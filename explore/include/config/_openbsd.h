@@ -25,6 +25,10 @@
 
 #define __FIT__P_PROBLEM // Hide __P from sys/cdefs.h. Workaround for glibc.
 
+#ifndef __unix
+# define __unix
+#endif
+
 #if defined(_REENTRANT) && !defined(_PTHREADS)
 #  define _PTHREADS
 #endif
