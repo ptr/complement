@@ -49,6 +49,8 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/TextLabel.o \
 		$(OUTPUT_DIR)/RubberTextLabel.o \
 		$(OUTPUT_DIR)/InputField.o \
+		$(OUTPUT_DIR)/InputMoney.o \
+		$(OUTPUT_DIR)/TextFilter.o \
 		$(OUTPUT_DIR)/TextCursor.o \
 		$(OUTPUT_DIR)/ScrVCollector.o \
 		$(OUTPUT_DIR)/ScrWindow.o \
