@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/03 16:57:58 ptr>
+// -*- C++ -*- Time-stamp: <99/02/04 18:57:34 ptr>
 
 #ifndef __SOCKSTREAM__
 #define __SOCKSTREAM__
@@ -113,10 +113,6 @@ class sock_base
     };
 
     enum _sockstate {
-//      goodbit       = 0x00,
-//      badbit        = 0x01,
-//      eofbit        = 0x02,
-//      failbit       = 0x04,
       hnamefailbit  = 0x08, // gethostbyname fail
       sockfailbit   = 0x10, // socket fail
       connfailbit   = 0x20, // connect fail
@@ -126,11 +122,11 @@ class sock_base
 #ifdef WIN32
     class Init
     {
-      public:
+      private:
 	Init();
 	~Init();
-      private:
-	static int  __init_cnt;
+
+        friend class sock_base;
     };
 #endif
 
