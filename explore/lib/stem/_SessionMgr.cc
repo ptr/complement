@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/07 13:01:42 ptr>
+// -*- C++ -*- Time-stamp: <99/06/16 12:03:43 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -52,11 +52,11 @@ void SessionMgr::establish_session( const Event& ev )
   }
 #endif
   // check account and permissions, create session leader (or 0)
-  EventHandler *_session_leader = session_leader( account, passwd );
+  EventHandler *_session_leader = session_leader( account, passwd, ev.src() );
   Event_base<SessionRsp> rs( EV_EDS_RS_SESSION );
   rs.dest( ev.src() );
   if ( _session_leader != 0 ) {
-    key_type k = key_generate();  // generate session new session id
+    key_type k = key_generate();  // generate new session id
 
     __S _s;
 
