@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/04 18:57:34 ptr>
+// -*- C++ -*- Time-stamp: <99/02/09 16:29:11 ptr>
 
 #ifndef __SOCKSTREAM__
 #define __SOCKSTREAM__
@@ -128,11 +128,11 @@ class sock_base
 
         friend class sock_base;
     };
-#endif
 
   protected:
-    sock_base();
-    ~sock_base();
+    __declspec( dllexport ) sock_base();
+    __declspec( dllexport ) ~sock_base();
+#endif
 };
 
 template<class charT, class traits>

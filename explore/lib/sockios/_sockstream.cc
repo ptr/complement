@@ -1,10 +1,10 @@
-// -*- C++ -*- Time-stamp: <99/02/08 17:14:40 ptr>
+// -*- C++ -*- Time-stamp: <99/02/09 16:30:18 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
-#include <sockstream>
-
 #ifdef WIN32
+
+#include <sockstream>
 
 // The Microsoft's cool programmers made two wanderful things:
 // 1. All sockets must be initialized via WSAStartup
@@ -23,7 +23,7 @@ namespace __impl {
 static char __xbuff[16];
 static const char *WINSOCK_ERR_MSG = "WinSock DLL not 2.0";
 
-extern int __thr_key; // plock.cc
+extern __declspec( dllexport ) int __thr_key; // xmt.cc
 
 } // namespace __impl
 
@@ -61,11 +61,13 @@ sock_base::Init::~Init()
   TlsSetValue( __impl::__thr_key, (void *)__tls_init_cnt );
 }
 
+__declspec( dllexport )
 sock_base::sock_base()
 {
   new( __impl::__xbuff ) Init();
 }
 
+__declspec( dllexport )
 sock_base::~sock_base()
 {
   reinterpret_cast<Init *>(__impl::__xbuff)->~Init();
@@ -73,16 +75,4 @@ sock_base::~sock_base()
 
 } // namespace std
 
-#else // !WIN32
-
-namespace std {
-
-sock_base::sock_base()
-{ }
-
-sock_base::~sock_base()
-{ }
-
-} // namespace std
-
-#endif // !WIN32
+#endif // WIN32
