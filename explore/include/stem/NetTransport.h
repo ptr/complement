@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/08 17:30:30 ptr>
+// -*- C++ -*- Time-stamp: <99/09/10 15:58:51 ptr>
 
 #ifndef __NetTransport_h
 #define __NetTransport_h
@@ -84,7 +84,7 @@ class NetTransport_base :
       { smgr.erase( k ); }
 
   protected:
-    addr_type rar_map( addr_type k, const string& name );
+    addr_type rar_map( addr_type k, const std::string& name );
     bool pop( Event&, SessionInfo& );
     void disconnect();
 
