@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/11 15:56:13 ptr>
+// -*- C++ -*- Time-stamp: <00/11/04 11:34:32 ptr>
 
 /*
  *
@@ -345,6 +345,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::_shift_fd()
   return msg;
 }
 
+#ifdef WIN32 // based on select call
 template <class Connect>
 sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
 {
@@ -355,19 +356,9 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
   _xsockaddr addr;
   size_t sz = sizeof( sockaddr_in );
 
-#ifdef __unix
-  if ( _pfd == 0 ) {
-    _pfd = new pollfd[1024];
-    _pfd[0].fd = fd();
-    _pfd[0].events = POLLIN;
-    ++_fdcount;
-  }
-#endif
-
   sockmgr_client_MP<Connect> *cl;
 
   do {
-#ifdef WIN32
     if ( _fdcount == 0 ) {
       FD_ZERO( &_pfd );
       ++_fdcount;
@@ -376,21 +367,8 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
     if ( select( FD_SETSIZE, &_pfd, 0, 0, 0 ) < 0 ) {
       return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
     }
-#else
-    _pfd[0].revents = 0;
-    if ( poll( _pfd, _fdcount, -1 ) < 0 ) { // wait infinite
-      return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
-    }
-#endif
 
-    if (
-#ifdef __unix
-      _pfd[0].revents != 0 && (_pfd[0].revents & POLLERR) == 0
-#endif
-#ifdef WIN32
-    FD_ISSET( fd(), &_pfd )
-#endif
-      ) { // poll found event on binded socket
+    if ( FD_ISSET( fd(), &_pfd ) ) { // poll found event on binded socket
       sock_base::socket_type _sd = ::accept( fd(), &addr.any, &sz );
       if ( _sd == -1 ) {
         // check and set errno
@@ -418,16 +396,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
 
         cl_new->s.open( _sd, addr.any );
 
-#ifdef __unix
-        int j = _fdcount++;
-
-        _pfd[j].fd = _sd;
-        _pfd[j].events = POLLIN;
-        _pfd[j].revents = 0;
-#endif
-#ifdef WIN32
         FD_SET( _sd, &_pfd );
-#endif
       }
       catch ( ... ) {
       }
@@ -441,18 +410,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
     } else {    // nothing found, may be only closed sockets
       _pfd[0].revents = 1; // we return to poll again
     }
-  } while (
-#ifdef __unix
-    _pfd[0].revents != 0
-#endif
-#ifdef WIN32
-    FD_ISSET( fd(), &_pfd )
-#endif
-    );
-#ifdef __unix
-  return 0; // Unexpected; should never occur
-#endif
-#ifdef WIN32
+  } while ( FD_ISSET( fd(), &_pfd ) );
   container_type::iterator i = _M_c.begin();
   while ( i != _M_c.end() ) {
     if ( (*i)->s.is_open() && FD_ISSET( (*i)->s.rdbuf()->fd(), &_pfd ) ) {
@@ -462,8 +420,97 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
   }
 
   return 0;
-#endif
+
 }
+#endif //  WIN32
+
+#ifdef __unix // based on poll call
+template <class Connect>
+sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
+{
+  if ( !is_open() ) {
+    return 0;
+  }
+
+  _xsockaddr addr;
+  size_t sz = sizeof( sockaddr_in );
+
+  if ( _pfd == 0 ) {
+    _pfd = new pollfd[1024];
+    _pfd[0].fd = fd();
+    _pfd[0].events = POLLIN;
+    ++_fdcount;
+    __STL_ASSERT( _fdcount == 1 );
+  }
+
+  sockmgr_client_MP<Connect> *cl;
+
+  do {
+
+    // find sockets that has buffered data
+    typename container_type::iterator ba = 
+      find_if( _M_c.begin(), _M_c.end(), _M_av );
+    if ( ba != _M_c.end() ) {
+      return *ba;
+    }
+
+    _pfd[0].revents = 0;
+    if ( poll( _pfd, _fdcount, -1 ) < 0 ) { // wait infinite
+      return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
+    }
+
+    if ( _pfd[0].revents != 0 && (_pfd[0].revents & POLLERR) == 0 ) {
+      // poll found event on binded socket
+      sock_base::socket_type _sd = ::accept( fd(), &addr.any, &sz );
+      if ( _sd == -1 ) {
+        // check and set errno
+        __STL_ASSERT( _sd == -1 );
+        return 0;
+      }
+
+      try {
+        sockmgr_client_MP<Connect> *cl_new;
+        typename container_type::iterator i = 
+          find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, -1 ) );
+    
+        if ( i == _M_c.end() ) { // we need new message processor
+          cl_new = new sockmgr_client_MP<Connect>();
+          _M_c.push_back( cl_new );
+        } else { // we can reuse old
+// #ifndef __hpux
+          cl_new = *i;
+// #else
+//          _M_c.erase( i );
+//          cl_new = new sockmgr_client_MP<Connect>();
+//          _M_c.push_back( cl_new );
+// #endif
+        }
+
+        cl_new->s.open( _sd, addr.any );
+
+        int j = _fdcount++;
+
+        _pfd[j].fd = _sd;
+        _pfd[j].events = POLLIN;
+        _pfd[j].revents = 0;
+      }
+      catch ( ... ) {
+      }
+    }
+
+    cl = _shift_fd(); // find polled and return it
+    if ( cl != 0 ) {
+      return cl; // return message processor
+    } else if ( _pfd[0].revents & POLLERR ) {
+      return 0; // return 0 only for binded socket
+    } else {    // nothing found, may be only closed sockets
+      _pfd[0].revents = 1; // we return to poll again
+    }
+  } while ( _pfd[0].revents != 0 );
+
+  return 0; // Unexpected; should never occur
+}
+#endif // __unix
 
 template <class Connect>
 sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_udp()

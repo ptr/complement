@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/11 10:15:22 ptr>
+// -*- C++ -*- Time-stamp: <00/11/03 21:11:06 ptr>
 
 /*
  *
@@ -130,6 +130,13 @@ struct fd_equal :
 {
   bool operator()(const sockmgr_client *__x, int __y) const
       { return __x->s.rdbuf()->fd() == __y; }
+};
+
+struct in_buf_avail :
+    public unary_function<sockmgr_client *,bool> 
+{
+  bool operator()(const sockmgr_client *__x) const
+      { return __x->s.rdbuf()->in_avail() > 0; }
 };
 
 // Policy: thread per client connection
@@ -270,6 +277,7 @@ class sockmgr_stream_MP : // multiplexor
 
     _Sequence _M_c;
     _Compare  _M_comp;
+    in_buf_avail _M_av;
     __STLPORT_STD::_STL_mutex _c_lock;
 
 #ifdef __unix
