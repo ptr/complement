@@ -1,6 +1,6 @@
-// -*- C++ -*- Time-stamp: <99/05/19 21:35:51 ptr>
+// -*- C++ -*- Time-stamp: <99/09/10 14:36:40 ptr>
 
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+#ident "$SunId$ %Q%"
 
 #include <crc.h>
 
