@@ -1,14 +1,14 @@
-// -*- C++ -*- Time-stamp: <02/09/25 12:07:30 ptr>
+// -*- C++ -*- Time-stamp: <03/07/05 21:41:44 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999, 2002
+ * Copyright (c) 1997-1999, 2002, 2003
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 1.0
+ * Licensed under the Academic Free License Version 1.2
  * 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -46,7 +46,8 @@ __impl::Mutex basic_sockmgr::_idx_lck;
 __FIT_DECLSPEC
 void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol prot )
 {
-  if ( is_open() ) {
+  MT_REENTRANT( _fd_lck, _1 );
+  if ( is_open_unsafe() ) {
     return;
   }
   _mode = ios_base::in | ios_base::out;
@@ -74,7 +75,7 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
     if ( type == sock_base::sock_stream ||
 	 type == sock_base::sock_seqpacket ) {
       // let's try reuse local address
-      setoptions( sock_base::so_reuseaddr, true );
+      setoptions_unsafe( sock_base::so_reuseaddr, true );
     }
 
     if ( ::bind( _fd, &_address.any, sizeof(_address) ) == -1 ) {
@@ -113,22 +114,24 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
 __FIT_DECLSPEC
 void basic_sockmgr::close()
 {
-  if ( !is_open() ) {
+  MT_REENTRANT( _fd_lck, _1 );
+  if ( !is_open_unsafe() ) {
     return;
   }
 #ifdef WIN32
   ::closesocket( _fd );
 #else
-  ::shutdown( _fd, 2 );
   ::close( _fd );
+  ::shutdown( _fd, 2 );
 #endif
   _fd = -1;
 }
 
-#if 0 // shutdown here has no sense
+__FIT_DECLSPEC
 void basic_sockmgr::shutdown( sock_base::shutdownflg dir )
 {
-  if ( is_open() ) {
+  MT_REENTRANT( _fd_lck, _1 );
+  if ( is_open_unsafe() ) {
     if ( (dir & (sock_base::stop_in | sock_base::stop_out)) ==
          (sock_base::stop_in | sock_base::stop_out) ) {
       ::shutdown( _fd, 2 );
@@ -139,13 +142,12 @@ void basic_sockmgr::shutdown( sock_base::shutdownflg dir )
     }
   }
 }
-#endif // 0
 
 __FIT_DECLSPEC
-void basic_sockmgr::setoptions( sock_base::so_t optname, bool on_off, int __v )
+void basic_sockmgr::setoptions_unsafe( sock_base::so_t optname, bool on_off, int __v )
 {
 #ifdef __unix
-  if ( is_open() ) {
+  if ( is_open_unsafe() ) {
     if ( optname != sock_base::so_linger ) {
       int turn = on_off ? 1 : 0;
       if ( setsockopt( _fd, SOL_SOCKET, (int)optname, (const void *)&turn,
