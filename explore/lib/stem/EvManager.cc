@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/28 14:52:29 ptr>
+// -*- C++ -*- Time-stamp: <00/10/06 14:55:38 ptr>
 
 /*
  *
@@ -85,7 +85,9 @@ int EvManager::_Dispatch( void *p )
 
   while ( me._ev_queue_cond.set() ) {
     MT_LOCK( me._lock_queue );
-    swap( me.in_ev_queue, me.out_ev_queue );
+    // swap( me.in_ev_queue, me.out_ev_queue );
+    __STL_ASSERT( me.out_ev_queue.empty() );
+    (const_cast<queue_type::container_type&>(me.in_ev_queue._Get_c())).swap( const_cast<queue_type::container_type&>(me.out_ev_queue._Get_c()) );
     MT_UNLOCK( me._lock_queue );
     while ( !me.out_ev_queue.empty() ) {
       me.Send( me.out_ev_queue.front() );

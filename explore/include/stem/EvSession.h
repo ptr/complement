@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/11 14:31:09 ptr>
+// -*- C++ -*- Time-stamp: <00/10/05 14:08:12 ptr>
 
 /*
  *
@@ -195,6 +195,11 @@ class SessionManager
     key_type create()
       {
         MT_REENTRANT( _lock, _x1 );
+        return unsafe_create();
+      }
+
+    key_type unsafe_create()
+      {
         key_type new_key = create_unique();
         heap[new_key];
         return new_key;
@@ -215,20 +220,29 @@ class SessionManager
     bool is_avail( const key_type& k ) const
       {
         MT_REENTRANT( _lock, _x1 );
-        return heap.find( k ) != heap.end();
+        return unsafe_is_avail( k );
       }
 
     void erase( const key_type& k )
       {
         MT_REENTRANT( _lock, _x1 );
-        heap.erase( k );
+        unsafe_erase( k );
       }
 
     void erase( iterator& k )
       {
         MT_REENTRANT( _lock, _x1 );
-        heap.erase( k );
+        unsafe_erase( k );
       }
+
+    bool unsafe_is_avail( const key_type& k ) const
+      { return heap.find( k ) != heap.end(); }
+
+    void unsafe_erase( const key_type& k )
+      { heap.erase( k ); }
+
+    void unsafe_erase( iterator& k )
+      { heap.erase( k ); }
 
   protected:
     heap_type heap;
