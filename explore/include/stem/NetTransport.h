@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/24 16:34:54 ptr>
+// -*- C++ -*- Time-stamp: <99/03/26 20:19:09 ptr>
 
 #ifndef __NetTransport_h
 #define __NetTransport_h
@@ -22,6 +22,7 @@
 #include <map>
 
 #include <Event.h>
+#include <EvSession.h>
 
 namespace EDS {
 
@@ -36,7 +37,7 @@ class NetTransport
 
     NetTransport() :
         _count( 0 ),
-        _sid( 0 ),
+        _sid( -1 ),
         net( 0 ),
         _net_owner( false )
       { }
@@ -65,14 +66,14 @@ class NetTransport
         }
       }
 
-    unsigned sid() const
+    EvSessionManager::key_type sid() const
       { return _sid; }
 
   private:
     bool pop( Event& );
 
     std::sockstream *net;
-    unsigned _sid;
+    EvSessionManager::key_type _sid;
     unsigned _count;
     // indeed rar can be inside connect(), but SunPro's CC 5.0
     // to be very huffy about it.
