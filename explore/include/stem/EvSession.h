@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <99/04/09 17:39:42 ptr>
+// -*- C++ -*- Time-stamp: <99/05/27 21:03:34 ptr>
 #ifndef __EvSession_h
 #define __EvSession_h
 
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+#ident "$SunId$ %Q%"
 
 #include <string>
 #include <ctime>
@@ -12,6 +12,10 @@
 #include <Event.h>
 
 namespace EDS {
+
+#ifdef __unix
+using std::time;
+#endif
 
 struct SessionInfo
 {
