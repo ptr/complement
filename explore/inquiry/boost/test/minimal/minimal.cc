@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/07/23 01:44:34 ptr>
+// -*- C++ -*- Time-stamp: <03/11/21 07:42:45 ptr>
 
 #ifdef __unix
 #  ifdef __HP_aCC
@@ -8,6 +8,7 @@
 #  endif
 #endif
 
+// #include <string>
 #include <boost/test/minimal.hpp>
 
 int add( int a, int b )
@@ -17,6 +18,7 @@ int add( int a, int b )
 
 int test_main( int, char ** )
 {
+#if 1
   BOOST_CHECK( add( 1, 2) == 4 );
   BOOST_REQUIRE( add( 1, 2) == 3 );
 
@@ -27,6 +29,9 @@ int test_main( int, char ** )
   if ( add( 1, 2) != 4 ) {
     BOOST_FAIL( "Hmm..., throw" );
   }
+#else
+  (std::string( "123" ) + "567").c_str();
+#endif
 
   return (add( 1, 2) == 4 ? 0 : 1);
 }
