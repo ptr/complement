@@ -1,1 +1,5 @@
 *.pcl
+compare.dvi
+compare.log
+compare.ps
+compare.pdf
