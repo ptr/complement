@@ -1,29 +1,29 @@
- /* Time-stamp: <02/12/16 23:01:07 ptr> */
+ /* Time-stamp: <02/12/17 12:32:48 ptr> */
  /* $Id$ */
 
 .nodecor a:link {
   text-decoration: none;
-  color: DarkOrange;
+  color: grey40;
 }
 
 .nodecor a:visited {
   text-decoration: none;
-  color: goldenrod2;
+  color: grey50;
 }
 
 .nodecor a.nodecor:active {
   text-decoration: none;
-  color: goldenrod2;
+  color: black;
 }
 
 .nodecor a:hover {
   text-decoration: none;
-  color: goldenrod2;
+  color: grey65;
 }
 
-.im {
-  background-image:      url(img/jpg/foldR1-2.jpg);
-  background-repeat:     repeat-y;
-  /* background-attachment: fixed; */
+div.warning {
+  border:  1px solid red;
+  /* color:   red; */
+  padding-left: 2em;
+  padding-right: 2em;
 }
-

@@ -1,12 +1,10 @@
-<!-- Time-stamp: <02/12/16 23:22:01 ptr> -->
+<!-- Time-stamp: <03/05/04 16:12:38 ptr> -->
 <!-- $Id$ -->
 
-<div class="bm">
-<img src="img/png/bml1.png"><a href="http://sourceforge.net"><img src="http://sourceforge.net/sflogo.php?group_id=63160&amp;type=2" width="125" height="37" border="0" alt="SourceForge.net Logo"></a><img src="img/png/bmr1.png">
-</div>
-<div class="logo1 border-t"><img src="img/jpg/Co-yw1.jpg"></div>
-<div class="toc">
+<div class="logo1 margines20"><img src="img/jpg/Co-yw1.jpg"></div>
+<div class="rightfloat">
+  <div class="logo2 margines20"><!-- <img src="img/png/ermine.png"> --></div>
+  <div class="toc">
 <!--#include file="Content.shtml" -->
-</div>
-<div class="general im">
-
+  </div> <!-- toc -->
+</div> <!-- rightfloat -->
