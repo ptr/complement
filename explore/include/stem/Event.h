@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/24 18:20:20 ptr>
+// -*- C++ -*- Time-stamp: <99/04/01 14:49:22 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -90,7 +90,7 @@ class __Event_Base
     key_type  _dst;  // destination
     key_type  _src;  // source
     key_type  _sid;  // session ID
-    sq_type   _sqn;  // sequential number / responce to number
+    sq_type   _sqn;  // sequential number
     sq_type   _rsqn; // responce to number
 
     friend class NetTransport;
@@ -228,6 +228,7 @@ class Event_base :
         unpack( std::stringstream( s.value() ) );
       }
 
+#ifndef _MSC_VER
     void pack( std::ostream& __s ) const
       { pack( __s, __type_traits<D>::is_POD_type() ); }
     void unpack( std::istream& __s )
@@ -236,10 +237,21 @@ class Event_base :
       { net_pack( __s, __type_traits<D>::is_POD_type() ); }
     void net_unpack( std::istream& __s )
       { net_unpack( __s, __type_traits<D>::is_POD_type() ); }
+#else
+    void pack( std::ostream& __s ) const
+      { _data.pack( __s ); }
+    void unpack( std::istream& __s )
+      { _data.unpack( __s ); }
+    void net_pack( std::ostream& __s ) const
+      { _data.net_pack( __s ); }
+    void net_unpack( std::istream& __s )
+      { _data.net_unpack( __s ); }
+#endif
 
   protected:
     value_type _data;
 
+#ifndef _MSC_VER
     void pack( std::ostream& __s, __true_type ) const
       { __s.write( (const char *)&_data, sizeof(D) ); }
 
@@ -253,24 +265,26 @@ class Event_base :
 
     void net_pack( std::ostream& __s, __true_type ) const
       {
-#ifndef _MSC_VER
         value_type tmp = to_net( _data );
         __s.write( (const char *)&tmp, sizeof(D) );
-#endif
       }
     void net_pack( std::ostream& __s, __false_type ) const
       { _data.net_pack( __s ); }
     void net_unpack( std::istream& __s, __true_type )
       {
-#ifndef _MSC_VER
         value_type tmp;
         __s.read( (char *)&tmp, sizeof(D) );
         _data = from_net( tmp );
-#endif
       }
     void net_unpack( std::istream& __s, __false_type )
       { _data.net_unpack( __s ); }
+#endif
 };
+
+// VC instantiate only whole class, so I need stupid specializaton for it:
+#ifdef _MSC_VER
+#include <EventSpec.h>
+#endif
 
 // VC 5.0 to be very huffy on typedefed std::string...
 __STL_TEMPLATE_NULL
