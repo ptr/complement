@@ -52,6 +52,8 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/CheckBox.o \
 		$(OUTPUT_DIR)/ControlData.o \
 		$(OUTPUT_DIR)/Filter.o \
+		$(OUTPUT_DIR)/PanelItem.o \
+		$(OUTPUT_DIR)/Panel.o \
 		$(OUTPUT_DIR)/ModalDialog.o
 
 
