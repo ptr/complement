@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/17 12:07:19 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 14:26:57 ptr>
 
 /*
  *
@@ -194,7 +194,11 @@ class basic_sockbuf :
 #ifdef __SGI_STL_OWN_IOSTREAMS
       , _base(0), _ebuf(0), _allocated( true )   
 #endif
-      { }
+      {
+#ifdef __SGI_STL_OWN_IOSTREAMS
+        _M_lock_w._M_initialize();
+#endif
+      }
     basic_sockbuf( const char *hostname, int port,
 		   sock_base::stype type = sock_base::sock_stream,
 		   sock_base::protocol prot = sock_base::inet ) :
@@ -204,12 +208,20 @@ class basic_sockbuf :
 #ifdef __SGI_STL_OWN_IOSTREAMS
       , _base(0), _ebuf(0), _allocated( true )   
 #endif
-      { open( hostname, port, type, prot ); }
+      {
+#ifdef __SGI_STL_OWN_IOSTREAMS
+        _M_lock_w._M_initialize();
+#endif
+        open( hostname, port, type, prot );
+      }
     virtual ~basic_sockbuf()
       {
         close();
 #ifdef __SGI_STL_OWN_IOSTREAMS
         _M_deallocate_block();
+#endif
+#ifdef __SGI_STL_OWN_IOSTREAMS
+        _M_lock_w._M_destroy();
 #endif
       }
 
