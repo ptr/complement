@@ -1,0 +1,23 @@
+# Time-stamp: <03/05/05 13:29:20 ptr>
+# $Id$
+
+# This file reflect versions of third-party libraries that
+# used in projects, with make-depend style
+
+# ===== Fix me! =====
+MWCW_BASE = e:/Metrowerks/CodeWarrior
+MWCW_NOVELL_SDK_BASE = e:/Novell/ndk/nwsdk
+STLPORT_LIB_DIR = e:/STLlab/STLport/lib
+STLPORT_INCLUDE_DIR = e:/STLlab/STLport/stlport
+# =====         =====
+
+MWCW_NOVELL = $(MWCW_BASE)/Novell Support/Metrowerks Support/Headers
+MWCW_NOVELL_R = $(MWCW_BASE)/Novell Support/Metrowerks Support
+#MWCW_NOVELL_R_C_I = $(MWCW_BASE)/Novell Support/Metrowerks Support/Headers
+#MWCW_NOVELL_R_CPP_I = $(MWCW_BASE)/Novell Support/Metrowerks Support/Libraries/MSL C++/Include
+MWCW_NOVELL_SDK = $(MWCW_NOVELL_SDK_BASE)
+
+PG_DIR ?= /usr/pgsql
+
+gSOAP_DIR ?= /opt/gSOAP-2.2.3
+BOOST_DIR ?= /export/hostel/build/dev-utils/boost_1_30_0

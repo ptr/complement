@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <03/03/02 12:41:09 ptr>
+# -*- makefile -*- Time-stamp: <03/05/06 13:28:35 ptr>
 # $Id$
 
 include $(BASEDIR)/Makefiles/Makefile.inc
@@ -131,13 +131,13 @@ ${SO_NAME_SHORT_STLDBG}:	$(OBJ_STLDBG) $(LIBSDEP)
 	 ln -s ${SO_MAJOR_STLDBG} ${SO_GENERAL_STLDBG})
 
 ${A_NAME_SHORT}:	$(OBJ_A)
-	$(AR) -r ${A_NAME_SHORT} $(OBJ_A)
+	$(AR) $(AR_INS_R) $(AR_OUT) ${A_NAME_SHORT} $(OBJ_A)
 
 ${A_NAME_SHORT_DBG}:	$(OBJ_A_DBG)
-	$(AR) -r ${A_NAME_SHORT_DBG} $(OBJ_A_DBG)
+	$(AR) $(AR_INS_R) $(AR_OUT) ${A_NAME_SHORT_DBG} $(OBJ_A_DBG)
 
 ${A_NAME_SHORT_STLDBG}:	$(OBJ_A_STLDBG)
-	$(AR) -r ${A_NAME_SHORT_STLDBG} $(OBJ_A_STLDBG)
+	$(AR) $(AR_INS_R) $(AR_OUT) ${A_NAME_SHORT_STLDBG} $(OBJ_A_STLDBG)
 
 install-release-shared:	release-shared
 	@if [ -f ${SO_INSTALL} ] ; then \

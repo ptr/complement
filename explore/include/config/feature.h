@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/01/19 13:29:42 ptr>
+// -*- C++ -*- Time-stamp: <03/05/05 14:36:50 ptr>
 
 /*
  *
@@ -78,6 +78,10 @@
 
 #ifdef WIN32
 #include <config/_windows.h>
+#endif
+
+#ifdef N_PLAT_NLM
+#include <config/_mwccnlm.h>
 #endif
 
 #ifdef __FIT_USE_DECLSPEC /* using export/import technique */
