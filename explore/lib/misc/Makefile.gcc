@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <02/06/20 11:10:50 ptr>
+# -*- Makefile -*- Time-stamp: <02/08/04 09:06:42 ptr>
 # $Id$
 
 BASEDIR := $(shell xtmp=`pwd`; xtmp=`dirname $$xtmp`; dirname $$xtmp)
@@ -9,13 +9,13 @@ include $(BASEDIR)/lib/misc/Makefile.inc
 
 all:	all-release all-debug
 
+install:	install-dbg-shared install-stldbg-shared install-release-shared
+
 all-shared:	release-shared dbg-shared stldbg-shared
 
-all-static:	release-static dbg-static stldbg-static
+all-debug:	dbg-shared stldbg-shared
 
-all-debug:	dbg-shared stldbg-shared dbg-static stldbg-static
-
-all-release:	release-shared release-static
+all-release:	release-shared
 
 include ${BASEDIR}/Makefiles/lib/Makefile.inc
 

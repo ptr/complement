@@ -1,4 +1,4 @@
-# Time-stamp: <02/08/03 08:45:26 ptr>
+# Time-stamp: <02/08/04 09:05:08 ptr>
 # $Id$
 
 BASEDIR := $(shell xtmp=`pwd`; xtmp=`dirname $$xtmp`; dirname $$xtmp)
@@ -9,13 +9,13 @@ include ${BASEDIR}/lib/DB/Makefile.inc
 
 all:	all-release all-debug
 
+install:	install-dbg-shared install-stldbg-shared install-release-shared
+
 all-shared:	release-shared dbg-shared stldbg-shared
 
-all-static:	release-static dbg-static stldbg-static
+all-debug:	dbg-shared stldbg-shared
 
-all-debug:	dbg-shared stldbg-shared dbg-static stldbg-static
-
-all-release:	release-shared release-static
+all-release:	release-shared
 
 include ${BASEDIR}/Makefiles/lib/Makefile.inc
 
@@ -29,4 +29,4 @@ endif
 
 release-shared:	LDLIBS = -ldl -lstlport_gcc
 dbg-shared:	LDLIBS = -ldl -lstlport_gcc
-stldbg-shared:	LDLIBS = -ldl -lstlport_gcc_stldbg
+stldbg-shared:	LDLIBS = -ldl -lstlport_gcc_stldebug
