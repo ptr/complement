@@ -1,5 +1,11 @@
-# -*- makefile -*- Time-stamp: <03/07/10 00:19:48 ptr>
+# -*- makefile -*- Time-stamp: <03/07/10 13:22:04 ptr>
 # $Id$
+
+INSTALL_TAGS ?= install-release-shared install-dbg-shared install-stldbg-shared
+
+PHONY += install $(INSTALL_TAGS)
+
+install:	$(INSTALL_TAGS)
 
 install-release-shared:	release-shared
 	@if [ -h $(INSTALL_LIB_DIR)/${SO_NAME} ] ; then \

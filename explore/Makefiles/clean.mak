@@ -1,7 +1,7 @@
-# -*- Makefile -*- Time-stamp: <03/07/09 23:57:51 ptr>
+# -*- Makefile -*- Time-stamp: <03/07/10 13:19:47 ptr>
 # $Id$
 
-.PHONY:	clean clobber
+PHONY += clean clobber distclean
 
 clean::	
 	@-rm -f core core.*
@@ -10,6 +10,6 @@ clean::
 	@-rm -f $(OBJ_STLDBG) $(DEP_STLDBG)
 
 clobber::	clean
-	@-rm .make.depend
+	@-rm -f .make.depend
 
 distclean::	clobber

@@ -1,11 +1,19 @@
-# Time-stamp: <03/07/10 00:06:43 ptr>
+# Time-stamp: <03/07/10 15:20:25 ptr>
 # $Id$
+
+.SUFFIXES:
+.SCCS_GET:
+.RCS_GET:
+
+PHONY ?=
+
+.PHONY: $(PHONY)
 
 RULESBASE ?= $(SRCROOT)/Makefiles
 
 ALL_TAGS ?= release-shared	dbg-shared	stldbg-shared
 
-all:	$(ALL_TAGS)
+all:	dirs $(ALL_TAGS)
 
 # define what make clone we use
 include ${RULESBASE}/make.mak
@@ -15,6 +23,8 @@ include ${RULESBASE}/sysid-$(USE_MAKE).mak
 include ${RULESBASE}/sys-$(OSNAME).mak
 # rules to make dirs for targets
 include ${RULESBASE}/targetdirs.mak
+# extern libraries
+include ${RULESBASE}/extern-$(OSNAME).mak
 
 # derive common targets (*.o, *.d),
 # build rules (including output catalogs)
