@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <04/05/21 17:49:13 ptr>
+// -*- C++ -*- Time-stamp: <04/06/15 18:05:48 ptr>
 
 /*
  *
@@ -206,7 +206,7 @@ class Argv
 //      { opt.push_back( new Option<std::string>( n, std::string(v), h ) ); }
     void parse( int argc, char * const *argv );
     template <class T>
-    bool assign( const char *nm, T& v )
+    bool assign( const char *nm, T& v ) const
       { 
         try {
           return (*find( nm ))->assign( v );
