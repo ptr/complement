@@ -1,3 +1,17 @@
+2004-01-08  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xmt.cc: apply CloseHandle call for thread handler under Windows
+	[thanks Anton Kholodkov].
+
+2003-12-30  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xmt.cc: user words should be freed before thread termination,
+	not in dtor.
+
+2003-12-29  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xmt.cc: avoid signaling in Thread dtor.
+
 2003-12-05  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* xmt.cc: don't use pthread_atfork in __at_fork_child, this settings
