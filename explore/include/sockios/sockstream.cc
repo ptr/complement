@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/28 12:54:11 ptr>
+// -*- C++ -*- Time-stamp: <99/12/17 20:14:24 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -198,12 +198,12 @@ basic_sockbuf<charT, traits> *basic_sockbuf<charT, traits>::close()
 //	cerr << "Closing" << endl;
 	// overflow();
 //	cerr << "Say shutdown on out" << endl;
-  shutdown( sock_base::stop_out );
+  // shutdown( sock_base::stop_out );
 //	cerr << "Sync" << endl;
   sync();
 //	cerr << "Say shutdown on in" << endl;
-  shutdown( sock_base::stop_in );
-//	shutdown( sock_base::stop_in | sock_base::stop_out );
+  // shutdown( sock_base::stop_in );
+  this->shutdown( sock_base::stop_in | sock_base::stop_out );
 //	cerr << "Sync" << endl;
 //	sync();
 //	cerr << "Close" << endl;
