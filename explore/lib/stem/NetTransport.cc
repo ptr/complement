@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/08/09 12:31:32 ptr>
+// -*- C++ -*- Time-stamp: <00/08/30 15:52:49 ptr>
 
 /*
  *
@@ -195,9 +195,7 @@ bool NetTransport_base::pop( Event& _rs )
 
   MT_IO_REENTRANT( *net )
 
-  net->read( (char *)buf, sizeof(unsigned) );
-  
-  if ( !net->good() ) {
+  if ( !net->read( (char *)buf, sizeof(unsigned) ).good() ) {
     return false;
   }
 
