@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/08/04 21:05:27 ptr>
+// -*- C++ -*- Time-stamp: <04/05/21 17:49:13 ptr>
 
 /*
  *
@@ -75,6 +75,7 @@ class Option_base
     bool is_set;
 
     virtual void read( const char *str ) = 0;
+    virtual void read( const std::string& str ) = 0;
     friend class Argv;
 };
 
@@ -112,6 +113,12 @@ class Option :
         s >> _v;
       }
 
+    void read( const std::string& str )
+      {
+        std::istringstream s( str );
+        s >> _v;
+      }
+
     friend class Argv;
 };
 
@@ -143,10 +150,10 @@ class Option<std::string> :
     std::string _v;
 
     void read( const char *str )
-      { _v = str;
-        // std::istringstream s( str );
-        // std::getline( s, _v );
-      }
+      { _v = str; }
+
+    void read( const std::string& str )
+      { _v = str; }
 
     friend class Argv;
 };
@@ -169,10 +176,10 @@ class Option<char *> :
     std::string _v;
 
     void read( const char *str )
-      { _v = str;
-        // std::istringstream s( str );
-        // std::getline( s, _v );
-      }
+      { _v = str; }
+
+    void read( const std::string& str )
+      { _v = str; }
 
     friend class Argv;
 };
