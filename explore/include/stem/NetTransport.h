@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/24 12:18:49 ptr>
+// -*- C++ -*- Time-stamp: <99/03/24 16:34:54 ptr>
 
 #ifndef __NetTransport_h
 #define __NetTransport_h
@@ -41,12 +41,7 @@ class NetTransport
         _net_owner( false )
       { }
 
-    ~NetTransport()
-      {
-        if ( _net_owner ) {
-          delete net;
-        }
-      }
+    __DLLEXPORT ~NetTransport();
 
     __DLLEXPORT
     key_type open( const std::string& hostname, int port );
@@ -69,6 +64,9 @@ class NetTransport
           net->close();
         }
       }
+
+    unsigned sid() const
+      { return _sid; }
 
   private:
     bool pop( Event& );
