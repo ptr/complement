@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <03/09/15 17:48:44 ptr>
+// -*- C++ -*- Time-stamp: <03/09/24 20:37:39 ptr>
 
 /*
  *
  * Copyright (c) 2003
  * Petr Ovtchenkov
  *
- * Licensed under the Academic Free License Version 1.0
+ * Licensed under the Academic Free License Version 1.2
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -38,6 +38,7 @@
 #  ifdef __USE_XOPEN2K
 // The IEEE Std. 1003.1j-2000 introduces functions to implement spinlocks.
 #   define __FIT_PTHREAD_SPINLOCK
+#   define __FIT_PSHARED_MUTEX
 #  endif
 #endif
 
