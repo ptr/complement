@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/11/25 11:28:25 ptr>
+// -*- C++ -*- Time-stamp: <96/12/19 12:57:29 ptr>
 #ifndef __EDS_EventHandler_h
 #define __EDS_EventHandler_h
 
@@ -157,50 +157,11 @@ class __EvTable
     typedef Container2::const_iterator const_iterator2;
 
     bool get( Key1, Key2, Value& ) const;
-    iterator1 get( Key1 key1 )
-      {
-	iterator1 i1 = storage.begin();
-	while ( i1 != storage.end() && key1st(*i1) != key1 ) {
-	  ++i1;
-	}
-	return i1;
-      }
-    const_iterator1 get( Key1 key1 ) const
-      {
-	const_iterator1 i1 = storage.begin();
-	while ( i1 != storage.end() && key1st(*i1) != key1 ) {
-	  ++i1;
-	}
-	return i1;
-      }
-    iterator2 get( iterator1 i1, Key2 key2 )
-      {
-	Container2& c2 = (*i1).second;
-	iterator2 i2 = c2.begin();
-	while ( i2 != c2.end() && key2nd(*i2) != key2 ) {
-	  ++i2;
-	}
-	return i2;
-      }
-    const_iterator2 get( const_iterator1 i1, Key2 key2 ) const
-      {
-	const Container2& c2 = (*i1).second;
-	const_iterator2 i2 = c2.begin();
-	while ( i2 != c2.end() && key2nd(*i2) != key2 ) {
-	  ++i2;
-	}
-	return i2;
-      }
-    bool get( const_iterator1 i1, Key2 key2, Value& value ) const
-      {
-	const_iterator2 i2 = get( i1, key2 );
-	if ( i2 == (*i1).second.end() ) {
-	  return false;
-	}
-	value = (*i2).second;
-
-	return true;
-      }
+    iterator1       get( Key1 key1 );
+    const_iterator1 get( Key1 key1 ) const;
+    iterator2       get( iterator1 i1, Key2 key2 );
+    const_iterator2 get( const_iterator1 i1, Key2 key2 ) const;
+    bool get( const_iterator1 i1, Key2 key2, Value& value ) const;
 
     iterator1 begin()
       { return storage.begin(); }
@@ -221,42 +182,8 @@ class __EvTable
     bool empty() const
       { return storage.empty(); }
 
-    void append( const __EvTable<Key1,Key2,Value>& x )
-      {
-	if ( x.empty() ) {
-	  return;
-	}
-	const_iterator1 i1 = x.storage.begin();
-	while ( i1 != x.storage.end() ) {
-	  Key1 key1 = key1st(*i1);
-	  const_iterator2 i2 = (*i1).second.begin();
-	  while ( i2 != (*i1).second.end() ) {
-	    Key2 key2 = key2nd(*i2);
-	    append( key1, key2, (*i2).second );
-	    ++i2;
-	  }
-	  ++i1;
-	}
-      }
-    void append( Key1 key1, Key2 key2, const Value& value )
-      {
-	iterator1 i1 = get( key1 );
-	if ( i1 == storage.end() ) {
-	  pair<Key2,Value> p2( key2, value );
-	  Container2 c2;
-	  c2.push_back( p2 );
-	  pair<Key1,Container2> p1( key1, c2 );
-	  storage.push_back( p1 );
-	  return;
-	}
-	iterator2 i2 = get( i1, key2 );
-	if ( i2 == (*i1).second.end() ) {
-	  pair<Key2,Value> p2( key2, value );
-	  (*i1).second.push_back( p2 );
-	  return;
-	}
-	(*i2).second = value; // only last value stored.
-      }
+    void append( const __EvTable<Key1,Key2,Value>& x );
+    void append( Key1 key1, Key2 key2, const Value& value );
 
     select1st<pair<Key1,Container2>, Key1> key1st;
     select1st<pair<Key2,Value>, Key2> key2nd;
@@ -279,6 +206,100 @@ bool __EvTable<Key1,Key2,Value>::get( Key1 key1, Key2 key2, Value& value ) const
   value = (*i2).second;
 
   return true;
+}
+
+template <class Key1, class Key2, class Value>
+__EvTable<Key1,Key2,Value>::iterator1 __EvTable<Key1,Key2,Value>::get( Key1 key1 )
+{
+  iterator1 i1 = storage.begin();
+  while ( i1 != storage.end() && key1st(*i1) != key1 ) {
+    ++i1;
+  }
+  return i1;
+}
+
+template <class Key1, class Key2, class Value>
+__EvTable<Key1,Key2,Value>::const_iterator1 __EvTable<Key1,Key2,Value>::get( Key1 key1 ) const
+{
+  const_iterator1 i1 = storage.begin();
+  while ( i1 != storage.end() && key1st(*i1) != key1 ) {
+    ++i1;
+  }
+  return i1;
+}
+
+template <class Key1, class Key2, class Value>
+__EvTable<Key1,Key2,Value>::iterator2 __EvTable<Key1,Key2,Value>::get( __EvTable<Key1,Key2,Value>::iterator1 i1, Key2 key2 )
+{
+  Container2& c2 = (*i1).second;
+  iterator2 i2 = c2.begin();
+  while ( i2 != c2.end() && key2nd(*i2) != key2 ) {
+    ++i2;
+  }
+  return i2;
+}
+
+template <class Key1, class Key2, class Value>
+__EvTable<Key1,Key2,Value>::const_iterator2 __EvTable<Key1,Key2,Value>::get( __EvTable<Key1,Key2,Value>::const_iterator1 i1, Key2 key2 ) const
+{
+  const Container2& c2 = (*i1).second;
+  const_iterator2 i2 = c2.begin();
+  while ( i2 != c2.end() && key2nd(*i2) != key2 ) {
+    ++i2;
+  }
+  return i2;
+}
+
+template <class Key1, class Key2, class Value>
+bool __EvTable<Key1,Key2,Value>::get( __EvTable<Key1,Key2,Value>::const_iterator1 i1, Key2 key2, Value& value ) const
+{
+  const_iterator2 i2 = get( i1, key2 );
+  if ( i2 == (*i1).second.end() ) {
+    return false;
+  }
+  value = (*i2).second;
+
+  return true;
+}
+
+template <class Key1, class Key2, class Value>
+void __EvTable<Key1,Key2,Value>::append( const __EvTable<Key1,Key2,Value>& x )
+{
+  if ( x.empty() ) {
+    return;
+  }
+  const_iterator1 i1 = x.storage.begin();
+  while ( i1 != x.storage.end() ) {
+    Key1 key1 = key1st(*i1);
+    const_iterator2 i2 = (*i1).second.begin();
+    while ( i2 != (*i1).second.end() ) {
+      Key2 key2 = key2nd(*i2);
+      append( key1, key2, (*i2).second );
+      ++i2;
+    }
+    ++i1;
+  }
+}
+
+template <class Key1, class Key2, class Value>
+void __EvTable<Key1,Key2,Value>::append( Key1 key1, Key2 key2, const Value& value )
+{
+  iterator1 i1 = get( key1 );
+  if ( i1 == storage.end() ) {
+    pair<Key2,Value> p2( key2, value );
+    Container2 c2;
+    c2.push_back( p2 );
+    pair<Key1,Container2> p1( key1, c2 );
+    storage.push_back( p1 );
+    return;
+  }
+  iterator2 i2 = get( i1, key2 );
+  if ( i2 == (*i1).second.end() ) {
+    pair<Key2,Value> p2( key2, value );
+    (*i1).second.push_back( p2 );
+    return;
+  }
+  (*i2).second = value; // only last value stored.
 }
 
 template <class T, class InputIterator >
