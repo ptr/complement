@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/08 12:13:15 ptr>
+// -*- C++ -*- Time-stamp: <99/06/08 13:19:04 ptr>
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
@@ -240,8 +240,8 @@ class __EvTable
     bool get( Key1, Key2, Value& ) const;
     bool get_1( const_iterator1 i1, Key2 key2, Value& value ) const;
     const_iterator1 find( Key1 key1 ) const
-      { return find_if( storage.begin(), storage.end(),
-                        compose1( bind2nd( eq_key1, key1 ), key1st ) ); }
+      { return std::find_if( storage.begin(), storage.end(),
+                        std::compose1( std::bind2nd( eq_key1, key1 ), key1st ) ); }
     iterator1 begin()
       { return storage.begin(); }
     iterator1 end()
@@ -275,13 +275,13 @@ class __EvTable
 template <class Key1, class Key2, class Value>
 bool __EvTable<Key1,Key2,Value>::get( Key1 key1, Key2 key2, Value& value ) const
 {
-  const_iterator1 i1 = find_if( storage.begin(), storage.end(),
-                                compose1( bind2nd( eq_key1, key1 ), key1st ) );
+  const_iterator1 i1 = std::find_if( storage.begin(), storage.end(),
+                                std::compose1( std::bind2nd( eq_key1, key1 ), key1st ) );
   if ( i1 == storage.end() ) {
     return false;
   }
-  const_iterator2 i2 = find_if( (*i1).second.begin(), (*i1).second.end(),
-                                compose1( bind2nd( eq_key2, key2 ), key2nd ) );
+  const_iterator2 i2 = std::find_if( (*i1).second.begin(), (*i1).second.end(),
+                                std::compose1( std::bind2nd( eq_key2, key2 ), key2nd ) );
   if ( i2 == (*i1).second.end() ) {
     return false;
   }
@@ -293,8 +293,8 @@ bool __EvTable<Key1,Key2,Value>::get( Key1 key1, Key2 key2, Value& value ) const
 template <class Key1, class Key2, class Value>
 bool __EvTable<Key1,Key2,Value>::get_1( __EvTable<Key1,Key2,Value>::const_iterator1 i1, Key2 key2, Value& value ) const
 {
-  const_iterator2 i2 = find_if( (*i1).second.begin(), (*i1).second.end(),
-                                compose1( bind2nd( eq_key2, key2 ), key2nd ) );
+  const_iterator2 i2 = std::find_if( (*i1).second.begin(), (*i1).second.end(),
+                                std::compose1( std::bind2nd( eq_key2, key2 ), key2nd ) );
   if ( i2 == (*i1).second.end() ) {
     return false;
   }
@@ -314,8 +314,8 @@ void __EvTable<Key1,Key2,Value>::append( Key1 key1, Key2 key2, const Value& valu
     storage.push_back( p1 );
     return;
   }
-  iterator2 i2 = find_if( (*i1).second.begin(), (*i1).second.end(),
-                          compose1( bind2nd( eq_key2, key2 ), key2nd ) );
+  iterator2 i2 = std::find_if( (*i1).second.begin(), (*i1).second.end(),
+                          std::compose1( std::bind2nd( eq_key2, key2 ), key2nd ) );
   if ( i2 == (*i1).second.end() ) {
     std::pair<Key2,Value> p2( key2, value );
     (*i1).second.push_back( p2 );
