@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/28 14:52:42 ptr>
+// -*- C++ -*- Time-stamp: <01/01/22 13:14:57 ptr>
 
 /*
  * Copyright (c) 1995-1999
@@ -180,6 +180,7 @@ class EvManager
 
   private:
     void Send( const Event& e );
+    __PG_DECLSPEC void unsafe_Remove( NetTransport_base * );
 
     addr_type create_unique();
     addr_type create_unique_x();

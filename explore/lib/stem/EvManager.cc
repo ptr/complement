@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/06 14:55:38 ptr>
+// -*- C++ -*- Time-stamp: <01/01/22 14:16:42 ptr>
 
 /*
  *
@@ -209,14 +209,20 @@ bool EvManager::Unsubscribe( addr_type id )
   return true; // may be here check object's reference count
 }
 
+__PG_DECLSPEC
+void EvManager::Remove( NetTransport_base *channel )
+{
+  MT_REENTRANT( _lock_heap, _x1 );
+  unsafe_Remove( channel );
+}
+
 // Remove references to remote objects, that was announced via 'channel'
 // (related, may be, with socket connection)
 // from [remote name -> local name] mapping table, and mark related session as
 // 'disconnected'.
 __PG_DECLSPEC
-void EvManager::Remove( NetTransport_base *channel )
+void EvManager::unsafe_Remove( NetTransport_base *channel )
 {
-  MT_REENTRANT( _lock_heap, _x1 );
   heap_type::iterator i = heap.begin();
 
   while ( i != heap.end() ) {
@@ -289,9 +295,15 @@ void EvManager::Send( const Event& e )
         __STL_ASSERT( remote != 0 );
         addr_type save_dest = e.dest();
         e.dest( remote->key ); // substitute address on remote system
-        remote->channel->push( e );
+        if ( !remote->channel->push( e ) ) {
+          // if I detect bad connection during writing to net
+          // (in the push), I remove this connetion related entries.
+          // Required by non-Solaris OS. Unsafe variant allow avoid
+          // deadlock here.
+          unsafe_Remove( remote->channel );
+        }
         e.dest( save_dest ); // restore original (may be used more)
-//        _XMB( "MT_UNLOCK" )
+//      _XMB( "MT_UNLOCK" )
         MT_UNLOCK( _lock_heap );
       }
     } else {
