@@ -1,5 +1,15 @@
-// -*- C++ -*- Time-stamp: <99/05/24 13:51:02 ptr>
+// -*- C++ -*- Time-stamp: <99/09/03 10:47:18 ptr>
 #ident "$SunId$ %Q%"
+
+#ifdef WIN32
+#  ifdef _DLL
+#    define __XMT_DLL __declspec( dllexport )
+#  else
+#    define __XMT_DLL
+#  endif
+#else
+#  define __XMT_DLL
+#endif
 
 #include <thr_mgr.h>
 #include <algorithm>
@@ -15,7 +25,7 @@ struct bad_thread :
       { return !__x->good(); }
 };
 
-__DLLEXPORT ThreadMgr::~ThreadMgr()
+__XMT_DLL ThreadMgr::~ThreadMgr()
 {
   MT_REENTRANT( _lock, _1 );
   container_type::iterator i = _M_c.begin();
@@ -29,7 +39,7 @@ __DLLEXPORT ThreadMgr::~ThreadMgr()
   }
 }
 
-__DLLEXPORT
+__XMT_DLL
 void ThreadMgr::launch( Thread::entrance_type entrance, const void *p, size_t psz )
 {
   MT_REENTRANT( _lock, _1 );
@@ -41,7 +51,7 @@ void ThreadMgr::launch( Thread::entrance_type entrance, const void *p, size_t ps
   (*i)->launch( entrance, p, psz );
 }
 
-__DLLEXPORT
+__XMT_DLL
 void ThreadMgr::garbage_collector()
 {
   MT_REENTRANT( _lock, _1 );

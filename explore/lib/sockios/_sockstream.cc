@@ -1,8 +1,14 @@
-// -*- C++ -*- Time-stamp: <99/05/25 18:50:10 ptr>
+// -*- C++ -*- Time-stamp: <99/09/03 11:31:35 ptr>
 
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+#ident "$SunId$ %Q%"
 
 #ifdef WIN32
+
+#  ifdef _DLL
+#    define __SOCKIOS_DLL __declspec( dllexport )
+#  else
+#    define __SOCKIOS_DLL
+#  endif
 
 #include <sockstream>
 
@@ -71,13 +77,13 @@ sock_base::Init::~Init()
   TlsSetValue( __impl::__thr_key, (void *)__tls_init_cnt );
 }
 
-__declspec( dllexport )
+__SOCKIOS_DLL
 sock_base::sock_base()
 {
   new( __impl::__xbuff ) Init();
 }
 
-__declspec( dllexport )
+__SOCKIOS_DLL
 sock_base::~sock_base()
 {
   reinterpret_cast<Init *>(__impl::__xbuff)->~Init();

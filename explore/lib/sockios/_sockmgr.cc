@@ -1,13 +1,27 @@
-// -*- C++ -*- Time-stamp: <99/05/27 21:00:55 ptr>
+// -*- C++ -*- Time-stamp: <99/09/03 12:11:13 ptr>
 
 #ident "$SunId$ %Q%"
+
+#ifdef _MSC_VER
+#pragma warning( disable : 4804 )
+#endif
+
+#ifdef WIN32
+#  ifdef _DLL
+#    define __SOCKIOS_DLL __declspec( dllexport )
+#  else
+#    define __SOCKIOS_DLL
+#  endif
+#else
+#  define __SOCKIOS_DLL
+#endif
 
 #include <cerrno>
 #include <sockmgr.h>
 
 namespace std {
 
-__DLLEXPORT
+__SOCKIOS_DLL
 void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol prot )
 {
   if ( is_open() ) {
@@ -83,7 +97,7 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
   return;
 }
 
-__DLLEXPORT
+__SOCKIOS_DLL
 void basic_sockmgr::close()
 {
   if ( !is_open() ) {
