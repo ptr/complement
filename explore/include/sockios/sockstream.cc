@@ -1,14 +1,14 @@
-// -*- C++ -*- Time-stamp: <02/09/25 11:59:07 ptr>
+// -*- C++ -*- Time-stamp: <03/06/29 16:53:01 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999, 2002
- * Petr Ovchenkov
+ * Copyright (c) 1997-1999, 2002, 2003
+ * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 1.0
+ * Licensed under the Academic Free License Version 1.2
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -226,24 +226,11 @@ basic_sockbuf<charT, traits, _Alloc>::close()
   if ( !is_open() )
     return 0;
 
-//	cerr << "Closing" << endl;
-	// overflow();
-//	cerr << "Say shutdown on out" << endl;
-  // shutdown( sock_base::stop_out );
-//	cerr << "Sync" << endl;
-  sync();
-//	cerr << "Say shutdown on in" << endl;
-  // shutdown( sock_base::stop_in );
-  this->shutdown( sock_base::stop_in | sock_base::stop_out );
-//	cerr << "Sync" << endl;
-//	sync();
-//	cerr << "Close" << endl;
 #ifdef WIN32
   ::closesocket( _fd );
 #else
   ::close( _fd );
 #endif
-//	cerr << "Pass" << endl;
 
   _STLP_ASSERT( _bbuf != 0 );
   // put area before get area

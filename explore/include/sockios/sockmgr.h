@@ -1,14 +1,14 @@
-// -*- C++ -*- Time-stamp: <02/09/25 11:37:16 ptr>
+// -*- C++ -*- Time-stamp: <03/07/05 09:26:36 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999, 2002
- * Petr Ovchenkov
+ * Copyright (c) 1997-1999, 2002, 2003
+ * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 1.0
+ * Licensed under the Academic Free License Version 1.2
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -87,19 +87,31 @@ class basic_sockmgr :
     __FIT_DECLSPEC void open( int port, sock_base::stype type, sock_base::protocol prot );
 
     virtual __FIT_DECLSPEC void close();
+    bool is_open_unsafe() const
+      { return _fd != -1; }
+    sock_base::socket_type fd_unsafe() const
+      { return _fd; }
+    __FIT_DECLSPEC
+    void setoptions_unsafe( sock_base::so_t optname, bool on_off = true,
+                     int __v = 0 );
 
   public:
     bool is_open() const
-      { return _fd != -1; }
+      { MT_REENTRANT( _fd_lck, _1 ); return is_open_unsafe(); }
     bool good() const
       { return _state == ios_base::goodbit; }
 
-    sock_base::socket_type fd() const { return _fd;}
+    sock_base::socket_type fd() const
+      { MT_REENTRANT( _fd_lck, _1 ); return fd_unsafe(); }
 
-    // void shutdown( sock_base::shutdownflg dir );
     __FIT_DECLSPEC
+    void shutdown( sock_base::shutdownflg dir );
     void setoptions( sock_base::so_t optname, bool on_off = true,
-                     int __v = 0 );
+                     int __v = 0 )
+      {
+        MT_REENTRANT( _fd_lck, _1 );
+        setoptions_unsafe( optname, on_off, __v );
+      }
 
   private:
     sock_base::socket_type _fd;    // master socket
@@ -113,6 +125,9 @@ class basic_sockmgr :
 
   private:
     static __impl::Mutex _idx_lck;
+
+  protected:
+    __impl::Mutex _fd_lck;
 };
 
 class ConnectionProcessorTemplate_MP // As reference
@@ -127,6 +142,8 @@ class ConnectionProcessorTemplate_MP // As reference
       { }
 };
 
+#ifndef __FIT_NO_POLL
+
 template <class Connect>
 class sockmgr_stream_MP :
     public basic_sockmgr
@@ -136,28 +153,22 @@ class sockmgr_stream_MP :
 	basic_sockmgr(),
         _fdcount( 0 )
       {
-#ifdef __FIT_POLL
         _pfd = 0;
-#endif
       }
 
     explicit sockmgr_stream_MP( int port, sock_base::stype t = sock_base::sock_stream ) :
 	basic_sockmgr(),
         _fdcount( 0 )
       {
-#ifdef __FIT_POLL
         _pfd = 0;
-#endif
         open( port, t );
       }
 
     ~sockmgr_stream_MP()
       {
-#ifdef __FIT_POLL
         if ( _pfd != 0 ) {
           delete [] _pfd;
         }
-#endif
       }
 
     void open( int port, sock_base::stype t = sock_base::sock_stream );
@@ -220,18 +231,109 @@ class sockmgr_stream_MP :
     in_buf_avail _M_av;
     _STLP_mutex _c_lock;
 
-#ifdef __FIT_POLL
     pollfd *_pfd;
-#endif
-#ifdef __FIT_SELECT
-    fd_set _pfd;
-#endif
     unsigned _fdcount;
 
   private:
     _Connect *_shift_fd();
     static void _close_by_signal( int );
 };
+
+#endif // !__FIT_NO_POLL
+
+#ifndef __FIT_NO_SELECT
+
+template <class Connect>
+class sockmgr_stream_MP_SELECT :
+    public basic_sockmgr
+{
+  public:
+    sockmgr_stream_MP_SELECT() :
+	basic_sockmgr(),
+        _fdmax( 0 )
+      {
+      }
+
+    explicit sockmgr_stream_MP_SELECT( int port, sock_base::stype t = sock_base::sock_stream ) :
+	basic_sockmgr(),
+        _fdmax( 0 )
+      {
+        open( port, t );
+      }
+
+    ~sockmgr_stream_MP_SELECT()
+      {
+      }
+
+    void open( int port, sock_base::stype t = sock_base::sock_stream );
+
+    virtual void close()
+      { basic_sockmgr::close(); }
+
+    void wait()
+      {	loop_id.join(); }
+
+    void detach( sockstream& ) // remove sockstream from polling in manager
+      { }
+
+  protected:
+    static int loop( void * );
+
+    struct _Connect {
+        sockstream *s;
+        Connect *_proc;
+    };
+
+    struct fd_equal :
+        public std::binary_function<_Connect *,int,bool> 
+    {
+        bool operator()(const _Connect *__x, int __y) const
+          { return __x->s->rdbuf()->fd() == __y; }
+    };
+
+    struct in_buf_avail :
+        public std::unary_function<_Connect *,bool> 
+    {
+        bool operator()(const _Connect *__x) const
+          { return __x->s->rdbuf()->in_avail() > 0; }
+    };
+
+    typedef _Connect *(sockmgr_stream_MP_SELECT<Connect>::*accept_type)();
+
+    accept_type _accept;
+    _Connect *accept() // workaround for CC
+      { return (this->*_accept)(); }
+    _Connect *accept_tcp();
+    _Connect *accept_udp();
+
+  private:
+    Thread     loop_id;
+
+  protected:
+    typedef sockmgr_stream_MP_SELECT<Connect> _Self_type;
+    typedef std::vector<_Connect *> _Sequence;
+    typedef fd_equal _Compare;
+    typedef typename _Sequence::value_type      value_type;
+    typedef typename _Sequence::size_type       size_type;
+    typedef          _Sequence                  container_type;
+
+    typedef typename _Sequence::reference       reference;
+    typedef typename _Sequence::const_reference const_reference;
+
+    _Sequence _M_c;
+    _Compare  _M_comp;
+    in_buf_avail _M_av;
+    _STLP_mutex _c_lock;
+
+    fd_set _pfdr;
+    fd_set _pfde;
+    int _fdmax;
+
+  private:
+    _Connect *_shift_fd();
+    static void _close_by_signal( int );
+};
+#endif // !__FIT_NO_SELECT
 
 _STLP_END_NAMESPACE
 
