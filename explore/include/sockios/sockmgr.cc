@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/17 10:04:42 ptr>
+// -*- C++ -*- Time-stamp: <00/02/15 13:34:42 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -183,8 +183,8 @@ int sockmgr_stream<Connect>::loop( void *p )
 
   pass.me = me;
 
-  set_unexpected( unexpected );
-  set_terminate( terminate );
+  __STD::set_unexpected( __STD::unexpected );
+  __STD::set_terminate( __STD::terminate );
 
   try {
     while ( (s = me->accept()) != 0 ) {
