@@ -1,8 +1,10 @@
-# Time-stamp: <99/03/19 16:58:12 ptr>
+# Time-stamp: <99/05/12 15:15:08 ptr>
 # %Z% $Date$ $Revision$ $RCSfile$ %Q%
 
 PWD :sh = pwd
 BASEDIR = $(PWD:%/lib/EDS=%)
+
+default:	libEDS_dbg.a
 
 include ../../Makefile.inc
 
@@ -11,7 +13,7 @@ INCLUDES += -I../../include/ios \
 	    -I../../include/sockios \
 	    -I../../include/EDS
 
-EDS_SRC = _EventHandler.cc NetTransport.cc EvManager.cc EvPack.cc
+EDS_SRC = _EventHandler.cc NetTransport.cc EvManager.cc EvPack.cc crc.cc
 EDS_OBJ = $(EDS_SRC:%.cc=$(OUTPUT_DIR)/%.o)
 
 libEDS_dbg.a := OPT +=
