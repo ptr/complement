@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <03/06/22 20:01:01 ptr>
+# -*- makefile -*- Time-stamp: <03/07/02 15:02:01 ptr>
 # $Id$
 
 # Shared libraries tags
@@ -10,7 +10,7 @@ dbg-shared:	$(OUTPUT_DIR_DBG) ${SO_NAME_SHORT_DBG}
 stldbg-shared:	$(OUTPUT_DIR_STLDBG) ${SO_NAME_SHORT_STLDBG}
 
 ${SO_NAME_SHORT}:	$(OBJ) $(LIBSDEP)
-	$(LINK.cc) $(OUTPUT_OPTION) $(OBJ) $(LDLIBS)
+	$(LINK.cc) $(LINK_OUTPUT_OPTION) $(OBJ) $(LDLIBS)
 	(cd $(OUTPUT_DIR); \
 	 rm -f ${SO_MINOR}; \
 	 ln -s $(SO_NAME_LONG) ${SO_MINOR}; \
@@ -20,7 +20,7 @@ ${SO_NAME_SHORT}:	$(OBJ) $(LIBSDEP)
          ln -s ${SO_MAJOR} ${SO_GENERAL})
 
 ${SO_NAME_SHORT_DBG}:	$(OBJ_DBG) $(LIBSDEP)
-	$(LINK.cc) $(OUTPUT_OPTION) $(OBJ_DBG) $(LDLIBS)
+	$(LINK.cc) $(LINK_OUTPUT_OPTION) $(OBJ_DBG) $(LDLIBS)
 	(cd $(OUTPUT_DIR_DBG); \
 	 rm -f ${SO_MINOR_DBG}; \
 	 ln -s $(SO_NAME_LONG_DBG) ${SO_MINOR_DBG}; \
@@ -30,7 +30,7 @@ ${SO_NAME_SHORT_DBG}:	$(OBJ_DBG) $(LIBSDEP)
 	 ln -s ${SO_MAJOR_DBG} ${SO_GENERAL_DBG})
 
 ${SO_NAME_SHORT_STLDBG}:	$(OBJ_STLDBG) $(LIBSDEP)
-	$(LINK.cc) $(OUTPUT_OPTION) $(OBJ_STLDBG) $(LDLIBS)
+	$(LINK.cc) $(LINK_OUTPUT_OPTION) $(OBJ_STLDBG) $(LDLIBS)
 	(cd $(OUTPUT_DIR_STLDBG); \
 	 rm -f ${SO_MINOR_STLDBG}; \
 	 ln -s $(SO_NAME_LONG_STLDBG) ${SO_MINOR_STLDBG}; \
