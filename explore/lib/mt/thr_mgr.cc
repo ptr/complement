@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/20 13:31:06 ptr>
+// -*- C++ -*- Time-stamp: <99/05/20 13:40:18 ptr>
 #ident "$SunId$ %Q%"
 
 #include <thr_mgr.h>
@@ -28,13 +28,12 @@ __DLLEXPORT ThreadMgr::~ThreadMgr()
 }
 
 __DLLEXPORT
-void ThreadMgr::launch( Thread::entrance_type entrance,
-                        const void *p = 0, size_t psz = 0 )
+void ThreadMgr::launch( Thread::entrance_type entrance, const void *p, size_t psz )
 {
   MT_REENTRANT( _lock, _1 );
   container_type::iterator i = find_if( _M_c.begin(), _M_c.end(), bad_thread() );
-  if ( i = _M_c.end() ) {
-    _M_c.push_back( new Thread() );
+  if ( i == _M_c.end() ) {
+    _M_c.push_back( new Thread( unsigned(Thread::daemon | Thread::detached) ) );
     i = --_M_c.end();
   }
   (*i)->launch( entrance, p, psz );
