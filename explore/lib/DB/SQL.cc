@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 10:52:56 ptr>
+// -*- C++ -*- Time-stamp: <99/11/12 17:44:29 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -16,6 +16,48 @@ namespace database {
 using std::string;
 using std::vector;
 using namespace std;
+
+NILL_type NILL;
+
+void Table::done()
+{
+  std::ostringstream s;
+  bool is_first = true;
+  switch ( _op ) {
+    case _INSERT:
+      s << "INSERT INTO \"" << _name << "\" (";
+      for ( int i = 0; i < header.size(); ++i ) {
+        if ( header[i].second == _NILL ) {
+          continue;
+        }
+        if ( !is_first ) {
+          s << ",";
+        } else {
+          is_first = false;
+        }
+        s << "\"" << header[i].first << "\"";
+      }
+      is_first = true;
+      s << ") VALUES (";
+      for ( int i = 0; i < row.size(); ++i ) {
+        if ( header[i].second == _NILL ) {
+          continue;
+        }
+        if ( !is_first ) {
+          s << ",";
+        } else {
+          is_first = false;
+        }
+        s << row[i];
+      }
+      s << ")";
+      db->state( s.str() );
+      break;
+    default:
+      throw invalid_argument( "database::Table no op" );
+      break;
+  }
+}
 
 DataBase::DataBase( const char *name,
                     const char *host, const char *port,
@@ -51,6 +93,48 @@ void DataBase::exec( const string& s )
   }
 
   PQclear( _result );
+}
+
+void DataBase::exec()
+{
+  if ( _flags != goodbit ) {
+    return;
+  }
+
+  PGresult *_result = PQexec( _conn, sentence.c_str() );
+  if ( _result == 0 || PQresultStatus( _result ) != PGRES_COMMAND_OK ) {
+    _flags = failbit;
+  }
+
+  PQclear( _result );
+}
+
+Table& DataBase::define_table( const char *nm )
+{
+  tables.push_back( new Table( nm, this ) );
+
+  return **(--tables.end());
+}
+
+Table& DataBase::table( const char *nm )
+{
+  tbl_container_type::iterator i = tables.begin();
+  while ( i != tables.end() ) {
+    if ( (*i)->name() == nm ) {
+      return **i;
+    }
+  }
+}
+
+void DataBase::begin_transaction()
+{
+  sentence = "BEGIN";
+}
+
+void DataBase::end_transaction()
+{
+  sentence += "; COMMIT";
+  this->exec();
 }
 
 Transaction::Transaction( DataBase& db ) :
