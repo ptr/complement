@@ -46,6 +46,10 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/Button.o \
 		$(OUTPUT_DIR)/ButtonedInfo.o \
 		$(OUTPUT_DIR)/ButtonedInfoPI.o \
+		$(OUTPUT_DIR)/InfoPI.o \
+		$(OUTPUT_DIR)/Money.o \
+		$(OUTPUT_DIR)/MoneyInfoPI.o \
+		$(OUTPUT_DIR)/ChMoneyInfoPI.o \
 		$(OUTPUT_DIR)/ButtonedCheckbox.o \
 		$(OUTPUT_DIR)/CoupleButtons.o \
 		$(OUTPUT_DIR)/varstring.o \
