@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <00/12/07 18:47:56 ptr>
+// -*- C++ -*- Time-stamp: <01/03/01 10:49:28 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
@@ -146,13 +146,6 @@ class sock_base
       stop_out = 0x2
     };
 
-    enum _sockstate {
-      hnamefailbit  = 0x08, // gethostbyname fail
-      sockfailbit   = 0x10, // socket fail
-      connfailbit   = 0x20, // connect fail
-      bindfailbit   = 0x40  // bind fail
-    };
-
 #ifdef WIN32
     class Init
     {
@@ -203,7 +196,6 @@ class basic_sockbuf :
       
     basic_sockbuf() :
       _fd( -1 ),
-      _open( false ),
       _mode( 0 )
 #ifdef __SGI_STL_OWN_IOSTREAMS
       , _bbuf(0), _ebuf(0), _allocated( true )   
@@ -217,7 +209,7 @@ class basic_sockbuf :
 		   sock_base::stype type = sock_base::sock_stream,
 		   sock_base::protocol prot = sock_base::inet ) :
       _fd( -1 ),
-      _open( false ),
+      /* _open( false ), */
       _mode( 0 )
 #ifdef __SGI_STL_OWN_IOSTREAMS
       , _bbuf(0), _ebuf(0), _allocated( true )   
@@ -240,7 +232,7 @@ class basic_sockbuf :
       }
 
     bool is_open() const
-      { return _open; }
+      { return _fd != -1; }
 
     basic_sockbuf<charT, traits, _Alloc> *open( const char *hostname, int port,
 					sock_base::stype type = sock_base::sock_stream,
@@ -267,11 +259,9 @@ class basic_sockbuf :
 
    const string& hostname() const
      { return _hostname; }
-   void setoptions( sock_base::so_t optname, bool on_off = true,
-                    int __v = 0 );
 
   protected:
-    void findhost( const char *hostname );
+    bool findhost( const char *hostname );
 
     virtual streamsize showmanyc()
       { return this->egptr() - this->gptr(); }
@@ -280,7 +270,7 @@ class basic_sockbuf :
     virtual int_type overflow( int_type c = traits::eof() );
     virtual int_type pbackfail( int_type c = traits::eof() )
       {
-	if ( !_open )
+	if ( !is_open() )
 	  return traits::eof();
 
 	if ( this->gptr() <= this->eback() ) {
@@ -413,10 +403,8 @@ class basic_sockbuf :
     } _address;
 
     ios_base::openmode  _mode;
-    unsigned long       _state;
     int                 _errno;
     sock_base::stype    _type;
-    bool                _open; // socket open and connected/binded
     // if open, and connected, other side hostname,
     // otherwise undefined:
     string              _hostname; 
@@ -447,7 +435,7 @@ class basic_sockstream :
         basic_ios<charT,traits>::init(&_sb);
 	basic_iostream<charT,traits>::clear();
 	if ( _sb.open( hostname, port, type, pro ) == 0 ) {
-	  setstate( ios_base::failbit );
+	  setstate( ios_base::failbit | ios_base::badbit );
 	}
       }
 
@@ -459,7 +447,7 @@ class basic_sockstream :
         basic_ios<charT,traits>::init(&_sb);
 	basic_iostream<charT,traits>::clear();
 	if ( _sb.open( s, addr, type ) == 0 ) {
-	  setstate( ios_base::failbit );
+	  setstate( ios_base::failbit | ios_base::badbit );
 	}
       }
 
@@ -473,7 +461,7 @@ class basic_sockstream :
       {
 	basic_iostream<charT,traits>::clear();
 	if ( _sb.open( hostname, port, type, pro ) == 0 ) {
-	  setstate( ios_base::failbit );
+	  setstate( ios_base::failbit | ios_base::badbit );
 	}
       }
 
@@ -483,7 +471,7 @@ class basic_sockstream :
       {
 	basic_iostream<charT,traits>::clear();
 	if ( _sb.open( s, addr, type ) == 0 ) {
-	  setstate( ios_base::failbit );
+	  setstate( ios_base::failbit | ios_base::badbit );
 	}
       }
 
@@ -497,6 +485,10 @@ class basic_sockstream :
 	  }
 	}
       }
+
+   void setoptions( sock_base::so_t optname, bool on_off = true,
+                    int __v = 0 );
+
   private:
     basic_sockbuf<charT,traits,_Alloc> _sb;
 };
