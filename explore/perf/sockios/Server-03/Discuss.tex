@@ -1,0 +1,107 @@
+% -*- LaTeX -*- Time-stamp: <02/12/05 10:24:12 ptr>
+
+\documentclass[a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{pslatex}
+\usepackage{pstricks}
+\usepackage[dvips]{epsfig}
+%\usepackage[dvipdf]{graphics}
+\usepackage[dvips]{graphics}
+\usepackage[american]{babel}
+
+\title{Performance Estimation of Sockios Library}
+\author{Petr Ovtchenkov}
+
+\begin{document}
+
+\maketitle
+
+\section{Computers and Networks}
+
+\begin{enumerate}
+  \item AMD Athlon XP 1500+ (dual) under Linux (2.4.17),
+        Ethernet card: Intel Corp. 82557 [Ethernet Pro 100].\label{fort}
+  \item Intel Pentium 133MHz under Linux (2.4.17),
+        Ethernet card: RealTek RTL8139 Fast Ethernet.\label{oldnavy}
+  \item Intel Pentium III 803MHz under Solaris 8,
+        Ethernet card: Intel 82558/82559 [EEPRO 100+].\label{ermine}
+\end{enumerate}
+
+Network between systems \ref{fort} and \ref{oldnavy}: 100Mb Ethernet,
+UTP level 5, point-to-point (no hubs, routers,
+switches or other devices between computers).
+
+\section{Compilers}
+
+On all systems was used GNU gcc 3{.}1{.}1 ($C{+}{+}$ or $C$, depends
+upon programs).
+
+\section{Tests Goals}
+
+Compare performance of sockios library. Detect problems and ways for
+possible solutions.
+
+\section{Tests description}
+
+\begin{figure}
+  \begin{center}
+    % \input test.pstex_t
+    \epsfig{file=test.eps,width=5in}
+  \end{center}
+  \caption{Local Loopback, sockios: system \ref{fort}.}
+\end{figure}
+
+\begin{enumerate}
+  \item Start server.
+  \item Start client.
+  \item Client connect to the server and send $n$ blocks of size $b$;
+        server read all sended by client data and write ones into one
+        buffer of size $b$, data overwritten.
+\end{enumerate}
+
+
+\section{Results}
+
+\begin{figure}
+  \begin{center}
+    \input p1.tex
+    % \epsfig{file=p1.eps}
+  \end{center}
+  \caption{Local Loopback, sockios: system \ref{fort}.}
+\end{figure}
+
+\begin{figure}
+  \begin{center}
+    \input p2.tex
+  \end{center}
+  \caption{Network, sockios:
+           systems \ref{fort} (server) and \ref{oldnavy} (client).}
+\end{figure}
+
+\begin{figure}
+  \begin{center}
+    \input p3.tex
+  \end{center}
+  \caption{Local Loopback, sockios: system \ref{ermine}.}
+\end{figure}
+
+\begin{figure}
+  \begin{center}
+    \input p4.tex
+  \end{center}
+  \caption{Local Loopback, restricted code on $C$: system \ref{fort}.}
+\end{figure}
+
+\begin{figure}
+  \begin{center}
+    \input p5.tex
+  \end{center}
+  \caption{Local Loopback, restricted code on $C$: system \ref{ermine}.
+           Test results for block size $32$ skiped here; one has 
+           mean elapsed time $128.637$s, client system mean 
+           time $6.088$s, client user mean time $1.133$s, server system
+           mean time $114.252$s, server user mean time $1.951$s.}
+\end{figure}
+
+\end{document}
