@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/07/27 19:11:20 ptr>
+// -*- C++ -*- Time-stamp: <00/08/28 13:18:01 ptr>
 
 /*
  *
@@ -7,7 +7,7 @@
  *
  * Copyright (c) 1999-2000
  * ParallelGraphics
- 
+ *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -25,7 +25,7 @@ extern "C" int nanosleep(const struct timespec *, struct timespec *);
 #endif
 
 // #ifdef __linux
-#ifndef __sun // i.e. __linux and __hpux
+#if !defined(__sun) && !defined(_WIN32) // i.e. __linux and __hpux
 #include <sys/poll.h> // pollfd
 #endif
 
