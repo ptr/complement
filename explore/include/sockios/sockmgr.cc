@@ -1,6 +1,6 @@
-// -*- C++ -*- Time-stamp: <99/05/19 19:16:40 ptr>
+// -*- C++ -*- Time-stamp: <99/05/24 12:00:21 ptr>
 
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+#ident "$SunId$ %Q%"
 
 #include <algorithm>
 
@@ -45,17 +45,19 @@ sockmgr_client *sockmgr_stream<Connect>::accept_tcp()
     return 0;
   }
 
-  MT_REENTRANT( _storage_lock, _1 );
-  sockmgr_client *&cl = _storage[ create_unique() ];
+  MT_REENTRANT( _c_lock, _1 );
+  sockmgr_client *cl;
 
-  __stl_assert( cl == 0 );
+  container_type::iterator i = 
+    find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, -1 ) );
 
-  cl = new sockmgr_client();
-
-  __stl_assert( cl != 0 );
-
+  if ( i == _M_c.end() ) {
+    cl = new sockmgr_client();
+    _M_c.push_back( cl );
+  }
+  
   cl->s.open( _sd, addr.any );
-  cl->s.rdbuf()->hostname( cl->hostname );
+  // cl->s.rdbuf()->hostname( _M_c.front()->hostname );
 
   return cl;
 }
@@ -107,12 +109,12 @@ sockmgr_client *sockmgr_stream<Connect>::accept_udp()
     }
 #endif
 
-    MT_LOCK( _storage_lock );
-    container_type::iterator i = _storage.begin();
+    MT_LOCK( _c_lock );
+    container_type::iterator i = _M_c.begin();
     sockbuf *b;
-    while ( i != _storage.end() ) {
-      b = (*i).second->s.rdbuf();
-      if ( /* b->stype() == sock_base::sock_dgram && */ // all dgram here
+    while ( i != _M_c.end() ) {
+      b = (*i)->s.rdbuf();
+      if ( (*i)->s.is_open() && b->stype() == sock_base::sock_dgram &&
         b->port() == addr.inet.sin_port &&
         b->inet_addr() == addr.inet.sin_addr.s_addr ) {
         break;
@@ -120,11 +122,14 @@ sockmgr_client *sockmgr_stream<Connect>::accept_udp()
       ++i;
     }
 
-    if ( i == _storage.end() || !(*i).second->thrID.good() ) {
-      sockmgr_client *&cl = _storage[ create_unique() ];
-      __stl_assert( cl == 0 );
-      cl = new sockmgr_client();
-      __stl_assert( cl != 0 );
+    sockmgr_client *cl;
+    if ( i == _M_c.end() ) {
+      i = find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, -1 ) );
+
+      if ( i == _M_c.end() ) {
+        cl = new sockmgr_client();
+        _M_c.push_back( cl );
+      }
 #ifdef __unix
       cl->s.open( dup( fd() ), addr.any, sock_base::sock_dgram );
 #endif
@@ -134,22 +139,12 @@ sockmgr_client *sockmgr_stream<Connect>::accept_udp()
       DuplicateHandle( proc, (HANDLE)fd(), proc, (HANDLE *)&dup_fd, 0, FALSE, DUPLICATE_SAME_ACCESS );
       cl->s.open( dup_fd, addr.any, sock_base::sock_dgram );
 #endif
-      MT_UNLOCK( _storage_lock );
-      cl->s.rdbuf()->hostname( cl->hostname );
-
+      MT_UNLOCK( _c_lock );
+      // cl->s.rdbuf()->hostname( _M_c.front()->hostname );
       return cl;
     }
-    // That's dangerous: garbage collector in working!
-//    if ( !(*i).second->thrID.good() ) {
-//      sockmgr_client *&cl = _storage[ (*i).first ];
-//      __stl_assert( cl != 0 );
-//      if ( !cl->s.is_open() ) {
-//        cl->s.open( dup( fd() ), addr.any, sock_base::sock_dgram );
-//      }      
-//      return cl;
-//    }
     // otherwise, thread exist and living, and I wait while it read message
-    MT_UNLOCK( _storage_lock );
+    MT_UNLOCK( _c_lock );
 #ifdef __unix
     nanosleep( &t, 0 );
 #endif
@@ -162,34 +157,10 @@ sockmgr_client *sockmgr_stream<Connect>::accept_udp()
 }
 
 template <class Connect>
-const sockmgr_stream<Connect>::key_type sockmgr_stream<Connect>::_low = 0x0000000a;
-
-template <class Connect>
-const sockmgr_stream<Connect>::key_type sockmgr_stream<Connect>::_high = 0x7fffffff;
-
-template <class Connect>
-sockmgr_stream<Connect>::key_type sockmgr_stream<Connect>::_id = sockmgr_stream<Connect>::_low;
-
-template <class Connect>
-sockmgr_stream<Connect>::key_type sockmgr_stream<Connect>::create_unique()
-{
-  pair<container_type::iterator,bool> ret;
-
-  do {
-    if ( ++_id > _high ) {
-      _id = (_id - _low) % (_high - _low) + _low;
-    }
-  } while ( _storage.find( _id ) != _storage.end() );
-
-  return _id;
-}
-
-template <class Connect>
 int sockmgr_stream<Connect>::loop( void *p )
 {
   sockmgr_stream *me = static_cast<sockmgr_stream *>(p);
 
-  me->_gc_id.launch( garbage_collector, me );
 #ifdef __unix
   Thread::unblock_signal( SIGINT );
 #endif
@@ -208,7 +179,7 @@ int sockmgr_stream<Connect>::loop( void *p )
     
       pass.client = s;
 
-      s->thrID.launch( connection, &pass, sizeof(pass) );
+      me->thr_mgr.launch( connection, &pass, sizeof(pass) );
     }
   }
   catch ( int ) {
@@ -238,7 +209,6 @@ int sockmgr_stream<Connect>::connection( void *p )
   sockmgr_stream *me = pass->me;
   sockmgr_client *client = pass->client;
 
-  int ret_code = 0;
 #ifdef __unix
   Thread::unblock_signal( SIGPIPE );
 #endif
@@ -248,7 +218,7 @@ int sockmgr_stream<Connect>::connection( void *p )
     Connect _proc;
 
     // The user connect function: application processing
-    _proc.connect( client->s, client->hostname, client->info );
+    _proc.connect( client->s );
 
     // Enforce socket close before thread terminated: this urgent for
     // udp sockstreams policy, and not significant for tcp.
@@ -259,59 +229,13 @@ int sockmgr_stream<Connect>::connection( void *p )
     throw;
   }
   catch ( ios_base::failure& ) {
-    
+    client->s.close();
   }
   catch ( ... ) {
-    ret_code = -1;
+    client->s.close();
     throw;
   }
 
-  return ret_code;
-}
-
-template <class Connect>
-int sockmgr_stream<Connect>::garbage_collector( void *p )
-{
-  sockmgr_stream *me = static_cast<sockmgr_stream *>(p);
-  container_type::iterator i;
-
-  typedef pair<const key_type,sockmgr_client*> container_content;
-  typedef select2nd<container_content>     value;
-
-#ifdef __unix
-  timespec t;
-
-  t.tv_sec = 12;
-  t.tv_nsec = 0;
-#endif
-#ifdef WIN32
-  int t = 12000;
-#endif
-
-  while ( me->_garbage_end.set() ) {
-#ifdef __unix
-    nanosleep( &t, 0 );
-#endif
-#ifdef WIN32
-    Sleep( t );
-#endif
-
-    MT_LOCK( me->_storage_lock );
-    i =  me->_storage.begin();
-    while ( (i = find_if( i, me->_storage.end(), compose1( bad_thread(), value() ) ))
-            != me->_storage.end() ) {
-      delete (*i).second;
-      me->_storage.erase( i++ );
-    }
-    MT_UNLOCK( me->_storage_lock );
-  }
-
-  MT_LOCK( me->_storage_lock );
-  for_each( me->_storage.begin(), me->_storage.end(), compose1( remove_client(), value() ) );
-  me->_storage.erase( me->_storage.begin(), me->_storage.end() );
-  MT_UNLOCK( me->_storage_lock );
-
-  me->_garbage_end.signal();
   return 0;
 }
 
@@ -343,27 +267,105 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
 
   _xsockaddr addr;
   int sz = sizeof( sockaddr_in );
-  
-  sock_base::socket_type _sd = ::accept( fd(), &addr.any, &sz );
-  if ( _sd == -1 ) {
-    // check and set errno
-    __stl_assert( _sd == -1 );
-    return 0;
+
+#ifdef __unix
+  if ( _pfd == 0 ) {
+    _pfd = new pollfd[256];
+    _pfd[0].fd = fd();
+    _pfd[0].events = POLLIN;
+    ++_fdcount;
+  }
+#endif
+
+#ifdef WIN32
+  if ( _fdcount == 0 ) {
+    FD_ZERO( &_pfd );
+    FD_SET( fd(), &_pfd );
+    ++_fdcount;
   }
 
-  MT_REENTRANT( _storage_lock, _1 );
-  sockmgr_client_MP<Connect> *&s = _storage[ create_unique() ];
+  if ( select( FD_SETSIZE, &_pfd, 0, 0, 0 ) < 0 ) {
+    return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
+  }
+#else
+  _pfd[0].revents = 0;
+  if ( poll( _pfd, _fdcount, -1 ) < 0 ) { // wait infinite
+    return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
+  }
+#endif
 
-  __stl_assert( s == 0 );
+  if (
+#ifdef __unix
+    _pfd[0].revents != 0
+#endif
+#ifdef WIN32
+    FD_ISSET( fd(), &_pfd );
+#endif
+    ) {
+    sock_base::socket_type _sd = ::accept( fd(), &addr.any, &sz );
+    if ( _sd == -1 ) {
+      // check and set errno
+      __stl_assert( _sd == -1 );
+      return 0;
+    }
 
-  s = new sockmgr_client_MP<Connect>();
+    MT_REENTRANT( _c_lock, _1 );
+    sockmgr_client_MP<Connect> *cl;
 
-  __stl_assert( s != 0 );
+    container_type::iterator i = 
+      find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, -1 ) );
+    
+    if ( i == _M_c.end() ) {
+      cl = new sockmgr_client_MP<Connect>();
+      _M_c.push_back( cl );      
+    } else {
+      cl = *i;
+    }
 
-  s->s.open( _sd, addr.any );
-  s->s.rdbuf()->hostname( s->hostname );
+    cl->s.open( _sd, addr.any );
 
-  return s;
+#ifdef __unix
+    int i;
+    for ( i = 1; i < _fdcount; ++i ) {
+      if ( _pfd[i].fd == -1 ) {
+        break;
+      }
+    }
+    if ( i == _fdcount ) {
+      i = _fdcount++;
+    }
+
+    _pfd[i].fd = _sd;
+    _pfd[i].events = POLLIN;
+    _pfd[i].revents = 0;
+#endif
+#ifdef WIN32
+    FD_SET( _sd, &_pfd );
+#endif
+    return cl;
+  } else {
+    // find polled and return it
+#ifdef __unix
+    for ( int i = 1; i < _fdcount; ++i ) {
+      if ( _pfd[i].revents != 0 ) {
+        _pfd[i].revents = 0;
+        container_type::iterator i = 
+          find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, _pfd[i].fd ) );
+        __stl_assert( i != _M_c.end() );
+        return *i;
+      }
+    }
+#endif
+#ifdef WIN32
+    container_type::iterator i = _M_c.begin();
+    while ( i != _M_c.end() ) {
+      if ( (*i)->s.is_open() && FD_ISSET( (*i)->s.rdbuf()->fd(), &_pfd ) ) {
+        return *i;
+      }
+    }
+#endif
+  }
+  return 0;
 }
 
 template <class Connect>
@@ -377,9 +379,11 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_udp()
   _xsockaddr addr;
 
 #ifdef WIN32
-  fd_set pfd;
-  FD_ZERO( &pfd );
-  FD_SET( fd(), &pfd );
+  if ( _fdcount == 0 ) {
+    FD_ZERO( &_pfd );
+    FD_SET( fd(), &_pfd );
+    ++_fdcount;
+  }
 
   if ( select( fd() + 1, &pfd, 0, 0, 0 ) > 0 ) {
     // get address of caller only
@@ -389,10 +393,13 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_udp()
     return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
   }
 #else
-  pollfd pfd;
-  pfd.fd = fd();
-  pfd.events = POLLIN;
-  pfd.revents = 0;
+  if ( _pfd == 0 ) {
+    _pfd = new pollfd[1];
+    _pfd[0].fd = fd();
+    _pfd[0].events = POLLIN;
+    ++_fdcount;
+  }
+
   if ( poll( &pfd, 1, -1 ) > 0 ) { // wait infinite
     // get address of caller only
     char buff[32];    
@@ -401,54 +408,30 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_udp()
     return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
   }
 #endif
-
-  MT_REENTRANT( _storage_lock, _1 );
-  container_type::iterator i = _storage.begin();
+  MT_REENTRANT( _c_lock, _1 );
+  container_type::iterator i = _M_c.begin();
   sockbuf *b;
-  while ( i != _storage.end() ) {
-    b = (*i).second->s.rdbuf();
-    if ( /* b->stype() == sock_base::sock_dgram && */ // all dgram here
+  while ( i != _M_c.end() ) {
+    b = (*i)->s.rdbuf();
+    if ( (*i)->s.is_open() && b->stype() == sock_base::sock_dgram &&
          b->port() == addr.inet.sin_port &&
          b->inet_addr() == addr.inet.sin_addr.s_addr ) {
       break;
     }
     ++i;
   }
-  sockmgr_client_MP<Connect> *&s = _storage[ i != _storage.end() ? (*i).first : create_unique() ];
-  if ( s == 0 ) {
-    s = new sockmgr_client_MP<Connect>();
+
+  sockmgr_client_MP<Connect> *cl;
+  if ( i == _M_c.end() ) {
+    cl = new sockmgr_client_MP<Connect>();
+    _M_c.push_back( cl );
+  } else {
+    cl = *i;
   }
-  __stl_assert( s != 0 );
+  
+  cl->s.open( dup( fd() ), addr.any, sock_base::sock_dgram );
 
-  if ( !s->s.is_open() ) {
-    s->s.open( dup( fd() ), addr.any, sock_base::sock_dgram );
-    s->s.rdbuf()->hostname( s->hostname );
-  }
-
-  return s;
-}
-
-template <class Connect>
-const sockmgr_stream_MP<Connect>::key_type sockmgr_stream_MP<Connect>::_low = 0x0000000a;
-
-template <class Connect>
-const sockmgr_stream_MP<Connect>::key_type sockmgr_stream_MP<Connect>::_high = 0x7fffffff;
-
-template <class Connect>
-sockmgr_stream_MP<Connect>::key_type sockmgr_stream_MP<Connect>::_id = sockmgr_stream_MP<Connect>::_low;
-
-template <class Connect>
-sockmgr_stream_MP<Connect>::key_type sockmgr_stream_MP<Connect>::create_unique()
-{
-  pair<container_type::iterator,bool> ret;
-
-  do {
-    if ( ++_id > _high ) {
-      _id = (_id - _low) % (_high - _low) + _low;
-    }
-  } while ( _storage.find( _id ) != _storage.end() );
-
-  return _id;
+  return cl;
 }
 
 template <class Connect>
@@ -456,88 +439,76 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
 {
   sockmgr_stream_MP *me = static_cast<sockmgr_stream_MP *>(p);
 
-  me->_gc_id.launch( garbage_collector, me );
 #ifdef __unix
   Thread::unblock_signal( SIGINT );
 #endif
-
-  int ret_code = 0;
 
   set_unexpected( unexpected );
   set_terminate( terminate );
 
   try {
     sockmgr_client_MP<Connect> *s;
+    unsigned _sfd;
 
     while ( (s = me->accept()) != 0 ) {    
       // The user connect function: application processing
-      s->_proc.connect( s->s, s->hostname, s->info );
+      _sfd = s->s.rdbuf()->fd();
+      s->_proc.connect( s->s );
+      if ( !s->s.is_open() ) {
+#ifdef __unix
+        for ( int i = 1; i < me->_fdcount; ++i ) {
+          if ( me->_pfd[i].fd == _sfd ) {
+            me->_pfd[i].revents = 0;
+            me->_pfd[i].fd = -1;
+            me->_pfd[i].events = 0;
+          }
+        }
+#endif
+#ifdef WIN32
+        FD_CLR( _sfd, &me->_pfd );
+#endif
+      }
     }
   }
   catch ( int sig ) {
     me->shutdown( sock_base::stop_in );
+    MT_REENTRANT( me->_c_lock, _1 );
+    container_type::iterator i = me->_M_c.begin();
+    while ( i != me->_M_c.end() ) {
+      (*i)->s.close();
+    }
     me->close();
-    cerr << "\n--- Interrupted MP ---" << endl;
+    throw;
+    // cerr << "\n--- Interrupted MP ---" << endl;
   }
   catch ( runtime_error& e ) {
     cerr << e.what() << endl;
-    ret_code = -1;
+    MT_REENTRANT( me->_c_lock, _1 );
+    container_type::iterator i = me->_M_c.begin();
+    while ( i != me->_M_c.end() ) {
+      (*i)->s.close();
+    }
+    me->close();
   }
   catch ( exception& e ) {
     cerr << e.what() << endl;
+    MT_REENTRANT( me->_c_lock, _1 );
+    container_type::iterator i = me->_M_c.begin();
+    while ( i != me->_M_c.end() ) {
+      (*i)->s.close();
+    }
+    me->close();
   }
   catch ( ... ) {
     cerr << "(1) Oh, oh, say baby Sally. Dick and Jane launch." << endl;
-  }
-
-  return ret_code;
-}
-
-
-template <class Connect>
-int sockmgr_stream_MP<Connect>::garbage_collector( void *p )
-{
-  sockmgr_stream_MP *me = static_cast<sockmgr_stream_MP *>(p);
-  container_type::iterator i;
-
-  typedef pair<const key_type,sockmgr_client_MP<Connect> *> container_content;
-  typedef select2nd<container_content>     value;
-  typedef bad_connect<Connect>  bad_connect_type;
-
-#ifdef __unix
-  timespec t;
-
-  t.tv_sec = 12; // 900;
-  t.tv_nsec = 0;
-#endif
-#ifdef WIN32
-  int t = 12000; // 900000;
-#endif
-
-  while ( me->_garbage_end.set() ) {
-#ifdef __unix
-    nanosleep( &t, 0 );
-#endif
-#ifdef WIN32
-    Sleep( t );
-#endif
-
-    MT_LOCK( me->_storage_lock );
-    i =  me->_storage.begin();
-    while ( (i = find_if( i, me->_storage.end(), compose1( bad_connect_type(), value() ) ))
-            != me->_storage.end() ) {
-      delete (*i).second;
-      me->_storage.erase( i++ );
+    MT_REENTRANT( me->_c_lock, _1 );
+    container_type::iterator i = me->_M_c.begin();
+    while ( i != me->_M_c.end() ) {
+      (*i)->s.close();
     }
-    MT_UNLOCK( me->_storage_lock );
+    me->close();
   }
 
-  MT_LOCK( me->_storage_lock );
-  for_each( me->_storage.begin(), me->_storage.end(), compose1( remove_client_MP<Connect>(), value() ) );
-  me->_storage.erase( me->_storage.begin(), me->_storage.end() );
-  MT_UNLOCK( me->_storage_lock );
-
-  me->_garbage_end.signal();
   return 0;
 }
 

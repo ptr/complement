@@ -1,19 +1,23 @@
-// -*- C++ -*- Time-stamp: <99/05/07 10:16:11 ptr>
+// -*- C++ -*- Time-stamp: <99/05/24 10:46:35 ptr>
 
 #ifndef __SOCKMGR_H
 #define __SOCKMGR_H
 
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+#ident "$SunId$ %Q%"
 
 #ifndef __SOCKSTREAM__
 #include <sockstream>
 #endif
 
-#include <map>
+#include <vector>
 #include <cerrno>
 
 #ifndef __XMT_H
 #include <xmt.h>
+#endif
+
+#ifndef __THR_MGR_H
+#include <thr_mgr.h>
 #endif
 
 using __impl::Thread;
@@ -77,65 +81,33 @@ class basic_sockmgr :
 
 struct sockmgr_client
 {
-    sockmgr_client() :
-        thrID( unsigned(Thread::daemon | Thread::detached) )
+    sockmgr_client()
       { }
 
     sockstream s;
-
-    Thread thrID;
-
-    string    hostname;
-    string    info;
 };
 
 template <class Connect>
-struct sockmgr_client_MP
+struct sockmgr_client_MP :
+    public sockmgr_client
 {
     sockmgr_client_MP()
       { }
 
     Connect    _proc;
-    sockstream s;
-    string     hostname;
-    string     info;
 };
 
-struct bad_thread :
-    public unary_function<sockmgr_client *,bool>
+struct less_sockmgr_client :
+    public binary_function<sockmgr_client *,sockmgr_client *,bool> 
 {
-    bool operator()(const sockmgr_client *__x) const
-      { return !__x->thrID.good(); }
+  bool operator()(const sockmgr_client *__x, const sockmgr_client *__y) const { return !__y->s.is_open() && __x->s.is_open(); }
 };
 
-// struct bad_sock :
-//    public unary_function<sockmgr_client *,bool>
-// {
-//    bool operator()(const sockmgr_client *__x) const
-//      { return !__x->s.good(); }
-// };
-
-template <class Connect>
-struct bad_connect :
-    public unary_function<sockmgr_client_MP<Connect> *,bool>
+struct fd_equal :
+    public binary_function<sockmgr_client *,int,bool> 
 {
-    bool operator()(const sockmgr_client_MP<Connect> * __x) const
-      { return !__x->s.good(); }
-};
-
-struct remove_client :
-    public unary_function<sockmgr_client *,int>
-{
-    int operator()(sockmgr_client *__x) const
-      { delete __x; return 0; }
-};
-
-template <class Connect>
-struct remove_client_MP :
-    public unary_function<sockmgr_client_MP<Connect> *,int>
-{
-    int operator()(sockmgr_client_MP<Connect> *__x) const
-      { delete __x; return 0; }
+  bool operator()(const sockmgr_client *__x, int __y) const
+      { return __x->s.rdbuf()->fd() == __y; }
 };
 
 // Policy: thread per client connection
@@ -143,15 +115,6 @@ template <class Connect>
 class sockmgr_stream :
     public basic_sockmgr
 {
-  private:
-    typedef unsigned key_type;
-    typedef map<key_type,sockmgr_client*,less<key_type>,
-                __STL_DEFAULT_ALLOCATOR(sockmgr_client*) > container_type;
-
-    // typedef pair<const _xsockaddr,sockmgr_client*> value_type;
-    // typedef list<value_type,__STL_DEFAULT_ALLOCATOR(value_type)> container_type;
-    // 
-
   public:
     sockmgr_stream() :
 	basic_sockmgr()
@@ -163,9 +126,6 @@ class sockmgr_stream :
 
     ~sockmgr_stream()
       {
-        if ( _gc_id.good() ) {
-          _garbage_end.wait();
-        }
       }
 
     void open( int port, sock_base::stype t = sock_base::sock_stream );
@@ -182,7 +142,6 @@ class sockmgr_stream :
 
     static int loop( void * );
     static int connection( void * );
-    static int garbage_collector( void * );
 
     typedef sockmgr_client *(sockmgr_stream<Connect>::*accept_type)();
 
@@ -193,25 +152,24 @@ class sockmgr_stream :
     sockmgr_client *accept_udp();
 
   private:
-// #ifdef __unix
-//    static __impl::Thread::thread_key_type _mt_key;
-//    static int _mt_idx;
-// #endif
-
-    container_type _storage; // clients connections db
-    key_type create_unique();
-
     Thread     loop_id;
-    Thread    _gc_id;    // garbage collector thread
-    Condition _garbage_end;
-
-    __impl::Mutex _storage_lock;
     __impl::Mutex _params_lock;
+    __impl::ThreadMgr  thr_mgr;
 
-    static const key_type _low;
-    static const key_type _high;
+  protected:
+    typedef std::vector<sockmgr_client *,__STL_DEFAULT_ALLOCATOR(sockmgr_client *)> _Sequence;
+    // typedef less_sockmgr_client _Compare;
+    typedef fd_equal _Compare;
+    typedef typename _Sequence::value_type      value_type;
+    typedef typename _Sequence::size_type       size_type;
+    typedef          _Sequence                  container_type;
 
-    static key_type _id;
+    typedef typename _Sequence::reference       reference;
+    typedef typename _Sequence::const_reference const_reference;
+
+    _Sequence _M_c;
+    _Compare  _M_comp;
+    __impl::Mutex _c_lock;
 };
 
 // Policy: multiplex all clients connections in one thread
@@ -219,25 +177,33 @@ template <class Connect>
 class sockmgr_stream_MP : // multiplexor
     public basic_sockmgr
 {
-  private:
-    typedef unsigned key_type;
-    typedef map<key_type,sockmgr_client_MP<Connect>*,less<key_type>,
-                __STL_DEFAULT_ALLOCATOR(sockmgr_client_MP<Connect>*) > container_type;
-
   public:
     sockmgr_stream_MP() :
-	basic_sockmgr()
-      { }
+	basic_sockmgr(),
+        _fdcount( 0 )
+      {
+#ifdef __unix
+        _pfd = 0;
+#endif
+      }
 
     explicit sockmgr_stream_MP( int port, sock_base::stype t = sock_base::sock_stream ) :
-	basic_sockmgr()
-      {	open( port, t ); }
+	basic_sockmgr(),
+        _fdcount( 0 )
+      {
+#ifdef __unix
+        _pfd = 0;
+#endif
+        open( port, t );
+      }
 
     ~sockmgr_stream_MP()
       {
-        if ( _gc_id.good() ) {
-          _garbage_end.wait();
+#ifdef __unix
+        if ( _pfd != 0 ) {
+          delete [] _pfd;
         }
+#endif
       }
 
     void open( int port, sock_base::stype t = sock_base::sock_stream );
@@ -246,8 +212,6 @@ class sockmgr_stream_MP : // multiplexor
 
   protected:
     static int loop( void * );
-    static int garbage_collector( void * );
-
     typedef sockmgr_client_MP<Connect> *(sockmgr_stream_MP<Connect>::*accept_type)();
 
     accept_type _accept;
@@ -255,27 +219,31 @@ class sockmgr_stream_MP : // multiplexor
       { return (this->*_accept)(); }
     sockmgr_client_MP<Connect> *accept_tcp();
     sockmgr_client_MP<Connect> *accept_udp();
+
+  private:
+    Thread     loop_id;
+
+  protected:
+    typedef std::vector<sockmgr_client *,__STL_DEFAULT_ALLOCATOR(sockmgr_client *)> _Sequence;
+    typedef less_sockmgr_client _Compare;
+    typedef typename _Sequence::value_type      value_type;
+    typedef typename _Sequence::size_type       size_type;
+    typedef          _Sequence                  container_type;
+
+    typedef typename _Sequence::reference       reference;
+    typedef typename _Sequence::const_reference const_reference;
+
+    _Sequence _M_c;
+    _Compare  _M_comp;
+    __impl::Mutex _c_lock;
+
 #ifdef __unix
     pollfd *_pfd;
 #endif
 #ifdef WIN32
     fd_set _pfd;
 #endif
-
-  private:
-    container_type _storage; // clients connections db
-    key_type create_unique();
-
-    Thread     loop_id;
-    Thread    _gc_id;    // garbage collector thread
-    Condition _garbage_end;
-
-    __impl::Mutex _storage_lock;
-
-    static const key_type _low;
-    static const key_type _high;
-
-    static key_type _id;
+    unsigned _fdcount;
 };
 
 } // namespace std
