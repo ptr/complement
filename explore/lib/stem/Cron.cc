@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/12/13 20:49:39 ptr>
+// -*- C++ -*- Time-stamp: <00/12/28 17:43:40 ptr>
 
 /*
  *
@@ -75,8 +75,10 @@ void __PG_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
 
   en.code = ne.code;
   en.addr = entry.src();
-  en.start.tv_sec = ne.start;
+  en.start.tv_sec = ne.start.tv_sec;
+  en.start.tv_nsec = ne.start.tv_nsec;
   en.n = ne.n;
+  en.arg = ne.arg;
   if ( en.n == 1 ) {
     en.period.tv_sec = 0;
     en.period.tv_nsec = 0;
@@ -94,7 +96,7 @@ void __PG_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
   }
 
   en.expired.tv_sec = en.start.tv_sec;
-  // en.expired.tv_nsec = 0;
+  en.expired.tv_nsec = en.start.tv_nsec;
   en.count = 0;
 
   MT_REENTRANT( _M_l, _x1 );
@@ -189,9 +191,10 @@ int Cron::_loop( void *p )
 
       // check if abonent exist
       if ( me.is_avail( en.addr ) ) {
-        Event ev( en.code );
+        Event_base<unsigned> ev( en.code );
         ev.dest( en.addr );
-        me.Send( ev );
+        ev.value() = en.arg;
+        me.Send( Event_convert<unsigned>()( ev ) );
       } else { // remove invalid abonent from Cron
         if ( me._M_c.empty() ) {
           me.PopState();
@@ -261,40 +264,48 @@ __PG_DECLSPEC
 void CronEntry::pack( __STD::ostream& s ) const
 {
   __pack( s, code );
-  __pack( s, start );
+  __pack( s, start.tv_sec );
+  __pack( s, start.tv_nsec );
   __pack( s, period.tv_sec );
   __pack( s, period.tv_nsec );
   __pack( s, n );
+  __pack( s, arg );
 }
 
 __PG_DECLSPEC
 void CronEntry::net_pack( __STD::ostream& s ) const
 {
   __net_pack( s, code );
-  __net_pack( s, start );
+  __net_pack( s, start.tv_sec );
+  __net_pack( s, start.tv_nsec );
   __net_pack( s, period.tv_sec );
   __net_pack( s, period.tv_nsec );
   __net_pack( s, n );
+  __net_pack( s, arg );
 }
 
 __PG_DECLSPEC
 void CronEntry::unpack( __STD::istream& s )
 {
   __unpack( s, code );
-  __unpack( s, start );
+  __unpack( s, start.tv_sec );
+  __unpack( s, start.tv_nsec );
   __unpack( s, period.tv_sec );
   __unpack( s, period.tv_nsec );
   __unpack( s, n );
+  __unpack( s, arg );
 }
 
 __PG_DECLSPEC
 void CronEntry::net_unpack( __STD::istream& s )
 {
   __net_unpack( s, code );
-  __net_unpack( s, start );
+  __net_unpack( s, start.tv_sec );
+  __net_unpack( s, start.tv_nsec );
   __net_unpack( s, period.tv_sec );
   __net_unpack( s, period.tv_nsec );
   __net_unpack( s, n );
+  __net_unpack( s, arg );
 }
 
 } // namespace EDS

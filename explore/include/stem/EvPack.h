@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/10 15:34:50 ptr>
+// -*- C++ -*- Time-stamp: <00/12/21 10:51:38 ptr>
 
 /*
  *
@@ -33,39 +33,11 @@
 #include <config/feature.h>
 #endif
 
-#ifdef WIN32
-#include <winsock.h>
-#  if defined(BIGENDIAN) && (BIGENDIAN > 0)
-#    define _BIG_ENDIAN
-#  else
-#    define _LITTLE_ENDIAN
-#  endif
-#else // !WIN32
-#  ifdef __sun
-#    include <sys/isa_defs.h>
-#  elif defined(__hpux)
-#    include <machine/param.h>
-#  else // __linux
-#    include <sys/types.h>
-#    if !defined(__BYTE_ORDER) || !defined(__LITTLE_ENDIAN) || !defined(__BIG_ENDIAN)
-#      error "One of __BYTE_ORDER, __LITTLE_ENDIAN and __BIG_ENDIAN undefined; Fix me!"
-#    endif
-#    if ( __BYTE_ORDER == __LITTLE_ENDIAN )
-#      define _LITTLE_ENDIAN
-#    elif ( __BYTE_ORDER == __BIG_ENDIAN )
-#      define _BIG_ENDIAN
-#    else
-#      error "__BYTE_ORDER neither __BIG_ENDIAN nor __LITTLE_ENDIAN; Fix me!"
-#    endif
-#  endif
-#endif // WIN32
-
 #ifdef _LITTLE_ENDIAN
 #  include <algorithm>
 #endif
 
-#include <istream>
-#include <ostream>
+#include <iostream>
 
 namespace EDS {
 

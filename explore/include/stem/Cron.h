@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/12/05 13:13:46 ptr>
+// -*- C++ -*- Time-stamp: <00/12/28 16:42:37 ptr>
 
 /*
  * Copyright (c) 1999-2000
@@ -61,23 +61,30 @@ struct CronEntry :
     };
 
     CronEntry() :
-        code( static_cast<code_type>(-1) ),
-        // addr( badaddr ),
-        start( immediate ),
-        n( static_cast<unsigned>(infinite) )
-      { period.tv_sec = 0; period.tv_nsec = 0; }
+        code( badcode ),
+        n( static_cast<unsigned>(infinite) ),
+        arg( 0 )
+      {
+        start.tv_sec = immediate; start.tv_nsec = 0;
+        period.tv_sec = 0; period.tv_nsec = 0;
+      }
 
     CronEntry( const CronEntry& x ) :
         code( x.code ),
-        start( x.start ),
-        n( x.n )
-      { period.tv_sec = x.period.tv_sec; period.tv_nsec = x.period.tv_nsec; }
+        n( x.n ),
+        arg( x.arg )
+      {
+        start.tv_sec = x.start.tv_sec; start.tv_nsec = x.start.tv_nsec;
+        period.tv_sec = x.period.tv_sec; period.tv_nsec = x.period.tv_nsec;
+      }
 
     code_type code;
-    time_t start;
+    // time_t start;
+    timespec start;
     // time_t end;
     timespec period;
     unsigned n;
+    unsigned arg;
 
     virtual __PG_DECLSPEC void pack( __STD::ostream& s ) const;
     virtual __PG_DECLSPEC void net_pack( __STD::ostream& s ) const;
@@ -88,10 +95,11 @@ struct CronEntry :
 struct __CronEntry
 {
     __CronEntry() :
-        code( static_cast<code_type>(-1) ),
+        code( badcode ),
         addr( badaddr ),
         n( 0 ),
-        count( 0 )
+        count( 0 ),
+        arg( 0 )
       {
         expired.tv_sec = 0; expired.tv_nsec = 0;
         start.tv_sec = 0; start.tv_nsec = 0;
@@ -102,7 +110,8 @@ struct __CronEntry
         code( x.code ),
         addr( x.addr ),
         n( x.n ),
-        count( x.count )
+        count( x.count ),
+        arg( x.arg )
       {
         expired.tv_sec = x.expired.tv_sec; expired.tv_nsec = x.expired.tv_nsec;
         start.tv_sec = x.start.tv_sec; start.tv_nsec = x.start.tv_nsec;
@@ -119,6 +128,7 @@ struct __CronEntry
 
     unsigned n;
     unsigned count;
+    unsigned arg;
 
 #if 0
     operator <( const __CronEntry& __x ) const
