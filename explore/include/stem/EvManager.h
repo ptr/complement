@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/10/11 14:17:06 ptr>
+// -*- C++ -*- Time-stamp: <96/10/14 17:02:24 ptr>
 #ifndef __EDS_EvManager_h
 #define __EDS_EvManager_h
 
@@ -49,25 +49,10 @@ class EDSEvManager :
 {
     typedef queue<deque<OXWEvInfo> > ParentCls;
   public:
-    EDSEvManager()
-      { lock_not_done.set_condition(); queue_lock.set_condition(); }
+    EDSEvManager();
 
-    ~EDSEvManager()
-      { }
-
-    void push(const value_type& x)
-      {
-	// queue_lock.lock();
-	ParentCls::push( x );
-	// queue_lock.unlock();
-	queue_lock._signal();
-	// queue_sem.post();
-      }
-    bool empty()
-      {
-	MT_REENTRANT( queue_lock, lck );
-	return ParentCls::empty();
-      }
+    void push(const value_type& x);
+    bool empty();
 
     void dispatch();
     void Done();
