@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/08/04 15:28:36 ptr>
+// -*- C++ -*- Time-stamp: <02/08/26 12:55:53 ptr>
 
 /*
  *
@@ -154,6 +154,8 @@ class DataBase
     unsigned _dbport;
     string _dbopt;
     string _dbtty;
+
+  public:
     std::ostream& _dberr;
 
     friend class Cursor;
