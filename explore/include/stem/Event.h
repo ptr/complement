@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/19 16:50:55 ptr>
+// -*- C++ -*- Time-stamp: <99/03/19 19:51:17 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -244,32 +244,6 @@ class Event_base :
 };
 
 template <>
-class Event_base<void> :
-        public __Event_Base
-{
-  public:
-    typedef void         value_type;
-    typedef void *       pointer;
-    typedef size_t       size_type;
-    typedef const void * const_pointer;
-
-    Event_base() :
-        __Event_Base()
-      { }
-
-    explicit Event_base( code_type c ) :
-        __Event_Base( c )
-      { }
-
-    explicit Event_base( const Event_base& e ) :
-        __Event_Base( e )
-      { }
-
-    size_type value_size() const
-      { return 0; }
-};
-
-template <>
 class Event_base<std::string> :
         public __Event_Base
 {
@@ -309,6 +283,42 @@ class Event_base<std::string> :
     size_type value_size() const
       { return _data.size(); }
 
+    void net_pack( Event& s ) const
+      {
+        s.code( _code );
+        s.dest( _dst );
+        s.src( _src );
+        s.seq( _sq );
+        s.value( _data );
+      }
+
+    void net_unpack( const Event& s )
+      {
+        _code = s.code();
+        _dst  = s.dest();
+        _src  = s.src();
+        _sq   = s.seq();
+        _data = s.value();
+      }
+
+    void pack( Event& s ) const
+      {
+        s.code( _code );
+        s.dest( _dst );
+        s.src( _src );
+        s.seq( _sq );
+        s.value( _data );
+      }
+
+    void unpack( const Event& s )
+      {
+        _code = s.code();
+        _dst  = s.dest();
+        _src  = s.src();
+        _sq   = s.seq();
+        _data = s.value();
+      }
+
     void pack( std::ostream& __s ) const
       { __pack_base::__pack( __s, _data ); }
     void unpack( std::istream& __s )
@@ -320,6 +330,75 @@ class Event_base<std::string> :
 
   protected:
     value_type _data;
+};
+
+template <>
+class Event_base<void> :
+        public __Event_Base
+{
+  public:
+    typedef void         value_type;
+    typedef void *       pointer;
+    typedef size_t       size_type;
+    typedef const void * const_pointer;
+
+    Event_base() :
+        __Event_Base()
+      { }
+
+    explicit Event_base( code_type c ) :
+        __Event_Base( c )
+      { }
+
+    explicit Event_base( const Event_base& e ) :
+        __Event_Base( e )
+      { }
+
+    size_type value_size() const
+      { return 0; }
+
+    void net_pack( Event& s ) const
+      {
+        s.code( _code );
+        s.dest( _dst );
+        s.src( _src );
+        s.seq( _sq );
+        s.value( std::string() );
+      }
+
+    void net_unpack( const Event& s )
+      {
+        _code = s.code();
+        _dst  = s.dest();
+        _src  = s.src();
+        _sq   = s.seq();
+      }
+
+    void pack( Event& s ) const
+      {
+        s.code( _code );
+        s.dest( _dst );
+        s.src( _src );
+        s.seq( _sq );
+        s.value( std::string() );
+      }
+
+    void unpack( const Event& s )
+      {
+        _code = s.code();
+        _dst  = s.dest();
+        _src  = s.src();
+        _sq   = s.seq();
+      }
+
+    void pack( std::ostream& ) const
+      { }
+    void unpack( std::istream& )
+      { }
+    void net_pack( std::ostream& ) const
+      { }
+    void net_unpack( std::istream& )
+      { }
 };
 
 #if 0
