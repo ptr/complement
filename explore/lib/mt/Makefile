@@ -4,11 +4,8 @@
 SRCROOT := ../..
 COMPILER_NAME := gcc
 
-STLPORT_LIB_DIR = /export/home/ptr/STLport.lab/STLport/lib
-STLPORT_INCLUDE_DIR = /export/home/ptr/STLport.lab/STLport/stlport
 include Makefile.inc
 include ${SRCROOT}/Makefiles/top.mak
-
 
 INCLUDES += -I$(SRCROOT)/include -I$(STLPORT_INCLUDE_DIR)
 
