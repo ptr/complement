@@ -1,4 +1,4 @@
-/* -*- C -*- Time-stamp: <04/04/05 16:25:03 ptr> */
+/* -*- C -*- Time-stamp: <04/04/21 12:22:20 ptr> */
 
 #if defined(__unix) || defined(__unix__)
 #  ifdef __HP_aCC
@@ -84,12 +84,13 @@ static struct flock _flu = { 0, 0, 0, F_UNLCK, SEEK_SET };
 static OVERLAPPED _fl = { 0, 0, 0, 0, 0 };
 #endif /* WIN32 */
 
-#if defined(__unix) || defined(__unix__)
+/* #if defined(__unix) || defined(__unix__) */
 int flck( int fd, int operation )
-#endif /* __unix || __unix__ */
+/* #endif */ /* __unix || __unix__ */
+/*
 #ifdef WIN32
 int flck( HANDLE fd, int operation )
-#endif /* WIN32 */
+#endif */ /* WIN32 */
 {
 #if defined(__unix) || defined(__unix__)
   struct flock fl;
@@ -149,11 +150,11 @@ int flck( HANDLE fd, int operation )
        * if you use 'fd = open( "myfile", O_CREAT, 00666 )',
        * pass first argument as (HANDLE)_get_osfhandle(fd)
        */
-      return LockFileEx( fd, LOCKFILE_EXCLUSIVE_LOCK, 0, (DWORD)-1, (DWORD)-1, &_fl ) == TRUE ? 0 : -1;
+      return LockFileEx( (HANDLE)_get_osfhandle(fd), LOCKFILE_EXCLUSIVE_LOCK, 0, (DWORD)-1, (DWORD)-1, &_fl ) == TRUE ? 0 : -1;
     case _F_LCK_R:
-      return LockFileEx( fd, 0, 0, (DWORD)-1, (DWORD)-1, &_fl ) == TRUE ? 0 : -1;
+      return LockFileEx((HANDLE) _get_osfhandle(fd), 0, 0, (DWORD)-1, (DWORD)-1, &_fl ) == TRUE ? 0 : -1;
     case _F_UNLCK:
-      return UnlockFileEx( fd, 0, (DWORD)-1, (DWORD)-1, &_fl ) == TRUE ? 0 : -1;
+      return UnlockFileEx( (HANDLE)_get_osfhandle(fd), 0, (DWORD)-1, (DWORD)-1, &_fl ) == TRUE ? 0 : -1;
     default:
       return -1;
   }
