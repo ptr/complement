@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/12/27 18:18:01 ptr>
+// -*- C++ -*- Time-stamp: <00/01/18 16:36:46 ptr>
 
 /*
  *
@@ -153,6 +153,7 @@ class NetTransportMgr :
       {
         if ( net ) {
           net->close();
+          this->close();
           join();
         }        
         delete net;
