@@ -63,7 +63,13 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
       return 0;
     }
     _address.inet.sin_family = AF_INET;
+    // htons is a define at least in Linux 2.2.5-15, and it's expantion fail
+    // for gcc 2.95.3
+#if defined(linux) && defined(htons) && defined(__bswap_16)
+    _address.inet.sin_port = ((((port) >> 8) & 0xff) | (((port) & 0xff) << 8));
+#else
     _address.inet.sin_port = htons( port );
+#endif // linux && htons
     if ( !findhost( name ) ) {
 #ifdef WIN32
       ::closesocket( _fd );
