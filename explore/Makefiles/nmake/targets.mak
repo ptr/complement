@@ -1,4 +1,4 @@
-# Time-stamp: <04/07/25 17:40:18 ptr>
+# Time-stamp: <04/05/01 00:45:03 ptr>
 # $Id$
 
 # dependency output parser
@@ -73,15 +73,17 @@ OBJ=$(OBJ:.o@ =.o@)
 # replace marker by prefix:
 #OBJ=$(OBJ:.o@=.o %OUTPUT_DIR%/)
 # sorry, but I still not know how substitute macros in braces ();
-!if "$(COMPILER_NAME)" == "evc4-arm"
+!if "$(COMPILER_NAME)" == "evc4"
+!if "$(TARGET_PROC)" == "arm"
 OBJ=$(OBJ:.o@=.o obj\evc4-arm\shared\)
-!elseif "$(COMPILER_NAME)" == "evc4-x86"
+!else
 OBJ=$(OBJ:.o@=.o obj\evc4-x86\shared\)
+!endif
 !elseif "$(COMPILER_NAME)" == "evc3"
 !if "$(TARGET_PROC)" == "arm"
-OBJ=$(OBJ:.o@=.o obj\arm-evc3\shared\)
+OBJ=$(OBJ:.o@=.o obj\evc3-arm\shared\)
 !else
-OBJ=$(OBJ:.o@=.o obj\x86-evc3\shared\)
+OBJ=$(OBJ:.o@=.o obj\evc3-x86\shared\)
 !endif
 !elseif "$(COMPILER_NAME)" == "vc6"
 OBJ=$(OBJ:.o@=.o obj\vc6\shared\)
@@ -105,15 +107,17 @@ OBJ_DBG=$(ALLOBJS:.o =.o@)
 OBJ_DBG=$(OBJ_DBG:.o@ =.o@)
 #OBJ=$(OBJ:.o@=.o %OUTPUT_DIR%/)
 # sorry, but I still not know how substitute macros in braces ();
-!if "$(COMPILER_NAME)" == "evc4-arm"
+!if "$(COMPILER_NAME)" == "evc4"
+!if "$(TARGET_PROC)" == "arm"
 OBJ_DBG=$(OBJ_DBG:.o@=.o obj\evc4-arm\shared-g\)
-!elseif "$(COMPILER_NAME)" == "evc4-x86"
+!else
 OBJ_DBG=$(OBJ_DBG:.o@=.o obj\evc4-x86\shared-g\)
+!endif
 !elseif "$(COMPILER_NAME)" == "evc3"
 !if "$(TARGET_PROC)" == "arm"
-OBJ_DBG=$(OBJ_DBG:.o@=.o obj\arm-evc3\shared-g\)
+OBJ_DBG=$(OBJ_DBG:.o@=.o obj\evc3-arm\shared-g\)
 !else
-OBJ_DBG=$(OBJ_DBG:.o@=.o obj\x86-evc3\shared-g\)
+OBJ_DBG=$(OBJ_DBG:.o@=.o obj\evc3-x86\shared-g\)
 !endif
 !elseif "$(COMPILER_NAME)" == "vc6"
 OBJ_DBG=$(OBJ_DBG:.o@=.o obj\vc6\shared-g\)
@@ -133,15 +137,17 @@ OBJ_STLDBG=$(ALLOBJS:.o =.o@)
 OBJ_STLDBG=$(OBJ_STLDBG:.o@ =.o@)
 #OBJ=$(OBJ:.o@=.o %OUTPUT_DIR%/)
 # sorry, but I still not know how substitute macros in braces ();
-!if "$(COMPILER_NAME)" == "evc4-arm"
+!if "$(COMPILER_NAME)" == "evc4"
+!if "$(TARGET_PROC)" == "arm"
 OBJ_STLDBG=$(OBJ_STLDBG:.o@=.o obj\evc4-arm\shared-stlg\)
-!elseif "$(COMPILER_NAME)" == "evc4-x86"
+!else
 OBJ_STLDBG=$(OBJ_STLDBG:.o@=.o obj\evc4-x86\shared-stlg\)
+!endif
 !elseif "$(COMPILER_NAME)" == "evc3"
 !if "$(TARGET_PROC)" == "arm"
-OBJ_STLDBG=$(OBJ_STLDBG:.o@=.o obj\arm-evc3\shared-stlg\)
+OBJ_STLDBG=$(OBJ_STLDBG:.o@=.o obj\evc3-arm\shared-stlg\)
 !else
-OBJ_STLDBG=$(OBJ_STLDBG:.o@=.o obj\x86-evc3\shared-stlg\)
+OBJ_STLDBG=$(OBJ_STLDBG:.o@=.o obj\evc3-x86\shared-stlg\)
 !endif
 !elseif "$(COMPILER_NAME)" == "vc6"
 OBJ_STLDBG=$(OBJ_STLDBG:.o@=.o obj\vc6\shared-stlg\)
@@ -152,19 +158,22 @@ OBJ_STLDBG=$(OBJ_STLDBG:.o@=.o obj\vc71\shared-stlg\)
 !elseif "$(COMPILER_NAME)" == "vc8"
 OBJ_STLDBG=$(OBJ_STLDBG:.o@=.o obj\vc8\shared-stlg\)
 !endif
+# add prefix to first element:
 OBJ_STLDBG=$(OUTPUT_DIR_STLDBG)\$(OBJ_STLDBG)
 
 OBJ_A=$(ALLOBJS:.o =.o@)
 OBJ_A=$(OBJ_A:.o@ =.o@)
-!if "$(COMPILER_NAME)" == "evc4-arm"
+!if "$(COMPILER_NAME)" == "evc4"
+!if "$(TARGET_PROC)" == "arm"
 OBJ_A=$(OBJ_A:.o@=.o obj\evc4-arm\static\)
-!elseif "$(COMPILER_NAME)" == "evc4-x86"
+!else
 OBJ_A=$(OBJ_A:.o@=.o obj\evc4-x86\static\)
+!endif
 !elseif "$(COMPILER_NAME)" == "evc3"
 !if "$(TARGET_PROC)" == "arm"
-OBJ_A=$(OBJ_A:.o@=.o obj\arm-evc3\static\)
+OBJ_A=$(OBJ_A:.o@=.o obj\evc3-arm\static\)
 !else
-OBJ_A=$(OBJ_A:.o@=.o obj\x86-evc3\static\)
+OBJ_A=$(OBJ_A:.o@=.o obj\evc3-x86\static\)
 !endif
 !elseif "$(COMPILER_NAME)" == "vc6"
 OBJ_A=$(OBJ_A:.o@=.o obj\vc6\static\)
@@ -179,15 +188,17 @@ OBJ_A=$(OUTPUT_DIR_A)\$(OBJ_A)
 
 OBJ_A_DBG=$(ALLOBJS:.o =.o@)
 OBJ_A_DBG=$(OBJ_A_DBG:.o@ =.o@)
-!if "$(COMPILER_NAME)" == "evc4-arm"
+!if "$(COMPILER_NAME)" == "evc4"
+!if "$(TARGET_PROC)" == "arm"
 OBJ_A_DBG=$(OBJ_A_DBG:.o@=.o obj\evc4-arm\static-g\)
-!elseif "$(COMPILER_NAME)" == "evc4-x86"
+!else
 OBJ_A_DBG=$(OBJ_A_DBG:.o@=.o obj\evc4-x86\static-g\)
+!endif
 !elseif "$(COMPILER_NAME)" == "evc3"
 !if "$(TARGET_PROC)" == "arm"
-OBJ_A_DBG=$(OBJ_A_DBG:.o@=.o obj\arm-evc3\static-g\)
+OBJ_A_DBG=$(OBJ_A_DBG:.o@=.o obj\evc3-arm\static-g\)
 !else
-OBJ_A_DBG=$(OBJ_A_DBG:.o@=.o obj\x86-evc3\static-g\)
+OBJ_A_DBG=$(OBJ_A_DBG:.o@=.o obj\evc3-x86\static-g\)
 !endif
 !elseif "$(COMPILER_NAME)" == "vc6"
 OBJ_A_DBG=$(OBJ_A_DBG:.o@=.o obj\vc6\static-g\)
@@ -202,15 +213,17 @@ OBJ_A_DBG=$(OUTPUT_DIR_A_DBG)\$(OBJ_A_DBG)
 
 OBJ_A_STLDBG=$(ALLOBJS:.o =.o@)
 OBJ_A_STLDBG=$(OBJ_A_STLDBG:.o@ =.o@)
-!if "$(COMPILER_NAME)" == "evc4-arm"
+!if "$(COMPILER_NAME)" == "evc4"
+!if "$(TARGET_PROC)" == "arm"
 OBJ_A_STLDBG=$(OBJ_A_STLDBG:.o@=.o obj\evc4-arm\static-stlg\)
-!elseif "$(COMPILER_NAME)" == "evc4-x86"
+!else
 OBJ_A_STLDBG=$(OBJ_A_STLDBG:.o@=.o obj\evc4-x86\static-stlg\)
+!endif
 !elseif "$(COMPILER_NAME)" == "evc3"
 !if "$(TARGET_PROC)" == "arm"
-OBJ_A_STLDBG=$(OBJ_A_STLDBG:.o@=.o obj\arm-evc3\static-stlg\)
+OBJ_A_STLDBG=$(OBJ_A_STLDBG:.o@=.o obj\evc3-arm\static-stlg\)
 !else
-OBJ_A_STLDBG=$(OBJ_A_STLDBG:.o@=.o obj\x86-evc3\static-stlg\)
+OBJ_A_STLDBG=$(OBJ_A_STLDBG:.o@=.o obj\evc3-x86\static-stlg\)
 !endif
 !elseif "$(COMPILER_NAME)" == "vc6"
 OBJ_A_STLDBG=$(OBJ_A_STLDBG:.o@=.o obj\vc6\static-stlg\)
@@ -226,15 +239,17 @@ OBJ_A_STLDBG=$(OUTPUT_DIR_A_STLDBG)\$(OBJ_A_STLDBG)
 !ifdef ALLRESS
 RES=$(ALLRESS:.res =.res@)
 RES=$(RES:.res@ =.res@)
-!if "$(COMPILER_NAME)" == "evc4-arm"
+!if "$(COMPILER_NAME)" == "evc4"
+!if "$(TARGET_PROC)" == "arm"
 RES=$(RES:.res@=.res obj\evc4-arm\shared\)
-!elseif "$(COMPILER_NAME)" == "evc4-x86"
+!else
 RES=$(RES:.res@=.res obj\evc4-x86\shared\)
+!endif
 !elseif "$(COMPILER_NAME)" == "evc3"
 !if "$(TARGET_PROC)" == "arm"
-RES=$(RES:.res@=.res obj\arm-evc3\shared\)
+RES=$(RES:.res@=.res obj\evc3-arm\shared\)
 !else
-RES=$(RES:.res@=.res obj\x86-evc3\shared\)
+RES=$(RES:.res@=.res obj\evc3-x86\shared\)
 !endif
 !elseif "$(COMPILER_NAME)" == "vc6"
 RES=$(RES:.res@=.res obj\vc6\shared\)
@@ -249,15 +264,17 @@ RES=$(OUTPUT_DIR)\$(RES)
 
 RES_DBG=$(ALLRESS:.res =.res@)
 RES_DBG=$(RES_DBG:.res@ =.res@)
-!if "$(COMPILER_NAME)" == "evc4-arm"
+!if "$(COMPILER_NAME)" == "evc4"
+!if "$(TARGET_PROC)" == "arm"
 RES_DBG=$(RES_DBG:.res@=.res obj\evc4-arm\shared-g\)
-!elseif "$(COMPILER_NAME)" == "evc4-x86"
+!else
 RES_DBG=$(RES_DBG:.res@=.res obj\evc4-x86\shared-g\)
+!endif
 !elseif "$(COMPILER_NAME)" == "evc3"
 !if "$(TARGET_PROC)" == "arm"
-RES_DBG=$(RES_DBG:.res@=.res obj\arm-evc3\shared-g\)
+RES_DBG=$(RES_DBG:.res@=.res obj\evc3-arm\shared-g\)
 !else
-RES_DBG=$(RES_DBG:.res@=.res obj\x86-evc3\shared-g\)
+RES_DBG=$(RES_DBG:.res@=.res obj\evc3-x86\shared-g\)
 !endif
 !elseif "$(COMPILER_NAME)" == "vc6"
 RES_DBG=$(RES_DBG:.res@=.res obj\vc6\shared-g\)
@@ -272,15 +289,17 @@ RES_DBG=$(OUTPUT_DIR_DBG)\$(RES_DBG)
 
 RES_STLDBG=$(ALLRESS:.res =.res@)
 RES_STLDBG=$(RES_STLDBG:.res@ =.res@)
-!if "$(COMPILER_NAME)" == "evc4-arm"
+!if "$(COMPILER_NAME)" == "evc4"
+!if "$(TARGET_PROC)" == "arm"
 RES_STLDBG=$(RES_STLDBG:.res@=.res obj\evc4-arm\shared-stlg\)
-!elseif "$(COMPILER_NAME)" == "evc4-x86"
+!else
 RES_STLDBG=$(RES_STLDBG:.res@=.res obj\evc4-x86\shared-stlg\)
+!endif
 !elseif "$(COMPILER_NAME)" == "evc3"
 !if "$(TARGET_PROC)" == "arm"
-RES_STLDBG=$(RES_STLDBG:.res@=.res obj\arm-evc3\shared-stlg\)
+RES_STLDBG=$(RES_STLDBG:.res@=.res obj\evc3-arm\shared-stlg\)
 !else
-RES_STLDBG=$(RES_STLDBG:.res@=.res obj\x86-evc3\shared-stlg\)
+RES_STLDBG=$(RES_STLDBG:.res@=.res obj\evc3-x86\shared-stlg\)
 !endif
 !elseif "$(COMPILER_NAME)" == "vc6"
 RES_STLDBG=$(RES_STLDBG:.res@=.res obj\vc6\shared-stlg\)
@@ -289,7 +308,8 @@ RES_STLDBG=$(RES_STLDBG:.res@=.res obj\vc70\shared-stlg\)
 !elseif "$(COMPILER_NAME)" == "vc71"
 RES_STLDBG=$(RES_STLDBG:.res@=.res obj\vc71\shared-stlg\)
 !elseif "$(COMPILER_NAME)" == "vc8"
-RES_DBG=$(RES_DBG:.res@=.res obj\vc8\shared-g\)
+RES_STLDBG=$(RES_STLDBG:.res@=.res obj\vc8\shared-stlg\)
 !endif
 RES_STLDBG=$(OUTPUT_DIR_STLDBG)\$(RES_STLDBG)
 !endif
+
