@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/12/05 10:16:02 ptr>
+// -*- C++ -*- Time-stamp: <00/12/05 13:13:46 ptr>
 
 /*
  * Copyright (c) 1999-2000
@@ -170,9 +170,6 @@ class Cron :
 
     __PG_DECLSPEC void EmptyStart();
     __PG_DECLSPEC void EmptyStop();
-
-    int wait()
-      { return _thr.join(); }
 
   private:
     static int _loop( void * );
