@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 10:00:47 ptr>
+// -*- C++ -*- Time-stamp: <99/10/13 17:49:50 ptr>
 
 /*
  *
@@ -32,9 +32,21 @@ namespace EDS {
 #define EV_EDS_RRQ_SESSION       0x11
 #define EV_EDS_RS_SESSION        0x12
 #define EV_EDS_CL_SESSION        0x13
+
+// Name Service
 #define EV_EDS_NM_LIST           0x14
+#define EV_EDS_NS_ADDR           0x1c
 #define EV_EDS_RQ_ADDR_LIST      0x15
 #define EV_EDS_RQ_EXT_ADDR_LIST  0x16
+#define EV_EDS_RQ_ADDR_BY_NAME   0x1b
+
+// Cron Service
+#define EV_EDS_CRON_ADD          0x17
+#define EV_EDS_CRON_REMOVE       0x18
+#define EV_EDS_CRON_START        0x19
+#define EV_EDS_CRON_STOP         0x1a
+                              // 0x1b
+                              // 0x1c
 
 } // namespace EDS
 
