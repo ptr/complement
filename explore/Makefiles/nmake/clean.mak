@@ -1,10 +1,10 @@
-# -*- makefile -*- Time-stamp: <03/10/26 16:13:11 ptr>
+# -*- makefile -*- Time-stamp: <03/10/29 22:21:22 ptr>
 # $Id$
 
 clean:
-	@-del /F /Q $(OBJ) $(DEP)
-	@-del /F /Q $(OBJ_DBG) $(DEP_DBG)
-	@-del /F /Q $(OBJ_STLDBG) $(DEP_STLDBG)
-	@-del /F /Q $(OBJ_A)
-	@-del /F /Q $(OBJ_A_DBG)
-	@-del /F /Q $(OBJ_A_STLDBG)
+	@-del /F /Q $(OUTPUT_DIR)\*.o $(OUTPUT_DIR)\*.obj
+	@-del /F /Q $(OUTPUT_DIR_DBG)\*.o $(OUTPUT_DIR_DBG)\*.obj
+	@-del /F /Q $(OUTPUT_DIR_STLDBG)\*.o $(OUTPUT_DIR_STLDBG)\*.obj
+	@-del /F /Q $(OUTPUT_DIR_A)\*.o $(OUTPUT_DIR_A)\*.obj
+	@-del /F /Q $(OUTPUT_DIR_A_DBG)\*.o $(OUTPUT_DIR_A_DBG)\*.obj
+	@-del /F /Q $(OUTPUT_DIR_A_STLDBG)\*.o $(OUTPUT_DIR_A_STLDBG)\*.obj
