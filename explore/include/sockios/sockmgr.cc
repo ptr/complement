@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 17:16:37 ptr>
+// -*- C++ -*- Time-stamp: <00/02/29 17:00:59 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -41,11 +41,11 @@ sockmgr_client *sockmgr_stream<Connect>::accept_tcp()
 #else
   size_t sz = sizeof( sockaddr_in );
 #endif
-  
+
   sock_base::socket_type _sd = ::accept( fd(), &addr.any, &sz );
   if ( _sd == -1 ) {
     // check and set errno
-    __stl_assert( _sd == -1 );
+    __STL_ASSERT( _sd == -1 );
     return 0;
   }
 
@@ -183,9 +183,6 @@ int sockmgr_stream<Connect>::loop( void *p )
 
   pass.me = me;
 
-  std::set_unexpected( std::unexpected );
-  std::set_terminate( std::terminate );
-
   try {
     while ( (s = me->accept()) != 0 ) {
     
@@ -306,7 +303,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
       sock_base::socket_type _sd = ::accept( fd(), &addr.any, &sz );
       if ( _sd == -1 ) {
         // check and set errno
-        __stl_assert( _sd == -1 );
+        __STL_ASSERT( _sd == -1 );
         return 0;
       }
 
@@ -348,7 +345,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
     if ( _pfd[j].revents != 0 ) {
       container_type::iterator i = 
         find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, _pfd[j].fd ) );
-      __stl_assert( i != _M_c.end() );
+      __STL_ASSERT( i != _M_c.end() );
       if ( _pfd[j].revents & POLLERR ) {
         memmove( &_pfd[j], &_pfd[j+1], sizeof(pollfd) * (_fdcount - j - 1) );
         --_fdcount;
@@ -449,9 +446,6 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
 #ifdef __unix
   Thread::unblock_signal( SIGINT );
 #endif
-
-  set_unexpected( unexpected );
-  set_terminate( terminate );
 
   try {
     sockmgr_client_MP<Connect> *s;

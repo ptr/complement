@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/07 19:51:23 ptr>
+// -*- C++ -*- Time-stamp: <00/02/29 16:56:00 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -100,14 +100,14 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
   setp( _base, _base + ((_ebuf - _base)>>1) );
   setg( epptr(), epptr(), epptr() );
 
-  __stl_assert( pbase() != 0 );
-  __stl_assert( pptr() != 0 );
-  __stl_assert( epptr() != 0 );
-  __stl_assert( eback() != 0 );
-  __stl_assert( gptr() != 0 );
-  __stl_assert( egptr() != 0 );
-  __stl_assert( _base != 0 );
-  __stl_assert( _ebuf != 0 );
+  __STL_ASSERT( pbase() != 0 );
+  __STL_ASSERT( pptr() != 0 );
+  __STL_ASSERT( epptr() != 0 );
+  __STL_ASSERT( eback() != 0 );
+  __STL_ASSERT( gptr() != 0 );
+  __STL_ASSERT( egptr() != 0 );
+  __STL_ASSERT( _base != 0 );
+  __STL_ASSERT( _ebuf != 0 );
 
   _state = ios_base::goodbit;
   _errno = 0; // if any
@@ -166,14 +166,14 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, const sock
   setp( _base, _base + ((_ebuf - _base)>>1) );
   setg( epptr(), epptr(), epptr() );
 
-  __stl_assert( pbase() != 0 );
-  __stl_assert( pptr() != 0 );
-  __stl_assert( epptr() != 0 );
-  __stl_assert( eback() != 0 );
-  __stl_assert( gptr() != 0 );
-  __stl_assert( egptr() != 0 );
-  __stl_assert( _base != 0 );
-  __stl_assert( _ebuf != 0 );
+  __STL_ASSERT( pbase() != 0 );
+  __STL_ASSERT( pptr() != 0 );
+  __STL_ASSERT( epptr() != 0 );
+  __STL_ASSERT( eback() != 0 );
+  __STL_ASSERT( gptr() != 0 );
+  __STL_ASSERT( egptr() != 0 );
+  __STL_ASSERT( _base != 0 );
+  __STL_ASSERT( _ebuf != 0 );
 
   _state = ios_base::goodbit;
   _errno = 0; // if any
@@ -219,7 +219,7 @@ basic_sockbuf<charT, traits, _Alloc>::close()
 #endif
 //	cerr << "Pass" << endl;
 
-  __stl_assert( _base != 0 );
+  __STL_ASSERT( _base != 0 );
 	// put area before get area
   setp( _base, _base + ((_ebuf - _base)>>1) );
   setg( epptr(), epptr(), epptr() );
@@ -325,8 +325,8 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
 #endif
 #endif
 
-  __stl_assert( eback() != 0 );
-  __stl_assert( _ebuf != 0 );
+  __STL_ASSERT( eback() != 0 );
+  __STL_ASSERT( _ebuf != 0 );
 
   // cerr << "Read" << endl;
   long offset = (this->*_xread)( eback(), sizeof(char_type) * (_ebuf - eback()) );
@@ -357,7 +357,7 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
   long count = pptr() - pbase();
 
   if ( count ) {
-    __stl_assert( pbase() != 0 );
+    __STL_ASSERT( pbase() != 0 );
 
     // Never do this: read and and write in basic_sockbuf are independent,
     // so reading here lead to lost message if reading and writing occur
@@ -387,11 +387,11 @@ xsputn( const char_type *s, streamsize n )
     return 0;
   }
 
-  __stl_assert( pbase() != 0 );
-  __stl_assert( pptr() != 0 );
-  __stl_assert( epptr() != 0 );
-  __stl_assert( _base != 0 );
-  __stl_assert( _ebuf != 0 );
+  __STL_ASSERT( pbase() != 0 );
+  __STL_ASSERT( pptr() != 0 );
+  __STL_ASSERT( epptr() != 0 );
+  __STL_ASSERT( _base != 0 );
+  __STL_ASSERT( _ebuf != 0 );
 
   if ( epptr() - pptr() > n ) {
     traits::copy( pptr(), s, n );
@@ -427,16 +427,16 @@ int basic_sockbuf<charT, traits, _Alloc>::__rdsync()
   int nmsg = ioctl( fd(), I_NREAD, &nlen );
 #endif
   if ( nmsg > 0 && nlen > 0 ) {
-    __stl_assert( _base != 0 );
-    __stl_assert( _ebuf != 0 );
-    __stl_assert( gptr() != 0 );
-    __stl_assert( egptr() != 0 );
+    __STL_ASSERT( _base != 0 );
+    __STL_ASSERT( _ebuf != 0 );
+    __STL_ASSERT( gptr() != 0 );
+    __STL_ASSERT( egptr() != 0 );
 
 //    cerr << "ioctl: " << dec << nmsg << ", " << nlen << endl;
     bool shift_req = gptr() == eback() ? false : (_ebuf - gptr()) > nlen ? false : true;
     if ( shift_req ) {
-      __stl_assert( gptr() > eback() );
-      __stl_assert( gptr() <= egptr() );
+      __STL_ASSERT( gptr() > eback() );
+      __STL_ASSERT( gptr() <= egptr() );
       traits::move( eback(), gptr(), egptr() - gptr() );
       setg( eback(), eback(), eback() + (egptr() - gptr()) );
     }

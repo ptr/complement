@@ -1,12 +1,12 @@
-// -*- C++ -*- Time-stamp: <00/02/24 19:38:41 ptr>
+// -*- C++ -*- Time-stamp: <00/03/03 13:33:04 ptr>
 
 /*
  *
  * Copyright (c) 1995-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999
- * ParallelGraphics Software Systems
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
  
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -192,15 +192,8 @@ const_h_iterator EventHandler::__find( state_type state ) const
   return hst_i;
 }
 
-// Trick with reference to theHistory instead of object itself is here due to
-// SunPro's C++ 4.1 bug (its occur only for large enough programm):
-// instances of theHistory in inline and outline methods are not same!!!
-// Of cause, you can found this only if theHistory is a template with static
-// member (stl/list, for example).
-
 __PG_DECLSPEC
-EventHandler::EventHandler()// :
-//    theHistory( *(new HistoryContainer()) )
+EventHandler::EventHandler()
 {
   new( Init_buf ) Init();
   theHistory.push_front( ST_NULL );  // State( ST_NULL );
@@ -208,8 +201,7 @@ EventHandler::EventHandler()// :
 }
 
 __PG_DECLSPEC
-EventHandler::EventHandler( const char *info )// :
-//    theHistory( *(new HistoryContainer()) )
+EventHandler::EventHandler( const char *info )
 {
   new( Init_buf ) Init();
   theHistory.push_front( ST_NULL );  // State( ST_NULL );
@@ -217,13 +209,12 @@ EventHandler::EventHandler( const char *info )// :
 }
 
 __PG_DECLSPEC
-EventHandler::EventHandler( addr_type id, const char *info )// :
-//    theHistory( *(new HistoryContainer()) )
+EventHandler::EventHandler( addr_type id, const char *info )
 {
   new( Init_buf ) Init();
   theHistory.push_front( ST_NULL );  // State( ST_NULL );
   _id = _mgr->SubscribeID( id, this, info );
-  __stl_assert( _id != -1 ); // already registered, or id has Event::extbit
+  __STL_ASSERT( _id != -1 ); // already registered, or id has Event::extbit
 //  if ( _id == -1 ) {
 //    _mgr->Subscribe( this, "" );
 //  }
@@ -232,7 +223,6 @@ EventHandler::EventHandler( addr_type id, const char *info )// :
 __PG_DECLSPEC
 EventHandler::~EventHandler()
 {
-//  delete &theHistory;
    _mgr->Unsubscribe( _id );
   ((Init *)Init_buf)->~Init();
 }
