@@ -2,6 +2,7 @@
 # Makefile for implementation and debugging OXW (Object X Window) class library
 
 INCLUDES = \
+	-I/usr/hostel/STL/include \
 	-I/usr/openwin/include \
 	-I../../../include
 DEFS = \
