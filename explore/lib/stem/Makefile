@@ -14,11 +14,11 @@ OPT = -g
 # OPT = -O4
 # OPT = -G -O4
 
-CCFLAGS = $(OPT) -cg92 +w -pic -pto -mt
+CCFLAGS = $(OPT) -cg92 +w -PIC -pto -mt
 CPPFLAGS = $(DEFS) $(INCLUDES)
 PROJECT_LIBS = -L../.. -lclass
 # LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm -ldl
-LDFLAGS =  -xildoff $(PROJECT_LIBS) -lX11 -lXpm
+LDFLAGS = -xildoff $(PROJECT_LIBS) -lX11 -lXpm
 
 OUTPUT_DIR = ./bin
 OUTPUT_TESTS_DIR = ./tests-bin
@@ -56,6 +56,10 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/varstring.o \
 		$(OUTPUT_DIR)/TextLabel.o \
 		$(OUTPUT_DIR)/RubberTextLabel.o \
+		$(OUTPUT_DIR)/InputPIBase.o \
+		$(OUTPUT_DIR)/InputPI.o \
+		$(OUTPUT_DIR)/InputNumPI.o \
+		$(OUTPUT_DIR)/InputMoneyPI.o \
 		$(OUTPUT_DIR)/InputField.o \
 		$(OUTPUT_DIR)/InputMoney.o \
 		$(OUTPUT_DIR)/InputDate.o \
@@ -68,6 +72,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/PopupMenu.o \
 		$(OUTPUT_DIR)/Menubar.o \
 		$(OUTPUT_DIR)/CheckList.o \
+		$(OUTPUT_DIR)/CheckListPI.o \
 		$(OUTPUT_DIR)/Scroller.o \
 		$(OUTPUT_DIR)/TableInfo.o \
 		$(OUTPUT_DIR)/CheckBox.o \
@@ -82,7 +87,10 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/ModalDialog.o \
 		$(OUTPUT_DIR)/AlertPanel.o \
 		$(OUTPUT_DIR)/Picture.o \
-		$(OUTPUT_DIR)/ModalDialogBase.o
+		$(OUTPUT_DIR)/ModalDialogBase.o \
+		\
+		$(OUTPUT_DIR)/CAPPropertyTypePI.o \
+		$(OUTPUT_DIR)/CAPCheckListPI.o
 
 
 # Xlib-based project
@@ -115,7 +123,7 @@ $(PROJECT):	$(LIBFILES.o)
 	$(LINK.cc) -G -o $@ $(LIBFILES.o)
 
 $(XTESTER):	$(XLIBFILES.o) $(XFILES.o)
-	$(LINK.cc) -o $@ $(XLIBFILES.o) $(XFILES.o)
+	$(LINK.cc) -o $@ $(XLIBFILES.o) $(XFILES.o) 
 
 $(OUTPUT_DIR)/%.o:	%.cc
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
