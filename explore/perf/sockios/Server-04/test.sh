@@ -70,43 +70,6 @@ repeat 10 experiment $lp $np p
 repeat 10 experiment $lb $nb b
 repeat 10 experiment $lh $nh h
 
-${echo} "# Server $ls/$ns"
-${echo} "$ls \c"
-../Server-03/stat.awk server-s.log
-${echo} "# Client $ls/$ns"
-${echo} -e "$ls \c"
-../Server-03/stat.awk client-s.log
-
-${echo} "# Server $l0/$n0"
-${echo} "$l0 \c"
-../Server-03/stat.awk server-0.log
-${echo} "# Client $l0/$n0"
-${echo} "$l0 \c"
-../Server-03/stat.awk client-0.log
-
-${echo} "# Server $lp/$np"
-${echo} "$lp \c"
-../Server-03/stat.awk server-p.log
-${echo} "# Client $lp/$np"
-${echo} "$lp \c"
-../Server-03/stat.awk client-p.log
-
-${echo} "# Server $lb/$nb"
-${echo} "$lb \c"
-../Server-03/stat.awk server-b.log
-${echo} "# Client $lb/$nb"
-${echo} "$lb \c"
-../Server-03/stat.awk client-b.log
-
-${echo} "# Server $lh/$nh"
-${echo} "$lh \c"
-../Server-03/stat.awk server-h.log
-${echo} "# Client $lh/$nh"
-${echo} "$lh \c"
-../Server-03/stat.awk client-h.log
-
-
-
 ${echo} "-----------"
 
 ${echo} "# Server " `date` `uname -a`
