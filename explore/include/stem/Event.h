@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/03/19 19:19:30 ptr>
+// -*- C++ -*- Time-stamp: <01/08/28 17:20:13 ptr>
 
 /*
  * Copyright (c) 1995-1999
@@ -35,15 +35,7 @@
 #include <string>
 #include <istream>
 #include <ostream>
-
-#ifdef __SGI_STL_PORT
-#  if __SGI_STL_PORT < 0x322
-#    include <type_traits.h>
-#  else
-#    include <stl/type_traits.h>
-#  endif
-#endif
-
+#include <utility>
 #include <sstream>
 
 #ifndef __EvPack_h
@@ -71,6 +63,10 @@ extern __PG_DECLSPEC addr_type nsaddr;
 extern __PG_DECLSPEC key_type  badkey;
 extern __PG_DECLSPEC code_type badcode;
 #endif
+
+using std::__true_type;
+using std::__false_type;
+using std::__type_traits;
 
 class __Event_Base
 {
