@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/13 19:00:59 ptr>
+// -*- C++ -*- Time-stamp: <99/10/20 11:24:21 ptr>
 
 /*
  *
@@ -119,11 +119,9 @@ void __EDS_DLL Names::get_by_name( const Event& rq )
       rs.value().addr = (*i).first;
       rs.value().record = (*i).second.info;
 
-      cerr << "++ '" << (*i).second.info << "'" << endl;
       Send( Event_convert<NameRecord>()( rs ) );
       return;
     }
-    cerr << "'" << (*i).second.info << "'" << endl;
     ++i;
   }
 
