@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/12/07 18:52:54 ptr>
+// -*- C++ -*- Time-stamp: <00/12/26 20:49:28 ptr>
 
 /*
  *
@@ -59,35 +59,26 @@ static const unsigned EDS_MAGIC = 0x534445c2U;
 
 #ifdef __SGI_STL_OWN_IOSTREAMS
 
-struct _STL_auto_lock2
+struct _auto_lock
 {
-  _STL_mutex& _M_lock;
+    _STL_mutex& _M_lock;
   
-  _STL_auto_lock2(_STL_mutex& __lock) : _M_lock(__lock)
-    { _M_lock._M_acquire_lock(); }
-  ~_STL_auto_lock2() { _M_lock._M_release_lock(); }
+    _auto_lock(_STL_mutex& __lock) : _M_lock(__lock)
+      { _M_lock._M_acquire_lock(); }
+    ~_auto_lock() { _M_lock._M_release_lock(); }
 
-private:
-  void operator=(const _STL_auto_lock2&);
-  _STL_auto_lock2(const _STL_auto_lock2&);
+  private:
+    void operator=(const _auto_lock&);
+    _auto_lock(const _auto_lock&);
 };
 
-#if 0
-// Some changes in STL internal implementation was made,
-// so I use own _STL_auto_lock2
-#  define MT_IO_REENTRANT( s ) \
-         __STLPORT_STD::_STL_auto_lock __AutoLock( (s).rdbuf()->_M_lock );
-#else
-#  define MT_IO_REENTRANT( s ) \
-         _STL_auto_lock2 __AutoLock( (s).rdbuf()->_M_lock );
-#endif // 0
-#  define MT_IO_LOCK( s ) (s).rdbuf()->_M_lock._M_acquire_lock();
-#  define MT_IO_UNLOCK( s ) (s).rdbuf()->_M_lock._M_release_lock();
-#  define MT_IO_REENTRANT_W( s ) \
-         __STLPORT_STD::_STL_auto_lock __AutoLock( (s).rdbuf()->_M_lock_w );
-#  define MT_IO_LOCK_W( s ) (s).rdbuf()->_M_lock_w._M_acquire_lock();
-#  define MT_IO_UNLOCK_W( s ) (s).rdbuf()->_M_lock_w._M_release_lock();
-#else
+#  define MT_IO_REENTRANT( s )   _auto_lock __AutoLock( (s).rdbuf()->_M_lock );
+#  define MT_IO_LOCK( s )        (s).rdbuf()->_M_lock._M_acquire_lock();
+#  define MT_IO_UNLOCK( s )      (s).rdbuf()->_M_lock._M_release_lock();
+#  define MT_IO_REENTRANT_W( s ) _auto_lock __AutoLock( (s).rdbuf()->_M_lock_w );
+#  define MT_IO_LOCK_W( s )      (s).rdbuf()->_M_lock_w._M_acquire_lock();
+#  define MT_IO_UNLOCK_W( s )    (s).rdbuf()->_M_lock_w._M_release_lock();
+#else // !__SGI_STL_OWN_IOSTREAMS
 #  define MT_IO_REENTRANT( s )
 #  define MT_IO_LOCK( s )
 #  define MT_IO_UNLOCK( s )
@@ -220,7 +211,7 @@ bool NetTransport_base::pop( Event& _rs )
   // if ( from_net( buf[0] ) != EDS_MAGIC ) {
   if ( buf[0] != EDS_MAGIC ) {
     cerr << "Magic fail" << endl;
-    close();
+    NetTransport_base::close();
     return false;
   }
 
@@ -236,14 +227,14 @@ bool NetTransport_base::pop( Event& _rs )
 
   if ( sz >= EDS_MSG_LIMIT ) {
     cerr << "Message size too big: " << sz << endl;
-    close();
+    NetTransport_base::close();
     return false;
   }
 
   adler32_type adler = adler32( (unsigned char *)buf, sizeof(unsigned) * 7 );
   if ( adler != from_net( buf[7] ) ) {
     cerr << "Adler-32 fail" << endl;
-    close();
+    NetTransport_base::close();
     return false;
   }
 
@@ -293,13 +284,14 @@ bool NetTransport_base::push( const Event& _rs )
   buf[1] = to_net( _rs.code() );
   buf[2] = to_net( _rs.dest() );
   buf[3] = to_net( _rs.src() );
+
+  // MT_IO_REENTRANT_W( *net )
+  MT_IO_LOCK_W( *net )
+
   buf[4] = to_net( ++_count );
   buf[5] = 0; // time?
   buf[6] = to_net( _rs.value().size() );
   buf[7] = to_net( adler32( (unsigned char *)buf, sizeof(unsigned) * 7 ) ); // crc
-
-  // MT_IO_REENTRANT_W( *net )
-  MT_IO_LOCK_W( *net )
 
   try {
     net->write( (const char *)buf, sizeof(unsigned) * 8 );
@@ -415,6 +407,13 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
   return badaddr;
 }
 
+__PG_DECLSPEC
+void NetTransportMgr::close()
+{
+  NetTransport_base::close();
+  join();
+}
+
 int NetTransportMgr::_loop( void *p )
 {
   NetTransportMgr& me = *reinterpret_cast<NetTransportMgr *>(p);
@@ -426,10 +425,10 @@ int NetTransportMgr::_loop( void *p )
       ev.src( me.rar_map( ev.src(), __at + me.net->rdbuf()->hostname() ) ); // substitute my local id
       manager()->push( ev );
     }
-    me.close();
+    me.NetTransport_base::close();
   }
   catch ( ... ) {
-    me.close();
+    me.NetTransport_base::close();
     throw;
   }
 

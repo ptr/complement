@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/28 15:30:32 ptr>
+// -*- C++ -*- Time-stamp: <00/12/26 20:05:25 ptr>
 
 /*
  *
@@ -94,7 +94,7 @@ class NetTransport_base :
       { return net == 0 || net->bad(); }
     bool is_open() const
       { return net != 0 && net->is_open(); }
-    __PG_DECLSPEC void close();
+    virtual __PG_DECLSPEC void close();
 
     __PG_DECLSPEC
     bool push( const Event& );
@@ -161,6 +161,8 @@ class NetTransportMgr :
     __PG_DECLSPEC
     addr_type open( const char *hostname, int port,
                     __STD::sock_base::stype stype = __STD::sock_base::sock_stream );
+    virtual __PG_DECLSPEC void close();
+
     int join()
       { return _thr.join(); }
 
