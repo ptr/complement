@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/08/01 18:25:39 ptr>
+// -*- C++ -*- Time-stamp: <00/09/08 18:00:34 ptr>
 
 /*
  *
@@ -6,7 +6,7 @@
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2000
- * ParallelGraphics
+ * ParallelGraphics Ltd.
  * 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -18,7 +18,13 @@
  * in supporting documentation.
  */
 
-#ident "$SunId$"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #include <config/feature.h>
 

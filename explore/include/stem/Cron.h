@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <00/06/02 14:44:35 ptr>
+// -*- C++ -*- Time-stamp: <00/09/10 15:34:01 ptr>
 
 /*
  * Copyright (c) 1999-2000
- * ParallelGraphics
+ * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -17,7 +17,13 @@
 #ifndef __Cron_h
 #define __Cron_h
 
-#ident "$SunId$"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #ifndef __config_feature_h
 #include <config/feature.h>

@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <00/06/01 12:07:56 ptr>
+// -*- C++ -*- Time-stamp: <00/09/08 14:00:49 ptr>
 
 /*
- * Copyright (c) 1999-2000
- * ParallelGraphics
- *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
+ *
+ * Copyright (c) 1999-2000
+ * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -17,13 +17,24 @@
  * in supporting documentation.
  */
 
-#ident "$SunId$"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #ifdef WIN32
 
 // The Microsoft's cool programmers made two wanderful things:
 // 1. All sockets must be initialized via WSAStartup
 // 2. Do it procedure once per every new thread.
+//    Not yet all: for one Windows this should be done
+//    once per every new thread, while for others only
+//    once per process (this depends upon pair Windows/sockets on it).
+// 3. If we do more intialization or less than this Windows expected,
+//    we fail with fatal results.
 // 
 // So I do this via Tls* functions (TlsAlloc() in plock.cc)
 

@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <00/08/08 20:58:32 ptr>
+// -*- C++ -*- Time-stamp: <00/09/11 19:34:06 ptr>
 
 /*
  * Copyright (c) 1995-1999
  * Petr Ovchenkov
  * 
  * Copyright (c) 1999-2000
- * ParallelGraphics
+ * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -20,7 +20,13 @@
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
-#ident "$SunId$"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -67,10 +73,18 @@ typedef unsigned state_type;
 #define __D_T(cls,T) EDS::__dispatcher_convert_Event_extr<EDS::__member_function<cls,T >,\
                                                           EDS::Event>
 
-#define EV_EDS(state,event,handler) \
-   RESPONSE_TABLE_ENTRY(state,event,handler,D1(ThisCls)::dispatch)
-#define EV_VOID(state,event,handler) \
-   RESPONSE_TABLE_ENTRY(state,event,handler,D2(ThisCls)::dispatch)
+#ifndef __FIT_TEMPLATE_CLASSTYPE_BUG
+#  define EV_EDS(state,event,handler) \
+     RESPONSE_TABLE_ENTRY(state,event,handler,D1(ThisCls)::dispatch)
+#  define EV_VOID(state,event,handler) \
+     RESPONSE_TABLE_ENTRY(state,event,handler,D2(ThisCls)::dispatch)
+#else // __FIT_TEMPLATE_CLASSTYPE_BUG
+#  define EV_EDS(state,event,handler) \
+     RESPONSE_TABLE_ENTRY(state,event,handler,__EDS_Event::dispatch)
+#  define EV_VOID(state,event,handler) \
+     RESPONSE_TABLE_ENTRY(state,event,handler,__EDS_Void::dispatch)
+#endif // __FIT_TEMPLATE_CLASSTYPE_BUG
+
 #define EV_Event_base_T_(state,event,handler,T) \
    RESPONSE_TABLE_ENTRY(state,event,handler,__D_EV_T(ThisCls,T)::dispatch)
 #define EV_T_(state,event,handler,T) \
@@ -83,11 +97,6 @@ typedef unsigned state_type;
 
 class EventHandler;
 class EvManager;
-
-typedef __STD::list<state_type,__STL_DEFAULT_ALLOCATOR(state_type) > HistoryContainer;
-typedef HistoryContainer::iterator h_iterator;
-typedef HistoryContainer::const_iterator const_h_iterator;
-
 
 struct GENERIC
 {
@@ -245,7 +254,7 @@ struct __PMFentry
 
     PMF  pmf;
 #if !defined( _MSC_VER ) || defined( _DEBUG )
-    typename EDS::GENERIC::DPMF dpmf;
+    __FIT_TYPENAME EDS::GENERIC::DPMF dpmf;
 #else // _MSC_VER && !_DEBUG
     GENERIC::DPMF dpmf;
 #endif
@@ -257,8 +266,8 @@ struct __DeclareAnyPMF
 {
     state_type    st;
 #ifndef _MSC_VER
-    typename EDS::code_type code;
-    typename EDS::__PMFentry<T> func;
+    __FIT_TYPENAME EDS::code_type code;
+    __FIT_TYPENAME EDS::__PMFentry<T> func;
 #else // _MSC_VER
 #  ifdef _DEBUG
     EDS::code_type code;
@@ -278,10 +287,10 @@ class __EvTable
     typedef __STD::vector<pair2_type,__STD::allocator<pair2_type > > Container2;
     typedef __STD::pair<Key1,Container2> pair1_type;
     typedef __STD::vector<pair1_type,__STD::allocator<pair1_type> > Container1;
-    typedef Container1::iterator iterator1;
-    typedef Container2::iterator iterator2;
-    typedef Container1::const_iterator const_iterator1;
-    typedef Container2::const_iterator const_iterator2;
+    typedef typename Container1::iterator iterator1;
+    typedef typename Container2::iterator iterator2;
+    typedef typename Container1::const_iterator const_iterator1;
+    typedef typename Container2::const_iterator const_iterator2;
 
     // Renaming get's was done due to VC 5.0 problem:
     // its unhappy with detecting const/nonconst function variant,
@@ -344,7 +353,7 @@ bool __EvTable<Key1,Key2,Value>::get( Key1 key1, Key2 key2, Value& value ) const
 }
 
 template <class Key1, class Key2, class Value>
-bool __EvTable<Key1,Key2,Value>::get_1( __EvTable<Key1,Key2,Value>::const_iterator1 i1, Key2 key2, Value& value ) const
+bool __EvTable<Key1,Key2,Value>::get_1( __FIT_TYPENAME_ARG __EvTable<Key1,Key2,Value>::const_iterator1 i1, Key2 key2, Value& value ) const
 {
   const_iterator2 i2 = __STD::find_if( (*i1).second.begin(), (*i1).second.end(),
                                 __STD::compose1( __STD::bind2nd( eq_key2, key2 ), key2nd ) );
@@ -411,7 +420,7 @@ bool __EvHandler<T, InputIterator>::Dispatch( T *c, InputIterator first,
   if ( first == last ) {
     return false;
   }
-  typename EDS::code_type code = event.code();
+  EDS::code_type code = event.code();
   __AnyPMFentry *entry;
   typename table_type::const_iterator1 i1 = table.find( code );
   if ( i1 == table.end() ) {
@@ -433,7 +442,7 @@ bool __EvHandler<T, InputIterator>::DispatchStub( T *, InputIterator first,
   if ( first == last ) {
     return false;
   }
-  typename EDS::code_type code = event.code();
+  EDS::code_type code = event.code();
   __AnyPMFentry *entry;
   typename table_type::const_iterator1 i1 = table.find( code );
   if ( i1 == table.end() ) {
@@ -455,7 +464,7 @@ bool __EvHandler<T, InputIterator>::DispatchTrace( InputIterator first,
     out << "\n\tStates stack empty?";
     return false;
   }
-  typename EDS::code_type code = event.code();
+  EDS::code_type code = event.code();
   __AnyPMFentry *entry;
   while ( first != last ) {
     if ( table.get( code, *first, entry ) ) {
@@ -478,7 +487,7 @@ void __EvHandler<T, InputIterator>::Out( __STD::ostream& out ) const
   __AnyPMFentry *entry;
   typename table_type::const_iterator1 i1 = table.begin();
   while ( i1 != table.end() ) {
-    typename EDS::code_type key1 = table.key1st(*i1);
+    EDS::code_type key1 = table.key1st(*i1);
     typename table_type::const_iterator2 i2 = table.begin( i1 );
     out << "\tMessage: " << __STD::hex << key1 << __STD::dec << __STD::endl;
     while ( i2 != table.end( i1 ) ) {
@@ -490,8 +499,23 @@ void __EvHandler<T, InputIterator>::Out( __STD::ostream& out ) const
   }
 }
 
+typedef __STD::list<state_type,__STL_DEFAULT_ALLOCATOR(state_type) > HistoryContainer;
+// #ifndef __FIT_TEMPLATE_TYPEDEF_BUG
+typedef HistoryContainer::iterator h_iterator;
+typedef HistoryContainer::const_iterator const_h_iterator;
+// #else // __FIT_TEMPLATE_TYPEDEF_BUG
+// be careful: list implementation dependence
+// #  ifndef __STL_DEBUG
+// typedef _List_iterator<state_type, _Nonconst_traits<state_type> > h_iterator;
+// typedef _List_iterator<state_type, _Const_traits<state_type> > const_h_iterator;
+// #  else // HP's aCC A.03.13 nevertheless fail here (or near).
+// typedef _DBG_iter<__list<state_type,__STL_DEFAULT_ALLOCATOR(state_type) >, _Nonconst_traits<state_type> > h_iterator;
+// typedef _DBG_iter<__list<state_type,__STL_DEFAULT_ALLOCATOR(state_type) >, _Const_traits<state_type> > const_h_iterator;
+// #  endif
+// #endif // __FIT_TEMPLATE_TYPEDEF_BUG
+
 __STL_TEMPLATE_NULL
-class __EvHandler<EventHandler,h_iterator>
+class __EvHandler<EventHandler,h_iterator >
 {
   public:
     __EvHandler()
@@ -642,6 +666,15 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
 
 // ***************************************************************************
 
+#ifdef __FIT_TEMPLATE_CLASSTYPE_BUG
+#  define  __FIT_TEMPLATE_CLASSTYPE_BUG_PARTIAL_WORAROUND(cls) \
+     typedef D2(cls) __EDS_Void; \
+     typedef D1(cls) __EDS_Event;
+#else // __FIT_TEMPLATE_CLASSTYPE_BUG
+#  define  __FIT_TEMPLATE_CLASSTYPE_BUG_PARTIAL_WORAROUND(cls)
+#endif // __FIT_TEMPLATE_CLASSTYPE_BUG
+
+
 // Macro for response table declaration:
 // class XX :
 //    public YY
@@ -656,7 +689,8 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
 
 #define DECLARE_RESPONSE_TABLE( cls, pcls )	                          \
   public:                                                                 \
-    virtual void Trace( __STD::ostream& out ) const                         \
+    __FIT_TEMPLATE_CLASSTYPE_BUG_PARTIAL_WORAROUND(cls)                   \
+    virtual void Trace( __STD::ostream& out ) const                       \
        { theEventsTable.Out( out ); }                                     \
     virtual bool DispatchTrace( const EDS::Event& __e, __STD::ostream& __s )\
        {                                                                  \
@@ -777,6 +811,8 @@ __PG_DECLSPEC EDS::__DeclareAnyPMF<cls> cls::theDeclEventsTable[] = {
 #endif // __WARN
 #endif // __TRACE || __WARN
 
+// #ifndef __FIT_NAMESPACE_TYPEDEF_BUG
 } // namespace EDS
+// #endif
 
 #endif  // __EventHandler_h

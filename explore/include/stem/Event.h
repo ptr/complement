@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <00/07/27 17:36:54 ptr>
+// -*- C++ -*- Time-stamp: <00/09/11 12:47:09 ptr>
 
 /*
  * Copyright (c) 1995-1999
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2000
- * ParallelGraphics
+ * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -20,7 +20,13 @@
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
-#ident "$SunId$"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -187,7 +193,7 @@ class Event_base :
         _data()
       { }
 
-    explicit Event_base( code_type c, const D& d ) :
+    Event_base( code_type c, const D& d ) :
         __Event_Base( c ),
         _data( d )
       { }
@@ -207,6 +213,7 @@ class Event_base :
     size_type value_size() const
       { return sizeof(_data); }
 
+#ifndef __FIT_TEMPLATE_FORWARD_BUG
     void net_pack( Event& s ) const
       {
         s.code( _code );
@@ -244,6 +251,12 @@ class Event_base :
         __STD::stringstream ss( s.value() );
         unpack( ss );
       }
+#else // __FIT_TEMPLATE_FORWARD_BUG
+    void net_pack( Event& s ) const;
+    void net_unpack( const Event& s );
+    void pack( Event& s ) const;
+    void unpack( const Event& s );
+#endif
 
 #ifndef _MSC_VER
     void pack( __STD::ostream& __s ) const
@@ -301,6 +314,7 @@ class Event_base :
 #endif
 };
 
+
 // VC 5.0 to be very huffy on typedefed __STD::string...
 __STL_TEMPLATE_NULL
 #ifndef _MSC_VER
@@ -327,7 +341,7 @@ class Event_base<__STD::basic_string<char, __STD::char_traits<char>, __STD::allo
         _data()
       { }
 
-    explicit Event_base( code_type c, const __STD::string& d ) :
+    Event_base( code_type c, const __STD::string& d ) :
         __Event_Base( c ),
         _data( d )
       { }
@@ -392,6 +406,50 @@ class Event_base<__STD::basic_string<char, __STD::char_traits<char>, __STD::allo
     value_type _data;
 };
 
+#ifdef __FIT_TEMPLATE_FORWARD_BUG
+template <class D>
+void Event_base<D>::net_pack( Event& s ) const
+{
+  s.code( _code );
+  s.dest( _dst );
+  s.src( _src );
+  __STD::ostringstream ss;
+  net_pack( ss );
+  s.value() = ss.str();
+}
+
+template <class D>
+void Event_base<D>::net_unpack( const Event& s )
+{
+  _code = s.code();
+  _dst  = s.dest();
+  _src  = s.src();
+  __STD::istringstream ss( s.value() );
+  net_unpack( ss );
+}
+
+template <class D>
+void Event_base<D>::pack( Event& s ) const
+{
+  s.code( _code );
+  s.dest( _dst );
+  s.src( _src );
+  __STD::ostringstream ss;
+  pack( ss );
+  s.value() = ss.str();
+}
+
+template <class D>
+void Event_base<D>::unpack( const Event& s )
+{
+  _code = s.code();
+  _dst  = s.dest();
+  _src  = s.src();
+  __STD::istringstream ss( s.value() );
+  unpack( ss );
+}
+#endif // __FIT_TEMPLATE_FORWARD_BUG
+
 __STL_TEMPLATE_NULL
 class Event_base<void> :
         public __Event_Base
@@ -410,7 +468,7 @@ class Event_base<void> :
         __Event_Base( c )
       { }
 
-    explicit Event_base( const Event_base& e ) :
+    __FIT_EXPLICIT Event_base( const Event_base& e ) :
         __Event_Base( e )
       { }
 

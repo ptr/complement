@@ -1,13 +1,13 @@
-// -*- C++ -*- Time-stamp: <00/02/24 19:52:47 ptr>
+// -*- C++ -*- Time-stamp: <00/09/08 13:55:57 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999
- * ParallelGraphics Software Systems
- 
+ * Copyright (c) 1999-2000
+ * ParallelGraphics Ltd.
+ * 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -18,7 +18,13 @@
  * in supporting documentation.
  */
 
-#ident "$SunId$ %Q%"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4804 )

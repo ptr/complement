@@ -1,12 +1,12 @@
-// -*- C++ -*- Time-stamp: <00/07/14 20:31:03 ptr>
+// -*- C++ -*- Time-stamp: <00/09/08 15:04:01 ptr>
 
 /*
  *
- * Copyright (c) 1999-2000
- * ParallelGraphics
- *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
+ *
+ * Copyright (c) 1999-2000
+ * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -21,7 +21,13 @@
 #ifndef __SOCKMGR_H
 #define __SOCKMGR_H
 
-#ident "$SunId$"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -187,12 +193,21 @@ class sockmgr_stream :
     typedef __STD::vector<sockmgr_client *,__STL_DEFAULT_ALLOCATOR(sockmgr_client *)> _Sequence;
     // typedef less_sockmgr_client _Compare;
     typedef fd_equal _Compare;
+#if !defined(__HP_aCC) || (__HP_aCC > 1)
     typedef typename _Sequence::value_type      value_type;
     typedef typename _Sequence::size_type       size_type;
     typedef          _Sequence                  container_type;
 
     typedef typename _Sequence::reference       reference;
     typedef typename _Sequence::const_reference const_reference;
+#else
+    typedef _Sequence::value_type      value_type;
+    typedef _Sequence::size_type       size_type;
+    typedef          _Sequence                  container_type;
+
+    typedef _Sequence::reference       reference;
+    typedef _Sequence::const_reference const_reference;
+#endif
 
     _Sequence _M_c;
     _Compare  _M_comp;

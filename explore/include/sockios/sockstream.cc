@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/08/31 10:00:09 ptr>
+// -*- C++ -*- Time-stamp: <00/09/08 14:52:34 ptr>
 
 /*
  *
@@ -6,7 +6,7 @@
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2000
- * ParallelGraphics
+ * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -18,7 +18,13 @@
  * in supporting documentation.
  */
 
-#ident "$SunId$"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #ifdef __unix
 extern "C" int nanosleep(const struct timespec *, struct timespec *);
@@ -121,14 +127,14 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
   }
 
   setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
-  setg( epptr(), epptr(), epptr() );
+  setg( this->epptr(), this->epptr(), this->epptr() );
 
-  __STL_ASSERT( pbase() != 0 );
-  __STL_ASSERT( pptr() != 0 );
-  __STL_ASSERT( epptr() != 0 );
-  __STL_ASSERT( eback() != 0 );
-  __STL_ASSERT( gptr() != 0 );
-  __STL_ASSERT( egptr() != 0 );
+  __STL_ASSERT( this->pbase() != 0 );
+  __STL_ASSERT( this->pptr() != 0 );
+  __STL_ASSERT( this->epptr() != 0 );
+  __STL_ASSERT( this->eback() != 0 );
+  __STL_ASSERT( this->gptr() != 0 );
+  __STL_ASSERT( this->egptr() != 0 );
   __STL_ASSERT( _bbuf != 0 );
   __STL_ASSERT( _ebuf != 0 );
 
@@ -187,14 +193,14 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, const sock
   }
 
   setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
-  setg( epptr(), epptr(), epptr() );
+  setg( this->epptr(), this->epptr(), this->epptr() );
 
-  __STL_ASSERT( pbase() != 0 );
-  __STL_ASSERT( pptr() != 0 );
-  __STL_ASSERT( epptr() != 0 );
-  __STL_ASSERT( eback() != 0 );
-  __STL_ASSERT( gptr() != 0 );
-  __STL_ASSERT( egptr() != 0 );
+  __STL_ASSERT( this->pbase() != 0 );
+  __STL_ASSERT( this->pptr() != 0 );
+  __STL_ASSERT( this->epptr() != 0 );
+  __STL_ASSERT( this->eback() != 0 );
+  __STL_ASSERT( this->gptr() != 0 );
+  __STL_ASSERT( this->egptr() != 0 );
   __STL_ASSERT( _bbuf != 0 );
   __STL_ASSERT( _ebuf != 0 );
 
@@ -245,7 +251,7 @@ basic_sockbuf<charT, traits, _Alloc>::close()
   __STL_ASSERT( _bbuf != 0 );
 	// put area before get area
   setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
-  setg( epptr(), epptr(), epptr() );
+  setg( this->epptr(), this->epptr(), this->epptr() );
 
   _fd = -1;
   _open = false;
@@ -296,14 +302,17 @@ void basic_sockbuf<charT, traits, _Alloc>::setoptions( int optname, bool __v )
 }
 
 template<class charT, class traits, class _Alloc>
+#if defined(__HP_aCC) && (__HP_aCC == 1)
+typename
+#endif
 basic_sockbuf<charT, traits, _Alloc>::int_type
 basic_sockbuf<charT, traits, _Alloc>::underflow()
 {
   if( !_open )
     return traits::eof();
 
-  if ( gptr() < egptr() )
-    return traits::to_int_type(*gptr());
+  if ( this->gptr() < this->egptr() )
+    return traits::to_int_type(*this->gptr());
 
 #ifdef WIN32
   fd_set pfd;
@@ -354,11 +363,11 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
 #endif
 #endif
 
-  __STL_ASSERT( eback() != 0 );
+  __STL_ASSERT( this->eback() != 0 );
   __STL_ASSERT( _ebuf != 0 );
 
   // cerr << "Read" << endl;
-  long offset = (this->*_xread)( eback(), sizeof(char_type) * (_ebuf - eback()) );
+  long offset = (this->*_xread)( this->eback(), sizeof(char_type) * (_ebuf - this->eback()) );
   if ( offset <= 0 ) // don't allow message of zero length
     return traits::eof();
   offset /= sizeof(charT);
@@ -366,27 +375,30 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
         
 //	cerr << "Underflow: " << hex << unsigned(eback()) << " + " << dec
 //	     << offset << " = " << hex << unsigned( eback() + offset ) << dec << endl;
-  setg( eback(), eback(), eback() + offset );
+  setg( this->eback(), this->eback(), this->eback() + offset );
   
-  return traits::to_int_type(*gptr());
+  return traits::to_int_type(*this->gptr());
 }
 
 template<class charT, class traits, class _Alloc>
+#if defined(__HP_aCC) && (__HP_aCC == 1)
+typename
+#endif
 basic_sockbuf<charT, traits, _Alloc>::int_type
 basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
 {
   if ( !_open )        
     return traits::eof();
 
-  if ( !traits::eq_int_type( c, traits::eof() ) && pptr() < epptr() ) {
+  if ( !traits::eq_int_type( c, traits::eof() ) && this->pptr() < this->epptr() ) {
     sputc( traits::to_char_type(c) );
     return c;
   }
 
-  long count = pptr() - pbase();
+  long count = this->pptr() - this->pbase();
 
   if ( count ) {
-    __STL_ASSERT( pbase() != 0 );
+    __STL_ASSERT( this->pbase() != 0 );
 
     // Never do this: read and and write in basic_sockbuf are independent,
     // so reading here lead to lost message if reading and writing occur
@@ -396,11 +408,11 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
 //      return traits::eof();  // otherwise I can't write without pipe broken
 //    }
 
-    if ( (this->*_xwrite)( pbase(), sizeof(charT) * count ) != count * sizeof(charT) )
+    if ( (this->*_xwrite)( this->pbase(), sizeof(charT) * count ) != count * sizeof(charT) )
       return traits::eof();
   }
 
-  setp( pbase(), epptr() ); // require: set pptr
+  setp( this->pbase(), this->epptr() ); // require: set pptr
   if( !traits::eq_int_type(c,traits::eof()) ) {
     sputc( traits::to_char_type(c) );
   }
@@ -416,25 +428,25 @@ xsputn( const char_type *s, streamsize n )
     return 0;
   }
 
-  __STL_ASSERT( pbase() != 0 );
-  __STL_ASSERT( pptr() != 0 );
-  __STL_ASSERT( epptr() != 0 );
+  __STL_ASSERT( this->pbase() != 0 );
+  __STL_ASSERT( this->pptr() != 0 );
+  __STL_ASSERT( this->epptr() != 0 );
   __STL_ASSERT( _bbuf != 0 );
   __STL_ASSERT( _ebuf != 0 );
 
-  if ( epptr() - pptr() > n ) {
-    traits::copy( pptr(), s, n );
-    pbump( n );
+  if ( this->epptr() - this->pptr() > n ) {
+    traits::copy( this->pptr(), s, n );
+    this->pbump( n );
   } else {
-    streamsize __n_put = epptr() - pptr();
-    traits::copy( pptr(), s, __n_put );
-    pbump( __n_put );
+    streamsize __n_put = this->epptr() - this->pptr();
+    traits::copy( this->pptr(), s, __n_put );
+    this->pbump( __n_put );
 
     if ( traits::eq_int_type(overflow(),traits::eof()) )
       return 0;
 
     setp( (char_type *)(s + __n_put), (char_type *)(s + n) );
-    pbump( n - __n_put );
+    this->pbump( n - __n_put );
 
     if ( traits::eq_int_type(overflow(),traits::eof()) ) {
       setp( _bbuf, _bbuf + ((_ebuf - _bbuf) >> 1) );
@@ -458,30 +470,37 @@ int basic_sockbuf<charT, traits, _Alloc>::__rdsync()
   if ( nmsg > 0 && nlen > 0 ) {
     __STL_ASSERT( _bbuf != 0 );
     __STL_ASSERT( _ebuf != 0 );
-    __STL_ASSERT( gptr() != 0 );
-    __STL_ASSERT( egptr() != 0 );
+    __STL_ASSERT( this->gptr() != 0 );
+    __STL_ASSERT( this->egptr() != 0 );
 
 //    cerr << "ioctl: " << dec << nmsg << ", " << nlen << endl;
-    bool shift_req = gptr() == eback() ? false : (_ebuf - gptr()) > nlen ? false : true;
+    bool shift_req = this->gptr() == this->eback() ? false : (_ebuf - this->gptr()) > nlen ? false : true;
     if ( shift_req ) {
-      __STL_ASSERT( gptr() > eback() );
-      __STL_ASSERT( gptr() <= egptr() );
-      traits::move( eback(), gptr(), egptr() - gptr() );
-      setg( eback(), eback(), eback() + (egptr() - gptr()) );
+      __STL_ASSERT( this->gptr() > this->eback() );
+      __STL_ASSERT( this->gptr() <= this->egptr() );
+      traits::move( this->eback(), this->gptr(), this->egptr() - this->gptr() );
+      setg( this->eback(), this->eback(), this->eback() + (this->egptr() - this->gptr()) );
     }
-    if ( gptr() == _ebuf ) { // I should read something, if other side write
+    if ( this->gptr() == _ebuf ) { // I should read something, if other side write
       return -1;             // otherwise I can't write without pipe broken
     }
-    long offset = (this->*_xread)( egptr(), sizeof(char_type) * (_ebuf - egptr()) );
+    long offset = (this->*_xread)( this->egptr(), sizeof(char_type) * (_ebuf - this->egptr()) );
 //    cerr << "I read here " << offset << endl;
     if ( offset < 0 ) // allow message of zero length
       return -1;
     offset /= sizeof(charT);
-    setg( eback(), gptr(), egptr() + offset );
+    setg( this->eback(), this->gptr(), this->egptr() + offset );
   }
 
   return 0;
 }
+
+#if defined(__HP_aCC) && (__HP_aCC == 1)
+  union basic_sockbuf_sockaddr {
+      sockaddr_in inet;
+      sockaddr    any;
+  };
+#endif
 
 template<class charT, class traits, class _Alloc>
 int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
@@ -492,10 +511,14 @@ int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
   size_t sz = sizeof( sockaddr_in );
 #endif
 
+#if defined(__HP_aCC) && (__HP_aCC == 1)
+  basic_sockbuf_sockaddr addr;
+#else
   union {
       sockaddr_in inet;
       sockaddr    any;
   } addr;
+#endif
 #ifdef __unix
   timespec t;
 
