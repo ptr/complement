@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/12/21 19:54:57 ptr>
+// -*- C++ -*- Time-stamp: <00/01/27 12:10:53 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -24,11 +24,13 @@
 #include <mt/xmt.h>
 #endif
 
+#  if 0
 extern "C" int APIENTRY
 DllMain( HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved )
 {
   return TRUE;   // ok
 }
+#  endif
 
 namespace __impl {
 
