@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/24 14:26:57 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:50:48 ptr>
 
 /*
  *
@@ -57,14 +57,6 @@
 #ifndef __SGI_STL_OWN_IOSTREAMS
 #  ifndef ___xsballoc_h
 #    include <_xsballoc.h>
-#  endif
-#endif
-
-#ifndef __SOCKIOS_DLL
-#  if defined( WIN32 ) && defined( _MSC_VER )
-#    define __SOCKIOS_DLL __declspec( dllimport )
-#  else
-#    define __SOCKIOS_DLL
 #  endif
 #endif
 
@@ -149,15 +141,15 @@ class sock_base
         // sometimes I need Init outside sock_base...
         // private:
       public:
-	__SOCKIOS_DLL Init();
-	__SOCKIOS_DLL ~Init();
+	__PG_DECLSPEC Init();
+	__PG_DECLSPEC ~Init();
 
         friend class sock_base;
     };
 
   protected:
-    __SOCKIOS_DLL sock_base();
-    __SOCKIOS_DLL ~sock_base();
+    __PG_DECLSPEC sock_base();
+    __PG_DECLSPEC ~sock_base();
 #endif
 };
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 16:49:10 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:39:20 ptr>
 
 /*
  *
@@ -24,16 +24,6 @@
 #pragma warning( disable : 4804 )
 #endif
 
-#ifdef WIN32
-#  ifdef _DLL
-#    define __EDS_DLL __declspec( dllexport )
-#  else
-#    define __EDS_DLL
-#  endif
-#else
-#  define __EDS_DLL
-#endif
-
 #include <config/feature.h>
 
 #include <stdlib.h>
@@ -41,39 +31,34 @@
 #include "EDS/SessionMgr.h"
 #include "EDS/EDSEv.h"
 
-#if defined( WIN32 ) && defined( _MSC_VER )
-#  undef __EDS_DLL_EXPORT
-#  define __EDS_DLL_EXPORT __EDS_DLL
-#endif
-
 #ifdef WIN32
 #define mrand48 rand // rand is bad generator, but wins has no other...
 #endif
 
 namespace EDS {
 
-__EDS_DLL
+__PG_DECLSPEC
 void SessionRsp::pack( __STD::ostream& s ) const
 {
   __pack( s, key );
   __pack( s, addr );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void SessionRsp::net_pack( __STD::ostream& s ) const
 {
   __net_pack( s, key );
   __net_pack( s, addr );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void SessionRsp::unpack( __STD::istream& s )
 {
   __unpack( s, key );
   __unpack( s, addr );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void SessionRsp::net_unpack( __STD::istream& s )
 {
   __net_unpack( s, key );
@@ -183,14 +168,14 @@ key_type SessionMgr::key_generate()
   return k;
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 EventHandler *SessionMgr::session_leader( const string&, const string&,
                                           addr_type ) throw ()
 {
   return 0;
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void SessionMgr::destroy_session_leader( EventHandler * ) throw ()
 {
 }

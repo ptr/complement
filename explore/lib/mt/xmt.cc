@@ -1,16 +1,6 @@
-// -*- C++ -*- Time-stamp: <00/02/21 15:31:08 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:30:49 ptr>
 
 #ident "$SunId$ %Q%"
-
-#ifdef WIN32
-#  ifdef _DLL
-#    define __XMT_DLL __declspec( dllexport )
-#  else
-#    define __XMT_DLL
-#  endif
-#else
-#  define __XMT_DLL
-#endif
 
 #include <mt/xmt.h>
 
@@ -27,7 +17,7 @@
 
 #ifdef WIN32
 
-using namespace std;
+// using namespace std;
 #endif
 
 extern "C" {
@@ -59,7 +49,7 @@ using __STD::endl;
 using std::timespec;
 #endif
 
-__XMT_DLL
+__PG_DECLSPEC
 int Condition::wait_time( const timespec *abstime )
 {
 #ifdef WIN32
@@ -114,7 +104,7 @@ int Condition::wait_time( const timespec *abstime )
 char *Init_buf[32];
 int Thread::Init::_count = 0;
 
-__XMT_DLL
+__PG_DECLSPEC
 void signal_throw( int sig ) throw( int )
 { throw sig; }
 
@@ -155,7 +145,7 @@ const Thread::thread_key_type Thread::bad_thread_key = __STATIC_CAST(Thread::thr
 Thread::thread_key_type Thread::_mt_key = __STATIC_CAST(Thread::thread_key_type,-1);
 #endif
 
-__XMT_DLL
+__PG_DECLSPEC
 Thread::Thread( unsigned __f ) :
     _id( bad_thread_key ),
     _entrance( 0 ),
@@ -167,7 +157,7 @@ Thread::Thread( unsigned __f ) :
   new( Init_buf ) Init();
 }
 
-__XMT_DLL
+__PG_DECLSPEC
 Thread::Thread( Thread::entrance_type entrance, const void *p, size_t psz, unsigned __f ) :
     _entrance( entrance ),
     _param( 0 ),
@@ -179,7 +169,7 @@ Thread::Thread( Thread::entrance_type entrance, const void *p, size_t psz, unsig
   _create( p, psz );
 }
 
-__XMT_DLL
+__PG_DECLSPEC
 Thread::~Thread()
 {
   long **user_words;
@@ -207,7 +197,7 @@ Thread::~Thread()
 #endif
 }
 
-__XMT_DLL
+__PG_DECLSPEC
 void Thread::launch( entrance_type entrance, const void *p, size_t psz )
 {
   if ( _id == bad_thread_key ) {
@@ -216,7 +206,7 @@ void Thread::launch( entrance_type entrance, const void *p, size_t psz )
   }
 }
 
-__XMT_DLL
+__PG_DECLSPEC
 int Thread::join()
 {
 #ifdef __STL_WIN32THREADS
@@ -242,7 +232,7 @@ int Thread::join()
   return ret_code;
 }
 
-__XMT_DLL
+__PG_DECLSPEC
 int Thread::suspend()
 {
   if ( _id != bad_thread_key ) {
@@ -266,7 +256,7 @@ int Thread::suspend()
   return -1;
 }
 
-__XMT_DLL
+__PG_DECLSPEC
 int Thread::resume()
 {
   if ( _id != bad_thread_key ) {
@@ -286,7 +276,7 @@ int Thread::resume()
   return -1;
 }
 
-__XMT_DLL
+__PG_DECLSPEC
 int Thread::kill( int sig )
 {
   if ( _id != bad_thread_key ) {
@@ -305,7 +295,7 @@ int Thread::kill( int sig )
   return -1;
 }
 
-__XMT_DLL
+__PG_DECLSPEC
 void Thread::exit( int code )
 {
 #ifdef __STL_PTHREADS
@@ -319,7 +309,7 @@ void Thread::exit( int code )
 #endif
 }
 
-__XMT_DLL
+__PG_DECLSPEC
 int Thread::join_all()
 {
 #ifdef __STL_UITHREADS
@@ -329,7 +319,7 @@ int Thread::join_all()
   return 0;
 }
 
-__XMT_DLL
+__PG_DECLSPEC
 void Thread::block_signal( int sig )
 {
 #ifdef __unix
@@ -346,7 +336,7 @@ void Thread::block_signal( int sig )
 #endif // __unix
 }
 
-__XMT_DLL
+__PG_DECLSPEC
 void Thread::unblock_signal( int sig )
 {
 #ifdef __unix
@@ -363,7 +353,7 @@ void Thread::unblock_signal( int sig )
 #endif // __unix
 }
 
-__XMT_DLL
+__PG_DECLSPEC
 void Thread::signal_handler( int sig, SIG_PF handler )
 {
 #ifdef __unix  // catch SIGPIPE here
@@ -378,7 +368,7 @@ void Thread::signal_handler( int sig, SIG_PF handler )
 #endif // __unix
 }
 
-__XMT_DLL
+__PG_DECLSPEC
 void Thread::sleep( timespec *t, timespec *r )
 {
 #ifdef __unix
@@ -523,7 +513,7 @@ void Thread::terminate()
   Thread::exit( -2 );
 }
 
-__XMT_DLL
+__PG_DECLSPEC
 long& Thread::iword( int __idx )
 {
   long **user_words;
@@ -589,7 +579,7 @@ long& Thread::iword( int __idx )
   return *_ytmp;
 }
 
-__XMT_DLL
+__PG_DECLSPEC
 void*& Thread::pword( int __idx )
 {
   long **user_words;

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 16:46:56 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:36:41 ptr>
 
 /*
  *
@@ -20,16 +20,6 @@
 
 #ident "$SunId$ %Q%"
 
-#ifdef WIN32
-#  ifdef _DLL
-#    define __EDS_DLL __declspec( dllexport )
-#  else
-#    define __EDS_DLL
-#  endif
-#else
-#  define __EDS_DLL
-#endif
-
 #include <config/feature.h>
 #include "EDS/EvPack.h"
 #include <iterator>
@@ -41,7 +31,7 @@ using __STD::istream;
 using __STD::ostream;
 using __STD::copy;
 
-__EDS_DLL
+__PG_DECLSPEC
 void __pack_base::__net_unpack( istream& s, string& str )
 {
   string::size_type sz;
@@ -56,7 +46,7 @@ void __pack_base::__net_unpack( istream& s, string& str )
   }
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void __pack_base::__net_pack( ostream& s, const string& str )
 {
   string::size_type sz = str.size();
@@ -65,7 +55,7 @@ void __pack_base::__net_pack( ostream& s, const string& str )
   copy( str.begin(), str.end(), __STD::ostream_iterator<char,char,__STD::char_traits<char> >(s) );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void __pack_base::__unpack( istream& s, string& str )
 {
   string::size_type sz;
@@ -79,7 +69,7 @@ void __pack_base::__unpack( istream& s, string& str )
   }
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void __pack_base::__pack( ostream& s, const string& str )
 {
   string::size_type sz = str.size();

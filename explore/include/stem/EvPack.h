@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 16:35:59 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:43:57 ptr>
 
 /*
  *
@@ -44,14 +44,6 @@
 
 #include <istream>
 #include <ostream>
-
-#ifndef __EDS_DLL
-#  if defined( WIN32 ) && defined( _MSC_VER )
-#    define __EDS_DLL __declspec( dllimport )
-#  else
-#    define __EDS_DLL
-#  endif
-#endif
 
 namespace EDS {
 
@@ -231,18 +223,18 @@ unsigned long from_net( const unsigned long& x )
 struct __pack_base
 {
     // To be released for data structure you want pass via EDS:
-    __EDS_DLL virtual void pack( __STD::ostream& ) const = 0 ;
-    __EDS_DLL virtual void unpack( __STD::istream& ) = 0 ;
-    __EDS_DLL virtual void net_pack( __STD::ostream& ) const = 0 ;
-    __EDS_DLL virtual void net_unpack( __STD::istream& ) = 0 ;
+    __PG_DECLSPEC virtual void pack( __STD::ostream& ) const = 0 ;
+    __PG_DECLSPEC virtual void unpack( __STD::istream& ) = 0 ;
+    __PG_DECLSPEC virtual void net_pack( __STD::ostream& ) const = 0 ;
+    __PG_DECLSPEC virtual void net_unpack( __STD::istream& ) = 0 ;
 
     // basic types
 
     // string
-    static __EDS_DLL void __net_unpack( __STD::istream& s, __STD::string& str );
-    static __EDS_DLL void __net_pack( __STD::ostream& s, const __STD::string& str );
-    static __EDS_DLL void __unpack( __STD::istream& s, __STD::string& str );
-    static __EDS_DLL void __pack( __STD::ostream& s, const __STD::string& str );
+    static __PG_DECLSPEC void __net_unpack( __STD::istream& s, __STD::string& str );
+    static __PG_DECLSPEC void __net_pack( __STD::ostream& s, const __STD::string& str );
+    static __PG_DECLSPEC void __unpack( __STD::istream& s, __STD::string& str );
+    static __PG_DECLSPEC void __pack( __STD::ostream& s, const __STD::string& str );
     // int
     static void __net_unpack( __STD::istream& s, int& x )
       {

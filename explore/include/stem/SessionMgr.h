@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 16:53:02 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:49:48 ptr>
 
 /*
  *
@@ -41,19 +41,6 @@
 #include <EDS/EvPack.h>
 #endif
 
-#ifndef __EDS_DLL
-#  if defined( WIN32 ) && defined( _MSC_VER )
-#    define __EDS_DLL __declspec( dllimport )
-#  else
-#    define __EDS_DLL
-#  endif
-#endif
-
-#if defined( WIN32 ) && defined( _MSC_VER )
-#  undef __EDS_DLL_EXPORT
-#  define __EDS_DLL_EXPORT __EDS_DLL
-#endif
-
 namespace EDS {
 
 class SessionMgr :
@@ -76,10 +63,10 @@ class SessionMgr :
 
   protected:
 
-    virtual __EDS_DLL EventHandler *session_leader( const __STD::string& account,
+    virtual __PG_DECLSPEC EventHandler *session_leader( const __STD::string& account,
                                                     const __STD::string& passwd,
                                                     addr_type addr ) throw();
-    virtual __EDS_DLL void destroy_session_leader( EventHandler * ) throw();
+    virtual __PG_DECLSPEC void destroy_session_leader( EventHandler * ) throw();
 
     void establish_session( const Event& );
     void restore_session( const Event_base<key_type>& );
@@ -111,17 +98,12 @@ struct SessionRsp :
     key_type  key;
     addr_type addr;
 
-    virtual __EDS_DLL void pack( __STD::ostream& s ) const;
-    virtual __EDS_DLL void net_pack( __STD::ostream& s ) const;
-    virtual __EDS_DLL void unpack( __STD::istream& s );
-    virtual __EDS_DLL void net_unpack( __STD::istream& s );
+    virtual __PG_DECLSPEC void pack( __STD::ostream& s ) const;
+    virtual __PG_DECLSPEC void net_pack( __STD::ostream& s ) const;
+    virtual __PG_DECLSPEC void unpack( __STD::istream& s );
+    virtual __PG_DECLSPEC void net_unpack( __STD::istream& s );
 };
 
 } // namespace EDS
-
-#if defined( WIN32 ) && defined( _MSC_VER )
-#  undef __EDS_DLL_EXPORT
-#  define __EDS_DLL_EXPORT
-#endif
 
 #endif // __SessionMgr_h

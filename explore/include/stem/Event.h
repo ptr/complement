@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 16:37:33 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:45:21 ptr>
 
 /*
  *
@@ -45,14 +45,6 @@
 #include <EDS/EvPack.h>
 #endif
 
-#ifndef __EDS_DLL
-#  if defined( WIN32 ) && defined( _MSC_VER )
-#    define __EDS_DLL __declspec( dllimport )
-#  else
-#    define __EDS_DLL
-#  endif
-#endif
-
 namespace EDS {
 
 typedef unsigned addr_type;
@@ -68,11 +60,11 @@ extern const code_type badcode;
 #endif
 
 #ifdef WIN32
-extern __EDS_DLL addr_type badaddr;
-extern __EDS_DLL addr_type extbit;
-extern __EDS_DLL addr_type nsaddr;
-extern __EDS_DLL key_type  badkey;
-extern __EDS_DLL code_type badcode;
+extern __PG_DECLSPEC addr_type badaddr;
+extern __PG_DECLSPEC addr_type extbit;
+extern __PG_DECLSPEC addr_type nsaddr;
+extern __PG_DECLSPEC key_type  badkey;
+extern __PG_DECLSPEC code_type badcode;
 #endif
 
 class __Event_Base

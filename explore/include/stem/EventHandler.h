@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 16:40:46 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:46:51 ptr>
 
 /*
  *
@@ -41,18 +41,6 @@
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4786 )
-#endif
-
-#ifndef __EDS_DLL
-#  if defined( WIN32 ) && defined( _MSC_VER )
-#    define __EDS_DLL __declspec( dllimport )
-#  else
-#    define __EDS_DLL
-#  endif
-#endif
-
-#ifndef __EDS_DLL_EXPORT
-#define __EDS_DLL_EXPORT
 #endif
 
 namespace EDS {
@@ -538,19 +526,19 @@ class EventHandler
         static int _count;
     };
 
-    __EDS_DLL EventHandler();
-    explicit __EDS_DLL EventHandler( const char *info );
-    explicit __EDS_DLL EventHandler( addr_type id, const char *info = 0 );
-    __EDS_DLL ~EventHandler();
+    __PG_DECLSPEC EventHandler();
+    explicit __PG_DECLSPEC EventHandler( const char *info );
+    explicit __PG_DECLSPEC EventHandler( addr_type id, const char *info = 0 );
+    __PG_DECLSPEC ~EventHandler();
 
-    __EDS_DLL const string& who_is( addr_type k ) const;
-    __EDS_DLL key_type sid( addr_type k ) const;
+    __PG_DECLSPEC const string& who_is( addr_type k ) const;
+    __PG_DECLSPEC key_type sid( addr_type k ) const;
     static EvManager *manager()
       { return _mgr; }
-    __EDS_DLL void Send( const Event& e );
-    __EDS_DLL void Send( const EventVoid& e );
-    __EDS_DLL void Forward( const Event& e );
-    __EDS_DLL void Forward( const EventVoid& e );
+    __PG_DECLSPEC void Send( const Event& e );
+    __PG_DECLSPEC void Send( const EventVoid& e );
+    __PG_DECLSPEC void Forward( const Event& e );
+    __PG_DECLSPEC void Forward( const EventVoid& e );
 
 /* ************************************************************ *\
    Member template will be nice here, but sorry...
@@ -593,13 +581,13 @@ class EventHandler
       { return _id; }
     void State( state_type state )
       { PushState( state ); }
-    __EDS_DLL void PushState( state_type state );
-    __EDS_DLL state_type State() const;
-    __EDS_DLL void PopState();
-    __EDS_DLL void PopState( state_type );
-    __EDS_DLL void PushTState( state_type state );
-    __EDS_DLL void RemoveState( state_type );
-    __EDS_DLL bool isState( state_type ) const;
+    __PG_DECLSPEC void PushState( state_type state );
+    __PG_DECLSPEC state_type State() const;
+    __PG_DECLSPEC void PopState();
+    __PG_DECLSPEC void PopState( state_type );
+    __PG_DECLSPEC void PushTState( state_type state );
+    __PG_DECLSPEC void RemoveState( state_type );
+    __PG_DECLSPEC bool isState( state_type ) const;
     virtual bool Dispatch( const Event& )
       { return false; }
     virtual bool DispatchStub( const Event& )
@@ -608,7 +596,7 @@ class EventHandler
       { return false; }
     virtual void Trace( ostream& ) const
       { }
-    __EDS_DLL void TraceStack( ostream& ) const;
+    __PG_DECLSPEC void TraceStack( ostream& ) const;
 
   private:
     h_iterator __find( state_type );
@@ -674,16 +662,16 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
   protected:					                          \
     virtual bool Dispatch( const EDS::Event& __e )                        \
        {                                                                  \
-         MT_REENTRANT_SDS( this->_theHistory_lock, _1 );     \
+         MT_REENTRANT_SDS( this->_theHistory_lock, _1 );                  \
          return theEventsTable.Dispatch( this, theHistory.begin(),        \
                                          theHistory.end(), __e ); }       \
     virtual bool DispatchStub( const EDS::Event& __e )                    \
        {                                                                  \
-         MT_REENTRANT_SDS( this->_theHistory_lock, _1 );     \
+         MT_REENTRANT_SDS( this->_theHistory_lock, _1 );                  \
          return theEventsTable.DispatchStub( this, theHistory.begin(),    \
                                              theHistory.end(), __e ); }   \
-    static __EDS_DLL_EXPORT evtable_type theEventsTable;                  \
-    static __EDS_DLL_EXPORT evtable_decl_type theDeclEventsTable[]
+    static __PG_DECLSPEC evtable_type theEventsTable;                     \
+    static __PG_DECLSPEC evtable_decl_type theDeclEventsTable[]
 
 // Macro for specification of response table body beginning:
 // DEFINE_RESPONSE_TABLE( XX )
@@ -691,9 +679,9 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
 // END_RESPONSE_TABLE
 
 #define DEFINE_RESPONSE_TABLE( cls )		                          \
-__EDS_DLL_EXPORT cls::evtable_type cls::theEventsTable;                   \
+__PG_DECLSPEC cls::evtable_type cls::theEventsTable;                      \
                                                                           \
-__EDS_DLL_EXPORT EDS::__DeclareAnyPMF<cls> cls::theDeclEventsTable[] = {
+__PG_DECLSPEC EDS::__DeclareAnyPMF<cls> cls::theDeclEventsTable[] = {
 
 // Macro for specification of response table entry:
 // RESPONSE_TABLE_ENTRY( ST_NRM, XW_EXPOSE, OXWEvExpose, XEventDispatch );

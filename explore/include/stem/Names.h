@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 16:43:52 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:48:04 ptr>
 
 /*
  *
@@ -41,32 +41,19 @@
 #include <EDS/EvPack.h>
 #endif
 
-#ifndef __EDS_DLL
-#  if defined( WIN32 ) && defined( _MSC_VER )
-#    define __EDS_DLL __declspec( dllimport )
-#  else
-#    define __EDS_DLL
-#  endif
-#endif
-
-#if defined( WIN32 ) && defined( _MSC_VER )
-#  undef __EDS_DLL_EXPORT
-#  define __EDS_DLL_EXPORT __EDS_DLL
-#endif
-
 namespace EDS {
 
 class Names :
     public EventHandler
 {
   public:
-    __EDS_DLL Names();
-    explicit __EDS_DLL Names( const char * );
-    explicit __EDS_DLL Names( addr_type id, const char *info = 0 );
+    __PG_DECLSPEC Names();
+    explicit __PG_DECLSPEC Names( const char * );
+    explicit __PG_DECLSPEC Names( addr_type id, const char *info = 0 );
 
-    __EDS_DLL void get_list( const Event& );
-    __EDS_DLL void get_ext_list( const Event& );
-    __EDS_DLL void get_by_name( const Event& );
+    __PG_DECLSPEC void get_list( const Event& );
+    __PG_DECLSPEC void get_ext_list( const Event& );
+    __PG_DECLSPEC void get_by_name( const Event& );
 
   private:
     DECLARE_RESPONSE_TABLE( Names, EventHandler );
@@ -87,17 +74,12 @@ struct NameRecord :
     addr_type    addr;
     __STD::string  record;
 
-    virtual __EDS_DLL void pack( __STD::ostream& s ) const;
-    virtual __EDS_DLL void net_pack( __STD::ostream& s ) const;
-    virtual __EDS_DLL void unpack( __STD::istream& s );
-    virtual __EDS_DLL void net_unpack( __STD::istream& s );
+    virtual __PG_DECLSPEC void pack( __STD::ostream& s ) const;
+    virtual __PG_DECLSPEC void net_pack( __STD::ostream& s ) const;
+    virtual __PG_DECLSPEC void unpack( __STD::istream& s );
+    virtual __PG_DECLSPEC void net_unpack( __STD::istream& s );
 };
 
 } // namespace EDS
-
-#if defined( WIN32 ) && defined( _MSC_VER )
-#  undef __EDS_DLL_EXPORT
-#  define __EDS_DLL_EXPORT
-#endif
 
 #endif // __Names_h
