@@ -1,9 +1,9 @@
-// -*- C++ -*- Time-stamp: <99/05/19 17:55:29 ptr>
+// -*- C++ -*- Time-stamp: <99/05/21 11:29:20 ptr>
 
 #ifndef __SOCKSTREAM__
 #define __SOCKSTREAM__
 
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+#ident "$SunId$ %Q%"
 
 #ifndef WIN32
 #  ifndef __STL_CONFIG_H
@@ -257,7 +257,8 @@ class basic_sockbuf :
    sock_base::stype stype() const
      { return _type; }
 
-   void hostname( string& hostname );
+   const string& hostname() const
+     { return _hostname; }
    void setoptions( int optname, bool __v );
 
   protected:
@@ -353,6 +354,7 @@ class basic_sockbuf :
       { return ::recv( _fd, buf, n, 0 ); }
 #endif
     int recvfrom( void *buf, size_t n );
+    void __hostname();
 
     sock_base::socket_type _fd;
     union {
@@ -365,6 +367,9 @@ class basic_sockbuf :
     int                 _errno;
     sock_base::stype    _type;
     bool                _open; // socket open and connected/binded
+    // if open, and connected, other side hostname,
+    // otherwise undefined:
+    string              _hostname; 
 };
 
 template <class charT, class traits>
