@@ -1,59 +1,26 @@
-# -*- makefile -*- Time-stamp: <02/11/20 09:19:09 ptr>
+# -*- Makefile -*- Time-stamp: <03/07/09 18:08:47 ptr>
 # $Id$
 
-BASEDIR := $(shell xtmp=`pwd`; xtmp=`dirname $$xtmp`; xtmp=`dirname $$xtmp`; dirname $$xtmp)
-COMPILER_NAME = gcc
+SRCROOT := ../../..
+COMPILER_NAME := gcc
 
-include ./Makefile.inc
+include Makefile.inc
+include ${SRCROOT}/Makefiles/top.mak
 
-all:	release-shared
 
-all-shared:	release-shared dbg-shared stldbg-shared
+INCLUDES += -I$(SRCROOT)/include -I$(STLPORT_INCLUDE_DIR)
 
-all-debug:	dbg-shared stldbg-shared
+release-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR}
+stldbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_STLDBG}
+dbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_DBG}
 
-all-release:	release-shared
-
-include ${BASEDIR}/Makefiles/app/Makefile.inc
-
-INCLUDES += -I$(STLPORT_INCLUDE_DIR)
-
-ifeq ($(OS_VER),SunOS)
-LDLIBS = 
+ifeq ($(OSNAME),sunos)
+release-shared : LDLIBS = -lstlport_gcc -lxmt_gcc -lmisc_gcc -lnsl -lsocket
+stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug -lxmt_gcc_stl-g -lmisc_gcc_stl-g -lnsl -lsocket
+dbg-shared     : LDLIBS = -lstlport_gcc -lxmt_gcc-g -lmisc_gcc-g -lnsl -lsocket
 else
-LDLIBS = 
+release-shared : LDLIBS = -lstlport_gcc -lxmt_gcc -lmisc_gcc -lsockios_gcc
+stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug -lxmt_gcc_stl-g -lmisc_gcc_stl-g -lsockios_gcc_stl-g
+dbg-shared     : LDLIBS = -lstlport_gcc -lxmt_gcc-g -lmisc_gcc-g -lsockios_gcc-g
 endif
-
-LDLIBS += -lrt -lnsl
-
-ifeq ($(OS_VER),SunOS)
-dbg-shared:	LDFLAGS += -L${INSTALL_LIB_DIR_DBG}
-stldbg-shared:	LDFLAGS += -L${INSTALL_LIB_DIR_STLDBG}
-release-shared:	LDFLAGS += -L${INSTALL_LIB_DIR}
-SYSLIBS = -lnsl -lsocket
-endif
-
-ifeq ($(OS_VER),Linux)
-release-shared:	LDFLAGS += -L${STLPORT_LIB_DIR} -L${INSTALL_LIB_DIR}
-stldbg-shared:	LDFLAGS += -L${STLPORT_LIB_DIR} -L${INSTALL_LIB_DIR_STLDBG}
-dbg-shared:	LDFLAGS += -L${STLPORT_LIB_DIR} -L${INSTALL_LIB_DIR_DBG}
-SYSLIBS =
-endif
-
-dbg-shared : LDLIBS += \
-                    -lstlport_gcc \
-		    -lxmt_gcc-g \
-		    -lsockios_gcc-g -lmisc_gcc-g ${SYSLIBS}
-
-stldbg-shared : LDLIBS += \
-                    -lstlport_gcc_stldebug \
-		    -lxmt_gcc_stl-g \
-		    -lsockios_gcc_stl-g -lmisc_gcc_stl-g ${SYSLIBS}
-
-release-shared : LDLIBS += \
-                    -lstlport_gcc \
-		    -lxmt_gcc \
-		    -lsockios_gcc -lmisc_gcc ${SYSLIBS}
-
-FORCE:
 
