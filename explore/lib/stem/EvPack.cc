@@ -1,12 +1,12 @@
-// -*- C++ -*- Time-stamp: <00/02/24 19:36:41 ptr>
+// -*- C++ -*- Time-stamp: <00/04/04 19:41:14 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999
- * ParallelGraphics Software Systems
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
  
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -23,6 +23,7 @@
 #include <config/feature.h>
 #include "EDS/EvPack.h"
 #include <iterator>
+#include <string>
 
 namespace EDS {
 
