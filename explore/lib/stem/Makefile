@@ -51,7 +51,8 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/TableInfo.o \
 		$(OUTPUT_DIR)/CheckBox.o \
 		$(OUTPUT_DIR)/ControlData.o \
-		$(OUTPUT_DIR)/Filter.o
+		$(OUTPUT_DIR)/Filter.o \
+		$(OUTPUT_DIR)/ModalDialog.o
 
 
 # Xlib-based project
@@ -70,7 +71,7 @@ LIBFILES.o = $(XLIBFILES.o)
 all:	$(PROJECT)
 
 $(PROJECT):	$(LIBFILES.o)
-	$(LINK.cc) -o $@ $(LIBFILES.o)
+	$(LINK.cc) -G -o $@ $(LIBFILES.o)
 
 $(XTESTER):	$(XLIBFILES.o) $(XFILES.o)
 	$(LINK.cc) -o $@ $(XLIBFILES.o) $(XFILES.o)
