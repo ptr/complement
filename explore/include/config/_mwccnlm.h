@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/05/05 16:32:08 ptr>
+// -*- C++ -*- Time-stamp: <03/05/28 14:47:28 ptr>
 
 /*
  *
@@ -24,5 +24,6 @@
 #ident "@(#)$Id$"
 
 #define __FIT_NOVELL_THREADS
+#define _LITTLE_ENDIAN // Novell NetWare run only on Intel
 
 #endif // __config__mwccnlm_h
