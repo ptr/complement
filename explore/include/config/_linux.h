@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/01/19 18:34:27 ptr>
+// -*- C++ -*- Time-stamp: <03/09/15 17:48:44 ptr>
 
 /*
  *
@@ -35,6 +35,10 @@
 #  endif
 // This feature exist at least since glibc 2.2.4
 #  define __FIT_XSI_THR  // Unix 98 or X/Open System Interfaces Extention
+#  ifdef __USE_XOPEN2K
+// The IEEE Std. 1003.1j-2000 introduces functions to implement spinlocks.
+#   define __FIT_PTHREAD_SPINLOCK
+#  endif
 #endif
 
 // Endiannes
