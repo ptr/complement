@@ -50,7 +50,7 @@
 #endif
 
 #ifdef __sun
-#  include <config/_solaris>
+#  include <config/_solaris.h>
 #  ifdef __GNUC__
 #    include <config/_gcc.h>
 #  endif
