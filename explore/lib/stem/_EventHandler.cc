@@ -28,14 +28,17 @@ void OXWEventHandler::PopState()
 
 void OXWEventHandler::PopState( state_type state )
 {
-  list<state_type>::iterator hst_i = theHistory.begin();
+  list<state_type>::iterator hst_i = find( state );
+  if ( hst_i != theHistory.end() && *hst_i != ST_TERMINAL ) {
+    theHistory.erase( hst_i, theHistory.end() );
+  }
+}
 
-  while ( hst_i != theHistory.end() && *hst_i != ST_TERMINAL ) {
-    if ( *hst_i == state ) {
-      theHistory.erase( hst_i, theHistory.end() );
-      return;
-    }
-    ++hst_i;
+void OXWEventHandler::RemoveState( state_type state )
+{
+  list<state_type>::iterator hst_i = find( state );
+  if ( hst_i != theHistory.end() && *hst_i != ST_TERMINAL ) {
+    theHistory.erase( hst_i );
   }
 }
 
@@ -45,11 +48,29 @@ bool OXWEventHandler::isState( state_type state ) const
 
   while ( hst_i != theHistory.rend() && *hst_i != ST_TERMINAL ) {
     if ( *hst_i == state ) {
-      return 1;
+      return true;
     }
     ++hst_i;
   }
-  return 0;
+  return false;
+}
+
+list<state_type>::iterator OXWEventHandler::find( state_type state )
+{
+  if ( theHistory.empty() ) {
+    return theHistory.end();
+  }
+  list<state_type>::iterator hst_i = theHistory.end();
+
+  while ( --hst_i != theHistory.begin() && *hst_i != ST_TERMINAL ) {
+    if ( *hst_i == state ) {
+      return hst_i;
+    }
+  }
+  if ( *hst_i != state ) {
+    return theHistory.end();
+  }
+  return hst_i;
 }
 
 OXWEventHandler::OXWEventHandler()
@@ -66,7 +87,7 @@ bool OXWEventHandler::Dispatch( OXWEvent& event )
 {
 //  cerr <<  "........\n" << Trace() << endl;
   list<state_type>::reverse_iterator hst_i = theHistory.rbegin();
-  bool d = 0;
+  bool d = false;
   while ( hst_i != theHistory.rend() && *hst_i != ST_TERMINAL && 
           !(d =__Dispatch( *hst_i, event ) ) ) {
     ++hst_i;
