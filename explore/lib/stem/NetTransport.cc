@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/01/19 13:10:08 ptr>
+// -*- C++ -*- Time-stamp: <00/01/27 13:46:38 ptr>
 
 /*
  *
@@ -97,16 +97,19 @@ __EDS_DLL EvSessionManager NetTransport_base::smgr;
 void NetTransport_base::disconnect()
 {
   if ( _sid != -1 && smgr.is_avail( _sid ) ) {
+    smgr.lock();
     SessionInfo& info = smgr[_sid];
     info.disconnect();
 //    cerr << "EvManager::disconnect: " << _sid << endl;
     if ( info._control != badaddr ) {
       Event_base<key_type> ev_disconnect( EV_EDS_DISCONNECT, _sid );
       ev_disconnect.dest( info._control );
+      smgr.unlock();
 //      cerr << "EvManager::disconnect, info._control: " << info._control << endl;
       Send( Event_convert<key_type>()(ev_disconnect) );
 //      cerr << "===== Pass" << endl;
     } else {
+      smgr.unlock();
       smgr.erase( _sid );
     }
     _sid = badkey;
@@ -144,7 +147,7 @@ addr_type NetTransport_base::rar_map( addr_type k, const string& name )
   return (*r).second;
 }
 
-bool NetTransport_base::pop( Event& _rs, SessionInfo& sess )
+bool NetTransport_base::pop( Event& _rs )
 {
   unsigned buf[8];
 
@@ -184,6 +187,8 @@ bool NetTransport_base::pop( Event& _rs, SessionInfo& sess )
     str += (char)net->get();
   }
 
+  smgr.lock();
+  SessionInfo& sess = smgr[_sid];
   sess.inc_from( 8 * sizeof(unsigned) + str.size() );
   if ( sess._un_from != _x_count ) {
     cerr << "Event(s) lost, or missrange event: " << sess._un_from
@@ -191,6 +196,7 @@ bool NetTransport_base::pop( Event& _rs, SessionInfo& sess )
     cerr << endl;
     sess._un_from = _x_count; // Retransmit?    
   }
+  smgr.unlock();
 
   return net->good();
 }
@@ -211,6 +217,7 @@ bool NetTransport_base::push( const Event& _rs )
 
   buf[4] = to_net( ++_count );
 
+  smgr.lock();
   SessionInfo& sess = smgr[_sid];
   sess.inc_to( 8 * sizeof(unsigned) + _rs.value().size() );
 
@@ -229,6 +236,7 @@ bool NetTransport_base::push( const Event& _rs )
     cerr << "Event(s) lost, or missrange event: " << sess._un_to
          << ", " << _count << "(" << _sid << ")" << endl;
   }
+  smgr.unlock();
 
   return net->good();
 }
@@ -241,16 +249,18 @@ void NetTransport::connect( sockstream& s )
 
   Event ev;
   _sid = smgr.create();
-  SessionInfo& sess = smgr[_sid];
 
-  sess._host = hostname;
-  sess._port = s.rdbuf()->port();
+  smgr.lock();
+  smgr[_sid]._host = hostname;
+  smgr[_sid]._port = s.rdbuf()->port();
+  smgr.unlock();
+
   net = &s;
   const string _at_hostname( __at + hostname );
 
   try {
     _net_ns = rar_map( nsaddr, __ns_at + hostname );
-    while ( pop( ev, sess ) ) {
+    while ( pop( ev ) ) {
       ev.src( rar_map( ev.src(), _at_hostname ) ); // substitute my local id
       manager()->push( ev );
     }
@@ -315,10 +325,8 @@ int NetTransportMgr::_loop( void *p )
   heap_type::iterator r;
   Event ev;
 
-  SessionInfo& sess = smgr[me._sid];
-
   try {
-    while ( me.pop( ev, sess ) ) {
+    while ( me.pop( ev ) ) {
       ev.src( me.rar_map( ev.src(), __at + me.net->rdbuf()->hostname() ) ); // substitute my local id
       manager()->push( ev );
     }
@@ -353,27 +361,31 @@ void NetTransportMP::connect( sockstream& s )
     _sid = smgr.create();
   }
 
-  SessionInfo& sess = smgr[ _sid ];
-
   try {
     if ( first ) {
-      sess._host = hostname;
-      sess._port = s.rdbuf()->port();
+      smgr.lock();
+      smgr[ _sid ]._host = hostname;
+      smgr[ _sid ]._port = s.rdbuf()->port();
+      smgr.unlock();
       net = &s;
     } else {
-      sess.connect();
+      smgr.lock();
+      smgr[ _sid ].connect();
+      smgr.unlock();
     }
     // indeed here need more check: data of event
     // and another: message can be break, and other datagram can be
     // in the middle of message...
-    if ( pop( ev, sess ) ) {
+    if ( pop( ev ) ) {
       ev.src( rar_map( ev.src(), __at + hostname ) ); // substitute my local id
       manager()->push( ev );
     }
     if ( !s.good() ) {
       throw ios_base::failure( "sockstream not good" );
     }
-    sess.disconnect();
+    smgr.lock();
+    smgr[ _sid ].disconnect();
+    smgr.unlock();
   }
   catch ( ... ) {
     s.close();
