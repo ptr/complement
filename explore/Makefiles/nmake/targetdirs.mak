@@ -1,4 +1,4 @@
-# Time-stamp: <03/07/15 15:23:19 ptr>
+# Time-stamp: <03/09/28 16:43:30 ptr>
 # $Id$
 
 OUTPUT_DIR             = obj\$(COMPILER_NAME)\shared$(EXTRA_DIRS)
@@ -6,7 +6,7 @@ OUTPUT_DIR_DBG         = obj\$(COMPILER_NAME)\shared-g$(EXTRA_DIRS)
 OUTPUT_DIR_STLDBG      = obj\$(COMPILER_NAME)\shared-stlg$(EXTRA_DIRS)
 
 # file to store generated dependencies for make:
-DEPENDS_COLLECTION     = obj/$(COMPILER_NAME)xi\/.make.depend
+DEPENDS_COLLECTION     = obj/$(COMPILER_NAME)/.make.depend
 
 # I use the same catalog, as for shared:
 OUTPUT_DIR_A           = $(OUTPUT_DIR)
