@@ -1,3 +1,9 @@
+2001-06-13  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* NetTransport.cc (Repository): The limit of EDS message is increased
+	from 1M to 4M;
+	* libEDS: new patch number, library version 3.5.1 now.
+
 2001-06-05  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
 
 	* Makefile.inc (Message): library version 3.5.0
