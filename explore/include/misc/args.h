@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <01/03/19 16:31:44 ptr>
+// -*- C++ -*- Time-stamp: <01/08/09 16:29:46 ptr>
 
 /*
  *
- * Copyright (c) 1997-1998
+ * Copyright (c) 1997-1998, 2001
  * Petr Ovchenkov
  *
  * This material is provided "as is", with absolutely no warranty expressed
@@ -32,8 +32,196 @@
 
 #include <string>
 #include <list>
+#include <vector>
 #include <algorithm>
 #include <istream>
+#include <ostream>
+#include <iostream>
+#include <exception>
+#include <stdexcept>
+#include <typeinfo>
+
+class Option_base
+{
+  public:
+    Option_base() :
+        is_set( false )
+      { }
+
+    virtual bool assign( int& ) const
+      { throw std::domain_error( "wrong type" ); }
+    virtual bool assign( std::string& ) const
+      { throw std::domain_error( "wrong type" ); }
+    virtual bool assign( unsigned& ) const
+      { throw std::domain_error( "wrong type" ); }
+    virtual bool assign( bool& ) const
+      { throw std::domain_error( "wrong type" ); }
+    virtual const type_info& type() const = 0;
+
+    bool operator ==( const Option_base& s ) const
+      { return _nm == s._nm; }
+    bool operator ==( const std::string& s ) const
+      { return _nm == s; }
+    bool operator ==( const char *s ) const
+      { return _nm == s; }
+
+  protected:
+    std::string _nm;
+    std::string _hlp;
+    bool is_set;
+
+    virtual void read( const char *str ) = 0;
+    friend class Argv;
+};
+
+template <class P, class V>
+class deref_equal :
+    public std::binary_function<P,V,bool>
+{
+  public:
+    bool operator()(const P& __x, const V& __y) const
+      { return *__x == __y; }
+};
+
+template <class T>
+class Option :
+    public Option_base
+{
+  public:
+    Option( const char *, const T&, const char * = 0 );
+    virtual bool assign( T& v ) const
+      {
+        v = _v;
+        return is_set;
+      }
+    virtual const type_info& type() const
+      { return typeid( T ); }
+  private:
+    T _v;
+
+    void read( const char *str )
+      {
+        std::istringstream s( str );
+        s >> _v;
+      }
+
+    friend class Argv;
+};
+
+template <class T>
+Option<T>::Option( const char *n, const T& v, const char *h )
+{
+  _nm = n;
+  _v = v;
+  if ( h != 0 ) {
+    _hlp = h;
+  }
+}
+
+// template <>
+class Option<std::string> :
+    public Option_base
+{
+  public:
+    Option( const char *, const std::string&, const char * = 0 );
+    bool assign( std::string& v ) const
+      {
+        v = _v;
+        return is_set;
+      }
+
+    virtual const type_info& type() const
+      { return typeid( std::string ); }
+  private:
+    std::string _v;
+
+    void read( const char *str )
+      { _v = str;
+        // std::istringstream s( str );
+        // std::getline( s, _v );
+      }
+
+    friend class Argv;
+};
+
+// template <>
+class Option<char *> :
+    public Option_base
+{
+  public:
+    Option( const char *, const char *, const char * = 0 );
+    bool assign( std::string& v ) const
+      {
+        v = _v;
+        return is_set;
+      }
+
+    virtual const type_info& type() const
+      { return typeid( std::string ); }
+  private:
+    std::string _v;
+
+    void read( const char *str )
+      { _v = str;
+        // std::istringstream s( str );
+        // std::getline( s, _v );
+      }
+
+    friend class Argv;
+};
+
+class Argv
+{
+  private:
+    typedef std::list<Option_base *> opt_container_type;
+    typedef std::vector<std::string> arg_container_type;
+    deref_equal<Option_base *,char *> eq;
+
+  public:
+    Argv() :
+        _stop_opt( "--" )
+      { };
+
+    template <class T>
+    void option( const char *n, const T& v, const char *h )
+      { opt.push_back( new Option<T>( n, v, h ) ); }
+//    void option( const char *n, const char *v, const char *h = 0 )
+//      { opt.push_back( new Option<std::string>( n, std::string(v), h ) ); }
+    void parse( int argc, char * const *argv );
+    template <class T>
+    bool assign( const char *nm, T& v )
+      {
+        opt_container_type::iterator i = std::find_if( opt.begin(), opt.end(),
+                                                       bind2nd( eq, nm ) );
+        if ( i == opt.end() ) {
+          std::string err( "unknown option " );
+          err += nm;
+          throw std::invalid_argument( err );
+        } /* else if ( (*i)->type() != typeid(v) ) { // this branch not useful...
+          throw std::domain_error( "invalid type" );
+          } else */
+        return (*i)->assign( v );
+      }
+
+    void print_help( std::ostream& s );
+    void copyright( const char * );
+    void brief( const char * );
+    void args( const char * );
+    void stop_option( const char * );
+    const std::string& operator[]( int i ) const;
+
+    arg_container_type::size_type size() const
+      { return arg.size(); }
+
+  protected:
+    opt_container_type opt;
+    arg_container_type arg;
+    std::string _pname;
+    std::string _copyright;
+    std::string _announce;
+    std::string _stop_opt;
+    std::string _args;
+};
 
 class ArgsParser
 {
@@ -44,6 +232,7 @@ class ArgsParser
     ArgsParser( int argc, char * const *argv );
     ArgsParser( const std::string& in );
     ArgsParser( std::istream& in );
+    ArgsParser();
 
     bool is_option( const std::string& op )
       { return std::find( arg.begin(), arg.end(), op ) != arg.end(); }
@@ -55,8 +244,16 @@ class ArgsParser
     unsigned size() const
       { return arg.size(); }
 
+    void print_help( std::ostream& s );
+    void copyright( const char * );
+    void brief( const char * );
+    void parse( int argc, char * const *argv );
+
   protected:
     container_type arg;
+    std::string _pname;
+    std::string _copyright;
+    std::string _announce;
 };
 
 class IniParser
