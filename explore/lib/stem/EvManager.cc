@@ -81,7 +81,7 @@ __EDS_DLL EvManager::~EvManager()
   _ev_queue_thr.join();
 }
 
-__EDS_DLL int EvManager::_Dispatch( void *p )
+int EvManager::_Dispatch( void *p )
 {
   EvManager& me = *reinterpret_cast<EvManager *>(p);
 
