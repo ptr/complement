@@ -1,9 +1,9 @@
-// -*- C++ -*- Time-stamp: <99/02/03 15:39:05 ptr>
+// -*- C++ -*- Time-stamp: <99/02/04 18:55:44 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
-// #include <csignal>
 #ifdef __unix
+// Current <csignal> not include all needed prototipes
 #include <signal.h>
 #endif
 
@@ -30,6 +30,7 @@ sockmgr_client *sockmgr_stream<Connect>::accept()
 
   MT_REENTRANT( _storage_lock, _1 );
   sockmgr_client *&cl = _storage[addr];
+
   if ( cl != 0 ) {
 
     __stl_assert( !cl->s.is_open() );
@@ -140,7 +141,11 @@ int sockmgr_stream<Connect>::loop( void *p )
   sockmgr_stream *me = static_cast<sockmgr_stream *>(p);
   sockmgr_client *s;
   string who;
+#ifdef WIN32
+  hostent *he;
+#else
   hostent he;
+#endif
   char tmp_buff[1024];
   int err = 0;
   params pass;
@@ -175,9 +180,10 @@ int sockmgr_stream<Connect>::loop( void *p )
     while ( (s = me->accept()) != 0 ) {
       in.s_addr = s->s.rdbuf()->inet_addr();
 #ifdef WIN32
-      // may be made it reeentrant?
-      if ( gethostbyaddr( (char *)&in.s_addr, sizeof(in_addr), AF_INET ) != 0 ) {
-	s->hostname = he.h_name;
+      // For Win he is thread private data, so that's safe
+      he = gethostbyaddr( (char *)&in.s_addr, sizeof(in_addr), AF_INET );
+      if ( he != 0 ) {
+	s->hostname = he->h_name;
       } else {
 	s->hostname = "unknown";
       }
@@ -204,8 +210,11 @@ int sockmgr_stream<Connect>::loop( void *p )
     cerr << e.what() << endl;
     ret_code = -1;
   }
+  catch ( exception& e ) {
+    cerr << e.what() << endl;
+  }
   catch ( ... ) {
-    cerr << "Oh, oh, say baby Sally. Dick and Jane launch." << endl;
+    cerr << "(1) Oh, oh, say baby Sally. Dick and Jane launch." << endl;
   }
 
 //  __stl_assert( false );
@@ -251,6 +260,7 @@ int sockmgr_stream<Connect>::connection( void *p )
     ret_code = -1;
   }
 
+  // may be set call of pos-mortem function here?
   me->erase( &client->s );
 
   return ret_code;
