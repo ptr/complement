@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/29 16:57:29 ptr>
+// -*- C++ -*- Time-stamp: <00/03/20 15:32:01 ptr>
 
 /*
  *
@@ -130,7 +130,7 @@ addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
                                   const __STD::string& info )
 {
   MT_REENTRANT( _lock_heap, _1 );
-  if ( (id & extbit) || is_avail( id ) ) {
+  if ( (id & extbit) || unsafe_is_avail( id ) ) {
     return badaddr;
   }
   __Object_Entry& record = heap[id];
@@ -145,7 +145,7 @@ addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
                                   const char *info )
 {
   MT_REENTRANT( _lock_heap, _1 );
-  if ( (id & extbit) || is_avail( id ) ) {
+  if ( (id & extbit) || unsafe_is_avail( id ) ) {
     return badaddr;
   }
   __Object_Entry& record = heap[id];
