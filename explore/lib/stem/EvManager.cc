@@ -1,75 +1,42 @@
-// -*- C++ -*- Time-stamp: <96/11/25 10:50:41 ptr>
+// -*- C++ -*- Time-stamp: <99/03/19 17:29:31 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
-#include <EDS/EvManager.h>
-#include <EDS/EventsCore.h>
+#include <EvManager.h>
+#include <NetTransport.h>
 
-EDSEvManager::EDSEvManager()
-{
-  lock_not_done.set_condition();
-  queue_lock.set_condition();
-}
+namespace EDS {
 
-void EDSEvManager::push(const EDSEvManager::value_type& x)
+void EvManager::Send( const Event& e, const EvManager::key_type& src_id )
 {
-  queue_lock.lock();
-  ParentCls::push( x );
-  queue_lock._signal();
-  queue_lock.unlock();
-}
-
-bool EDSEvManager::empty()
-{
-  MT_REENTRANT( queue_lock, lck );
-  return ParentCls::empty();
-}
-
-void EDSEvManager::dispatch()
-{
-  queue_lock.wait();
-  while ( !empty() ) {
-    EDSEvInfo& top = front();
-    switch ( top.first.dtype ) {
-      case EDSEvTarget::Local:
-	switch ( top.first.ctype ) {
-	  case EDSEvTarget::This:
-	    top.first.target->Notify( top.second );
-	    break;
-	  case EDSEvTarget::BranchChilds:
-	    top.first.target->BranchNotifyChilds( top.second );
-	    break;
-	  case EDSEvTarget::Branch:
-	    top.first.target->BranchNotify( top.second );
-	    break;
-	  case EDSEvTarget::Siblings:
-	    top.first.target->SiblingNotify( top.second );
-	    break;
-	  case EDSEvTarget::Parent:
-	    top.first.target->ParentNotify( top.second );
-	    break;
-	}
-	break;
-      case EDSEvTarget::Global:
-	WARN( true, "Global events not accepted yet" );
-	break;
+  dump( std::cerr, e );
+  std::cerr << "Send: " << std::hex << src_id << "\n";
+  heap_type::iterator i = heap.find( e.dest() );
+  if ( i != heap.end() ) {
+    if ( (*i).second.ref != 0 ) { // local deliver
+       std::cerr << "Local\n";
+      (*i).second.ref->Dispatch( e );
+    } else { // remote object
+       std::cerr << "Remote\n";
+      __stl_assert( (*i).second.remote != 0 );
+      (*i).second.remote->channel->push( e, (*i).second.remote->key, src_id );
     }
-    queue_lock.lock();
-    pop();
-    queue_lock.unlock();
+  } else {
+    std::cerr << "Not found\n";
   }
-
-  queue_lock.set_condition();
 }
 
-void EDSEvManager::Done()
+EvManager::key_type EvManager::create_unique()
 {
-  lock_not_done._signal();
-  // queue_lock._signal();
+  const key_type _low  = 0x100;
+  const key_type _high = /* 65535 */ 0x3fffffff;
+
+  do {
+    if ( ++_id > _high ) {
+      _id = (_id - _low) % (_high - _low) + _low;
+    }
+  } while ( heap.find( _id ) != heap.end() );
+
+  return _id;
 }
 
-bool EDSEvManager::wait_done()
-{
-  lock_not_done.wait();
-
-  return lock_not_done.get_condition();
-}
+} // namespace EDS
