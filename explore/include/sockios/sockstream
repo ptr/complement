@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 09:58:03 ptr>
+// -*- C++ -*- Time-stamp: <99/12/21 17:08:11 ptr>
 
 /*
  *
@@ -139,9 +139,11 @@ class sock_base
 #ifdef WIN32
     class Init
     {
-      private:
-	Init();
-	~Init();
+        // sometimes I need Init outside sock_base...
+        // private:
+      public:
+	__SOCKIOS_DLL Init();
+	__SOCKIOS_DLL ~Init();
 
         friend class sock_base;
     };
