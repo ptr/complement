@@ -1,3 +1,10 @@
+2002-06-23  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xmt.cc, xmt.h (Repository): remove signal throw---seems not work
+	properly; provide handler that make sanity of Thread object by signal
+	TERM; modify thread-specific data pocessing with iword/pword functions;
+	this still need to fix for solaris threads and Windows.
+
 2002-06-15  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* xmt.cc (Repository): add signal handler, that exit
