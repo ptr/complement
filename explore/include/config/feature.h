@@ -3,12 +3,12 @@
 /*
  *
  * Copyright (c) 1999, 2002, 2003
- * Petr Ovtchenkov
+ * Petr Ovchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 1.2
+ * Licensed under the Academic Free License Version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -24,7 +24,7 @@
 #ifndef __config_feature_h
 #define __config_feature_h
 
-#ifdef __unix
+#if defined(__unix) || defined(__OpenBSD__)
 #  ifdef __HP_aCC
 #pragma VERSIONID "@(#)$Id$"
 #  else
