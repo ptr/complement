@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/10/09 18:34:54 ptr>
+// -*- C++ -*- Time-stamp: <96/10/11 14:17:06 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #include <EDS/EvManager.h>
@@ -44,7 +44,8 @@ void EDSEvManager::dispatch()
 
 void EDSEvManager::Done()
 {
-  lock_not_done.signal();
+  lock_not_done._signal();
+  queue_lock._signal();
 }
 
 bool EDSEvManager::wait_done()
