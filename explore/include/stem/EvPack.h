@@ -1,12 +1,12 @@
-// -*- C++ -*- Time-stamp: <00/05/10 16:28:19 ptr>
+// -*- C++ -*- Time-stamp: <00/05/23 19:35:58 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999
- * ParallelGraphics Software Systems
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
  
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -21,7 +21,7 @@
 #ifndef __EvPack_h
 #define __EvPack_h
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -39,10 +39,15 @@
 #    include <sys/isa_defs.h>
 #  else
 #    include <sys/types.h>
-#    if (__BYTE_ORDER==__LITTLE_ENDIAN)
+#    if !defined(__BYTE_ORDER) || !defined(__LITTLE_ENDIAN) || !defined(__BIG_ENDIAN)
+#      error "One of __BYTE_ORDER, __LITTLE_ENDIAN and __BIG_ENDIAN undefined; Fix me!"
+#    endif
+#    if ( __BYTE_ORDER == __LITTLE_ENDIAN )
 #      define _LITTLE_ENDIAN
-#    else
+#    elif ( __BYTE_ORDER == __BIG_ENDIAN )
 #      define _BIG_ENDIAN
+#    else
+#      error "__BYTE_ORDER neither __BIG_ENDIAN nor __LITTLE_ENDIAN; Fix me!"
 #    endif
 #  endif
 #endif // WIN32

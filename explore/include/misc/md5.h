@@ -33,7 +33,7 @@
 #define __aux_md5_h
 
 #ifdef __Linux
-#include <stdint.h>          /* for uint_* *
+#include <stdint.h>             /* for uint_* */
 #else
 #include <sys/types.h>          /* for uint_* */
 #endif
