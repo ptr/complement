@@ -1,13 +1,13 @@
-// -*- C++ -*- Time-stamp: <00/02/24 19:39:20 ptr>
+// -*- C++ -*- Time-stamp: <00/05/22 12:33:49 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999
- * ParallelGraphics Software Systems
- 
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
+ *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -18,7 +18,7 @@
  * in supporting documentation.
  */
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4804 )
@@ -65,6 +65,26 @@ void SessionRsp::net_unpack( __STD::istream& s )
   __net_unpack( s, addr );
 }
 
+__PG_DECLSPEC
+SessionMgr::SessionMgr() :
+    EventHandler()
+{ }
+
+__PG_DECLSPEC
+SessionMgr::SessionMgr( const char *info ) :
+    EventHandler( info )
+{ }
+
+__PG_DECLSPEC
+SessionMgr::SessionMgr( addr_type addr, const char *info ) :
+    EventHandler( addr, info )
+{ }
+
+__PG_DECLSPEC
+SessionMgr::~SessionMgr()
+{
+}
+
 void SessionMgr::raw_establish_session( EventHandler *_session_leader, addr_type addr )
 {
   Event_base<SessionRsp> rs( EV_EDS_RS_SESSION );
@@ -99,7 +119,7 @@ void SessionMgr::establish_session( const Event& ev )
   getline( s, passwd );
 
   // check account and permissions, create session leader (or 0)
-  EventHandler *_session_leader = session_leader( account, passwd, ev.src() );
+  EventHandler *_session_leader = this->session_leader( account, passwd, ev.src() );
   Event_base<SessionRsp> rs( EV_EDS_RS_SESSION );
   rs.dest( ev.src() );
   if ( _session_leader != 0 ) {
@@ -169,10 +189,11 @@ key_type SessionMgr::key_generate()
 }
 
 __PG_DECLSPEC
-EventHandler *SessionMgr::session_leader( const string&, const string&,
-                                          addr_type ) throw ()
+EventHandler *SessionMgr::session_leader( const  __STD::string&,
+                                          const  __STD::string&,
+                                          addr_type ) throw()
 {
-  return 0;
+  return (EventHandler *)0;
 }
 
 __PG_DECLSPEC
