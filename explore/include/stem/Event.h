@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/22 15:37:45 ptr>
+// -*- C++ -*- Time-stamp: <99/03/24 12:37:12 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -23,11 +23,6 @@ class __Event_Base
     typedef size_t   size_type;
     
     enum {
-      respbit = 0x80000000,
-      seqmask = 0x7fffffff
-    };
-
-    enum {
       extbit  = 0x80000000
     };
 
@@ -35,21 +30,27 @@ class __Event_Base
         _code( 0 ),
         _dst( 0 ),
         _src( 0 ),
-        _sq( 0 )
+        _sid( 0 ),
+        _sqn( 0 ),
+        _rsqn( 0 )
       { }
 
     explicit __Event_Base( code_type c ) :
         _code( c ),
         _dst( 0 ),
         _src( 0 ),
-        _sq( 0 )
+        _sid( 0 ),
+        _sqn( 0 ),
+        _rsqn( 0 )        
       { }
 
     explicit __Event_Base( const __Event_Base& e ) :
         _code( e._code ),
         _dst( e._dst ),
         _src( e._src ),
-        _sq( e._sq )
+        _sid( e._sid ),
+        _sqn( 0 ),
+        _rsqn( e._sqn ) // ! not _rsqn
       { }
 
     code_type code() const
@@ -58,10 +59,14 @@ class __Event_Base
       { return _dst; }
     key_type src() const
       { return _src; }
+    key_type sid() const
+      { return _sid; }
     sq_type seq() const
-      { return _sq & seqmask; }
+      { return _sqn; }
+    sq_type responce() const
+      { return _rsqn; }
     bool is_responce() const
-      { return (_sq & respbit) != 0; }
+      { return _rsqn != 0; }
     bool is_from_foreign() const
       { return (_src & extbit) != 0; }
     bool is_to_foreign() const
@@ -74,13 +79,19 @@ class __Event_Base
     void src( key_type c )
       { _src = c; }
     void seq( sq_type c )
-      { _sq = c; }
+      { _sqn = c; }
+    void responce( sq_type c )
+      { _rsqn = c; }
+    void sid( key_type c )
+      { _sid = c; }
 
   protected:
     code_type _code; // event code
-    key_type  _dst;  // source
-    key_type  _src;  // destination
-    sq_type   _sq;   // sequential number / responce to number
+    key_type  _dst;  // destination
+    key_type  _src;  // source
+    key_type  _sid;  // session ID
+    sq_type   _sqn;  // sequential number / responce to number
+    sq_type   _rsqn; // responce to number
 
     friend class NetTransport;
 };
@@ -174,7 +185,9 @@ class Event_base :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.seq( _sq );
+        s.sid( _sid );
+        s.seq( _sqn );
+        s.responce( _rsqn );
         std::stringstream ss;
         net_pack( ss );
         s.value( ss.str() );
@@ -185,7 +198,9 @@ class Event_base :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sq   = s.seq();
+        _sid  = s.sid();
+        _sqn  = s.seq();
+        _rsqn = s.responce();
         net_unpack( std::stringstream( s.value() ) );
       }
 
@@ -194,7 +209,9 @@ class Event_base :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.seq( _sq );
+        s.sid( _sid );
+        s.seq( _sqn );
+        s.responce( _rsqn );
         std::stringstream ss;
         pack( ss );
         s.value( ss.str() );
@@ -205,7 +222,9 @@ class Event_base :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sq   = s.seq();
+        _sid  = s.sid();
+        _sqn  = s.seq();
+        _rsqn = s.responce();
         unpack( std::stringstream( s.value() ) );
       }
 
@@ -303,7 +322,9 @@ class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.seq( _sq );
+        s.sid( _sid );
+        s.seq( _sqn );
+        s.responce( _rsqn );
         s.value( _data );
       }
 
@@ -312,7 +333,9 @@ class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sq   = s.seq();
+        _sid  = s.sid();
+        _sqn  = s.seq();
+        _rsqn = s.responce();
         _data = s.value();
       }
 
@@ -321,7 +344,9 @@ class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.seq( _sq );
+        s.sid( _sid );
+        s.seq( _sqn );
+        s.responce( _rsqn );
         s.value( _data );
       }
 
@@ -330,7 +355,9 @@ class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sq   = s.seq();
+        _sid  = s.sid();
+        _sqn  = s.seq();
+        _rsqn = s.responce();
         _data = s.value();
       }
 
@@ -377,7 +404,9 @@ class Event_base<void> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.seq( _sq );
+        s.sid( _sid );
+        s.seq( _sqn );
+        s.responce( _rsqn );
         s.value( std::string() );
       }
 
@@ -386,7 +415,9 @@ class Event_base<void> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sq   = s.seq();
+        _sid  = s.sid();
+        _sqn  = s.seq();
+        _rsqn = s.responce();
       }
 
     void pack( Event& s ) const
@@ -394,7 +425,9 @@ class Event_base<void> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.seq( _sq );
+        s.sid( _sid );
+        s.seq( _sqn );
+        s.responce( _rsqn );
         s.value( std::string() );
       }
 
@@ -403,7 +436,9 @@ class Event_base<void> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sq   = s.seq();
+        _sid  = s.sid();
+        _sqn  = s.seq();
+        _rsqn = s.responce();
       }
 
     void pack( std::ostream& ) const
