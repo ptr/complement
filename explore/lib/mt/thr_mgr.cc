@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <01/03/19 16:24:29 ptr>
+// -*- C++ -*- Time-stamp: <02/04/14 18:01:24 ptr>
 
 /*
- * Copyright (c) 1997-1999
- * Petr Ovchenkov
+ * Copyright (c) 1997-1999, 2002
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
- * ParallelGraphics Ltd.
+ * Parallel Graphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -40,7 +40,7 @@ struct bad_thread :
       { return !__x->good(); }
 };
 
-__PG_DECLSPEC ThreadMgr::~ThreadMgr()
+__FIT_DECLSPEC ThreadMgr::~ThreadMgr()
 {
   MT_REENTRANT( _lock, _x1 );
   container_type::iterator i = _M_c.begin();
@@ -55,7 +55,7 @@ __PG_DECLSPEC ThreadMgr::~ThreadMgr()
   }
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void ThreadMgr::launch( Thread::entrance_type entrance, const void *p, size_t psz )
 {
   MT_REENTRANT( _lock, _x1 );
@@ -67,7 +67,7 @@ void ThreadMgr::launch( Thread::entrance_type entrance, const void *p, size_t ps
   (*i)->launch( entrance, p, psz );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void ThreadMgr::garbage_collector()
 {
   MT_REENTRANT( _lock, _x1 );
