@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/08/04 15:21:33 ptr>
+// -*- C++ -*- Time-stamp: <02/08/23 14:12:49 ptr>
 
 /*
  *
@@ -33,6 +33,8 @@
 #include <DB/xxSQL_i.h>
 #endif
 
+#include <iostream>
+
 namespace xxSQL {
 
 class DBxx
@@ -42,6 +44,10 @@ class DBxx
       Unknown,
       PostgreSQL,
       Oracle8i
+    };
+
+    enum flags_t {
+      truss = 0x1
     };
 
     DBxx( DBvendor vendor, const DataBase_connect& );
@@ -61,9 +67,19 @@ class DBxx
     void clear( unsigned flags )
       { _db->clear( flags ); }
     void exec( const std::string& query )
-      { _db->exec( query ); }
+      { 
+        if ( (fmtflags & truss) != 0 ) {
+          std::cerr << query << std::endl;
+        }
+        _db->exec( query );
+      }
     void exec( const char *query )
-      { _db->exec( query ); }
+      {
+        if ( (fmtflags & truss) != 0 ) {
+          std::cerr << query << std::endl;
+        }
+        _db->exec( query );
+      }
 
     void begin_transaction()
       { _db->begin_transaction(); }
@@ -71,7 +87,12 @@ class DBxx
       { _db->end_transaction(); }
 
     Cursor *create_cursor( const char *query )
-      { return _db->create_cursor( query ); }
+      {
+        if ( (fmtflags & truss) != 0 ) {
+          std::cerr << query << std::endl;
+        }
+        return _db->create_cursor( query );
+      }
     void delete_cursor( Cursor *cursor )
       { _db->delete_cursor( cursor ); }
 
@@ -84,9 +105,15 @@ class DBxx
     DBvendor vendor() const
       { return _dbvendor; }
 
+    void setf( unsigned _f )
+      { fmtflags |= _f; }
+    void unsetf( unsigned _f )
+      { fmtflags &= ~_f; }
+
   private:
     DataBase *_db;
     DBvendor _dbvendor;
+    unsigned fmtflags;
     void *lh; // DB wrapper library handler
 };
 
