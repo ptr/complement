@@ -1,22 +1,25 @@
 # "%Z%$RCSfile$ v.$Revision$ %H% %T%"
 # Makefile for implementation and debugging OXW (Object X Window) class library
 
-#	-I/usr/hostel/STL/include \
+PROJECT = ../../libOXW.so
+XTESTER = xtester
 
-INCLUDES = -I/usr/openwin/include \
-	   -I../../../include
+INCLUDES = \
+	-I/usr/openwin/include \
+	-I../../../include
 
 DEFS = \
 	-DSVR4 \
-	-D__DEBUG=2
+	-D__DEBUG=2 \
+	-D__TRACE -D__WARN
 # OPT = -g -p
 OPT = -g
 # OPT = -O4
 # OPT = -G -O4
 
-CCFLAGS = $(OPT) -cg92 +w -PIC -pto -mt
+CCFLAGS = $(OPT) -cg92 +w -pic -pto -mt -sb
 CPPFLAGS = $(DEFS) $(INCLUDES)
-PROJECT_LIBS = -L../.. -lclass
+PROJECT_LIBS = -L../.. -lCLASS
 # LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm -ldl
 LDFLAGS = -xildoff $(PROJECT_LIBS) -lX11 -lXpm
 
@@ -29,6 +32,7 @@ TESTS_DIR = ./tests
 # Library files
 
 XLIBFILES.o = \
+		$(OUTPUT_DIR)/Diagnosis.o \
 		$(OUTPUT_DIR)/Event.o \
 		$(OUTPUT_DIR)/EventHandler.o \
 		$(OUTPUT_DIR)/EventsCore.o \
@@ -93,39 +97,29 @@ XLIBFILES.o = \
 		\
 		$(OUTPUT_DIR)/CAPPropertyTypePI.o \
 		$(OUTPUT_DIR)/CAPCheckListPI.o
+		$(OUTPUT_DIR)/ComplexInput.o \
+		$(OUTPUT_DIR)/InputUnit.o
 
 
 # Xlib-based project
 
-XTESTER = xtester
 XFILES.o = \
 		$(OUTPUT_TESTS_DIR)/xtester.o \
 		$(OUTPUT_TESTS_DIR)/xmain.o
-PROJECT = ../../libOXW.so
+
 LIBFILES.o = $(XLIBFILES.o)
 
 .KEEP_STATE:
 
 .PARALLEL:
 
-all:	dirs $(PROJECT)
+all:	$(PROJECT)
 
-dirs:
-	@if [ ! -d ./bin ]; \
-	then \
-	  mkdir ./bin; \
-	fi
-tests-dirs:
-	@if [ ! -d ./tests-bin ]; \
-	then \
-	  mkdir ./tests-bin; \
-	fi
-
-$(PROJECT):	$(LIBFILES.o)
+$(PROJECT):	$(OUTPUT_DIR) $(LIBFILES.o)
 	$(LINK.cc) -G -o $@ $(LIBFILES.o)
 
-$(XTESTER):	$(XLIBFILES.o) $(XFILES.o)
-	$(LINK.cc) -o $@ $(XLIBFILES.o) $(XFILES.o) 
+$(XTESTER):	$(OUTPUT_DIR) $(OUTPUT_TESTS_DIR) $(XLIBFILES.o) $(XFILES.o)
+	$(LINK.cc) -o $@ $(XLIBFILES.o) $(XFILES.o)
 
 $(OUTPUT_DIR)/%.o:	%.cc
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
@@ -133,12 +127,24 @@ $(OUTPUT_DIR)/%.o:	%.cc
 $(OUTPUT_TESTS_DIR)/%.o:	$(TESTS_DIR)/%.cc
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
-clear:
-	@if [ -d ./bin ]; \
+$(OUTPUT_DIR):
+	@if [ ! -d $(OUTPUT_DIR) ]; \
 	then \
-	  rm -rf ./bin; \
+	  mkdir $(OUTPUT_DIR); \
 	fi
-	@if [ -d ./tests-bin ]; \
+
+$(OUTPUT_TESTS_DIR):
+	@if [ ! -d $(OUTPUT_TESTS_DIR) ]; \
 	then \
-	  rm -rf ./tests-bin; \
+	  mkdir $(OUTPUT_TESTS_DIR); \
+	fi
+
+clear:
+	@if [ -d $(OUTPUT_DIR) ]; \
+	then \
+	  rm -rf $(OUTPUT_DIR); \
+	fi
+	@if [ -d $(OUTPUT_TESTS_DIR) ]; \
+	then \
+	  rm -rf $(OUTPUT_TESTS_DIR); \
 	fi
