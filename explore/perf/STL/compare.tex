@@ -1,0 +1,290 @@
+% -*- LaTeX -*- Time-stamp: <03/07/23 23:39:00 ptr>
+
+\documentclass[a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{pslatex}
+\usepackage{pstricks}
+\usepackage[dvips]{epsfig}
+%\usepackage[dvipdf]{graphics}
+\usepackage[dvips]{graphics}
+\usepackage[american]{babel}
+
+\usepackage{epic}
+\usepackage{eepic}
+\usepackage{psfig}
+
+\usepackage{listings}
+
+\lstset{language=C++,basicstyle=\small,numbers=left,numberstyle=\tiny,stepnumber=1,numbersep=5pt,stringstyle=\ttfamily,keywordstyle=\ttfamily\bfseries}
+
+\providecommand{\STLport}{{\fontfamily{cmss}\selectfont STLport}}
+\providecommand{\libstd}{{\fontfamily{cmtt}\selectfont GNU \mbox{libstd++}}}
+\newcommand{\CPP}{\mbox{{C}{+}{+}}}
+
+\title{Comparison of Strings Implementations \\ in \CPP{} language}
+\author{Petr Ovchenkov}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+In this article I present attempt to made comparison of
+strings implementation in \STLport{} and \libstd.
+
+Also I want to show results that can help
+to answer on question: what better from practice point of view,
+constant or linear complexity of strings copy algorithm?
+This comparison is done on the base of STLport strings and ropes.
+
+I expect that this results will help to make decision between
+STL implementations as well proper choice of strings implementation.
+\end{abstract}
+
+\section{Computers}
+
+Computers and operational environments that used in tests:
+\begin{enumerate}
+  \item Hands-made machine (assembled by Tersys company) with 2 $1.33$-GHz
+        AMD Athlon XP 1500+ processors under Linux (kernel 2.4.17
+        or 2.4.20, \verb|glibc| 2{.}2{.}5).
+\end{enumerate}
+
+\section{Compilers}
+
+For Unix-like systems was used GNU gcc 3{.}1{.}1 and 3{.}2{.}3 with appropriate
+\verb|libstd++| libraries (version~3). I don't see
+differences in test results between mentioned compiler's versions.
+
+\section{Time Measure\label{timemeasure}}
+
+Due to ``time'' function has different options and output format on Linux
+and other UINIXes, I use program \texttt{time} from
+\texttt{complement}\footnote{\texttt{http://complement.sourceforge.net}}
+project bundle\footnote{Portability note: system should has \texttt{wait3} function.}.
+By the way this function provide high-precision time measure.
+
+\section{The Tests Descriptions\label{TestsDescr}}
+
+\subsection{Add Characters to String\label{incr-string}}
+
+We have empty string. In the loop we add to this string single
+character.
+Really this is a test for algorithm
+of memory allocation (and moving memory contents to reallocated string).
+
+\lstinputlisting{string/add/str.cc}
+
+\subsection{Search of Substring\label{search-string}}
+
+We have string. In the loop we search three substrings.
+The matched substrings are positioned in
+the beginning, middle and end of the string. All searches are
+successful.
+
+\lstinputlisting{string/find/str.cc}
+
+\subsection{Mixed Operations\label{mixed-string}}
+
+This is a mix of common operations under strings: assignment,
+search of substring, replace of substring by another substring,
+concatenation of strings.
+
+\lstinputlisting{string/ops/str.cc}
+
+\begin{figure}
+  \begin{center}
+    \input strings.tex
+  \end{center}
+  \caption{Comparison of \libstd{} and \STLport{}
+           strings implementation. Wall time for tests:
+           test 1---described in section~\ref{incr-string},
+           2---in~\ref{search-string} and
+           test~3 is described in section~\ref{mixed-string}.
+           The implementation of strings in \STLport{}
+           is 2--3 times faster than in \libstd.
+           \label{STLport-gpp-strings}}
+\end{figure}
+
+\subsection{String as parameter by value (copy string)\label{params-string}}
+
+\lstinputlisting{string/params/str.cc}
+
+\subsection{String as parameter by reference\label{params-ref-string}}
+
+\lstinputlisting{string/params-ref/str.cc}
+
+\section{Role of Allocators}
+
+The \STLport{} has ``optimized'' memory allocator
+(\verb|node_alloc|). This allocator was used when I run strings tests
+for \STLport{} (see section~\ref{TestsDescr}). May be the win of \STLport{} is
+due to advanced memory allocation technique?
+
+\STLport{} provide three base memory allocators:
+\begin{itemize}
+  \item ``optimized'' \verb|node_alloc|;
+  \item adapter around \verb|new| operator;
+  \item adapter around \verb|malloc| call.
+\end{itemize}
+
+\begin{figure}
+  \begin{center}
+    \input alloc.tex
+  \end{center}
+  \caption{Role of memory allocator in strings implementation (\STLport).
+           Wall time for tests:
+           test 1---described in section~\ref{incr-string},
+           2---in~\ref{search-string} and
+           test~3 is described in section~\ref{mixed-string}.
+           \label{STLport-alloc-strings}}
+\end{figure}
+
+Let's repeat tests from section~\ref{TestsDescr} for \STLport{} with different
+allocators. We see (fig.~\ref{STLport-alloc-strings}) that all allocators
+are good enough: only on test with lot amount of memory
+allocation/reallocation
+operations (test~1) the ``optimized'' \verb|node_alloc| has a tiny advantage
+(difference between best and worst allocators is $3\%$).
+For search operations (test~2) the results as expected
+are the same (within measure of inaccuracy).
+
+\section{Strings in Multithreaded Environment}
+
+Memory allocation performance in single and multithreaded environments
+is an important aspect of any application. The work with \CPP{}
+strings in multithreaded environments is highly depends upon
+underlying allocator.
+
+The tests are the same as described in section~\ref{TestsDescr},
+except that every test run simultaneously in two threads.
+
+
+\subsection{Comparison of \STLport{} and \libstd}
+
+\begin{figure}
+  \begin{center}
+    \input strings-MT.tex
+  \end{center}
+  \caption{Tests wall time (\libstd) and \STLport{}
+           strings) in  MT environment (two threads):
+           test 1---described in section~\ref{incr-string},
+           2---in~\ref{search-string} and
+           test~3 is described in section~\ref{mixed-string}.
+           \label{STLport-gpp-MT-strings}}
+\end{figure}
+
+The results (fig.~\ref{STLport-gpp-MT-strings}) are near
+the same as shown on figure~\ref{STLport-gpp-strings}
+except that for mix operations test (test~3, described in
+section~\ref{mixed-string}) the \libstd's performance
+degradate too much.
+
+\subsection{Time Profile in \libstd}
+
+\begin{figure}
+  \begin{center}
+    \input strings-MT-libstd.tex
+  \end{center}
+  \caption{GNU \texttt{libstd++} strings
+           implementation in MT environment.
+           Wall time and user time per thread for tests:
+           test 1---described in section~\ref{incr-string},
+           2---in~\ref{search-string} and
+           test~3 is described in section~\ref{mixed-string}.
+           \label{gpp-MT-strings}}
+\end{figure}
+
+On figure~\ref{gpp-MT-strings} you can see user and wall
+time for tests with \libstd{} strings implementation.
+We see that both threads remain in user space almost all time.
+This may be due to a lot of waiting state. 
+
+As we can see in test~3, the general performance problem
+is seems in a lot of thread synchronization operation
+(a lot of system time, $132.854$~sec, that is greater than
+user time, $109.7775$~sec, in test~3 I can associate
+only with thread synchronization primitives).
+
+\subsection{Time Profile in \STLport}
+
+\begin{figure}
+  \begin{center}
+    \input strings-MT-STLport.tex
+  \end{center}
+  \caption{STLport
+           strings (\texttt{malloc}-based and \texttt{node\_alloc}-based)
+           implementation. Wall time and user time per thread for tests:
+           test 1---described in section~\ref{incr-string},
+           2---in~\ref{search-string} and
+           test~3 is described in section~\ref{mixed-string}.
+           \label{STLport-MT-strings}}
+\end{figure}
+
+On figure~\ref{STLport-MT-strings} shown user time per thread
+and wall time for tests with STLport implementation with
+\texttt{node\_alloc}-based and \texttt{malloc}-based allocators.
+
+The surprise for me was that \texttt{malloc}-based variant
+win (twice!) over \texttt{node\_alloc}-based variant in test~3.
+Compare figures~\ref{STLport-alloc-strings} and \ref{STLport-MT-strings}.
+The mix operations test time profiles of
+\texttt{malloc}-based and \texttt{node\_alloc}-based
+are the same for single-thread tests and differ for MT environment
+(only for test 3!).
+
+
+\section{Strings vs. Ropes}
+
+Some time ago, there are many discussions about complexity
+of string assignment algorithm.
+In this time 
+SGI made experimental realization of standard string interfaces
+with constant copy/insert/replace algorithm complexity---the \texttt{ropes}.
+
+Really \texttt{ropes} and \texttt{strings} has different usage scope.
+I use STLport implementation (that come from SGI \texttt{string} and \texttt{rope}
+classes) to compare ones. You can see STLport story here:
+\texttt{http://www.stlport.com/doc/story.html}.
+Some words about \texttt{string} and \texttt{rope}
+from first hands you can find here:\\
+\texttt{http://www.sgi.com/tech/stl/string\_discussion.html}.
+
+This test based on mix of copy, insert, append and replace
+operations under classic strings or ropes. The main part
+of test you can see on lines 21--30 (where \texttt{T} is
+either \texttt{string} or \texttt{rope}).
+
+\lstinputlisting{string/ropes/str.cc}
+
+\begin{figure}
+  \begin{center}
+    \input str-rope.tex
+  \end{center}
+  \caption{Strings vs. Ropes.\label{STLport-rope-string}}
+\end{figure}
+
+As expected, efforts to establish constant assign/insert/replace
+algorithm complexity lead to
+overhead---so ropes are preferable if you want to process
+long strings (longer then 25--30K, as you can see on figure~\ref{STLport-rope-string}).
+
+Evident, that complexity of \texttt{string} operations is near the linear,
+while \texttt{rope} has constant complexity. But the overhead
+of \texttt{rope} is significant, so cost of constant algorithm complexity
+is high enough.
+
+\section{References}
+
+\noindent
+\begin{description}
+  \item[STLport] \texttt{http://www.stlport.com}
+  \item[GCC]     \texttt{http://gcc.gnu.org}
+  \item[SGI]     \texttt{http://www.sgi.com/tech/stl/}
+  \item[Complement] \texttt{http://complement.sourceforge.net}
+\end{description}
+
+
+
+\end{document}
