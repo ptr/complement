@@ -1,0 +1,28 @@
+# Time-stamp: <00/05/11 21:36:40 ptr>
+# $SunId$
+
+BASEDIR := $(shell xtmp=`pwd`; \
+               xtmp=`dirname $$xtmp`; dirname $$xtmp)
+LIBDIR  := $(shell xtmp=`pwd`; dirname $$xtmp)
+
+COMPILER_NAME = gcc
+include ${BASEDIR}/lib/EDS/Makefile.inc
+
+all:	dbg release
+
+# include ${BASEDIR}/Makefile.inc.${COMPILER_NAME}
+include ${BASEDIR}/lib/Makefile.inc.lib
+
+INCLUDES += -I$(BASEDIR)/include
+
+dbg : LDFLAGS += -L../mt/obj/${COMPILER_NAME}
+release : LDFLAGS += -L../mt/obj/${COMPILER_NAME}${DBG_SUFFIX}
+
+dbg : LDFLAGS += -L../mt/obj/${COMPILER_NAME}
+dbg : LDFLAGS += -L../sockios/obj/${COMPILER_NAME}
+release : LDFLAGS += -L../mt/obj/${COMPILER_NAME}${DBG_SUFFIX}
+release : LDFLAGS += -L../sockios/obj/${COMPILER_NAME}${DBG_SUFFIX}
+
+release : LDLIBS += -lxmt -lsockios -lstlport_sunpro
+dbg     : LDLIBS += -lxmt${DBG_SUFFIX} -lsockios${DBG_SUFFIX} \
+                    -lstlport_sunpro_stldebug

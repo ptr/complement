@@ -1,0 +1,24 @@
+# Time-stamp: <00/05/11 22:10:11 ptr>
+# $SunId$
+
+BASEDIR := $(shell xtmp=`pwd`; \
+               xtmp=`dirname $$xtmp`; dirname $$xtmp)
+LIBDIR  := $(shell xtmp=`pwd`; dirname $$xtmp)
+
+COMPILER_NAME = gcc
+post_nm = pgsql
+EXTRA_DIRS = /${post_nm}
+include ${BASEDIR}/lib/DB/Makefile.inc
+
+all:	dbg release
+
+# include ${BASEDIR}/Makefile.inc.${COMPILER_NAME}
+include ${BASEDIR}/lib/Makefile.inc.lib
+
+INCLUDES += -I$(BASEDIR)/include
+
+INCLUDES += -I/usr/local/pgsql/include
+DEFS += -D__DB_POSTGRES
+
+release : LDLIBS += -lstlport_sunpro
+dbg     : LDLIBS += -lstlport_sunpro_stldebug
