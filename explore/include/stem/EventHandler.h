@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <99/05/06 11:16:02 ptr>
+// -*- C++ -*- Time-stamp: <99/05/24 15:23:36 ptr>
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+#ident "$SunId$ %Q%"
 
 #include <Event.h>
 
@@ -14,6 +14,7 @@
 
 #ifdef WIN32
 #include <_algorithm> // for select1st
+#include <win_config.h>
 #endif // WIN32
 
 namespace EDS {
@@ -545,8 +546,8 @@ class EventHandler
     // See comment near EventHandler::EventHandler() implementation
     // HistoryContainer& theHistory;
     HistoryContainer theHistory;
-    static evtable_type theEventsTable;
-    static __DeclareAnyPMF<EventHandler> theDeclEventsTable[];
+    static __DLLEXPORT evtable_type theEventsTable;
+    static __DLLEXPORT __DeclareAnyPMF<EventHandler> theDeclEventsTable[];
 
   public:
 
@@ -559,16 +560,16 @@ class EventHandler
         static int _count;
     };
 
-    EventHandler();
-    explicit EventHandler( const Event::key_type& id );
-    ~EventHandler();
+    __DLLEXPORT EventHandler();
+    explicit __DLLEXPORT EventHandler( const Event::key_type& id );
+    __DLLEXPORT ~EventHandler();
 
-    const string& who_is( const Event::key_type& k ) const;
-    unsigned sid( const Event::key_type& k ) const;
+    __DLLEXPORT const string& who_is( const Event::key_type& k ) const;
+    __DLLEXPORT unsigned sid( const Event::key_type& k ) const;
     static EvManager *manager()
       { return _mgr; }
-    void Send( const Event& e );
-    void Send( const EventVoid& e );
+    __DLLEXPORT void Send( const Event& e );
+    __DLLEXPORT void Send( const EventVoid& e );
 
 /* ************************************************************ *\
    Member template will be nice here, but sorry...
@@ -611,18 +612,18 @@ class EventHandler
       { return _id; }
     void State( state_type state )
       { PushState( state ); }
-    void PushState( state_type state );
-    state_type State() const;
-    void PopState();
-    void PopState( state_type );
-    void PushTState( state_type state );
-    void RemoveState( state_type );
-    bool isState( state_type ) const;
-    virtual bool Dispatch( const Event& );
-    virtual bool DispatchStub( const Event& );
-    virtual void DispatchTrace( const Event&, ostream&  );
-    virtual void Trace( ostream& ) const;
-    void TraceStack( ostream& ) const;
+    __DLLEXPORT void PushState( state_type state );
+    __DLLEXPORT state_type State() const;
+    __DLLEXPORT void PopState();
+    __DLLEXPORT void PopState( state_type );
+    __DLLEXPORT void PushTState( state_type state );
+    __DLLEXPORT void RemoveState( state_type );
+    __DLLEXPORT bool isState( state_type ) const;
+    __DLLEXPORT virtual bool Dispatch( const Event& );
+    __DLLEXPORT virtual bool DispatchStub( const Event& );
+    __DLLEXPORT virtual void DispatchTrace( const Event&, ostream&  );
+    __DLLEXPORT virtual void Trace( ostream& ) const;
+    __DLLEXPORT void TraceStack( ostream& ) const;
     static const table_type& get_ev_table()
       { return theEventsTable.table; }
 

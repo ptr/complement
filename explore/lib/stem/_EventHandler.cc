@@ -1,5 +1,5 @@
-// -*- C++ -*- Time-stamp: <99/03/26 19:09:23 ptr>
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+// -*- C++ -*- Time-stamp: <99/05/24 15:26:30 ptr>
+#ident "$SunId$ %Q%"
 
 #include <EventHandler.h>
 #include <EvManager.h>
@@ -13,8 +13,10 @@
 
 namespace EDS {
 
+__DLLEXPORT
 EventHandler::evtable_type EventHandler::theEventsTable( EventHandler::theDeclEventsTable );
 
+__DLLEXPORT
 __DeclareAnyPMF<EventHandler> EventHandler::theDeclEventsTable[] = {
   { 0, 0, { 0, 0, "End of table" }}
 };
@@ -38,43 +40,51 @@ EventHandler::Init::~Init()
   }
 }
 
+__DLLEXPORT
 const string& EventHandler::who_is( const Event::key_type& k ) const
 {
   return _mgr->who_is( k );
 }
 
+__DLLEXPORT
 unsigned EventHandler::sid( const Event::key_type& k ) const
 {
   return _mgr->sid( k );
 }
 
+__DLLEXPORT
 void EventHandler::Send( const Event& e )
 {
   _mgr->Send( e, _id );
 }
 
+__DLLEXPORT
 void EventHandler::Send( const EventVoid& e )
 {
   _mgr->Send( EDS::Event_convert<void>()( e ), _id );
 }
 
+__DLLEXPORT
 void EventHandler::PushState( state_type state )
 {
   RemoveState( state );
   theHistory.push_front( state );
 }
 
+__DLLEXPORT
 state_type EventHandler::State() const
 {
   return theHistory.front();
 }
 
+__DLLEXPORT
 void EventHandler::PushTState( state_type state )
 {
   theHistory.push_front( ST_TERMINAL );
   theHistory.push_front( state );
 }
 
+__DLLEXPORT
 void EventHandler::PopState()
 {
   theHistory.pop_front();
@@ -83,6 +93,7 @@ void EventHandler::PopState()
   }
 }
 
+__DLLEXPORT
 void EventHandler::PopState( state_type state )
 {
   h_iterator hst_i = __find( state );
@@ -91,6 +102,7 @@ void EventHandler::PopState( state_type state )
   }
 }
 
+__DLLEXPORT
 void EventHandler::RemoveState( state_type state )
 {
   h_iterator hst_i = __find( state );
@@ -99,6 +111,7 @@ void EventHandler::RemoveState( state_type state )
   }
 }
 
+__DLLEXPORT
 bool EventHandler::isState( state_type state ) const
 {
   const HistoryContainer& hst = theHistory;
@@ -143,6 +156,7 @@ const_h_iterator EventHandler::__find( state_type state ) const
 // Of cause, you can found this only if theHistory is a template with static
 // member (stl/list, for example).
 
+__DLLEXPORT
 EventHandler::EventHandler()// :
 //    theHistory( *(new HistoryContainer()) )
 {
@@ -151,6 +165,7 @@ EventHandler::EventHandler()// :
   _id = _mgr->Subscribe( this, "" );
 }
 
+__DLLEXPORT
 EventHandler::EventHandler( const Event::key_type& id )// :
 //    theHistory( *(new HistoryContainer()) )
 {
@@ -163,6 +178,7 @@ EventHandler::EventHandler( const Event::key_type& id )// :
 //  }
 }
 
+__DLLEXPORT
 EventHandler::~EventHandler()
 {
 //  delete &theHistory;
@@ -170,23 +186,28 @@ EventHandler::~EventHandler()
   ((Init *)Init_buf)->~Init();
 }
 
+__DLLEXPORT
 bool EventHandler::Dispatch( const Event& event )
 {
   return theEventsTable.Dispatch( this, theHistory.begin(),theHistory.end(),
 				  event );
 }
 
+__DLLEXPORT
 bool EventHandler::DispatchStub( const Event& event )
 {
   return theEventsTable.DispatchStub( this, theHistory.begin(),
 				      theHistory.end(), event );
 }
+
+__DLLEXPORT
 void EventHandler::DispatchTrace( const Event& __event__, ostream& out )
 {
   theEventsTable.DispatchTrace( theHistory.begin(),theHistory.end(),
 				__event__, out );
 }
 
+__DLLEXPORT
 void EventHandler::TraceStack( ostream& out ) const
 {
   const HistoryContainer& hst = theHistory;
@@ -197,6 +218,7 @@ void EventHandler::TraceStack( ostream& out ) const
   out << endl;
 }
 
+__DLLEXPORT
 void EventHandler::Trace( ostream& out ) const
 {
   EventHandler::theEventsTable.Out( out );
