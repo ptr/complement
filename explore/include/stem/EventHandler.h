@@ -1,11 +1,7 @@
-#ident "%Z%%Q% $RCSfile$ v$Revision$ %H% %T%" // -*- C++ -*-
+#ident "%Z%%Q%$RCSfile$ ($Revision$): %H% %T%" // -*- C++ -*-
 
 #ifndef __OXW_EventHandler_h
 #define __OXW_EventHandler_h
-
-#ifndef _XLIB_H_
-#include <X11/Xlib.h>
-#endif
 
 #ifndef __OXW_OXWdefs_h
 #include <OXW/OXWdefs.h>
@@ -13,6 +9,10 @@
 
 #ifndef __OXW_Event_h
 #include <OXW/Event.h>
+#endif
+
+#ifndef __OXW_Dispatch_h
+#include <OXW/Dispatch.h>
 #endif
 
 #ifndef LIST_H
@@ -29,48 +29,62 @@
 
 // ******************************************************* OXWEventsTableEntry
 
-template <class T>
+template <class T >
 class OXWEventsTableEntry
 {
   friend class OXWEventsTableEntry<T>;
 
   public:
     typedef void (T::*PMF)( OXWEvent& );
+    typedef void (T::*vPMF)();
+    typedef void (T::*xPMF)( XEvent& );
 
-    OXWEventsTableEntry( message_type msg, PMF pmf, const char *pmf_name ) :
-	Msg( msg ),
-	Pmf( pmf ),
-	Pmf_name( pmf_name ),
-        class_name( "" )
-      { }
-
-    OXWEventsTableEntry( message_type msg, PMF pmf,
+    OXWEventsTableEntry( message_type msg, PMF pmf, AnyDPMF dpmf,
 			 const char *cls, const char *pmf_name ) :
 	Msg( msg ),
 	Pmf( pmf ),
 	Pmf_name( pmf_name ),
-        class_name( cls )
+        class_name( cls ),
+	dispatch( dpmf )
       { }
-
+    OXWEventsTableEntry( message_type msg, vPMF pmf, AnyDPMF dpmf,
+			 const char *cls, const char *pmf_name ) :
+	Msg( msg ),
+	Pmf( PMF(pmf) ),
+	Pmf_name( pmf_name ),
+        class_name( cls ),
+	dispatch( dpmf )
+      { }
+    OXWEventsTableEntry( message_type msg, xPMF pmf, AnyDPMF dpmf,
+			 const char *cls, const char *pmf_name ) :
+	Msg( msg ),
+	Pmf( PMF(pmf) ),
+	Pmf_name( pmf_name ),
+        class_name( cls ),
+	dispatch( dpmf )
+      { }
     OXWEventsTableEntry() :
 	Msg( 0 ),
 	Pmf( 0 ),
 	Pmf_name( "??" ),
-        class_name( "??" )
+        class_name( "??" ),
+        dispatch( 0 )
       { }
 
     OXWEventsTableEntry( message_type msg ) :
 	Msg( msg ),
 	Pmf( 0 ),
 	Pmf_name( "??" ),
-        class_name( "??" )
+        class_name( "??" ),
+        dispatch( 0 )
       { }
 
     bool operator==( const OXWEventsTableEntry<T>& probe ) const
       { return probe.Msg == Msg; }
-    bool Dispatch( const T& generic, OXWEvent& event ) const
+    bool Dispatch( const T *generic, OXWEvent& event ) const
       {
-	(generic.*Pmf)( event );
+	dispatch( (GENERIC *)generic, AnyPMF(Pmf), event );
+	// (generic.*Pmf)( event );
 	return 1;
       }
     void Out( ostrstream& out ) const
@@ -81,6 +95,7 @@ class OXWEventsTableEntry
     PMF Pmf;
     const char *Pmf_name;
     const char *class_name;
+    const AnyDPMF dispatch;
 };
 
 // ************************************************************ OXWEventsTable
@@ -102,7 +117,7 @@ class OXWEventsTable
     void push( const OXWEventsTableEntry<T>& entry );
     bool operator==( const_table_entry& probe ) const
       { return probe.theState == theState; }
-    bool Dispatch( const T& generic, OXWEvent& event ) const;
+    bool Dispatch( const T *generic, OXWEvent& event ) const;
     state_type State() const
       { return theState; }
     void Out( ostrstream& ) const;
@@ -123,7 +138,7 @@ void OXWEventsTable<T>::push( const OXWEventsTableEntry<T>& entry )
 }
 
 template <class T>
-bool OXWEventsTable<T>::Dispatch( const T& generic, OXWEvent& event ) const
+bool OXWEventsTable<T>::Dispatch( const T *generic, OXWEvent& event ) const
 {
   list<table_entry>::const_iterator i = find( table.begin(), table.end(),
 					table_entry( event.Message ) );
@@ -154,7 +169,7 @@ class OXWStateTable
   public:
     typedef OXWEventsTable<T> table_entry;
     void push( state_type, OXWEventsTableEntry<T>& );
-    bool Dispatch( const T& generic, state_type, OXWEvent& event );
+    bool Dispatch( const T *generic, state_type, OXWEvent& event );
     void swap( OXWStateTable& x )
       { table.swap( x.table ); }
     void Out( ostrstream& ) const;
@@ -181,7 +196,7 @@ void OXWStateTable<T>::push( state_type state, OXWEventsTableEntry<T>& entry )
 }
 
 template <class T>
-bool OXWStateTable<T>::Dispatch( const T& generic, state_type state,
+bool OXWStateTable<T>::Dispatch( const T *generic, state_type state,
 				 OXWEvent& event )
 {
   list<table_entry>::iterator i = table.begin();
@@ -205,14 +220,6 @@ void OXWStateTable<T>::Out( ostrstream& out ) const
     ++i;
   }
 }
-
-// ******************************************************************* GENERIC
-
-class GENERIC
-{
-  virtual void pure( OXWEvent& ) = 0; // This is to allow usage of virtual
-	                              // catchers, indeed never used.
-};
 
 typedef OXWEventsTableEntry<GENERIC> GENERIC_EvTblEntry;
 typedef OXWStateTable<GENERIC> GENERIC_StatesTbl;
@@ -249,7 +256,7 @@ class OXWEventHandler
     bool isState( state_type ) const;
     bool Dispatch( OXWEvent& );
     virtual const char *Trace() const;
-    
+
   protected:
     void TraceStack( ostrstream& ) const;
     virtual bool __Dispatch( state_type, OXWEvent& );
@@ -284,7 +291,7 @@ int cls::ini_flag = cls::RespTblConfigure();    \
 bool cls::__Dispatch( state_type state, OXWEvent& __event__ ) \
 {						\
   return 					\
-      theStatesTable.Dispatch( *((GENERIC *)this), state, __event__ ); \
+      theStatesTable.Dispatch( (GENERIC *)this, state, __event__ ); \
 }						\
                                                 \
 const char *cls::Trace() const                  \
@@ -303,10 +310,11 @@ int cls::RespTblConfigure()                     \
     ParentThisCls::RespTblConfigure();          \
     theStatesTable = ParentThisCls::theStatesTable;
 
-#define RESPONSE_TABLE_ENTRY( state, msg, catcher ) \
+#define RESPONSE_TABLE_ENTRY( state, msg, catcher, dispatch ) \
     theStatesTable.push( state, *((GENERIC_EvTblEntry *) \
-	    &OXWEventsTableEntry< ThisCls >(    \
-	    msg, &ThisCls::catcher, class_name, #catcher )) )
+	  &OXWEventsTableEntry<ThisCls>( msg,   \
+	  &ThisCls::catcher, AnyDPMF(dispatch), \
+          class_name, #catcher )) )
 
 #define END_RESPONSE_TABLE			\
   }                                             \
