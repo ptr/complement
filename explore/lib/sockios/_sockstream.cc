@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/04 17:11:23 ptr>
+// -*- C++ -*- Time-stamp: <99/02/08 17:14:40 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -13,7 +13,10 @@
 // So I do this via Tls* functions (TlsAlloc() in plock.cc)
 
 #include <ostream>
-#include <xxx/plock.h>
+
+#ifndef __XMT_H
+#include <xmt.h>
+#endif
 
 namespace __impl {
 
