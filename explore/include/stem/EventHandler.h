@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/08 15:13:11 ptr>
+// -*- C++ -*- Time-stamp: <99/10/18 10:22:21 ptr>
 
 /*
  *
@@ -621,6 +621,11 @@ void __EvTableLoader( EventHandler::table_type *table, Handler * )
   __EvTableLoader( table, (typename Handler::ParentThisCls *)0 );
   const typename Handler::evtable_decl_type *__e = Handler::get_ev_table_decl();
   while ( __e->func.dpmf != 0 ) {
+//    if ( !__e->func.valid ) {
+//      std::cerr << "Function type mismatch: " << typeid(Handler).name() << "::"
+//                << __e->func.pmf_name << std::endl;
+//      abort();
+//    }
     table->append( __e->code, __e->st, (__AnyPMFentry *)&__e->func );
     ++__e;
   }
