@@ -1,4 +1,4 @@
-# Time-stamp: <02/09/03 18:11:01 ptr>
+# Time-stamp: <03/03/02 11:41:08 ptr>
 # $Id$
 
 # .KEEP_STATE:
@@ -11,7 +11,9 @@
         clear-dbg-shared \
         clear-stldbg-shared \
 	dbg-shared release-shared \
+	dbg-static release-static \
 	dbg-shared-dep stldbg-shared-dep release-shared-dep \
+	dbg-static-dep stldbg-static-dep release-static-dep \
 	.make.depend
 
 OS_VER := $(shell uname -s | sed -e s/\[\.\ \]/_/g)
@@ -79,19 +81,19 @@ endif
 CDEPFLAGS = -E -M
 CCDEPFLAGS = -E -M
 
-stldbg-shared : DEFS += -D_STLP_DEBUG
-stldbg-shared-dep : DEFS += -D_STLP_DEBUG
+stldbg-static stldbg-shared : DEFS += -D_STLP_DEBUG
+stldbg-static-dep stldbg-shared-dep : DEFS += -D_STLP_DEBUG
 
-release-shared : OPT += -O2
+release-static release-shared : OPT += -O2
 
-dbg-shared : OPT += -g
-dbg-shared-dep : OPT += -g
-stldbg-shared : OPT += -g
-stldbg-shared-dep : OPT += -g
+dbg-static dbg-shared : OPT += -g
+dbg-static-dep dbg-shared-dep : OPT += -g
+stldbg-static stldbg-shared : OPT += -g
+stldbg-static-dep stldbg-shared-dep : OPT += -g
 
 ifeq ($(OS_VER),HP-UX)
-release-shared release-shared-dep : OPT += -march=2.0
-dbg-shared dbg-shared-dep stldbg-shared stldbg-shared-dep : OPT += -march=2.0
+release-static release-static-dep release-shared release-shared-dep : OPT += -march=2.0
+dbg-static stldbg-static dbg-static-dep stldbg-static-dep dbg-shared dbg-shared-dep stldbg-shared stldbg-shared-dep : OPT += -march=2.0
 endif
 
 -include .make.depend
