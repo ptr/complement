@@ -1,4 +1,4 @@
-# Time-stamp: <01/11/09 12:59:05 ptr>
+# Time-stamp: <03/03/23 15:08:57 ptr>
 # $Id$
 
 # This file reflect versions of third-party libraries that
@@ -24,3 +24,9 @@ RL_INCLUDE ?= /usr/local/include/readline
 RL_LIB ?= /usr/local/lib
 RL_LIB_VER_MAJOR = 4
 RL_LIB_VER_MINOR = 2
+
+# gSOAP (http://gsoap2.sourceforge.net)
+
+gSOAP_INCLUDE_DIR ?= ${gSOAP_DIR}/include
+gSOAP_LIB_DIR ?= ${gSOAP_DIR}/lib
+gSOAP_BIN_DIR ?= ${gSOAP_DIR}/bin
