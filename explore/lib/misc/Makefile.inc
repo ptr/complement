@@ -1,4 +1,4 @@
-# Time-stamp: <01/06/01 14:52:07 ptr>
+# Time-stamp: <01/06/05 14:01:46 ptr>
 # $Id$
 
 # I have only one reason while I should use "C++" variant of MD5 instead of "C":
@@ -9,6 +9,7 @@
 # that possible for C++ (or I should #define names).
 
 LIBNAME = Aux
+MAJOR = .1
 MINOR = .5
 PATCH = .0
 SRC_CC = CyrMoney.cc args.cc dir_utils.cc directory.cc _node.cc cgi.cc \

@@ -1,3 +1,8 @@
+2001-06-05  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Makefile.inc (Message): library version 3.5.0
+	This reflect real major libEDS release.
+
 2001-06-04  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
 
 	* libEDS: Work with STLport 4.5 beta 8 (from stlport cvs);
