@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/08 14:38:17 ptr>
+// -*- C++ -*- Time-stamp: <00/10/06 18:54:39 ptr>
 
 /*
  *
@@ -62,6 +62,11 @@
 #  include <netinet/in.h>
 #  include <arpa/inet.h>
 #  include <netdb.h>
+#  ifdef __hpux
+#    ifndef socklen_t // HP-UX 10.01
+typedef int socklen_t;
+#    endif
+#  endif
 #  include <cerrno>
 #endif // !WIN32
 
@@ -80,7 +85,6 @@ namespace std {
 class sock_base
 {
   public:
-    typedef unsigned long sopt;
     typedef unsigned long shutdownflg;
 #ifdef __unix
     typedef int           socket_type;
@@ -103,7 +107,7 @@ class sock_base
     };
 
     // Option flags per-socket.
-    enum _sopt {
+    enum so_t {
       so_debug	        = SO_DEBUG,       // turn on debugging info recording
 #ifndef __linux
       so_acceptconn     = SO_ACCEPTCONN,  // socket has had listen()
@@ -117,11 +121,6 @@ class sock_base
 #endif
       so_linger	        = SO_LINGER,      // linger on close if data present
       so_oobinline	= SO_OOBINLINE,   // leave received OOB data in line
-#ifdef __sun
-      so_dontlinger     = SO_DONTLINGER,  // ~so_linger
-#else
-      so_dontlinger     = ~so_linger,
-#endif
       // Additional options, not kept in so_options.
       so_sndbuf		= SO_SNDBUF,      // send buffer size
       so_rcvbuf		= SO_RCVBUF,      // receive buffer size
@@ -268,7 +267,8 @@ class basic_sockbuf :
 
    const string& hostname() const
      { return _hostname; }
-   void setoptions( int optname, bool __v );
+   void setoptions( sock_base::so_t optname, bool on_off = true,
+                    int __v = 0 );
 
   protected:
     void findhost( const char *hostname );
