@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/08/22 22:49:53 ptr>
+// -*- C++ -*- Time-stamp: <96/11/03 10:46:18 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #include <CLASS/checks.h>
@@ -117,18 +117,19 @@ OXWEventHandler::~OXWEventHandler()
   delete &theHistory;
 }
 
-bool OXWEventHandler::Dispatch( OXWEvent& event )
+bool OXWEventHandler::Dispatch( const OXWEvent& event )
 {
   return theEventsTable.Dispatch( this, theHistory.begin(),theHistory.end(),
 				  event );
 }
 
-bool OXWEventHandler::DispatchStub( OXWEvent& event )
+bool OXWEventHandler::DispatchStub( const OXWEvent& event )
 {
   return theEventsTable.DispatchStub( this, theHistory.begin(),
 				      theHistory.end(), event );
 }
-void OXWEventHandler::DispatchTrace( OXWEvent& __event__, ostrstream& out )
+void OXWEventHandler::DispatchTrace( const OXWEvent& __event__,
+				     ostrstream& out )
 {
   theEventsTable.DispatchTrace( theHistory.begin(),theHistory.end(),
 				__event__, out );
