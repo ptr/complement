@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/11/04 11:34:32 ptr>
+// -*- C++ -*- Time-stamp: <01/01/22 14:14:59 ptr>
 
 /*
  *
@@ -302,6 +302,11 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::_shift_fd()
         find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, _pfd[j].fd ) );
 #ifndef __hpux
       __STL_ASSERT( i != _M_c.end() );
+#ifdef __linux
+      if ( i == _M_c.end() ) {
+        cerr << "CRASH!!!!" << endl;
+      }
+#endif
 #else
       if ( i == _M_c.end() ) { // Socket already closed (may be after read/write failure)
         // this way may not notify poll (like in HP-UX 11.00) via POLLERR flag

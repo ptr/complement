@@ -1,4 +1,4 @@
-# Time-stamp: <00/10/09 10:01:38 ptr>
+# Time-stamp: <01/01/18 13:12:27 ptr>
 # $SunId$
 
 BASEDIR := $(shell xtmp=`pwd`; \
@@ -27,7 +27,7 @@ dbg-shared : LDFLAGS += -Wl,+k
 dbg-shared : LDFLAGS += -L${HOME}/lib
 dbg-shared : LDLIBS += -lxmt_${COMPILER_NAME}${DBG_SUFFIX} \
 		       -lsockios_${COMPILER_NAME}${DBG_SUFFIX} \
-                       -lstlport_aCC_debug
+                       -lstlport_aCC
 
 dbg-static : LDFLAGS += -L${HOME}/lib
 dbg-static : LDLIBS += -lxmt_${COMPILER_NAME}${DBG_SUFFIX} \

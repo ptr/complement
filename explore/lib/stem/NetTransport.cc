@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/01/16 12:56:05 ptr>
+// -*- C++ -*- Time-stamp: <01/01/22 14:08:53 ptr>
 
 /*
  *
@@ -311,10 +311,19 @@ bool NetTransport_base::push( const Event& _rs )
         if ( sess._un_to != _count ) {
           cerr << "Outgoing event(s) lost, or missrange event: " << sess._un_to
                << ", " << _count << " (Session " << _sid << ")" << endl;
-          kill( getpid(), SIGQUIT );
+          // kill( getpid(), SIGQUIT );
         }
       }
       smgr.unlock();
+    } else {
+      throw ios_base::failure( "net not good" );
+    }
+  }
+  catch ( ios_base::failure& ) {
+    if ( net != 0 ) { // clear connection: required by non-Solaris OS
+      disconnect();   // for MP connection policy  
+      rar.clear();
+      net->close();
     }
   }
   catch ( ... ) {
@@ -502,9 +511,8 @@ void NetTransportMP::connect( sockstream& s )
     }
   }
   catch ( ... ) {
-    s.close();
-    // disconnect();
-    this->close();
+    this->close(); // clear connection
+    net = 0;
   }
 }
 
