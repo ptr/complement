@@ -1,8 +1,8 @@
-# -*- makefile -*- Time-stamp: <02/03/11 15:28:35 ptr>
+# -*- makefile -*- Time-stamp: <02/09/03 18:53:18 ptr>
 # $Id$
 
 include $(BASEDIR)/Makefiles/Makefile.inc
--include $(BASEDIR)/Makefiles/Makefile.dep.${COMPILER_NAME}
+# -include $(BASEDIR)/Makefiles/Makefile.dep.${COMPILER_NAME}
 include ${BASEDIR}/Makefiles/Makefile.inc.${COMPILER_NAME}
 include $(BASEDIR)/Makefiles/Makefile.inc.ver
 LDFLAGS = 
@@ -63,27 +63,6 @@ release-shared:	$(OUTPUT_DIR) ${SO_NAME_SHORT}
 dbg-shared:	$(OUTPUT_DIR_DBG) ${SO_NAME_SHORT_DBG}
 
 stldbg-shared:	$(OUTPUT_DIR_STLDBG) ${SO_NAME_SHORT_STLDBG}
-
-release-shared-dep:	$(OUTPUT_DIR) $(DEP)
-
-dbg-shared-dep:	$(OUTPUT_DIR_DBG) $(DEP_DBG)
-
-stldbg-shared-dep:	$(OUTPUT_DIR_STLDBG) $(DEP_STLDBG)
-
-# Static libraries tags
-
-release-static:	$(OUTPUT_DIR_A) ${A_NAME_SHORT}
-
-dbg-static:	$(OUTPUT_DIR_A_DBG) ${A_NAME_SHORT_DBG}
-
-stldbg-static:	$(OUTPUT_DIR_A_STLDBG) ${A_NAME_SHORT_STLDBG}
-
-release-static-dep:	$(OUTPUT_DIR_A) $(DEP_A)
-
-dbg-static-dep:	$(OUTPUT_DIR_A_DBG) $(DEP_A_DBG)
-
-stldbg-static-dep:	$(OUTPUT_DIR_A_STLDBG) $(DEP_A_STLDBG)
-
 
 ${SO_NAME_SHORT}:	$(OBJ) $(LIBSDEP)
 	$(LINK.cc) $(OUTPUT_OPTION) $(OBJ) $(LDLIBS)
@@ -146,24 +125,18 @@ prepare-pkg-shared:	release-shared
 	 rm -f ${SO_NAME_LINK}; \
 	 ln -s ${SO_NAME_LONG} ${SO_NAME_LINK} )
 
-install-release-static:	release-static
-	@if [ -f ${A_INSTALL} ] ; then \
-	  rm ${A_INSTALL}; \
-	fi
-	$(INSTALL_A) ${A_NAME_SHORT} $(INSTALL_LIB_DIR)
-
 install-dbg-shared:	dbg-shared
 	@if [ -f ${SO_INSTALL_DBG} ] ; then \
 	  rm ${SO_INSTALL_DBG}; \
 	fi
-	@if [ -h $(INSTALL_LIB_DIR)/${SO_MAJOR_DBG} ] ; then \
-	  rm $(INSTALL_LIB_DIR)/${SO_MAJOR_DBG}; \
+	@if [ -h $(INSTALL_LIB_DIR_DBG)/${SO_MAJOR_DBG} ] ; then \
+	  rm $(INSTALL_LIB_DIR_DBG)/${SO_MAJOR_DBG}; \
 	fi
-	@if [ -h $(INSTALL_LIB_DIR)/${SO_GENERAL_DBG} ] ; then \
-	  rm $(INSTALL_LIB_DIR)/${SO_GENERAL_DBG}; \
+	@if [ -h $(INSTALL_LIB_DIR_DBG)/${SO_GENERAL_DBG} ] ; then \
+	  rm $(INSTALL_LIB_DIR_DBG)/${SO_GENERAL_DBG}; \
 	fi
-	$(INSTALL_SO) ${SO_NAME_SHORT_DBG} $(INSTALL_LIB_DIR)
-	(cd $(INSTALL_LIB_DIR) && \
+	$(INSTALL_SO) ${SO_NAME_SHORT_DBG} $(INSTALL_LIB_DIR_DBG)
+	(cd $(INSTALL_LIB_DIR_DBG) && \
 	 { rm -f ${SO_MINOR_DBG}; \
 	   ln -s ${SO_NAME_LONG_DBG} ${SO_MINOR_DBG}; \
 	   rm -f ${SO_MAJOR_DBG}; \
@@ -171,24 +144,18 @@ install-dbg-shared:	dbg-shared
 	   rm -f ${SO_GENERAL_DBG}; \
 	   ln -s ${SO_MAJOR_DBG} ${SO_GENERAL_DBG}; } )
 
-install-dbg-static:	dbg-static
-	@if [ -f ${A_INSTALL_DBG} ] ; then \
-	  rm ${A_INSTALL_DBG}; \
-	fi
-	$(INSTALL_A) ${A_NAME_SHORT_DBG} $(INSTALL_LIB_DIR)
-
 install-stldbg-shared:	stldbg-shared
 	@if [ -f ${SO_INSTALL_STLDBG} ] ; then \
 	  rm ${SO_INSTALL_STLDBG}; \
 	fi
-	@if [ -h $(INSTALL_LIB_DIR)/${SO_MAJOR_STLDBG} ] ; then \
-	  rm $(INSTALL_LIB_DIR)/${SO_MAJOR_STLDBG}; \
+	@if [ -h $(INSTALL_LIB_DIR_STLDBG)/${SO_MAJOR_STLDBG} ] ; then \
+	  rm $(INSTALL_LIB_DIR_STLDBG)/${SO_MAJOR_STLDBG}; \
 	fi
-	@if [ -h $(INSTALL_LIB_DIR)/${SO_GENERAL_STLDBG} ] ; then \
-	  rm $(INSTALL_LIB_DIR)/${SO_GENERAL_STLDBG}; \
+	@if [ -h $(INSTALL_LIB_DIR_STLDBG)/${SO_GENERAL_STLDBG} ] ; then \
+	  rm $(INSTALL_LIB_DIR_STLDBG)/${SO_GENERAL_STLDBG}; \
 	fi
-	$(INSTALL_SO) ${SO_NAME_SHORT_STLDBG} $(INSTALL_LIB_DIR)
-	(cd $(INSTALL_LIB_DIR) && \
+	$(INSTALL_SO) ${SO_NAME_SHORT_STLDBG} $(INSTALL_LIB_DIR_STLDBG)
+	(cd $(INSTALL_LIB_DIR_STLDBG) && \
 	 { rm -f ${SO_MINOR_STLDBG}; \
 	   ln -s ${SO_NAME_LONG_STLDBG} ${SO_MINOR_STLDBG}; \
 	   rm -f ${SO_MAJOR_STLDBG}; \
@@ -196,17 +163,8 @@ install-stldbg-shared:	stldbg-shared
 	   rm -f ${SO_GENERAL_STLDBG}; \
 	   ln -s ${SO_MAJOR_STLDBG} ${SO_GENERAL_STLDBG}; } )
 
-install-stldbg-static:	stldbg-static
-	@if [ -f ${A_INSTALL_STLDBG} ] ; then \
-	  rm ${A_INSTALL_STLDBG}; \
-	fi
-	$(INSTALL_A) ${A_NAME_SHORT_STLDBG} $(INSTALL_LIB_DIR)
-
 clear-release-shared::
 	@rm -f ${SO_NAME_SHORT}
-
-clear-release-static::
-	@rm -f ${A_NAME_SHORT}
 
 clear-dbg-shared::
 	@rm -f ${SO_NAME_SHORT_DBG}
@@ -214,14 +172,5 @@ clear-dbg-shared::
 clear-stldbg-shared::
 	@rm -f ${SO_NAME_SHORT_STLDBG}
 
-clear-dbg-static::
-	@rm -f ${A_NAME_SHORT_DBG}
-
-clear-stldbg-static::
-	@rm -f ${A_NAME_SHORT_STLDBG}
-
-clear-static:	clear-dbg-static clear-stldbg-static \
-		clear-release-static
-
-clear-all:	clear-static clear
+clear-all:	clear
 	-rm -f ${SO_INSTALL} ${SO_INSTALL_LN}

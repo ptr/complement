@@ -1,4 +1,4 @@
-# Time-stamp: <02/08/26 15:35:11 ptr>
+# Time-stamp: <02/09/03 18:11:01 ptr>
 # $Id$
 
 # .KEEP_STATE:
@@ -7,13 +7,11 @@
 .SCCS_GET:
 
 .PHONY:	$(OUTPUT_DIR) $(OUTPUT_DIR_DBG) $(OUTPUT_DIR_STLDBG) \
-        $(OUTPUT_DIR_A) $(OUTPUT_DIR_A_DBG) $(OUTPUT_DIR_A_STLDBG) \
-	clear-release-static clear-release-shared \
-        clear-dbg-static clear-dbg-shared \
-        clear-stldbg-static clear-stldbg-shared \
-	dbg-shared release-shared dbg-static release-static \
+	clear-release-shared \
+        clear-dbg-shared \
+        clear-stldbg-shared \
+	dbg-shared release-shared \
 	dbg-shared-dep stldbg-shared-dep release-shared-dep \
-        dbg-static-dep stldbg-static-dep release-static-dep \
 	.make.depend
 
 OS_VER := $(shell uname -s | sed -e s/\[\.\ \]/_/g)
@@ -85,20 +83,11 @@ stldbg-shared : DEFS += -D_STLP_DEBUG
 stldbg-shared-dep : DEFS += -D_STLP_DEBUG
 
 release-shared : OPT += -O2
-release-static : OPT += -O2
 
 dbg-shared : OPT += -g
 dbg-shared-dep : OPT += -g
 stldbg-shared : OPT += -g
 stldbg-shared-dep : OPT += -g
-
-stldbg-static : DEFS += -D_STLP_DEBUG
-stldbg-static-dep : DEFS += -D_STLP_DEBUG
-
-dbg-static : OPT += -g
-dbg-static-dep : OPT += -g
-stldbg-static : OPT += -g
-stldbg-static-dep : OPT += -g
 
 ifeq ($(OS_VER),HP-UX)
 release-shared release-shared-dep : OPT += -march=2.0
