@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 09:48:13 ptr>
+// -*- C++ -*- Time-stamp: <99/09/22 12:00:18 ptr>
 
 /*
  *
@@ -21,7 +21,7 @@
 #ifndef __config_feature_h
 #define __config_feature_h
 
-#pragma ident "$SunId$ %Q%"
+#ident "$SunId$ %Q%"
 
 #ifdef _DEBUG
 #  ifndef __STL_DEBUG
