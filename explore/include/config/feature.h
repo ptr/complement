@@ -71,7 +71,11 @@
 
 #ifdef linux
 #  include <config/_linux.h>
-#  ifdef __GNUC__
+#  ifdef __INTEL_COMPILER
+#    include <config/_icc.h>
+#  endif
+/* Intel's icc define __GNUC__! */
+#  if defined(__GNUC__) && !defined(__INTEL_COMPILER)
 #    include <config/_gcc.h>
 #  endif
 #endif
