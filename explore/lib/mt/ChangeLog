@@ -1,3 +1,7 @@
+2002-07-12  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* libxmt: Version 1.6.0
+
 2002-07-11  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* xmt.h, xmt.cc (Repository): add try_wait_time,
