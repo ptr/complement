@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/04/07 13:55:30 ptr>
+// -*- C++ -*- Time-stamp: <99/04/16 14:42:33 ptr>
 #ifndef __EvManager_h
 #define __EvManager_h
 
@@ -20,10 +20,13 @@
 #endif
 
 #include <xmt.h>
+#include <sockstream>
 
 namespace EDS {
 
+class NetTransport_base;
 class NetTransport;
+class NetTransportMgr;
 
 struct __Remote_Object_Entry
 {
@@ -32,13 +35,13 @@ struct __Remote_Object_Entry
         channel( 0 )
       { }
 
-    __Remote_Object_Entry( Event::key_type __k, NetTransport *__c ) :
+    __Remote_Object_Entry( Event::key_type __k, NetTransport_base *__c ) :
         key( __k ),
         channel( __c )
       { }
 
     Event::key_type key;
-    NetTransport *channel;
+    NetTransport_base *channel;
 };
 
 struct __Object_Entry
@@ -51,7 +54,7 @@ struct __Object_Entry
     ~__Object_Entry()
       { delete remote; }
 
-    void addremote( Event::key_type key,  NetTransport *channel )
+    void addremote( Event::key_type key, NetTransport_base *channel )
       { remote = new __Remote_Object_Entry( key, channel ); }
         
     EventHandler *ref;  // system dependent? for Win may be WND HANDLER?    
@@ -106,7 +109,7 @@ class EvManager
         return id;
       }
 
-    key_type SubscribeRemote( NetTransport *channel, const key_type& rmkey, const std::string& info )
+    key_type SubscribeRemote( NetTransport_base *channel, const key_type& rmkey, const std::string& info )
       {
         MT_REENTRANT( _lock_heap, _1 );
         key_type id = create_unique() | Event::extbit;
@@ -139,32 +142,28 @@ class EvManager
       }
 
     EvSessionManager::key_type sid( const key_type& object_id ) const;
-    SessionInfo& session_info( const EvSessionManager::key_type& k )
-      { return smgr[k]; }
-
-    void erase_session( const EvSessionManager::key_type& k )
-      { smgr.erase( k ); }
 
     void Send( const Event& e, const key_type& src_id = Event::badaddr );
 
   private:
     key_type create_unique();
 
-    EvSessionManager::key_type establish_session();
-    void Remove( NetTransport * );
-    void disconnect( const EvSessionManager::key_type& _sid );
+    void Remove( NetTransport_base * );
     void Dispatch( const Event& e );
 
     const key_type _low;
     const key_type _high;
     key_type _id;
     heap_type heap;
-    EvSessionManager smgr;
 
     __impl::Mutex _lock_heap;
 
     static std::string inv_key_str;
+
+    friend class NetTransport_base;
     friend class NetTransport;
+    friend class NetTransportMgr;
+    friend class NetTransportMP;
 };
 
 } // namespace EDS

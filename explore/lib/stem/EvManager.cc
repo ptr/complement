@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/04/06 19:15:34 ptr>
+// -*- C++ -*- Time-stamp: <99/04/16 14:43:31 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #include <EvManager.h>
@@ -12,7 +12,7 @@ std::string EvManager::inv_key_str( "invalid key" );
 // (related, may be, with socket connection)
 // from [remote name -> local name] mapping table, and mark related session as
 // 'disconnected'.
-void EvManager::Remove( NetTransport *channel )
+void EvManager::Remove( NetTransport_base *channel )
 {
   MT_LOCK( _lock_heap );
   heap_type::iterator i = heap.begin();
@@ -25,7 +25,6 @@ void EvManager::Remove( NetTransport *channel )
     }
   }
   MT_UNLOCK( _lock_heap );
-  disconnect( channel->sid() );
 }
 
 // return session id of object with address 'id' if this is external
@@ -66,7 +65,7 @@ void EvManager::Send( const Event& e, const EvManager::key_type& src_id )
     } else { // remote delivery
 //       std::cerr << "Remote\n";
       __stl_assert( (*i).second.remote != 0 );
-      (*i).second.remote->channel->push( e, (*i).second.remote->key, src_id );
+      (*i).second.remote->channel->push( e, (*i).second.remote->key, src_id, -1 );
     }
   } else {
     std::cerr << "===================== Not found\n";
@@ -82,31 +81,6 @@ EvManager::key_type EvManager::create_unique()
   } while ( heap.find( _id ) != heap.end() );
 
   return _id;
-}
-
-EvSessionManager::key_type EvManager::establish_session()
-{
-  // EvSessionManager::key_type new_key = smgr.create();
-
-  return /* new_key */ smgr.create();
-}
-
-void EvManager::disconnect( const EvSessionManager::key_type& _sid )
-{
-  if ( smgr.is_avail( _sid ) ) {
-    SessionInfo& info = smgr[_sid];
-    info.disconnect();
-//    cerr << "EvManager::disconnect: " << _sid << endl;
-    if ( info._control != Event::badaddr ) {
-      Event_base<Event::key_type> ev_disconnect( EV_DISCONNECT, _sid );
-      ev_disconnect.dest( info._control );
-//      cerr << "EvManager::disconnect, info._control: " << info._control << endl;
-      Send( EDS::Event_convert<Event::key_type>()(ev_disconnect), Event::mgraddr );
-//      cerr << "===== Pass" << endl;
-    } else {
-      smgr.erase( _sid );
-    }
-  }
 }
 
 } // namespace EDS
