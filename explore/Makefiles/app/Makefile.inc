@@ -1,4 +1,4 @@
-# Time-stamp: <01/11/09 12:54:29 ptr>
+# -*- makefile -*- Time-stamp: <02/03/11 14:20:45 ptr>
 # $Id$
 
 all:	all-shared all-static
