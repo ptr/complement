@@ -16,10 +16,6 @@ LINK_OUTPUT_OPTION = /OUT:$@
 DEFS += /D "WIN32" /D "_WINDOWS"
 CPPFLAGS = $(DEFS) $(INCLUDES)
 
-CCFLAGS = -pthread $(OPT)
-CFLAGS = -pthread $(OPT)
-CXXFLAGS = -pthread -fexceptions -fident $(OPT)
-
 CFLAGS = /nologo /TC /W3 /GR /GX $(OPT)
 CXXFLAGS = /nologo /TP /W3 /GR /GX $(OPT)
 COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(TARGET_ARCH) /c
