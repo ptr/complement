@@ -1,3 +1,7 @@
+2001-06-05  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Makefile.inc (Message): library version 0.5.0
+
 2001-06-04  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
 
 	* libDB:  Work with STLport 4.5 beta 8 (from stlport cvs);

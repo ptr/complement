@@ -1,3 +1,8 @@
+2001-06-05  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* Makefile.inc (Message): library version 1.5.0
+	This reflect real release major version of libxmt
+
 2001-06-04  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
 
 	* libxmt: Work with STLport 4.5 beta 8 (from stlport cvs);
