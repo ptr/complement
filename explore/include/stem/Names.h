@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/24 19:48:04 ptr>
+// -*- C++ -*- Time-stamp: <00/05/19 09:35:23 ptr>
 
 /*
  *
@@ -50,6 +50,7 @@ class Names :
     __PG_DECLSPEC Names();
     explicit __PG_DECLSPEC Names( const char * );
     explicit __PG_DECLSPEC Names( addr_type id, const char *info = 0 );
+    __PG_DECLSPEC ~Names();
 
     __PG_DECLSPEC void get_list( const Event& );
     __PG_DECLSPEC void get_ext_list( const Event& );
