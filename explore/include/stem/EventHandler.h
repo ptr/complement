@@ -224,10 +224,14 @@ struct __DeclareAnyPMF
 #ifndef _MSC_VER
     typename EDS::Event::code_type code;
     typename EDS::__PMFentry<T> func;
-#else
+#else // _MSC_VER
+#  ifdef _DEBUG
     EDS::__Event_Base::code_type code;
+#  else  // !_DEBUG
+    __Event_Base::code_type code; // workaround for VC 5.0
+#  endif // _DEBUG
     EDS::__PMFentry<T> func;
-#endif
+#endif // _MSC_VER
 };
 
 template <class Key1, class Key2, class Value>
