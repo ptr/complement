@@ -29,14 +29,17 @@
 #include <config/feature.h>
 #include "EDS/EvPack.h"
 #include <iterator>
+#include <iostream>
 #include <string>
+#include <algorithm>
 
 namespace EDS {
 
-using __STD::string;
-using __STD::istream;
-using __STD::ostream;
-using __STD::copy;
+// using __STD::string;
+// using __STD::istream;
+// using __STD::ostream;
+// using __STD::copy;
+using namespace std;
 
 __PG_DECLSPEC
 void __pack_base::__net_unpack( istream& s, string& str )
@@ -67,11 +70,11 @@ void __pack_base::__net_pack( ostream& s, const string& str )
   string::size_type sz = str.size();
   sz = to_net( sz );
   s.write( (const char *)&sz, 4 );
-#if !defined(__HP_aCC) || (__HP_aCC > 1)
+#if !defined(__HP_aCC) || (__HP_aCC > 1) // linker problem, not compiler
   copy( str.begin(), str.end(), __STD::ostream_iterator<char,char,__STD::char_traits<char> >(s) );
 #else // Mmm, may be with __STL_DEBUG should be a bit different...
 // #  ifndef __STL_DEBUG
-  __STD::__copy_aux(str.begin(), str.end(), __STD::ostream_iterator<char,char,__STD::char_traits<char> >(s), (char *)(0) );
+  copy( str.begin(), str.end(), ostream_iterator<char>(s) );
 // #  else
 //  __STD::__copy_aux(str.begin(), str.end(), __STD::ostream_iterator<char,char,__STD::char_traits<char> >(s), (char *)(0) );
 // #  endif
@@ -105,11 +108,12 @@ void __pack_base::__pack( ostream& s, const string& str )
 {
   string::size_type sz = str.size();
   s.write( (const char *)&sz, 4 );
-#if !defined(__HP_aCC) || (__HP_aCC > 1)
+#if !defined(__HP_aCC) || (__HP_aCC > 1) // linker problem, not compiler
   __STD::copy( str.begin(), str.end(), __STD::ostream_iterator<char,char,__STD::char_traits<char> >(s) );
 #else // Mmm, may be with __STL_DEBUG should be a bit different...
 // #  ifndef __STL_DEBUG
-  __STD::__copy_aux(str.begin(), str.end(), __STD::ostream_iterator<char,char,__STD::char_traits<char> >(s), (char *)(0) );
+  copy( str.begin(), str.end(), ostream_iterator<char>(s) );
+  // __STD::__copy_aux(str.begin(), str.end(), __STD::ostream_iterator<char,char,__STD::char_traits<char> >(s), (char *)(0) );
 // #  else
 //   __STD::__copy_aux(str.begin(), str.end(), __STD::ostream_iterator<char,char,__STD::char_traits<char> >(s), (char *)(0) );
 //  for ( string::size_type i = 0; i < str.size(); ++i ) {
