@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/29 14:55:35 ptr>
+// -*- C++ -*- Time-stamp: <99/04/06 17:49:17 ptr>
 #ifndef __EvManager_h
 #define __EvManager_h
 
@@ -77,7 +77,9 @@ class EvManager
                               __STL_DEFAULT_ALLOCATOR(__Object_Entry) > heap_type;
 
     EvManager() :
-        _id( 0 )
+        _low( __Event_Base::beglocaddr ),
+        _high( __Event_Base::endlocaddr ),
+        _id( _low )
       { }
 
     key_type Subscribe( EventHandler *object, const std::string& info )
@@ -95,7 +97,7 @@ class EvManager
       {
         MT_REENTRANT( _lock_heap, _1 );
         if ( (id & Event::extbit) || is_avail( id ) ) {
-          return -1;
+          return Event::badaddr;
         }
         EDS::__Object_Entry& record = heap[id];
         record.ref = object;
@@ -153,6 +155,8 @@ class EvManager
     void disconnect( const EvSessionManager::key_type& _sid );
     void Dispatch( const Event& e );
 
+    const key_type _low;
+    const key_type _high;
     key_type _id;
     heap_type heap;
     EvSessionManager smgr;
