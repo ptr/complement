@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/03/03 13:05:25 ptr>
+// -*- C++ -*- Time-stamp: <00/04/04 13:26:20 ptr>
 
 /*
  *
@@ -202,8 +202,16 @@ bool NetTransport_base::pop( Event& _rs )
 
   str.erase();  // str.clear(); absent in VC's STL
   str.reserve( sz );
+#if defined(_MSC_VER) && (_MSC_VER < 1200)
+  char ch;
+#endif
   while ( sz-- > 0 ) {
+#if defined(_MSC_VER) && (_MSC_VER < 1200)
+    net->get( ch );
+    str += ch;
+#else
     str += (char)net->get();
+#endif
   }
 
   smgr.lock();
