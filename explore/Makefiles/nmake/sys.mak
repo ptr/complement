@@ -1,4 +1,4 @@
-# Time-stamp: <03/07/15 18:24:51 ptr>
+# Time-stamp: <03/09/28 18:59:23 ptr>
 # $Id$
 
 # shared library:
@@ -15,7 +15,7 @@ AR_INS_R =
 AR_EXTR = 
 AR_OUT = /o
 
-INSTALL = cp
+INSTALL = copy
 
 INSTALL_SO = $(INSTALL)
 INSTALL_A = $(INSTALL)
