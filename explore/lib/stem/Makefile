@@ -1,4 +1,4 @@
-# Time-stamp: <99/10/13 16:01:05 ptr>
+# Time-stamp: <99/11/02 12:14:59 ptr>
 # $SunId$ %Q%
 
 PWD :sh = pwd
@@ -10,7 +10,7 @@ libdbg_a:	../libEDS_dbg.a
 
 include ../../Makefile.inc
 
-INCLUDES += -I../../include
+INCLUDES += -I$(BASEDIR)/include
 
 EDS_SRC = _EventHandler.cc NetTransport.cc EvManager.cc EvPack.cc crc.cc \
           _SessionMgr.cc Names.cc Cron.cc
@@ -42,7 +42,8 @@ $(OUTPUT_DIR)/libEDS_dbg.so:	$(EDS_OBJ)
 	$(LINK.cc) $(OUTPUT_OPTION) $(EDS_OBJ) $(LDLIBS)
 
 clear::
-	?-rm -rf $(OUTPUT_DIR)/*
+	?-rm -rf $(EDS_OBJ) \
+	    $(OUTPUT_DIR)/libEDS_dbg.so $(OUTPUT_DIR)/libEDS_dbg.a
 
 clear-all:	clear
 	?-rm -f ../libEDS_dbg.a
