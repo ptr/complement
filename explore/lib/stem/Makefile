@@ -37,6 +37,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/TextCursor.o \
 		$(OUTPUT_DIR)/ScrVCollector.o \
 		$(OUTPUT_DIR)/ScrWindow.o \
+		$(OUTPUT_DIR)/ScrTable.o \
 		$(OUTPUT_DIR)/PopupMenu.o \
 		$(OUTPUT_DIR)/AlignUtils.o \
 		$(OUTPUT_DIR)/CheckList.o \
