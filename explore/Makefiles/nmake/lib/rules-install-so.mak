@@ -1,11 +1,13 @@
-# Time-stamp: <03/09/28 19:16:37 ptr>
+# Time-stamp: <04/07/25 17:16:55 ptr>
 # $Id$
 
 !ifndef INSTALL_TAGS
-INSTALL_TAGS= install-release-shared install-dbg-shared install-stldbg-shared
+INSTALL_TAGS= install-release-shared install-dbg-shared
 !endif
 
 install:	$(INSTALL_TAGS)
+
+install-shared:	install-release-shared install-dbg-shared install-stldbg-shared
 
 install-release-shared: release-shared
 	$(INSTALL_SO) $(SO_NAME_OUT) $(INSTALL_LIB_DIR)
