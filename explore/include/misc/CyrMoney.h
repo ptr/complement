@@ -1,12 +1,12 @@
-// -*- C++ -*- Time-stamp: <98/03/24 12:30:25 ptr>
+// -*- C++ -*- Time-stamp: <98/11/12 20:45:43 ptr>
 #ifndef __CyrMoney_h
 #define __CyrMoney_h
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
-#ifndef __STRING__
 #include <string>
-#endif
+
+using std::string;
 
 class cyr_money_converter
 {

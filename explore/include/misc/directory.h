@@ -21,16 +21,12 @@
 #if !defined(DIRECTORY_H)
 #define DIRECTORY_H
 
-#ifndef __SGI_STL_CONFIG_H
 #include <stl_config.h>
-#endif
-
-#ifndef __STRING__
 #include <string>
-#endif
-
-#ifndef __SGI_STL_ITERATOR
 #include <iterator>
+
+#ifdef __STL_USE_NAMESPACES
+using namespace std;
 #endif
 
 // -----------------------------------------------------------------------------
@@ -42,7 +38,11 @@
 class dir_it_rep;
 
 class dir_it :
+#ifndef __STL_USE_NAMESPACES
     public input_iterator<string, int>
+#else
+    public iterator<input_iterator_tag,string,int,string*,string&>
+#endif
 {
   public:
     // --------------------------------------------------------------------
