@@ -1,4 +1,4 @@
-# Time-stamp: <03/09/12 17:55:56 ptr>
+# Time-stamp: <03/09/28 18:06:14 ptr>
 # $Id$
 
 .SUFFIXES: .o .cc
@@ -40,7 +40,7 @@ USE_MAKE = nmake
 #include ${RULESBASE}/depend-$(COMPILER_NAME).mak
 
 # general clean
-#include ${RULESBASE}/clean.mak
+# include ${RULESBASE}/clean.mak
 
 # if target is library, rules for library
 !ifdef LIBNAME
@@ -48,6 +48,6 @@ USE_MAKE = nmake
 !endif
 
 # if target is program, rules for executable
-#ifdef PRGNAME
-#include ${RULESBASE}/app/top.mak
-#endif
+!ifdef PRGNAME
+!include $(RULESBASE)/$(USE_MAKE)/app/top.mak
+!endif
