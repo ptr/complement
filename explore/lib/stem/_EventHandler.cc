@@ -1,35 +1,35 @@
-#ident "%Z%$RCSfile$ v.$Revision$ %H% %T%"
+#ident "%Z%%Q% $RCSfile$ v$Revision$ %H% %T%"
 
 #include <OXW/EventHandler.h>
 #include <CLASS/checks.h>
 
-int ASEventHandler::Find( ASEventInfo&, ASEqualOperator )
+int OXWEventHandler::Find( OXWEventInfo&, OXWEqualOperator )
 {
   return 0;
 }
 
 class GENERIC
 {
-  virtual void pure( ASEvent& ) = 0; // This is to allow usage of virtual
-                                     // catchers, indeed never used.
+  virtual void pure( OXWEvent& ) = 0; // This is to allow usage of virtual
+	                              // catchers, indeed never used.
 };
 
-typedef void (GENERIC::*GENERIC_PMF)( ASEvent& );
+typedef void (GENERIC::*GENERIC_PMF)( OXWEvent& );
 
 inline
-long ASEventDispatch( GENERIC& generic, GENERIC_PMF pmf, ASEvent& event )
+long OXWEventDispatch( GENERIC& generic, GENERIC_PMF pmf, OXWEvent& event )
 {
   (generic.*pmf)( event );
   return 0;
 }
 
-long ASEventHandler::Dispatch( ASEventInfo& eventInfo, ASEvent& event )
+long OXWEventHandler::Dispatch( OXWEventInfo& eventInfo, OXWEvent& event )
 {
   PRECONDITION(eventInfo.Entry);
-  return ASEventDispatch( *(eventInfo.Object), eventInfo.Entry->Pmf, event );
+  return OXWEventDispatch( *(eventInfo.Object), eventInfo.Entry->Pmf, event );
 }
 
-int ASEventHandler::SearchEntries( ASGenericTableEntry *entries, ASEventInfo& eventInfo, ASEqualOperator equal )
+int OXWEventHandler::SearchEntries( OXWGenericTableEntry *entries, OXWEventInfo& eventInfo, OXWEqualOperator equal )
 {
   if ( equal ) {
     while ( entries->Pmf != 0 ) {
