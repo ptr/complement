@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/25 14:54:44 ptr>
+// -*- C++ -*- Time-stamp: <99/02/25 18:03:21 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -196,16 +196,11 @@ basic_sockbuf<charT, traits>::underflow()
   FD_ZERO( &pfd );
   FD_SET( fd(), &pfd );
 
-  // Here trick with buffer locking: while I sleep on select, buffer should
-  // be unlocked to allow output operations; Before return, I should
-  // recover status quo: indeed I am in critical section, that will
-  // be unlocked outside this code (as it was locked outside it).
-  MT_UNLOCK( __locker( *this ) );
+  // See comments for __unix section; I don't understand how in win
+  // buffers locked.
   if ( select( fd() + 1, &pfd, 0, 0, 0 ) <= 0 ) {
-    MT_LOCK( __locker( *this ) );
     return traits::eof();
   }
-  MT_LOCK( __locker( *this ) );
 #else
   pollfd pfd;
   pfd.fd = fd();
