@@ -1,0 +1,103 @@
+2001-03-20  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Modified namespace to satisfy STLport 4.1 beta 5
+
+	* EvSession.h:
+	problems with non-inline copy constructor and operator (VC5 sp3)
+
+	* Satisfy for STLport 4.1 beta 5.
+
+	* Increment patch number.
+
+2001-03-01  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* sockios:
+	setoptions for socket moved from basic_sockbuf to sockstream.
+
+	* Incremented patch number (in version presentation) after sockstream
+	modifications.
+
+2001-02-15  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Change version
+
+2001-02-06  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Under hard load I see the same behavior as under HP-UX and Linux.
+	Fix code: remove difference in code between Solaris and non-Solaris
+	for MCSF polisy of socket manager.
+
+	* EvSession.h, _EvSession.cc:
+	Added copy constructor and assignment operator. All MT-unsafe
+	operations are protected now. Public accesable operations return
+	copy of object, not reference.
+
+	* EventHandler.h:
+	Destructor marked as virtual.
+
+	* NetTransport.h, NetTransport.cc:
+	Unsafe operations with sessions are protected now. Public accessable
+	operations return copy of SessionInfo instead of reference.
+
+2001-01-30  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Cron:
+	Remove event from Cron service with consideration of arg number.
+
+	* NetTransport:
+	We should not erase session when control object exist, but should
+	do this when no such object.
+
+2001-01-22  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Approach for fix problem with lost info about closed connections
+	on non-Solaris OSes. Should be checked on other OS, including Solaris
+	and non-MP variant.
+
+	* Cron: I should use RemoveState(), not PopState()
+
+2001-01-16  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Cron (Cron.h, Cron.cc, NetTransport.cc):
+	only one Cron loop thread per instance start now, it go	to suspended
+	state if no messages in queue instead of exit.
+
+	* NetTransportMgs (NetTransport.h):
+	before open we sure that _loop terminated.
+
+	* Increment libEDS version.
+
+2000-12-29  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Cron (Cron.h, EvPack.h, Cron.cc):
+	Start of cron events: added nanoseconds;
+	Cron entry has now unsigned argument, and notification send
+	this argument.
+
+	* NetTransport (NetTransport.h, NetTransport.cc):
+	Fix problem for NetTransportMgr: when close communication socket I
+	join thread with read (pop) loop.
+
+2000-12-08  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Change STLport version
+	
+2000-12-06  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Cron: Remove waiting: no sense.
+
+2000-12-05  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Cron: Add wait to Cron---no join_all for POSIX threads.
+
+2001-11-21  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Cron.cc: Accept zero period if event planning to send only once.
+
+2000-11-04  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* sockios:
+	Multiplexsor variant of Sock manager---data from net, that was
+	readed from net and buffered in sockbuf, not extracted befor next
+	data recieved (I wait on poll). Now I check is available data
+	in buffer and return this sockstream if yes before calling poll.

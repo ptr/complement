@@ -1,0 +1,5 @@
+2001-03-20  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Satisfy for STLport 4.1 beta 5.
+
+	* Increment patch number.
