@@ -1,9 +1,9 @@
-// -*- C++ -*- Time-stamp: <99/05/19 18:51:47 ptr>
+// -*- C++ -*- Time-stamp: <99/05/21 11:31:18 ptr>
 
 #ifndef __NetTransport_h
 #define __NetTransport_h
 
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+#ident "$SunId$ %Q%"
 
 #ifndef __SOCKSTREAM__
 #include <sockstream>
@@ -83,8 +83,7 @@ class NetTransport :
       { }
 
     __DLLEXPORT
-    void connect( std::sockstream&, const std::string& hostname,
-                  std::string& info );
+    void connect( std::sockstream& );
 };
 
 class NetTransportMgr :
@@ -118,8 +117,7 @@ class NetTransportMP :
       { }
 
     __DLLEXPORT
-    void connect( std::sockstream&, const std::string& hostname,
-                  std::string& info );
+    void connect( std::sockstream& );
 };
 
 } // namespace EDS
