@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/01/24 15:19:41 ptr>
+// -*- C++ -*- Time-stamp: <00/02/03 14:12:25 ptr>
 
 /*
  *
@@ -30,7 +30,15 @@
 #include <string>
 #include <istream>
 #include <ostream>
-#include <type_traits.h>
+
+#ifdef __SGI_STL_PORT
+#  if __SGI_STL_PORT < 0x322
+#    include <type_traits.h>
+#  else
+#    include <stl/type_traits.h>
+#  endif
+#endif
+
 #include <sstream>
 
 #ifndef __EvPack_h
