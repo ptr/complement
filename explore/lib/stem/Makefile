@@ -44,6 +44,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/Frame.o \
 		$(OUTPUT_DIR)/Button.o \
 		$(OUTPUT_DIR)/ButtonedInfo.o \
+		$(OUTPUT_DIR)/ButtonedCheckbox.o \
 		$(OUTPUT_DIR)/CoupleButtons.o \
 		$(OUTPUT_DIR)/varstring.o \
 		$(OUTPUT_DIR)/TextLabel.o \
