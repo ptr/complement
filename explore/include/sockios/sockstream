@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/09 10:38:18 ptr>
+// -*- C++ -*- Time-stamp: <00/12/07 18:47:56 ptr>
 
 /*
  *
@@ -362,9 +362,9 @@ class basic_sockbuf :
       { __STL_THROW(length_error("basic_sockbuf")); }
 
     typedef typename _Alloc_traits<charT, _Alloc>::allocator_type allocator_type;
-    typedef __allocator<charT, _Alloc> _Alloc_type;
+    /* typedef __allocator<charT, _Alloc> _Alloc_type; */
 
-    _Alloc_type _M_data_allocator;    
+    /* _Alloc_type */ allocator_type _M_data_allocator;    
 #endif
 
   private:
