@@ -8,6 +8,8 @@ ALL_TAGS := release-shared
 
 STLPORT_DIR := /export/home/ptr/STLport.lab/cvs.stlport.com/STLport
 
+USE_STDLIB := yes
+
 include ../Makefile.inc
 include ${SRCROOT}/Makefiles/top.mak
 
