@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/16 15:05:02 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 16:48:10 ptr>
 
 /*
  *
@@ -117,7 +117,7 @@ void __EDS_DLL Cron::Remove( const Event_base<CronEntry>& entry )
   cond.signal(); // in any case, remove I something or not
 
   const CronEntry& ne = entry.value();
-  std::vector<value_type> tmp;
+  __STD::vector<value_type> tmp;
 
   tmp.reserve( _M_c.size() );
 
@@ -257,7 +257,7 @@ DEFINE_RESPONSE_TABLE( Cron )
 END_RESPONSE_TABLE
 
 __EDS_DLL
-void CronEntry::pack( std::ostream& s ) const
+void CronEntry::pack( __STD::ostream& s ) const
 {
   __pack( s, code );
   __pack( s, start );
@@ -267,7 +267,7 @@ void CronEntry::pack( std::ostream& s ) const
 }
 
 __EDS_DLL
-void CronEntry::net_pack( std::ostream& s ) const
+void CronEntry::net_pack( __STD::ostream& s ) const
 {
   __net_pack( s, code );
   __net_pack( s, start );
@@ -277,7 +277,7 @@ void CronEntry::net_pack( std::ostream& s ) const
 }
 
 __EDS_DLL
-void CronEntry::unpack( std::istream& s )
+void CronEntry::unpack( __STD::istream& s )
 {
   __unpack( s, code );
   __unpack( s, start );
@@ -287,7 +287,7 @@ void CronEntry::unpack( std::istream& s )
 }
 
 __EDS_DLL
-void CronEntry::net_unpack( std::istream& s )
+void CronEntry::net_unpack( __STD::istream& s )
 {
   __net_unpack( s, code );
   __net_unpack( s, start );

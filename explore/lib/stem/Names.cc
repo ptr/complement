@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/12/27 20:05:35 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 16:46:30 ptr>
 
 /*
  *
@@ -135,28 +135,28 @@ void __EDS_DLL Names::get_by_name( const Event& rq )
 }
 
 __EDS_DLL
-void NameRecord::pack( std::ostream& s ) const
+void NameRecord::pack( __STD::ostream& s ) const
 {
   __pack( s, addr );
   __pack( s, record );
 }
 
 __EDS_DLL
-void NameRecord::net_pack( std::ostream& s ) const
+void NameRecord::net_pack( __STD::ostream& s ) const
 {
   __net_pack( s, addr );
   __net_pack( s, record );
 }
 
 __EDS_DLL
-void NameRecord::unpack( std::istream& s )
+void NameRecord::unpack( __STD::istream& s )
 {
   __unpack( s, addr );
   __unpack( s, record );
 }
 
 __EDS_DLL
-void NameRecord::net_unpack( std::istream& s )
+void NameRecord::net_unpack( __STD::istream& s )
 {
   __net_unpack( s, addr );
   __net_unpack( s, record );

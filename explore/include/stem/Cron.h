@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/18 18:17:33 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 16:54:46 ptr>
 
 /*
  *
@@ -87,10 +87,10 @@ struct CronEntry :
     timespec period;
     unsigned n;
 
-    virtual __EDS_DLL void pack( std::ostream& s ) const;
-    virtual __EDS_DLL void net_pack( std::ostream& s ) const;
-    virtual __EDS_DLL void unpack( std::istream& s );
-    virtual __EDS_DLL void net_unpack( std::istream& s );
+    virtual __EDS_DLL void pack( __STD::ostream& s ) const;
+    virtual __EDS_DLL void net_pack( __STD::ostream& s ) const;
+    virtual __EDS_DLL void unpack( __STD::istream& s );
+    virtual __EDS_DLL void net_unpack( __STD::istream& s );
 };
 
 struct __CronEntry
@@ -186,9 +186,9 @@ class Cron :
     __impl::Condition cond;
 
     typedef __CronEntry value_type;
-    typedef std::priority_queue<value_type,
-      std::vector<value_type>,
-      std::greater<value_type> > container_type;
+    typedef __STD::priority_queue<value_type,
+      __STD::vector<value_type>,
+      __STD::greater<value_type> > container_type;
 
     container_type _M_c;
     __impl::Mutex _M_l;

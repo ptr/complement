@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 09:57:43 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 17:15:22 ptr>
 
 /*
  *
@@ -57,7 +57,7 @@
 using __impl::Thread;
 using __impl::Condition;
 
-namespace std {
+__STL_BEGIN_NAMESPACE
 
 union _xsockaddr {
     sockaddr_in inet;
@@ -192,7 +192,7 @@ class sockmgr_stream :
 
   protected:
     typedef sockmgr_stream<Connect> _Self_type;
-    typedef std::vector<sockmgr_client *,__STL_DEFAULT_ALLOCATOR(sockmgr_client *)> _Sequence;
+    typedef __STD::vector<sockmgr_client *,__STL_DEFAULT_ALLOCATOR(sockmgr_client *)> _Sequence;
     // typedef less_sockmgr_client _Compare;
     typedef fd_equal _Compare;
     typedef typename _Sequence::value_type      value_type;
@@ -260,7 +260,7 @@ class sockmgr_stream_MP : // multiplexor
     Thread     loop_id;
 
   protected:
-    typedef std::vector<sockmgr_client_MP<Connect> *,__STL_DEFAULT_ALLOCATOR(sockmgr_client_MP<Connect> *)> _Sequence;
+    typedef __STD::vector<sockmgr_client_MP<Connect> *,__STL_DEFAULT_ALLOCATOR(sockmgr_client_MP<Connect> *)> _Sequence;
     typedef fd_equal _Compare;
     typedef typename _Sequence::value_type      value_type;
     typedef typename _Sequence::size_type       size_type;
@@ -282,7 +282,7 @@ class sockmgr_stream_MP : // multiplexor
     unsigned _fdcount;
 };
 
-} // namespace std
+__STL_END_NAMESPACE
 
 #ifndef __STL_LINK_TIME_INSTANTIATION
 #include <sockios/sockmgr.cc>

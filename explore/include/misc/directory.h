@@ -29,7 +29,7 @@
 #include <iterator>
 
 #ifdef __STL_USE_NAMESPACES
-using namespace std;
+using namespace __STD;
 #endif
 
 // -----------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/13 17:35:55 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 16:43:52 ptr>
 
 /*
  *
@@ -85,12 +85,12 @@ struct NameRecord :
       { }
 
     addr_type    addr;
-    std::string  record;
+    __STD::string  record;
 
-    virtual __EDS_DLL void pack( std::ostream& s ) const;
-    virtual __EDS_DLL void net_pack( std::ostream& s ) const;
-    virtual __EDS_DLL void unpack( std::istream& s );
-    virtual __EDS_DLL void net_unpack( std::istream& s );
+    virtual __EDS_DLL void pack( __STD::ostream& s ) const;
+    virtual __EDS_DLL void net_pack( __STD::ostream& s ) const;
+    virtual __EDS_DLL void unpack( __STD::istream& s );
+    virtual __EDS_DLL void net_unpack( __STD::istream& s );
 };
 
 } // namespace EDS

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/08 10:14:00 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 16:41:48 ptr>
 
 /*
  *
@@ -89,7 +89,7 @@ struct SessionInfo
 //	sockaddr    any;
 //    } _address;
 
-  std::string _host; // name + ip +? port? 
+  __STD::string _host; // name + ip +? port? 
   int _port;    // ?
 
     // sockstream *_sock; // ?
@@ -178,9 +178,9 @@ class SessionManager
 {
   public:
     typedef unsigned key_type;
-    // typedef std::map<key_type,T,std::less<key_type>,
+    // typedef __STD::map<key_type,T,__STD::less<key_type>,
     //            __STL_DEFAULT_ALLOCATOR(T) > heap_type;
-    typedef std::map<key_type,T> heap_type;
+    typedef __STD::map<key_type,T> heap_type;
 
     SessionManager()
       { }
@@ -267,9 +267,9 @@ SessionManager<T>::key_type SessionManager<T>::create_unique()
 #endif
 {
 #ifndef _MSC_VER
-  std::pair<typename heap_type::iterator, bool> ret;
+  __STD::pair<typename heap_type::iterator, bool> ret;
 #else
-  std::pair<heap_type::iterator,bool> ret;
+  __STD::pair<heap_type::iterator,bool> ret;
 #endif
 
   do {

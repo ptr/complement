@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/08 13:18:17 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 16:45:05 ptr>
 
 /*
  *
@@ -61,14 +61,14 @@
 
 namespace EDS {
 
-extern __EDS_DLL void dump( std::ostream&, const EDS::Event& );
+extern __EDS_DLL void dump( __STD::ostream&, const EDS::Event& );
 
 class NetTransport_base :
     public EventHandler // to avoid dependence from creation order
 {
   public:
-    typedef std::map<key_type,key_type> heap_type;
-//    typedef std::map<key_type,key_type,std::less<key_type>,
+    typedef __STD::map<key_type,key_type> heap_type;
+//    typedef __STD::map<key_type,key_type,__STD::less<key_type>,
 //      __STL_DEFAULT_ALLOCATOR(key_type) > heap_type;
 
     NetTransport_base() :
@@ -114,19 +114,19 @@ class NetTransport_base :
       { smgr.erase( k ); }
 
   protected:
-    addr_type rar_map( addr_type k, const std::string& name );
+    addr_type rar_map( addr_type k, const __STD::string& name );
     bool pop( Event& );
     void disconnect();
 
 #ifdef __SGI_STL_OWN_IOSTREAMS
 #ifndef __GNUC__
-    std::sockstream *net;
+    __STD::sockstream *net;
 #else
     STLPORT::basic_sockstream<char,STLPORT::char_traits<char>,
       STLPORT::allocator<char> > *net;
 #endif
 #else
-    std::sockstream *net;
+    __STD::sockstream *net;
 #endif
     EvSessionManager::key_type _sid;
     unsigned _count;
@@ -147,7 +147,7 @@ class NetTransport :
       { }
 
     __EDS_DLL
-    void connect( std::sockstream& );
+    void connect( __STD::sockstream& );
 };
 
 class NetTransportMgr :
@@ -163,7 +163,7 @@ class NetTransportMgr :
 
     __EDS_DLL
     addr_type open( const char *hostname, int port,
-                    std::sock_base::stype stype = std::sock_base::sock_stream );
+                    __STD::sock_base::stype stype = __STD::sock_base::sock_stream );
     int join()
       { return _thr.join(); }
 
@@ -183,7 +183,7 @@ class NetTransportMP :
       { }
 
     __EDS_DLL
-    void connect( std::sockstream& );
+    void connect( __STD::sockstream& );
 };
 
 } // namespace EDS

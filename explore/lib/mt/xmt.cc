@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/14 19:53:11 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 15:31:08 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -49,8 +49,8 @@ DllMain( HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved )
 namespace __impl {
 
 #ifndef _WIN32
-using std::cerr;
-using std::endl;
+using __STD::cerr;
+using __STD::endl;
 #endif
 
 #ifdef _WIN32
@@ -453,8 +453,8 @@ void *Thread::_call( void *p )
   set_unexpected( unexpected );
   set_terminate( terminate );
 #else
-  __STD::set_unexpected( unexpected );
-  __STD::set_terminate( terminate );
+  std::set_unexpected( unexpected );
+  std::set_terminate( terminate );
 #endif
 	
   try {
@@ -465,7 +465,7 @@ void *Thread::_call( void *p )
 
     me->_id = bad_thread_key;
   }
-  catch ( __STD::exception& e ) {
+  catch ( std::exception& e ) {
 #ifndef _WIN32
     cerr << e.what() << endl;
 #endif
@@ -546,7 +546,7 @@ long& Thread::iword( int __idx )
 #else // __STL_USE_SGI_ALLOCATORS
     user_words = alloc::allocate( uw_alloc_size );
 #endif // __STL_USE_SGI_ALLOCATORS
-    std::fill( *user_words, *user_words + uw_alloc_size, 0 );
+    __STD::fill( *user_words, *user_words + uw_alloc_size, 0 );
 #ifdef __STL_UITHREADS
     thr_setspecific( _mt_key, user_words );
 #endif
@@ -564,13 +564,13 @@ long& Thread::iword( int __idx )
 #else // __STL_USE_SGI_ALLOCATORS
     long **_mtmp = alloc().allocate( tmp );
 #endif // __STL_USE_SGI_ALLOCATORS
-    std::copy( *user_words, *user_words + uw_alloc_size, *_mtmp );
+    __STD::copy( *user_words, *user_words + uw_alloc_size, *_mtmp );
     alloc().deallocate( user_words, uw_alloc_size );
     user_words = _mtmp;
 #else // !__STL_USE_STD_ALLOCATORS && !_MSC_VER
     user_words = alloc::reallocate( user_words, uw_alloc_size, tmp );
 #endif // !__STL_USE_STD_ALLOCATORS && !_MSC_VER
-    std::fill( *user_words + uw_alloc_size, *user_words + tmp, 0 );
+    __STD::fill( *user_words + uw_alloc_size, *user_words + tmp, 0 );
     uw_alloc_size = tmp;
 #ifdef __STL_UITHREADS
     thr_setspecific( _mt_key, user_words );
@@ -608,7 +608,7 @@ void*& Thread::pword( int __idx )
 // #else
     user_words = alloc().allocate( uw_alloc_size );
 // #endif
-    std::fill( *user_words, *user_words + uw_alloc_size, 0 );
+    __STD::fill( *user_words, *user_words + uw_alloc_size, 0 );
 #ifdef __STL_UITHREADS
     thr_setspecific( _mt_key, user_words );
 #endif
@@ -627,13 +627,13 @@ void*& Thread::pword( int __idx )
 // #else
     long **_mtmp = alloc().allocate( tmp );
 // #endif
-    std::copy( *user_words, *user_words + uw_alloc_size, *_mtmp );
+    __STD::copy( *user_words, *user_words + uw_alloc_size, *_mtmp );
     alloc().deallocate( user_words, uw_alloc_size );
     user_words = _mtmp;
 #else // __STL_USE_SGI_ALLOCATORS
     user_words = alloc::reallocate( user_words, uw_alloc_size, tmp );
 #endif // __STL_USE_SGI_ALLOCATORS
-    std::fill( *user_words + uw_alloc_size, *user_words + tmp, 0 );
+    __STD::fill( *user_words + uw_alloc_size, *user_words + tmp, 0 );
     uw_alloc_size = tmp;
 #ifdef __STL_UITHREADS
     thr_setspecific( _mt_key, *user_words );

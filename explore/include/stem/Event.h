@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/03 14:12:25 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 16:37:33 ptr>
 
 /*
  *
@@ -136,19 +136,19 @@ namespace EDS {
 template <class D> class Event_base;
 // VC 5.0 to be very huffy on typedefed std::string...
 #ifndef _MSC_VER
-__STL_TEMPLATE_NULL class Event_base<std::string>;
+__STL_TEMPLATE_NULL class Event_base<__STD::string>;
 #else
 __STL_TEMPLATE_NULL
-class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<char> > >;
+class Event_base<__STD::basic_string<char, __STD::char_traits<char>, __STD::allocator<char> > >;
 #endif
 __STL_TEMPLATE_NULL class Event_base<void>;
 
 // Typedefs:
 
 typedef Event_base<void>        EventVoid;
-typedef Event_base<std::string> EventStr;
+typedef Event_base<__STD::string> EventStr;
       // Today same, the basic of Event transport/conversions:
-typedef Event_base<std::string> Event;
+typedef Event_base<__STD::string> Event;
 
 /* ******************************************** *\
    Any class to be passed as parameter
@@ -161,13 +161,13 @@ typedef Event_base<std::string> Event;
       // unsigned sessionID;
       // unsigned flags;
 
-      virtual void pack( std::ostream& s ) const;
-      virtual void net_pack( std::ostream& s ) const;
-      virtual void unpack( std::istream& s );
-      virtual void net_unpack( std::istream& s );
+      virtual void pack( __STD::ostream& s ) const;
+      virtual void net_pack( __STD::ostream& s ) const;
+      virtual void unpack( __STD::istream& s );
+      virtual void net_unpack( __STD::istream& s );
    };
 
-   Of cause, if it not a POD type, std::string
+   Of cause, if it not a POD type, __STD::string
    or void.
 
    To pack/unpuck POD members, use static functions of
@@ -221,7 +221,7 @@ class Event_base :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::ostringstream ss;
+        __STD::ostringstream ss;
         net_pack( ss );
         s.value() = ss.str();
       }
@@ -231,7 +231,7 @@ class Event_base :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        std::stringstream ss( s.value() );
+        __STD::stringstream ss( s.value() );
         net_unpack( ss );
       }
 
@@ -240,7 +240,7 @@ class Event_base :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         pack( ss );
         s.value() = ss.str();
       }
@@ -250,30 +250,30 @@ class Event_base :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        std::stringstream ss( s.value() );
+        __STD::stringstream ss( s.value() );
         unpack( ss );
       }
 
 #ifndef _MSC_VER
-    void pack( std::ostream& __s ) const
+    void pack( __STD::ostream& __s ) const
       { pack( __s, __type_traits<D>::is_POD_type() ); }
-    void unpack( std::istream& __s )
+    void unpack( __STD::istream& __s )
       { unpack( __s, __type_traits<D>::is_POD_type() ); }
-    void net_pack( std::ostream& __s ) const
+    void net_pack( __STD::ostream& __s ) const
       { net_pack( __s, __type_traits<D>::is_POD_type() ); }
-    void net_unpack( std::istream& __s )
+    void net_unpack( __STD::istream& __s )
       { net_unpack( __s, __type_traits<D>::is_POD_type() ); }
 #else
 // VC instantiate only whole class, so I need stupid specializaton for it,
 // and this template can be compiled for non-POD classes only
 // (specialization for integral types in separate file, included below)
-    void pack( std::ostream& __s ) const
+    void pack( __STD::ostream& __s ) const
       { _data.pack( __s ); }
-    void unpack( std::istream& __s )
+    void unpack( __STD::istream& __s )
       { _data.unpack( __s ); }
-    void net_pack( std::ostream& __s ) const
+    void net_pack( __STD::ostream& __s ) const
       { _data.net_pack( __s ); }
-    void net_unpack( std::istream& __s )
+    void net_unpack( __STD::istream& __s )
       { _data.net_unpack( __s ); }
 #endif
 
@@ -281,50 +281,50 @@ class Event_base :
     value_type _data;
 
 #ifndef _MSC_VER
-    void pack( std::ostream& __s, __true_type ) const
+    void pack( __STD::ostream& __s, __true_type ) const
       { __s.write( (const char *)&_data, sizeof(D) ); }
 
-    void pack( std::ostream& __s, __false_type ) const
+    void pack( __STD::ostream& __s, __false_type ) const
       { _data.pack( __s ); }
 
-    void unpack( std::istream& __s, __true_type )
+    void unpack( __STD::istream& __s, __true_type )
       { __s.read( (char *)&_data, sizeof(D) ); }
-    void unpack( std::istream& __s, __false_type )
+    void unpack( __STD::istream& __s, __false_type )
       { _data.unpack( __s ); }
 
-    void net_pack( std::ostream& __s, __true_type ) const
+    void net_pack( __STD::ostream& __s, __true_type ) const
       {
         value_type tmp = to_net( _data );
         __s.write( (const char *)&tmp, sizeof(D) );
       }
-    void net_pack( std::ostream& __s, __false_type ) const
+    void net_pack( __STD::ostream& __s, __false_type ) const
       { _data.net_pack( __s ); }
-    void net_unpack( std::istream& __s, __true_type )
+    void net_unpack( __STD::istream& __s, __true_type )
       {
         value_type tmp;
         __s.read( (char *)&tmp, sizeof(D) );
         _data = from_net( tmp );
       }
-    void net_unpack( std::istream& __s, __false_type )
+    void net_unpack( __STD::istream& __s, __false_type )
       { _data.net_unpack( __s ); }
 #endif
 };
 
-// VC 5.0 to be very huffy on typedefed std::string...
+// VC 5.0 to be very huffy on typedefed __STD::string...
 __STL_TEMPLATE_NULL
 #ifndef _MSC_VER
-class Event_base<std::string> :
+class Event_base<__STD::string> :
 #else
-class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<char> > > :
+class Event_base<__STD::basic_string<char, __STD::char_traits<char>, __STD::allocator<char> > > :
 #endif
         public __Event_Base
 {
   public:
-    typedef std::string         value_type;
-    typedef std::string&        reference;
-    typedef const std::string&  const_reference;
-    typedef std::string *       pointer;
-    typedef const std::string * const_pointer;
+    typedef __STD::string         value_type;
+    typedef __STD::string&        reference;
+    typedef const __STD::string&  const_reference;
+    typedef __STD::string *       pointer;
+    typedef const __STD::string * const_pointer;
 
     Event_base() :
         __Event_Base(),
@@ -336,7 +336,7 @@ class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<
         _data()
       { }
 
-    explicit Event_base( code_type c, const std::string& d ) :
+    explicit Event_base( code_type c, const __STD::string& d ) :
         __Event_Base( c ),
         _data( d )
       { }
@@ -388,13 +388,13 @@ class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<
         _data = s.value();
       }
 
-    void pack( std::ostream& __s ) const
+    void pack( __STD::ostream& __s ) const
       { __pack_base::__pack( __s, _data ); }
-    void unpack( std::istream& __s )
+    void unpack( __STD::istream& __s )
       { __pack_base::__unpack( __s, _data ); }
-    void net_pack( std::ostream& __s ) const
+    void net_pack( __STD::ostream& __s ) const
       { __pack_base::__net_pack( __s, _data ); }
-    void net_unpack( std::istream& __s )
+    void net_unpack( __STD::istream& __s )
       { __pack_base::__net_unpack( __s, _data ); }
 
   protected:
@@ -456,13 +456,13 @@ class Event_base<void> :
         _src  = s.src();
       }
 
-    void pack( std::ostream& ) const
+    void pack( __STD::ostream& ) const
       { }
-    void unpack( std::istream& )
+    void unpack( __STD::istream& )
       { }
-    void net_pack( std::ostream& ) const
+    void net_pack( __STD::ostream& ) const
       { }
-    void net_unpack( std::istream& )
+    void net_unpack( __STD::istream& )
       { }
 };
 

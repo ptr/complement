@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 10:38:26 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 15:59:44 ptr>
 
 /*
  *
@@ -30,12 +30,12 @@
 
 namespace Helios {
 
-const std::string __nodes_heap_base::dot( "." );
-const std::string __nodes_heap_base::dotdot( ".." );
+const __STD::string __nodes_heap_base::dot( "." );
+const __STD::string __nodes_heap_base::dotdot( ".." );
 
  __nodes_heap_base::key_type __nodes_heap_base::create_unique()
 {
-  std::pair<heap_type::iterator,bool> ret;
+  __STD::pair<heap_type::iterator,bool> ret;
 
   do {
     if ( ++_id > _high ) {
