@@ -1,3 +1,8 @@
+2005-03-25  Petr Ovtchenkov  <ptr@island.plnet.ru>
+
+	* Makefile: revision of Makefiles---path to stlport lib and
+	-lstlport went to common Makefiles.
+
 2004-11-05  Petr Ovtchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* library naming scheme changed.
