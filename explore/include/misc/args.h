@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/08 17:39:03 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 16:31:44 ptr>
 
 /*
  *
@@ -20,9 +20,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -37,20 +37,20 @@
 
 class ArgsParser
 {
-    typedef __STD::list<__STD::string> container_type;
+    typedef std::list<std::string> container_type;
   public:
     typedef container_type::iterator iterator;
 
     ArgsParser( int argc, char * const *argv );
-    ArgsParser( const __STD::string& in );
-    ArgsParser( __STD::istream& in );
+    ArgsParser( const std::string& in );
+    ArgsParser( std::istream& in );
 
-    bool is_option( const __STD::string& op )
-      { return __STD::find( arg.begin(), arg.end(), op ) != arg.end(); }
-    bool is_option_X( const __STD::string& op );
+    bool is_option( const std::string& op )
+      { return std::find( arg.begin(), arg.end(), op ) != arg.end(); }
+    bool is_option_X( const std::string& op );
 
-    __STD::string get_next( const __STD::string& op );
-    __STD::string get( int n );
+    std::string get_next( const std::string& op );
+    std::string get( int n );
 
     unsigned size() const
       { return arg.size(); }
@@ -62,21 +62,21 @@ class ArgsParser
 class IniParser
 {
   public:
-    IniParser( __STD::istream& );
-    __STD::string value( const __STD::string& key, const __STD::string& def );
+    IniParser( std::istream& );
+    std::string value( const std::string& key, const std::string& def );
 
   protected:
     struct par
     {
 	par() 
 	  { }
-	par( const __STD::string& n, const __STD::string& v ) :
+	par( const std::string& n, const std::string& v ) :
 	    name( n ),
 	    value( v )
 	  { }
 
-	__STD::string name;
-	__STD::string value;
+	std::string name;
+	std::string value;
 
 	bool operator ==( const par& p ) const
 	  { return name == p.name; }
@@ -84,7 +84,7 @@ class IniParser
 	  { return name != p.name; }
     };
 
-    typedef __STD::list<par> container_type;
+    typedef std::list<par> container_type;
 
     container_type pars;
 };

@@ -1,5 +1,5 @@
-# Time-stamp: <01/02/15 13:01:11 ptr>
-# $SunId$
+# Time-stamp: <01/03/19 19:24:38 ptr>
+# $Id$
 
 # I have only one reason while I should use "C++" variant of MD5 instead of "C":
 # names like MD5Init is wide distributed, but some cool programmers use this
@@ -10,6 +10,6 @@
 
 LIBNAME = Aux
 MINOR = .3
-PATCH = .0
+PATCH = .1
 SRC_CC = CyrMoney.cc args.cc dir_utils.cc directory.cc _node.cc cgi.cc # _md5.cc
 SRC_C = md5.c

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/08 17:56:28 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 16:26:39 ptr>
 
 /*
  *
@@ -20,9 +20,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -32,7 +32,7 @@
 
 #include <string>
 
-using __STD::string;
+using std::string;
 
 class cyr_money_converter
 {

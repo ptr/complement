@@ -1,9 +1,9 @@
-// -*- C++ -*- Time-stamp: <01/02/13 12:23:58 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 19:03:34 ptr>
 
 /*
  *
- * Copyright (c) 1999-2000
- * ParallelGraphics
+ * Copyright (c) 1999-2001
+ * ParallelGraphics Ltd.
  * 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -20,9 +20,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -61,7 +61,7 @@ class DataBase :
     virtual ~DataBase();
 
     virtual void reconnect();
-    virtual void exec( const __STD::string& );
+    virtual void exec( const std::string& );
     virtual void exec( const char * );
 
     virtual void begin_transaction();

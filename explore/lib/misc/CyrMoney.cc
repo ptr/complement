@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/08 18:00:17 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 16:28:09 ptr>
 
 /*
  *
@@ -35,7 +35,7 @@
 #include "aux_/CyrMoney.h"
 #endif
 
-using namespace __STD;
+using namespace std;
 
 string theUnits_ISO8859_5[] =
 { "", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь",

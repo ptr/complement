@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <00/11/09 10:24:28 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 19:05:04 ptr>
 
 /*
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
@@ -20,9 +20,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -61,7 +61,7 @@ class DBxx
       { _db->clear(); }
     void clear( unsigned flags )
       { _db->clear( flags ); }
-    void exec( const __STD::string& query )
+    void exec( const std::string& query )
       { _db->exec( query ); }
     void exec( const char *query )
       { _db->exec( query ); }
@@ -76,7 +76,7 @@ class DBxx
     void delete_cursor( Cursor *cursor )
       { _db->delete_cursor( cursor ); }
 
-    string escape_data( const string& s ) const;
+    string escape_data( const std::string& s ) const;
     string escape_data( const char* s ) const;
     string get_time() const;
     string get_time( time_t ) const;

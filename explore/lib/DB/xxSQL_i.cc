@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <01/02/13 12:23:58 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 19:17:20 ptr>
 
 /*
  *
- * Copyright (c) 2000
+ * Copyright (c) 2001
  * ParallelGraphics
  * 
  * This material is provided "as is", with absolutely no warranty expressed
@@ -17,9 +17,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -34,9 +34,9 @@
 
 namespace xxSQL {
 
-using __STD::string;
-using __STD::vector;
-using namespace __STD;
+using std::string;
+using std::vector;
+using namespace std;
 
 DataBase::DataBase( const char *name, const char *usr, const char *passwd,
                     const char *host, const char *port,
@@ -109,7 +109,7 @@ const string& Cursor::value( int n, const string& f )
 {
   vector<string>::iterator i = find( fields.begin(), fields.end(), lower(f) );
   if ( i == fields.end() ) {
-    throw __STD::invalid_argument( f );
+    throw std::invalid_argument( f );
   }
   vector<string>::size_type j = 0;
   distance( fields.begin(), i, j );
@@ -121,7 +121,7 @@ const string& Cursor::value( int n, const char *cf )
   // string f( cf );
   vector<string>::iterator i = find( fields.begin(), fields.end(), lower(cf) );
   if ( i == fields.end() ) {
-    throw __STD::invalid_argument( cf );
+    throw std::invalid_argument( cf );
   }
   vector<string>::size_type j = 0;
   distance( fields.begin(), i, j );

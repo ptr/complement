@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/01/31 11:01:01 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 18:52:02 ptr>
 
 /*
  * Copyright (c) 1998
@@ -22,9 +22,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -85,10 +85,10 @@ struct CronEntry :
     unsigned n;
     unsigned arg;
 
-    virtual __PG_DECLSPEC void pack( __STD::ostream& s ) const;
-    virtual __PG_DECLSPEC void net_pack( __STD::ostream& s ) const;
-    virtual __PG_DECLSPEC void unpack( __STD::istream& s );
-    virtual __PG_DECLSPEC void net_unpack( __STD::istream& s );
+    virtual __PG_DECLSPEC void pack( std::ostream& s ) const;
+    virtual __PG_DECLSPEC void net_pack( std::ostream& s ) const;
+    virtual __PG_DECLSPEC void unpack( std::istream& s );
+    virtual __PG_DECLSPEC void net_unpack( std::istream& s );
 };
 
 struct __CronEntry
@@ -188,9 +188,9 @@ class Cron :
     __impl::Condition cond;
 
     typedef __CronEntry value_type;
-    typedef __STD::priority_queue<value_type,
-      __STD::vector<value_type>,
-      __STD::greater<value_type> > container_type;
+    typedef std::priority_queue<value_type,
+      std::vector<value_type>,
+      std::greater<value_type> > container_type;
 
     container_type _M_c;
     __impl::Mutex _M_l;

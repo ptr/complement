@@ -1,10 +1,10 @@
-// -*- C++ -*- Time-stamp: <01/02/05 13:09:17 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 18:36:15 ptr>
 
 /*
  * Copyright (c) 1995-1999
  * Petr Ovchenkov
  * 
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
@@ -22,9 +22,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -50,7 +50,7 @@
 
 namespace EDS {
 
-using namespace __STD;
+using namespace std;
 
 typedef unsigned state_type;
 
@@ -283,10 +283,10 @@ template <class Key1, class Key2, class Value>
 class __EvTable
 {
   public:
-    typedef __STD::pair<Key2,Value> pair2_type;
-    typedef __STD::vector<pair2_type,__STD::allocator<pair2_type > > Container2;
-    typedef __STD::pair<Key1,Container2> pair1_type;
-    typedef __STD::vector<pair1_type,__STD::allocator<pair1_type> > Container1;
+    typedef std::pair<Key2,Value> pair2_type;
+    typedef std::vector<pair2_type,std::allocator<pair2_type > > Container2;
+    typedef std::pair<Key1,Container2> pair1_type;
+    typedef std::vector<pair1_type,std::allocator<pair1_type> > Container1;
     typedef typename Container1::iterator iterator1;
     typedef typename Container2::iterator iterator2;
     typedef typename Container1::const_iterator const_iterator1;
@@ -299,11 +299,11 @@ class __EvTable
     bool get( Key1, Key2, Value& ) const;
     bool get_1( const_iterator1 i1, Key2 key2, Value& value ) const;
     const_iterator1 find( Key1 key1 ) const
-      { return __STD::find_if( storage.begin(), storage.end(),
-                        __STD::compose1( __STD::bind2nd( eq_key1, key1 ), key1st ) ); }
+      { return std::find_if( storage.begin(), storage.end(),
+                        std::compose1( std::bind2nd( eq_key1, key1 ), key1st ) ); }
     iterator1 find( Key1 key1 )
-      { return __STD::find_if( storage.begin(), storage.end(),
-                        __STD::compose1( __STD::bind2nd( eq_key1, key1 ), key1st ) ); }
+      { return std::find_if( storage.begin(), storage.end(),
+                        std::compose1( std::bind2nd( eq_key1, key1 ), key1st ) ); }
     iterator1 begin()
       { return storage.begin(); }
     iterator1 end()
@@ -325,10 +325,10 @@ class __EvTable
 
     void append( Key1 key1, Key2 key2, const Value& value );
 
-    __STD::select1st<pair1_type> key1st;
-    __STD::select1st<pair2_type> key2nd;
-    __STD::equal_to<Key1> eq_key1;
-    __STD::equal_to<Key2> eq_key2;
+    std::select1st<pair1_type> key1st;
+    std::select1st<pair2_type> key2nd;
+    std::equal_to<Key1> eq_key1;
+    std::equal_to<Key2> eq_key2;
  
   protected:
    Container1 storage;
@@ -337,13 +337,13 @@ class __EvTable
 template <class Key1, class Key2, class Value>
 bool __EvTable<Key1,Key2,Value>::get( Key1 key1, Key2 key2, Value& value ) const
 {
-  const_iterator1 i1 = __STD::find_if( storage.begin(), storage.end(),
-                                __STD::compose1( __STD::bind2nd( eq_key1, key1 ), key1st ) );
+  const_iterator1 i1 = std::find_if( storage.begin(), storage.end(),
+                                std::compose1( std::bind2nd( eq_key1, key1 ), key1st ) );
   if ( i1 == storage.end() ) {
     return false;
   }
-  const_iterator2 i2 = __STD::find_if( (*i1).second.begin(), (*i1).second.end(),
-                                __STD::compose1( __STD::bind2nd( eq_key2, key2 ), key2nd ) );
+  const_iterator2 i2 = std::find_if( (*i1).second.begin(), (*i1).second.end(),
+                                std::compose1( std::bind2nd( eq_key2, key2 ), key2nd ) );
   if ( i2 == (*i1).second.end() ) {
     return false;
   }
@@ -355,8 +355,8 @@ bool __EvTable<Key1,Key2,Value>::get( Key1 key1, Key2 key2, Value& value ) const
 template <class Key1, class Key2, class Value>
 bool __EvTable<Key1,Key2,Value>::get_1( __FIT_TYPENAME_ARG __EvTable<Key1,Key2,Value>::const_iterator1 i1, Key2 key2, Value& value ) const
 {
-  const_iterator2 i2 = __STD::find_if( (*i1).second.begin(), (*i1).second.end(),
-                                __STD::compose1( __STD::bind2nd( eq_key2, key2 ), key2nd ) );
+  const_iterator2 i2 = std::find_if( (*i1).second.begin(), (*i1).second.end(),
+                                std::compose1( std::bind2nd( eq_key2, key2 ), key2nd ) );
   if ( i2 == (*i1).second.end() ) {
     return false;
   }
@@ -370,17 +370,17 @@ void __EvTable<Key1,Key2,Value>::append( Key1 key1, Key2 key2, const Value& valu
   iterator1 i1 = find( key1 );
 
   if ( i1 == storage.end() ) {
-    __STD::pair<Key2,Value> p2( key2, value );
+    std::pair<Key2,Value> p2( key2, value );
     Container2 c2;
     c2.push_back( p2 );
-    __STD::pair<Key1,Container2> p1( key1, c2 );
+    std::pair<Key1,Container2> p1( key1, c2 );
     storage.push_back( p1 );
     return;
   }
-  iterator2 i2 = __STD::find_if( (*i1).second.begin(), (*i1).second.end(),
-                          __STD::compose1( __STD::bind2nd( eq_key2, key2 ), key2nd ) );
+  iterator2 i2 = std::find_if( (*i1).second.begin(), (*i1).second.end(),
+                          std::compose1( std::bind2nd( eq_key2, key2 ), key2nd ) );
   if ( i2 == (*i1).second.end() ) {
-    __STD::pair<Key2,Value> p2( key2, value );
+    std::pair<Key2,Value> p2( key2, value );
     (*i1).second.push_back( p2 );
     return;
   }
@@ -404,8 +404,8 @@ class __EvHandler
     bool DispatchStub( T *, InputIterator, InputIterator,
 		       const Event& event );
     bool DispatchTrace( InputIterator first, InputIterator last,
-			const Event& event, __STD::ostream& out );
-    void Out( __STD::ostream& ) const;
+			const Event& event, std::ostream& out );
+    void Out( std::ostream& ) const;
 
     convert<GENERIC::PMF, typename __member_function<T,Event>::pmf_type>  pmf;
     convert<GENERIC::DPMF,typename __member_function<T,Event>::dpmf_type> dpmf;
@@ -458,7 +458,7 @@ bool __EvHandler<T, InputIterator>::DispatchStub( T *, InputIterator first,
 
 template <class T, class InputIterator>
 bool __EvHandler<T, InputIterator>::DispatchTrace( InputIterator first,
-                  InputIterator last, const Event& event, __STD::ostream& out )
+                  InputIterator last, const Event& event, std::ostream& out )
 {
   if ( first == last ) {
     out << "\n\tStates stack empty?";
@@ -468,18 +468,18 @@ bool __EvHandler<T, InputIterator>::DispatchTrace( InputIterator first,
   __AnyPMFentry *entry;
   while ( first != last ) {
     if ( table.get( code, *first, entry ) ) {
-      out << "\tMessage 0x" << __STD::hex << code << __STD::dec << " catcher "
+      out << "\tMessage 0x" << std::hex << code << std::dec << " catcher "
           << entry->pmf_name << " (state " << *first << ")";
       return true;
     }
     ++first;
   }
-  out << "\tCatcher not found for message 0x" << __STD::hex << code << __STD::dec;
+  out << "\tCatcher not found for message 0x" << std::hex << code << std::dec;
   return false;
 }
 
 template <class T, class InputIterator>
-void __EvHandler<T, InputIterator>::Out( __STD::ostream& out ) const
+void __EvHandler<T, InputIterator>::Out( std::ostream& out ) const
 {
   if ( table.empty() ) {
     return;
@@ -489,7 +489,7 @@ void __EvHandler<T, InputIterator>::Out( __STD::ostream& out ) const
   while ( i1 != table.end() ) {
     EDS::code_type key1 = table.key1st(*i1);
     typename table_type::const_iterator2 i2 = table.begin( i1 );
-    out << "\tMessage: " << __STD::hex << key1 << __STD::dec << __STD::endl;
+    out << "\tMessage: " << std::hex << key1 << std::dec << std::endl;
     while ( i2 != table.end( i1 ) ) {
       state_type key2 = table.key2nd(*i2++);
       table.get( key1, key2, entry );
@@ -499,7 +499,7 @@ void __EvHandler<T, InputIterator>::Out( __STD::ostream& out ) const
   }
 }
 
-typedef __STD::list<state_type,__STL_DEFAULT_ALLOCATOR(state_type) > HistoryContainer;
+typedef std::list<state_type> HistoryContainer;
 // #ifndef __FIT_TEMPLATE_TYPEDEF_BUG
 typedef HistoryContainer::iterator h_iterator;
 typedef HistoryContainer::const_iterator const_h_iterator;
@@ -514,7 +514,7 @@ typedef HistoryContainer::const_iterator const_h_iterator;
 // #  endif
 // #endif // __FIT_TEMPLATE_TYPEDEF_BUG
 
-__STL_TEMPLATE_NULL
+_STLP_TEMPLATE_NULL
 class __EvHandler<EventHandler,h_iterator >
 {
   public:
@@ -591,10 +591,10 @@ class EventHandler
    class T :
       public __pack_base
    {
-      virtual void pack( __STD::ostream& s ) const;
-      virtual void net_pack( __STD::ostream& s ) const;
-      virtual void unpack( __STD::istream& s );
-      virtual void net_unpack( __STD::istream& s );
+      virtual void pack( std::ostream& s ) const;
+      virtual void net_pack( std::ostream& s ) const;
+      virtual void unpack( std::istream& s );
+      virtual void net_unpack( std::istream& s );
    } t;
 
 
@@ -649,8 +649,8 @@ void __EvTableLoader( EventHandler::table_type *table, Handler * )
   const typename Handler::evtable_decl_type *__e = Handler::get_ev_table_decl();
   while ( __e->func.dpmf != 0 ) {
 //    if ( !__e->func.valid ) {
-//      __STD::cerr << "Function type mismatch: " << typeid(Handler).name() << "::"
-//                << __e->func.pmf_name << __STD::endl;
+//      std::cerr << "Function type mismatch: " << typeid(Handler).name() << "::"
+//                << __e->func.pmf_name << std::endl;
 //      abort();
 //    }
     table->append( __e->code, __e->st, (__AnyPMFentry *)&__e->func );
@@ -658,7 +658,7 @@ void __EvTableLoader( EventHandler::table_type *table, Handler * )
   }
 }
 
-__STL_TEMPLATE_NULL
+_STLP_TEMPLATE_NULL
 inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
                                            EventHandler * )
 { }
@@ -690,9 +690,9 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
 #define DECLARE_RESPONSE_TABLE( cls, pcls )	                          \
   public:                                                                 \
     __FIT_TEMPLATE_CLASSTYPE_BUG_PARTIAL_WORAROUND(cls)                   \
-    virtual void Trace( __STD::ostream& out ) const                       \
+    virtual void Trace( std::ostream& out ) const                       \
        { theEventsTable.Out( out ); }                                     \
-    virtual bool DispatchTrace( const EDS::Event& __e, __STD::ostream& __s )\
+    virtual bool DispatchTrace( const EDS::Event& __e, std::ostream& __s )\
        {                                                                  \
          MT_REENTRANT_SDS( this->_theHistory_lock, _x1 );                 \
          return theEventsTable.DispatchTrace( theHistory.begin(),         \

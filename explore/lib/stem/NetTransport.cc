@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <01/02/28 14:35:04 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 19:17:59 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
@@ -20,9 +20,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -89,7 +89,7 @@ struct _auto_lock
 
 
 __PG_DECLSPEC
-void dump( __STD::ostream& o, const EDS::Event& e )
+void dump( std::ostream& o, const EDS::Event& e )
 {
   MT_IO_REENTRANT( o )
   o << setiosflags(ios_base::showbase) << hex
@@ -226,7 +226,7 @@ bool NetTransport_base::pop( Event& _rs )
 {
   unsigned buf[8];
 
-  __STL_ASSERT( net != 0 );
+  _STLP_ASSERT( net != 0 );
 
   MT_IO_REENTRANT( *net )
 
@@ -302,7 +302,7 @@ bool NetTransport_base::pop( Event& _rs )
 __PG_DECLSPEC
 bool NetTransport_base::push( const Event& _rs )
 {
-  __STL_ASSERT( net != 0 );
+  _STLP_ASSERT( net != 0 );
   if ( _sid == badkey || !net->good() ) {
     return false;
   }
@@ -415,7 +415,7 @@ NetTransportMgr::~NetTransportMgr()
 
 __PG_DECLSPEC
 addr_type NetTransportMgr::open( const char *hostname, int port,
-                                 __STD::sock_base::stype stype )
+                                 std::sock_base::stype stype )
 {
   // I should be sure, that not more then one _loop running from here!
   // For this, I enforce close connection before I try open new,

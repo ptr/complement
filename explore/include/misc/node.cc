@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/08 18:24:03 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 16:41:18 ptr>
 
 /*
  *
@@ -20,9 +20,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -91,7 +91,7 @@ template <class Node>
 typename
 #endif
 nodes_heap_cursor<Node>::iterator
-nodes_heap_cursor<Node>::create_catalog( const __STD::string& name, unsigned prot )
+nodes_heap_cursor<Node>::create_catalog( const std::string& name, unsigned prot )
 {
   if ( !can_write() ) {
     return catalog->end(); // no permission
@@ -116,7 +116,7 @@ nodes_heap_cursor<Node>::insert_catalog(
 #if defined(__HP_aCC) && (__HP_aCC==1)
 typename
 #endif
-nodes_heap_cursor<Node>::iterator i, const __STD::string& name, unsigned prot )
+nodes_heap_cursor<Node>::iterator i, const std::string& name, unsigned prot )
 {
   if ( !can_write() ) {
     return catalog->end(); // no permission
@@ -211,10 +211,10 @@ nodes_heap_cursor<Node>::iterator
 nodes_heap_cursor<Node>::mv( iterator i, nodes_heap_cursor<Node>& cursor )
 {
   if ( cursor._heap != _heap ) {
-    throw __STD::domain_error( "different heaps" );
+    throw std::domain_error( "different heaps" );
   }
   if ( cursor.catalog == catalog ) {
-    throw __STD::domain_error( "same catalog" );
+    throw std::domain_error( "same catalog" );
   }
   if ( !reinterpret_cast<__node_base *>(cursor._heap->value(cursor.dot()))->can_write( _uid, _gid, _grp.begin(), _grp.end() ) ) {
     throw entry_error( "permission denied" );
@@ -240,10 +240,10 @@ nodes_heap_cursor<Node>::iterator
 nodes_heap_cursor<Node>::mv( key_type k, nodes_heap_cursor<Node>& cursor )
 {
   if ( cursor._heap != _heap ) {
-    throw __STD::domain_error( "different heaps" );
+    throw std::domain_error( "different heaps" );
   }
   if ( cursor.catalog == catalog ) {
-    throw __STD::domain_error( "same catalog" );
+    throw std::domain_error( "same catalog" );
   }
   if ( !reinterpret_cast<__node_base *>(cursor._heap->value(cursor.dot()))->can_write( _uid, _gid, _grp.begin(), _grp.end() ) ) {
     throw entry_error( "permission denied" );
@@ -273,7 +273,7 @@ nodes_heap_cursor<Node>::iterator
 nodes_heap_cursor<Node>::mv( key_type k, nodes_heap_cursor<Node>& cursor, iterator ic )
 {
   if ( cursor._heap != _heap ) {
-    throw __STD::domain_error( "different heaps" );
+    throw std::domain_error( "different heaps" );
   }        
   if ( !reinterpret_cast<__node_base *>(cursor._heap->value(cursor.dot()))->can_write( _uid, _gid, _grp.begin(), _grp.end() ) ) {
     throw entry_error( "permission denied" );
@@ -284,7 +284,7 @@ nodes_heap_cursor<Node>::mv( key_type k, nodes_heap_cursor<Node>& cursor, iterat
 
   iterator i = catalog->entry( k );
   if ( cursor.catalog == catalog && i == ic ) {
-    throw __STD::domain_error( "moving in self" );
+    throw std::domain_error( "moving in self" );
   }
 
   if ( i == catalog->end() ) {
@@ -304,10 +304,10 @@ template <class Node>
 typename
 #endif
 nodes_heap_cursor<Node>::iterator
-nodes_heap_cursor<Node>::mv( iterator i, nodes_heap_cursor<Node>& cursor, const __STD::string& name )
+nodes_heap_cursor<Node>::mv( iterator i, nodes_heap_cursor<Node>& cursor, const std::string& name )
 {
   if ( cursor._heap != _heap ) {
-    throw __STD::domain_error( "different heaps" );
+    throw std::domain_error( "different heaps" );
   }        
   if ( !reinterpret_cast<__node_base *>(cursor._heap->value(cursor.dot()))->can_write( _uid, _gid, _grp.begin(), _grp.end() ) ) {
     throw entry_error( "permission denied" );
@@ -367,7 +367,7 @@ nodes_heap_cursor<Node>::ln( key_type k, nodes_heap_cursor<Node>& cursor )
     throw entry_error( "no entry" );
   }
   if ( cursor._heap != _heap ) {
-    throw __STD::domain_error( "different heaps" );
+    throw std::domain_error( "different heaps" );
   }
   return this->ln( i );
 }

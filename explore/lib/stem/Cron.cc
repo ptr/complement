@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/01/29 13:24:33 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 18:54:56 ptr>
 
 /*
  * Copyright (c) 1998
@@ -19,9 +19,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -118,7 +118,7 @@ void __PG_DECLSPEC Cron::Remove( const Event_base<CronEntry>& entry )
   cond.signal(); // in any case, remove I something or not
 
   const CronEntry& ne = entry.value();
-  __STD::vector<value_type> tmp;
+  std::vector<value_type> tmp;
 
   tmp.reserve( _M_c.size() );
 
@@ -143,7 +143,7 @@ void __PG_DECLSPEC Cron::RemoveArg( const Event_base<CronEntry>& entry )
   cond.signal(); // in any case, remove I something or not
 
   const CronEntry& ne = entry.value();
-  __STD::vector<value_type> tmp;
+  std::vector<value_type> tmp;
 
   tmp.reserve( _M_c.size() );
 
@@ -234,7 +234,7 @@ int Cron::_loop( void *p )
         continue;
       }
 
-#ifndef __STL_LONG_LONG     
+#ifndef _STLP_LONG_LONG     
       double _next = en.start.tv_sec + en.start.tv_nsec * 1.0e-9 +
         (en.period.tv_sec + en.period.tv_nsec * 1.0e-9) * ++en.count;
       en.expired.tv_nsec = 1.0e9 * modf( _next, &_next );
@@ -284,7 +284,7 @@ DEFINE_RESPONSE_TABLE( Cron )
 END_RESPONSE_TABLE
 
 __PG_DECLSPEC
-void CronEntry::pack( __STD::ostream& s ) const
+void CronEntry::pack( std::ostream& s ) const
 {
   __pack( s, code );
   __pack( s, start.tv_sec );
@@ -296,7 +296,7 @@ void CronEntry::pack( __STD::ostream& s ) const
 }
 
 __PG_DECLSPEC
-void CronEntry::net_pack( __STD::ostream& s ) const
+void CronEntry::net_pack( std::ostream& s ) const
 {
   __net_pack( s, code );
   __net_pack( s, start.tv_sec );
@@ -308,7 +308,7 @@ void CronEntry::net_pack( __STD::ostream& s ) const
 }
 
 __PG_DECLSPEC
-void CronEntry::unpack( __STD::istream& s )
+void CronEntry::unpack( std::istream& s )
 {
   __unpack( s, code );
   __unpack( s, start.tv_sec );
@@ -320,7 +320,7 @@ void CronEntry::unpack( __STD::istream& s )
 }
 
 __PG_DECLSPEC
-void CronEntry::net_unpack( __STD::istream& s )
+void CronEntry::net_unpack( std::istream& s )
 {
   __net_unpack( s, code );
   __net_unpack( s, start.tv_sec );

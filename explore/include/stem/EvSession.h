@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <01/02/02 12:59:59 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 18:37:31 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
@@ -23,9 +23,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -98,7 +98,7 @@ struct SessionInfo
 //	sockaddr    any;
 //    } _address;
 
-  __STD::string _host; // name + ip +? port? 
+  std::string _host; // name + ip +? port? 
   int _port;    // ?
 
     // sockstream *_sock; // ?
@@ -191,7 +191,7 @@ class SessionManager
     typedef unsigned key_type;
     // typedef __STD::map<key_type,T,__STD::less<key_type>,
     //            __STL_DEFAULT_ALLOCATOR(T) > heap_type;
-    typedef __STD::map<key_type,T> heap_type;
+    typedef std::map<key_type,T> heap_type;
     typedef typename heap_type::iterator iterator;
 
     SessionManager()
@@ -303,9 +303,9 @@ SessionManager<T>::key_type SessionManager<T>::create_unique()
 #endif
 {
 #ifndef _MSC_VER
-  __STD::pair<typename heap_type::iterator, bool> ret;
+  std::pair<typename heap_type::iterator, bool> ret;
 #else
-  __STD::pair<heap_type::iterator,bool> ret;
+  std::pair<heap_type::iterator,bool> ret;
 #endif
 
   do {

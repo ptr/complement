@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <01/03/01 10:49:28 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 20:13:13 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
@@ -20,9 +20,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -34,7 +34,7 @@ extern "C" int nanosleep(const struct timespec *, struct timespec *);
 
 using __impl::Thread;
 
-__STL_BEGIN_NAMESPACE
+_STLP_BEGIN_NAMESPACE
 
 template <class Connect>
 void sockmgr_stream<Connect>::open( int port, sock_base::stype t )
@@ -69,7 +69,7 @@ sockmgr_client *sockmgr_stream<Connect>::accept_tcp()
   sock_base::socket_type _sd = ::accept( fd(), &addr.any, &sz );
   if ( _sd == -1 ) {
     // check and set errno
-    __STL_ASSERT( _sd == -1 );
+    _STLP_ASSERT( _sd == -1 );
     return 0;
   }
 
@@ -439,7 +439,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
     _pfd[0].fd = fd();
     _pfd[0].events = POLLIN;
     ++_fdcount;
-    __STL_ASSERT( _fdcount == 1 );
+    _STLP_ASSERT( _fdcount == 1 );
   }
 
   sockmgr_client_MP<Connect> *cl;
@@ -463,7 +463,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
       sock_base::socket_type _sd = ::accept( fd(), &addr.any, &sz );
       if ( _sd == -1 ) {
         // check and set errno
-        __STL_ASSERT( _sd == -1 );
+        _STLP_ASSERT( _sd == -1 );
         return 0;
       }
 
@@ -655,4 +655,4 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
   return 0;
 }
 
-__STL_END_NAMESPACE
+_STLP_END_NAMESPACE

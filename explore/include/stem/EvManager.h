@@ -1,10 +1,10 @@
-// -*- C++ -*- Time-stamp: <01/01/22 13:14:57 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 19:15:24 ptr>
 
 /*
  * Copyright (c) 1995-1999
  * Petr Ovchenkov
  * 
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
@@ -22,9 +22,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -92,7 +92,7 @@ struct __Object_Entry
       { remote = new __Remote_Object_Entry( key, channel ); }
         
     EventHandler *ref;  // system dependent? for Win may be WND HANDLER?    
-    __STD::string info; // even IDL interface...
+    std::string info; // even IDL interface...
     __Remote_Object_Entry *remote;
  // string location; // if ref invalid;
  // int refcount;    // references on object
@@ -109,23 +109,22 @@ namespace EDS {
 class EvManager
 {
   public:
-//    typedef __STD::map<key_type,__Object_Entry,__STD::less<key_type>,
-//                              __STL_DEFAULT_ALLOCATOR(__Object_Entry) > heap_ty
-    typedef __STD::map<key_type,__Object_Entry> heap_type;
-    typedef __STD::queue< Event > queue_type;
+//    typedef std::map<key_type,__Object_Entry,std::less<key_type>> heap_type;
+    typedef std::map<key_type,__Object_Entry> heap_type;
+    typedef std::queue< Event > queue_type;
 
     __PG_DECLSPEC EvManager();
     __PG_DECLSPEC ~EvManager();
 
-    __PG_DECLSPEC addr_type Subscribe( EventHandler *object, const __STD::string& info );
+    __PG_DECLSPEC addr_type Subscribe( EventHandler *object, const std::string& info );
     __PG_DECLSPEC addr_type Subscribe( EventHandler *object, const char *info = 0 );
     __PG_DECLSPEC addr_type SubscribeID( addr_type id, EventHandler *object,
-                                    const __STD::string& info );
+                                    const std::string& info );
     __PG_DECLSPEC addr_type SubscribeID( addr_type id, EventHandler *object,
                                     const char *info = 0 );
     __PG_DECLSPEC addr_type SubscribeRemote( NetTransport_base *channel,
                                          addr_type rmkey,
-                                         const __STD::string& info );
+                                         const std::string& info );
     __PG_DECLSPEC addr_type SubscribeRemote( NetTransport_base *channel,
                                          addr_type rmkey,
                                          const char *info = 0 );
@@ -204,7 +203,7 @@ class EvManager
     __impl::Mutex _lock_heap;
     __impl::Mutex _lock_queue;
 
-    static __STD::string inv_key_str;
+    static std::string inv_key_str;
 
     friend class Names;
 };

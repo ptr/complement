@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <01/02/28 14:35:04 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 19:20:46 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
@@ -23,9 +23,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -55,7 +55,7 @@
 using __impl::Thread;
 using __impl::Condition;
 
-__STL_BEGIN_NAMESPACE
+_STLP_BEGIN_NAMESPACE
 
 union _xsockaddr {
     sockaddr_in inet;
@@ -186,7 +186,7 @@ class sockmgr_stream :
 
   protected:
     typedef sockmgr_stream<Connect> _Self_type;
-    typedef __STD::vector<sockmgr_client *,__STL_DEFAULT_ALLOCATOR(sockmgr_client *)> _Sequence;
+    typedef std::vector<sockmgr_client *> _Sequence;
     // typedef less_sockmgr_client _Compare;
     typedef fd_equal _Compare;
 #if !defined(__HP_aCC) || (__HP_aCC > 1)
@@ -209,7 +209,7 @@ class sockmgr_stream :
     _Compare  _M_comp;
     // __impl::Mutex _c_lock;
     // __STLPORT_STD::_STL_mutex_lock _c_lock;
-    __STLPORT_STD::_STL_mutex _c_lock;
+    _STL_mutex _c_lock;
 };
 
 // Policy: multiplex all clients connections in one thread
@@ -265,7 +265,7 @@ class sockmgr_stream_MP : // multiplexor
 
   protected:
     typedef sockmgr_stream_MP<Connect> _Self_type;
-    typedef __STD::vector<sockmgr_client_MP<Connect> *,__STL_DEFAULT_ALLOCATOR(sockmgr_client_MP<Connect> *)> _Sequence;
+    typedef std::vector<sockmgr_client_MP<Connect> *> _Sequence;
     typedef fd_equal _Compare;
     typedef typename _Sequence::value_type      value_type;
     typedef typename _Sequence::size_type       size_type;
@@ -277,7 +277,7 @@ class sockmgr_stream_MP : // multiplexor
     _Sequence _M_c;
     _Compare  _M_comp;
     in_buf_avail _M_av;
-    __STLPORT_STD::_STL_mutex _c_lock;
+    _STL_mutex _c_lock;
 
 #ifdef __unix
     pollfd *_pfd;
@@ -291,7 +291,7 @@ class sockmgr_stream_MP : // multiplexor
     sockmgr_client_MP<Connect> *_shift_fd();
 };
 
-__STL_END_NAMESPACE
+_STLP_END_NAMESPACE
 
 #ifndef __STL_LINK_TIME_INSTANTIATION
 #include <sockios/sockmgr.cc>

@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <00/09/10 15:36:33 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 19:18:54 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  * 
  * This material is provided "as is", with absolutely no warranty expressed
@@ -23,9 +23,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -79,12 +79,12 @@ struct NameRecord :
       { }
 
     addr_type    addr;
-    __STD::string  record;
+    std::string  record;
 
-    virtual __PG_DECLSPEC void pack( __STD::ostream& s ) const;
-    virtual __PG_DECLSPEC void net_pack( __STD::ostream& s ) const;
-    virtual __PG_DECLSPEC void unpack( __STD::istream& s );
-    virtual __PG_DECLSPEC void net_unpack( __STD::istream& s );
+    virtual __PG_DECLSPEC void pack( std::ostream& s ) const;
+    virtual __PG_DECLSPEC void net_pack( std::ostream& s ) const;
+    virtual __PG_DECLSPEC void unpack( std::istream& s );
+    virtual __PG_DECLSPEC void net_unpack( std::istream& s );
 };
 
 } // namespace EDS
