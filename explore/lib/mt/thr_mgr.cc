@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/21 14:11:35 ptr>
+// -*- C++ -*- Time-stamp: <00/01/19 13:05:20 ptr>
 #ident "$SunId$ %Q%"
 
 #ifdef WIN32
@@ -33,6 +33,7 @@ __XMT_DLL ThreadMgr::~ThreadMgr()
   while ( i != _M_c.end() ) {
     if ( (*i)->good() ) {
       (*i)->kill( SIGTERM );
+      (*i)->join();
     }
     delete *i;
     _M_c.erase( i++ );
