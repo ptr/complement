@@ -1,12 +1,12 @@
-// -*- C++ -*- Time-stamp: <01/03/19 16:28:09 ptr>
+// -*- C++ -*- Time-stamp: <02/04/14 18:01:24 ptr>
 
 /*
  *
- * Copyright (c) 1999
- * Petr Ovchenkov
+ * Copyright (c) 1999, 2002
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
- * ParallelGraphics
+ * Parallel Graphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -45,32 +45,32 @@
 #  define _REENTRANT
 #endif
 
-#if defined( WIN32 ) && !defined(__PG_USE_STATIC_LIB) && !defined(_LIB)
-#  undef  __PG_USE_DECLSPEC
-#  define __PG_USE_DECLSPEC
+#if defined( WIN32 ) && !defined(__FIT_USE_STATIC_LIB) && !defined(_LIB)
+#  undef  __FIT_USE_DECLSPEC
+#  define __FIT_USE_DECLSPEC
 #else
-#  undef  __PG_USE_DECLSPEC
+#  undef  __FIT_USE_DECLSPEC
 #endif
 
 #if (defined (__DLL) || defined (_DLL) || defined (_WINDLL) )
-#  undef  __PG_DLL
-#  define __PG_DLL
+#  undef  __FIT_DLL
+#  define __FIT_DLL
 #else 
-#  undef  __PG_DLL
+#  undef  __FIT_DLL
 #endif
 
-#ifdef __PG_USE_DECLSPEC /* using export/import technique */
-#  ifdef __PG_DLL
-#    define __PG_DECLSPEC   __declspec( dllexport )
+#ifdef __FIT_USE_DECLSPEC /* using export/import technique */
+#  ifdef __FIT_DLL
+#    define __FIT_DECLSPEC   __declspec( dllexport )
 #  else
-#    define __PG_DECLSPEC   __declspec( dllimport )
+#    define __FIT_DECLSPEC   __declspec( dllimport )
 #  endif
 #else
-#  define __PG_DECLSPEC
+#  define __FIT_DECLSPEC
 #endif
 
 #if defined(__sun) && defined(__GNUC__)
-#  define __PG_USE_ABBREV
+#  define __FIT_USE_ABBREV
 #endif
 
 /*
@@ -109,7 +109,7 @@
 #  ifndef __LINK_TIME_INSTANTIATION
 #    define __LINK_TIME_INSTANTIATION 1
 #  endif
-#  define __PG_INCLASS_OPERATOR
+#  define __FIT_INCLASS_OPERATOR
 #endif // __SUNPRO_CC
 
 #if defined(__sun) && !defined(_PTHREADS)
