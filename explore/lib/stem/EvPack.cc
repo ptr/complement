@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/12 14:07:11 ptr>
+// -*- C++ -*- Time-stamp: <00/09/14 15:33:44 ptr>
 
 /*
  *
@@ -70,7 +70,11 @@ void __pack_base::__net_pack( ostream& s, const string& str )
 #if !defined(__HP_aCC) || (__HP_aCC > 1)
   copy( str.begin(), str.end(), __STD::ostream_iterator<char,char,__STD::char_traits<char> >(s) );
 #else // Mmm, may be with __STL_DEBUG should be a bit different...
+// #  ifndef __STL_DEBUG
   __STD::__copy_aux(str.begin(), str.end(), __STD::ostream_iterator<char,char,__STD::char_traits<char> >(s), (char *)(0) );
+// #  else
+//  __STD::__copy_aux(str.begin(), str.end(), __STD::ostream_iterator<char,char,__STD::char_traits<char> >(s), (char *)(0) );
+// #  endif
 #endif
 }
 
@@ -104,7 +108,14 @@ void __pack_base::__pack( ostream& s, const string& str )
 #if !defined(__HP_aCC) || (__HP_aCC > 1)
   __STD::copy( str.begin(), str.end(), __STD::ostream_iterator<char,char,__STD::char_traits<char> >(s) );
 #else // Mmm, may be with __STL_DEBUG should be a bit different...
+// #  ifndef __STL_DEBUG
   __STD::__copy_aux(str.begin(), str.end(), __STD::ostream_iterator<char,char,__STD::char_traits<char> >(s), (char *)(0) );
+// #  else
+//   __STD::__copy_aux(str.begin(), str.end(), __STD::ostream_iterator<char,char,__STD::char_traits<char> >(s), (char *)(0) );
+//  for ( string::size_type i = 0; i < str.size(); ++i ) {
+//    s << str[i];
+//  }
+// #  endif
 #endif
 }
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/10 15:34:35 ptr>
+// -*- C++ -*- Time-stamp: <00/09/28 14:52:42 ptr>
 
 /*
  * Copyright (c) 1995-1999
@@ -162,9 +162,6 @@ class EvManager
       }
 
     __PG_DECLSPEC void Remove( NetTransport_base * );
-#ifdef __hpux
-    __PG_DECLSPEC void StartEvQueue();
-#endif
 
   protected:
     bool unsafe_is_avail( addr_type id ) const

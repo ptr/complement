@@ -44,6 +44,9 @@
 #else // WIN32
 #  include <unistd.h>
 #  include <sys/types.h>
+#  if defined(__hpux) && !defined(_INCLUDE_XOPEN_SOURCE_EXTENDED)
+#    define _INCLUDE_XOPEN_SOURCE_EXTENDED
+#  endif
 #  include <sys/socket.h>
 #  include <stropts.h>
 // #  ifndef __linux

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/10 15:30:54 ptr>
+// -*- C++ -*- Time-stamp: <00/09/28 17:11:59 ptr>
 
 /*
  *
@@ -255,8 +255,8 @@ bool NetTransport_base::pop( Event& _rs )
   SessionInfo& sess = smgr[_sid];
   sess.inc_from( 8 * sizeof(unsigned) + str.size() );
   if ( sess._un_from != _x_count ) {
-    cerr << "Event(s) lost, or missrange event: " << sess._un_from
-         << ", " << _x_count << "(" << _sid << ") --- ";
+    cerr << "Incoming event(s) lost, or missrange event: " << sess._un_from
+         << ", " << _x_count << " (" << _sid << ") --- ";
     cerr << endl;
     sess._un_from = _x_count; // Retransmit?    
   }
@@ -278,29 +278,41 @@ bool NetTransport_base::push( const Event& _rs )
   buf[2] = to_net( _rs.dest() );
   buf[3] = to_net( _rs.src() );
 
-  MT_REENTRANT( _lock, _x1 );
-
-  buf[4] = to_net( ++_count );
-
   smgr.lock();
-  SessionInfo& sess = smgr[_sid];
-  sess.inc_to( 8 * sizeof(unsigned) + _rs.value().size() );
+  try {
+    buf[4] = to_net( ++_count );
 
-  buf[5] = 0; // time?
-  buf[6] = to_net( _rs.value().size() );
-  buf[7] = to_net( adler32( (unsigned char *)buf, sizeof(unsigned) * 7 ) ); // crc
+    SessionInfo& sess = smgr[_sid];
+    sess.inc_to( 8 * sizeof(unsigned) + _rs.value().size() );
 
-  MT_IO_REENTRANT_W( *net )
-  net->write( (const char *)buf, sizeof(unsigned) * 8 );
+    buf[5] = 0; // time?
+    buf[6] = to_net( _rs.value().size() );
+    buf[7] = to_net( adler32( (unsigned char *)buf, sizeof(unsigned) * 7 ) ); // crc
 
-  copy( _rs.value().begin(), _rs.value().end(),
-        ostream_iterator<char,char,char_traits<char> >(*net) );
+  // MT_IO_REENTRANT_W( *net )
+    MT_IO_LOCK_W( *net )
+    try {
+      net->write( (const char *)buf, sizeof(unsigned) * 8 );
+        
+      copy( _rs.value().begin(), _rs.value().end(),
+            ostream_iterator<char,char,char_traits<char> >(*net) );
 
-  net->flush();
+      net->flush();
+    }
+    catch ( ... ) {
+      MT_IO_UNLOCK_W( *net )
+      throw;
+    }
+    MT_IO_UNLOCK_W( *net )
 
-  if ( sess._un_to != _count ) {
-    cerr << "Event(s) lost, or missrange event: " << sess._un_to
-         << ", " << _count << "(" << _sid << ")" << endl;
+    if ( sess._un_to != _count ) {
+      cerr << "Outgoing event(s) lost, or missrange event: " << sess._un_to
+           << ", " << _count << " (Session " << _sid << ")" << endl;
+    }
+  }
+  catch ( ... ) {
+    smgr.unlock();
+    throw;
   }
   smgr.unlock();
 
