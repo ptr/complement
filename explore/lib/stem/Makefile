@@ -1,4 +1,4 @@
-# Time-stamp: <99/09/21 13:06:51 ptr>
+# Time-stamp: <99/10/13 16:01:05 ptr>
 # $SunId$ %Q%
 
 PWD :sh = pwd
@@ -13,7 +13,7 @@ include ../../Makefile.inc
 INCLUDES += -I../../include
 
 EDS_SRC = _EventHandler.cc NetTransport.cc EvManager.cc EvPack.cc crc.cc \
-          _SessionMgr.cc Names.cc
+          _SessionMgr.cc Names.cc Cron.cc
 EDS_OBJ = $(EDS_SRC:%.cc=$(OUTPUT_DIR)/%.o)
 
 libdbg_so := LDFLAGS += -L..
