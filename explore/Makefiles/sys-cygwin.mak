@@ -1,8 +1,14 @@
-# Time-stamp: <03/07/11 12:26:09 ptr>
+# Time-stamp: <03/07/15 18:24:51 ptr>
 # $Id$
 
-SO := dll
+# shared library:
+SO  := dll
+LIB := lib
+EXP := exp
+# executable:
+EXE := .exe
 
+# static library extention:
 ARCH := lib
 AR := lib.exe
 AR_INS_R := 
