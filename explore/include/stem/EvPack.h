@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/24 13:23:30 ptr>
+// -*- C++ -*- Time-stamp: <99/03/24 13:54:52 ptr>
 #ifndef __EvPack_h
 #define __EvPack_h
 
@@ -23,6 +23,8 @@
 #include <ostream>
 
 namespace EDS {
+
+#ifndef _MSC_VER
 
 template <int S>
 class __byte_swapper
@@ -133,11 +135,67 @@ class __net_converter<signed char>
 
 template <class T>
 T to_net( const T& x )
-{ return __net_converter<T>::to_net( x ); }
+{ return EDS::__net_converter<T>::to_net( x ); }
 
 template <class T>
 T from_net( const T& x )
-{ return __net_converter<T>::from_net( x ); }
+{ return EDS::__net_converter<T>::from_net( x ); }
+
+#else // !_MSC_VER
+
+inline
+char to_net( const char& x )
+{ return x; }
+
+inline
+signed char to_net( const signed char& x )
+{ return x; }
+
+inline
+unsigned char to_net( const unsigned char& x )
+{ return x; }
+
+inline
+short to_net( const short& x )
+{ return htons( x ); }
+
+inline
+unsigned short to_net( const unsigned short& x )
+{ return htons( x ); }
+
+inline
+int to_net( const int& x )
+{ return htonl( x ); }
+
+inline
+unsigned to_net( const unsigned& x )
+{ return htonl( x ); }
+
+inline
+long to_net( const long& x )
+{ return htonl( x ); }
+
+inline
+unsigned long to_net( const unsigned long& x )
+{ return htonl( x ); }
+
+inline
+int from_net( const int& x )
+{ return ntohl( x ); }
+
+inline
+unsigned from_net( const unsigned& x )
+{ return ntohl( x ); }
+
+inline
+long from_net( const long& x )
+{ return ntohl( x ); }
+
+inline
+unsigned long from_net( const unsigned long& x )
+{ return ntohl( x ); }
+
+#endif
 
 struct __pack_base
 {
