@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/06/12 15:29:55 ptr>
+// -*- C++ -*- Time-stamp: <02/08/01 10:08:06 ptr>
 
 /*
  *
@@ -269,10 +269,7 @@ void basic_sockbuf<charT, traits, _Alloc>::shutdown( sock_base::shutdownflg dir 
 }
 
 template<class charT, class traits, class _Alloc>
-#if defined(__HP_aCC) && (__HP_aCC == 1)
-typename
-#endif
-basic_sockbuf<charT, traits, _Alloc>::int_type
+__FIT_TYPENAME basic_sockbuf<charT, traits, _Alloc>::int_type
 basic_sockbuf<charT, traits, _Alloc>::underflow()
 {
   if( !is_open() )
@@ -324,10 +321,7 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
 }
 
 template<class charT, class traits, class _Alloc>
-#if defined(__HP_aCC) && (__HP_aCC == 1)
-typename
-#endif
-basic_sockbuf<charT, traits, _Alloc>::int_type
+__FIT_TYPENAME basic_sockbuf<charT, traits, _Alloc>::int_type
 basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
 {
   if ( !is_open() )        

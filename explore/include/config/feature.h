@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/05/12 11:58:44 ptr>
+// -*- C++ -*- Time-stamp: <02/08/01 09:58:50 ptr>
 
 /*
  *
@@ -132,11 +132,16 @@
 #  define __FIT_TEMPLATE_FORWARD_BUG
 #  define __FIT_EXPLICIT_BUG
 #  define __FIT_USING_NAMESPACE_BUG
-#  define __FIT_TYPENAME_TEMPLATE_PARAMETER_BUG
+// #  define __FIT_TYPENAME_TEMPLATE_PARAMETER_BUG
+#  define __FIT_TYPENAME_TEMPLATE_PARAMETER
 #  define __FIT_NEED_TYPENAME_IN_ARGS_BUG
 #  define __FIT_TEMPLATE_TYPEDEF_BUG
 #  define __FIT_TEMPLATE_CLASSTYPE_BUG
 #endif
+
+// #if defined(__GNUC__) && (__GNUC__==3) // gcc 3.1.1 at least
+// #  define __FIT_TYPENAME_TEMPLATE_PARAMETER_RET
+// #endif
 
 #ifdef __FIT_EXPLICIT_BUG
 #  define __FIT_EXPLICIT
@@ -149,6 +154,12 @@
 #else // __FIT_TYPENAME_TEMPLATE_PARAMETER_BUG
 #  define __FIT_TYPENAME typename
 #endif // __FIT_TYPENAME_TEMPLATE_PARAMETER_BUG
+
+// #ifdef __FIT_TYPENAME_TEMPLATE_PARAMETER_RET
+// #  define __FIT_TYPENAME_RET typename
+// #else
+// #  define __FIT_TYPENAME_RET
+// #endif
 
 #ifdef __FIT_NEED_TYPENAME_IN_ARGS_BUG
 #  define __FIT_TYPENAME_ARG typename
