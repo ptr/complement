@@ -1,13 +1,31 @@
-// -*- C++ -*- Time-stamp: <99/09/03 11:34:08 ptr>
+// -*- C++ -*- Time-stamp: <99/09/22 09:58:03 ptr>
+
+/*
+ *
+ * Copyright (c) 1997-1999
+ * Petr Ovchenkov
+ *
+ * Copyright (c) 1999
+ * ParallelGraphics Software Systems
+ 
+ * This material is provided "as is", with absolutely no warranty expressed
+ * or implied. Any use is at your own risk.
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies and
+ * that both that copyright notice and this permission notice appear
+ * in supporting documentation.
+ */
 
 #ifndef __SOCKSTREAM__
 #define __SOCKSTREAM__
 
 #ident "$SunId$ %Q%"
 
-#  ifndef __STL_CONFIG_H
-#    include <stl_config.h>
-#  endif
+#ifndef __config_feature_h
+#include <config/feature.h>
+#endif
 
 #ifndef __IOS__
 #include <ios>
@@ -22,29 +40,17 @@
 #endif
 
 #ifdef WIN32
-// #include <winsock2.h>
-#include <winsock.h>
+#  include <winsock.h>
 #else // WIN32
-
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <stropts.h>
-#include <sys/conf.h>
-
-// #ifdef queue // in sys/stream.h queue exist and conflict with stl
-// #undef queue
-// #endif
-
-// #define queue _queue_
-#include <netinet/in.h>
-// #undef queue
-
-#include <arpa/inet.h>
-#include <netdb.h>
-
-#include <cerrno>
-
+#  include <unistd.h>
+#  include <sys/types.h>
+#  include <sys/socket.h>
+#  include <stropts.h>
+#  include <sys/conf.h>
+#  include <netinet/in.h>
+#  include <arpa/inet.h>
+#  include <netdb.h>
+#  include <cerrno>
 #endif // !WIN32
 
 #ifndef ___xsballoc_h
@@ -433,7 +439,7 @@ typedef basic_sockstream<wchar_t,char_traits<wchar_t> > wsockstream;
 } // namespace std
 
 #ifndef __STL_LINK_TIME_INSTANTIATION
-#include <sockstream.cc>
+#include <sockios/sockstream.cc>
 #endif
 
 #endif // __SOCKSTREAM__

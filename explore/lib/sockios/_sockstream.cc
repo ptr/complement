@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/16 18:32:42 ptr>
+// -*- C++ -*- Time-stamp: <99/09/21 14:10:57 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -10,7 +10,7 @@
 #    define __SOCKIOS_DLL
 #  endif
 
-#include <sockstream>
+#include <sockios/sockstream>
 
 // The Microsoft's cool programmers made two wanderful things:
 // 1. All sockets must be initialized via WSAStartup
@@ -21,7 +21,7 @@
 #include <ostream>
 
 #ifndef __XMT_H
-#include <xmt.h>
+#include <mt/xmt.h>
 #endif
 
 extern "C" int APIENTRY

@@ -21,7 +21,10 @@
 #if !defined(DIRECTORY_H)
 #define DIRECTORY_H
 
-#include <stl_config.h>
+#ifndef __config_feature_h
+#include <config/feature.h>
+#endif
+
 #include <string>
 #include <iterator>
 

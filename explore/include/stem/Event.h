@@ -1,8 +1,31 @@
-// -*- C++ -*- Time-stamp: <99/09/10 15:54:29 ptr>
+// -*- C++ -*- Time-stamp: <99/09/22 09:51:35 ptr>
+
+/*
+ *
+ * Copyright (c) 1995-1999
+ * Petr Ovchenkov
+ *
+ * Copyright (c) 1999
+ * ParallelGraphics Software Systems
+ 
+ * This material is provided "as is", with absolutely no warranty expressed
+ * or implied. Any use is at your own risk.
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies and
+ * that both that copyright notice and this permission notice appear
+ * in supporting documentation.
+ */
+
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
 #ident "$SunId$ %Q%"
+
+#ifndef __config_feature_h
+#include <config/feature.h>
+#endif
 
 #include <string>
 #include <istream>
@@ -10,7 +33,9 @@
 #include <type_traits.h>
 #include <sstream>
 
-#include <EvPack.h>
+#ifndef __EvPack_h
+#include <EDS/EvPack.h>
+#endif
 
 #ifndef __EDS_DLL
 #  if defined( WIN32 ) && defined( _MSC_VER )

@@ -1,11 +1,33 @@
-// -*- C++ -*- Time-stamp: <99/08/13 16:06:10 ptr>
+// -*- C++ -*- Time-stamp: <99/09/22 10:40:31 ptr>
+
+/*
+ *
+ * Copyright (c) 1997
+ * Petr Ovchenkov
+ *
+ * This material is provided "as is", with absolutely no warranty expressed
+ * or implied. Any use is at your own risk.
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies and
+ * that both that copyright notice and this permission notice appear
+ * in supporting documentation.
+ */
 
 #ident "$SunId$ %Q%"
 
-#include <dir_utils.h>
+#include <config/feature.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <directory.h>
+
+#ifndef _WIN32
+#include "aux/dir_utils.h"
+#include "aux/directory.h"
+#else
+#include "aux_/dir_utils.h"
+#include "aux_/directory.h"
+#endif
 
 using namespace std;
 
