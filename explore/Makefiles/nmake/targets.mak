@@ -1,4 +1,4 @@
-# Time-stamp: <03/10/13 15:22:29 ptr>
+# Time-stamp: <03/10/17 17:13:09 ptr>
 # $Id$
 
 # dependency output parser
@@ -36,13 +36,21 @@ ALLOBJS = $(SRC_C:.c=.o)
 !endif
 !endif
 
-ALLOBJS = $(ALLOBJS:../=)
-
 !ifdef SRC_RC
 ALLRESS = $(SRC_RC:.rc=.res)
-ALLRESS = $(ALLRESS:../=)
+#ALLRESS = $(ALLRESS:../=)
 !endif
 # ALLOBJS = $(ALLOBJS:somedir/=)
+
+!if EXIST( .\nmake-src-prefix.mak )
+# Include strip of path to sources, i.e. macro like
+#   ALLOBJS = $(ALLOBJS:..\..\..\..\..\..\explore/../extern/boost/libs/test/src/=)
+#   ALLOBJS = $(ALLOBJS:../=)
+#   ALLRESS = $(ALLRESS:../=)
+# Be careful about path spelling!
+# Pay attention the order of this macro! THE ORDER IS SIGNIFICANT!
+!include .\nmake-src-prefix.mak
+!endif
 
 ALLDEPS    = $(SRC_CC:.cc=.d) $(SRC_CPP:.cpp=.d) $(SRC_C:.c=.d)
 
@@ -92,6 +100,29 @@ OBJ_STLDBG=$(OBJ_STLDBG:.o@ =.o@)
 OBJ_STLDBG=$(OBJ_STLDBG:.o@=.o obj\vc6\shared-stlg\)
 # add prefix to first element:
 OBJ_STLDBG=$(OUTPUT_DIR_STLDBG)\$(OBJ_STLDBG)
+
+OBJ_A=$(ALLOBJS:.o =.o@)
+!if [echo OBJ 1 -$(OBJ_A)-]
+!endif
+OBJ_A=$(OBJ_A:.o@ =.o@)
+!if [echo OBJ 1 -$(OBJ_A)-]
+!endif
+OBJ_A=$(OBJ_A:.o@=.o obj\vc6\static\)
+!if [echo OBJ 2 -$(OBJ_A)-]
+!endif
+OBJ_A=$(OUTPUT_DIR_A)\$(OBJ_A)
+!if [echo OBJ 3 -$(OBJ_A)-]
+!endif
+
+OBJ_A_DBG=$(ALLOBJS:.o =.o@)
+OBJ_A_DBG=$(OBJ_A_DBG:.o@ =.o@)
+OBJ_A_DBG=$(OBJ_A_DBG:.o@=.o obj\vc6\static-g\)
+OBJ_A_DBG=$(OUTPUT_DIR_A_DBG)\$(OBJ_A_DBG)
+
+OBJ_A_STLDBG=$(ALLOBJS:.o =.o@)
+OBJ_A_STLDBG=$(OBJ_A_STLDBG:.o@ =.o@)
+OBJ_A_STLDBG=$(OBJ_A_STLDBG:.o@=.o obj\vc6\static-stlg\)
+OBJ_A_STLDBG=$(OUTPUT_DIR_A_STLDBG)\$(OBJ_A_STLDBG)
 
 #OBJ_A      := $(OBJ)
 #OBJ_DBG    := $(addprefix $(OUTPUT_DIR_DBG)/,$(ALLOBJS))
