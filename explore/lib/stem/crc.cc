@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/12 13:49:07 ptr>
+// -*- C++ -*- Time-stamp: <99/05/19 21:35:51 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -50,7 +50,6 @@ void make_crc_table()
 crc32_type crc32_update( crc32_type crc, unsigned char *buf, int len )
 {
   crc32_type c = crc ^ 0xffffffffL;
-  int n;
 
   if ( !crc_table_computed )
     make_crc_table();
@@ -66,7 +65,6 @@ adler32_type adler32_update( adler32_type adler, unsigned char *buf, int len )
 {
   adler32_type s1 = adler & 0xffff;
   adler32_type s2 = (adler >> 16) & 0xffff;
-  int n;
 
   while ( len-- ) {
     s1 = (s1 + *buf++) % BASE;
