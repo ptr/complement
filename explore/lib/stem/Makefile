@@ -31,14 +31,12 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/EventHandler.o \
 		$(OUTPUT_DIR)/EventsCore.o \
 		$(OUTPUT_DIR)/Actuator.o \
+		$(OUTPUT_DIR)/Resource.o \
 		$(OUTPUT_DIR)/Application.o \
 		$(OUTPUT_DIR)/RectObject.o \
 		$(OUTPUT_DIR)/WindowBase.o \
 		$(OUTPUT_DIR)/Window.o \
-		$(OUTPUT_DIR)/Chameleon.o \
 		$(OUTPUT_DIR)/Collector.o \
-		$(OUTPUT_DIR)/Resource.o \
-		$(OUTPUT_DIR)/ResourceMgr.o \
 		$(OUTPUT_DIR)/DrawTools.o \
 		$(OUTPUT_DIR)/TopLevel.o \
 		$(OUTPUT_DIR)/GrContext.o \
@@ -62,7 +60,6 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/PopupMenu.o \
 		$(OUTPUT_DIR)/CheckList.o \
 		$(OUTPUT_DIR)/Scroller.o \
-		$(OUTPUT_DIR)/TargetUtils.o \
 		$(OUTPUT_DIR)/TableInfo.o \
 		$(OUTPUT_DIR)/CheckBox.o \
 		$(OUTPUT_DIR)/ControlData.o \
@@ -101,7 +98,7 @@ tests-dirs:
 $(PROJECT):	$(LIBFILES.o)
 	$(LINK.cc) -G -o $@ $(LIBFILES.o)
 
-$(XTESTER):	dirs tests-dirs $(XLIBFILES.o) $(XFILES.o)
+$(XTESTER):	$(XLIBFILES.o) $(XFILES.o)
 	$(LINK.cc) -o $@ $(XLIBFILES.o) $(XFILES.o)
 
 $(OUTPUT_DIR)/%.o:	%.cc
