@@ -97,32 +97,21 @@ class ASEvent
 
 inline ASEvent::ASEvent()
 {
-  Message = 0;
-  type = IntegerParams;
-  IParams.AParam = 0;
-  IParams.BParam = 0;
-  IParams.CParam = 0;
-  IParams.DParam = 0;
+  memset( this, 0, sizeof( ASEvent ) );
 }
 
 inline ASEvent::ASEvent( unsigned long msg )
 {
   Message = msg;
   type = IntegerParams;
-  IParams.AParam = 0;
-  IParams.BParam = 0;
-  IParams.CParam = 0;
-  IParams.DParam = 0;
+  memset( &IParams, 0, sizeof( unsigned long ) * 4 );
 }
 
 inline ASEvent::ASEvent( unsigned long msg, const tagIParams& ip )
 {
   Message = msg;
   type = IntegerParams;
-  IParams.AParam = ip.AParam;
-  IParams.BParam = ip.BParam;
-  IParams.CParam = ip.CParam;
-  IParams.DParam = ip.DParam;
+  memcpy( &IParams, &ip, sizeof( unsigned long ) * 4 );
 }
 
 inline ASEvent::ASEvent( unsigned long msg, const tagFParams& fp )
@@ -151,20 +140,14 @@ inline void ASEvent::SetMessage( unsigned long msg )
 {
   Message = msg;
   type = IntegerParams;
-  IParams.AParam = 0;
-  IParams.BParam = 0;
-  IParams.CParam = 0;
-  IParams.DParam = 0;
+  memset( &IParams, 0, sizeof( unsigned long ) * 4 );
 }
 
 inline void ASEvent::SetIParams( unsigned long msg, const tagIParams& ip )
 {
   Message = msg;
   type = IntegerParams;
-  IParams.AParam = ip.AParam;
-  IParams.BParam = ip.BParam;
-  IParams.CParam = ip.CParam;
-  IParams.DParam = ip.DParam;
+  memcpy( &IParams, &ip, sizeof( unsigned long ) * 4 );
 }
 
 inline void ASEvent::SetFParams( unsigned long msg, const tagFParams& fp )
