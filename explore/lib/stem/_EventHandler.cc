@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/02/28 11:38:24 ptr>
+// -*- C++ -*- Time-stamp: <96/02/29 21:05:43 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #include <OXW/EventHandler.h>
@@ -113,14 +113,19 @@ OXWEventHandler::~OXWEventHandler()
 
 bool OXWEventHandler::Dispatch( OXWEvent& event )
 {
-  return theEventsTable.Dispatch( this, theHistory.begin(),
-				  theHistory.end(), event );
+  return theEventsTable.Dispatch( this, theHistory.begin(),theHistory.end(),
+				  event );
 }
 
+bool OXWEventHandler::DispatchStub( OXWEvent& event )
+{
+  return theEventsTable.DispatchStub( this, theHistory.begin(),
+				      theHistory.end(), event );
+}
 void OXWEventHandler::DispatchTrace( OXWEvent& __event__, ostrstream& out )
 {
-  theEventsTable.DispatchTrace( theHistory.begin(),
-	 		        theHistory.end(), __event__, out );
+  theEventsTable.DispatchTrace( theHistory.begin(),theHistory.end(),
+				__event__, out );
 }
 
 void OXWEventHandler::TraceStack( ostrstream& out ) const
