@@ -1,0 +1,85 @@
+ /* Time-stamp: <02/10/08 18:07:38 ptr> */
+ /* $Id$ */
+
+body {
+  color: black;
+  background-color: #ffffff;
+  /* font: 12pt Sans-Serif, Arial, Helvetica; */
+  /* font-family:    sans-serif, Arial, Helvetica; */
+  font-size:      12pt;
+  font-family:    sans-serif, Arial, Helvetica;
+  padding-left:   0in;
+  padding-top:    0in;
+  padding-right:  0in;
+  padding-bottom: 0in;
+}
+
+/*
+p {
+  font-family: sans-serif, Arial, Helvetica;
+  font-size: 12pt;
+}
+*/
+
+h1 {
+  font-size: 144%;
+  font-weight: bold;
+}
+
+h2 {
+  font-size: 120%;
+  font-weight: bold;
+}
+
+h3 {
+  font-size: 14pt;
+  font-style: italic;
+  font-family: sans-serif, Arial, Helvetica;
+}
+
+dl dd {
+  left-margin: 20;
+}
+
+dl dt {
+  font-weight: bold;
+}
+
+/*
+ul li {
+  font-family: sans-serif, Arial, Helvetica;
+  font-size: 12pt;
+}
+*/
+
+body table tr th {
+  font-family: sans-serif, Arial, Helvetica;
+  font-weight: bold;
+}
+
+body table tr td {
+  font-family: sans-serif, Arial, Helvetica;
+  font-size: 12pt;
+}
+
+
+a:link {
+  text-decoration: none;
+  color: black;
+}
+
+a:visited {
+  text-decoration: none;
+  color: DarkGoldenrod;
+}
+
+a:active {
+  text-decoration: none;
+  color: black;
+}
+
+a:hover {
+  text-decoration: none;
+  color: black;
+}
+

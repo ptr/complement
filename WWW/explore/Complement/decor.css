@@ -1,0 +1,48 @@
+ /* Time-stamp: <02/10/08 17:54:43 ptr> */
+ /* $Id$ */
+
+h1.ident {
+  font: bold 12pt Sans-Serif, Arial, Helvetica;
+  margine-left: 0cm;
+  padding-left: 0cm;
+}
+
+h2.ident {
+  font: bold 12pt Sans-Serif, Arial, Helvetica;
+  padding-left: 1em;
+}
+
+h3.ident {
+  font-size: 12pt;
+  font-family: Sans-serif, Arial, Helvetica;
+  font-style: normal;
+  font-weight: normal;
+  padding-left: 2em;
+}
+
+td.margines {
+  padding-left:   0.5in;
+  padding-top:    0.5in;
+  padding-right:  0.5in;
+  padding-bottom: 0.5in;
+}
+
+/*
+table td.decor {
+}
+*/
+
+.bml {
+  background-image:       url(img/png/bml1.png);
+  background-color:       white;
+  background-position:    center;
+  color:                  #000000;
+  padding-left:   0in;
+  padding-top:    0in;
+  padding-right:  0in;
+  padding-bottom: 0in;
+  margine-left:   0cm;
+  margine-top:    0cm;
+  height:         31px;
+  width:          24px;
+}

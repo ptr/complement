@@ -1,0 +1,59 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<!-- Time-stamp: <02/10/07 16:24:05 ptr> -->
+<!-- $Id$ -->
+
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="main.css">
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <title>Complement: CVS access</title>
+  </head>
+
+  <body>
+<!--#include file="head.shtml" -->
+<h2>CVS access</h2>
+
+<p>
+You can read directives for CVS access <a href="http://sourceforge.net/cvs/?group_id=63160">here</a> or below on this page.
+</p>
+
+<h3>Anonymous CVS Access</h3>
+
+<p>
+This project's SourceForge.net CVS repository can be checked out
+through anonymous (pserver) CVS with the following instruction set.
+When prompted for a password for anonymous, simply press the Enter key.
+</p>
+
+<pre>
+cvs -d:pserver:anonymous@cvs.complement.sourceforge.net:/cvsroot/complement login 
+</pre>
+ 
+<pre>
+cvs -z3 -d:pserver:anonymous@cvs.complement.sourceforge.net:/cvsroot/complement co complement
+</pre>
+
+<p>
+Updates from within the module's directory do not need the -d parameter.
+</p>
+
+
+<h3>Developer CVS Access via SSH</h3>
+
+<p>
+Only project developers can access the CVS tree via this method.
+SSH (either SSH1 or SSH2) must be installed on your client machine.
+Substitute developername with the proper values.
+Name of module is 'complement' here. Enter your site password when
+prompted.
+</p>
+
+<pre>
+export CVS_RSH=ssh
+
+cvs -z3 -d:ext:developername@cvs.complement.sourceforge.net:/cvsroot/complement co complement
+</pre>
+<!--#include file="foot.shtml" -->
+  </body>
+</html>
