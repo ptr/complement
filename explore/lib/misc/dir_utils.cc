@@ -1,26 +1,20 @@
-// -*- C++ -*- Time-stamp: <99/03/13 22:29:26 ptr>
+// -*- C++ -*- Time-stamp: <99/05/27 19:08:03 ptr>
 
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+#ident "$SunId$ %Q%"
 
 #include <dir_utils.h>
-#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <directory.h>
 
+extern "C" char *tempnam( const char *, const char * ); // not part of STDC
+
 string mkunique_dir( const string& base, const string& prefix )
 {
-  static const string XXXXXX( "XXXXXX" );
-  string unique( base );
-  if ( unique.length() > 0 && unique.at( unique.length()-1 ) != '/' ) {
-    unique += '/';
-  }
-  unique += prefix;
-  unique += XXXXXX;
-  // not correct, but I know implementation,
-  // and length will be same.
-  mktemp( const_cast<char *>(unique.c_str()) );
-  mkdir( unique.c_str(), S_IRWXU | S_IRWXG | S_IRWXO );
+  char *tmp = ::tempnam( base.c_str(), prefix.c_str() );
+  mkdir( tmp, S_IRWXU | S_IRWXG | S_IRWXO );
+  string unique( tmp );
+  free( tmp );
 
   return unique;
 }
