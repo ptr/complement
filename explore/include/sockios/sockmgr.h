@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/08 14:16:17 ptr>
+// -*- C++ -*- Time-stamp: <99/02/09 16:56:19 ptr>
 
 #ifndef __SOCKMGR_H
 #define __SOCKMGR_H
@@ -35,9 +35,9 @@ class basic_sockmgr :
     ~basic_sockmgr()
       { close(); }
 
-    void open( int port, sock_base::stype type, sock_base::protocol prot );
+    __DLLEXPORT void open( int port, sock_base::stype type, sock_base::protocol prot );
 
-    void close();
+    __DLLEXPORT void close();
 
     bool is_open() const
       { return _open; }

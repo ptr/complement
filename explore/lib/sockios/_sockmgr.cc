@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/08 14:18:00 ptr>
+// -*- C++ -*- Time-stamp: <99/02/09 16:56:46 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -7,6 +7,7 @@
 
 namespace std {
 
+__DLLEXPORT
 void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol prot )
 {
   if ( is_open() ) {
@@ -82,6 +83,7 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
   return;
 }
 
+__DLLEXPORT
 void basic_sockmgr::close()
 {
   if ( !is_open() ) {
