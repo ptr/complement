@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/04/01 14:49:22 ptr>
+// -*- C++ -*- Time-stamp: <99/04/01 15:33:28 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -238,6 +238,9 @@ class Event_base :
     void net_unpack( std::istream& __s )
       { net_unpack( __s, __type_traits<D>::is_POD_type() ); }
 #else
+// VC instantiate only whole class, so I need stupid specializaton for it,
+// and this template can be compiled for non-POD classes only
+// (specialization for integral types in separate file, included below)
     void pack( std::ostream& __s ) const
       { _data.pack( __s ); }
     void unpack( std::istream& __s )
@@ -280,11 +283,6 @@ class Event_base :
       { _data.net_unpack( __s ); }
 #endif
 };
-
-// VC instantiate only whole class, so I need stupid specializaton for it:
-#ifdef _MSC_VER
-#include <EventSpec.h>
-#endif
 
 // VC 5.0 to be very huffy on typedefed std::string...
 __STL_TEMPLATE_NULL
@@ -465,29 +463,9 @@ class Event_base<void> :
       { }
 };
 
-#if 0
-class GENERIC;
-class EventsCore;
-
-template <class T> class EDSCallbackObject;
-typedef EDSEventT<EDSEventsCore,EDSCallbackObject<GENERIC> > EDSEventCb;
-
-template <class T>
-class EDSCallbackObject
-{
-  public:
-    typedef void (T::*PMF)();
-    EDSCallbackObject( T *o, PMF pmf )
-      { object = o; Pmf = pmf; }
-    EDSCallbackObject()
-      { object = 0; Pmf = 0; }
-    operator EDSCallbackObject<GENERIC>&()
-      { return *((EDSCallbackObject<GENERIC> *)this); }
-    operator const EDSCallbackObject<GENERIC>&() const
-      { return *((EDSCallbackObject<GENERIC> *)this); }
-    T *object;
-    PMF Pmf;
-};
+// VC instantiate only whole class, so I need stupid specializaton for it:
+#ifdef _MSC_VER
+#include <EventSpec.h>
 #endif
 
 } // namespace EDS
