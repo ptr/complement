@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/02/29 21:05:43 ptr>
+// -*- C++ -*- Time-stamp: <96/03/06 14:02:40 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #include <OXW/EventHandler.h>
@@ -25,25 +25,25 @@ DEFINE_NAME_IT( OXWEventHandler );
 void OXWEventHandler::PushState( state_type state )
 {
   RemoveState( state );
-  theHistory.push_back( state );
+  theHistory.push_front( state );
 }
 
 state_type OXWEventHandler::State() const
 {
-  return theHistory.back();
+  return theHistory.front();
 }
 
 void OXWEventHandler::PushTState( state_type state )
 {
-  theHistory.push_back( ST_TERMINAL );
-  theHistory.push_back( state );
+  theHistory.push_front( ST_TERMINAL );
+  theHistory.push_front( state );
 }
 
 void OXWEventHandler::PopState()
 {
-  theHistory.pop_back();
-  while ( theHistory.back() == ST_TERMINAL ) {
-    theHistory.pop_back();
+  theHistory.pop_front();
+  while ( theHistory.front() == ST_TERMINAL ) {
+    theHistory.pop_front();
   }
 }
 
@@ -51,7 +51,7 @@ void OXWEventHandler::PopState( state_type state )
 {
   h_iterator hst_i = __find( state );
   if ( hst_i != theHistory.end() && *hst_i != ST_TERMINAL ) {
-    theHistory.erase( hst_i, theHistory.end() );
+    theHistory.erase( theHistory.begin(), ++hst_i );
   }
 }
 
@@ -66,12 +66,9 @@ void OXWEventHandler::RemoveState( state_type state )
 bool OXWEventHandler::isState( state_type state ) const
 {
   const HistoryContainer& hst = theHistory;
-  HistoryContainer::const_reverse_iterator hst_i = hst.rbegin();
-
-  while ( hst_i != hst.rend() && *hst_i != ST_TERMINAL ) {
-    if ( *hst_i++ == state ) {
-      return true;
-    }
+  const_h_iterator hst_i = __find( state );
+  if ( hst_i != hst.end() && *hst_i != ST_TERMINAL ) {
+    return true;
   }
   return false;
 }
@@ -81,15 +78,25 @@ h_iterator OXWEventHandler::__find( state_type state )
   if ( theHistory.empty() ) {
     return theHistory.end();
   }
-  h_iterator hst_i = theHistory.end();
+  h_iterator hst_i = theHistory.begin();
 
-  while ( --hst_i != theHistory.begin() && *hst_i != ST_TERMINAL ) {
-    if ( *hst_i == state ) {
-      return hst_i;
-    }
+  while ( hst_i != theHistory.end() && *hst_i != ST_TERMINAL
+	  && *hst_i != state ) {
+    ++hst_i;
   }
-  if ( *hst_i != state ) {
+  return hst_i;
+}
+
+const_h_iterator OXWEventHandler::__find( state_type state ) const
+{
+  if ( theHistory.empty() ) {
     return theHistory.end();
+  }
+  h_iterator hst_i = theHistory.begin();
+
+  while ( hst_i != theHistory.end() && *hst_i != ST_TERMINAL
+	  && *hst_i != state ) {
+    ++hst_i;
   }
   return hst_i;
 }
@@ -131,8 +138,8 @@ void OXWEventHandler::DispatchTrace( OXWEvent& __event__, ostrstream& out )
 void OXWEventHandler::TraceStack( ostrstream& out ) const
 {
   const HistoryContainer& hst = theHistory;
-  HistoryContainer::const_reverse_iterator hst_i = hst.rbegin();
-  while ( hst_i != hst.rend() ) {
+  HistoryContainer::const_iterator hst_i = hst.begin();
+  while ( hst_i != hst.end() ) {
     out << "[" << *hst_i++ << "]";
   }
   out << endl;
