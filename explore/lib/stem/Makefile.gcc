@@ -1,4 +1,4 @@
-# Time-stamp: <00/05/19 20:04:39 ptr>
+# Time-stamp: <00/05/23 19:16:15 ptr>
 # $SunId$
 
 BASEDIR := $(shell xtmp=`pwd`; \
@@ -10,20 +10,23 @@ include ${BASEDIR}/lib/EDS/Makefile.inc
 
 all:	dbg release
 
-# include ${BASEDIR}/Makefile.inc.${COMPILER_NAME}
 include ${BASEDIR}/lib/Makefile.inc.lib
 
 INCLUDES += -I$(BASEDIR)/include
 
-dbg : LDFLAGS += -L$(BASEDIR)/lib/mt/obj/${COMPILER_NAME}${DBG_SUFFIX}
-release : LDFLAGS += -L$(BASEDIR)/lib/mt/obj/${COMPILER_NAME}
-
-
+ifeq ($(OSTYPE),Linux)
 dbg : LDFLAGS += -L$(BASEDIR)/lib/mt/obj/${COMPILER_NAME}${DBG_SUFFIX}
 dbg : LDFLAGS += -L$(BASEDIR)/lib/sockios/obj/${COMPILER_NAME}${DBG_SUFFIX} -L$(HOME)/lib
 release : LDFLAGS += -L$(BASEDIR)/lib/mt/obj/${COMPILER_NAME}
 release : LDFLAGS += -L$(BASEDIR)/lib/sockios/obj/${COMPILER_NAME} -L$(HOME)/lib
+else
+dbg : LDFLAGS += -L$(BASEDIR)/lib/mt/obj/${COMPILER_NAME}${DBG_SUFFIX}
+dbg : LDFLAGS += -L$(BASEDIR)/lib/sockios/obj/${COMPILER_NAME}${DBG_SUFFIX}
+release : LDFLAGS += -L$(BASEDIR)/lib/mt/obj/${COMPILER_NAME}
+release : LDFLAGS += -L$(BASEDIR)/lib/sockios/obj/${COMPILER_NAME}
+endif
 
 dbg     : LDLIBS += -lxmt${DBG_SUFFIX} -lsockios${DBG_SUFFIX} \
                     -lstlport_gcc_stldebug
 release : LDLIBS += -lxmt -lsockios -lstlport_gcc
+

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/03/03 13:33:04 ptr>
+// -*- C++ -*- Time-stamp: <00/05/19 17:45:48 ptr>
 
 /*
  *
@@ -18,7 +18,7 @@
  * in supporting documentation.
  */
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4804 )
@@ -40,7 +40,7 @@ namespace EDS {
 
 char *Init_buf[32];
 EvManager *EventHandler::_mgr = 0;
-Names *_ns = 0;
+EDS::Names *_ns = 0;
 const char *_ns_name = "ns";
 
 int EventHandler::Init::_count = 0;
@@ -48,16 +48,16 @@ int EventHandler::Init::_count = 0;
 EventHandler::Init::Init()
 {
   if ( _count++ == 0 ) {
-    _mgr = new EvManager();
-    _ns = new Names( nsaddr, _ns_name );
+    EventHandler::_mgr = new EvManager();
+    EDS::_ns = new Names( nsaddr, _ns_name );
   }
 }
 
 EventHandler::Init::~Init()
 {
   if ( --_count == 0 ) {
-    delete _ns;
-    delete _mgr;
+    delete EDS::_ns;
+    delete EventHandler::_mgr;
   }
 }
 

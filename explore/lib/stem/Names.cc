@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/24 19:37:34 ptr>
+// -*- C++ -*- Time-stamp: <00/05/19 11:41:39 ptr>
 
 /*
  *
@@ -18,7 +18,7 @@
  * in supporting documentation.
  */
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4804 )
@@ -43,6 +43,10 @@ __PG_DECLSPEC Names::Names( const char *info ) :
 
 __PG_DECLSPEC Names::Names( addr_type id, const char *info ) :
     EventHandler( id, info )
+{
+}
+
+__PG_DECLSPEC Names::~Names()
 {
 }
 
