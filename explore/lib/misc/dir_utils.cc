@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 10:40:31 ptr>
+// -*- C++ -*- Time-stamp: <00/01/12 14:49:21 ptr>
 
 /*
  *
@@ -47,7 +47,7 @@ void rm_dir_all( const string& d )
 {
   struct stat buf;
   static const string dot( "." );
-  static const string dotdot( "." );
+  static const string dotdot( ".." );
 
   for ( dir_it current(d); current != dir_it(); ++current ) {
     if (*current != dot && *current != dotdot ) {
