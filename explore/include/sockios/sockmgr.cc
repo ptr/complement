@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/07/05 09:50:46 ptr>
+// -*- C++ -*- Time-stamp: <03/07/31 16:19:47 ptr>
 
 /*
  *
@@ -568,7 +568,13 @@ void sockmgr_stream_MP_SELECT<Connect>::_close_by_signal( int )
 
   me->close();
 #else
-#error "Fix me!"
+// #error "Fix me!"
+#ifdef __FIT_WIN32THREADS
+  void *_uw_save = *((void **)TlsGetValue( Thread::mtkey() ) + _idx );
+  _Self_type *me = static_cast<_Self_type *>( _uw_save );
+
+  me->close();
+#endif
 #endif
 }
 

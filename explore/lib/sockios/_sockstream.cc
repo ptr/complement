@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/09/25 12:08:26 ptr>
+// -*- C++ -*- Time-stamp: <03/07/31 15:49:03 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002
@@ -344,6 +344,9 @@ std::string hostname( unsigned long inet_addr )
 
 int service( const char *name, const char *proto ) throw( std::domain_error )
 {
+#ifdef _WIN32
+  typedef u_short uint16_t;
+#endif
 #ifndef __GETHOSTBYADDR__
   char tmp_buf[1024];
   struct servent se;
@@ -371,6 +374,9 @@ int service( const char *name, const char *proto ) throw( std::domain_error )
 
 std::string service( int port, const char *proto ) throw( std::domain_error )
 {
+#ifdef _WIN32
+  typedef u_short uint16_t;
+#endif
   std::string _servname;
 
   port = htons( uint16_t(port) );
@@ -394,7 +400,7 @@ std::string service( int port, const char *proto ) throw( std::domain_error )
   return _servname;
 #  endif
 #else // __GETHOSTBYADDR__
-  struct servent *s = ::getservbyport( name, proto );
+  struct servent *s = ::getservbyport( port, proto );
   if ( s == 0 ) {
     throw std::domain_error( "service not found" );
   }

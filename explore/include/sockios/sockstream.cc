@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/06/29 16:53:01 ptr>
+// -*- C++ -*- Time-stamp: <03/07/31 15:42:12 ptr>
 
 /*
  *
@@ -36,7 +36,10 @@ extern "C" int nanosleep(const struct timespec *, struct timespec *);
 #include <sys/poll.h> // pollfd
 #endif
 
+#ifdef __unix
 #include <stropts.h> // for ioctl() call
+#endif
+
 
 _STLP_BEGIN_NAMESPACE
 
