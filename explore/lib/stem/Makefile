@@ -69,6 +69,9 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/Filter.o \
 		$(OUTPUT_DIR)/PanelItem.o \
 		$(OUTPUT_DIR)/Panel.o \
+		$(OUTPUT_DIR)/ANPanelItem.o \
+		$(OUTPUT_DIR)/ANPanel.o \
+		$(OUTPUT_DIR)/CheckBoxPI.o \
 		$(OUTPUT_DIR)/Matrix.o \
 		$(OUTPUT_DIR)/ModalDialog.o \
 		$(OUTPUT_DIR)/Picture.o \
