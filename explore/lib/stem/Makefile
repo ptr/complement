@@ -6,7 +6,7 @@ DEFS = -DSVR4 -D__DEBUG=2
 # OPT = -g -p
 OPT = -g
 # OPT = -G -O4
-CCFLAGS = $(OPT) -cg92 +w -pic -pto -mt
+CCFLAGS = $(OPT) -cg92 +w -pic -pto
 CPPFLAGS = $(DEFS) $(INCLUDES)
 # LDFLAGS = -L$(OUTPUT_DIR) -lclass -lX11 -ldl
 PROJECT_LIBS = ../..
@@ -41,9 +41,11 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/PopupMenu.o \
 		$(OUTPUT_DIR)/CheckList.o \
 		$(OUTPUT_DIR)/Scroller.o \
-		$(OUTPUT_DIR)/TagetUtils.o \
+		$(OUTPUT_DIR)/TargetUtils.o \
 		$(OUTPUT_DIR)/TableInfo.o \
-		$(OUTPUT_DIR)/CheckBox.o
+		$(OUTPUT_DIR)/CheckBox.o \
+		$(OUTPUT_DIR)/ControlData.o \
+		$(OUTPUT_DIR)/Filter.o
 
 
 # Xlib-based project
