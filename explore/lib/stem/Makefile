@@ -68,7 +68,8 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/PanelItem.o \
 		$(OUTPUT_DIR)/Panel.o \
 		$(OUTPUT_DIR)/ModalDialog.o \
-		$(OUTPUT_DIR)/Picture.o
+		$(OUTPUT_DIR)/Picture.o \
+		$(OUTPUT_DIR)/AppModal.o
 
 
 # Xlib-based project
