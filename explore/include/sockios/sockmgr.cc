@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/04/16 19:42:07 ptr>
+// -*- C++ -*- Time-stamp: <99/05/07 10:42:14 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -125,7 +125,15 @@ sockmgr_client *sockmgr_stream<Connect>::accept_udp()
       __stl_assert( cl == 0 );
       cl = new sockmgr_client();
       __stl_assert( cl != 0 );
+#ifdef __unix
       cl->s.open( dup( fd() ), addr.any, sock_base::sock_dgram );
+#endif
+#ifdef WIN32
+      SOCKET dup_fd;
+      HANDLE proc = GetCurrentProcess();
+      DuplicateHandle( proc, (HANDLE)fd(), proc, (HANDLE *)&dup_fd, 0, FALSE, DUPLICATE_SAME_ACCESS );
+      cl->s.open( dup_fd, addr.any, sock_base::sock_dgram );
+#endif
       MT_UNLOCK( _storage_lock );
       cl->s.rdbuf()->hostname( cl->hostname );
 
@@ -203,7 +211,7 @@ int sockmgr_stream<Connect>::loop( void *p )
       s->thrID.launch( connection, &pass, sizeof(pass) );
     }
   }
-  catch ( int sig ) {
+  catch ( int ) {
     me->shutdown( sock_base::stop_in );
     me->close();
     cerr << "\n--- Interrupted ---" << endl;
