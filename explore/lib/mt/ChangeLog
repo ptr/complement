@@ -1,6 +1,12 @@
+2003-02-12  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xmt.h, xmt.cc: fix bug for Semaphor with timeout.
+
+	* libxmt: Version 1.6.6
+
 2003-02-05  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
-	* xmt.h, xmt.cc: add Semaphor wait with timeouts.
+	* xmt.h, xmt.cc: add Semaphor wait with timeout.
 
 	* libxmt: Version 1.6.5
 
