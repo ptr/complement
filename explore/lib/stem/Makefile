@@ -1,6 +1,6 @@
 # %Z% $Date$ $Revision$ $RCSfile$ %Q%
 # Implementation and debugging OXW (Object X Window) class library (Release 2)
-# Time-stamp: <96/03/04 10:28:39 ptr>
+# Time-stamp: <96/07/19 17:24:49 ptr>
 
 PROJECT = ../../libOXW.so
 MENU0 = menu0
@@ -26,14 +26,14 @@ OPT = -g
 # OPT = -O4
 # OPT = -G -O4
 
-CCFLAGS = $(OPT) -cg92 +w -PIC -pto -mt
+CCFLAGS = $(OPT) -cg92 +w -PIC -instances=static -mt
 CPPFLAGS = $(DEFS) $(INCLUDES)
-PROJECT_LIBS = -xildoff -L../.. -L../../../../STL.labs -lCLASS -lSTL
+PROJECT_LIBS = -xildoff -L../.. -L../../../../STL.labs -lCLASS -lSTL -lInt
 # LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm -ldl
 LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm -lXext
 
-OUTPUT_DIR = /usr/home/ptr/tmp
-OUTPUT_TESTS_DIR = /usr/home/ptr/tmp
+OUTPUT_DIR = ./bin
+OUTPUT_TESTS_DIR = ./tests/bin
 OUTPUT_OPTION = -o $@
 
 TESTS_DIR = ./tests
@@ -62,6 +62,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/Button.o \
 		$(OUTPUT_DIR)/ButtonCheck.o \
 		$(OUTPUT_DIR)/ButtonPic.o \
+		$(OUTPUT_DIR)/InputBase.o \
 		$(OUTPUT_DIR)/Input.o \
 		$(OUTPUT_DIR)/PopupMenu.o \
 		$(OUTPUT_DIR)/Menubar.o \

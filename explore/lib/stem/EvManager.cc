@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/03/05 18:51:37 ptr>
+// -*- C++ -*- Time-stamp: <96/03/25 15:03:16 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #include <X11/Xlib.h>
@@ -58,6 +58,7 @@ void OXWEvManager::X_dispatch()
   OXWEventsCore *theWindow;
 
   XNextEvent( OXWWindowBase::theDisplay, &event );
+  TRACE_XEV( event );  
   if ( event.type == MappingNotify ) {
     XRefreshKeyboardMapping( &event.xmapping );
     return;
