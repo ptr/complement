@@ -1,12 +1,12 @@
-// -*- C++ -*- Time-stamp: <01/06/04 17:45:24 ptr>
+// -*- C++ -*- Time-stamp: <02/04/14 20:11:47 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999
- * Petr Ovchenkov
+ * Copyright (c) 1997-1999, 2002
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
- * ParallelGraphics Ltd.
+ * Parallel Graphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -148,15 +148,15 @@ class sock_base
         // sometimes I need Init outside sock_base...
         // private:
       public:
-	__PG_DECLSPEC Init();
-	__PG_DECLSPEC ~Init();
+	__FIT_DECLSPEC Init();
+	__FIT_DECLSPEC ~Init();
 
         friend class sock_base;
     };
 
   protected:
-    __PG_DECLSPEC sock_base();
-    __PG_DECLSPEC ~sock_base();
+    __FIT_DECLSPEC sock_base();
+    __FIT_DECLSPEC ~sock_base();
 #endif
 };
 
