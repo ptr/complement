@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/21 14:10:57 ptr>
+// -*- C++ -*- Time-stamp: <99/12/21 19:54:57 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -45,12 +45,14 @@ int __thr_key = TlsAlloc();
 namespace std {
 
 static int __glob_init_cnt = 0;
+static int __glob_init_wsock2 = 0;
 
 enum {
   WINDOWS_NT_4,
   WINDOWS_NT_3,
   WINDOWS_98,
   WINDOWS_95,
+  WINDOWS_95_WSOCK2,
   WINDOWS_3_1
 };
 
@@ -62,6 +64,9 @@ int WinVer()
 
   if ( info.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS ) { // Win 9x
     if ( info.dwMinorVersion == 0 ) {
+      if ( __glob_init_wsock2 != 0 ) {
+        return WINDOWS_95_WSOCK2;
+      }
       return WINDOWS_95;
     }
     return WINDOWS_98;
@@ -74,6 +79,7 @@ int WinVer()
   return WINDOWS_3_1;
 }
 
+__SOCKIOS_DLL
 sock_base::Init::Init()
 {
   int __tls_init_cnt = (int)TlsGetValue( __impl::__thr_key );
@@ -98,22 +104,26 @@ sock_base::Init::Init()
           TlsSetValue( __impl::__thr_key, 0 );
           throw domain_error( __impl::WINSOCK_ERR_MSG );          
         }
+      } else if ( win_ver == WINDOWS_95 ) {
+        __glob_init_wsock2 = 1;
       }
+
     }
   }
   TlsSetValue( __impl::__thr_key, (void *)__tls_init_cnt );
 }
 
+__SOCKIOS_DLL
 sock_base::Init::~Init()
 {
   int __tls_init_cnt = (int)TlsGetValue( __impl::__thr_key );
   int win_ver = WinVer();
-  --__glob_init_cnt; // only for Win 95
+  // --__glob_init_cnt; // only for Win 95
   if ( --__tls_init_cnt == 0 ) {
     if ( win_ver != WINDOWS_95 ) {
       WSACleanup();
     } else if ( __glob_init_cnt == 0 ) {
-      WSACleanup();
+      // WSACleanup();
     }
   }
   TlsSetValue( __impl::__thr_key, (void *)__tls_init_cnt );
