@@ -1,12 +1,12 @@
-// -*- C++ -*- Time-stamp: <00/02/21 16:47:40 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 21:04:19 ptr>
 
 /*
  *
  * Copyright (c) 1995-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999
- * ParallelGraphics Software Systems
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
  
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -22,16 +22,6 @@
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4804 )
-#endif
-
-#ifdef WIN32
-#  ifdef _DLL
-#    define __EDS_DLL __declspec( dllexport )
-#  else
-#    define __EDS_DLL
-#  endif
-#else
-#  define __EDS_DLL
 #endif
 
 #include <config/feature.h>
@@ -50,11 +40,11 @@ const addr_type nsaddr     = 0x00000001;
 #endif
 
 #ifdef WIN32
-__EDS_DLL addr_type badaddr    = 0xffffffff;
-__EDS_DLL key_type  badkey     = 0xffffffff;
-__EDS_DLL code_type badcode    = static_cast<code_type>(-1);
-__EDS_DLL addr_type extbit     = 0x80000000;
-__EDS_DLL addr_type nsaddr     = 0x00000001;
+__PG_DECLSPEC addr_type badaddr    = 0xffffffff;
+__PG_DECLSPEC key_type  badkey     = 0xffffffff;
+__PG_DECLSPEC code_type badcode    = static_cast<code_type>(-1);
+__PG_DECLSPEC addr_type extbit     = 0x80000000;
+__PG_DECLSPEC addr_type nsaddr     = 0x00000001;
 #endif
 
 const           addr_type beglocaddr = 0x00000100;
@@ -64,7 +54,7 @@ const           addr_type endextaddr = 0xbfffffff;
 
 __STD::string EvManager::inv_key_str( "invalid key" );
 
-__EDS_DLL EvManager::EvManager() :
+__PG_DECLSPEC EvManager::EvManager() :
     _low( beglocaddr ),
     _high( endlocaddr ),
     _id( _low ),
@@ -75,7 +65,7 @@ __EDS_DLL EvManager::EvManager() :
   _ev_queue_thr.launch( _Dispatch, this );
 }
 
-__EDS_DLL EvManager::~EvManager()
+__PG_DECLSPEC EvManager::~EvManager()
 {
   _ev_queue_cond.set( false );
   _ev_queue_thr.join();
@@ -109,7 +99,7 @@ int EvManager::_Dispatch( void *p )
   return 0;
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 addr_type EvManager::Subscribe( EventHandler *object, const __STD::string& info )
 {
   MT_REENTRANT( _lock_heap, _1 );
@@ -121,7 +111,7 @@ addr_type EvManager::Subscribe( EventHandler *object, const __STD::string& info 
   return id;
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 addr_type EvManager::Subscribe( EventHandler *object, const char *info )
 {
   MT_REENTRANT( _lock_heap, _1 );
@@ -135,7 +125,7 @@ addr_type EvManager::Subscribe( EventHandler *object, const char *info )
   return id;
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
                                   const __STD::string& info )
 {
@@ -150,7 +140,7 @@ addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
   return id;
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
                                   const char *info )
 {
@@ -167,7 +157,7 @@ addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
   return id;
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
                                       addr_type rmkey,
                                       const __STD::string& info )
@@ -183,7 +173,7 @@ addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
   return id;
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
                                       addr_type rmkey,
                                       const char *info )
@@ -201,7 +191,7 @@ addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
   return id;
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 bool EvManager::Unsubscribe( addr_type id )
 {
   MT_REENTRANT( _lock_heap, _1 );
@@ -229,7 +219,7 @@ void EvManager::Remove( NetTransport_base *channel )
 
 // return session id of object with address 'id' if this is external
 // object; otherwise return -1;
-__EDS_DLL key_type EvManager::sid( addr_type id ) const
+__PG_DECLSPEC key_type EvManager::sid( addr_type id ) const
 {
   MT_REENTRANT( _lock_heap, _1 );
   heap_type::const_iterator i = heap.find( id );
@@ -239,7 +229,7 @@ __EDS_DLL key_type EvManager::sid( addr_type id ) const
   return (*i).second.remote->channel->sid();
 }
 
-__EDS_DLL NetTransport_base *EvManager::transport( addr_type id ) const
+__PG_DECLSPEC NetTransport_base *EvManager::transport( addr_type id ) const
 {
   MT_REENTRANT( _lock_heap, _1 );
   heap_type::const_iterator i = heap.find( id );
@@ -248,6 +238,17 @@ __EDS_DLL NetTransport_base *EvManager::transport( addr_type id ) const
   }
   return (*i).second.remote->channel;
 }
+
+#if 0
+#define _XMB( msg ) \
+{ \
+  ostringstream ss; \
+  ss << msg << "\n" \
+     << __FILE__ << ":" << __LINE__ << endl; \
+  MessageBox( 0, ss.str().c_str(), "Planet Problem", MB_OK ); \
+}
+
+#endif
 
 // Resolve Address -> Object Reference, call Object's dispatcher in case
 // of local object, or call appropriate channel delivery function for
@@ -258,13 +259,19 @@ void EvManager::Send( const Event& e )
   try {
     // Will be useful to block on erase/insert operations...
     MT_LOCK( _lock_heap );
+//    _XMB( "MT_LOCK" )
     heap_type::iterator i = heap.find( e.dest() );
     if ( i != heap.end() ) {
       if ( (*i).second.ref != 0 ) { // local delivery
         EventHandler *object = (*i).second.ref;
 //       __STD::cerr << "Local\n";
+//        _XMB( "MT_UNLOCK" )
         MT_UNLOCK( _lock_heap );
-        object->Dispatch( e );
+        try {
+          object->Dispatch( e );
+        } 
+        catch ( ... ) {
+        }
       } else { // remote delivery
 //       __STD::cerr << "Remote\n";
         __Remote_Object_Entry *remote = (*i).second.remote;
@@ -273,18 +280,26 @@ void EvManager::Send( const Event& e )
         e.dest( remote->key ); // substitute address on remote system
         remote->channel->push( e );
         e.dest( save_dest ); // restore original (may be used more)
+//        _XMB( "MT_UNLOCK" )
         MT_UNLOCK( _lock_heap );
       }
     } else {
+//      _XMB( "MT_UNLOCK" )
       MT_UNLOCK( _lock_heap );
-      __STD::cerr << "===== EDS: "
-                << __STD::hex << __STD::setiosflags(__STD::ios_base::showbase)
-                << e.dest()
-                << " not found, source: " << e.src()
-                << ", code " << e.code() << __STD::dec << endl;
+      try {
+        __STD::cerr << "===== EDS: "
+                    << __STD::hex 
+                    << __STD::setiosflags(__STD::ios_base::showbase)
+                    << e.dest()
+                    << " not found, source: " << e.src()
+                    << ", code " << e.code() << __STD::dec << endl;
+      }
+      catch ( ... ) {
+      }
     }
   }
   catch ( ... ) {
+//    _XMB( "MT_UNLOCK" )
     MT_UNLOCK( _lock_heap );
   }
 }
