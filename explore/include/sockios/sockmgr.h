@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/09 16:56:19 ptr>
+// -*- C++ -*- Time-stamp: <99/02/16 20:04:14 ptr>
 
 #ifndef __SOCKMGR_H
 #define __SOCKMGR_H
@@ -17,6 +17,7 @@
 #endif
 
 using __impl::Thread;
+using __impl::Condition;
 
 namespace std {
 
@@ -155,6 +156,27 @@ struct sockmgr_client
     string    info;
 };
 
+struct bad_thread :
+    public unary_function<sockmgr_client *,bool>
+{
+    bool operator()(const sockmgr_client *__x) const
+      { return !__x->thrID.good(); }
+};
+
+struct bad_sock :
+    public unary_function<sockmgr_client *,bool>
+{
+    bool operator()(const sockmgr_client *__x) const
+      { return !__x->s.good(); }
+};
+
+struct remove_client :
+    public unary_function<sockmgr_client *,int>
+{
+    int operator()(const sockmgr_client *__x) const
+      { delete __x; return 0; }
+};
+
 // #ifdef _MSC_VER
 // #pragma warning( disable : 4786 )
 // #endif
@@ -166,6 +188,10 @@ class sockmgr_stream :
   private:
     typedef map<_xsockaddr,sockmgr_client*,less<_xsockaddr>,
                 __STL_DEFAULT_ALLOCATOR(sockmgr_client*) > container_type;
+
+    // typedef pair<const _xsockaddr,sockmgr_client*> value_type;
+    // typedef list<value_type,__STL_DEFAULT_ALLOCATOR(value_type)> container_type;
+    // 
 
   public:
     sockmgr_stream() :
@@ -194,7 +220,7 @@ class sockmgr_stream :
       }
 
     void wait()
-      {	loop_id.join(); }
+      {	loop_id.join(); /* _loop_end.wait(); */ }
 
     sockstream *accept_dgram();
 
@@ -209,14 +235,25 @@ class sockmgr_stream :
 
     static int loop( void * );
     static int connection( void * );
+    static int garbage_collector( void * );
+#ifdef __unix
     static void broken_pipe( int );
+    static void interrupt( int );
+#endif
 
     sockmgr_client *accept();
 
   private:
+#ifdef __unix
+    static sockmgr_stream<Connect> *__self; // for signal handlers
+#endif
+
     container_type _storage; // clients connections db
 
-    Thread loop_id;
+    Thread     loop_id;
+    Thread    _gc_id;    // garbage collector thread
+//    Condition _loop_end;
+    Condition _garbage_end;
 
     __impl::Mutex _storage_lock;
     __impl::Mutex _params_lock;
