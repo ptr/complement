@@ -1,4 +1,4 @@
-#ident "%Z%%Q% $RCSfile$ v$Revision$ %H% %T%"
+#ident "%Z%%Q%$RCSfile$ ($Revision$): %H% %T%"
 
 #include <OXW/EventHandler.h>
 #include <OXW/OXWEvents.h>
@@ -59,7 +59,7 @@ OXWEventHandler::OXWEventHandler()
 
 bool OXWEventHandler::__Dispatch( state_type state, OXWEvent& event )
 {
-  return theStatesTable.Dispatch( *((GENERIC *)this), state, event );
+  return theStatesTable.Dispatch( (GENERIC *)this, state, event );
 }
 
 bool OXWEventHandler::Dispatch( OXWEvent& event )
