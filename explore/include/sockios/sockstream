@@ -409,7 +409,7 @@ class basic_sockstream :
         basic_ios<charT,traits>::init(&_sb);
         basic_iostream<charT,traits>::clear();
         if ( _sb.open( hostname, port, type, pro ) == 0 ) {
-          basic_iostream<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
+          basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
         }
       }
 
@@ -421,7 +421,7 @@ class basic_sockstream :
         basic_ios<charT,traits>::init(&_sb);
         basic_iostream<charT,traits>::clear();
         if ( _sb.open( s, addr, type ) == 0 ) {
-          basic_iostream<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
+          basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
         }
       }
 
@@ -435,7 +435,7 @@ class basic_sockstream :
       {
         basic_iostream<charT,traits>::clear();
         if ( _sb.open( hostname, port, type, pro ) == 0 ) {
-          basic_iostream<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
+          basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
         }
       }
 
@@ -445,7 +445,7 @@ class basic_sockstream :
       {
         basic_iostream<charT,traits>::clear();
         if ( _sb.open( s, addr, type ) == 0 ) {
-          basic_iostream<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
+          basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
         }
       }
 
@@ -453,7 +453,7 @@ class basic_sockstream :
       {
         if ( _sb.is_open() ) {
           if ( _sb.close() == 0 ) {
-            basic_iostream<charT,traits>::setstate( ios_base::failbit );
+            basic_ios<charT,traits>::setstate( ios_base::failbit );
           } else {
             basic_iostream<charT,traits>::clear();
           }
