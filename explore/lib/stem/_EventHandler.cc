@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/08 14:36:38 ptr>
+// -*- C++ -*- Time-stamp: <99/09/13 10:00:33 ptr>
 #ident "$SunId$ %Q%"
 
 #ifdef _MSC_VER
@@ -74,6 +74,18 @@ __EDS_DLL
 void EventHandler::Send( const EventVoid& e )
 {
   e.src( _id );
+  _mgr->Send( EDS::Event_convert<void>()( e ) );
+}
+
+__EDS_DLL
+void EventHandler::Forward( const Event& e )
+{
+  _mgr->Send( e );
+}
+
+__EDS_DLL
+void EventHandler::Forward( const EventVoid& e )
+{
   _mgr->Send( EDS::Event_convert<void>()( e ) );
 }
 
