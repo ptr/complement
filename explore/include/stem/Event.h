@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/11/09 10:27:14 ptr>
+// -*- C++ -*- Time-stamp: <99/12/27 17:31:11 ptr>
 
 /*
  *
@@ -97,9 +97,9 @@ class __Event_Base
     key_type src() const
       { return _src; }
     bool is_from_foreign() const
-      { return (_src & extbit) != 0; }
+      { return ((_src & extbit) != 0) && (_src != badaddr); }
     bool is_to_foreign() const
-      { return (_dst & extbit) != 0; }
+      { return ((_dst & extbit) != 0) && (_dst != badaddr); }
 
     void code( code_type c ) const
       { _code = c; }
