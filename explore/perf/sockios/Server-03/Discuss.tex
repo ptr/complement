@@ -1,4 +1,4 @@
-% -*- LaTeX -*- Time-stamp: <02/12/06 15:21:12 ptr>
+% -*- LaTeX -*- Time-stamp: <03/01/15 23:24:26 ptr>
 
 \documentclass[a4paper]{article}
 
@@ -10,6 +10,10 @@
 \usepackage[dvips]{graphics}
 \usepackage[american]{babel}
 
+\usepackage{epic}
+\usepackage{eepic}
+\usepackage{psfig}
+
 \title{Performance Estimation of Sockios Library}
 \author{Petr Ovtchenkov}
 
@@ -19,17 +23,18 @@
 
 \section{Computers and Networks}
 
+Computers and operational environments that used in tests:
 \begin{enumerate}
-  \item AMD Athlon XP 1500+ (dual) under Linux (2.4.17),
+  \item AMD Athlon XP 1500+ (two-way) under Linux (kernel 2.4.17),
         Ethernet card: Intel Corp. 82557 [Ethernet Pro 100].\label{fort}
-  \item Intel Pentium 133MHz under Linux (2.4.17),
+  \item Intel Pentium 133MHz under Linux (kernel 2.4.17),
         Ethernet card: RealTek RTL8139 Fast Ethernet.\label{oldnavy}
   \item Intel Pentium III 803MHz under Solaris 8,
         Ethernet card: Intel 82558/82559 [EEPRO 100+].\label{ermine}
 \end{enumerate}
 
 Network between systems \ref{fort} and \ref{oldnavy}: 100Mb Ethernet,
-UTP level 5, point-to-point (no hubs, routers,
+UTP level 5, point-to-point connection (no hubs, routers,
 switches or other devices between computers).
 
 \section{Compilers}
@@ -39,15 +44,19 @@ upon programs).
 
 \section{Tests Goals}
 
-Compare performance of sockios library. Detect problems and ways for
-possible solutions.
+I want to compare performance of sockios library with ``pure C code''
+(near the fastest code based on the same system calls, even with
+reduced functionality for simplification).
+I expect that this results will help to detect problems and 
+to find a ways for improvements.
 
 \section{Tests description}
 
 \begin{figure}
   \begin{center}
-    % \input test.pstex_t
-    \epsfig{file=test.eps,width=5in}
+    % \input TimeDiagram.pstex_t
+    \input TimeDiagram.eepic
+    % \epsfig{file=TimeDiagram.eps,width=5in}
   \end{center}
   \caption{Test time diagram. Shown only two experiment from ten.\ref{TimeDiagram}.}
 \end{figure}
@@ -61,8 +70,8 @@ possible solutions.
 \end{enumerate}
 
 This procedure repeat $10$ times. During tests we collect some statistic
-data: client and server user CPU time, system CPU time and elapsed (real) time.
-Then we find mean values and dispersion. So we can estimate the real
+data: client and server user CPU time, system CPU timThen we find mean values and dispersion. So we can estimate the real
+o we can estimate the real
 load from client and server programs in the real environments.
 
 In case of client and server run on different computers, we start server on
@@ -99,12 +108,32 @@ to the server $50$M). We make estimations for $5$ cases:
   \caption{Local Loopback, sockios: system \ref{fort}.}
 \end{figure}
 
+You see, that extremely large number of short packages lead to
+performance degeneration. For unbuffered write/read this degenration
+is so much, I skip this results on plot (figure~\ref{C-local-3})
+
+For loopback communtication we see evident minima. I think, that
+exact minima point should be for block size $65\,565$---the maxima size
+that \texttt{write} system call can put into socket without blocking
+(with default settings of OS'es I used).
+
+From figures \ref{local-1} and \ref{C-local-1} we see that user's times
+are near the same as for sockios-based client, as for ``pure $C$ code''.
+But server kernel time for sockios-based program is
+doubled against ``pure $C$ code'' (that increase elapsed time).
+User's time for sockios-based server is exceed one for ``pure $C$ code''
+server too.
+
+This may be due to sockios-based server start new thread for connection,
+but separate test (establish connection without sending data) not confirm
+this assumption.
+
 \begin{figure}
   \begin{center}
     \input p2.tex
   \end{center}
   \caption{Network, sockios:
-           systems \ref{fort} (server) and \ref{oldnavy} (client).}
+           systems \ref{fort} (server) and \ref{oldnavy} (client).\label{local-1}}
 \end{figure}
 
 \begin{figure}
@@ -118,7 +147,7 @@ to the server $50$M). We make estimations for $5$ cases:
   \begin{center}
     \input p4.tex
   \end{center}
-  \caption{Local Loopback, restricted code on $C$: system \ref{fort}.}
+  \caption{Local Loopback, restricted code on $C$: system \ref{fort}.\label{C-local-1}}
 \end{figure}
 
 \begin{figure}
