@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/19 19:51:17 ptr>
+// -*- C++ -*- Time-stamp: <99/03/22 15:37:45 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -61,11 +61,11 @@ class __Event_Base
     sq_type seq() const
       { return _sq & seqmask; }
     bool is_responce() const
-      { return _sq & respbit; }
+      { return (_sq & respbit) != 0; }
     bool is_from_foreign() const
-      { return _src & extbit; }
+      { return (_src & extbit) != 0; }
     bool is_to_foreign() const
-      { return _dst & extbit; }
+      { return (_dst & extbit) != 0; }
 
     void code( code_type c )
       { _code = c; }
@@ -88,7 +88,13 @@ class __Event_Base
 // Forward declarations
 
 template <class D> class Event_base;
+// VC 5.0 to be very huffy on typedefed std::string...
+#ifndef _MSC_VER
 template <> class Event_base<std::string>;
+#else
+template <> 
+class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<char> > >;
+#endif
 template <> class Event_base<void>;
 
 // Typedefs:
@@ -228,23 +234,32 @@ class Event_base :
 
     void net_pack( std::ostream& __s, __true_type ) const
       {
+#ifndef _MSC_VER
         value_type tmp = to_net( _data );
         __s.write( (const char *)&tmp, sizeof(D) );
+#endif
       }
     void net_pack( std::ostream& __s, __false_type ) const
       { _data.net_pack( __s ); }
     void net_unpack( std::istream& __s, __true_type )
       {
+#ifndef _MSC_VER
         value_type tmp;
         __s.read( (char *)&tmp, sizeof(D) );
         _data = from_net( tmp );
+#endif
       }
     void net_unpack( std::istream& __s, __false_type )
       { _data.net_unpack( __s ); }
 };
 
-template <>
+// VC 5.0 to be very huffy on typedefed std::string...
+__STL_TEMPLATE_NULL
+#ifndef _MSC_VER
 class Event_base<std::string> :
+#else
+class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<char> > > :
+#endif
         public __Event_Base
 {
   public:
@@ -332,7 +347,7 @@ class Event_base<std::string> :
     value_type _data;
 };
 
-template <>
+__STL_TEMPLATE_NULL
 class Event_base<void> :
         public __Event_Base
 {
