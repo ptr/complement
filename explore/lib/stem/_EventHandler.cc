@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/19 15:45:43 ptr>
+// -*- C++ -*- Time-stamp: <99/11/05 17:33:34 ptr>
 
 /*
  *
@@ -78,7 +78,7 @@ const string& EventHandler::who_is( addr_type k ) const
 }
 
 __EDS_DLL
-unsigned EventHandler::sid( key_type k ) const
+key_type EventHandler::sid( addr_type k ) const
 {
   return _mgr->sid( k );
 }

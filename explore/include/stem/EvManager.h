@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/15 18:49:26 ptr>
+// -*- C++ -*- Time-stamp: <99/11/05 17:15:38 ptr>
 
 /*
  *
@@ -63,12 +63,12 @@ struct __Remote_Object_Entry
         channel( 0 )
       { }
 
-    __Remote_Object_Entry( Event::key_type __k, NetTransport_base *__c ) :
+    __Remote_Object_Entry( key_type __k, NetTransport_base *__c ) :
         key( __k ),
         channel( __c )
       { }
 
-    Event::key_type key;
+    key_type key;
     NetTransport_base *channel;
 };
 
@@ -82,7 +82,7 @@ struct __Object_Entry
     ~__Object_Entry()
       { delete remote; }
 
-    void addremote( Event::key_type key, NetTransport_base *channel )
+    void addremote( key_type key, NetTransport_base *channel )
       { remote = new __Remote_Object_Entry( key, channel ); }
         
     EventHandler *ref;  // system dependent? for Win may be WND HANDLER?    
@@ -103,7 +103,6 @@ namespace EDS {
 class EvManager
 {
   public:
-    typedef Event::key_type key_type;
     typedef std::map<key_type,__Object_Entry,std::less<key_type>,
                               __STL_DEFAULT_ALLOCATOR(__Object_Entry) > heap_type;
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/15 19:06:23 ptr>
+// -*- C++ -*- Time-stamp: <99/11/05 17:09:00 ptr>
 
 /*
  *
@@ -42,15 +42,17 @@
 namespace EDS {
 
 #ifndef WIN32
-const __EDS_DLL addr_type badaddr    = 0xffffffff;
-const __EDS_DLL key_type  badkey     = 0xffffffff;
-const __EDS_DLL addr_type extbit     = 0x80000000;
-const __EDS_DLL addr_type nsaddr     = 0x00000001;
+const addr_type badaddr    = 0xffffffff;
+const key_type  badkey     = 0xffffffff;
+const code_type badcode    = static_cast<code_type>(-1);
+const addr_type extbit     = 0x80000000;
+const addr_type nsaddr     = 0x00000001;
 #endif
 
 #ifdef WIN32
 __EDS_DLL addr_type badaddr    = 0xffffffff;
 __EDS_DLL key_type  badkey     = 0xffffffff;
+__EDS_DLL code_type badcode    = static_cast<code_type>(-1);
 __EDS_DLL addr_type extbit     = 0x80000000;
 __EDS_DLL addr_type nsaddr     = 0x00000001;
 #endif

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 10:47:53 ptr>
+// -*- C++ -*- Time-stamp: <99/11/05 17:48:54 ptr>
 
 /*
  *
@@ -122,13 +122,13 @@ void SessionMgr::establish_session( const Event& ev )
     rs.value().addr = _session_leader->self_id();
     _session_leader->Send( Event_convert<SessionRsp>()(rs) );
   } else {
-    rs.value().key = static_cast<key_type>(-1);
-    rs.value().addr = static_cast<Event::key_type>(Event::badaddr);
+    rs.value().key = badkey;
+    rs.value().addr = badaddr;
     Send( Event_convert<SessionRsp>()(rs) );    
   }
 }
 
-void SessionMgr::restore_session( const Event_base<SessionMgr::key_type>& ev )
+void SessionMgr::restore_session( const Event_base<key_type>& ev )
 {
   key_type k = ev.value();
   Container::iterator i = find_if( _M_c.begin(), _M_c.end(),
@@ -141,28 +141,28 @@ void SessionMgr::restore_session( const Event_base<SessionMgr::key_type>& ev )
     rs.value().addr = _sess(*i).leader->self_id();
     _sess(*i).leader->Send( Event_convert<SessionRsp>()(rs) );    
   } else {
-    rs.value().key = static_cast<key_type>(-1);
-    rs.value().addr = static_cast<Event::key_type>(Event::badaddr);
+    rs.value().key = badkey;
+    rs.value().addr = badaddr;
     Send( Event_convert<SessionRsp>()(rs) );
   }
 }
 
-void SessionMgr::close_session( const Event_base<SessionMgr::key_type>& ev )
+void SessionMgr::close_session( const Event_base<key_type>& ev )
 {
   Container::iterator i = find_if( _M_c.begin(), _M_c.end(),
                                    compose1( bind2nd( _eq_key, ev.value() ), _skey ) );
   if ( i != _M_c.end() ) {
     destroy_session_leader( _sess(*i).leader );
-    (*i).first = static_cast<key_type>(-1);
+    (*i).first = badkey;
     (*i).second.leader = 0;
   }
 }
 
-SessionMgr::key_type SessionMgr::key_generate()
+key_type SessionMgr::key_generate()
 {
   key_type k;
   do {
-    while ( (k = static_cast<key_type>(mrand48())) == -1 );
+    while ( (k = static_cast<key_type>(mrand48())) == badkey );
   } while ( find_if( _M_c.begin(), _M_c.end(),
                      compose1( bind2nd( _eq_key, k ), _skey ) ) != _M_c.end() );
   return k;
@@ -170,7 +170,7 @@ SessionMgr::key_type SessionMgr::key_generate()
 
 __EDS_DLL
 EventHandler *SessionMgr::session_leader( const string&, const string&,
-                                          Event::key_type ) throw ()
+                                          addr_type ) throw ()
 {
   return 0;
 }

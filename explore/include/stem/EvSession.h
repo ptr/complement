@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 09:51:11 ptr>
+// -*- C++ -*- Time-stamp: <99/11/05 17:13:57 ptr>
 
 /*
  *
@@ -64,7 +64,7 @@ struct SessionInfo
         _lun_from( 0 ),
         _lun_to( 0 ),
         _reconnect_cnt( 0 ),
-        _control( Event::badaddr )
+        _control( badaddr )
 //        _is_connected( true )
       {
         _start = connect();
@@ -113,7 +113,7 @@ struct SessionInfo
     unsigned _reconnect_cnt; // reconnection counter
     bool     _is_connected;  // true if on line now (for stream connection)
 
-    Event::key_type _control; // address of control object;
+    key_type _control; // address of control object;
 
     // encoding / crypt info
     // ...
