@@ -1,4 +1,4 @@
-# Time-stamp: <02/08/04 09:05:08 ptr>
+# Time-stamp: <02/08/22 19:15:16 ptr>
 # $Id$
 
 BASEDIR := $(shell xtmp=`pwd`; xtmp=`dirname $$xtmp`; dirname $$xtmp)
@@ -20,13 +20,21 @@ all-release:	release-shared
 include ${BASEDIR}/Makefiles/lib/Makefile.inc
 
 INCLUDES += -I$(STLPORT_INCLUDE_DIR)
+dbg-shared:	DEFS += -D__DEBUG
 
-ifeq ($(OS_VER),Linux)
-release-shared: LDSEARCH = -L${STLPORT_LIB_DIR}
-stldbg-shared:  LDSEARCH = -L${STLPORT_LIB_DIR}
-dbg-shared:     LDSEARCH = -L${STLPORT_LIB_DIR}
+
+ifeq ($(OS_VER),SunOS)
+release-shared: LDSEARCH = -L${STLPORT_LIB_DIR} -L${BASEDIR}/build/lib
+stldbg-shared:  LDSEARCH = -L${STLPORT_LIB_DIR} -L${BASEDIR}/build/lib
+dbg-shared:     LDSEARCH = -L${STLPORT_LIB_DIR} -L${BASEDIR}/build/lib
 endif
 
-release-shared:	LDLIBS = -ldl -lstlport_gcc
-dbg-shared:	LDLIBS = -ldl -lstlport_gcc
-stldbg-shared:	LDLIBS = -ldl -lstlport_gcc_stldebug
+ifeq ($(OS_VER),Linux)
+release-shared: LDSEARCH = -L${STLPORT_LIB_DIR} -L${BASEDIR}/build/lib
+stldbg-shared:  LDSEARCH = -L${STLPORT_LIB_DIR} -L${BASEDIR}/build/lib
+dbg-shared:     LDSEARCH = -L${STLPORT_LIB_DIR} -L${BASEDIR}/build/lib
+endif
+
+release-shared:	LDLIBS = -ldl -lstlport_gcc -lxmt_gcc
+dbg-shared:	LDLIBS = -ldl -lstlport_gcc -lxmt_gcc-g
+stldbg-shared:	LDLIBS = -ldl -lstlport_gcc_stldebug -lxmt_gcc-g
