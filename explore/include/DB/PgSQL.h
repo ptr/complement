@@ -1,6 +1,9 @@
-// -*- C++ -*- Time-stamp: <01/07/19 18:08:26 ptr>
+// -*- C++ -*- Time-stamp: <02/08/04 15:35:55 ptr>
 
 /*
+ *
+ * Copyright (c) 2002
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
