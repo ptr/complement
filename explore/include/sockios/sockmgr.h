@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <01/06/04 17:45:53 ptr>
+// -*- C++ -*- Time-stamp: <02/04/14 20:46:10 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999
+ * Copyright (c) 1997-1999, 2002
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2001
@@ -73,13 +73,15 @@ class basic_sockmgr :
 	_fd( -1 )
       { }
 
-    ~basic_sockmgr()
-      { close(); }
+    virtual ~basic_sockmgr()
+      { basic_sockmgr::close(); }
 
-    __PG_DECLSPEC void open( int port, sock_base::stype type, sock_base::protocol prot );
+  protected:
+    __FIT_DECLSPEC void open( int port, sock_base::stype type, sock_base::protocol prot );
 
-    __PG_DECLSPEC void close();
+    virtual __FIT_DECLSPEC void close();
 
+  public:
     bool is_open() const
       { return _fd != -1; }
     bool good() const
@@ -88,7 +90,7 @@ class basic_sockmgr :
     sock_base::socket_type fd() const { return _fd;}
 
     // void shutdown( sock_base::shutdownflg dir );
-    __PG_DECLSPEC
+    __FIT_DECLSPEC
     void setoptions( sock_base::so_t optname, bool on_off = true,
                      int __v = 0 );
 
@@ -156,7 +158,16 @@ class sockmgr_stream :
       {
       }
 
+    // To do: virtual
     void open( int port, sock_base::stype t = sock_base::sock_stream );
+    // To do: 
+    // void __open( int port, sock_base::stype t = sock_base::sock_stream );
+
+    virtual void close()
+      {
+        basic_sockmgr::close();
+        loop_id.kill( SIGINT );
+      }
 
     void wait()
       {	loop_id.join(); }
@@ -247,6 +258,13 @@ class sockmgr_stream_MP : // multiplexor
       }
 
     void open( int port, sock_base::stype t = sock_base::sock_stream );
+
+    virtual void close()
+      {
+        basic_sockmgr::close();
+        loop_id.kill( SIGINT );
+      }
+
     void wait()
       {	loop_id.join(); }
 
