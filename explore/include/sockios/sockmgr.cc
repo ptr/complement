@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/03/19 20:13:13 ptr>
+// -*- C++ -*- Time-stamp: <01/03/26 18:37:25 ptr>
 
 /*
  *
@@ -371,7 +371,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
       sock_base::socket_type _sd = ::accept( fd(), &addr.any, &sz );
       if ( _sd == -1 ) {
         // check and set errno
-        __STL_ASSERT( _sd == -1 );
+        _STLP_ASSERT( _sd == -1 );
         return 0;
       }
 
