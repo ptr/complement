@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/15 19:23:28 ptr>
+// -*- C++ -*- Time-stamp: <99/10/18 11:04:52 ptr>
 
 /*
  *
@@ -19,6 +19,7 @@
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4804 )
+#pragma warning( disable : 4800 )
 #endif
 
 #ifdef WIN32
