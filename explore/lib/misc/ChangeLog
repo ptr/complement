@@ -1,3 +1,9 @@
+2001-06-04  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* libAux:  Work with STLport 4.5 beta 8 (from stlport cvs);
+	remove obsolete in any case dependence from non-STLport iostreams
+	realization (it should not work).
+
 2001-06-01  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
 
 	* libAux: version 0.5.0 (new module here, see 2001-03-21 below).
