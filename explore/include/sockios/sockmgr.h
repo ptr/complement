@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/04 19:01:10 ptr>
+// -*- C++ -*- Time-stamp: <99/02/08 14:16:17 ptr>
 
 #ifndef __SOCKMGR_H
 #define __SOCKMGR_H
@@ -12,7 +12,9 @@
 #include <map>
 #include <cerrno>
 
-#include <xxx/plock.h>
+#ifndef __XMT_H
+#include <xmt.h>
+#endif
 
 using __impl::Thread;
 
