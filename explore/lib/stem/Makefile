@@ -38,6 +38,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/Chameleon.o \
 		$(OUTPUT_DIR)/Collector.o \
 		$(OUTPUT_DIR)/Resource.o \
+		$(OUTPUT_DIR)/ResourceMgr.o \
 		$(OUTPUT_DIR)/DrawTools.o \
 		$(OUTPUT_DIR)/TopLevel.o \
 		$(OUTPUT_DIR)/GrContext.o \
