@@ -1,14 +1,14 @@
-// -*- C++ -*- Time-stamp: <03/07/31 15:42:12 ptr>
+// -*- C++ -*- Time-stamp: <03/11/17 08:48:12 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999, 2002, 2003
- * Petr Ovtchenkov
+ * Petr Ovchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 1.2
+ * Licensed under the Academic Free License Version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -102,14 +102,14 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
     setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
     setg( this->epptr(), this->epptr(), this->epptr() );
 
-    _STLP_ASSERT( this->pbase() != 0 );
-    _STLP_ASSERT( this->pptr() != 0 );
-    _STLP_ASSERT( this->epptr() != 0 );
-    _STLP_ASSERT( this->eback() != 0 );
-    _STLP_ASSERT( this->gptr() != 0 );
-    _STLP_ASSERT( this->egptr() != 0 );
-    _STLP_ASSERT( _bbuf != 0 );
-    _STLP_ASSERT( _ebuf != 0 );
+    // _STLP_ASSERT( this->pbase() != 0 );
+    // _STLP_ASSERT( this->pptr() != 0 );
+    // _STLP_ASSERT( this->epptr() != 0 );
+    // _STLP_ASSERT( this->eback() != 0 );
+    // _STLP_ASSERT( this->gptr() != 0 );
+    // _STLP_ASSERT( this->egptr() != 0 );
+    // _STLP_ASSERT( _bbuf != 0 );
+    // _STLP_ASSERT( _ebuf != 0 );
 
     _errno = 0; // if any
     // __hostname();
@@ -197,14 +197,14 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, const sock
   setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
   setg( this->epptr(), this->epptr(), this->epptr() );
 
-  _STLP_ASSERT( this->pbase() != 0 );
-  _STLP_ASSERT( this->pptr() != 0 );
-  _STLP_ASSERT( this->epptr() != 0 );
-  _STLP_ASSERT( this->eback() != 0 );
-  _STLP_ASSERT( this->gptr() != 0 );
-  _STLP_ASSERT( this->egptr() != 0 );
-  _STLP_ASSERT( _bbuf != 0 );
-  _STLP_ASSERT( _ebuf != 0 );
+  // _STLP_ASSERT( this->pbase() != 0 );
+  // _STLP_ASSERT( this->pptr() != 0 );
+  // _STLP_ASSERT( this->epptr() != 0 );
+  // _STLP_ASSERT( this->eback() != 0 );
+  // _STLP_ASSERT( this->gptr() != 0 );
+  // _STLP_ASSERT( this->egptr() != 0 );
+  // _STLP_ASSERT( _bbuf != 0 );
+  // _STLP_ASSERT( _ebuf != 0 );
 
   _errno = 0; // if any
   // __hostname();
@@ -235,7 +235,7 @@ basic_sockbuf<charT, traits, _Alloc>::close()
   ::close( _fd );
 #endif
 
-  _STLP_ASSERT( _bbuf != 0 );
+  // _STLP_ASSERT( _bbuf != 0 );
   // put area before get area
   setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
   setg( this->epptr(), this->epptr(), this->epptr() );
@@ -297,8 +297,8 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
   }
 #endif // __FIT_POLL
 
-  _STLP_ASSERT( this->eback() != 0 );
-  _STLP_ASSERT( _ebuf != 0 );
+  // _STLP_ASSERT( this->eback() != 0 );
+  // _STLP_ASSERT( _ebuf != 0 );
 
   long offset = (this->*_xread)( this->eback(), sizeof(char_type) * (_ebuf - this->eback()) );
   if ( offset <= 0 ) // don't allow message of zero length
@@ -327,7 +327,7 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
   long count = this->pptr() - this->pbase();
 
   if ( count ) {
-    _STLP_ASSERT( this->pbase() != 0 );
+    // _STLP_ASSERT( this->pbase() != 0 );
 
     // Never do this: read and and write in basic_sockbuf are independent,
     // so reading here lead to lost message if reading and writing occur
@@ -357,11 +357,11 @@ xsputn( const char_type *s, streamsize n )
     return 0;
   }
 
-  _STLP_ASSERT( this->pbase() != 0 );
-  _STLP_ASSERT( this->pptr() != 0 );
-  _STLP_ASSERT( this->epptr() != 0 );
-  _STLP_ASSERT( _bbuf != 0 );
-  _STLP_ASSERT( _ebuf != 0 );
+  // _STLP_ASSERT( this->pbase() != 0 );
+  // _STLP_ASSERT( this->pptr() != 0 );
+  // _STLP_ASSERT( this->epptr() != 0 );
+  // _STLP_ASSERT( _bbuf != 0 );
+  // _STLP_ASSERT( _ebuf != 0 );
 
   if ( this->epptr() - this->pptr() > n ) {
     traits::copy( this->pptr(), s, n );
@@ -398,15 +398,15 @@ int basic_sockbuf<charT, traits, _Alloc>::__rdsync()
   int nmsg = ioctl( fd(), I_NREAD, &nlen ); // shouldn't work, as I understand...
 #endif
   if ( nmsg > 0 && nlen > 0 ) {
-    _STLP_ASSERT( _bbuf != 0 );
-    _STLP_ASSERT( _ebuf != 0 );
-    _STLP_ASSERT( this->gptr() != 0 );
-    _STLP_ASSERT( this->egptr() != 0 );
+    // _STLP_ASSERT( _bbuf != 0 );
+    // _STLP_ASSERT( _ebuf != 0 );
+    // _STLP_ASSERT( this->gptr() != 0 );
+    // _STLP_ASSERT( this->egptr() != 0 );
 
     bool shift_req = this->gptr() == this->eback() ? false : (_ebuf - this->gptr()) > nlen ? false : true;
     if ( shift_req ) {
-      _STLP_ASSERT( this->gptr() > this->eback() );
-      _STLP_ASSERT( this->gptr() <= this->egptr() );
+      // _STLP_ASSERT( this->gptr() > this->eback() );
+      // _STLP_ASSERT( this->gptr() <= this->egptr() );
       traits::move( this->eback(), this->gptr(), this->egptr() - this->gptr() );
       setg( this->eback(), this->eback(), this->eback() + (this->egptr() - this->gptr()) );
     }
