@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/29 14:22:34 ptr>
+// -*- C++ -*- Time-stamp: <99/04/01 21:16:53 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -146,6 +146,9 @@ void NetTransport::connect( sockstream& s, const string& hostname, string& info 
   Event ev;
   _sid = EventHandler::_mgr->establish_session();
   SessionInfo& sess =  EventHandler::_mgr->session_info( _sid );
+
+  sess._host = hostname;
+  sess._port = s.rdbuf()->port();
 
   try {
     net = &s;
