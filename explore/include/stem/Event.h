@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/01/05 18:50:12 ptr>
+// -*- C++ -*- Time-stamp: <00/01/24 15:19:41 ptr>
 
 /*
  *
@@ -84,7 +84,7 @@ class __Event_Base
         _src( badaddr )
       { }
 
-    explicit __Event_Base( const __Event_Base& e ) :
+    /* explicit */ __Event_Base( const __Event_Base& e ) :
         _code( e._code ),
         _dst( e._dst ),
         _src( e._src )
@@ -193,9 +193,9 @@ class Event_base :
         _data( d )
       { }
 
-#ifndef __GNUG__ // otherwise gcc can't return structure
-    explicit
-#endif
+// #ifndef __GNUG__ // otherwise gcc can't return structure
+//    explicit
+// #endif
     Event_base( const Event_base& e ) :
         __Event_Base( e ),
         _data( e._data )
@@ -334,7 +334,7 @@ class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<
       { }
 
 #if !defined( __GNUG__ ) && !defined( _MSC_VER ) // otherwise gcc can't return structure
-    explicit
+//    explicit
 #endif
     Event_base( const Event_base& e ) :
         __Event_Base( e ),
