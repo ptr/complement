@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/12/27 20:04:58 ptr>
+// -*- C++ -*- Time-stamp: <00/01/11 12:17:25 ptr>
 
 /*
  *
@@ -215,7 +215,7 @@ bool EvManager::Unsubscribe( addr_type id )
 // 'disconnected'.
 void EvManager::Remove( NetTransport_base *channel )
 {
-  MT_LOCK( _lock_heap );
+  MT_REENTRANT( _lock_heap, _1 );
   heap_type::iterator i = heap.begin();
 
   while ( i != heap.end() ) {
@@ -225,7 +225,6 @@ void EvManager::Remove( NetTransport_base *channel )
       ++i;
     }
   }
-  MT_UNLOCK( _lock_heap );
 }
 
 // return session id of object with address 'id' if this is external
@@ -281,7 +280,8 @@ void EvManager::Send( const Event& e )
       std::cerr << "===== EDS: "
                 << std::hex << std::setiosflags(std::ios_base::showbase)
                 << e.dest()
-                << " not found\n" << std::dec;
+                << " not found, source: " << e.src()
+                << ", code " << e.code() << std::dec;
     }
   }
   catch ( ... ) {
