@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/24 21:09:11 ptr>
+// -*- C++ -*- Time-stamp: <99/08/23 13:11:05 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -150,7 +150,10 @@ class Event_base :
         _data( d )
       { }
 
-    explicit Event_base( const Event_base& e ) :
+#ifndef __GNUG__ // otherwise gcc can't return structure
+    explicit
+#endif
+    Event_base( const Event_base& e ) :
         __Event_Base( e ),
         _data( e._data )
       { }
@@ -167,7 +170,7 @@ class Event_base :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        std::ostringstream ss;
         net_pack( ss );
         s.value() = ss.str();
       }
@@ -177,7 +180,8 @@ class Event_base :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        net_unpack( std::stringstream( s.value() ) );
+        std::stringstream ss( s.value() );
+        net_unpack( ss );
       }
 
     void pack( Event& s ) const
@@ -195,7 +199,8 @@ class Event_base :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        unpack( std::stringstream( s.value() ) );
+        std::stringstream ss( s.value() );
+        unpack( ss );
       }
 
 #ifndef _MSC_VER
@@ -285,7 +290,10 @@ class Event_base<std::basic_string<char, std::char_traits<char>, __DEFALLOCATOR(
         _data( d )
       { }
 
-    explicit Event_base( const Event_base& e ) :
+#ifndef __GNUG__ // otherwise gcc can't return structure
+    explicit
+#endif
+    Event_base( const Event_base& e ) :
         __Event_Base( e ),
         _data( e._data )
       { }

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/27 21:03:34 ptr>
+// -*- C++ -*- Time-stamp: <99/08/23 11:45:27 ptr>
 #ifndef __EvSession_h
 #define __EvSession_h
 
@@ -145,7 +145,8 @@ class SessionManager
 {
   public:
     typedef unsigned key_type;
-    typedef std::map<key_type,T, std::less<key_type>,
+//    typedef std::map<key_type,T> heap_type;
+    typedef std::map<key_type,T,std::less<key_type>,
                 __STL_DEFAULT_ALLOCATOR(T) > heap_type;
 
     SessionManager()
@@ -191,12 +192,12 @@ class SessionManager
     static const key_type _low;
     static const key_type _high;
     static key_type _id;
-    __impl::Mutex _lock;
+    mutable typename __impl::Mutex _lock;
 };
 
 #ifndef _MSC_VER
 template <class T>
-const SessionManager<T>::key_type SessionManager<T>::_low( 0 );
+const typename SessionManager<T>::key_type SessionManager<T>::_low( 0 );
 #else
 template <class T>
 const SessionManager<T>::key_type SessionManager<T>::_low = 0;
@@ -204,7 +205,7 @@ const SessionManager<T>::key_type SessionManager<T>::_low = 0;
 
 #ifndef _MSC_VER
 template <class T>
-const SessionManager<T>::key_type SessionManager<T>::_high( 65535 );
+const typename SessionManager<T>::key_type SessionManager<T>::_high( 65535 );
 #else
 template <class T>
 const SessionManager<T>::key_type SessionManager<T>::_high = 65535;
@@ -212,17 +213,17 @@ const SessionManager<T>::key_type SessionManager<T>::_high = 65535;
 
 #ifndef _MSC_VER
 template <class T>
-SessionManager<T>::key_type SessionManager<T>::_id( SessionManager<T>::_low );
+typename SessionManager<T>::key_type SessionManager<T>::_id( SessionManager<T>::_low );
 #else
 template <class T>
 SessionManager<T>::key_type SessionManager<T>::_id = SessionManager<T>::_low;
 #endif
 
 template <class T>
-SessionManager<T>::key_type SessionManager<T>::create_unique()
+typename SessionManager<T>::key_type SessionManager<T>::create_unique()
 {
 #ifndef _MSC_VER
-  pair<heap_type::iterator,bool> ret;
+  std::pair<typename heap_type::iterator, bool> ret;
 #else
   std::pair<heap_type::iterator,bool> ret;
 #endif

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/24 21:12:26 ptr>
+// -*- C++ -*- Time-stamp: <99/08/19 11:32:09 ptr>
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
@@ -11,11 +11,6 @@
 #include <vector>
 #include <list>
 #include <ostream>
-
-#ifdef WIN32
-// #include <_algorithm> // for select1st
-// #include <win_config.h>
-#endif // WIN32
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4786 )
@@ -38,12 +33,6 @@ typedef unsigned state_type;
 #define __D_T(cls,T) EDS::__dispatcher_convert_Event_extr<EDS::__member_function<cls,T >,\
                                                           EDS::Event>
 
-
-#if 0
-#define D3(cls) __dispatcher_convert<__member_function<cls,\
-                                     EDSCallbackObject<GENERIC> >,EDSEventCb>
-#endif
-
 #define EV_EDS(state,event,handler) \
    RESPONSE_TABLE_ENTRY(state,event,handler,D1(ThisCls)::dispatch)
 #define EV_VOID(state,event,handler) \
@@ -64,11 +53,10 @@ typedef HistoryContainer::iterator h_iterator;
 typedef HistoryContainer::const_iterator const_h_iterator;
 
 
-class GENERIC
+struct GENERIC
 {
-  virtual void foo( Event& ) = 0; // This is to allow usage of virtual
-	                             // catchers, indeed never used.
-  public:
+    virtual void foo( Event& ) = 0; // This is to allow usage of virtual
+                                    // catchers, indeed never used.
     typedef void (GENERIC::*PMF)();
     typedef void (*DPMF)();
 };
@@ -124,7 +112,7 @@ struct Event_convert // to transport
         } else {
           x.pack( tmp );
         }
-        
+
         return tmp;
       }
 };
@@ -145,7 +133,7 @@ struct __member_function
 			       const_reference_argument_type arg );
 };
 
-template <class T >
+template <class T>
 struct __member_function_void
 {
     typedef T   class_type;
@@ -161,48 +149,44 @@ struct __member_function_void
 template <class PMF>
 struct __dispatcher
 {
-    static void dispatch( PMF::pointer_class_type c, PMF::pmf_type pmf,
-	                  PMF::const_reference_argument_type arg )
+    static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf,
+	                  typename PMF::const_reference_argument_type arg )
       {	(c->*pmf)( arg ); }
 };
 
 template <class PMF, class Arg >
 struct __dispatcher_void
 {
-    static void dispatch( PMF::pointer_class_type c, PMF::pmf_type pmf, const Arg& )
+    static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, const Arg& )
       {	(c->*pmf)(); }
 };
 
 template <class PMF, class Arg >
 struct __dispatcher_convert
 {
-    static void dispatch( PMF::pointer_class_type c, PMF::pmf_type pmf, const Arg& arg )
-      {	(c->*pmf)( convert<Arg,PMF::argument_type>()(arg) ); }
+    static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, const Arg& arg )
+      {	(c->*pmf)( convert<Arg,typename PMF::argument_type>()(arg) ); }
 };
 
 template <class PMF, class Arg >
 struct __dispatcher_convert_Event
 {
-    static void dispatch( PMF::pointer_class_type c, PMF::pmf_type pmf, const Arg& arg )
-      {	(c->*pmf)( convert_Event<PMF::argument_type>()(arg) ); }
+    static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, const Arg& arg )
+      {	(c->*pmf)( convert_Event<typename PMF::argument_type>()(arg) ); }
 };
 
 template <class PMF, class Arg >
 struct __dispatcher_convert_Event_extr
 {
-    static void dispatch( PMF::pointer_class_type c, PMF::pmf_type pmf, const Arg& arg )
-      {	(c->*pmf)( convert_Event_extr<PMF::argument_type>()(arg) ); }
+    static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, const Arg& arg )
+      {	(c->*pmf)( convert_Event_extr<typename PMF::argument_type>()(arg) ); }
 };
 
 struct __AnyPMFentry
 {
-#ifndef _MSC_VER
-    typename EDS::GENERIC::PMF  pmf;
-    typename EDS::GENERIC::DPMF dpmf;
-#else
     EDS::GENERIC::PMF  pmf;
     EDS::GENERIC::DPMF dpmf;
-#endif
+
     const char *pmf_name;
 };
 
@@ -249,6 +233,9 @@ class __EvTable
     bool get( Key1, Key2, Value& ) const;
     bool get_1( const_iterator1 i1, Key2 key2, Value& value ) const;
     const_iterator1 find( Key1 key1 ) const
+      { return std::find_if( storage.begin(), storage.end(),
+                        std::compose1( std::bind2nd( eq_key1, key1 ), key1st ) ); }
+    iterator1 find( Key1 key1 )
       { return std::find_if( storage.begin(), storage.end(),
                         std::compose1( std::bind2nd( eq_key1, key1 ), key1st ) ); }
     iterator1 begin()
@@ -314,7 +301,8 @@ bool __EvTable<Key1,Key2,Value>::get_1( __EvTable<Key1,Key2,Value>::const_iterat
 template <class Key1, class Key2, class Value>
 void __EvTable<Key1,Key2,Value>::append( Key1 key1, Key2 key2, const Value& value )
 {
-  iterator1 i1 = const_cast<iterator1>( find( key1 ) );
+  iterator1 i1 = find( key1 );
+
   if ( i1 == storage.end() ) {
     std::pair<Key2,Value> p2( key2, value );
     Container2 c2;
@@ -333,7 +321,7 @@ void __EvTable<Key1,Key2,Value>::append( Key1 key1, Key2 key2, const Value& valu
   (*i2).second = value; // only last value stored.
 }
 
-template <class T, class InputIterator >
+template <class T, class InputIterator>
 class __EvHandler
 {
   public:
@@ -353,8 +341,8 @@ class __EvHandler
 			const Event& event, std::ostream& out );
     void Out( std::ostream& ) const;
 
-    convert<GENERIC::PMF, __member_function<T,Event>::pmf_type>  pmf;
-    convert<GENERIC::DPMF,__member_function<T,Event>::dpmf_type> dpmf;
+    convert<GENERIC::PMF, typename __member_function<T,Event>::pmf_type>  pmf;
+    convert<GENERIC::DPMF,typename __member_function<T,Event>::dpmf_type> dpmf;
 
     table_type table;
 };
@@ -368,7 +356,7 @@ bool __EvHandler<T, InputIterator>::Dispatch( T *c, InputIterator first,
   }
   typename EDS::Event::code_type code = event.code();
   __AnyPMFentry *entry;
-  table_type::const_iterator1 i1 = table.find( code );
+  typename table_type::const_iterator1 i1 = table.find( code );
   if ( i1 == table.end() ) {
     return false;
   }  
@@ -390,7 +378,7 @@ bool __EvHandler<T, InputIterator>::DispatchStub( T *, InputIterator first,
   }
   typename EDS::Event::code_type code = event.code();
   __AnyPMFentry *entry;
-  table_type::const_iterator1 i1 = table.find( code );
+  typename table_type::const_iterator1 i1 = table.find( code );
   if ( i1 == table.end() ) {
     return false;
   }  
@@ -402,7 +390,7 @@ bool __EvHandler<T, InputIterator>::DispatchStub( T *, InputIterator first,
   return false;
 }
 
-template <class T, class InputIterator >
+template <class T, class InputIterator>
 bool __EvHandler<T, InputIterator>::DispatchTrace( InputIterator first,
                   InputIterator last, const Event& event, std::ostream& out )
 {
@@ -431,10 +419,10 @@ void __EvHandler<T, InputIterator>::Out( std::ostream& out ) const
     return;
   }
   __AnyPMFentry *entry;
-  table_type::const_iterator1 i1 = table.begin();
+  typename table_type::const_iterator1 i1 = table.begin();
   while ( i1 != table.end() ) {
     typename EDS::Event::code_type key1 = table.key1st(*i1);
-    table_type::const_iterator2 i2 = table.begin( i1 );
+    typename table_type::const_iterator2 i2 = table.begin( i1 );
     out << "\tMessage: " << std::hex << key1 << std::dec << std::endl;
     while ( i2 != table.end( i1 ) ) {
       state_type key2 = table.key2nd(*i2++);
@@ -445,7 +433,7 @@ void __EvHandler<T, InputIterator>::Out( std::ostream& out ) const
   }
 }
 
-template <>
+__STL_TEMPLATE_NULL
 class __EvHandler<EventHandler,h_iterator>
 {
   public:
@@ -571,17 +559,15 @@ class EventHandler
 template <class Handler>
 void __EvTableLoader( EventHandler::table_type *table, Handler * )
 {
-  __EvTableLoader( table, (Handler::ParentThisCls *)0 );
-  const Handler::evtable_decl_type *__e = Handler::get_ev_table_decl();
+  __EvTableLoader( table, (typename Handler::ParentThisCls *)0 );
+  const typename Handler::evtable_decl_type *__e = Handler::get_ev_table_decl();
   while ( __e->func.dpmf != 0 ) {
     table->append( __e->code, __e->st, (__AnyPMFentry *)&__e->func );
     ++__e;
   }
 }
 
-#ifndef _MSC_VER
-template <>
-#endif
+__STL_TEMPLATE_NULL
 inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
                                            EventHandler * )
 { }
@@ -641,7 +627,7 @@ EDS::__DeclareAnyPMF<cls> cls::theDeclEventsTable[] = {
 
 #define RESPONSE_TABLE_ENTRY( state, code, catcher, dispatch )            \
   { state, code,                                                          \
-    {(EDS::__PMFentry<ThisCls>::PMF)catcher, (EDS::GENERIC::DPMF)dispatch, #catcher }},
+    {(EDS::__PMFentry<ThisCls>::PMF)&ThisCls::catcher, (EDS::GENERIC::DPMF)dispatch, #catcher }},
 
 // Macro for specification of response table end:
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/04 13:51:26 ptr>
+// -*- C++ -*- Time-stamp: <99/08/18 22:34:29 ptr>
 
 #ifndef __NetTransport_h
 #define __NetTransport_h
@@ -30,12 +30,13 @@ class NetTransport_base :
 {
   public:
     typedef Event::key_type key_type;
-    typedef std::map<key_type,key_type,std::less<key_type>,
-      __STL_DEFAULT_ALLOCATOR(key_type) > heap_type;
+    typedef std::map<key_type,key_type> heap_type;
+//    typedef std::map<key_type,key_type,std::less<key_type>,
+//      __STL_DEFAULT_ALLOCATOR(key_type) > heap_type;
 
     NetTransport_base() :
         _count( 0 ),
-        _sid( -1 ),
+        _sid( static_cast<EvSessionManager::key_type>(-1) ),
         net( 0 )
       { }
 
