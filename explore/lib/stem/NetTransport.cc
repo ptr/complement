@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/12/26 20:49:28 ptr>
+// -*- C++ -*- Time-stamp: <01/01/16 12:56:05 ptr>
 
 /*
  *
@@ -210,7 +210,7 @@ bool NetTransport_base::pop( Event& _rs )
 
   // if ( from_net( buf[0] ) != EDS_MAGIC ) {
   if ( buf[0] != EDS_MAGIC ) {
-    cerr << "Magic fail" << endl;
+    cerr << "EDS Magic fail" << endl;
     NetTransport_base::close();
     return false;
   }
@@ -226,14 +226,14 @@ bool NetTransport_base::pop( Event& _rs )
   unsigned sz = from_net( buf[6] );
 
   if ( sz >= EDS_MSG_LIMIT ) {
-    cerr << "Message size too big: " << sz << endl;
+    cerr << "EDS Message size too big: " << sz << endl;
     NetTransport_base::close();
     return false;
   }
 
   adler32_type adler = adler32( (unsigned char *)buf, sizeof(unsigned) * 7 );
   if ( adler != from_net( buf[7] ) ) {
-    cerr << "Adler-32 fail" << endl;
+    cerr << "EDS Adler-32 fail" << endl;
     NetTransport_base::close();
     return false;
   }
@@ -260,7 +260,7 @@ bool NetTransport_base::pop( Event& _rs )
       SessionInfo& sess = smgr[_sid];
       sess.inc_from( 8 * sizeof(unsigned) + str.size() );
       if ( sess._un_from != _x_count ) {
-        cerr << "Incoming event(s) lost, or missrange event: " << sess._un_from
+        cerr << "EDS Incoming event(s) lost, or missrange event: " << sess._un_from
              << ", " << _x_count << " (Session: " << _sid << ") --- ";
         cerr << endl;
         sess._un_from = _x_count; // Retransmit?    
@@ -277,6 +277,9 @@ __PG_DECLSPEC
 bool NetTransport_base::push( const Event& _rs )
 {
   __STL_ASSERT( net != 0 );
+  if ( _sid == badkey || !net->good() ) {
+    return false;
+  }
   unsigned buf[8];
 
   // buf[0] = to_net( EDS_MAGIC );
@@ -308,6 +311,7 @@ bool NetTransport_base::push( const Event& _rs )
         if ( sess._un_to != _count ) {
           cerr << "Outgoing event(s) lost, or missrange event: " << sess._un_to
                << ", " << _count << " (Session " << _sid << ")" << endl;
+          kill( getpid(), SIGQUIT );
         }
       }
       smgr.unlock();
@@ -377,6 +381,7 @@ NetTransportMgr::~NetTransportMgr()
     net->close(); // otherwise _loop may not exited
     // this->close();
     join();
+    // NetTransport_base::close() called during loop thread termination (see _loop)
     delete net;
     net = 0;
   }        
@@ -386,12 +391,17 @@ __PG_DECLSPEC
 addr_type NetTransportMgr::open( const char *hostname, int port,
                                  __STD::sock_base::stype stype )
 {
+  // I should be sure, that not more then one _loop running from here!
+  // For this, I enforce close connection before I try open new,
+  // and wait thread with _loop before start new.
   if ( net == 0 ) {
     net = new sockstream( hostname, port, stype );
   } else if ( net->is_open() ) {
-    net->close();
+    // net->close();
+    close(); // I should wait termination of _loop, clear EDS address mapping, etc.
     net->open( hostname, port, stype );
   } else {
+    join(); // This is safe: transparent if no _loop, and wait it if one exist
     net->open( hostname, port, stype );
   }
   net->rdbuf()->setoptions( std::sock_base::so_linger, true, 10 );
@@ -411,7 +421,7 @@ __PG_DECLSPEC
 void NetTransportMgr::close()
 {
   NetTransport_base::close();
-  join();
+  join(); // I should wait termination of _loop
 }
 
 int NetTransportMgr::_loop( void *p )
@@ -448,8 +458,7 @@ __PG_DECLSPEC
 void NetTransportMP::connect( sockstream& s )
 {
   const string& hostname = s.rdbuf()->hostname();
-  bool sock_dgr = (s.rdbuf()->stype() == std::sock_base::sock_stream) ?
-                  false : true;
+  bool sock_dgr = (s.rdbuf()->stype() == std::sock_base::sock_stream) ? false : true;
 
   Event ev;
 

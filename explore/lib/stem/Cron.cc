@@ -1,8 +1,10 @@
-// -*- C++ -*- Time-stamp: <00/12/28 17:43:40 ptr>
+// -*- C++ -*- Time-stamp: <01/01/12 15:57:40 ptr>
 
 /*
- *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1998
+ * Petr Ovchenkov
+ * 
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  * 
  * This material is provided "as is", with absolutely no warranty expressed
@@ -35,7 +37,8 @@
 
 #include <cmath>
 
-#define CRON_ST_STARTED 0x10
+#define CRON_ST_STARTED   0x10
+#define CRON_ST_SUSPENDED 0x11
 
 namespace EDS {
 
@@ -59,7 +62,6 @@ __PG_DECLSPEC Cron::~Cron()
   if ( isState( CRON_ST_STARTED ) ) {
     Stop();
   }
-  _thr.join();
 }
 
 void __PG_DECLSPEC Cron::AddFirst( const Event_base<CronEntry>& entry )
@@ -101,8 +103,11 @@ void __PG_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
 
   MT_REENTRANT( _M_l, _x1 );
   _M_c.push( en );
-  if ( _M_c.top() == en ) {
-    cond.signal();
+  if ( isState( CRON_ST_SUSPENDED ) ) { // alarm if cron loop suspended
+    PopState( CRON_ST_SUSPENDED );
+    _thr.resume();
+  } else if ( _M_c.top() == en ) { // cron has entries, but new entry is on top
+    cond.signal();                 // so, we need wait it
   }
 }
 
@@ -140,8 +145,13 @@ void __PG_DECLSPEC Cron::Start()
 
 void __PG_DECLSPEC Cron::Stop()
 {
-  PopState();
+  PopState( CRON_ST_STARTED );
   cond.signal();
+  if ( isState( CRON_ST_SUSPENDED ) ) {
+    PopState( CRON_ST_SUSPENDED );
+    _thr.resume();
+  }
+  _thr.join();
 }
 
 void __PG_DECLSPEC Cron::EmptyStart()
@@ -156,49 +166,45 @@ void __PG_DECLSPEC Cron::EmptyStop()
 
 int Cron::_loop( void *p )
 {
+  // After creation cron loop (one per every Cron object),
+  // this loop should exit in following cases:
+  //   -) Cron receive Stop event (if it loop already started)
+  //   -) Cron object destroyed
+  // If Cron's container empty, this thread suspend, and can be alarmed
+  // after Add (Cron entry) event.
   Cron& me = *reinterpret_cast<Cron *>(p);
 
   me.PushState( CRON_ST_STARTED );
 
   timespec abstime;
-  int res;
   while ( me.isState( CRON_ST_STARTED ) ) {
-    // At this point _M_c should never be empty!
-    // If I detect that _M_c is empty, I or don't start, or
-    // exit from this thread
-    {
-      MT_REENTRANT( me._M_l, _x1 );
-      if ( me._M_c.empty() ) {
-        timespec t;
-        t.tv_sec = 0;
-        t.tv_nsec = 10000000; // 10 ms
-        // make chance to PopState() from other thread...
-        __impl::Thread::sleep( &t );
-        continue; // break?
-      }
-      abstime = me._M_c.top().expired;
+    MT_LOCK( me._M_l );
+    if ( me._M_c.empty() ) {
+      me.PushState( CRON_ST_SUSPENDED );
+      MT_UNLOCK( me._M_l );
+      me._thr.suspend();
+      continue;
     }
-    res = me.cond.wait_time( &abstime );
-    if ( res > 0 ) { // time expired
-      __CronEntry en;
-      MT_REENTRANT( me._M_l, _x1 );
+    // At this point _M_c should never be empty!
+    abstime = me._M_c.top().expired;
+    MT_UNLOCK( me._M_l );
+    if ( me.cond.wait_time( &abstime ) > 0 ) { // time expired, otherwise signal or error
+      MT_LOCK( me._M_l );
 
-      if ( me._M_c.empty() ) {
-        continue; // break?
+      if ( me._M_c.empty() ) { // event removed while I wait?
+        MT_UNLOCK( me._M_l );
+        continue;
       }
-      en = me._M_c.top();
+      __CronEntry en = me._M_c.top(); // get and eject top cron entry
       me._M_c.pop();
 
-      // check if abonent exist
-      if ( me.is_avail( en.addr ) ) {
+      if ( me.is_avail( en.addr ) ) { // check if target abonent exist
         Event_base<unsigned> ev( en.code );
         ev.dest( en.addr );
         ev.value() = en.arg;
         me.Send( Event_convert<unsigned>()( ev ) );
-      } else { // remove invalid abonent from Cron
-        if ( me._M_c.empty() ) {
-          me.PopState();
-        }
+      } else { // do nothing, this lead to removing invalid abonent from Cron
+        MT_UNLOCK( me._M_l );
         continue;
       }
 
@@ -222,7 +228,8 @@ int Cron::_loop( void *p )
       en.expired.tv_sec += unsigned(_d / 1000000000);
       en.expired.tv_nsec = unsigned(_d % 1000000000);
 #endif
-
+      // if loop infinite, always put Cron entry in stack,
+      // otherwise check counter
       if ( en.n == CronEntry::infinite ) {
         en.start.tv_sec = en.expired.tv_sec;
         en.start.tv_nsec = en.expired.tv_nsec;        
@@ -230,19 +237,8 @@ int Cron::_loop( void *p )
         me._M_c.push( en );
       } else if ( (en.count) < (en.n) ) { // This SC5.0 patch 107312-06 bug
         me._M_c.push( en );
-      } else if ( me._M_c.empty() ) {
-        me.PopState();
       }
-    } else { // signaled or error
-      // This occur if new record added in Cron queue, or
-      // this is request for cron loop termination
-      MT_REENTRANT( me._M_l, _x1 );
-      if ( me._M_c.empty() && me.isState(CRON_ST_STARTED) ) {
-        // If Cron queue is empty, no needs in loop, I terminate this thread
-        me.PopState();
-      }
-      // in case of Cron queue empty, PopState may be call outside this thread,
-      // like Cron::Stop
+      MT_UNLOCK( me._M_l );
     }
   }
 
