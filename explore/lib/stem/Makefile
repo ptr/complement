@@ -16,7 +16,7 @@ CCFLAGS = $(OPT) -cg92 +w -pic -pto -mt
 CPPFLAGS = $(DEFS) $(INCLUDES)
 PROJECT_LIBS = -L../.. -lclass
 # LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm -ldl
-LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm
+LDFLAGS =  -xildoff $(PROJECT_LIBS) -lX11 -lXpm
 
 OUTPUT_DIR = ./bin
 OUTPUT_TESTS_DIR = ./tests-bin
@@ -67,7 +67,8 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/Filter.o \
 		$(OUTPUT_DIR)/PanelItem.o \
 		$(OUTPUT_DIR)/Panel.o \
-		$(OUTPUT_DIR)/ModalDialog.o
+		$(OUTPUT_DIR)/ModalDialog.o \
+		$(OUTPUT_DIR)/Picture.o
 
 
 # Xlib-based project
