@@ -1,4 +1,4 @@
-# Time-stamp: <03/05/29 12:40:21 ptr>
+# Time-stamp: <03/06/13 22:37:21 ptr>
 # $Id$
 
 # .KEEP_STATE:
@@ -38,6 +38,7 @@ OPT ?=
 
 CXX = mwccnlm
 CC = mwccnlm
+LINK.cc = mwldnlm $(LDFLAGS) $(TARGET_ARCH)
 
 INSTALL = /usr/bin/install
 

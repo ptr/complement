@@ -1,4 +1,4 @@
-# Time-stamp: <03/03/31 15:14:48 ptr>
+# Time-stamp: <03/06/22 16:42:09 ptr>
 # $Id$
 
 # This file reflect versions of third-party libraries that
@@ -8,8 +8,8 @@ ifeq ($(OS_VER),SunOS)
 PG_DIR ?= /opt/PGpgsql
 endif
 ifeq ($(OS_VER),Linux)
-PG_DIR ?= /usr/pgsql
+PG_DIR ?= /usr/local/pgsql
 endif
 
 gSOAP_DIR ?= /opt/gSOAP-2.2.3
-BOOST_DIR ?= /export/hostel/build/dev-utils/boost_1_30_0
+BOOST_DIR ?= ${BASEDIR}/../extern/boost
