@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/03 12:11:32 ptr>
+// -*- C++ -*- Time-stamp: <99/09/08 14:36:38 ptr>
 #ident "$SunId$ %Q%"
 
 #ifdef _MSC_VER
@@ -17,6 +17,7 @@
 
 #include <EventHandler.h>
 #include <EvManager.h>
+#include <Names.h>
 
 #if defined(__TRACE) || defined(__WARN)
 
@@ -29,6 +30,8 @@ namespace EDS {
 
 char *Init_buf[32];
 EvManager *EventHandler::_mgr = 0;
+Names *_ns = 0;
+const char *_ns_name = "ns";
 
 int EventHandler::Init::_count = 0;
 
@@ -36,24 +39,26 @@ EventHandler::Init::Init()
 {
   if ( _count++ == 0 ) {
     _mgr = new EvManager();
+    _ns = new Names( nsaddr, _ns_name );
   }
 }
 
 EventHandler::Init::~Init()
 {
   if ( --_count == 0 ) {
+    delete _ns;
     delete _mgr;
   }
 }
 
 __EDS_DLL
-const string& EventHandler::who_is( const Event::key_type& k ) const
+const string& EventHandler::who_is( addr_type k ) const
 {
   return _mgr->who_is( k );
 }
 
 __EDS_DLL
-unsigned EventHandler::sid( const Event::key_type& k ) const
+unsigned EventHandler::sid( key_type k ) const
 {
   return _mgr->sid( k );
 }
@@ -61,13 +66,15 @@ unsigned EventHandler::sid( const Event::key_type& k ) const
 __EDS_DLL
 void EventHandler::Send( const Event& e )
 {
-  _mgr->Send( e, _id );
+  e.src( _id );
+  _mgr->Send( e );
 }
 
 __EDS_DLL
 void EventHandler::Send( const EventVoid& e )
 {
-  _mgr->Send( EDS::Event_convert<void>()( e ), _id );
+  e.src( _id );
+  _mgr->Send( EDS::Event_convert<void>()( e ) );
 }
 
 __EDS_DLL
@@ -168,16 +175,25 @@ EventHandler::EventHandler()// :
 {
   new( Init_buf ) Init();
   State( ST_NULL );
-  _id = _mgr->Subscribe( this, "" );
+  _id = _mgr->Subscribe( this );
 }
 
 __EDS_DLL
-EventHandler::EventHandler( const Event::key_type& id )// :
+EventHandler::EventHandler( const char *info )// :
 //    theHistory( *(new HistoryContainer()) )
 {
   new( Init_buf ) Init();
   State( ST_NULL );
-  _id = _mgr->SubscribeID( id, this, "" );
+  _id = _mgr->Subscribe( this, info );
+}
+
+__EDS_DLL
+EventHandler::EventHandler( addr_type id, const char *info )// :
+//    theHistory( *(new HistoryContainer()) )
+{
+  new( Init_buf ) Init();
+  State( ST_NULL );
+  _id = _mgr->SubscribeID( id, this, info );
   __stl_assert( _id != -1 ); // already registered, or id has Event::extbit
 //  if ( _id == -1 ) {
 //    _mgr->Subscribe( this, "" );
