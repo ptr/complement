@@ -1,3 +1,8 @@
+2004-05-06  Petr Ovtchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xmt.cc: fix wrong calculation of difference between two
+	timespecs.
+	
 2004-04-08  Petr Ovtchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* fl.c, flck.h: add file locking wrapper.
