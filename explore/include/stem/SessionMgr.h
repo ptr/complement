@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/18 19:31:11 ptr>
+// -*- C++ -*- Time-stamp: <99/08/16 16:32:31 ptr>
 
 #ifndef __SessionMgr_h
 #define __SessionMgr_h
@@ -30,8 +30,8 @@ class SessionMgr :
 
     virtual EventHandler *session_leader( const std::string& account,
                                           const std::string& passwd,
-                                          Event::key_type addr ) throw() = 0;
-    virtual void destroy_session_leader( EventHandler * ) throw() = 0;
+                                          Event::key_type addr ) throw();
+    virtual void destroy_session_leader( EventHandler * ) throw();
 
     void establish_session( const Event& );
     void restore_session( const Event_base<key_type>& );
