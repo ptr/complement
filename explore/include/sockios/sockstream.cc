@@ -276,11 +276,19 @@ basic_sockbuf<charT, traits>::underflow()
   FD_ZERO( &pfd );
   FD_SET( fd(), &pfd );
 
-  // See comments for __unix section; I don't understand how in win
+  // See comments for __unix section; I don't understand how in wins
   // buffers locked.
+
+  // Seems with MS's iostream work fine without MT_UNLOCK/MT_LOCK
+  // (and more: with MS's ios buffers and MT_UNLOCK/MT_LOCK this
+  // shouldn't work) while with my ones it's required
+
+  MT_UNLOCK( __locker() ); // <----
   if ( select( fd() + 1, &pfd, 0, 0, 0 ) <= 0 ) {
+    MT_LOCK( __locker() ); // <----
     return traits::eof();
   }
+  MT_LOCK( __locker() );   // <----
 #else
   pollfd pfd;
   pfd.fd = fd();
