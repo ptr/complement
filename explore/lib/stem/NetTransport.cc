@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/19 18:45:46 ptr>
+// -*- C++ -*- Time-stamp: <99/03/22 12:12:35 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -54,6 +54,74 @@ void dump( ostream& o, const EDS::Event& e )
   }
 }
 
+int NetTransport::_loop( void *p )
+{
+  NetTransport& me = *reinterpret_cast<NetTransport *>(p);
+  heap_type::iterator r;
+  Event ev;
+
+  try {
+    while ( me.pop(ev) ) {
+      dump( std::cerr, ev );
+      __stl_assert( EventHandler::_mgr != 0 );
+      // if _mgr == 0, best choice is close connection...
+      r = me.rar.find( ev._src );
+      if ( r == me.rar.end() ) {        
+        r = me.rar.insert( 
+          heap_type::value_type( ev._src,
+          EventHandler::_mgr->SubscribeRemote( &me, ev._src, me._server_name ) ) ).first;
+//        cerr << "Create remote object: " << hex << (*r).second
+//             << " [" << ev._src << "]\n";
+      }
+      ev._src = (*r).second; // substitute my local id
+
+      EventHandler::_mgr->Dispatch( ev );
+    }
+  }
+  catch ( ios_base::failure& e ) {
+    cerr << "Post mortem: " << e.what() << endl;
+  }
+  catch ( std::runtime_error& e ) {
+    cerr << e.what() << endl;
+  }
+  catch ( std::exception& e ) {
+    cerr << e.what() << endl;
+  }
+  catch ( ... ) {
+    cerr << "What?!" << endl;
+  }
+
+  return 0;  
+}
+
+// connect initiator (client) function
+__DLLEXPORT
+NetTransport::key_type NetTransport::open( const string& hostname, int port )
+{
+  if ( _net_owner && net != 0 ) {
+    if ( net->is_open() ) {
+      net->close();
+    }
+    net->open( hostname.c_str(), port );
+  } else {
+    net = new std::sockstream( hostname.c_str(), port );
+  }
+  _net_owner = true;
+  _server_name = hostname;
+  if ( net->good() ) {
+    heap_type::iterator r;
+
+    // forward register remote object with ID 0
+    r = rar.insert( 
+      heap_type::value_type( 0,
+                             EventHandler::_mgr->SubscribeRemote( this, 0, _server_name ) ) ).first;
+    _thr.launch( _loop, this ); // start thread here
+    return (*r).second;
+  }
+  return -1;
+}
+
+// passive side (server) function
 __DLLEXPORT
 void NetTransport::connect( sockstream& s, const string& hostname, string& info )
 {
