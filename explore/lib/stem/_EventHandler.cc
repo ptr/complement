@@ -4,17 +4,19 @@
 #include <OXW/OXWEvents.h>
 #include <CLASS/checks.h>
 
-#include <strstream.h>
+// #include <iostream.h>
 
-GENERIC_StatesTbl OXWEventHandler::theStatesTable = OXWEventHandler::RTConfigure();
-int OXWEventHandler::ini_flag = 0;
+char trace_buffer[4096];
 
-GENERIC_StatesTbl OXWEventHandler::RTConfigure()
+ostrstream OXWEventHandler::Out( trace_buffer, 4096 );
+GENERIC_StatesTbl OXWEventHandler::theStatesTable;
+
+DEFINE_NAME_IT( OXWEventHandler );
+
+int OXWEventHandler::RespTblConfigure()
 {
-  GENERIC_StatesTbl tmp;
-  return tmp;
+  return 1;
 }
-
 
 void OXWEventHandler::PopState()
 {
@@ -24,6 +26,32 @@ void OXWEventHandler::PopState()
   }
 }
 
+void OXWEventHandler::PopState( state_type state )
+{
+  list<state_type>::iterator hst_i = theHistory.begin();
+
+  while ( hst_i != theHistory.end() && *hst_i != ST_TERMINAL ) {
+    if ( *hst_i == state ) {
+      theHistory.erase( hst_i, theHistory.end() );
+      return;
+    }
+    ++hst_i;
+  }
+}
+
+bool OXWEventHandler::isState( state_type state ) const
+{
+  list<state_type>::const_reverse_iterator hst_i = theHistory.rbegin();
+
+  while ( hst_i != theHistory.rend() && *hst_i != ST_TERMINAL ) {
+    if ( *hst_i == state ) {
+      return 1;
+    }
+    ++hst_i;
+  }
+  return 0;
+}
+
 OXWEventHandler::OXWEventHandler()
 {
   State( ST_NULL );
@@ -31,43 +59,37 @@ OXWEventHandler::OXWEventHandler()
 
 bool OXWEventHandler::__Dispatch( state_type state, OXWEvent& event )
 {
-  TRACE( "Dispatch " << isA() << "\n" <<  theStatesTable.PrintContents() );
   return theStatesTable.Dispatch( *((GENERIC *)this), state, event );
 }
 
 bool OXWEventHandler::Dispatch( OXWEvent& event )
 {
-  {
-    list<state_type>::reverse_iterator hst_i = theHistory.rbegin();
-    ostrstream buf;
-    buf << "State stack (" << isA() << "):\n";
-    while ( hst_i != theHistory.rend() ) {
-      buf << "\tstate: " << *hst_i << "\n";
-      ++hst_i;
-    }
-    buf << ends;
-    TRACE( buf.str() );
-  }
+//  cerr <<  "........\n" << Trace() << endl;
   list<state_type>::reverse_iterator hst_i = theHistory.rbegin();
   bool d = 0;
   while ( hst_i != theHistory.rend() && *hst_i != ST_TERMINAL && 
           !(d =__Dispatch( *hst_i, event ) ) ) {
     ++hst_i;
   }
-  if ( !d && State() == ST_NULL ) {
-    TRACE( "Sorry, init now...(" << isA() << ")" );
-    OXWEvRTInit( OXWEvent( OXW_RTINIT ) );
-    d = Dispatch( event );
-  }
   return d;
 }
 
-void OXWEventHandler::OXWEvRTInit( OXWEvent& )
+void OXWEventHandler::TraceStack( ostrstream& out ) const
 {
-  OXWRTInit();
-  State( ST_READY );
+  list<state_type>::const_reverse_iterator hst_i = theHistory.rbegin();
+  out << "State stack (" << isA() << "):\n";
+  while ( hst_i != theHistory.rend() ) {
+    out << "\tstate: " << *hst_i << "\n";
+    ++hst_i;
+  }
 }
 
-void OXWEventHandler::OXWRTInit()
-{ // do nothing: this is stub
+const char *OXWEventHandler::Trace() const
+{
+  Out.seekp( 0, ostream::beg );
+  TraceStack( Out );
+  OXWEventHandler::theStatesTable.Out( Out );
+  Out << ends;
+
+  return Out.str();
 }

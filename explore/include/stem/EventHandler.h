@@ -23,6 +23,10 @@
 #include <algo.h>
 #endif
 
+#ifndef STRSTREAM_H
+#include <strstream.h>
+#endif
+
 // ******************************************************* OXWEventsTableEntry
 
 template <class T>
@@ -33,14 +37,35 @@ class OXWEventsTableEntry
   public:
     typedef void (T::*PMF)( OXWEvent& );
 
-    OXWEventsTableEntry( message_type msg, PMF pmf ) :
+    OXWEventsTableEntry( message_type msg, PMF pmf, const char *pmf_name ) :
 	Msg( msg ),
-	Pmf( pmf )
+	Pmf( pmf ),
+	Pmf_name( pmf_name ),
+        class_name( "" )
       { }
+
+    OXWEventsTableEntry( message_type msg, PMF pmf,
+			 const char *cls, const char *pmf_name ) :
+	Msg( msg ),
+	Pmf( pmf ),
+	Pmf_name( pmf_name ),
+        class_name( cls )
+      { }
+
     OXWEventsTableEntry() :
 	Msg( 0 ),
-	Pmf( 0 )
+	Pmf( 0 ),
+	Pmf_name( "??" ),
+        class_name( "??" )
       { }
+
+    OXWEventsTableEntry( message_type msg ) :
+	Msg( msg ),
+	Pmf( 0 ),
+	Pmf_name( "??" ),
+        class_name( "??" )
+      { }
+
     bool operator==( const OXWEventsTableEntry<T>& probe ) const
       { return probe.Msg == Msg; }
     bool Dispatch( const T& generic, OXWEvent& event ) const
@@ -48,22 +73,15 @@ class OXWEventsTableEntry
 	(generic.*Pmf)( event );
 	return 1;
       }
-    char *PrintContents() const;
+    void Out( ostrstream& out ) const
+      { out << "Message: " << Msg << "\t" << class_name << "::" << Pmf_name; }
 
   private:
     message_type Msg;
     PMF Pmf;
+    const char *Pmf_name;
+    const char *class_name;
 };
-
-template <class T>
-char *OXWEventsTableEntry<T>::PrintContents() const
-{
-  static char buffer[128];
-  ostrstream buf( buffer, 128 );
-
-  buf << "Message: " << Msg << ends;
-  return buffer;
-}
 
 // ************************************************************ OXWEventsTable
 
@@ -87,7 +105,7 @@ class OXWEventsTable
     bool Dispatch( const T& generic, OXWEvent& event ) const;
     state_type State() const
       { return theState; }
-    char *PrintContents() const;
+    void Out( ostrstream& ) const;
 
   private:
     state_type theState;
@@ -108,24 +126,22 @@ template <class T>
 bool OXWEventsTable<T>::Dispatch( const T& generic, OXWEvent& event ) const
 {
   list<table_entry>::const_iterator i = find( table.begin(), table.end(),
-					table_entry( event.Message, 0 ) );
+					table_entry( event.Message ) );
   return i != table.end() ? (*i).Dispatch( generic, event ) : 0;
 }
 
 template <class T>
-char *OXWEventsTable<T>::PrintContents() const
+void OXWEventsTable<T>::Out( ostrstream& out ) const
 {
-  static char buffer[1024];
   list<table_entry>::const_iterator i = table.begin();
-  ostrstream buf( buffer, 1024 );
 
-  buf << "State " << theState << "\n";
+  out << "State " << theState << "\n";
   while ( i != table.end() ) {
-    buf << "\t" << (*i).PrintContents() << "\n";
+    out << "\t";
+    (*i).Out( out );
+    out << "\n";
     ++i;
   }
-  buf << ends;
-  return buffer;
 }
 
 // ************************************************************* OXWStateTable
@@ -141,7 +157,7 @@ class OXWStateTable
     bool Dispatch( const T& generic, state_type, OXWEvent& event );
     void swap( OXWStateTable& x )
       { table.swap( x.table ); }
-    char *PrintContents() const;
+    void Out( ostrstream& ) const;
 
   private:
     list<table_entry> table;
@@ -180,18 +196,14 @@ bool OXWStateTable<T>::Dispatch( const T& generic, state_type state,
 }
 
 template <class T>
-char *OXWStateTable<T>::PrintContents() const
+void OXWStateTable<T>::Out( ostrstream& out ) const
 {
-  static char buffer[1024];
   list<table_entry>::const_iterator i = table.begin();
-  ostrstream buf( buffer, 1024 );
 
   while ( i != table.end() ) {
-    buf << (*i).PrintContents();
+    (*i).Out( out );
     ++i;
   }
-  buf << ends;
-  return buffer;
 }
 
 // ******************************************************************* GENERIC
@@ -205,6 +217,16 @@ class GENERIC
 typedef OXWEventsTableEntry<GENERIC> GENERIC_EvTblEntry;
 typedef OXWStateTable<GENERIC> GENERIC_StatesTbl;
 
+#define NAME_IT                                 \
+  public:					\
+    virtual const char *isA() const		\
+      { return class_name; }			\
+  private:					\
+    static const char *class_name
+
+#define DEFINE_NAME_IT( cls )                   \
+const char *cls::class_name = #cls
+
 // *********************************************************** OXWEventHandler
 
 class OXWEventHandler
@@ -212,64 +234,83 @@ class OXWEventHandler
   public:
     OXWEventHandler();
     void State( state_type state )
+      { PushState( state ); }
+    void PushState( state_type state )
       { theHistory.push_back( state ); }
     state_type State() const
       { return theHistory.back(); }
     void PopState();
-    void TerminalState( state_type state )
+    void PopState( state_type );
+    void PushTState( state_type state )
       {
 	theHistory.push_back( ST_TERMINAL );
 	theHistory.push_back( state );
       }
+    bool isState( state_type ) const;
     bool Dispatch( OXWEvent& );
-    virtual const char *isA() const
-      { return "OXWEventHandler"; }
+    virtual const char *Trace() const;
     
   protected:
-    void OXWEvRTInit( OXWEvent& );
-    virtual void OXWRTInit();
+    void TraceStack( ostrstream& ) const;
     virtual bool __Dispatch( state_type, OXWEvent& );
-    static GENERIC_StatesTbl RTConfigure();
+    static int RespTblConfigure();
 
     list<state_type> theHistory;
     static GENERIC_StatesTbl theStatesTable;
-
-  private:
-    static int ini_flag;
+    static ostrstream Out;
+    NAME_IT;
 };
 
 // ***************************************************************************
 
 #define DECLARE_RESPONSE_TABLE( cls, pcls )	\
+  NAME_IT;                                      \
+  public:                                       \
+    virtual const char *Trace() const;          \
   private:					\
     typedef cls ThisCls;			\
     typedef pcls ParentThisCls;			\
   protected:					\
-    virtual void OXWRTInit();                   \
+    static int RespTblConfigure();              \
     virtual bool __Dispatch( state_type, OXWEvent& ); \
-    static GENERIC_StatesTbl theStatesTable
-
+    static GENERIC_StatesTbl theStatesTable;    \
+    static int ini_flag
 
 #define DEFINE_RESPONSE_TABLE( cls )		\
+DEFINE_NAME_IT( cls );                          \
 GENERIC_StatesTbl cls::theStatesTable;          \
+int cls::ini_flag = cls::RespTblConfigure();    \
                                                 \
 bool cls::__Dispatch( state_type state, OXWEvent& __event__ ) \
 {						\
-  TRACE( "Dispatch " << isA() << "\n" << theStatesTable.PrintContents() ); \
   return 					\
       theStatesTable.Dispatch( *((GENERIC *)this), state, __event__ ); \
 }						\
+                                                \
+const char *cls::Trace() const                  \
+{                                               \
+  Out.seekp( 0, ostream::beg );                 \
+  TraceStack( Out );                            \
+  ThisCls::theStatesTable.Out( Out );           \
+  Out << ends;                                  \
+                                                \
+  return Out.str();                             \
+}                                               \
 						\
-void cls::OXWRTInit()                           \
-{						\
-  ParentThisCls::OXWRTInit();                   \
-  theStatesTable.swap( ParentThisCls::theStatesTable );
-
-#define END_RESPONSE_TABLE			\
-}
+int cls::RespTblConfigure()                     \
+{			                        \
+  if ( ini_flag == 0) {                         \
+    ParentThisCls::RespTblConfigure();          \
+    theStatesTable = ParentThisCls::theStatesTable;
 
 #define RESPONSE_TABLE_ENTRY( state, msg, catcher ) \
-  theStatesTable.push( state, *((GENERIC_EvTblEntry *) \
-	  &OXWEventsTableEntry< ThisCls >( msg, &ThisCls::catcher )) )
+    theStatesTable.push( state, *((GENERIC_EvTblEntry *) \
+	    &OXWEventsTableEntry< ThisCls >(    \
+	    msg, &ThisCls::catcher, class_name, #catcher )) )
+
+#define END_RESPONSE_TABLE			\
+  }                                             \
+  return 1;                                     \
+}
 
 #endif          // __OXW_EventHandler_h
