@@ -39,6 +39,8 @@ struct tagIParams
   union {
     unsigned long DParam;
     tagLParam DP;
+    class ASEventsCore *ECObject;
+    class ASWindowBase *WBObject;
   };
 };
 
