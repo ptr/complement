@@ -1,103 +1,87 @@
-# Time-stamp: <97/01/28 15:55:06 ptr>
+# Time-stamp: <97/09/26 16:57:33 ptr>
 # %Z% $Date$ $Revision$ $RCSfile$ %Q%
-# Implementation and debugging EDS (Event-Driven System) class library
-# (Release 2), derived from OXW project: EDS is parent library for OXW.
+# Implementation and debugging EDS class library.
 
-# PROJECT  = ./libEDS.so
-PROJECTD = ./libEDSd.so
-PROJECT = $(PROJECTD)
+baselibname = EDS
+libversion = 2
+libname        = $(baselibname:%=lib%.so)
+libnamedebug   = $(baselibname:%=lib%d.so)
+libname_v      = $(libname:%=%.$(libversion))
+libnamedebug_v = $(libnamedebug:%=%.$(libversion))
 
 INCLUDES = \
-	-I/usr/openwin/include \
 	-I../../include \
-	-I../../../../STL.labs
-
-DEFS = \
-	-DSVR4
-DBG_DEFS = $(DEFS) \
-	-D__DEBUG=2 \
-	-D__TRACE -D__WARN
-OPT = -O
-DBG_OPT = -g
-
-# CCFLAGS = $(OPT) -cg92 +w -PIC -instances=static -mt
-CCFLAGS = $(DBG_OPT) +w -pic -instances=static -mt -features=no%anachronisms \
-	-features=rtti
-CPPFLAGS = $(DBG_DEFS) $(INCLUDES)
-PROJECT_LIBS = -L$(INSTALL_LIB_DIR) -lCLASS -lSTL
-LDFLAGS = -lCLASS -lSTL -lSTD
+	-I/usr/local/include/STL
 
 INSTALL_LIB_DIR = /usr/home/ptr/lib
-INSTALL_CMD = /usr/home/ptr/bin/install-sh
-OUTPUT_DIR = ./bin
-OUTPUT_TESTS_DIR = ./tests/bin
-OUTPUT_OPTION = -o $@
+LDFLAGS = 
+DEFS =
+$(libnamedebug_v) := DEFS += -D__DEBUG=2 -D__TRACE -D__WARN
+$(libname_v)      := OPT = -O -pic
+$(libnamedebug_v) := OPT = -g -pic +w
+$(libname_v)      := LDFLAGS += -lCLASS
+$(libnamedebug_v) := LDFLAGS += -lCLASSd
 
-TESTS_DIR = ./tests
+CCFLAGS = $(OPT) -instances=static -mt -features=no%anachronisms -features=rtti
+CPPFLAGS = $(DEFS) $(INCLUDES)
+
+INSTALL_CMD = install-sh
+OUTPUT_DIR = ./bin
+OUTPUT_OPTION = -o $@
 
 # Library files
 
-LIBFILES.o = \
-		$(OUTPUT_DIR)/EventHandler.o \
-		$(OUTPUT_DIR)/EventsCore.o \
-		$(OUTPUT_DIR)/EvManager.o \
-		$(OUTPUT_DIR)/Application.o
+%:	%.c
+
+LIBFILES = \
+	EventsCore.cc \
+	EventHandler.cc \
+	EvManager.cc \
+	Application.cc
+
+LIBFILES.o = $(LIBFILES:%.cc=$(OUTPUT_DIR)/%.o)
 
 .KEEP_STATE:
 
 .PARALLEL:
 
-all:	dir $(PROJECT)
+$(libname_v) $(libnamedebug_v):	$(LIBFILES.o)
+	$(LINK.cc) -G -o $@ -h `basename $@` $(LIBFILES.o)
 
-$(PROJECT):	$(LIBFILES.o)
-	$(LINK.cc) -G -o $@ $(LIBFILES.o)
+$(libname):	$(libname_v)
+	-@rm -f $(libname)
+	-@ln -s $(libname_v) $(libname)
 
-$(PROJECTD):	$(LIBFILES.o)
-	$(LINK.cc) -G -o $@ $(LIBFILES.o)
+$(libnamedebug):	$(libnamedebug_v)
+	-@rm -f $(libnamedebug)
+	-@ln -s $(libnamedebug_v) $(libnamedebug)
 
 $(OUTPUT_DIR)/%.o:	%.cc
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
-$(OUTPUT_TESTS_DIR)/%.o:	$(TESTS_DIR)/%.cc
-	$(COMPILE.cc) $(OUTPUT_OPTION) $<
+dir:	$(OUTPUT_DIR)
 
-dir::	$(OUTPUT_DIR)
-
-$(OUTPUT_DIR)::
-	@if [ ! -d $(OUTPUT_DIR) ]; \
+$(OUTPUT_DIR):
+	-@if [ ! -d $(OUTPUT_DIR) ]; \
 	then \
 	  mkdir $(OUTPUT_DIR); \
 	fi
 
-clear::
-	@if [ -d $(OUTPUT_DIR) ]; \
+clear:
+	-@if [ -d $(OUTPUT_DIR) ]; \
 	then \
-	  rm -f $(OUTPUT_DIR)/*.o; \
+	  rm -f $(LIBFILES.o); \
 	fi
-
-dir::	$(OUTPUT_TESTS_DIR)
-
-$(OUTPUT_TESTS_DIR)::
-	@if [ ! -d $(OUTPUT_TESTS_DIR) ]; \
-	then \
-	  mkdir $(OUTPUT_TESTS_DIR); \
-	fi
-
-clear::
-	@if [ -d $(OUTPUT_TESTS_DIR) ]; \
-	then \
-	  rm -f $(OUTPUT_TESTS_DIR)/*.o; \
-	fi
-	@rm core *~;
 
 clearall:	clear
-	rm $(PROJECT)
+	-@rm -f $(libname) $(libnamedebug) $(libname_v) $(libnamedebug_v) 
 
-install::	$(INSTALL_LIB_DIR)/$(PROJECT)
-
-uninstall::	clearall
-	rm -f $(INSTALL_LIB_DIR)/$(PROJECT)
-
-$(INSTALL_LIB_DIR)/$(PROJECT):	$(PROJECT)
-	$(INSTALL_CMD) -c $(PROJECT) $(INSTALL_LIB_DIR)
-
+install:
+	-$(INSTALL_CMD) -m 0755 -c $(libname_v)      $(INSTALL_LIB_DIR)
+	-@(cd $(INSTALL_LIB_DIR); \
+	   rm -f $(libname); \
+           ln -s $(libname_v) $(libname) )
+	-$(INSTALL_CMD) -m 0755 -c $(libnamedebug_v) $(INSTALL_LIB_DIR)
+	-@(cd $(INSTALL_LIB_DIR); \
+           rm -f $(libnamedebug); \
+           ln -s $(libnamedebug_v) $(libnamedebug) )

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/11/25 10:47:15 ptr>
+// -*- C++ -*- Time-stamp: <98/01/20 21:21:29 ptr>
 #ifndef __EDS_EvManager_h
 #define __EDS_EvManager_h
 
@@ -8,16 +8,12 @@
 #include <CLASS/lock.h>
 #endif
 
-#ifndef PAIR_H
-#include <stl/pair.h>
+#ifndef __UTILITY__
+#include <utility>
 #endif
 
-#ifndef DEQUE_H
-#include <stl/deque.h>
-#endif
-
-#ifndef STACK_H
-#include <stl/stack.h>
+#ifndef __QUEUE__
+#include <queue>
 #endif
 
 #ifndef __EDS_Event_h
@@ -45,9 +41,9 @@ struct EDSEvTarget
 typedef pair<EDSEvTarget,EDSEvent> EDSEvInfo;
 
 class EDSEvManager :
-    public queue<deque<EDSEvInfo> >
+    public queue<EDSEvInfo,deque<EDSEvInfo> >
 {
-    typedef queue<deque<EDSEvInfo> > ParentCls;
+    typedef queue<EDSEvInfo,deque<EDSEvInfo> > ParentCls;
   public:
     EDSEvManager();
 
