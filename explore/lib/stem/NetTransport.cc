@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/08 17:34:55 ptr>
+// -*- C++ -*- Time-stamp: <99/09/13 10:20:38 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -224,7 +224,7 @@ void NetTransport::connect( sockstream& s )
     _net_ns = rar_map( nsaddr, __ns_at + hostname );
     while ( pop( ev, sess ) ) {
       ev.src( rar_map( ev.src(), _at_hostname ) ); // substitute my local id
-      manager()->Dispatch( ev );
+      manager()->Send( ev );
     }
     if ( !s.good() ) {
       s.close();
@@ -278,7 +278,7 @@ int NetTransportMgr::_loop( void *p )
   try {
     while ( me.pop( ev, sess ) ) {
       ev.src( me.rar_map( ev.src(), __at + me.net->rdbuf()->hostname() ) ); // substitute my local id
-      manager()->Dispatch( ev );
+      manager()->Send( ev );
     }
     if ( me.net ) {
       me.net->close();
@@ -334,7 +334,7 @@ void NetTransportMP::connect( sockstream& s )
     // in the middle of message...
     if ( pop( ev, sess ) ) {
       ev.src( rar_map( ev.src(), __at + hostname ) ); // substitute my local id
-      manager()->Dispatch( ev );
+      manager()->Send( ev );
     }
     if ( !s.good() ) {
       throw ios_base::failure( "sockstream not good" );
