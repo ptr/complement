@@ -1,4 +1,4 @@
-# Time-stamp: <03/05/06 13:29:35 ptr>
+# Time-stamp: <03/05/29 12:40:21 ptr>
 # $Id$
 
 # .KEEP_STATE:
@@ -25,11 +25,12 @@ SO = nlm
 
 ARCH = lib
 AR = mwldnlm -type library -msgstyle gcc -w off
+#AR = mwccnlm -type library -msgstyle gcc -w off -map x.map
 AR_INS_R = 
 AR_EXTR = 
 AR_OUT = -o
 
-INCLUDES = -I$(BASEDIR)/include
+INCLUDES = 
 
 # DEFS = -D__$(OS_VER)
 DEFS ?=
@@ -45,7 +46,7 @@ INSTALL_A = ${INSTALL} -c -m 0644
 INSTALL_EXE = ${INSTALL} -c -m 0755
 
 OUTPUT_OPTION = -o $@
-CPPFLAGS = $(DEFS) -I- -I. $(INCLUDES) -ir "$(MWCW_NOVELL_SDK)" -ir "$(MWCW_NOVELL_R)" -prefix nlm_prefix.h
+CPPFLAGS = $(DEFS) -gccinc -I. $(INCLUDES) -ir "$(MWCW_NOVELL_SDK)" -ir "$(MWCW_NOVELL_R)" -prefix nlm_prefix.h
 
 CFLAGS = -lang c -msgstyle gcc -ext o -nostdinc $(OPT)
 CXXFLAGS = -lang c++ -msgstyle gcc -ext o -iso_templates on -bool on -Cpp_exceptions on -wchar_t on -nostdinc $(OPT)
