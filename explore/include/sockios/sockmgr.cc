@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/24 19:45:13 ptr>
+// -*- C++ -*- Time-stamp: <99/05/28 18:28:22 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -186,24 +186,13 @@ int sockmgr_stream<Connect>::loop( void *p )
       me->thr_mgr.launch( connection, &pass, sizeof(pass) );
     }
   }
-  catch ( int ) {
+  catch ( ... ) {
     me->shutdown( sock_base::stop_in );
     me->close();
     throw;
-    // cerr << "\n--- sockmgr_stream: signal " << strsignal( sig ) << " detected ---" << endl;
-  }
-  catch ( runtime_error& e ) {
-    cerr << e.what() << endl;
-    ret_code = -1;
-  }
-  catch ( exception& e ) {
-    cerr << e.what() << endl;
-  }
-  catch ( ... ) {
-    cerr << "sockmgr_stream: undetected exception" << endl;
   }
 
-  return ret_code;
+  return 0;
 }
 
 template <class Connect>
@@ -329,19 +318,11 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
     cl->s.open( _sd, addr.any );
 
 #ifdef __unix
-    int i;
-    for ( i = 1; i < _fdcount; ++i ) {
-      if ( _pfd[i].fd == -1 ) {
-        break;
-      }
-    }
-    if ( i == _fdcount ) {
-      i = _fdcount++;
-    }
+    int j = _fdcount++;
 
-    _pfd[i].fd = _sd;
-    _pfd[i].events = POLLIN;
-    _pfd[i].revents = 0;
+    _pfd[j].fd = _sd;
+    _pfd[j].events = POLLIN;
+    _pfd[j].revents = 0;
 #endif
 #ifdef WIN32
     FD_SET( _sd, &_pfd );
@@ -350,12 +331,17 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
   } else {
     // find polled and return it
 #ifdef __unix
-    for ( int i = 1; i < _fdcount; ++i ) {
-      if ( _pfd[i].revents != 0 ) {
-        _pfd[i].revents = 0;
+    for ( int j = 1; j < _fdcount; ++j ) {
+      if ( _pfd[j].revents != 0 ) {
         container_type::iterator i = 
-          find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, _pfd[i].fd ) );
+          find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, _pfd[j].fd ) );
         __stl_assert( i != _M_c.end() );
+        if ( _pfd[j].revents & POLLERR ) {
+          memmove( &_pfd[j], &_pfd[j+1], sizeof(pollfd) * (_fdcount - j - 1) );
+          --_fdcount;
+          (*i)->s.close();
+        }
+        _pfd[j].revents = 0;
         return *i;
       }
     }
@@ -366,6 +352,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
       if ( (*i)->s.is_open() && FD_ISSET( (*i)->s.rdbuf()->fd(), &_pfd ) ) {
         return *i;
       }
+      ++i;
     }
 #endif
   }
@@ -404,7 +391,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_udp()
     ++_fdcount;
   }
 
-  if ( poll( &pfd, 1, -1 ) > 0 ) { // wait infinite
+  if ( poll( _pfd, 1, -1 ) > 0 ) { // wait infinite
     // get address of caller only
     char buff[32];    
     ::recvfrom( fd(), buff, 32, MSG_PEEK, &addr.any, &sz );
@@ -420,20 +407,23 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_udp()
     if ( (*i)->s.is_open() && b->stype() == sock_base::sock_dgram &&
          b->port() == addr.inet.sin_port &&
          b->inet_addr() == addr.inet.sin_addr.s_addr ) {
-      break;
+      return *i;
     }
     ++i;
   }
 
   sockmgr_client_MP<Connect> *cl;
-  if ( i == _M_c.end() ) {
-    cl = new sockmgr_client_MP<Connect>();
-    _M_c.push_back( cl );
-  } else {
-    cl = *i;
-  }
-  
+  cl = new sockmgr_client_MP<Connect>();
+  _M_c.push_back( cl );
+#ifdef __unix
   cl->s.open( dup( fd() ), addr.any, sock_base::sock_dgram );
+#endif
+#ifdef WIN32
+  SOCKET dup_fd;
+  HANDLE proc = GetCurrentProcess();
+  DuplicateHandle( proc, (HANDLE)fd(), proc, (HANDLE *)&dup_fd, 0, FALSE, DUPLICATE_SAME_ACCESS );
+  cl->s.open( dup_fd, addr.any, sock_base::sock_dgram );
+#endif
 
   return cl;
 }
@@ -456,61 +446,37 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
 
     while ( (s = me->accept()) != 0 ) {    
       // The user connect function: application processing
-      _sfd = s->s.rdbuf()->fd();
-      s->_proc.connect( s->s );
-      if ( !s->s.is_open() ) {
-#ifdef __unix
-        for ( int i = 1; i < me->_fdcount; ++i ) {
-          if ( me->_pfd[i].fd == _sfd ) {
-            me->_pfd[i].revents = 0;
-            me->_pfd[i].fd = -1;
-            me->_pfd[i].events = 0;
-          }
+      if ( s->s.is_open() ) {
+        _sfd = s->s.rdbuf()->fd();
+        s->_proc.connect( s->s );
+        if ( !s->s.good() ) {
+          s->s.close();
         }
+        if ( !s->s.is_open() ) {
+#ifdef __unix
+          for ( int i = 1; i < me->_fdcount; ++i ) {
+            if ( me->_pfd[i].fd == _sfd ) {
+              memmove( &me->_pfd[i], &me->_pfd[i+1], sizeof(pollfd) * (me->_fdcount - i - 1) );
+              --me->_fdcount;
+            }
+          }
 #endif
 #ifdef WIN32
-        FD_CLR( _sfd, &me->_pfd );
+          FD_CLR( _sfd, &me->_pfd );
 #endif
+        }
       }
     }
   }
-  catch ( int sig ) {
+  catch ( ... ) {
     me->shutdown( sock_base::stop_in );
     MT_REENTRANT( me->_c_lock, _1 );
     container_type::iterator i = me->_M_c.begin();
     while ( i != me->_M_c.end() ) {
-      (*i)->s.close();
+      (*i++)->s.close();
     }
     me->close();
     throw;
-    // cerr << "\n--- Interrupted MP ---" << endl;
-  }
-  catch ( runtime_error& e ) {
-    cerr << e.what() << endl;
-    MT_REENTRANT( me->_c_lock, _1 );
-    container_type::iterator i = me->_M_c.begin();
-    while ( i != me->_M_c.end() ) {
-      (*i)->s.close();
-    }
-    me->close();
-  }
-  catch ( exception& e ) {
-    cerr << e.what() << endl;
-    MT_REENTRANT( me->_c_lock, _1 );
-    container_type::iterator i = me->_M_c.begin();
-    while ( i != me->_M_c.end() ) {
-      (*i)->s.close();
-    }
-    me->close();
-  }
-  catch ( ... ) {
-    cerr << "(1) Oh, oh, say baby Sally. Dick and Jane launch." << endl;
-    MT_REENTRANT( me->_c_lock, _1 );
-    container_type::iterator i = me->_M_c.begin();
-    while ( i != me->_M_c.end() ) {
-      (*i)->s.close();
-    }
-    me->close();
   }
 
   return 0;
