@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <97/01/14 19:54:52 ptr>
+// -*- C++ -*- Time-stamp: <97/01/16 14:42:23 ptr>
 #ifndef __LA_Integer_h
 #define __LA_Integer_h
 
@@ -1046,7 +1046,7 @@ template <int P, class LL, class UL, class L, class T>
 la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::assign( const string& s )
 {
   string::size_type f = s.find_first_not_of( " \t\n" );
-  CHECK_RANGE( f != string::NPOS );
+  CHECK_RANGE( f != string::npos );
 
   *this = 0L;
   la_int ten( 10 );
@@ -1059,7 +1059,7 @@ la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::assign( const string& s )
   }
   
   string::size_type p = s.find_first_not_of( "0123456789", f );
-  string::const_iterator end = p != string::NPOS ? s.begin() + p : s.end();
+  string::const_iterator end = p != string::npos ? s.begin() + p : s.end();
   string::const_iterator ch  = s.begin() + f;
 
   CHECK_RANGE( ch != end );
