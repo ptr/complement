@@ -1,13 +1,13 @@
-// -*- C++ -*- Time-stamp: <00/05/19 11:41:39 ptr>
+// -*- C++ -*- Time-stamp: <00/05/23 20:38:33 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999
- * ParallelGraphics Software Systems
- 
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
+ *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *

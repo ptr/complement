@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/24 19:35:17 ptr>
+// -*- C++ -*- Time-stamp: <00/05/23 21:17:10 ptr>
 
 /*
  *
@@ -170,14 +170,13 @@ int Cron::_loop( void *p )
     res = me.cond.wait_time( &abstime );
     if ( res > 0 ) { // time expired
       __CronEntry en;
-      {
-        MT_REENTRANT( me._M_l, _1 );
-        if ( me._M_c.empty() ) {
-          continue; // break?
-        }
-        en = me._M_c.top();
-        me._M_c.pop();
+      MT_REENTRANT( me._M_l, _1 );
+
+      if ( me._M_c.empty() ) {
+        continue; // break?
       }
+      en = me._M_c.top();
+      me._M_c.pop();
 
       Event ev( en.code );
       ev.dest( en.addr );
@@ -203,16 +202,11 @@ int Cron::_loop( void *p )
         en.start.tv_sec = en.expired.tv_sec;
         en.start.tv_nsec = en.expired.tv_nsec;        
         en.count = 0;
-        MT_REENTRANT( me._M_l, _1 );
         me._M_c.push( en );
       } else if ( (en.count) < (en.n) ) { // This SC5.0 patch 107312-06 bug
-        MT_REENTRANT( me._M_l, _1 );
         me._M_c.push( en );
-      } else {
-        MT_REENTRANT( me._M_l, _1 );
-        if ( me._M_c.empty() ) {
-          me.PopState();
-        }
+      } else if ( me._M_c.empty() ) {
+        me.PopState();
       }
     } else { // signaled or error
       // This occur if new record added in Cron queue, or
