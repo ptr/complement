@@ -1,4 +1,4 @@
-# Time-stamp: <03/05/06 13:30:07 ptr>
+# Time-stamp: <03/07/02 15:01:04 ptr>
 # $Id$
 
 # .KEEP_STATE:
@@ -65,6 +65,7 @@ INSTALL_EXE = ${INSTALL} -c -m 0755
 
 # OUTPUT_DIR = obj
 OUTPUT_OPTION = -o $@
+LINK_OUTPUT_OPTION := ${OUTPUT_OPTION}
 CPPFLAGS = $(DEFS) $(INCLUDES)
 
 ifeq ($(OS_VER),SunOS)
