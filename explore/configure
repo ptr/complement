@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# Time-stamp: <03/07/15 15:09:50 ptr>
+# $Id$
+
+
+configmak=./Makefiles/config.mak
+
+rm -f ${configmak}
+
+echo "STLPORT_DIR := /export/home/windows/guest/STLlab/STLport" >> ${configmak}
+
