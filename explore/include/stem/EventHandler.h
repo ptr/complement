@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/24 19:46:51 ptr>
+// -*- C++ -*- Time-stamp: <00/04/04 11:36:00 ptr>
 
 /*
  *
@@ -266,9 +266,9 @@ class __EvTable
 {
   public:
     typedef __STD::pair<Key2,Value> pair2_type;
-    typedef __STD::vector<pair2_type,__STL_DEFAULT_ALLOCATOR(pair2_type) > Container2;
+    typedef __STD::vector<pair2_type,__STD::allocator<pair2_type > > Container2;
     typedef __STD::pair<Key1,Container2> pair1_type;
-    typedef __STD::vector<pair1_type,__STL_DEFAULT_ALLOCATOR(pair1_type) > Container1;
+    typedef __STD::vector<pair1_type,__STD::allocator<pair1_type> > Container1;
     typedef Container1::iterator iterator1;
     typedef Container2::iterator iterator2;
     typedef Container1::const_iterator const_iterator1;
