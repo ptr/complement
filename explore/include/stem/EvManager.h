@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/23 12:58:36 ptr>
+// -*- C++ -*- Time-stamp: <99/03/24 17:58:59 ptr>
 #ifndef __EvManager_h
 #define __EvManager_h
 
@@ -102,6 +102,7 @@ class EvManager
         EDS::__Object_Entry& record = heap[id];
         // record.ref = object;
         record.info = info;
+        __stl_assert( channel != 0 );
         record.addremote( rmkey, channel );
 
         return id;
@@ -121,19 +122,22 @@ class EvManager
         }
       }
 
-    bool is_avail( const key_type& id )
-      { return heap.find( _id ) != heap.end(); }
+    bool is_avail( const key_type& id ) const
+      { return heap.find( id ) != heap.end(); }
 
-    const string& who_is( const key_type& id )
+    const string& who_is( const key_type& id ) const
       {
-        heap_type::iterator i = heap.find( id );
+        heap_type::const_iterator i = heap.find( id );
         if ( i == heap.end() ) {
           return inv_key_str;
         }
         return (*i).second.info;
       }
 
+    unsigned sid( const key_type& id ) const;
+
     void Send( const Event& e, const key_type& src_id );
+    void Remove( NetTransport * );
 
   private:
     key_type create_unique();

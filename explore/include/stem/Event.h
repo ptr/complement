@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/24 12:37:12 ptr>
+// -*- C++ -*- Time-stamp: <99/03/24 18:20:20 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -49,8 +49,8 @@ class __Event_Base
         _dst( e._dst ),
         _src( e._src ),
         _sid( e._sid ),
-        _sqn( 0 ),
-        _rsqn( e._sqn ) // ! not _rsqn
+        _sqn( e._sqn ),
+        _rsqn( e._rsqn ) // ! not _rsqn
       { }
 
     code_type code() const
