@@ -1,10 +1,10 @@
-// -*- C++ -*- Time-stamp: <01/02/02 13:01:51 ptr>
+// -*- C++ -*- Time-stamp: <01/03/20 15:47:04 ptr>
 
 /*
  * Copyright (c) 1995-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
@@ -19,16 +19,19 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
+#include <config/feature.h>
 #include <EDS/EvSession.h>
 
 namespace EDS {
 
+#ifndef WIN32
+__PG_DECLSPEC
 SessionInfo::SessionInfo( const SessionInfo& si )
 {
   _host = si._host;
@@ -50,6 +53,7 @@ SessionInfo::SessionInfo( const SessionInfo& si )
   _control = si._control;
 }
 
+__PG_DECLSPEC
 SessionInfo& SessionInfo::operator =( const SessionInfo& si )
 {
   _host = si._host;
@@ -72,6 +76,7 @@ SessionInfo& SessionInfo::operator =( const SessionInfo& si )
 
   return *this;
 }
+#endif
 
 #if !defined(__HP_aCC) || (__HP_aCC > 1)
 template class SessionManager<addr_type>;
