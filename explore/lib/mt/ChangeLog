@@ -1,3 +1,8 @@
+2003-01-07  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xmt.h, xmt.cc: add delay function (sleep for interval
+        of time); fix wrong time conversion for Win in sleep.
+
 2002-09-25  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* libxmt: prepare for public on sourceforge.net under
