@@ -1,6 +1,20 @@
-// -*- C++ -*- Time-stamp: <99/08/23 13:11:53 ptr>
+// -*- C++ -*- Time-stamp: <99/09/03 12:48:33 ptr>
 
 #ident "$SunId$ %Q%"
+
+#ifdef _MSC_VER
+#pragma warning( disable : 4804 )
+#endif
+
+#ifdef WIN32
+#  ifdef _DLL
+#    define __EDS_DLL __declspec( dllexport )
+#  else
+#    define __EDS_DLL
+#  endif
+#else
+#  define __EDS_DLL
+#endif
 
 #include <iomanip>
 #include <NetTransport.h>
@@ -18,7 +32,7 @@ using namespace std;
 
 #define EDS_MAGIC 0xc2454453U
 
-__DLLEXPORT
+__EDS_DLL
 void dump( std::ostream& o, const EDS::Event& e )
 {
   o << setiosflags(ios_base::showbase) << hex
@@ -81,7 +95,7 @@ void NetTransport_base::disconnect()
   }
 }
 
-__DLLEXPORT NetTransport_base::~NetTransport_base()
+__EDS_DLL NetTransport_base::~NetTransport_base()
 {
   manager()->Remove( this );
   disconnect();
@@ -167,7 +181,7 @@ bool NetTransport_base::pop( Event& _rs, SessionInfo& sess )
 }
 
 
-__DLLEXPORT
+__EDS_DLL
 bool NetTransport_base::push( const Event& _rs, const Event::key_type& rmkey,
                               const Event::key_type& srckey )
 {
@@ -205,7 +219,7 @@ bool NetTransport_base::push( const Event& _rs, const Event::key_type& rmkey,
   return net->good();
 }
 
-__DLLEXPORT
+__EDS_DLL
 void NetTransport::connect( sockstream& s )
 {
   const string& hostname = s.rdbuf()->hostname();
@@ -243,7 +257,7 @@ void NetTransport::connect( sockstream& s )
 
 // connect initiator (client) function
 
-__DLLEXPORT
+__EDS_DLL
 NetTransport_base::key_type NetTransportMgr::open(
                                              const char *hostname, int port,
                                              std::sock_base::stype stype )
@@ -310,7 +324,7 @@ int NetTransportMgr::_loop( void *p )
   return 0;  
 }
 
-__DLLEXPORT
+__EDS_DLL
 void NetTransportMP::connect( sockstream& s )
 {
   const string& hostname = s.rdbuf()->hostname();

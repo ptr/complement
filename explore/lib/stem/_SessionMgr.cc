@@ -1,11 +1,30 @@
-// -*- C++ -*- Time-stamp: <99/08/23 13:16:18 ptr>
+// -*- C++ -*- Time-stamp: <99/09/03 14:12:53 ptr>
 
 #ident "$SunId$ %Q%"
+
+#ifdef _MSC_VER
+#pragma warning( disable : 4804 )
+#endif
+
+#ifdef WIN32
+#  ifdef _DLL
+#    define __EDS_DLL __declspec( dllexport )
+#  else
+#    define __EDS_DLL
+#  endif
+#else
+#  define __EDS_DLL
+#endif
 
 #include <stdlib.h>
 
 #include <SessionMgr.h>
 #include <EDSEv.h>
+
+#if defined( WIN32 ) && defined( _MSC_VER )
+#  undef __EDS_DLL_EXPORT
+#  define __EDS_DLL_EXPORT __EDS_DLL
+#endif
 
 #ifdef WIN32
 #define mrand48 rand // rand is bad generator, but wins has no other...
@@ -13,28 +32,28 @@
 
 namespace EDS {
 
-__DLLEXPORT
+__EDS_DLL
 void SessionRsp::pack( std::ostream& s ) const
 {
   __pack( s, key );
   __pack( s, addr );
 }
 
-__DLLEXPORT
+__EDS_DLL
 void SessionRsp::net_pack( std::ostream& s ) const
 {
   __net_pack( s, key );
   __net_pack( s, addr );
 }
 
-__DLLEXPORT
+__EDS_DLL
 void SessionRsp::unpack( std::istream& s )
 {
   __unpack( s, key );
   __unpack( s, addr );
 }
 
-__DLLEXPORT
+__EDS_DLL
 void SessionRsp::net_unpack( std::istream& s )
 {
   __net_unpack( s, key );
@@ -129,12 +148,14 @@ SessionMgr::key_type SessionMgr::key_generate()
   return k;
 }
 
+__EDS_DLL
 EventHandler *SessionMgr::session_leader( const string&, const string&,
                                           Event::key_type ) throw ()
 {
   return 0;
 }
 
+__EDS_DLL
 void SessionMgr::destroy_session_leader( EventHandler * ) throw ()
 {
 }

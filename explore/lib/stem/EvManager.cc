@@ -1,5 +1,19 @@
-// -*- C++ -*- Time-stamp: <99/08/18 22:56:55 ptr>
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+// -*- C++ -*- Time-stamp: <99/09/03 13:28:22 ptr>
+#ident "$SunId$ %Q%"
+
+#ifdef _MSC_VER
+#pragma warning( disable : 4804 )
+#endif
+
+#ifdef WIN32
+#  ifdef _DLL
+#    define __EDS_DLL __declspec( dllexport )
+#  else
+#    define __EDS_DLL
+#  endif
+#else
+#  define __EDS_DLL
+#endif
 
 #include <EvManager.h>
 #include <NetTransport.h>

@@ -1,5 +1,15 @@
-// -*- C++ -*- Time-stamp: <99/05/24 15:07:13 ptr>
+// -*- C++ -*- Time-stamp: <99/09/03 11:51:40 ptr>
 #ident "$SunId$ %Q%"
+
+#ifdef WIN32
+#  ifdef _DLL
+#    define __EDS_DLL __declspec( dllexport )
+#  else
+#    define __EDS_DLL
+#  endif
+#else
+#  define __EDS_DLL
+#endif
 
 #include <EvPack.h>
 #include <iterator>
@@ -11,7 +21,7 @@ using std::istream;
 using std::ostream;
 using std::copy;
 
-__DLLEXPORT
+__EDS_DLL
 void __pack_base::__net_unpack( istream& s, string& str )
 {
   string::size_type sz;
@@ -26,7 +36,7 @@ void __pack_base::__net_unpack( istream& s, string& str )
   }
 }
 
-__DLLEXPORT
+__EDS_DLL
 void __pack_base::__net_pack( ostream& s, const string& str )
 {
   string::size_type sz = str.size();
@@ -35,7 +45,7 @@ void __pack_base::__net_pack( ostream& s, const string& str )
   copy( str.begin(), str.end(), std::ostream_iterator<char,char,std::char_traits<char> >(s) );
 }
 
-__DLLEXPORT
+__EDS_DLL
 void __pack_base::__unpack( istream& s, string& str )
 {
   string::size_type sz;
@@ -49,7 +59,7 @@ void __pack_base::__unpack( istream& s, string& str )
   }
 }
 
-__DLLEXPORT
+__EDS_DLL
 void __pack_base::__pack( ostream& s, const string& str )
 {
   string::size_type sz = str.size();
