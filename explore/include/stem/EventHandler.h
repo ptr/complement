@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/08/19 11:32:09 ptr>
+// -*- C++ -*- Time-stamp: <99/09/03 14:19:31 ptr>
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
@@ -14,6 +14,18 @@
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4786 )
+#endif
+
+#ifndef __EDS_DLL
+#  if defined( WIN32 ) && defined( _MSC_VER )
+#    define __EDS_DLL __declspec( dllimport )
+#  else
+#    define __EDS_DLL
+#  endif
+#endif
+
+#ifndef __EDS_DLL_EXPORT
+#define __EDS_DLL_EXPORT
 #endif
 
 namespace EDS {
@@ -171,8 +183,13 @@ struct __dispatcher_convert
 template <class PMF, class Arg >
 struct __dispatcher_convert_Event
 {
+#ifndef _MSC_VER
     static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, const Arg& arg )
       {	(c->*pmf)( convert_Event<typename PMF::argument_type>()(arg) ); }
+#else
+    static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, const Arg& arg )
+      {	(c->*pmf)( convert_Event<PMF::argument_type>()(arg) ); }
+#endif
 };
 
 template <class PMF, class Arg >
@@ -477,16 +494,16 @@ class EventHandler
         static int _count;
     };
 
-    __DLLEXPORT EventHandler();
-    explicit __DLLEXPORT EventHandler( const Event::key_type& id );
-    __DLLEXPORT ~EventHandler();
+    __EDS_DLL EventHandler();
+    explicit __EDS_DLL EventHandler( const Event::key_type& id );
+    __EDS_DLL ~EventHandler();
 
-    __DLLEXPORT const string& who_is( const Event::key_type& k ) const;
-    __DLLEXPORT unsigned sid( const Event::key_type& k ) const;
+    __EDS_DLL const string& who_is( const Event::key_type& k ) const;
+    __EDS_DLL unsigned sid( const Event::key_type& k ) const;
     static EvManager *manager()
       { return _mgr; }
-    __DLLEXPORT void Send( const Event& e );
-    __DLLEXPORT void Send( const EventVoid& e );
+    __EDS_DLL void Send( const Event& e );
+    __EDS_DLL void Send( const EventVoid& e );
 
 /* ************************************************************ *\
    Member template will be nice here, but sorry...
@@ -529,13 +546,13 @@ class EventHandler
       { return _id; }
     void State( state_type state )
       { PushState( state ); }
-    __DLLEXPORT void PushState( state_type state );
-    __DLLEXPORT state_type State() const;
-    __DLLEXPORT void PopState();
-    __DLLEXPORT void PopState( state_type );
-    __DLLEXPORT void PushTState( state_type state );
-    __DLLEXPORT void RemoveState( state_type );
-    __DLLEXPORT bool isState( state_type ) const;
+    __EDS_DLL void PushState( state_type state );
+    __EDS_DLL state_type State() const;
+    __EDS_DLL void PopState();
+    __EDS_DLL void PopState( state_type );
+    __EDS_DLL void PushTState( state_type state );
+    __EDS_DLL void RemoveState( state_type );
+    __EDS_DLL bool isState( state_type ) const;
     virtual bool Dispatch( const Event& )
       { return false; }
     virtual bool DispatchStub( const Event& )
@@ -544,7 +561,7 @@ class EventHandler
       { return false; }
     virtual void Trace( ostream& ) const
       { }
-    __DLLEXPORT void TraceStack( ostream& ) const;
+    __EDS_DLL void TraceStack( ostream& ) const;
 
   private:
     h_iterator __find( state_type );
@@ -607,8 +624,8 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
     virtual bool DispatchStub( const EDS::Event& __e )                    \
        { return theEventsTable.DispatchStub( this, theHistory.begin(),    \
                                              theHistory.end(), __e ); }   \
-    static evtable_type theEventsTable;                                   \
-    static evtable_decl_type theDeclEventsTable[]
+    static __EDS_DLL_EXPORT evtable_type theEventsTable;                  \
+    static __EDS_DLL_EXPORT evtable_decl_type theDeclEventsTable[]
 
 // Macro for specification of response table body beginning:
 // DEFINE_RESPONSE_TABLE( XX )
@@ -616,9 +633,9 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
 // END_RESPONSE_TABLE
 
 #define DEFINE_RESPONSE_TABLE( cls )		                          \
-cls::evtable_type cls::theEventsTable;                                    \
+__EDS_DLL_EXPORT cls::evtable_type cls::theEventsTable;                   \
                                                                           \
-EDS::__DeclareAnyPMF<cls> cls::theDeclEventsTable[] = {
+__EDS_DLL_EXPORT EDS::__DeclareAnyPMF<cls> cls::theDeclEventsTable[] = {
 
 // Macro for specification of response table entry:
 // RESPONSE_TABLE_ENTRY( ST_NRM, XW_EXPOSE, OXWEvExpose, XEventDispatch );
