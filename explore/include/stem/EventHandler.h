@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/28 18:17:25 ptr>
+// -*- C++ -*- Time-stamp: <99/11/05 17:34:47 ptr>
 
 /*
  *
@@ -258,14 +258,14 @@ struct __DeclareAnyPMF
 {
     state_type    st;
 #ifndef _MSC_VER
-    typename EDS::Event::code_type code;
+    typename EDS::code_type code;
     typename EDS::__PMFentry<T> func;
 #else // _MSC_VER
 #  ifdef _DEBUG
-    EDS::__Event_Base::code_type code;
+    EDS::code_type code;
     EDS::__PMFentry<T> func;
 #  else  // !_DEBUG
-    __Event_Base::code_type code; // workaround for VC 5.0
+    code_type code; // workaround for VC 5.0
     __PMFentry<T> func;
 #  endif // _DEBUG
 #endif // _MSC_VER
@@ -386,7 +386,7 @@ class __EvHandler
 #ifndef _MSC_VER
     typedef typename T::table_type table_type;
 #else // should sync at least with EventHandler::table_type below: 
-    typedef __EvTable<Event::code_type,state_type,__AnyPMFentry *> table_type;
+    typedef __EvTable<EDS::code_type,state_type,__AnyPMFentry *> table_type;
 #endif // (that was workaround of M$ VC 5.0 bug)
 
     __EvHandler()
@@ -412,7 +412,7 @@ bool __EvHandler<T, InputIterator>::Dispatch( T *c, InputIterator first,
   if ( first == last ) {
     return false;
   }
-  typename EDS::Event::code_type code = event.code();
+  typename EDS::code_type code = event.code();
   __AnyPMFentry *entry;
   typename table_type::const_iterator1 i1 = table.find( code );
   if ( i1 == table.end() ) {
@@ -434,7 +434,7 @@ bool __EvHandler<T, InputIterator>::DispatchStub( T *, InputIterator first,
   if ( first == last ) {
     return false;
   }
-  typename EDS::Event::code_type code = event.code();
+  typename EDS::code_type code = event.code();
   __AnyPMFentry *entry;
   typename table_type::const_iterator1 i1 = table.find( code );
   if ( i1 == table.end() ) {
@@ -456,7 +456,7 @@ bool __EvHandler<T, InputIterator>::DispatchTrace( InputIterator first,
     out << "\n\tStates stack empty?";
     return false;
   }
-  typename EDS::Event::code_type code = event.code();
+  typename EDS::code_type code = event.code();
   __AnyPMFentry *entry;
   while ( first != last ) {
     if ( table.get( code, *first, entry ) ) {
@@ -479,7 +479,7 @@ void __EvHandler<T, InputIterator>::Out( std::ostream& out ) const
   __AnyPMFentry *entry;
   typename table_type::const_iterator1 i1 = table.begin();
   while ( i1 != table.end() ) {
-    typename EDS::Event::code_type key1 = table.key1st(*i1);
+    typename EDS::code_type key1 = table.key1st(*i1);
     typename table_type::const_iterator2 i2 = table.begin( i1 );
     out << "\tMessage: " << std::hex << key1 << std::dec << std::endl;
     while ( i2 != table.end( i1 ) ) {
@@ -516,7 +516,7 @@ class EventHandler
 {
   public:
     typedef __EvHandler<EventHandler,h_iterator> evtable_type;
-    typedef __EvTable<Event::code_type,state_type,__AnyPMFentry *> table_type;
+    typedef __EvTable<code_type,state_type,__AnyPMFentry *> table_type;
     typedef __DeclareAnyPMF<EventHandler> evtable_decl_type;
     typedef EventHandler ThisCls;
   protected:
@@ -542,7 +542,7 @@ class EventHandler
     __EDS_DLL ~EventHandler();
 
     __EDS_DLL const string& who_is( addr_type k ) const;
-    __EDS_DLL unsigned sid( key_type k ) const;
+    __EDS_DLL key_type sid( addr_type k ) const;
     static EvManager *manager()
       { return _mgr; }
     __EDS_DLL void Send( const Event& e );
@@ -580,14 +580,14 @@ class EventHandler
 
 \* ************************************************************ */
 #define SEND_T_(T) \
-    void SendMessage( Event::key_type dst, Event::code_type code, const T& s ) \
+    void SendMessage( EDS::key_type dst, EDS::code_type code, const T& s ) \
       { \
         Event_base<T> e( code, s ); \
         e.dest( dst ); \
         EventHandler::Send( EDS::Event_convert<T>()( e ) ); \
       }
 
-    Event::key_type self_id() const
+    addr_type self_id() const
       { return _id; }
     void State( state_type state )
       { PushState( state ); }
@@ -612,7 +612,7 @@ class EventHandler
     h_iterator __find( state_type );
     const_h_iterator __find( state_type ) const;
 
-    Event::key_type _id;
+    addr_type _id;
     static EvManager *_mgr;
 
     friend class Init;

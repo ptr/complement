@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 12:05:16 ptr>
+// -*- C++ -*- Time-stamp: <99/11/09 10:27:14 ptr>
 
 /*
  *
@@ -56,6 +56,7 @@ extern const addr_type badaddr;
 extern const addr_type extbit;
 extern const addr_type nsaddr;
 extern const key_type  badkey;
+extern const code_type badcode;
 #endif
 
 #ifdef WIN32
@@ -63,39 +64,24 @@ extern __EDS_DLL addr_type badaddr;
 extern __EDS_DLL addr_type extbit;
 extern __EDS_DLL addr_type nsaddr;
 extern __EDS_DLL key_type  badkey;
+extern __EDS_DLL code_type badcode;
 #endif
 
 class __Event_Base
 {
   public:
-    typedef unsigned code_type;
-    typedef unsigned key_type;
     typedef size_t   size_type;
-    
-    enum {
-      extbit  = 0x80000000
-    };
-
-    enum {
-      entryaddr  = 0,
-      mgraddr    = 0x00000007,
-      beglocaddr = 0x00000100,
-      endlocaddr = 0x3fffffff,
-      begextaddr = extbit,
-      endextaddr = 0xbfffffff,
-      badaddr    = 0xffffffff
-    };
 
     __Event_Base() :
-        _code( 0 ),
-        _dst( 0 ),
-        _src( 0 )
+        _code( badcode ),
+        _dst( badaddr ),
+        _src( badaddr )
       { }
 
     explicit __Event_Base( code_type c ) :
         _code( c ),
-        _dst( 0 ),
-        _src( 0 )
+        _dst( badaddr ),
+        _src( badaddr )
       { }
 
     explicit __Event_Base( const __Event_Base& e ) :

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/11 13:08:25 ptr>
+// -*- C++ -*- Time-stamp: <99/11/05 17:21:20 ptr>
 
 /*
  *
@@ -100,11 +100,11 @@ void NetTransport_base::disconnect()
     SessionInfo& info = smgr[_sid];
     info.disconnect();
 //    cerr << "EvManager::disconnect: " << _sid << endl;
-    if ( info._control != Event::badaddr ) {
-      Event_base<Event::key_type> ev_disconnect( EV_EDS_DISCONNECT, _sid );
+    if ( info._control != badaddr ) {
+      Event_base<key_type> ev_disconnect( EV_EDS_DISCONNECT, _sid );
       ev_disconnect.dest( info._control );
 //      cerr << "EvManager::disconnect, info._control: " << info._control << endl;
-      Send( EDS::Event_convert<Event::key_type>()(ev_disconnect) );
+      Send( Event_convert<key_type>()(ev_disconnect) );
 //      cerr << "===== Pass" << endl;
     } else {
       smgr.erase( _sid );

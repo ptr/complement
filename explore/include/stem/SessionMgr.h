@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 09:54:04 ptr>
+// -*- C++ -*- Time-stamp: <99/11/05 17:43:23 ptr>
 
 /*
  *
@@ -60,8 +60,6 @@ class SessionMgr :
     public EventHandler
 {
   public:
-    typedef unsigned key_type;
-
     SessionMgr() :
         EventHandler()
       { }
@@ -70,7 +68,7 @@ class SessionMgr :
         EventHandler( info )
       { }
 
-     SessionMgr( Event::key_type addr, const char *info = 0 ) :
+     SessionMgr( addr_type addr, const char *info = 0 ) :
         EventHandler( addr, info )
       { }
 
@@ -78,7 +76,7 @@ class SessionMgr :
 
     virtual __EDS_DLL EventHandler *session_leader( const std::string& account,
                                                     const std::string& passwd,
-                                                    Event::key_type addr ) throw();
+                                                    addr_type addr ) throw();
     virtual __EDS_DLL void destroy_session_leader( EventHandler * ) throw();
 
     void establish_session( const Event& );
@@ -108,8 +106,8 @@ class SessionMgr :
 struct SessionRsp :
    public __pack_base
 {
-    SessionMgr::key_type key;
-    Event::key_type      addr;
+    key_type  key;
+    addr_type addr;
 
     virtual __EDS_DLL void pack( std::ostream& s ) const;
     virtual __EDS_DLL void net_pack( std::ostream& s ) const;

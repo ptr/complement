@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/06 11:21:07 ptr>
+// -*- C++ -*- Time-stamp: <99/11/05 17:19:51 ptr>
 
 /*
  *
@@ -67,7 +67,6 @@ class NetTransport_base :
     public EventHandler // to avoid dependence from creation order
 {
   public:
-    typedef Event::key_type key_type;
     typedef std::map<key_type,key_type> heap_type;
 //    typedef std::map<key_type,key_type,std::less<key_type>,
 //      __STL_DEFAULT_ALLOCATOR(key_type) > heap_type;
