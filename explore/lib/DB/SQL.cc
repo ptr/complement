@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 16:57:08 ptr>
+// -*- C++ -*- Time-stamp: <00/04/18 11:26:24 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -78,11 +78,20 @@ DataBase::DataBase( const char *name, const char *usr, const char *passwd,
     _flags( 0 )
 {
 #if defined( __DB_POSTGRES )
-  string db_name_quoted = "\"";
+  /*
+    For PostgreSQL 6.5.1 (at least) we need quotes around db name,
+    (libpg.so.2.0) wile for 7.0 not (libpg.so.2.1).
+    Something between this versions...
+   */
+  /*
+  string db_name_quoted; = "\"";
   db_name_quoted += name;
   db_name_quoted += "\"";
-  _conn = PQsetdbLogin( host, port, opt, tty, /* name */ db_name_quoted.c_str(), usr, passwd );
-  if ( PQstatus( _conn ) == CONNECTION_BAD ) {
+  */
+  _conn = PQsetdbLogin( host, port, opt, tty, name /* db_name_quoted.c_str() */, usr, passwd );
+  if ( _conn == 0 ) {
+    _flags = badbit | failbit;
+  } else if ( PQstatus( _conn ) == CONNECTION_BAD ) {
     _flags = badbit | failbit;
     PQfinish( _conn );
     _conn = 0;
@@ -120,7 +129,7 @@ DataBase::~DataBase()
 
 void DataBase::exec( const string& s )
 {
-  if ( _flags != goodbit ) {
+  if ( !good() ) {
     return;
   }
 
