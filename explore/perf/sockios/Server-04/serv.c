@@ -1,4 +1,4 @@
-/* -*- C -*- Time-stamp: <02/12/02 16:51:19 ptr> */
+/* -*- C -*- Time-stamp: <02/12/03 00:21:12 ptr> */
 
 /*
  *
@@ -129,8 +129,18 @@ Options:\n\
       errno = 0;
       while ( errno == 0 ) {
         int rb;
+        /* printf( "Read: %d\n", bs ); */
         rb = read( csd, b, bs );
-        if ( rb != bs || errno != 0 ) {
+        if ( rb == 0 ) {
+          count += bs;
+          ++scount;
+          break;
+        }
+        /* printf( "Read done: %d\n", rb ); */
+        while ( rb < bs && errno == 0 ) {
+          rb += read( csd, b + rb, bs - rb );          
+        }
+        if ( errno != 0 ) {
           count += rb;
           ++scount;
           break;
@@ -140,6 +150,8 @@ Options:\n\
       }
       printf( "Server see: client close connection (%d/%d)\n", count, scount );
     }
+  } else {
+    printf( "Can't bind socket\n" );
   }
 
   printf( "End of main\n" );

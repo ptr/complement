@@ -1,4 +1,4 @@
-/* -*- C -*- Time-stamp: <02/12/02 19:00:41 ptr> */
+/* -*- C -*- Time-stamp: <02/12/02 23:44:48 ptr> */
 
 /*
  *
@@ -212,24 +212,11 @@ Options:\n\
     errno = 0;
     for ( i = 0; i < ni; ++i ) {
       if ( errno == 0 ) {
-        /*
-        if ( i % 102400 == 0 ) {
-          printf( "%d\n", i );
+        wb = write( sd, b, bs );
+        while ( wb < bs && errno == 0 ) {
+          wb += write( sd, b + wb, bs - wb );
         }
-        */
-
-        /* if ( bs < 4 * 1024 ) { */
-          wb = write( sd, b, bs );
-          /* } else {
-          int sbs = 0;
-          wb = 0;
-          while ( sbs < bs ) {
-            wb += write( sd, b + sbs, (4 * 1024 < (bs-sbs) ? 4*1024 : ( bs - sbs )) );
-            sbs += 4 * 1024;
-          }
-          */
-        }
-        if ( wb != bs ) {
+        if ( errno != 0 ) {
           printf( "Something wrong (%d)/ %d\n", i, errno );
           break;
         }
@@ -238,6 +225,8 @@ Options:\n\
         break;
       }
     }   
+  } else {
+    printf( "Can't connect to server\n" );
   }
 
   close( sd );
