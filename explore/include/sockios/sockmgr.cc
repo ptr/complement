@@ -1,9 +1,11 @@
-// -*- C++ -*- Time-stamp: <99/01/29 19:05:44 ptr>
+// -*- C++ -*- Time-stamp: <99/02/03 15:39:05 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 // #include <csignal>
+#ifdef __unix
 #include <signal.h>
+#endif
 
 using __impl::Thread;
 
@@ -57,7 +59,18 @@ sockstream *sockmgr_stream<Connect>::accept_dgram()
 
   int sz = sizeof( sockaddr_in );
   _xsockaddr addr;
-	
+
+#ifdef WIN32
+  fd_set pfd;
+  FD_ZERO( &pfd );
+  FD_SET( fd(), &pfd );
+
+  if ( select( fd() + 1, &pfd, 0, 0, 0 ) > 0 ) {
+    // get address of caller only
+    char buff[32];    
+    ::recvfrom( fd(), buff, 32, MSG_PEEK, &addr._address.any, &sz );
+  }
+#else
   pollfd pfd;
   pfd.fd = fd();
   pfd.events = POLLIN;
@@ -67,6 +80,7 @@ sockstream *sockmgr_stream<Connect>::accept_dgram()
     char buff[32];    
     ::recvfrom( fd(), buff, 32, MSG_PEEK, &addr._address.any, &sz );
   }
+#endif
 
   MT_REENTRANT( _storage_lock, _1 );
   sockmgr_client *&cl = _storage[addr];
@@ -160,12 +174,21 @@ int sockmgr_stream<Connect>::loop( void *p )
   try {
     while ( (s = me->accept()) != 0 ) {
       in.s_addr = s->s.rdbuf()->inet_addr();
+#ifdef WIN32
+      // may be made it reeentrant?
+      if ( gethostbyaddr( (char *)&in.s_addr, sizeof(in_addr), AF_INET ) != 0 ) {
+	s->hostname = he.h_name;
+      } else {
+	s->hostname = "unknown";
+      }
+#else
       if ( gethostbyaddr_r( (char *)&in.s_addr, sizeof(in_addr), AF_INET,
 			    &he, tmp_buff, 1024, &err ) != 0 ) {
 	s->hostname = he.h_name;
       } else {
 	s->hostname = "unknown";
       }
+#endif
 
       s->hostname += " [";
       s->hostname += inet_ntoa( in );
