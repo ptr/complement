@@ -1,11 +1,12 @@
+# "%Z%$RCSfile$ v.$Revision$ %H% %T%"
 # Makefile for implementation and debugging OXW (Object X Window) class library
 
 INCLUDES = -I/usr/openwin/include -I.
 DEFS = -DSVR4 -D__DEBUG=2
-OPT = -g
+OPT = -g -p
 CCFLAGS = $(OPT) -cg92 +w -pic -pto
 CPPFLAGS = $(DEFS) $(INCLUDES)
-LDFLAGS = $(OUTPUT_DIR)/classlib.so -lXol -lXt -lX11 -lintl -lgen
+LDFLAGS = $(OUTPUT_DIR)/classlib.so -lXol -lXt -lX11 -lintl -lgen -ldl
 OUTPUT_DIR = ./bin
 OXW_DIR = ./OXW
 OUTPUT_OPTION = -o $@
