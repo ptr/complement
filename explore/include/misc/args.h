@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/08/09 16:29:46 ptr>
+// -*- C++ -*- Time-stamp: <01/08/10 21:06:59 ptr>
 
 /*
  *
@@ -48,6 +48,9 @@ class Option_base
         is_set( false )
       { }
 
+    virtual ~Option_base()
+      { }
+
     virtual bool assign( int& ) const
       { throw std::domain_error( "wrong type" ); }
     virtual bool assign( std::string& ) const
@@ -82,6 +85,9 @@ class deref_equal :
     bool operator()(const P& __x, const V& __y) const
       { return *__x == __y; }
 };
+
+inline void Option_base_destroyer( Option_base *p )
+{ delete p; }
 
 template <class T>
 class Option :
@@ -176,11 +182,14 @@ class Argv
     typedef std::list<Option_base *> opt_container_type;
     typedef std::vector<std::string> arg_container_type;
     deref_equal<Option_base *,char *> eq;
+    deref_equal<Option_base *,std::string> eqs;
 
   public:
     Argv() :
         _stop_opt( "--" )
       { };
+    ~Argv()
+      { std::for_each( opt.begin(), opt.end(), Option_base_destroyer ); }
 
     template <class T>
     void option( const char *n, const T& v, const char *h )
@@ -190,18 +199,18 @@ class Argv
     void parse( int argc, char * const *argv );
     template <class T>
     bool assign( const char *nm, T& v )
-      {
-        opt_container_type::iterator i = std::find_if( opt.begin(), opt.end(),
-                                                       bind2nd( eq, nm ) );
-        if ( i == opt.end() ) {
-          std::string err( "unknown option " );
-          err += nm;
-          throw std::invalid_argument( err );
-        } /* else if ( (*i)->type() != typeid(v) ) { // this branch not useful...
-          throw std::domain_error( "invalid type" );
-          } else */
-        return (*i)->assign( v );
+      { 
+        try {
+          return (*find( nm ))->assign( v );
+        }
+        catch ( std::domain_error& err ) {
+          std::string _err( err.what() );
+          _err += " for option ";
+          _err += nm;
+          throw std::domain_error( _err );
+        }
       }
+    bool is( const char *nm ) const;
 
     void print_help( std::ostream& s );
     void copyright( const char * );
@@ -221,6 +230,10 @@ class Argv
     std::string _announce;
     std::string _stop_opt;
     std::string _args;
+
+  private:
+    opt_container_type::const_iterator find( const char *nm ) const;
+    opt_container_type::iterator find( const char *nm );
 };
 
 class ArgsParser
