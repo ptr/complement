@@ -1,3 +1,8 @@
+2002-08-03  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* libDB: Insert DB support in 'explore' source tree;
+	version 0.6.2. Candidate for version 1.0.0.
+
 2001-08-15  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
 
 	* xxSQL.cc (Repository): Added version in DB-specific library name.  
