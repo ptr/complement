@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <02/11/29 23:44:14 ptr>
+# -*- makefile -*- Time-stamp: <02/12/02 12:49:02 ptr>
 # $Id$
 
 BASEDIR := $(shell xtmp=`pwd`; xtmp=`dirname $$xtmp`; xtmp=`dirname $$xtmp`; dirname $$xtmp)
@@ -18,14 +18,9 @@ include ${BASEDIR}/Makefiles/app/Makefile.inc
 INCLUDES +=
 DEFS += 
 
-LDLIBS =
-LDLIBS += -lrt
-
-dbg-shared : LDLIBS += 
-
-stldbg-shared : LDLIBS += 
-
-release-shared : LDLIBS += 
+ifeq ($(OS_VER),SunOS)
+LDLIBS = -lrt
+endif
 
 FORCE:
 
