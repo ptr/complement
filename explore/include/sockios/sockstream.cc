@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/08/19 15:00:38 ptr>
+// -*- C++ -*- Time-stamp: <99/09/02 21:50:39 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -283,12 +283,14 @@ basic_sockbuf<charT, traits>::underflow()
   // (and more: with MS's ios buffers and MT_UNLOCK/MT_LOCK this
   // shouldn't work) while with my ones it's required
 
-  MT_UNLOCK( __locker() ); // <----
+  // !!!! If use native MS iostreams, comment three lines <---- i below !!!
+
+  __locker()._M_release_lock();   // <---- 1
   if ( select( fd() + 1, &pfd, 0, 0, 0 ) <= 0 ) {
-    MT_LOCK( __locker() ); // <----
+    __locker()._M_acquire_lock(); // <---- 2
     return traits::eof();
   }
-  MT_LOCK( __locker() );   // <----
+  __locker()._M_acquire_lock();   // <---- 3
 #else
   pollfd pfd;
   pfd.fd = fd();
