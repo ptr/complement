@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/03/19 19:20:46 ptr>
+// -*- C++ -*- Time-stamp: <01/06/04 17:45:53 ptr>
 
 /*
  *
@@ -209,7 +209,7 @@ class sockmgr_stream :
     _Compare  _M_comp;
     // __impl::Mutex _c_lock;
     // __STLPORT_STD::_STL_mutex_lock _c_lock;
-    _STL_mutex _c_lock;
+    _STLP_mutex _c_lock;
 };
 
 // Policy: multiplex all clients connections in one thread
@@ -277,7 +277,7 @@ class sockmgr_stream_MP : // multiplexor
     _Sequence _M_c;
     _Compare  _M_comp;
     in_buf_avail _M_av;
-    _STL_mutex _c_lock;
+    _STLP_mutex _c_lock;
 
 #ifdef __unix
     pollfd *_pfd;
