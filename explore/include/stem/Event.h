@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/04/14 19:44:55 ptr>
+// -*- C++ -*- Time-stamp: <99/05/12 15:00:52 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -24,7 +24,6 @@ class __Event_Base
   public:
     typedef unsigned code_type;
     typedef unsigned key_type;
-    typedef unsigned sq_type;
     typedef size_t   size_type;
     
     enum {
@@ -44,28 +43,19 @@ class __Event_Base
     __Event_Base() :
         _code( 0 ),
         _dst( 0 ),
-        _src( 0 ),
-        _sid( 0 ),
-        _sqn( 0 ),
-        _rsqn( 0 )
+        _src( 0 )
       { }
 
     explicit __Event_Base( code_type c ) :
         _code( c ),
         _dst( 0 ),
-        _src( 0 ),
-        _sid( 0 ),
-        _sqn( 0 ),
-        _rsqn( 0 )        
+        _src( 0 )
       { }
 
     explicit __Event_Base( const __Event_Base& e ) :
         _code( e._code ),
         _dst( e._dst ),
-        _src( e._src ),
-        _sid( e._sid ),
-        _sqn( e._sqn ),
-        _rsqn( e._rsqn ) // ! not _rsqn
+        _src( e._src )
       { }
 
     code_type code() const
@@ -74,14 +64,6 @@ class __Event_Base
       { return _dst; }
     key_type src() const
       { return _src; }
-    key_type sid() const
-      { return _sid; }
-    sq_type seq() const
-      { return _sqn; }
-    sq_type responce() const
-      { return _rsqn; }
-    bool is_responce() const
-      { return _rsqn != 0; }
     bool is_from_foreign() const
       { return (_src & extbit) != 0; }
     bool is_to_foreign() const
@@ -93,20 +75,11 @@ class __Event_Base
       { _dst = c; }
     void src( key_type c )
       { _src = c; }
-    void seq( sq_type c )
-      { _sqn = c; }
-    void responce( sq_type c )
-      { _rsqn = c; }
-    void sid( key_type c )
-      { _sid = c; }
 
   protected:
     code_type _code; // event code
     key_type  _dst;  // destination
     key_type  _src;  // source
-    key_type  _sid;  // session ID
-    sq_type   _sqn;  // sequential number
-    sq_type   _rsqn; // responce to number
 
     friend class NetTransport_base;
     friend class NetTransportMgr;
@@ -191,8 +164,6 @@ class Event_base :
       { return _data; }
     reference value()
       { return _data; }
-    void value( const D& d )
-      { _data = d; }
     size_type value_size() const
       { return sizeof(_data); }
 
@@ -201,12 +172,9 @@ class Event_base :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         net_pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void net_unpack( const Event& s )
@@ -214,9 +182,6 @@ class Event_base :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         net_unpack( std::stringstream( s.value() ) );
       }
 
@@ -225,12 +190,9 @@ class Event_base :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void unpack( const Event& s )
@@ -238,9 +200,6 @@ class Event_base :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         unpack( std::stringstream( s.value() ) );
       }
 
@@ -340,8 +299,6 @@ class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<
       { return _data; }
     reference value()
       { return _data; }
-    void value( const std::string& d )
-      { _data = d; }
     size_type value_size() const
       { return _data.size(); }
 
@@ -350,10 +307,7 @@ class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
-        s.value( _data );
+        s.value() = _data;
       }
 
     void net_unpack( const Event& s )
@@ -361,9 +315,6 @@ class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         _data = s.value();
       }
 
@@ -372,10 +323,7 @@ class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
-        s.value( _data );
+        s.value() = _data;
       }
 
     void unpack( const Event& s )
@@ -383,9 +331,6 @@ class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         _data = s.value();
       }
 
@@ -432,10 +377,7 @@ class Event_base<void> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
-        s.value( std::string() );
+        s.value().erase();
       }
 
     void net_unpack( const Event& s )
@@ -443,9 +385,6 @@ class Event_base<void> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
       }
 
     void pack( Event& s ) const
@@ -453,10 +392,7 @@ class Event_base<void> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
-        s.value( std::string() );
+        s.value().erase();
       }
 
     void unpack( const Event& s )
@@ -464,9 +400,6 @@ class Event_base<void> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
       }
 
     void pack( std::ostream& ) const

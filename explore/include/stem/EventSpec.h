@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/04/01 14:45:35 ptr>
+// -*- C++ -*- Time-stamp: <99/05/12 14:17:19 ptr>
 
 // Only for MS VC!
 // NEVER direct include!
@@ -40,8 +40,6 @@ class Event_base<short> :
       { return _data; }
     reference value()
       { return _data; }
-    void value( const short& d )
-      { _data = d; }
     size_type value_size() const
       { return sizeof(_data); }
 
@@ -50,12 +48,9 @@ class Event_base<short> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         net_pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void net_unpack( const Event& s )
@@ -63,9 +58,6 @@ class Event_base<short> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         net_unpack( std::stringstream( s.value() ) );
       }
 
@@ -74,12 +66,9 @@ class Event_base<short> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void unpack( const Event& s )
@@ -87,9 +76,6 @@ class Event_base<short> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         unpack( std::stringstream( s.value() ) );
       }
 
@@ -148,8 +134,6 @@ class Event_base<unsigned short> :
       { return _data; }
     reference value()
       { return _data; }
-    void value( const unsigned short& d )
-      { _data = d; }
     size_type value_size() const
       { return sizeof(_data); }
 
@@ -158,12 +142,9 @@ class Event_base<unsigned short> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         net_pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void net_unpack( const Event& s )
@@ -171,9 +152,6 @@ class Event_base<unsigned short> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         net_unpack( std::stringstream( s.value() ) );
       }
 
@@ -182,12 +160,9 @@ class Event_base<unsigned short> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void unpack( const Event& s )
@@ -195,9 +170,6 @@ class Event_base<unsigned short> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         unpack( std::stringstream( s.value() ) );
       }
 
@@ -256,8 +228,6 @@ class Event_base<int> :
       { return _data; }
     reference value()
       { return _data; }
-    void value( const int& d )
-      { _data = d; }
     size_type value_size() const
       { return sizeof(_data); }
 
@@ -266,12 +236,9 @@ class Event_base<int> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         net_pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void net_unpack( const Event& s )
@@ -279,9 +246,6 @@ class Event_base<int> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         net_unpack( std::stringstream( s.value() ) );
       }
 
@@ -290,12 +254,9 @@ class Event_base<int> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void unpack( const Event& s )
@@ -303,9 +264,6 @@ class Event_base<int> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         unpack( std::stringstream( s.value() ) );
       }
 
@@ -364,8 +322,6 @@ class Event_base<unsigned> :
       { return _data; }
     reference value()
       { return _data; }
-    void value( const unsigned& d )
-      { _data = d; }
     size_type value_size() const
       { return sizeof(_data); }
 
@@ -374,12 +330,9 @@ class Event_base<unsigned> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         net_pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void net_unpack( const Event& s )
@@ -387,9 +340,6 @@ class Event_base<unsigned> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         net_unpack( std::stringstream( s.value() ) );
       }
 
@@ -398,12 +348,9 @@ class Event_base<unsigned> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void unpack( const Event& s )
@@ -411,9 +358,6 @@ class Event_base<unsigned> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         unpack( std::stringstream( s.value() ) );
       }
 
@@ -472,8 +416,6 @@ class Event_base<long> :
       { return _data; }
     reference value()
       { return _data; }
-    void value( const long& d )
-      { _data = d; }
     size_type value_size() const
       { return sizeof(_data); }
 
@@ -482,12 +424,9 @@ class Event_base<long> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         net_pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void net_unpack( const Event& s )
@@ -495,9 +434,6 @@ class Event_base<long> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         net_unpack( std::stringstream( s.value() ) );
       }
 
@@ -506,12 +442,9 @@ class Event_base<long> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void unpack( const Event& s )
@@ -519,9 +452,6 @@ class Event_base<long> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         unpack( std::stringstream( s.value() ) );
       }
 
@@ -580,8 +510,6 @@ class Event_base<unsigned long> :
       { return _data; }
     reference value()
       { return _data; }
-    void value( const unsigned long& d )
-      { _data = d; }
     size_type value_size() const
       { return sizeof(_data); }
 
@@ -590,12 +518,9 @@ class Event_base<unsigned long> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         net_pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void net_unpack( const Event& s )
@@ -603,9 +528,6 @@ class Event_base<unsigned long> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         net_unpack( std::stringstream( s.value() ) );
       }
 
@@ -614,12 +536,9 @@ class Event_base<unsigned long> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void unpack( const Event& s )
@@ -627,9 +546,6 @@ class Event_base<unsigned long> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         unpack( std::stringstream( s.value() ) );
       }
 
@@ -688,8 +604,6 @@ class Event_base<char> :
       { return _data; }
     reference value()
       { return _data; }
-    void value( const char& d )
-      { _data = d; }
     size_type value_size() const
       { return sizeof(_data); }
 
@@ -698,12 +612,9 @@ class Event_base<char> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         net_pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void net_unpack( const Event& s )
@@ -711,9 +622,6 @@ class Event_base<char> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         net_unpack( std::stringstream( s.value() ) );
       }
 
@@ -722,12 +630,9 @@ class Event_base<char> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void unpack( const Event& s )
@@ -735,9 +640,6 @@ class Event_base<char> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         unpack( std::stringstream( s.value() ) );
       }
 
@@ -796,8 +698,6 @@ class Event_base<unsigned char> :
       { return _data; }
     reference value()
       { return _data; }
-    void value( const unsigned char& d )
-      { _data = d; }
     size_type value_size() const
       { return sizeof(_data); }
 
@@ -806,12 +706,9 @@ class Event_base<unsigned char> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         net_pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void net_unpack( const Event& s )
@@ -819,9 +716,6 @@ class Event_base<unsigned char> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         net_unpack( std::stringstream( s.value() ) );
       }
 
@@ -830,12 +724,9 @@ class Event_base<unsigned char> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void unpack( const Event& s )
@@ -843,9 +734,6 @@ class Event_base<unsigned char> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         unpack( std::stringstream( s.value() ) );
       }
 
@@ -904,8 +792,6 @@ class Event_base<signed char> :
       { return _data; }
     reference value()
       { return _data; }
-    void value( const signed char& d )
-      { _data = d; }
     size_type value_size() const
       { return sizeof(_data); }
 
@@ -914,12 +800,9 @@ class Event_base<signed char> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         net_pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void net_unpack( const Event& s )
@@ -927,9 +810,6 @@ class Event_base<signed char> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         net_unpack( std::stringstream( s.value() ) );
       }
 
@@ -938,12 +818,9 @@ class Event_base<signed char> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        s.sid( _sid );
-        s.seq( _sqn );
-        s.responce( _rsqn );
         std::stringstream ss;
         pack( ss );
-        s.value( ss.str() );
+        s.value() = ss.str();
       }
 
     void unpack( const Event& s )
@@ -951,9 +828,6 @@ class Event_base<signed char> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        _sid  = s.sid();
-        _sqn  = s.seq();
-        _rsqn = s.responce();
         unpack( std::stringstream( s.value() ) );
       }
 
