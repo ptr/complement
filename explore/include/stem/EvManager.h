@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/10/08 18:26:21 ptr>
+// -*- C++ -*- Time-stamp: <96/10/11 14:17:06 ptr>
 #ifndef __EDS_EvManager_h
 #define __EDS_EvManager_h
 
@@ -54,8 +54,6 @@ class EDSEvManager :
 
     ~EDSEvManager()
       { }
-
-    void Register( unsigned long, OXWEventsCore * );
 
     void push(const value_type& x)
       {
