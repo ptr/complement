@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/12/24 14:09:24 ptr>
+// -*- C++ -*- Time-stamp: <00/02/16 15:05:02 ptr>
 
 /*
  *
@@ -197,19 +197,30 @@ int Cron::_loop( void *p )
       Event ev( en.code );
       ev.dest( en.addr );
       me.Send( ev );
-     
+
+#ifndef __STL_LONG_LONG     
       double _next = en.start.tv_sec + en.start.tv_nsec * 1.0e-9 +
         (en.period.tv_sec + en.period.tv_nsec * 1.0e-9) * ++en.count;
       en.expired.tv_nsec = 1.0e9 * modf( _next, &_next );
       en.expired.tv_sec = _next;
+#else
+      long long _d = en.period.tv_nsec;
+      _d *= ++en.count;
+      _d += en.start.tv_nsec;
+      en.expired.tv_sec = en.period.tv_sec;
+      en.expired.tv_sec *= en.count;
+      en.expired.tv_sec += en.start.tv_sec;
+      en.expired.tv_sec += unsigned(_d / 1000000000);
+      en.expired.tv_nsec = unsigned(_d % 1000000000);
+#endif
 
-      if ( (en.count) < (en.n) ) { // This SC5.0 patch 107312-06 bug
-        MT_REENTRANT( me._M_l, _1 );
-        me._M_c.push( en );
-      } else if ( en.n == CronEntry::infinite ) {
+      if ( en.n == CronEntry::infinite ) {
         en.start.tv_sec = en.expired.tv_sec;
         en.start.tv_nsec = en.expired.tv_nsec;        
         en.count = 0;
+        MT_REENTRANT( me._M_l, _1 );
+        me._M_c.push( en );
+      } else if ( (en.count) < (en.n) ) { // This SC5.0 patch 107312-06 bug
         MT_REENTRANT( me._M_l, _1 );
         me._M_c.push( en );
       } else {
