@@ -42,6 +42,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/RectObject.o \
 		$(OUTPUT_DIR)/WindowBase.o \
 		$(OUTPUT_DIR)/Window.o \
+		$(OUTPUT_DIR)/GrWindow.o \
 		$(OUTPUT_DIR)/Collector.o \
 		$(OUTPUT_DIR)/DrawTools.o \
 		$(OUTPUT_DIR)/TopLevel.o \
