@@ -7,6 +7,11 @@ INCLUDES :=
 CXX := c++
 CC := gcc
 
+ifdef TARGET_OS
+CXX := ${TARGET_OS}-c++
+CC := ${TARGET_OS}-gcc
+endif
+
 DEFS ?=
 OPT ?=
 
