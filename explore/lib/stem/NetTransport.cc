@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 16:46:03 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:38:03 ptr>
 
 /*
  *
@@ -22,16 +22,6 @@
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4804 )
-#endif
-
-#ifdef WIN32
-#  ifdef _DLL
-#    define __EDS_DLL __declspec( dllexport )
-#  else
-#    define __EDS_DLL
-#  endif
-#else
-#  define __EDS_DLL
 #endif
 
 #include <config/feature.h>
@@ -75,7 +65,7 @@ using namespace std;
 #endif
 
 
-__EDS_DLL
+__PG_DECLSPEC
 void dump( __STD::ostream& o, const EDS::Event& e )
 {
   MT_IO_REENTRANT( o )
@@ -117,7 +107,7 @@ void dump( __STD::ostream& o, const EDS::Event& e )
   }
 }
 
-__EDS_DLL EvSessionManager NetTransport_base::smgr;
+__PG_DECLSPEC EvSessionManager NetTransport_base::smgr;
 
 void NetTransport_base::disconnect()
 {
@@ -142,12 +132,12 @@ void NetTransport_base::disconnect()
   }
 }
 
-__EDS_DLL NetTransport_base::~NetTransport_base()
+__PG_DECLSPEC NetTransport_base::~NetTransport_base()
 {
   NetTransport_base::close();
 }
 
-__EDS_DLL void NetTransport_base::close()
+__PG_DECLSPEC void NetTransport_base::close()
 {
   if ( net != 0 ) {
     manager()->Remove( this );
@@ -231,7 +221,7 @@ bool NetTransport_base::pop( Event& _rs )
 }
 
 
-__EDS_DLL
+__PG_DECLSPEC
 bool NetTransport_base::push( const Event& _rs )
 {
   __stl_assert( net != 0 );
@@ -272,7 +262,7 @@ bool NetTransport_base::push( const Event& _rs )
   return net->good();
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void NetTransport::connect( sockstream& s )
 {
   const string& hostname = s.rdbuf()->hostname();
@@ -315,7 +305,7 @@ void NetTransport::connect( sockstream& s )
 
 // connect initiator (client) function
 
-__EDS_DLL
+__PG_DECLSPEC
 NetTransportMgr::~NetTransportMgr()
 {
   if ( net ) {
@@ -327,7 +317,7 @@ NetTransportMgr::~NetTransportMgr()
   net = 0;
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 addr_type NetTransportMgr::open( const char *hostname, int port,
                                  __STD::sock_base::stype stype )
 {
@@ -371,7 +361,7 @@ int NetTransportMgr::_loop( void *p )
   return 0;  
 }
 
-__EDS_DLL addr_type NetTransportMgr::make_map( addr_type k, const char *name )
+__PG_DECLSPEC addr_type NetTransportMgr::make_map( addr_type k, const char *name )
 {
   string full_name = name;
   full_name += __at;
@@ -380,7 +370,7 @@ __EDS_DLL addr_type NetTransportMgr::make_map( addr_type k, const char *name )
   return rar_map( k, full_name );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void NetTransportMP::connect( sockstream& s )
 {
   const string& hostname = s.rdbuf()->hostname();

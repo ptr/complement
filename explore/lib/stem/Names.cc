@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 16:46:30 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:37:34 ptr>
 
 /*
  *
@@ -24,44 +24,29 @@
 #pragma warning( disable : 4804 )
 #endif
 
-#ifdef WIN32
-#  ifdef _DLL
-#    define __EDS_DLL __declspec( dllexport )
-#  else
-#    define __EDS_DLL
-#  endif
-#else
-#  define __EDS_DLL
-#endif
-
 #include <config/feature.h>
 #include "EDS/Names.h"
 #include "EDS/EvManager.h"
 #include "EDS/EDSEv.h"
 
-#if defined( WIN32 ) && defined( _MSC_VER )
-#  undef __EDS_DLL_EXPORT
-#  define __EDS_DLL_EXPORT __EDS_DLL
-#endif
-
 namespace EDS {
 
-__EDS_DLL Names::Names() :
+__PG_DECLSPEC Names::Names() :
     EventHandler()
 {
 }
 
-__EDS_DLL Names::Names( const char *info ) :
+__PG_DECLSPEC Names::Names( const char *info ) :
     EventHandler( info )
 {
 }
 
-__EDS_DLL Names::Names( addr_type id, const char *info ) :
+__PG_DECLSPEC Names::Names( addr_type id, const char *info ) :
     EventHandler( id, info )
 {
 }
 
-void __EDS_DLL Names::get_list( const Event& rq )
+void __PG_DECLSPEC Names::get_list( const Event& rq )
 {
   Event_base<NameRecord> rs( EV_EDS_NM_LIST );
 
@@ -85,7 +70,7 @@ void __EDS_DLL Names::get_list( const Event& rq )
   Send( Event_convert<NameRecord>()( rs ) );
 }
 
-void __EDS_DLL Names::get_ext_list( const Event& rq )
+void __PG_DECLSPEC Names::get_ext_list( const Event& rq )
 {
   Event_base<NameRecord> rs( EV_EDS_NM_LIST );
 
@@ -109,7 +94,7 @@ void __EDS_DLL Names::get_ext_list( const Event& rq )
   Send( Event_convert<NameRecord>()( rs ) );
 }
 
-void __EDS_DLL Names::get_by_name( const Event& rq )
+void __PG_DECLSPEC Names::get_by_name( const Event& rq )
 {
   Event_base<NameRecord> rs( EV_EDS_NS_ADDR );
 
@@ -134,28 +119,28 @@ void __EDS_DLL Names::get_by_name( const Event& rq )
   Send( Event_convert<NameRecord>()( rs ) );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void NameRecord::pack( __STD::ostream& s ) const
 {
   __pack( s, addr );
   __pack( s, record );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void NameRecord::net_pack( __STD::ostream& s ) const
 {
   __net_pack( s, addr );
   __net_pack( s, record );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void NameRecord::unpack( __STD::istream& s )
 {
   __unpack( s, addr );
   __unpack( s, record );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void NameRecord::net_unpack( __STD::istream& s )
 {
   __net_unpack( s, addr );

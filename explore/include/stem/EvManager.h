@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 16:43:08 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:43:07 ptr>
 
 /*
  *
@@ -109,22 +109,22 @@ class EvManager
     typedef __STD::map<key_type,__Object_Entry> heap_type;
     typedef __STD::queue< Event > queue_type;
 
-    __EDS_DLL EvManager();
-    __EDS_DLL ~EvManager();
+    __PG_DECLSPEC EvManager();
+    __PG_DECLSPEC ~EvManager();
 
-    __EDS_DLL addr_type Subscribe( EventHandler *object, const __STD::string& info );
-    __EDS_DLL addr_type Subscribe( EventHandler *object, const char *info = 0 );
-    __EDS_DLL addr_type SubscribeID( addr_type id, EventHandler *object,
+    __PG_DECLSPEC addr_type Subscribe( EventHandler *object, const __STD::string& info );
+    __PG_DECLSPEC addr_type Subscribe( EventHandler *object, const char *info = 0 );
+    __PG_DECLSPEC addr_type SubscribeID( addr_type id, EventHandler *object,
                                     const __STD::string& info );
-    __EDS_DLL addr_type SubscribeID( addr_type id, EventHandler *object,
+    __PG_DECLSPEC addr_type SubscribeID( addr_type id, EventHandler *object,
                                     const char *info = 0 );
-    __EDS_DLL addr_type SubscribeRemote( NetTransport_base *channel,
+    __PG_DECLSPEC addr_type SubscribeRemote( NetTransport_base *channel,
                                          addr_type rmkey,
                                          const __STD::string& info );
-    __EDS_DLL addr_type SubscribeRemote( NetTransport_base *channel,
+    __PG_DECLSPEC addr_type SubscribeRemote( NetTransport_base *channel,
                                          addr_type rmkey,
                                          const char *info = 0 );
-    __EDS_DLL bool Unsubscribe( addr_type id );
+    __PG_DECLSPEC bool Unsubscribe( addr_type id );
 
     bool is_avail( addr_type id ) const
       { return heap.find( id ) != heap.end(); }
@@ -141,8 +141,8 @@ class EvManager
         return i == heap.end() ? inv_key_str : (*i).second.info;
       }
 
-    __EDS_DLL key_type sid( addr_type object_id ) const;
-    __EDS_DLL NetTransport_base *transport( addr_type object_id ) const;
+    __PG_DECLSPEC key_type sid( addr_type object_id ) const;
+    __PG_DECLSPEC NetTransport_base *transport( addr_type object_id ) const;
 
     void push( const Event& e )
       {

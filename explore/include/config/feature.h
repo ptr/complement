@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/24 13:00:39 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:58:49 ptr>
 
 
 /*
@@ -85,6 +85,30 @@
 #elif (__USE_SGI_STL_PORT == 0x321) && defined(_MSC_VER)
 #  define __STL_USE_NEW_IOSTREAMS
 #  define __STLPORT_NEW_IOSTREAMS 
+#endif
+
+#if defined( WIN32 ) && !defined(__PG_USE_STATIC_LIB) && !defined(_LIB)
+#  undef  __PG_USE_DECLSPEC
+#  define __PG_USE_DECLSPEC
+#else
+#  undef  __PG_USE_DECLSPEC
+#endif
+
+#if (defined (__DLL) || defined (_DLL) || defined (_WINDLL) )
+#  undef  __PG_DLL
+#  define __PG_DLL
+#else 
+#  undef  __PG_DLL
+#endif
+
+#ifdef __PG_USE_DECLSPEC /* using export/import technique */
+#  ifdef __PG_DLL
+#    define __PG_DECLSPEC   __declspec( dllexport )
+#  else
+#    define __PG_DECLSPEC   __declspec( dllimport )
+#  endif
+#else
+#  define __PG_DECLSPEC
 #endif
 
 /*

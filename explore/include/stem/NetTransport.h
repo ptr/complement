@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 16:45:05 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:49:03 ptr>
 
 /*
  *
@@ -51,17 +51,9 @@
 #include <EDS/EventHandler.h>
 #endif
 
-#ifndef __EDS_DLL
-#  if defined( WIN32 ) && defined( _MSC_VER )
-#    define __EDS_DLL __declspec( dllimport )
-#  else
-#    define __EDS_DLL
-#  endif
-#endif
-
 namespace EDS {
 
-extern __EDS_DLL void dump( __STD::ostream&, const EDS::Event& );
+extern __PG_DECLSPEC void dump( __STD::ostream&, const EDS::Event& );
 
 class NetTransport_base :
     public EventHandler // to avoid dependence from creation order
@@ -86,7 +78,7 @@ class NetTransport_base :
         _net_ns( badaddr )
       { }
 
-    __EDS_DLL ~NetTransport_base();
+    __PG_DECLSPEC ~NetTransport_base();
 
     bool fail() const
       { return net == 0 ? false : net->fail(); }
@@ -96,9 +88,9 @@ class NetTransport_base :
       { return net == 0 || net->bad(); }
     bool is_open() const
       { return net != 0 && net->is_open(); }
-    __EDS_DLL void close();
+    __PG_DECLSPEC void close();
 
-    __EDS_DLL
+    __PG_DECLSPEC
     bool push( const Event& );
 
 
@@ -135,7 +127,7 @@ class NetTransport_base :
     heap_type rar; // reverce address resolution table
     __impl::Mutex  _lock;
     addr_type _net_ns; // reflection of address of remote name service
-    static __EDS_DLL EvSessionManager smgr;
+    static __PG_DECLSPEC EvSessionManager smgr;
 };
 
 class NetTransport :
@@ -146,7 +138,7 @@ class NetTransport :
         NetTransport_base( "EDS::NetTransport" )
       { }
 
-    __EDS_DLL
+    __PG_DECLSPEC
     void connect( __STD::sockstream& );
 };
 
@@ -158,16 +150,16 @@ class NetTransportMgr :
         NetTransport_base( "EDS::NetTransportMgr" )
       { }
 
-    __EDS_DLL
+    __PG_DECLSPEC
     ~NetTransportMgr();
 
-    __EDS_DLL
+    __PG_DECLSPEC
     addr_type open( const char *hostname, int port,
                     __STD::sock_base::stype stype = __STD::sock_base::sock_stream );
     int join()
       { return _thr.join(); }
 
-    __EDS_DLL addr_type make_map( addr_type k, const char *name );
+    __PG_DECLSPEC addr_type make_map( addr_type k, const char *name );
 
   protected:
     static int _loop( void * );
@@ -182,7 +174,7 @@ class NetTransportMP :
         NetTransport_base( "EDS::NetTransportMP" )
       { }
 
-    __EDS_DLL
+    __PG_DECLSPEC
     void connect( __STD::sockstream& );
 };
 

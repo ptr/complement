@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 15:39:32 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:52:47 ptr>
 
 /*
  *
@@ -24,23 +24,13 @@
 #pragma warning( disable : 4804 )
 #endif
 
-#ifdef WIN32
-#  ifdef _DLL
-#    define __SOCKIOS_DLL __declspec( dllexport )
-#  else
-#    define __SOCKIOS_DLL
-#  endif
-#else
-#  define __SOCKIOS_DLL
-#endif
-
 #include <config/feature.h>
 #include <cerrno>
 #include <sockios/sockmgr.h>
 
 __STL_BEGIN_NAMESPACE
 
-__SOCKIOS_DLL
+__PG_DECLSPEC
 void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol prot )
 {
   if ( is_open() ) {
@@ -116,7 +106,7 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
   return;
 }
 
-__SOCKIOS_DLL
+__PG_DECLSPEC
 void basic_sockmgr::close()
 {
   if ( !is_open() ) {

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 16:48:10 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:35:17 ptr>
 
 /*
  *
@@ -22,16 +22,6 @@
 #pragma warning( disable : 4800 )
 #endif
 
-#ifdef WIN32
-#  ifdef _DLL
-#    define __EDS_DLL __declspec( dllexport )
-#  else
-#    define __EDS_DLL
-#  endif
-#else
-#  define __EDS_DLL
-#endif
-
 #include <config/feature.h>
 #include "EDS/Cron.h"
 #include "EDS/EvManager.h"
@@ -39,31 +29,26 @@
 
 #include <cmath>
 
-#if defined( WIN32 ) && defined( _MSC_VER )
-#  undef __EDS_DLL_EXPORT
-#  define __EDS_DLL_EXPORT __EDS_DLL
-#endif
-
 #define CRON_ST_STARTED 0x10
 
 namespace EDS {
 
-__EDS_DLL Cron::Cron() :
+__PG_DECLSPEC Cron::Cron() :
     EventHandler()
 {
 }
 
-__EDS_DLL Cron::Cron( const char *info ) :
+__PG_DECLSPEC Cron::Cron( const char *info ) :
     EventHandler( info )
 {
 }
 
-__EDS_DLL Cron::Cron( addr_type id, const char *info ) :
+__PG_DECLSPEC Cron::Cron( addr_type id, const char *info ) :
     EventHandler( id, info )
 {
 }
 
-__EDS_DLL Cron::~Cron()
+__PG_DECLSPEC Cron::~Cron()
 {
   if ( isState( CRON_ST_STARTED ) ) {
     Stop();
@@ -71,13 +56,13 @@ __EDS_DLL Cron::~Cron()
   _thr.join();
 }
 
-void __EDS_DLL Cron::AddFirst( const Event_base<CronEntry>& entry )
+void __PG_DECLSPEC Cron::AddFirst( const Event_base<CronEntry>& entry )
 {
   Add( entry );
   Start();
 }
 
-void __EDS_DLL Cron::Add( const Event_base<CronEntry>& entry )
+void __PG_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
 {
   const CronEntry& ne = entry.value();
   __CronEntry en;
@@ -111,7 +96,7 @@ void __EDS_DLL Cron::Add( const Event_base<CronEntry>& entry )
 }
 
 // Remove cron entry if recipient address and event code match to request
-void __EDS_DLL Cron::Remove( const Event_base<CronEntry>& entry )
+void __PG_DECLSPEC Cron::Remove( const Event_base<CronEntry>& entry )
 {
   MT_REENTRANT( _M_l, _1 );
   cond.signal(); // in any case, remove I something or not
@@ -134,7 +119,7 @@ void __EDS_DLL Cron::Remove( const Event_base<CronEntry>& entry )
   }
 }
 
-void __EDS_DLL Cron::Start()
+void __PG_DECLSPEC Cron::Start()
 {
   MT_REENTRANT( _M_l, _1 );
   if ( !_M_c.empty() ) { // start only if Cron queue not empty
@@ -142,18 +127,18 @@ void __EDS_DLL Cron::Start()
   }
 }
 
-void __EDS_DLL Cron::Stop()
+void __PG_DECLSPEC Cron::Stop()
 {
   PopState();
   cond.signal();
 }
 
-void __EDS_DLL Cron::EmptyStart()
+void __PG_DECLSPEC Cron::EmptyStart()
 {
   // do nothing
 }
 
-void __EDS_DLL Cron::EmptyStop()
+void __PG_DECLSPEC Cron::EmptyStop()
 {
   // do nothing
 }
@@ -256,7 +241,7 @@ DEFINE_RESPONSE_TABLE( Cron )
   EV_VOID(ST_NULL,EV_EDS_CRON_STOP,EmptyStop)
 END_RESPONSE_TABLE
 
-__EDS_DLL
+__PG_DECLSPEC
 void CronEntry::pack( __STD::ostream& s ) const
 {
   __pack( s, code );
@@ -266,7 +251,7 @@ void CronEntry::pack( __STD::ostream& s ) const
   __pack( s, n );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void CronEntry::net_pack( __STD::ostream& s ) const
 {
   __net_pack( s, code );
@@ -276,7 +261,7 @@ void CronEntry::net_pack( __STD::ostream& s ) const
   __net_pack( s, n );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void CronEntry::unpack( __STD::istream& s )
 {
   __unpack( s, code );
@@ -286,7 +271,7 @@ void CronEntry::unpack( __STD::istream& s )
   __unpack( s, n );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void CronEntry::net_unpack( __STD::istream& s )
 {
   __net_unpack( s, code );

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 17:15:22 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:51:54 ptr>
 
 /*
  *
@@ -46,14 +46,6 @@
 #include <poll.h>
 #endif
 
-#ifndef __SOCKIOS_DLL
-#  if defined( WIN32 ) && defined( _MSC_VER )
-#    define __SOCKIOS_DLL __declspec( dllimport )
-#  else
-#    define __SOCKIOS_DLL
-#  endif
-#endif
-
 using __impl::Thread;
 using __impl::Condition;
 
@@ -79,9 +71,9 @@ class basic_sockmgr :
     ~basic_sockmgr()
       { close(); }
 
-    __SOCKIOS_DLL void open( int port, sock_base::stype type, sock_base::protocol prot );
+    __PG_DECLSPEC void open( int port, sock_base::stype type, sock_base::protocol prot );
 
-    __SOCKIOS_DLL void close();
+    __PG_DECLSPEC void close();
 
     bool is_open() const
       { return _open; }

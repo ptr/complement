@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 16:54:46 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:42:18 ptr>
 
 /*
  *
@@ -41,19 +41,6 @@
 
 #include <queue>
 
-#ifndef __EDS_DLL
-#  if defined( WIN32 ) && defined( _MSC_VER )
-#    define __EDS_DLL __declspec( dllimport )
-#  else
-#    define __EDS_DLL
-#  endif
-#endif
-
-#if defined( WIN32 ) && defined( _MSC_VER )
-#  undef __EDS_DLL_EXPORT
-#  define __EDS_DLL_EXPORT __EDS_DLL
-#endif
-
 namespace EDS {
 
 #ifdef _WIN32
@@ -87,10 +74,10 @@ struct CronEntry :
     timespec period;
     unsigned n;
 
-    virtual __EDS_DLL void pack( __STD::ostream& s ) const;
-    virtual __EDS_DLL void net_pack( __STD::ostream& s ) const;
-    virtual __EDS_DLL void unpack( __STD::istream& s );
-    virtual __EDS_DLL void net_unpack( __STD::istream& s );
+    virtual __PG_DECLSPEC void pack( __STD::ostream& s ) const;
+    virtual __PG_DECLSPEC void net_pack( __STD::ostream& s ) const;
+    virtual __PG_DECLSPEC void unpack( __STD::istream& s );
+    virtual __PG_DECLSPEC void net_unpack( __STD::istream& s );
 };
 
 struct __CronEntry
@@ -164,20 +151,20 @@ class Cron :
     public EventHandler
 {
   public:
-    __EDS_DLL Cron();
-    explicit __EDS_DLL Cron( const char * );
-    explicit __EDS_DLL Cron( addr_type id, const char *info = 0 );
+    __PG_DECLSPEC Cron();
+    explicit __PG_DECLSPEC Cron( const char * );
+    explicit __PG_DECLSPEC Cron( addr_type id, const char *info = 0 );
 
-    __EDS_DLL ~Cron();
+    __PG_DECLSPEC ~Cron();
 
-    __EDS_DLL void Add( const Event_base<CronEntry>& );
-    __EDS_DLL void AddFirst( const Event_base<CronEntry>& );
-    __EDS_DLL void Remove( const Event_base<CronEntry>& );
-    __EDS_DLL void Start();
-    __EDS_DLL void Stop();
+    __PG_DECLSPEC void Add( const Event_base<CronEntry>& );
+    __PG_DECLSPEC void AddFirst( const Event_base<CronEntry>& );
+    __PG_DECLSPEC void Remove( const Event_base<CronEntry>& );
+    __PG_DECLSPEC void Start();
+    __PG_DECLSPEC void Stop();
 
-    __EDS_DLL void EmptyStart();
-    __EDS_DLL void EmptyStop();
+    __PG_DECLSPEC void EmptyStart();
+    __PG_DECLSPEC void EmptyStop();
 
   private:
     static int _loop( void * );
@@ -198,10 +185,5 @@ class Cron :
 };
 
 } // namespace EDS
-
-#if defined( WIN32 ) && defined( _MSC_VER )
-#  undef __EDS_DLL_EXPORT
-#  define __EDS_DLL_EXPORT
-#endif
 
 #endif // __Cron_h

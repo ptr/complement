@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/12/20 16:08:43 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:38:41 ptr>
 
 /*
  *
@@ -22,16 +22,6 @@
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4804 )
-#endif
-
-#ifdef WIN32
-#  ifdef _DLL
-#    define __EDS_DLL __declspec( dllexport )
-#  else
-#    define __EDS_DLL
-#  endif
-#else
-#  define __EDS_DLL
 #endif
 
 #include <config/feature.h>
@@ -71,45 +61,45 @@ EventHandler::Init::~Init()
   }
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 const string& EventHandler::who_is( addr_type k ) const
 {
   return _mgr->who_is( k );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 key_type EventHandler::sid( addr_type k ) const
 {
   return _mgr->sid( k );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void EventHandler::Send( const Event& e )
 {
   e.src( _id );
   _mgr->push( e );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void EventHandler::Send( const EventVoid& e )
 {
   e.src( _id );
   _mgr->push( EDS::Event_convert<void>()( e ) );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void EventHandler::Forward( const Event& e )
 {
   _mgr->push( e );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void EventHandler::Forward( const EventVoid& e )
 {
   _mgr->push( EDS::Event_convert<void>()( e ) );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void EventHandler::PushState( state_type state )
 {
   RemoveState( state );
@@ -117,14 +107,14 @@ void EventHandler::PushState( state_type state )
   theHistory.push_front( state );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 state_type EventHandler::State() const
 {
   MT_REENTRANT_SDS( _theHistory_lock, _1 );
   return theHistory.front();
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void EventHandler::PushTState( state_type state )
 {
   MT_REENTRANT_SDS( _theHistory_lock, _1 );
@@ -132,7 +122,7 @@ void EventHandler::PushTState( state_type state )
   theHistory.push_front( state );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void EventHandler::PopState()
 {
   MT_REENTRANT_SDS( _theHistory_lock, _1 );
@@ -142,7 +132,7 @@ void EventHandler::PopState()
   }
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void EventHandler::PopState( state_type state )
 {
   MT_REENTRANT_SDS( _theHistory_lock, _1 );
@@ -152,7 +142,7 @@ void EventHandler::PopState( state_type state )
   }
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void EventHandler::RemoveState( state_type state )
 {
   MT_REENTRANT_SDS( _theHistory_lock, _1 );
@@ -162,7 +152,7 @@ void EventHandler::RemoveState( state_type state )
   }
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 bool EventHandler::isState( state_type state ) const
 {
   MT_REENTRANT_SDS( _theHistory_lock, _1 );
@@ -208,7 +198,7 @@ const_h_iterator EventHandler::__find( state_type state ) const
 // Of cause, you can found this only if theHistory is a template with static
 // member (stl/list, for example).
 
-__EDS_DLL
+__PG_DECLSPEC
 EventHandler::EventHandler()// :
 //    theHistory( *(new HistoryContainer()) )
 {
@@ -217,7 +207,7 @@ EventHandler::EventHandler()// :
   _id = _mgr->Subscribe( this );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 EventHandler::EventHandler( const char *info )// :
 //    theHistory( *(new HistoryContainer()) )
 {
@@ -226,7 +216,7 @@ EventHandler::EventHandler( const char *info )// :
   _id = _mgr->Subscribe( this, info );
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 EventHandler::EventHandler( addr_type id, const char *info )// :
 //    theHistory( *(new HistoryContainer()) )
 {
@@ -239,7 +229,7 @@ EventHandler::EventHandler( addr_type id, const char *info )// :
 //  }
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 EventHandler::~EventHandler()
 {
 //  delete &theHistory;
@@ -247,7 +237,7 @@ EventHandler::~EventHandler()
   ((Init *)Init_buf)->~Init();
 }
 
-__EDS_DLL
+__PG_DECLSPEC
 void EventHandler::TraceStack( ostream& out ) const
 {
   MT_REENTRANT( _theHistory_lock, _1 );

@@ -1,14 +1,8 @@
-// -*- C++ -*- Time-stamp: <00/02/18 17:48:06 ptr>
+// -*- C++ -*- Time-stamp: <00/02/24 19:53:29 ptr>
 
 #ident "$SunId$ %Q%"
 
 #ifdef WIN32
-
-#  ifdef _DLL
-#    define __SOCKIOS_DLL __declspec( dllexport )
-#  else
-#    define __SOCKIOS_DLL
-#  endif
 
 #include <sockios/sockstream>
 
@@ -83,7 +77,7 @@ int WinVer()
   return WINDOWS_3_1;
 }
 
-__SOCKIOS_DLL
+__PG_DECLSPEC
 sock_base::Init::Init()
 {
   int __err = 0;
@@ -134,7 +128,7 @@ sock_base::Init::Init()
   }
 }
 
-__SOCKIOS_DLL
+__PG_DECLSPEC
 sock_base::Init::~Init()
 {
   int __tls_init_cnt = (int)TlsGetValue( __impl::__thr_key );
@@ -150,13 +144,13 @@ sock_base::Init::~Init()
   TlsSetValue( __impl::__thr_key, (void *)__tls_init_cnt );
 }
 
-__SOCKIOS_DLL
+__PG_DECLSPEC
 sock_base::sock_base()
 {
   new( __impl::__xbuff ) Init();
 }
 
-__SOCKIOS_DLL
+__PG_DECLSPEC
 sock_base::~sock_base()
 {
   reinterpret_cast<Init *>(__impl::__xbuff)->~Init();
