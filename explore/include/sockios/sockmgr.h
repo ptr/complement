@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/11/03 21:11:06 ptr>
+// -*- C++ -*- Time-stamp: <01/02/28 14:35:04 ptr>
 
 /*
  *
@@ -67,10 +67,9 @@ class basic_sockmgr :
 {
   public:
     basic_sockmgr() :
-	_open( false ),
 	_errno( 0 ),
 	_mode( ios_base::in | ios_base::out ),
-	_state( ios_base::failbit ),
+	_state( ios_base::goodbit ),
 	_fd( -1 )
       { }
 
@@ -82,13 +81,14 @@ class basic_sockmgr :
     __PG_DECLSPEC void close();
 
     bool is_open() const
-      { return _open; }
+      { return _fd != -1; }
     bool good() const
       { return _state == ios_base::goodbit; }
 
     sock_base::socket_type fd() const { return _fd;}
 
-    void shutdown( sock_base::shutdownflg dir );
+    // void shutdown( sock_base::shutdownflg dir );
+    __PG_DECLSPEC
     void setoptions( sock_base::so_t optname, bool on_off = true,
                      int __v = 0 );
 
@@ -98,7 +98,6 @@ class basic_sockmgr :
     unsigned long _state; // state flags
     int           _errno; // error state
     _xsockaddr    _address;
-    bool          _open;  // true if open
 };
 
 struct sockmgr_client

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/11 15:15:47 ptr>
+// -*- C++ -*- Time-stamp: <01/03/01 10:49:28 ptr>
 
 /*
  *
@@ -51,7 +51,7 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
   if ( prot == sock_base::inet ) {
     _fd = socket( PF_INET, type, 0 );
     if ( _fd == -1 ) {
-      _state |= sock_base::sockfailbit;
+      _state |= ios_base::failbit | ios_base::badbit;
 #ifdef WIN32
       _errno = WSAGetLastError();
 #else
@@ -59,51 +59,35 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
 #endif
       return;
     }
+    // _open = true;
     _address.inet.sin_family = AF_INET;
     _address.inet.sin_port = htons( port );
     _address.inet.sin_addr.s_addr = htons( INADDR_ANY );
-    int attempt = 0;
 
-    while ( ::bind( _fd, &_address.any, sizeof(_address) ) == -1 ) {
-#ifdef WIN32
-      _errno = WSAGetLastError();
-      if ( attempt++ == 10 || _errno != WSAEADDRINUSE )
-#else
-      _errno = errno;
-      if ( attempt++ == 10 || _errno != EADDRINUSE )
-#endif
-      {
-	_state |= sock_base::bindfailbit;
-#ifdef WIN32
-	::closesocket( _fd );
-#else
-	::close( _fd );
-#endif
-	return;
-      }
-#ifdef WIN32
-      ::Sleep( 20000 );
-#else
-      ::sleep( 20 );
-#endif
-    }	    
-    if ( attempt > 0 ) {
-      _errno = 0;
-#ifdef WIN32
-      WSASetLastError( 0 );
-#else
-      errno = 0;
-#endif
-    }
     if ( type == sock_base::sock_stream ||
 	 type == sock_base::sock_seqpacket ) {
-#ifndef __hpux
       // let's try reuse local address
       setoptions( sock_base::so_reuseaddr, true );
+    }
+
+    if ( ::bind( _fd, &_address.any, sizeof(_address) ) == -1 ) {
+#ifdef WIN32
+      _errno = WSAGetLastError();
 #else
-      // let's try reuse local address
-      setoptions( sock_base::so_reuseaddr, false );
+      _errno = errno;
 #endif
+      _state |= ios_base::failbit;
+#ifdef WIN32
+      ::closesocket( _fd );
+#else
+      ::close( _fd );
+#endif
+      _fd = -1;
+      return;
+    }
+
+    if ( type == sock_base::sock_stream ||
+	 type == sock_base::sock_seqpacket ) {
       // I am shure, this is socket of type SOCK_STREAM | SOCK_SEQPACKET,
       // so don't check return code from listen
       ::listen( _fd, SOMAXCONN );
@@ -115,7 +99,6 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
   }
   _state = ios_base::goodbit;
   _errno = 0; // if any
-  _open = true;
 
   return;
 }
@@ -126,16 +109,15 @@ void basic_sockmgr::close()
   if ( !is_open() ) {
     return;
   }
-  shutdown( sock_base::stop_in | sock_base::stop_out );
 #ifdef WIN32
   ::closesocket( _fd );
 #else
   ::close( _fd );
 #endif
   _fd = -1;
-  _open = false;
 }
 
+#if 0 // shutdown here has no sense
 void basic_sockmgr::shutdown( sock_base::shutdownflg dir )
 {
   if ( is_open() ) {
@@ -149,20 +131,23 @@ void basic_sockmgr::shutdown( sock_base::shutdownflg dir )
     }
   }
 }
+#endif // 0
 
+__PG_DECLSPEC
 void basic_sockmgr::setoptions( sock_base::so_t optname, bool on_off, int __v )
 {
 #ifdef __unix
   if ( is_open() ) {
     if ( optname != sock_base::so_linger ) {
-      if ( setsockopt( _fd, SOL_SOCKET, (int)optname, (const void *)&on_off,
-                       (socklen_t)sizeof(bool) ) != 0 ) {
-        _state |= sock_base::sockfailbit;
-#ifdef WIN32
+      int turn = on_off ? 1 : 0;
+      if ( setsockopt( _fd, SOL_SOCKET, (int)optname, (const void *)&turn,
+                       (socklen_t)sizeof(int) ) != 0 ) {
+        _state |= ios_base::failbit;
+#  ifdef WIN32
         _errno = WSAGetLastError();
-#else
+#  else
         _errno = errno;
-#endif
+#  endif
       }
     } else {
       linger l;
@@ -170,19 +155,19 @@ void basic_sockmgr::setoptions( sock_base::so_t optname, bool on_off, int __v )
       l.l_linger = __v;
       if ( setsockopt( _fd, SOL_SOCKET, (int)optname, (const void *)&l,
                        (socklen_t)sizeof(linger) ) != 0 ) {
-        _state |= sock_base::sockfailbit;
-#ifdef WIN32
+        _state |= ios_base::failbit;
+#  ifdef WIN32
         _errno = WSAGetLastError();
-#else
+#  else
         _errno = errno;
-#endif
+#  endif
       }
       
     }
   } else {
-    _state |= sock_base::sockfailbit;
+    _state |= ios_base::failbit;
   }
-#endif
+#endif // __unix
 }
 
 __STL_END_NAMESPACE
