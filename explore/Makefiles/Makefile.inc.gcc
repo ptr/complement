@@ -1,4 +1,4 @@
-# Time-stamp: <01/03/26 15:29:20 ptr>
+# Time-stamp: <02/08/26 15:35:11 ptr>
 # $Id$
 
 # .KEEP_STATE:
@@ -67,7 +67,8 @@ CPPFLAGS = $(DEFS) $(INCLUDES)
 ifeq ($(OS_VER),SunOS)
 CCFLAGS = -pthreads $(OPT)
 CFLAGS = -pthreads $(OPT)
-CXXFLAGS = -pthreads -nostdinc++ -fexceptions -fident $(OPT)
+# CXXFLAGS = -pthreads -nostdinc++ -fexceptions -fident $(OPT)
+CXXFLAGS = -pthreads  -fexceptions -fident $(OPT)
 endif
 
 ifeq ($(OS_VER),Linux)
