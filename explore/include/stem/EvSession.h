@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/29 14:44:43 ptr>
+// -*- C++ -*- Time-stamp: <99/04/06 16:45:02 ptr>
 #ifndef __EvSession_h
 #define __EvSession_h
 
@@ -9,6 +9,7 @@
 #include <sockstream>
 #include <map>
 #include <xmt.h>
+#include <Event.h>
 
 namespace EDS {
 
@@ -25,7 +26,8 @@ struct SessionInfo
         _un_to( 0 ),
         _lun_from( 0 ),
         _lun_to( 0 ),
-        _reconnect_cnt( 0 )
+        _reconnect_cnt( 0 ),
+        _control( Event::badaddr )
 //        _is_connected( true )
       {
         _start = connect();
@@ -73,6 +75,8 @@ struct SessionInfo
     time_t   _last;     // last access time
     unsigned _reconnect_cnt; // reconnection counter
     bool     _is_connected;  // true if on line now (for stream connection)
+
+    Event::key_type _control; // address of control object;
 
     // encoding / crypt info
     // ...
@@ -141,7 +145,9 @@ class SessionManager
                 __STL_DEFAULT_ALLOCATOR(T) > heap_type;
 
     SessionManager() :
-        _id( 0 )
+        _low( 0 ),
+        _high( 65535 ),
+        _id( _low )
       { }
 
     key_type create()
@@ -178,6 +184,8 @@ class SessionManager
 
   private:
     key_type create_unique();
+    const key_type _low;
+    const key_type _high;
     key_type _id;
     __impl::Mutex _lock;
 };
@@ -185,9 +193,6 @@ class SessionManager
 template <class T>
 SessionManager<T>::key_type SessionManager<T>::create_unique()
 {
-  const key_type _low  = 0;
-  const key_type _high = 65535;
-
 #ifndef _MSC_VER
   pair<heap_type::iterator,bool> ret;
 #else
