@@ -17,7 +17,7 @@ OPT = -g
 # OPT = -O4
 # OPT = -G -O4
 
-CCFLAGS = $(OPT) -cg92 +w -pic -pto -mt -sb
+CCFLAGS = $(OPT) -cg92 +w -PIC -pto -mt -sb
 CPPFLAGS = $(DEFS) $(INCLUDES)
 PROJECT_LIBS = -L../.. -lCLASS
 # LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm -ldl
@@ -54,6 +54,8 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/InfoField.o \
 		$(OUTPUT_DIR)/InfoPIBase.o \
 		$(OUTPUT_DIR)/InfoPI.o \
+		$(OUTPUT_DIR)/InfoIntPI.o \
+		$(OUTPUT_DIR)/InfoDatePI.o \
 		$(OUTPUT_DIR)/Money.o \
 		$(OUTPUT_DIR)/MoneyInfoPI.o \
 		$(OUTPUT_DIR)/ChMoneyInfoPI.o \
