@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/01/22 15:12:56 ptr>
+// -*- C++ -*- Time-stamp: <01/01/29 13:24:33 ptr>
 
 /*
  * Copyright (c) 1998
@@ -135,6 +135,32 @@ void __PG_DECLSPEC Cron::Remove( const Event_base<CronEntry>& entry )
   }
 }
 
+// Remove cron entry if recipient address and event code match to request
+// and arg the same
+void __PG_DECLSPEC Cron::RemoveArg( const Event_base<CronEntry>& entry )
+{
+  MT_REENTRANT( _M_l, _x1 );
+  cond.signal(); // in any case, remove I something or not
+
+  const CronEntry& ne = entry.value();
+  __STD::vector<value_type> tmp;
+
+  tmp.reserve( _M_c.size() );
+
+  while ( !_M_c.empty() ) {
+    if (  _M_c.top().addr != entry.src() || _M_c.top().code != ne.code 
+          || _M_c.top().arg != ne.arg ) {
+      tmp.push_back( _M_c.top() );
+    }
+    _M_c.pop();
+  }
+
+  while ( !tmp.empty() ) {
+    _M_c.push( tmp.back() );
+    tmp.pop_back();
+  }
+}
+
 void __PG_DECLSPEC Cron::Start()
 {
   MT_REENTRANT( _M_l, _x1 );
@@ -250,6 +276,7 @@ DEFINE_RESPONSE_TABLE( Cron )
   EV_Event_base_T_(ST_NULL,EV_EDS_CRON_ADD,AddFirst,CronEntry)
   EV_Event_base_T_(CRON_ST_STARTED,EV_EDS_CRON_ADD,Add,CronEntry)
   EV_Event_base_T_(ST_NULL,EV_EDS_CRON_REMOVE,Remove,CronEntry)
+  EV_Event_base_T_(ST_NULL,EV_EDS_CRON_REMOVE_ARG,RemoveArg,CronEntry)
   EV_VOID(ST_NULL,EV_EDS_CRON_START,Start)
   EV_VOID(CRON_ST_STARTED,EV_EDS_CRON_STOP,Stop)
   EV_VOID(CRON_ST_STARTED,EV_EDS_CRON_START,EmptyStart)

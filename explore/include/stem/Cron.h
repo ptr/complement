@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/01/12 15:58:53 ptr>
+// -*- C++ -*- Time-stamp: <01/01/29 13:24:16 ptr>
 
 /*
  * Copyright (c) 1998
@@ -178,6 +178,7 @@ class Cron :
     __PG_DECLSPEC void Add( const Event_base<CronEntry>& );
     __PG_DECLSPEC void AddFirst( const Event_base<CronEntry>& );
     __PG_DECLSPEC void Remove( const Event_base<CronEntry>& );
+    __PG_DECLSPEC void RemoveArg( const Event_base<CronEntry>& );
     __PG_DECLSPEC void Start();
     __PG_DECLSPEC void Stop();
 
