@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/18 18:19:33 ptr>
+// -*- C++ -*- Time-stamp: <99/12/24 14:09:24 ptr>
 
 /*
  *
@@ -173,6 +173,11 @@ int Cron::_loop( void *p )
     {
       MT_REENTRANT( me._M_l, _1 );
       if ( me._M_c.empty() ) {
+        timespec t;
+        t.tv_sec = 0;
+        t.tv_nsec = 10000000; // 10 ms
+        // make chance to PopState() from other thread...
+        __impl::Thread::sleep( &t );
         continue; // break?
       }
       abstime = me._M_c.top().expired;
