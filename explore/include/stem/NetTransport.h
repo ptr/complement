@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/10 15:36:52 ptr>
+// -*- C++ -*- Time-stamp: <00/09/28 15:30:32 ptr>
 
 /*
  *
@@ -131,7 +131,6 @@ class NetTransport_base :
     // indeed rar can be inside connect(), but SunPro's CC 5.0
     // to be very huffy about it.
     heap_type rar; // reverce address resolution table
-    __impl::Mutex  _lock;
     addr_type _net_ns; // reflection of address of remote name service
     static __PG_DECLSPEC EvSessionManager smgr;
 };

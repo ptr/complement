@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/10 15:29:53 ptr>
+// -*- C++ -*- Time-stamp: <00/09/28 14:52:29 ptr>
 
 /*
  *
@@ -225,14 +225,6 @@ void EvManager::Remove( NetTransport_base *channel )
     }
   }
 }
-
-#ifdef __hpux
-__PG_DECLSPEC
-void EvManager::StartEvQueue()
-{
-  _ev_queue_thr.launch( _Dispatch, this );
-}
-#endif
 
 // return session id of object with address 'id' if this is external
 // object; otherwise return -1;
