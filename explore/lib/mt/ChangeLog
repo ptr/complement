@@ -1,3 +1,8 @@
+2003-12-05  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xmt.cc: don't use pthread_atfork in __at_fork_child, this settings
+	already inherited; this shuld be checked for Solaris.
+
 2003-09-25  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* xmt.cc, xmt.h: add Thread state flags, intended to show
