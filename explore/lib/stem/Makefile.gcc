@@ -24,12 +24,26 @@ include ${BASEDIR}/lib/Makefile.inc.lib
 
 INCLUDES += -I$(BASEDIR)/include
 
+ifeq ($(OS_VER),SunOS)
 release-shared:	LDSEARCH = -L../mt/$(OUTPUT_DIR) \
 		           -L../sockios/$(OUTPUT_DIR) 
 stldbg-shared:	LDSEARCH = -L../mt/$(OUTPUT_DIR_STLDBG) \
 			   -L../sockios/$(OUTPUT_DIR_STLDBG)
 dbg-shared:	LDSEARCH = -L../mt/$(OUTPUT_DIR_DBG) \
 			   -L../sockios/$(OUTPUT_DIR_DBG)
+endif
+
+ifeq ($(OS_VER),Linux)
+release-shared:	LDSEARCH = -L../mt/$(OUTPUT_DIR) \
+			   -L../sockios/$(OUTPUT_DIR) \
+                           -L$(BASEDIR)/../STLport/lib
+stldbg-shared:	LDSEARCH = -L../mt/$(OUTPUT_DIR_STLDBG) \
+			   -L../sockios/$(OUTPUT_DIR_STLDBG) \
+                           -L$(BASEDIR)/../STLport/lib
+dbg-shared:	LDSEARCH = -L../mt/$(OUTPUT_DIR_DBG) \
+			   -L../sockios/$(OUTPUT_DIR_DBG) \
+                           -L$(BASEDIR)/../STLport/lib
+endif
 
 release-shared:	LDLIBS = -lxmt_${COMPILER_NAME} \
 		         -lsockios_${COMPILER_NAME} -lstlport_gcc
