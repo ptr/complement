@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/04/07 18:47:57 ptr>
+// -*- C++ -*- Time-stamp: <99/04/09 17:39:42 ptr>
 #ifndef __EvSession_h
 #define __EvSession_h
 
@@ -190,14 +190,29 @@ class SessionManager
     __impl::Mutex _lock;
 };
 
+#ifndef _MSC_VER
 template <class T>
 const SessionManager<T>::key_type SessionManager<T>::_low( 0 );
+#else
+template <class T>
+const SessionManager<T>::key_type SessionManager<T>::_low = 0;
+#endif
 
+#ifndef _MSC_VER
 template <class T>
 const SessionManager<T>::key_type SessionManager<T>::_high( 65535 );
-
+#else
 template <class T>
-SessionManager<T>::key_type SessionManager<T>::_id( _low );
+const SessionManager<T>::key_type SessionManager<T>::_high = 65535;
+#endif
+
+#ifndef _MSC_VER
+template <class T>
+SessionManager<T>::key_type SessionManager<T>::_id( SessionManager<T>::_low );
+#else
+template <class T>
+SessionManager<T>::key_type SessionManager<T>::_id = SessionManager<T>::_low;
+#endif
 
 template <class T>
 SessionManager<T>::key_type SessionManager<T>::create_unique()
