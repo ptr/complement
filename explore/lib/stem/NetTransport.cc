@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/11/04 11:27:52 ptr>
+// -*- C++ -*- Time-stamp: <00/12/07 18:52:54 ptr>
 
 /*
  *
@@ -31,6 +31,7 @@
 #endif
 
 #include <config/feature.h>
+#include <iterator>
 #include <iomanip>
 #include "EDS/NetTransport.h"
 #include "EDS/EventHandler.h"
