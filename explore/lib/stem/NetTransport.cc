@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/04 13:50:56 ptr>
+// -*- C++ -*- Time-stamp: <99/06/07 19:55:39 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -226,7 +226,7 @@ void NetTransport::connect( sockstream& s )
       s.close();
     }
   }
-  catch ( ios_base::failure& e ) {
+  catch ( ios_base::failure& ) {
     s.close();
     // Policy for NetTransport is thread per connect, so it's destructor
     // will be called bit later, and it do this.
