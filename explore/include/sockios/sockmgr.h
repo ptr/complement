@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/03 11:40:21 ptr>
+// -*- C++ -*- Time-stamp: <99/09/14 19:34:29 ptr>
 
 #ifndef __SOCKMGR_H
 #define __SOCKMGR_H
@@ -18,6 +18,10 @@
 
 #ifndef __THR_MGR_H
 #include <thr_mgr.h>
+#endif
+
+#ifdef __unix
+#include <poll.h>
 #endif
 
 #ifndef __SOCKIOS_DLL
