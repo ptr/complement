@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/21 11:42:15 ptr>
+// -*- C++ -*- Time-stamp: <99/05/28 18:17:34 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -62,7 +62,7 @@ EvSessionManager NetTransport_base::smgr;
 
 void NetTransport_base::disconnect()
 {
-  if ( smgr.is_avail( _sid ) ) {
+  if ( _sid != -1 && smgr.is_avail( _sid ) ) {
     SessionInfo& info = smgr[_sid];
     info.disconnect();
 //    cerr << "EvManager::disconnect: " << _sid << endl;
@@ -75,6 +75,8 @@ void NetTransport_base::disconnect()
     } else {
       smgr.erase( _sid );
     }
+    _sid = -1;
+    _count = 0;
   }
 }
 
@@ -221,18 +223,20 @@ void NetTransport::connect( sockstream& s )
     while ( pop( ev, sess ) ) {
       event_process( ev, hostname );
     }
+    if ( !s.good() ) {
+      s.close();
+    }
   }
   catch ( ios_base::failure& e ) {
-    cerr << "Post mortem: " << e.what() << endl;
-  }
-  catch ( std::runtime_error& e ) {
-    cerr << e.what() << endl;
-  }
-  catch ( std::exception& e ) {
-    cerr << e.what() << endl;
+    s.close();
+    // Policy for NetTransport is thread per connect, so it's destructor
+    // will be called bit later, and it do this.
+    // disconnect();
   }
   catch ( ... ) {
-    cerr << "What?!" << endl;
+    s.close();
+    // disconnect();
+    throw;
   }
   cerr << "Disconnected: " << hostname << endl;
 }
@@ -251,14 +255,14 @@ NetTransport_base::key_type NetTransportMgr::open(
     net->open( hostname.c_str(), port, stype );
   }
 
-  _partner_name = hostname;
+  // _partner_name = hostname;
   if ( net->good() ) {
     heap_type::iterator r;
 
     // forward register remote object with ID 0
     r = rar.insert( 
       heap_type::value_type( 0,
-                             EventHandler::manager()->SubscribeRemote( this, 0, _partner_name ) ) ).first;
+                             EventHandler::manager()->SubscribeRemote( this, 0, net->rdbuf()->hostname() /* _partner_name */ ) ) ).first;
     _sid = smgr.create();
     _thr.launch( _loop, this ); // start thread here
     return (*r).second;
@@ -279,38 +283,31 @@ int NetTransportMgr::_loop( void *p )
       // dump( std::cerr, ev );
       __stl_assert( EventHandler::manager() != 0 );
       // if _mgr == 0, best choice is close connection...
-//      sess.inc_from( sizeof(__Event_Base) + sizeof(std::string::size_type) +
-//                     ev.value_size() );
-//      if ( sess.un_from( ev.seq() ) != 0 ) {
-//        cerr << "Event(s) lost, or miss range event" << endl;
-//      }
       r = me.rar.find( ev._src );
       if ( r == me.rar.end() ) {
         r = me.rar.insert( 
           heap_type::value_type( ev._src,
-          EventHandler::manager()->SubscribeRemote( &me, ev._src, me._partner_name ) ) ).first;
+          EventHandler::manager()->SubscribeRemote( &me, ev._src, me.net->rdbuf()->hostname() ) ) ).first;
 //        cerr << "Create remote object: " << hex << (*r).second
 //             << " [" << ev._src << "]\n";
       }
       ev._src = (*r).second; // substitute my local id
-//      if ( me._sid == -1 ) {
-//        me._sid = ev.sid();
-//      }
 
       EventHandler::manager()->Dispatch( ev );
     }
-  }
-  catch ( ios_base::failure& e ) {
-    cerr << "Post mortem: " << e.what() << endl;
-  }
-  catch ( std::runtime_error& e ) {
-    cerr << e.what() << endl;
-  }
-  catch ( std::exception& e ) {
-    cerr << e.what() << endl;
+    if ( me.net ) {
+      me.net->close();
+    }
+    EventHandler::manager()->Remove( &me );
+    me.disconnect();
   }
   catch ( ... ) {
-    cerr << "What?!" << endl;
+    if ( me.net ) {
+      me.net->close();
+    }
+    EventHandler::manager()->Remove( &me );
+    me.disconnect();
+    throw;
   }
 
   return 0;  
@@ -320,37 +317,39 @@ __DLLEXPORT
 void NetTransportMP::connect( sockstream& s )
 {
   const string& hostname = s.rdbuf()->hostname();
-  cerr << "Connected: " << hostname << endl;
 
   Event ev;
-  _sid = smgr.create();
+  bool first = false;
+  if ( _sid == -1 ) {
+    first = true;
+    _sid = smgr.create();
+  }
+
   SessionInfo& sess = smgr[ _sid ];
 
-  sess._host = hostname;
-  sess._port = s.rdbuf()->port();
-  net = &s;
-
   try {
+    if ( first ) {
+      sess._host = hostname;
+      sess._port = s.rdbuf()->port();
+      net = &s;
+    } else {
+      sess.connect();
+    }
     // indeed here need more check: data of event
     // and another: message can be break, and other datagram can be
     // in the middle of message...
     if ( pop( ev, sess ) ) {
       event_process( ev, hostname );
     }
-  }
-  catch ( ios_base::failure& e ) {
-    cerr << "Post mortem: " << e.what() << endl;
-  }
-  catch ( std::runtime_error& e ) {
-    cerr << e.what() << endl;
-  }
-  catch ( std::exception& e ) {
-    cerr << e.what() << endl;
+    if ( !s.good() ) {
+      throw ios_base::failure( "sockstream not good" );
+    }
+    sess.disconnect();
   }
   catch ( ... ) {
-    cerr << "What?!" << endl;
+    s.close();
+    disconnect();
   }
-  cerr << "Disconnected: " << hostname << endl;
 }
 
 } // namespace EDS
