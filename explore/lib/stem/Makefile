@@ -46,6 +46,8 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/Button.o \
 		$(OUTPUT_DIR)/ButtonedInfo.o \
 		$(OUTPUT_DIR)/ButtonedInfoPI.o \
+		$(OUTPUT_DIR)/StrButtonedInfoPI.o \
+		$(OUTPUT_DIR)/InfoField.o \
 		$(OUTPUT_DIR)/InfoPIBase.o \
 		$(OUTPUT_DIR)/InfoPI.o \
 		$(OUTPUT_DIR)/Money.o \
