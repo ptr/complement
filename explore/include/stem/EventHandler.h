@@ -1,15 +1,15 @@
-// -*- C++ -*- Time-stamp: <96/03/06 14:41:30 ptr>
-#ifndef __OXW_EventHandler_h
-#define __OXW_EventHandler_h
+// -*- C++ -*- Time-stamp: <96/08/22 21:10:52 ptr>
+#ifndef __EDS_EventHandler_h
+#define __EDS_EventHandler_h
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
-#ifndef __OXW_OXWdefs_h
-#include <OXW/OXWdefs.h>
+#ifndef __EDS_EDSdefs_h
+#include <EDS/EDSdefs.h>
 #endif
 
-#ifndef __OXW_Event_h
-#include <OXW/Event.h>
+#ifndef __EDS_Event_h
+#include <EDS/Event.h>
 #endif
 
 #ifndef ALGO_H
@@ -618,4 +618,4 @@ DIAG_DECLARE_GROUP(EventDispatch);
 #endif // __WARN
 #endif // __TRACE || __WARN
 
-#endif          // __OXW_EventHandler_h
+#endif          // __EDS_EventHandler_h
