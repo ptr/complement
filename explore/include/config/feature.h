@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/11 17:17:01 ptr>
+// -*- C++ -*- Time-stamp: <00/12/07 19:04:16 ptr>
 
 /*
  *
@@ -104,7 +104,7 @@
 #  ifndef _REENTRANT
 #    define _REENTRANT
 #  endif
-#  ifdef __sun
+#  if defined(__sun) && defined(_SOLARIS_THREADS) && !defined(_PTHREADS)
 #    define __STL_SOLARIS_THREADS
 #  endif
 
