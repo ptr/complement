@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/11/05 17:34:47 ptr>
+// -*- C++ -*- Time-stamp: <99/12/24 11:16:11 ptr>
 
 /*
  *
@@ -146,7 +146,9 @@ struct Event_convert // to transport
     EDS::Event operator ()( const EDS::Event_base<T>& x ) const
       {
         EDS::Event tmp;
-        if ( x.is_to_foreign() ) {
+        // first is evident, the second introduced
+        // to support Forward autodetection
+        if ( x.is_to_foreign() || x.is_from_foreign() ) {
           x.net_pack( tmp );
         } else {
           x.pack( tmp );
