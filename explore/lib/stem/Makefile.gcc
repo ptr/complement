@@ -1,4 +1,4 @@
-# Time-stamp: <00/05/23 19:16:15 ptr>
+# Time-stamp: <00/06/05 14:15:19 ptr>
 # $SunId$
 
 BASEDIR := $(shell xtmp=`pwd`; \
@@ -26,7 +26,7 @@ release : LDFLAGS += -L$(BASEDIR)/lib/mt/obj/${COMPILER_NAME}
 release : LDFLAGS += -L$(BASEDIR)/lib/sockios/obj/${COMPILER_NAME}
 endif
 
-dbg     : LDLIBS += -lxmt${DBG_SUFFIX} -lsockios${DBG_SUFFIX} \
+dbg     : LDLIBS += -lxmt_${COMPILER_NAME}${DBG_SUFFIX} -lsockios_${COMPILER_NAME}${DBG_SUFFIX} \
                     -lstlport_gcc_stldebug
-release : LDLIBS += -lxmt -lsockios -lstlport_gcc
+release : LDLIBS += -lxmt_${COMPILER_NAME} -lsockios_${COMPILER_NAME} -lstlport_gcc
 

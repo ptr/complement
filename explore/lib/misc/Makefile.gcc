@@ -1,4 +1,4 @@
-# Time-stamp: <00/05/23 19:11:13 ptr>
+# Time-stamp: <00/06/05 14:17:08 ptr>
 # $SunId$
 
 CC=gcc
@@ -25,6 +25,6 @@ dbg : LDFLAGS += -L../mt/obj/${COMPILER_NAME}${DBG_SUFFIX}
 release : LDFLAGS += -L../mt/obj/${COMPILER_NAME}
 endif
 
-release : LDLIBS += -lxmt -lstlport_gcc
-dbg     : LDLIBS += -lxmt${DBG_SUFFIX} -lstlport_gcc_stldebug
+release : LDLIBS += -lxmt_${COMPILER_NAME} -lstlport_gcc
+dbg     : LDLIBS += -lxmt_${COMPILER_NAME}${DBG_SUFFIX} -lstlport_gcc_stldebug
 

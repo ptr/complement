@@ -1,4 +1,19 @@
-// -*- C++ -*- Time-stamp: <00/05/23 14:42:59 ptr>
+// -*- C++ -*- Time-stamp: <00/06/02 18:11:06 ptr>
+
+/*
+ *
+ * Copyright (c) 2000
+ * ParallelGraphics
+ * 
+ * This material is provided "as is", with absolutely no warranty expressed
+ * or implied. Any use is at your own risk.
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies and
+ * that both that copyright notice and this permission notice appear
+ * in supporting documentation.
+ */
 
 #ident "$SunId$"
 
@@ -37,7 +52,7 @@ DataBase::DataBase( const char *name, const char *usr, const char *passwd,
   if ( port != 0 ) {
     // 
   } else {
-    _dbport = -1;
+    _dbport = ~0U;
   }
   if ( opt != 0 ) {
     _dbopt = opt;

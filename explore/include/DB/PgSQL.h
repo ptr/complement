@@ -1,4 +1,19 @@
-// -*- C++ -*- Time-stamp: <00/05/23 16:14:26 ptr>
+// -*- C++ -*- Time-stamp: <00/06/02 18:17:10 ptr>
+
+/*
+ *
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
+ * 
+ * This material is provided "as is", with absolutely no warranty expressed
+ * or implied. Any use is at your own risk.
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies and
+ * that both that copyright notice and this permission notice appear
+ * in supporting documentation.
+ */
 
 #ifndef __PgSQL_h
 #define __PgSQL_h
@@ -43,7 +58,6 @@ class DataBase :
     virtual void end_transaction();
 
     virtual xxSQL::Cursor *create_cursor( const char * );
-    virtual void delete_cursor( xxSQL::Cursor * );
 
   private:
     DBconn *_conn;
