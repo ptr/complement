@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <99/04/16 14:42:33 ptr>
+// -*- C++ -*- Time-stamp: <99/09/08 13:23:10 ptr>
 #ifndef __EvManager_h
 #define __EvManager_h
 
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+#ident "$SunId$ %Q%"
 
 #include <string>
 #include <map>
@@ -79,81 +79,50 @@ class EvManager
     typedef std::map<key_type,__Object_Entry,std::less<key_type>,
                               __STL_DEFAULT_ALLOCATOR(__Object_Entry) > heap_type;
 
-    EvManager() :
-        _low( __Event_Base::beglocaddr ),
-        _high( __Event_Base::endlocaddr ),
-        _id( _low )
-      { }
+    __EDS_DLL EvManager();
 
-    key_type Subscribe( EventHandler *object, const std::string& info )
-      {
-        MT_REENTRANT( _lock_heap, _1 );
-        key_type id = create_unique();
-        EDS::__Object_Entry& record = heap[id];
-        record.ref = object;
-        record.info = info;
+    __EDS_DLL addr_type Subscribe( EventHandler *object, const std::string& info );
+    __EDS_DLL addr_type Subscribe( EventHandler *object, const char *info = 0 );
+    __EDS_DLL addr_type SubscribeID( addr_type id, EventHandler *object,
+                                    const std::string& info );
+    __EDS_DLL addr_type SubscribeID( addr_type id, EventHandler *object,
+                                    const char *info = 0 );
+    __EDS_DLL addr_type SubscribeRemote( NetTransport_base *channel,
+                                         addr_type rmkey,
+                                         const std::string& info );
+    __EDS_DLL addr_type SubscribeRemote( NetTransport_base *channel,
+                                         addr_type rmkey,
+                                         const char *info = 0 );
+    __EDS_DLL bool Unsubscribe( addr_type id );
 
-        return id;
-      }
-
-    key_type SubscribeID( key_type id, EventHandler *object, const std::string& info )
-      {
-        MT_REENTRANT( _lock_heap, _1 );
-        if ( (id & Event::extbit) || is_avail( id ) ) {
-          return Event::badaddr;
-        }
-        EDS::__Object_Entry& record = heap[id];
-        record.ref = object;
-        record.info = info;
-
-        return id;
-      }
-
-    key_type SubscribeRemote( NetTransport_base *channel, const key_type& rmkey, const std::string& info )
-      {
-        MT_REENTRANT( _lock_heap, _1 );
-        key_type id = create_unique() | Event::extbit;
-        EDS::__Object_Entry& record = heap[id];
-        // record.ref = object;
-        record.info = info;
-        __stl_assert( channel != 0 );
-        record.addremote( rmkey, channel );
-
-        return id;
-      }
-
-    bool Unsubscribe( const key_type& id )
-      {
-        // MT_REENTRANT( _lock_heap, _1 );
-        heap.erase( /* (const heap_type::key_type&)*/ id );
-        return true; // may be here check object's reference count
-      }
-
-    bool is_avail( const key_type& id ) const
+    bool is_avail( addr_type id ) const
       { return heap.find( id ) != heap.end(); }
 
-    const string& who_is( const key_type& id ) const
+    const string& who_is( addr_type id ) const
       {
         heap_type::const_iterator i = heap.find( id );
-        if ( i == heap.end() ) {
-          return inv_key_str;
-        }
-        return (*i).second.info;
+        return i == heap.end() ? inv_key_str : (*i).second.info;
       }
 
-    EvSessionManager::key_type sid( const key_type& object_id ) const;
+    const string& annotate( addr_type id ) const
+      {
+        heap_type::const_iterator i = heap.find( id );
+        return i == heap.end() ? inv_key_str : (*i).second.info;
+      }
 
-    void Send( const Event& e, const key_type& src_id = Event::badaddr );
+    key_type sid( addr_type object_id ) const;
+
+    void Send( const Event& e );
 
   private:
-    key_type create_unique();
+    addr_type create_unique();
 
     void Remove( NetTransport_base * );
     void Dispatch( const Event& e );
 
-    const key_type _low;
-    const key_type _high;
-    key_type _id;
+    const addr_type _low;
+    const addr_type _high;
+    addr_type _id;
     heap_type heap;
 
     __impl::Mutex _lock_heap;
@@ -164,6 +133,8 @@ class EvManager
     friend class NetTransport;
     friend class NetTransportMgr;
     friend class NetTransportMP;
+
+    friend class Names;
 };
 
 } // namespace EDS

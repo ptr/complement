@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/03 14:19:31 ptr>
+// -*- C++ -*- Time-stamp: <99/09/08 13:00:54 ptr>
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
@@ -495,11 +495,12 @@ class EventHandler
     };
 
     __EDS_DLL EventHandler();
-    explicit __EDS_DLL EventHandler( const Event::key_type& id );
+    explicit __EDS_DLL EventHandler( const char *info );
+    explicit __EDS_DLL EventHandler( addr_type id, const char *info = 0 );
     __EDS_DLL ~EventHandler();
 
-    __EDS_DLL const string& who_is( const Event::key_type& k ) const;
-    __EDS_DLL unsigned sid( const Event::key_type& k ) const;
+    __EDS_DLL const string& who_is( addr_type k ) const;
+    __EDS_DLL unsigned sid( key_type k ) const;
     static EvManager *manager()
       { return _mgr; }
     __EDS_DLL void Send( const Event& e );

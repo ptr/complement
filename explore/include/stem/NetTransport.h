@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/03 12:47:47 ptr>
+// -*- C++ -*- Time-stamp: <99/09/08 17:30:30 ptr>
 
 #ifndef __NetTransport_h
 #define __NetTransport_h
@@ -34,7 +34,7 @@ namespace EDS {
 extern __EDS_DLL void dump( std::ostream&, const EDS::Event& );
 
 class NetTransport_base :
-    public EventHandler // to avoid creation order dependence in manager
+    public EventHandler // to avoid dependence from creation order
 {
   public:
     typedef Event::key_type key_type;
@@ -44,8 +44,17 @@ class NetTransport_base :
 
     NetTransport_base() :
         _count( 0 ),
-        _sid( static_cast<EvSessionManager::key_type>(-1) ),
-        net( 0 )
+        _sid( badkey ),
+        net( 0 ),
+        _net_ns( badaddr )
+      { }
+
+    NetTransport_base( const char *info ) :
+        EventHandler( info ),
+        _count( 0 ),
+        _sid( badkey ),
+        net( 0 ),
+        _net_ns( badaddr )
       { }
 
     __EDS_DLL ~NetTransport_base();
@@ -60,11 +69,14 @@ class NetTransport_base :
       { if ( net != 0 ) net->close(); }
 
     __EDS_DLL
-    bool push( const Event&, const key_type& rmkey, const key_type& srckey );
+    bool push( const Event& );
 
 
     EvSessionManager::key_type sid() const
       { return _sid; }
+
+    addr_type ns() const
+      { return _net_ns; }
 
     static SessionInfo& session_info( const EvSessionManager::key_type& k )
       { return smgr[k]; }
@@ -72,8 +84,8 @@ class NetTransport_base :
       { smgr.erase( k ); }
 
   protected:
+    addr_type rar_map( addr_type k, const string& name );
     bool pop( Event&, SessionInfo& );
-    void event_process( Event&, const std::string& );
     void disconnect();
 
     std::sockstream *net;
@@ -83,6 +95,7 @@ class NetTransport_base :
     // to be very huffy about it.
     heap_type rar; // reverce address resolution table
     __impl::Mutex  _lock;
+    addr_type _net_ns; // reflection of address of remote name service
     static EvSessionManager smgr;
 };
 
@@ -90,7 +103,8 @@ class NetTransport :
     public NetTransport_base
 {
   public:
-    NetTransport()
+    NetTransport() :
+        NetTransport_base( "EDS::NetTransport" )
       { }
 
     __EDS_DLL
@@ -101,7 +115,8 @@ class NetTransportMgr :
     public NetTransport_base
 {
   public:
-    NetTransportMgr()
+    NetTransportMgr() :
+        NetTransport_base( "EDS::NetTransportMgr" )
       { }
 
     ~NetTransportMgr()
@@ -114,10 +129,12 @@ class NetTransportMgr :
       }
 
     __EDS_DLL
-    key_type open( const char *hostname, int port,
-                   std::sock_base::stype stype = std::sock_base::sock_stream );
+    addr_type open( const char *hostname, int port,
+                    std::sock_base::stype stype = std::sock_base::sock_stream );
     int join()
       { return _thr.join(); }
+
+    __EDS_DLL addr_type make_map( addr_type k, const char *name );
 
   protected:
     static int _loop( void * );
@@ -128,7 +145,8 @@ class NetTransportMP :
     public NetTransport_base
 {
   public:
-    NetTransportMP()
+    NetTransportMP() :
+        NetTransport_base( "EDS::NetTransportMP" )
       { }
 
     __EDS_DLL
