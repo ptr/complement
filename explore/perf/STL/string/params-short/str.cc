@@ -13,9 +13,9 @@ string func( string par )
 
 int main( int, char * const * )
 {
-  string s( "12345678901234567890" );
+  string s( "1234567890" );
 
-  for ( int i = 0; i < 1/*0000000*/; ++i ) {
+  for ( int i = 0; i < 10000000; ++i ) {
     string sx = func( s );
   }
 
