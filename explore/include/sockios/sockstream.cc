@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/04/16 19:23:41 ptr>
+// -*- C++ -*- Time-stamp: <99/05/07 11:05:17 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -420,8 +420,8 @@ void basic_sockbuf<charT, traits>::hostname( string& hostname )
   hostent *he;
 #else
   hostent he;
-#endif
   char tmp_buff[1024];
+#endif
   int err = 0;
   in_addr in;
   in.s_addr = inet_addr();
