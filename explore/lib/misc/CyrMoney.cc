@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/09/20 11:43:12 ptr>
+// -*- C++ -*- Time-stamp: <02/08/02 12:13:29 ptr>
 
 /*
  *
@@ -28,6 +28,7 @@
 #endif
 
 #include <sstream>
+#include <iostream>
 #include "misc/CyrMoney.h"
 
 using namespace std;
@@ -222,6 +223,7 @@ string cyr_money_converter::conv( const string& n, cyr_money_converter::encoding
   } else {
     s_cents = "00" + cents[enc][2];
   }
+  ss.clear();
   string::size_type sz = nn.length();
 
   int units = 0;
@@ -233,30 +235,37 @@ string cyr_money_converter::conv( const string& n, cyr_money_converter::encoding
     sz -= 3;
     ss.str( nn.substr( sz ) );
     ss >> units;
+    ss.clear();
     nn.erase( sz );
     if ( sz > 3 ) {
       sz -= 3;
       ss.str( nn.substr( sz ) );
       ss >> thousands;
+      ss.clear();
       nn.erase( sz );
       if ( sz > 3 ) {
 	sz -= 3;
 	ss.str( nn.substr( sz ) );
 	ss >> millions;
+        ss.clear();
 	nn.erase( sz );
 	ss.str( nn );
 	ss >> billions;
+        ss.clear();
       } else {
 	ss.str( nn );
 	ss >> millions;
+        ss.clear();
       }
     } else {
       ss.str( nn );
       ss >> thousands;
+      ss.clear();
     }
   } else {
     ss.str( nn );
     ss >> units;
+    ss.clear();
   }
 
   string res;
@@ -276,6 +285,7 @@ string cyr_money_converter::conv( const string& n, cyr_money_converter::encoding
 
   string::size_type fp = res.find_first_not_of( " " );
   res[fp] = res[fp] - char(0x20); // first letter to caps...
+
   return res;
 }
 
