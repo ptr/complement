@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/24 17:13:42 ptr>
+// -*- C++ -*- Time-stamp: <99/03/26 20:45:14 ptr>
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
@@ -39,8 +39,6 @@ typedef unsigned state_type;
                                      EDSCallbackObject<GENERIC> >,EDSEventCb>
 #endif
 
-// #define EV_OXW(state,event,handler) \
-//   RESPONSE_TABLE_ENTRY(state,event,handler,D1(ThisCls)::dispatch)
 #define EV_EDS(state,event,handler) \
    RESPONSE_TABLE_ENTRY(state,event,handler,D1(ThisCls)::dispatch)
 #define EV_VOID(state,event,handler) \
@@ -158,8 +156,6 @@ struct __member_function_void
 template <class PMF>
 struct __dispatcher
 {
-//    static void dispatch( PMF::const_pointer_class_type c, PMF::pmf_type pmf,
-//	                  PMF::reference_argument_type arg )
     static void dispatch( PMF::pointer_class_type c, PMF::pmf_type pmf,
 	                  PMF::const_reference_argument_type arg )
       {	(c->*pmf)( arg ); }
@@ -168,8 +164,6 @@ struct __dispatcher
 template <class PMF, class Arg >
 struct __dispatcher_void
 {
-//    static void dispatch( PMF::const_pointer_class_type c, PMF::pmf_type pmf,
-//	                  Arg& )
     static void dispatch( PMF::pointer_class_type c, PMF::pmf_type pmf, const Arg& )
       {	(c->*pmf)(); }
 };
@@ -177,8 +171,6 @@ struct __dispatcher_void
 template <class PMF, class Arg >
 struct __dispatcher_convert
 {
-//    static void dispatch( PMF::const_pointer_class_type c, PMF::pmf_type pmf,
-//	                  Arg& arg )
     static void dispatch( PMF::pointer_class_type c, PMF::pmf_type pmf, const Arg& arg )
       {	(c->*pmf)( convert<Arg,PMF::argument_type>()(arg) ); }
 };
@@ -223,7 +215,7 @@ template <class T>
 struct __DeclareAnyPMF
 {
     state_type    st;
-    typename EDS::Event::code_type code; // msg
+    typename EDS::Event::code_type code;
     typename EDS::__PMFentry<T> func;
 };
 
@@ -574,6 +566,7 @@ class EventHandler
     const string& who_is( const Event::key_type& k ) const;
     unsigned sid( const Event::key_type& k ) const;
     void Send( const Event& e );
+    void Send( const EventVoid& e );
 
 /* ************************************************************ *\
    Member template will be nice here, but sorry...
