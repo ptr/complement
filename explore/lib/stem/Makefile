@@ -1,13 +1,11 @@
-# Time-stamp: <99/05/27 15:19:32 ptr>
+# Time-stamp: <99/05/28 19:19:01 ptr>
 # $SunId$ %Q%
-
-include ../../Makefile.spec.inc
 
 PWD :sh = pwd
 BASEDIR = $(PWD:%/lib/EDS=%)
 
+default:	libdbg_a
 libdbg_a:	libEDS_dbg.a
-default:	libEDS_dbg.a
 
 include ../../Makefile.inc
 
