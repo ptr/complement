@@ -1,11 +1,9 @@
-// -*- C++ -*- Time-stamp: <99/02/03 15:53:01 ptr>
+// -*- C++ -*- Time-stamp: <99/02/08 14:18:00 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
-#include <sockmgr.h>
-
 #include <cerrno>
-#include <xxx/plock.h>
+#include <sockmgr.h>
 
 namespace std {
 
