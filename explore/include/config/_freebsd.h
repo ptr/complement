@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <03/09/24 19:56:55 ptr>
+// -*- C++ -*- Time-stamp: <03/11/30 19:49:07 ptr>
 
 /*
  *
  * Copyright (c) 2003
- * Petr Ovtchenkov
+ * Petr Ovchenkov
  *
- * Licensed under the Academic Free License Version 1.2
+ * Licensed under the Academic Free License Version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.

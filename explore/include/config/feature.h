@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/09/24 19:51:34 ptr>
+// -*- C++ -*- Time-stamp: <03/11/30 19:45:58 ptr>
 
 /*
  *
@@ -78,6 +78,13 @@
 
 #ifdef __FreeBSD__
 #  include <config/_freebsd.h>
+#  ifdef __GNUC__
+#    include <config/_gcc.h>
+#  endif
+#endif
+
+#ifdef __OpenBSD__
+#  include <config/_openbsd.h>
 #  ifdef __GNUC__
 #    include <config/_gcc.h>
 #  endif
