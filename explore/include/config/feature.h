@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/12/21 10:49:59 ptr>
+// -*- C++ -*- Time-stamp: <01/01/31 16:57:23 ptr>
 
 /*
  *
@@ -212,9 +212,9 @@
 #ifdef WIN32
 // #include <winsock.h>
 // #  if defined(BIGENDIAN) && (BIGENDIAN > 0)
-#    define _BIG_ENDIAN
+// #    define _BIG_ENDIAN
 // #  else
-// #    define _LITTLE_ENDIAN
+#    define _LITTLE_ENDIAN
 // #  endif
 #else // !WIN32
 #  ifdef __sun
