@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/08/18 22:34:29 ptr>
+// -*- C++ -*- Time-stamp: <99/09/03 12:47:47 ptr>
 
 #ifndef __NetTransport_h
 #define __NetTransport_h
@@ -21,9 +21,17 @@
 #include <EvSession.h>
 #include <EventHandler.h>
 
+#ifndef __EDS_DLL
+#  if defined( WIN32 ) && defined( _MSC_VER )
+#    define __EDS_DLL __declspec( dllimport )
+#  else
+#    define __EDS_DLL
+#  endif
+#endif
+
 namespace EDS {
 
-extern __DLLEXPORT void dump( std::ostream&, const EDS::Event& );
+extern __EDS_DLL void dump( std::ostream&, const EDS::Event& );
 
 class NetTransport_base :
     public EventHandler // to avoid creation order dependence in manager
@@ -40,7 +48,7 @@ class NetTransport_base :
         net( 0 )
       { }
 
-    __DLLEXPORT ~NetTransport_base();
+    __EDS_DLL ~NetTransport_base();
 
     bool fail() const
       { return net == 0 || net->fail(); }
@@ -51,7 +59,7 @@ class NetTransport_base :
     void close()
       { if ( net != 0 ) net->close(); }
 
-    __DLLEXPORT
+    __EDS_DLL
     bool push( const Event&, const key_type& rmkey, const key_type& srckey );
 
 
@@ -85,7 +93,7 @@ class NetTransport :
     NetTransport()
       { }
 
-    __DLLEXPORT
+    __EDS_DLL
     void connect( std::sockstream& );
 };
 
@@ -105,7 +113,7 @@ class NetTransportMgr :
         delete net;
       }
 
-    __DLLEXPORT
+    __EDS_DLL
     key_type open( const char *hostname, int port,
                    std::sock_base::stype stype = std::sock_base::sock_stream );
     int join()
@@ -123,7 +131,7 @@ class NetTransportMP :
     NetTransportMP()
       { }
 
-    __DLLEXPORT
+    __EDS_DLL
     void connect( std::sockstream& );
 };
 

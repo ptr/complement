@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/08/23 11:45:27 ptr>
+// -*- C++ -*- Time-stamp: <99/09/03 12:06:09 ptr>
 #ifndef __EvSession_h
 #define __EvSession_h
 
@@ -145,7 +145,6 @@ class SessionManager
 {
   public:
     typedef unsigned key_type;
-//    typedef std::map<key_type,T> heap_type;
     typedef std::map<key_type,T,std::less<key_type>,
                 __STL_DEFAULT_ALLOCATOR(T) > heap_type;
 
@@ -219,8 +218,13 @@ template <class T>
 SessionManager<T>::key_type SessionManager<T>::_id = SessionManager<T>::_low;
 #endif
 
+#ifndef _MSC_VER
 template <class T>
 typename SessionManager<T>::key_type SessionManager<T>::create_unique()
+#else
+template <class T>
+SessionManager<T>::key_type SessionManager<T>::create_unique()
+#endif
 {
 #ifndef _MSC_VER
   std::pair<typename heap_type::iterator, bool> ret;

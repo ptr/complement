@@ -1,20 +1,19 @@
-// -*- C++ -*- Time-stamp: <99/06/24 20:59:02 ptr>
+// -*- C++ -*- Time-stamp: <99/09/03 14:34:11 ptr>
 #ifndef __EvPack_h
 #define __EvPack_h
 
 #ident "$SunId$ %Q%"
 
 #ifdef WIN32
-// #  include <winsock2.h>
+#include <winsock.h>
 #  if defined(BIGENDIAN) && (BIGENDIAN > 0)
 #    define _BIG_ENDIAN
 #  else
 #    define _LITTLE_ENDIAN
 #  endif
-// #  include <win_config.h>
-#else
+#else // !WIN32
 #  include <sys/isa_defs.h>
-#endif
+#endif // WIN32
 
 #ifdef _LITTLE_ENDIAN
 #  include <algorithm>
@@ -22,6 +21,14 @@
 
 #include <istream>
 #include <ostream>
+
+#ifndef __EDS_DLL
+#  if defined( WIN32 ) && defined( _MSC_VER )
+#    define __EDS_DLL __declspec( dllimport )
+#  else
+#    define __EDS_DLL
+#  endif
+#endif
 
 namespace EDS {
 
@@ -201,18 +208,18 @@ unsigned long from_net( const unsigned long& x )
 struct __pack_base
 {
     // To be released for data structure you want pass via EDS:
-    __DLLEXPORT virtual void pack( std::ostream& ) const = 0 ;
-    __DLLEXPORT virtual void unpack( std::istream& ) = 0 ;
-    __DLLEXPORT virtual void net_pack( std::ostream& ) const = 0 ;
-    __DLLEXPORT virtual void net_unpack( std::istream& ) = 0 ;
+    __EDS_DLL virtual void pack( std::ostream& ) const = 0 ;
+    __EDS_DLL virtual void unpack( std::istream& ) = 0 ;
+    __EDS_DLL virtual void net_pack( std::ostream& ) const = 0 ;
+    __EDS_DLL virtual void net_unpack( std::istream& ) = 0 ;
 
     // basic types
 
     // string
-    static __DLLEXPORT void __net_unpack( std::istream& s, std::string& str );
-    static __DLLEXPORT void __net_pack( std::ostream& s, const std::string& str );
-    static __DLLEXPORT void __unpack( std::istream& s, std::string& str );
-    static __DLLEXPORT void __pack( std::ostream& s, const std::string& str );
+    static __EDS_DLL void __net_unpack( std::istream& s, std::string& str );
+    static __EDS_DLL void __net_pack( std::ostream& s, const std::string& str );
+    static __EDS_DLL void __unpack( std::istream& s, std::string& str );
+    static __EDS_DLL void __pack( std::ostream& s, const std::string& str );
     // int
     static void __net_unpack( std::istream& s, int& x )
       {

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/08/23 13:11:05 ptr>
+// -*- C++ -*- Time-stamp: <99/09/03 12:00:46 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -88,7 +88,7 @@ template <class D> class Event_base;
 __STL_TEMPLATE_NULL class Event_base<std::string>;
 #else
 __STL_TEMPLATE_NULL
-class Event_base<std::basic_string<char, std::char_traits<char>, __DEFALLOCATOR(char) > >;
+class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<char> > >;
 #endif
 __STL_TEMPLATE_NULL class Event_base<void>;
 
@@ -264,7 +264,7 @@ __STL_TEMPLATE_NULL
 #ifndef _MSC_VER
 class Event_base<std::string> :
 #else
-class Event_base<std::basic_string<char, std::char_traits<char>, __DEFALLOCATOR(char) > > :
+class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<char> > > :
 #endif
         public __Event_Base
 {
