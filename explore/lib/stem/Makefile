@@ -4,6 +4,8 @@
 PROJECT = ../../libOXW.so
 XTESTER = xtester
 YTESTER = ytester
+TONE = tester1
+TTWO = tester2
 
 INCLUDES = \
 	-I/usr/openwin/include \
@@ -23,7 +25,7 @@ CCFLAGS = $(OPT) -cg92 +w -PIC -pto -mt
 CPPFLAGS = $(DEFS) $(INCLUDES)
 PROJECT_LIBS = -L../.. -L../../../../STL -lCLASS -lSTL
 # LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm -ldl
-LDFLAGS = -xildoff $(PROJECT_LIBS) -lX11 -lXpm 
+LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm 
 
 OUTPUT_DIR = ./bin
 OUTPUT_TESTS_DIR = ./tests-bin
@@ -123,6 +125,15 @@ YFILES.o = \
 		$(OUTPUT_TESTS_DIR)/ytester.o \
 		$(OUTPUT_TESTS_DIR)/ymain.o
 
+TONE.o = \
+		$(OUTPUT_TESTS_DIR)/tester1.o \
+		$(OUTPUT_TESTS_DIR)/tester1main.o
+
+TTWO.o = \
+		$(OUTPUT_TESTS_DIR)/tester2.o \
+		$(OUTPUT_TESTS_DIR)/tester2main.o
+
+
 LIBFILES.o = $(XLIBFILES.o)
 
 .KEEP_STATE:
@@ -139,6 +150,12 @@ $(XTESTER):	$(OUTPUT_DIR) $(OUTPUT_TESTS_DIR) $(XLIBFILES.o) $(XFILES.o)
 
 $(YTESTER):	$(OUTPUT_DIR) $(OUTPUT_TESTS_DIR) $(XLIBFILES.o) $(YFILES.o)
 	$(LINK.cc) -o $@ $(XLIBFILES.o) $(YFILES.o)
+
+$(TONE):	$(OUTPUT_DIR) $(OUTPUT_TESTS_DIR) $(XLIBFILES.o) $(TONE.o)
+	$(LINK.cc) -o $@ $(XLIBFILES.o) $(TONE.o)
+
+$(TTWO):	$(OUTPUT_DIR) $(OUTPUT_TESTS_DIR) $(XLIBFILES.o) $(TTWO.o)
+	$(LINK.cc) -o $@ $(XLIBFILES.o) $(TTWO.o)
 
 $(OUTPUT_DIR)/%.o:	%.cc
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
