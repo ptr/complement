@@ -1,9 +1,8 @@
-// -*- C++ -*- Time-stamp: <96/03/06 14:02:40 ptr>
+// -*- C++ -*- Time-stamp: <96/08/22 22:49:53 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
-#include <OXW/EventHandler.h>
-#include <OXW/OXWEvents.h>
 #include <CLASS/checks.h>
+#include <EDS/EventHandler.h>
 
 // #include <iostream.h>
 #if defined(__TRACE) || defined(__WARN)

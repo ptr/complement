@@ -1,21 +1,8 @@
-// -*- C++ -*- Time-stamp: <96/03/25 15:03:16 ptr>
+// -*- C++ -*- Time-stamp: <96/09/09 14:45:36 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
-#include <X11/Xlib.h>
-
-#include <stl/map.h>
-
-#include <OXW/EvManager.h>
-#include <OXW/EventsCore.h>
-#include <OXW/WindowBase.h>
-#include <OXW/Diagnosis.h>
-
-static map<unsigned long, OXWEventsCore *, less<unsigned long> > windows;
-
-void OXWEvManager::Register( unsigned long wndh, OXWEventsCore *wnd )
-{
-  windows[ wndh ] = wnd;
-}
+#include <EDS/EvManager.h>
+#include <EDS/EventsCore.h>
 
 void OXWEvManager::dispatch()
 {
@@ -52,33 +39,14 @@ void OXWEvManager::dispatch()
   MT_MUTEX_UNLOCK( &lock_not_empty );
 }
 
-void OXWEvManager::X_dispatch()
-{
-  XEvent event;
-  OXWEventsCore *theWindow;
-
-  XNextEvent( OXWWindowBase::theDisplay, &event );
-  TRACE_XEV( event );  
-  if ( event.type == MappingNotify ) {
-    XRefreshKeyboardMapping( &event.xmapping );
-    return;
-  }
-  theWindow = windows[ event.xany.window ];
-  TRACE_XEV( event );
-  WARN( theWindow == 0, "unregistered window: don't know to do..." );
-  if ( theWindow != 0 ) {
-    theWindow->Notify( OXWEventX( event ) );
-  }
-}
-
 void OXWEvManager::Done()
 {
-  MT_MUTEX_LOCK( &lock_not_done );
+  // MT_MUTEX_LOCK( &lock_not_done );
   if ( !done ) {
     MT_COND_SIGNAL( &done_cond );
     done = true;
   }
-  MT_MUTEX_UNLOCK( &lock_not_done );
+  // MT_MUTEX_UNLOCK( &lock_not_done );
 }
 
 bool OXWEvManager::wait_empty()
