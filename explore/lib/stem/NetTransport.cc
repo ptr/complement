@@ -50,7 +50,7 @@ using namespace std;
 
 #ifdef __sparc
 #define EDS_MAGIC 0xc2454453U
-#elif defined( __i386 )
+#elif defined( __i386 ) || defined(WIN32)
 #define EDS_MAGIC 0x534445c2U
 #else
 #error "Can't determine platform byte order!"

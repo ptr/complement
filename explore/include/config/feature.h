@@ -1,5 +1,6 @@
 // -*- C++ -*- Time-stamp: <00/02/22 10:39:49 ptr>
 
+
 /*
  *
  * Copyright (c) 1999
@@ -36,6 +37,7 @@
 #endif // _DEBUG_ALLOC
 
 #define __USE_SGI_STL_PORT  0x400
+// #define __USE_SGI_STL_PORT  0x321
 
 #if defined( __STL_DEBUG ) && (__USE_SGI_STL_PORT >= 0x400)
 // #  define __STD __stl_native_std
@@ -63,10 +65,20 @@
 
 #  ifndef _REENTRANT
 #    define _REENTRANT
-#    define __STL_SOLARIS_THREADS
+#    ifdef __sun
+#      define __STL_SOLARIS_THREADS
+#    endif
 #  else
-#    define __STL_SOLARIS_THREADS
+#    ifdef __sun
+#      define __STL_SOLARIS_THREADS
+#    endif
 #  endif
+#  ifdef _MSC_VER
+// #    define __STL_NO_STATIC_TEMPLATE_DATA
+#  endif
+#elif (__USE_SGI_STL_PORT == 0x321) && defined(_MSC_VER)
+#  define __STL_USE_NEW_IOSTREAMS
+#  define __STLPORT_NEW_IOSTREAMS 
 #endif
 
 /*

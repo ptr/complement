@@ -39,11 +39,13 @@ extern "C" {
 }
 
 #ifdef WIN32
+#  if 0
 extern "C" int APIENTRY
 DllMain( HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved )
 {
   return TRUE;   // ok
 }
+#  endif
 #endif
 
 namespace __impl {
