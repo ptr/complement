@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/11/09 10:55:39 ptr>
+// -*- C++ -*- Time-stamp: <01/02/13 12:23:58 ptr>
 
 /*
  *
@@ -34,6 +34,10 @@ extern "C" {
 #include <DB/xxSQL_i.h>
 #endif
 
+#ifndef __XMT_H
+#include <mt/xmt.h>
+#endif
+
 namespace PgSQL {
 
 typedef ::pg_conn    DBconn;
@@ -53,7 +57,7 @@ class DataBase :
   public:
     DataBase( const char *name, const char *usr = 0, const char *passwd = 0,
               const char *host = 0, const char *port = 0, const char *opt = 0,
-              const char *tty = 0 );
+              const char *tty = 0, std::ostream *err = 0 );
     virtual ~DataBase();
 
     virtual void reconnect();
@@ -71,7 +75,11 @@ class DataBase :
     virtual std::string IS_NOT_NULL() const;
 
   private:
+    static int conn_proc( void * );
+
     DBconn *_conn;
+    __impl::Thread thr;
+    __impl::Condition con_cond;
 
     friend class Cursor;
 };

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/11/09 10:57:25 ptr>
+// -*- C++ -*- Time-stamp: <01/02/13 12:23:58 ptr>
 
 #ifdef __unix
 #  ifdef __HP_aCC
@@ -33,7 +33,7 @@ DBxx::DBxx( DBvendor vendor,
   switch ( vendor ) {
     case PostgreSQL:
 #ifdef __DB_POSTGRES
-      _db = new PgSQL::DataBase(name,usr,passwd,host,port,opt,tty);
+      _db = new PgSQL::DataBase(name,usr,passwd,host,port,opt,tty,err);
 #else
       _db = 0;
 #endif

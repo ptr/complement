@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/16 16:35:22 ptr>
+// -*- C++ -*- Time-stamp: <01/02/13 12:23:58 ptr>
 
 /*
  *
@@ -40,8 +40,10 @@ using namespace __STD;
 
 DataBase::DataBase( const char *name, const char *usr, const char *passwd,
                     const char *host, const char *port,
-                    const char *opt, const char *tty ) :
-    _flags( 0 )
+                    const char *opt, const char *tty,
+                    std::ostream *err ) :
+    _flags( 0 ),
+    _dberr( err != 0 ? *err : std::cerr )
 {
   if ( name != 0 ) {
     _dbname = name;
