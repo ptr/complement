@@ -1,4 +1,8 @@
-2002-08-24  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+2004-11-05  Petr Ovtchenkov  <ptr@Island.UrbanNet.Ru>
+
+	* library naming changed.
+
+2002-08-24  Petr Ovtchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* xxSQL.cc (Repository): fix loaded libraries names
 
@@ -9,16 +13,16 @@
 	to avoid problems with loading applications without
 	explicit usage of libxmt; varsion 0.6.3.
 
-2002-08-03  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+2002-08-03  Petr Ovtchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* libDB: Insert DB support in 'explore' source tree;
 	version 0.6.2. Candidate for version 1.0.0.
 
-2001-08-15  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+2001-08-15  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
 
 	* xxSQL.cc (Repository): Added version in DB-specific library name.  
 
-2001-07-27  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+2001-07-27  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
 
 	* libDB: Version 0.6.1. Candidate for version 1.0.0
 	
@@ -29,7 +33,7 @@
 	Add explicit link with other C++ shared libraries---this significantly
 	reduce library size.
 
-2001-07-19  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+2001-07-19  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
 
 	* libDB: Version 0.6.0. Candidate for version 1.0.0
 	
@@ -40,30 +44,30 @@
 	removed compile-time and link-time DB dependencies for end application.
 	Load DB wrapper library at runtime via dlopen. 
 
-2001-06-05  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+2001-06-05  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
 
 	* Makefile.inc (Message): library version 0.5.0
 
-2001-06-04  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+2001-06-04  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
 
 	* libDB:  Work with STLport 4.5 beta 8 (from stlport cvs);
 	remove obsolete in any case dependence from non-STLport iostreams
 	realization (it should not work).
 
-2001-03-20  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+2001-03-20  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
 
 	* libDB: Satisfy for STLport 4.1 beta 5.
 
 	* libDB: Increment patch number.
 
-2001-02-15  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+2001-02-15  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
 
 	* libDB (PgSQL.cc):
 	Fix merge
 	
 	* libDB: Change version
 	
-2001-02-14  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+2001-02-14  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
 
 	* libDB (PgSQL.h, xxSQL_i.h):
 	Changed behavior when server trying to establish connection to DB:
@@ -76,36 +80,36 @@
 	with DB we can see in log files.
 	All above is related to PostgerSQL only now.
 
-2000-11-29  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+2000-11-29  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
 
 	* libDB (OraSQL.h, PgSQL.h, xxSQL.h, xxSQL_i.h):
 	DB - ?
 	
-2000-10-16  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+2000-10-16  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
 
 	* libDB: Support of Oracle 8i added (on HP-UX).
 
-2000-05-23  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+2000-05-23  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
 
 	* libDB (PgSQL.cc): Universal DB interface
 	
-2000-05-22  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+2000-05-22  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
 
 	* libDB: no quotation for DB name for Postgres 7.x
 
-2000-02-22  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+2000-02-22  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
 
 	* libDB: std namespace changed to satisfy STLport 4.0b2
 	
-2000-01-05  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+2000-01-05  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
 
 	* libDB: Two DB supported: Postgres and MySQL
 
-1999-11-16  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+1999-11-16  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
 
 	* libDB: development od DB interface
 	
-1999-09-02  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+1999-09-02  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
 
 	* libDB (SQL.cc):
 	Initial revision

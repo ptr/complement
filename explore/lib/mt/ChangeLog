@@ -1,3 +1,7 @@
+2004-11-05  Petr Ovtchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* library naming scheme changed.
+
 2004-05-06  Petr Ovtchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* xmt.cc: fix wrong calculation of difference between two
