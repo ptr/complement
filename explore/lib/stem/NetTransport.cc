@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/24 12:39:18 ptr>
+// -*- C++ -*- Time-stamp: <99/03/24 18:25:52 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -18,7 +18,7 @@ void dump( std::ostream& o, const EDS::Event& e )
 {
   o << setiosflags(ios_base::showbase) << hex
     << "Code: " << e.code() << " Destination: " << e.dest() << " Source: " << e.src()
-    << "SID: " << e.sid()
+    << " SID: " << e.sid()
     << "\nSN: " << e.seq()
     << "\nRN: " << e.responce()
     << "\nData:\n";
@@ -55,6 +55,14 @@ void dump( std::ostream& o, const EDS::Event& e )
     buf[i] = 0;
     o << buf << endl;   
   }
+}
+
+__DLLEXPORT NetTransport::~NetTransport()
+{
+  if ( _net_owner ) {
+    delete net;
+  }
+  EventHandler::_mgr->Remove( this );
 }
 
 int NetTransport::_loop( void *p )
@@ -143,6 +151,7 @@ void NetTransport::connect( sockstream& s, const string& hostname, string& info 
   try {
     net = &s;
     while ( pop(ev) ) {
+      cerr << "------------------------>>>>>>>>\n";
       dump( std::cerr, ev );
       __stl_assert( EventHandler::_mgr != 0 );
       // if _mgr == 0, best choice is close connection...
@@ -205,9 +214,10 @@ __DLLEXPORT
 bool NetTransport::push( const Event& __rs, const Event::key_type& rmkey,
                          const Event::key_type& srckey )
 {
+  cerr << "<<<<<<<-------------------------\n";
   dump( std::cerr, __rs );
   std::cerr << "Src key " << hex << srckey << ", remote key " << rmkey
-            << "\n";
+            << " SID: " << _sid << "\n";
 
   unsigned buf[7];
 
