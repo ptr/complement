@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/12/21 17:08:11 ptr>
+// -*- C++ -*- Time-stamp: <00/02/07 19:49:49 ptr>
 
 /*
  *
@@ -27,17 +27,18 @@
 #include <config/feature.h>
 #endif
 
-#ifndef __IOS__
+// #ifndef __IOS__
+#include <iosfwd>
 #include <ios>
-#endif
+// #endif
 
-#ifndef __STREAMBUF__
+// #ifndef __STREAMBUF__
 #include <streambuf>
-#endif
+// #endif
 
-#ifndef __IOSTREAM__
+// #ifndef __IOSTREAM__
 #include <iostream>
-#endif
+// #endif
 
 #ifdef WIN32
 #  include <winsock.h>
@@ -53,8 +54,10 @@
 #  include <cerrno>
 #endif // !WIN32
 
-#ifndef ___xsballoc_h
-#include <_xsballoc.h>
+#ifndef __SGI_STL_OWN_IOSTREAMS
+#  ifndef ___xsballoc_h
+#    include <_xsballoc.h>
+#  endif
 #endif
 
 #ifndef __SOCKIOS_DLL
@@ -65,7 +68,11 @@
 #  endif
 #endif
 
+#ifdef __SGI_STL_OWN_IOSTREAMS
+__STL_BEGIN_NAMESPACE
+#else
 namespace std {
+#endif
 
 class sock_base
 {
@@ -154,10 +161,13 @@ class sock_base
 #endif
 };
 
-template<class charT, class traits>
+template<class charT, class traits, class _Alloc>
 class basic_sockbuf :
-	public basic_streambuf<charT, traits>,
-	public _stream_base<charT,__STL_DEFAULT_ALLOCATOR(charT) >
+	public basic_streambuf<charT, traits>
+#ifndef __SGI_STL_OWN_IOSTREAMS
+        ,
+	public _stream_base<charT,_Alloc>
+#endif
 {
   public:
     typedef basic_ios<charT, traits>       ios_type;
@@ -169,18 +179,21 @@ class basic_sockbuf :
 #endif
     
   public:
-    /* Inherited from basic_streambuf :
+  /* Inherited from basic_streambuf : */
     typedef charT                      char_type;
     typedef typename traits::int_type  int_type;
     typedef typename traits::pos_type  pos_type;
     typedef typename traits::off_type  off_type;
     typedef traits                     traits_type;
-    */
+  /*  */
       
     basic_sockbuf() :
       _fd( -1 ),
       _open( false ),
       _mode( 0 )
+#ifdef __SGI_STL_OWN_IOSTREAMS
+      , _base(0), _ebuf(0), _allocated( true )   
+#endif
       { }
     basic_sockbuf( const char *hostname, int port,
 		   sock_base::stype type = sock_base::sock_stream,
@@ -188,21 +201,29 @@ class basic_sockbuf :
       _fd( -1 ),
       _open( false ),
       _mode( 0 )
+#ifdef __SGI_STL_OWN_IOSTREAMS
+      , _base(0), _ebuf(0), _allocated( true )   
+#endif
       { open( hostname, port, type, prot ); }
     virtual ~basic_sockbuf()
-      {	close(); }
+      {
+        close();
+#ifdef __SGI_STL_OWN_IOSTREAMS
+        _M_deallocate_block();
+#endif
+      }
 
     bool is_open() const
       { return _open; }
 
-    basic_sockbuf<charT, traits> *open( const char *hostname, int port,
+    basic_sockbuf<charT, traits, _Alloc> *open( const char *hostname, int port,
 					sock_base::stype type = sock_base::sock_stream,
 					sock_base::protocol prot = sock_base::inet );
 
-    basic_sockbuf<charT, traits> *open( sock_base::socket_type s, const sockaddr& addr,
+    basic_sockbuf<charT, traits, _Alloc> *open( sock_base::socket_type s, const sockaddr& addr,
 					sock_base::stype t = sock_base::sock_stream );
 
-    basic_sockbuf<charT, traits> *close();
+    basic_sockbuf<charT, traits, _Alloc> *close();
     void shutdown( sock_base::shutdownflg dir );
 
     sock_base::socket_type fd() const { return _fd;}
@@ -279,11 +300,48 @@ class basic_sockbuf :
 
     virtual streamsize xsputn(const char_type *s, streamsize n);
 
+#ifdef __SGI_STL_OWN_IOSTREAMS
+  private: // Helper functions
+    charT* _base;
+    charT* _ebuf;
+    bool _allocated; // true, if _base should be deallocated
+
+    // Precondition: 0 < __n <= max_size().
+    charT* _M_allocate( size_t __n ) { return _M_data_allocator.allocate(__n); }
+    void _M_deallocate( charT* __p, size_t __n )
+      { if (__p) _M_data_allocator.deallocate(__p, __n); }
+
+    void _M_allocate_block(size_t __n)
+      {
+	if ( _allocated ) {
+	  if ( __n <= max_size() ) {
+	    _base = _M_allocate(__n);
+	    _ebuf = _base + __n;
+	    __stl_assert( __n > 0 ? _base != 0 : _base == 0 );
+	  } else
+	    _M_throw_length_error();
+	}
+      }
+
+    void _M_deallocate_block()
+      { if ( _allocated ) _M_deallocate(_base, _ebuf - _base); }
+  
+    size_t max_size() const { return (size_t(-1) / sizeof(charT)) - 1; }
+
+    void _M_throw_length_error() const
+      { __STL_THROW(length_error("basic_sockbuf")); }
+
+    typedef typename _Alloc_traits<charT, _Alloc>::allocator_type allocator_type;
+    typedef __allocator<charT, _Alloc> _Alloc_type;
+
+    _Alloc_type _M_data_allocator;    
+#endif
+
   private:
-    typedef basic_sockbuf<charT,traits> _Self_type;
+    typedef basic_sockbuf<charT,traits,_Alloc> _Self_type;
     int __rdsync();
-    int (basic_sockbuf<charT,traits>::*_xwrite)( const void *, size_t );
-    int (basic_sockbuf<charT,traits>::*_xread)( void *, size_t );
+    int (basic_sockbuf<charT,traits,_Alloc>::*_xwrite)( const void *, size_t );
+    int (basic_sockbuf<charT,traits,_Alloc>::*_xread)( void *, size_t );
     int write( const void *buf, size_t n )
 #ifndef WIN32
       { return ::write( _fd, buf, n ); }
@@ -334,7 +392,7 @@ class basic_sockbuf :
     string              _hostname; 
 };
 
-template <class charT, class traits>
+template <class charT, class traits, class _Alloc>
 class basic_sockstream :
 	public sock_base,
 	public basic_iostream<charT,traits>
@@ -347,7 +405,7 @@ class basic_sockstream :
     typedef typename traits::off_type off_type;
     */
     basic_sockstream() :
-#ifdef WIN32
+#if defined( WIN32 ) || defined(__SGI_STL_OWN_IOSTREAMS)
 	sock_base(),
 	basic_iostream<charT,traits>( &_sb )
 	  { }
@@ -359,7 +417,7 @@ class basic_sockstream :
     explicit basic_sockstream( const char *hostname, int port,
 			       sock_base::stype type = sock_base::sock_stream,
 			       sock_base::protocol pro = sock_base::inet ) :
-#ifdef WIN32
+#if defined( WIN32 ) || defined( __SGI_STL_OWN_IOSTREAMS )
 	sock_base(),
         basic_iostream<charT,traits>( &_sb )
 #else
@@ -367,7 +425,7 @@ class basic_sockstream :
 	basic_iostream<charT,traits>()
 #endif
       {
-#ifndef WIN32
+#if !defined( WIN32 ) && !defined( __SGI_STL_OWN_IOSTREAMS )
 	init( &_sb );
 #endif
 	clear();
@@ -378,7 +436,7 @@ class basic_sockstream :
 
     explicit basic_sockstream( sock_base::socket_type s, const sockaddr& addr,
                                sock_base::stype type = sock_base::sock_stream ) :
-#ifdef WIN32
+#if defined( WIN32 ) || defined( __SGI_STL_OWN_IOSTREAMS )
 	sock_base(),
         basic_iostream<charT,traits>( &_sb )
 #else
@@ -386,7 +444,7 @@ class basic_sockstream :
 	basic_iostream<charT,traits>()
 #endif
       {
-#ifndef WIN32
+#if !defined( WIN32 ) && !defined( __SGI_STL_OWN_IOSTREAMS )
 	init( &_sb );
 #endif
 	clear();
@@ -395,8 +453,8 @@ class basic_sockstream :
 	}
       }
 
-    basic_sockbuf<charT,traits>* rdbuf() const
-      { return const_cast<basic_sockbuf<charT,traits>*>(&_sb); }
+    basic_sockbuf<charT,traits,_Alloc>* rdbuf() const
+      { return const_cast<basic_sockbuf<charT,traits,_Alloc>*>(&_sb); }
     bool is_open() const
       { return _sb.is_open(); }
     void open( const char *hostname, int port,
@@ -430,15 +488,23 @@ class basic_sockstream :
 	}
       }
   private:
-    basic_sockbuf<charT,traits> _sb;
+    basic_sockbuf<charT,traits,_Alloc> _sb;
 };
 
-typedef basic_sockbuf<char,char_traits<char> >              sockbuf;
-typedef basic_sockbuf<wchar_t,char_traits<wchar_t> >       wsockbuf;
-typedef basic_sockstream<char,char_traits<char> >        sockstream;
-typedef basic_sockstream<wchar_t,char_traits<wchar_t> > wsockstream;
+typedef basic_sockbuf<char,char_traits<char>,
+                     __STL_DEFAULT_ALLOCATOR(char) >        sockbuf;
+typedef basic_sockbuf<wchar_t,char_traits<wchar_t>,
+                     __STL_DEFAULT_ALLOCATOR(wchar_t) >    wsockbuf;
+typedef basic_sockstream<char,char_traits<char>,
+                     __STL_DEFAULT_ALLOCATOR(char) >     sockstream;
+typedef basic_sockstream<wchar_t,char_traits<wchar_t>,
+                     __STL_DEFAULT_ALLOCATOR(wchar_t) > wsockstream;
 
+#ifdef __SGI_STL_OWN_IOSTREAMS
+__STL_END_NAMESPACE
+#else
 } // namespace std
+#endif
 
 #ifndef __STL_LINK_TIME_INSTANTIATION
 #include <sockios/sockstream.cc>

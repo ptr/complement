@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/01/19 13:05:20 ptr>
+// -*- C++ -*- Time-stamp: <00/02/03 10:08:09 ptr>
 #ident "$SunId$ %Q%"
 
 #ifdef WIN32
@@ -13,6 +13,7 @@
 
 #include "mt/thr_mgr.h"
 #include <algorithm>
+#include <functional>
 
 using namespace std;
 

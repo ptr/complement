@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/12/17 20:14:24 ptr>
+// -*- C++ -*- Time-stamp: <00/02/07 19:51:23 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -6,11 +6,15 @@
 extern "C" int nanosleep(const struct timespec *, struct timespec *);
 #endif
 
+#ifdef __SGI_STL_OWN_IOSTREAMS
+__STL_BEGIN_NAMESPACE
+#else
 namespace std {
+#endif
 
-template<class charT, class traits>
-basic_sockbuf<charT, traits> *
-basic_sockbuf<charT, traits>::open( const char *name, int port,
+template<class charT, class traits, class _Alloc>
+basic_sockbuf<charT, traits, _Alloc> *
+basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
 				    sock_base::stype type,
 				    sock_base::protocol prot )
 {
@@ -117,9 +121,9 @@ basic_sockbuf<charT, traits>::open( const char *name, int port,
   return this;
 }
 
-template<class charT, class traits>
-basic_sockbuf<charT, traits> *
-basic_sockbuf<charT, traits>::open( sock_base::socket_type s, const sockaddr& addr,
+template<class charT, class traits, class _Alloc>
+basic_sockbuf<charT, traits, _Alloc> *
+basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, const sockaddr& addr,
 				    sock_base::stype t )
 {
   if ( is_open() || s == -1 ) {
@@ -189,8 +193,9 @@ basic_sockbuf<charT, traits>::open( sock_base::socket_type s, const sockaddr& ad
   return this;
 }
 
-template<class charT, class traits>
-basic_sockbuf<charT, traits> *basic_sockbuf<charT, traits>::close()
+template<class charT, class traits, class _Alloc>
+basic_sockbuf<charT, traits, _Alloc> *
+basic_sockbuf<charT, traits, _Alloc>::close()
 {
   if ( !_open )
     return 0;
@@ -225,8 +230,8 @@ basic_sockbuf<charT, traits> *basic_sockbuf<charT, traits>::close()
   return this;
 }
 
-template<class charT, class traits>
-void basic_sockbuf<charT, traits>::shutdown( sock_base::shutdownflg dir )
+template<class charT, class traits, class _Alloc>
+void basic_sockbuf<charT, traits, _Alloc>::shutdown( sock_base::shutdownflg dir )
 {
   if ( is_open() ) {
     if ( (dir & (sock_base::stop_in | sock_base::stop_out)) ==
@@ -240,8 +245,8 @@ void basic_sockbuf<charT, traits>::shutdown( sock_base::shutdownflg dir )
   }
 }
 
-template<class charT, class traits>
-void basic_sockbuf<charT, traits>::setoptions( int optname, bool __v )
+template<class charT, class traits, class _Alloc>
+void basic_sockbuf<charT, traits, _Alloc>::setoptions( int optname, bool __v )
 {
 #ifdef __unix
   if ( is_open() ) {
@@ -261,9 +266,9 @@ void basic_sockbuf<charT, traits>::setoptions( int optname, bool __v )
 #endif
 }
 
-template<class charT, class traits>
-basic_sockbuf<charT, traits>::int_type
-basic_sockbuf<charT, traits>::underflow()
+template<class charT, class traits, class _Alloc>
+basic_sockbuf<charT, traits, _Alloc>::int_type
+basic_sockbuf<charT, traits, _Alloc>::underflow()
 {
   if( !_open )
     return traits::eof();
@@ -284,14 +289,19 @@ basic_sockbuf<charT, traits>::underflow()
   // shouldn't work) while with my ones it's required
 
   // !!!! If use native MS iostreams, comment three lines <---- i below !!!
-
+#  ifndef __SGI_STL_OWN_IOSTREAMS 
   __locker()._M_release_lock();   // <---- 1
+#  endif
   if ( select( fd() + 1, &pfd, 0, 0, 0 ) <= 0 ) {
+#  ifndef __SGI_STL_OWN_IOSTREAMS 
     __locker()._M_acquire_lock(); // <---- 2
+#  endif
     return traits::eof();
   }
+#  ifndef __SGI_STL_OWN_IOSTREAMS 
   __locker()._M_acquire_lock();   // <---- 3
-#else
+#  endif
+#else // WIN32
   pollfd pfd;
   pfd.fd = fd();
   pfd.events = POLLIN;
@@ -301,12 +311,18 @@ basic_sockbuf<charT, traits>::underflow()
   // be unlocked to allow output operations; Before return, I should
   // recover status quo: indeed I am in critical section, that will
   // be unlocked outside this code (as it was locked outside it).
+#  ifndef __SGI_STL_OWN_IOSTREAMS 
   __locker()._M_release_lock();
+#  endif
   if ( poll( &pfd, 1, -1 ) <= 0 ) { // wait infinite
+#  ifndef __SGI_STL_OWN_IOSTREAMS 
     __locker()._M_acquire_lock();
+#  endif
     return traits::eof();
   }
+#ifndef __SGI_STL_OWN_IOSTREAMS 
   __locker()._M_acquire_lock();
+#endif
 #endif
 
   __stl_assert( eback() != 0 );
@@ -326,9 +342,9 @@ basic_sockbuf<charT, traits>::underflow()
   return traits::to_int_type(*gptr());
 }
 
-template<class charT, class traits>
-basic_sockbuf<charT, traits>::int_type
-basic_sockbuf<charT, traits>::overflow( int_type c )
+template<class charT, class traits, class _Alloc>
+basic_sockbuf<charT, traits, _Alloc>::int_type
+basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
 {
   if ( !_open )        
     return traits::eof();
@@ -363,8 +379,8 @@ basic_sockbuf<charT, traits>::overflow( int_type c )
   return traits::not_eof(c);
 }
 
-template<class charT, class traits>
-streamsize basic_sockbuf<charT, traits>::
+template<class charT, class traits, class _Alloc>
+streamsize basic_sockbuf<charT, traits, _Alloc>::
 xsputn( const char_type *s, streamsize n )
 {
   if ( !is_open() || s == 0 || n == 0 ) {
@@ -400,8 +416,8 @@ xsputn( const char_type *s, streamsize n )
   return n;
 }
 
-template<class charT, class traits>
-int basic_sockbuf<charT, traits>::__rdsync()
+template<class charT, class traits, class _Alloc>
+int basic_sockbuf<charT, traits, _Alloc>::__rdsync()
 {
 #ifdef WIN32
   unsigned long nlen = 0;
@@ -438,8 +454,8 @@ int basic_sockbuf<charT, traits>::__rdsync()
   return 0;
 }
 
-template<class charT, class traits>
-int basic_sockbuf<charT, traits>::recvfrom( void *buf, size_t n )
+template<class charT, class traits, class _Alloc>
+int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
 {
 #ifdef _WIN32 // specific for Wins headers
   int sz = sizeof( sockaddr_in );
@@ -509,8 +525,8 @@ int basic_sockbuf<charT, traits>::recvfrom( void *buf, size_t n )
   return 0; // never
 }
 
-template<class charT, class traits>
-void basic_sockbuf<charT, traits>::__hostname()
+template<class charT, class traits, class _Alloc>
+void basic_sockbuf<charT, traits, _Alloc>::__hostname()
 {
 #ifdef WIN32
   hostent *he;
@@ -544,8 +560,8 @@ void basic_sockbuf<charT, traits>::__hostname()
   _hostname += "]";
 }
 
-template<class charT, class traits>
-void basic_sockbuf<charT, traits>::findhost( const char *hostname )
+template<class charT, class traits, class _Alloc>
+void basic_sockbuf<charT, traits, _Alloc>::findhost( const char *hostname )
 {
 #ifndef WIN32
   hostent _host;
@@ -590,4 +606,8 @@ void basic_sockbuf<charT, traits>::findhost( const char *hostname )
 #endif
 }
 
-}
+#ifdef __SGI_STL_OWN_IOSTREAMS
+__STL_END_NAMESPACE
+#else
+} // namespace std
+#endif

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/18 18:32:39 ptr>
+// -*- C++ -*- Time-stamp: <00/02/07 17:34:52 ptr>
 
 /*
  *
@@ -25,15 +25,36 @@
 
 #ifdef _DEBUG
 #  ifndef __STL_DEBUG
-#    define __STL_DEBUG
+#    define __STL_DEBUG  1
 #  endif // __STL_DEBUG
 #endif // _DEBUG
 
 #ifdef _DEBUG_ALLOC
 #  ifndef __STL_DEBUG_ALLOC
-#    define __STL_DEBUG_ALLOC
+#    define __STL_DEBUG_ALLOC  1
 #  endif // __STL_DEBUG_ALLOC
 #endif // _DEBUG_ALLOC
+
+# define __STL_STD_REBUILD 1
+# define  __STL_USE_SGI_STRING  1
+// # define   __STL_USE_NEW_IOSTREAMS	1
+# define __SGI_STL_OWN_IOSTREAMS 1
+// # define  __STL_HAS_WCHAR_T
+#  define __STL_NO_OWN_NAMESPACE  1
+// #  define __STL_VENDOR_CSTD std
+#ifndef __GNUC__
+#  define __STL_USE_NEW_C_HEADERS
+#else
+#  define __STL_NO_CSTD_FUNCTION_IMPORTS
+// #  define __STL_NO_METHOD_SPECIALIZATION
+#endif
+
+#ifndef _REENTRANT
+#  define _REENTRANT
+#  define __STL_SOLARIS_THREADS
+#else
+#  define __STL_SOLARIS_THREADS
+#endif
 
 /*
  * UNIX 95 implementation
