@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/11/21 20:09:16 ptr>
+// -*- C++ -*- Time-stamp: <00/12/13 20:49:39 ptr>
 
 /*
  *
@@ -205,7 +205,12 @@ int Cron::_loop( void *p )
       en.expired.tv_nsec = 1.0e9 * modf( _next, &_next );
       en.expired.tv_sec = _next;
 #else
-      long long _d = en.period.tv_nsec;
+#  ifdef _MSC_VER
+      __int64
+#  else
+      long long 
+#  endif
+        _d = en.period.tv_nsec;
       _d *= ++en.count;
       _d += en.start.tv_nsec;
       en.expired.tv_sec = en.period.tv_sec;
