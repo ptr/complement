@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/04 13:09:48 ptr>
+// -*- C++ -*- Time-stamp: <99/06/07 13:01:42 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -53,6 +53,8 @@ void SessionMgr::establish_session( const Event& ev )
 #endif
   // check account and permissions, create session leader (or 0)
   EventHandler *_session_leader = session_leader( account, passwd );
+  Event_base<SessionRsp> rs( EV_EDS_RS_SESSION );
+  rs.dest( ev.src() );
   if ( _session_leader != 0 ) {
     key_type k = key_generate();  // generate session new session id
 
@@ -61,24 +63,18 @@ void SessionMgr::establish_session( const Event& ev )
     _s.leader = _session_leader;  // store session leader
     _s.timeout = time( 0 ) + 20 * 60;
 
-    Container::iterator i = _M_c.begin();
-    while ( i != _M_c.end() && _skey( *i ) != -1 ) {
-      ++i;
-    }
+    Container::iterator i = find_if( _M_c.begin(), _M_c.end(),
+                                     compose1( bind2nd( _eq_key, -1 ), _skey ) );
     if ( i == _M_c.end() ) {
       _M_c.push_back( account_type(k,_s) );
     } else {
       (*i).first = k;
       (*i).second = _s;
     }
-    Event_base<SessionRsp> rs( EV_EDS_RS_SESSION );
-    rs.dest( ev.src() );
     rs.value().key = k;
     rs.value().addr = _session_leader->self_id();
-    Send( Event_convert<SessionRsp>()(rs) );
+    _session_leader->Send( Event_convert<SessionRsp>()(rs) );
   } else {
-    Event_base<SessionRsp> rs( EV_EDS_RS_SESSION );
-    rs.dest( ev.src() );
     rs.value().key = -1;
     rs.value().addr = -1;
     Send( Event_convert<SessionRsp>()(rs) );    
@@ -88,32 +84,26 @@ void SessionMgr::establish_session( const Event& ev )
 void SessionMgr::restore_session( const Event_base<SessionMgr::key_type>& ev )
 {
   key_type k = ev.value();
-  Container::iterator i = _M_c.begin();
-  while ( i != _M_c.end() && _skey( *i ) != k ) {
-    ++i;
-  }
+  Container::iterator i = find_if( _M_c.begin(), _M_c.end(),
+                                   compose1( bind2nd( _eq_key, k ), _skey ) );
+
+  Event_base<SessionRsp> rs( EV_EDS_RS_SESSION );
+  rs.dest( ev.src() );
   if ( i != _M_c.end() ) {
-    Event_base<SessionRsp> rs( EV_EDS_RS_SESSION );
-    rs.dest( ev.src() );
     rs.value().key = k;
     rs.value().addr = _sess(*i).leader->self_id();
-    Send( Event_convert<SessionRsp>()(rs) );    
+    _sess(*i).leader->Send( Event_convert<SessionRsp>()(rs) );    
   } else {
-    Event_base<SessionRsp> rs( EV_EDS_RS_SESSION );
-    rs.dest( ev.src() );
     rs.value().key = -1;
     rs.value().addr = -1;
-    Send( Event_convert<SessionRsp>()(rs) );    
+    Send( Event_convert<SessionRsp>()(rs) );
   }
 }
 
 void SessionMgr::close_session( const Event_base<SessionMgr::key_type>& ev )
 {
-  key_type k = ev.value();
-  Container::iterator i = _M_c.begin();
-  while ( i != _M_c.end() && _skey( *i ) != k ) {
-    ++i;
-  }
+  Container::iterator i = find_if( _M_c.begin(), _M_c.end(),
+                                   compose1( bind2nd( _eq_key, ev.value() ), _skey ) );
   if ( i != _M_c.end() ) {
     destroy_session_leader( _sess(*i).leader );
     (*i).first = -1;
@@ -123,19 +113,11 @@ void SessionMgr::close_session( const Event_base<SessionMgr::key_type>& ev )
 
 SessionMgr::key_type SessionMgr::key_generate()
 {
-  Container::iterator i;
   key_type k;
   do {
-    k = static_cast<key_type>(mrand48());
-    i = _M_c.begin();
-    if ( k == -1 ) {
-      continue;
-    }
-    while ( i != _M_c.end() && _skey( *i ) != k ) {
-      ++i;
-    }
-  } while ( i != _M_c.end() );
-
+    while ( (k = static_cast<key_type>(mrand48())) == -1 );
+  } while ( find_if( _M_c.begin(), _M_c.end(),
+                     compose1( bind2nd( _eq_key, k ), _skey ) ) != _M_c.end() );
   return k;
 }
 
