@@ -1,13 +1,11 @@
-# Time-stamp: <99/12/17 14:21:44 ptr>
-# $SunId$ %Q%
+# -*- Makefile -*- Time-stamp: <03/09/25 12:02:31 ptr>
+# $Id$
 
-default:	libdbg_so
+SRCROOT := ../..
+COMPILER_NAME := gcc
 
-libdbg_so:
-	?(cd obj.${COMPILER_NAME}; make)
+include Makefile.inc
+include ${SRCROOT}/Makefiles/top.mak
 
-clear:
-	?(cd obj.${COMPILER_NAME}; make clear)
+INCLUDES += -I$(SRCROOT)/include -I$(STLPORT_INCLUDE_DIR)
 
-clear-all:
-	?(cd obj.${COMPILER_NAME}; make clear-all)

@@ -1,12 +1,14 @@
-// -*- C++ -*- Time-stamp: <01/06/13 18:07:36 ptr>
+// -*- C++ -*- Time-stamp: <03/11/16 21:58:38 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999
+ * Copyright (c) 1997-1999, 2002, 2003
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
+ *
+ * Licensed under the Academic Free License version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -22,7 +24,7 @@
 #  ifdef __HP_aCC
 #pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "@(#)$Id$"
+#ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -33,11 +35,11 @@
 #include <config/feature.h>
 #include <iterator>
 #include <iomanip>
-#include "EDS/NetTransport.h"
-#include "EDS/EventHandler.h"
-#include "EDS/EvManager.h"
+#include "stem/NetTransport.h"
+#include "stem/EventHandler.h"
+#include "stem/EvManager.h"
 #include "crc.h"
-#include "EDS/EDSEv.h"
+#include "stem/EDSEv.h"
 
 const unsigned EDS_MSG_LIMIT = 0x400000; // 4MB
 
@@ -86,7 +88,7 @@ struct _auto_lock
 #endif
 
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void dump( std::ostream& o, const EDS::Event& e )
 {
   MT_IO_REENTRANT( o )
@@ -128,7 +130,7 @@ void dump( std::ostream& o, const EDS::Event& e )
   }
 }
 
-__PG_DECLSPEC EvSessionManager NetTransport_base::smgr;
+__FIT_DECLSPEC EvSessionManager NetTransport_base::smgr;
 
 void NetTransport_base::disconnect()
 {
@@ -164,12 +166,12 @@ void NetTransport_base::disconnect()
   }
 }
 
-__PG_DECLSPEC NetTransport_base::~NetTransport_base()
+__FIT_DECLSPEC NetTransport_base::~NetTransport_base()
 {
   NetTransport_base::close();
 }
 
-__PG_DECLSPEC void NetTransport_base::close()
+__FIT_DECLSPEC void NetTransport_base::close()
 {
   if ( net != 0 ) {
     manager()->Remove( this );
@@ -179,7 +181,7 @@ __PG_DECLSPEC void NetTransport_base::close()
   }
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void NetTransport_base::establish_session( std::sockstream& s ) throw (std::domain_error)
 {
   smgr.lock();
@@ -188,7 +190,7 @@ void NetTransport_base::establish_session( std::sockstream& s ) throw (std::doma
     smgr.unlock();
     throw std::domain_error( "bad session id" );
   }
-  smgr[_sid]._host = s.rdbuf()->hostname();
+  smgr[_sid]._host = hostname( s.rdbuf()->inet_addr() );
   smgr[_sid]._port = s.rdbuf()->port();
   smgr.unlock();
 }
@@ -224,7 +226,7 @@ bool NetTransport_base::pop( Event& _rs )
 {
   unsigned buf[8];
 
-  _STLP_ASSERT( net != 0 );
+  // _STLP_ASSERT( net != 0 );
 
   MT_IO_REENTRANT( *net )
 
@@ -297,10 +299,10 @@ bool NetTransport_base::pop( Event& _rs )
 }
 
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 bool NetTransport_base::push( const Event& _rs )
 {
-  _STLP_ASSERT( net != 0 );
+  // _STLP_ASSERT( net != 0 );
   if ( _sid == badkey || !net->good() ) {
     return false;
   }
@@ -359,21 +361,21 @@ bool NetTransport_base::push( const Event& _rs )
   return net->good();
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void NetTransport::connect( sockstream& s )
 {
-  const string& hostname = s.rdbuf()->hostname();
-  cerr << "Connected: " << hostname << endl;
+  const string& _hostname = hostname( s.rdbuf()->inet_addr() );
+  cerr << "Connected: " << _hostname << endl;
   s.setoptions( std::sock_base::so_linger, true, 10 );
   s.setoptions( std::sock_base::so_keepalive, true );
 
   Event ev;
   net = &s;
-  const string _at_hostname( __at + hostname );
+  const string _at_hostname( __at + _hostname );
 
   try {
     establish_session( s );
-    _net_ns = rar_map( nsaddr, __ns_at + hostname );
+    _net_ns = rar_map( nsaddr, __ns_at + _hostname );
     while ( pop( ev ) ) {
       ev.src( rar_map( ev.src(), _at_hostname ) ); // substitute my local id
       manager()->push( ev );
@@ -393,12 +395,12 @@ void NetTransport::connect( sockstream& s )
     // disconnect();
     throw;
   }
-  cerr << "Disconnected: " << hostname << endl;
+  cerr << "Disconnected: " << _hostname << endl;
 }
 
 // connect initiator (client) function
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 NetTransportMgr::~NetTransportMgr()
 {
   if ( net ) {
@@ -411,7 +413,7 @@ NetTransportMgr::~NetTransportMgr()
   }        
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 addr_type NetTransportMgr::open( const char *hostname, int port,
                                  std::sock_base::stype stype )
 {
@@ -441,7 +443,7 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
   return badaddr;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void NetTransportMgr::close()
 {
   NetTransport_base::close();
@@ -456,7 +458,7 @@ int NetTransportMgr::_loop( void *p )
 
   try {
     while ( me.pop( ev ) ) {
-      ev.src( me.rar_map( ev.src(), __at + me.net->rdbuf()->hostname() ) ); // substitute my local id
+      ev.src( me.rar_map( ev.src(), __at + hostname( me.net->rdbuf()->inet_addr()) ) ); // substitute my local id
       manager()->push( ev );
     }
     me.NetTransport_base::close();
@@ -469,19 +471,19 @@ int NetTransportMgr::_loop( void *p )
   return 0;  
 }
 
-__PG_DECLSPEC addr_type NetTransportMgr::make_map( addr_type k, const char *name )
+__FIT_DECLSPEC addr_type NetTransportMgr::make_map( addr_type k, const char *name )
 {
   string full_name = name;
   full_name += __at;
-  full_name += net->rdbuf()->hostname();
+  full_name += hostname( net->rdbuf()->inet_addr() );
 
   return rar_map( k, full_name );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void NetTransportMP::connect( sockstream& s )
 {
-  const string& hostname = s.rdbuf()->hostname();
+  const string& _hostname = hostname( s.rdbuf()->inet_addr() );
   bool sock_dgr = (s.rdbuf()->stype() == std::sock_base::sock_stream) ? false : true;
 
   Event ev;
@@ -503,7 +505,7 @@ void NetTransportMP::connect( sockstream& s )
     // and another: message can be break, and other datagram can be
     // in the middle of message...
     if ( pop( ev ) ) {
-      ev.src( rar_map( ev.src(), __at + hostname ) ); // substitute my local id
+      ev.src( rar_map( ev.src(), __at + _hostname ) ); // substitute my local id
       manager()->push( ev );
     }
     if ( !s.good() ) {

@@ -1,12 +1,14 @@
-// -*- C++ -*- Time-stamp: <01/03/19 18:57:27 ptr>
+// -*- C++ -*- Time-stamp: <03/11/16 22:07:47 ptr>
 
 /*
  *
- * Copyright (c) 1995-1999
+ * Copyright (c) 1995-1999, 2002, 2003
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
+ *
+ * Licensed under the Academic Free License version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -22,7 +24,7 @@
 #  ifdef __HP_aCC
 #pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "@(#)$Id$"
+#ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -31,8 +33,8 @@
 #endif
 
 #include <config/feature.h>
-#include "EDS/EvManager.h"
-#include "EDS/NetTransport.h"
+#include "stem/EvManager.h"
+#include "stem/NetTransport.h"
 #include <iomanip>
 
 namespace EDS {
@@ -60,7 +62,7 @@ const           addr_type endextaddr = 0xbfffffff;
 
 std::string EvManager::inv_key_str( "invalid key" );
 
-__PG_DECLSPEC EvManager::EvManager() :
+__FIT_DECLSPEC EvManager::EvManager() :
     _low( beglocaddr ),
     _high( endlocaddr ),
     _id( _low ),
@@ -73,7 +75,7 @@ __PG_DECLSPEC EvManager::EvManager() :
 // #endif
 }
 
-__PG_DECLSPEC EvManager::~EvManager()
+__FIT_DECLSPEC EvManager::~EvManager()
 {
   _ev_queue_cond.set( false );
   _ev_queue_thr.join();
@@ -86,8 +88,9 @@ int EvManager::_Dispatch( void *p )
   while ( me._ev_queue_cond.set() ) {
     MT_LOCK( me._lock_queue );
     // swap( me.in_ev_queue, me.out_ev_queue );
-    _STLP_ASSERT( me.out_ev_queue.empty() );
-    (const_cast<queue_type::container_type&>(me.in_ev_queue._Get_c())).swap( const_cast<queue_type::container_type&>(me.out_ev_queue._Get_c()) );
+    // _STLP_ASSERT( me.out_ev_queue.empty() );
+    // (const_cast<queue_type::container_type&>(me.in_ev_queue._Get_c())).swap( const_cast<queue_type::container_type&>(me.out_ev_queue._Get_c()) );
+    swap( me.in_ev_queue, me.out_ev_queue );
     MT_UNLOCK( me._lock_queue );
     while ( !me.out_ev_queue.empty() ) {
       me.Send( me.out_ev_queue.front() );
@@ -109,7 +112,7 @@ int EvManager::_Dispatch( void *p )
   return 0;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 addr_type EvManager::Subscribe( EventHandler *object, const std::string& info )
 {
   MT_REENTRANT( _lock_heap, _x1 );
@@ -121,7 +124,7 @@ addr_type EvManager::Subscribe( EventHandler *object, const std::string& info )
   return id;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 addr_type EvManager::Subscribe( EventHandler *object, const char *info )
 {
   MT_REENTRANT( _lock_heap, _x1 );
@@ -135,7 +138,7 @@ addr_type EvManager::Subscribe( EventHandler *object, const char *info )
   return id;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
                                   const std::string& info )
 {
@@ -150,7 +153,7 @@ addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
   return id;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
                                   const char *info )
 {
@@ -167,7 +170,7 @@ addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
   return id;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
                                       addr_type rmkey,
                                       const std::string& info )
@@ -177,13 +180,13 @@ addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
   __Object_Entry& record = heap[id];
   // record.ref = object;
   record.info = info;
-  _STLP_ASSERT( channel != 0 );
+  // _STLP_ASSERT( channel != 0 );
   record.addremote( rmkey, channel );
 
   return id;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
                                       addr_type rmkey,
                                       const char *info )
@@ -195,13 +198,13 @@ addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
   if ( info ) {
     record.info = info;
   }
-  _STLP_ASSERT( channel != 0 );
+  // _STLP_ASSERT( channel != 0 );
   record.addremote( rmkey, channel );
 
   return id;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 bool EvManager::Unsubscribe( addr_type id )
 {
   MT_REENTRANT( _lock_heap, _x1 );
@@ -209,7 +212,7 @@ bool EvManager::Unsubscribe( addr_type id )
   return true; // may be here check object's reference count
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void EvManager::Remove( NetTransport_base *channel )
 {
   MT_REENTRANT( _lock_heap, _x1 );
@@ -220,7 +223,7 @@ void EvManager::Remove( NetTransport_base *channel )
 // (related, may be, with socket connection)
 // from [remote name -> local name] mapping table, and mark related session as
 // 'disconnected'.
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void EvManager::unsafe_Remove( NetTransport_base *channel )
 {
   heap_type::iterator i = heap.begin();
@@ -236,7 +239,7 @@ void EvManager::unsafe_Remove( NetTransport_base *channel )
 
 // return session id of object with address 'id' if this is external
 // object; otherwise return -1;
-__PG_DECLSPEC key_type EvManager::sid( addr_type id ) const
+__FIT_DECLSPEC key_type EvManager::sid( addr_type id ) const
 {
   MT_REENTRANT( _lock_heap, _x1 );
   heap_type::const_iterator i = heap.find( id );
@@ -246,7 +249,7 @@ __PG_DECLSPEC key_type EvManager::sid( addr_type id ) const
   return (*i).second.remote->channel->sid();
 }
 
-__PG_DECLSPEC NetTransport_base *EvManager::transport( addr_type id ) const
+__FIT_DECLSPEC NetTransport_base *EvManager::transport( addr_type id ) const
 {
   MT_REENTRANT( _lock_heap, _x1 );
   heap_type::const_iterator i = heap.find( id );
@@ -292,7 +295,7 @@ void EvManager::Send( const Event& e )
       } else { // remote delivery
 //       std::cerr << "Remote\n";
         __Remote_Object_Entry *remote = (*i).second.remote;
-        _STLP_ASSERT( remote != 0 );
+        // _STLP_ASSERT( remote != 0 );
         addr_type save_dest = e.dest();
         e.dest( remote->key ); // substitute address on remote system
         if ( !remote->channel->push( e ) ) {

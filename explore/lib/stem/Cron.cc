@@ -1,11 +1,13 @@
-// -*- C++ -*- Time-stamp: <01/03/19 18:54:56 ptr>
+// -*- C++ -*- Time-stamp: <03/11/06 07:51:32 ptr>
 
 /*
- * Copyright (c) 1998
+ * Copyright (c) 1998, 2002, 2003
  * Petr Ovchenkov
  * 
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
+ *
+ * Licensed under the Academic Free License version 2.0
  * 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -21,7 +23,7 @@
 #  ifdef __HP_aCC
 #pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "@(#)$Id$"
+#ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -31,9 +33,9 @@
 #endif
 
 #include <config/feature.h>
-#include "EDS/Cron.h"
-#include "EDS/EvManager.h"
-#include "EDS/EDSEv.h"
+#include "stem/Cron.h"
+#include "stem/EvManager.h"
+#include "stem/EDSEv.h"
 
 #include <cmath>
 
@@ -42,35 +44,35 @@
 
 namespace EDS {
 
-__PG_DECLSPEC Cron::Cron() :
+__FIT_DECLSPEC Cron::Cron() :
     EventHandler()
 {
 }
 
-__PG_DECLSPEC Cron::Cron( const char *info ) :
+__FIT_DECLSPEC Cron::Cron( const char *info ) :
     EventHandler( info )
 {
 }
 
-__PG_DECLSPEC Cron::Cron( addr_type id, const char *info ) :
+__FIT_DECLSPEC Cron::Cron( addr_type id, const char *info ) :
     EventHandler( id, info )
 {
 }
 
-__PG_DECLSPEC Cron::~Cron()
+__FIT_DECLSPEC Cron::~Cron()
 {
   if ( isState( CRON_ST_STARTED ) ) {
     Stop();
   }
 }
 
-void __PG_DECLSPEC Cron::AddFirst( const Event_base<CronEntry>& entry )
+void __FIT_DECLSPEC Cron::AddFirst( const Event_base<CronEntry>& entry )
 {
   Add( entry );
   Start();
 }
 
-void __PG_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
+void __FIT_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
 {
   const CronEntry& ne = entry.value();
   __CronEntry en;
@@ -112,7 +114,7 @@ void __PG_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
 }
 
 // Remove cron entry if recipient address and event code match to request
-void __PG_DECLSPEC Cron::Remove( const Event_base<CronEntry>& entry )
+void __FIT_DECLSPEC Cron::Remove( const Event_base<CronEntry>& entry )
 {
   MT_REENTRANT( _M_l, _x1 );
   cond.signal(); // in any case, remove I something or not
@@ -137,7 +139,7 @@ void __PG_DECLSPEC Cron::Remove( const Event_base<CronEntry>& entry )
 
 // Remove cron entry if recipient address and event code match to request
 // and arg the same
-void __PG_DECLSPEC Cron::RemoveArg( const Event_base<CronEntry>& entry )
+void __FIT_DECLSPEC Cron::RemoveArg( const Event_base<CronEntry>& entry )
 {
   MT_REENTRANT( _M_l, _x1 );
   cond.signal(); // in any case, remove I something or not
@@ -161,7 +163,7 @@ void __PG_DECLSPEC Cron::RemoveArg( const Event_base<CronEntry>& entry )
   }
 }
 
-void __PG_DECLSPEC Cron::Start()
+void __FIT_DECLSPEC Cron::Start()
 {
   MT_REENTRANT( _M_l, _x1 );
   if ( !_M_c.empty() ) { // start only if Cron queue not empty
@@ -169,7 +171,7 @@ void __PG_DECLSPEC Cron::Start()
   }
 }
 
-void __PG_DECLSPEC Cron::Stop()
+void __FIT_DECLSPEC Cron::Stop()
 {
   RemoveState( CRON_ST_STARTED );
   cond.signal();
@@ -180,12 +182,12 @@ void __PG_DECLSPEC Cron::Stop()
   _thr.join();
 }
 
-void __PG_DECLSPEC Cron::EmptyStart()
+void __FIT_DECLSPEC Cron::EmptyStart()
 {
   // do nothing
 }
 
-void __PG_DECLSPEC Cron::EmptyStop()
+void __FIT_DECLSPEC Cron::EmptyStop()
 {
   // do nothing
 }
@@ -283,7 +285,7 @@ DEFINE_RESPONSE_TABLE( Cron )
   EV_VOID(ST_NULL,EV_EDS_CRON_STOP,EmptyStop)
 END_RESPONSE_TABLE
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void CronEntry::pack( std::ostream& s ) const
 {
   __pack( s, code );
@@ -295,7 +297,7 @@ void CronEntry::pack( std::ostream& s ) const
   __pack( s, arg );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void CronEntry::net_pack( std::ostream& s ) const
 {
   __net_pack( s, code );
@@ -307,7 +309,7 @@ void CronEntry::net_pack( std::ostream& s ) const
   __net_pack( s, arg );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void CronEntry::unpack( std::istream& s )
 {
   __unpack( s, code );
@@ -319,7 +321,7 @@ void CronEntry::unpack( std::istream& s )
   __unpack( s, arg );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void CronEntry::net_unpack( std::istream& s )
 {
   __net_unpack( s, code );

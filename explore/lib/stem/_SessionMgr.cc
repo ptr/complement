@@ -1,12 +1,14 @@
-// -*- C++ -*- Time-stamp: <01/05/29 15:29:39 ptr>
+// -*- C++ -*- Time-stamp: <03/11/06 07:56:40 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999
+ * Copyright (c) 1997-1999, 2002, 2003
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
+ *
+ * Licensed under the Academic Free License version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -22,7 +24,7 @@
 #  ifdef __HP_aCC
 #pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "@(#)$Id$"
+#ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -34,8 +36,8 @@
 
 #include <stdlib.h>
 
-#include "EDS/SessionMgr.h"
-#include "EDS/EDSEv.h"
+#include "stem/SessionMgr.h"
+#include "stem/EDSEv.h"
 
 #ifdef WIN32
 #define mrand48 rand // rand is bad generator, but wins has no other...
@@ -43,50 +45,50 @@
 
 namespace EDS {
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void SessionRsp::pack( std::ostream& s ) const
 {
   __pack( s, key );
   __pack( s, addr );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void SessionRsp::net_pack( std::ostream& s ) const
 {
   __net_pack( s, key );
   __net_pack( s, addr );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void SessionRsp::unpack( std::istream& s )
 {
   __unpack( s, key );
   __unpack( s, addr );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void SessionRsp::net_unpack( std::istream& s )
 {
   __net_unpack( s, key );
   __net_unpack( s, addr );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 SessionMgr::SessionMgr() :
     EventHandler()
 { }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 SessionMgr::SessionMgr( const char *info ) :
     EventHandler( info )
 { }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 SessionMgr::SessionMgr( addr_type addr, const char *info ) :
     EventHandler( addr, info )
 { }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 SessionMgr::~SessionMgr()
 {
 }
@@ -194,14 +196,14 @@ key_type SessionMgr::key_generate()
   return k;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 EventHandler *SessionMgr::session_leader( const std::string&, const std::string&,
                                           addr_type ) throw()
 {
   return (EventHandler *)0;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void SessionMgr::destroy_session_leader( EventHandler * ) throw ()
 {
 }

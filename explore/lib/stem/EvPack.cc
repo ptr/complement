@@ -1,12 +1,14 @@
-// -*- C++ -*- Time-stamp: <01/03/19 18:57:07 ptr>
+// -*- C++ -*- Time-stamp: <03/11/06 07:53:00 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999
+ * Copyright (c) 1997-1999, 2002, 2003
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
+ *
+ * Licensed under the Academic Free License version 2.0
  * 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -22,12 +24,12 @@
 #  ifdef __HP_aCC
 #pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "@(#)$Id$"
+#ident "@(#)$Id$"
 #  endif
 #endif
 
 #include <config/feature.h>
-#include "EDS/EvPack.h"
+#include "stem/EvPack.h"
 #include <iterator>
 #include <iostream>
 #include <string>
@@ -41,7 +43,7 @@ namespace EDS {
 // using __STD::copy;
 using namespace std;
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void __pack_base::__net_unpack( istream& s, string& str )
 {
   string::size_type sz;
@@ -64,7 +66,7 @@ void __pack_base::__net_unpack( istream& s, string& str )
   }
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void __pack_base::__net_pack( ostream& s, const string& str )
 {
   string::size_type sz = str.size();
@@ -81,7 +83,7 @@ void __pack_base::__net_pack( ostream& s, const string& str )
 #endif
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void __pack_base::__unpack( istream& s, string& str )
 {
   string::size_type sz;
@@ -103,7 +105,7 @@ void __pack_base::__unpack( istream& s, string& str )
   }
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void __pack_base::__pack( ostream& s, const string& str )
 {
   string::size_type sz = str.size();
