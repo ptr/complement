@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/04/16 19:24:36 ptr>
+// -*- C++ -*- Time-stamp: <99/05/07 10:16:11 ptr>
 
 #ifndef __SOCKMGR_H
 #define __SOCKMGR_H
@@ -78,7 +78,7 @@ class basic_sockmgr :
 struct sockmgr_client
 {
     sockmgr_client() :
-        thrID( Thread::daemon | Thread::detached )
+        thrID( unsigned(Thread::daemon | Thread::detached) )
       { }
 
     sockstream s;
@@ -184,7 +184,7 @@ class sockmgr_stream :
     static int connection( void * );
     static int garbage_collector( void * );
 
-    typedef sockmgr_client *(sockmgr_stream::*accept_type)();
+    typedef sockmgr_client *(sockmgr_stream<Connect>::*accept_type)();
 
     accept_type _accept;
     sockmgr_client *accept() // workaround for CC
