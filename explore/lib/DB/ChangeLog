@@ -1,3 +1,14 @@
+2002-08-24  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xxSQL.cc (Repository): fix loaded libraries names
+
+	* xxSQL.cc, xxSQL.h (Repository) add flags and code
+	for requests tracing.
+
+	* libDB: support for gcc 3.1.1; linked with libxmt,
+	to avoid problems with loading applications without
+	explicit usage of libxmt; varsion 0.6.3.
+
 2002-08-03  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* libDB: Insert DB support in 'explore' source tree;
