@@ -1,3 +1,10 @@
+2005-03-29  Petr Ovtchenkov  <ptr@island.plnet.ru>
+
+	* gmake/app/rules.mak, gmake/freebsd/rules-so.mak, gmake/linux/rules-so.mak,
+	gmake/openbsd/rules-so.mak, gmake/sunos/rules-so.mak: fix link sequence---
+	the end objects should be really last, i.e. after libs. This affected
+	by linkage with libstlport without libstdc++.
+
 2005-03-25  Petr Ovtchenkov  <ptr@island.plnet.ru>
 
 	* gmake/app/gcc.mak, gmake/lib/gcc.mak:
