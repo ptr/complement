@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/08 14:39:13 ptr>
+// -*- C++ -*- Time-stamp: <99/09/10 16:03:21 ptr>
 #ifndef __Names_h
 #define __Names_h
 
@@ -33,8 +33,8 @@ class Names :
     explicit __EDS_DLL Names( const char * );
     explicit __EDS_DLL Names( addr_type id, const char *info = 0 );
 
-    void get_list( const Event& );
-    void get_ext_list( const Event& );
+    __EDS_DLL void get_list( const Event& );
+    __EDS_DLL void get_ext_list( const Event& );
 
   private:
     DECLARE_RESPONSE_TABLE( Names, EventHandler );
