@@ -1,4 +1,4 @@
-/* -*- C -*- Time-stamp: <03/04/09 22:20:28 ptr> */
+/* -*- C -*- Time-stamp: <03/05/07 19:48:03 ptr> */
 
 /*
  *
@@ -47,6 +47,18 @@
  *
  */
 
+#ifdef __CYGWIN32__ // but defined in Linux headers
+/* Macros for converting between `struct timeval' and `struct timespec'.  */
+# define TIMEVAL_TO_TIMESPEC(tv, ts) {                                   \
+        (ts)->tv_sec = (tv)->tv_sec;                                    \
+        (ts)->tv_nsec = (tv)->tv_usec * 1000;                           \
+}
+# define TIMESPEC_TO_TIMEVAL(tv, ts) {                                   \
+        (tv)->tv_sec = (ts)->tv_sec;                                    \
+        (tv)->tv_usec = (ts)->tv_nsec / 1000;                           \
+}
+#endif
+
 int main( int argc, char * const * argv )
 {
   int app_mode = 0;
@@ -75,7 +87,7 @@ int main( int argc, char * const * argv )
     }
 
     /* read precise time */
-#ifdef __linux
+#if defined(__linux) || defined(__CYGWIN32__)
     struct timeval tv;
     gettimeofday( &tv, 0 );
     TIMEVAL_TO_TIMESPEC( &tv, &ts );
@@ -95,7 +107,7 @@ int main( int argc, char * const * argv )
     } else {
       struct rusage r;
       struct timespec te;
-#ifdef __linux
+#if defined(__linux) || defined(__CYGWIN32__)
       struct timeval tve;
 #elif defined( WIN32 )
       time_t cte;
@@ -103,7 +115,7 @@ int main( int argc, char * const * argv )
 
       wait3( 0, 0, &r ); /* read process statistic */
       /* take precise time */
-#ifdef __linux
+#if defined(__linux) || defined(__CYGWIN32__)
       gettimeofday( &tve, 0 );
       TIMEVAL_TO_TIMESPEC( &tve, &te );
 #elif defined( WIN32 )
