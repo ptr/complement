@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/12/21 10:51:38 ptr>
+// -*- C++ -*- Time-stamp: <01/01/31 11:06:13 ptr>
 
 /*
  *
@@ -38,6 +38,10 @@
 #endif
 
 #include <iostream>
+
+#ifdef WIN32
+#include <winsock.h>
+#endif
 
 namespace EDS {
 

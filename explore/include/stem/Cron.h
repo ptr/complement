@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/01/29 13:24:16 ptr>
+// -*- C++ -*- Time-stamp: <01/01/31 11:01:01 ptr>
 
 /*
  * Copyright (c) 1998
@@ -50,10 +50,6 @@
 #include <queue>
 
 namespace EDS {
-
-#ifdef _WIN32
-using std::timespec;
-#endif
 
 struct CronEntry :
    public __pack_base
