@@ -28,7 +28,7 @@ void OXWEventHandler::PopState()
 
 void OXWEventHandler::PopState( state_type state )
 {
-  list<state_type>::iterator hst_i = find( state );
+  list<state_type>::iterator hst_i = __find( state );
   if ( hst_i != theHistory.end() && *hst_i != ST_TERMINAL ) {
     theHistory.erase( hst_i, theHistory.end() );
   }
@@ -36,7 +36,7 @@ void OXWEventHandler::PopState( state_type state )
 
 void OXWEventHandler::RemoveState( state_type state )
 {
-  list<state_type>::iterator hst_i = find( state );
+  list<state_type>::iterator hst_i = __find( state );
   if ( hst_i != theHistory.end() && *hst_i != ST_TERMINAL ) {
     theHistory.erase( hst_i );
   }
@@ -55,7 +55,7 @@ bool OXWEventHandler::isState( state_type state ) const
   return false;
 }
 
-list<state_type>::iterator OXWEventHandler::find( state_type state )
+list<state_type>::iterator OXWEventHandler::__find( state_type state )
 {
   if ( theHistory.empty() ) {
     return theHistory.end();
