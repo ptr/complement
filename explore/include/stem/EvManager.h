@@ -1,13 +1,12 @@
-// -*- C++ -*- Time-stamp: <00/03/20 15:34:15 ptr>
+// -*- C++ -*- Time-stamp: <00/05/26 10:47:58 ptr>
 
 /*
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
  *
  * Copyright (c) 1995-1999
  * Petr Ovchenkov
- *
- * Copyright (c) 1999
- * ParallelGraphics Software Systems
- 
+ * 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -127,7 +126,7 @@ class EvManager
     __PG_DECLSPEC bool Unsubscribe( addr_type id );
 
     bool is_avail( addr_type id ) const
-      { 
+      {
         MT_REENTRANT( _lock_heap, _1 );
         return unsafe_is_avail(id);
       }

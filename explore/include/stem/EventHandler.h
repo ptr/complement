@@ -1,12 +1,11 @@
-// -*- C++ -*- Time-stamp: <00/05/22 12:33:08 ptr>
+// -*- C++ -*- Time-stamp: <00/05/26 10:56:06 ptr>
 
 /*
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
  *
  * Copyright (c) 1995-1999
  * Petr Ovchenkov
- *
- * Copyright (c) 1999-2000
- * ParallelGraphics
  * 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -540,6 +539,7 @@ class EventHandler
     __PG_DECLSPEC ~EventHandler();
 
     __PG_DECLSPEC const string& who_is( addr_type k ) const;
+    __PG_DECLSPEC bool is_avail( addr_type id ) const;
     __PG_DECLSPEC key_type sid( addr_type k ) const;
     static EvManager *manager()
       { return _mgr; }
