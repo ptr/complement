@@ -578,7 +578,7 @@ void basic_sockbuf<charT, traits, _Alloc>::__hostname()
                         &he, tmp_buff, 1024, &err ) != 0
 #else
        gethostbyaddr_r( (char *)&in.s_addr, sizeof(in_addr), AF_INET,
-                        &he, tmp_buff, 1024, &phe, &err ) != 0
+                        &he, tmp_buff, 1024, &phe, &err ) == 0
 #endif
      )
   {
