@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <02/03/11 14:49:22 ptr>
+# -*- makefile -*- Time-stamp: <03/03/02 12:47:01 ptr>
 # $Id$
 
 
@@ -17,6 +17,9 @@ else
 dbg-shared:	LDFLAGS += -shared -Wl,-h$(SO_NAME_LINK_DBG) ${LDSEARCH}
 stldbg-shared:	LDFLAGS += -shared -Wl,-h$(SO_NAME_LINK_STLDBG) ${LDSEARCH}
 release-shared:	LDFLAGS += -shared -Wl,-h$(SO_NAME_LINK) ${LDSEARCH}
+dbg-static:	LDFLAGS += ${LDSEARCH}
+stldbg-static:	LDFLAGS += ${LDSEARCH}
+release-static:	LDFLAGS += ${LDSEARCH}
 endif
 
 
