@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/28 10:24:17 ptr>
+// -*- C++ -*- Time-stamp: <99/06/01 16:03:23 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -108,6 +108,7 @@ basic_sockbuf<charT, traits>::open( const char *name, int port,
   _state = ios_base::goodbit;
   _errno = 0; // if any
   _open = true;
+  __hostname();
 
 //	in_port_t ppp = 0x5000;
 //	cerr << hex << _address.inet.sin_port << " " << ppp << endl;
