@@ -1,13 +1,13 @@
-// -*- C++ -*- Time-stamp: <00/04/17 10:07:43 ptr>
+// -*- C++ -*- Time-stamp: <00/07/14 20:28:48 ptr>
 
 /*
+ *
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
- * ParallelGraphics
- 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -18,7 +18,7 @@
  * in supporting documentation.
  */
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4804 )
@@ -49,8 +49,24 @@ using namespace std;
 #endif
 
 #ifdef __SGI_STL_OWN_IOSTREAMS
+
+struct _STL_auto_lock2
+{
+  _STL_mutex& _M_lock;
+  
+  _STL_auto_lock2(_STL_mutex& __lock) : _M_lock(__lock)
+    { _M_lock._M_acquire_lock(); }
+  ~_STL_auto_lock2() { _M_lock._M_release_lock(); }
+
+private:
+  void operator=(const _STL_auto_lock2&);
+  _STL_auto_lock2(const _STL_auto_lock2&);
+};
+
+// #  define MT_IO_REENTRANT( s ) \
+//         __STLPORT_STD::_STL_auto_lock __AutoLock( (s).rdbuf()->_M_lock );
 #  define MT_IO_REENTRANT( s ) \
-         __STLPORT_STD::_STL_auto_lock __AutoLock( (s).rdbuf()->_M_lock );
+         _STL_auto_lock2 __AutoLock( (s).rdbuf()->_M_lock );
 #  define MT_IO_LOCK( s ) (s).rdbuf()->_M_lock._M_acquire_lock();
 #  define MT_IO_UNLOCK( s ) (s).rdbuf()->_M_lock._M_release_lock();
 #  define MT_IO_REENTRANT_W( s ) \
