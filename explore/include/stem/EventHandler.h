@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/04 13:34:27 ptr>
+// -*- C++ -*- Time-stamp: <99/06/08 12:13:15 ptr>
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
@@ -328,7 +328,11 @@ template <class T, class InputIterator >
 class __EvHandler
 {
   public:
+#ifndef _MSC_VER
     typedef typename T::table_type table_type;
+#else // should sync at least with EventHandler::table_type below: 
+    typedef __EvTable<Event::code_type,state_type,__AnyPMFentry *> table_type;
+#endif // (that was workaround of M$ VC 5.0 bug)
 
     __EvHandler()
       { __EvTableLoader( &table, (T *)0 ); }
@@ -556,7 +560,7 @@ class EventHandler
 };
 
 template <class Handler>
-void __EvTableLoader( typename EventHandler::table_type *table, Handler * )
+void __EvTableLoader( EventHandler::table_type *table, Handler * )
 {
   __EvTableLoader( table, (Handler::ParentThisCls *)0 );
   const Handler::evtable_decl_type *__e = Handler::get_ev_table_decl();
@@ -566,7 +570,9 @@ void __EvTableLoader( typename EventHandler::table_type *table, Handler * )
   }
 }
 
+#ifndef _MSC_VER
 template <>
+#endif
 inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
                                            EventHandler * )
 { }
