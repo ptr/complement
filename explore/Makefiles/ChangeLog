@@ -6,7 +6,9 @@
 	libstdc++/libestdc++ supported on Linux and OpenBSD. libstlport
 	will be in link sequence when _USE_NOSTDLIB in charge. If macro
 	NOT_USE_NOSTDLIB defined original gcc linkage in use and no link with
-	libstlport.
+	libstlport. Don't insert libsupc++ into libxxx.so and in end application---
+	this archive is in libstlport now. Ability to link without stlport; path
+	to stlport lib and -lstlport added.
 
 	* build/Makefiles/gmake/openbsd/rules-so.mak: idem.
 
