@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 10:46:36 ptr>
+// -*- C++ -*- Time-stamp: <99/10/05 21:50:59 ptr>
 
 /*
  *
@@ -118,6 +118,16 @@ __EDS_DLL NetTransport_base::~NetTransport_base()
 {
   manager()->Remove( this );
   disconnect();
+}
+
+__EDS_DLL void NetTransport_base::close()
+{
+  if ( net != 0 ) {
+    manager()->Remove( this );    
+    disconnect();
+    rar.clear();
+    net->close();
+  }
 }
 
 const string __ns_at( "ns@" );
@@ -273,6 +283,8 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
     net = new sockstream( hostname, port, stype );
   } else if ( net->is_open() ) {
     net->close();
+    net->open( hostname, port, stype );
+  } else {
     net->open( hostname, port, stype );
   }
 
