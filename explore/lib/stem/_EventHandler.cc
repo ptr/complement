@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/24 15:26:30 ptr>
+// -*- C++ -*- Time-stamp: <99/06/04 11:13:38 ptr>
 #ident "$SunId$ %Q%"
 
 #include <EventHandler.h>
@@ -12,14 +12,6 @@
 #endif // __TRACE || __WARN
 
 namespace EDS {
-
-__DLLEXPORT
-EventHandler::evtable_type EventHandler::theEventsTable( EventHandler::theDeclEventsTable );
-
-__DLLEXPORT
-__DeclareAnyPMF<EventHandler> EventHandler::theDeclEventsTable[] = {
-  { 0, 0, { 0, 0, "End of table" }}
-};
 
 char *Init_buf[32];
 EvManager *EventHandler::_mgr = 0;
@@ -187,27 +179,6 @@ EventHandler::~EventHandler()
 }
 
 __DLLEXPORT
-bool EventHandler::Dispatch( const Event& event )
-{
-  return theEventsTable.Dispatch( this, theHistory.begin(),theHistory.end(),
-				  event );
-}
-
-__DLLEXPORT
-bool EventHandler::DispatchStub( const Event& event )
-{
-  return theEventsTable.DispatchStub( this, theHistory.begin(),
-				      theHistory.end(), event );
-}
-
-__DLLEXPORT
-void EventHandler::DispatchTrace( const Event& __event__, ostream& out )
-{
-  theEventsTable.DispatchTrace( theHistory.begin(),theHistory.end(),
-				__event__, out );
-}
-
-__DLLEXPORT
 void EventHandler::TraceStack( ostream& out ) const
 {
   const HistoryContainer& hst = theHistory;
@@ -216,12 +187,6 @@ void EventHandler::TraceStack( ostream& out ) const
     out << "[" << *hst_i++ << "]";
   }
   out << endl;
-}
-
-__DLLEXPORT
-void EventHandler::Trace( ostream& out ) const
-{
-  EventHandler::theEventsTable.Out( out );
 }
 
 } // namespace EDS
