@@ -1,12 +1,12 @@
-// -*- C++ -*- Time-stamp: <99/05/19 18:02:37 ptr>
+// -*- C++ -*- Time-stamp: <99/05/21 11:29:41 ptr>
 
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+#ident "$SunId$ %Q%"
 
 namespace std {
 
 template<class charT, class traits>
 basic_sockbuf<charT, traits> *
-basic_sockbuf<charT, traits>::open( const char *hostname, int port,
+basic_sockbuf<charT, traits>::open( const char *name, int port,
 				    sock_base::stype type,
 				    sock_base::protocol prot )
 {
@@ -33,7 +33,7 @@ basic_sockbuf<charT, traits>::open( const char *hostname, int port,
     }
     _address.inet.sin_family = AF_INET;
     _address.inet.sin_port = htons( port );
-    findhost( hostname );
+    findhost( name );
     if ( _state != ios_base::goodbit ) {
 #ifdef WIN32
       ::closesocket( _fd );
@@ -77,7 +77,7 @@ basic_sockbuf<charT, traits>::open( const char *hostname, int port,
     return 0;
   }
   if ( _base == 0 )
-    _M_allocate_block( 0x2000 ); // max 1460 (dec) --- single segment
+    _M_allocate_block( 0xb00 ); // max 1460 (dec) [0x5b4] --- single segment
   if ( _base == 0 ) {
 #ifdef WIN32
     ::closesocket( _fd );
@@ -141,7 +141,7 @@ basic_sockbuf<charT, traits>::open( sock_base::socket_type s, const sockaddr& ad
 
 
   if ( _base == 0 ) {
-    _M_allocate_block( 0x2000 );
+    _M_allocate_block( 0xb00 );
   }
 
   if ( _base == 0 ) {
@@ -169,6 +169,7 @@ basic_sockbuf<charT, traits>::open( sock_base::socket_type s, const sockaddr& ad
   _state = ios_base::goodbit;
   _errno = 0; // if any
   _open = true;
+  __hostname();
 //	in_port_t ppp = 0x5000;
 //	cerr << hex << _address.inet.sin_port << " " << ppp << endl;
 //	cerr << hex << _address.inet.sin_addr.s_addr << endl;
@@ -439,11 +440,12 @@ int basic_sockbuf<charT, traits>::recvfrom( void *buf, size_t n )
 }
 
 template<class charT, class traits>
-void basic_sockbuf<charT, traits>::hostname( string& hostname )
+void basic_sockbuf<charT, traits>::__hostname()
 {
 #ifdef WIN32
   hostent *he;
-#else
+#endif
+#ifdef __unix
   hostent he;
   char tmp_buff[1024];
 #endif
@@ -454,22 +456,22 @@ void basic_sockbuf<charT, traits>::hostname( string& hostname )
   // For Win he is thread private data, so that's safe
   he = gethostbyaddr( (char *)&in.s_addr, sizeof(in_addr), AF_INET );
   if ( he != 0 ) {
-    hostname = he->h_name;
+    _hostname = he->h_name;
   } else {
-    hostname = "unknown";
+    _hostname = "unknown";
   }
 #else
   if ( gethostbyaddr_r( (char *)&in.s_addr, sizeof(in_addr), AF_INET,
                         &he, tmp_buff, 1024, &err ) != 0 ) {
-    hostname = he.h_name;
+    _hostname = he.h_name;
   } else {
-    hostname = "unknown";
+    _hostname = "unknown";
   }
 #endif
 
-  hostname += " [";
-  hostname += inet_ntoa( in );
-  hostname += "]";
+  _hostname += " [";
+  _hostname += inet_ntoa( in );
+  _hostname += "]";
 }
 
 template<class charT, class traits>
