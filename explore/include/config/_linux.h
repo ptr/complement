@@ -2,8 +2,8 @@
 
 /*
  *
- * Copyright (c) 2003
- * Petr Ovchenkov
+ * Copyright (c) 2003, 2004
+ * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 2.0
  *
@@ -23,6 +23,15 @@
 
 #ident "@(#)$Id$"
 
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
+
+// Include this first, due to <features.h> unconditionally redefine
+// a lot of macros.
+
+#include <features.h>
+
 #define __FIT__P_PROBLEM // Hide __P from sys/cdefs.h. Workaround for glibc.
 
 #if defined(_REENTRANT) && !defined(_PTHREADS)
@@ -30,9 +39,9 @@
 #endif
 
 #if defined(_PTHREADS)
-#  ifndef __USE_UNIX98
-#    define __USE_UNIX98
-#  endif
+//#  ifndef __USE_UNIX98
+//#    define __USE_UNIX98
+//#  endif
 // This feature exist at least since glibc 2.2.4
 #  define __FIT_XSI_THR  // Unix 98 or X/Open System Interfaces Extention
 #  ifdef __USE_XOPEN2K
