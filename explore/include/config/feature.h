@@ -1,14 +1,14 @@
-// -*- C++ -*- Time-stamp: <03/06/29 19:55:11 ptr>
+// -*- C++ -*- Time-stamp: <03/09/24 19:51:34 ptr>
 
 /*
  *
- * Copyright (c) 1999, 2002
+ * Copyright (c) 1999, 2002, 2003
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 1.0
+ * Licensed under the Academic Free License Version 1.2
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -71,6 +71,13 @@
 
 #ifdef linux
 #  include <config/_linux.h>
+#  ifdef __GNUC__
+#    include <config/_gcc.h>
+#  endif
+#endif
+
+#ifdef __FreeBSD__
+#  include <config/_freebsd.h>
 #  ifdef __GNUC__
 #    include <config/_gcc.h>
 #  endif
