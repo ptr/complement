@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/06/21 20:21:08 ptr>
+// -*- C++ -*- Time-stamp: <02/07/11 22:08:06 ptr>
 
 /*
  *
@@ -477,6 +477,10 @@ sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>::accept_tcp()
 
   do {
     // find sockets that has buffered data
+    // Note, that available data will processed first
+    // with preference over connection establishes and 
+    // new data;
+    // This policy may be worth to revise.
     typename container_type::iterator ba = 
       find_if( _M_c.begin(), _M_c.end(), _M_av );
     if ( ba != _M_c.end() ) {
@@ -488,6 +492,8 @@ sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>::accept_tcp()
       return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
     }
 
+    // New connction open before data read from opened sockets.
+    // This policy may be worth to revise.
     if ( _pfd[0].revents != 0 && (_pfd[0].revents & POLLERR) == 0 ) {
       // poll found event on binded socket
       sock_base::socket_type _sd = ::accept( fd(), &addr.any, &sz );
@@ -604,22 +610,11 @@ sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>::accept_udp()
 template <class Connect>
 void sockmgr_stream_MP<Connect>::_close_by_signal( int )
 {
-  cerr << "_close_by_signal" << endl;
-  // this function provide sanity of 'loop' call:
-  // close all open connections>, associated with listen socket.
 #ifdef _PTHREADS
   void *_uw_save = *((void **)pthread_getspecific( Thread::mtkey() ) + _idx );
   sockmgr_stream_MP *me = static_cast<sockmgr_stream_MP *>( _uw_save );
 
-  me->_c_lock._M_acquire_lock();
-
-  typename container_type::iterator i = me->_M_c.begin();
-  while ( i != me->_M_c.end() ) {
-    (*i++)->s->close();
-  }
   me->close();
-  me->_c_lock._M_release_lock();
-  me->loop_id.kill( SIGTERM ); // request for thread termination
 #else
 #error "Fix me!"
 #endif
@@ -630,13 +625,6 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
 {
   sockmgr_stream_MP *me = static_cast<sockmgr_stream_MP *>(p);
   me->loop_id.pword( _idx ) = me; // push pointer to self for signal processing
-#ifdef __unix
-  Thread::unblock_signal( SIGPIPE );
-  Thread::unblock_signal( SIGINT );
-//  Thread::signal_handler( SIGPIPE, signal_throw );
-  Thread::signal_handler( SIGPIPE, sockmgr_stream_MP<Connect>::_close_by_signal );
-  Thread::signal_handler( SIGINT, sockmgr_stream_MP<Connect>::_close_by_signal );
-#endif
 
   try {
     _Connect *s;
@@ -649,6 +637,7 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
         s->_proc->connect( *s->s );
         if ( !s->s->good() ) {
           s->s->close();
+          s->_proc->close();
         }
         if ( !s->s->is_open() ) { // remove all closed sockets from poll
 #ifdef __FIT_POLL
@@ -669,10 +658,12 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
   }
   catch ( ... ) {
     me->_c_lock._M_acquire_lock();
-
-    typename container_type::iterator i = me->_M_c.begin();
-    while ( i != me->_M_c.end() ) {
-      (*i++)->s->close();
+    
+    for ( typename container_type::iterator i = me->_M_c.begin(); i != me->_M_c.end(); ++i ) {
+      if ( (*i)->s->is_open() ) { // close all not closed yet
+        (*i)->s->close();
+        (*i)->_proc->close();
+      }
     }
     me->close();
     me->_c_lock._M_release_lock();
@@ -680,10 +671,12 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
   }
 
   me->_c_lock._M_acquire_lock();
-
-  typename container_type::iterator i = me->_M_c.begin();
-  while ( i != me->_M_c.end() ) {
-    (*i++)->s->close();
+  
+  for ( typename container_type::iterator i = me->_M_c.begin(); i != me->_M_c.end(); ++i ) {
+    if ( (*i)->s->is_open() ) { // close all not closed yet
+      (*i)->s->close();
+      (*i)->_proc->close();
+    }
   }
   me->close();
   me->_c_lock._M_release_lock();
