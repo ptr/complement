@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/01/19 13:10:13 ptr>
+// -*- C++ -*- Time-stamp: <00/02/08 13:18:17 ptr>
 
 /*
  *
@@ -115,10 +115,19 @@ class NetTransport_base :
 
   protected:
     addr_type rar_map( addr_type k, const std::string& name );
-    bool pop( Event&, SessionInfo& );
+    bool pop( Event& );
     void disconnect();
 
+#ifdef __SGI_STL_OWN_IOSTREAMS
+#ifndef __GNUC__
     std::sockstream *net;
+#else
+    STLPORT::basic_sockstream<char,STLPORT::char_traits<char>,
+      STLPORT::allocator<char> > *net;
+#endif
+#else
+    std::sockstream *net;
+#endif
     EvSessionManager::key_type _sid;
     unsigned _count;
     // indeed rar can be inside connect(), but SunPro's CC 5.0
