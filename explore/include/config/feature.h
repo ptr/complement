@@ -1,9 +1,9 @@
-// -*- C++ -*- Time-stamp: <03/11/30 19:45:58 ptr>
+// -*- C++ -*- Time-stamp: <04/04/09 16:03:57 ptr>
 
 /*
  *
- * Copyright (c) 1999, 2002, 2003
- * Petr Ovchenkov
+ * Copyright (c) 1999, 2002, 2003, 2004
+ * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
@@ -31,19 +31,6 @@
 #ident "@(#)$Id$"
 #  endif
 #endif
-
-// #define __USE_SGI_STL_PORT  0x400
-
-// #if /* defined( __STL_DEBUG ) && */ (__USE_SGI_STL_PORT >= 0x400)
-// // #  define __STD __stl_native_std
-// #  define __STD __STLPORT_STD // __std_alias
-// #  ifdef __STL_DEBUG 
-// #    define __VENDOR_STD  __STL_VENDOR_EXCEPT_STD
-// #  else
-// #    define __VENDOR_STD  __std_alias
-// #  endif
-// #endif
-
 
 #ifndef _REENTRANT
 #  define _REENTRANT
