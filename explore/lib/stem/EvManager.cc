@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/04/16 14:43:31 ptr>
+// -*- C++ -*- Time-stamp: <99/05/12 18:01:55 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #include <EvManager.h>
@@ -65,7 +65,7 @@ void EvManager::Send( const Event& e, const EvManager::key_type& src_id )
     } else { // remote delivery
 //       std::cerr << "Remote\n";
       __stl_assert( (*i).second.remote != 0 );
-      (*i).second.remote->channel->push( e, (*i).second.remote->key, src_id, -1 );
+      (*i).second.remote->channel->push( e, (*i).second.remote->key, src_id );
     }
   } else {
     std::cerr << "===================== Not found\n";
