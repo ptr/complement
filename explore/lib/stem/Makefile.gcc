@@ -1,11 +1,12 @@
-# Time-stamp: <00/10/03 19:22:12 ptr>
-# $SunId$
+# Time-stamp: <01/03/21 13:38:22 ptr>
+# $Id$
 
 BASEDIR := $(shell xtmp=`pwd`; \
                xtmp=`dirname $$xtmp`; dirname $$xtmp)
 LIBDIR  := $(shell xtmp=`pwd`; dirname $$xtmp)
 
 COMPILER_NAME = gcc
+INSTALL_PRE_LIB_DIR = ${BASEDIR}/package/PGslib/PG/lib
 include ${BASEDIR}/lib/EDS/Makefile.inc
 
 all:	all-release all-debug
