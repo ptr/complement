@@ -8,6 +8,10 @@ int ASEventHandler::Find( ASEventInfo&, ASEqualOperator )
   return 0;
 }
 
+class GENERIC
+{
+};
+
 long ASEventDispatch(GENERIC& generic, void (GENERIC::*pmf)( ASEvent& ), ASEvent& event )
 {
   (generic.*pmf)( event );
@@ -17,7 +21,7 @@ long ASEventDispatch(GENERIC& generic, void (GENERIC::*pmf)( ASEvent& ), ASEvent
 long ASEventHandler::Dispatch( ASEventInfo& eventInfo, ASEvent& event )
 {
   PRECONDITION(eventInfo.Entry);
-  return ASEventDispatch( *eventInfo.Object, eventInfo.Entry->Pmf, event );
+  return ASEventDispatch( *(eventInfo.Object), eventInfo.Entry->Pmf, event );
 }
 
 int ASEventHandler::SearchEntries( ASGenericTableEntry *entries, ASEventInfo& eventInfo, ASEqualOperator equal )
