@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 09:52:04 ptr>
+// -*- C++ -*- Time-stamp: <99/10/08 15:13:11 ptr>
 
 /*
  *
@@ -220,8 +220,13 @@ struct __dispatcher_convert_Event
 template <class PMF, class Arg >
 struct __dispatcher_convert_Event_extr
 {
+#ifndef _MSC_VER
     static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, const Arg& arg )
       {	(c->*pmf)( convert_Event_extr<typename PMF::argument_type>()(arg) ); }
+#else
+    static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, const Arg& arg )
+      {	(c->*pmf)( convert_Event_extr<PMF::argument_type>()(arg) ); }
+#endif
 };
 
 struct __AnyPMFentry
