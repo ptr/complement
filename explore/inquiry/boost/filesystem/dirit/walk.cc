@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/06/22 17:51:45 ptr>
+// -*- C++ -*- Time-stamp: <05/02/22 22:34:53 ptr>
 
 #include <iostream>
 #include <boost/filesystem/operations.hpp>
@@ -19,7 +19,7 @@ int main( int, char * const * )
   fs::path full_path( fs::initial_path() );
 
   // string p = ".";
-  string p = "/opt/mcollection2/arch_in";
+  string p = "/tmp";
   // string p = "/opt/mail-coll";
   full_path = fs::system_complete( fs::path( p, fs::native ) );
 
