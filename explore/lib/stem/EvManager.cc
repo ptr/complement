@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/01/18 15:43:43 ptr>
+// -*- C++ -*- Time-stamp: <00/02/16 15:07:30 ptr>
 
 /*
  *
@@ -281,7 +281,7 @@ void EvManager::Send( const Event& e )
                 << std::hex << std::setiosflags(std::ios_base::showbase)
                 << e.dest()
                 << " not found, source: " << e.src()
-                << ", code " << e.code() << std::dec;
+                << ", code " << e.code() << std::dec << endl;
     }
   }
   catch ( ... ) {
