@@ -1,4 +1,4 @@
-/* -*- C++ -*- Time-stamp: <04/05/18 08:56:40 ptr> */
+/* -*- C++ -*- Time-stamp: <05/03/30 16:24:27 ptr> */
 
 /*
  *
@@ -50,7 +50,9 @@
 #  define __FIT_XSI_THR  /* Unix 98 or X/Open System Interfaces Extention */
 #  ifdef __USE_XOPEN2K
 /* The IEEE Std. 1003.1j-2000 introduces functions to implement spinlocks. */
-#   define __FIT_PTHREAD_SPINLOCK
+#   ifndef __UCLIBC__ /* There are no spinlocks in uClibc 0.9.27 */
+#     define __FIT_PTHREAD_SPINLOCK
+#   endif
 #   define __FIT_PSHARED_MUTEX
 #  endif
 #endif
