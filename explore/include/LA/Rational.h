@@ -1,8 +1,14 @@
-// -*- C++ -*- Time-stamp: <96/04/08 15:54:49 ptr>
+// -*- C++ -*- Time-stamp: <96/04/09 13:37:27 ptr>
 #ifndef __LA_Rational_h
 #define __LA_Rational_h
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+
+#ifndef __GNUC__
+#ifndef BOOL_H
+#include <stl/bool.h>
+#endif
+#endif
 
 template <class I>
 class Rational
