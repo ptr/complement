@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/11/17 08:48:12 ptr>
+// -*- C++ -*- Time-stamp: <04/01/21 16:55:44 ptr>
 
 /*
  *
@@ -301,12 +301,13 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
   // _STLP_ASSERT( _ebuf != 0 );
 
   long offset = (this->*_xread)( this->eback(), sizeof(char_type) * (_ebuf - this->eback()) );
-  if ( offset <= 0 ) // don't allow message of zero length
+  // don't allow message of zero length:
+  // in conjunction with POLLIN in revent of poll above this designate that
+  // we receive FIN packet.
+  if ( offset <= 0 )
     return traits::eof();
   offset /= sizeof(charT);
         
-//	cerr << "Underflow: " << hex << unsigned(eback()) << " + " << dec
-//	     << offset << " = " << hex << unsigned( eback() + offset ) << dec << endl;
   setg( this->eback(), this->eback(), this->eback() + offset );
   
   return traits::to_int_type(*this->gptr());
