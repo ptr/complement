@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/09 16:29:11 ptr>
+// -*- C++ -*- Time-stamp: <99/03/22 13:17:49 ptr>
 
 #ifndef __SOCKSTREAM__
 #define __SOCKSTREAM__
@@ -6,14 +6,19 @@
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #ifndef WIN32
-#ifndef __STL_CONFIG_H
-#include <stl_config.h>
-#endif
+#  ifndef __STL_CONFIG_H
+#    include <stl_config.h>
+#  endif
+#else
+#  ifndef __WIN_CONFIG_H
+#    include <win_config.h>
+#  endif
 #endif
 
 #ifndef __IOS__
 #include <ios>
 #endif
+
 #ifndef __STREAMBUF__
 #include <streambuf>
 #endif
@@ -24,7 +29,6 @@
 
 #ifdef WIN32
 #include <winsock2.h>
-#define __STL_DEFAULT_ALLOCATOR(T) allocator<T>
 #else // WIN32
 
 #include <unistd.h>
