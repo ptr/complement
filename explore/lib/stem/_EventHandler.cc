@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 10:47:21 ptr>
+// -*- C++ -*- Time-stamp: <99/10/19 15:45:43 ptr>
 
 /*
  *
@@ -113,18 +113,21 @@ __EDS_DLL
 void EventHandler::PushState( state_type state )
 {
   RemoveState( state );
+  MT_REENTRANT_SDS( _theHistory_lock, _1 );
   theHistory.push_front( state );
 }
 
 __EDS_DLL
 state_type EventHandler::State() const
 {
+  MT_REENTRANT_SDS( _theHistory_lock, _1 );
   return theHistory.front();
 }
 
 __EDS_DLL
 void EventHandler::PushTState( state_type state )
 {
+  MT_REENTRANT_SDS( _theHistory_lock, _1 );
   theHistory.push_front( ST_TERMINAL );
   theHistory.push_front( state );
 }
@@ -132,6 +135,7 @@ void EventHandler::PushTState( state_type state )
 __EDS_DLL
 void EventHandler::PopState()
 {
+  MT_REENTRANT_SDS( _theHistory_lock, _1 );
   theHistory.pop_front();
   while ( theHistory.front() == ST_TERMINAL ) {
     theHistory.pop_front();
@@ -141,6 +145,7 @@ void EventHandler::PopState()
 __EDS_DLL
 void EventHandler::PopState( state_type state )
 {
+  MT_REENTRANT_SDS( _theHistory_lock, _1 );
   h_iterator hst_i = __find( state );
   if ( hst_i != theHistory.end() && *hst_i != ST_TERMINAL ) {
     theHistory.erase( theHistory.begin(), ++hst_i );
@@ -150,6 +155,7 @@ void EventHandler::PopState( state_type state )
 __EDS_DLL
 void EventHandler::RemoveState( state_type state )
 {
+  MT_REENTRANT_SDS( _theHistory_lock, _1 );
   h_iterator hst_i = __find( state );
   if ( hst_i != theHistory.end() && *hst_i != ST_TERMINAL ) {
     theHistory.erase( hst_i );
@@ -159,6 +165,7 @@ void EventHandler::RemoveState( state_type state )
 __EDS_DLL
 bool EventHandler::isState( state_type state ) const
 {
+  MT_REENTRANT_SDS( _theHistory_lock, _1 );
   const HistoryContainer& hst = theHistory;
   const_h_iterator hst_i = __find( state );
   if ( hst_i != hst.end() && *hst_i != ST_TERMINAL ) {
@@ -206,7 +213,7 @@ EventHandler::EventHandler()// :
 //    theHistory( *(new HistoryContainer()) )
 {
   new( Init_buf ) Init();
-  State( ST_NULL );
+  theHistory.push_front( ST_NULL );  // State( ST_NULL );
   _id = _mgr->Subscribe( this );
 }
 
@@ -215,7 +222,7 @@ EventHandler::EventHandler( const char *info )// :
 //    theHistory( *(new HistoryContainer()) )
 {
   new( Init_buf ) Init();
-  State( ST_NULL );
+  theHistory.push_front( ST_NULL );  // State( ST_NULL );
   _id = _mgr->Subscribe( this, info );
 }
 
@@ -224,7 +231,7 @@ EventHandler::EventHandler( addr_type id, const char *info )// :
 //    theHistory( *(new HistoryContainer()) )
 {
   new( Init_buf ) Init();
-  State( ST_NULL );
+  theHistory.push_front( ST_NULL );  // State( ST_NULL );
   _id = _mgr->SubscribeID( id, this, info );
   __stl_assert( _id != -1 ); // already registered, or id has Event::extbit
 //  if ( _id == -1 ) {
@@ -243,6 +250,7 @@ EventHandler::~EventHandler()
 __EDS_DLL
 void EventHandler::TraceStack( ostream& out ) const
 {
+  MT_REENTRANT( _theHistory_lock, _1 );
   const HistoryContainer& hst = theHistory;
   HistoryContainer::const_iterator hst_i = hst.begin();
   while ( hst_i != hst.end() ) {
