@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/04 14:08:23 ptr>
+// -*- C++ -*- Time-stamp: <99/06/24 21:09:11 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -85,12 +85,12 @@ class __Event_Base
 template <class D> class Event_base;
 // VC 5.0 to be very huffy on typedefed std::string...
 #ifndef _MSC_VER
-template <> class Event_base<std::string>;
+__STL_TEMPLATE_NULL class Event_base<std::string>;
 #else
-template <> 
-class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<char> > >;
+__STL_TEMPLATE_NULL
+class Event_base<std::basic_string<char, std::char_traits<char>, __DEFALLOCATOR(char) > >;
 #endif
-template <> class Event_base<void>;
+__STL_TEMPLATE_NULL class Event_base<void>;
 
 // Typedefs:
 
@@ -259,7 +259,7 @@ __STL_TEMPLATE_NULL
 #ifndef _MSC_VER
 class Event_base<std::string> :
 #else
-class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<char> > > :
+class Event_base<std::basic_string<char, std::char_traits<char>, __DEFALLOCATOR(char) > > :
 #endif
         public __Event_Base
 {
