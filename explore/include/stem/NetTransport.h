@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/28 13:56:14 ptr>
+// -*- C++ -*- Time-stamp: <99/06/04 13:51:26 ptr>
 
 #ifndef __NetTransport_h
 #define __NetTransport_h
@@ -19,12 +19,14 @@
 
 #include <Event.h>
 #include <EvSession.h>
+#include <EventHandler.h>
 
 namespace EDS {
 
 extern __DLLEXPORT void dump( std::ostream&, const EDS::Event& );
 
-class NetTransport_base
+class NetTransport_base :
+    public EventHandler // to avoid creation order dependence in manager
 {
   public:
     typedef Event::key_type key_type;
@@ -103,7 +105,7 @@ class NetTransportMgr :
       }
 
     __DLLEXPORT
-    key_type open( const std::string& hostname, int port,
+    key_type open( const char *hostname, int port,
                    std::sock_base::stype stype = std::sock_base::sock_stream );
     int join()
       { return _thr.join(); }
