@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/02/01 20:33:06 ptr>
+// -*- C++ -*- Time-stamp: <01/03/01 10:49:28 ptr>
 
 /*
  *
@@ -226,7 +226,6 @@ int sockmgr_stream<Connect>::loop( void *p )
     }
   }
   catch ( ... ) {
-    me->shutdown( sock_base::stop_in );
     me->close();
     throw;
   }
@@ -632,7 +631,6 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
     }
   }
   catch ( ... ) {
-    me->shutdown( sock_base::stop_in );
     me->_c_lock._M_acquire_lock();
 
     typename container_type::iterator i = me->_M_c.begin();
@@ -645,7 +643,6 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
   }
 
   cerr << "Out of loop!" << endl;
-  me->shutdown( sock_base::stop_in );
   me->_c_lock._M_acquire_lock();
 
   typename container_type::iterator i = me->_M_c.begin();
