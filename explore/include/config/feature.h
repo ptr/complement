@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 12:00:18 ptr>
+// -*- C++ -*- Time-stamp: <99/10/04 10:50:21 ptr>
 
 /*
  *
@@ -71,6 +71,7 @@
 #  ifndef __LINK_TIME_INSTANTIATION
 #    define __LINK_TIME_INSTANTIATION
 #  endif
+// #  define __PG_INCLASS_OPERATOR
 #endif // __SUNPRO_CC
 
 #endif // __config_feature_h
