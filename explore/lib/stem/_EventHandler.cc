@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/24 18:04:11 ptr>
+// -*- C++ -*- Time-stamp: <99/03/26 19:09:23 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #include <EventHandler.h>
@@ -51,6 +51,11 @@ unsigned EventHandler::sid( const Event::key_type& k ) const
 void EventHandler::Send( const Event& e )
 {
   _mgr->Send( e, _id );
+}
+
+void EventHandler::Send( const EventVoid& e )
+{
+  _mgr->Send( EDS::Event_convert<void>()( e ), _id );
 }
 
 void EventHandler::PushState( state_type state )
