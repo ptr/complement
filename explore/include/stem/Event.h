@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/08/22 21:10:52 ptr>
+// -*- C++ -*- Time-stamp: <96/10/08 18:12:05 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -118,6 +118,12 @@ class OXWEventT
     static Allocator data_allocator;
 };
 
+template <class S, class D >
+OXWEventT<S,D>::Allocator OXWEventT<S,D>::data_allocator;
+
+template <class S, class D >
+D OXWEventT<S,D>::error_data;
+
 // ********************************************* OXWEventT<OXWEventsCore,void>
 
 class OXWEventT<OXWEventsCore,void>
@@ -179,9 +185,5 @@ class OXWEventT<OXWEventsCore,void>
     void *DataObject;
     size_t sz;
 };
-
-#ifndef __TEMPLATE_DB__
-#include "Event.cc"
-#endif
 
 #endif
