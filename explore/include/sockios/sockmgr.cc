@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/08/19 14:58:54 ptr>
+// -*- C++ -*- Time-stamp: <99/09/15 11:39:30 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -7,10 +7,6 @@
 #ifdef __unix
 extern "C" int nanosleep(const struct timespec *, struct timespec *);
 #endif
-
-#ifdef WIN32
-// #include <_algorithm>
-#endif // WIN32
 
 using __impl::Thread;
 
@@ -40,7 +36,7 @@ sockmgr_client *sockmgr_stream<Connect>::accept_tcp()
   }
 
   _xsockaddr addr;
-  int sz = sizeof( sockaddr_in );
+  size_t sz = sizeof( sockaddr_in );
   
   sock_base::socket_type _sd = ::accept( fd(), &addr.any, &sz );
   if ( _sd == -1 ) {
@@ -75,7 +71,7 @@ sockmgr_client *sockmgr_stream<Connect>::accept_udp()
     return 0;
   }
 
-  int sz = sizeof( sockaddr_in );
+  size_t sz = sizeof( sockaddr_in );
   _xsockaddr addr;
 #ifdef __unix
   timespec t;
@@ -263,7 +259,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
   }
 
   _xsockaddr addr;
-  int sz = sizeof( sockaddr_in );
+  size_t sz = sizeof( sockaddr_in );
 
 #ifdef __unix
   if ( _pfd == 0 ) {
@@ -375,7 +371,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_udp()
     return 0;
   }
 
-  int sz = sizeof( sockaddr_in );
+  size_t sz = sizeof( sockaddr_in );
   _xsockaddr addr;
 
 #ifdef WIN32
