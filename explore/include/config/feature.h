@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <01/01/31 16:57:23 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 16:28:09 ptr>
 
 /*
  *
  * Copyright (c) 1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics
  *
  * This material is provided "as is", with absolutely no warranty expressed
@@ -22,93 +22,28 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
-// #ifdef _DEBUG
-// #  ifndef __STL_DEBUG
-// #    define __STL_DEBUG  1
-// #  endif // __STL_DEBUG
-// #endif // _DEBUG
+// #define __USE_SGI_STL_PORT  0x400
 
-// #ifdef _DEBUG_ALLOC
-// #  ifndef __STL_DEBUG_ALLOC
-// #    define __STL_DEBUG_ALLOC  1
-// #  endif // __STL_DEBUG_ALLOC
-// #endif // _DEBUG_ALLOC
-
-#define __USE_SGI_STL_PORT  0x400
-// #define __USE_SGI_STL_PORT  0x321
-
-#if /* defined( __STL_DEBUG ) && */ (__USE_SGI_STL_PORT >= 0x400)
-// #  define __STD __stl_native_std
-#  define __STD __STLPORT_STD // __std_alias
-#  ifdef __STL_DEBUG 
-#    define __VENDOR_STD  __STL_VENDOR_EXCEPT_STD
-#  else
-#    define __VENDOR_STD  __std_alias
-#  endif
-// #else
-// #  ifndef _MSC_VER
-// #    define __STD std
+// #if /* defined( __STL_DEBUG ) && */ (__USE_SGI_STL_PORT >= 0x400)
+// // #  define __STD __stl_native_std
+// #  define __STD __STLPORT_STD // __std_alias
+// #  ifdef __STL_DEBUG 
+// #    define __VENDOR_STD  __STL_VENDOR_EXCEPT_STD
 // #  else
-// #    define __STD _STL
-// #  endif 
+// #    define __VENDOR_STD  __std_alias
+// #  endif
+// #endif
+
+
+#ifndef _REENTRANT
+#  define _REENTRANT
 #endif
-
-#if 0
-#if __USE_SGI_STL_PORT >= 0x322
-// #  if __USE_SGI_STL_PORT < 0x400
-#    define __STL_STD_REBUILD 1
-#    define  __STL_USE_SGI_STRING  1
-// # define   __STL_USE_NEW_IOSTREAMS	1
-#    define __SGI_STL_OWN_IOSTREAMS 1
-// # define  __STL_HAS_WCHAR_T
-#    if !defined( _MSC_VER ) && defined(__STL_DEBUG)
-#       define __STL_NO_OWN_NAMESPACE  1
-// #      define __STL_DONT_REDEFINE_STD
-#    elif !defined( _MSC_VER )
-#      define __STL_DONT_REDEFINE_STD
-#    endif
-// #  define __STL_VENDOR_CSTD std
-#    ifndef __GNUC__
-#      define __STL_USE_NEW_C_HEADERS
-#    else
-#      define __STL_NO_CSTD_FUNCTION_IMPORTS
-// #  define __STL_NO_METHOD_SPECIALIZATION
-#    endif
-// #  endif // __USE_SGI_STL_PORT
-
-#  ifndef _REENTRANT
-#    define _REENTRANT
-#    ifdef __sun
-#      define __STL_SOLARIS_THREADS
-#    endif
-#  else
-#    ifdef __sun
-#      define __STL_SOLARIS_THREADS
-#    endif
-#  endif
-#  ifdef _MSC_VER
-// #    define __STL_NO_STATIC_TEMPLATE_DATA
-#  endif
-#elif (__USE_SGI_STL_PORT == 0x321) && defined(_MSC_VER)
-#  define __STL_USE_NEW_IOSTREAMS
-#  define __STLPORT_NEW_IOSTREAMS 
-#endif
-#else
-
-#  ifndef _REENTRANT
-#    define _REENTRANT
-#  endif
-#  if defined(__sun) && defined(_SOLARIS_THREADS) && !defined(_PTHREADS)
-#    define __STL_SOLARIS_THREADS
-#  endif
-
-#endif // 0
 
 #if defined( WIN32 ) && !defined(__PG_USE_STATIC_LIB) && !defined(_LIB)
 #  undef  __PG_USE_DECLSPEC
@@ -167,19 +102,20 @@
 #  define _INCLUDE_AES_SOURCE
 #endif
 
-// #ifdef // __SunOS_5_7
-// #  define _XOPEN_SOURCE 1
-// #  define _XOPEN_SOURCE_EXTENDED 1
-// #  define __EXTENSIONS__ 1
-// #  define __XPG4v2 1
-// #endif // __SunOS_5_7
-
 #ifdef __SUNPRO_CC
 #  ifndef __LINK_TIME_INSTANTIATION
 #    define __LINK_TIME_INSTANTIATION 1
 #  endif
 #  define __PG_INCLASS_OPERATOR
 #endif // __SUNPRO_CC
+
+#if defined(__sun) && !defined(_PTHREADS)
+#  define __FIT_UITHREADS
+#endif
+
+#if defined(WIN32) && !defined(_PTHREADS)
+#  define __FIT_WIN32THREADS
+#endif
 
 #if defined(__HP_aCC) && (__HP_aCC==1) // aCC A.03.13
 #  define __FIT_TEMPLATE_FORWARD_BUG
