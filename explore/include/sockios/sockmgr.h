@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/06/12 17:08:30 ptr>
+// -*- C++ -*- Time-stamp: <02/06/20 10:24:48 ptr>
 
 /*
  *
@@ -71,7 +71,12 @@ class basic_sockmgr :
 	_mode( ios_base::in | ios_base::out ),
 	_state( ios_base::goodbit ),
 	_fd( -1 )
-      { }
+      {
+        __impl::Locker _l( _idx_lck );
+        if ( _idx == -1 ) {
+          _idx = Thread::xalloc();
+        }
+      }
 
     virtual ~basic_sockmgr()
       { basic_sockmgr::close(); }
@@ -100,6 +105,12 @@ class basic_sockmgr :
     unsigned long _state; // state flags
     int           _errno; // error state
     _xsockaddr    _address;
+
+  protected:
+    static int _idx;
+
+  private:
+    static __impl::Mutex _idx_lck;
 };
 
 struct sockmgr_client
@@ -166,7 +177,8 @@ class sockmgr_stream :
     virtual void close()
       {
         basic_sockmgr::close();
-        loop_id.kill( SIGINT );
+        // loop_id.kill( SIGINT );
+        // loop_id.kill( SIGPIPE );
       }
 
     void wait()
@@ -276,7 +288,8 @@ class sockmgr_stream_MP : // multiplexor
     virtual void close()
       {
         basic_sockmgr::close();
-        loop_id.kill( SIGINT );
+        // loop_id.kill( SIGINT );
+        loop_id.kill( SIGPIPE );
       }
 
     void wait()
@@ -346,6 +359,7 @@ class sockmgr_stream_MP : // multiplexor
   private:
     // sockmgr_client_MP<Connect> *_shift_fd();
     _Connect *_shift_fd();
+    static void _close_by_signal( int );
 };
 
 _STLP_END_NAMESPACE

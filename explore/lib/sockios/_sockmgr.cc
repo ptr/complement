@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/04/14 20:11:47 ptr>
+// -*- C++ -*- Time-stamp: <02/06/16 18:51:32 ptr>
 
 /*
  *
@@ -35,6 +35,10 @@
 #include <sockios/sockmgr.h>
 
 _STLP_BEGIN_NAMESPACE
+
+int basic_sockmgr::_idx = -1;
+__impl::Mutex basic_sockmgr::_idx_lck;
+
 
 __FIT_DECLSPEC
 void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol prot )
