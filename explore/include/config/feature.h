@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/08/01 09:58:50 ptr>
+// -*- C++ -*- Time-stamp: <02/08/26 18:40:58 ptr>
 
 /*
  *
@@ -91,10 +91,18 @@
  */
 
 #ifdef __sun // __SunOS_5_6, __SunOS_5_7
-#  define _XOPEN_SOURCE 1
-#  define _XOPEN_SOURCE_EXTENDED 1
-#  define __EXTENSIONS__ 1
-#  define __XPG4v2 1
+#  ifndef _XOPEN_SOURCE
+#    define _XOPEN_SOURCE 1
+#  endif
+#  ifndef _XOPEN_SOURCE_EXTENDED
+#    define _XOPEN_SOURCE_EXTENDED 1
+#  endif
+#  ifndef __EXTENSIONS__
+#    define __EXTENSIONS__ 1
+#  endif
+#  ifndef __XPG4v2
+#    define __XPG4v2 1
+#  endif
 #endif // __SunOS_5_6
 
 #ifdef __hpux
@@ -142,6 +150,10 @@
 // #if defined(__GNUC__) && (__GNUC__==3) // gcc 3.1.1 at least
 // #  define __FIT_TYPENAME_TEMPLATE_PARAMETER_RET
 // #endif
+#if defined(__GNUC__) && ( __GNUC__ == 2 ) && (__GNUC_MINOR__ == 95)
+  // at least 2.95.3
+// #define __FIT_STD_AS_GLOBAL
+#endif
 
 #ifdef __FIT_EXPLICIT_BUG
 #  define __FIT_EXPLICIT
