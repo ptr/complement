@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/16 17:19:43 ptr>
+// -*- C++ -*- Time-stamp: <00/11/09 10:54:58 ptr>
 
 /*
  *
@@ -94,6 +94,11 @@ class DataBase
     virtual Cursor *create_cursor( const char * ) = 0;
     void delete_cursor( Cursor *_c )
       { delete _c; }
+
+    virtual string get_time() const = 0;
+    virtual string get_time( time_t ) const = 0;
+    virtual string IS_NULL() const = 0;
+    virtual string IS_NOT_NULL() const = 0;
 
   protected:
     unsigned _flags;

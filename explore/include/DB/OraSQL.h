@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/17 09:47:29 ptr>
+// -*- C++ -*- Time-stamp: <00/11/09 10:23:26 ptr>
 
 /*
  *
@@ -64,6 +64,11 @@ class DataBase :
     virtual void end_transaction();
 
     virtual xxSQL::Cursor *create_cursor( const char * );
+
+    virtual std::string get_time() const;
+    virtual std::string get_time( time_t ) const;
+    virtual std::string IS_NULL() const;
+    virtual std::string IS_NOT_NULL() const;
 
   private:
     OCIServer  *_conn_srv;

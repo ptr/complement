@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/16 17:46:22 ptr>
+// -*- C++ -*- Time-stamp: <00/11/09 10:57:25 ptr>
 
 #ifdef __unix
 #  ifdef __HP_aCC
@@ -17,6 +17,9 @@
 #ifdef __DB_ORACLE
 #  include "DB/OraSQL.h"
 #endif
+
+#include <sstream>
+#include <iomanip>
 
 namespace xxSQL {
 
@@ -51,6 +54,78 @@ DBxx::DBxx( DBvendor vendor,
 DBxx::~DBxx()
 {
   delete _db;
+}
+
+string DBxx::escape_data( const string& s ) const
+{
+  string r( s );
+
+  // escape single quote
+  string::size_type p = r.find( '\'', 0 );
+  while ( p != string::npos ) {
+    r.insert( p, 1, '\'' );
+    p += 2;
+    p = r.find( '\'', p );
+  }
+
+  return r;
+}
+
+string DBxx::escape_data( const char *s ) const
+{
+  string r( s );
+
+  // escape single quote
+  string::size_type p = r.find( '\'', 0 );
+  while ( p != string::npos ) {
+    r.insert( p, 1, '\'' );
+    p += 2;
+    p = r.find( '\'', p );
+  }
+
+  return r;
+}
+
+string DBxx::get_time() const
+{
+  if ( _db != 0 ) {
+    return _db->get_time();
+  }
+  return get_time( time(0) );
+}
+
+string DBxx::get_time( time_t t ) const
+{
+  if ( _db != 0 ) {
+    return _db->get_time();
+  }
+
+  std::ostringstream os;
+  tm tstr;
+  localtime_r( &t, &tstr );
+  os << (tstr.tm_year + 1900)
+     << '-' << setw( 2 ) << setfill( '0' ) << (tstr.tm_mon+1)
+     << '-' << setw( 2 ) << setfill( '0' ) << tstr.tm_mday
+     << ' ' << setw( 2 ) << setfill( '0' ) << tstr.tm_hour
+     << ':' << setw( 2 ) << setfill( '0' ) << tstr.tm_min
+     << ':' << setw( 2 ) << setfill( '0' ) << tstr.tm_sec;
+  return os.str();
+}
+
+string DBxx::IS_NULL() const
+{
+  if ( _db != 0 ) {
+    return _db->IS_NULL();
+  }
+  return string( "IS NULL" );
+}
+
+string DBxx::IS_NOT_NULL() const
+{
+  if ( _db != 0 ) {
+    return _db->IS_NOT_NULL();
+  }
+  return string( "IS NOT NULL" );
 }
 
 } // namespace xxSQL
