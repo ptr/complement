@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/19 15:44:29 ptr>
+// -*- C++ -*- Time-stamp: <99/10/28 18:17:25 ptr>
 
 /*
  *
@@ -660,7 +660,7 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
        { theEventsTable.Out( out ); }                                     \
     virtual bool DispatchTrace( const EDS::Event& __e, std::ostream& __s )\
        {                                                                  \
-         MT_REENTRANT_SDS( EDS::EventHandler::_theHistory_lock, _1 );     \
+         MT_REENTRANT_SDS( this->_theHistory_lock, _1 );     \
          return theEventsTable.DispatchTrace( theHistory.begin(),         \
                                               theHistory.end(), __e, __s ); } \
     typedef EDS::__EvHandler<cls,EDS::h_iterator> evtable_type;           \
@@ -672,12 +672,12 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
   protected:					                          \
     virtual bool Dispatch( const EDS::Event& __e )                        \
        {                                                                  \
-         MT_REENTRANT_SDS( EDS::EventHandler::_theHistory_lock, _1 );     \
+         MT_REENTRANT_SDS( this->_theHistory_lock, _1 );     \
          return theEventsTable.Dispatch( this, theHistory.begin(),        \
                                          theHistory.end(), __e ); }       \
     virtual bool DispatchStub( const EDS::Event& __e )                    \
        {                                                                  \
-         MT_REENTRANT_SDS( EDS::EventHandler::_theHistory_lock, _1 );     \
+         MT_REENTRANT_SDS( this->_theHistory_lock, _1 );     \
          return theEventsTable.DispatchStub( this, theHistory.begin(),    \
                                              theHistory.end(), __e ); }   \
     static __EDS_DLL_EXPORT evtable_type theEventsTable;                  \
