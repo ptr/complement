@@ -1,56 +1,59 @@
-# -*- makefile -*- Time-stamp: <03/06/22 20:05:48 ptr>
+# -*- makefile -*- Time-stamp: <03/07/10 00:19:48 ptr>
 # $Id$
 
 install-release-shared:	release-shared
-	@if [ -f ${SO_INSTALL} ] ; then \
-	  rm ${SO_INSTALL}; \
+	@if [ -h $(INSTALL_LIB_DIR)/${SO_NAME} ] ; then \
+	  rm $(INSTALL_LIB_DIR)/${SO_NAME}; \
 	fi
-	@if [ -h $(INSTALL_LIB_DIR)/${SO_MAJOR} ] ; then \
-	  rm $(INSTALL_LIB_DIR)/${SO_MAJOR}; \
+	@if [ -h $(INSTALL_LIB_DIR)/${SO_NAMEx} ] ; then \
+	  rm $(INSTALL_LIB_DIR)/${SO_NAMEx}; \
 	fi
-	@if [ -h $(INSTALL_LIB_DIR)/${SO_GENERAL} ] ; then \
-	  rm $(INSTALL_LIB_DIR)/${SO_GENERAL}; \
+	@if [ -h $(INSTALL_LIB_DIR)/${SO_NAMExx} ] ; then \
+	  rm $(INSTALL_LIB_DIR)/${SO_NAMExx}; \
 	fi
-	$(INSTALL_SO) ${SO_NAME_SHORT} $(INSTALL_LIB_DIR)
+	@if [ -f $(INSTALL_LIB_DIR)/${SO_NAMExxx} ] ; then \
+	  rm $(INSTALL_LIB_DIR)/${SO_NAMExxx}; \
+	fi
+	$(INSTALL_SO) ${SO_NAME_OUTxxx} $(INSTALL_LIB_DIR)
 	(cd $(INSTALL_LIB_DIR) && \
-	 { rm -f ${SO_MINOR}; ln -s ${SO_NAME_LONG} ${SO_MINOR}; \
-	   rm -f ${SO_MAJOR}; ln -s ${SO_MINOR} ${SO_MAJOR}; \
-	   rm -f ${SO_GENERAL}; ln -s ${SO_MAJOR} ${SO_GENERAL}; } )
+	 { ln -s ${SO_NAMExxx} ${SO_NAMExx}; \
+	   ln -s ${SO_NAMExx} ${SO_NAMEx}; \
+	   ln -s ${SO_NAMEx} ${SO_NAME}; } )
 
 install-dbg-shared:	dbg-shared
-	@if [ -f ${SO_INSTALL_DBG} ] ; then \
-	  rm ${SO_INSTALL_DBG}; \
+	@if [ -h $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBG} ] ; then \
+	  rm $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBG}; \
 	fi
-	@if [ -h $(INSTALL_LIB_DIR_DBG)/${SO_MAJOR_DBG} ] ; then \
-	  rm $(INSTALL_LIB_DIR_DBG)/${SO_MAJOR_DBG}; \
+	@if [ -h $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGx} ] ; then \
+	  rm $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGx}; \
 	fi
-	@if [ -h $(INSTALL_LIB_DIR_DBG)/${SO_GENERAL_DBG} ] ; then \
-	  rm $(INSTALL_LIB_DIR_DBG)/${SO_GENERAL_DBG}; \
+	@if [ -h $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGxx} ] ; then \
+	  rm $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGxx}; \
 	fi
-	$(INSTALL_SO) ${SO_NAME_SHORT_DBG} $(INSTALL_LIB_DIR_DBG)
+	@if [ -f $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGxxx} ] ; then \
+	  rm $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGxxx}; \
+	fi
+	$(INSTALL_SO) ${SO_NAME_OUT_DBGxxx} $(INSTALL_LIB_DIR_DBG)
 	(cd $(INSTALL_LIB_DIR_DBG) && \
-	 { rm -f ${SO_MINOR_DBG}; \
-	   ln -s ${SO_NAME_LONG_DBG} ${SO_MINOR_DBG}; \
-	   rm -f ${SO_MAJOR_DBG}; \
-	   ln -s ${SO_MINOR_DBG} ${SO_MAJOR_DBG}; \
-	   rm -f ${SO_GENERAL_DBG}; \
-	   ln -s ${SO_MAJOR_DBG} ${SO_GENERAL_DBG}; } )
+	 { ln -s ${SO_NAME_DBGxxx} ${SO_NAME_DBGxx}; \
+	   ln -s ${SO_NAME_DBGxx} ${SO_NAME_DBGx}; \
+	   ln -s ${SO_NAME_DBGx} ${SO_NAME_DBG}; } )
 
 install-stldbg-shared:	stldbg-shared
-	@if [ -f ${SO_INSTALL_STLDBG} ] ; then \
-	  rm ${SO_INSTALL_STLDBG}; \
+	@if [ -h $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBG} ] ; then \
+	  rm $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBG}; \
 	fi
-	@if [ -h $(INSTALL_LIB_DIR_STLDBG)/${SO_MAJOR_STLDBG} ] ; then \
-	  rm $(INSTALL_LIB_DIR_STLDBG)/${SO_MAJOR_STLDBG}; \
+	@if [ -h $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGx} ] ; then \
+	  rm $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGx}; \
 	fi
-	@if [ -h $(INSTALL_LIB_DIR_STLDBG)/${SO_GENERAL_STLDBG} ] ; then \
-	  rm $(INSTALL_LIB_DIR_STLDBG)/${SO_GENERAL_STLDBG}; \
+	@if [ -h $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxx} ] ; then \
+	  rm $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxx}; \
 	fi
-	$(INSTALL_SO) ${SO_NAME_SHORT_STLDBG} $(INSTALL_LIB_DIR_STLDBG)
+	@if [ -f $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxxx} ] ; then \
+	  rm $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxxx}; \
+	fi
+	$(INSTALL_SO) ${SO_NAME_OUT_STLDBGxxx} $(INSTALL_LIB_DIR_STLDBG)
 	(cd $(INSTALL_LIB_DIR_STLDBG) && \
-	 { rm -f ${SO_MINOR_STLDBG}; \
-	   ln -s ${SO_NAME_LONG_STLDBG} ${SO_MINOR_STLDBG}; \
-	   rm -f ${SO_MAJOR_STLDBG}; \
-	   ln -s ${SO_MINOR_STLDBG} ${SO_MAJOR_STLDBG}; \
-	   rm -f ${SO_GENERAL_STLDBG}; \
-	   ln -s ${SO_MAJOR_STLDBG} ${SO_GENERAL_STLDBG}; } )
+	 { ln -s ${SO_NAME_STLDBGxxx} ${SO_NAME_STLDBGxx}; \
+	   ln -s ${SO_NAME_STLDBGxx} ${SO_NAME_STLDBGx}; \
+	   ln -s ${SO_NAME_STLDBGx} ${SO_NAME_STLDBG}; } )
