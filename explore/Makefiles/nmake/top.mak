@@ -40,7 +40,7 @@ USE_MAKE = nmake
 #include ${RULESBASE}/depend-$(COMPILER_NAME).mak
 
 # general clean
-# include ${RULESBASE}/clean.mak
+!include $(RULESBASE)/$(USE_MAKE)/clean.mak
 
 # if target is library, rules for library
 !ifdef LIBNAME
