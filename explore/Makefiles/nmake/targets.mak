@@ -1,4 +1,4 @@
-# Time-stamp: <03/10/17 19:31:41 ptr>
+# Time-stamp: <03/10/26 15:46:18 ptr>
 # $Id$
 
 # dependency output parser
@@ -116,7 +116,7 @@ OBJ_A_STLDBG=$(OBJ_A_STLDBG:.o@ =.o@)
 OBJ_A_STLDBG=$(OBJ_A_STLDBG:.o@=.o obj\vc6\static-stlg\)
 OBJ_A_STLDBG=$(OUTPUT_DIR_A_STLDBG)\$(OBJ_A_STLDBG)
 
-!ifdef ALLRES
+!ifdef ALLRESS
 RES=$(ALLRESS:.res =.res@)
 RES=$(RES:.res@ =.res@)
 RES=$(RES:.res@=.res obj\vc6\shared\)
@@ -125,11 +125,11 @@ RES=$(OUTPUT_DIR)\$(RES)
 RES_DBG=$(ALLRESS:.res =.res@)
 RES_DBG=$(RES_DBG:.res@ =.res@)
 RES_DBG=$(RES_DBG:.res@=.res obj\vc6\shared-g\)
-RES_DBG=$(OUTPUT_DIR)\$(RES_DBG)
+RES_DBG=$(OUTPUT_DIR_DBG)\$(RES_DBG)
 
 RES_STLDBG=$(ALLRESS:.res =.res@)
 RES_STLDBG=$(RES_STLDBG:.res@ =.res@)
 RES_STLDBG=$(RES_STLDBG:.res@=.res obj\vc6\shared-stlg\)
-RES_STLDBG=$(OUTPUT_DIR)\$(RES_STLDBG)
+RES_STLDBG=$(OUTPUT_DIR_STLDBG)\$(RES_STLDBG)
 !endif
 
