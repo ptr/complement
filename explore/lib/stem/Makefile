@@ -6,7 +6,8 @@ DEFS = -DSVR4 -D__DEBUG=2
 # OPT = -g -p
 OPT = -g
 # OPT = -G
-CCFLAGS = $(OPT) -cg92 +w -pic -pto -mt
+CCFLAGS = $(OPT) -cg92 +w -pic -pto 
+#-mt
 CPPFLAGS = $(DEFS) $(INCLUDES)
 # LDFLAGS = -L$(OUTPUT_DIR) -lclass -lX11 -ldl
 PROJECT_LIBS = ../..
@@ -34,6 +35,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/TextLabel.o \
 		$(OUTPUT_DIR)/InputField.o \
 		$(OUTPUT_DIR)/TextCursor.o \
+		$(OUTPUT_DIR)/ScrVCollector.o \
 		$(OUTPUT_DIR)/ScrWindow.o \
 		$(OUTPUT_DIR)/PopupMenu.o \
 		$(OUTPUT_DIR)/AlignUtils.o \
