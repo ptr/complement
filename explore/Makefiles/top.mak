@@ -1,4 +1,4 @@
-# Time-stamp: <03/07/09 18:23:32 ptr>
+# Time-stamp: <03/07/10 00:06:43 ptr>
 # $Id$
 
 RULESBASE ?= $(SRCROOT)/Makefiles
@@ -22,11 +22,15 @@ include ${RULESBASE}/targets-$(USE_MAKE).mak
 # dependency
 include ${RULESBASE}/depend-$(COMPILER_NAME).mak
 
-# target is library, rules for library
+# general clean
+include ${RULESBASE}/clean.mak
+
+# if target is library, rules for library
 ifdef LIBNAME
 include ${RULESBASE}/lib/top.mak
 endif
 
-# general clean
-
-include ${RULESBASE}/clean.mak
+# if target is program, rules for executable
+ifdef PRGNAME
+include ${RULESBASE}/app/top.mak
+endif
