@@ -21,7 +21,7 @@
 # include <windows.h>
 #endif /* WIN32 */
 
-#include "flck.h"
+#include "mt/flck.h"
 
 #if defined(__unix) || defined(__unix__)
 
