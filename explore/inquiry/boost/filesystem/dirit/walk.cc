@@ -4,18 +4,23 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
-#include <dirent.h>
+// #include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 using namespace std;
 
 int main( int, char * const * )
 {
-#if 0
+#if 1
   namespace fs = boost::filesystem;
 
   fs::path full_path( fs::initial_path() );
 
-  string p = ".";
+  // string p = ".";
+  string p = "/opt/mcollection2/arch_in";
+  // string p = "/opt/mail-coll";
   full_path = fs::system_complete( fs::path( p, fs::native ) );
 
   if ( !fs::exists( full_path ) ) {
@@ -33,7 +38,12 @@ int main( int, char * const * )
 //          if ( pos != string::npos && (pos == (nm.size() - 3)) ) {
 //            cerr << nm << endl;
 //          }
-          std::cerr << di->leaf() << "\n";
+          struct stat buf;
+          if ( stat( di->string().c_str(), &buf ) == 0 ) {
+            cout << di->leaf() << ' ' << buf.st_size << ' ' << buf.st_mtime << endl;
+          } else {
+            cerr << "Problems with " << di->leaf() << endl;
+          }
         } else {
           cerr << di->leaf()<< " [directory]\n";
         }

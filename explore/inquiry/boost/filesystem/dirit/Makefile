@@ -1,53 +1,19 @@
-# Time-stamp: <03/06/22 16:44:39 ptr>
+# -*- Makefile -*- Time-stamp: <03/08/15 12:46:45 ptr>
 # $Id$
 
-BASEDIR := $(shell xtmp=`pwd`; xtmp=`dirname $$xtmp`; xtmp=`dirname $$xtmp`; xtmp=`dirname $$xtmp`; dirname $$xtmp)
+SRCROOT := ../../../../../explore
+COMPILER_NAME := gcc
 
-COMPILER_NAME = gcc
-include ./Makefile.inc
+include Makefile.inc
+include ${SRCROOT}/Makefiles/top.mak
 
-all:	release-shared
 
-all-shared:	release-shared dbg-shared stldbg-shared
+INCLUDES += -I$(SRCROOT)/include -I$(STLPORT_INCLUDE_DIR) -I$(BOOST_INCLUDE_DIR)
 
-all-debug:	dbg-shared stldbg-shared
+release-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR}
+stldbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_STLDBG}
+dbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_DBG}
 
-all-release:	release-shared
-
-include ${BASEDIR}/Makefiles/app/Makefile.inc
-
-INCLUDES += -I$(STLPORT_INCLUDE_DIR) -I${BASEDIR}/include -I${BOOST_INCLUDE_DIR}
-
-BUILD_SYSTEM := $(shell echo "`uname -n` `uname -s` `uname -r` `uname -v` `uname -p`")
-BUILD_DATE := $(shell echo "`date +'%Y/%m/%d %T %Z'`")
-
-ifeq ($(OS_VER),SunOS)
-LDLIBS = 
-else
-LDLIBS = 
-endif
-
-LDLIBS += -lrt -lnsl
-
-ifeq ($(OS_VER),SunOS)
-dbg-shared:	LDFLAGS += -L${STLPORT_LIB_DIR} -L${BASEDIR}/build/lib
-stldbg-shared:	LDFLAGS += -L${STLPORT_LIB_DIR} -L${BASEDIR}/build/lib
-release-shared:	LDFLAGS += -L${STLPORT_LIB_DIR} -L${BASEDIR}/build/lib
-endif
-
-ifeq ($(OS_VER),Linux)
-release-shared:	LDFLAGS += -L${STLPORT_LIB_DIR} -L${BASEDIR}/build/lib
-stldbg-shared:	LDFLAGS += -L${STLPORT_LIB_DIR} -L${BASEDIR}/build/lib
-dbg-shared:	LDFLAGS += -L${STLPORT_LIB_DIR} -L${BASEDIR}/build/lib
-endif
-
-dbg-shared : LDLIBS += \
-                    -lstlport_gcc
-
-stldbg-shared : LDLIBS += \
-                    -lstlport_gcc_stldebug
-
-release-shared : LDLIBS += \
-                    -lstlport_gcc
-
-FORCE:
+release-shared : LDLIBS = -Wl,-rpath=${STLPORT_LIB_DIR}:${CoMT_LIB_DIR} -lstlport_gcc -lboost_fs_gcc
+stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug -lboost_fs_gcc_stl-g
+dbg-shared     : LDLIBS = -lstlport_gcc -lboost_fs_gcc-g
