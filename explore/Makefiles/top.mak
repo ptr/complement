@@ -7,13 +7,11 @@
 
 PHONY ?=
 
-.PHONY: $(PHONY)
-
 RULESBASE ?= $(SRCROOT)/Makefiles
 
 ALL_TAGS ?= release-shared	dbg-shared	stldbg-shared
 
-all:	dirs $(ALL_TAGS)
+all:	$(OUTPUT_DIRS) $(ALL_TAGS)
 
 all-static:	release-static	dbg-static	stldbg-static
 all-shared:	release-shared	dbg-shared	stldbg-shared
@@ -54,3 +52,5 @@ endif
 ifdef PRGNAME
 include ${RULESBASE}/$(USE_MAKE)/app/top.mak
 endif
+
+.PHONY: $(PHONY)
