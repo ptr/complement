@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/12/21 20:41:16 ptr>
+// -*- C++ -*- Time-stamp: <00/02/03 17:26:59 ptr>
 
 /*
  *
@@ -104,8 +104,9 @@ namespace EDS {
 class EvManager
 {
   public:
-    typedef std::map<key_type,__Object_Entry,std::less<key_type>,
-                              __STL_DEFAULT_ALLOCATOR(__Object_Entry) > heap_type;
+//    typedef std::map<key_type,__Object_Entry,std::less<key_type>,
+//                              __STL_DEFAULT_ALLOCATOR(__Object_Entry) > heap_ty
+    typedef std::map<key_type,__Object_Entry> heap_type;
     typedef std::queue< Event > queue_type;
 
     __EDS_DLL EvManager();
