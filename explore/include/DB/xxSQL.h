@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/08/23 14:12:49 ptr>
+// -*- C++ -*- Time-stamp: <02/08/26 12:57:55 ptr>
 
 /*
  *
@@ -33,7 +33,7 @@
 #include <DB/xxSQL_i.h>
 #endif
 
-#include <iostream>
+#include <ostream>
 
 namespace xxSQL {
 
@@ -69,14 +69,14 @@ class DBxx
     void exec( const std::string& query )
       { 
         if ( (fmtflags & truss) != 0 ) {
-          std::cerr << query << std::endl;
+          _db->_dberr << query << "\n";
         }
         _db->exec( query );
       }
     void exec( const char *query )
       {
         if ( (fmtflags & truss) != 0 ) {
-          std::cerr << query << std::endl;
+          _db->_dberr << query << "\n";
         }
         _db->exec( query );
       }
@@ -89,7 +89,7 @@ class DBxx
     Cursor *create_cursor( const char *query )
       {
         if ( (fmtflags & truss) != 0 ) {
-          std::cerr << query << std::endl;
+          _db->_dberr << query << "\n";
         }
         return _db->create_cursor( query );
       }
