@@ -1,0 +1,28 @@
+2001-03-20  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Modified namespace to satisfy STLport 4.1 beta 5
+
+	* Satisfy for STLport 4.1 beta 5.
+
+	* Increment patch number.
+
+2001-02-15  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Change version
+
+2001-01-16  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Pass detach/daemon options to POSIX threads.
+
+	* libxmt version incremented.
+
+2000-12-08  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Start usage of POSIX threads on Solaris.
+
+	* Change STLport version
+
+2000-12-06  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* POSIX thread support for thread_suspend: experimental
+

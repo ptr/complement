@@ -1,0 +1,9 @@
+2001-03-21  Ivan Vigasin    <vig@ParallelGraphics.COM>
+
+	* arguments now lives in lib/aux (moved from helios)
+
+2001-03-20  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* Satisfy for STLport 4.1 beta 5.
+
+	* Increment patch number.
