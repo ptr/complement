@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/01 14:23:26 ptr>
+// -*- C++ -*- Time-stamp: <99/02/03 12:35:05 ptr>
 
 #ifndef __SOCKSTREAM__
 #define __SOCKSTREAM__
@@ -47,7 +47,7 @@
 #include <cerrno>
 
 #define closesocket close
-#define SOCKET int
+typedef int SOCKET;
 
 #endif // WIN32
 
@@ -62,8 +62,6 @@ class sock_base
   public:
     typedef unsigned long sopt;
     typedef unsigned long shutdownflg;
-//    typedef unsigned long level;
-//    typedef unsigned long protocol;
 
     enum stype {
       sock_stream	= SOCK_STREAM,    // stream socket
@@ -312,7 +310,11 @@ class basic_sockbuf :
 
     SOCKET fd() const { return _fd;}
 
+#ifdef WIN32
+    u_short family() const
+#else
     sa_family_t family() const
+#endif
       { return /* is_open() ? */ _address.any.sa_family /* : 0 */; }
     int port() const
       { return /* is_open() && */ _address.any.sa_family == AF_INET ?
@@ -336,15 +338,14 @@ class basic_sockbuf :
 	  _state |= sock_base::hnamefailbit;
 	}
 #else
-	// should do reeentrant here
+	// should do reeentrant here?
 	hostent *host = gethostbyname( hostname );
-	// check h_errno here...
-	if ( host == 0 ) {
-	  _errno = WSAGetLastError();
-	  _state |= sock_base::hnamefailbit;
-	} else {
+	if ( host != 0 ) {
 	  memcpy( (char *)&_address.inet.sin_addr,
 		  (char *)host->h_addr, host->h_length );
+	} else {
+	  _errno = WSAGetLastError();
+	  _state |= sock_base::hnamefailbit;
 	}
 #endif
       }
@@ -411,8 +412,13 @@ class basic_sockbuf :
 
     int __rdsync()
       {
+#ifdef WIN32
+	unsigned long nlen = 0;
+	int nmsg = ioctlsocket( fd(), FIONREAD, &nlen );
+#else
 	long nlen = 0;
 	int nmsg = ioctl( fd(), I_NREAD, &nlen );
+#endif
 	if ( nmsg > 0 && nlen > 0 ) {
 	  __stl_assert( _base != 0 );
 	  __stl_assert( _ebuf != 0 );
@@ -533,7 +539,6 @@ class basic_sockstream :
 	}
       }
 
-    // only for sock_stream : inet now!
     explicit basic_sockstream( SOCKET s, const sockaddr& addr ) :
 #ifdef WIN32
         basic_iostream<charT,traits>( &_sb )
@@ -588,11 +593,8 @@ class basic_sockstream :
     basic_sockbuf<charT,traits> _sb;
 };
 
-// typedef basic_ifstream<char,char_traits<char> >        ifstream;
-// typedef basic_ifstream<wchar_t,char_traits<wchar_t> > wifstream;
-// typedef basic_ofstream<char,char_traits<char> >        ofstream;
-// typedef basic_ofstream<wchar_t,char_traits<wchar_t> > wofstream;
 typedef basic_sockbuf<char,char_traits<char> >              sockbuf;
+typedef basic_sockbuf<wchar_t,char_traits<wchar_t> >       wsockbuf;
 typedef basic_sockstream<char,char_traits<char> >        sockstream;
 typedef basic_sockstream<wchar_t,char_traits<wchar_t> > wsockstream;
 

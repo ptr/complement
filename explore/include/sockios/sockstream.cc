@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/01 14:23:45 ptr>
+// -*- C++ -*- Time-stamp: <99/02/02 18:04:58 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -81,9 +81,15 @@ basic_sockbuf<charT, traits>::underflow()
   if ( gptr() < egptr() )
     return traits::to_int_type(*gptr());
 
-  // Here shift operator is 'divide by 2'
-  // Oh, poll here --- find how many chars available!!!!
+#ifdef WIN32
+  fd_set pfd[FD_SETSIZE];
+  FD_ZERO( &pfd );
+  FD_SET( fd(), &pfd );
 
+  if ( select( FD_SETSIZE, &pfd[0], 0, 0, 0 ) <= 0 ) {
+    return traits::eof();
+  }
+#else
   pollfd pfd;
   pfd.fd = fd();
   pfd.events = POLLIN;
@@ -92,6 +98,7 @@ basic_sockbuf<charT, traits>::underflow()
   if ( poll( &pfd, 1, -1 ) <= 0 ) { // timeout 200 (milliseconds)
     return traits::eof();
   }
+#endif
 
   __stl_assert( eback() != 0 );
   __stl_assert( _ebuf != 0 );
