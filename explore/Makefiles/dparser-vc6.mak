@@ -1,5 +1,16 @@
-# -*- Makefile -*- Time-stamp: <03/07/11 18:22:23 ptr>
+# -*- Makefile -*- Time-stamp: <03/07/15 17:39:24 ptr>
 # $Id$
+
+# bug here: if no dependencies:
+# ---------------------------------
+#    int main() { return 0; }
+# ---------------------------------
+# this sed script produce wrong output
+# ---------------------------------
+#   obj/vc6/shared/xx.o obj/vc6/shared/xx.d : obj/vc6/shared/xx.cpp \
+# ---------------------------------
+# (wrong backslash at eol)
+
 
 DP_OUTPUT_DIR = | grep "^\#line 1 " | (echo -e 's|\([a-zA-Z]\):|/cygdrive/\1|g\nt next\n: next\n1s|^\#line 1 \(.*\)|$(OUTPUT_DIR)/$*.o $@ : $< \\\\|\nt\n$$s|^\#line 1 "\(.*\)"|\1|g\nt space\ns|^\#line 1 "\(.*\)"|\1\\\\|g\nt space\nd\n: space\ns| |\\\\ |g\ns|^|  |\ns|\\\\\\\\|/|g\n' > $(OUTPUT_DIR)/tmp.sed; sed -f $(OUTPUT_DIR)/tmp.sed; rm -f $(OUTPUT_DIR)/tmp.sed ) > $@; \
                   [ -s $@ ] || rm -f $@
