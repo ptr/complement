@@ -1,5 +1,59 @@
 2001-03-20  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
 
-	* Satisfy for STLport 4.1 beta 5.
+	* libDB: Satisfy for STLport 4.1 beta 5.
 
-	* Increment patch number.
+	* libDB: Increment patch number.
+
+2001-02-15  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* libDB (PgSQL.cc):
+	Fix merge
+	
+	* libDB: Change version
+	
+2001-02-14  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* libDB (PgSQL.h, xxSQL_i.h):
+	Changed behavior when server trying to establish connection to DB:
+	call for connection is done in separate thread, the leading thread
+	wait no more then little timeout (5 seconds, if this is first attempt
+	to conenct/reconnect to DB, or 2 seconds if establishing of
+	connection to DB is in progress); if timeout occur, and 
+	UseFilePasswd is set to 1, the janitor will make attempt
+	to authenticate user from file. In case the problems
+	with DB we can see in log files.
+	All above is related to PostgerSQL only now.
+
+2000-11-29  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* libDB (OraSQL.h, PgSQL.h, xxSQL.h, xxSQL_i.h):
+	DB - ?
+	
+2000-10-16  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* libDB: Support of Oracle 8i added (on HP-UX).
+
+2000-05-23  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libDB (PgSQL.cc): Universal DB interface
+	
+2000-05-22  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libDB: no quotation for DB name for Postgres 7.x
+
+2000-02-22  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libDB: std namespace changed to satisfy STLport 4.0b2
+	
+2000-01-05  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libDB: Two DB supported: Postgres and MySQL
+
+1999-11-16  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libDB: development od DB interface
+	
+1999-09-02  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libDB (SQL.cc):
+	Initial revision

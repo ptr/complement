@@ -1,3 +1,11 @@
+2001-06-01  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* The fork and become_daemon now in xmt library.
+
+	* New exception class fork_in_parent added in xmt.
+
+	* libEDS: version 0.5.0
+	
 2001-03-20  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
 
 	* Modified namespace to satisfy STLport 4.1 beta 5
@@ -101,3 +109,139 @@
 	readed from net and buffered in sockbuf, not extracted befor next
 	data recieved (I wait on poll). Now I check is available data
 	in buffer and return this sockstream if yes before calling poll.
+	
+2000-09-12  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	ifdef #ident directive (for vary compilers)
+	Removed wrong 'explicit' declaration:
+  	'explicit' may be used only for converting constructors.
+	this-> for inherited functions (HP's aCC A.03.13 don't understand
+	inheritance and 'using' clause). Created Makefiles for HP's aCC
+	compiler. Workarounds for HP's aCC names resolution.
+	This is release that start working on HP-UX 11.00 (with aCC A.03.13).
+
+2000-08-10  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	Port to HP-UX. Changes in posix threads---bug fixes.
+	Less hostid defines --- no needs in it.
+
+2000-05-31  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	Cron bug fixed; Less cerr printing
+	
+2000-05-23  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	GNU C++: required abbreviations for Sun
+	
+2000-02-24  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	DLL export/import/none
+	
+2000-01-05  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	Asynchronous internal events processing
+	
+1999-11-09  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	Event::key_type obsolete
+	
+1999-10-20  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	MT problem during access to state history stack.
+	
+1999-09-13  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	Allow forward event from one object to another.
+	
+1999-09-10  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	NameService established. Fix message addressing bug for internal
+	messages transport.
+	
+1999-06-04  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	Removed dependency from static constructors run order for events
+	tables. Removed unneeded calls and methods.
+
+1999-03-19  Petr Ovchenkov
+
+	* libEDS:
+	Reincarnation of EDS. EDS 3 Now! Support net and local events
+	traffic; Total rewritten addressing scheme.
+
+1998-05-21  Petr Ovchenkov
+
+	* The road to EDS 3: Start revision of OXW
+	
+1996-11-25  Petr Ovchenkov  
+
+	* libOXW:
+	Names changed in EDS (EDSEvent, EDSEventT, EDSCallbackObject,
+	EDSEventsCore, etc.) in spirit of separate libraries.
+
+1996-11-03  Petr Ovchenkov  
+
+	* libOXW:
+	The events transfer has made as const event transfer. This has done
+	to avoid implicit events modification during transport ones.
+	Such modifications dangerous and depend upon events dispatcher
+	realization.
+
+1996-10-07  Petr Ovchenkov  
+
+	* libOXW:
+	Variant without X. Some names changed.
+	
+1996-03-06  Petr Ovchenkov  
+
+	* libOXW:
+	Fixed bug with wrong find of states: now states push_front in
+	theHistory.
+	
+1996-03-05  Petr Ovchenkov  
+
+	* libOXW:
+	DispatchStub added (find, but not call).
+	
+1996-02-29  Petr Ovchenkov  
+
+	* libOXW:
+	Radical revision of events---states container.
+	
+1995-12-28  Petr Ovchenkov  
+
+	* libOXW:
+	Modification in search of appropriate state in states stack.
+	
+1995-11-21  Petr Ovchenkov  
+
+	* libOXW:
+	Tracing of events, and more pretty release.
+	
+1995-11-11  Petr Ovchenkov  
+
+	* libOXW:
+	stack of object's states
+	
+1995-11-02  Petr Ovchenkov  
+
+	* libOXW (Revision 2 start)
+
+1995-10-01  Petr Ovchenkov  
+
+	* Events dispatcher can find both virtual and non-virtual catchers.
+
+1995-04-26  Petr Ovchenkov  
+
+	* Initial revision (?) libAS

@@ -1,9 +1,73 @@
+2001-06-01  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* libAux: version 0.5.0 (new module here, see 2001-03-21 below).
+
 2001-03-21  Ivan Vigasin    <vig@ParallelGraphics.COM>
 
-	* arguments now lives in lib/aux (moved from helios)
+	* arguments now lives in libaux (moved from helios)
 
 2001-03-20  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
 
 	* Satisfy for STLport 4.1 beta 5.
 
-	* Increment patch number.
+	* libAux: version 0.3.1
+
+2000-09-12  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+	
+	* libAux (dir_utils.cc, _node.cc, args.cc):
+	ifdef #ident directive (for vary compilers)
+	Removed wrong 'explicit' declaration:
+	'explicit' may be used only for converting constructors.
+	this-> for inherited functions (HP's aCC A.03.13 don't understand
+	inheritance and 'using' clause). Created Makefiles for HP's aCC
+	compiler. Workarounds for HP's aCC names resolution.
+	This is release that start working on HP-UX 11.00 (with aCC A.03.13).
+	
+2000-08-10  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libAux (_node.cc):
+	Port to HP-UX. Changes in posix threads---bug fixes.
+	Less hostid defines---no needs in it.
+
+2000-02-22  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libAux:
+	std namespace changed to satisfy STLport 4.0b2
+	
+1999-09-02  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libAux (directory.cc, dir_utils.cc, args.cc):
+	Fix for gcc 2.95 and STLport
+	
+1999-05-28  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libAux (dir_utils.cc):
+	tempname---not part of cstdio
+	
+1999-05-06  Petr Ovchenkov  <ptr@ParaGraph.Ru>
+
+	* libAux (directory.cc, dir_utils.cc, CyrMoney.cc, args.cc):
+	adopted for new iostreams
+
+	* libAux (_node.cc):
+	Initial revision
+
+1998-05-02  Petr Ovchenkov
+
+	* libAux (args.cc):
+	parser for arguments in string added.
+	
+1998-03-24  Petr Ovchenkov
+
+	* libAux (CyrMoney.cc):
+	Initial revision
+	
+1998-03-23  Petr Ovchenkov
+
+	* libAux (args.cc):
+	Initial revision
+	
+1998-01-16  Petr Ovchenkov
+
+	* libAux (directory.cc, dir_utils.cc):
+	Initial revision
