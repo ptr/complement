@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/02/28 11:38:23 ptr>
+// -*- C++ -*- Time-stamp: <96/03/04 20:36:56 ptr>
 #ifndef __OXW_EventHandler_h
 #define __OXW_EventHandler_h
 
@@ -189,6 +189,16 @@ class __EvTable
 	}
 	return i2;
       }
+    bool get( const_iterator1 i1, Key2 key2, Value& value ) const
+      {
+	const_iterator2 i2 = get( i1, key2 );
+	if ( i2 == (*i1).second.end() ) {
+	  return false;
+	}
+	value = (*i2).second;
+
+	return true;
+      }
 
     iterator1 begin()
       { return storage.begin(); }
@@ -278,6 +288,7 @@ class __EvHandler
     __EvHandler( const char *, __DeclareAnyPMF<T> * );
 
     bool Dispatch( T *, InputIterator, InputIterator, OXWEvent& event );
+    bool DispatchStub( T *, InputIterator, InputIterator, OXWEvent& event );
     bool DispatchTrace( InputIterator first, InputIterator last,
 			OXWEvent& event, ostrstream& out )
       {
@@ -329,7 +340,11 @@ bool __EvHandler<T, InputIterator>::Dispatch( T *c, InputIterator first,
   }
   message_type msg = event.GetMessage();
   __AnyPMFentry *entry;
-  while ( first != last && !table.get( msg, *first, entry ) ) {
+  table_type::const_iterator1 i1 = table.get( msg );
+  if ( i1 == table.end() ) {
+    return false;
+  }  
+  while ( first != last && !table.get( i1, *first, entry ) ) {
     ++first;
   }
   if ( first == last ) {
@@ -337,6 +352,28 @@ bool __EvHandler<T, InputIterator>::Dispatch( T *c, InputIterator first,
   }
   (*dpmf(entry->dpmf))( c, pmf(entry->pmf), event );
 
+  return true;
+}
+
+template <class T, class InputIterator>
+bool __EvHandler<T, InputIterator>::DispatchStub( T *, InputIterator first,
+				       InputIterator last, OXWEvent& event )
+{
+  if ( first == last ) {
+    return false;
+  }
+  message_type msg = event.GetMessage();
+  __AnyPMFentry *entry;
+  table_type::const_iterator1 i1 = table.get( msg );
+  if ( i1 == table.end() ) {
+    return false;
+  }  
+  while ( first != last && !table.get( i1, *first, entry ) ) {
+    ++first;
+  }
+  if ( first == last ) {
+    return false;
+  }
   return true;
 }
 
@@ -371,6 +408,8 @@ class __EvHandler<OXWEventHandler,h_iterator>
       {	class_name = nm; }
 
     bool Dispatch( OXWEventHandler *, h_iterator, h_iterator, OXWEvent& )
+      { return false; }
+    bool DispatchStub( OXWEventHandler *, h_iterator, h_iterator, OXWEvent& )
       { return false; }
     bool DispatchTrace( h_iterator, h_iterator, OXWEvent&, ostrstream& )
       { return false; }
@@ -421,6 +460,7 @@ class OXWEventHandler
     void RemoveState( state_type );
     bool isState( state_type ) const;
     virtual bool Dispatch( OXWEvent& );
+    virtual bool DispatchStub( OXWEvent& );
     virtual void DispatchTrace( OXWEvent&, ostrstream&  );
     virtual void Trace( ostrstream& ) const;
     void TraceStack( ostrstream& ) const;
@@ -456,6 +496,7 @@ class OXWEventHandler
       { return theEventsTable.table; }          \
   protected:					\
     virtual bool Dispatch( OXWEvent& );         \
+    virtual bool DispatchStub( OXWEvent& );     \
     static evtable_type theEventsTable;         \
     static __DeclareAnyPMF<cls> theDeclEventsTable[]
 
@@ -472,6 +513,12 @@ bool cls::Dispatch( OXWEvent& __event__ )       \
 {						\
   return theEventsTable.Dispatch( this, theHistory.begin(), \
 				  theHistory.end(), __event__ ); \
+}						\
+                                                \
+bool cls::DispatchStub( OXWEvent& __event__ )   \
+{						\
+  return theEventsTable.DispatchStub( this, theHistory.begin(), \
+				      theHistory.end(), __event__ ); \
 }						\
                                                 \
 void cls::DispatchTrace( OXWEvent& __event__, ostrstream& out )  \
