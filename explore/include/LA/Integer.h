@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/04/09 13:49:07 ptr>
+// -*- C++ -*- Time-stamp: <96/04/09 16:24:26 ptr>
 #ifndef __LA_Integer_h
 #define __LA_Integer_h
 
@@ -20,6 +20,10 @@
 #include <LA/tmp.h>
 #endif
 
+#ifndef _SYS_ISA_DEFS_H
+#include <sys/isa_defs.h>
+#endif
+
 class Integer_overflow
 {
 };
@@ -37,14 +41,25 @@ struct la_int_traits {
 template <int P, class LL, class UL, class L, class T> class la_int;
 typedef la_int<4, long long, unsigned long, long, la_int_traits> Integer4;
 
+#ifdef __GNUC__
+
+typedef long long long_base_type;
+typedef unsigned long ubase_type;
+typedef long base_type;
+typedef la_int_traits traits_type;
+
+#endif
+
 template <int P, class LL, class UL, class L, class T>
 class la_int
 {
   public:
+#ifndef __GNUC__
     typedef LL long_base_type;
     typedef UL ubase_type;
     typedef L base_type;
     typedef T traits_type;
+#endif
 
     la_int()
       { }
@@ -126,8 +141,14 @@ class la_int
     union __longlong {
 	long_base_type A;
 	struct {
+#ifdef _BIG_ENDIAN
 	    ubase_type hi;
 	    ubase_type lo;
+#endif
+#ifdef _LITTLE_ENDIAN
+	    ubase_type lo;
+	    ubase_type hi;
+#endif
 	} a;
     };
 
@@ -146,12 +167,19 @@ class la_int
 union __longlong {
     long long A;
     struct {
-	unsigned long hi;
-	unsigned long lo;
+#ifdef _BIG_ENDIAN
+	    unsigned long hi;
+	    unsigned long lo;
+#endif
+#ifdef _LITTLE_ENDIAN
+	    unsigned long lo;
+	    unsigned long hi;
+#endif
     } a;
 };
 
-void __load( __longlong& t, unsigned long hi, unsigned long lo ) const
+inline
+void __load( __longlong& t, unsigned long hi, unsigned long lo )
 {
   t.a.hi = hi >> 1;
   t.a.lo = lo | (hi << la_int_traits::shift_first_to_hi );
