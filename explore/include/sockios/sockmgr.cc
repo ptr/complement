@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/04 20:02:55 ptr>
+// -*- C++ -*- Time-stamp: <99/02/16 20:11:58 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -129,16 +129,39 @@ void sockmgr_stream<Connect>::erase( sockstream *s )
   }
 }
 
+
+#ifdef __unix
+
+template <class Connect>
+sockmgr_stream<Connect> *sockmgr_stream<Connect>::__self = 0;
+
 template <class Connect>
 void sockmgr_stream<Connect>::broken_pipe( int )
 {
-  cerr << "broken pipe detected" << endl;
+  cerr << "\nbroken pipe detected" << endl;
 }
+
+template <class Connect>
+void sockmgr_stream<Connect>::interrupt( int )
+{
+  cerr << "\nInterrupted" << endl;
+  __stl_assert( __self != 0 );
+  __self->shutdown( sock_base::stop_in );
+  __self->close();
+}
+
+#endif
 
 template <class Connect>
 int sockmgr_stream<Connect>::loop( void *p )
 {
   sockmgr_stream *me = static_cast<sockmgr_stream *>(p);
+  __self = me;
+//  me->_loop_end.set( false );
+
+  me->_garbage_end.set( false );
+  me->_gc_id.launch( garbage_collector, me );
+
   sockmgr_client *s;
   string who;
 #ifdef WIN32
@@ -159,6 +182,7 @@ int sockmgr_stream<Connect>::loop( void *p )
 
   sigemptyset( &sigset );
   sigaddset( &sigset, SIGPIPE );
+  sigaddset( &sigset, SIGINT );
 
 #ifdef _SOLARIS_THREADS
   thr_sigsetmask( SIG_BLOCK, &sigset, 0 );
@@ -171,6 +195,8 @@ int sockmgr_stream<Connect>::loop( void *p )
 
   act.sa_handler = SIG_IGN;
   sigaction( SIGPIPE, &act, 0 );
+  act.sa_handler = SIG_PF(interrupt);
+  sigaction( SIGINT, &act, 0 );
 #endif
 
   set_unexpected( unexpected );
@@ -218,6 +244,10 @@ int sockmgr_stream<Connect>::loop( void *p )
 
 //  __stl_assert( false );
 
+  me->_garbage_end.set( true );
+
+//  me->_loop_end.signal();
+
   return ret_code;
 }
 
@@ -260,9 +290,52 @@ int sockmgr_stream<Connect>::connection( void *p )
     ret_code = -1;
   }
 
-  me->erase( &client->s );
-
   return ret_code;
+}
+
+template <class Connect>
+int sockmgr_stream<Connect>::garbage_collector( void *p )
+{
+  sockmgr_stream *me = static_cast<sockmgr_stream *>(p);
+  container_type::iterator i;
+
+  typedef pair<const _xsockaddr,sockmgr_client*> container_content;
+  typedef select2nd<container_content>     value;
+
+#ifdef __unix
+  timespec t;
+
+  t.tv_sec = 900; // 900;
+  t.tv_nsec = 0;
+#endif
+#ifdef WIN32
+  int t = 900000; // 900000;
+#endif
+
+  while ( !me->_garbage_end.set() ) {
+#ifdef __unix
+    nanosleep( &t, 0 );
+#endif
+#ifdef WIN32
+    Sleep( t );
+#endif
+
+    MT_LOCK( me->_storage_lock );
+    i =  me->_storage.begin();
+    while ( (i = find_if( i, me->_storage.end(), compose1( bad_thread(), value() ) ))
+            != me->_storage.end() ) {
+      delete (*i).second;
+      me->_storage.erase( i++ );
+    }
+    MT_UNLOCK( me->_storage_lock );
+  }
+
+  MT_LOCK( me->_storage_lock );
+  for_each( me->_storage.begin(), me->_storage.end(), compose1( remove_client(), value() ) );
+  me->_storage.erase( me->_storage.begin(), me->_storage.end() );
+  MT_UNLOCK( me->_storage_lock );
+
+  return 0;
 }
 
 } // namespace std
