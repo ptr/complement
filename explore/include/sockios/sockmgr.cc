@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/19 18:45:45 ptr>
+// -*- C++ -*- Time-stamp: <99/05/19 19:16:40 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -211,10 +211,11 @@ int sockmgr_stream<Connect>::loop( void *p )
       s->thrID.launch( connection, &pass, sizeof(pass) );
     }
   }
-  catch ( int sig ) {
+  catch ( int ) {
     me->shutdown( sock_base::stop_in );
     me->close();
-    cerr << "\n--- sockmgr_stream: signal " << strsignal( sig ) << " detected ---" << endl;
+    throw;
+    // cerr << "\n--- sockmgr_stream: signal " << strsignal( sig ) << " detected ---" << endl;
   }
   catch ( runtime_error& e ) {
     cerr << e.what() << endl;
