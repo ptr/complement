@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/05/10 16:31:50 ptr>
+// -*- C++ -*- Time-stamp: <00/05/23 19:38:24 ptr>
 
 /*
  *
@@ -21,7 +21,7 @@
 #ifndef __SOCKSTREAM__
 #define __SOCKSTREAM__
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
 #ifndef __config_feature_h
 #include <config/feature.h>
