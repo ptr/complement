@@ -1,8 +1,12 @@
-// -*- C++ -*- Time-stamp: <99/05/28 18:28:22 ptr>
+// -*- C++ -*- Time-stamp: <99/06/02 20:25:56 ptr>
 
 #ident "$SunId$ %Q%"
 
 #include <algorithm>
+
+#ifdef __unix
+extern "C" int nanosleep(const struct timespec *, struct timespec *);
+#endif
 
 #ifdef WIN32
 #include <_algorithm>
@@ -270,92 +274,97 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
   }
 #endif
 
+  do {
 #ifdef WIN32
-  if ( _fdcount == 0 ) {
-    FD_ZERO( &_pfd );
+    if ( _fdcount == 0 ) {
+      FD_ZERO( &_pfd );
+      ++_fdcount;
+    }
     FD_SET( fd(), &_pfd );
-    ++_fdcount;
-  }
-
-  if ( select( FD_SETSIZE, &_pfd, 0, 0, 0 ) < 0 ) {
-    return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
-  }
+    if ( select( FD_SETSIZE, &_pfd, 0, 0, 0 ) < 0 ) {
+      return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
+    }
 #else
-  _pfd[0].revents = 0;
-  if ( poll( _pfd, _fdcount, -1 ) < 0 ) { // wait infinite
-    return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
-  }
+    _pfd[0].revents = 0;
+    if ( poll( _pfd, _fdcount, -1 ) < 0 ) { // wait infinite
+      return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
+    }
 #endif
 
-  if (
+    if (
 #ifdef __unix
-    _pfd[0].revents != 0
+      _pfd[0].revents != 0
 #endif
 #ifdef WIN32
-    FD_ISSET( fd(), &_pfd );
+      FD_ISSET( fd(), &_pfd );
 #endif
-    ) {
-    sock_base::socket_type _sd = ::accept( fd(), &addr.any, &sz );
-    if ( _sd == -1 ) {
-      // check and set errno
-      __stl_assert( _sd == -1 );
-      return 0;
-    }
+      ) {
+      sock_base::socket_type _sd = ::accept( fd(), &addr.any, &sz );
+      if ( _sd == -1 ) {
+        // check and set errno
+        __stl_assert( _sd == -1 );
+        return 0;
+      }
 
-    MT_REENTRANT( _c_lock, _1 );
-    sockmgr_client_MP<Connect> *cl;
+      MT_REENTRANT( _c_lock, _1 );
+      sockmgr_client_MP<Connect> *cl;
 
-    container_type::iterator i = 
-      find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, -1 ) );
+      container_type::iterator i = 
+        find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, -1 ) );
     
-    if ( i == _M_c.end() ) {
-      cl = new sockmgr_client_MP<Connect>();
-      _M_c.push_back( cl );      
-    } else {
-      cl = *i;
-    }
+      if ( i == _M_c.end() ) {
+        cl = new sockmgr_client_MP<Connect>();
+        _M_c.push_back( cl );      
+      } else {
+        cl = *i;
+      }
 
-    cl->s.open( _sd, addr.any );
+      cl->s.open( _sd, addr.any );
 
 #ifdef __unix
-    int j = _fdcount++;
+      int j = _fdcount++;
 
-    _pfd[j].fd = _sd;
-    _pfd[j].events = POLLIN;
-    _pfd[j].revents = 0;
+      _pfd[j].fd = _sd;
+      _pfd[j].events = POLLIN;
+      _pfd[j].revents = 0;
 #endif
 #ifdef WIN32
-    FD_SET( _sd, &_pfd );
+      FD_SET( _sd, &_pfd );
 #endif
-    return cl;
-  } else {
-    // find polled and return it
+    }
 #ifdef __unix
-    for ( int j = 1; j < _fdcount; ++j ) {
-      if ( _pfd[j].revents != 0 ) {
-        container_type::iterator i = 
-          find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, _pfd[j].fd ) );
-        __stl_assert( i != _M_c.end() );
-        if ( _pfd[j].revents & POLLERR ) {
-          memmove( &_pfd[j], &_pfd[j+1], sizeof(pollfd) * (_fdcount - j - 1) );
-          --_fdcount;
-          (*i)->s.close();
-        }
-        _pfd[j].revents = 0;
-        return *i;
-      }
-    }
+  } while ( _pfd[0].revents != 0 );
 #endif
 #ifdef WIN32
-    container_type::iterator i = _M_c.begin();
-    while ( i != _M_c.end() ) {
-      if ( (*i)->s.is_open() && FD_ISSET( (*i)->s.rdbuf()->fd(), &_pfd ) ) {
-        return *i;
-      }
-      ++i;
-    }
+  } while ( FD_ISSET( fd(), &_pfd ) );
 #endif
+  // find polled and return it
+#ifdef __unix
+  for ( int j = 1; j < _fdcount; ++j ) {
+    if ( _pfd[j].revents != 0 ) {
+      container_type::iterator i = 
+        find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, _pfd[j].fd ) );
+      __stl_assert( i != _M_c.end() );
+      if ( _pfd[j].revents & POLLERR ) {
+        memmove( &_pfd[j], &_pfd[j+1], sizeof(pollfd) * (_fdcount - j - 1) );
+        --_fdcount;
+        (*i)->s.close();
+      }
+      _pfd[j].revents = 0;
+      return *i;
+    }
   }
+#endif
+#ifdef WIN32
+  container_type::iterator i = _M_c.begin();
+  while ( i != _M_c.end() ) {
+    if ( (*i)->s.is_open() && FD_ISSET( (*i)->s.rdbuf()->fd(), &_pfd ) ) {
+      return *i;
+    }
+    ++i;
+  }
+#endif
+
   return 0;
 }
 
