@@ -1,3 +1,8 @@
+2002-07-11  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xmt.h, xmt.cc (Repository): add try_wait_time,
+	thanks for Ivan Vigasin.
+
 2002-06-23  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* xmt.cc, xmt.h (Repository): remove signal throw---seems not work
