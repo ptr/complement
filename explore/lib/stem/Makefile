@@ -1,4 +1,4 @@
-# Time-stamp: <99/08/19 18:12:59 ptr>
+# Time-stamp: <99/09/07 17:40:09 ptr>
 # $SunId$ %Q%
 
 PWD :sh = pwd
@@ -15,7 +15,7 @@ INCLUDES += -I../../include/mt \
 	    -I../../include/EDS
 
 EDS_SRC = _EventHandler.cc NetTransport.cc EvManager.cc EvPack.cc crc.cc \
-          _SessionMgr.cc
+          _SessionMgr.cc Names.cc
 EDS_OBJ = $(EDS_SRC:%.cc=$(OUTPUT_DIR)/%.o)
 
 libdbg_so := LDFLAGS += -L..

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/03 12:48:33 ptr>
+// -*- C++ -*- Time-stamp: <99/09/08 17:34:55 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -90,7 +90,7 @@ void NetTransport_base::disconnect()
     } else {
       smgr.erase( _sid );
     }
-    _sid = static_cast<EvSessionManager::key_type>(-1);
+    _sid = badkey;
     _count = 0;
   }
 }
@@ -101,32 +101,19 @@ __EDS_DLL NetTransport_base::~NetTransport_base()
   disconnect();
 }
 
-// passive side (server) function
+const string __ns_at( "ns@" );
+const string __at( "@" );
 
-void NetTransport_base::event_process( Event& ev, const string& hostname )
+addr_type NetTransport_base::rar_map( addr_type k, const string& name )
 {
-//      cerr << "------------------------>>>>>>>>\n";
-//      dump( std::cerr, ev );
-  // sess.inc_from( sizeof(__Event_Base) + sizeof(std::string::size_type) +
-  //               ev.value_size() );
-  // if ( sess.un_from( ev.seq() ) != 0 ) {
-  //   cerr << "Event(s) lost, or miss range event" << endl;
-  // }
-  heap_type::iterator r = rar.find( ev._src );
+  heap_type::iterator r = rar.find( k );
   if ( r == rar.end() ) {
     r = rar.insert(
-      heap_type::value_type( ev._src,
-                             manager()->SubscribeRemote( this, ev._src, hostname ) ) ).first;
-//        cerr << "Create remote object: " << hex << (*r).second
-//             << " [" << ev._src << "]\n";
+      heap_type::value_type( k,
+                             manager()->SubscribeRemote( this, k, name ) ) ).first;
   }
-  ev._src = (*r).second; // substitute my local id
 
-  // if ( ev.sid() != _sid ) {
-  //   ev.sid( _sid );
-  // }
-        
-  manager()->Dispatch( ev );
+  return (*r).second;
 }
 
 bool NetTransport_base::pop( Event& _rs, SessionInfo& sess )
@@ -182,16 +169,15 @@ bool NetTransport_base::pop( Event& _rs, SessionInfo& sess )
 
 
 __EDS_DLL
-bool NetTransport_base::push( const Event& _rs, const Event::key_type& rmkey,
-                              const Event::key_type& srckey )
+bool NetTransport_base::push( const Event& _rs )
 {
   __stl_assert( net != 0 );
   unsigned buf[8];
 
   buf[0] = to_net( EDS_MAGIC );
   buf[1] = to_net( _rs.code() );
-  buf[2] = to_net( rmkey );
-  buf[3] = to_net( srckey );
+  buf[2] = to_net( _rs.dest() );
+  buf[3] = to_net( _rs.src() );
 
   MT_REENTRANT( _lock, _1 );
 
@@ -232,10 +218,13 @@ void NetTransport::connect( sockstream& s )
   sess._host = hostname;
   sess._port = s.rdbuf()->port();
   net = &s;
+  const string _at_hostname( __at + hostname );
 
   try {
+    _net_ns = rar_map( nsaddr, __ns_at + hostname );
     while ( pop( ev, sess ) ) {
-      event_process( ev, hostname );
+      ev.src( rar_map( ev.src(), _at_hostname ) ); // substitute my local id
+      manager()->Dispatch( ev );
     }
     if ( !s.good() ) {
       s.close();
@@ -258,9 +247,8 @@ void NetTransport::connect( sockstream& s )
 // connect initiator (client) function
 
 __EDS_DLL
-NetTransport_base::key_type NetTransportMgr::open(
-                                             const char *hostname, int port,
-                                             std::sock_base::stype stype )
+addr_type NetTransportMgr::open( const char *hostname, int port,
+                                 std::sock_base::stype stype )
 {
   if ( net == 0 ) {
     net = new sockstream( hostname, port, stype );
@@ -270,17 +258,13 @@ NetTransport_base::key_type NetTransportMgr::open(
   }
 
   if ( net->good() ) {
-    heap_type::iterator r;
-
-    // forward register remote object with ID 0
-    r = rar.insert( 
-      heap_type::value_type( 0,
-                             manager()->SubscribeRemote( this, 0, net->rdbuf()->hostname() ) ) ).first;
+    _net_ns = rar_map( nsaddr, __ns_at + hostname );
+    addr_type zero_object = rar_map( 0, __at + hostname );
     _sid = smgr.create();
     _thr.launch( _loop, this ); // start thread here
-    return (*r).second;
+    return zero_object;
   }
-  return static_cast<NetTransport_base::key_type>(-1);
+  return badaddr;
 }
 
 int NetTransportMgr::_loop( void *p )
@@ -293,17 +277,7 @@ int NetTransportMgr::_loop( void *p )
 
   try {
     while ( me.pop( ev, sess ) ) {
-      // dump( std::cerr, ev );
-      r = me.rar.find( ev._src );
-      if ( r == me.rar.end() ) {
-        r = me.rar.insert( 
-          heap_type::value_type( ev._src,
-          manager()->SubscribeRemote( &me, ev._src, me.net->rdbuf()->hostname() ) ) ).first;
-//        cerr << "Create remote object: " << hex << (*r).second
-//             << " [" << ev._src << "]\n";
-      }
-      ev._src = (*r).second; // substitute my local id
-
+      ev.src( me.rar_map( ev.src(), __at + me.net->rdbuf()->hostname() ) ); // substitute my local id
       manager()->Dispatch( ev );
     }
     if ( me.net ) {
@@ -322,6 +296,15 @@ int NetTransportMgr::_loop( void *p )
   }
 
   return 0;  
+}
+
+__EDS_DLL addr_type NetTransportMgr::make_map( addr_type k, const char *name )
+{
+  string full_name = name;
+  full_name += __at;
+  full_name += net->rdbuf()->hostname();
+
+  return rar_map( k, full_name );
 }
 
 __EDS_DLL
@@ -350,7 +333,8 @@ void NetTransportMP::connect( sockstream& s )
     // and another: message can be break, and other datagram can be
     // in the middle of message...
     if ( pop( ev, sess ) ) {
-      event_process( ev, hostname );
+      ev.src( rar_map( ev.src(), __at + hostname ) ); // substitute my local id
+      manager()->Dispatch( ev );
     }
     if ( !s.good() ) {
       throw ios_base::failure( "sockstream not good" );
