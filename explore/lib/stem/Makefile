@@ -58,6 +58,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/ScrTable.o \
 		$(OUTPUT_DIR)/SpeedyButton.o \
 		$(OUTPUT_DIR)/PopupMenu.o \
+		$(OUTPUT_DIR)/Menubar.o \
 		$(OUTPUT_DIR)/CheckList.o \
 		$(OUTPUT_DIR)/Scroller.o \
 		$(OUTPUT_DIR)/TableInfo.o \
