@@ -1,7 +1,8 @@
-#ident "%Z%%Q%$RCSfile$ ($Revision$): %H% %T%" // -*- C++ -*-
-
+// -*- C++ -*- Time-stamp: <96/02/27 15:35:25 ptr>
 #ifndef __OXW_Event_h
 #define __OXW_Event_h
+
+#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #ifndef _XLIB_H_
 #include <X11/Xlib.h>
@@ -44,6 +45,8 @@ class OXWCallbackObject
     OXWCallbackObject()
       { object = 0; Pmf = 0; }
     operator OXWCallbackObject<GENERIC>&()
+      { return *((OXWCallbackObject<GENERIC> *)this); }
+    operator const OXWCallbackObject<GENERIC>&() const
       { return *((OXWCallbackObject<GENERIC> *)this); }
     T *object;
     PMF Pmf;
@@ -122,7 +125,14 @@ class OXWEventT
       { theSender = x; }
     operator OXWEvent& ()
       { return *( (OXWEvent *)this ); }
+    operator const OXWEvent& () const
+      { return *( (OXWEvent *)this ); }
     operator D& ()
+      {
+	WARN( sz == 0, "You made attempt to read not allocated data!" );
+	return sz ? *DataObject : error_data;
+      }
+    operator const D& () const
       {
 	WARN( sz == 0, "You made attempt to read not allocated data!" );
 	return sz ? *DataObject : error_data;
@@ -176,6 +186,11 @@ class OXWEventT<OXWEventsCore,void>
     void Sender( OXWEventsCore *x )
       { theSender = x; }
     operator OXWEventX& ()
+      {
+	PRECONDITION( Message < LASTEvent );
+	return *((OXWEventX *)this);
+      }
+    operator const OXWEventX& () const
       {
 	PRECONDITION( Message < LASTEvent );
 	return *((OXWEventX *)this);
@@ -238,6 +253,10 @@ class OXWEventT<OXWEventsCore,XEvent>
     operator XEvent& ()
       {	return *DataObject; }
     operator OXWEvent& ()
+      { return *( (OXWEvent *)this ); }
+    operator const XEvent& () const
+      {	return *DataObject; }
+    operator const OXWEvent& () const
       { return *( (OXWEvent *)this ); }
 
   private:
