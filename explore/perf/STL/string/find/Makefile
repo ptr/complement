@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <03/07/09 18:08:47 ptr>
+# -*- Makefile -*- Time-stamp: <04/07/14 23:09:37 ptr>
 # $Id$
 
 DIRS = STLport-default STLport-malloc STLport-newalloc libstd++
@@ -8,3 +8,12 @@ all:
 	  (cd $$d; make);\
 	done
 
+clean:
+	for d in $(DIRS); do \
+	  (cd $$d; make clean); \
+	done
+
+depend:
+	for d in $(DIRS); do \
+	  (cd $$d; make depend); \
+	done
