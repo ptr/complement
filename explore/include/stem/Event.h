@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/04/06 17:50:28 ptr>
+// -*- C++ -*- Time-stamp: <99/04/14 19:44:55 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -108,7 +108,8 @@ class __Event_Base
     sq_type   _sqn;  // sequential number
     sq_type   _rsqn; // responce to number
 
-    friend class NetTransport;
+    friend class NetTransport_base;
+    friend class NetTransportMgr;
 };
 
 // Forward declarations
