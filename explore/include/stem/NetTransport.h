@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/06 10:15:18 ptr>
+// -*- C++ -*- Time-stamp: <99/10/06 11:21:07 ptr>
 
 /*
  *
@@ -127,7 +127,7 @@ class NetTransport_base :
     heap_type rar; // reverce address resolution table
     __impl::Mutex  _lock;
     addr_type _net_ns; // reflection of address of remote name service
-    static EvSessionManager smgr;
+    static __EDS_DLL EvSessionManager smgr;
 };
 
 class NetTransport :

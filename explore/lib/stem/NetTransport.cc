@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/06 10:16:03 ptr>
+// -*- C++ -*- Time-stamp: <99/10/06 11:21:16 ptr>
 
 /*
  *
@@ -92,7 +92,7 @@ void dump( std::ostream& o, const EDS::Event& e )
   }
 }
 
-EvSessionManager NetTransport_base::smgr;
+__EDS_DLL EvSessionManager NetTransport_base::smgr;
 
 void NetTransport_base::disconnect()
 {
@@ -118,6 +118,7 @@ __EDS_DLL NetTransport_base::~NetTransport_base()
 {
   manager()->Remove( this );
   disconnect();
+  delete net;
 }
 
 __EDS_DLL void NetTransport_base::close()
