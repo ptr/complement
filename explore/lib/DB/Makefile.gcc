@@ -1,4 +1,4 @@
-# Time-stamp: <00/06/02 17:58:29 ptr>
+# Time-stamp: <00/06/07 17:42:29 degor>
 # $SunId$
 
 BASEDIR := $(shell xtmp=`pwd`; \
@@ -19,6 +19,11 @@ INCLUDES += -I$(BASEDIR)/include
 
 INCLUDES += -I/usr/local/pgsql/include
 DEFS += -D__DB_POSTGRES
+
+ifeq ($(shell uname),Linux)
+dbg     : LDFLAGS += -L$(HOME)/lib
+release : LDFLAGS += -L$(HOME)/lib
+endif
 
 release : LDLIBS += -lstlport_gcc
 dbg     : LDLIBS += -lstlport_gcc_stldebug
