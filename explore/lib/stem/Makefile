@@ -12,7 +12,7 @@ OPT = -g
 # OPT = -O4
 # OPT = -G -O4
 
-CCFLAGS = $(OPT) -cg92 +w -pic -pto
+CCFLAGS = $(OPT) -cg92 +w -pic -pto -mt
 CPPFLAGS = $(DEFS) $(INCLUDES)
 PROJECT_LIBS = -L../.. -lclass
 # LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm -ldl
