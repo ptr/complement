@@ -1,0 +1,26 @@
+# Time-stamp: <01/11/09 12:59:05 ptr>
+# $Id$
+
+# This file reflect versions of third-party libraries that
+# used in projects
+
+include $(BASEDIR)/Makefiles/Makefile.inc.ver.${COMPILER_NAME}
+
+# STLport library
+STLPORT_LIB_DIR ?= /usr/local/lib
+STLPORT_INCLUDE_DIR ?= /usr/local/include/stlport
+STLPORT_VER ?= 4.5
+
+# PostgreSQL library version:
+
+PG_INCLUDE ?= $(PG_DIR)/include
+PG_LIB ?= $(PG_DIR)/lib
+PG_LIB_VER_MAJOR = 2
+PG_LIB_VER_MINOR = 1
+
+# Readline libraries version:
+
+RL_INCLUDE ?= /usr/local/include/readline
+RL_LIB ?= /usr/local/lib
+RL_LIB_VER_MAJOR = 4
+RL_LIB_VER_MINOR = 2

@@ -1,0 +1,40 @@
+# Time-stamp: <00/07/26 21:46:05 ptr>
+# $SunId$
+
+.KEEP_STATE:
+.PARALLEL:
+.SUFFIXES:
+.SCCS_GET:
+
+OS_VER:sh =uname -sr | sed -e s/\[\.\ \]/_/g
+SO = so
+
+# INCLUDES = -I$(BASEDIR)/include/stlport \
+#           -I$(BASEDIR)/include/ios
+
+STLPORT_INCLUDES = $(BASEDIR)/include/stlport
+
+# INCLUDES = -I$(BASEDIR)/include/stlport
+INCLUDES = -I$(STLPORT_INCLUDES)
+
+# DEFS += -D__$(OS_VER)
+
+INSTALL = /usr/ucb/install
+OUTPUT_OPTION = -o $@
+CPPFLAGS = $(DEFS) $(INCLUDES)
+CCFLAGS = -mt -library=%none,Crun $(OPT)
+CFLAGS = -mt $(OPT)
+# libdbg_so := CCFLAGS += -template=wholeclass
+libdbg_a := LDFLAGS += -xar
+
+dbg := DEFS += -D__STL_DEBUG
+dbg := OPT += -g
+
+clear-release::
+	?-rm -f $(OUTPUT_DIR)/ir.out
+	?-rm -rf $(OUTPUT_DIR)/SunWS_cache
+
+clear-dbg::
+	?-rm -f $(OUTPUT_DIR_DBG)/ir.out
+	?-rm -rf $(OUTPUT_DIR_DBG)/SunWS_cache
+
