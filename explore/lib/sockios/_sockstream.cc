@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <00/09/08 14:00:49 ptr>
+// -*- C++ -*- Time-stamp: <02/04/14 20:11:47 ptr>
 
 /*
- * Copyright (c) 1997-1999
- * Petr Ovchenkov
+ * Copyright (c) 1997-1999, 2002
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2000
- * ParallelGraphics Ltd.
+ * Parallel Graphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -19,9 +19,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -107,7 +107,7 @@ int WinVer()
   return WINDOWS_3_1;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 sock_base::Init::Init()
 {
   MT_REENTRANT( _SI_lock, _1 );
@@ -167,7 +167,7 @@ sock_base::Init::Init()
   }
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 sock_base::Init::~Init()
 {
   MT_REENTRANT( _SI_lock, _1 );
@@ -192,13 +192,13 @@ sock_base::Init::~Init()
   TlsSetValue( __impl::__thr_key, (void *)__tls_init_cnt );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 sock_base::sock_base()
 {
   new( __impl::__xbuff ) Init();
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 sock_base::~sock_base()
 {
   reinterpret_cast<Init *>(__impl::__xbuff)->~Init();
