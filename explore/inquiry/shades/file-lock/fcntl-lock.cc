@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <04/01/12 15:14:22 ptr>
+// -*- C++ -*- Time-stamp: <04/01/12 16:46:26 ptr>
 
 #ifdef __unix
 #  ifdef __HP_aCC
@@ -28,20 +28,22 @@
 using namespace std;
 using namespace __impl;
 
-#define MARK cerr << __FILE__ << ":" << __LINE__ << endl
-// #define MARK (void *)0
+// #define MARK cerr << __FILE__ << ":" << __LINE__ << endl
+#define MARK (void *)0
 
 // #define MARK fprintf( stdout, "%s:%d\n", __FILE__, __LINE__ )
 
-// Condition cnd;
-
 struct flock fl;
 struct flock ful;
+struct flock fls;
 
-int thread_func1( void * )
+Mutex m;
+int cnt = 0;
+
+int thread_func( void * )
 {
   MARK;
-  for ( int count = 0; count < 1; ++count ) {
+  for ( int count = 0; count < 10; ++count ) {
     try {
       MARK;
       int fd = open( "/tmp/myfile", O_RDWR | O_CREAT | O_APPEND, 00666 );
@@ -52,41 +54,30 @@ int thread_func1( void * )
       }
 
       MARK;
-      timespec t;
-      t.tv_sec = 1;
-      t.tv_nsec = 500000000;
-//      Thread::delay( &t );
       
-      // int check = flock( fd, LOCK_EX );
       int check = fcntl( fd, F_SETLKW, &fl );
-      // int check = 0;
       if ( check != 0 ) {
         throw check;
       }
-//      cnd.set( true );
-      // pthread_yield();
 
       MARK;
       write( fd, "test string 1\n", 14 );
       write( fd, "test string 2\n", 14 );
       write( fd, "test string 3\n", 14 );
+
+      m.lock();
+      ++cnt;
+      m.unlock();
       MARK;
 
-      // timespec t;
-//      t.tv_sec = 1;
-//      t.tv_nsec = 0;
+      timespec t;
+      t.tv_sec = 1;
+      t.tv_nsec = 0;
 
       MARK;
       Thread::delay( &t );
-//      for ( int i = 0; i < 0xfffff; ++i ) {
-//        int x = 1;
-//        int y = 2;
-//        swap( x, y );
-//      }
       MARK;
 
-//      cnd.set( false );
-      // check = flock( fd, LOCK_UN );
       check = fcntl( fd, F_SETLKW, &ful );
 
       if ( check != 0 ) {
@@ -103,18 +94,20 @@ int thread_func1( void * )
     }
   }
 
-//  cerr << "-------------------------------" << endl;
-//  cnd.set( true );
   return 0;
 }
 
-int thread_func2( void * )
+int thread_func_r( void * )
 {
   MARK;
-  for ( int count = 0; count < 5; ++count ) {
+
+  char buf[15];
+  buf[14] = 0;
+
+  for ( int count = 0; count < 10; ++count ) {
     try {
       MARK;
-      int fd = open( "/tmp/myfile", O_RDWR | O_CREAT | O_APPEND, 00666 );
+      int fd = open( "/tmp/myfile", O_RDONLY );
 
       MARK;
       if ( fd < 0 ) {
@@ -122,38 +115,41 @@ int thread_func2( void * )
       }
 
       MARK;
-//      cnd.try_wait();
-      timespec t;
-      t.tv_sec = 1;
-      t.tv_nsec = 0;
-      // Thread::delay( &t );
-      // int check = flock( fd, LOCK_EX );
-      int check = fcntl( fd, F_SETLKW, &fl );
-      // int check = 0;
+      
+      int check = fcntl( fd, F_SETLKW, &fls );
       if ( check != 0 ) {
         throw check;
       }
 
       MARK;
-      write( fd, "test string 1\n", 14 );
-      write( fd, "test string 2\n", 14 );
-      write( fd, "test string 3\n", 14 );
+      m.lock();
+      int ready_cnt = cnt;
+      m.unlock();
+      
+      while ( ready_cnt-- > 0 ) {
+        read( fd, buf, 14 );
+        if ( strcmp( buf, "test string 1\n" ) != 0 ) {
+          throw 0;
+        }
+        read( fd, buf, 14 );
+        if ( strcmp( buf, "test string 2\n" ) != 0 ) {
+          throw 0;
+        }
+        read( fd, buf, 14 );
+        if ( strcmp( buf, "test string 3\n" ) != 0 ) {
+          throw 0;
+        }
+      }
       MARK;
 
-      // timespec t;
-//      t.tv_sec = 1;
-//      t.tv_nsec = 0;
+      timespec t;
+      t.tv_sec = 1;
+      t.tv_nsec = 0;
 
       MARK;
       Thread::delay( &t );
-//      for ( int i = 0; i < 0xfffff; ++i ) {
-//        int x = 1;
-//        int y = 2;
-//        swap( x, y );
-//      }
       MARK;
 
-      // check = flock( fd, LOCK_UN );
       check = fcntl( fd, F_SETLKW, &ful );
 
       if ( check != 0 ) {
@@ -165,7 +161,8 @@ int thread_func2( void * )
       MARK;
     }
     catch ( int check ) {
-      cerr << "The error returned: " << check << ", errno " << errno << endl;
+      cerr << "* The error returned: " << check << ", errno " << errno
+           << buf << endl;
       MARK;
     }
   }
@@ -187,20 +184,24 @@ int main( int, char * const * )
   ful.l_len = 0;
   ful.l_pid = getpid();
 
+  fls.l_type = F_RDLCK;
+  fls.l_start = 0;
+  fls.l_whence = SEEK_SET;
+  fls.l_len = 0;
+  fls.l_pid = getpid();
 
-  // cnd.set( false );
-  // cnd.set( true );
   MARK;
-  Thread t1( thread_func1 );
+  Thread t1( thread_func );
   MARK;
-  Thread t2( thread_func2 );
+  Thread t2( thread_func );
+  MARK;
+  Thread t3( thread_func_r );
+  MARK;
+  Thread t4( thread_func_r );
 
   MARK;
   t2.join();
   t1.join();
-  MARK;
-//  cerr << "-------------------------------" << endl;
-//  cnd.set( true );
   MARK;
 
   return 0;
