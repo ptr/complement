@@ -6,7 +6,8 @@ DEFS = -DSVR4 -D__DEBUG=2
 OPT = -g -p
 CCFLAGS = $(OPT) -cg92 +w -pic -pto
 CPPFLAGS = $(DEFS) $(INCLUDES)
-LDFLAGS = $(OUTPUT_DIR)/classlib.so -lXol -lXt -lX11 -lintl -lgen -ldl
+# LDFLAGS = $(OUTPUT_DIR)/classlib.so -lXol -lXt -lX11 -lintl -lgen -ldl
+LDFLAGS = $(OUTPUT_DIR)/classlib.so -lX11 -ldl
 OUTPUT_DIR = ./bin
 OXW_DIR = ./OXW
 OUTPUT_OPTION = -o $@
@@ -36,6 +37,22 @@ LIBFILES.o = \
 		$(OUTPUT_DIR)/HeadedWnd.o \
 		$(OUTPUT_DIR)/InputField.o
 
+XLIBFILES.o = \
+		$(OUTPUT_DIR)/Event.o \
+		$(OUTPUT_DIR)/EventHandler.o \
+		$(OUTPUT_DIR)/EventsCore.o \
+		$(OUTPUT_DIR)/Application.o \
+		$(OUTPUT_DIR)/RectObject.o \
+		$(OUTPUT_DIR)/Window.o \
+		$(OUTPUT_DIR)/Resource.o \
+		$(OUTPUT_DIR)/DrawTools.o \
+		$(OUTPUT_DIR)/TopLevel.o \
+		$(OUTPUT_DIR)/GrContext.o \
+		$(OUTPUT_DIR)/Frame.o \
+		$(OUTPUT_DIR)/Button.o \
+		$(OUTPUT_DIR)/varstring.o \
+		$(OUTPUT_DIR)/TextLabel.o
+
 # Tester
 
 PROJECT = olitIntro
@@ -56,6 +73,14 @@ STESTER = scrlist
 SFILES.o = \
 		$(OUTPUT_DIR)/scrlist_tester.o \
 		$(OUTPUT_DIR)/scrlist.o
+
+# Xlib-based project
+
+XTESTER = xtester
+XFILES.o = \
+		$(OUTPUT_DIR)/xtester.o \
+		$(OUTPUT_DIR)/xmain.o
+
 
 .KEEP_STATE:
 
@@ -78,6 +103,9 @@ $(BTESTER):	$(LIBFILES.o) $(BFILES.o)
 
 $(STESTER):	$(LIBFILES.o) $(SFILES.o)
 	$(LINK.cc) -o $@ $(LIBFILES.o) $(SFILES.o)
+
+$(XTESTER):	$(XLIBFILES.o) $(XFILES.o)
+	$(LINK.cc) -o $@ $(XLIBFILES.o) $(XFILES.o)
 
 $(OUTPUT_DIR)/%.o:	%.cc
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
