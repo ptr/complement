@@ -11,5 +11,5 @@
 LIBNAME = Aux
 MINOR = .3
 PATCH = .1
-SRC_CC = CyrMoney.cc args.cc dir_utils.cc directory.cc _node.cc cgi.cc # _md5.cc
+SRC_CC = CyrMoney.cc args.cc dir_utils.cc directory.cc _node.cc cgi.cc arguments.cc# _md5.cc
 SRC_C = md5.c
