@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/19 17:10:30 ptr>
+// -*- C++ -*- Time-stamp: <99/03/22 16:28:19 ptr>
 #ifndef __EvManager_h
 #define __EvManager_h
 
@@ -55,6 +55,14 @@ struct __Object_Entry
  // int refcount;    // references on object
 };
 
+#ifdef _MSC_VER
+} // namespace EDS
+namespace std {
+typedef  EDS::__Object_Entry __Object_Entry;
+} // namespace std
+namespace EDS {
+#endif
+
 class EvManager
 {
   public:
@@ -69,7 +77,7 @@ class EvManager
     key_type Subscribe( EventHandler *object, const std::string& info )
       {
         key_type id = create_unique();
-        __Object_Entry& record = heap[id];
+        EDS::__Object_Entry& record = heap[id];
         record.ref = object;
         record.info = info;
 
@@ -81,7 +89,7 @@ class EvManager
         if ( (id & Event::extbit) || is_avail( id ) ) {
           return -1;
         }
-        __Object_Entry& record = heap[id];
+        EDS::__Object_Entry& record = heap[id];
         record.ref = object;
         record.info = info;
 
@@ -91,7 +99,7 @@ class EvManager
     key_type SubscribeRemote( NetTransport *channel, const key_type& rmkey, const std::string& info )
       {
         key_type id = create_unique() | Event::extbit;
-        __Object_Entry& record = heap[id];
+        EDS::__Object_Entry& record = heap[id];
         // record.ref = object;
         record.info = info;
         record.addremote( rmkey, channel );
