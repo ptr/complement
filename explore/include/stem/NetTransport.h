@@ -1,13 +1,9 @@
-// -*- C++ -*- Time-stamp: <99/04/16 15:32:04 ptr>
+// -*- C++ -*- Time-stamp: <99/05/19 18:51:47 ptr>
 
 #ifndef __NetTransport_h
 #define __NetTransport_h
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
-
-// To do:
-// I think, that no reason assotiate transport with socketstream here;
-// one can use abitrary iostream instead. 
 
 #ifndef __SOCKSTREAM__
 #include <sockstream>
@@ -53,8 +49,7 @@ class NetTransport_base
       { if ( net != 0 ) net->close(); }
 
     __DLLEXPORT
-    bool push( const Event&, const key_type& rmkey,
-               const key_type& srckey, const Event::key_type& sid );
+    bool push( const Event&, const key_type& rmkey, const key_type& srckey );
 
 
     EvSessionManager::key_type sid() const
@@ -66,8 +61,8 @@ class NetTransport_base
       { smgr.erase( k ); }
 
   protected:
-    bool pop( Event& );
-    void event_process( Event&, SessionInfo&, const std::string& );
+    bool pop( Event&, SessionInfo& );
+    void event_process( Event&, const std::string& );
     void disconnect();
 
     std::sockstream *net;
@@ -76,7 +71,7 @@ class NetTransport_base
     // indeed rar can be inside connect(), but SunPro's CC 5.0
     // to be very huffy about it.
     heap_type rar; // reverce address resolution table
-    // __impl::Mutex  _lock;
+    __impl::Mutex  _lock;
     static EvSessionManager smgr;
 };
 
