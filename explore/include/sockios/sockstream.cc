@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/11/03 19:52:45 ptr>
+// -*- C++ -*- Time-stamp: <01/03/01 10:49:28 ptr>
 
 /*
  *
@@ -51,7 +51,6 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
     return 0;
   }
   _mode = ios_base::in | ios_base::out;
-  _state = ios_base::goodbit;
   _errno = 0;
   _type = type;
 #ifdef WIN32
@@ -60,7 +59,6 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
   if ( prot == sock_base::inet ) {
     _fd = socket( PF_INET, type, 0 );
     if ( _fd == -1 ) {
-      _state |= sock_base::sockfailbit;
 #ifdef WIN32
       _errno = WSAGetLastError();
 #else
@@ -70,19 +68,18 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
     }
     _address.inet.sin_family = AF_INET;
     _address.inet.sin_port = htons( port );
-    findhost( name );
-    if ( _state != ios_base::goodbit ) {
+    if ( !findhost( name ) ) {
 #ifdef WIN32
       ::closesocket( _fd );
 #else
       ::close( _fd );
 #endif
+      _fd = -1;
       return 0;
     }
 	  
     // Generally, stream sockets may successfully connect() only once
     if ( connect( _fd, &_address.any, sizeof( _address ) ) == -1 ) {
-      _state |= sock_base::connfailbit;
 #ifdef WIN32
       _errno = WSAGetLastError();
       ::closesocket( _fd );
@@ -90,6 +87,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
       _errno = errno;
       ::close( _fd );
 #endif
+      _fd = -1;
       return 0;
     }
     if ( type == sock_base::sock_stream ) {
@@ -102,7 +100,6 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
   } else if ( prot == sock_base::local ) {
     _fd = socket( PF_UNIX, type, 0 );
     if ( _fd == -1 ) {
-      _state |= sock_base::sockfailbit;
 #ifdef WIN32
       _errno = WSAGetLastError();
 #else
@@ -138,9 +135,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
   __STL_ASSERT( _bbuf != 0 );
   __STL_ASSERT( _ebuf != 0 );
 
-  _state = ios_base::goodbit;
   _errno = 0; // if any
-  _open = true;
   __hostname();
 
 //	in_port_t ppp = 0x5000;
@@ -161,7 +156,6 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, const sock
   _fd = s;
   memcpy( (void *)&_address.any, (const void *)&addr, sizeof(sockaddr) );
   _mode = ios_base::in | ios_base::out;
-  _state = ios_base::goodbit;
   _errno = 0;
   _type = t;
 #ifdef WIN32
@@ -174,9 +168,9 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, const sock
     _xwrite = &_Self_type::sendto;
     _xread = &_Self_type::recvfrom;
   } else {
+    _fd = -1;
     return 0; // unsupported type
   }
-
 
   if ( _bbuf == 0 ) {
     _M_allocate_block( 0xb00 );
@@ -204,9 +198,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, const sock
   __STL_ASSERT( _bbuf != 0 );
   __STL_ASSERT( _ebuf != 0 );
 
-  _state = ios_base::goodbit;
   _errno = 0; // if any
-  _open = true;
   __hostname();
 //	in_port_t ppp = 0x5000;
 //	cerr << hex << _address.inet.sin_port << " " << ppp << endl;
@@ -226,7 +218,7 @@ template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
 basic_sockbuf<charT, traits, _Alloc>::close()
 {
-  if ( !_open )
+  if ( !is_open() )
     return 0;
 
 //	cerr << "Closing" << endl;
@@ -249,12 +241,11 @@ basic_sockbuf<charT, traits, _Alloc>::close()
 //	cerr << "Pass" << endl;
 
   __STL_ASSERT( _bbuf != 0 );
-	// put area before get area
+  // put area before get area
   setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
   setg( this->epptr(), this->epptr(), this->epptr() );
 
   _fd = -1;
-  _open = false;
 
   return this;
 }
@@ -275,49 +266,13 @@ void basic_sockbuf<charT, traits, _Alloc>::shutdown( sock_base::shutdownflg dir 
 }
 
 template<class charT, class traits, class _Alloc>
-void basic_sockbuf<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, bool on_off, int __v )
-{
-#ifdef __unix
-  if ( is_open() ) {
-    if ( optname != sock_base::so_linger ) {
-      if ( setsockopt( _fd, SOL_SOCKET, (int)optname, (const void *)&on_off,
-                       (socklen_t)sizeof(bool) ) != 0 ) {
-        _state |= sock_base::sockfailbit;
-#ifdef WIN32
-        _errno = WSAGetLastError();
-#else
-        _errno = errno;
-#endif
-      }
-    } else {
-      linger l;
-      l.l_onoff = on_off ? 1 : 0;
-      l.l_linger = __v;
-      if ( setsockopt( _fd, SOL_SOCKET, (int)optname, (const void *)&l,
-                       (socklen_t)sizeof(linger) ) != 0 ) {
-        _state |= sock_base::sockfailbit;
-#ifdef WIN32
-        _errno = WSAGetLastError();
-#else
-        _errno = errno;
-#endif
-      }
-      
-    }
-  } else {
-    _state |= sock_base::sockfailbit;
-  }
-#endif
-}
-
-template<class charT, class traits, class _Alloc>
 #if defined(__HP_aCC) && (__HP_aCC == 1)
 typename
 #endif
 basic_sockbuf<charT, traits, _Alloc>::int_type
 basic_sockbuf<charT, traits, _Alloc>::underflow()
 {
-  if( !_open )
+  if( !is_open() )
     return traits::eof();
 
   if ( this->gptr() < this->egptr() )
@@ -338,8 +293,15 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
   pfd.revents = 0;
 
   // cerr << ((unsigned)this) << " before poll" << endl;
+  if ( !is_open() /* || (_state != ios_base::goodbit) */ ) {
+    return traits::eof();
+  }
   if ( poll( &pfd, 1, -1 ) <= 0 ) { // wait infinite
     // cerr << "after poll -1" << endl;
+    return traits::eof();
+  }
+  if ( (pfd.revents & POLLERR) != 0 ) {
+    // _state |= ios_base::failbit;
     return traits::eof();
   }
   // cerr << ((unsigned)this) << "after poll, read" << endl;
@@ -369,7 +331,7 @@ typename
 basic_sockbuf<charT, traits, _Alloc>::int_type
 basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
 {
-  if ( !_open )        
+  if ( !is_open() )        
     return traits::eof();
 
   if ( !traits::eq_int_type( c, traits::eof() ) && this->pptr() < this->epptr() ) {
@@ -625,39 +587,38 @@ void basic_sockbuf<charT, traits, _Alloc>::__hostname()
 }
 
 template<class charT, class traits, class _Alloc>
-void basic_sockbuf<charT, traits, _Alloc>::findhost( const char *hostname )
+bool basic_sockbuf<charT, traits, _Alloc>::findhost( const char *hostname )
 {
 #ifndef __GETHOSTBYADDR__
   hostent _host;
-#ifndef __hpux
+#  ifndef __hpux
   char tmpbuf[1024];
-#else
+#  else // __hpux
   hostent_data tmpbuf;
-#endif
-#ifdef __linux
+#  endif // __hpux
+#  ifdef __linux
   hostent *host = 0;
   gethostbyname_r( hostname, &_host, tmpbuf, 1024, &host, &_errno );
-#elif defined(__hpux)
+#  elif defined(__hpux)
   _errno = gethostbyname_r( hostname, &_host, &tmpbuf );
   hostent *host = &_host;
-#elif defined(__sun)
+#  elif defined(__sun)
   hostent *host = gethostbyname_r( hostname, &_host, tmpbuf, 1024, &_errno );
-#else
-#  error "Check port of gethostbyname_r"
-#endif
+#  else // !__linux !__hpux !__sun
+#    error "Check port of gethostbyname_r"
+#  endif // __linux __hpux __sun
   if ( host != 0 ) {
     memcpy( (char *)&_address.inet.sin_addr,
             (char *)host->h_addr, host->h_length );
-  } else {
-    _state |= sock_base::hnamefailbit;
   }
 #else // __GETHOSTBYADDR__
   hostent *host = gethostbyname( hostname );
   if ( host != 0 ) {
     memcpy( (char *)&_address.inet.sin_addr,
             (char *)host->h_addr, host->h_length );
-  } else {
+  }
 #  ifdef WIN32
+    else {
     _errno = WSAGetLastError();
 
     // specific to Wins only:
@@ -674,21 +635,46 @@ void basic_sockbuf<charT, traits, _Alloc>::findhost( const char *hostname )
                   (char *)host->h_addr, host->h_length );
           WSASetLastError( 0 ); // clear error
           _errno = 0;
-          return;
+        } else {
+          _errno = WSAGetLastError();
         }
-        _errno = WSAGetLastError();
       }
     }
-#  endif // WIN32
-    _state |= sock_base::hnamefailbit;
   }
+#  endif // WIN32
 #endif // __GETHOSTBYADDR__
+  return host == 0 ? false : true;
+}
+
+template<class charT, class traits, class _Alloc>
+void basic_sockstream<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, bool on_off, int __v )
+{
+#ifdef __unix
+  if ( _sb.is_open() ) {
+    if ( optname != sock_base::so_linger ) {
+      int turn = on_off ? 1 : 0;
+      if ( setsockopt( _sb.fd(), SOL_SOCKET, (int)optname, (const void *)&turn,
+                       (socklen_t)sizeof(int) ) != 0 ) {
+        this->setstate( ios_base::failbit );
+      }
+    } else {
+      linger l;
+      l.l_onoff = on_off ? 1 : 0;
+      l.l_linger = __v;
+      if ( setsockopt( _sb.fd(), SOL_SOCKET, (int)optname, (const void *)&l,
+                       (socklen_t)sizeof(linger) ) != 0 ) {
+        this->setstate( ios_base::failbit );
+      }
+    }
+  } else {
+    this->setstate( ios_base::failbit );
+  }
+#endif // __unix
 }
 
 #ifdef __GETHOSTBYADDR__
 #undef __GETHOSTBYADDR__
 #endif
-
 
 #ifdef __SGI_STL_OWN_IOSTREAMS
 __STL_END_NAMESPACE
