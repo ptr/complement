@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/05/12 16:08:40 ptr>
+// -*- C++ -*- Time-stamp: <00/05/22 12:33:53 ptr>
 
 
 /*
@@ -6,9 +6,9 @@
  * Copyright (c) 1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999
- * ParallelGraphics Software Systems
- 
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
+ *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -22,19 +22,19 @@
 #ifndef __config_feature_h
 #define __config_feature_h
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
-#ifdef _DEBUG
-#  ifndef __STL_DEBUG
-#    define __STL_DEBUG  1
-#  endif // __STL_DEBUG
-#endif // _DEBUG
+// #ifdef _DEBUG
+// #  ifndef __STL_DEBUG
+// #    define __STL_DEBUG  1
+// #  endif // __STL_DEBUG
+// #endif // _DEBUG
 
-#ifdef _DEBUG_ALLOC
-#  ifndef __STL_DEBUG_ALLOC
-#    define __STL_DEBUG_ALLOC  1
-#  endif // __STL_DEBUG_ALLOC
-#endif // _DEBUG_ALLOC
+// #ifdef _DEBUG_ALLOC
+// #  ifndef __STL_DEBUG_ALLOC
+// #    define __STL_DEBUG_ALLOC  1
+// #  endif // __STL_DEBUG_ALLOC
+// #endif // _DEBUG_ALLOC
 
 #define __USE_SGI_STL_PORT  0x400
 // #define __USE_SGI_STL_PORT  0x321
@@ -121,6 +121,10 @@
 #  define __PG_DECLSPEC
 #endif
 
+#if defined(__sun) && defined(__GNUC__)
+#  define __PG_USE_ABBREV
+#endif
+
 /*
  * UNIX 95 implementation
  *
@@ -140,14 +144,14 @@
 
 
 #ifdef __SunOS_5_6
-#  define _XOPEN_SOURCE
+#  define _XOPEN_SOURCE 1
 #  define _XOPEN_SOURCE_EXTENDED 1
 #  define __EXTENSIONS__
 #  define __XPG4v2
 #endif // __SunOS_5_6
 
 #ifdef __SunOS_5_7
-#  define _XOPEN_SOURCE
+#  define _XOPEN_SOURCE 1
 #  define _XOPEN_SOURCE_EXTENDED 1
 #  define __EXTENSIONS__
 #  define __XPG4v2
