@@ -1,7 +1,7 @@
-# -*- Makefile -*- Time-stamp: <03/07/04 13:11:51 ptr>
+# -*- Makefile -*- Time-stamp: <03/07/06 19:45:49 ptr>
 # $Id$
 
-include dparser-$(COMPILER_NAME).mak
+include ${BASEDIR}/Makefiles/dparser-$(COMPILER_NAME).mak
 
 # Rules for release output:
 

@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <03/07/02 15:02:01 ptr>
+# -*- makefile -*- Time-stamp: <03/07/07 08:33:49 ptr>
 # $Id$
 
 # Shared libraries tags
@@ -38,3 +38,4 @@ ${SO_NAME_SHORT_STLDBG}:	$(OBJ_STLDBG) $(LIBSDEP)
 	 ln -s ${SO_MINOR_STLDBG} ${SO_MAJOR_STLDBG}; \
 	 rm -f ${SO_GENERAL_STLDBG}; \
 	 ln -s ${SO_MAJOR_STLDBG} ${SO_GENERAL_STLDBG})
+
