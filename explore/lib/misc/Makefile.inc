@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <01/08/09 16:01:26 ptr>
+# -*- Makefile -*- Time-stamp: <02/07/14 16:33:59 ptr>
 # $Id$
 
 # I have only one reason while I should use "C++" variant of MD5 instead of "C":
@@ -8,11 +8,9 @@
 # instead of global one. So I should shift this module in other namespace
 # that possible for C++ (or I should #define names).
 
-LIBNAME = Aux
+LIBNAME = misc
 MAJOR = .1
-MINOR = .7
+MINOR = .8
 PATCH = .0
-#SRC_CC = CyrMoney.cc args.cc dir_utils.cc directory.cc _node.cc cgi.cc \
-#	 arguments.cc
-SRC_CC = args.cc dir_utils.cc directory.cc _node.cc arguments.cc
+SRC_CC = CyrMoney.cc args.cc dir_utils.cc directory.cc _node.cc arguments.cc
 SRC_C = md5.c

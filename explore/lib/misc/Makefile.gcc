@@ -1,14 +1,11 @@
-# Time-stamp: <01/09/20 11:47:04 ptr>
+# -*- Makefile -*- Time-stamp: <02/06/20 11:10:50 ptr>
 # $Id$
 
-BASEDIR := $(shell xtmp=`pwd`; \
-               xtmp=`dirname $$xtmp`; dirname $$xtmp)
+BASEDIR := $(shell xtmp=`pwd`; xtmp=`dirname $$xtmp`; dirname $$xtmp)
 LIBDIR  := $(shell xtmp=`pwd`; dirname $$xtmp)
 
 COMPILER_NAME = gcc
-INSTALL_PRE_LIB_DIR = ${BASEDIR}/package/PGslib/PG/lib
-INSTALL_SC_LIB_DIR = ${BASEDIR}/package/SubClub/PGslibsc/SC/lib
-include ${BASEDIR}/lib/misc/Makefile.inc
+include $(BASEDIR)/lib/misc/Makefile.inc
 
 all:	all-release all-debug
 
@@ -20,7 +17,7 @@ all-debug:	dbg-shared stldbg-shared dbg-static stldbg-static
 
 all-release:	release-shared release-static
 
-include ${BASEDIR}/lib/Makefile.inc.lib
+include ${BASEDIR}/Makefiles/lib/Makefile.inc
 
 INCLUDES += -I$(STLPORT_INCLUDE_DIR)
 
@@ -30,6 +27,13 @@ stldbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR}
 dbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR}
 endif
 
-release-shared:	LDLIBS = -lstlport_gcc
-stldbg-shared:	LDLIBS = -lstlport_gcc_stldbg
-dbg-shared:	LDLIBS = -lstlport_gcc
+ifeq ($(OS_VER),SunOS)
+release-shared : LDLIBS = -lstlport_gcc -lrt
+stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug -lrt
+dbg-shared     : LDLIBS = -lstlport_gcc -lrt
+else
+release-shared : LDLIBS = -lstlport_gcc
+stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug
+dbg-shared     : LDLIBS = -lstlport_gcc
+endif
+
