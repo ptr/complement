@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/21 19:12:07 ptr>
+// -*- C++ -*- Time-stamp: <99/06/24 21:12:26 ptr>
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
@@ -13,9 +13,13 @@
 #include <ostream>
 
 #ifdef WIN32
-#include <_algorithm> // for select1st
-#include <win_config.h>
+// #include <_algorithm> // for select1st
+// #include <win_config.h>
 #endif // WIN32
+
+#ifdef _MSC_VER
+#pragma warning( disable : 4786 )
+#endif
 
 namespace EDS {
 

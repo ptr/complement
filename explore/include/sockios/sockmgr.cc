@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/02 20:25:56 ptr>
+// -*- C++ -*- Time-stamp: <99/06/24 20:46:04 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -9,7 +9,7 @@ extern "C" int nanosleep(const struct timespec *, struct timespec *);
 #endif
 
 #ifdef WIN32
-#include <_algorithm>
+// #include <_algorithm>
 #endif // WIN32
 
 using __impl::Thread;

@@ -1,17 +1,17 @@
-// -*- C++ -*- Time-stamp: <99/06/03 19:12:28 ptr>
+// -*- C++ -*- Time-stamp: <99/06/24 20:59:02 ptr>
 #ifndef __EvPack_h
 #define __EvPack_h
 
 #ident "$SunId$ %Q%"
 
 #ifdef WIN32
-#  include <winsock2.h>
+// #  include <winsock2.h>
 #  if defined(BIGENDIAN) && (BIGENDIAN > 0)
 #    define _BIG_ENDIAN
 #  else
 #    define _LITTLE_ENDIAN
 #  endif
-#  include <win_config.h>
+// #  include <win_config.h>
 #else
 #  include <sys/isa_defs.h>
 #endif

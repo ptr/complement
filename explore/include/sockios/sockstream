@@ -1,19 +1,19 @@
-// -*- C++ -*- Time-stamp: <99/05/25 10:15:21 ptr>
+// -*- C++ -*- Time-stamp: <99/06/24 20:45:15 ptr>
 
 #ifndef __SOCKSTREAM__
 #define __SOCKSTREAM__
 
 #ident "$SunId$ %Q%"
 
-#ifndef WIN32
+// #ifndef WIN32
 #  ifndef __STL_CONFIG_H
 #    include <stl_config.h>
 #  endif
-#else
-#  ifndef __WIN_CONFIG_H
-#    include <win_config.h>
-#  endif
-#endif
+// #else
+// #  ifndef __WIN_CONFIG_H
+// #    include <win_config.h>
+// #  endif
+// #endif
 
 #ifndef __IOS__
 #include <ios>
@@ -28,7 +28,8 @@
 #endif
 
 #ifdef WIN32
-#include <winsock2.h>
+// #include <winsock2.h>
+#include <winsock.h>
 #else // WIN32
 
 #include <unistd.h>
