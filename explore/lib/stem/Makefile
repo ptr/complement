@@ -5,10 +5,10 @@ INCLUDES = -I/usr/openwin/include -I.
 DEFS = -DSVR4 -D__DEBUG=2
 # OPT = -g -p
 OPT = -g
-CCFLAGS = $(OPT) -cg92 +w -pic -pto
+CCFLAGS = $(OPT) -cg92 +w -pic -pto -mt
 CPPFLAGS = $(DEFS) $(INCLUDES)
 # LDFLAGS = -L$(OUTPUT_DIR) -lclass -lX11 -ldl
-LDFLAGS = -L$(OUTPUT_DIR) -lclass -lX11
+LDFLAGS = -L$(OUTPUT_DIR) -lclass -lX11 -lXpm
 OUTPUT_DIR = ./bin
 OXW_DIR = ./OXW
 OUTPUT_OPTION = -o $@
@@ -37,7 +37,9 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/AlignUtils.o \
 		$(OUTPUT_DIR)/CheckList.o \
 		$(OUTPUT_DIR)/Scroller.o \
-		$(OUTPUT_DIR)/TagetUtils.o
+		$(OUTPUT_DIR)/TagetUtils.o \
+		$(OUTPUT_DIR)/TableInfo.o
+
 
 # Xlib-based project
 
