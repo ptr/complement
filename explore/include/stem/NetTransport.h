@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/01/16 12:13:59 ptr>
+// -*- C++ -*- Time-stamp: <01/02/02 12:59:59 ptr>
 
 /*
  *
@@ -106,26 +106,50 @@ class NetTransport_base :
     addr_type ns() const
       { return _net_ns; }
 
-    static SessionInfo& session_info( const EvSessionManager::key_type& k )
-      { return smgr[k]; }
+    static SessionInfo session_info( const EvSessionManager::key_type& k )
+      {
+        smgr.lock();
+        SessionInfo si = smgr[k];
+        smgr.unlock();
+        return si;
+      }
+
+    static void session_control( const EvSessionManager::key_type& k,
+                                 const EDS::addr_type& a )
+      {
+        smgr.lock();
+        smgr[k]._control = a;
+        smgr.unlock();
+      }
+
+    static std::string session_host( const EvSessionManager::key_type& k )
+      {
+        smgr.lock();
+        std::string h( smgr[k]._host );
+        smgr.unlock();
+        return h;
+      }
+
     static void erase_session( const EvSessionManager::key_type& k )
       { smgr.erase( k ); }
 
   protected:
+    void establish_session( std::sockstream& s ) throw (std::domain_error);
+    void mark_session_onoff( bool );
     addr_type rar_map( addr_type k, const __STD::string& name );
     bool pop( Event& );
     void disconnect();
 
-#ifdef __SGI_STL_OWN_IOSTREAMS
-#ifndef __GNUC__
+// #ifdef __SGI_STL_OWN_IOSTREAMS
+// #ifndef __GNUC__
     __STD::sockstream *net;
-#else
-    STLPORT::basic_sockstream<char,STLPORT::char_traits<char>,
-      STLPORT::allocator<char> > *net;
-#endif
-#else
-    __STD::sockstream *net;
-#endif
+// #else
+//    STLPORT::basic_sockstream<char,STLPORT::char_traits<char>,
+//      STLPORT::allocator<char> > *net;
+// #endif
+// #else
+//    __STD::sockstream *net;
+// #endif
     EvSessionManager::key_type _sid;
     unsigned _count;
     // indeed rar can be inside connect(), but SunPro's CC 5.0
