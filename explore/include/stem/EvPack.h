@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/24 15:04:53 ptr>
+// -*- C++ -*- Time-stamp: <99/06/03 19:12:28 ptr>
 #ifndef __EvPack_h
 #define __EvPack_h
 
@@ -200,15 +200,20 @@ unsigned long from_net( const unsigned long& x )
 
 struct __pack_base
 {
+    // To be released for data structure you want pass via EDS:
     __DLLEXPORT virtual void pack( std::ostream& ) const = 0 ;
     __DLLEXPORT virtual void unpack( std::istream& ) = 0 ;
     __DLLEXPORT virtual void net_pack( std::ostream& ) const = 0 ;
     __DLLEXPORT virtual void net_unpack( std::istream& ) = 0 ;
 
+    // basic types
+
+    // string
     static __DLLEXPORT void __net_unpack( std::istream& s, std::string& str );
     static __DLLEXPORT void __net_pack( std::ostream& s, const std::string& str );
     static __DLLEXPORT void __unpack( std::istream& s, std::string& str );
     static __DLLEXPORT void __pack( std::ostream& s, const std::string& str );
+    // int
     static void __net_unpack( std::istream& s, int& x )
       {
         s.read( (char *)&x, sizeof(int) );
@@ -223,6 +228,7 @@ struct __pack_base
       { s.read( (char *)&x, sizeof(int) ); }
     static void __pack( std::ostream& s, int x )
       { s.write( (const char *)&x, 4 ); }
+    // unsigned
     static void __net_unpack( std::istream& s, unsigned& x )
       {
         s.read( (char *)&x, sizeof(unsigned) );
@@ -237,6 +243,7 @@ struct __pack_base
       { s.read( (char *)&x, sizeof(unsigned) ); }
     static void __pack( std::ostream& s, unsigned x )
       { s.write( (const char *)&x, sizeof(unsigned) ); }
+    // long
     static void __net_unpack( std::istream& s, long& x )
       {
         s.read( (char *)&x, sizeof(long) );
@@ -251,6 +258,7 @@ struct __pack_base
       { s.read( (char *)&x, sizeof(long) ); }
     static void __pack( std::ostream& s, long x )
       { s.write( (const char *)&x, sizeof(long) ); }
+    // unsigned long
     static void __net_unpack( std::istream& s, unsigned long& x )
       {
         s.read( (char *)&x, sizeof(unsigned long) );
@@ -265,6 +273,33 @@ struct __pack_base
       { s.read( (char *)&x, sizeof(unsigned long) ); }
     static void __pack( std::ostream& s, unsigned long x )
       { s.write( (const char *)&x, sizeof(unsigned long) ); }
+    // char
+    static void __net_unpack( std::istream& s, char& x )
+      { s.read( (char *)&x, sizeof(char) ); }
+    static void __net_pack( std::ostream& s, char x )
+      { s.write( (const char *)&x, 1 ); }
+    static void __unpack( std::istream& s, char& x )
+      { s.read( (char *)&x, sizeof(char) ); }
+    static void __pack( std::ostream& s, char x )
+      { s.write( (const char *)&x, 1 ); }
+    // signed char
+    static void __net_unpack( std::istream& s, signed char& x )
+      { s.read( (char *)&x, sizeof(signed char) ); }
+    static void __net_pack( std::ostream& s, signed char x )
+      { s.write( (const char *)&x, 1 ); }
+    static void __unpack( std::istream& s, signed char& x )
+      { s.read( (char *)&x, sizeof(signed char) ); }
+    static void __pack( std::ostream& s, signed char x )
+      { s.write( (const char *)&x, 1 ); }
+    // unsigned char
+    static void __net_unpack( std::istream& s, unsigned char& x )
+      { s.read( (char *)&x, sizeof(unsigned char) ); }
+    static void __net_pack( std::ostream& s, unsigned char x )
+      { s.write( (const char *)&x, 1 ); }
+    static void __unpack( std::istream& s, unsigned char& x )
+      { s.read( (char *)&x, sizeof(unsigned char) ); }
+    static void __pack( std::ostream& s, unsigned char x )
+      { s.write( (const char *)&x, 1 ); }
 };
 
 }
