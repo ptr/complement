@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/21 11:29:41 ptr>
+// -*- C++ -*- Time-stamp: <99/05/25 10:00:58 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -182,6 +182,57 @@ basic_sockbuf<charT, traits>::open( sock_base::socket_type s, const sockaddr& ad
 //	cerr << hex << xxx.sin_addr.s_addr << endl;
 
   return this;
+}
+
+template<class charT, class traits>
+basic_sockbuf<charT, traits> *basic_sockbuf<charT, traits>::close()
+{
+  if ( !_open )
+    return 0;
+
+//	cerr << "Closing" << endl;
+	// overflow();
+//	cerr << "Say shutdown on out" << endl;
+  shutdown( sock_base::stop_out );
+//	cerr << "Sync" << endl;
+  sync();
+//	cerr << "Say shutdown on in" << endl;
+  shutdown( sock_base::stop_in );
+//	shutdown( sock_base::stop_in | sock_base::stop_out );
+//	cerr << "Sync" << endl;
+//	sync();
+//	cerr << "Close" << endl;
+#ifdef WIN32
+  ::closesocket( _fd );
+#else
+  ::close( _fd );
+#endif
+//	cerr << "Pass" << endl;
+
+  __stl_assert( _base != 0 );
+	// put area before get area
+  setp( _base, _base + ((_ebuf - _base)>>1) );
+  setg( epptr(), epptr(), epptr() );
+
+  _fd = -1;
+  _open = false;
+
+  return this;
+}
+
+template<class charT, class traits>
+void basic_sockbuf<charT, traits>::shutdown( sock_base::shutdownflg dir )
+{
+  if ( is_open() ) {
+    if ( (dir & (sock_base::stop_in | sock_base::stop_out)) ==
+         (sock_base::stop_in | sock_base::stop_out) ) {
+      ::shutdown( _fd, 2 );
+    } else if ( dir & sock_base::stop_in ) {
+      ::shutdown( _fd, 0 );
+    } else if ( dir & sock_base::stop_out ) {
+      ::shutdown( _fd, 1 );
+    }
+  }
 }
 
 template<class charT, class traits>
