@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/28 18:17:34 ptr>
+// -*- C++ -*- Time-stamp: <99/06/04 13:50:56 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -7,6 +7,7 @@
 #include <EventHandler.h>
 #include <EvManager.h>
 #include <crc.h>
+#include <EDSEv.h>
 
 namespace EDS {
 
@@ -67,10 +68,10 @@ void NetTransport_base::disconnect()
     info.disconnect();
 //    cerr << "EvManager::disconnect: " << _sid << endl;
     if ( info._control != Event::badaddr ) {
-      Event_base<Event::key_type> ev_disconnect( EV_DISCONNECT, _sid );
+      Event_base<Event::key_type> ev_disconnect( EV_EDS_DISCONNECT, _sid );
       ev_disconnect.dest( info._control );
 //      cerr << "EvManager::disconnect, info._control: " << info._control << endl;
-      EventHandler::manager()->Send( EDS::Event_convert<Event::key_type>()(ev_disconnect), Event::mgraddr );
+      Send( EDS::Event_convert<Event::key_type>()(ev_disconnect) );
 //      cerr << "===== Pass" << endl;
     } else {
       smgr.erase( _sid );
@@ -82,7 +83,7 @@ void NetTransport_base::disconnect()
 
 __DLLEXPORT NetTransport_base::~NetTransport_base()
 {
-  EventHandler::manager()->Remove( this );
+  manager()->Remove( this );
   disconnect();
 }
 
@@ -92,8 +93,6 @@ void NetTransport_base::event_process( Event& ev, const string& hostname )
 {
 //      cerr << "------------------------>>>>>>>>\n";
 //      dump( std::cerr, ev );
-  __stl_assert( EventHandler::manager() != 0 );
-  // if _mgr == 0, best choice is close connection...
   // sess.inc_from( sizeof(__Event_Base) + sizeof(std::string::size_type) +
   //               ev.value_size() );
   // if ( sess.un_from( ev.seq() ) != 0 ) {
@@ -103,7 +102,7 @@ void NetTransport_base::event_process( Event& ev, const string& hostname )
   if ( r == rar.end() ) {
     r = rar.insert(
       heap_type::value_type( ev._src,
-                             EventHandler::manager()->SubscribeRemote( this, ev._src, hostname ) ) ).first;
+                             manager()->SubscribeRemote( this, ev._src, hostname ) ) ).first;
 //        cerr << "Create remote object: " << hex << (*r).second
 //             << " [" << ev._src << "]\n";
   }
@@ -113,7 +112,7 @@ void NetTransport_base::event_process( Event& ev, const string& hostname )
   //   ev.sid( _sid );
   // }
         
-  EventHandler::manager()->Dispatch( ev );
+  manager()->Dispatch( ev );
 }
 
 bool NetTransport_base::pop( Event& __rs, SessionInfo& sess )
@@ -245,24 +244,23 @@ void NetTransport::connect( sockstream& s )
 
 __DLLEXPORT
 NetTransport_base::key_type NetTransportMgr::open(
-                                             const string& hostname, int port,
+                                             const char *hostname, int port,
                                              std::sock_base::stype stype )
 {
   if ( net == 0 ) {
-    net = new sockstream( hostname.c_str(), port, stype );
+    net = new sockstream( hostname, port, stype );
   } else if ( net->is_open() ) {
     net->close();
-    net->open( hostname.c_str(), port, stype );
+    net->open( hostname, port, stype );
   }
 
-  // _partner_name = hostname;
   if ( net->good() ) {
     heap_type::iterator r;
 
     // forward register remote object with ID 0
     r = rar.insert( 
       heap_type::value_type( 0,
-                             EventHandler::manager()->SubscribeRemote( this, 0, net->rdbuf()->hostname() /* _partner_name */ ) ) ).first;
+                             manager()->SubscribeRemote( this, 0, net->rdbuf()->hostname() ) ) ).first;
     _sid = smgr.create();
     _thr.launch( _loop, this ); // start thread here
     return (*r).second;
@@ -281,31 +279,29 @@ int NetTransportMgr::_loop( void *p )
   try {
     while ( me.pop( ev, sess ) ) {
       // dump( std::cerr, ev );
-      __stl_assert( EventHandler::manager() != 0 );
-      // if _mgr == 0, best choice is close connection...
       r = me.rar.find( ev._src );
       if ( r == me.rar.end() ) {
         r = me.rar.insert( 
           heap_type::value_type( ev._src,
-          EventHandler::manager()->SubscribeRemote( &me, ev._src, me.net->rdbuf()->hostname() ) ) ).first;
+          manager()->SubscribeRemote( &me, ev._src, me.net->rdbuf()->hostname() ) ) ).first;
 //        cerr << "Create remote object: " << hex << (*r).second
 //             << " [" << ev._src << "]\n";
       }
       ev._src = (*r).second; // substitute my local id
 
-      EventHandler::manager()->Dispatch( ev );
+      manager()->Dispatch( ev );
     }
     if ( me.net ) {
       me.net->close();
     }
-    EventHandler::manager()->Remove( &me );
+    manager()->Remove( &me );
     me.disconnect();
   }
   catch ( ... ) {
     if ( me.net ) {
       me.net->close();
     }
-    EventHandler::manager()->Remove( &me );
+    manager()->Remove( &me );
     me.disconnect();
     throw;
   }
