@@ -41,14 +41,14 @@ typedef void *(*DBimpl_type)( const void * );
 
 #ifdef __GNUC__
 #  ifdef __DEBUG
-const char *lname_pg  = "libDBpg_gcc-g.so";
-const char *lname_ora = "libDBora_gcc-g.so";
+const char *lname_pg  = "libDBpgg.so";
+const char *lname_ora = "libDBorag.so";
 #  elif defined( _STLP_DEBUG )
-const char *lname_pg  = "libDBpg_gcc_stl-g.so";
-const char *lname_ora = "libDBora_gcc_stl-g.so";
+const char *lname_pg  = "libDBpgstlg.so";
+const char *lname_ora = "libDBorastlg.so";
 #  else
-const char *lname_pg  = "libDBpg_gcc.so";
-const char *lname_ora = "libDBora_gcc.so";
+const char *lname_pg  = "libDBpg.so";
+const char *lname_ora = "libDBora.so";
 #  endif
 #else
 #  error "-------> Please fix load library name\n"
