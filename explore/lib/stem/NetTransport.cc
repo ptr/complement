@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/06 11:21:16 ptr>
+// -*- C++ -*- Time-stamp: <99/10/11 13:08:25 ptr>
 
 /*
  *
@@ -116,9 +116,7 @@ void NetTransport_base::disconnect()
 
 __EDS_DLL NetTransport_base::~NetTransport_base()
 {
-  manager()->Remove( this );
-  disconnect();
-  delete net;
+  NetTransport_base::close();
 }
 
 __EDS_DLL void NetTransport_base::close()
