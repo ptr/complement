@@ -18,10 +18,10 @@ endif
 ifeq ($(OSNAME),sunos)
 release-shared : LDLIBS = -lstlport_gcc -lrt
 stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug -lrt
-dbg-shared     : LDLIBS = -lstlport_gcc -lrt
+dbg-shared     : LDLIBS = -lstlport_gcc_debug -lrt
 else
 release-shared : LDLIBS = -lstlport_gcc
 stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug
-dbg-shared     : LDLIBS = -lstlport_gcc
+dbg-shared     : LDLIBS = -lstlport_gcc_debug
 endif
 
