@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/04/06 16:45:02 ptr>
+// -*- C++ -*- Time-stamp: <99/04/07 18:47:57 ptr>
 #ifndef __EvSession_h
 #define __EvSession_h
 
@@ -144,10 +144,7 @@ class SessionManager
     typedef std::map<key_type,T, std::less<key_type>,
                 __STL_DEFAULT_ALLOCATOR(T) > heap_type;
 
-    SessionManager() :
-        _low( 0 ),
-        _high( 65535 ),
-        _id( _low )
+    SessionManager()
       { }
 
     key_type create()
@@ -159,7 +156,10 @@ class SessionManager
       }
 
     T& operator[]( const key_type& k )
-      { return heap[k]; }
+      {
+        MT_REENTRANT( _lock, _1 );
+        return heap[k];
+      }
 
     bool is_avail( const key_type& k ) const
       {
@@ -184,11 +184,20 @@ class SessionManager
 
   private:
     key_type create_unique();
-    const key_type _low;
-    const key_type _high;
-    key_type _id;
+    static const key_type _low;
+    static const key_type _high;
+    static key_type _id;
     __impl::Mutex _lock;
 };
+
+template <class T>
+const SessionManager<T>::key_type SessionManager<T>::_low( 0 );
+
+template <class T>
+const SessionManager<T>::key_type SessionManager<T>::_high( 65535 );
+
+template <class T>
+SessionManager<T>::key_type SessionManager<T>::_id( _low );
 
 template <class T>
 SessionManager<T>::key_type SessionManager<T>::create_unique()
