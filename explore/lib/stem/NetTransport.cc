@@ -1,6 +1,6 @@
-// -*- C++ -*- Time-stamp: <99/05/19 18:59:53 ptr>
+// -*- C++ -*- Time-stamp: <99/05/21 11:42:15 ptr>
 
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+#ident "$SunId$ %Q%"
 
 #include <iomanip>
 #include <NetTransport.h>
@@ -204,8 +204,9 @@ bool NetTransport_base::push( const Event& __rs, const Event::key_type& rmkey,
 }
 
 __DLLEXPORT
-void NetTransport::connect( sockstream& s, const string& hostname, string& info )
+void NetTransport::connect( sockstream& s )
 {
+  const string& hostname = s.rdbuf()->hostname();
   cerr << "Connected: " << hostname << endl;
 
   Event ev;
@@ -217,22 +218,9 @@ void NetTransport::connect( sockstream& s, const string& hostname, string& info 
   net = &s;
 
   try {
-//    if ( s.rdbuf()->stype() == sock_base::sock_stream ) {
-      while ( pop( ev, sess ) ) {
-        event_process( ev, hostname );
-      }
-//    } else if ( s.rdbuf()->stype() == sock_base::sock_dgram ) {
-      // indeed here need more check: data of event
-      // and another: message can be break, and other datagram can be
-      // in the middle of message...
-//      cerr << "#1" << endl;
-//      s.rdbuf()->pubsync();
-//      if ( (s.rdbuf()->in_avail() >= 7 * sizeof(unsigned)) && pop(ev) ) {
-//        cerr << "#2" << endl;
-//        event_process( ev, sess, hostname );
-//        cerr << "#3" << endl;
-//      }
-//    }
+    while ( pop( ev, sess ) ) {
+      event_process( ev, hostname );
+    }
   }
   catch ( ios_base::failure& e ) {
     cerr << "Post mortem: " << e.what() << endl;
@@ -329,8 +317,9 @@ int NetTransportMgr::_loop( void *p )
 }
 
 __DLLEXPORT
-void NetTransportMP::connect( sockstream& s, const string& hostname, string& info )
+void NetTransportMP::connect( sockstream& s )
 {
+  const string& hostname = s.rdbuf()->hostname();
   cerr << "Connected: " << hostname << endl;
 
   Event ev;
