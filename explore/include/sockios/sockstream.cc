@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/03 15:54:17 ptr>
+// -*- C++ -*- Time-stamp: <99/02/04 19:04:05 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -7,8 +7,8 @@ namespace std {
 template<class charT, class traits>
 basic_sockbuf<charT, traits> *
 basic_sockbuf<charT, traits>::open( const char *hostname, int port,
-				    sock_base::stype type = sock_base::sock_stream,
-				    sock_base::protocol prot = sock_base::inet )
+				    sock_base::stype type,
+				    sock_base::protocol prot )
 {
   if ( is_open() ) {
     return 0;
@@ -313,7 +313,7 @@ int basic_sockbuf<charT, traits>::__rdsync()
     __stl_assert( gptr() != 0 );
     __stl_assert( egptr() != 0 );
 
-    cerr << "ioctl: " << dec << nmsg << ", " << nlen << endl;
+//    cerr << "ioctl: " << dec << nmsg << ", " << nlen << endl;
     bool shift_req = gptr() == eback() ? false : (_ebuf - gptr()) > nlen ? false : true;
     if ( shift_req ) {
       __stl_assert( gptr() > eback() );
@@ -325,7 +325,7 @@ int basic_sockbuf<charT, traits>::__rdsync()
       return -1;             // otherwise I can't write without pipe broken
     }
     long offset = (this->*_xread)( egptr(), sizeof(char_type) * (_ebuf - egptr()) );
-    cerr << "I read here " << offset << endl;
+//    cerr << "I read here " << offset << endl;
     if ( offset < 0 ) // allow message of zero length
       return -1;
     offset /= sizeof(charT);
