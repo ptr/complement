@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/16 17:44:44 ptr>
+// -*- C++ -*- Time-stamp: <00/11/09 10:24:28 ptr>
 
 /*
  *
@@ -75,6 +75,13 @@ class DBxx
       { return _db->create_cursor( query ); }
     void delete_cursor( Cursor *cursor )
       { _db->delete_cursor( cursor ); }
+
+    string escape_data( const string& s ) const;
+    string escape_data( const char* s ) const;
+    string get_time() const;
+    string get_time( time_t ) const;
+    string IS_NULL() const;
+    string IS_NOT_NULL() const;
 
   private:
     DataBase *_db;
