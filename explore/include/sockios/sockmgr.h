@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/16 20:04:14 ptr>
+// -*- C++ -*- Time-stamp: <99/04/16 19:24:36 ptr>
 
 #ifndef __SOCKMGR_H
 #define __SOCKMGR_H
@@ -20,6 +20,11 @@ using __impl::Thread;
 using __impl::Condition;
 
 namespace std {
+
+union _xsockaddr {
+    sockaddr_in inet;
+    sockaddr    any;
+};
 
 class basic_sockmgr :
 	public sock_base
@@ -45,7 +50,7 @@ class basic_sockmgr :
     bool good() const
       { return _state == ios_base::goodbit; }
 
-    SOCKET fd() const { return _fd;}
+    sock_base::socket_type fd() const { return _fd;}
 
     void shutdown( sock_base::shutdownflg dir )
       {
@@ -62,98 +67,38 @@ class basic_sockmgr :
       }
 
   private:
-    SOCKET        _fd;    // master socket
+    sock_base::socket_type _fd;    // master socket
     unsigned long _mode;  // open mode
     unsigned long _state; // state flags
     int           _errno; // error state
-    union {
-	sockaddr_in inet;
-	sockaddr    any;
-    } _address;
+    _xsockaddr    _address;
     bool          _open;  // true if open
-};
-
-class _xsockaddr
-{
-  public:
-    union {
-	sockaddr_in inet;
-	sockaddr    any;
-    } _address;
-
-    bool operator ==( const _xsockaddr& a ) const
-      {
-	if ( _address.any.sa_family == a._address.any.sa_family ) {
-	  if ( _address.any.sa_family == AF_INET ) {
-	    if ( _address.inet.sin_port ==  a._address.inet.sin_port ) {
-	      if ( _address.inet.sin_addr.s_addr == a._address.inet.sin_addr.s_addr ) {
-		return true;
-	      }
-	    }
-	  } else {  // strcmp?
-	    return memcmp( _address.any.sa_data, a._address.any.sa_data, 14 ) == 0;
-	  }
-	}
-	return false;
-      }
-
-    bool operator <( const _xsockaddr& a ) const
-      {
-	if ( _address.any.sa_family < a._address.any.sa_family ) {
-	  return true;
-	}
-	if ( _address.any.sa_family > a._address.any.sa_family ) {
-	  return false;
-	}
-	if ( _address.any.sa_family == AF_INET ) {
-	  if ( _address.inet.sin_port < a._address.inet.sin_port ) {
-	    return true;
-	  }
-	  if ( _address.inet.sin_port > a._address.inet.sin_port ) {
-	    return false;
-	  }
-	  if ( _address.inet.sin_addr.s_addr < a._address.inet.sin_addr.s_addr ) {
-	    return true;
-	  }
-	} else {  // strcmp?
-	  return (memcmp( _address.any.sa_data, a._address.any.sa_data, 14 ) < 0);
-	}
-	return false;
-      }
-
-    bool operator >( const _xsockaddr& a ) const
-      {
-	if ( _address.any.sa_family > a._address.any.sa_family ) {
-	  return true;
-	}
-	if ( _address.any.sa_family < a._address.any.sa_family ) {
-	  return false;
-	}
-	if ( _address.any.sa_family == AF_INET ) {
-	  if ( _address.inet.sin_port > a._address.inet.sin_port ) {
-	    return true;
-	  }
-	  if ( _address.inet.sin_port < a._address.inet.sin_port ) {
-	    return false;
-	  }
-	  if ( _address.inet.sin_addr.s_addr > a._address.inet.sin_addr.s_addr ) {
-	    return true;
-	  }
-	} else {  // strcmp?
-	  return (memcmp( _address.any.sa_data, a._address.any.sa_data, 14 ) > 0);
-	}
-	return false;
-      }
 };
 
 struct sockmgr_client
 {
+    sockmgr_client() :
+        thrID( Thread::daemon | Thread::detached )
+      { }
+
     sockstream s;
 
     Thread thrID;
 
     string    hostname;
     string    info;
+};
+
+template <class Connect>
+struct sockmgr_client_MP
+{
+    sockmgr_client_MP()
+      { }
+
+    Connect    _proc;
+    sockstream s;
+    string     hostname;
+    string     info;
 };
 
 struct bad_thread :
@@ -163,30 +108,44 @@ struct bad_thread :
       { return !__x->thrID.good(); }
 };
 
-struct bad_sock :
-    public unary_function<sockmgr_client *,bool>
+// struct bad_sock :
+//    public unary_function<sockmgr_client *,bool>
+// {
+//    bool operator()(const sockmgr_client *__x) const
+//      { return !__x->s.good(); }
+// };
+
+template <class Connect>
+struct bad_connect :
+    public unary_function<sockmgr_client_MP<Connect> *,bool>
 {
-    bool operator()(const sockmgr_client *__x) const
+    bool operator()(const sockmgr_client_MP<Connect> * __x) const
       { return !__x->s.good(); }
 };
 
 struct remove_client :
     public unary_function<sockmgr_client *,int>
 {
-    int operator()(const sockmgr_client *__x) const
+    int operator()(sockmgr_client *__x) const
       { delete __x; return 0; }
 };
 
-// #ifdef _MSC_VER
-// #pragma warning( disable : 4786 )
-// #endif
+template <class Connect>
+struct remove_client_MP :
+    public unary_function<sockmgr_client_MP<Connect> *,int>
+{
+    int operator()(sockmgr_client_MP<Connect> *__x) const
+      { delete __x; return 0; }
+};
 
+// Policy: thread per client connection
 template <class Connect>
 class sockmgr_stream :
     public basic_sockmgr
 {
   private:
-    typedef map<_xsockaddr,sockmgr_client*,less<_xsockaddr>,
+    typedef unsigned key_type;
+    typedef map<key_type,sockmgr_client*,less<key_type>,
                 __STL_DEFAULT_ALLOCATOR(sockmgr_client*) > container_type;
 
     // typedef pair<const _xsockaddr,sockmgr_client*> value_type;
@@ -204,27 +163,15 @@ class sockmgr_stream :
 
     ~sockmgr_stream()
       {
-	container_type::iterator i = _storage.begin();
-	for ( ; i != _storage.end(); ++i ) {
-	  (*i).second->s.close();
-	  delete (*i).second;
-	}
+        if ( _gc_id.good() ) {
+          _garbage_end.wait();
+        }
       }
 
-    void open( int port, sock_base::stype t = sock_base::sock_stream )
-      {
-	basic_sockmgr::open( port, t, sock_base::inet );
-	if ( is_open() ) {
-	  loop_id.launch( loop, this );
-	}
-      }
+    void open( int port, sock_base::stype t = sock_base::sock_stream );
 
     void wait()
-      {	loop_id.join(); /* _loop_end.wait(); */ }
-
-    sockstream *accept_dgram();
-
-    void erase( sockstream *s );
+      {	loop_id.join(); }
 
   protected:
     struct params
@@ -236,27 +183,99 @@ class sockmgr_stream :
     static int loop( void * );
     static int connection( void * );
     static int garbage_collector( void * );
-#ifdef __unix
-    static void broken_pipe( int );
-    static void interrupt( int );
-#endif
 
-    sockmgr_client *accept();
+    typedef sockmgr_client *(sockmgr_stream::*accept_type)();
+
+    accept_type _accept;
+    sockmgr_client *accept() // workaround for CC
+      { return (this->*_accept)(); }
+    sockmgr_client *accept_tcp();
+    sockmgr_client *accept_udp();
 
   private:
-#ifdef __unix
-    static sockmgr_stream<Connect> *__self; // for signal handlers
-#endif
+// #ifdef __unix
+//    static __impl::Thread::thread_key_type _mt_key;
+//    static int _mt_idx;
+// #endif
 
     container_type _storage; // clients connections db
+    key_type create_unique();
 
     Thread     loop_id;
     Thread    _gc_id;    // garbage collector thread
-//    Condition _loop_end;
     Condition _garbage_end;
 
     __impl::Mutex _storage_lock;
     __impl::Mutex _params_lock;
+
+    static const key_type _low;
+    static const key_type _high;
+
+    static key_type _id;
+};
+
+// Policy: multiplex all clients connections in one thread
+template <class Connect>
+class sockmgr_stream_MP : // multiplexor
+    public basic_sockmgr
+{
+  private:
+    typedef unsigned key_type;
+    typedef map<key_type,sockmgr_client_MP<Connect>*,less<key_type>,
+                __STL_DEFAULT_ALLOCATOR(sockmgr_client_MP<Connect>*) > container_type;
+
+  public:
+    sockmgr_stream_MP() :
+	basic_sockmgr()
+      { }
+
+    explicit sockmgr_stream_MP( int port, sock_base::stype t = sock_base::sock_stream ) :
+	basic_sockmgr()
+      {	open( port, t ); }
+
+    ~sockmgr_stream_MP()
+      {
+        if ( _gc_id.good() ) {
+          _garbage_end.wait();
+        }
+      }
+
+    void open( int port, sock_base::stype t = sock_base::sock_stream );
+    void wait()
+      {	loop_id.join(); }
+
+  protected:
+    static int loop( void * );
+    static int garbage_collector( void * );
+
+    typedef sockmgr_client_MP<Connect> *(sockmgr_stream_MP<Connect>::*accept_type)();
+
+    accept_type _accept;
+    sockmgr_client_MP<Connect> *accept() // workaround for CC
+      { return (this->*_accept)(); }
+    sockmgr_client_MP<Connect> *accept_tcp();
+    sockmgr_client_MP<Connect> *accept_udp();
+#ifdef __unix
+    pollfd *_pfd;
+#endif
+#ifdef WIN32
+    fd_set _pfd;
+#endif
+
+  private:
+    container_type _storage; // clients connections db
+    key_type create_unique();
+
+    Thread     loop_id;
+    Thread    _gc_id;    // garbage collector thread
+    Condition _garbage_end;
+
+    __impl::Mutex _storage_lock;
+
+    static const key_type _low;
+    static const key_type _high;
+
+    static key_type _id;
 };
 
 } // namespace std

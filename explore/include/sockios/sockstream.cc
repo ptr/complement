@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/25 18:03:21 ptr>
+// -*- C++ -*- Time-stamp: <99/04/16 19:23:41 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -16,6 +16,7 @@ basic_sockbuf<charT, traits>::open( const char *hostname, int port,
   _mode = ios_base::in | ios_base::out;
   _state = ios_base::goodbit;
   _errno = 0;
+  _type = type;
 #ifdef WIN32
   WSASetLastError( 0 );
 #endif
@@ -113,7 +114,7 @@ basic_sockbuf<charT, traits>::open( const char *hostname, int port,
 
 template<class charT, class traits>
 basic_sockbuf<charT, traits> *
-basic_sockbuf<charT, traits>::open( SOCKET s, const sockaddr& addr,
+basic_sockbuf<charT, traits>::open( sock_base::socket_type s, const sockaddr& addr,
 				    sock_base::stype t )
 {
   if ( is_open() || s == -1 ) {
@@ -124,6 +125,7 @@ basic_sockbuf<charT, traits>::open( SOCKET s, const sockaddr& addr,
   _mode = ios_base::in | ios_base::out;
   _state = ios_base::goodbit;
   _errno = 0;
+  _type = t;
 #ifdef WIN32
   WSASetLastError( 0 );
 #endif
@@ -342,6 +344,132 @@ int basic_sockbuf<charT, traits>::__rdsync()
   }
 
   return 0;
+}
+
+template<class charT, class traits>
+int basic_sockbuf<charT, traits>::recvfrom( void *buf, size_t n )
+{
+  int sz = sizeof( sockaddr_in );
+
+  union {
+      sockaddr_in inet;
+      sockaddr    any;
+  } addr;
+#ifdef __unix
+  timespec t;
+
+  t.tv_sec = 0;
+  t.tv_nsec = 10000;
+
+  pollfd pfd;
+  pfd.fd = _fd;
+  pfd.events = POLLIN;
+#endif
+#ifdef WIN32
+  int t = 10;
+  fd_set pfd;
+#endif
+  do {
+#ifdef WIN32
+    FD_ZERO( &pfd );
+    FD_SET( _fd, &pfd );
+
+    if ( select( _fd + 1, &pfd, 0, 0, 0 ) > 0 ) {
+      // get address of caller only
+      char buff[32];
+      ::recvfrom( _fd, buff, 32, MSG_PEEK, &addr.any, &sz );
+    } else {
+      return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
+    }
+#else
+    pfd.revents = 0;
+    if ( poll( &pfd, 1, -1 ) > 0 ) { // wait infinite
+      // get address of caller only
+      char buff[32];    
+      ::recvfrom( _fd, buff, 32, MSG_PEEK, &addr.any, &sz );
+    } else {
+      return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
+    }
+#endif
+    if ( port() == addr.inet.sin_port && inet_addr() == addr.inet.sin_addr.s_addr ) {
+//    if ( memcmp( (void *)&_address.any, (const void *)&addr, sizeof(sockaddr) ) == 0 ) {
+#ifdef WIN32
+      return ::recvfrom( _fd, (char *)buf, n, 0, &_address.any, &sz );
+#else
+      return ::recvfrom( _fd, buf, n, 0, &_address.any, &sz );
+#endif
+    }
+#ifdef __unix
+//    cerr << "Sleeping in sockstream: "
+//         << port() << "/" << addr.inet.sin_port << ", "
+//         << inet_addr() << "/" << addr.inet.sin_addr.s_addr << endl;
+    nanosleep( &t, 0 );
+#endif
+#ifdef WIN32
+    Sleep( t );
+#endif
+  } while ( true );
+
+  return 0; // never
+}
+
+template<class charT, class traits>
+void basic_sockbuf<charT, traits>::hostname( string& hostname )
+{
+#ifdef WIN32
+  hostent *he;
+#else
+  hostent he;
+#endif
+  char tmp_buff[1024];
+  int err = 0;
+  in_addr in;
+  in.s_addr = inet_addr();
+#ifdef WIN32
+  // For Win he is thread private data, so that's safe
+  he = gethostbyaddr( (char *)&in.s_addr, sizeof(in_addr), AF_INET );
+  if ( he != 0 ) {
+    hostname = he->h_name;
+  } else {
+    hostname = "unknown";
+  }
+#else
+  if ( gethostbyaddr_r( (char *)&in.s_addr, sizeof(in_addr), AF_INET,
+                        &he, tmp_buff, 1024, &err ) != 0 ) {
+    hostname = he.h_name;
+  } else {
+    hostname = "unknown";
+  }
+#endif
+
+  hostname += " [";
+  hostname += inet_ntoa( in );
+  hostname += "]";
+}
+
+template<class charT, class traits>
+void basic_sockbuf<charT, traits>::findhost( const char *hostname )
+{
+#ifndef WIN32
+  hostent _host;
+  char tmpbuf[1024];
+  hostent *host = gethostbyname_r( hostname, &_host, tmpbuf, 1024, &_errno );
+  if ( host != 0 ) {
+    memcpy( (char *)&_address.inet.sin_addr,
+            (char *)host->h_addr, host->h_length );
+  } else {
+    _state |= sock_base::hnamefailbit;
+  }
+#else
+  hostent *host = gethostbyname( hostname );
+  if ( host != 0 ) {
+    memcpy( (char *)&_address.inet.sin_addr,
+            (char *)host->h_addr, host->h_length );
+  } else {
+    _errno = WSAGetLastError();
+    _state |= sock_base::hnamefailbit;
+  }
+#endif
 }
 
 }

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/22 13:17:49 ptr>
+// -*- C++ -*- Time-stamp: <99/04/16 19:24:14 ptr>
 
 #ifndef __SOCKSTREAM__
 #define __SOCKSTREAM__
@@ -50,8 +50,6 @@
 
 #include <cerrno>
 
-typedef int SOCKET;
-
 #endif // !WIN32
 
 #ifndef ___xsballoc_h
@@ -65,6 +63,12 @@ class sock_base
   public:
     typedef unsigned long sopt;
     typedef unsigned long shutdownflg;
+#ifdef __unix
+    typedef int           socket_type;
+#endif
+#ifdef WIN32
+    typedef SOCKET        socket_type;
+#endif
 
     enum stype {
       sock_stream	= SOCK_STREAM,    // stream socket
@@ -147,6 +151,11 @@ class basic_sockbuf :
   public:
     typedef basic_ios<charT, traits>       ios_type;
     typedef typename traits::state_type    state_t;
+#ifdef WIN32
+    typedef u_short                        family_type;
+#else
+    typedef sa_family_t                    family_type;
+#endif
     
   public:
     /* Inherited from basic_streambuf :
@@ -183,7 +192,7 @@ class basic_sockbuf :
 					sock_base::stype type = sock_base::sock_stream,
 					sock_base::protocol prot = sock_base::inet );
 
-    basic_sockbuf<charT, traits> *open( SOCKET s, const sockaddr& addr,
+    basic_sockbuf<charT, traits> *open( sock_base::socket_type s, const sockaddr& addr,
 					sock_base::stype t = sock_base::sock_stream );
 
     basic_sockbuf<charT, traits> *close()
@@ -235,13 +244,9 @@ class basic_sockbuf :
 	}
       }
 
-    SOCKET fd() const { return _fd;}
+    sock_base::socket_type fd() const { return _fd;}
 
-#ifdef WIN32
-    u_short family() const
-#else
-    sa_family_t family() const
-#endif
+    family_type family() const
       { return /* is_open() ? */ _address.any.sa_family /* : 0 */; }
     int port() const
       { return /* is_open() && */ _address.any.sa_family == AF_INET ?
@@ -249,33 +254,13 @@ class basic_sockbuf :
     unsigned long inet_addr() const
       { return /* is_open() && */ _address.any.sa_family == AF_INET ?
 	  _address.inet.sin_addr.s_addr : 0; }
-    
+   sock_base::stype stype() const
+     { return _type; }
+
+   void hostname( string& hostname );
 
   protected:
-    void findhost( const char *hostname )
-      {
-#ifndef WIN32
-	hostent _host;
-	char tmpbuf[1024];
-	hostent *host = gethostbyname_r( hostname, &_host, tmpbuf, 1024, &_errno );
-	if ( host != 0 ) {
-	  memcpy( (char *)&_address.inet.sin_addr,
-		  (char *)host->h_addr, host->h_length );
-	} else {
-	  _state |= sock_base::hnamefailbit;
-	}
-#else
-	// should do reeentrant here?
-	hostent *host = gethostbyname( hostname );
-	if ( host != 0 ) {
-	  memcpy( (char *)&_address.inet.sin_addr,
-		  (char *)host->h_addr, host->h_length );
-	} else {
-	  _errno = WSAGetLastError();
-	  _state |= sock_base::hnamefailbit;
-	}
-#endif
-      }
+    void findhost( const char *hostname );
 
     virtual int showmanyc()
       { return egptr() - gptr(); }
@@ -371,17 +356,9 @@ class basic_sockbuf :
 #else
       { return ::recv( _fd, buf, n, 0 ); }
 #endif
-    int recvfrom( void *buf, size_t n )
-      {
-	int sz = sizeof( sockaddr_in );
-#ifdef WIN32
-	return ::recvfrom( _fd, (char *)buf, n, 0, &_address.any, &sz );
-#else
-	return ::recvfrom( _fd, buf, n, 0, &_address.any, &sz );
-#endif
-      }
+    int recvfrom( void *buf, size_t n );
 
-    SOCKET       _fd;
+    sock_base::socket_type _fd;
     union {
 	sockaddr_in inet;
 	sockaddr    any;
@@ -390,6 +367,7 @@ class basic_sockbuf :
     ios_base::openmode  _mode;
     unsigned long       _state;
     int                 _errno;
+    sock_base::stype    _type;
     bool                _open; // socket open and connected/binded
 };
 
@@ -435,7 +413,8 @@ class basic_sockstream :
 	}
       }
 
-    explicit basic_sockstream( SOCKET s, const sockaddr& addr ) :
+    explicit basic_sockstream( sock_base::socket_type s, const sockaddr& addr,
+                               sock_base::stype type = sock_base::sock_stream ) :
 #ifdef WIN32
 	sock_base(),
         basic_iostream<charT,traits>( &_sb )
@@ -448,14 +427,14 @@ class basic_sockstream :
 	init( &_sb );
 #endif
 	clear();
-	if ( _sb.open( s, addr ) == 0 ) {
+	if ( _sb.open( s, addr, type ) == 0 ) {
 	  setstate( ios_base::failbit );
 	}
       }
 
     basic_sockbuf<charT,traits>* rdbuf() const
       { return const_cast<basic_sockbuf<charT,traits>*>(&_sb); }
-    bool is_open()
+    bool is_open() const
       { return _sb.is_open(); }
     void open( const char *hostname, int port,
 	       sock_base::stype type = sock_base::sock_stream,
@@ -468,11 +447,11 @@ class basic_sockstream :
       }
 
     // only for sock_stream : inet now!
-    void open( SOCKET s, const sockaddr& addr,
+    void open( sock_base::socket_type s, const sockaddr& addr,
 	       sock_base::stype type = sock_base::sock_stream )
       {
 	clear();
-	if ( _sb.open( s, addr ) == 0 ) {
+	if ( _sb.open( s, addr, type ) == 0 ) {
 	  setstate( ios_base::failbit );
 	}
       }
