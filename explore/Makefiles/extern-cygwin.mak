@@ -1,5 +1,16 @@
-# Time-stamp: <03/07/10 15:33:20 ptr>
+# Time-stamp: <03/07/15 17:46:38 ptr>
 # $Id$
+
+# This is Complement project (really not extern):
+
+CoMT_LIB_DIR        ?= ${INSTALL_LIB_DIR}
+CoMT_LIB_DIR_DBG    ?= ${INSTALL_LIB_DIR_DBG}
+CoMT_LIB_DIR_STLDBG ?= ${INSTALL_LIB_DIR_STLDBG}
+CoMT_BIN_DIR        ?= ${INSTALL_BIN_DIR}
+CoMT_BIN_DIR_DBG    ?= ${INSTALL_BIN_DIR_DBG}
+CoMT_BIN_DIR_STLDBG ?= ${INSTALL_BIN_DIR_STLDBG}
+
+CoMT_INCLUDE_DIR ?= ${CoMT_DIR}/include
 
 # This file reflect versions of third-party libraries that
 # used in projects
@@ -48,3 +59,4 @@ endif
 gSOAP_DIR ?= /opt/gSOAP-2.2.3
 BOOST_DIR ?= ${SRCROOT}/../extern/boost
 STLPORT_DIR ?= e:/STLlab/STLport
+CoMT_DIR ?= ${SRCROOT}
