@@ -1,19 +1,28 @@
 # "%Z%$RCSfile$ v.$Revision$ %H% %T%"
 # Makefile for implementation and debugging OXW (Object X Window) class library
 
-INCLUDES = -I/usr/openwin/include -I../../../include
-DEFS = -DSVR4 -D__DEBUG=2
+INCLUDES = \
+	-I/usr/openwin/include \
+	-I../../../include
+DEFS = \
+	-DSVR4 \
+	-D__DEBUG=2
 # OPT = -g -p
 OPT = -g
 # OPT = -O4
 # OPT = -G -O4
-CCFLAGS = $(OPT) -cg92 +w -pic -pto -mt
+
+CCFLAGS = $(OPT) -cg92 +w -pic -pto
 CPPFLAGS = $(DEFS) $(INCLUDES)
-# LDFLAGS = -L$(OUTPUT_DIR) -lclass -lX11 -ldl
-PROJECT_LIBS = ../..
-LDFLAGS = -L$(PROJECT_LIBS) -lclass -lX11 -lXpm
+PROJECT_LIBS = -L../.. -lclass
+# LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm -ldl
+LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm
+
 OUTPUT_DIR = ./bin
+OUTPUT_TESTS_DIR = ./tests-bin
 OUTPUT_OPTION = -o $@
+
+TESTS_DIR = ./tests
 
 # Library files
 
@@ -62,8 +71,8 @@ XLIBFILES.o = \
 
 XTESTER = xtester
 XFILES.o = \
-		$(OUTPUT_DIR)/xtester.o \
-		$(OUTPUT_DIR)/xmain.o
+		$(OUTPUT_TESTS_DIR)/xtester.o \
+		$(OUTPUT_TESTS_DIR)/xmain.o
 PROJECT = ../../libOXW.so
 LIBFILES.o = $(XLIBFILES.o)
 
@@ -71,13 +80,37 @@ LIBFILES.o = $(XLIBFILES.o)
 
 .PARALLEL:
 
-all:	$(PROJECT)
+all:	dirs $(PROJECT)
+
+dirs:
+	@if [ ! -d ./bin ]; \
+	then \
+	  mkdir ./bin; \
+	fi
+tests-dirs:
+	@if [ ! -d ./tests-bin ]; \
+	then \
+	  mkdir ./tests-bin; \
+	fi
 
 $(PROJECT):	$(LIBFILES.o)
 	$(LINK.cc) -G -o $@ $(LIBFILES.o)
 
-$(XTESTER):	$(XLIBFILES.o) $(XFILES.o)
+$(XTESTER):	dirs tests-dirs $(XLIBFILES.o) $(XFILES.o)
 	$(LINK.cc) -o $@ $(XLIBFILES.o) $(XFILES.o)
 
 $(OUTPUT_DIR)/%.o:	%.cc
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
+
+$(OUTPUT_TESTS_DIR)/%.o:	$(TESTS_DIR)/%.cc
+	$(COMPILE.cc) $(OUTPUT_OPTION) $<
+
+clear:
+	@if [ -d ./bin ]; \
+	then \
+	  rm -rf ./bin; \
+	fi
+	@if [ -d ./tests-bin ]; \
+	then \
+	  rm -rf ./tests-bin; \
+	fi
