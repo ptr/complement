@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/11 19:34:06 ptr>
+// -*- C++ -*- Time-stamp: <01/02/05 13:09:17 ptr>
 
 /*
  * Copyright (c) 1995-1999
@@ -562,7 +562,7 @@ class EventHandler
     __PG_DECLSPEC EventHandler();
     explicit __PG_DECLSPEC EventHandler( const char *info );
     explicit __PG_DECLSPEC EventHandler( addr_type id, const char *info = 0 );
-    __PG_DECLSPEC ~EventHandler();
+    virtual __PG_DECLSPEC ~EventHandler();
 
     __PG_DECLSPEC const string& who_is( addr_type k ) const;
     __PG_DECLSPEC bool is_avail( addr_type id ) const;
