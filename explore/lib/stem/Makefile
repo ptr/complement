@@ -1,6 +1,6 @@
 # %Z% $Date$ $Revision$ $RCSfile$ %Q%
 # Implementation and debugging OXW (Object X Window) class library (Release 2)
-# Time-stamp: <96/09/27 20:20:47 ptr>
+# Time-stamp: <96/10/09 17:20:28 ptr>
 
 PROJECT = ../../libEDS.so
 
@@ -19,7 +19,8 @@ OPT = -g
 # OPT = -G -O4
 
 # CCFLAGS = $(OPT) -cg92 +w -PIC -instances=static -mt
-CCFLAGS = $(OPT) +w -PIC -instances=static -mt
+CCFLAGS = $(OPT) +w -PIC -instances=static -mt -features=no%anachronisms \
+	-features=rtti
 CPPFLAGS = $(DEFS) $(INCLUDES)
 PROJECT_LIBS = -L../.. -L../../../../STL.labs -lCLASS -lSTL
 # LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm -ldl
