@@ -1,4 +1,4 @@
-# Time-stamp: <01/01/18 13:12:27 ptr>
+# Time-stamp: <01/01/23 13:13:50 ptr>
 # $SunId$
 
 BASEDIR := $(shell xtmp=`pwd`; \
@@ -21,39 +21,37 @@ all-release:	release-shared release-static
 include ${BASEDIR}/lib/Makefile.inc.lib
 
 INCLUDES += -I$(BASEDIR)/include
+# LDFLAGS += -L${HOME}/lib
+# LDLIBS +=
+# OPT +=
 
-dbg-shared : OPT += +inst_close
-dbg-shared : LDFLAGS += -Wl,+k
-dbg-shared : LDFLAGS += -L${HOME}/lib
-dbg-shared : LDLIBS += -lxmt_${COMPILER_NAME}${DBG_SUFFIX} \
-		       -lsockios_${COMPILER_NAME}${DBG_SUFFIX} \
-                       -lstlport_aCC
+# dbg-shared : OPT += +inst_close
+# dbg-shared : LDFLAGS += -Wl,+k -Wl,+h$(SO_NAME_LONG_DBG)
+# dbg-shared : LDLIBS += -lxmt_${COMPILER_NAME}${DBG_SUFFIX} \
+#		       -lsockios_${COMPILER_NAME}${DBG_SUFFIX} \
+#                       -lstlport_aCC
 
-dbg-static : LDFLAGS += -L${HOME}/lib
-dbg-static : LDLIBS += -lxmt_${COMPILER_NAME}${DBG_SUFFIX} \
-		       -lsockios_${COMPILER_NAME}${DBG_SUFFIX} \
-                       -lstlport_aCC_debug
+# dbg-static : LDLIBS += -lxmt_${COMPILER_NAME}${DBG_SUFFIX} \
+# 		       -lsockios_${COMPILER_NAME}${DBG_SUFFIX} \
+#                      -lstlport_aCC
 
-stldbg-shared : OPT += +inst_close
-stldbg-shared : LDFLAGS += -Wl,+k
-stldbg-shared : LDFLAGS += -L${HOME}/lib
-stldbg-shared : LDLIBS += -lxmt_${COMPILER_NAME}_stl${DBG_SUFFIX} \
-		          -lsockios_${COMPILER_NAME}_stl${DBG_SUFFIX} \
-                          -lstlport_aCC_stldebug
+# stldbg-shared : OPT += +inst_close
+# stldbg-shared : LDFLAGS += -Wl,+k
+# stldbg-shared : LDLIBS += -lxmt_${COMPILER_NAME}_stl${DBG_SUFFIX} \
+#		          -lsockios_${COMPILER_NAME}_stl${DBG_SUFFIX} \
+#                          -lstlport_aCC_stldebug
 
-stldbg-static : LDFLAGS += -L${HOME}/lib
-stldbg-static : LDLIBS += -lxmt_${COMPILER_NAME}_stl${DBG_SUFFIX} \
-		          -lsockios_${COMPILER_NAME}_stl${DBG_SUFFIX} \
-                          -lstlport_aCC_stldebug
+# stldbg-static : LDLIBS += -lxmt_${COMPILER_NAME}_stl${DBG_SUFFIX} \
+#		          -lsockios_${COMPILER_NAME}_stl${DBG_SUFFIX} \
+#                          -lstlport_aCC_stldebug
 
-release-shared : OPT += +inst_close
-release-shared : LDFLAGS += -Wl,+k
-release-shared : LDFLAGS += -L${HOME}/lib
-release-shared : LDLIBS += -lxmt_${COMPILER_NAME} \
-		           -lsockios_${COMPILER_NAME} \
-			   -lstlport_aCC
+# release-shared : OPT += +inst_close
+# release-shared : LDFLAGS += -Wl,+k -Wl,+h$(SO_NAME_LONG) -Wl,+s
+# release-shared : LDLIBS += -lxmt_${COMPILER_NAME} \
+#		           -lsockios_${COMPILER_NAME} \
+#			   -lstlport_aCC
 
-release-static : LDFLAGS += -L${HOME}/lib
-release-static : LDLIBS += -lxmt_${COMPILER_NAME} \
-		           -lsockios_${COMPILER_NAME} \
-			   -lstlport_aCC
+# release-static : LDLIBS += -lxmt_${COMPILER_NAME} \
+# 		           -lsockios_${COMPILER_NAME} \
+#			   -lstlport_aCC
+
