@@ -1,15 +1,30 @@
-# Time-stamp: <03/07/06 23:13:45 ptr>
+# Time-stamp: <03/07/07 17:21:48 ptr>
 # $Id$
 
-include ${BASEDIR}/Makefiles/make.mak
-include ${BASEDIR}/Makefiles/sysid-$(USE_MAKE).mak
-include ${BASEDIR}/Makefiles/targetdirs.mak
+RULESBASE ?= $(SRCROOT)/Makefiles
 
-DIRS_UNIQUE_SRC := $(dir $(SRC_CPP) $(SRC_CC) $(SRC_C) )
-DIRS_UNIQUE_SRC := $(sort $(DIRS_UNIQUE_SRC) )
-include ${BASEDIR}/Makefiles/dirsrc.mak
-include ${BASEDIR}/Makefiles/sys-$(OSNAME).mak
-include ${BASEDIR}/Makefiles/compiler-$(COMPILER_NAME).mak
-include ${BASEDIR}/Makefiles/clean.mak
+# define what make clone we use
+include ${RULESBASE}/make.mak
+# identify OS and build date
+include ${RULESBASE}/sysid-$(USE_MAKE).mak
+# OS-specific definitions, like ar, ln, install, etc.
+include ${RULESBASE}/sys-$(OSNAME).mak
+# compiler, compiler options
+include ${RULESBASE}/compiler-$(COMPILER_NAME).mak
+# rules to make dirs for targets
+include ${RULESBASE}/targetdirs.mak
 
--include .make.depend
+# derive common targets (*.o, *.d),
+# build rules (including output catalogs)
+include ${RULESBASE}/tergets-$(USE_MAKE).mak
+# dependency
+include ${RULESBASE}/depend-$(COMPILER_NAME).mak
+
+# target is library, rules for library
+ifdef LIBNAME
+include ${RULESBASE}/lib/top.mak
+endif
+
+# general clean
+
+include ${RULESBASE}/clean.mak
