@@ -186,7 +186,15 @@ this allow to skip memory allocation for short strings.
 
 \lstinputlisting{string/params-short/str.cc}
 
-I have problems with this test, so I will return here later.
+Test \#6 is default \STLport{}, with ``short string optimization'', while
+test \#7 present results without ``short string optimization''. In case of \libstd{}
+tests \#6 and \#7 are the same.
+
+\STLport{} was build with ``short string'' size 16. ``Short strings optimization'' give
+test time $2.95\%$ longer then without ones (for strings with size 20, this test case
+not shown on figures).
+But you see, for ``short'' strings test with ``short'' strings optimization
+show time that $43.3\%$ better!
 
 \section{Role of Allocators}
 
