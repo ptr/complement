@@ -33,6 +33,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/varstring.o \
 		$(OUTPUT_DIR)/TextLabel.o \
 		$(OUTPUT_DIR)/InputField.o \
+		$(OUTPUT_DIR)/TextCursor.o \
 		$(OUTPUT_DIR)/ScrWindow.o \
 		$(OUTPUT_DIR)/PopupMenu.o \
 		$(OUTPUT_DIR)/AlignUtils.o \
