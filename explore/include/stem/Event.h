@@ -97,6 +97,12 @@ class __Event_Base
     friend class NetTransportMgr;
 };
 
+#if defined(_MSC_VER) && !defined(_DEBUG)  // workaround for VC 5.0 / Release
+} // namespace EDS
+typedef EDS::__Event_Base __Event_Base;
+namespace EDS {
+#endif
+
 // Forward declarations
 
 template <class D> class Event_base;
