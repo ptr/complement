@@ -75,14 +75,15 @@ class ASEvent
     void SetXEvent( unsigned long, XEvent& );
     void SetXEvent( XEvent& );
 
-    unsigned long GetMessage() { return Message; }
+    unsigned long GetMessage() const
+      { return Message; }
     tagIParams& GetIParams();
     tagFParams& GetFParams();
     char *GetSParam();
     XEvent *GetXEvent();
 
-    contained_type isA();
-    int isA( contained_type );
+    contained_type isA() const;
+    int isA( contained_type ) const;
 
   private:
     union {
@@ -212,12 +213,12 @@ inline XEvent *ASEvent::GetXEvent()
   return Xevent;
 }
 
-inline ASEvent::contained_type ASEvent::isA()
+inline ASEvent::contained_type ASEvent::isA() const
 {
   return type;
 }
 
-inline int ASEvent::isA( ASEvent::contained_type tstType )
+inline int ASEvent::isA( ASEvent::contained_type tstType ) const
 {
   return tstType == type;
 }
