@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 09:49:45 ptr>
+// -*- C++ -*- Time-stamp: <99/10/15 18:49:26 ptr>
 
 /*
  *
@@ -138,7 +138,8 @@ class EvManager
         return i == heap.end() ? inv_key_str : (*i).second.info;
       }
 
-    key_type sid( addr_type object_id ) const;
+    __EDS_DLL key_type sid( addr_type object_id ) const;
+    __EDS_DLL NetTransport_base *transport( addr_type object_id ) const;
 
     void Send( const Event& e );
 

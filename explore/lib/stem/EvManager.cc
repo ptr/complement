@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 10:44:35 ptr>
+// -*- C++ -*- Time-stamp: <99/10/15 19:06:23 ptr>
 
 /*
  *
@@ -192,7 +192,7 @@ void EvManager::Remove( NetTransport_base *channel )
 
 // return session id of object with address 'id' if this is external
 // object; otherwise return -1;
-key_type EvManager::sid( addr_type id ) const
+__EDS_DLL key_type EvManager::sid( addr_type id ) const
 {
   MT_REENTRANT( _lock_heap, _1 );
   heap_type::const_iterator i = heap.find( id );
@@ -200,6 +200,16 @@ key_type EvManager::sid( addr_type id ) const
     return badkey;
   }
   return (*i).second.remote->channel->sid();
+}
+
+__EDS_DLL NetTransport_base *EvManager::transport( addr_type id ) const
+{
+  MT_REENTRANT( _lock_heap, _1 );
+  heap_type::const_iterator i = heap.find( id );
+  if ( i == heap.end() || (*i).second.remote == 0 ) {
+    return 0;
+  }
+  return (*i).second.remote->channel;
 }
 
 // Resolve Address -> Object Reference, call Object's dispatcher in case
