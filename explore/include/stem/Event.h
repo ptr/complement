@@ -1,12 +1,8 @@
-// -*- C++ -*- Time-stamp: <97/04/21 13:30:34 ptr>
+// -*- C++ -*- Time-stamp: <97/09/17 16:10:15 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
-
-#ifndef DEFALLOC_H
-#include <stl/defalloc.h>
-#endif
 
 #ifndef __EDS_EDSdefs_h
 #include <EDS/EDSdefs.h>
@@ -14,10 +10,6 @@
 
 #ifndef __CLASS_checks_h
 #include <CLASS/checks.h>
-#endif
-
-#ifndef _STRING_H
-#include <string.h>
 #endif
 
 template <class T> class EDSEventsTable<T>;
@@ -154,7 +146,7 @@ EDSEventT<S,D>::EDSEventT( message_type msg, const D *first, const D *last ) :
 {
   if ( n > 0 ) {
     CHECK_RANGE( sz > 0 );
-    DataObject = (pointer)::operator new( n * sz );
+    DataObject = static_cast<pointer>(::operator new( n * sz ));
     uninitialized_copy( first, last, DataObject );
   }
 }
@@ -165,11 +157,11 @@ EDSEventT<S,D>::EDSEventT( const EDSEvent& e ) :
 {
   if ( n > 0 ) {
     CHECK_RANGE( sz > 0 );
-    DataObject = reinterpret_cast<pointer>(::operator new( n * sz ));
-    const_pointer first = reinterpret_cast<const_pointer>( e.Data() );
-    uninitialized_copy( first, first + n, DataObject );
+    DataObject = static_cast<pointer>(::operator new( n * sz ));
+    const_pointer first = static_cast<const_pointer>( e.Data() );
+    uninitialized_copy_n( first, n, DataObject );
   } else {
-    DataObject = reinterpret_cast<pointer>(e.Data());
+    DataObject = static_cast<pointer>(e.Data());
   }
 }
 
@@ -189,7 +181,6 @@ class EDSEventT<EDSEventsCore,void> :
     public EDSEvent_base<EDSEventsCore,void>
 {
   friend EDSEventsTable<GENERIC>;
-  friend EDSEvent;
 
   public:
     EDSEventT() :
@@ -204,7 +195,9 @@ class EDSEventT<EDSEventsCore,void> :
 	if ( n > 0 ) {
 	  CHECK_RANGE( sz > 0 );
 	  DataObject = ::operator new( n * sz );
-	  memcpy( DataObject, e.DataObject, n * sz );
+	  uninitialized_copy_n(
+	    static_cast<char * const>(e.DataObject), n * sz,
+	    static_cast<char *>(DataObject) );
 	} else {
 	  DataObject = e.DataObject;
 	}

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/12/19 12:57:29 ptr>
+// -*- C++ -*- Time-stamp: <97/09/26 15:39:19 ptr>
 #ifndef __EDS_EventHandler_h
 #define __EDS_EventHandler_h
 
@@ -12,24 +12,20 @@
 #include <EDS/Event.h>
 #endif
 
-#ifndef ALGO_H
-#include <stl/algo.h>
+#ifndef __ALGORITHM__
+#include <algorithm>
 #endif
 
-#ifndef PAIR_H
-#include <stl/pair.h>
+#ifndef __UTILITY__
+#include <utility>
 #endif
 
-#ifndef PROJECTN_H
-#include <stl/projectn.h>
+#ifndef __VECTOR__
+#include <vector>
 #endif
 
-#ifndef VECTOR_H
-#include <stl/vector.h>
-#endif
-
-#ifndef LIST_H
-#include <stl/list.h>
+#ifndef __LIST__
+#include <list>
 #endif
 
 #ifndef STRSTREAM_H
@@ -86,7 +82,7 @@ struct __member_function_void
     typedef const T&  const_reference_class_type;
     typedef void (T::*pmf_type)();
     typedef void (*dpmf_type)( const_pointer_class_type, pmf_type,
-			       argument_type arg );
+			       void * );
 };
 
 template <class PMF>
@@ -148,7 +144,6 @@ template <class Key1, class Key2, class Value>
 class __EvTable
 {
   public:
-    friend class __EvTable< Key1, Key2, Value>;
     typedef vector<pair<Key2,Value> > Container2;
     typedef vector<pair<Key1,Container2> > Container1;
     typedef Container1::iterator iterator1;
@@ -185,8 +180,8 @@ class __EvTable
     void append( const __EvTable<Key1,Key2,Value>& x );
     void append( Key1 key1, Key2 key2, const Value& value );
 
-    select1st<pair<Key1,Container2>, Key1> key1st;
-    select1st<pair<Key2,Value>, Key2> key2nd;
+    select1st<pair<Key1,Container2> > key1st;
+    select1st<pair<Key2,Value> > key2nd;
  
   protected:
    Container1 storage;
@@ -594,11 +589,11 @@ __DeclareAnyPMF<cls> cls::theDeclEventsTable[] = {
 
 #if defined(__TRACE) || defined(__WARN)
 
-DIAG_DECLARE_GROUP(EventHandler);
-DIAG_DECLARE_GROUP(EventDispatch);
+// DIAG_DECLARE_GROUP(EventHandler);
+// DIAG_DECLARE_GROUP(EventDispatch);
 
 #ifdef __TRACE
-
+/*
 #define TRACE_EH(handler)           TRACEX_EH(EventHandler,4,(handler))
 #define TRACEX_EH(g,l,handler)                                       \
   CLDiagBase::Out.seekp(0,ostream::beg);                             \
@@ -616,11 +611,11 @@ DIAG_DECLARE_GROUP(EventDispatch);
   handler.DispatchTrace( e, CLDiagBase::Out );                       \
   CLDiagBase::Out << ends;                                           \
   CLDiagGroup##g::Trace(l,CLDiagBase::Out.str(),__FILE__,__LINE__);
-
+*/
 #endif // __TRACE
 
 #ifdef __WARN
-
+/*
 #define WARN_EH(c,handler)          WARNX_EH(EventHandler,c,4,(handler))
 #define WARNX_EH(g,c,l,handler)                                     \
   if(c){                                                            \
@@ -642,7 +637,7 @@ DIAG_DECLARE_GROUP(EventDispatch);
     CLDiagBase::Out << ends;                                        \
     CLDiagGroup##g::Trace(l,CLDiagBase::Out.str(),__FILE__,__LINE__);\
   }
-
+*/
 #endif // __WARN
 #endif // __TRACE || __WARN
 

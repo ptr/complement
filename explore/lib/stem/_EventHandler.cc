@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/11/25 10:31:02 ptr>
+// -*- C++ -*- Time-stamp: <97/09/26 15:39:50 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #include <CLASS/checks.h>
@@ -7,8 +7,8 @@
 // #include <iostream.h>
 #if defined(__TRACE) || defined(__WARN)
 
-DIAG_DEFINE_GROUP(EventHandler,0,4);
-DIAG_DEFINE_GROUP(EventDispatch,0,3);
+// DIAG_DEFINE_GROUP(EventHandler,0,4);
+// DIAG_DEFINE_GROUP(EventDispatch,0,3);
 
 #endif // __TRACE || __WARN
 
