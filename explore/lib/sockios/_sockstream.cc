@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/09 16:30:18 ptr>
+// -*- C++ -*- Time-stamp: <99/04/12 12:38:46 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -24,6 +24,7 @@ static char __xbuff[16];
 static const char *WINSOCK_ERR_MSG = "WinSock DLL not 2.0";
 
 extern __declspec( dllexport ) int __thr_key; // xmt.cc
+// static int _sb_idx = Thread::xalloc();
 
 } // namespace __impl
 
@@ -32,6 +33,7 @@ namespace std {
 sock_base::Init::Init()
 {
   int __tls_init_cnt = (int)TlsGetValue( __impl::__thr_key );
+//  long& __tls_init_cnt = __impl::Thread::iword( _sb_idx );
   if ( __tls_init_cnt++ == 0 ) {
     WORD    __vers;
     WSADATA __wsadata;
