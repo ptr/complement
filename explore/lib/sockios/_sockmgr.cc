@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/07/31 16:42:15 ptr>
+// -*- C++ -*- Time-stamp: <04/01/21 14:33:52 ptr>
 
 /*
  *
@@ -121,8 +121,8 @@ void basic_sockmgr::close()
 #ifdef WIN32
   ::closesocket( _fd );
 #else
-  ::close( _fd );
   ::shutdown( _fd, 2 );
+  ::close( _fd );
 #endif
   _fd = -1;
 }
