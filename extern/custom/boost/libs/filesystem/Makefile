@@ -16,11 +16,11 @@ dbg-shared:     LDSEARCH = -L${STLPORT_LIB_DIR}
 endif
 
 ifeq ($(OSNAME),sunos)
-release-shared : LDLIBS = -lstlport_gcc -lrt
-stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug -lrt
-dbg-shared     : LDLIBS = -lstlport_gcc -lrt
+release-shared : LDLIBS = -lstlport -lrt
+stldbg-shared  : LDLIBS = -lstlportstlg -lrt
+dbg-shared     : LDLIBS = -lstlportg -lrt
 else
-release-shared : LDLIBS = -lstlport_gcc
-stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug
-dbg-shared     : LDLIBS = -lstlport_gcc
+release-shared : LDLIBS = -lstlport
+stldbg-shared  : LDLIBS = -lstlportstlg
+dbg-shared     : LDLIBS = -lstlportg
 endif
