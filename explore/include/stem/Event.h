@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/03 12:00:46 ptr>
+// -*- C++ -*- Time-stamp: <99/09/07 19:58:23 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -12,7 +12,24 @@
 
 #include <EvPack.h>
 
+#ifndef __EDS_DLL
+#  if defined( WIN32 ) && defined( _MSC_VER )
+#    define __EDS_DLL __declspec( dllimport )
+#  else
+#    define __EDS_DLL
+#  endif
+#endif
+
 namespace EDS {
+
+typedef unsigned addr_type;
+typedef unsigned code_type;
+typedef unsigned key_type;
+
+extern const __EDS_DLL addr_type badaddr;
+extern const __EDS_DLL addr_type extbit;
+extern const __EDS_DLL addr_type nsaddr;
+extern const __EDS_DLL key_type  badkey;
 
 class __Event_Base
 {
@@ -64,17 +81,17 @@ class __Event_Base
     bool is_to_foreign() const
       { return (_dst & extbit) != 0; }
 
-    void code( code_type c )
+    void code( code_type c ) const
       { _code = c; }
-    void dest( key_type c )
+    void dest( addr_type c ) const
       { _dst = c; }
-    void src( key_type c )
+    void src( addr_type c ) const
       { _src = c; }
 
   protected:
-    code_type _code; // event code
-    key_type  _dst;  // destination
-    key_type  _src;  // source
+    mutable code_type _code; // event code
+    mutable addr_type  _dst;  // destination
+    mutable addr_type  _src;  // source
 
     friend class NetTransport_base;
     friend class NetTransportMgr;

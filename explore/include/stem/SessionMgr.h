@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/03 14:12:34 ptr>
+// -*- C++ -*- Time-stamp: <99/09/08 13:54:44 ptr>
 
 #ifndef __SessionMgr_h
 #define __SessionMgr_h
@@ -35,8 +35,12 @@ class SessionMgr :
         EventHandler()
       { }
 
-     SessionMgr( Event::key_type addr ) :
-        EventHandler( addr )
+    SessionMgr( const char *info ) :
+        EventHandler( info )
+      { }
+
+     SessionMgr( Event::key_type addr, const char *info = 0 ) :
+        EventHandler( addr, info )
       { }
 
   protected:
