@@ -1,3 +1,8 @@
+2003-02-14  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xmt.h, xmt.cc: nanosleep required interval, not absolute time.
+	See IEEE Std 1003.1-2001 and other POSIX-like specs since 1998.
+
 2003-02-12  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* xmt.h, xmt.cc: wrong time calculation for Semaphor with timeout.
