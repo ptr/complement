@@ -1,215 +1,330 @@
-// -*- C++ -*- Time-stamp: <97/09/17 16:10:15 ptr>
+// -*- C++ -*- Time-stamp: <99/03/19 16:50:55 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
-#ifndef __EDS_EDSdefs_h
-#include <EDS/EDSdefs.h>
-#endif
+#include <string>
+#include <istream>
+#include <ostream>
+#include <type_traits.h>
+#include <sstream>
 
-#ifndef __CLASS_checks_h
-#include <CLASS/checks.h>
-#endif
+#include <EvPack.h>
 
-template <class T> class EDSEventsTable<T>;
-template <class S, class D> class EDSEventT;
+namespace EDS {
 
-class GENERIC;
-class EDSEventsCore;
-
-template <class S, class D>
-class EDSEvent_base
+class __Event_Base
 {
   public:
-    typedef D value_type;
-    typedef D * pointer;
-    typedef size_t size_type;
-    typedef const D * const_pointer;
+    typedef unsigned code_type;
+    typedef unsigned key_type;
+    typedef unsigned sq_type;
+    typedef size_t   size_type;
+    
+    enum {
+      respbit = 0x80000000,
+      seqmask = 0x7fffffff
+    };
 
-    EDSEvent_base() :
-	Message( 0 ),
-	theSender( 0 ),
-	DataObject( 0 ),
-	sz( 0 ),
-	n( 0 )
+    enum {
+      extbit  = 0x80000000
+    };
+
+    __Event_Base() :
+        _code( 0 ),
+        _dst( 0 ),
+        _src( 0 ),
+        _sq( 0 )
       { }
 
-    EDSEvent_base( message_type msg ) :
-	Message( msg ),
-	theSender( 0 ),
-	DataObject( 0 ),
-	sz( 0 ),
-	n( 0 )
+    explicit __Event_Base( code_type c ) :
+        _code( c ),
+        _dst( 0 ),
+        _src( 0 ),
+        _sq( 0 )
       { }
 
-    EDSEvent_base( message_type msg, const D *first, const D *last ) :
-	Message( msg ),
-	theSender( 0 ),
-	DataObject( 0 ),
-	sz( sizeof(D) ),
-	n( last - first )
+    explicit __Event_Base( const __Event_Base& e ) :
+        _code( e._code ),
+        _dst( e._dst ),
+        _src( e._src ),
+        _sq( e._sq )
       { }
 
-    EDSEvent_base( const EDSEvent_base& e ) :
-	Message( e.Message ),
-	theSender( (S *)e.theSender ),
-	DataObject( 0 ),
-	sz( e.sz ),
-	n( e.n )
-      { }
+    code_type code() const
+      { return _code; }
+    key_type dest() const
+      { return _dst; }
+    key_type src() const
+      { return _src; }
+    sq_type seq() const
+      { return _sq & seqmask; }
+    bool is_responce() const
+      { return _sq & respbit; }
+    bool is_from_foreign() const
+      { return _src & extbit; }
+    bool is_to_foreign() const
+      { return _dst & extbit; }
 
-    message_type GetMessage() const
-      { return Message; }
-    S *Sender() const
-      { return theSender; }
-    pointer Data() const
-      { return DataObject; }
-    size_type DataSize() const
-      { return sz; }
-    size_type Count() const
-      { return n; }
-    void Sender( const S *x ) const
-      { const_cast<S *>(theSender) = const_cast<S *>(x); }
+    void code( code_type c )
+      { _code = c; }
+    void dest( key_type c )
+      { _dst = c; }
+    void src( key_type c )
+      { _src = c; }
+    void seq( sq_type c )
+      { _sq = c; }
 
   protected:
-    message_type Message;
-    S *theSender;
-    size_type sz;
-    size_type n;
-    pointer DataObject;
+    code_type _code; // event code
+    key_type  _dst;  // source
+    key_type  _src;  // destination
+    sq_type   _sq;   // sequential number / responce to number
+
+    friend class NetTransport;
 };
 
-typedef EDSEventT<EDSEventsCore,void> EDSEvent;
+// Forward declarations
 
-// ***************************************************************** EDSEventT
+template <class D> class Event_base;
+template <> class Event_base<std::string>;
+template <> class Event_base<void>;
 
-template <class S, class D>
-class EDSEventT :
-    public EDSEvent_base<S,D>
+// Typedefs:
+
+typedef Event_base<void>        EventVoid;
+typedef Event_base<std::string> EventStr;
+      // Today same, the basic of Event transport/conversions:
+typedef Event_base<std::string> Event;
+
+/* ******************************************** *\
+   Any class to be passed as parameter
+   to Event_base should be like:
+
+   struct auth_resp :
+     public EDS::__pack_base
+   {
+      // unsigned result;
+      // unsigned sessionID;
+      // unsigned flags;
+
+      virtual void pack( std::ostream& s ) const;
+      virtual void net_pack( std::ostream& s ) const;
+      virtual void unpack( std::istream& s );
+      virtual void net_unpack( std::istream& s );
+   };
+
+   Of cause, if it not a POD type, std::string
+   or void.
+
+   To pack/unpuck POD members, use static functions of
+   __pack_base (EvPack.h).
+
+\* ******************************************** */
+
+template <class D>
+class Event_base :
+        public __Event_Base
 {
-  friend EDSEvent;
-
   public:
-    typedef D& reference;
-    typedef const D& const_reference;
+    typedef D         value_type;
+    typedef D&        reference;
+    typedef const D&  const_reference;
+    typedef D *       pointer;
+    typedef const D * const_pointer;
 
-    EDSEventT() :
-	EDSEvent_basic()
+    Event_base() :
+        __Event_Base(),
+        _data()
       { }
-    EDSEventT( message_type msg, const D& x );
-    EDSEventT( message_type msg, const D *first, const D *last );
 
-    EDSEventT( const EDSEvent& e );
-    ~EDSEventT();
+    explicit Event_base( code_type c ) :
+        __Event_Base( c ),
+        _data()
+      { }
 
-    operator EDSEvent& ()
-      { return *reinterpret_cast<EDSEvent *>(this); }
-    operator const EDSEvent& () const
-      { return *reinterpret_cast<const EDSEvent * const >(this); }
-    operator reference ()
+    explicit Event_base( code_type c, const D& d ) :
+        __Event_Base( c ),
+        _data( d )
+      { }
+
+    explicit Event_base( const Event_base& e ) :
+        __Event_Base( e ),
+        _data( e._data )
+      { }
+
+    const_reference value() const
+      { return _data; }
+    reference value()
+      { return _data; }
+    void value( const D& d )
+      { _data = d; }
+    size_type value_size() const
+      { return sizeof(_data); }
+
+    void net_pack( Event& s ) const
       {
-	CHECK_LENGTH( sz != 0 );
-	return *DataObject;
+        s.code( _code );
+        s.dest( _dst );
+        s.src( _src );
+        s.seq( _sq );
+        std::stringstream ss;
+        net_pack( ss );
+        s.value( ss.str() );
       }
-    operator const_reference () const
+
+    void net_unpack( const Event& s )
       {
-	CHECK_LENGTH( sz != 0 );
-	return *DataObject;
+        _code = s.code();
+        _dst  = s.dest();
+        _src  = s.src();
+        _sq   = s.seq();
+        net_unpack( std::stringstream( s.value() ) );
       }
-    reference operator []( size_t i )
+
+    void pack( Event& s ) const
       {
-	CHECK_LENGTH( sz != 0 );
-	CHECK_RANGE( i < n );
-	return *(DataObject + i);
+        s.code( _code );
+        s.dest( _dst );
+        s.src( _src );
+        s.seq( _sq );
+        std::stringstream ss;
+        pack( ss );
+        s.value( ss.str() );
       }
-    const_reference operator []( size_t i ) const
+
+    void unpack( const Event& s )
       {
-	CHECK_LENGTH( sz != 0 );
-	CHECK_RANGE( i < n );
-	return *(DataObject + i);
+        _code = s.code();
+        _dst  = s.dest();
+        _src  = s.src();
+        _sq   = s.seq();
+        unpack( std::stringstream( s.value() ) );
       }
+
+    void pack( std::ostream& __s ) const
+      { pack( __s, __type_traits<D>::is_POD_type() ); }
+    void unpack( std::istream& __s )
+      { unpack( __s, __type_traits<D>::is_POD_type() ); }
+    void net_pack( std::ostream& __s ) const
+      { net_pack( __s, __type_traits<D>::is_POD_type() ); }
+    void net_unpack( std::istream& __s )
+      { net_unpack( __s, __type_traits<D>::is_POD_type() ); }
+
+  protected:
+    value_type _data;
+
+    void pack( std::ostream& __s, __true_type ) const
+      { __s.write( (const char *)&_data, sizeof(D) ); }
+
+    void pack( std::ostream& __s, __false_type ) const
+      { _data.pack( __s ); }
+
+    void unpack( std::istream& __s, __true_type )
+      { __s.read( (char *)&_data, sizeof(D) ); }
+    void unpack( std::istream& __s, __false_type )
+      { _data.unpack( __s ); }
+
+    void net_pack( std::ostream& __s, __true_type ) const
+      {
+        value_type tmp = to_net( _data );
+        __s.write( (const char *)&tmp, sizeof(D) );
+      }
+    void net_pack( std::ostream& __s, __false_type ) const
+      { _data.net_pack( __s ); }
+    void net_unpack( std::istream& __s, __true_type )
+      {
+        value_type tmp;
+        __s.read( (char *)&tmp, sizeof(D) );
+        _data = from_net( tmp );
+      }
+    void net_unpack( std::istream& __s, __false_type )
+      { _data.net_unpack( __s ); }
 };
 
-template <class S, class D>
-EDSEventT<S,D>::EDSEventT( message_type msg, const D& x ) :
-    EDSEvent_base<S,D>( msg )
+template <>
+class Event_base<void> :
+        public __Event_Base
 {
-  n = 1;
-  sz = sizeof(D);
-  DataObject = new D ( x );
-}
-
-template <class S, class D>
-EDSEventT<S,D>::EDSEventT( message_type msg, const D *first, const D *last ) :
-    EDSEvent_base<S,D>( msg, first, last )
-{
-  if ( n > 0 ) {
-    CHECK_RANGE( sz > 0 );
-    DataObject = static_cast<pointer>(::operator new( n * sz ));
-    uninitialized_copy( first, last, DataObject );
-  }
-}
-
-template <class S, class D>
-EDSEventT<S,D>::EDSEventT( const EDSEvent& e ) :
-    EDSEvent_base<S,D>( e )
-{
-  if ( n > 0 ) {
-    CHECK_RANGE( sz > 0 );
-    DataObject = static_cast<pointer>(::operator new( n * sz ));
-    const_pointer first = static_cast<const_pointer>( e.Data() );
-    uninitialized_copy_n( first, n, DataObject );
-  } else {
-    DataObject = static_cast<pointer>(e.Data());
-  }
-}
-
-template <class S, class D>
-EDSEventT<S,D>::~EDSEventT()
-{
-  if ( n > 0 ) {
-    CHECK_RANGE( sz > 0 );
-    destroy( DataObject, DataObject + n );
-    ::operator delete( DataObject );
-  }
-}
-
-// ********************************************* EDSEventT<EDSEventsCore,void>
-
-class EDSEventT<EDSEventsCore,void> :
-    public EDSEvent_base<EDSEventsCore,void>
-{
-  friend EDSEventsTable<GENERIC>;
-
   public:
-    EDSEventT() :
-	EDSEvent_base<EDSEventsCore,void>()
+    typedef void         value_type;
+    typedef void *       pointer;
+    typedef size_t       size_type;
+    typedef const void * const_pointer;
+
+    Event_base() :
+        __Event_Base()
       { }
-    EDSEventT( message_type msg ) :
-	EDSEvent_base<EDSEventsCore,void>( msg )
+
+    explicit Event_base( code_type c ) :
+        __Event_Base( c )
       { }
-    EDSEventT( const EDSEventT& e ) :
-	EDSEvent_base<EDSEventsCore,void>( e )
-      {
-	if ( n > 0 ) {
-	  CHECK_RANGE( sz > 0 );
-	  DataObject = ::operator new( n * sz );
-	  uninitialized_copy_n(
-	    static_cast<char * const>(e.DataObject), n * sz,
-	    static_cast<char *>(DataObject) );
-	} else {
-	  DataObject = e.DataObject;
-	}
-      }
-    ~EDSEventT()
-      {
-	if ( n > 0 ) {
-	  CHECK_RANGE( sz > 0 );
-	  ::operator delete( DataObject );
-	}
-      }
+
+    explicit Event_base( const Event_base& e ) :
+        __Event_Base( e )
+      { }
+
+    size_type value_size() const
+      { return 0; }
 };
+
+template <>
+class Event_base<std::string> :
+        public __Event_Base
+{
+  public:
+    typedef std::string         value_type;
+    typedef std::string&        reference;
+    typedef const std::string&  const_reference;
+    typedef std::string *       pointer;
+    typedef const std::string * const_pointer;
+
+    Event_base() :
+        __Event_Base(),
+        _data()
+      { }
+
+    explicit Event_base( code_type c ) :
+        __Event_Base( c ),
+        _data()
+      { }
+
+    explicit Event_base( code_type c, const std::string& d ) :
+        __Event_Base( c ),
+        _data( d )
+      { }
+
+    explicit Event_base( const Event_base& e ) :
+        __Event_Base( e ),
+        _data( e._data )
+      { }
+
+    const_reference value() const
+      { return _data; }
+    reference value()
+      { return _data; }
+    void value( const std::string& d )
+      { _data = d; }
+    size_type value_size() const
+      { return _data.size(); }
+
+    void pack( std::ostream& __s ) const
+      { __pack_base::__pack( __s, _data ); }
+    void unpack( std::istream& __s )
+      { __pack_base::__unpack( __s, _data ); }
+    void net_pack( std::ostream& __s ) const
+      { __pack_base::__net_pack( __s, _data ); }
+    void net_unpack( std::istream& __s )
+      { __pack_base::__net_unpack( __s, _data ); }
+
+  protected:
+    value_type _data;
+};
+
+#if 0
+class GENERIC;
+class EventsCore;
 
 template <class T> class EDSCallbackObject;
 typedef EDSEventT<EDSEventsCore,EDSCallbackObject<GENERIC> > EDSEventCb;
@@ -230,5 +345,8 @@ class EDSCallbackObject
     T *object;
     PMF Pmf;
 };
+#endif
+
+} // namespace EDS
 
 #endif
