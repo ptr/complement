@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/04 12:55:26 ptr>
+// -*- C++ -*- Time-stamp: <99/06/04 14:57:55 ptr>
 
 #ifndef __SessionMgr_h
 #define __SessionMgr_h
@@ -47,8 +47,9 @@ class SessionMgr :
 
     key_type key_generate();
     Container _M_c;
-    select1st<account_type> _skey;
-    select2nd<account_type> _sess;
+    std::select1st<account_type> _skey;
+    std::select2nd<account_type> _sess;
+    std::equal_to<key_type>      _eq_key;
 
     DECLARE_RESPONSE_TABLE( SessionMgr, EventHandler );
 };
