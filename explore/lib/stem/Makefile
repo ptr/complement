@@ -1,4 +1,4 @@
-# "%Z%$RCSfile$ v.$Revision$ %H% %T%"
+# "%Z%%Q%$RCSfile$, ($Revision$) %H% %T%"
 # Makefile for implementation and debugging OXW (Object X Window) class library
 
 PROJECT = ../../libOXW.so
@@ -6,11 +6,19 @@ XTESTER = xtester
 YTESTER = ytester
 TONE = tester1
 TTWO = tester2
+TMENU0 = menu0
+TMENU1 = menu1
+TCONTROLS0 = controls0
+TCONTAINER0 = container0
+TCONTAINER1 = container1
+TACTION0 = action0
+TNOTES0 = bookmarks0
+OPERIN = OperIn
 
 INCLUDES = \
 	-I/usr/openwin/include \
-	-I../../../include \
-	-I../../../../STL/include
+	-I../../include \
+	-I../../../../STL.labs
 
 DEFS = \
 	-DSVR4 \
@@ -21,14 +29,14 @@ OPT = -g
 # OPT = -O4
 # OPT = -G -O4
 
-CCFLAGS = $(OPT) -cg92 +w -PIC -pto -mt
+CCFLAGS = $(OPT) -cg92 +w -PIC -pto
 CPPFLAGS = $(DEFS) $(INCLUDES)
-PROJECT_LIBS = -xildoff -L../.. -L../../../../STL -lCLASS -lSTL
+PROJECT_LIBS = -xildoff -L../.. -L../../../../STL.labs -lCLASS -lSTL
 # LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm -ldl
-LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm 
+LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm -lXext
 
-OUTPUT_DIR = ./bin
-OUTPUT_TESTS_DIR = ./tests-bin
+OUTPUT_DIR = /usr/home/ptr/tmp
+OUTPUT_TESTS_DIR = /usr/home/ptr/tmp
 OUTPUT_OPTION = -o $@
 
 TESTS_DIR = ./tests
@@ -37,34 +45,41 @@ TESTS_DIR = ./tests
 
 XLIBFILES.o = \
 		$(OUTPUT_DIR)/Diagnosis.o \
-		$(OUTPUT_DIR)/Event.o \
 		$(OUTPUT_DIR)/EventHandler.o \
+		$(OUTPUT_DIR)/Dispatch.o \
 		$(OUTPUT_DIR)/EventsCore.o \
 		$(OUTPUT_DIR)/Actuator.o \
 		$(OUTPUT_DIR)/Resource.o \
 		$(OUTPUT_DIR)/Application.o \
 		$(OUTPUT_DIR)/RectObject.o \
 		$(OUTPUT_DIR)/WindowBase.o \
+		$(OUTPUT_DIR)/Misc.o \
 		$(OUTPUT_DIR)/Window.o \
 		$(OUTPUT_DIR)/GrWindow.o \
-		$(OUTPUT_DIR)/Collector.o \
 		$(OUTPUT_DIR)/DrawTools.o \
-		$(OUTPUT_DIR)/TopLevel.o \
+		$(OUTPUT_DIR)/WMClient.o \
 		$(OUTPUT_DIR)/GrContext.o \
 		$(OUTPUT_DIR)/Frame.o \
+		$(OUTPUT_DIR)/String.o \
+		$(OUTPUT_DIR)/Label.o \
 		$(OUTPUT_DIR)/Button.o \
-		$(OUTPUT_DIR)/TextFilter.o \
-		$(OUTPUT_DIR)/varstring.o \
-		$(OUTPUT_DIR)/TextLabel.o \
-		$(OUTPUT_DIR)/InputField.o \
-		$(OUTPUT_DIR)/TextCursor.o \
+		$(OUTPUT_DIR)/ButtonCheck.o \
+		$(OUTPUT_DIR)/ButtonPic.o \
+		$(OUTPUT_DIR)/Input.o \
 		$(OUTPUT_DIR)/PopupMenu.o \
-		$(OUTPUT_DIR)/CheckList.o \
-		$(OUTPUT_DIR)/CheckBox.o \
-		$(OUTPUT_DIR)/ControlData.o \
+		$(OUTPUT_DIR)/Menubar.o \
 		$(OUTPUT_DIR)/Picture.o \
-		$(OUTPUT_DIR)/ButtonXPM.o
+		$(OUTPUT_DIR)/Bookmarks.o
 
+
+#		$(OUTPUT_DIR)/TextLabel.o \
+#		$(OUTPUT_DIR)/TextFilter.o
+#		$(OUTPUT_DIR)/CheckList.o \
+#		$(OUTPUT_DIR)/CheckBox.o \
+#		$(OUTPUT_DIR)/ControlData.o \
+#		$(OUTPUT_DIR)/ButtonXPM.o
+#		$(OUTPUT_DIR)/InputField.o \
+#		$(OUTPUT_DIR)/TextCursor.o \
 #		$(OUTPUT_DIR)/Filter.o \
 #		$(OUTPUT_DIR)/Scroller.o \
 #		$(OUTPUT_DIR)/ScrVCollector.o \
@@ -98,7 +113,6 @@ XLIBFILES.o = \
 #		 $(OUTPUT_DIR)/InputNumPI.o \
 #		 $(OUTPUT_DIR)/InputMoneyPI.o \
 #		 $(OUTPUT_DIR)/ANInputMoneyPI.o \
-#		 $(OUTPUT_DIR)/Menubar.o \
 #		 $(OUTPUT_DIR)/TableInfo.o \
 #		 $(OUTPUT_DIR)/PanelItem.o \
 #		 $(OUTPUT_DIR)/Panel.o \
@@ -132,6 +146,37 @@ TTWO.o = \
 		$(OUTPUT_TESTS_DIR)/tester2.o \
 		$(OUTPUT_TESTS_DIR)/tester2main.o
 
+TMENU0.o = \
+		$(OUTPUT_TESTS_DIR)/menu0.o \
+		$(OUTPUT_TESTS_DIR)/menu0main.o
+
+TMENU1.o = \
+		$(OUTPUT_TESTS_DIR)/menu1.o \
+		$(OUTPUT_TESTS_DIR)/menu1main.o
+
+TCONTROLS0.o = \
+		$(OUTPUT_TESTS_DIR)/controls0.o \
+		$(OUTPUT_TESTS_DIR)/controls0main.o
+
+TCONTAINER0.o = \
+		$(OUTPUT_TESTS_DIR)/container0.o \
+		$(OUTPUT_TESTS_DIR)/container0main.o
+
+TCONTAINER1.o = \
+		$(OUTPUT_TESTS_DIR)/container1.o \
+		$(OUTPUT_TESTS_DIR)/container1main.o
+
+TACTION0.o = \
+		$(OUTPUT_TESTS_DIR)/action0.o \
+		$(OUTPUT_TESTS_DIR)/action0main.o
+
+TNOTES0.o = \
+		$(OUTPUT_TESTS_DIR)/bookmarks0.o \
+		$(OUTPUT_TESTS_DIR)/bookmarks0main.o
+
+OPERIN.o = \
+		$(OUTPUT_TESTS_DIR)/OperIn.o \
+		$(OUTPUT_TESTS_DIR)/OperInMain.o
 
 LIBFILES.o = $(XLIBFILES.o)
 
@@ -156,19 +201,43 @@ $(TONE):	$(OUTPUT_DIR) $(OUTPUT_TESTS_DIR) $(XLIBFILES.o) $(TONE.o)
 $(TTWO):	$(OUTPUT_DIR) $(OUTPUT_TESTS_DIR) $(XLIBFILES.o) $(TTWO.o)
 	$(LINK.cc) -o $@ $(XLIBFILES.o) $(TTWO.o)
 
+$(TMENU0):	$(OUTPUT_DIR) $(OUTPUT_TESTS_DIR) $(XLIBFILES.o) $(TMENU0.o)
+	$(LINK.cc) -o $@ $(XLIBFILES.o) $(TMENU0.o)
+
+$(TMENU1):	$(OUTPUT_DIR) $(OUTPUT_TESTS_DIR) $(XLIBFILES.o) $(TMENU1.o)
+	$(LINK.cc) -o $@ $(XLIBFILES.o) $(TMENU1.o)
+
+$(TCONTROLS0):	$(OUTPUT_DIR) $(OUTPUT_TESTS_DIR) $(XLIBFILES.o) $(TCONTROLS0.o)
+	$(LINK.cc) -o $@ $(XLIBFILES.o) $(TCONTROLS0.o)
+
+$(TCONTAINER0):	$(OUTPUT_DIR) $(OUTPUT_TESTS_DIR) $(XLIBFILES.o) $(TCONTAINER0.o)
+	$(LINK.cc) -o $@ $(XLIBFILES.o) $(TCONTAINER0.o)
+
+$(TCONTAINER1):	$(OUTPUT_DIR) $(OUTPUT_TESTS_DIR) $(XLIBFILES.o) $(TCONTAINER1.o)
+	$(LINK.cc) -o $@ $(XLIBFILES.o) $(TCONTAINER1.o)
+
+$(TACTION0):	$(OUTPUT_DIR) $(OUTPUT_TESTS_DIR) $(XLIBFILES.o) $(TACTION0.o)
+	$(LINK.cc) -o $@ $(XLIBFILES.o) $(TACTION0.o)
+
+$(TNOTES0):	$(OUTPUT_DIR) $(OUTPUT_TESTS_DIR) $(XLIBFILES.o) $(TNOTES0.o)
+	$(LINK.cc) -o $@ $(XLIBFILES.o) $(TNOTES0.o)
+
+$(OPERIN):	$(OUTPUT_DIR) $(OUTPUT_TESTS_DIR) $(XLIBFILES.o) $(OPERIN.o)
+	$(LINK.cc) -o $@ $(XLIBFILES.o) $(OPERIN.o)
+
 $(OUTPUT_DIR)/%.o:	%.cc
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
 $(OUTPUT_TESTS_DIR)/%.o:	$(TESTS_DIR)/%.cc
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
-$(OUTPUT_DIR):
+$(OUTPUT_DIR)::
 	@if [ ! -d $(OUTPUT_DIR) ]; \
 	then \
 	  mkdir $(OUTPUT_DIR); \
 	fi
 
-$(OUTPUT_TESTS_DIR):
+$(OUTPUT_TESTS_DIR)::
 	@if [ ! -d $(OUTPUT_TESTS_DIR) ]; \
 	then \
 	  mkdir $(OUTPUT_TESTS_DIR); \
