@@ -17,7 +17,7 @@ OPT = -g
 # OPT = -O4
 # OPT = -G -O4
 
-CCFLAGS = $(OPT) -cg92 +w -PIC -pto -mt -sb
+CCFLAGS = $(OPT) -cg92 +w -PIC -pto -mt
 CPPFLAGS = $(DEFS) $(INCLUDES)
 PROJECT_LIBS = -L../.. -lCLASS
 # LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm -ldl
@@ -103,7 +103,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/InputUnit.o
 
 
-# Xlib-based project
+# test program
 
 XFILES.o = \
 		$(OUTPUT_TESTS_DIR)/xtester.o \
@@ -115,9 +115,9 @@ LIBFILES.o = $(XLIBFILES.o)
 
 .PARALLEL:
 
-all:	$(PROJECT)
+all:	$(OUTPUT_DIR) $(PROJECT)
 
-$(PROJECT):	$(OUTPUT_DIR) $(LIBFILES.o)
+$(PROJECT):	$(LIBFILES.o)
 	$(LINK.cc) -G -o $@ $(LIBFILES.o)
 
 $(XTESTER):	$(OUTPUT_DIR) $(OUTPUT_TESTS_DIR) $(XLIBFILES.o) $(XFILES.o)
