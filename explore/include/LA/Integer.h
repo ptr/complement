@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/04/09 16:24:26 ptr>
+// -*- C++ -*- Time-stamp: <97/01/14 19:54:52 ptr>
 #ifndef __LA_Integer_h
 #define __LA_Integer_h
 
@@ -22,6 +22,10 @@
 
 #ifndef _SYS_ISA_DEFS_H
 #include <sys/isa_defs.h>
+#endif
+
+#ifndef __std_string_h
+#include <std/string.h>
 #endif
 
 class Integer_overflow
@@ -118,6 +122,10 @@ class la_int
     bool operator <( const la_int& ) const;
     bool operator <( base_type ) const;
     bool operator ==( const la_int& ) const;
+
+    la_int& assign( const string& ); // input from string
+    operator string();               // output to string
+    operator string() const;
     
   protected:
     bool __overflow( ubase_type x ) const
@@ -1032,6 +1040,89 @@ la_int<P,LL,UL,L,T> la_int<P,LL,UL,L,T>::gcd( const la_int& x ) const
     shl_aux( u.d, u.d+P, k );
   }
   return u;
+}
+
+template <int P, class LL, class UL, class L, class T>
+la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::assign( const string& s )
+{
+  string::size_type f = s.find_first_not_of( " \t\n" );
+  CHECK_RANGE( f != string::NPOS );
+
+  *this = 0L;
+  la_int ten( 10 );
+  bool flag = true;
+  if ( s[f] == '+' ) {
+    ++f;
+  } else if ( s[f] == '-' ) {
+    ++f;
+    flag = false;
+  }
+  
+  string::size_type p = s.find_first_not_of( "0123456789", f );
+  string::const_iterator end = p != string::NPOS ? s.begin() + p : s.end();
+  string::const_iterator ch  = s.begin() + f;
+
+  CHECK_RANGE( ch != end );
+
+  while ( ch != end ) {
+    *this *= ten;
+    *this += long( *ch++ - '0' );
+  }
+  if ( !flag ) {
+    radix_complement();
+  }
+
+  return *this;
+}
+
+template <int P, class LL, class UL, class L, class T>
+la_int<P,LL,UL,L,T>::operator string()
+{
+  string s;
+  la_int ten( 10 );
+  la_int n;
+  la_int tmp( *this );
+  bool flag = false;
+  if ( *tmp.d & traits_type::sign_mask ) {
+    flag = true;
+    tmp.radix_complement();
+  }
+
+  do {
+    tmp.div1( ten, n );
+    s.append( 1, char( '0' + n.d[P-1] ) ); // n is a tmp % 10
+  } while ( tmp != 0L );
+  if ( flag ) {
+    s.append( '-' );
+  }
+  
+  reverse( s.begin(), s.end() );
+  return s;
+}
+
+template <int P, class LL, class UL, class L, class T>
+la_int<P,LL,UL,L,T>::operator string() const
+{
+  string s;
+  la_int ten( 10 );
+  la_int n;
+  la_int tmp( *this );
+  bool flag = false;
+  if ( *tmp.d & traits_type::sign_mask ) {
+    flag = true;
+    tmp.radix_complement();
+  }
+
+  do {
+    tmp.div1( ten, n );
+    s.append( 1, char( '0' + n.d[P-1] ) ); // n is a tmp % 10
+  } while ( tmp != 0L );
+  if ( flag ) {
+    s.append( '-' );
+  }
+  
+  reverse( s.begin(), s.end() );
+  return s;
 }
 
 #endif // __LA_Integer_h
