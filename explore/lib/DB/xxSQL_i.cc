@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/06/02 18:11:06 ptr>
+// -*- C++ -*- Time-stamp: <00/10/13 10:17:07 ptr>
 
 /*
  *
@@ -15,7 +15,13 @@
  * in supporting documentation.
  */
 
-#ident "$SunId$"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #include <config/feature.h>
 #include "DB/xxSQL_i.h"
