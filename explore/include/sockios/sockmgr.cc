@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/07/14 12:57:51 ptr>
+// -*- C++ -*- Time-stamp: <02/08/01 10:08:06 ptr>
 
 /*
  *
@@ -85,7 +85,7 @@ void sockmgr_stream_MP<Connect>::open( int port, sock_base::stype t )
 }
 
 template <class Connect>
-sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>::_shift_fd()
+__FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>::_shift_fd()
 {
   _Connect *msg = 0;
   int j = 1;
@@ -226,7 +226,7 @@ sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>::accept_tcp()
 #ifdef __FIT_POLL
 
 template <class Connect>
-sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>::accept_tcp()
+__FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>::accept_tcp()
 {
   if ( !is_open() ) {
     return 0;
@@ -308,7 +308,7 @@ sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>::accept_tcp()
 #endif // __FIT_POLL
 
 template <class Connect>
-sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>::accept_udp()
+__FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>::accept_udp()
 {
   if ( !is_open() ) {
     return 0;
