@@ -1,5 +1,5 @@
-// -*- C++ -*- Time-stamp: <99/03/22 16:01:50 ptr>
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+// -*- C++ -*- Time-stamp: <99/05/24 15:07:13 ptr>
+#ident "$SunId$ %Q%"
 
 #include <EvPack.h>
 #include <iterator>
@@ -11,6 +11,7 @@ using std::istream;
 using std::ostream;
 using std::copy;
 
+__DLLEXPORT
 void __pack_base::__net_unpack( istream& s, string& str )
 {
   string::size_type sz;
@@ -25,6 +26,7 @@ void __pack_base::__net_unpack( istream& s, string& str )
   }
 }
 
+__DLLEXPORT
 void __pack_base::__net_pack( ostream& s, const string& str )
 {
   string::size_type sz = str.size();
@@ -33,6 +35,7 @@ void __pack_base::__net_pack( ostream& s, const string& str )
   copy( str.begin(), str.end(), std::ostream_iterator<char,char,std::char_traits<char> >(s) );
 }
 
+__DLLEXPORT
 void __pack_base::__unpack( istream& s, string& str )
 {
   string::size_type sz;
@@ -46,6 +49,7 @@ void __pack_base::__unpack( istream& s, string& str )
   }
 }
 
+__DLLEXPORT
 void __pack_base::__pack( ostream& s, const string& str )
 {
   string::size_type sz = str.size();

@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <99/03/24 13:54:52 ptr>
+// -*- C++ -*- Time-stamp: <99/05/24 15:04:53 ptr>
 #ifndef __EvPack_h
 #define __EvPack_h
 
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+#ident "$SunId$ %Q%"
 
 #ifdef WIN32
 #  include <winsock2.h>
@@ -11,6 +11,7 @@
 #  else
 #    define _LITTLE_ENDIAN
 #  endif
+#  include <win_config.h>
 #else
 #  include <sys/isa_defs.h>
 #endif
@@ -199,15 +200,15 @@ unsigned long from_net( const unsigned long& x )
 
 struct __pack_base
 {
-    virtual void pack( std::ostream& ) const = 0 ;
-    virtual void unpack( std::istream& ) = 0 ;
-    virtual void net_pack( std::ostream& ) const = 0 ;
-    virtual void net_unpack( std::istream& ) = 0 ;
+    __DLLEXPORT virtual void pack( std::ostream& ) const = 0 ;
+    __DLLEXPORT virtual void unpack( std::istream& ) = 0 ;
+    __DLLEXPORT virtual void net_pack( std::ostream& ) const = 0 ;
+    __DLLEXPORT virtual void net_unpack( std::istream& ) = 0 ;
 
-    static void __net_unpack( std::istream& s, std::string& str );
-    static void __net_pack( std::ostream& s, const std::string& str );
-    static void __unpack( std::istream& s, std::string& str );
-    static void __pack( std::ostream& s, const std::string& str );
+    static __DLLEXPORT void __net_unpack( std::istream& s, std::string& str );
+    static __DLLEXPORT void __net_pack( std::ostream& s, const std::string& str );
+    static __DLLEXPORT void __unpack( std::istream& s, std::string& str );
+    static __DLLEXPORT void __pack( std::ostream& s, const std::string& str );
     static void __net_unpack( std::istream& s, int& x )
       {
         s.read( (char *)&x, sizeof(int) );

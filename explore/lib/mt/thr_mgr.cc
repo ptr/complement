@@ -1,8 +1,10 @@
-// -*- C++ -*- Time-stamp: <99/05/20 13:40:18 ptr>
+// -*- C++ -*- Time-stamp: <99/05/24 13:51:02 ptr>
 #ident "$SunId$ %Q%"
 
 #include <thr_mgr.h>
 #include <algorithm>
+
+using namespace std;
 
 namespace __impl {
 
