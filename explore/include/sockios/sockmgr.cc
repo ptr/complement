@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/24 20:46:04 ptr>
+// -*- C++ -*- Time-stamp: <99/08/19 14:58:54 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -22,9 +22,9 @@ void sockmgr_stream<Connect>::open( int port, sock_base::stype t )
   basic_sockmgr::open( port, t, sock_base::inet );
   if ( is_open() ) {
     if ( t == sock_base::sock_stream ) {
-      _accept = accept_tcp;
+      _accept = &_Self_type::accept_tcp;
     } else if ( t == sock_base::sock_dgram ) {
-      _accept = accept_udp;
+      _accept = &_Self_type::accept_udp;
     } else {
       throw invalid_argument( "sockmgr_stream" );
     }
@@ -49,7 +49,7 @@ sockmgr_client *sockmgr_stream<Connect>::accept_tcp()
     return 0;
   }
 
-  MT_REENTRANT( _c_lock, _1 );
+  __STLPORT_STD::_STL_auto_lock _1(_c_lock);
   sockmgr_client *cl;
 
   container_type::iterator i = 
@@ -115,7 +115,7 @@ sockmgr_client *sockmgr_stream<Connect>::accept_udp()
     }
 #endif
 
-    MT_LOCK( _c_lock );
+    _c_lock._M_acquire_lock();
     container_type::iterator i = _M_c.begin();
     sockbuf *b;
     while ( i != _M_c.end() ) {
@@ -147,12 +147,12 @@ sockmgr_client *sockmgr_stream<Connect>::accept_udp()
       DuplicateHandle( proc, (HANDLE)fd(), proc, (HANDLE *)&dup_fd, 0, FALSE, DUPLICATE_SAME_ACCESS );
       cl->s.open( dup_fd, addr.any, sock_base::sock_dgram );
 #endif
-      MT_UNLOCK( _c_lock );
+      _c_lock._M_release_lock();
       // cl->s.rdbuf()->hostname( _M_c.front()->hostname );
       return cl;
     }
     // otherwise, thread exist and living, and I wait while it read message
-    MT_UNLOCK( _c_lock );
+    _c_lock._M_release_lock();
 #ifdef __unix
     nanosleep( &t, 0 );
 #endif
@@ -306,7 +306,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
         return 0;
       }
 
-      MT_REENTRANT( _c_lock, _1 );
+      __STLPORT_STD::_STL_auto_lock _1(_c_lock);
       sockmgr_client_MP<Connect> *cl;
 
       container_type::iterator i = 
@@ -408,7 +408,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_udp()
     return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
   }
 #endif
-  MT_REENTRANT( _c_lock, _1 );
+  __STLPORT_STD::_STL_auto_lock _1(_c_lock);
   container_type::iterator i = _M_c.begin();
   sockbuf *b;
   while ( i != _M_c.end() ) {
@@ -479,7 +479,7 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
   }
   catch ( ... ) {
     me->shutdown( sock_base::stop_in );
-    MT_REENTRANT( me->_c_lock, _1 );
+    __STLPORT_STD::_STL_auto_lock _1(me->_c_lock);
     container_type::iterator i = me->_M_c.begin();
     while ( i != me->_M_c.end() ) {
       (*i++)->s.close();

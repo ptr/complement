@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/01 16:03:23 ptr>
+// -*- C++ -*- Time-stamp: <99/08/19 15:00:38 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -60,11 +60,11 @@ basic_sockbuf<charT, traits>::open( const char *name, int port,
       return 0;
     }
     if ( type == sock_base::sock_stream ) {
-      _xwrite = write;
-      _xread = read;
+      _xwrite = &_Self_type::write;
+      _xread = &_Self_type::read;
     } else if ( type == sock_base::sock_dgram ) {
-      _xwrite = send;
-      _xread = recv;
+      _xwrite = &_Self_type::send;
+      _xread = &_Self_type::recv;
     }
   } else if ( prot == sock_base::local ) {
     _fd = socket( PF_UNIX, type, 0 );
@@ -135,11 +135,11 @@ basic_sockbuf<charT, traits>::open( sock_base::socket_type s, const sockaddr& ad
   WSASetLastError( 0 );
 #endif
   if ( t == sock_base::sock_stream ) {
-    _xwrite = write;
-    _xread = read;
+    _xwrite = &_Self_type::write;
+    _xread = &_Self_type::read;
   } else if ( t == sock_base::sock_dgram ) {
-    _xwrite = sendto;
-    _xread = recvfrom;
+    _xwrite = &_Self_type::sendto;
+    _xread = &_Self_type::recvfrom;
   } else {
     return 0; // unsupported type
   }
@@ -291,12 +291,12 @@ basic_sockbuf<charT, traits>::underflow()
   // be unlocked to allow output operations; Before return, I should
   // recover status quo: indeed I am in critical section, that will
   // be unlocked outside this code (as it was locked outside it).
-  MT_UNLOCK( __locker() );
+  __locker()._M_release_lock();
   if ( poll( &pfd, 1, -1 ) <= 0 ) { // wait infinite
-    MT_LOCK( __locker() );
+    __locker()._M_acquire_lock();
     return traits::eof();
   }
-  MT_LOCK( __locker() );
+  __locker()._M_acquire_lock();
 #endif
 
   __stl_assert( eback() != 0 );
