@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/05/23 19:38:07 ptr>
+// -*- C++ -*- Time-stamp: <00/07/27 19:11:20 ptr>
 
 /*
  *
@@ -24,7 +24,8 @@
 extern "C" int nanosleep(const struct timespec *, struct timespec *);
 #endif
 
-#ifdef __Linux
+// #ifdef __linux
+#ifndef __sun // i.e. __linux and __hpux
 #include <sys/poll.h> // pollfd
 #endif
 
@@ -547,46 +548,61 @@ int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
   return 0; // never
 }
 
+// For WIN32 and HP-UX 11.00 gethostbyaddr is reeentrant
+// ptr: _PTHREADS_DRAFT4 has sence only for HP-UX 11.00
+// ptr: PTHREAD_THREADS_MAX defined in HP-UX 10.01 and
+#if defined(WIN32) || (defined(__hpux) && \
+                        (!defined(_REENTRANT) || \
+                        (!defined(_PTHREADS_DRAFT4) && \
+                         !defined(PTHREAD_THREADS_MAX))))
+#  define __GETHOSTBYADDR__
+#endif
+
 template<class charT, class traits, class _Alloc>
 void basic_sockbuf<charT, traits, _Alloc>::__hostname()
 {
-#ifdef WIN32
+#ifdef __GETHOSTBYADDR__
   hostent *he;
-#endif
-#ifdef __unix
+#else
   hostent he;
   char tmp_buff[1024];
-#ifdef __Linux
-  hostent* phe=0;
-#endif
+#  ifdef __linux
+  hostent *phe = 0;
+#  endif
 #endif
   int err = 0;
   in_addr in;
   in.s_addr = inet_addr();
-#ifdef WIN32
+#ifdef __GETHOSTBYADDR__
   // For Win he is thread private data, so that's safe
+  // It's MT-safe also for HP-UX 11.00
   he = gethostbyaddr( (char *)&in.s_addr, sizeof(in_addr), AF_INET );
   if ( he != 0 ) {
     _hostname = he->h_name;
   } else {
     _hostname = "unknown";
   }
-#else
+#else // __GETHOSTBYADDR__
   if (
-#ifndef __Linux
+#  ifdef __sun
        gethostbyaddr_r( (char *)&in.s_addr, sizeof(in_addr), AF_INET,
                         &he, tmp_buff, 1024, &err ) != 0
-#else
+#  elif defined(__linux)
        gethostbyaddr_r( (char *)&in.s_addr, sizeof(in_addr), AF_INET,
                         &he, tmp_buff, 1024, &phe, &err ) == 0
-#endif
+#  elif defined(__hpux) // reentrant variant for HP-UX before 11.00
+       gethostbyaddr_r( (char *)&in.s_addr, sizeof(in_addr), AF_INET,
+                        &he, tmp_buff ) == 0
+#  else
+#    error "Check port of gethostbyaddr_r"
+#  endif
      )
   {
     _hostname = he.h_name;
   } else {
     _hostname = "unknown";
   }
-#endif
+#endif // __GETHOSTBYADDR__
 
   _hostname += " [";
   _hostname += inet_ntoa( in );
@@ -596,14 +612,19 @@ void basic_sockbuf<charT, traits, _Alloc>::__hostname()
 template<class charT, class traits, class _Alloc>
 void basic_sockbuf<charT, traits, _Alloc>::findhost( const char *hostname )
 {
-#ifndef WIN32
+#ifndef __GETHOSTBYADDR__
   hostent _host;
   char tmpbuf[1024];
-#ifdef __Linux
+#ifdef __linux
   hostent *host = 0;
-  gethostbyname_r( hostname, &_host, tmpbuf, 1024, &host,  &_errno );
-#else
+  gethostbyname_r( hostname, &_host, tmpbuf, 1024, &host, &_errno );
+#elif defined(__hpux)
+  _errno = gethostbyname_r( hostname, &_host, tmpbuf );
+  hostent *host = _host;
+#elif defined(__sun)
   hostent *host = gethostbyname_r( hostname, &_host, tmpbuf, 1024, &_errno );
+#else
+#  error "Check port of gethostbyname_r"
 #endif
   if ( host != 0 ) {
     memcpy( (char *)&_address.inet.sin_addr,
@@ -611,38 +632,44 @@ void basic_sockbuf<charT, traits, _Alloc>::findhost( const char *hostname )
   } else {
     _state |= sock_base::hnamefailbit;
   }
-#else
+#else // __GETHOSTBYADDR__
   hostent *host = gethostbyname( hostname );
   if ( host != 0 ) {
     memcpy( (char *)&_address.inet.sin_addr,
             (char *)host->h_addr, host->h_length );
-    return;
-  }
+  } else {
+#  ifdef WIN32
+    _errno = WSAGetLastError();
 
-  _errno = WSAGetLastError();
-
-  // specific to Wins only:
-  // cool M$ can't resolve IP address in gethostbyname, try once more
-  // via inet_addr() and gethostbyaddr()
-  // Returned _errno depend upon WinSock version, and applied patches,
-  // with some of it even gethostbyname may be succeed.
-  if ( _errno == WSAHOST_NOT_FOUND || _errno == WSATRY_AGAIN ) {
-    unsigned long ipaddr = ::inet_addr( hostname );
-    if ( ipaddr != INADDR_NONE ) {
-      host = gethostbyaddr( (const char *)&ipaddr, sizeof(ipaddr), AF_INET );
-      if ( host != 0 ) { // that's was IP indeed...
-        memcpy( (char *)&_address.inet.sin_addr,
-                (char *)host->h_addr, host->h_length );
-        WSASetLastError( 0 ); // clear error
-        _errno = 0;
-        return;
+    // specific to Wins only:
+    // cool M$ can't resolve IP address in gethostbyname, try once more
+    // via inet_addr() and gethostbyaddr()
+    // Returned _errno depend upon WinSock version, and applied patches,
+    // with some of it even gethostbyname may be succeed.
+    if ( _errno == WSAHOST_NOT_FOUND || _errno == WSATRY_AGAIN ) {
+      unsigned long ipaddr = ::inet_addr( hostname );
+      if ( ipaddr != INADDR_NONE ) {
+        host = gethostbyaddr( (const char *)&ipaddr, sizeof(ipaddr), AF_INET );
+        if ( host != 0 ) { // Oh, that's was IP indeed...
+          memcpy( (char *)&_address.inet.sin_addr,
+                  (char *)host->h_addr, host->h_length );
+          WSASetLastError( 0 ); // clear error
+          _errno = 0;
+          return;
+        }
+        _errno = WSAGetLastError();
       }
-      _errno = WSAGetLastError();
     }
+#  endif // WIN32
+    _state |= sock_base::hnamefailbit;
   }
-  _state |= sock_base::hnamefailbit;
-#endif
+#endif // __GETHOSTBYADDR__
 }
+
+#ifdef __GETHOSTBYADDR__
+#undef __GETHOSTBYADDR__
+#endif
+
 
 #ifdef __SGI_STL_OWN_IOSTREAMS
 __STL_END_NAMESPACE

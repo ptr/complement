@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/24 19:33:40 ptr>
+// -*- C++ -*- Time-stamp: <00/07/26 19:23:21 ptr>
 #ident "$SunId$ %Q%"
 
 #include "mt/thr_mgr.h"
@@ -18,7 +18,7 @@ struct bad_thread :
 
 __PG_DECLSPEC ThreadMgr::~ThreadMgr()
 {
-  MT_REENTRANT( _lock, _1 );
+  MT_REENTRANT( _lock, _x1 );
   container_type::iterator i = _M_c.begin();
 
   while ( i != _M_c.end() ) {
@@ -34,7 +34,7 @@ __PG_DECLSPEC ThreadMgr::~ThreadMgr()
 __PG_DECLSPEC
 void ThreadMgr::launch( Thread::entrance_type entrance, const void *p, size_t psz )
 {
-  MT_REENTRANT( _lock, _1 );
+  MT_REENTRANT( _lock, _x1 );
   container_type::iterator i = find_if( _M_c.begin(), _M_c.end(), bad_thread() );
   if ( i == _M_c.end() ) {
     _M_c.push_back( new Thread( unsigned(Thread::daemon | Thread::detached) ) );
@@ -46,7 +46,7 @@ void ThreadMgr::launch( Thread::entrance_type entrance, const void *p, size_t ps
 __PG_DECLSPEC
 void ThreadMgr::garbage_collector()
 {
-  MT_REENTRANT( _lock, _1 );
+  MT_REENTRANT( _lock, _x1 );
   container_type::iterator i = _M_c.begin();
 
   while ( i != _M_c.end() ) {

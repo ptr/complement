@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/05/26 10:53:36 ptr>
+// -*- C++ -*- Time-stamp: <00/07/27 19:18:11 ptr>
 
 /*
  *
@@ -88,7 +88,7 @@ void __PG_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
   // en.expired.tv_nsec = 0;
   en.count = 0;
 
-  MT_REENTRANT( _M_l, _1 );
+  MT_REENTRANT( _M_l, _x1 );
   _M_c.push( en );
   if ( _M_c.top() == en ) {
     cond.signal();
@@ -98,7 +98,7 @@ void __PG_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
 // Remove cron entry if recipient address and event code match to request
 void __PG_DECLSPEC Cron::Remove( const Event_base<CronEntry>& entry )
 {
-  MT_REENTRANT( _M_l, _1 );
+  MT_REENTRANT( _M_l, _x1 );
   cond.signal(); // in any case, remove I something or not
 
   const CronEntry& ne = entry.value();
@@ -121,7 +121,7 @@ void __PG_DECLSPEC Cron::Remove( const Event_base<CronEntry>& entry )
 
 void __PG_DECLSPEC Cron::Start()
 {
-  MT_REENTRANT( _M_l, _1 );
+  MT_REENTRANT( _M_l, _x1 );
   if ( !_M_c.empty() ) { // start only if Cron queue not empty
     _thr.launch( _loop, this );
   }
@@ -156,7 +156,7 @@ int Cron::_loop( void *p )
     // If I detect that _M_c is empty, I or don't start, or
     // exit from this thread
     {
-      MT_REENTRANT( me._M_l, _1 );
+      MT_REENTRANT( me._M_l, _x1 );
       if ( me._M_c.empty() ) {
         timespec t;
         t.tv_sec = 0;
@@ -170,7 +170,7 @@ int Cron::_loop( void *p )
     res = me.cond.wait_time( &abstime );
     if ( res > 0 ) { // time expired
       __CronEntry en;
-      MT_REENTRANT( me._M_l, _1 );
+      MT_REENTRANT( me._M_l, _x1 );
 
       if ( me._M_c.empty() ) {
         continue; // break?
@@ -219,7 +219,7 @@ int Cron::_loop( void *p )
     } else { // signaled or error
       // This occur if new record added in Cron queue, or
       // this is request for cron loop termination
-      MT_REENTRANT( me._M_l, _1 );
+      MT_REENTRANT( me._M_l, _x1 );
       if ( me._M_c.empty() && me.isState(CRON_ST_STARTED) ) {
         // If Cron queue is empty, no needs in loop, I terminate this thread
         me.PopState();
