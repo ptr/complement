@@ -1,3 +1,11 @@
+2003-01-17  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xmt.h: experimental implementation of portable mutexes,
+	based on template specialization technique; add mutex
+	scope [aka PROCESS_PRIVATE/SYSTEM_SCOPE].
+
+	* libxmt: Version 1.6.3
+	
 2003-01-15  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* xmt.cc (Repository): Add POSIX 1003.1-2001 semaphores,
