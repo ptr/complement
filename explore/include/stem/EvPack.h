@@ -37,6 +37,13 @@
 #else // !WIN32
 #  ifndef __Linux
 #    include <sys/isa_defs.h>
+#  else
+#    include <sys/types.h>
+#    if (__BYTE_ORDER==__LITTLE_ENDIAN)
+#      define _LITTLE_ENDIAN
+#    else
+#      define _BIG_ENDIAN
+#    endif
 #  endif
 #endif // WIN32
 
