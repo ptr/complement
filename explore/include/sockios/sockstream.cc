@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/17 10:11:33 ptr>
+// -*- C++ -*- Time-stamp: <99/09/28 12:54:11 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -570,7 +570,9 @@ void basic_sockbuf<charT, traits>::findhost( const char *hostname )
   // specific to Wins only:
   // cool M$ can't resolve IP address in gethostbyname, try once more
   // via inet_addr() and gethostbyaddr()
-  if ( _errno == WSAHOST_NOT_FOUND ) {
+  // Returned _errno depend upon WinSock version, and applied patches,
+  // with some of it even gethostbyname may be succeed.
+  if ( _errno == WSAHOST_NOT_FOUND || _errno == WSATRY_AGAIN ) {
     unsigned long ipaddr = ::inet_addr( hostname );
     if ( ipaddr != INADDR_NONE ) {
       host = gethostbyaddr( (const char *)&ipaddr, sizeof(ipaddr), AF_INET );
