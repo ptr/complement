@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <99/05/12 15:18:21 ptr>
+// -*- C++ -*- Time-stamp: <99/09/10 14:31:47 ptr>
 #ifndef __crc_h
 #define __crc_h
 
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+#ident "$SunId$ %Q%"
 
 #include <cstdlib>
 
