@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <03/07/06 22:26:08 ptr>
+# -*- Makefile -*- Time-stamp: <03/07/09 17:58:34 ptr>
 # $Id$
 
 # Some trick to build implicit rules for sources in some different
@@ -12,10 +12,10 @@ WORD1 := $(word 1,$(DIRS_UNIQUE_SRC))
 
 # is still directory in the list?
 ifneq "$(WORD1)" ""
-include ${BASEDIR}/Makefiles/rules-o.mak
-include ${BASEDIR}/Makefiles/rules-d.mak
+include ${RULESBASE}/rules-o.mak
+include ${RULESBASE}/rules-d.mak
 # remove processed directory from list
 DIRS_UNIQUE_SRC := $(filter-out $(WORD1),$(DIRS_UNIQUE_SRC))
 # recursive include here:
-include ${BASEDIR}/Makefiles/dirsrc.mak
+include ${RULESBASE}/dirsrc.mak
 endif

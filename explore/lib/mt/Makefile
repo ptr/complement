@@ -1,28 +1,16 @@
-# -*- Makefile -*- Time-stamp: <03/07/07 12:00:18 ptr>
+# -*- Makefile -*- Time-stamp: <03/07/09 18:08:47 ptr>
 # $Id$
 
-BASEDIR := $(shell xtmp=`pwd`; xtmp=`dirname $$xtmp`; dirname $$xtmp)
-LIBDIR  := $(shell xtmp=`pwd`; dirname $$xtmp)
+SRCROOT := ../..
+COMPILER_NAME := gcc
 
-COMPILER_NAME = gcc
 STLPORT_LIB_DIR = /export/home/ptr/STLport.lab/STLport/lib
 STLPORT_INCLUDE_DIR = /export/home/ptr/STLport.lab/STLport/stlport
-include $(BASEDIR)/lib/mt/Makefile.inc
-
-all:	all-release all-debug
-
-install:	install-dbg-shared install-stldbg-shared install-release-shared
-
-all-shared:	release-shared dbg-shared stldbg-shared
-
-all-debug:	dbg-shared stldbg-shared
-
-all-release:	release-shared
-
-include ${BASEDIR}/Makefiles/top.mak
+include Makefile.inc
+include ${SRCROOT}/Makefiles/top.mak
 
 
-INCLUDES += -I$(STLPORT_INCLUDE_DIR)
+INCLUDES += -I$(SRCROOT)/include -I$(STLPORT_INCLUDE_DIR)
 
 ifeq ($(OSNAME),linux)
 release-shared:	LDSEARCH = -L${STLPORT_LIB_DIR}
