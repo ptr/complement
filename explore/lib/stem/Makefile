@@ -23,7 +23,7 @@ OPT = -g
 
 CCFLAGS = $(OPT) -cg92 +w -PIC -pto -mt
 CPPFLAGS = $(DEFS) $(INCLUDES)
-PROJECT_LIBS = -L../.. -L../../../../STL -lCLASS -lSTL
+PROJECT_LIBS = -xildoff -L../.. -L../../../../STL -lCLASS -lSTL
 # LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm -ldl
 LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm 
 
@@ -53,66 +53,65 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/GrContext.o \
 		$(OUTPUT_DIR)/Frame.o \
 		$(OUTPUT_DIR)/Button.o \
-		$(OUTPUT_DIR)/ButtonedInfo.o \
-		$(OUTPUT_DIR)/ButtonedInfoPI.o \
-		$(OUTPUT_DIR)/StrButtonedInfoPI.o \
-		$(OUTPUT_DIR)/InfoField.o \
-		$(OUTPUT_DIR)/InfoPIBase.o \
-		$(OUTPUT_DIR)/InfoPI.o \
-		$(OUTPUT_DIR)/InfoIntPI.o \
-		$(OUTPUT_DIR)/InfoDatePI.o \
-		$(OUTPUT_DIR)/Money.o \
-		$(OUTPUT_DIR)/MoneyInfoPI.o \
-		$(OUTPUT_DIR)/ChMoneyInfoPI.o \
-		$(OUTPUT_DIR)/ButtonedCheckbox.o \
-		$(OUTPUT_DIR)/CoupleButtons.o \
+		$(OUTPUT_DIR)/TextFilter.o \
 		$(OUTPUT_DIR)/varstring.o \
 		$(OUTPUT_DIR)/TextLabel.o \
-		$(OUTPUT_DIR)/RubberTextLabel.o \
-		$(OUTPUT_DIR)/ANInputField.o \
-		$(OUTPUT_DIR)/InputPIBase.o \
-		$(OUTPUT_DIR)/InputPI.o \
-		$(OUTPUT_DIR)/BlindInputPI.o \
-		$(OUTPUT_DIR)/InputNumPI.o \
-		$(OUTPUT_DIR)/InputMoneyPI.o \
-		$(OUTPUT_DIR)/ANInputMoneyPI.o \
 		$(OUTPUT_DIR)/InputField.o \
-		$(OUTPUT_DIR)/InputMoney.o \
-		$(OUTPUT_DIR)/InputDate.o \
-		$(OUTPUT_DIR)/TextFilter.o \
-		$(OUTPUT_DIR)/ANTextFilter.o \
 		$(OUTPUT_DIR)/TextCursor.o \
-		$(OUTPUT_DIR)/ScrVCollector.o \
-		$(OUTPUT_DIR)/ScrWindow.o \
-		$(OUTPUT_DIR)/ScrTable.o \
-		$(OUTPUT_DIR)/SpeedyButton.o \
 		$(OUTPUT_DIR)/PopupMenu.o \
-		$(OUTPUT_DIR)/Menubar.o \
 		$(OUTPUT_DIR)/CheckList.o \
-		$(OUTPUT_DIR)/CheckListPI.o \
-		$(OUTPUT_DIR)/Scroller.o \
-		$(OUTPUT_DIR)/TableInfo.o \
 		$(OUTPUT_DIR)/CheckBox.o \
 		$(OUTPUT_DIR)/ControlData.o \
-		$(OUTPUT_DIR)/Filter.o \
-		$(OUTPUT_DIR)/PanelItem.o \
-		$(OUTPUT_DIR)/Panel.o \
-		$(OUTPUT_DIR)/ANPanelItem.o \
-		$(OUTPUT_DIR)/ANPanel.o \
-		$(OUTPUT_DIR)/CheckBoxPI.o \
-		$(OUTPUT_DIR)/Matrix.o \
-		$(OUTPUT_DIR)/ModalDialog.o \
-		$(OUTPUT_DIR)/AlertPanel.o \
 		$(OUTPUT_DIR)/Picture.o \
-		$(OUTPUT_DIR)/ButtonXPM.o \
-		$(OUTPUT_DIR)/ModalDialogBase.o \
-		\
-		$(OUTPUT_DIR)/CAPPropertyTypePI.o \
-		$(OUTPUT_DIR)/CAPCheckListPI.o \
-		$(OUTPUT_DIR)/ComplexInput.o \
-		$(OUTPUT_DIR)/InputUnit.o
+		$(OUTPUT_DIR)/ButtonXPM.o
 
-#		$(OUTPUT_DIR)/CAPPictures.o \
+#		$(OUTPUT_DIR)/Filter.o \
+#		$(OUTPUT_DIR)/Scroller.o \
+#		$(OUTPUT_DIR)/ScrVCollector.o \
+#		$(OUTPUT_DIR)/ScrWindow.o \
+#		$(OUTPUT_DIR)/ScrTable.o \
+#		 $(OUTPUT_DIR)/CheckListPI.o \
+#		 $(OUTPUT_DIR)/SpeedyButton.o \
+#		 $(OUTPUT_DIR)/Matrix.o \
+#		 $(OUTPUT_DIR)/ModalDialog.o \
+#		 $(OUTPUT_DIR)/Money.o \
+#		 $(OUTPUT_DIR)/MoneyInfoPI.o \
+#		 $(OUTPUT_DIR)/ChMoneyInfoPI.o \
+#		 $(OUTPUT_DIR)/ButtonedInfo.o \
+#		 $(OUTPUT_DIR)/ButtonedInfoPI.o \
+#		 $(OUTPUT_DIR)/StrButtonedInfoPI.o \
+#		 $(OUTPUT_DIR)/InfoField.o \
+#		 $(OUTPUT_DIR)/InfoPIBase.o \
+#		 $(OUTPUT_DIR)/InfoPI.o \
+#		 $(OUTPUT_DIR)/InfoIntPI.o \
+#		 $(OUTPUT_DIR)/InfoDatePI.o \
+#		 $(OUTPUT_DIR)/ButtonedCheckbox.o \
+#		 $(OUTPUT_DIR)/CoupleButtons.o \
+#		 $(OUTPUT_DIR)/ANTextFilter.o \
+#		 $(OUTPUT_DIR)/InputMoney.o \
+#		 $(OUTPUT_DIR)/InputDate.o \
+#		 $(OUTPUT_DIR)/RubberTextLabel.o \
+#		 $(OUTPUT_DIR)/ANInputField.o \
+#		 $(OUTPUT_DIR)/InputPIBase.o \
+#		 $(OUTPUT_DIR)/InputPI.o \
+#		 $(OUTPUT_DIR)/BlindInputPI.o \
+#		 $(OUTPUT_DIR)/InputNumPI.o \
+#		 $(OUTPUT_DIR)/InputMoneyPI.o \
+#		 $(OUTPUT_DIR)/ANInputMoneyPI.o \
+#		 $(OUTPUT_DIR)/Menubar.o \
+#		 $(OUTPUT_DIR)/TableInfo.o \
+#		 $(OUTPUT_DIR)/PanelItem.o \
+#		 $(OUTPUT_DIR)/Panel.o \
+#		 $(OUTPUT_DIR)/ANPanelItem.o \
+#		 $(OUTPUT_DIR)/ANPanel.o \
+#		 $(OUTPUT_DIR)/CheckBoxPI.o \
+#		 $(OUTPUT_DIR)/AlertPanel.o \
+#		 $(OUTPUT_DIR)/ModalDialogBase.o \
+#		 $(OUTPUT_DIR)/CAPPropertyTypePI.o \
+#		 $(OUTPUT_DIR)/CAPCheckListPI.o \
+#		 $(OUTPUT_DIR)/ComplexInput.o \
+#		 $(OUTPUT_DIR)/InputUnit.o
+#		 $(OUTPUT_DIR)/CAPPictures.o \
 
 
 # test program
