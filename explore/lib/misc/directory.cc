@@ -20,12 +20,7 @@
 
 #include <config/feature.h>
 
-#ifndef _WIN32
-#include "aux/directory.h"
-#else
-#include "aux_/directory.h"
-#endif
-
+#include "misc/directory.h"
 #include <dirent.h>
 #include <unistd.h>
 #include <assert.h>

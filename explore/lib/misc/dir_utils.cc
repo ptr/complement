@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/03/19 16:33:38 ptr>
+// -*- C++ -*- Time-stamp: <01/09/20 11:45:51 ptr>
 
 /*
  *
@@ -17,9 +17,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "$Id$"
 #  endif
 #endif
 
@@ -27,13 +27,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#ifndef _WIN32
-#include "aux/dir_utils.h"
-#include "aux/directory.h"
-#else
-#include "aux_/dir_utils.h"
-#include "aux_/directory.h"
-#endif
+#include "misc/dir_utils.h"
+#include "misc/directory.h"
 
 using namespace std;
 

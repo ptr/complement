@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/03/19 16:41:34 ptr>
+// -*- C++ -*- Time-stamp: <01/09/20 11:43:33 ptr>
 
 /*
  *
@@ -27,12 +27,7 @@
 #endif
 
 #include <config/feature.h>
-
-#ifndef _WIN32
-#include "aux/node.h"
-#else
-#include "aux_/node.h"
-#endif
+#include "misc/node.h"
 
 namespace Helios {
 
