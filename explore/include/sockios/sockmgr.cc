@@ -300,13 +300,8 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::_shift_fd()
       // We should distinguish closed socket from income message
       typename container_type::iterator i = 
         find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, _pfd[j].fd ) );
-#ifndef __hpux
+#ifdef __sun // Solaris return ERROR on poll, before close socket
       __STL_ASSERT( i != _M_c.end() );
-#ifdef __linux
-      if ( i == _M_c.end() ) {
-        cerr << "CRASH!!!!" << endl;
-      }
-#endif
 #else
       if ( i == _M_c.end() ) { // Socket already closed (may be after read/write failure)
         // this way may not notify poll (like in HP-UX 11.00) via POLLERR flag
@@ -325,7 +320,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::_shift_fd()
         }
         continue;
       } else
-#endif // __hpux
+#endif // !__sun
       if ( _pfd[j].revents & POLLERR /* | POLLHUP | POLLNVAL */ ) { // poll first see closed socket
         --_fdcount;
 #if !defined( _RWSTD_VER ) // bogus RogueWave
@@ -334,7 +329,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::_shift_fd()
         memmove( &_pfd[j], &_pfd[j+1], sizeof(_pfd[0]) * (_fdcount - j) );
 #endif
         (*i)->s.close();
-#ifdef __hpux
+#ifndef __sun
         (*i)->_proc.close();
 #endif
         continue;
