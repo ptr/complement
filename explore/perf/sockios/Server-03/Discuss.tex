@@ -1,4 +1,4 @@
-% -*- LaTeX -*- Time-stamp: <02/12/05 18:14:43 ptr>
+% -*- LaTeX -*- Time-stamp: <02/12/06 15:21:12 ptr>
 
 \documentclass[a4paper]{article}
 
@@ -49,7 +49,7 @@ possible solutions.
     % \input test.pstex_t
     \epsfig{file=test.eps,width=5in}
   \end{center}
-  \caption{Test time diagram.\ref{TimeDiagram}.}
+  \caption{Test time diagram. Shown only two experiment from ten.\ref{TimeDiagram}.}
 \end{figure}
 
 \begin{enumerate}
@@ -62,14 +62,32 @@ possible solutions.
 
 This procedure repeat $10$ times. During tests we collect some statistic
 data: client and server user CPU time, system CPU time and elapsed (real) time.
-Than we find mean values and dispersion. So we can estimate the real
+Then we find mean values and dispersion. So we can estimate the real
 load from client and server programs in the real environments.
 
 In case of client and server run on different computers, we start server on
 the local system, login via \texttt{ssh} on remote hoste and start here client.
 Login via ssh is done under \texttt{ssh-agent}, to avoid manual password typing.
 
-To compare
+We compare results of sockios library with ``ideal'' times from
+C-written programs with restricted functionality (no buffering, no multiple
+clients processing on server side, no multithreading).
+
+Due to ``time'' function has different options and output format on Linux
+and Solaris, we use program \texttt{time} from this
+bundle\footnote{Portabilty note: system should has \texttt{wait3} function.}.
+By the way this function use high-precision time measure.
+
+Client connect to the server and send $n$ blocks of size $b$ via TCP/IP protocol.
+The numbers $n$ and $b$ choose so that $n b = 52428800$ (i.e. client send
+to the server $50$M). We make estimations for $5$ cases:
+\begin{itemize}
+  \item many small messages ($b = 32$);
+  \item basic message size ($b = 1024$, i.e. $1$K);
+  \item messages of page size ($b = 4096$, i.e. $4$K);
+  \item large messages ($b = 1048576$, i.e. $1$M);
+  \item huge messages ($b = 52428800$, i.e. $50$M).
+\end{itemize}
 
 \section{Results}
 
@@ -111,7 +129,14 @@ To compare
            Test results for block size $32$ skiped here; one has 
            mean elapsed time $128.637$s, client system mean 
            time $6.088$s, client user mean time $1.133$s, server system
-           mean time $114.252$s, server user mean time $1.951$s.}
+           mean time $114.252$s, server user mean time $1.951$s.\label{local-C-ermine}}
 \end{figure}
+
+Really, systems can send/receive only $64$K at once
+(default settings, local loopback, \texttt{read}/\texttt{write} system calls
+without return). This fact we see on the figure~\ref{local-C-ermine}:
+with tiny packets and unbuffered data system has so bad performance,
+I removed this point from picture, to avoid too small scale of other results.
+
 
 \end{document}
