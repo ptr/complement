@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/07 10:42:14 ptr>
+// -*- C++ -*- Time-stamp: <99/05/19 18:45:45 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -211,10 +211,10 @@ int sockmgr_stream<Connect>::loop( void *p )
       s->thrID.launch( connection, &pass, sizeof(pass) );
     }
   }
-  catch ( int ) {
+  catch ( int sig ) {
     me->shutdown( sock_base::stop_in );
     me->close();
-    cerr << "\n--- Interrupted ---" << endl;
+    cerr << "\n--- sockmgr_stream: signal " << strsignal( sig ) << " detected ---" << endl;
   }
   catch ( runtime_error& e ) {
     cerr << e.what() << endl;
@@ -224,7 +224,7 @@ int sockmgr_stream<Connect>::loop( void *p )
     cerr << e.what() << endl;
   }
   catch ( ... ) {
-    cerr << "(1) Oh, oh, say baby Sally. Dick and Jane launch." << endl;
+    cerr << "sockmgr_stream: undetected exception" << endl;
   }
 
   return ret_code;
@@ -255,12 +255,14 @@ int sockmgr_stream<Connect>::connection( void *p )
   }
   catch ( int ) { // signal
     client->s.close();
+    throw;
   }
   catch ( ios_base::failure& ) {
     
   }
   catch ( ... ) {
     ret_code = -1;
+    throw;
   }
 
   return ret_code;
@@ -278,11 +280,11 @@ int sockmgr_stream<Connect>::garbage_collector( void *p )
 #ifdef __unix
   timespec t;
 
-  t.tv_sec = 12; // 900;
+  t.tv_sec = 12;
   t.tv_nsec = 0;
 #endif
 #ifdef WIN32
-  int t = 12000; // 900000;
+  int t = 12000;
 #endif
 
   while ( me->_garbage_end.set() ) {
