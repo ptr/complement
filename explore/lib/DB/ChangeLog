@@ -1,3 +1,7 @@
+2001-08-15  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* xxSQL.cc (Repository): Added version in DB-specific library name.  
+
 2001-07-27  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
 
 	* libDB: Version 0.6.1. Candidate for version 1.0.0
