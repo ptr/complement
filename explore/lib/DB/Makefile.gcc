@@ -22,12 +22,12 @@ all-release:	release-shared release-static
 
 include ${BASEDIR}/lib/Makefile.inc.lib
 
-INCLUDES += -I$(BASEDIR)/include
+INCLUDES += -I$(STLPORT_INCLUDE_DIR)
 
 ifeq ($(OS_VER),Linux)
-release-shared: LDSEARCH = -L${BASEDIR}/../STLport/lib
-stldbg-shared:  LDSEARCH = -L${BASEDIR}/../STLport/lib
-dbg-shared:     LDSEARCH = -L${BASEDIR}/../STLport/lib
+release-shared: LDSEARCH = -L${STLPORT_LIB_DIR}
+stldbg-shared:  LDSEARCH = -L${STLPORT_LIB_DIR}
+dbg-shared:     LDSEARCH = -L${STLPORT_LIB_DIR}
 endif
 
 release-shared:	LDLIBS = -ldl -lstlport_gcc
