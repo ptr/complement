@@ -1,6 +1,6 @@
-// -*- C++ -*- Time-stamp: <99/02/09 16:56:46 ptr>
+// -*- C++ -*- Time-stamp: <99/05/27 21:00:55 ptr>
 
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+#ident "$SunId$ %Q%"
 
 #include <cerrno>
 #include <sockmgr.h>
@@ -39,7 +39,7 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
       _errno = WSAGetLastError();
       if ( attempt++ == 10 || _errno != WSAEADDRINUSE )
 #else
-       _errno = std::errno;
+      _errno = errno;
       if ( attempt++ == 10 || _errno != EADDRINUSE )
 #endif
       {
