@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/22 12:12:35 ptr>
+// -*- C++ -*- Time-stamp: <99/03/22 16:28:25 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -7,13 +7,14 @@
 #include <EventHandler.h>
 #include <EvManager.h>
 
-
 namespace EDS {
 
+#ifndef _MSC_VER
 using namespace std;
+#endif
 
 __DLLEXPORT
-void dump( ostream& o, const EDS::Event& e )
+void dump( std::ostream& o, const EDS::Event& e )
 {
   o << setiosflags(ios_base::showbase) << hex
     << "Code: " << e.code() << " Destination: " << e.dest() << " Source: " << e.src()
@@ -180,7 +181,7 @@ bool NetTransport::pop( Event& __rs )
   if ( !net->good() ) {
     return false;
   }
-  str.clear();
+  str.erase();  // str.clear(); absent in VC's STL
   str.reserve( sz );
   while ( sz-- > 0 ) {
     str += (char)net->get();
