@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/11/05 17:43:23 ptr>
+// -*- C++ -*- Time-stamp: <99/12/22 15:01:18 ptr>
 
 /*
  *
@@ -71,6 +71,8 @@ class SessionMgr :
      SessionMgr( addr_type addr, const char *info = 0 ) :
         EventHandler( addr, info )
       { }
+
+    void raw_establish_session( EventHandler *, addr_type );
 
   protected:
 
