@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/21 11:31:18 ptr>
+// -*- C++ -*- Time-stamp: <99/05/28 13:56:14 ptr>
 
 #ifndef __NetTransport_h
 #define __NetTransport_h
@@ -94,7 +94,13 @@ class NetTransportMgr :
       { }
 
     ~NetTransportMgr()
-      { delete net; }
+      {
+        if ( net ) {
+          net->close();
+          join();
+        }        
+        delete net;
+      }
 
     __DLLEXPORT
     key_type open( const std::string& hostname, int port,
@@ -105,8 +111,6 @@ class NetTransportMgr :
   protected:
     static int _loop( void * );
     __impl::Thread _thr;
-
-    std::string _partner_name;
 };
 
 class NetTransportMP :
