@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/26 20:31:26 ptr>
+// -*- C++ -*- Time-stamp: <99/03/29 14:44:43 ptr>
 #ifndef __EvSession_h
 #define __EvSession_h
 
@@ -74,6 +74,10 @@ struct SessionInfo
 
     // encoding / crypt info
     // ...
+
+
+    bool is_connected() const
+      { return _is_connected; }
 
     void inc_from( size_t sz, size_t u = 1 )
       {
@@ -155,8 +159,20 @@ class SessionManager
         return heap.find( k ) != heap.end();
       }
 
+    void erase( const key_type& k )
+      {
+        MT_REENTRANT( _lock, _1 );
+        heap.erase( k );
+      }
+
+    void erase( heap_type::iterator& k )
+      {
+        MT_REENTRANT( _lock, _1 );
+        heap.erase( k );
+      }
+
   protected:
-     heap_type heap;
+    heap_type heap;
 
   private:
     key_type create_unique();
