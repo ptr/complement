@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/05 21:50:59 ptr>
+// -*- C++ -*- Time-stamp: <99/10/06 10:16:03 ptr>
 
 /*
  *
@@ -156,7 +156,7 @@ bool NetTransport_base::pop( Event& _rs, SessionInfo& sess )
 
   if ( from_net( buf[0] ) != EDS_MAGIC ) {
     cerr << "Magic fail" << endl;
-    net->close();
+    close();
     return false;
   }
 
@@ -173,7 +173,7 @@ bool NetTransport_base::pop( Event& _rs, SessionInfo& sess )
   adler32_type adler = adler32( (unsigned char *)buf, sizeof(unsigned) * 7 );
   if ( adler != from_net( buf[7] ) ) {
     cerr << "Adler-32 fail" << endl;
-    net->close();
+    close();
     return false;
   }
 
@@ -311,18 +311,10 @@ int NetTransportMgr::_loop( void *p )
       ev.src( me.rar_map( ev.src(), __at + me.net->rdbuf()->hostname() ) ); // substitute my local id
       manager()->Send( ev );
     }
-    if ( me.net ) {
-      me.net->close();
-    }
-    manager()->Remove( &me );
-    me.disconnect();
+    me.close();
   }
   catch ( ... ) {
-    if ( me.net ) {
-      me.net->close();
-    }
-    manager()->Remove( &me );
-    me.disconnect();
+    me.close();
     throw;
   }
 
