@@ -1,8 +1,27 @@
-// -*- C++ -*- Time-stamp: <99/08/18 20:20:03 ptr>
+// -*- C++ -*- Time-stamp: <99/09/22 10:32:29 ptr>
+/*
+ *
+ * Copyright (c) 1997-1998
+ * Petr Ovchenkov
+ *
+ * This material is provided "as is", with absolutely no warranty expressed
+ * or implied. Any use is at your own risk.
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies and
+ * that both that copyright notice and this permission notice appear
+ * in supporting documentation.
+ */
+
 #ifndef __args_h
 #define __args_h
 
 #ident "$SunId$ %Q%"
+
+#ifndef __config_feature_h
+#include <config/feature.h>
+#endif
 
 #include <string>
 #include <list>

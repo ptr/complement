@@ -1,26 +1,54 @@
-// -*- C++ -*- Time-stamp: <99/09/13 11:58:37 ptr>
+// -*- C++ -*- Time-stamp: <99/09/22 09:49:45 ptr>
+
+/*
+ *
+ * Copyright (c) 1995-1999
+ * Petr Ovchenkov
+ *
+ * Copyright (c) 1999
+ * ParallelGraphics Software Systems
+ 
+ * This material is provided "as is", with absolutely no warranty expressed
+ * or implied. Any use is at your own risk.
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies and
+ * that both that copyright notice and this permission notice appear
+ * in supporting documentation.
+ */
+
 #ifndef __EvManager_h
 #define __EvManager_h
 
 #ident "$SunId$ %Q%"
 
+#ifndef __config_feature_h
+#include <config/feature.h>
+#endif
+
 #include <string>
 #include <map>
 
 #ifndef __Event_h
-#include <Event.h>
+#include <EDS/Event.h>
 #endif
 
 #ifndef __EventHandler_h
-#include <EventHandler.h>
+#include <EDS/EventHandler.h>
 #endif
 
 #ifndef __EvSession_h
-#include <EvSession.h>
+#include <EDS/EvSession.h>
 #endif
 
-#include <xmt.h>
-#include <sockstream>
+#ifndef __XMT_H
+#include <mt/xmt.h>
+#endif
+
+#ifndef __SOCKSTREAM__
+#include <sockios/sockstream>
+#endif
 
 namespace EDS {
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/08/27 15:19:06 ptr>
+// -*- C++ -*- Time-stamp: <99/09/22 10:53:29 ptr>
 
 #ifndef __SQL_h
 #define __SQL_h
@@ -9,6 +9,10 @@ extern "C" {
 struct pg_conn;
 // struct PGconn;
 } // extern "C"
+
+#ifndef __config_feature_h
+#include <config/feature.h>
+#endif
 
 #include <string>
 #include <vector>

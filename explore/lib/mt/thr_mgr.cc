@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/03 10:47:18 ptr>
+// -*- C++ -*- Time-stamp: <99/09/21 14:11:35 ptr>
 #ident "$SunId$ %Q%"
 
 #ifdef WIN32
@@ -11,7 +11,7 @@
 #  define __XMT_DLL
 #endif
 
-#include <thr_mgr.h>
+#include "mt/thr_mgr.h"
 #include <algorithm>
 
 using namespace std;

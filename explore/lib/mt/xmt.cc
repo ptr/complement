@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/10 15:40:31 ptr>
+// -*- C++ -*- Time-stamp: <99/09/21 14:52:04 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -12,7 +12,7 @@
 #  define __XMT_DLL
 #endif
 
-#include <xmt.h>
+#include <mt/xmt.h>
 
 #include <cstring>
 #ifndef _WIN32
@@ -22,9 +22,6 @@
 #include <functional>
 
 #ifdef WIN32
-// #include <iostream>
-// #include <iomanip>
-// #include <win_config.h>
 
 using namespace std;
 #endif

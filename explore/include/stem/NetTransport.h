@@ -1,25 +1,55 @@
-// -*- C++ -*- Time-stamp: <99/09/10 15:58:51 ptr>
+// -*- C++ -*- Time-stamp: <99/09/22 09:53:47 ptr>
+
+/*
+ *
+ * Copyright (c) 1997-1999
+ * Petr Ovchenkov
+ *
+ * Copyright (c) 1999
+ * ParallelGraphics Software Systems
+ 
+ * This material is provided "as is", with absolutely no warranty expressed
+ * or implied. Any use is at your own risk.
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies and
+ * that both that copyright notice and this permission notice appear
+ * in supporting documentation.
+ */
 
 #ifndef __NetTransport_h
 #define __NetTransport_h
 
 #ident "$SunId$ %Q%"
 
+#ifndef __config_feature_h
+#include <config/feature.h>
+#endif
+
 #ifndef __SOCKSTREAM__
-#include <sockstream>
+#include <sockios/sockstream>
 #endif
 
 #ifndef __XMT_H
-#include <xmt.h>
+#include <mt/xmt.h>
 #endif
 
 #include <string>
 #include <sstream>
 #include <map>
 
-#include <Event.h>
-#include <EvSession.h>
-#include <EventHandler.h>
+#ifndef __Event_h
+#include <EDS/Event.h>
+#endif
+
+#ifndef __EvSession_h
+#include <EDS/EvSession.h>
+#endif
+
+#ifndef __EventHandler_h
+#include <EDS/EventHandler.h>
+#endif
 
 #ifndef __EDS_DLL
 #  if defined( WIN32 ) && defined( _MSC_VER )

@@ -1,8 +1,9 @@
-// -*- C++ -*- Time-stamp: <99/08/31 19:30:31 ptr>
+// -*- C++ -*- Time-stamp: <99/09/22 10:52:56 ptr>
 
 #ident "$SunId$ %Q%"
 
-#include <SQL.h>
+#include <config/feature.h>
+#include "DB/SQL.h"
 #include <cstdio>
 using std::FILE;
 #include <libpq-fe.h>
