@@ -36,7 +36,7 @@ extern "C" int nanosleep(const struct timespec *, struct timespec *);
 #include <sys/poll.h> // pollfd
 #endif
 
-#ifdef __unix
+#if defined(__unix) && !defined(__UCLIBC__)
 #include <stropts.h> // for ioctl() call
 #endif
 
