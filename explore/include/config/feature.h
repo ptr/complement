@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/05/05 14:36:50 ptr>
+// -*- C++ -*- Time-stamp: <03/06/29 19:55:11 ptr>
 
 /*
  *
@@ -97,8 +97,8 @@
 // Windows has no poll system call, while most current unixes
 // has poll (HP-UX 10.xx, old Linuxes may not).
 // We can use either poll or select.
-#ifndef __FIT_SELECT
-#  define __FIT_POLL   // use poll system call
+#ifndef __FIT_NO_POLL
+# define __FIT_POLL   // use poll system call
 #endif
 
 #ifdef __FIT_EXPLICIT_BUG
