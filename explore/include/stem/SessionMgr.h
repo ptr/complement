@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/18 17:56:48 ptr>
+// -*- C++ -*- Time-stamp: <99/06/18 19:31:11 ptr>
 
 #ifndef __SessionMgr_h
 #define __SessionMgr_h
@@ -63,10 +63,10 @@ struct SessionRsp :
     SessionMgr::key_type key;
     Event::key_type      addr;
 
-    virtual void pack( std::ostream& s ) const;
-    virtual void net_pack( std::ostream& s ) const;
-    virtual void unpack( std::istream& s );
-    virtual void net_unpack( std::istream& s );
+    virtual __DLLEXPORT void pack( std::ostream& s ) const;
+    virtual __DLLEXPORT void net_pack( std::ostream& s ) const;
+    virtual __DLLEXPORT void unpack( std::istream& s );
+    virtual __DLLEXPORT void net_unpack( std::istream& s );
 };
 
 } // namespace EDS
