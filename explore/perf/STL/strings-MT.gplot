@@ -1,0 +1,61 @@
+#!/usr/bin/env gnuplot
+
+set terminal epslatex color 10
+# set terminal pslatex
+# set terminal pstricks
+# set terminal postscript landscape enhanced color 10
+
+# Athlon XP 1500+ x 2 (Linux)
+
+# set terminal gif
+
+set xlabel "Test number"
+set ylabel "$t$, sec"
+
+set grid
+#set logscale x
+set lmargin -5
+set rmargin -3
+
+
+set key left
+set xtics 1, 1
+
+set output "strings-MT.eps"
+plot [0.9:5.1] 'string-MT/STLport.dat' using ($1):($6) notitle w l lt 1, \
+      'string-MT/STLport.dat' using ($1):($6):($7) title "STLport, node alloc" w yerrorbars lt 1, \
+     'string-MT/STLport-malloc.dat' using ($1):($6) notitle w l lt 2, \
+     'string-MT/STLport-malloc.dat' using ($1):($6):($7) title "STLport, malloc" w yerrorbars lt 2, \
+     'string-MT/g++-3.dat' using ($1):($6) notitle w l lt 3, \
+     'string-MT/g++-3.dat' using ($1):($6):($7) title "libstd++" w yerrorbars lt 3 
+
+#pause(-1)
+
+#set output "strings-MT-2.eps"
+
+#plot [0.9:3.1] 'string-MT/STLport.dat' using ($1):($6) notitle w l lt 1, \
+#      'string-MT/STLport.dat' using ($1):($6):($7) title "STLport, node alloc" w yerrorbars lt 1, \
+#     'string-MT/STLport-malloc.dat' using ($1):($6) notitle w l lt 2, \
+#     'string-MT/STLport-malloc.dat' using ($1):($6):($7) title "STLport, malloc" w yerrorbars lt 2
+
+#pause(-1)
+
+set output "strings-MT-libstd.eps"
+plot [0.9:5.1] 'string-MT/g++-3.dat' using ($1):($6) notitle w l lt 3, \
+     'string-MT/g++-3.dat' using ($1):($6):($7) title "wall time" w yerrorbars lt 3, \
+     'string-MT/g++-3.dat' using ($1):($2/2) notitle w l lt 1, \
+     'string-MT/g++-3.dat' using ($1):($2/2):($7) title "user time per thread" w yerrorbars lt 1
+
+#pause(-1)
+
+set output "strings-MT-STLport.eps"
+plot [0.9:5.1] 'string-MT/STLport.dat' using ($1):($6) notitle w l lt 1, \
+     'string-MT/STLport.dat' using ($1):($6):($7) title "node alloc, wall time" w yerrorbars lt 1, \
+     'string-MT/STLport.dat' using ($1):($2/2) notitle w l lt 3, \
+     'string-MT/STLport.dat' using ($1):($2/2):($7) title "node alloc, user time per thread" w yerrorbars lt 3, \
+     'string-MT/STLport-malloc.dat' using ($1):($6) notitle w l lt 2, \
+     'string-MT/STLport-malloc.dat' using ($1):($6):($7) title "malloc, wall time" w yerrorbars lt 2, \
+     'string-MT/STLport-malloc.dat' using ($1):($2/2) notitle w l lt 4, \
+     'string-MT/STLport-malloc.dat' using ($1):($2/2):($7) title "malloc, user time per thread" w yerrorbars lt 4
+
+#pause(-1)
