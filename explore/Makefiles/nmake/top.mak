@@ -1,4 +1,4 @@
-# Time-stamp: <03/09/28 18:06:14 ptr>
+# Time-stamp: <03/10/26 16:04:25 ptr>
 # $Id$
 
 .SUFFIXES: .o .cc
@@ -8,8 +8,13 @@ RULESBASE = $(SRCROOT)/Makefiles
 !endif
 
 !ifndef ALL_TAGS
-ALL_TAGS = release-shared	dbg-shared	stldbg-shared
+ALL_TAGS = release-shared dbg-shared stldbg-shared release-static dbg-static stldbg-static
 !endif
+
+all-dynamic: all-shared
+all-shared: release-shared dbg-shared stldbg-shared
+
+all-static:	release-static dbg-static stldbg-static
 
 #!if [echo $(ALL_TAGS)]
 #!endif
