@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/22 16:28:19 ptr>
+// -*- C++ -*- Time-stamp: <99/03/23 12:58:36 ptr>
 #ifndef __EvManager_h
 #define __EvManager_h
 
@@ -124,6 +124,15 @@ class EvManager
     bool is_avail( const key_type& id )
       { return heap.find( _id ) != heap.end(); }
 
+    const string& who_is( const key_type& id )
+      {
+        heap_type::iterator i = heap.find( id );
+        if ( i == heap.end() ) {
+          return inv_key_str;
+        }
+        return (*i).second.info;
+      }
+
     void Send( const Event& e, const key_type& src_id );
 
   private:
@@ -131,6 +140,8 @@ class EvManager
 
     key_type _id;
     heap_type heap;
+
+    static std::string inv_key_str;
 };
 
 } // namespace EDS
