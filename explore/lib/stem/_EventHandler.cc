@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/03/19 19:18:34 ptr>
+// -*- C++ -*- Time-stamp: <01/05/30 15:23:55 ptr>
 
 /*
  * Copyright (c) 1995-1999
@@ -19,7 +19,7 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$Id$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
 #pragma ident "@(#)$Id$"
 #  endif
