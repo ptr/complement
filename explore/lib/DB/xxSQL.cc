@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/08/04 15:12:51 ptr>
+// -*- C++ -*- Time-stamp: <02/08/23 14:01:27 ptr>
 
 /*
  *
@@ -40,15 +40,24 @@ namespace xxSQL {
 typedef void *(*DBimpl_type)( const void * );
 
 #ifdef __GNUC__
-const char *lname_pg  = "libDBpg_gcc.so.0.6";
+#  ifdef __DEBUG
+const char *lname_pg  = "libDBpg_gcc-g.so";
+const char *lname_ora = "libDBora_gcc-g.so";
+#  elif defined( _STLP_DEBUG )
+const char *lname_pg  = "libDBpg_gcc_stl-g.so";
+const char *lname_ora = "libDBora_gcc_stl-g.so";
+#  else
+const char *lname_pg  = "libDBpg_gcc.so";
 const char *lname_ora = "libDBora_gcc.so";
+#  endif
 #else
 #  error "-------> Please fix load library name\n"
 #endif
 
 DBxx::DBxx( DBvendor vendor, const DataBase_connect& conn ) :
     lh( 0 ),
-    _dbvendor( Unknown )
+    _dbvendor( Unknown ),
+    fmtflags( 0 )
 {
   try {
     DBimpl_type DBimpl;
