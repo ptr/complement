@@ -1,0 +1,75 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<!-- Time-stamp: <03/10/07 16:16:39 ptr> -->
+<!-- $Id$ -->
+
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <link rel="stylesheet" type="text/css" href="main.css" media="screen" title="general">
+    <link rel="stylesheet" type="text/css" href="decor.css" media="screen" title="general">
+    <link rel="stylesheet" type="text/css" href="float.css" media="screen" title="general">
+    <title>C++ string implementation performance</title>
+  </head>
+
+  <body>
+<!--#include file="head-string.shtml" -->
+<div class="toppic">
+<img src="img/jpg/apropos.jpg">
+</div>
+<div class="main">
+    <!-- <h2 class="lheader">Related links</h2> -->
+
+<h2 class="lheader"><font size="+2">Comparison of Strings Implementations in C++ language</font></h2>
+                                    by Petr Ovchenkov
+
+<h2 class="lheader">Abstract</h2>
+<p>
+<i>
+In this article I present attempt to made comparison of strings implementation
+in STLport and GNU libstd++.
+Also I want to show results that can help to answer on question: what better
+from practice point of view,  constant or linear complexity of strings copy algorithm? This comparison is done on the base of STLport strings and ropes.
+I expect that this results will help to make decision between STL implementations
+as well proper choice of strings implementation.
+</i>
+</p>
+
+<h2 class="lheader">1. Computers</h2>
+<p>Computers and operational environments that used in tests:</p>
+<ul>
+ <li>Hands-made machine (assembled by <a href="http://www.tersys.ru">Tersys company</a>) with 2 1.33-GHz AMD
+     Athlon XP 1500+ processors under Linux (kernel 2.4.20, glibc 2.2.5).
+ </li>
+</ul>
+
+<h2 class="lheader">2. Compilers</h2>
+<p>
+For Unix-like systems was used GNU gcc 3.3 with appropriate libstd++ libraries
+(version 3). The GNU gcc 3.1.1 and 3.2.3 are worse up to 28% (for some tests).
+</p>
+
+<h2 class="lheader">3. Time Measure</h2>
+<p>
+Due to &#8220;time&#8221; function has different options and output format on Linux and other
+UINIXes, I use program time from <a href="index.shtml">complement project bundle</a>.  By the way this function provide high-precision time measure.
+</p>
+
+<h2 class="lheader">4. Statistic</h2>
+<p>
+Every experiment repeate 10 times. For every result series I do ordinal statistical manipulation. Mean time is
+</p>
+
+<p>
+And mean square deviation
+</p>
+
+<p>
+or
+</p>
+
+</div>
+<!--#include file="foot.shtml" -->
+  </body>
+</html>
+
