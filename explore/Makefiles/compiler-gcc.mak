@@ -1,7 +1,8 @@
-# Time-stamp: <03/07/06 19:42:26 ptr>
+# Time-stamp: <03/07/09 18:21:13 ptr>
 # $Id$
 
-INCLUDES = -I$(BASEDIR)/include
+#INCLUDES = -I$(SRCROOT)/include
+INCLUDES :=
 
 CXX := c++
 CC := gcc
@@ -9,8 +10,8 @@ CC := gcc
 DEFS ?=
 OPT ?=
 
-OUTPUT_OPTION := -o $@
-LINK_OUTPUT_OPTION := ${OUTPUT_OPTION}
+OUTPUT_OPTION = -o $@
+LINK_OUTPUT_OPTION = ${OUTPUT_OPTION}
 CPPFLAGS = $(DEFS) $(INCLUDES)
 
 ifeq ($(OSNAME),sunos)
@@ -30,13 +31,22 @@ endif
 CDEPFLAGS = -E -M
 CCDEPFLAGS = -E -M
 
-stldbg-static stldbg-shared : DEFS += -D_STLP_DEBUG
-stldbg-static-dep stldbg-shared-dep : DEFS += -D_STLP_DEBUG
+# STLport DEBUG mode specific defines
+stldbg-static :	    DEFS += -D_STLP_DEBUG
+stldbg-shared :     DEFS += -D_STLP_DEBUG
+stldbg-static-dep : DEFS += -D_STLP_DEBUG
+stldbg-shared-dep : DEFS += -D_STLP_DEBUG
 
-release-static release-shared : OPT += -O2
+# optimization and debug compiler flags
+release-static : OPT += -O2
+release-shared : OPT += -O2
 
-dbg-static dbg-shared : OPT += -g
-dbg-static-dep dbg-shared-dep : OPT += -g
+dbg-static : OPT += -g
+dbg-shared : OPT += -g
+#dbg-static-dep : OPT += -g
+#dbg-shared-dep : OPT += -g
 
-stldbg-static stldbg-shared : OPT += -g
-stldbg-static-dep stldbg-shared-dep : OPT += -g
+stldbg-static : OPT += -g
+stldbg-shared : OPT += -g
+#stldbg-static-dep : OPT += -g
+#stldbg-shared-dep : OPT += -g
