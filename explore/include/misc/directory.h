@@ -50,19 +50,19 @@ class dir_it :
     dir_it() :
 	i_rep(0)
       { }
-    explicit dir_it(string const &);
-    dir_it(dir_it const &it);
+    explicit dir_it( const string &);
+    dir_it(const dir_it& it);
     ~dir_it();
 
-    dir_it &operator= (dir_it const &it);
+    dir_it &operator= (const dir_it& it);
 
     string operator* () const { return i_value; }
 
-    dir_it &operator++ ();
-    dir_it operator++ (int) { dir_it rc (*this); operator++(); return rc; }
+    dir_it& operator++ ();
+    dir_it operator++ (int) { dir_it rc(*this); operator++(); return rc; }
 
-    bool operator== (dir_it const &it) const;
-    bool operator!= (dir_it const &it) const { return !operator== (it); }
+    bool operator== (const dir_it& it) const;
+    bool operator!= (const dir_it& it) const { return !operator== (it); }
 
   private:
     dir_it_rep *i_rep;    // representation for the next value
