@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/04/04 13:26:20 ptr>
+// -*- C++ -*- Time-stamp: <00/04/17 10:07:43 ptr>
 
 /*
  *
@@ -31,6 +31,8 @@
 #include "EDS/EvManager.h"
 #include "crc.h"
 #include "EDS/EDSEv.h"
+
+#define EDS_MSG_LIMIT   0x100000 // 1M
 
 namespace EDS {
 
@@ -190,6 +192,12 @@ bool NetTransport_base::pop( Event& _rs )
   unsigned _x_count = from_net( buf[4] );
   unsigned _x_time = from_net( buf[5] ); // time?
   unsigned sz = from_net( buf[6] );
+
+  if ( sz >= EDS_MSG_LIMIT ) {
+    cerr << "Message size too big: " << sz << endl;
+    close();
+    return false;
+  }
 
   adler32_type adler = adler32( (unsigned char *)buf, sizeof(unsigned) * 7 );
   if ( adler != from_net( buf[7] ) ) {
