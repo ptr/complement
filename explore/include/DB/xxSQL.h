@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/03/19 19:05:04 ptr>
+// -*- C++ -*- Time-stamp: <01/07/19 18:44:42 ptr>
 
 /*
  *
@@ -36,16 +36,12 @@ class DBxx
 {
   public:
     enum DBvendor {
+      Unknown,
       PostgreSQL,
       Oracle8i
     };
 
-    DBxx( DBvendor vendor,
-          const char *name, const char *usr = 0, const char *passwd = 0,
-          const char *host = 0, const char *port = 0,
-          std::ostream *err = 0,
-          const char *opt = 0,
-          const char *tty = 0 );
+    DBxx( DBvendor vendor, const DataBase_connect& );
     ~DBxx();
 
     void reconnect()
@@ -82,9 +78,13 @@ class DBxx
     string get_time( time_t ) const;
     string IS_NULL() const;
     string IS_NOT_NULL() const;
+    DBvendor vendor() const
+      { return _dbvendor; }
 
   private:
     DataBase *_db;
+    DBvendor _dbvendor;
+    void *lh; // DB wrapper library handler
 };
 
 } // namespace xxSQL

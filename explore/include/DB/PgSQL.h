@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/03/19 19:03:34 ptr>
+// -*- C++ -*- Time-stamp: <01/07/19 18:08:26 ptr>
 
 /*
  *
@@ -55,9 +55,7 @@ class DataBase :
         public xxSQL::DataBase
 {
   public:
-    DataBase( const char *name, const char *usr = 0, const char *passwd = 0,
-              const char *host = 0, const char *port = 0, const char *opt = 0,
-              const char *tty = 0, std::ostream *err = 0 );
+    DataBase( const xxSQL::DataBase_connect& );
     virtual ~DataBase();
 
     virtual void reconnect();

@@ -1,9 +1,9 @@
-// -*- C++ -*- Time-stamp: <01/03/19 19:17:20 ptr>
+// -*- C++ -*- Time-stamp: <01/07/19 16:02:40 ptr>
 
 /*
  *
  * Copyright (c) 2001
- * ParallelGraphics
+ * ParallelGraphics Ltd.
  * 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -38,35 +38,44 @@ using std::string;
 using std::vector;
 using namespace std;
 
-DataBase::DataBase( const char *name, const char *usr, const char *passwd,
-                    const char *host, const char *port,
-                    const char *opt, const char *tty,
-                    std::ostream *err ) :
+DataBase_connect::DataBase_connect() :
+    name(),
+    user(),
+    pass(),
+    host(),
+    opt(),
+    tty(),
+    err( 0 ),
+    port( 0 )
+{  
+}
+
+DataBase::DataBase( const DataBase_connect& c ) :
     _flags( 0 ),
-    _dberr( err != 0 ? *err : std::cerr )
+    _dberr( c.err != 0 ? *c.err : std::cerr )
 {
-  if ( name != 0 ) {
-    _dbname = name;
+  if ( c.name.length() != 0 ) {
+    _dbname = c.name;
   }
-  if ( usr != 0 ) {
-    _dbusr = usr;
+  if ( c.user.length() != 0 ) {
+    _dbusr = c.user;
   }
-  if ( passwd != 0 ) {
-    _dbpass = passwd;
+  if ( c.pass.length() != 0 ) {
+    _dbpass = c.pass;
   }
-  if ( host != 0 ) {
-    _dbhost = host;
+  if ( c.host.length() != 0 ) {
+    _dbhost = c.host;
   }
-  if ( port != 0 ) {
+  if ( c.port != 0 ) {
     // 
   } else {
     _dbport = ~0U;
   }
-  if ( opt != 0 ) {
-    _dbopt = opt;
+  if ( c.opt.length() != 0 ) {
+    _dbopt = c.opt;
   }
-  if ( tty != 0 ) {
-    _dbtty = tty;
+  if ( c.tty.length() != 0 ) {
+    _dbtty = c.tty;
   }
 }
 

@@ -1,4 +1,19 @@
-// -*- C++ -*- Time-stamp: <01/03/19 19:00:55 ptr>
+// -*- C++ -*- Time-stamp: <01/07/19 18:44:42 ptr>
+
+/*
+ *
+ * Copyright (c) 1999-2001
+ * ParallelGraphics Ltd.
+ * 
+ * This material is provided "as is", with absolutely no warranty expressed
+ * or implied. Any use is at your own risk.
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies and
+ * that both that copyright notice and this permission notice appear
+ * in supporting documentation.
+ */
 
 #ifdef __unix
 #  ifdef __HP_aCC
@@ -11,49 +26,85 @@
 #include <config/feature.h>
 
 #include "DB/xxSQL.h"
-#ifdef __DB_POSTGRES
-#  include "DB/PgSQL.h"
-#endif
-#ifdef __DB_ORACLE
-#  include "DB/OraSQL.h"
-#endif
 
 #include <sstream>
 #include <iomanip>
+#include <dlfcn.h>
 
 namespace xxSQL {
 
-DBxx::DBxx( DBvendor vendor,
-            const char *name, const char *usr, const char *passwd,
-            const char *host, const char *port,
-            std::ostream *err,
-            const char *opt,
-            const char *tty )
+// extern "C" void *(*DBimpl)( const void * );
+typedef void *(*DBimpl_type)( const void * );
+
+#ifdef __GNUC__
+const char *lname_pg  = "libDBpg_gcc.so";
+const char *lname_ora = "libDBora_gcc.so";
+#else
+#  error "-------> Please fix load library name\n"
+#endif
+
+DBxx::DBxx( DBvendor vendor, const DataBase_connect& conn ) :
+    lh( 0 ),
+    _dbvendor( Unknown )
 {
-  switch ( vendor ) {
-    case PostgreSQL:
-#ifdef __DB_POSTGRES
-      _db = new PgSQL::DataBase(name,usr,passwd,host,port,opt,tty,err);
-#else
-      _db = 0;
-#endif
-      break;
-    case Oracle8i:
-#ifdef __DB_ORACLE
-      _db = new OraSQL::DataBase(name,usr,passwd,err);
-#else
-      _db = 0;
-#endif
-      break;
-    default:
-      _db = 0;
-      break;
+  try {
+    DBimpl_type DBimpl;
+    /*
+      DB-specific libraries are loaded dynamically at runtime now,
+      via dlopen, etc. So we can detect what DB we use only at runtime. 
+     */
+
+    /*
+      Unfortunately, we still depend from compiler: C++ name mangling
+      scheme are differ for different compilers, and ones can even depends from
+      compilation options. So for DB wrapper library we SHOULD use
+      the same compiler (in common) as for this interface library.
+      This lead to problems with building third-party DB wrapper
+      libraries, but this is common C++ problem.
+     */
+    switch ( vendor ) {
+      case PostgreSQL:
+        lh = dlopen( lname_pg, RTLD_LAZY );
+        if ( lh == 0 ) {
+          throw vendor;
+        }
+        break;
+      case Oracle8i:
+        lh = dlopen( lname_ora, RTLD_LAZY );
+        if ( lh == 0 ) {
+          throw vendor;
+        }
+        break;
+      default:
+        _db = 0;
+        throw Unknown;
+    }
+    DBimpl = (DBimpl_type)dlsym( lh, "DataBase" );
+    _db = reinterpret_cast<DataBase *>( (*DBimpl)( reinterpret_cast<const void *>(&conn) ) );
+    _dbvendor = vendor;
+  }
+  catch ( const DBvendor& v ) {
+    switch ( v ) {
+      case PostgreSQL:
+        *conn.err << "Can't find " << lname_pg << endl;
+        break;
+      case Oracle8i:
+        *conn.err << "Can't find " << lname_ora << endl;
+        break;
+      default:
+        *conn.err << "Unsupported database" << endl;
+        break;
+    }
   }
 }
 
 DBxx::~DBxx()
 {
   delete _db;
+  if ( lh != 0 ) {
+    dlclose( lh );
+    lh = 0;
+  }
 }
 
 string DBxx::escape_data( const string& s ) const
