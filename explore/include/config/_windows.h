@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/01/19 13:23:03 ptr>
+// -*- C++ -*- Time-stamp: <03/06/29 19:53:27 ptr>
 
 /*
  *
@@ -42,6 +42,7 @@
 #endif
 
 #define __FIT_SELECT // use select system call
+#define __FIT_NO_POLL
 
 // *** Endians issues
 
