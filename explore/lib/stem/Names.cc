@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 10:46:04 ptr>
+// -*- C++ -*- Time-stamp: <99/10/13 19:00:59 ptr>
 
 /*
  *
@@ -107,6 +107,32 @@ void __EDS_DLL Names::get_ext_list( const Event& rq )
   Send( Event_convert<NameRecord>()( rs ) );
 }
 
+void __EDS_DLL Names::get_by_name( const Event& rq )
+{
+  Event_base<NameRecord> rs( EV_EDS_NS_ADDR );
+
+  rs.dest( rq.src() );
+
+  EvManager::heap_type::iterator i = manager()->heap.begin();
+  while ( i != manager()->heap.end() ) {
+    if ( ((*i).first & extbit) == 0 && (*i).second.info == rq.value() ) { // only local...
+      rs.value().addr = (*i).first;
+      rs.value().record = (*i).second.info;
+
+      cerr << "++ '" << (*i).second.info << "'" << endl;
+      Send( Event_convert<NameRecord>()( rs ) );
+      return;
+    }
+    cerr << "'" << (*i).second.info << "'" << endl;
+    ++i;
+  }
+
+  // end of table
+  rs.value().addr = badaddr;
+  rs.value().record.clear();
+  Send( Event_convert<NameRecord>()( rs ) );
+}
+
 __EDS_DLL
 void NameRecord::pack( std::ostream& s ) const
 {
@@ -138,6 +164,7 @@ void NameRecord::net_unpack( std::istream& s )
 DEFINE_RESPONSE_TABLE( Names )
   EV_EDS(ST_NULL,EV_EDS_RQ_ADDR_LIST,get_list)
   EV_EDS(ST_NULL,EV_EDS_RQ_EXT_ADDR_LIST,get_ext_list)
+  EV_EDS(ST_NULL,EV_EDS_RQ_ADDR_BY_NAME,get_by_name)
 END_RESPONSE_TABLE
 
 } // namespace EDS
