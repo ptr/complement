@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 10:53:29 ptr>
+// -*- C++ -*- Time-stamp: <99/11/16 14:06:59 ptr>
 
 #ifndef __SQL_h
 #define __SQL_h
@@ -16,8 +16,146 @@ struct pg_conn;
 
 #include <string>
 #include <vector>
+#include <utility>
+#include <sstream>
 
 namespace database {
+
+class DataBase;
+
+struct NILL_type
+{
+};
+
+extern NILL_type NILL;
+
+class Table
+{
+  protected:
+    enum _data_type {
+      _NILL,
+      _NONNILL
+    };
+
+    typedef std::pair<std::string,_data_type> entry_type;
+
+  public:
+    Table( const char *n, DataBase *_db ) :
+        _name( n ),
+        db( _db )
+      { }
+    Table( const std::string& n, DataBase *_db ) :
+        _name( n ),
+        db( _db )
+      { }
+
+    Table& INSERT()
+      {
+        _op = _INSERT;
+        _count = 0;
+        for ( int i = 0; i < header.size(); ++i ) {
+          header[i].second = _NILL;
+        }
+        return *this;
+      }
+
+    Table& operator <<( const struct NILL_type& )
+      {
+        header[_count++].second = _NILL;
+        return *this;
+      }
+
+    Table& operator <<( int x )
+      {
+        std::ostringstream s;
+        s << x;
+        header[_count].second = _NONNILL;
+        row[_count++] = s.str();
+        return *this;
+      }
+
+    Table& operator <<( unsigned x )
+      {
+        std::ostringstream s;
+        s << x;
+        header[_count].second = _NONNILL;
+        row[_count++] = s.str();
+        return *this;
+      }
+
+    Table& operator <<( long x )
+      {
+        std::ostringstream s;
+        s << x;
+        header[_count].second = _NONNILL;
+        row[_count++] = s.str();
+        return *this;
+      }
+
+    Table& operator <<( unsigned long x )
+      {
+        std::ostringstream s;
+        s << x;
+        header[_count].second = _NONNILL;
+        row[_count++] = s.str();
+        return *this;
+      }
+
+    Table& operator <<( const char *x )
+      {
+        header[_count].second = _NONNILL;
+        row[_count] = "'";
+        row[_count] += x;
+        std::string::size_type p = row[_count].rfind( '\'' );
+        
+        while ( p != 0 ) {
+          row[_count].insert( p, 1, '\\' );
+          p = row[_count].rfind( '\'', p );
+        }
+        row[_count++] += "'";
+        return *this;
+      }
+
+     Table& operator <<( const std::string& x )
+      {
+        header[_count].second = _NONNILL;
+        row[_count] = "'";
+        row[_count] += x;
+        std::string::size_type p = row[_count].rfind( '\'' );
+        
+        while ( p != 0 ) {
+          row[_count].insert( p, 1, '\\' );
+          p = row[_count].rfind( '\'', p );
+        }
+        row[_count++] += "'";
+        return *this;
+      }
+
+    void done();
+    const std::string& name()
+      { return _name; }
+
+    // protected:
+
+    void field( const char *fn )
+      {
+        std::string s;
+        header.push_back( entry_type(fn,_NILL) );
+        row.push_back( s );
+      }
+
+  protected:
+    std::string _name;
+    std::vector<entry_type>  header;
+    std::vector<std::string> row;
+    int _count;
+    DataBase *db;
+
+    enum _op_type {
+      _NONE,
+      _INSERT
+    } _op;
+};
 
 class DataBase
 {
@@ -39,13 +177,36 @@ class DataBase
       { return (_flags & badbit) != 0; }
     bool fail() const
       { return (_flags & failbit) != 0; }
+    void clear()
+      { _flags = goodbit; }
+    void exec( const std::string& );
+
+    void exec();
+
+    void state( const std::string& s )
+      {
+        if ( sentence.length() != 0 ) {
+          sentence += "; ";
+        }
+        sentence += s;
+      }
+
+    Table& table( const char * );
+    void begin_transaction();
+    void end_transaction();
+
+  protected:
+    Table& define_table( const char * );
 
   private:
     // std::string _exec_str;
     ::pg_conn *_conn;
     unsigned _flags;
+    typedef std::vector<Table*> tbl_container_type;
+    tbl_container_type tables;
 
-    void exec( const std::string& );
+    std::string sentence;
+
     friend class Transaction;
     friend class Cursor;
 };
@@ -55,6 +216,9 @@ class Transaction
   public:
     Transaction( DataBase& );
     ~Transaction();
+
+    void exec( const std::string& s )
+      { _exec_str = s; }
 
   private:
     DataBase& _db;
