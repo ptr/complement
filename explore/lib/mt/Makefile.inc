@@ -1,6 +1,6 @@
-# Time-stamp: <00/11/02 15:11:37 ptr>
+# Time-stamp: <01/01/12 16:49:33 ptr>
 # $SunId$
 
 LIBNAME = xmt
-MINOR = .3
+MINOR = .4
 SRC_CC = xmt.cc thr_mgr.cc
