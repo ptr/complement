@@ -51,7 +51,8 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/Frame.o \
 		$(OUTPUT_DIR)/Button.o \
 		$(OUTPUT_DIR)/varstring.o \
-		$(OUTPUT_DIR)/TextLabel.o
+		$(OUTPUT_DIR)/TextLabel.o \
+		$(OUTPUT_DIR)/InputField.o
 
 # Tester
 
