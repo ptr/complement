@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/08 13:00:54 ptr>
+// -*- C++ -*- Time-stamp: <99/09/13 10:29:50 ptr>
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
@@ -509,6 +509,8 @@ class EventHandler
       { return _mgr; }
     __EDS_DLL void Send( const Event& e );
     __EDS_DLL void Send( const EventVoid& e );
+    __EDS_DLL void Forward( const Event& e );
+    __EDS_DLL void Forward( const EventVoid& e );
 
 /* ************************************************************ *\
    Member template will be nice here, but sorry...
