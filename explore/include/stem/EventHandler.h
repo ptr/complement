@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/23 10:51:44 ptr>
+// -*- C++ -*- Time-stamp: <99/03/24 12:37:47 ptr>
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
@@ -568,9 +568,10 @@ class EventHandler
     };
 
     EventHandler();
-    explicit EventHandler( Event::key_type id );
+    explicit EventHandler( const Event::key_type& id );
     ~EventHandler();
 
+    const string& who_is( const Event::key_type& k );
     void Send( const Event& e );
 
 /* ************************************************************ *\
@@ -636,7 +637,6 @@ class EventHandler
     Event::key_type _id;
     static EvManager *_mgr;
 
-    friend class externstream;
     friend class Init;
     friend class NetTransport;
 };
