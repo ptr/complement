@@ -1,5 +1,19 @@
-// -*- C++ -*- Time-stamp: <99/06/04 11:13:38 ptr>
+// -*- C++ -*- Time-stamp: <99/09/03 12:11:32 ptr>
 #ident "$SunId$ %Q%"
+
+#ifdef _MSC_VER
+#pragma warning( disable : 4804 )
+#endif
+
+#ifdef WIN32
+#  ifdef _DLL
+#    define __EDS_DLL __declspec( dllexport )
+#  else
+#    define __EDS_DLL
+#  endif
+#else
+#  define __EDS_DLL
+#endif
 
 #include <EventHandler.h>
 #include <EvManager.h>
@@ -32,51 +46,51 @@ EventHandler::Init::~Init()
   }
 }
 
-__DLLEXPORT
+__EDS_DLL
 const string& EventHandler::who_is( const Event::key_type& k ) const
 {
   return _mgr->who_is( k );
 }
 
-__DLLEXPORT
+__EDS_DLL
 unsigned EventHandler::sid( const Event::key_type& k ) const
 {
   return _mgr->sid( k );
 }
 
-__DLLEXPORT
+__EDS_DLL
 void EventHandler::Send( const Event& e )
 {
   _mgr->Send( e, _id );
 }
 
-__DLLEXPORT
+__EDS_DLL
 void EventHandler::Send( const EventVoid& e )
 {
   _mgr->Send( EDS::Event_convert<void>()( e ), _id );
 }
 
-__DLLEXPORT
+__EDS_DLL
 void EventHandler::PushState( state_type state )
 {
   RemoveState( state );
   theHistory.push_front( state );
 }
 
-__DLLEXPORT
+__EDS_DLL
 state_type EventHandler::State() const
 {
   return theHistory.front();
 }
 
-__DLLEXPORT
+__EDS_DLL
 void EventHandler::PushTState( state_type state )
 {
   theHistory.push_front( ST_TERMINAL );
   theHistory.push_front( state );
 }
 
-__DLLEXPORT
+__EDS_DLL
 void EventHandler::PopState()
 {
   theHistory.pop_front();
@@ -85,7 +99,7 @@ void EventHandler::PopState()
   }
 }
 
-__DLLEXPORT
+__EDS_DLL
 void EventHandler::PopState( state_type state )
 {
   h_iterator hst_i = __find( state );
@@ -94,7 +108,7 @@ void EventHandler::PopState( state_type state )
   }
 }
 
-__DLLEXPORT
+__EDS_DLL
 void EventHandler::RemoveState( state_type state )
 {
   h_iterator hst_i = __find( state );
@@ -103,7 +117,7 @@ void EventHandler::RemoveState( state_type state )
   }
 }
 
-__DLLEXPORT
+__EDS_DLL
 bool EventHandler::isState( state_type state ) const
 {
   const HistoryContainer& hst = theHistory;
@@ -148,7 +162,7 @@ const_h_iterator EventHandler::__find( state_type state ) const
 // Of cause, you can found this only if theHistory is a template with static
 // member (stl/list, for example).
 
-__DLLEXPORT
+__EDS_DLL
 EventHandler::EventHandler()// :
 //    theHistory( *(new HistoryContainer()) )
 {
@@ -157,7 +171,7 @@ EventHandler::EventHandler()// :
   _id = _mgr->Subscribe( this, "" );
 }
 
-__DLLEXPORT
+__EDS_DLL
 EventHandler::EventHandler( const Event::key_type& id )// :
 //    theHistory( *(new HistoryContainer()) )
 {
@@ -170,7 +184,7 @@ EventHandler::EventHandler( const Event::key_type& id )// :
 //  }
 }
 
-__DLLEXPORT
+__EDS_DLL
 EventHandler::~EventHandler()
 {
 //  delete &theHistory;
@@ -178,7 +192,7 @@ EventHandler::~EventHandler()
   ((Init *)Init_buf)->~Init();
 }
 
-__DLLEXPORT
+__EDS_DLL
 void EventHandler::TraceStack( ostream& out ) const
 {
   const HistoryContainer& hst = theHistory;
