@@ -22,7 +22,7 @@ all-release:	release-shared release-static
 
 include ${BASEDIR}/lib/Makefile.inc.lib
 
-INCLUDES += -I$(BASEDIR)/include
+INCLUDES += -I$(STLPORT_INCLUDE_DIR)
 
 ifeq ($(OS_VER),SunOS)
 release-shared:	LDSEARCH = -L../mt/$(OUTPUT_DIR) \
@@ -36,13 +36,13 @@ endif
 ifeq ($(OS_VER),Linux)
 release-shared:	LDSEARCH = -L../mt/$(OUTPUT_DIR) \
 			   -L../sockios/$(OUTPUT_DIR) \
-                           -L$(BASEDIR)/../STLport/lib
+                           -L$(STLPORT_LIB_DIR)
 stldbg-shared:	LDSEARCH = -L../mt/$(OUTPUT_DIR_STLDBG) \
 			   -L../sockios/$(OUTPUT_DIR_STLDBG) \
-                           -L$(BASEDIR)/../STLport/lib
+                           -L$(STLPORT_LIB_DIR)
 dbg-shared:	LDSEARCH = -L../mt/$(OUTPUT_DIR_DBG) \
 			   -L../sockios/$(OUTPUT_DIR_DBG) \
-                           -L$(BASEDIR)/../STLport/lib
+                           -L$(STLPORT_LIB_DIR)
 endif
 
 release-shared:	LDLIBS = -lxmt_${COMPILER_NAME} \
