@@ -1,17 +1,31 @@
-# Time-stamp: <98/05/26 19:26:27 ptr>
+# Time-stamp: <99/03/19 16:58:12 ptr>
 # %Z% $Date$ $Revision$ $RCSfile$ %Q%
-# Implementation and debugging EDS class library.
 
-baselibname = EDS
-libversion  = 3
-libfiles_cc = EventsCore.cc EventHandler.cc EvManager.cc Application.cc
-libname     = $(baselibname:%=lib%-debug.so)
-DEFS = -D_PTHREADS
-LDFLAGS =
+PWD :sh = pwd
+BASEDIR = $(PWD:%/lib/EDS=%)
 
-include ../Makefile.lib
+include ../../Makefile.inc
 
-$(libname_v) := DEFS += -D__DEBUG=2 -D__TRACE -D__WARN
-$(libname_v) := OPT = -g -pic +w
-$(libname_v) := INCLUDES += -I/usr/local/include/tools
-# $(libname_v) := LDLIBS += -L/usr/local/lib -lAuxd
+INCLUDES += -I../../include/ios \
+	    -I../../include/mt \
+	    -I../../include/sockios \
+	    -I../../include/EDS
+
+EDS_SRC = _EventHandler.cc NetTransport.cc EvManager.cc EvPack.cc
+EDS_OBJ = $(EDS_SRC:%.cc=$(OUTPUT_DIR)/%.o)
+
+libEDS_dbg.a := OPT +=
+libEDS_dbg.a := DEFS +=
+libEDS_dbg.a := LDFLAGS += -xar
+
+libEDS_dbg.a:	$(EDS_OBJ)
+	$(LINK.cc) $(OUTPUT_OPTION) $(EDS_OBJ) $(LDLIBS)
+	?-rm -f ../libEDS_dbg.a
+	?-ln -s EDS/libEDS_dbg.a ../libEDS_dbg.a
+	?-touch -r libEDS_dbg.a ../libEDS_dbg.a
+
+clear::
+	?-rm -rf $(OUTPUT_DIR)/*
+
+clear-all:	clear
+	?-rm -f ../libEDS_dbg.a libEDS_dbg.a
