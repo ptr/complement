@@ -34,9 +34,9 @@ dbg-shared     : LDLIBS = -lstlportg -lrt
 endif
 
 ifeq ($(OSNAME),linux)
-release-shared : LDLIBS = -lstlport
-stldbg-shared  : LDLIBS = -lstlportstlg
-dbg-shared     : LDLIBS = -lstlportg
+#release-shared : LDLIBS = -lstlport
+#stldbg-shared  : LDLIBS = -lstlportstlg
+#dbg-shared     : LDLIBS = -lstlportg
 endif
 
 ifeq ($(OSNAME),freebsd)
