@@ -1,8 +1,28 @@
-// -*- C++ -*- Time-stamp: <96/04/09 13:28:53 ptr>
+// -*- C++ -*- Time-stamp: <96/04/09 15:12:56 ptr>
 #ifndef __LA_tmp_h
 #define __LA_tmp_h
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+
+template <class T1, class T2>
+inline bool operator!=(const T1& x, const T2& y) {
+    return !(x == y);
+}
+
+template <class T1, class T2>
+inline bool operator>(const T1& x, const T2& y) {
+    return y < x;
+}
+
+template <class T1, class T2>
+inline bool operator<=(const T1& x, const T2& y) {
+    return !(y < x);
+}
+
+template <class T1, class T2>
+inline bool operator>=(const T1& x, const T2& y) {
+    return !(x < y);
+}
 
 template <class ForwardIterator1, class ForwardIterator2,class T>
 inline
@@ -27,9 +47,18 @@ void reverse(BidirectionalIterator first, BidirectionalIterator last)
     iter_swap( first++, --last );
 }
 
+/*
 template <class InputIterator, class OutputIterator>
 OutputIterator copy(InputIterator first, InputIterator last,
 		    OutputIterator result) {
+    while (first != last) *result++ = *first++;
+    return result;
+}
+*/
+
+inline
+unsigned long *copy( const unsigned long *first, const unsigned long *last,
+		    unsigned long *result) {
     while (first != last) *result++ = *first++;
     return result;
 }
