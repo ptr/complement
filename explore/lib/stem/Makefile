@@ -96,7 +96,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/ModalDialogBase.o \
 		\
 		$(OUTPUT_DIR)/CAPPropertyTypePI.o \
-		$(OUTPUT_DIR)/CAPCheckListPI.o
+		$(OUTPUT_DIR)/CAPCheckListPI.o \
 		$(OUTPUT_DIR)/ComplexInput.o \
 		$(OUTPUT_DIR)/InputUnit.o
 
