@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/08/01 09:29:37 ptr>
+// -*- C++ -*- Time-stamp: <02/08/04 21:05:27 ptr>
 
 /*
  *
@@ -40,6 +40,7 @@
 #include <exception>
 #include <stdexcept>
 #include <typeinfo>
+#include <sstream>
 
 class Option_base
 {
