@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/10 15:34:19 ptr>
+// -*- C++ -*- Time-stamp: <01/01/29 13:24:10 ptr>
 
 /*
  *
@@ -49,10 +49,12 @@ namespace EDS {
 // Cron Service
 #define EV_EDS_CRON_ADD          0x17
 #define EV_EDS_CRON_REMOVE       0x18
+#define EV_EDS_CRON_REMOVE_ARG   0x1d
 #define EV_EDS_CRON_START        0x19
 #define EV_EDS_CRON_STOP         0x1a
                               // 0x1b
                               // 0x1c
+                              // 0x1d
 
 } // namespace EDS
 
