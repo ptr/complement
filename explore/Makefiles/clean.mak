@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <03/07/10 13:19:47 ptr>
+# -*- Makefile -*- Time-stamp: <03/07/15 12:19:04 ptr>
 # $Id$
 
 PHONY += clean clobber distclean
@@ -10,6 +10,6 @@ clean::
 	@-rm -f $(OBJ_STLDBG) $(DEP_STLDBG)
 
 clobber::	clean
-	@-rm -f .make.depend
+	@-rm -f $(DEPENDS_COLLECTION)
 
 distclean::	clobber

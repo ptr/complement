@@ -1,9 +1,11 @@
-# Time-stamp: <03/07/10 13:23:24 ptr>
+# Time-stamp: <03/07/15 12:17:02 ptr>
 # $Id$
 
 OUTPUT_DIR     := obj/$(COMPILER_NAME)/shared$(EXTRA_DIRS)
 OUTPUT_DIR_DBG := obj/$(COMPILER_NAME)/shared-g$(EXTRA_DIRS)
 OUTPUT_DIR_STLDBG := obj/$(COMPILER_NAME)/shared-stlg$(EXTRA_DIRS)
+
+DEPENDS_COLLECTION := obj/$(COMPILER_NAME)/.make.depend
 
 # I use the same catalog, as for shared:
 OUTPUT_DIR_A := $(OUTPUT_DIR)
