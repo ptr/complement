@@ -1,9 +1,9 @@
-// -*- C++ -*- Time-stamp: <01/02/13 12:24:21 ptr>
+// -*- C++ -*- Time-stamp: <01/07/19 18:08:26 ptr>
 
 /*
  *
- * Copyright (c) 1999-2000
- * ParallelGraphics
+ * Copyright (c) 1999-2001
+ * ParallelGraphics Ltd.
  * 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -20,9 +20,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "$Id$"
 #  endif
 #endif
 
@@ -37,6 +37,42 @@
 namespace xxSQL {
 
 using namespace std;
+
+class DataBase_connect
+{
+  public:
+    DataBase_connect();
+
+    void dbname( const char *nm )
+      { name = nm; }
+    void dbuser( const char *usr )
+      { user = usr; }
+    void dbpasswd( const char *passwd ) 
+      { pass = passwd; }
+    void dbhost( const char *h )
+      { host = h; }
+    void dbopt( const char *options )
+      { opt = options; }
+    void dbtty( const char *t )
+      { tty = t; }
+    void dbport( unsigned p )
+      { port = p; }
+    void dberr( std::ostream *e )
+      { err = e; }
+
+  private:
+    string name;
+    string user;
+    string pass;
+    string host;
+    string opt;
+    string tty;
+    std::ostream *err;
+    unsigned port;
+
+    friend class DataBase;
+    friend class DBxx;
+};
 
 class Cursor
 {
@@ -68,9 +104,8 @@ class DataBase
       failbit = 2      
     };
 
-    DataBase( const char *name, const char *usr = 0, const char *passwd = 0,
-              const char *host = 0, const char *port = 0, const char *opt = 0,
-              const char *tty = 0, std::ostream *err = 0 );
+    DataBase( const DataBase_connect& );
+
     virtual ~DataBase();
 
     virtual void reconnect() = 0;

@@ -1,4 +1,4 @@
-# Time-stamp: <01/03/29 13:56:00 ptr>
+# Time-stamp: <01/07/19 16:01:14 ptr>
 # $Id$
 
 BASEDIR := $(shell xtmp=`pwd`; \
@@ -6,8 +6,6 @@ BASEDIR := $(shell xtmp=`pwd`; \
 LIBDIR  := $(shell xtmp=`pwd`; dirname $$xtmp)
 
 COMPILER_NAME = gcc
-# post_nm = pgsql
-# EXTRA_DIRS = /${post_nm}
 INSTALL_PRE_LIB_DIR = ${BASEDIR}/package/PGslib/PG/lib
 INSTALL_SC_LIB_DIR = ${BASEDIR}/package/SubClub/PGslibsc/SC/lib
 include ${BASEDIR}/lib/DB/Makefile.inc
@@ -27,13 +25,6 @@ include ${BASEDIR}/lib/Makefile.inc.lib
 
 INCLUDES += -I$(BASEDIR)/include
 
-INCLUDES += -I/usr/local/pgsql/include
-DEFS += -D__DB_POSTGRES
+# INCLUDES += -I/usr/local/pgsql/include
+# DEFS += -D__DB_POSTGRES
 
-#ifeq ($(OS_VER),Linux)
-#dbg     : LDFLAGS += -L$(HOME)/lib
-#release : LDFLAGS += -L$(HOME)/lib
-#endif
-#
-#release : LDLIBS += -lstlport_gcc -lpq
-#dbg     : LDLIBS += -lstlport_gcc_stldebug -lpq
