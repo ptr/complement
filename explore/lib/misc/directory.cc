@@ -42,15 +42,15 @@ class dir_it_rep
     DIR        *i_dir;
     dirent     *i_dirent;
 
-    dir_it_rep(dir_it_rep const &); // no copying
-    operator= (dir_it_rep const &); // no assigning
+    dir_it_rep( const dir_it_rep &); // no copying
+    dir_it_rep& operator= (const dir_it_rep &); // no assigning
 
   public:
    // ------------------------------------------------------------------
    // ctor: Open the directory (if possible). The representation is not
    // put onto the initial entry of the directory: This is done by the
    // ctor of code(dir_it).
-    dir_it_rep( string const &dir ) :  // normal allocation
+    dir_it_rep( const string& dir ) :  // normal allocation
 	i_ref_count(1),
 	i_dir(opendir(dir.c_str())),
 	i_dirent(0)
@@ -92,7 +92,7 @@ bool dir_it_rep::get_next()
 // it opening the directory fails, the constructed iterator compares
 // equal to the past the end iterator immediately.
 
-dir_it::dir_it( string const &dir ):
+dir_it::dir_it( const string& dir ):
   i_rep(new dir_it_rep(dir))
 {
   if (!i_rep->get_next()) {
@@ -106,7 +106,7 @@ dir_it::dir_it( string const &dir ):
 // copy ctor: copy the pointer to the representation and increase the
 // reference count. Also copy the current name.
 
-dir_it::dir_it( dir_it const &dir ):
+dir_it::dir_it( const dir_it& dir ):
   i_rep(dir.i_rep),
   i_value(dir.i_value)
 {
@@ -130,7 +130,7 @@ dir_it::~dir_it()
 // the representation of the RHS. However, make sure that
 // self-assignment does not fail.
 
-dir_it &dir_it::operator= (dir_it const &it)
+dir_it &dir_it::operator= ( const dir_it& it)
 {
   if (it.i_rep != 0)
     it.i_rep->reference();
@@ -164,7 +164,7 @@ dir_it &dir_it::operator++ ()
 // (i.e. iterator where the representation is code(0)) or if they are
 // both valid and point to the same name.
 
-bool dir_it::operator== (dir_it const &it) const
+bool dir_it::operator== (const dir_it& it) const
 {
   if (i_rep == 0)
     return it.i_rep == 0? true: false;

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/27 19:08:03 ptr>
+// -*- C++ -*- Time-stamp: <99/08/13 16:06:10 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -6,6 +6,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <directory.h>
+
+using namespace std;
 
 extern "C" char *tempnam( const char *, const char * ); // not part of STDC
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/07 19:55:39 ptr>
+// -*- C++ -*- Time-stamp: <99/08/23 13:11:53 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -76,7 +76,7 @@ void NetTransport_base::disconnect()
     } else {
       smgr.erase( _sid );
     }
-    _sid = -1;
+    _sid = static_cast<EvSessionManager::key_type>(-1);
     _count = 0;
   }
 }
@@ -115,7 +115,7 @@ void NetTransport_base::event_process( Event& ev, const string& hostname )
   manager()->Dispatch( ev );
 }
 
-bool NetTransport_base::pop( Event& __rs, SessionInfo& sess )
+bool NetTransport_base::pop( Event& _rs, SessionInfo& sess )
 {
   unsigned buf[8];
 
@@ -133,9 +133,9 @@ bool NetTransport_base::pop( Event& __rs, SessionInfo& sess )
   if ( !net->read( (char *)&buf[1], sizeof(unsigned) * 7 ).good() ) {
     return false;
   }
-  __rs.code( from_net( buf[1] ) );
-  __rs.dest( from_net( buf[2] ) );
-  __rs.src( from_net( buf[3] ) );
+  _rs.code( from_net( buf[1] ) );
+  _rs.dest( from_net( buf[2] ) );
+  _rs.src( from_net( buf[3] ) );
   unsigned _x_count = from_net( buf[4] );
   unsigned _x_time = from_net( buf[5] ); // time?
   unsigned sz = from_net( buf[6] );
@@ -147,7 +147,7 @@ bool NetTransport_base::pop( Event& __rs, SessionInfo& sess )
     return false;
   }
 
-  string& str = __rs.value();
+  string& str = _rs.value();
 
   str.erase();  // str.clear(); absent in VC's STL
   str.reserve( sz );
@@ -166,15 +166,16 @@ bool NetTransport_base::pop( Event& __rs, SessionInfo& sess )
   return net->good();
 }
 
+
 __DLLEXPORT
-bool NetTransport_base::push( const Event& __rs, const Event::key_type& rmkey,
+bool NetTransport_base::push( const Event& _rs, const Event::key_type& rmkey,
                               const Event::key_type& srckey )
 {
   __stl_assert( net != 0 );
   unsigned buf[8];
 
   buf[0] = to_net( EDS_MAGIC );
-  buf[1] = to_net( __rs.code() );
+  buf[1] = to_net( _rs.code() );
   buf[2] = to_net( rmkey );
   buf[3] = to_net( srckey );
 
@@ -183,15 +184,15 @@ bool NetTransport_base::push( const Event& __rs, const Event::key_type& rmkey,
   buf[4] = to_net( ++_count );
 
   SessionInfo& sess = smgr[_sid];
-  sess.inc_to( 8 * sizeof(unsigned) + __rs.value().size() );
+  sess.inc_to( 8 * sizeof(unsigned) + _rs.value().size() );
 
   buf[5] = 0; // time?
-  buf[6] = to_net( __rs.value().size() );
+  buf[6] = to_net( _rs.value().size() );
   buf[7] = to_net( adler32( (unsigned char *)buf, sizeof(unsigned) * 7 ) ); // crc
 
   net->write( (const char *)buf, sizeof(unsigned) * 8 );
 
-  copy( __rs.value().begin(), __rs.value().end(),
+  copy( _rs.value().begin(), _rs.value().end(),
         ostream_iterator<char,char,char_traits<char> >(*net) );
 
   net->flush();
@@ -265,7 +266,7 @@ NetTransport_base::key_type NetTransportMgr::open(
     _thr.launch( _loop, this ); // start thread here
     return (*r).second;
   }
-  return -1;
+  return static_cast<NetTransport_base::key_type>(-1);
 }
 
 int NetTransportMgr::_loop( void *p )
