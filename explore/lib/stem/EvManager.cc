@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <01/01/22 14:16:42 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 18:57:27 ptr>
 
 /*
  *
  * Copyright (c) 1995-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
@@ -20,9 +20,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -58,7 +58,7 @@ const           addr_type endlocaddr = 0x3fffffff;
 const           addr_type begextaddr = extbit;
 const           addr_type endextaddr = 0xbfffffff;
 
-__STD::string EvManager::inv_key_str( "invalid key" );
+std::string EvManager::inv_key_str( "invalid key" );
 
 __PG_DECLSPEC EvManager::EvManager() :
     _low( beglocaddr ),
@@ -86,7 +86,7 @@ int EvManager::_Dispatch( void *p )
   while ( me._ev_queue_cond.set() ) {
     MT_LOCK( me._lock_queue );
     // swap( me.in_ev_queue, me.out_ev_queue );
-    __STL_ASSERT( me.out_ev_queue.empty() );
+    _STLP_ASSERT( me.out_ev_queue.empty() );
     (const_cast<queue_type::container_type&>(me.in_ev_queue._Get_c())).swap( const_cast<queue_type::container_type&>(me.out_ev_queue._Get_c()) );
     MT_UNLOCK( me._lock_queue );
     while ( !me.out_ev_queue.empty() ) {
@@ -110,7 +110,7 @@ int EvManager::_Dispatch( void *p )
 }
 
 __PG_DECLSPEC
-addr_type EvManager::Subscribe( EventHandler *object, const __STD::string& info )
+addr_type EvManager::Subscribe( EventHandler *object, const std::string& info )
 {
   MT_REENTRANT( _lock_heap, _x1 );
   addr_type id = create_unique();
@@ -137,7 +137,7 @@ addr_type EvManager::Subscribe( EventHandler *object, const char *info )
 
 __PG_DECLSPEC
 addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
-                                  const __STD::string& info )
+                                  const std::string& info )
 {
   MT_REENTRANT( _lock_heap, _x1 );
   if ( (id & extbit) || unsafe_is_avail( id ) ) {
@@ -170,14 +170,14 @@ addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
 __PG_DECLSPEC
 addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
                                       addr_type rmkey,
-                                      const __STD::string& info )
+                                      const std::string& info )
 {
   MT_REENTRANT( _lock_heap, _x1 );
   addr_type id = create_unique_x();
   __Object_Entry& record = heap[id];
   // record.ref = object;
   record.info = info;
-  __STL_ASSERT( channel != 0 );
+  _STLP_ASSERT( channel != 0 );
   record.addremote( rmkey, channel );
 
   return id;
@@ -195,7 +195,7 @@ addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
   if ( info ) {
     record.info = info;
   }
-  __STL_ASSERT( channel != 0 );
+  _STLP_ASSERT( channel != 0 );
   record.addremote( rmkey, channel );
 
   return id;
@@ -281,7 +281,7 @@ void EvManager::Send( const Event& e )
     if ( i != heap.end() ) {
       if ( (*i).second.ref != 0 ) { // local delivery
         EventHandler *object = (*i).second.ref;
-//       __STD::cerr << "Local\n";
+//       std::cerr << "Local\n";
 //        _XMB( "MT_UNLOCK" )
         MT_UNLOCK( _lock_heap );
         try {
@@ -290,9 +290,9 @@ void EvManager::Send( const Event& e )
         catch ( ... ) {
         }
       } else { // remote delivery
-//       __STD::cerr << "Remote\n";
+//       std::cerr << "Remote\n";
         __Remote_Object_Entry *remote = (*i).second.remote;
-        __STL_ASSERT( remote != 0 );
+        _STLP_ASSERT( remote != 0 );
         addr_type save_dest = e.dest();
         e.dest( remote->key ); // substitute address on remote system
         if ( !remote->channel->push( e ) ) {
@@ -311,12 +311,12 @@ void EvManager::Send( const Event& e )
      MT_UNLOCK( _lock_heap );
 #if 0
       try {
-        __STD::cerr << "===== EDS: "
-                    << __STD::hex 
-                    << __STD::setiosflags(__STD::ios_base::showbase)
-                    << e.dest()
-                    << " not found, source: " << e.src()
-                    << ", code " << e.code() << __STD::dec << endl;
+        std::cerr << "===== EDS: "
+                  << std::hex 
+                  << std::setiosflags(std::ios_base::showbase)
+                  << e.dest()
+                  << " not found, source: " << e.src()
+                  << ", code " << e.code() << std::dec << endl;
       }
       catch ( ... ) {
       }

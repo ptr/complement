@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <01/02/02 12:59:59 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 19:18:17 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
@@ -23,9 +23,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -59,14 +59,14 @@
 
 namespace EDS {
 
-extern __PG_DECLSPEC void dump( __STD::ostream&, const EDS::Event& );
+extern __PG_DECLSPEC void dump( std::ostream&, const EDS::Event& );
 
 class NetTransport_base :
     public EventHandler // to avoid dependence from creation order
 {
   public:
-    typedef __STD::map<key_type,key_type> heap_type;
-//    typedef __STD::map<key_type,key_type,__STD::less<key_type>,
+    typedef std::map<key_type,key_type> heap_type;
+//    typedef std::map<key_type,key_type,std::less<key_type>,
 //      __STL_DEFAULT_ALLOCATOR(key_type) > heap_type;
 
     NetTransport_base() :
@@ -136,13 +136,13 @@ class NetTransport_base :
   protected:
     void establish_session( std::sockstream& s ) throw (std::domain_error);
     void mark_session_onoff( bool );
-    addr_type rar_map( addr_type k, const __STD::string& name );
+    addr_type rar_map( addr_type k, const std::string& name );
     bool pop( Event& );
     void disconnect();
 
 // #ifdef __SGI_STL_OWN_IOSTREAMS
 // #ifndef __GNUC__
-    __STD::sockstream *net;
+    std::sockstream *net;
 // #else
 //    STLPORT::basic_sockstream<char,STLPORT::char_traits<char>,
 //      STLPORT::allocator<char> > *net;
@@ -168,7 +168,7 @@ class NetTransport :
       { }
 
     __PG_DECLSPEC
-    void connect( __STD::sockstream& );
+    void connect( std::sockstream& );
 };
 
 class NetTransportMgr :
@@ -184,7 +184,7 @@ class NetTransportMgr :
 
     __PG_DECLSPEC
     addr_type open( const char *hostname, int port,
-                    __STD::sock_base::stype stype = __STD::sock_base::sock_stream );
+                    std::sock_base::stype stype = std::sock_base::sock_stream );
     virtual __PG_DECLSPEC void close();
 
     int join()
@@ -206,7 +206,7 @@ class NetTransportMP :
       { }
 
     __PG_DECLSPEC
-    void connect( __STD::sockstream& );
+    void connect( std::sockstream& );
 };
 
 } // namespace EDS

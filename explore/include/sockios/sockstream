@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/03/01 10:49:28 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 18:44:09 ptr>
 
 /*
  *
@@ -23,9 +23,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -76,11 +76,7 @@
 #  endif
 #endif
 
-#ifdef __SGI_STL_OWN_IOSTREAMS
-__STL_BEGIN_NAMESPACE
-#else
-namespace std {
-#endif
+_STLP_BEGIN_NAMESPACE
 
 class sock_base
 {
@@ -306,7 +302,7 @@ class basic_sockbuf :
 
 	long count = this->pptr() - this->pbase();
 	if ( count ) {
-	  __STL_ASSERT( this->pbase() != 0 );
+	  _STLP_ASSERT( this->pbase() != 0 );
 	  if ( (this->*_xwrite)( this->pbase(), sizeof(charT) * count ) != count * sizeof(charT) )
 	    return -1;
 	  setp( this->pbase(), this->epptr() ); // require: set pptr
@@ -337,7 +333,7 @@ class basic_sockbuf :
 	  if ( __n <= max_size() ) {
 	    _bbuf = _M_allocate(__n);
 	    _ebuf = _bbuf + __n;
-	    __STL_ASSERT( __n > 0 ? _bbuf != 0 : _bbuf == 0 );
+	    _STLP_ASSERT( __n > 0 ? _bbuf != 0 : _bbuf == 0 );
 	  } else
 	    this->_M_throw_length_error();
 	}
@@ -349,7 +345,7 @@ class basic_sockbuf :
     size_t max_size() const { return (size_t(-1) / sizeof(charT)) - 1; }
 
     void _M_throw_length_error() const
-      { __STL_THROW(length_error("basic_sockbuf")); }
+      { _STLP_THROW(length_error("basic_sockbuf")); }
 
     typedef typename _Alloc_traits<charT, _Alloc>::allocator_type allocator_type;
     /* typedef __allocator<charT, _Alloc> _Alloc_type; */
@@ -493,20 +489,12 @@ class basic_sockstream :
     basic_sockbuf<charT,traits,_Alloc> _sb;
 };
 
-typedef basic_sockbuf<char,char_traits<char>,
-                     __STL_DEFAULT_ALLOCATOR(char) >        sockbuf;
-typedef basic_sockbuf<wchar_t,char_traits<wchar_t>,
-                     __STL_DEFAULT_ALLOCATOR(wchar_t) >    wsockbuf;
-typedef basic_sockstream<char,char_traits<char>,
-                     __STL_DEFAULT_ALLOCATOR(char) >     sockstream;
-typedef basic_sockstream<wchar_t,char_traits<wchar_t>,
-                     __STL_DEFAULT_ALLOCATOR(wchar_t) > wsockstream;
+typedef basic_sockbuf<char,char_traits<char>,allocator<char> >        sockbuf;
+typedef basic_sockbuf<wchar_t,char_traits<wchar_t>,allocator<wchar_t> >  wsockbuf;
+typedef basic_sockstream<char,char_traits<char>,allocator<char> >     sockstream;
+typedef basic_sockstream<wchar_t,char_traits<wchar_t>,allocator<wchar_t> > wsockstream;
 
-#ifdef __SGI_STL_OWN_IOSTREAMS
-__STL_END_NAMESPACE
-#else
-} // namespace std
-#endif
+_STLP_END_NAMESPACE
 
 #ifndef __STL_LINK_TIME_INSTANTIATION
 #include <sockios/sockstream.cc>

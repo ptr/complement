@@ -1,10 +1,10 @@
-// -*- C++ -*- Time-stamp: <00/09/10 15:31:43 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 19:18:34 ptr>
 
 /*
  * Copyright (c) 1995-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
@@ -19,9 +19,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -225,7 +225,7 @@ EventHandler::EventHandler( addr_type id, const char *info )
   new( Init_buf ) Init();
   theHistory.push_front( ST_NULL );  // State( ST_NULL );
   _id = _mgr->SubscribeID( id, this, info );
-  __STL_ASSERT( _id != -1 ); // already registered, or id has Event::extbit
+  _STLP_ASSERT( _id != -1 ); // already registered, or id has Event::extbit
 //  if ( _id == -1 ) {
 //    _mgr->Subscribe( this, "" );
 //  }

@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <00/09/14 15:33:44 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 18:57:07 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  * 
  * This material is provided "as is", with absolutely no warranty expressed
@@ -20,9 +20,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -71,7 +71,7 @@ void __pack_base::__net_pack( ostream& s, const string& str )
   sz = to_net( sz );
   s.write( (const char *)&sz, 4 );
 #if !defined(__HP_aCC) || (__HP_aCC > 1) // linker problem, not compiler
-  copy( str.begin(), str.end(), __STD::ostream_iterator<char,char,__STD::char_traits<char> >(s) );
+  copy( str.begin(), str.end(), std::ostream_iterator<char,char,std::char_traits<char> >(s) );
 #else // Mmm, may be with __STL_DEBUG should be a bit different...
 // #  ifndef __STL_DEBUG
   copy( str.begin(), str.end(), ostream_iterator<char>(s) );
@@ -109,7 +109,7 @@ void __pack_base::__pack( ostream& s, const string& str )
   string::size_type sz = str.size();
   s.write( (const char *)&sz, 4 );
 #if !defined(__HP_aCC) || (__HP_aCC > 1) // linker problem, not compiler
-  __STD::copy( str.begin(), str.end(), __STD::ostream_iterator<char,char,__STD::char_traits<char> >(s) );
+  std::copy( str.begin(), str.end(), std::ostream_iterator<char,char,std::char_traits<char> >(s) );
 #else // Mmm, may be with __STL_DEBUG should be a bit different...
 // #  ifndef __STL_DEBUG
   copy( str.begin(), str.end(), ostream_iterator<char>(s) );

@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <01/03/01 10:49:28 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 18:02:17 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
@@ -20,9 +20,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -35,11 +35,7 @@ extern "C" int nanosleep(const struct timespec *, struct timespec *);
 #include <sys/poll.h> // pollfd
 #endif
 
-#ifdef __SGI_STL_OWN_IOSTREAMS
-__STL_BEGIN_NAMESPACE
-#else
-namespace std {
-#endif
+_STLP_BEGIN_NAMESPACE
 
 template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
@@ -126,14 +122,14 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
   setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
   setg( this->epptr(), this->epptr(), this->epptr() );
 
-  __STL_ASSERT( this->pbase() != 0 );
-  __STL_ASSERT( this->pptr() != 0 );
-  __STL_ASSERT( this->epptr() != 0 );
-  __STL_ASSERT( this->eback() != 0 );
-  __STL_ASSERT( this->gptr() != 0 );
-  __STL_ASSERT( this->egptr() != 0 );
-  __STL_ASSERT( _bbuf != 0 );
-  __STL_ASSERT( _ebuf != 0 );
+  _STLP_ASSERT( this->pbase() != 0 );
+  _STLP_ASSERT( this->pptr() != 0 );
+  _STLP_ASSERT( this->epptr() != 0 );
+  _STLP_ASSERT( this->eback() != 0 );
+  _STLP_ASSERT( this->gptr() != 0 );
+  _STLP_ASSERT( this->egptr() != 0 );
+  _STLP_ASSERT( _bbuf != 0 );
+  _STLP_ASSERT( _ebuf != 0 );
 
   _errno = 0; // if any
   __hostname();
@@ -189,14 +185,14 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, const sock
   setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
   setg( this->epptr(), this->epptr(), this->epptr() );
 
-  __STL_ASSERT( this->pbase() != 0 );
-  __STL_ASSERT( this->pptr() != 0 );
-  __STL_ASSERT( this->epptr() != 0 );
-  __STL_ASSERT( this->eback() != 0 );
-  __STL_ASSERT( this->gptr() != 0 );
-  __STL_ASSERT( this->egptr() != 0 );
-  __STL_ASSERT( _bbuf != 0 );
-  __STL_ASSERT( _ebuf != 0 );
+  _STLP_ASSERT( this->pbase() != 0 );
+  _STLP_ASSERT( this->pptr() != 0 );
+  _STLP_ASSERT( this->epptr() != 0 );
+  _STLP_ASSERT( this->eback() != 0 );
+  _STLP_ASSERT( this->gptr() != 0 );
+  _STLP_ASSERT( this->egptr() != 0 );
+  _STLP_ASSERT( _bbuf != 0 );
+  _STLP_ASSERT( _ebuf != 0 );
 
   _errno = 0; // if any
   __hostname();
@@ -240,7 +236,7 @@ basic_sockbuf<charT, traits, _Alloc>::close()
 #endif
 //	cerr << "Pass" << endl;
 
-  __STL_ASSERT( _bbuf != 0 );
+  _STLP_ASSERT( _bbuf != 0 );
   // put area before get area
   setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
   setg( this->epptr(), this->epptr(), this->epptr() );
@@ -307,8 +303,8 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
   // cerr << ((unsigned)this) << "after poll, read" << endl;
 #endif
 
-  __STL_ASSERT( this->eback() != 0 );
-  __STL_ASSERT( _ebuf != 0 );
+  _STLP_ASSERT( this->eback() != 0 );
+  _STLP_ASSERT( _ebuf != 0 );
 
   long offset = (this->*_xread)( this->eback(), sizeof(char_type) * (_ebuf - this->eback()) );
   // cerr << ((unsigned)this) << "after poll, read " << offset << endl;
@@ -342,7 +338,7 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
   long count = this->pptr() - this->pbase();
 
   if ( count ) {
-    __STL_ASSERT( this->pbase() != 0 );
+    _STLP_ASSERT( this->pbase() != 0 );
 
     // Never do this: read and and write in basic_sockbuf are independent,
     // so reading here lead to lost message if reading and writing occur
@@ -372,11 +368,11 @@ xsputn( const char_type *s, streamsize n )
     return 0;
   }
 
-  __STL_ASSERT( this->pbase() != 0 );
-  __STL_ASSERT( this->pptr() != 0 );
-  __STL_ASSERT( this->epptr() != 0 );
-  __STL_ASSERT( _bbuf != 0 );
-  __STL_ASSERT( _ebuf != 0 );
+  _STLP_ASSERT( this->pbase() != 0 );
+  _STLP_ASSERT( this->pptr() != 0 );
+  _STLP_ASSERT( this->epptr() != 0 );
+  _STLP_ASSERT( _bbuf != 0 );
+  _STLP_ASSERT( _ebuf != 0 );
 
   if ( this->epptr() - this->pptr() > n ) {
     traits::copy( this->pptr(), s, n );
@@ -412,16 +408,16 @@ int basic_sockbuf<charT, traits, _Alloc>::__rdsync()
   int nmsg = ioctl( fd(), I_NREAD, &nlen );
 #endif
   if ( nmsg > 0 && nlen > 0 ) {
-    __STL_ASSERT( _bbuf != 0 );
-    __STL_ASSERT( _ebuf != 0 );
-    __STL_ASSERT( this->gptr() != 0 );
-    __STL_ASSERT( this->egptr() != 0 );
+    _STLP_ASSERT( _bbuf != 0 );
+    _STLP_ASSERT( _ebuf != 0 );
+    _STLP_ASSERT( this->gptr() != 0 );
+    _STLP_ASSERT( this->egptr() != 0 );
 
 //    cerr << "ioctl: " << dec << nmsg << ", " << nlen << endl;
     bool shift_req = this->gptr() == this->eback() ? false : (_ebuf - this->gptr()) > nlen ? false : true;
     if ( shift_req ) {
-      __STL_ASSERT( this->gptr() > this->eback() );
-      __STL_ASSERT( this->gptr() <= this->egptr() );
+      _STLP_ASSERT( this->gptr() > this->eback() );
+      _STLP_ASSERT( this->gptr() <= this->egptr() );
       traits::move( this->eback(), this->gptr(), this->egptr() - this->gptr() );
       setg( this->eback(), this->eback(), this->eback() + (this->egptr() - this->gptr()) );
     }
@@ -676,8 +672,5 @@ void basic_sockstream<charT, traits, _Alloc>::setoptions( sock_base::so_t optnam
 #undef __GETHOSTBYADDR__
 #endif
 
-#ifdef __SGI_STL_OWN_IOSTREAMS
-__STL_END_NAMESPACE
-#else
-} // namespace std
-#endif
+_STLP_END_NAMESPACE
+

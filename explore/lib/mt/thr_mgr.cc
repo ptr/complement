@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <00/09/08 11:38:25 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 16:24:29 ptr>
 
 /*
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
- * ParallelGraphics
+ * Copyright (c) 1999-2001
+ * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -19,9 +19,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -29,9 +29,9 @@
 #include <algorithm>
 #include <functional>
 
-using namespace __STD;
-
 namespace __impl {
+
+using namespace std;
 
 struct bad_thread :
     public unary_function<Thread *,bool>

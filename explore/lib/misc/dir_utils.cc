@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/08 18:01:32 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 16:33:38 ptr>
 
 /*
  *
@@ -35,7 +35,7 @@
 #include "aux_/directory.h"
 #endif
 
-using namespace __STD;
+using namespace std;
 
 extern "C" char *tempnam( const char *, const char * ); // not part of STDC
 

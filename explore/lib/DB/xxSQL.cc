@@ -1,10 +1,10 @@
-// -*- C++ -*- Time-stamp: <01/02/13 12:23:58 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 19:00:55 ptr>
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 

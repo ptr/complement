@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <00/09/10 15:37:09 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 18:56:39 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
@@ -23,9 +23,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -62,8 +62,8 @@ class SessionMgr :
 
   protected:
 
-    virtual __PG_DECLSPEC EventHandler *session_leader( const __STD::string& account,
-                                                    const __STD::string& passwd,
+    virtual __PG_DECLSPEC EventHandler *session_leader( const std::string& account,
+                                                    const std::string& passwd,
                                                     addr_type addr ) throw();
     virtual __PG_DECLSPEC void destroy_session_leader( EventHandler * ) throw();
 
@@ -78,14 +78,14 @@ class SessionMgr :
         time_t timeout;
     };
 
-    typedef __STD::pair<key_type,__S> account_type;
-    typedef __STD::vector<account_type> Container;
+    typedef std::pair<key_type,__S> account_type;
+    typedef std::vector<account_type> Container;
 
     key_type key_generate();
     Container _M_c;
-    __STD::select1st<account_type> _skey;
-    __STD::select2nd<account_type> _sess;
-    __STD::equal_to<key_type>      _eq_key;
+    std::select1st<account_type> _skey;
+    std::select2nd<account_type> _sess;
+    std::equal_to<key_type>      _eq_key;
 
     DECLARE_RESPONSE_TABLE( SessionMgr, EventHandler );
 };
@@ -97,10 +97,10 @@ struct SessionRsp :
     key_type  key;
     addr_type addr;
 
-    virtual __PG_DECLSPEC void pack( __STD::ostream& s ) const;
-    virtual __PG_DECLSPEC void net_pack( __STD::ostream& s ) const;
-    virtual __PG_DECLSPEC void unpack( __STD::istream& s );
-    virtual __PG_DECLSPEC void net_unpack( __STD::istream& s );
+    virtual __PG_DECLSPEC void pack( std::ostream& s ) const;
+    virtual __PG_DECLSPEC void net_pack( std::ostream& s ) const;
+    virtual __PG_DECLSPEC void unpack( std::istream& s );
+    virtual __PG_DECLSPEC void net_unpack( std::istream& s );
 };
 
 } // namespace EDS

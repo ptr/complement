@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <00/09/10 15:30:33 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 18:55:57 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
@@ -20,9 +20,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -130,28 +130,28 @@ void __PG_DECLSPEC Names::get_by_name( const Event& rq )
 }
 
 __PG_DECLSPEC
-void NameRecord::pack( __STD::ostream& s ) const
+void NameRecord::pack( std::ostream& s ) const
 {
   __pack( s, addr );
   __pack( s, record );
 }
 
 __PG_DECLSPEC
-void NameRecord::net_pack( __STD::ostream& s ) const
+void NameRecord::net_pack( std::ostream& s ) const
 {
   __net_pack( s, addr );
   __net_pack( s, record );
 }
 
 __PG_DECLSPEC
-void NameRecord::unpack( __STD::istream& s )
+void NameRecord::unpack( std::istream& s )
 {
   __unpack( s, addr );
   __unpack( s, record );
 }
 
 __PG_DECLSPEC
-void NameRecord::net_unpack( __STD::istream& s )
+void NameRecord::net_unpack( std::istream& s )
 {
   __net_unpack( s, addr );
   __net_unpack( s, record );

@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <00/09/08 18:00:34 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 16:41:34 ptr>
 
 /*
  *
  * Copyright (c) 1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  * 
  * This material is provided "as is", with absolutely no warranty expressed
@@ -20,9 +20,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -36,12 +36,12 @@
 
 namespace Helios {
 
-const __STD::string __nodes_heap_base::dot( "." );
-const __STD::string __nodes_heap_base::dotdot( ".." );
+const std::string __nodes_heap_base::dot( "." );
+const std::string __nodes_heap_base::dotdot( ".." );
 
  __nodes_heap_base::key_type __nodes_heap_base::create_unique()
 {
-  __STD::pair<heap_type::iterator,bool> ret;
+  std::pair<heap_type::iterator,bool> ret;
 
   do {
     if ( ++_id > _high ) {

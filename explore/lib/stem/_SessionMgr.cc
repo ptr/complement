@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <00/09/10 15:32:08 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 18:56:18 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
@@ -20,9 +20,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "$@(#)Id$"
 #  endif
 #endif
 
@@ -44,28 +44,28 @@
 namespace EDS {
 
 __PG_DECLSPEC
-void SessionRsp::pack( __STD::ostream& s ) const
+void SessionRsp::pack( std::ostream& s ) const
 {
   __pack( s, key );
   __pack( s, addr );
 }
 
 __PG_DECLSPEC
-void SessionRsp::net_pack( __STD::ostream& s ) const
+void SessionRsp::net_pack( std::ostream& s ) const
 {
   __net_pack( s, key );
   __net_pack( s, addr );
 }
 
 __PG_DECLSPEC
-void SessionRsp::unpack( __STD::istream& s )
+void SessionRsp::unpack( std::istream& s )
 {
   __unpack( s, key );
   __unpack( s, addr );
 }
 
 __PG_DECLSPEC
-void SessionRsp::net_unpack( __STD::istream& s )
+void SessionRsp::net_unpack( std::istream& s )
 {
   __net_unpack( s, key );
   __net_unpack( s, addr );
@@ -195,8 +195,7 @@ key_type SessionMgr::key_generate()
 }
 
 __PG_DECLSPEC
-EventHandler *SessionMgr::session_leader( const  __STD::string&,
-                                          const  __STD::string&,
+EventHandler *SessionMgr::session_leader( const std::string&, const std::string&,
                                           addr_type ) throw()
 {
   return (EventHandler *)0;

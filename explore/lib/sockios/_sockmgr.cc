@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <01/03/01 10:49:28 ptr>
+// -*- C++ -*- Time-stamp: <01/03/19 16:51:55 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
+ * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  * 
  * This material is provided "as is", with absolutely no warranty expressed
@@ -20,9 +20,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -34,7 +34,7 @@
 #include <cerrno>
 #include <sockios/sockmgr.h>
 
-__STL_BEGIN_NAMESPACE
+_STLP_BEGIN_NAMESPACE
 
 __PG_DECLSPEC
 void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol prot )
@@ -170,4 +170,4 @@ void basic_sockmgr::setoptions( sock_base::so_t optname, bool on_off, int __v )
 #endif // __unix
 }
 
-__STL_END_NAMESPACE
+_STLP_END_NAMESPACE
