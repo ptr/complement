@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/11/30 13:16:31 ptr>
+/* -*- C++ -*- Time-stamp: <04/05/18 08:56:40 ptr> */
 
 /*
  *
@@ -27,31 +27,35 @@
 # define _GNU_SOURCE
 #endif
 
-// Include this first, due to <features.h> unconditionally redefine
-// a lot of macros.
+/*
+ * Include this first, due to <features.h> unconditionally redefine
+ * a lot of macros.
+*/
 
 #include <features.h>
 
-#define __FIT__P_PROBLEM // Hide __P from sys/cdefs.h. Workaround for glibc.
+#define __FIT__P_PROBLEM /* Hide __P from sys/cdefs.h. Workaround for glibc. */
 
 #if defined(_REENTRANT) && !defined(_PTHREADS)
-#  define _PTHREADS
+# define _PTHREADS
 #endif
 
 #if defined(_PTHREADS)
-//#  ifndef __USE_UNIX98
-//#    define __USE_UNIX98
-//#  endif
-// This feature exist at least since glibc 2.2.4
-#  define __FIT_XSI_THR  // Unix 98 or X/Open System Interfaces Extention
+/*
+#  ifndef __USE_UNIX98
+#    define __USE_UNIX98
+#  endif
+*/
+/* This feature exist at least since glibc 2.2.4 */
+#  define __FIT_XSI_THR  /* Unix 98 or X/Open System Interfaces Extention */
 #  ifdef __USE_XOPEN2K
-// The IEEE Std. 1003.1j-2000 introduces functions to implement spinlocks.
+/* The IEEE Std. 1003.1j-2000 introduces functions to implement spinlocks. */
 #   define __FIT_PTHREAD_SPINLOCK
 #   define __FIT_PSHARED_MUTEX
 #  endif
 #endif
 
-// Endiannes
+/* Endiannes */
 #include <sys/types.h>
 #if !defined(__BYTE_ORDER) || !defined(__LITTLE_ENDIAN) || !defined(__BIG_ENDIAN)
 #  error "One of __BYTE_ORDER, __LITTLE_ENDIAN and __BIG_ENDIAN undefined; Fix me!"
@@ -65,4 +69,4 @@
 #  error "__BYTE_ORDER neither __BIG_ENDIAN nor __LITTLE_ENDIAN; Fix me!"
 #endif
 
-#endif // __config__linux_h
+#endif /* __config__linux_h */

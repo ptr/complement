@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <04/04/09 16:03:57 ptr>
+/* -*- C -*- Time-stamp: <04/05/18 08:44:56 ptr> */
 
 /*
  *
@@ -99,35 +99,39 @@
 #  define __FIT_DECLSPEC
 #endif
 
-// Windows has no poll system call, while most current unixes
-// has poll (HP-UX 10.xx, old Linuxes may not).
-// We can use either poll or select.
+/*
+ * Windows has no poll system call, while most current unixes
+ * has poll (HP-UX 10.xx, old Linuxes may not).
+ * We can use either poll or select.
+ */
 #ifndef __FIT_NO_POLL
-# define __FIT_POLL   // use poll system call
+# define __FIT_POLL   /* use poll system call */
 #endif
 
 #ifdef __FIT_EXPLICIT_BUG
 #  define __FIT_EXPLICIT
-#else // __FIT_EXPLICIT_BUG
+#else /* __FIT_EXPLICIT_BUG */
 #  define __FIT_EXPLICIT  explicit
-#endif // __FIT_EXPLICIT_BUG
+#endif /* __FIT_EXPLICIT_BUG */
 
 #ifdef __FIT_TYPENAME_TEMPLATE_PARAMETER_BUG
 #  define __FIT_TYPENAME 
-#else // __FIT_TYPENAME_TEMPLATE_PARAMETER_BUG
+#else /* __FIT_TYPENAME_TEMPLATE_PARAMETER_BUG */
 #  define __FIT_TYPENAME typename
-#endif // __FIT_TYPENAME_TEMPLATE_PARAMETER_BUG
+#endif /* __FIT_TYPENAME_TEMPLATE_PARAMETER_BUG */
 
-// #ifdef __FIT_TYPENAME_TEMPLATE_PARAMETER_RET
-// #  define __FIT_TYPENAME_RET typename
-// #else
-// #  define __FIT_TYPENAME_RET
-// #endif
+/*
+#ifdef __FIT_TYPENAME_TEMPLATE_PARAMETER_RET
+#  define __FIT_TYPENAME_RET typename
+#else
+#  define __FIT_TYPENAME_RET
+#endif
+*/
 
 #ifdef __FIT_NEED_TYPENAME_IN_ARGS_BUG
 #  define __FIT_TYPENAME_ARG typename
-#else // __FIT_NEED_TYPENAME_IN_ARGS_BUG
+#else /* __FIT_NEED_TYPENAME_IN_ARGS_BUG */
 #  define __FIT_TYPENAME_ARG 
-#endif // __FIT_NEED_TYPENAME_IN_ARGS_BUG
+#endif /* __FIT_NEED_TYPENAME_IN_ARGS_BUG */
 
-#endif // __config_feature_h
+#endif /* __config_feature_h */
