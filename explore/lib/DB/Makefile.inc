@@ -3,5 +3,5 @@
 
 # LIBNAME = DB${post_nm}
 LIBNAME = DB
-MINOR = .3
+MINOR = .4
 SRC_CC = xxSQL_i.cc PgSQL.cc OraSQL.cc xxSQL.cc
