@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/03/20 15:47:48 ptr>
+// -*- C++ -*- Time-stamp: <01/06/13 18:07:36 ptr>
 
 /*
  *
@@ -39,7 +39,7 @@
 #include "crc.h"
 #include "EDS/EDSEv.h"
 
-#define EDS_MSG_LIMIT   0x100000 // 1MB
+const unsigned EDS_MSG_LIMIT = 0x400000; // 4MB
 
 namespace EDS {
 
@@ -48,10 +48,8 @@ using namespace std;
 #endif
 
 #ifdef _BIG_ENDIAN
-// #  define EDS_MAGIC 0xc2454453U
 static const unsigned EDS_MAGIC = 0xc2454453U;
 #elif defined(_LITTLE_ENDIAN)
-// #  define EDS_MAGIC 0x534445c2U
 static const unsigned EDS_MAGIC = 0x534445c2U;
 #else
 #  error "Can't determine platform byte order!"
