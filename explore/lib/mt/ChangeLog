@@ -1,3 +1,10 @@
+2003-03-26  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xmt.h: broadcast signaling added to Condition for non-windows
+	paltforms.
+
+	* libxmt: Version 1.6.7
+	
 2003-02-14  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* xmt.h, xmt.cc: nanosleep required interval, not absolute time.
