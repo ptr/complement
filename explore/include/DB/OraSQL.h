@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/16 11:17:50 ptr>
+// -*- C++ -*- Time-stamp: <00/10/17 09:47:29 ptr>
 
 /*
  *
@@ -53,8 +53,7 @@ class DataBase :
 {
   public:
     DataBase( const char *name, const char *usr = 0, const char *passwd = 0,
-              const char *host = 0, const char *port = 0, const char *opt = 0,
-              const char *tty = 0 );
+              std::ostream *err = 0 );
     virtual ~DataBase();
 
     virtual void reconnect();
@@ -64,14 +63,14 @@ class DataBase :
     virtual void begin_transaction();
     virtual void end_transaction();
 
-  virtual xxSQL::Cursor *create_cursor( const char * );
+    virtual xxSQL::Cursor *create_cursor( const char * );
 
   private:
     OCIServer  *_conn_srv;
     OCISvcCtx  *_conn_srv_ctx;
     OCISession *_conn_sess;
 
-  class Init
+    class Init
     {
       public:
         Init();
@@ -81,11 +80,13 @@ class DataBase :
         static unsigned count;
     };
 
+    int error_report( int, const char *s = 0 );
+    std::ostream *_err;
     friend class Cursor;
 };
 
 class Cursor :
-  public xxSQL::Cursor
+    public xxSQL::Cursor
 {
   private:
     Cursor( const char *nm, DataBase *_db, const char *statement );

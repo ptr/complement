@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/12 10:13:48 ptr>
+// -*- C++ -*- Time-stamp: <00/10/16 17:44:44 ptr>
 
 /*
  *
@@ -42,7 +42,9 @@ class DBxx
 
     DBxx( DBvendor vendor,
           const char *name, const char *usr = 0, const char *passwd = 0,
-          const char *host = 0, const char *port = 0, const char *opt = 0,
+          const char *host = 0, const char *port = 0,
+          std::ostream *err = 0,
+          const char *opt = 0,
           const char *tty = 0 );
     ~DBxx();
 
@@ -57,6 +59,8 @@ class DBxx
       { return _db->fail(); }
     void clear()
       { _db->clear(); }
+    void clear( unsigned flags )
+      { _db->clear( flags ); }
     void exec( const __STD::string& query )
       { _db->exec( query ); }
     void exec( const char *query )

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/16 11:15:13 ptr>
+// -*- C++ -*- Time-stamp: <00/10/16 17:46:22 ptr>
 
 #ifdef __unix
 #  ifdef __HP_aCC
@@ -22,7 +22,9 @@ namespace xxSQL {
 
 DBxx::DBxx( DBvendor vendor,
             const char *name, const char *usr, const char *passwd,
-            const char *host, const char *port, const char *opt,
+            const char *host, const char *port,
+            std::ostream *err,
+            const char *opt,
             const char *tty )
 {
   switch ( vendor ) {
@@ -35,7 +37,7 @@ DBxx::DBxx( DBvendor vendor,
       break;
     case Oracle8i:
 #ifdef __DB_ORACLE
-      _db = new OraSQL::DataBase(name,usr,passwd,host,port,opt,tty);
+      _db = new OraSQL::DataBase(name,usr,passwd,err);
 #else
       _db = 0;
 #endif

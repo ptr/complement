@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/13 10:15:37 ptr>
+// -*- C++ -*- Time-stamp: <00/10/16 17:19:43 ptr>
 
 /*
  *
@@ -65,7 +65,7 @@ class DataBase
     enum {
       goodbit = 0,
       badbit  = 1,
-      failbit = 2
+      failbit = 2      
     };
 
     DataBase( const char *name, const char *usr = 0, const char *passwd = 0,
@@ -83,6 +83,8 @@ class DataBase
       { return (_flags & failbit) != 0; }
     void clear()
       { _flags = goodbit; }
+    void clear( unsigned flags )
+      { _flags &= ~flags; }
     virtual void exec( const string& ) = 0;
     virtual void exec( const char * ) = 0;
 
