@@ -1,11 +1,22 @@
-// -*- C++ -*- Time-stamp: <00/05/23 16:15:16 ptr>
+// -*- C++ -*- Time-stamp: <00/10/16 11:15:13 ptr>
 
-#ident "$SunId$"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #include <config/feature.h>
 
 #include "DB/xxSQL.h"
-#include "DB/PgSQL.h"
+#ifdef __DB_POSTGRES
+#  include "DB/PgSQL.h"
+#endif
+#ifdef __DB_ORACLE
+#  include "DB/OraSQL.h"
+#endif
 
 namespace xxSQL {
 
@@ -16,7 +27,18 @@ DBxx::DBxx( DBvendor vendor,
 {
   switch ( vendor ) {
     case PostgreSQL:
+#ifdef __DB_POSTGRES
       _db = new PgSQL::DataBase(name,usr,passwd,host,port,opt,tty);
+#else
+      _db = 0;
+#endif
+      break;
+    case Oracle8i:
+#ifdef __DB_ORACLE
+      _db = new OraSQL::DataBase(name,usr,passwd,host,port,opt,tty);
+#else
+      _db = 0;
+#endif
       break;
     default:
       _db = 0;

@@ -1,4 +1,4 @@
-# Time-stamp: <00/09/06 13:49:39 ptr>
+# Time-stamp: <00/10/12 11:44:46 ptr>
 # $SunId$
 
 BASEDIR := $(shell xtmp=`pwd`; \
@@ -10,7 +10,15 @@ COMPILER_NAME = gcc
 # EXTRA_DIRS = /${post_nm}
 include ${BASEDIR}/lib/DB/Makefile.inc
 
-all:	dbg release
+all:	all-release all-debug
+
+all-shared:	release-shared dbg-shared stldbg-shared
+
+all-static:	release-static dbg-static stldbg-static
+
+all-debug:	dbg-shared stldbg-shared dbg-static stldbg-static
+
+all-release:	release-shared release-static
 
 # include ${BASEDIR}/Makefile.inc.${COMPILER_NAME}
 include ${BASEDIR}/lib/Makefile.inc.lib
@@ -20,10 +28,10 @@ INCLUDES += -I$(BASEDIR)/include
 INCLUDES += -I/usr/local/pgsql/include
 DEFS += -D__DB_POSTGRES
 
-ifeq ($(OS_VER),Linux)
-dbg     : LDFLAGS += -L$(HOME)/lib
-release : LDFLAGS += -L$(HOME)/lib
-endif
-
-release : LDLIBS += -lstlport_gcc -lpq
-dbg     : LDLIBS += -lstlport_gcc_stldebug -lpq
+#ifeq ($(OS_VER),Linux)
+#dbg     : LDFLAGS += -L$(HOME)/lib
+#release : LDFLAGS += -L$(HOME)/lib
+#endif
+#
+#release : LDLIBS += -lstlport_gcc -lpq
+#dbg     : LDLIBS += -lstlport_gcc_stldebug -lpq

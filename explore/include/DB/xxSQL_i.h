@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/06/02 18:16:14 ptr>
+// -*- C++ -*- Time-stamp: <00/10/13 10:15:37 ptr>
 
 /*
  *
@@ -18,7 +18,13 @@
 #ifndef __DB_xxSQL_i_h
 #define __DB_xxSQL_i_h
 
-#ident "$SunId$"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -30,6 +36,8 @@
 
 namespace xxSQL {
 
+using namespace std;
+
 class Cursor
 {
   protected:
@@ -38,15 +46,15 @@ class Cursor
 
   public:
     virtual void fetch_all() = 0;
-    const __STD::string& value( int, const __STD::string& );
-    const __STD::string& value( int, const char * );
-    __STD::vector<__STD::vector<__STD::string> >::size_type size() const
+    const string& value( int, const string& );
+    const string& value( int, const char * );
+    vector<vector<string> >::size_type size() const
       { return data.size(); }
 
   protected:
-    __STD::string name;
-    __STD::vector<__STD::string> fields;
-    __STD::vector<__STD::vector<__STD::string> > data;
+    string name;
+    vector<string> fields;
+    vector<vector<string> > data;
 
     friend class DataBase;
 };
@@ -75,7 +83,7 @@ class DataBase
       { return (_flags & failbit) != 0; }
     void clear()
       { _flags = goodbit; }
-    virtual void exec( const __STD::string& ) = 0;
+    virtual void exec( const string& ) = 0;
     virtual void exec( const char * ) = 0;
 
     virtual void begin_transaction() = 0;
@@ -88,13 +96,13 @@ class DataBase
   protected:
     unsigned _flags;
     unsigned long _xc;
-    __STD::string _dbname;
-    __STD::string _dbusr;
-    __STD::string _dbpass;
-    __STD::string _dbhost;
+    string _dbname;
+    string _dbusr;
+    string _dbpass;
+    string _dbhost;
     unsigned _dbport;
-    __STD::string _dbopt;
-    __STD::string _dbtty;
+    string _dbopt;
+    string _dbtty;
 
     friend class Cursor;
 };

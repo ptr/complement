@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/12 10:15:04 ptr>
+// -*- C++ -*- Time-stamp: <00/10/16 11:17:50 ptr>
 
 /*
  *
@@ -15,8 +15,8 @@
  * in supporting documentation.
  */
 
-#ifndef __PgSQL_h
-#define __PgSQL_h
+#ifndef __OraSQL_h
+#define __OraSQL_h
 
 #ifdef __unix
 #  ifdef __HP_aCC
@@ -27,16 +27,17 @@
 #endif
 
 extern "C" {
-  struct pg_conn;
+  struct OCIServer;
+  struct OCISvcCtx;
+  struct OCISession;
+  struct OCIStmt;
 } // extern "C"
 
 #ifndef __xxSQL_i_h
-#include <DB/xxSQL_i.h>
+#  include <DB/xxSQL_i.h>
 #endif
 
-namespace PgSQL {
-
-typedef ::pg_conn    DBconn;
+namespace OraSQL {
 
 class DataBase;
 class Cursor;
@@ -48,7 +49,7 @@ struct NILL_type
 extern NILL_type NILL;
 
 class DataBase :
-        public xxSQL::DataBase
+    public xxSQL::DataBase
 {
   public:
     DataBase( const char *name, const char *usr = 0, const char *passwd = 0,
@@ -63,16 +64,28 @@ class DataBase :
     virtual void begin_transaction();
     virtual void end_transaction();
 
-    virtual xxSQL::Cursor *create_cursor( const char * );
+  virtual xxSQL::Cursor *create_cursor( const char * );
 
   private:
-    DBconn *_conn;
+    OCIServer  *_conn_srv;
+    OCISvcCtx  *_conn_srv_ctx;
+    OCISession *_conn_sess;
+
+  class Init
+    {
+      public:
+        Init();
+        ~Init();
+
+      private:
+        static unsigned count;
+    };
 
     friend class Cursor;
 };
 
 class Cursor :
-    public xxSQL::Cursor
+  public xxSQL::Cursor
 {
   private:
     Cursor( const char *nm, DataBase *_db, const char *statement );
@@ -83,11 +96,11 @@ class Cursor :
 
   private:
     DataBase *db;
+    OCIStmt *_st;
 
     friend class DataBase;
 };
 
-} // namespace PgSQL
+} // namespace OraSQL
 
-
-#endif // __PgSQL_h
+#endif // __OraSQL_h

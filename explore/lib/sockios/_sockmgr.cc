@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/06 22:06:20 ptr>
+// -*- C++ -*- Time-stamp: <00/10/11 15:15:47 ptr>
 
 /*
  *
@@ -97,8 +97,13 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
     }
     if ( type == sock_base::sock_stream ||
 	 type == sock_base::sock_seqpacket ) {
+#ifndef __hpux
       // let's try reuse local address
       setoptions( sock_base::so_reuseaddr, true );
+#else
+      // let's try reuse local address
+      setoptions( sock_base::so_reuseaddr, false );
+#endif
       // I am shure, this is socket of type SOCK_STREAM | SOCK_SEQPACKET,
       // so don't check return code from listen
       ::listen( _fd, SOMAXCONN );

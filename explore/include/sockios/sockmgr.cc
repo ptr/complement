@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/11 11:45:11 ptr>
+// -*- C++ -*- Time-stamp: <00/10/11 15:56:13 ptr>
 
 /*
  *
@@ -300,16 +300,18 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::_shift_fd()
       // We should distinguish closed socket from income message
       typename container_type::iterator i = 
         find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, _pfd[j].fd ) );
-      // __STL_ASSERT( i != _M_c.end() );
+#ifndef __hpux
+      __STL_ASSERT( i != _M_c.end() );
+#else
       if ( i == _M_c.end() ) { // Socket already closed (may be after read/write failure)
         // this way may not notify poll (like in HP-UX 11.00) via POLLERR flag
         // as made in Solaris
         --_fdcount;
-#if !defined( _RWSTD_VER ) // bogus RogueWave
+#  if !defined( _RWSTD_VER ) // bogus RogueWave
         memmove( &_pfd[j], &_pfd[j+1], sizeof(struct pollfd) * (_fdcount - j) );
-#else
+#  else
         memmove( &_pfd[j], &_pfd[j+1], sizeof(_pfd[0]) * (_fdcount - j) );
-#endif
+#  endif
         for ( i = _M_c.begin(); i != _M_c.end(); ++i ) {
           if ( (*i)->s.rdbuf()->fd() == -1 ) {
             (*i)->s.close();
@@ -317,7 +319,9 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::_shift_fd()
           }
         }
         continue;
-      } else if ( _pfd[j].revents & POLLERR /* | POLLHUP | POLLNVAL */ ) { // poll first see closed socket
+      } else
+#endif // __hpux
+      if ( _pfd[j].revents & POLLERR /* | POLLHUP | POLLNVAL */ ) { // poll first see closed socket
         --_fdcount;
 #if !defined( _RWSTD_VER ) // bogus RogueWave
         memmove( &_pfd[j], &_pfd[j+1], sizeof(struct pollfd) * (_fdcount - j) );
@@ -325,6 +329,9 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::_shift_fd()
         memmove( &_pfd[j], &_pfd[j+1], sizeof(_pfd[0]) * (_fdcount - j) );
 #endif
         (*i)->s.close();
+#ifdef __hpux
+        (*i)->_proc.close();
+#endif
         continue;
       }
       if ( msg == 0 ) {
@@ -392,17 +399,24 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
       }
 
       try {
+        sockmgr_client_MP<Connect> *cl_new;
         typename container_type::iterator i = 
           find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, -1 ) );
     
         if ( i == _M_c.end() ) { // we need new message processor
-          cl = new sockmgr_client_MP<Connect>();
-          _M_c.push_back( cl );
+          cl_new = new sockmgr_client_MP<Connect>();
+          _M_c.push_back( cl_new );
         } else { // we can reuse old
-          cl = *i;
+#ifndef __hpux
+          cl_new = *i;
+#else
+          _M_c.erase( i );
+          cl_new = new sockmgr_client_MP<Connect>();
+          _M_c.push_back( cl_new );
+#endif
         }
 
-        cl->s.open( _sd, addr.any );
+        cl_new->s.open( _sd, addr.any );
 
 #ifdef __unix
         int j = _fdcount++;
@@ -418,6 +432,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
       catch ( ... ) {
       }
     }
+
     cl = _shift_fd(); // find polled and return it
     if ( cl != 0 ) {
       return cl; // return message processor
@@ -549,12 +564,12 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
               --me->_fdcount;
 #if !defined( _RWSTD_VER ) // bogus RogueWave
               memmove( &me->_pfd[i], &me->_pfd[i+1], sizeof(struct pollfd) * (me->_fdcount - i) );
-#else
+#else // _RWSTD_VER
               memmove( &me->_pfd[i], &me->_pfd[i+1], sizeof(&me->_pfd[0]) * (me->_fdcount - i) );
 #endif
             }
           }
-#endif
+#endif // __unix
 #ifdef WIN32
           FD_CLR( _sfd, &me->_pfd );
 #endif
