@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/01/30 12:49:35 ptr>
+// -*- C++ -*- Time-stamp: <01/02/02 12:05:03 ptr>
 
 /*
  *
@@ -181,6 +181,32 @@ __PG_DECLSPEC void NetTransport_base::close()
   }
 }
 
+__PG_DECLSPEC
+void NetTransport_base::establish_session( std::sockstream& s ) throw (std::domain_error)
+{
+  smgr.lock();
+  _sid = smgr.unsafe_create();
+  if ( _sid == badkey ) {
+    smgr.unlock();
+    throw std::domain_error( "bad session id" );
+  }
+  smgr[_sid]._host = s.rdbuf()->hostname();
+  smgr[_sid]._port = s.rdbuf()->port();
+  smgr.unlock();
+}
+
+void NetTransport_base::mark_session_onoff( bool f )
+{
+  smgr.lock();
+  if ( smgr.unsafe_is_avail( _sid ) ) {
+    if ( f ) 
+      smgr[ _sid ].connect();
+    else
+      smgr[ _sid ].disconnect();
+  }
+  smgr.unlock();
+}
+
 const string __ns_at( "ns@" );
 const string __at( "@" );
 
@@ -348,16 +374,7 @@ void NetTransport::connect( sockstream& s )
   const string _at_hostname( __at + hostname );
 
   try {
-    smgr.lock();
-    _sid = smgr.unsafe_create();
-    if ( _sid == badkey ) {
-      smgr.unlock();
-      throw std::domain_error( "NetTransport::connect: bad session id" );
-    }
-    smgr[_sid]._host = hostname;
-    smgr[_sid]._port = s.rdbuf()->port();
-    smgr.unlock();
-
+    establish_session( s );
     _net_ns = rar_map( nsaddr, __ns_at + hostname );
     while ( pop( ev ) ) {
       ev.src( rar_map( ev.src(), _at_hostname ) ); // substitute my local id
@@ -473,11 +490,7 @@ void NetTransportMP::connect( sockstream& s )
 
   try {
     if ( _sid == badkey ) {
-      smgr.lock();
-      _sid = smgr.unsafe_create();
-      smgr[ _sid ]._host = hostname;
-      smgr[ _sid ]._port = s.rdbuf()->port();
-      smgr.unlock();
+      establish_session( s );
       net = &s;
 // #ifndef __hpux
       if ( !sock_dgr ) {
@@ -486,11 +499,7 @@ void NetTransportMP::connect( sockstream& s )
       }
 // #endif
     } else if ( sock_dgr /* && _sid != badkey */ ) {
-      smgr.lock();
-      if ( smgr.unsafe_is_avail( _sid ) ) {
-        smgr[ _sid ].connect();
-      }
-      smgr.unlock();
+      mark_session_onoff( true );
     }
     // indeed here need more check: data of event
     // and another: message can be break, and other datagram can be
@@ -503,11 +512,7 @@ void NetTransportMP::connect( sockstream& s )
       throw ios_base::failure( "sockstream not good" );
     }
     if ( sock_dgr && _sid != badkey ) {
-      smgr.lock();
-      if ( smgr.unsafe_is_avail( _sid ) ) {
-        smgr[ _sid ].disconnect();
-      }
-      smgr.unlock();
+      mark_session_onoff( false );
     }
   }
   catch ( ... ) {
