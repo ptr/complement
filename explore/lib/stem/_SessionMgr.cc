@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/16 12:03:43 ptr>
+// -*- C++ -*- Time-stamp: <99/06/18 18:00:52 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -6,6 +6,10 @@
 
 #include <SessionMgr.h>
 #include <EDSEv.h>
+
+#ifdef WIN32
+#define mrand48 rand // rand is bad generator, but wins has no other...
+#endif
 
 namespace EDS {
 
