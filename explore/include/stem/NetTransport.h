@@ -1,13 +1,13 @@
-// -*- C++ -*- Time-stamp: <00/02/24 19:49:03 ptr>
+// -*- C++ -*- Time-stamp: <00/05/22 14:46:29 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999
- * ParallelGraphics Software Systems
- 
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
+ *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -21,7 +21,7 @@
 #ifndef __NetTransport_h
 #define __NetTransport_h
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
 #ifndef __config_feature_h
 #include <config/feature.h>

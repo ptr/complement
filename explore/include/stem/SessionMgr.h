@@ -1,13 +1,13 @@
-// -*- C++ -*- Time-stamp: <00/02/24 19:49:48 ptr>
+// -*- C++ -*- Time-stamp: <00/05/22 12:33:43 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999
- * ParallelGraphics Software Systems
- 
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
+ *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -21,7 +21,7 @@
 #ifndef __SessionMgr_h
 #define __SessionMgr_h
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -47,18 +47,11 @@ class SessionMgr :
     public EventHandler
 {
   public:
-    SessionMgr() :
-        EventHandler()
-      { }
-
-    SessionMgr( const char *info ) :
-        EventHandler( info )
-      { }
-
-     SessionMgr( addr_type addr, const char *info = 0 ) :
-        EventHandler( addr, info )
-      { }
-
+    __PG_DECLSPEC SessionMgr();
+    __PG_DECLSPEC SessionMgr( const char *info );
+    __PG_DECLSPEC SessionMgr( addr_type addr, const char *info = 0 );
+    __PG_DECLSPEC ~SessionMgr();
+   
     void raw_establish_session( EventHandler *, addr_type );
 
   protected:

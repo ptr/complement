@@ -1,13 +1,13 @@
-// -*- C++ -*- Time-stamp: <00/04/04 11:36:00 ptr>
+// -*- C++ -*- Time-stamp: <00/05/22 12:33:08 ptr>
 
 /*
  *
  * Copyright (c) 1995-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999
- * ParallelGraphics Software Systems
- 
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
+ * 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -21,7 +21,7 @@
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -51,6 +51,14 @@ typedef unsigned state_type;
 
 #define ST_NULL     (EDS::state_type)(0)
 #define ST_TERMINAL (EDS::state_type)(-1)
+
+#ifdef __PG_USE_ABBREV
+#  define __dispatcher                    _dch_
+#  define __member_function               _mf_
+#  define __dispatcher_convert_Event      _dch_cnv_Event_
+#  define __dispatcher_convert_Event_extr _dch_cnv_Event_e_
+#  define __AnyPMFentry APMFE
+#endif
 
 #define D1(cls) EDS::__dispatcher<EDS::__member_function<cls,EDS::Event> >
 #define D2(cls) EDS::__dispatcher_void<EDS::__member_function_void<cls>,EDS::EventVoid>
@@ -657,8 +665,7 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
     typedef EDS::__DeclareAnyPMF<cls> evtable_decl_type;                  \
     typedef cls ThisCls;			                          \
     typedef pcls::ThisCls ParentThisCls;	                          \
-    static const evtable_decl_type *get_ev_table_decl()                   \
-       { return theDeclEventsTable; }                                     \
+    static __PG_DECLSPEC const evtable_decl_type *get_ev_table_decl();    \
   protected:					                          \
     virtual bool Dispatch( const EDS::Event& __e )                        \
        {                                                                  \
@@ -681,6 +688,8 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
 #define DEFINE_RESPONSE_TABLE( cls )		                          \
 __PG_DECLSPEC cls::evtable_type cls::theEventsTable;                      \
                                                                           \
+__PG_DECLSPEC const cls::evtable_decl_type *cls::get_ev_table_decl()      \
+       { return theDeclEventsTable; }                                     \
 __PG_DECLSPEC EDS::__DeclareAnyPMF<cls> cls::theDeclEventsTable[] = {
 
 // Macro for specification of response table entry:
