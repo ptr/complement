@@ -1,4 +1,4 @@
-# Time-stamp: <03/10/17 17:13:09 ptr>
+# Time-stamp: <03/10/17 19:31:41 ptr>
 # $Id$
 
 # dependency output parser
@@ -102,17 +102,9 @@ OBJ_STLDBG=$(OBJ_STLDBG:.o@=.o obj\vc6\shared-stlg\)
 OBJ_STLDBG=$(OUTPUT_DIR_STLDBG)\$(OBJ_STLDBG)
 
 OBJ_A=$(ALLOBJS:.o =.o@)
-!if [echo OBJ 1 -$(OBJ_A)-]
-!endif
 OBJ_A=$(OBJ_A:.o@ =.o@)
-!if [echo OBJ 1 -$(OBJ_A)-]
-!endif
 OBJ_A=$(OBJ_A:.o@=.o obj\vc6\static\)
-!if [echo OBJ 2 -$(OBJ_A)-]
-!endif
 OBJ_A=$(OUTPUT_DIR_A)\$(OBJ_A)
-!if [echo OBJ 3 -$(OBJ_A)-]
-!endif
 
 OBJ_A_DBG=$(ALLOBJS:.o =.o@)
 OBJ_A_DBG=$(OBJ_A_DBG:.o@ =.o@)
@@ -123,15 +115,6 @@ OBJ_A_STLDBG=$(ALLOBJS:.o =.o@)
 OBJ_A_STLDBG=$(OBJ_A_STLDBG:.o@ =.o@)
 OBJ_A_STLDBG=$(OBJ_A_STLDBG:.o@=.o obj\vc6\static-stlg\)
 OBJ_A_STLDBG=$(OUTPUT_DIR_A_STLDBG)\$(OBJ_A_STLDBG)
-
-#OBJ_A      := $(OBJ)
-#OBJ_DBG    := $(addprefix $(OUTPUT_DIR_DBG)/,$(ALLOBJS))
-#OBJ_A_DBG  := $(OBJ_DBG)
-#OBJ_STLDBG := $(addprefix $(OUTPUT_DIR_STLDBG)/,$(ALLOBJS))
-#OBJ_A_STLDBG := $(OBJ_STLDBG)
-#DEP        := $(addprefix $(OUTPUT_DIR)/,$(ALLDEPS))
-#DEP_DBG    := $(addprefix $(OUTPUT_DIR_DBG)/,$(ALLDEPS))
-#DEP_STLDBG := $(addprefix $(OUTPUT_DIR_STLDBG)/,$(ALLDEPS))
 
 !ifdef ALLRES
 RES=$(ALLRESS:.res =.res@)

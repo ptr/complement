@@ -1,4 +1,4 @@
-# Time-stamp: <03/10/17 14:35:46 ptr>
+# Time-stamp: <03/10/17 19:29:01 ptr>
 # $Id$
 
 OUTPUT_DIR             = obj\$(COMPILER_NAME)\shared$(EXTRA_DIRS)
@@ -16,9 +16,9 @@ OUTPUT_DIR_A_STLDBG    = obj\$(COMPILER_NAME)\static-stlg$(EXTRA_DIRS)
 INSTALL_LIB_DIR        = $(SRCROOT)\build\lib
 INSTALL_LIB_DIR_DBG    = $(SRCROOT)\build\lib-g
 INSTALL_LIB_DIR_STLDBG = $(SRCROOT)\build\lib_stl-g
-INSTALL_STATIC_LIB_DIR = $(SRCROOT)\build\static
-INSTALL_STATIC_LIB_DIR_DBG    = $(SRCROOT)\build\static-g
-INSTALL_STATIC_LIB_DIR_STLDBG = $(SRCROOT)\build\static_stl-g
+INSTALL_STATIC_LIB_DIR = $(SRCROOT)\build\lib
+INSTALL_STATIC_LIB_DIR_DBG    = $(SRCROOT)\build\lib-g
+INSTALL_STATIC_LIB_DIR_STLDBG = $(SRCROOT)\build\lib_stl-g
 INSTALL_BIN_DIR        = $(SRCROOT)\build\bin
 INSTALL_BIN_DIR_DBG    = $(SRCROOT)\build\bin-g
 INSTALL_BIN_DIR_STLDBG = $(SRCROOT)\build\bin_stl-g
