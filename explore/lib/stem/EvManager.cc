@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/24 21:04:19 ptr>
+// -*- C++ -*- Time-stamp: <00/02/29 16:57:29 ptr>
 
 /*
  *
@@ -167,7 +167,7 @@ addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
   __Object_Entry& record = heap[id];
   // record.ref = object;
   record.info = info;
-  __stl_assert( channel != 0 );
+  __STL_ASSERT( channel != 0 );
   record.addremote( rmkey, channel );
 
   return id;
@@ -185,7 +185,7 @@ addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
   if ( info ) {
     record.info = info;
   }
-  __stl_assert( channel != 0 );
+  __STL_ASSERT( channel != 0 );
   record.addremote( rmkey, channel );
 
   return id;
@@ -275,7 +275,7 @@ void EvManager::Send( const Event& e )
       } else { // remote delivery
 //       __STD::cerr << "Remote\n";
         __Remote_Object_Entry *remote = (*i).second.remote;
-        __stl_assert( remote != 0 );
+        __STL_ASSERT( remote != 0 );
         addr_type save_dest = e.dest();
         e.dest( remote->key ); // substitute address on remote system
         remote->channel->push( e );

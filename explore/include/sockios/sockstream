@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/24 19:50:48 ptr>
+// -*- C++ -*- Time-stamp: <00/02/29 16:50:40 ptr>
 
 /*
  *
@@ -293,7 +293,7 @@ class basic_sockbuf :
 
 	long count = pptr() - pbase();
 	if ( count ) {
-	  __stl_assert( pbase() != 0 );
+	  __STL_ASSERT( pbase() != 0 );
 	  if ( (this->*_xwrite)( pbase(), sizeof(charT) * count ) != count * sizeof(charT) )
 	    return -1;
 	  setp( pbase(), epptr() ); // require: set pptr
@@ -324,7 +324,7 @@ class basic_sockbuf :
 	  if ( __n <= max_size() ) {
 	    _base = _M_allocate(__n);
 	    _ebuf = _base + __n;
-	    __stl_assert( __n > 0 ? _base != 0 : _base == 0 );
+	    __STL_ASSERT( __n > 0 ? _base != 0 : _base == 0 );
 	  } else
 	    _M_throw_length_error();
 	}

@@ -1,12 +1,12 @@
-// -*- C++ -*- Time-stamp: <00/02/24 19:38:03 ptr>
+// -*- C++ -*- Time-stamp: <00/03/03 13:05:25 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999
- * ParallelGraphics Software Systems
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
  
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -166,7 +166,7 @@ bool NetTransport_base::pop( Event& _rs )
 {
   unsigned buf[8];
 
-  __stl_assert( net != 0 );
+  __STL_ASSERT( net != 0 );
 
   MT_IO_REENTRANT( *net )
 
@@ -224,7 +224,7 @@ bool NetTransport_base::pop( Event& _rs )
 __PG_DECLSPEC
 bool NetTransport_base::push( const Event& _rs )
 {
-  __stl_assert( net != 0 );
+  __STL_ASSERT( net != 0 );
   unsigned buf[8];
 
   // buf[0] = to_net( EDS_MAGIC );
