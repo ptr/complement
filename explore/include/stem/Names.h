@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 09:53:26 ptr>
+// -*- C++ -*- Time-stamp: <99/10/13 17:35:55 ptr>
 
 /*
  *
@@ -66,6 +66,7 @@ class Names :
 
     __EDS_DLL void get_list( const Event& );
     __EDS_DLL void get_ext_list( const Event& );
+    __EDS_DLL void get_by_name( const Event& );
 
   private:
     DECLARE_RESPONSE_TABLE( Names, EventHandler );
