@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <03/07/06 19:42:26 ptr>
+# -*- makefile -*- Time-stamp: <03/07/10 13:08:28 ptr>
 # $Id$
 
 
@@ -10,13 +10,13 @@
 OPT += -fPIC
 
 ifeq ($(OSNAME),hp-ux)
-dbg-shared:	LDFLAGS += -shared -Wl,-C20 -Wl,-dynamic  -Wl,+h$(SO_NAME_LINK_DBG) ${LDSEARCH}
-stldbg-shared:	LDFLAGS += -shared -Wl,-C20 -Wl,-dynamic  -Wl,+h$(SO_NAME_LINK_STLDBG) ${LDSEARCH}
-release-shared:	LDFLAGS += -shared -Wl,-C20 -Wl,-dynamic -Wl,+h$(SO_NAME_LINK) ${LDSEARCH}
+dbg-shared:	LDFLAGS += -shared -Wl,-C20 -Wl,-dynamic  -Wl,+h$(SO_NAME_DBGxx) ${LDSEARCH}
+stldbg-shared:	LDFLAGS += -shared -Wl,-C20 -Wl,-dynamic  -Wl,+h$(SO_NAME_STLDBGxx) ${LDSEARCH}
+release-shared:	LDFLAGS += -shared -Wl,-C20 -Wl,-dynamic -Wl,+h$(SO_NAMExx) ${LDSEARCH}
 else
-dbg-shared:	LDFLAGS += -shared -Wl,-h$(SO_NAME_LINK_DBG) ${LDSEARCH}
-stldbg-shared:	LDFLAGS += -shared -Wl,-h$(SO_NAME_LINK_STLDBG) ${LDSEARCH}
-release-shared:	LDFLAGS += -shared -Wl,-h$(SO_NAME_LINK) ${LDSEARCH}
+dbg-shared:	LDFLAGS += -shared -Wl,-h$(SO_NAME_DBGxx) ${LDSEARCH}
+stldbg-shared:	LDFLAGS += -shared -Wl,-h$(SO_NAME_STLDBGxx) ${LDSEARCH}
+release-shared:	LDFLAGS += -shared -Wl,-h$(SO_NAMExx) ${LDSEARCH}
 dbg-static:	LDFLAGS += ${LDSEARCH}
 stldbg-static:	LDFLAGS += ${LDSEARCH}
 release-static:	LDFLAGS += ${LDSEARCH}
