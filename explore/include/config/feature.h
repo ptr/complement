@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/24 19:58:49 ptr>
+// -*- C++ -*- Time-stamp: <00/02/25 21:32:02 ptr>
 
 
 /*
@@ -42,6 +42,11 @@
 #if /* defined( __STL_DEBUG ) && */ (__USE_SGI_STL_PORT >= 0x400)
 // #  define __STD __stl_native_std
 #  define __STD __STLPORT_STD // __std_alias
+#  ifdef __STL_DEBUG 
+#    define __VENDOR_STD  __STL_VENDOR_EXCEPT_STD
+#  else
+#    define __VENDOR_STD  __std_alias
+#  endif
 // #else
 // #  ifndef _MSC_VER
 // #    define __STD std
@@ -57,8 +62,11 @@
 // # define   __STL_USE_NEW_IOSTREAMS	1
 #    define __SGI_STL_OWN_IOSTREAMS 1
 // # define  __STL_HAS_WCHAR_T
-#    ifndef _MSC_VER
+#    if !defined( _MSC_VER ) && defined(__STL_DEBUG)
 #       define __STL_NO_OWN_NAMESPACE  1
+// #      define __STL_DONT_REDEFINE_STD
+#    elif !defined( _MSC_VER )
+#      define __STL_DONT_REDEFINE_STD
 #    endif
 // #  define __STL_VENDOR_CSTD std
 #    ifndef __GNUC__
