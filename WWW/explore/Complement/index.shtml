@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
-<!-- Time-stamp: <02/10/15 21:30:46 ptr> -->
+<!-- Time-stamp: <02/12/16 23:30:16 ptr> -->
 <!-- $Id$ -->
 
 <html>
@@ -9,7 +9,7 @@
     <link rel="stylesheet" type="text/css" href="main.css" media="screen" title="general">
     <link rel="stylesheet" type="text/css" href="decor.css" media="screen" title="general">
     <link rel="stylesheet" type="text/css" href="float.css" media="screen" title="general">
-    <meta name="keywords" content="C++, STLport, portable, threads, multithreads, event, stream, IO, library, socket, ISO, IEC, 14882, standard, Unix, Linux, Solaris, HP-UX, Windows">
+    <meta name="keywords" content="C++, STLport, portable, threads, multithreads, event, stream, IO, library, socket, ISO/IEC 14882, standard, Unix, Linux, Solaris, HP-UX, Windows">
     <title>Complement C++ libraries</title>
   </head>
 

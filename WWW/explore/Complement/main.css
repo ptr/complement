@@ -1,4 +1,4 @@
- /* Time-stamp: <02/10/10 11:56:35 ptr> */
+ /* Time-stamp: <02/12/16 23:24:43 ptr> */
  /* $Id$ */
 
 body {
@@ -62,6 +62,63 @@ body table tr td {
   font-size: 12pt;
 }
 
+.ddisplay {
+  padding-left:   3ex;
+  padding-right:  3ex;
+  padding-top:    3ex;
+  padding-bottom: 3ex;
+  color: #00ff44;
+  background-color: black;
+  font-size: 10pt;
+  font-family: courier, monospace;
+}
+
+div.logo1 {
+  position: absolute;
+  left:     0px;
+  width:    160px;
+  height:   160px;
+  padding-left: 20px;
+  padding-top: 20px;
+}
+
+div.toc {
+  position:  absolute;
+  left:      0px;
+  width:     160px;
+  top:       160px;
+  /* width: 24% !important; */
+  /* min-width: 140px !important; */
+}
+
+div.toc-spacer {
+  margin:     20px;
+}
+
+div.general {
+  position: absolute;
+  left: 160px;
+  /* width: 67%; */
+  min-height: 80% !important;
+  padding-top: 1cm;
+  padding-left: 100px;
+  padding-right: 1cm;
+  padding-bottom: 1cm;
+  margin-right: 20px;
+  border-top:    5px solid #ccc;
+  border-right:  5px solid #ccc;
+  border-bottom: 5px solid #ccc;
+}
+
+div.bm {
+  margin-right: 20px;
+  vertical-align: bottom;
+  text-align: right;
+}
+
+div.border-t {
+  border-top:    5px solid #ccc;
+}
 
 a:link {
   text-decoration: underline;
