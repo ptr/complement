@@ -1,12 +1,14 @@
-// -*- C++ -*- Time-stamp: <01/01/29 13:24:10 ptr>
+// -*- C++ -*- Time-stamp: <03/11/06 07:45:09 ptr>
 
 /*
  *
- * Copyright (c) 1995-1999
+ * Copyright (c) 1995-1999, 2002, 2003
  * Petr Ovchenkov
  *
  * Copyright (c) 1999
  * ParallelGraphics Ltd.
+ *
+ * Licensed under the Academic Free License version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -23,9 +25,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "$SunId$"
+#ident "@(#)$Id$"
 #  endif
 #endif
 

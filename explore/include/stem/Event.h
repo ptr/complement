@@ -1,11 +1,13 @@
-// -*- C++ -*- Time-stamp: <01/08/28 17:20:13 ptr>
+// -*- C++ -*- Time-stamp: <03/11/06 07:48:11 ptr>
 
 /*
- * Copyright (c) 1995-1999
+ * Copyright (c) 1995-1999, 2002, 2003
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
+ *
+ * Licensed under the Academic Free License version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -24,7 +26,7 @@
 #  ifdef __HP_aCC
 #pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "@(#)$Id$"
+#ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -39,7 +41,7 @@
 #include <sstream>
 
 #ifndef __EvPack_h
-#include <EDS/EvPack.h>
+#include <stem/EvPack.h>
 #endif
 
 namespace EDS {
@@ -209,7 +211,8 @@ class Event_base :
     size_type value_size() const
       { return sizeof(_data); }
 
-#ifndef __FIT_TEMPLATE_FORWARD_BUG
+//#ifndef __FIT_TEMPLATE_FORWARD_BUG
+#if 0
     void net_pack( Event& s ) const
       {
         s.code( _code );
@@ -256,13 +259,13 @@ class Event_base :
 
 #ifndef _MSC_VER
     void pack( std::ostream& __s ) const
-      { pack( __s, __type_traits<D>::is_POD_type() ); }
+      { pack( __s, typename __type_traits<D>::is_POD_type() ); }
     void unpack( std::istream& __s )
-      { unpack( __s, __type_traits<D>::is_POD_type() ); }
+      { unpack( __s, typename __type_traits<D>::is_POD_type() ); }
     void net_pack( std::ostream& __s ) const
-      { net_pack( __s, __type_traits<D>::is_POD_type() ); }
+      { net_pack( __s, typename __type_traits<D>::is_POD_type() ); }
     void net_unpack( std::istream& __s )
-      { net_unpack( __s, __type_traits<D>::is_POD_type() ); }
+      { net_unpack( __s, typename __type_traits<D>::is_POD_type() ); }
 #else
 // VC instantiate only whole class, so I need stupid specializaton for it,
 // and this template can be compiled for non-POD classes only
@@ -402,7 +405,7 @@ class Event_base<std::basic_string<char,std::char_traits<char>,std::allocator<ch
     value_type _data;
 };
 
-#ifdef __FIT_TEMPLATE_FORWARD_BUG
+//#ifdef __FIT_TEMPLATE_FORWARD_BUG
 template <class D>
 void Event_base<D>::net_pack( Event& s ) const
 {
@@ -444,7 +447,7 @@ void Event_base<D>::unpack( const Event& s )
   std::istringstream ss( s.value() );
   unpack( ss );
 }
-#endif // __FIT_TEMPLATE_FORWARD_BUG
+//#endif // __FIT_TEMPLATE_FORWARD_BUG
 
 _STLP_TEMPLATE_NULL
 class Event_base<void> :

@@ -1,12 +1,14 @@
-// -*- C++ -*- Time-stamp: <01/03/19 19:18:17 ptr>
+// -*- C++ -*- Time-stamp: <03/11/06 07:43:25 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999
+ * Copyright (c) 1997-1999, 2002, 2003
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
+ *
+ * Licensed under the Academic Free License version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -25,7 +27,7 @@
 #  ifdef __HP_aCC
 #pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "@(#)$Id$"
+#ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -46,20 +48,20 @@
 #include <map>
 
 #ifndef __Event_h
-#include <EDS/Event.h>
+#include <stem/Event.h>
 #endif
 
 #ifndef __EvSession_h
-#include <EDS/EvSession.h>
+#include <stem/EvSession.h>
 #endif
 
 #ifndef __EventHandler_h
-#include <EDS/EventHandler.h>
+#include <stem/EventHandler.h>
 #endif
 
 namespace EDS {
 
-extern __PG_DECLSPEC void dump( std::ostream&, const EDS::Event& );
+extern __FIT_DECLSPEC void dump( std::ostream&, const EDS::Event& );
 
 class NetTransport_base :
     public EventHandler // to avoid dependence from creation order
@@ -84,7 +86,7 @@ class NetTransport_base :
         _net_ns( badaddr )
       { }
 
-    __PG_DECLSPEC ~NetTransport_base();
+    __FIT_DECLSPEC ~NetTransport_base();
 
     bool fail() const
       { return net == 0 ? false : net->fail(); }
@@ -94,9 +96,9 @@ class NetTransport_base :
       { return net == 0 || net->bad(); }
     bool is_open() const
       { return net != 0 && net->is_open(); }
-    virtual __PG_DECLSPEC void close();
+    virtual __FIT_DECLSPEC void close();
 
-    __PG_DECLSPEC
+    __FIT_DECLSPEC
     bool push( const Event& );
 
 
@@ -156,7 +158,7 @@ class NetTransport_base :
     // to be very huffy about it.
     heap_type rar; // reverce address resolution table
     addr_type _net_ns; // reflection of address of remote name service
-    static __PG_DECLSPEC EvSessionManager smgr;
+    static __FIT_DECLSPEC EvSessionManager smgr;
 };
 
 class NetTransport :
@@ -167,7 +169,7 @@ class NetTransport :
         NetTransport_base( "EDS::NetTransport" )
       { }
 
-    __PG_DECLSPEC
+    __FIT_DECLSPEC
     void connect( std::sockstream& );
 };
 
@@ -179,18 +181,18 @@ class NetTransportMgr :
         NetTransport_base( "EDS::NetTransportMgr" )
       { }
 
-    __PG_DECLSPEC
+    __FIT_DECLSPEC
     ~NetTransportMgr();
 
-    __PG_DECLSPEC
+    __FIT_DECLSPEC
     addr_type open( const char *hostname, int port,
                     std::sock_base::stype stype = std::sock_base::sock_stream );
-    virtual __PG_DECLSPEC void close();
+    virtual __FIT_DECLSPEC void close();
 
     int join()
       { return _thr.join(); }
 
-    __PG_DECLSPEC addr_type make_map( addr_type k, const char *name );
+    __FIT_DECLSPEC addr_type make_map( addr_type k, const char *name );
 
   protected:
     static int _loop( void * );
@@ -205,7 +207,7 @@ class NetTransportMP :
         NetTransport_base( "EDS::NetTransportMP" )
       { }
 
-    __PG_DECLSPEC
+    __FIT_DECLSPEC
     void connect( std::sockstream& );
 };
 

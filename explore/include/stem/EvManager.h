@@ -1,11 +1,13 @@
-// -*- C++ -*- Time-stamp: <01/03/19 19:15:24 ptr>
+// -*- C++ -*- Time-stamp: <03/11/06 07:45:50 ptr>
 
 /*
- * Copyright (c) 1995-1999
+ * Copyright (c) 1995-1999, 2002, 2003
  * Petr Ovchenkov
  * 
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
+ *
+ * Licensed under the Academic Free License version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -37,15 +39,15 @@
 #include <queue>
 
 #ifndef __Event_h
-#include <EDS/Event.h>
+#include <stem/Event.h>
 #endif
 
 #ifndef __EventHandler_h
-#include <EDS/EventHandler.h>
+#include <stem/EventHandler.h>
 #endif
 
 #ifndef __EvSession_h
-#include <EDS/EvSession.h>
+#include <stem/EvSession.h>
 #endif
 
 #ifndef __XMT_H
@@ -113,22 +115,22 @@ class EvManager
     typedef std::map<key_type,__Object_Entry> heap_type;
     typedef std::queue< Event > queue_type;
 
-    __PG_DECLSPEC EvManager();
-    __PG_DECLSPEC ~EvManager();
+    __FIT_DECLSPEC EvManager();
+    __FIT_DECLSPEC ~EvManager();
 
-    __PG_DECLSPEC addr_type Subscribe( EventHandler *object, const std::string& info );
-    __PG_DECLSPEC addr_type Subscribe( EventHandler *object, const char *info = 0 );
-    __PG_DECLSPEC addr_type SubscribeID( addr_type id, EventHandler *object,
+    __FIT_DECLSPEC addr_type Subscribe( EventHandler *object, const std::string& info );
+    __FIT_DECLSPEC addr_type Subscribe( EventHandler *object, const char *info = 0 );
+    __FIT_DECLSPEC addr_type SubscribeID( addr_type id, EventHandler *object,
                                     const std::string& info );
-    __PG_DECLSPEC addr_type SubscribeID( addr_type id, EventHandler *object,
+    __FIT_DECLSPEC addr_type SubscribeID( addr_type id, EventHandler *object,
                                     const char *info = 0 );
-    __PG_DECLSPEC addr_type SubscribeRemote( NetTransport_base *channel,
+    __FIT_DECLSPEC addr_type SubscribeRemote( NetTransport_base *channel,
                                          addr_type rmkey,
                                          const std::string& info );
-    __PG_DECLSPEC addr_type SubscribeRemote( NetTransport_base *channel,
+    __FIT_DECLSPEC addr_type SubscribeRemote( NetTransport_base *channel,
                                          addr_type rmkey,
                                          const char *info = 0 );
-    __PG_DECLSPEC bool Unsubscribe( addr_type id );
+    __FIT_DECLSPEC bool Unsubscribe( addr_type id );
 
     bool is_avail( addr_type id ) const
       {
@@ -148,8 +150,8 @@ class EvManager
         return unsafe_annotate( id );
       }
 
-    __PG_DECLSPEC key_type sid( addr_type object_id ) const;
-    __PG_DECLSPEC NetTransport_base *transport( addr_type object_id ) const;
+    __FIT_DECLSPEC key_type sid( addr_type object_id ) const;
+    __FIT_DECLSPEC NetTransport_base *transport( addr_type object_id ) const;
 
     void push( const Event& e )
       {
@@ -160,7 +162,7 @@ class EvManager
         }
       }
 
-    __PG_DECLSPEC void Remove( NetTransport_base * );
+    __FIT_DECLSPEC void Remove( NetTransport_base * );
 
   protected:
     bool unsafe_is_avail( addr_type id ) const
@@ -179,7 +181,7 @@ class EvManager
 
   private:
     void Send( const Event& e );
-    __PG_DECLSPEC void unsafe_Remove( NetTransport_base * );
+    __FIT_DECLSPEC void unsafe_Remove( NetTransport_base * );
 
     addr_type create_unique();
     addr_type create_unique_x();

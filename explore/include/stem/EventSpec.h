@@ -1,12 +1,14 @@
-// -*- C++ -*- Time-stamp: <00/09/10 15:36:14 ptr>
+// -*- C++ -*- Time-stamp: <03/11/06 07:49:19 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999
+ * Copyright (c) 1997-1999, 2002, 2003
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
+ *
+ * Licensed under the Academic Free License version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -25,7 +27,7 @@
 #  ifdef __HP_aCC
 #pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "@(#)$Id$"
+#ident "@(#)$Id$"
 #  endif
 #endif
 
