@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/07/14 13:53:45 ptr>
+// -*- C++ -*- Time-stamp: <03/09/24 21:04:53 ptr>
 
 /*
  *
@@ -17,9 +17,9 @@
  * in supporting documentation.
  */
 
-#pragma VERSIONID "@(#)$Id$"
+#ifdef __unix
 #  ifdef __HP_aCC
-#pragma ident "@(#)$Id$"
+#pragma VERSIONID "@(#)$Id$"
 #  else
 #ident "@(#)$Id$"
 #  endif
@@ -29,15 +29,19 @@
 
 #ifdef _WIN32
 #include <mt/xmt.h>
-#ifdef __sun
+
+__impl::Mutex _l;
+#endif
+
 std::string calendar_time( time_t t )
 {
-#ifdef __linux
+#ifndef _WIN32
+  char buff[32];
+// #ifdef __sun
+#if (_POSIX_C_SOURCE - 0 >= 199506L) || defined(_POSIX_PTHREAD_SEMANTICS) || defined(N_PLAT_NLM) || \
+    defined(__FreeBSD__) || defined(__OpenBSD__)
   ctime_r( &t, buff );
-#endif
-#if !defined(__sun) && !defined(__linux)
-#  error( "Fix me!" )
-#endif
+#else
   ctime_r( &t, buff, 32 );
 #endif
 // #endif
