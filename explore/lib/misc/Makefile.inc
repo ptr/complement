@@ -9,8 +9,8 @@
 # that possible for C++ (or I should #define names).
 
 LIBNAME = misc
-MAJOR = .1
-MINOR = .8
-PATCH = .1
+MAJOR = 1
+MINOR = 8
+PATCH = 1
 SRC_CC = CyrMoney.cc args.cc dir_utils.cc directory.cc _node.cc arguments.cc
 SRC_C = md5.c
