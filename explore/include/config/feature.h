@@ -116,6 +116,10 @@
 #  define __FIT_UITHREADS
 #endif
 
+#if defined(linux)
+# define __FIT__P_PROBLEM
+#endif // Hide __P from sys/cdefs.h. Workaround for glibc.
+
 #if defined(linux) && defined(_REENTRANT) && !defined(_PTHREADS)
 #  define _PTHREADS
 #endif
