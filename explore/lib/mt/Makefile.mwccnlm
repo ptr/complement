@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <03/05/05 13:24:16 ptr>
+# -*- Makefile -*- Time-stamp: <03/06/06 17:37:46 ptr>
 # $Id$
 
 BASEDIR := $(shell xtmp=`pwd`; xtmp=`dirname $$xtmp`; dirname $$xtmp)
@@ -19,7 +19,7 @@ all-release:	release-shared
 
 include ${BASEDIR}/Makefiles/lib/Makefile.inc
 
-INCLUDES += -I$(STLPORT_INCLUDE_DIR)
+INCLUDES += -I$(STLPORT_INCLUDE_DIR) -I$(BASEDIR)/include
 
 release-shared:	LDSEARCH = -L${STLPORT_LIB_DIR}
 stldbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR}
