@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/14 20:51:04 ptr>
+// -*- C++ -*- Time-stamp: <99/09/16 20:23:40 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -558,10 +558,29 @@ void basic_sockbuf<charT, traits>::findhost( const char *hostname )
   if ( host != 0 ) {
     memcpy( (char *)&_address.inet.sin_addr,
             (char *)host->h_addr, host->h_length );
-  } else {
-    _errno = WSAGetLastError();
-    _state |= sock_base::hnamefailbit;
+    return;
   }
+
+  _errno = WSAGetLastError();
+
+  // specific to Wins only:
+  // cool M$ can't resolve IP address in gethostbyname, try once more
+  // via inet_addr() and gethostbyaddr()
+  if ( _errno == WSAHOST_NOT_FOUND ) {
+    unsigned long ipaddr = inet_addr( hostname );
+    if ( ipaddr != INADDR_NONE ) {
+      host = gethostbyaddr( (const char *)&ipaddr, sizeof(ipaddr), AF_INET );
+      if ( host != 0 ) { // that's was IP indeed...
+        memcpy( (char *)&_address.inet.sin_addr,
+                (char *)host->h_addr, host->h_length );
+        WSASetLastError( 0 ); // clear error
+        _errno = 0;
+        return;
+      }
+      _errno = WSAGetLastError();
+    }
+  }
+  _state |= sock_base::hnamefailbit;
 #endif
 }
 
