@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/08/30 15:51:46 ptr>
+// -*- C++ -*- Time-stamp: <00/08/31 15:57:28 ptr>
 
 /*
  *
@@ -62,9 +62,9 @@ __PG_DECLSPEC EvManager::EvManager() :
     _x_high( endextaddr ),
     _x_id( _x_low )
 {
-#ifndef __hpux
+// #ifndef __hpux
   _ev_queue_thr.launch( _Dispatch, this );
-#endif
+// #endif
 }
 
 __PG_DECLSPEC EvManager::~EvManager()
