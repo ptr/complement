@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/03/19 18:44:09 ptr>
+// -*- C++ -*- Time-stamp: <01/06/04 17:45:24 ptr>
 
 /*
  *
@@ -70,11 +70,11 @@
 #  include <cerrno>
 #endif // !WIN32
 
-#ifndef __SGI_STL_OWN_IOSTREAMS
-#  ifndef ___xsballoc_h
-#    include <_xsballoc.h>
-#  endif
-#endif
+// #ifndef __SGI_STL_OWN_IOSTREAMS
+// #  ifndef ___xsballoc_h
+// #    include <_xsballoc.h>
+// #  endif
+// #endif
 
 _STLP_BEGIN_NAMESPACE
 
@@ -163,10 +163,10 @@ class sock_base
 template<class charT, class traits, class _Alloc>
 class basic_sockbuf :
 	public basic_streambuf<charT, traits>
-#ifndef __SGI_STL_OWN_IOSTREAMS
-        ,
-	public _stream_base<charT,_Alloc>
-#endif
+// #ifndef __SGI_STL_OWN_IOSTREAMS
+//        ,
+//	public _stream_base<charT,_Alloc>
+// #endif
 {
   public:
     typedef basic_ios<charT, traits>       ios_type;
@@ -193,13 +193,13 @@ class basic_sockbuf :
     basic_sockbuf() :
       _fd( -1 ),
       _mode( 0 )
-#ifdef __SGI_STL_OWN_IOSTREAMS
+// #ifdef __SGI_STL_OWN_IOSTREAMS
       , _bbuf(0), _ebuf(0), _allocated( true )   
-#endif
+// #endif
       {
-#ifdef __SGI_STL_OWN_IOSTREAMS
+// #ifdef __SGI_STL_OWN_IOSTREAMS
         _M_lock_w._M_initialize();
-#endif
+// #endif
       }
     basic_sockbuf( const char *hostname, int port,
 		   sock_base::stype type = sock_base::sock_stream,
@@ -207,24 +207,24 @@ class basic_sockbuf :
       _fd( -1 ),
       /* _open( false ), */
       _mode( 0 )
-#ifdef __SGI_STL_OWN_IOSTREAMS
+// #ifdef __SGI_STL_OWN_IOSTREAMS
       , _bbuf(0), _ebuf(0), _allocated( true )   
-#endif
+// #endif
       {
-#ifdef __SGI_STL_OWN_IOSTREAMS
+// #ifdef __SGI_STL_OWN_IOSTREAMS
         _M_lock_w._M_initialize();
-#endif
+// #endif
         open( hostname, port, type, prot );
       }
     virtual ~basic_sockbuf()
       {
         close();
-#ifdef __SGI_STL_OWN_IOSTREAMS
+// #ifdef __SGI_STL_OWN_IOSTREAMS
         _M_deallocate_block();
-#endif
-#ifdef __SGI_STL_OWN_IOSTREAMS
+// #endif
+// #ifdef __SGI_STL_OWN_IOSTREAMS
         _M_lock_w._M_destroy();
-#endif
+// #endif
       }
 
     bool is_open() const
@@ -313,9 +313,9 @@ class basic_sockbuf :
 
     virtual streamsize xsputn(const char_type *s, streamsize n);
 
-#ifdef __SGI_STL_OWN_IOSTREAMS
+// #ifdef __SGI_STL_OWN_IOSTREAMS
   public:
-    _STL_mutex_base _M_lock_w; // lock for writing
+    _STLP_mutex_base _M_lock_w; // lock for writing
     // _STL_mutex_base _M_lock; used for read lock
   private: // Helper functions
     charT* _bbuf;
@@ -351,7 +351,7 @@ class basic_sockbuf :
     /* typedef __allocator<charT, _Alloc> _Alloc_type; */
 
     /* _Alloc_type */ allocator_type _M_data_allocator;    
-#endif
+// #endif
 
   private:
     typedef basic_sockbuf<charT,traits,_Alloc> _Self_type;
