@@ -1,13 +1,10 @@
-# Time-stamp: <01/07/27 17:25:45 ptr>
+# Time-stamp: <02/08/03 08:45:26 ptr>
 # $Id$
 
-BASEDIR := $(shell xtmp=`pwd`; \
-               xtmp=`dirname $$xtmp`; dirname $$xtmp)
+BASEDIR := $(shell xtmp=`pwd`; xtmp=`dirname $$xtmp`; dirname $$xtmp)
 LIBDIR  := $(shell xtmp=`pwd`; dirname $$xtmp)
 
 COMPILER_NAME = gcc
-INSTALL_PRE_LIB_DIR = ${BASEDIR}/package/PGslib/PG/lib
-INSTALL_SC_LIB_DIR = ${BASEDIR}/package/SubClub/PGslibsc/SC/lib
 include ${BASEDIR}/lib/DB/Makefile.inc
 
 all:	all-release all-debug
@@ -20,7 +17,7 @@ all-debug:	dbg-shared stldbg-shared dbg-static stldbg-static
 
 all-release:	release-shared release-static
 
-include ${BASEDIR}/lib/Makefile.inc.lib
+include ${BASEDIR}/Makefiles/lib/Makefile.inc
 
 INCLUDES += -I$(STLPORT_INCLUDE_DIR)
 
