@@ -141,7 +141,7 @@ Option<T>::Option( const char *n, const T& v, const char *h )
   }
 }
 
-// template <>
+template <>
 class Option<std::string> :
     public Option_base
 {
@@ -167,7 +167,7 @@ class Option<std::string> :
     friend class Argv;
 };
 
-// template <>
+template <>
 class Option<char *> :
     public Option_base
 {
