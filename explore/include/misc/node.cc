@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 17:28:08 ptr>
+// -*- C++ -*- Time-stamp: <00/07/27 16:46:03 ptr>
 
 /*
  *
@@ -18,14 +18,14 @@
  * in supporting documentation.
  */
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
 namespace Helios {
 
 template <class Node>
 void nodes_heap<Node>::destroy( key_type __id )
 {
-  MT_REENTRANT( _lock, _1 );
+  MT_REENTRANT( _lock, _x1 );
   heap_type::iterator i = heap.find( __id );
   if ( i != heap.end() ) {
     __node_base& node = *reinterpret_cast<__node_base *>((*i).second);
@@ -43,7 +43,7 @@ void nodes_heap<Node>::destroy( key_type __id )
 template <class Node>
 __nodes_heap_base::key_type nodes_heap<Node>::create_node( unsigned uid, unsigned gid, unsigned prot )
 {
-  MT_REENTRANT( _lock, _1 );
+  MT_REENTRANT( _lock, _x1 );
 
   key_type id = create_unique();
   Node *tmp = new Node( uid, gid, prot );
@@ -56,7 +56,7 @@ template <class Node>
 __nodes_heap_base::key_type
 nodes_heap<Node>::create_catalog( unsigned uid, unsigned gid, unsigned prot )
 {
-  MT_REENTRANT( _lock, _1 );
+  MT_REENTRANT( _lock, _x1 );
 
   key_type id = create_unique();
   Catalog *tmp = new Catalog( uid, gid, prot );
@@ -68,7 +68,7 @@ nodes_heap<Node>::create_catalog( unsigned uid, unsigned gid, unsigned prot )
 template <class Node>
 __nodes_heap_base::key_type nodes_heap<Node>::create_root( unsigned prot )
 {
-  MT_REENTRANT( _lock, _1 );
+  MT_REENTRANT( _lock, _x1 );
   Catalog *root = new Catalog( 0, 0, prot );
 
   heap[0] = root;

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/05/23 19:35:58 ptr>
+// -*- C++ -*- Time-stamp: <00/07/27 18:02:19 ptr>
 
 /*
  *
@@ -35,9 +35,11 @@
 #    define _LITTLE_ENDIAN
 #  endif
 #else // !WIN32
-#  ifndef __Linux
+#  ifdef __sun
 #    include <sys/isa_defs.h>
-#  else
+#  elif defined(__hpux)
+#    include <machine/param.h>
+#  else // __linux
 #    include <sys/types.h>
 #    if !defined(__BYTE_ORDER) || !defined(__LITTLE_ENDIAN) || !defined(__BIG_ENDIAN)
 #      error "One of __BYTE_ORDER, __LITTLE_ENDIAN and __BIG_ENDIAN undefined; Fix me!"
