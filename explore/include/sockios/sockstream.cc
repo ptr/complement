@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/04 19:04:05 ptr>
+// -*- C++ -*- Time-stamp: <99/02/25 14:54:44 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -26,7 +26,7 @@ basic_sockbuf<charT, traits>::open( const char *hostname, int port,
 #ifdef WIN32
       _errno = WSAGetLastError();
 #else
-      _errno = ::errno;
+      _errno = errno;
 #endif
       return 0;
     }
@@ -49,7 +49,7 @@ basic_sockbuf<charT, traits>::open( const char *hostname, int port,
       _errno = WSAGetLastError();
       ::closesocket( _fd );
 #else
-      _errno = ::errno;
+      _errno = errno;
       ::close( _fd );
 #endif
       return 0;
@@ -68,7 +68,7 @@ basic_sockbuf<charT, traits>::open( const char *hostname, int port,
 #ifdef WIN32
       _errno = WSAGetLastError();
 #else
-      _errno = ::errno;
+      _errno = errno;
 #endif
       return 0;
     }
@@ -196,18 +196,32 @@ basic_sockbuf<charT, traits>::underflow()
   FD_ZERO( &pfd );
   FD_SET( fd(), &pfd );
 
+  // Here trick with buffer locking: while I sleep on select, buffer should
+  // be unlocked to allow output operations; Before return, I should
+  // recover status quo: indeed I am in critical section, that will
+  // be unlocked outside this code (as it was locked outside it).
+  MT_UNLOCK( __locker( *this ) );
   if ( select( fd() + 1, &pfd, 0, 0, 0 ) <= 0 ) {
+    MT_LOCK( __locker( *this ) );
     return traits::eof();
   }
+  MT_LOCK( __locker( *this ) );
 #else
   pollfd pfd;
   pfd.fd = fd();
   pfd.events = POLLIN;
   pfd.revents = 0;
-  // cerr << "Poll" << endl;
+
+  // Here trick with buffer locking: while I sleep on poll, buffer should
+  // be unlocked to allow output operations; Before return, I should
+  // recover status quo: indeed I am in critical section, that will
+  // be unlocked outside this code (as it was locked outside it).
+  MT_UNLOCK( __locker( *this ) );
   if ( poll( &pfd, 1, -1 ) <= 0 ) { // timeout 200 (milliseconds)
+    MT_LOCK( __locker( *this ) );
     return traits::eof();
   }
+  MT_LOCK( __locker( *this ) );
 #endif
 
   __stl_assert( eback() != 0 );
