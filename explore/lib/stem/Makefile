@@ -102,6 +102,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/ModalDialog.o \
 		$(OUTPUT_DIR)/AlertPanel.o \
 		$(OUTPUT_DIR)/Picture.o \
+		$(OUTPUT_DIR)/ButtonXPM.o \
 		$(OUTPUT_DIR)/ModalDialogBase.o \
 		$(OUTPUT_DIR)/CAPPictures.o \
 		\
