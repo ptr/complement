@@ -34,6 +34,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/GrContext.o \
 		$(OUTPUT_DIR)/Frame.o \
 		$(OUTPUT_DIR)/Button.o \
+		$(OUTPUT_DIR)/ButtonedInfo.o \
 		$(OUTPUT_DIR)/CoupleButtons.o \
 		$(OUTPUT_DIR)/varstring.o \
 		$(OUTPUT_DIR)/TextLabel.o \
@@ -77,9 +78,6 @@ $(PROJECT):	$(LIBFILES.o)
 
 $(XTESTER):	$(XLIBFILES.o) $(XFILES.o)
 	$(LINK.cc) -o $@ $(XLIBFILES.o) $(XFILES.o)
-
-# $(XTESTER):	$(XFILES.o)
-#	$(LINK.cc) -o $@ $(XFILES.o) -lOXW
 
 $(OUTPUT_DIR)/%.o:	%.cc
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
