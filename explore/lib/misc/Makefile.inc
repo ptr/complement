@@ -1,4 +1,4 @@
-# Time-stamp: <01/06/05 14:01:46 ptr>
+# -*- Makefile -*- Time-stamp: <01/07/27 17:15:32 ptr>
 # $Id$
 
 # I have only one reason while I should use "C++" variant of MD5 instead of "C":
@@ -10,8 +10,9 @@
 
 LIBNAME = Aux
 MAJOR = .1
-MINOR = .5
+MINOR = .6
 PATCH = .0
-SRC_CC = CyrMoney.cc args.cc dir_utils.cc directory.cc _node.cc cgi.cc \
-	 arguments.cc
+#SRC_CC = CyrMoney.cc args.cc dir_utils.cc directory.cc _node.cc cgi.cc \
+#	 arguments.cc
+SRC_CC = args.cc dir_utils.cc directory.cc _node.cc arguments.cc
 SRC_C = md5.c
