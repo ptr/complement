@@ -30,6 +30,9 @@
 
 /* Constants for MD5Transform routine.
  */
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 #define S11 7
 #define S12 12
@@ -314,4 +317,8 @@ static void MD5_memset( char *output, int value, unsigned len )
   for ( i = 0; i < len; i++ )
     ((char *)output)[i] = (char)value;
 }
+#endif
+
+#ifdef  __cplusplus
+} // extern "C"
 #endif

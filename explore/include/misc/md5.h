@@ -57,6 +57,13 @@ typedef struct {
   } buf_un;
 } MD5_CTX;
 
+#ifdef __hpux /* really for cool Oracle's programmers
+                 in pair with HP's wonderful linker */
+#  define MD5Init   __MD5Init__
+#  define MD5Update __MD5Update__
+#  define MD5Final  __MD5Final__
+#endif /* __hpux */
+
 void MD5Init( MD5_CTX * );
 void MD5Update(MD5_CTX *, uint8_t *, uint32_t );
 void MD5Final( uint8_t [16], MD5_CTX * );

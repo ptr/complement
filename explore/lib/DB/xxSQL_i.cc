@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/13 10:17:07 ptr>
+// -*- C++ -*- Time-stamp: <00/10/16 16:35:22 ptr>
 
 /*
  *
@@ -81,9 +81,31 @@ Cursor::~Cursor()
 {
 }
 
+string lower( const string& s )
+{
+  string l;
+  l.reserve( s.length() );
+  for ( string::const_iterator i = s.begin(); i != s.end(); ++i ) {
+    l += tolower( *i );
+  }
+  return l;
+}
+
+string lower( const char *s )
+{
+  string l;
+  unsigned n = strlen(s);
+  const char *e = s + n;
+  l.reserve( n );
+  while ( s != e ) {
+    l += tolower( *s++ );
+  }
+  return l;
+}
+
 const string& Cursor::value( int n, const string& f )
 {
-  vector<string>::iterator i = find( fields.begin(), fields.end(), f );
+  vector<string>::iterator i = find( fields.begin(), fields.end(), lower(f) );
   if ( i == fields.end() ) {
     throw __STD::invalid_argument( f );
   }
@@ -94,10 +116,10 @@ const string& Cursor::value( int n, const string& f )
 
 const string& Cursor::value( int n, const char *cf )
 {
-  string f( cf );
-  vector<string>::iterator i = find( fields.begin(), fields.end(), f );
+  // string f( cf );
+  vector<string>::iterator i = find( fields.begin(), fields.end(), lower(cf) );
   if ( i == fields.end() ) {
-    throw __STD::invalid_argument( f );
+    throw __STD::invalid_argument( cf );
   }
   vector<string>::size_type j = 0;
   distance( fields.begin(), i, j );
