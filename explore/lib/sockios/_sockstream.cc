@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/03 11:31:35 ptr>
+// -*- C++ -*- Time-stamp: <99/09/14 15:08:41 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -60,9 +60,28 @@ sock_base::Init::Init()
       throw domain_error( __impl::WINSOCK_ERR_MSG );
     }
     if ( LOBYTE(__wsadata.wVersion) != 2 || HIBYTE(__wsadata.wVersion) != 0 ) {
-      WSACleanup();
-      TlsSetValue( __impl::__thr_key, 0 );
-      throw domain_error( __impl::WINSOCK_ERR_MSG );
+      OSVERSIONINFO info;
+      info.dwOSVersionInfoSize = sizeof(info);
+      GetVersionEx(&info);
+      
+      if ( info.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS ) { // 98 or 95
+        if ( info.dwMajorVersion < 4 ) {
+          WSACleanup();
+          TlsSetValue( __impl::__thr_key, 0 );
+          throw domain_error( __impl::WINSOCK_ERR_MSG );          
+        }
+        if ( info.dwMinorVersion > 0 ) { // that's at least 98, should be socket 2
+          WSACleanup();
+          TlsSetValue( __impl::__thr_key, 0 );
+          throw domain_error( __impl::WINSOCK_ERR_MSG );                    
+        }
+        // WinSock DLL not 2.0, may be net problems,
+        // but this is Win 95...
+      } else { // 3.1 or NT, if in NT socket not 2.0 go away.
+        WSACleanup();
+        TlsSetValue( __impl::__thr_key, 0 );
+        throw domain_error( __impl::WINSOCK_ERR_MSG );
+      }
     }
   }
   TlsSetValue( __impl::__thr_key, (void *)__tls_init_cnt );
