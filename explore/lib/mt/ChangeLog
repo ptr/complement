@@ -1,3 +1,10 @@
+2003-01-15  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xmt.cc (Repository): Add POSIX 1003.1-2001 semaphores,
+	ones predecessors on Solaris, and semaphores on Wins.
+
+	* libxmt: Version 1.6.2
+
 2003-01-07  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* xmt.h, xmt.cc: add delay function (sleep for interval
