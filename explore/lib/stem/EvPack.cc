@@ -41,8 +41,16 @@ void __pack_base::__net_unpack( istream& s, string& str )
   if ( sz > 0 ) {
     str.erase();
     str.reserve( sz );
+#if defined(_MSC_VER) && (_MSC_VER < 1200)
+    char ch;
+#endif
     while ( sz-- > 0 ) {
+#if defined(_MSC_VER) && (_MSC_VER < 1200)
+      s.get( ch );
+      str += ch;
+#else
       str += (char)s.get();
+#endif
     }
   }
 }
@@ -64,8 +72,16 @@ void __pack_base::__unpack( istream& s, string& str )
   if ( sz > 0 ) {
     str.erase();
     str.reserve( sz );
+#if defined(_MSC_VER) && (_MSC_VER < 1200)
+    char ch;
+#endif
     while ( sz-- > 0 ) {
+#if defined(_MSC_VER) && (_MSC_VER < 1200)
+      s.get( ch );
+      str += ch;
+#else
       str += (char)s.get();
+#endif
     }
   }
 }
