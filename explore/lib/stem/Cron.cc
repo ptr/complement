@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/01/12 15:57:40 ptr>
+// -*- C++ -*- Time-stamp: <01/01/22 15:12:56 ptr>
 
 /*
  * Copyright (c) 1998
@@ -145,10 +145,10 @@ void __PG_DECLSPEC Cron::Start()
 
 void __PG_DECLSPEC Cron::Stop()
 {
-  PopState( CRON_ST_STARTED );
+  RemoveState( CRON_ST_STARTED );
   cond.signal();
   if ( isState( CRON_ST_SUSPENDED ) ) {
-    PopState( CRON_ST_SUSPENDED );
+    RemoveState( CRON_ST_SUSPENDED );
     _thr.resume();
   }
   _thr.join();
