@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/20 11:24:21 ptr>
+// -*- C++ -*- Time-stamp: <99/12/27 20:05:35 ptr>
 
 /*
  *
@@ -67,6 +67,7 @@ void __EDS_DLL Names::get_list( const Event& rq )
 
   rs.dest( rq.src() );
 
+  MT_REENTRANT( manager()->_lock_heap, _1 );
   EvManager::heap_type::iterator i = manager()->heap.begin();
   while ( i != manager()->heap.end() ) {
     if ( ((*i).first & extbit) == 0 ) { // only local...
@@ -90,6 +91,7 @@ void __EDS_DLL Names::get_ext_list( const Event& rq )
 
   rs.dest( rq.src() );
 
+  MT_REENTRANT( manager()->_lock_heap, _1 );
   EvManager::heap_type::iterator i = manager()->heap.begin();
   while ( i != manager()->heap.end() ) {
     if ( ((*i).first & extbit) != 0 ) { // only external...
@@ -113,6 +115,7 @@ void __EDS_DLL Names::get_by_name( const Event& rq )
 
   rs.dest( rq.src() );
 
+  MT_REENTRANT( manager()->_lock_heap, _1 );
   EvManager::heap_type::iterator i = manager()->heap.begin();
   while ( i != manager()->heap.end() ) {
     if ( ((*i).first & extbit) == 0 && (*i).second.info == rq.value() ) { // only local...
