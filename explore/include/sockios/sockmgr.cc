@@ -1,14 +1,14 @@
-// -*- C++ -*- Time-stamp: <03/07/31 16:19:47 ptr>
+// -*- C++ -*- Time-stamp: <03/11/17 08:46:06 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999, 2002, 2003
- * Petr Ovtchenkov
+ * Petr Ovchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 1.2
+ * Licensed under the Academic Free License Version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -52,7 +52,7 @@ void sockmgr_stream_MP<Connect>::open( int port, sock_base::stype t )
         _pfd[0].fd = fd_unsafe();
         _pfd[0].events = POLLIN;
         ++_fdcount;
-        _STLP_ASSERT( _fdcount == 1 );
+        // _STLP_ASSERT( _fdcount == 1 );
       }
     } else if ( t == sock_base::sock_dgram ) {
       _accept = &_Self_type::accept_udp;
@@ -173,7 +173,7 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
       sock_base::socket_type _sd = ::accept( fd_unsafe(), &addr.any, &sz );
       if ( _sd == -1 ) {
         // check and set errno
-        _STLP_ASSERT( _sd == -1 );
+        // _STLP_ASSERT( _sd == -1 );
         return 0;
       }
 
@@ -458,7 +458,7 @@ __FIT_TYPENAME sockmgr_stream_MP_SELECT<Connect>::_Connect *sockmgr_stream_MP_SE
         sock_base::socket_type _sd = ::accept( fd_unsafe(), &addr.any, &sz );
         if ( _sd == -1 ) {
           // check and set errno
-          _STLP_ASSERT( _sd == -1 );
+          // _STLP_ASSERT( _sd == -1 );
           return 0;
         }
 
