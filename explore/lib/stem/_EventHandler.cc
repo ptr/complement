@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/11/05 17:33:34 ptr>
+// -*- C++ -*- Time-stamp: <99/12/20 16:08:43 ptr>
 
 /*
  *
@@ -87,26 +87,26 @@ __EDS_DLL
 void EventHandler::Send( const Event& e )
 {
   e.src( _id );
-  _mgr->Send( e );
+  _mgr->push( e );
 }
 
 __EDS_DLL
 void EventHandler::Send( const EventVoid& e )
 {
   e.src( _id );
-  _mgr->Send( EDS::Event_convert<void>()( e ) );
+  _mgr->push( EDS::Event_convert<void>()( e ) );
 }
 
 __EDS_DLL
 void EventHandler::Forward( const Event& e )
 {
-  _mgr->Send( e );
+  _mgr->push( e );
 }
 
 __EDS_DLL
 void EventHandler::Forward( const EventVoid& e )
 {
-  _mgr->Send( EDS::Event_convert<void>()( e ) );
+  _mgr->push( EDS::Event_convert<void>()( e ) );
 }
 
 __EDS_DLL

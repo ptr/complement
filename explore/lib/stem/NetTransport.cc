@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/11/05 17:21:20 ptr>
+// -*- C++ -*- Time-stamp: <99/12/20 17:53:32 ptr>
 
 /*
  *
@@ -122,7 +122,7 @@ __EDS_DLL NetTransport_base::~NetTransport_base()
 __EDS_DLL void NetTransport_base::close()
 {
   if ( net != 0 ) {
-    manager()->Remove( this );    
+    manager()->Remove( this );
     disconnect();
     rar.clear();
     net->close();
@@ -252,7 +252,7 @@ void NetTransport::connect( sockstream& s )
     _net_ns = rar_map( nsaddr, __ns_at + hostname );
     while ( pop( ev, sess ) ) {
       ev.src( rar_map( ev.src(), _at_hostname ) ); // substitute my local id
-      manager()->Send( ev );
+      manager()->push( ev );
     }
     if ( !s.good() ) {
       s.close();
@@ -308,7 +308,7 @@ int NetTransportMgr::_loop( void *p )
   try {
     while ( me.pop( ev, sess ) ) {
       ev.src( me.rar_map( ev.src(), __at + me.net->rdbuf()->hostname() ) ); // substitute my local id
-      manager()->Send( ev );
+      manager()->push( ev );
     }
     me.close();
   }
@@ -356,7 +356,7 @@ void NetTransportMP::connect( sockstream& s )
     // in the middle of message...
     if ( pop( ev, sess ) ) {
       ev.src( rar_map( ev.src(), __at + hostname ) ); // substitute my local id
-      manager()->Send( ev );
+      manager()->push( ev );
     }
     if ( !s.good() ) {
       throw ios_base::failure( "sockstream not good" );
