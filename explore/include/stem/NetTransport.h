@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/26 20:19:09 ptr>
+// -*- C++ -*- Time-stamp: <99/04/16 15:32:04 ptr>
 
 #ifndef __NetTransport_h
 #define __NetTransport_h
@@ -28,29 +28,20 @@ namespace EDS {
 
 extern __DLLEXPORT void dump( std::ostream&, const EDS::Event& );
 
-class NetTransport
+class NetTransport_base
 {
   public:
     typedef Event::key_type key_type;
     typedef std::map<key_type,key_type,std::less<key_type>,
       __STL_DEFAULT_ALLOCATOR(key_type) > heap_type;
 
-    NetTransport() :
+    NetTransport_base() :
         _count( 0 ),
         _sid( -1 ),
-        net( 0 ),
-        _net_owner( false )
+        net( 0 )
       { }
 
-    __DLLEXPORT ~NetTransport();
-
-    __DLLEXPORT
-    key_type open( const std::string& hostname, int port );
-    __DLLEXPORT
-    void connect( std::sockstream&, const std::string& hostname,
-                  std::string& info );
-    __DLLEXPORT
-    bool push( const Event&, const key_type& rmkey, const key_type& srckey );
+    __DLLEXPORT ~NetTransport_base();
 
     bool fail() const
       { return net == 0 || net->fail(); }
@@ -58,19 +49,26 @@ class NetTransport
       { return net != 0 && net->good(); }
     bool is_open() const
       { return net != 0 && net->is_open(); }
-
     void close()
-      {
-        if ( net != 0 ) {
-          net->close();
-        }
-      }
+      { if ( net != 0 ) net->close(); }
+
+    __DLLEXPORT
+    bool push( const Event&, const key_type& rmkey,
+               const key_type& srckey, const Event::key_type& sid );
+
 
     EvSessionManager::key_type sid() const
       { return _sid; }
 
-  private:
+    static SessionInfo& session_info( const EvSessionManager::key_type& k )
+      { return smgr[k]; }
+    static void erase_session( const EvSessionManager::key_type& k )
+      { smgr.erase( k ); }
+
+  protected:
     bool pop( Event& );
+    void event_process( Event&, SessionInfo&, const std::string& );
+    void disconnect();
 
     std::sockstream *net;
     EvSessionManager::key_type _sid;
@@ -78,14 +76,56 @@ class NetTransport
     // indeed rar can be inside connect(), but SunPro's CC 5.0
     // to be very huffy about it.
     heap_type rar; // reverce address resolution table
-
-    std::string _partner_name;
-    static int _loop( void * );
-    __impl::Thread _thr;
     // __impl::Mutex  _lock;
-    bool _net_owner;
+    static EvSessionManager smgr;
 };
 
+class NetTransport :
+    public NetTransport_base
+{
+  public:
+    NetTransport()
+      { }
+
+    __DLLEXPORT
+    void connect( std::sockstream&, const std::string& hostname,
+                  std::string& info );
+};
+
+class NetTransportMgr :
+    public NetTransport_base
+{
+  public:
+    NetTransportMgr()
+      { }
+
+    ~NetTransportMgr()
+      { delete net; }
+
+    __DLLEXPORT
+    key_type open( const std::string& hostname, int port,
+                   std::sock_base::stype stype = std::sock_base::sock_stream );
+    int join()
+      { return _thr.join(); }
+
+  protected:
+    static int _loop( void * );
+    __impl::Thread _thr;
+
+    std::string _partner_name;
+};
+
+class NetTransportMP :
+    public NetTransport_base
+{
+  public:
+    NetTransportMP()
+      { }
+
+    __DLLEXPORT
+    void connect( std::sockstream&, const std::string& hostname,
+                  std::string& info );
+};
 
 } // namespace EDS
 
