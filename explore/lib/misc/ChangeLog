@@ -1,3 +1,8 @@
+2001-09-20  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* libAux change location; it now in misc catalogs. This done to satisfy
+	Windows requirements---Windows fails when see word 'aux'.
+	
 2001-08-13  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
 
 	* args.cc (Repository): Change in option style: -option=value now.
