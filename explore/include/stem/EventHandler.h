@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/08 13:19:04 ptr>
+// -*- C++ -*- Time-stamp: <99/06/21 19:12:07 ptr>
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
@@ -216,8 +216,13 @@ template <class T>
 struct __DeclareAnyPMF
 {
     state_type    st;
+#ifndef _MSC_VER
     typename EDS::Event::code_type code;
     typename EDS::__PMFentry<T> func;
+#else
+    EDS::__Event_Base::code_type code;
+    EDS::__PMFentry<T> func;
+#endif
 };
 
 template <class Key1, class Key2, class Value>
