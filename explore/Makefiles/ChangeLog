@@ -1,0 +1,19 @@
+2005-03-25  Petr Ovtchenkov  <ptr@island.plnet.ru>
+
+	* gmake/app/gcc.mak, gmake/lib/gcc.mak:
+	code reorganization to simplify platform configuration with or without
+	-nostdlib [avoid link with libstdc++ or libestdc++]; now link without
+	libstdc++/libestdc++ supported on Linux and OpenBSD. libstlport
+	will be in link sequence when _USE_NOSTDLIB in charge. If macro
+	NOT_USE_NOSTDLIB defined original gcc linkage in use and no link with
+	libstlport.
+
+	* build/Makefiles/gmake/openbsd/rules-so.mak: idem.
+
+	* build/Makefiles/gmake/freebsd/rules-so.mak: idem.
+
+2005-03-23  Petr Ovtchenkov  <ptr@island.plnet.ru>
+
+	* gmake/app/gcc.mak, gmake/lib/gcc.mak: don't use libsupc++,
+	it linked in libstlport.so now; add libstlport into 'standard' libs;
+	add macro to turn off STLport usage
