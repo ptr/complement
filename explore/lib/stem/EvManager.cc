@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/08 12:22:00 ptr>
+// -*- C++ -*- Time-stamp: <99/09/10 15:53:18 ptr>
 #ident "$SunId$ %Q%"
 
 #ifdef _MSC_VER
@@ -20,10 +20,20 @@
 
 namespace EDS {
 
+#ifndef WIN32
 const __EDS_DLL addr_type badaddr    = 0xffffffff;
 const __EDS_DLL key_type  badkey     = 0xffffffff;
 const __EDS_DLL addr_type extbit     = 0x80000000;
 const __EDS_DLL addr_type nsaddr     = 0x00000001;
+#endif
+
+#ifdef WIN32
+__EDS_DLL addr_type badaddr    = 0xffffffff;
+__EDS_DLL key_type  badkey     = 0xffffffff;
+__EDS_DLL addr_type extbit     = 0x80000000;
+__EDS_DLL addr_type nsaddr     = 0x00000001;
+#endif
+
 const           addr_type beglocaddr = 0x00000100;
 const           addr_type endlocaddr = 0x3fffffff;
 const           addr_type begextaddr = extbit;

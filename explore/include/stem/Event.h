@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/07 19:58:23 ptr>
+// -*- C++ -*- Time-stamp: <99/09/10 15:54:29 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -26,10 +26,19 @@ typedef unsigned addr_type;
 typedef unsigned code_type;
 typedef unsigned key_type;
 
-extern const __EDS_DLL addr_type badaddr;
-extern const __EDS_DLL addr_type extbit;
-extern const __EDS_DLL addr_type nsaddr;
-extern const __EDS_DLL key_type  badkey;
+#ifndef WIN32
+extern const addr_type badaddr;
+extern const addr_type extbit;
+extern const addr_type nsaddr;
+extern const key_type  badkey;
+#endif
+
+#ifdef WIN32
+extern __EDS_DLL addr_type badaddr;
+extern __EDS_DLL addr_type extbit;
+extern __EDS_DLL addr_type nsaddr;
+extern __EDS_DLL key_type  badkey;
+#endif
 
 class __Event_Base
 {
