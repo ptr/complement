@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/15 12:21:44 ptr>
+// -*- C++ -*- Time-stamp: <99/10/18 11:01:04 ptr>
 
 /*
  *
@@ -55,6 +55,10 @@
 #endif
 
 namespace EDS {
+
+#ifdef _WIN32
+using std::timespec;
+#endif
 
 struct CronEntry :
    public __pack_base
