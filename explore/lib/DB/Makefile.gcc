@@ -1,4 +1,4 @@
-# Time-stamp: <01/07/19 16:01:14 ptr>
+# Time-stamp: <01/07/26 16:01:14 ptr>
 # $Id$
 
 BASEDIR := $(shell xtmp=`pwd`; \
@@ -24,8 +24,7 @@ all-release:	release-shared release-static
 include ${BASEDIR}/lib/Makefile.inc.lib
 
 INCLUDES += -I$(BASEDIR)/include
-LDLIBS += -ldl
 
-# INCLUDES += -I/usr/local/pgsql/include
-# DEFS += -D__DB_POSTGRES
-
+#ifeq ($(OS_VER),Linux)
+LDFLAGS += -ldl
+#endif
