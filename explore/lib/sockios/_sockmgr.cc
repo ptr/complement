@@ -1,12 +1,12 @@
-// -*- C++ -*- Time-stamp: <01/03/19 16:51:55 ptr>
+// -*- C++ -*- Time-stamp: <02/04/14 20:11:47 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999
- * Petr Ovchenkov
+ * Copyright (c) 1997-1999, 2002
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
- * ParallelGraphics Ltd.
+ * Parallel Graphics Ltd.
  * 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -36,7 +36,7 @@
 
 _STLP_BEGIN_NAMESPACE
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol prot )
 {
   if ( is_open() ) {
@@ -103,7 +103,7 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
   return;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void basic_sockmgr::close()
 {
   if ( !is_open() ) {
@@ -133,7 +133,7 @@ void basic_sockmgr::shutdown( sock_base::shutdownflg dir )
 }
 #endif // 0
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void basic_sockmgr::setoptions( sock_base::so_t optname, bool on_off, int __v )
 {
 #ifdef __unix
