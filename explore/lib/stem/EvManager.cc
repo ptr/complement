@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/10/14 17:02:23 ptr>
+// -*- C++ -*- Time-stamp: <96/11/25 10:50:41 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #include <EDS/EvManager.h>
@@ -16,7 +16,6 @@ void EDSEvManager::push(const EDSEvManager::value_type& x)
   ParentCls::push( x );
   queue_lock._signal();
   queue_lock.unlock();
-  // queue_sem.post();
 }
 
 bool EDSEvManager::empty()
@@ -29,8 +28,7 @@ void EDSEvManager::dispatch()
 {
   queue_lock.wait();
   while ( !empty() ) {
-    // queue_sem.wait();
-    OXWEvInfo& top = front();
+    EDSEvInfo& top = front();
     switch ( top.first.dtype ) {
       case EDSEvTarget::Local:
 	switch ( top.first.ctype ) {
@@ -66,7 +64,7 @@ void EDSEvManager::dispatch()
 void EDSEvManager::Done()
 {
   lock_not_done._signal();
-  queue_lock._signal();
+  // queue_lock._signal();
 }
 
 bool EDSEvManager::wait_done()

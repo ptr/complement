@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/11/24 14:17:11 ptr>
+// -*- C++ -*- Time-stamp: <96/11/25 11:45:31 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -20,14 +20,14 @@
 #include <string.h>
 #endif
 
-template <class T> class OXWEventsTable<T>;
-template <class S, class D> class OXWEventT;
+template <class T> class EDSEventsTable<T>;
+template <class S, class D> class EDSEventT;
 
 class GENERIC;
-class OXWEventsCore;
+class EDSEventsCore;
 
 template <class S, class D>
-class EDSEvent_basic
+class EDSEvent_base
 {
   public:
     typedef D value_type;
@@ -35,7 +35,7 @@ class EDSEvent_basic
     typedef size_t size_type;
     typedef const D * const_pointer;
 
-    EDSEvent_basic() :
+    EDSEvent_base() :
 	Message( 0 ),
 	theSender( 0 ),
 	DataObject( 0 ),
@@ -43,7 +43,7 @@ class EDSEvent_basic
 	n( 0 )
       { }
 
-    EDSEvent_basic( message_type msg ) :
+    EDSEvent_base( message_type msg ) :
 	Message( msg ),
 	theSender( 0 ),
 	DataObject( 0 ),
@@ -51,7 +51,7 @@ class EDSEvent_basic
 	n( 0 )
       { }
 
-    EDSEvent_basic( message_type msg, const D *first, const D *last ) :
+    EDSEvent_base( message_type msg, const D *first, const D *last ) :
 	Message( msg ),
 	theSender( 0 ),
 	DataObject( 0 ),
@@ -59,7 +59,7 @@ class EDSEvent_basic
 	n( last - first )
       { }
 
-    EDSEvent_basic( const EDSEvent_basic& e ) :
+    EDSEvent_base( const EDSEvent_base& e ) :
 	Message( e.Message ),
 	theSender( (S *)e.theSender ),
 	DataObject( 0 ),
@@ -88,33 +88,33 @@ class EDSEvent_basic
     pointer DataObject;
 };
 
-typedef OXWEventT<OXWEventsCore,void> OXWEvent;
+typedef EDSEventT<EDSEventsCore,void> EDSEvent;
 
-// ***************************************************************** OXWEventT
+// ***************************************************************** EDSEventT
 
 template <class S, class D>
-class OXWEventT :
-    public EDSEvent_basic<S,D>
+class EDSEventT :
+    public EDSEvent_base<S,D>
 {
-  friend OXWEvent;
+  friend EDSEvent;
 
   public:
     typedef D& reference;
     typedef const D& const_reference;
 
-    OXWEventT() :
+    EDSEventT() :
 	EDSEvent_basic()
       { }
-    OXWEventT( message_type msg, const D& x );
-    OXWEventT( message_type msg, const D *first, const D *last );
+    EDSEventT( message_type msg, const D& x );
+    EDSEventT( message_type msg, const D *first, const D *last );
 
-    OXWEventT( const OXWEvent& e );
-    ~OXWEventT();
+    EDSEventT( const EDSEvent& e );
+    ~EDSEventT();
 
-    operator OXWEvent& ()
-      { return *reinterpret_cast<OXWEvent *>(this); }
-    operator const OXWEvent& () const
-      { return *reinterpret_cast<const OXWEvent * const >(this); }
+    operator EDSEvent& ()
+      { return *reinterpret_cast<EDSEvent *>(this); }
+    operator const EDSEvent& () const
+      { return *reinterpret_cast<const EDSEvent * const >(this); }
     operator reference ()
       {
 	CHECK_LENGTH( sz != 0 );
@@ -140,8 +140,8 @@ class OXWEventT :
 };
 
 template <class S, class D>
-OXWEventT<S,D>::OXWEventT( message_type msg, const D& x ) :
-    EDSEvent_basic<S,D>( msg )
+EDSEventT<S,D>::EDSEventT( message_type msg, const D& x ) :
+    EDSEvent_base<S,D>( msg )
 {
   n = 1;
   sz = sizeof(D);
@@ -149,8 +149,8 @@ OXWEventT<S,D>::OXWEventT( message_type msg, const D& x ) :
 }
 
 template <class S, class D>
-OXWEventT<S,D>::OXWEventT( message_type msg, const D *first, const D *last ) :
-    EDSEvent_basic<S,D>( msg, first, last )
+EDSEventT<S,D>::EDSEventT( message_type msg, const D *first, const D *last ) :
+    EDSEvent_base<S,D>( msg, first, last )
 {
   CHECK_OUT_OF_RANGE( n >= 1 && sz >= sizeof( value_type ) );
   DataObject = (pointer)::operator new( n * sz );
@@ -158,8 +158,8 @@ OXWEventT<S,D>::OXWEventT( message_type msg, const D *first, const D *last ) :
 }
 
 template <class S, class D>
-OXWEventT<S,D>::OXWEventT( const OXWEvent& e ) :
-    EDSEvent_basic<S,D>( e )
+EDSEventT<S,D>::EDSEventT( const EDSEvent& e ) :
+    EDSEvent_base<S,D>( e )
 {
   if ( sz ) {
     CHECK_OUT_OF_RANGE( n >= 1 && sz >= sizeof( value_type ) );
@@ -172,7 +172,7 @@ OXWEventT<S,D>::OXWEventT( const OXWEvent& e ) :
 }
 
 template <class S, class D>
-OXWEventT<S,D>::~OXWEventT()
+EDSEventT<S,D>::~EDSEventT()
 {
   if ( sz ) {
     destroy( DataObject, DataObject + n );
@@ -180,23 +180,23 @@ OXWEventT<S,D>::~OXWEventT()
   }
 }
 
-// ********************************************* OXWEventT<OXWEventsCore,void>
+// ********************************************* EDSEventT<EDSEventsCore,void>
 
-class OXWEventT<OXWEventsCore,void> :
-    public EDSEvent_basic<OXWEventsCore,void>
+class EDSEventT<EDSEventsCore,void> :
+    public EDSEvent_base<EDSEventsCore,void>
 {
-  friend OXWEventsTable<GENERIC>;
-  friend OXWEvent;
+  friend EDSEventsTable<GENERIC>;
+  friend EDSEvent;
 
   public:
-    OXWEventT() :
-	EDSEvent_basic<OXWEventsCore,void>()
+    EDSEventT() :
+	EDSEvent_base<EDSEventsCore,void>()
       { }
-    OXWEventT( message_type msg ) :
-	EDSEvent_basic<OXWEventsCore,void>( msg )
+    EDSEventT( message_type msg ) :
+	EDSEvent_base<EDSEventsCore,void>( msg )
       { }
-    OXWEventT( const OXWEventT& e ) :
-	EDSEvent_basic<OXWEventsCore,void>( e )
+    EDSEventT( const EDSEventT& e ) :
+	EDSEvent_base<EDSEventsCore,void>( e )
       {
 	if ( sz ) {
 	  CHECK_OUT_OF_RANGE( n >= 1 );
@@ -206,12 +206,32 @@ class OXWEventT<OXWEventsCore,void> :
 	  DataObject = e.DataObject;
 	}
       }
-    ~OXWEventT()
+    ~EDSEventT()
       {
 	if ( sz ) {
 	  ::operator delete( DataObject );
 	}
       }
+};
+
+template <class T> class EDSCallbackObject;
+typedef EDSEventT<EDSEventsCore,EDSCallbackObject<GENERIC> > EDSEventCb;
+
+template <class T>
+class EDSCallbackObject
+{
+  public:
+    typedef void (T::*PMF)();
+    EDSCallbackObject( T *o, PMF pmf )
+      { object = o; Pmf = pmf; }
+    EDSCallbackObject()
+      { object = 0; Pmf = 0; }
+    operator EDSCallbackObject<GENERIC>&()
+      { return *((EDSCallbackObject<GENERIC> *)this); }
+    operator const EDSCallbackObject<GENERIC>&() const
+      { return *((EDSCallbackObject<GENERIC> *)this); }
+    T *object;
+    PMF Pmf;
 };
 
 #endif
