@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/13 11:54:11 ptr>
+// -*- C++ -*- Time-stamp: <99/09/14 19:14:16 ptr>
 #ident "$SunId$ %Q%"
 
 #ifdef _MSC_VER
@@ -17,6 +17,7 @@
 
 #include <EvManager.h>
 #include <NetTransport.h>
+#include <iomanip>
 
 namespace EDS {
 
@@ -203,7 +204,10 @@ void EvManager::Send( const Event& e )
       e.dest( save_dest ); // restore original (may be used more)
     }
   } else {
-    std::cerr << "===================== Not found\n";
+    std::cerr << "===== EDS: "
+              << std::hex << std::setiosflags(std::ios_base::showbase)
+              << e.dest()
+              << " not found\n" << std::dec;
   }
 }
 
