@@ -15,14 +15,26 @@ include ${BASEDIR}/lib/Makefile.inc.lib
 
 INCLUDES += -I$(BASEDIR)/include
 
+<<<<<<< Makefile.gcc
+dbg : LDFLAGS += -L$(BASEDIR)/lib/mt/obj/${COMPILER_NAME}${DBG_SUFFIX}
+release : LDFLAGS += -L$(BASEDIR)/lib/mt/obj/${COMPILER_NAME}
+=======
 dbg : LDFLAGS += -L../mt/obj/${COMPILER_NAME}${DBG_SUFFIX}
 release : LDFLAGS += -L../mt/obj/${COMPILER_NAME}
+>>>>>>> 3.2
 
+<<<<<<< Makefile.gcc
+dbg : LDFLAGS += -L$(BASEDIR)/lib/mt/obj/${COMPILER_NAME}${DBG_SUFFIX}
+dbg : LDFLAGS += -L$(BASEDIR)/lib/sockios/obj/${COMPILER_NAME}${DBG_SUFFIX} -L$(HOME)/lib
+release : LDFLAGS += -L$(BASEDIR)/lib/mt/obj/${COMPILER_NAME}
+release : LDFLAGS += -L$(BASEDIR)/lib/sockios/obj/${COMPILER_NAME} -L$(HOME)/lib
+=======
 dbg : LDFLAGS += -L../mt/obj/${COMPILER_NAME}${DBG_SUFFIX}
 dbg : LDFLAGS += -L../sockios/obj/${COMPILER_NAME}${DBG_SUFFIX}
 release : LDFLAGS += -L../mt/obj/${COMPILER_NAME}
 release : LDFLAGS += -L../sockios/obj/${COMPILER_NAME}
+>>>>>>> 3.2
 
-release : LDLIBS += -lxmt -lsockios -lstlport_sunpro
 dbg     : LDLIBS += -lxmt${DBG_SUFFIX} -lsockios${DBG_SUFFIX} \
-                    -lstlport_sunpro_stldebug
+                    -lstlport_gcc_stldebug
+release : LDLIBS += -lxmt -lsockios -lstlport_gcc
