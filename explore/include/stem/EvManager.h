@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/08 13:23:10 ptr>
+// -*- C++ -*- Time-stamp: <99/09/13 11:58:37 ptr>
 #ifndef __EvManager_h
 #define __EvManager_h
 
@@ -116,14 +116,18 @@ class EvManager
 
   private:
     addr_type create_unique();
+    addr_type create_unique_x();
 
     void Remove( NetTransport_base * );
-    void Dispatch( const Event& e );
 
     const addr_type _low;
     const addr_type _high;
     addr_type _id;
     heap_type heap;
+
+    const addr_type _x_low;
+    const addr_type _x_high;
+    addr_type _x_id;
 
     __impl::Mutex _lock_heap;
 
