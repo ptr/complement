@@ -5,8 +5,9 @@ INCLUDES = -I/usr/openwin/include -I../../../include
 DEFS = -DSVR4 -D__DEBUG=2
 # OPT = -g -p
 OPT = -g
+# OPT = -O4
 # OPT = -G -O4
-CCFLAGS = $(OPT) -cg92 +w -pic -pto
+CCFLAGS = $(OPT) -cg92 +w -pic -pto -mt
 CPPFLAGS = $(DEFS) $(INCLUDES)
 # LDFLAGS = -L$(OUTPUT_DIR) -lclass -lX11 -ldl
 PROJECT_LIBS = ../..
@@ -20,6 +21,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/Event.o \
 		$(OUTPUT_DIR)/EventHandler.o \
 		$(OUTPUT_DIR)/EventsCore.o \
+		$(OUTPUT_DIR)/Actuator.o \
 		$(OUTPUT_DIR)/Application.o \
 		$(OUTPUT_DIR)/RectObject.o \
 		$(OUTPUT_DIR)/WindowBase.o \
@@ -72,6 +74,9 @@ $(PROJECT):	$(LIBFILES.o)
 
 $(XTESTER):	$(XLIBFILES.o) $(XFILES.o)
 	$(LINK.cc) -o $@ $(XLIBFILES.o) $(XFILES.o)
+
+# $(XTESTER):	$(XFILES.o)
+#	$(LINK.cc) -o $@ $(XFILES.o) -lOXW
 
 $(OUTPUT_DIR)/%.o:	%.cc
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
