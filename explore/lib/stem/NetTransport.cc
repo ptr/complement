@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/22 16:28:25 ptr>
+// -*- C++ -*- Time-stamp: <99/03/24 12:39:18 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -18,7 +18,9 @@ void dump( std::ostream& o, const EDS::Event& e )
 {
   o << setiosflags(ios_base::showbase) << hex
     << "Code: " << e.code() << " Destination: " << e.dest() << " Source: " << e.src()
-    << "\nSeq: " << e.seq()
+    << "SID: " << e.sid()
+    << "\nSN: " << e.seq()
+    << "\nRN: " << e.responce()
     << "\nData:\n";
 
   string mark_line( "-----------| 4 --------| 8 --------| b --------|10 --------|14 --------|\n" );
@@ -67,14 +69,17 @@ int NetTransport::_loop( void *p )
       __stl_assert( EventHandler::_mgr != 0 );
       // if _mgr == 0, best choice is close connection...
       r = me.rar.find( ev._src );
-      if ( r == me.rar.end() ) {        
+      if ( r == me.rar.end() ) {
         r = me.rar.insert( 
           heap_type::value_type( ev._src,
-          EventHandler::_mgr->SubscribeRemote( &me, ev._src, me._server_name ) ) ).first;
+          EventHandler::_mgr->SubscribeRemote( &me, ev._src, me._partner_name ) ) ).first;
 //        cerr << "Create remote object: " << hex << (*r).second
 //             << " [" << ev._src << "]\n";
       }
       ev._src = (*r).second; // substitute my local id
+      if ( me._sid == 0 ) {
+        me._sid = ev.sid();
+      }
 
       EventHandler::_mgr->Dispatch( ev );
     }
@@ -108,14 +113,14 @@ NetTransport::key_type NetTransport::open( const string& hostname, int port )
     net = new std::sockstream( hostname.c_str(), port );
   }
   _net_owner = true;
-  _server_name = hostname;
+  _partner_name = hostname;
   if ( net->good() ) {
     heap_type::iterator r;
 
     // forward register remote object with ID 0
     r = rar.insert( 
       heap_type::value_type( 0,
-                             EventHandler::_mgr->SubscribeRemote( this, 0, _server_name ) ) ).first;
+                             EventHandler::_mgr->SubscribeRemote( this, 0, _partner_name ) ) ).first;
     _thr.launch( _loop, this ); // start thread here
     return (*r).second;
   }
@@ -123,6 +128,9 @@ NetTransport::key_type NetTransport::open( const string& hostname, int port )
 }
 
 // passive side (server) function
+
+static __sid_ = 0;
+
 __DLLEXPORT
 void NetTransport::connect( sockstream& s, const string& hostname, string& info )
 {
@@ -130,6 +138,7 @@ void NetTransport::connect( sockstream& s, const string& hostname, string& info 
 
   heap_type::iterator r;
   Event ev;
+  _sid = ++__sid_;
 
   try {
     net = &s;
@@ -167,15 +176,17 @@ void NetTransport::connect( sockstream& s, const string& hostname, string& info 
 
 bool NetTransport::pop( Event& __rs )
 {
-  unsigned buf[5];
+  unsigned buf[7];
 
-  net->read( (char *)&buf, sizeof(int) * 5 );
+  net->read( (char *)&buf, sizeof(int) * 7 );
   __rs.code( from_net( buf[0] ) );
   __rs.dest( from_net( buf[1] ) );
   __rs.src( from_net( buf[2] ) );
-  __rs.seq( from_net( buf[3] ) );
+  __rs.sid( from_net( buf[3] ) );
+  __rs.seq( from_net( buf[4] ) );
+  __rs.responce( from_net( buf[5] ) );
 
-  unsigned sz = from_net( buf[4] );
+  unsigned sz = from_net( buf[6] );
   string& str = __rs.value();
 
   if ( !net->good() ) {
@@ -198,15 +209,17 @@ bool NetTransport::push( const Event& __rs, const Event::key_type& rmkey,
   std::cerr << "Src key " << hex << srckey << ", remote key " << rmkey
             << "\n";
 
-  unsigned buf[5];
+  unsigned buf[7];
 
   buf[0] = to_net( __rs.code() );
   buf[1] = to_net( /* __rs.dest() */ rmkey );
   buf[2] = to_net( /* __rs.src() */ srckey );
-  buf[3] = to_net( __rs.seq() != 0 ? __rs.seq() | Event::respbit : ++_count );
-  buf[4] = to_net( __rs.value().size() );
+  buf[3] = to_net( /* __rs.sid() */ _sid );
+  buf[4] = to_net( ++_count );
+  buf[5] = to_net( __rs.responce() );
+  buf[6] = to_net( __rs.value().size() );
 
-  net->write( (const char *)buf, sizeof(unsigned) * 5 );
+  net->write( (const char *)buf, sizeof(unsigned) * 7 );
 
   copy( __rs.value().begin(), __rs.value().end(),
         ostream_iterator<char,char,char_traits<char> >(*net) );
