@@ -1,4 +1,4 @@
-# Time-stamp: <03/03/02 11:41:08 ptr>
+# Time-stamp: <03/05/06 13:30:07 ptr>
 # $Id$
 
 # .KEEP_STATE:
@@ -33,6 +33,9 @@ endif
 
 ARCH = a
 AR = ar
+AR_INS_R = -r
+AR_EXTR = -x
+AR_OUT =
 
 INCLUDES = -I$(BASEDIR)/include
 
