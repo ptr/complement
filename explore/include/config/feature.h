@@ -1,6 +1,5 @@
 // -*- C++ -*- Time-stamp: <00/05/22 12:33:53 ptr>
 
-
 /*
  *
  * Copyright (c) 1999
@@ -18,7 +17,6 @@
  * that both that copyright notice and this permission notice appear
  * in supporting documentation.
  */
-
 #ifndef __config_feature_h
 #define __config_feature_h
 
@@ -95,6 +93,15 @@
 #  define __STL_USE_NEW_IOSTREAMS
 #  define __STLPORT_NEW_IOSTREAMS 
 #endif
+#else
+
+#  ifndef _REENTRANT
+#    define _REENTRANT
+#  endif
+#  ifdef __sun
+#    define __STL_SOLARIS_THREADS
+#  endif
+
 #endif // 0
 
 #if defined( WIN32 ) && !defined(__PG_USE_STATIC_LIB) && !defined(_LIB)
@@ -142,24 +149,23 @@
  *   (under Solaris 5.6 and Solaris 7) with some extentions
  */
 
-
 #ifdef __SunOS_5_6
 #  define _XOPEN_SOURCE 1
 #  define _XOPEN_SOURCE_EXTENDED 1
-#  define __EXTENSIONS__
-#  define __XPG4v2
+#  define __EXTENSIONS__ 1
+#  define __XPG4v2 1
 #endif // __SunOS_5_6
 
 #ifdef __SunOS_5_7
 #  define _XOPEN_SOURCE 1
 #  define _XOPEN_SOURCE_EXTENDED 1
-#  define __EXTENSIONS__
-#  define __XPG4v2
+#  define __EXTENSIONS__ 1
+#  define __XPG4v2 1
 #endif // __SunOS_5_7
 
 #ifdef __SUNPRO_CC
 #  ifndef __LINK_TIME_INSTANTIATION
-#    define __LINK_TIME_INSTANTIATION
+#    define __LINK_TIME_INSTANTIATION 1
 #  endif
 #  define __PG_INCLASS_OPERATOR
 #endif // __SUNPRO_CC
