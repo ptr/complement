@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/01/27 12:10:53 ptr>
+// -*- C++ -*- Time-stamp: <00/02/18 17:48:06 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -19,6 +19,7 @@
 // So I do this via Tls* functions (TlsAlloc() in plock.cc)
 
 #include <ostream>
+#include <sstream>
 
 #ifndef __XMT_H
 #include <mt/xmt.h>
@@ -35,7 +36,8 @@ DllMain( HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved )
 namespace __impl {
 
 static char __xbuff[16];
-static const char *WINSOCK_ERR_MSG = "WinSock DLL not 2.0";
+static const char *WINSOCK_ERR_MSG  = "WinSock DLL not 2.0";
+static const char *WINSOCK_ERR_MSG1 = "WinSock DLL not 2.0 (or not Win95)";
 
 // extern __declspec( dllexport ) int __thr_key; // xmt.cc
 int __thr_key = TlsAlloc();
@@ -84,35 +86,52 @@ int WinVer()
 __SOCKIOS_DLL
 sock_base::Init::Init()
 {
-  int __tls_init_cnt = (int)TlsGetValue( __impl::__thr_key );
+  int __err = 0;
+  try {
+    int __tls_init_cnt = (int)TlsGetValue( __impl::__thr_key );
 //  long& __tls_init_cnt = __impl::Thread::iword( _sb_idx );
-  if ( __tls_init_cnt++ == 0 ) {
-    int win_ver = WinVer();
+    if ( __tls_init_cnt++ == 0 ) {
+      int win_ver = WinVer();
 
-    WORD    __vers;
-    WSADATA __wsadata;
+      WORD    __vers;
+      WSADATA __wsadata;
 
-    if ( win_ver != WINDOWS_3_1 && !(win_ver == WINDOWS_95 && __glob_init_cnt++ > 0) ) {
-      __vers = MAKEWORD( 2, 0 );
-      int __err = WSAStartup( __vers, &__wsadata );
+      if ( win_ver != WINDOWS_3_1 && !(win_ver == WINDOWS_95 && __glob_init_cnt++ > 0) ) {
+        __vers = MAKEWORD( 2, 0 );
+        __err = WSAStartup( __vers, &__wsadata );
 
-      if ( __err != 0 ) {
-        TlsSetValue( __impl::__thr_key, 0 );
-        throw domain_error( __impl::WINSOCK_ERR_MSG );
-      }
-      if ( LOBYTE(__wsadata.wVersion) != 2 || HIBYTE(__wsadata.wVersion) != 0 ) {
-        if ( win_ver != WINDOWS_95 ) {
-          WSACleanup();
+        if ( __err != 0 && __err != WSAVERNOTSUPPORTED ) {
           TlsSetValue( __impl::__thr_key, 0 );
-          throw domain_error( __impl::WINSOCK_ERR_MSG );          
+          throw domain_error( __impl::WINSOCK_ERR_MSG );
         }
-      } else if ( win_ver == WINDOWS_95 ) {
-        __glob_init_wsock2 = 1;
-      }
+        if ( LOBYTE(__wsadata.wVersion) != 2 || HIBYTE(__wsadata.wVersion) != 0 ) {
+          if ( win_ver != WINDOWS_95 ) {
+            WSACleanup();
+            TlsSetValue( __impl::__thr_key, 0 );
+            throw domain_error( __impl::WINSOCK_ERR_MSG1 );
+          }
+        } else if ( win_ver == WINDOWS_95 ) {
+          __glob_init_wsock2 = 1;
+        }
 
+      }
     }
+    TlsSetValue( __impl::__thr_key, (void *)__tls_init_cnt );
   }
-  TlsSetValue( __impl::__thr_key, (void *)__tls_init_cnt );
+  catch ( domain_error& err ) {
+    ostringstream ss;
+    ss << err.what() << ", Error code " << __err << "\n"
+       << __FILE__ << ":" << __LINE__ << endl;
+    MessageBox( 0, ss.str().c_str(), "Planet Problem", MB_OK );
+    throw;
+  }
+  catch ( ... ) {
+    ostringstream ss;
+    ss << "Unspesified exception, Error code " << __err << "\n"
+       << __FILE__ << ":" << __LINE__ << endl;
+    MessageBox( 0, ss.str().c_str(), "Planet Problem", MB_OK );
+    throw;
+  }
 }
 
 __SOCKIOS_DLL
