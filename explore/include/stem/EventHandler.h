@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/22 20:08:27 ptr>
+// -*- C++ -*- Time-stamp: <99/03/23 10:51:44 ptr>
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
@@ -13,7 +13,7 @@
 #include <ostream>
 
 #ifdef WIN32
-#include <_algorithm>
+#include <_algorithm> // for select1st
 #endif // WIN32
 
 namespace EDS {
@@ -654,106 +654,61 @@ class EventHandler
 // The body of response table is defined by macro DEFINE_RESPONSE_TABLE
 // (see below).
 
-#ifndef _MSC_VER
-#define DECLARE_RESPONSE_TABLE( cls, pcls )	\
-  public:                                       \
-    virtual void Trace( std::ostream& ) const;    \
-    virtual void DispatchTrace( const EDS::Event&, std::ostream& );\
-    typedef typename EDS::__EvHandler<cls,EDS::h_iterator> evtable_type;\
-    typedef cls ThisCls;			\
-    typedef typename pcls ParentThisCls;        \
-    static const table_type& get_ev_table()     \
-      { return theEventsTable.table; }          \
-  protected:					\
-    virtual bool Dispatch( const EDS::Event& );   \
-    virtual bool DispatchStub( const EDS::Event& ); \
-    static evtable_type theEventsTable;         \
-    static typename EDS::__DeclareAnyPMF<cls> theDeclEventsTable[]
-#else // _MSC_VER
-#define DECLARE_RESPONSE_TABLE( cls, pcls )	\
-  public:                                       \
-    virtual void Trace( std::ostream& ) const;    \
-    virtual void DispatchTrace( const EDS::Event&, std::ostream& );\
-    typedef EDS::__EvHandler<cls,EDS::h_iterator> evtable_type;\
-    typedef cls ThisCls;			\
-    typedef pcls ParentThisCls;        \
-    static const table_type& get_ev_table()     \
-      { return theEventsTable.table; }          \
-  protected:					\
-    virtual bool Dispatch( const EDS::Event& );   \
-    virtual bool DispatchStub( const EDS::Event& ); \
-    static evtable_type theEventsTable;         \
+
+#define DECLARE_RESPONSE_TABLE( cls, pcls )	                          \
+  public:                                                                 \
+    virtual void Trace( std::ostream& ) const;                            \
+    virtual void DispatchTrace( const EDS::Event&, std::ostream& );       \
+    typedef EDS::__EvHandler<cls,EDS::h_iterator> evtable_type;           \
+    typedef cls ThisCls;			                          \
+    typedef pcls ParentThisCls;                                           \
+    static const table_type& get_ev_table()                               \
+      { return theEventsTable.table; }                                    \
+  protected:					                          \
+    virtual bool Dispatch( const EDS::Event& );                           \
+    virtual bool DispatchStub( const EDS::Event& );                       \
+    static evtable_type theEventsTable;                                   \
     static EDS::__DeclareAnyPMF<cls> theDeclEventsTable[]
-#endif // _MSC_VER
 
 // Macro for specification of response table body beginning:
 // DEFINE_RESPONSE_TABLE( XX )
 //   RESPONSE_TABLE_ENTRY( ST_NRM, XW_EXPOSE, OXWEvExpose, XEventDispatch );
 // END_RESPONSE_TABLE
 
-#ifndef _MSC_VER
-#define DEFINE_RESPONSE_TABLE( cls )		\
-cls::evtable_type cls::theEventsTable( theDeclEventsTable ); \
-                                                \
-bool cls::Dispatch( const EDS::Event& __event__ ) \
-{						\
-  return theEventsTable.Dispatch( this, theHistory.begin(), \
-				  theHistory.end(), __event__ ); \
-}						\
-                                                \
-bool cls::DispatchStub( const EDS::Event& __event__ ) \
-{						\
-  return theEventsTable.DispatchStub( this, theHistory.begin(), \
-				      theHistory.end(), __event__ ); \
-}						\
-                                                \
-void cls::DispatchTrace( const EDS::Event& __event__, std::ostream& out )  \
-{						\
-  theEventsTable.DispatchTrace( theHistory.begin(), \
-	 		        theHistory.end(), __event__, out ); \
-}						\
-                                                \
-void cls::Trace( std::ostream& out ) const        \
-{                                               \
-  theEventsTable.Out( out );                    \
-}                                               \
-typename EDS::__DeclareAnyPMF<cls> cls::theDeclEventsTable[] = {
-#else // _MSC_VER
-#define DEFINE_RESPONSE_TABLE( cls )		\
-cls::evtable_type cls::theEventsTable( theDeclEventsTable ); \
-                                                \
-bool cls::Dispatch( const EDS::Event& __event__ ) \
-{						\
-  return theEventsTable.Dispatch( this, theHistory.begin(), \
-				  theHistory.end(), __event__ ); \
-}						\
-                                                \
-bool cls::DispatchStub( const EDS::Event& __event__ ) \
-{						\
-  return theEventsTable.DispatchStub( this, theHistory.begin(), \
-				      theHistory.end(), __event__ ); \
-}						\
-                                                \
-void cls::DispatchTrace( const EDS::Event& __event__, std::ostream& out )  \
-{						\
-  theEventsTable.DispatchTrace( theHistory.begin(), \
-	 		        theHistory.end(), __event__, out ); \
-}						\
-                                                \
-void cls::Trace( std::ostream& out ) const        \
-{                                               \
-  theEventsTable.Out( out );                    \
-}                                               \
+#define DEFINE_RESPONSE_TABLE( cls )		                          \
+cls::evtable_type cls::theEventsTable( theDeclEventsTable );              \
+                                                                          \
+bool cls::Dispatch( const EDS::Event& __event__ )                         \
+{						                          \
+  return theEventsTable.Dispatch( this, theHistory.begin(),               \
+				  theHistory.end(), __event__ );          \
+}						                          \
+                                                                          \
+bool cls::DispatchStub( const EDS::Event& __event__ )                     \
+{						                          \
+  return theEventsTable.DispatchStub( this, theHistory.begin(),           \
+				      theHistory.end(), __event__ );      \
+}						                          \
+                                                                          \
+void cls::DispatchTrace( const EDS::Event& __event__, std::ostream& out ) \
+{						                          \
+  theEventsTable.DispatchTrace( theHistory.begin(),                       \
+	 		        theHistory.end(), __event__, out );       \
+}						                          \
+                                                                          \
+void cls::Trace( std::ostream& out ) const                                \
+{                                                                         \
+  theEventsTable.Out( out );                                              \
+}                                                                         \
 EDS::__DeclareAnyPMF<cls> cls::theDeclEventsTable[] = {
-#endif // _MSC_VER
 
 // Macro for specification of response table entry:
 // RESPONSE_TABLE_ENTRY( ST_NRM, XW_EXPOSE, OXWEvExpose, XEventDispatch );
 //                       ~~~~~~  ~~~~~~~~~  ~~~~~~~~~~~  ~~~~~~~~~~~~~~
 //                       State     Event      Catcher      Dispatcher
 
-#define RESPONSE_TABLE_ENTRY( state, code, catcher, dispatch ) \
-  { state, code,                                               \
+#define RESPONSE_TABLE_ENTRY( state, code, catcher, dispatch )            \
+  { state, code,                                                          \
     {(EDS::__PMFentry<ThisCls>::PMF)catcher, (EDS::GENERIC::DPMF)dispatch, #catcher }},
 
 // Macro for specification of response table end:
