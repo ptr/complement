@@ -1,3 +1,14 @@
+2001-07-27  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* libxmt: Version 1.5.1
+	
+	* Makefile.gcc (Repository): provide workaround for
+	bug in GNU make 3.79*---it foget old value of variable when
+	tag-dependent variable use += operator, if includes of makefiles
+	is too deep---near deepth of 3. This influence to libraries building.
+	Add explicit link with other C++ shared libraries---this significantly
+	reduce library size.
+
 2001-06-05  Petr Ovchenkov  <ptr@ParaGraph.Ru>
 
 	* Makefile.inc (Message): library version 1.5.0

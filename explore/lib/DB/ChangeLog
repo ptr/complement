@@ -1,6 +1,17 @@
+2001-07-27  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* libDB: Version 0.6.1. Candidate for version 1.0.0
+	
+	* Makefile.gcc (Repository): provide workaround for
+	bug in GNU make 3.79*---it foget old value of variable when
+	tag-dependent variable use += operator, if includes of makefiles
+	is too deep---near deepth of 3. This influence to libraries building.
+	Add explicit link with other C++ shared libraries---this significantly
+	reduce library size.
+
 2001-07-19  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
 
-	* libDB_??.so: Version 0.6.0. Candidate for version 1.0.0
+	* libDB: Version 0.6.0. Candidate for version 1.0.0
 	
 	* OraSQL.cc, PgSQL.cc (Repository): Moved from interface library
 	to DB wrapper library.
