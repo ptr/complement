@@ -122,7 +122,7 @@ class sock_base
       so_rcvtimeo       = SO_RCVTIMEO,    // receive timeout
       so_error		= SO_ERROR,       // get error status and clear
       so_type		= SO_TYPE         // get socket type
-#if !defined( WIN32 ) && !defined( __linux )
+#ifdef __sun // indeed HP-UX 11.00 also has it, but 10.01 not
                                  ,
       so_prototype      = SO_PROTOTYPE    // get/set protocol type
 #endif
@@ -177,7 +177,11 @@ class basic_sockbuf :
 #ifdef WIN32
     typedef u_short                        family_type;
 #else
+#  ifdef sa_family_t
     typedef sa_family_t                    family_type;
+#  else // HP-UX 10.01
+    typedef unsigned short                 family_type;
+#  endif
 #endif
     
   public:

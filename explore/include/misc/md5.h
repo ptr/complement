@@ -32,7 +32,7 @@
 #ifndef __aux_md5_h
 #define __aux_md5_h
 
-#ifdef __Linux
+#ifdef __linux
 #include <stdint.h>             /* for uint_* */
 #else
 #include <sys/types.h>          /* for uint_* */
@@ -40,6 +40,13 @@
 
 #ifdef  __cplusplus
 extern "C" {
+#endif
+
+#ifndef uint32_t // HP-UX 10.01
+typedef unsigned uint32_t;
+#endif
+#ifndef uint8_t  // HP-UX 10.01
+typedef unsigned char uint8_t;
 #endif
 
 /* MD5 context. */
