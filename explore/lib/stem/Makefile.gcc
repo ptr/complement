@@ -1,4 +1,4 @@
-# Time-stamp: <01/03/29 13:57:03 ptr>
+# Time-stamp: <01/07/27 16:40:13 ptr>
 # $Id$
 
 BASEDIR := $(shell xtmp=`pwd`; \
@@ -24,20 +24,18 @@ include ${BASEDIR}/lib/Makefile.inc.lib
 
 INCLUDES += -I$(BASEDIR)/include
 
-dbg : OPT += 
-# -fno-default-inline -fno-implement-inlines -fkeep-inline-functions
-# dbg : LDFLAGS += -L../mt/obj/${COMPILER_NAME}${DBG_SUFFIX}
-# dbg : LDFLAGS += -L$(BASEDIR)/lib/sockios/obj/${COMPILER_NAME}${DBG_SUFFIX}
-# release : LDFLAGS += -L../mt/obj/${COMPILER_NAME}
-# release : LDFLAGS += -L$(BASEDIR)/lib/sockios/obj/${COMPILER_NAME}
+release-shared:	LDSEARCH = -L../mt/$(OUTPUT_DIR) \
+		           -L../sockios/$(OUTPUT_DIR) 
+stldbg-shared:	LDSEARCH = -L../mt/$(OUTPUT_DIR_STLDBG) \
+			   -L../sockios/$(OUTPUT_DIR_STLDBG)
+dbg-shared:	LDSEARCH = -L../mt/$(OUTPUT_DIR_DBG) \
+			   -L../sockios/$(OUTPUT_DIR_DBG)
 
-ifneq (${OS_VER},SunOS) # Linux, HP-UX
-# dbg : LDFLAGS += -L$(HOME)/lib
-# dbg : LDFLAGS += -L/tst/lib
-# release : LDFLAGS += -L$(HOME)/lib
-endif
-
-# dbg     : LDLIBS += -lxmt_${COMPILER_NAME}${DBG_SUFFIX} -lsockios_${COMPILER_NAME}${DBG_SUFFIX} \
-                    -lstlport_gcc_stldebug
-# release : LDLIBS += -lxmt_${COMPILER_NAME} -lsockios_${COMPILER_NAME} -lstlport_gcc
+release-shared:	LDLIBS = -lxmt_${COMPILER_NAME} \
+		         -lsockios_${COMPILER_NAME} -lstlport_gcc
+stldbg-shared:	LDLIBS = -lxmt_${COMPILER_NAME}_stl${DBG_SUFFIX} \
+		         -lsockios_${COMPILER_NAME}_stl${DBG_SUFFIX} \
+			 -lstlport_gcc_stldbg
+dbg-shared:	LDLIBS = -lxmt_${COMPILER_NAME}${DBG_SUFFIX} \
+			 -lsockios_${COMPILER_NAME}${DBG_SUFFIX} -lstlport_gcc
 

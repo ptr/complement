@@ -1,4 +1,4 @@
-# Time-stamp: <01/07/26 16:01:14 ptr>
+# Time-stamp: <01/07/27 17:25:45 ptr>
 # $Id$
 
 BASEDIR := $(shell xtmp=`pwd`; \
@@ -20,11 +20,10 @@ all-debug:	dbg-shared stldbg-shared dbg-static stldbg-static
 
 all-release:	release-shared release-static
 
-# include ${BASEDIR}/Makefile.inc.${COMPILER_NAME}
 include ${BASEDIR}/lib/Makefile.inc.lib
 
 INCLUDES += -I$(BASEDIR)/include
 
-#ifeq ($(OS_VER),Linux)
-LDFLAGS += -ldl
-#endif
+release-shared:	LDLIBS = -ldl -lstlport_gcc
+dbg-shared:	LDLIBS = -ldl -lstlport_gcc
+stldbg-shared:	LDLIBS = -ldl -lstlport_gcc_stldbg
