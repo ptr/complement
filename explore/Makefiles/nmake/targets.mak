@@ -38,8 +38,10 @@ ALLOBJS = $(SRC_C:.c=.o)
 
 ALLOBJS = $(ALLOBJS:../=)
 
+!ifdef SRC_RC
 ALLRESS = $(SRC_RC:.rc=.res)
 ALLRESS = $(ALLRESS:../=)
+!endif
 # ALLOBJS = $(ALLOBJS:somedir/=)
 
 ALLDEPS    = $(SRC_CC:.cc=.d) $(SRC_CPP:.cpp=.d) $(SRC_C:.c=.d)
@@ -63,13 +65,13 @@ OBJ=$(OBJ:.o@ =.o@)
 # replace marker by prefix:
 #OBJ=$(OBJ:.o@=.o %OUTPUT_DIR%/)
 # sorry, but I still not know how substitute macros in braces ();
-OBJ=$(OBJ:.o@=.o obj/vc6/shared/)
+OBJ=$(OBJ:.o@=.o obj\vc6\shared\)
 #!if [echo OBJ 3 -$(OBJ)-]
 #!endif
 # add prefix to first element:
-OBJ=$(OUTPUT_DIR)/$(OBJ)
-# !if [echo -$(OBJ)-]
-# !endif
+OBJ=$(OUTPUT_DIR)\$(OBJ)
+#!if [echo -$(OBJ)-]
+#!endif
 
 # The same trick for OBJ_DBG:
 OBJ_DBG=$(ALLOBJS:.o =.o@)
@@ -77,9 +79,9 @@ OBJ_DBG=$(ALLOBJS:.o =.o@)
 OBJ_DBG=$(OBJ_DBG:.o@ =.o@)
 #OBJ=$(OBJ:.o@=.o %OUTPUT_DIR%/)
 # sorry, but I still not know how substitute macros in braces ();
-OBJ_DBG=$(OBJ_DBG:.o@=.o obj/vc6/shared-g/)
+OBJ_DBG=$(OBJ_DBG:.o@=.o obj\vc6\shared-g\)
 # add prefix to first element:
-OBJ_DBG=$(OUTPUT_DIR_DBG)/$(OBJ_DBG)
+OBJ_DBG=$(OUTPUT_DIR_DBG)\$(OBJ_DBG)
 
 # And for OBJ_STLDBG too:
 OBJ_STLDBG=$(ALLOBJS:.o =.o@)
@@ -87,9 +89,9 @@ OBJ_STLDBG=$(ALLOBJS:.o =.o@)
 OBJ_STLDBG=$(OBJ_STLDBG:.o@ =.o@)
 #OBJ=$(OBJ:.o@=.o %OUTPUT_DIR%/)
 # sorry, but I still not know how substitute macros in braces ();
-OBJ_STLDBG=$(OBJ_STLDBG:.o@=.o obj/vc6/shared-stlg/)
+OBJ_STLDBG=$(OBJ_STLDBG:.o@=.o obj\vc6\shared-stlg\)
 # add prefix to first element:
-OBJ_STLDBG=$(OUTPUT_DIR_STLDBG)/$(OBJ_STLDBG)
+OBJ_STLDBG=$(OUTPUT_DIR_STLDBG)\$(OBJ_STLDBG)
 
 #OBJ_A      := $(OBJ)
 #OBJ_DBG    := $(addprefix $(OUTPUT_DIR_DBG)/,$(ALLOBJS))
@@ -100,17 +102,20 @@ OBJ_STLDBG=$(OUTPUT_DIR_STLDBG)/$(OBJ_STLDBG)
 #DEP_DBG    := $(addprefix $(OUTPUT_DIR_DBG)/,$(ALLDEPS))
 #DEP_STLDBG := $(addprefix $(OUTPUT_DIR_STLDBG)/,$(ALLDEPS))
 
+!ifdef ALLRES
 RES=$(ALLRESS:.res =.res@)
 RES=$(RES:.res@ =.res@)
-RES=$(RES:.res@=.res obj/vc6/shared/)
-RES=$(OUTPUT_DIR)/$(RES)
+RES=$(RES:.res@=.res obj\vc6\shared\)
+RES=$(OUTPUT_DIR)\$(RES)
 
 RES_DBG=$(ALLRESS:.res =.res@)
 RES_DBG=$(RES_DBG:.res@ =.res@)
-RES_DBG=$(RES_DBG:.res@=.res obj/vc6/shared-g/)
-RES_DBG=$(OUTPUT_DIR)/$(RES_DBG)
+RES_DBG=$(RES_DBG:.res@=.res obj\vc6\shared-g\)
+RES_DBG=$(OUTPUT_DIR)\$(RES_DBG)
 
 RES_STLDBG=$(ALLRESS:.res =.res@)
 RES_STLDBG=$(RES_STLDBG:.res@ =.res@)
-RES_STLDBG=$(RES_STLDBG:.res@=.res obj/vc6/shared-stlg/)
-RES_STLDBG=$(OUTPUT_DIR)/$(RES_STLDBG)
+RES_STLDBG=$(RES_STLDBG:.res@=.res obj\vc6\shared-stlg\)
+RES_STLDBG=$(OUTPUT_DIR)\$(RES_STLDBG)
+!endif
+
