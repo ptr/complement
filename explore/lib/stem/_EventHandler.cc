@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <00/05/26 10:47:47 ptr>
+// -*- C++ -*- Time-stamp: <00/08/09 11:35:31 ptr>
 
 /*
- * Copyright (c) 1999-2000
- * ParallelGraphics
- *
  * Copyright (c) 1995-1999
  * Petr Ovchenkov
+ *
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -108,21 +108,21 @@ __PG_DECLSPEC
 void EventHandler::PushState( state_type state )
 {
   RemoveState( state );
-  MT_REENTRANT_SDS( _theHistory_lock, _1 );
+  MT_REENTRANT_SDS( _theHistory_lock, _x1 );
   theHistory.push_front( state );
 }
 
 __PG_DECLSPEC
 state_type EventHandler::State() const
 {
-  MT_REENTRANT_SDS( _theHistory_lock, _1 );
+  MT_REENTRANT_SDS( _theHistory_lock, _x1 );
   return theHistory.front();
 }
 
 __PG_DECLSPEC
 void EventHandler::PushTState( state_type state )
 {
-  MT_REENTRANT_SDS( _theHistory_lock, _1 );
+  MT_REENTRANT_SDS( _theHistory_lock, _x1 );
   theHistory.push_front( ST_TERMINAL );
   theHistory.push_front( state );
 }
@@ -130,7 +130,7 @@ void EventHandler::PushTState( state_type state )
 __PG_DECLSPEC
 void EventHandler::PopState()
 {
-  MT_REENTRANT_SDS( _theHistory_lock, _1 );
+  MT_REENTRANT_SDS( _theHistory_lock, _x1 );
   theHistory.pop_front();
   while ( theHistory.front() == ST_TERMINAL ) {
     theHistory.pop_front();
@@ -140,7 +140,7 @@ void EventHandler::PopState()
 __PG_DECLSPEC
 void EventHandler::PopState( state_type state )
 {
-  MT_REENTRANT_SDS( _theHistory_lock, _1 );
+  MT_REENTRANT_SDS( _theHistory_lock, _x1 );
   h_iterator hst_i = __find( state );
   if ( hst_i != theHistory.end() && *hst_i != ST_TERMINAL ) {
     theHistory.erase( theHistory.begin(), ++hst_i );
@@ -150,7 +150,7 @@ void EventHandler::PopState( state_type state )
 __PG_DECLSPEC
 void EventHandler::RemoveState( state_type state )
 {
-  MT_REENTRANT_SDS( _theHistory_lock, _1 );
+  MT_REENTRANT_SDS( _theHistory_lock, _x1 );
   h_iterator hst_i = __find( state );
   if ( hst_i != theHistory.end() && *hst_i != ST_TERMINAL ) {
     theHistory.erase( hst_i );
@@ -160,7 +160,7 @@ void EventHandler::RemoveState( state_type state )
 __PG_DECLSPEC
 bool EventHandler::isState( state_type state ) const
 {
-  MT_REENTRANT_SDS( _theHistory_lock, _1 );
+  MT_REENTRANT_SDS( _theHistory_lock, _x1 );
   const HistoryContainer& hst = theHistory;
   const_h_iterator hst_i = __find( state );
   if ( hst_i != hst.end() && *hst_i != ST_TERMINAL ) {
@@ -235,7 +235,7 @@ EventHandler::~EventHandler()
 __PG_DECLSPEC
 void EventHandler::TraceStack( ostream& out ) const
 {
-  MT_REENTRANT( _theHistory_lock, _1 );
+  MT_REENTRANT( _theHistory_lock, _x1 );
   const HistoryContainer& hst = theHistory;
   HistoryContainer::const_iterator hst_i = hst.begin();
   while ( hst_i != hst.end() ) {

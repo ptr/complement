@@ -1,13 +1,13 @@
-// -*- C++ -*- Time-stamp: <00/02/21 15:59:44 ptr>
+// -*- C++ -*- Time-stamp: <00/08/01 18:25:39 ptr>
 
 /*
  *
  * Copyright (c) 1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999
- * ParallelGraphics Software Systems
- 
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
+ * 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -18,7 +18,7 @@
  * in supporting documentation.
  */
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
 #include <config/feature.h>
 

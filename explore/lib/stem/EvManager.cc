@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/05/29 19:44:49 ptr>
+// -*- C++ -*- Time-stamp: <00/08/09 11:36:27 ptr>
 
 /*
  *
@@ -18,7 +18,7 @@
  * in supporting documentation.
  */
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4804 )
@@ -62,7 +62,9 @@ __PG_DECLSPEC EvManager::EvManager() :
     _x_high( endextaddr ),
     _x_id( _x_low )
 {
+#ifndef __hpux
   _ev_queue_thr.launch( _Dispatch, this );
+#endif
 }
 
 __PG_DECLSPEC EvManager::~EvManager()
@@ -102,7 +104,7 @@ int EvManager::_Dispatch( void *p )
 __PG_DECLSPEC
 addr_type EvManager::Subscribe( EventHandler *object, const __STD::string& info )
 {
-  MT_REENTRANT( _lock_heap, _1 );
+  MT_REENTRANT( _lock_heap, _x1 );
   addr_type id = create_unique();
   __Object_Entry& record = heap[id];
   record.ref = object;
@@ -114,7 +116,7 @@ addr_type EvManager::Subscribe( EventHandler *object, const __STD::string& info 
 __PG_DECLSPEC
 addr_type EvManager::Subscribe( EventHandler *object, const char *info )
 {
-  MT_REENTRANT( _lock_heap, _1 );
+  MT_REENTRANT( _lock_heap, _x1 );
   addr_type id = create_unique();
   __Object_Entry& record = heap[id];
   record.ref = object;
@@ -129,7 +131,7 @@ __PG_DECLSPEC
 addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
                                   const __STD::string& info )
 {
-  MT_REENTRANT( _lock_heap, _1 );
+  MT_REENTRANT( _lock_heap, _x1 );
   if ( (id & extbit) || unsafe_is_avail( id ) ) {
     return badaddr;
   }
@@ -144,7 +146,7 @@ __PG_DECLSPEC
 addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
                                   const char *info )
 {
-  MT_REENTRANT( _lock_heap, _1 );
+  MT_REENTRANT( _lock_heap, _x1 );
   if ( (id & extbit) || unsafe_is_avail( id ) ) {
     return badaddr;
   }
@@ -162,7 +164,7 @@ addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
                                       addr_type rmkey,
                                       const __STD::string& info )
 {
-  MT_REENTRANT( _lock_heap, _1 );
+  MT_REENTRANT( _lock_heap, _x1 );
   addr_type id = create_unique_x();
   __Object_Entry& record = heap[id];
   // record.ref = object;
@@ -178,7 +180,7 @@ addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
                                       addr_type rmkey,
                                       const char *info )
 {
-  MT_REENTRANT( _lock_heap, _1 );
+  MT_REENTRANT( _lock_heap, _x1 );
   addr_type id = create_unique_x();
   __Object_Entry& record = heap[id];
   // record.ref = object;
@@ -194,7 +196,7 @@ addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
 __PG_DECLSPEC
 bool EvManager::Unsubscribe( addr_type id )
 {
-  MT_REENTRANT( _lock_heap, _1 );
+  MT_REENTRANT( _lock_heap, _x1 );
   heap.erase( /* (const heap_type::key_type&)*/ id );
   return true; // may be here check object's reference count
 }
@@ -203,9 +205,10 @@ bool EvManager::Unsubscribe( addr_type id )
 // (related, may be, with socket connection)
 // from [remote name -> local name] mapping table, and mark related session as
 // 'disconnected'.
+__PG_DECLSPEC
 void EvManager::Remove( NetTransport_base *channel )
 {
-  MT_REENTRANT( _lock_heap, _1 );
+  MT_REENTRANT( _lock_heap, _x1 );
   heap_type::iterator i = heap.begin();
 
   while ( i != heap.end() ) {
@@ -217,11 +220,19 @@ void EvManager::Remove( NetTransport_base *channel )
   }
 }
 
+#ifdef __hpux
+__PG_DECLSPEC
+void EvManager::StartEvQueue()
+{
+  _ev_queue_thr.launch( _Dispatch, this );
+}
+#endif
+
 // return session id of object with address 'id' if this is external
 // object; otherwise return -1;
 __PG_DECLSPEC key_type EvManager::sid( addr_type id ) const
 {
-  MT_REENTRANT( _lock_heap, _1 );
+  MT_REENTRANT( _lock_heap, _x1 );
   heap_type::const_iterator i = heap.find( id );
   if ( i == heap.end() || (*i).second.remote == 0 ) {
     return badkey;
@@ -231,7 +242,7 @@ __PG_DECLSPEC key_type EvManager::sid( addr_type id ) const
 
 __PG_DECLSPEC NetTransport_base *EvManager::transport( addr_type id ) const
 {
-  MT_REENTRANT( _lock_heap, _1 );
+  MT_REENTRANT( _lock_heap, _x1 );
   heap_type::const_iterator i = heap.find( id );
   if ( i == heap.end() || (*i).second.remote == 0 ) {
     return 0;
@@ -285,7 +296,7 @@ void EvManager::Send( const Event& e )
       }
     } else {
 //      _XMB( "MT_UNLOCK" )
-      MT_UNLOCK( _lock_heap );
+     MT_UNLOCK( _lock_heap );
 #if 0
       try {
         __STD::cerr << "===== EDS: "

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/05/23 20:38:33 ptr>
+// -*- C++ -*- Time-stamp: <00/07/27 19:23:10 ptr>
 
 /*
  *
@@ -56,7 +56,7 @@ void __PG_DECLSPEC Names::get_list( const Event& rq )
 
   rs.dest( rq.src() );
 
-  MT_REENTRANT( manager()->_lock_heap, _1 );
+  MT_REENTRANT( manager()->_lock_heap, _x1 );
   EvManager::heap_type::iterator i = manager()->heap.begin();
   while ( i != manager()->heap.end() ) {
     if ( ((*i).first & extbit) == 0 ) { // only local...
@@ -80,7 +80,7 @@ void __PG_DECLSPEC Names::get_ext_list( const Event& rq )
 
   rs.dest( rq.src() );
 
-  MT_REENTRANT( manager()->_lock_heap, _1 );
+  MT_REENTRANT( manager()->_lock_heap, _x1 );
   EvManager::heap_type::iterator i = manager()->heap.begin();
   while ( i != manager()->heap.end() ) {
     if ( ((*i).first & extbit) != 0 ) { // only external...
@@ -104,7 +104,7 @@ void __PG_DECLSPEC Names::get_by_name( const Event& rq )
 
   rs.dest( rq.src() );
 
-  MT_REENTRANT( manager()->_lock_heap, _1 );
+  MT_REENTRANT( manager()->_lock_heap, _x1 );
   EvManager::heap_type::iterator i = manager()->heap.begin();
   while ( i != manager()->heap.end() ) {
     if ( ((*i).first & extbit) == 0 && (*i).second.info == rq.value() ) { // only local...

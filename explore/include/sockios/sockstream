@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/05/23 19:38:24 ptr>
+// -*- C++ -*- Time-stamp: <00/07/27 13:49:40 ptr>
 
 /*
  *
@@ -40,8 +40,15 @@
 #  include <sys/types.h>
 #  include <sys/socket.h>
 #  include <stropts.h>
-#  ifndef __Linux
+// #  ifndef __linux
+#  ifdef __sun
+// #    ifdef __hpux
+// #      define class dclass
+// #    endif
 #    include <sys/conf.h>
+// #    ifdef __hpux
+// #      undef class
+// #    endif
 #  endif
 #  include <netinet/in.h>
 #  include <arpa/inet.h>
@@ -89,20 +96,22 @@ class sock_base
     // Option flags per-socket.
     enum _sopt {
       so_debug	        = SO_DEBUG,       // turn on debugging info recording
-#ifndef __Linux
+#ifndef __linux
       so_acceptconn     = SO_ACCEPTCONN,  // socket has had listen()
 #endif
       so_reuseaddr	= SO_REUSEADDR,   // allow local address reuse
       so_keepalive	= SO_KEEPALIVE,   // keep connections alive
       so_dontroute	= SO_DONTROUTE,   // just use interface addresses
       so_broadcast	= SO_BROADCAST,   // permit sending of broadcast msgs
-#ifndef __Linux
+#ifndef __linux
       so_useloopback    = SO_USELOOPBACK, // bypass hardware when possible
 #endif
       so_linger	        = SO_LINGER,      // linger on close if data present
       so_oobinline	= SO_OOBINLINE,   // leave received OOB data in line
-#ifndef __Linux
+#ifdef __sun
       so_dontlinger     = SO_DONTLINGER,  // ~so_linger
+#else
+      so_dontlinger     = ~so_linger,
 #endif
       // Additional options, not kept in so_options.
       so_sndbuf		= SO_SNDBUF,      // send buffer size
@@ -113,7 +122,7 @@ class sock_base
       so_rcvtimeo       = SO_RCVTIMEO,    // receive timeout
       so_error		= SO_ERROR,       // get error status and clear
       so_type		= SO_TYPE         // get socket type
-#if !defined( WIN32 ) && !defined( __Linux )
+#if !defined( WIN32 ) && !defined( __linux )
                                  ,
       so_prototype      = SO_PROTOTYPE    // get/set protocol type
 #endif
@@ -251,7 +260,7 @@ class basic_sockbuf :
   protected:
     void findhost( const char *hostname );
 
-    virtual int showmanyc()
+    virtual streamsize showmanyc()
       { return egptr() - gptr(); }
 
     virtual int_type underflow();

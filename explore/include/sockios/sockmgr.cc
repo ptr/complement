@@ -1,12 +1,12 @@
-// -*- C++ -*- Time-stamp: <00/07/14 20:32:08 ptr>
+// -*- C++ -*- Time-stamp: <00/07/27 14:39:17 ptr>
 
 /*
  *
- * Copyright (c) 1999-2000
- * ParallelGraphics
- *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
+ *
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -111,7 +111,7 @@ sockmgr_client *sockmgr_stream<Connect>::accept_udp()
   t.tv_sec = 0;
   t.tv_nsec = 10000;
 
-  pollfd pfd;
+  struct pollfd pfd;
   pfd.fd = fd();
   pfd.events = POLLIN;
 #endif
@@ -331,7 +331,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
         return 0;
       }
 
-      __STLPORT_STD::_STL_auto_lock _1(_c_lock);
+      __STLPORT_STD::_STL_auto_lock _x1(_c_lock);
       sockmgr_client_MP<Connect> *cl;
 
       container_type::iterator i = 
@@ -371,7 +371,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
         find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, _pfd[j].fd ) );
       __STL_ASSERT( i != _M_c.end() );
       if ( _pfd[j].revents & POLLERR ) {
-        memmove( &_pfd[j], &_pfd[j+1], sizeof(pollfd) * (_fdcount - j - 1) );
+        memmove( &_pfd[j], &_pfd[j+1], sizeof(struct pollfd) * (_fdcount - j - 1) );
         --_fdcount;
         (*i)->s.close();
       }
@@ -433,7 +433,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_udp()
     return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
   }
 #endif
-  __STLPORT_STD::_STL_auto_lock _1(_c_lock);
+  __STLPORT_STD::_STL_auto_lock _x1(_c_lock);
   container_type::iterator i = _M_c.begin();
   sockbuf *b;
   while ( i != _M_c.end() ) {
@@ -487,7 +487,7 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
 #ifdef __unix
           for ( int i = 1; i < me->_fdcount; ++i ) {
             if ( me->_pfd[i].fd == _sfd ) {
-              memmove( &me->_pfd[i], &me->_pfd[i+1], sizeof(pollfd) * (me->_fdcount - i - 1) );
+              memmove( &me->_pfd[i], &me->_pfd[i+1], sizeof(struct pollfd) * (me->_fdcount - i - 1) );
               --me->_fdcount;
             }
           }
@@ -501,7 +501,7 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
   }
   catch ( ... ) {
     me->shutdown( sock_base::stop_in );
-    __STLPORT_STD::_STL_auto_lock _1(me->_c_lock);
+    __STLPORT_STD::_STL_auto_lock _x1(me->_c_lock);
     container_type::iterator i = me->_M_c.begin();
     while ( i != me->_M_c.end() ) {
       (*i++)->s.close();

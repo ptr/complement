@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/05/22 12:33:53 ptr>
+// -*- C++ -*- Time-stamp: <00/08/02 17:13:13 ptr>
 
 /*
  *
@@ -149,19 +149,24 @@
  *   (under Solaris 5.6 and Solaris 7) with some extentions
  */
 
-#ifdef __SunOS_5_6
+#ifdef __sun // __SunOS_5_6, __SunOS_5_7
 #  define _XOPEN_SOURCE 1
 #  define _XOPEN_SOURCE_EXTENDED 1
 #  define __EXTENSIONS__ 1
 #  define __XPG4v2 1
 #endif // __SunOS_5_6
 
-#ifdef __SunOS_5_7
-#  define _XOPEN_SOURCE 1
+#ifdef __hpux
 #  define _XOPEN_SOURCE_EXTENDED 1
-#  define __EXTENSIONS__ 1
-#  define __XPG4v2 1
-#endif // __SunOS_5_7
+#  define _INCLUDE_AES_SOURCE
+#endif
+
+// #ifdef // __SunOS_5_7
+// #  define _XOPEN_SOURCE 1
+// #  define _XOPEN_SOURCE_EXTENDED 1
+// #  define __EXTENSIONS__ 1
+// #  define __XPG4v2 1
+// #endif // __SunOS_5_7
 
 #ifdef __SUNPRO_CC
 #  ifndef __LINK_TIME_INSTANTIATION

@@ -1,12 +1,12 @@
-// -*- C++ -*- Time-stamp: <00/07/14 20:28:48 ptr>
+// -*- C++ -*- Time-stamp: <00/08/09 12:31:32 ptr>
 
 /*
  *
- * Copyright (c) 1999-2000
- * ParallelGraphics
- *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
+ *
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -32,7 +32,7 @@
 #include "crc.h"
 #include "EDS/EDSEv.h"
 
-#define EDS_MSG_LIMIT   0x100000 // 1M
+#define EDS_MSG_LIMIT   0x100000 // 1MB
 
 namespace EDS {
 
@@ -40,12 +40,14 @@ namespace EDS {
 using namespace std;
 #endif
 
-#ifdef __sparc
-#define EDS_MAGIC 0xc2454453U
-#elif defined( __i386 ) || defined(WIN32)
-#define EDS_MAGIC 0x534445c2U
+#ifdef _BIG_ENDIAN
+// #  define EDS_MAGIC 0xc2454453U
+static const unsigned EDS_MAGIC = 0xc2454453U;
+#elif defined(_LITTLE_ENDIAN)
+// #  define EDS_MAGIC 0x534445c2U
+static const unsigned EDS_MAGIC = 0x534445c2U;
 #else
-#error "Can't determine platform byte order!"
+#  error "Can't determine platform byte order!"
 #endif
 
 #ifdef __SGI_STL_OWN_IOSTREAMS
@@ -63,10 +65,15 @@ private:
   _STL_auto_lock2(const _STL_auto_lock2&);
 };
 
-// #  define MT_IO_REENTRANT( s ) \
-//         __STLPORT_STD::_STL_auto_lock __AutoLock( (s).rdbuf()->_M_lock );
+#if 0
+// Some changes in STL internal implementation was made,
+// so I use own _STL_auto_lock2
+#  define MT_IO_REENTRANT( s ) \
+         __STLPORT_STD::_STL_auto_lock __AutoLock( (s).rdbuf()->_M_lock );
+#else
 #  define MT_IO_REENTRANT( s ) \
          _STL_auto_lock2 __AutoLock( (s).rdbuf()->_M_lock );
+#endif // 0
 #  define MT_IO_LOCK( s ) (s).rdbuf()->_M_lock._M_acquire_lock();
 #  define MT_IO_UNLOCK( s ) (s).rdbuf()->_M_lock._M_release_lock();
 #  define MT_IO_REENTRANT_W( s ) \
@@ -188,7 +195,9 @@ bool NetTransport_base::pop( Event& _rs )
 
   MT_IO_REENTRANT( *net )
 
-  if ( !net->read( (char *)buf, sizeof(unsigned) ).good() ) {
+  net->read( (char *)buf, sizeof(unsigned) );
+  
+  if ( !net->good() ) {
     return false;
   }
 
@@ -265,7 +274,7 @@ bool NetTransport_base::push( const Event& _rs )
   buf[2] = to_net( _rs.dest() );
   buf[3] = to_net( _rs.src() );
 
-  MT_REENTRANT( _lock, _1 );
+  MT_REENTRANT( _lock, _x1 );
 
   buf[4] = to_net( ++_count );
 
