@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/04/14 18:01:24 ptr>
+// -*- C++ -*- Time-stamp: <02/05/12 11:58:44 ptr>
 
 /*
  *
@@ -182,5 +182,13 @@
 #    endif
 #  endif
 #endif // WIN32
+
+#ifdef WIN32
+#  define __FIT_SELECT // use select system call
+#else // most current unixes has poll (HP-UX, old Linuxes may not)
+#  if !defined(__FIT_SELECT)
+#    define __FIT_POLL   // use poll system call
+#  endif
+#endif
 
 #endif // __config_feature_h
