@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/11/03 10:40:16 ptr>
+// -*- C++ -*- Time-stamp: <96/11/24 14:17:11 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -51,12 +51,12 @@ class EDSEvent_basic
 	n( 0 )
       { }
 
-    EDSEvent_basic( message_type msg, size_type num, size_type size ) :
+    EDSEvent_basic( message_type msg, const D *first, const D *last ) :
 	Message( msg ),
 	theSender( 0 ),
 	DataObject( 0 ),
-	sz( size ),
-	n( num )
+	sz( sizeof(D) ),
+	n( last - first )
       { }
 
     EDSEvent_basic( const EDSEvent_basic& e ) :
@@ -105,10 +105,9 @@ class OXWEventT :
     OXWEventT() :
 	EDSEvent_basic()
       { }
-    OXWEventT( message_type msg, size_type num = 1,
-	       size_type size = sizeof( D ) );
-    OXWEventT( message_type msg, const_reference data, size_type num = 1,
-	       size_type size = sizeof( D ) );
+    OXWEventT( message_type msg, const D& x );
+    OXWEventT( message_type msg, const D *first, const D *last );
+
     OXWEventT( const OXWEvent& e );
     ~OXWEventT();
 
@@ -130,44 +129,32 @@ class OXWEventT :
       {
 	CHECK_LENGTH( sz != 0 );
 	CHECK_RANGE( i < n );
-	return *reinterpret_cast<pointer>(
-	  reinterpret_cast<char *>(DataObject) + i * sz);
+	return *(DataObject + i);
       }
     const_reference operator []( size_t i ) const
       {
 	CHECK_LENGTH( sz != 0 );
 	CHECK_RANGE( i < n );
-	return *reinterpret_cast<const_pointer>(
-	  reinterpret_cast<char *>(DataObject) + i * sz);
+	return *(DataObject + i);
       }
 };
 
 template <class S, class D>
-OXWEventT<S,D>::OXWEventT( message_type msg, OXWEventT::const_reference data,
-			   OXWEventT::size_type num,
-			   OXWEventT::size_type size ) :
-    EDSEvent_basic<S,D>( msg, num, size )
+OXWEventT<S,D>::OXWEventT( message_type msg, const D& x ) :
+    EDSEvent_basic<S,D>( msg )
 {
-  CHECK_OUT_OF_RANGE( n >= 1 && sz >= sizeof( value_type ) );
-  DataObject = (pointer)::operator new( n * sz );
-  while ( num-- ) {
-    construct( reinterpret_cast<pointer>(
-      reinterpret_cast<char *>(DataObject) + num * sz),
-	       *reinterpret_cast<const_pointer>(
-		 reinterpret_cast<const char *>(&data) + num * sz) );
-  }
+  n = 1;
+  sz = sizeof(D);
+  DataObject = new D ( x );
 }
 
 template <class S, class D>
-OXWEventT<S,D>::OXWEventT( message_type msg, OXWEventT::size_type num,
-			   OXWEventT::size_type size ) :
-    EDSEvent_basic<S,D>( msg, num, size )
+OXWEventT<S,D>::OXWEventT( message_type msg, const D *first, const D *last ) :
+    EDSEvent_basic<S,D>( msg, first, last )
 {
   CHECK_OUT_OF_RANGE( n >= 1 && sz >= sizeof( value_type ) );
-  DataObject = reinterpret_cast<pointer>(::operator new( n * sz ));
-  while ( num-- ) {
-    new (reinterpret_cast<char *>(DataObject) + num * sz) D();
-  }
+  DataObject = (pointer)::operator new( n * sz );
+  uninitialized_copy( first, last, DataObject );
 }
 
 template <class S, class D>
@@ -177,13 +164,8 @@ OXWEventT<S,D>::OXWEventT( const OXWEvent& e ) :
   if ( sz ) {
     CHECK_OUT_OF_RANGE( n >= 1 && sz >= sizeof( value_type ) );
     DataObject = reinterpret_cast<pointer>(::operator new( n * sz ));
-    size_type num = n;
-    while ( num-- ) {
-      construct( reinterpret_cast<pointer>(
-	reinterpret_cast<char *>(DataObject) + num * sz),
-		 *reinterpret_cast<const_pointer>(
-		   reinterpret_cast<const char *>(e.Data()) + num * sz) );
-    }
+    const_pointer first = reinterpret_cast<const_pointer>( e.Data() );
+    uninitialized_copy( first, first + n, DataObject );
   } else {
     DataObject = reinterpret_cast<pointer>(e.Data());
   }
@@ -193,10 +175,7 @@ template <class S, class D>
 OXWEventT<S,D>::~OXWEventT()
 {
   if ( sz ) {
-    while ( n-- ) {
-      destroy( reinterpret_cast<pointer>(
-	reinterpret_cast<char *>(DataObject) + n * sz) );
-    }
+    destroy( DataObject, DataObject + n );
     ::operator delete( DataObject );
   }
 }
