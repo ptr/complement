@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/07/27 13:49:40 ptr>
+// -*- C++ -*- Time-stamp: <00/08/31 09:57:29 ptr>
 
 /*
  *
@@ -198,7 +198,7 @@ class basic_sockbuf :
       _open( false ),
       _mode( 0 )
 #ifdef __SGI_STL_OWN_IOSTREAMS
-      , _base(0), _ebuf(0), _allocated( true )   
+      , _bbuf(0), _ebuf(0), _allocated( true )   
 #endif
       {
 #ifdef __SGI_STL_OWN_IOSTREAMS
@@ -212,7 +212,7 @@ class basic_sockbuf :
       _open( false ),
       _mode( 0 )
 #ifdef __SGI_STL_OWN_IOSTREAMS
-      , _base(0), _ebuf(0), _allocated( true )   
+      , _bbuf(0), _ebuf(0), _allocated( true )   
 #endif
       {
 #ifdef __SGI_STL_OWN_IOSTREAMS
@@ -293,7 +293,7 @@ class basic_sockbuf :
 	if ( s != 0 && n != 0 ) {
 	  _M_deallocate_block();
 	  _allocated = false;
-	  _base = s;
+	  _bbuf = s;
 	  _ebuf = s + n;
 	}
 	return this;
@@ -323,9 +323,9 @@ class basic_sockbuf :
     _STL_mutex_base _M_lock_w; // lock for writing
     // _STL_mutex_base _M_lock; used for read lock
   private: // Helper functions
-    charT* _base;
+    charT* _bbuf;
     charT* _ebuf;
-    bool _allocated; // true, if _base should be deallocated
+    bool _allocated; // true, if _bbuf should be deallocated
 
     // Precondition: 0 < __n <= max_size().
     charT* _M_allocate( size_t __n ) { return _M_data_allocator.allocate(__n); }
@@ -336,16 +336,16 @@ class basic_sockbuf :
       {
 	if ( _allocated ) {
 	  if ( __n <= max_size() ) {
-	    _base = _M_allocate(__n);
-	    _ebuf = _base + __n;
-	    __STL_ASSERT( __n > 0 ? _base != 0 : _base == 0 );
+	    _bbuf = _M_allocate(__n);
+	    _ebuf = _bbuf + __n;
+	    __STL_ASSERT( __n > 0 ? _bbuf != 0 : _bbuf == 0 );
 	  } else
 	    _M_throw_length_error();
 	}
       }
 
     void _M_deallocate_block()
-      { if ( _allocated ) _M_deallocate(_base, _ebuf - _base); }
+      { if ( _allocated ) _M_deallocate(_bbuf, _ebuf - _bbuf); }
   
     size_t max_size() const { return (size_t(-1) / sizeof(charT)) - 1; }
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/08/28 13:18:01 ptr>
+// -*- C++ -*- Time-stamp: <00/08/31 10:00:09 ptr>
 
 /*
  *
@@ -107,9 +107,9 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
   } else { // other protocols not implemented yet
     return 0;
   }
-  if ( _base == 0 )
+  if ( _bbuf == 0 )
     _M_allocate_block( 0xb00 ); // max 1460 (dec) [0x5b4] --- single segment
-  if ( _base == 0 ) {
+  if ( _bbuf == 0 ) {
 #ifdef WIN32
     ::closesocket( _fd );
 #else
@@ -120,7 +120,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
     return 0;
   }
 
-  setp( _base, _base + ((_ebuf - _base)>>1) );
+  setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
   setg( epptr(), epptr(), epptr() );
 
   __STL_ASSERT( pbase() != 0 );
@@ -129,7 +129,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
   __STL_ASSERT( eback() != 0 );
   __STL_ASSERT( gptr() != 0 );
   __STL_ASSERT( egptr() != 0 );
-  __STL_ASSERT( _base != 0 );
+  __STL_ASSERT( _bbuf != 0 );
   __STL_ASSERT( _ebuf != 0 );
 
   _state = ios_base::goodbit;
@@ -172,11 +172,11 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, const sock
   }
 
 
-  if ( _base == 0 ) {
+  if ( _bbuf == 0 ) {
     _M_allocate_block( 0xb00 );
   }
 
-  if ( _base == 0 ) {
+  if ( _bbuf == 0 ) {
 #ifdef WIN32
     ::closesocket( _fd );
 #else
@@ -186,7 +186,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, const sock
     return 0;
   }
 
-  setp( _base, _base + ((_ebuf - _base)>>1) );
+  setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
   setg( epptr(), epptr(), epptr() );
 
   __STL_ASSERT( pbase() != 0 );
@@ -195,7 +195,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, const sock
   __STL_ASSERT( eback() != 0 );
   __STL_ASSERT( gptr() != 0 );
   __STL_ASSERT( egptr() != 0 );
-  __STL_ASSERT( _base != 0 );
+  __STL_ASSERT( _bbuf != 0 );
   __STL_ASSERT( _ebuf != 0 );
 
   _state = ios_base::goodbit;
@@ -242,9 +242,9 @@ basic_sockbuf<charT, traits, _Alloc>::close()
 #endif
 //	cerr << "Pass" << endl;
 
-  __STL_ASSERT( _base != 0 );
+  __STL_ASSERT( _bbuf != 0 );
 	// put area before get area
-  setp( _base, _base + ((_ebuf - _base)>>1) );
+  setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
   setg( epptr(), epptr(), epptr() );
 
   _fd = -1;
@@ -419,7 +419,7 @@ xsputn( const char_type *s, streamsize n )
   __STL_ASSERT( pbase() != 0 );
   __STL_ASSERT( pptr() != 0 );
   __STL_ASSERT( epptr() != 0 );
-  __STL_ASSERT( _base != 0 );
+  __STL_ASSERT( _bbuf != 0 );
   __STL_ASSERT( _ebuf != 0 );
 
   if ( epptr() - pptr() > n ) {
@@ -437,10 +437,10 @@ xsputn( const char_type *s, streamsize n )
     pbump( n - __n_put );
 
     if ( traits::eq_int_type(overflow(),traits::eof()) ) {
-      setp( _base, _base + ((_ebuf - _base) >> 1) );
+      setp( _bbuf, _bbuf + ((_ebuf - _bbuf) >> 1) );
       return 0;
     }
-    setp( _base, _base + ((_ebuf - _base) >> 1) );
+    setp( _bbuf, _bbuf + ((_ebuf - _bbuf) >> 1) );
   }
   return n;
 }
@@ -456,7 +456,7 @@ int basic_sockbuf<charT, traits, _Alloc>::__rdsync()
   int nmsg = ioctl( fd(), I_NREAD, &nlen );
 #endif
   if ( nmsg > 0 && nlen > 0 ) {
-    __STL_ASSERT( _base != 0 );
+    __STL_ASSERT( _bbuf != 0 );
     __STL_ASSERT( _ebuf != 0 );
     __STL_ASSERT( gptr() != 0 );
     __STL_ASSERT( egptr() != 0 );
