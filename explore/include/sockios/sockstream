@@ -1,0 +1,605 @@
+// -*- C++ -*- Time-stamp: <99/02/01 14:23:26 ptr>
+
+#ifndef __SOCKSTREAM__
+#define __SOCKSTREAM__
+
+#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+
+#ifndef WIN32
+#ifndef __STL_CONFIG_H
+#include <stl_config.h>
+#endif
+#endif
+
+#ifndef __IOS__
+#include <ios>
+#endif
+#ifndef __STREAMBUF__
+#include <streambuf>
+#endif
+
+#ifndef __IOSTREAM__
+#include <iostream>
+#endif
+
+#ifdef WIN32
+#include <winsock2.h>
+#define __STL_DEFAULT_ALLOCATOR(T) allocator<T>
+#else // WIN32
+
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <stropts.h>
+#include <sys/conf.h>
+
+#ifdef queue // in sys/stream.h queue exist and conflict with stl
+#undef queue
+#endif
+
+#define queue _queue_
+#include <netinet/in.h>
+#undef queue
+
+#include <arpa/inet.h>
+#include <netdb.h>
+
+#include <cerrno>
+
+#define closesocket close
+#define SOCKET int
+
+#endif // WIN32
+
+#ifndef ___xsballoc_h
+#include <_xsballoc.h>
+#endif
+
+namespace std {
+
+class sock_base
+{
+  public:
+    typedef unsigned long sopt;
+    typedef unsigned long shutdownflg;
+//    typedef unsigned long level;
+//    typedef unsigned long protocol;
+
+    enum stype {
+      sock_stream	= SOCK_STREAM,    // stream socket
+      sock_dgram	= SOCK_DGRAM,     // datagram socket
+      sock_raw	        = SOCK_RAW,       // raw-protocol interface
+      sock_rdm	        = SOCK_RDM,       // reliably-delivered message
+      sock_seqpacket    = SOCK_SEQPACKET  // sequenced packet stream
+    };
+
+    enum protocol {
+      local,                              // local to host (pipes, portals)
+      inet                                // internetwork: UDP, TCP, etc.
+    };
+
+    // Option flags per-socket.
+    enum _sopt {
+      so_debug	        = SO_DEBUG,       // turn on debugging info recording
+      so_acceptconn     = SO_ACCEPTCONN,  // socket has had listen()
+      so_reuseaddr	= SO_REUSEADDR,   // allow local address reuse
+      so_keepalive	= SO_KEEPALIVE,   // keep connections alive
+      so_dontroute	= SO_DONTROUTE,   // just use interface addresses
+      so_broadcast	= SO_BROADCAST,   // permit sending of broadcast msgs
+      so_useloopback    = SO_USELOOPBACK, // bypass hardware when possible
+      so_linger	        = SO_LINGER,      // linger on close if data present
+      so_oobinline	= SO_OOBINLINE,   // leave received OOB data in line
+      so_dontlinger     = SO_DONTLINGER,  // ~so_linger
+      // Additional options, not kept in so_options.
+      so_sndbuf		= SO_SNDBUF,      // send buffer size
+      so_rcvbuf		= SO_RCVBUF,      // receive buffer size
+      so_sndlowat       = SO_SNDLOWAT,    // send low-water mark
+      so_rcvlowat       = SO_RCVLOWAT,    // receive low-water mark
+      so_sndtimeo       = SO_SNDTIMEO,    // send timeout
+      so_rcvtimeo       = SO_RCVTIMEO,    // receive timeout
+      so_error		= SO_ERROR,       // get error status and clear
+      so_type		= SO_TYPE         // get socket type
+#ifndef WIN32
+                                 ,
+      so_prototype      = SO_PROTOTYPE    // get/set protocol type
+#endif
+    };
+
+    // Level number for (get/set)sockopt() to apply to socket itself.
+//    enum _level {
+//      sol_socket        = SOL_SOCKET
+//    };
+
+    enum shutdownflags {
+      stop_in  = 0x1,
+      stop_out = 0x2
+    };
+
+    enum _iostate {
+      goodbit       = 0x00,
+      badbit        = 0x01,
+      eofbit        = 0x02,
+      failbit       = 0x04,
+      hnamefailbit  = 0x08, // gethostbyname fail
+      sockfailbit   = 0x10, // socket fail
+      connfailbit   = 0x20, // connect fail
+      bindfailbit   = 0x40  // bind fail
+    };
+};
+
+template<class charT, class traits>
+class basic_sockbuf :
+	public basic_streambuf<charT, traits>,
+	public _stream_base<charT,__STL_DEFAULT_ALLOCATOR(charT) >
+{
+  public:
+    typedef basic_ios<charT, traits>       ios_type;
+    typedef typename traits::state_type    state_t;
+    
+  public:
+    /* Inherited from basic_streambuf :
+    typedef charT                      char_type;
+    typedef typename traits::int_type  int_type;
+    typedef typename traits::pos_type  pos_type;
+    typedef typename traits::off_type  off_type;
+    typedef traits                     traits_type;
+    */
+      
+    basic_sockbuf() :
+      basic_streambuf<charT, traits>(),
+      _stream_base<charT,__STL_DEFAULT_ALLOCATOR(charT) >(__STL_DEFAULT_ALLOCATOR(charT)()),
+      _fd( -1 ),
+      _open( false ),
+      _mode( 0 )
+      { }
+    basic_sockbuf( const char *hostname, int port,
+		   sock_base::stype type = sock_base::sock_stream,
+		   sock_base::protocol prot = sock_base::inet ) :
+      basic_streambuf<charT, traits>(),
+      _stream_base<charT,__STL_DEFAULT_ALLOCATOR(charT) >(__STL_DEFAULT_ALLOCATOR(charT)()),
+      _fd( -1 ),
+      _open( false ),
+      _mode( 0 )
+      { open( hostname, port, type, prot ); }
+    virtual ~basic_sockbuf()
+      {	close(); }
+
+    bool is_open() const
+      { return _open; }
+
+    basic_sockbuf<charT, traits> *open( const char *hostname, int port,
+					sock_base::stype type = sock_base::sock_stream,
+					sock_base::protocol prot = sock_base::inet )
+      {
+	if ( is_open() ) {
+	  return 0;
+	}
+	_mode = ios_base::in | ios_base::out;
+	_state = sock_base::goodbit;
+	_errno = 0;
+#ifdef WIN32
+        WSASetLastError( 0 );
+#endif
+	if ( prot == sock_base::inet ) {
+	  _fd = socket( PF_INET, type, 0 );
+	  if ( _fd == -1 ) {
+	    _state |= sock_base::sockfailbit;
+#ifdef WIN32
+	    _errno = WSAGetLastError();
+#else
+	    _errno = ::errno;
+#endif
+	    return 0;
+	  }
+	  _address.inet.sin_family = AF_INET;
+	  _address.inet.sin_port = htons( port );
+	  findhost( hostname );
+	  if ( _state != sock_base::goodbit ) {
+	    ::closesocket( _fd );
+	    return 0;
+	  }
+	  
+	  // Generally, stream sockets may successfully connect() only once
+	  if ( connect( _fd, &_address.any, sizeof( _address ) ) == -1 ) {
+	    _state |= sock_base::connfailbit;
+#ifdef WIN32
+	    _errno = WSAGetLastError();
+#else
+	    _errno = ::errno;
+#endif
+	    ::closesocket( _fd );
+	    return 0;
+	  }
+	  if ( type == sock_base::sock_stream ) {
+	    _xwrite = write;
+	    _xread = read;
+	  } else if ( type == sock_base::sock_dgram ) {
+	    _xwrite = send;
+	    _xread = recv;
+	  }
+	} else if ( prot == sock_base::local ) {
+	  _fd = socket( PF_UNIX, type, 0 );
+	  if ( _fd == -1 ) {
+	    _state |= sock_base::sockfailbit;
+#ifdef WIN32
+	    _errno = WSAGetLastError();
+#else
+	    _errno = ::errno;
+#endif
+	    return 0;
+	  }
+	} else {
+	  return 0;
+	}
+	if ( _base == 0 )
+	  _M_allocate_block( 0x2000 ); // max 1460 (dec) --- single segment
+	if ( _base == 0 ) {
+	  ::closesocket( _fd );
+	  _fd = -1;
+	  return 0;
+	}
+
+	setp( _base, _base + ((_ebuf - _base)>>1) );
+	setg( epptr(), epptr(), epptr() );
+
+	__stl_assert( pbase() != 0 );
+	__stl_assert( pptr() != 0 );
+	__stl_assert( epptr() != 0 );
+	__stl_assert( eback() != 0 );
+	__stl_assert( gptr() != 0 );
+	__stl_assert( egptr() != 0 );
+	__stl_assert( _base != 0 );
+	__stl_assert( _ebuf != 0 );
+
+	_state = sock_base::goodbit;
+	_errno = 0; // if any
+	_open = true;
+
+//	in_port_t ppp = 0x5000;
+//	cerr << hex << _address.inet.sin_port << " " << ppp << endl;
+//	cerr << hex << _address.inet.sin_addr.s_addr << endl;
+
+	return this;
+      }
+
+    basic_sockbuf<charT, traits> *open( SOCKET s, const sockaddr& addr,
+					sock_base::stype t = sock_base::sock_stream );
+
+    basic_sockbuf<charT, traits> *close()
+      {
+	if ( !_open )
+	  return 0;
+
+//	cerr << "Closing" << endl;
+	// overflow();
+//	cerr << "Say shutdown on out" << endl;
+	shutdown( sock_base::stop_out );
+//	cerr << "Sync" << endl;
+	sync();
+//	cerr << "Say shutdown on in" << endl;
+	shutdown( sock_base::stop_in );
+//	shutdown( sock_base::stop_in | sock_base::stop_out );
+//	cerr << "Sync" << endl;
+//	sync();
+//	cerr << "Close" << endl;
+	::closesocket( _fd );
+//	cerr << "Pass" << endl;
+
+	__stl_assert( _base != 0 );
+	// put area before get area
+	setp( _base, _base + ((_ebuf - _base)>>1) );
+	setg( epptr(), epptr(), epptr() );
+
+	_fd = -1;
+	_open = false;
+
+	return this;
+      }
+
+    void shutdown( sock_base::shutdownflg dir )
+      {
+	if ( is_open() ) {
+	  if ( (dir & (sock_base::stop_in | sock_base::stop_out)) ==
+	              (sock_base::stop_in | sock_base::stop_out) ) {
+	    ::shutdown( _fd, 2 );
+	  } else if ( dir & sock_base::stop_in ) {
+	    ::shutdown( _fd, 0 );
+	  } else if ( dir & sock_base::stop_out ) {
+	    ::shutdown( _fd, 1 );
+	  }
+	}
+      }
+
+    SOCKET fd() const { return _fd;}
+
+    sa_family_t family() const
+      { return /* is_open() ? */ _address.any.sa_family /* : 0 */; }
+    int port() const
+      { return /* is_open() && */ _address.any.sa_family == AF_INET ?
+	  _address.inet.sin_port : 0; }
+    unsigned long inet_addr() const
+      { return /* is_open() && */ _address.any.sa_family == AF_INET ?
+	  _address.inet.sin_addr.s_addr : 0; }
+    
+
+  protected:
+    void findhost( const char *hostname )
+      {
+#ifndef WIN32
+	hostent _host;
+	char tmpbuf[1024];
+	hostent *host = gethostbyname_r( hostname, &_host, tmpbuf, 1024, &_errno );
+	if ( host != 0 ) {
+	  memcpy( (char *)&_address.inet.sin_addr,
+		  (char *)host->h_addr, host->h_length );
+	} else {
+	  _state |= sock_base::hnamefailbit;
+	}
+#else
+	// should do reeentrant here
+	hostent *host = gethostbyname( hostname );
+	// check h_errno here...
+	if ( host == 0 ) {
+	  _errno = WSAGetLastError();
+	  _state |= sock_base::hnamefailbit;
+	} else {
+	  memcpy( (char *)&_address.inet.sin_addr,
+		  (char *)host->h_addr, host->h_length );
+	}
+#endif
+      }
+
+    virtual int showmanyc()
+      { return egptr() - gptr(); }
+
+    virtual int_type underflow();
+    virtual int_type overflow( int_type c = traits::eof() );
+    virtual int_type pbackfail( int_type c = traits::eof() )
+      {
+	if ( !_open )
+	  return traits::eof();
+
+	if ( gptr() <= eback() ) {
+	  return traits::eof();
+	}
+
+	gbump(-1);
+	if ( !traits::eq_int_type(c,traits::eof()) ) {
+	  *gptr() = traits::to_char_type(c);
+	  return c;
+	}
+
+	return traits::not_eof(c);
+      }
+
+    // Buffer managment and positioning:
+    virtual basic_streambuf<charT, traits> *setbuf(char_type *s, streamsize n )
+      {
+	if ( s != 0 && n != 0 ) {
+	  _M_deallocate_block();
+	  _allocated = false;
+	  _base = s;
+	  _ebuf = s + n;
+	}
+	return this;
+      }
+
+    virtual int sync()
+      {
+	if ( !is_open() ) {
+	  return -1;
+	}
+
+	if ( __rdsync() != 0 ) {
+	  return -1;
+	}
+
+	long count = pptr() - pbase();
+	if ( count ) {
+	  __stl_assert( pbase() != 0 );
+
+	  if ( (this->*_xwrite)( pbase(), sizeof(charT) * count ) != count * sizeof(charT) )
+	    return -1;
+	  setp( pbase(), epptr() ); // require: set pptr
+	}
+
+	return 0;
+      }
+
+    virtual streamsize xsputn(const char_type *s, streamsize n);
+  private:
+
+    int __rdsync()
+      {
+	long nlen = 0;
+	int nmsg = ioctl( fd(), I_NREAD, &nlen );
+	if ( nmsg > 0 && nlen > 0 ) {
+	  __stl_assert( _base != 0 );
+	  __stl_assert( _ebuf != 0 );
+	  __stl_assert( gptr() != 0 );
+	  __stl_assert( egptr() != 0 );
+
+	  cerr << "ioctl: " << dec << nmsg << ", " << nlen << endl;
+	  bool shift_req = gptr() == eback() ? false : (_ebuf - gptr()) > nlen ? false : true;
+	  if ( shift_req ) {
+	    __stl_assert( gptr() > eback() );
+	    __stl_assert( gptr() <= egptr() );
+	    traits::move( eback(), gptr(), egptr() - gptr() );
+	    setg( eback(), eback(), eback() + (egptr() - gptr()) );
+	  }
+	  if ( gptr() == _ebuf ) { // I should read something, if other side write
+	    return -1;             // otherwise I can't write without pipe broken
+	  }
+	  long offset = (this->*_xread)( egptr(), sizeof(char_type) * (_ebuf - egptr()) );
+	  cerr << "I read here " << offset << endl;
+	  if ( offset < 0 ) // allow message of zero length
+	    return -1;
+	  offset /= sizeof(charT);
+	  setg( eback(), gptr(), egptr() + offset );
+	}
+
+	return 0;
+      }
+
+    int (basic_sockbuf<charT,traits>::*_xwrite)( const void *, size_t );
+    int (basic_sockbuf<charT,traits>::*_xread)( void *, size_t );
+    int write( const void *buf, size_t n )
+#ifndef WIN32
+      { return ::write( _fd, buf, n ); }
+#else
+      { return ::send( _fd, (const char *)buf, n, 0 ); }
+#endif
+    int send( const void *buf, size_t n )
+#ifdef WIN32
+      { return ::send( _fd, (const char *)buf, n, 0 ); }
+#else
+      { return ::send( _fd, buf, n, 0 ); }
+#endif
+    int sendto( const void *buf, size_t n )
+#ifdef WIN32
+      { return ::sendto( _fd, (const char *)buf, n, 0, &_address.any, sizeof( sockaddr_in ) ); }
+#else
+      { return ::sendto( _fd, buf, n, 0, &_address.any, sizeof( sockaddr_in ) ); }
+#endif
+
+    int read( void *buf, size_t n )
+#ifdef WIN32
+      { return ::recv( _fd, (char *)buf, n, 0  ); }
+#else
+      { return ::read( _fd, buf, n ); }
+#endif
+    int recv( void *buf, size_t n )
+#ifdef WIN32
+      { return ::recv( _fd, (char *)buf, n, 0  ); }
+#else
+      { return ::recv( _fd, buf, n, 0 ); }
+#endif
+    int recvfrom( void *buf, size_t n )
+      {
+	int sz = sizeof( sockaddr_in );
+#ifdef WIN32
+	return ::recvfrom( _fd, (char *)buf, n, 0, &_address.any, &sz );
+#else
+	return ::recvfrom( _fd, buf, n, 0, &_address.any, &sz );
+#endif
+      }
+
+    SOCKET       _fd;
+    union {
+	sockaddr_in inet;
+	sockaddr    any;
+    } _address;
+
+    ios_base::openmode  _mode;
+    unsigned long       _state;
+    int                 _errno;
+    bool                _open; // socket open and connected/binded
+};
+
+template <class charT, class traits>
+class basic_sockstream :
+	public basic_iostream<charT,traits>
+{
+  public:
+    /* Inherited from basic_iostream
+    typedef charT                     char_type;
+    typedef typename traits::int_type int_type;
+    typedef typename traits::pos_type pos_type;
+    typedef typename traits::off_type off_type;
+    */
+    basic_sockstream() :
+#ifdef WIN32
+	basic_iostream<charT,traits>( &_sb )
+	  { }
+#else
+	basic_iostream<charT,traits>()
+          { init( &_sb ); }
+#endif
+    explicit basic_sockstream( const char *hostname, int port,
+			       sock_base::stype type = sock_base::sock_stream,
+			       sock_base::protocol pro = sock_base::inet ) :
+#ifdef WIN32
+        basic_iostream<charT,traits>( &_sb )
+#else
+	basic_iostream<charT,traits>()
+#endif
+      {
+#ifndef WIN32
+	init( &_sb );
+#endif
+	clear();
+	if ( _sb.open( hostname, port, type, pro ) == 0 ) {
+	  setstate( ios_base::failbit );
+	}
+      }
+
+    // only for sock_stream : inet now!
+    explicit basic_sockstream( SOCKET s, const sockaddr& addr ) :
+#ifdef WIN32
+        basic_iostream<charT,traits>( &_sb )
+#else
+	basic_iostream<charT,traits>()
+#endif
+      {
+#ifndef WIN32
+	init( &_sb );
+#endif
+	clear();
+	if ( _sb.open( s, addr ) == 0 ) {
+	  setstate( ios_base::failbit );
+	}
+      }
+
+    basic_sockbuf<charT,traits>* rdbuf() const
+      { return const_cast<basic_sockbuf<charT,traits>*>(&_sb); }
+    bool is_open()
+      { return _sb.is_open(); }
+    void open( const char *hostname, int port,
+	       sock_base::stype type = sock_base::sock_stream,
+	       sock_base::protocol pro = sock_base::inet )
+      {
+	clear();
+	if ( _sb.open( hostname, port, type, pro ) == 0 ) {
+	  setstate( ios_base::failbit );
+	}
+      }
+
+    // only for sock_stream : inet now!
+    void open( SOCKET s, const sockaddr& addr,
+	       sock_base::stype type = sock_base::sock_stream )
+      {
+	clear();
+	if ( _sb.open( s, addr ) == 0 ) {
+	  setstate( ios_base::failbit );
+	}
+      }
+
+    void close()
+      {
+	if ( _sb.is_open() ) {
+	  if ( _sb.close() == 0 ) {
+	    setstate( ios_base::failbit );
+	  } else {
+	    clear();
+	  }
+	}
+      }
+  private:
+    basic_sockbuf<charT,traits> _sb;
+};
+
+// typedef basic_ifstream<char,char_traits<char> >        ifstream;
+// typedef basic_ifstream<wchar_t,char_traits<wchar_t> > wifstream;
+// typedef basic_ofstream<char,char_traits<char> >        ofstream;
+// typedef basic_ofstream<wchar_t,char_traits<wchar_t> > wofstream;
+typedef basic_sockbuf<char,char_traits<char> >              sockbuf;
+typedef basic_sockstream<char,char_traits<char> >        sockstream;
+typedef basic_sockstream<wchar_t,char_traits<wchar_t> > wsockstream;
+
+} // namespace std
+
+#ifndef __STL_SEPARATE_INSTANTIATION
+#include <sockstream.cc>
+#endif
+
+#endif // __SOCKSTREAM__
