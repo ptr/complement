@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/04/01 15:33:28 ptr>
+// -*- C++ -*- Time-stamp: <99/04/06 17:49:27 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -14,6 +14,11 @@
 
 namespace EDS {
 
+// Control events:
+
+#define EV_CONNECT        0x6
+#define EV_DISCONNECT     0x7
+
 class __Event_Base
 {
   public:
@@ -24,6 +29,16 @@ class __Event_Base
     
     enum {
       extbit  = 0x80000000
+    };
+
+    enum {
+      entryaddr  = 0,
+      mgraddr    = 0x00000007,
+      beglocaddr = 0x00000100,
+      endlocaddr = 0x3fffffff,
+      begextaddr = extbit,
+      endextaddr = 0xbfffffff,
+      badaddr    = 0xffffffff
     };
 
     __Event_Base() :
