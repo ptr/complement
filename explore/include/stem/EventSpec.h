@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/25 18:06:51 ptr>
+// -*- C++ -*- Time-stamp: <00/09/10 15:36:14 ptr>
 
 /*
  *
@@ -6,8 +6,8 @@
  * Petr Ovchenkov
  *
  * Copyright (c) 1999
- * ParallelGraphics Software Systems
- 
+ * ParallelGraphics Ltd.
+ *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -21,7 +21,13 @@
 // Only for MS VC!
 // NEVER direct include!
 
-#ident "$SunId$ %Q%"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 __STL_TEMPLATE_NULL
 class Event_base<short> :

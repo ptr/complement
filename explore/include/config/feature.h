@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/08/02 17:13:13 ptr>
+// -*- C++ -*- Time-stamp: <00/09/11 17:17:01 ptr>
 
 /*
  *
@@ -20,7 +20,13 @@
 #ifndef __config_feature_h
 #define __config_feature_h
 
-#ident "$SunId$"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 // #ifdef _DEBUG
 // #  ifndef __STL_DEBUG
@@ -174,5 +180,33 @@
 #  endif
 #  define __PG_INCLASS_OPERATOR
 #endif // __SUNPRO_CC
+
+#if defined(__HP_aCC) && (__HP_aCC==1) // aCC A.03.13
+#  define __FIT_TEMPLATE_FORWARD_BUG
+#  define __FIT_EXPLICIT_BUG
+#  define __FIT_USING_NAMESPACE_BUG
+#  define __FIT_TYPENAME_TEMPLATE_PARAMETER_BUG
+#  define __FIT_NEED_TYPENAME_IN_ARGS_BUG
+#  define __FIT_TEMPLATE_TYPEDEF_BUG
+#  define __FIT_TEMPLATE_CLASSTYPE_BUG
+#endif
+
+#ifdef __FIT_EXPLICIT_BUG
+#  define __FIT_EXPLICIT
+#else // __FIT_EXPLICIT_BUG
+#  define __FIT_EXPLICIT  explicit
+#endif // __FIT_EXPLICIT_BUG
+
+#ifdef __FIT_TYPENAME_TEMPLATE_PARAMETER_BUG
+#  define __FIT_TYPENAME 
+#else // __FIT_TYPENAME_TEMPLATE_PARAMETER_BUG
+#  define __FIT_TYPENAME typename
+#endif // __FIT_TYPENAME_TEMPLATE_PARAMETER_BUG
+
+#ifdef __FIT_NEED_TYPENAME_IN_ARGS_BUG
+#  define __FIT_TYPENAME_ARG typename
+#else // __FIT_NEED_TYPENAME_IN_ARGS_BUG
+#  define __FIT_TYPENAME_ARG 
+#endif // __FIT_NEED_TYPENAME_IN_ARGS_BUG
 
 #endif // __config_feature_h

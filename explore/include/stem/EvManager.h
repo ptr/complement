@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <00/08/03 12:57:21 ptr>
+// -*- C++ -*- Time-stamp: <00/09/10 15:34:35 ptr>
 
 /*
  * Copyright (c) 1995-1999
  * Petr Ovchenkov
  * 
  * Copyright (c) 1999-2000
- * ParallelGraphics
+ * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -20,7 +20,13 @@
 #ifndef __EvManager_h
 #define __EvManager_h
 
-#ident "$SunId$"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #ifndef __config_feature_h
 #include <config/feature.h>

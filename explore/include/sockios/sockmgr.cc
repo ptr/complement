@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/07/27 14:39:17 ptr>
+// -*- C++ -*- Time-stamp: <00/09/08 15:46:38 ptr>
 
 /*
  *
@@ -6,7 +6,7 @@
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2000
- * ParallelGraphics
+ * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -18,7 +18,13 @@
  * in supporting documentation.
  */
 
-#ident "$SunId$"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #include <algorithm>
 
@@ -111,7 +117,11 @@ sockmgr_client *sockmgr_stream<Connect>::accept_udp()
   t.tv_sec = 0;
   t.tv_nsec = 10000;
 
+#if !defined( _RWSTD_VER ) // bogus RogueWave
   struct pollfd pfd;
+#else
+  struct ::pollfd pfd;
+#endif
   pfd.fd = fd();
   pfd.events = POLLIN;
 #endif
@@ -334,6 +344,9 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
       __STLPORT_STD::_STL_auto_lock _x1(_c_lock);
       sockmgr_client_MP<Connect> *cl;
 
+#if defined(__HP_aCC) && (__HP_aCC==1)
+      typename
+#endif
       container_type::iterator i = 
         find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, -1 ) );
     
@@ -367,11 +380,18 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
 #ifdef __unix
   for ( int j = 1; j < _fdcount; ++j ) {
     if ( _pfd[j].revents != 0 ) {
+#if defined(__HP_aCC) && (__HP_aCC==1)
+      typename
+#endif
       container_type::iterator i = 
         find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, _pfd[j].fd ) );
       __STL_ASSERT( i != _M_c.end() );
       if ( _pfd[j].revents & POLLERR ) {
+#if !defined( _RWSTD_VER ) // bogus RogueWave
         memmove( &_pfd[j], &_pfd[j+1], sizeof(struct pollfd) * (_fdcount - j - 1) );
+#else
+        memmove( &_pfd[j], &_pfd[j+1], sizeof(_pfd[0]) * (_fdcount - j - 1) );
+#endif
         --_fdcount;
         (*i)->s.close();
       }
@@ -434,6 +454,9 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_udp()
   }
 #endif
   __STLPORT_STD::_STL_auto_lock _x1(_c_lock);
+#if defined(__HP_aCC) && (__HP_aCC==1)
+  typename
+#endif
   container_type::iterator i = _M_c.begin();
   sockbuf *b;
   while ( i != _M_c.end() ) {
@@ -487,7 +510,11 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
 #ifdef __unix
           for ( int i = 1; i < me->_fdcount; ++i ) {
             if ( me->_pfd[i].fd == _sfd ) {
+#if !defined( _RWSTD_VER ) // bogus RogueWave
               memmove( &me->_pfd[i], &me->_pfd[i+1], sizeof(struct pollfd) * (me->_fdcount - i - 1) );
+#else
+              memmove( &me->_pfd[i], &me->_pfd[i+1], sizeof(&me->_pfd[0]) * (me->_fdcount - i - 1) );
+#endif
               --me->_fdcount;
             }
           }
@@ -502,6 +529,9 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
   catch ( ... ) {
     me->shutdown( sock_base::stop_in );
     __STLPORT_STD::_STL_auto_lock _x1(me->_c_lock);
+#if defined(__HP_aCC) && (__HP_aCC==1)
+    typename
+#endif
     container_type::iterator i = me->_M_c.begin();
     while ( i != me->_M_c.end() ) {
       (*i++)->s.close();

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/08/01 13:04:28 ptr>
+// -*- C++ -*- Time-stamp: <00/09/11 14:31:09 ptr>
 
 /*
  *
@@ -6,7 +6,7 @@
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2000
- * ParallelGraphics
+ * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -21,7 +21,13 @@
 #ifndef __EvSession_h
 #define __EvSession_h
 
-#ident "$SunId$"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -181,6 +187,7 @@ class SessionManager
     // typedef __STD::map<key_type,T,__STD::less<key_type>,
     //            __STL_DEFAULT_ALLOCATOR(T) > heap_type;
     typedef __STD::map<key_type,T> heap_type;
+    typedef typename heap_type::iterator iterator;
 
     SessionManager()
       { }
@@ -217,7 +224,7 @@ class SessionManager
         heap.erase( k );
       }
 
-    void erase( heap_type::iterator& k )
+    void erase( iterator& k )
       {
         MT_REENTRANT( _lock, _x1 );
         heap.erase( k );
@@ -231,7 +238,7 @@ class SessionManager
     static const key_type _low;
     static const key_type _high;
     static key_type _id;
-    mutable typename __impl::Mutex _lock;
+    mutable __impl::Mutex _lock;
 };
 
 #ifndef _MSC_VER
@@ -255,7 +262,7 @@ const SessionManager<T>::key_type SessionManager<T>::_high = 65535;
 // typename SessionManager<T>::key_type SessionManager<T>::_id( SessionManager<T>::_low );
 // #else
 template <class T>
-SessionManager<T>::key_type SessionManager<T>::_id = SessionManager<T>::_low;
+typename SessionManager<T>::key_type SessionManager<T>::_id = SessionManager<T>::_low;
 // #endif
 
 #ifndef _MSC_VER

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/05/22 14:46:29 ptr>
+// -*- C++ -*- Time-stamp: <00/09/10 15:36:52 ptr>
 
 /*
  *
@@ -6,7 +6,7 @@
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2000
- * ParallelGraphics
+ * ParallelGraphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -21,7 +21,13 @@
 #ifndef __NetTransport_h
 #define __NetTransport_h
 
-#ident "$SunId$"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #ifndef __config_feature_h
 #include <config/feature.h>

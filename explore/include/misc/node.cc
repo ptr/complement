@@ -1,13 +1,13 @@
-// -*- C++ -*- Time-stamp: <00/07/27 16:46:03 ptr>
+// -*- C++ -*- Time-stamp: <00/09/08 18:24:03 ptr>
 
 /*
  *
  * Copyright (c) 1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999
- * ParallelGraphics
- 
+ * Copyright (c) 1999-2000
+ * ParallelGraphics Ltd.
+ *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -18,7 +18,13 @@
  * in supporting documentation.
  */
 
-#ident "$SunId$"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 namespace Helios {
 
@@ -81,6 +87,9 @@ __nodes_heap_base::key_type nodes_heap<Node>::create_root( unsigned prot )
 }
 
 template <class Node>
+#if defined(__HP_aCC) && (__HP_aCC==1)
+typename
+#endif
 nodes_heap_cursor<Node>::iterator
 nodes_heap_cursor<Node>::create_catalog( const __STD::string& name, unsigned prot )
 {
@@ -99,8 +108,15 @@ nodes_heap_cursor<Node>::create_catalog( const __STD::string& name, unsigned pro
 }
 
 template <class Node>
+#if defined(__HP_aCC) && (__HP_aCC==1)
+typename
+#endif
 nodes_heap_cursor<Node>::iterator
-nodes_heap_cursor<Node>::insert_catalog( nodes_heap_cursor<Node>::iterator i, const __STD::string& name, unsigned prot )
+nodes_heap_cursor<Node>::insert_catalog(
+#if defined(__HP_aCC) && (__HP_aCC==1)
+typename
+#endif
+nodes_heap_cursor<Node>::iterator i, const __STD::string& name, unsigned prot )
 {
   if ( !can_write() ) {
     return catalog->end(); // no permission
@@ -188,6 +204,9 @@ void nodes_heap_cursor<Node>::cd( iterator i )
 }
 
 template <class Node>
+#if defined(__HP_aCC) && (__HP_aCC==1)
+typename
+#endif
 nodes_heap_cursor<Node>::iterator
 nodes_heap_cursor<Node>::mv( iterator i, nodes_heap_cursor<Node>& cursor )
 {
@@ -214,6 +233,9 @@ nodes_heap_cursor<Node>::mv( iterator i, nodes_heap_cursor<Node>& cursor )
 }
 
 template <class Node>
+#if defined(__HP_aCC) && (__HP_aCC==1)
+typename
+#endif
 nodes_heap_cursor<Node>::iterator
 nodes_heap_cursor<Node>::mv( key_type k, nodes_heap_cursor<Node>& cursor )
 {
@@ -244,6 +266,9 @@ nodes_heap_cursor<Node>::mv( key_type k, nodes_heap_cursor<Node>& cursor )
 }
 
 template <class Node>
+#if defined(__HP_aCC) && (__HP_aCC==1)
+typename
+#endif
 nodes_heap_cursor<Node>::iterator
 nodes_heap_cursor<Node>::mv( key_type k, nodes_heap_cursor<Node>& cursor, iterator ic )
 {
@@ -275,6 +300,9 @@ nodes_heap_cursor<Node>::mv( key_type k, nodes_heap_cursor<Node>& cursor, iterat
 }
 
 template <class Node>
+#if defined(__HP_aCC) && (__HP_aCC==1)
+typename
+#endif
 nodes_heap_cursor<Node>::iterator
 nodes_heap_cursor<Node>::mv( iterator i, nodes_heap_cursor<Node>& cursor, const __STD::string& name )
 {
@@ -302,6 +330,9 @@ nodes_heap_cursor<Node>::mv( iterator i, nodes_heap_cursor<Node>& cursor, const 
 
 
 template <class Node>
+#if defined(__HP_aCC) && (__HP_aCC==1)
+typename
+#endif
 nodes_heap_cursor<Node>::iterator
 nodes_heap_cursor<Node>::ln( iterator i )
 {
@@ -325,6 +356,9 @@ nodes_heap_cursor<Node>::ln( iterator i )
 }
 
 template <class Node>
+#if defined(__HP_aCC) && (__HP_aCC==1)
+typename
+#endif
 nodes_heap_cursor<Node>::iterator
 nodes_heap_cursor<Node>::ln( key_type k, nodes_heap_cursor<Node>& cursor )
 {

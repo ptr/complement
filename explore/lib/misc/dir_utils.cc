@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 15:47:20 ptr>
+// -*- C++ -*- Time-stamp: <00/09/08 18:01:32 ptr>
 
 /*
  *
@@ -15,7 +15,13 @@
  * in supporting documentation.
  */
 
-#ident "$SunId$ %Q%"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #include <config/feature.h>
 #include <sys/types.h>

@@ -1,0 +1,29 @@
+# Time-stamp: <00/09/12 11:44:57 ptr>
+# $SunId$
+
+BASEDIR := $(shell xtmp=`pwd`; \
+               xtmp=`dirname $$xtmp`; dirname $$xtmp)
+LIBDIR  := $(shell xtmp=`pwd`; dirname $$xtmp)
+
+COMPILER_NAME = aCC
+include ${BASEDIR}/lib/EDS/Makefile.inc
+
+all:	dbg release
+
+include ${BASEDIR}/lib/Makefile.inc.lib
+
+INCLUDES += -I$(BASEDIR)/include
+
+dbg : OPT += +inst_close
+dbg : LDFLAGS += -Wl,+k
+dbg : LDFLAGS += -L${HOME}/lib
+dbg : LDLIBS += -lxmt_${COMPILER_NAME}${DBG_SUFFIX} \
+		-lsockios_${COMPILER_NAME}${DBG_SUFFIX} \
+		-lstlport_aCC_stldebug
+
+release : OPT += +inst_close
+release : LDFLAGS += -Wl,+k
+release : LDFLAGS += -L${HOME}/lib
+release : LDLIBS += -lxmt_${COMPILER_NAME} \
+		    -lsockios_${COMPILER_NAME} \
+		    -lstlport_aCC

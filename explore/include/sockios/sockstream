@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/08/31 09:57:29 ptr>
+// -*- C++ -*- Time-stamp: <00/09/08 14:38:17 ptr>
 
 /*
  *
@@ -6,8 +6,8 @@
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2000
- * ParallelGraphics
- 
+ * ParallelGraphics Ltd.
+ *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -21,7 +21,13 @@
 #ifndef __SOCKSTREAM__
 #define __SOCKSTREAM__
 
-#ident "$SunId$"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -265,7 +271,7 @@ class basic_sockbuf :
     void findhost( const char *hostname );
 
     virtual streamsize showmanyc()
-      { return egptr() - gptr(); }
+      { return this->egptr() - this->gptr(); }
 
     virtual int_type underflow();
     virtual int_type overflow( int_type c = traits::eof() );
@@ -274,13 +280,13 @@ class basic_sockbuf :
 	if ( !_open )
 	  return traits::eof();
 
-	if ( gptr() <= eback() ) {
+	if ( this->gptr() <= this->eback() ) {
 	  return traits::eof();
 	}
 
-	gbump(-1);
+	this->gbump(-1);
 	if ( !traits::eq_int_type(c,traits::eof()) ) {
-	  *gptr() = traits::to_char_type(c);
+	  *this->gptr() = traits::to_char_type(c);
 	  return c;
 	}
 
@@ -305,12 +311,12 @@ class basic_sockbuf :
 	  return -1;
 	}
 
-	long count = pptr() - pbase();
+	long count = this->pptr() - this->pbase();
 	if ( count ) {
-	  __STL_ASSERT( pbase() != 0 );
-	  if ( (this->*_xwrite)( pbase(), sizeof(charT) * count ) != count * sizeof(charT) )
+	  __STL_ASSERT( this->pbase() != 0 );
+	  if ( (this->*_xwrite)( this->pbase(), sizeof(charT) * count ) != count * sizeof(charT) )
 	    return -1;
-	  setp( pbase(), epptr() ); // require: set pptr
+	  setp( this->pbase(), this->epptr() ); // require: set pptr
 	}
 
 	return 0;
@@ -340,7 +346,7 @@ class basic_sockbuf :
 	    _ebuf = _bbuf + __n;
 	    __STL_ASSERT( __n > 0 ? _bbuf != 0 : _bbuf == 0 );
 	  } else
-	    _M_throw_length_error();
+	    this->_M_throw_length_error();
 	}
       }
 
@@ -429,26 +435,26 @@ class basic_sockstream :
 	sock_base(),
 	basic_iostream<charT,traits>( 0 )
 	  { basic_ios<charT,traits>::init(&_sb); }
-    explicit basic_sockstream( const char *hostname, int port,
-			       sock_base::stype type = sock_base::sock_stream,
-			       sock_base::protocol pro = sock_base::inet ) :
+    basic_sockstream( const char *hostname, int port,
+                      sock_base::stype type = sock_base::sock_stream,
+                      sock_base::protocol pro = sock_base::inet ) :
 	sock_base(),
 	basic_iostream<charT,traits>( 0 )
       {
         basic_ios<charT,traits>::init(&_sb);
-	clear();
+	basic_iostream<charT,traits>::clear();
 	if ( _sb.open( hostname, port, type, pro ) == 0 ) {
 	  setstate( ios_base::failbit );
 	}
       }
 
-    explicit basic_sockstream( sock_base::socket_type s, const sockaddr& addr,
+    basic_sockstream( sock_base::socket_type s, const sockaddr& addr,
                                sock_base::stype type = sock_base::sock_stream ) :
 	sock_base(),
 	basic_iostream<charT,traits>( 0 )
       {
         basic_ios<charT,traits>::init(&_sb);
-	clear();
+	basic_iostream<charT,traits>::clear();
 	if ( _sb.open( s, addr, type ) == 0 ) {
 	  setstate( ios_base::failbit );
 	}
@@ -462,7 +468,7 @@ class basic_sockstream :
 	       sock_base::stype type = sock_base::sock_stream,
 	       sock_base::protocol pro = sock_base::inet )
       {
-	clear();
+	basic_iostream<charT,traits>::clear();
 	if ( _sb.open( hostname, port, type, pro ) == 0 ) {
 	  setstate( ios_base::failbit );
 	}
@@ -472,7 +478,7 @@ class basic_sockstream :
     void open( sock_base::socket_type s, const sockaddr& addr,
 	       sock_base::stype type = sock_base::sock_stream )
       {
-	clear();
+	basic_iostream<charT,traits>::clear();
 	if ( _sb.open( s, addr, type ) == 0 ) {
 	  setstate( ios_base::failbit );
 	}
@@ -484,7 +490,7 @@ class basic_sockstream :
 	  if ( _sb.close() == 0 ) {
 	    setstate( ios_base::failbit );
 	  } else {
-	    clear();
+	    basic_iostream<charT,traits>::clear();
 	  }
 	}
       }

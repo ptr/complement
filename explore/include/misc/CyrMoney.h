@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 15:40:49 ptr>
+// -*- C++ -*- Time-stamp: <00/09/08 17:56:28 ptr>
 
 /*
  *
@@ -18,7 +18,13 @@
 #ifndef __CyrMoney_h
 #define __CyrMoney_h
 
-#ident "$SunId$ %Q%"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #ifndef __config_feature_h
 #include <config/feature.h>

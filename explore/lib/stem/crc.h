@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 10:48:59 ptr>
+// -*- C++ -*- Time-stamp: <00/09/10 15:33:37 ptr>
 
 /*
  *
@@ -6,8 +6,8 @@
  * Petr Ovchenkov
  *
  * Copyright (c) 1999
- * ParallelGraphics Software Systems
- 
+ * ParallelGraphics Ltd.
+ *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -21,7 +21,13 @@
 #ifndef __crc_h
 #define __crc_h
 
-#ident "$SunId$ %Q%"
+#ifdef __unix
+#  ifdef __HP_aCC
+#pragma VERSIONID "$SunId$"
+#  else
+#pragma ident "$SunId$"
+#  endif
+#endif
 
 #ifndef __config_feature_h
 #include <config/feature.h>
