@@ -1,10 +1,12 @@
-// -*- C++ -*- Time-stamp: <99/03/19 17:29:31 ptr>
+// -*- C++ -*- Time-stamp: <99/03/23 12:57:45 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #include <EvManager.h>
 #include <NetTransport.h>
 
 namespace EDS {
+
+std::string EvManager::inv_key_str( "invalid key" );
 
 void EvManager::Send( const Event& e, const EvManager::key_type& src_id )
 {
