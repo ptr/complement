@@ -1,12 +1,11 @@
-// -*- C++ -*- Time-stamp: <00/05/23 22:06:56 ptr>
+// -*- C++ -*- Time-stamp: <00/06/01 12:07:56 ptr>
 
 /*
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
- *
- * Copyright (c) 1999-2000
- * ParallelGraphics
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -19,21 +18,6 @@
  */
 
 #ident "$SunId$"
-
-#include <sockios/sockstream>
-
-#ifdef __SGI_STL_OWN_IOSTREAMS
-__STL_BEGIN_NAMESPACE
-#else
-namespace std {
-#endif
-template class basic_sockbuf<char, char_traits<char>, __STL_DEFAULT_ALLOCATOR(char) >;
-template class basic_sockstream<char, char_traits<char>, __STL_DEFAULT_ALLOCATOR(char) >;
-#ifdef __SGI_STL_OWN_IOSTREAMS
-__STL_END_NAMESPACE
-#else
-} // namespace std
-#endif
 
 #ifdef WIN32
 
@@ -49,6 +33,8 @@ __STL_END_NAMESPACE
 #ifndef __XMT_H
 #include <mt/xmt.h>
 #endif
+
+#include <sockios/sockstream>
 
 #  if 0
 extern "C" int APIENTRY
@@ -75,6 +61,8 @@ namespace std {
 
 static int __glob_init_cnt = 0;
 static int __glob_init_wsock2 = 0;
+
+static __impl::Mutex _SI_lock;
 
 enum {
   WINDOWS_NT_4,
@@ -111,6 +99,7 @@ int WinVer()
 __PG_DECLSPEC
 sock_base::Init::Init()
 {
+  MT_REENTRANT( _SI_lock, _1 );
   int __err = 0;
   try {
     int __tls_init_cnt = (int)TlsGetValue( __impl::__thr_key );
@@ -142,6 +131,14 @@ sock_base::Init::Init()
       }
     }
     TlsSetValue( __impl::__thr_key, (void *)__tls_init_cnt );
+    int a = 1;
+    int b = 2;
+    int c = 3;
+    for ( int j = 0; j < 100000; ++j ) {
+      swap( a, b );
+      swap( b, c );
+      a = j;
+    }
   }
   catch ( domain_error& err ) {
     ostringstream ss;
@@ -162,12 +159,21 @@ sock_base::Init::Init()
 __PG_DECLSPEC
 sock_base::Init::~Init()
 {
+  MT_REENTRANT( _SI_lock, _1 );
   int __tls_init_cnt = (int)TlsGetValue( __impl::__thr_key );
   int win_ver = WinVer();
   // --__glob_init_cnt; // only for Win 95
   if ( --__tls_init_cnt == 0 ) {
     if ( win_ver != WINDOWS_95 ) {
       WSACleanup();
+      int a = 1;
+      int b = 2;
+      int c = 3;
+      for ( int j = 0; j < 100000; ++j ) {
+        swap( a, b );
+        swap( b, c );
+        a = j;
+      }
     } else if ( __glob_init_cnt == 0 ) {
       // WSACleanup();
     }
