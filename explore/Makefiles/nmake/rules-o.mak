@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <03/09/15 14:22:01 ptr>
+# -*- Makefile -*- Time-stamp: <03/09/28 16:52:08 ptr>
 # $Id$
 
 # Rules for release output:
@@ -15,22 +15,22 @@
 # Rules for debug output:
 
 .cpp{$(OUTPUT_DIR_DBG)}.o:
-	$(COMPILE_cc) $(OUTPUT_OPTION) $<
+	$(COMPILE_cc_DBG) $(OUTPUT_OPTION_DBG) $<
 
 .cc{$(OUTPUT_DIR_DBG)}.o:
-	$(COMPILE_cc) $(OUTPUT_OPTION) $<
+	$(COMPILE_cc_DBG) $(OUTPUT_OPTION_DBG) $<
 
 .c{$(OUTPUT_DIR_DBG)}.o:
-	$(COMPILE_c) $(OUTPUT_OPTION) $<
+	$(COMPILE_c_DBG) $(OUTPUT_OPTION_DBG) $<
 
 # Rules for STLport debug output:
 
 .cpp{$(OUTPUT_DIR_STLDBG)}.o:
-	$(COMPILE_cc) $(OUTPUT_OPTION) $<
+	$(COMPILE_cc_STLDBG) $(OUTPUT_OPTION_STLDBG) $<
 
 .cc{$(OUTPUT_DIR_STLDBG)}.o:
-	$(COMPILE_cc) $(OUTPUT_OPTION) $<
+	$(COMPILE_cc_STLDBG) $(OUTPUT_OPTION_STLDBG) $<
 
 .c{$(OUTPUT_DIR_STLDBG)}.o:
-	$(COMPILE_c) $(OUTPUT_OPTION) $<
+	$(COMPILE_c_STL_DBG) $(OUTPUT_OPTION_STLDBG) $<
 
