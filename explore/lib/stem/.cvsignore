@@ -1,8 +1,2 @@
 obj
-VC.DSW
-VC.OPT
-VC.dsp
-VC.ncb
-VC.plg
-*.d
-.make.depend
+core

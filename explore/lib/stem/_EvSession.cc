@@ -1,11 +1,13 @@
-// -*- C++ -*- Time-stamp: <01/03/20 15:47:04 ptr>
+// -*- C++ -*- Time-stamp: <03/11/06 07:54:42 ptr>
 
 /*
- * Copyright (c) 1995-1999
+ * Copyright (c) 1995-1999, 2002, 2003
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
+ *
+ * Licensed under the Academic Free License version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -21,17 +23,17 @@
 #  ifdef __HP_aCC
 #pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "@(#)$Id$"
+#ident "@(#)$Id$"
 #  endif
 #endif
 
 #include <config/feature.h>
-#include <EDS/EvSession.h>
+#include <stem/EvSession.h>
 
 namespace EDS {
 
 #ifndef WIN32
-__PG_DECLSPEC
+__FIT_DECLSPEC
 SessionInfo::SessionInfo( const SessionInfo& si )
 {
   _host = si._host;
@@ -53,7 +55,7 @@ SessionInfo::SessionInfo( const SessionInfo& si )
   _control = si._control;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 SessionInfo& SessionInfo::operator =( const SessionInfo& si )
 {
   _host = si._host;

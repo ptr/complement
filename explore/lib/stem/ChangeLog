@@ -1,3 +1,9 @@
+2003-11-06  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* libEDS: library renamed to 'stem' == lower of 'StEM'
+
+	* libstem: compilation with present libxmt and libsockios
+
 2001-07-27  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
 
 	* libEDS: Version 3.5.2

@@ -1,12 +1,14 @@
-// -*- C++ -*- Time-stamp: <01/03/19 18:55:57 ptr>
+// -*- C++ -*- Time-stamp: <03/11/06 07:53:51 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999
+ * Copyright (c) 1997-1999, 2002, 2003
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
+ *
+ * Licensed under the Academic Free License version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -22,7 +24,7 @@
 #  ifdef __HP_aCC
 #pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "@(#)$Id$"
+#ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -31,32 +33,32 @@
 #endif
 
 #include <config/feature.h>
-#include "EDS/Names.h"
-#include "EDS/EvManager.h"
-#include "EDS/EDSEv.h"
+#include "stem/Names.h"
+#include "stem/EvManager.h"
+#include "stem/EDSEv.h"
 
 namespace EDS {
 
-__PG_DECLSPEC Names::Names() :
+__FIT_DECLSPEC Names::Names() :
     EventHandler()
 {
 }
 
-__PG_DECLSPEC Names::Names( const char *info ) :
+__FIT_DECLSPEC Names::Names( const char *info ) :
     EventHandler( info )
 {
 }
 
-__PG_DECLSPEC Names::Names( addr_type id, const char *info ) :
+__FIT_DECLSPEC Names::Names( addr_type id, const char *info ) :
     EventHandler( id, info )
 {
 }
 
-__PG_DECLSPEC Names::~Names()
+__FIT_DECLSPEC Names::~Names()
 {
 }
 
-void __PG_DECLSPEC Names::get_list( const Event& rq )
+void __FIT_DECLSPEC Names::get_list( const Event& rq )
 {
   Event_base<NameRecord> rs( EV_EDS_NM_LIST );
 
@@ -80,7 +82,7 @@ void __PG_DECLSPEC Names::get_list( const Event& rq )
   Send( Event_convert<NameRecord>()( rs ) );
 }
 
-void __PG_DECLSPEC Names::get_ext_list( const Event& rq )
+void __FIT_DECLSPEC Names::get_ext_list( const Event& rq )
 {
   Event_base<NameRecord> rs( EV_EDS_NM_LIST );
 
@@ -104,7 +106,7 @@ void __PG_DECLSPEC Names::get_ext_list( const Event& rq )
   Send( Event_convert<NameRecord>()( rs ) );
 }
 
-void __PG_DECLSPEC Names::get_by_name( const Event& rq )
+void __FIT_DECLSPEC Names::get_by_name( const Event& rq )
 {
   Event_base<NameRecord> rs( EV_EDS_NS_ADDR );
 
@@ -129,28 +131,28 @@ void __PG_DECLSPEC Names::get_by_name( const Event& rq )
   Send( Event_convert<NameRecord>()( rs ) );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void NameRecord::pack( std::ostream& s ) const
 {
   __pack( s, addr );
   __pack( s, record );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void NameRecord::net_pack( std::ostream& s ) const
 {
   __net_pack( s, addr );
   __net_pack( s, record );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void NameRecord::unpack( std::istream& s )
 {
   __unpack( s, addr );
   __unpack( s, record );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void NameRecord::net_unpack( std::istream& s )
 {
   __net_unpack( s, addr );

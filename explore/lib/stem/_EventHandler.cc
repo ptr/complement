@@ -1,11 +1,13 @@
-// -*- C++ -*- Time-stamp: <01/05/30 15:23:55 ptr>
+// -*- C++ -*- Time-stamp: <03/11/16 21:57:49 ptr>
 
 /*
- * Copyright (c) 1995-1999
+ * Copyright (c) 1995-1999, 2002, 2003
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
+ *
+ * Licensed under the Academic Free License version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -21,7 +23,7 @@
 #  ifdef __HP_aCC
 #pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "@(#)$Id$"
+#ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -30,9 +32,9 @@
 #endif
 
 #include <config/feature.h>
-#include "EDS/EventHandler.h"
-#include "EDS/EvManager.h"
-#include "EDS/Names.h"
+#include "stem/EventHandler.h"
+#include "stem/EvManager.h"
+#include "stem/Names.h"
 
 #if defined(__TRACE) || defined(__WARN)
 
@@ -66,51 +68,51 @@ EventHandler::Init::~Init()
   }
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 const string& EventHandler::who_is( addr_type k ) const
 {
   return _mgr->who_is( k );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 bool EventHandler::is_avail( addr_type id ) const
 {
   return _mgr->is_avail( id );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 key_type EventHandler::sid( addr_type k ) const
 {
   return _mgr->sid( k );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void EventHandler::Send( const Event& e )
 {
   e.src( _id );
   _mgr->push( e );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void EventHandler::Send( const EventVoid& e )
 {
   e.src( _id );
   _mgr->push( EDS::Event_convert<void>()( e ) );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void EventHandler::Forward( const Event& e )
 {
   _mgr->push( e );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void EventHandler::Forward( const EventVoid& e )
 {
   _mgr->push( EDS::Event_convert<void>()( e ) );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void EventHandler::PushState( state_type state )
 {
   RemoveState( state );
@@ -118,14 +120,14 @@ void EventHandler::PushState( state_type state )
   theHistory.push_front( state );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 state_type EventHandler::State() const
 {
   MT_REENTRANT_SDS( _theHistory_lock, _x1 );
   return theHistory.front();
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void EventHandler::PushTState( state_type state )
 {
   MT_REENTRANT_SDS( _theHistory_lock, _x1 );
@@ -133,7 +135,7 @@ void EventHandler::PushTState( state_type state )
   theHistory.push_front( state );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void EventHandler::PopState()
 {
   MT_REENTRANT_SDS( _theHistory_lock, _x1 );
@@ -143,7 +145,7 @@ void EventHandler::PopState()
   }
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void EventHandler::PopState( state_type state )
 {
   MT_REENTRANT_SDS( _theHistory_lock, _x1 );
@@ -153,7 +155,7 @@ void EventHandler::PopState( state_type state )
   }
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void EventHandler::RemoveState( state_type state )
 {
   MT_REENTRANT_SDS( _theHistory_lock, _x1 );
@@ -163,7 +165,7 @@ void EventHandler::RemoveState( state_type state )
   }
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 bool EventHandler::isState( state_type state ) const
 {
   MT_REENTRANT_SDS( _theHistory_lock, _x1 );
@@ -203,7 +205,7 @@ const_h_iterator EventHandler::__find( state_type state ) const
   return hst_i;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 EventHandler::EventHandler()
 {
   new( Init_buf ) Init();
@@ -211,7 +213,7 @@ EventHandler::EventHandler()
   _id = _mgr->Subscribe( this );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 EventHandler::EventHandler( const char *info )
 {
   new( Init_buf ) Init();
@@ -219,29 +221,29 @@ EventHandler::EventHandler( const char *info )
   _id = _mgr->Subscribe( this, info );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 EventHandler::EventHandler( addr_type id, const char *info )
 {
   new( Init_buf ) Init();
   theHistory.push_front( ST_NULL );  // State( ST_NULL );
   _id = _mgr->SubscribeID( id, this, info );
-  _STLP_ASSERT( _id != -1 ); // already registered, or id has Event::extbit
+  // _STLP_ASSERT( _id != -1 ); // already registered, or id has Event::extbit
 //  if ( _id == -1 ) {
 //    _mgr->Subscribe( this, "" );
 //  }
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 EventHandler::~EventHandler()
 {
    _mgr->Unsubscribe( _id );
   ((Init *)Init_buf)->~Init();
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void EventHandler::TraceStack( ostream& out ) const
 {
-  MT_REENTRANT( _theHistory_lock, _x1 );
+  MT_REENTRANT_RS( _theHistory_lock, _x1 );
   const HistoryContainer& hst = theHistory;
   HistoryContainer::const_iterator hst_i = hst.begin();
   while ( hst_i != hst.end() ) {
