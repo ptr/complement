@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/04/07 13:50:32 ptr>
+// -*- C++ -*- Time-stamp: <99/05/06 11:16:02 ptr>
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
@@ -634,7 +634,6 @@ class EventHandler
     static EvManager *_mgr;
 
     friend class Init;
-    friend class NetTransport;
 };
 
 // ***************************************************************************
