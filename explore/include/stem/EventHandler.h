@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/13 10:29:50 ptr>
+// -*- C++ -*- Time-stamp: <99/09/16 15:33:58 ptr>
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
@@ -213,7 +213,11 @@ struct __PMFentry
     typedef void (T::*PMF)();
 
     PMF  pmf;
+#if !defined( _MSC_VER ) || defined( _DEBUG )
     typename EDS::GENERIC::DPMF dpmf;
+#else // _MSC_VER && !_DEBUG
+    GENERIC::DPMF dpmf;
+#endif
     const char *pmf_name;
 };
 
@@ -227,10 +231,11 @@ struct __DeclareAnyPMF
 #else // _MSC_VER
 #  ifdef _DEBUG
     EDS::__Event_Base::code_type code;
+    EDS::__PMFentry<T> func;
 #  else  // !_DEBUG
     __Event_Base::code_type code; // workaround for VC 5.0
+    __PMFentry<T> func;
 #  endif // _DEBUG
-    EDS::__PMFentry<T> func;
 #endif // _MSC_VER
 };
 
