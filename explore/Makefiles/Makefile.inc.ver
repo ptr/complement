@@ -7,9 +7,12 @@
 include $(BASEDIR)/Makefiles/Makefile.inc.ver.${COMPILER_NAME}
 
 # STLport library
-STLPORT_LIB_DIR ?= /usr/local/lib
-STLPORT_INCLUDE_DIR ?= /usr/local/include/stlport
-STLPORT_VER ?= 4.5
+#STLPORT_LIB_DIR ?= /usr/local/lib
+#STLPORT_INCLUDE_DIR ?= /usr/local/include/stlport
+#STLPORT_VER ?= 4.5
+STLPORT_LIB_DIR ?= /export/home/ptr/STLport.lab/STLport/lib
+STLPORT_INCLUDE_DIR ?= /export/home/ptr/STLport.lab/STLport/stlport
+STLPORT_VER ?= 4.5.5
 
 # PostgreSQL library version:
 

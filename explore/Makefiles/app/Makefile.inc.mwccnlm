@@ -1,8 +1,9 @@
-# Time-stamp: <01/04/11 12:45:53 ptr>
+# Time-stamp: <03/06/13 22:42:48 ptr>
 # $Id$
 
 # LDFLAGS += -L${HOME}/lib
-LDFLAGS += -nostdlib -L"${MWCW_NOVELL_SDK_BASE}/imports" -L"${MWCW_NOVELL_R}/Libraries/Runtime" -lclib.imp -lthreads.imp -lnlmlib.imp -lfpsm.imp -llocnlm32.imp -lmwcrtl.lib
+#LDFLAGS += -nostdlib -L"${MWCW_NOVELL_SDK_BASE}/imports" -L"${MWCW_NOVELL_R}/Libraries/Runtime" -lclib.imp -lthreads.imp -lnlmlib.imp -lfpsm.imp -llocnlm32.imp -lmwcrtl.lib
+LDFLAGS += -nostdlib -L"${MWCW_NOVELL_SDK_BASE}/imports" -L"${MWCW_NOVELL_R}/Libraries/Runtime" -lclib.imp -lthreads.imp -lnlmlib.imp -llocnlm32.imp -lmwcrtl.lib
 
 # release-shared : LDFLAGS += -L${HOME}/lib
 # release-static : LDFLAGS += -L${HOME}/lib
