@@ -73,7 +73,8 @@ endif
 ifeq ($(OS_VER),Linux)
 CCFLAGS = -pthread $(OPT)
 CFLAGS = -pthread $(OPT)
-CXXFLAGS = -pthread -nostdinc++ -fexceptions -fident $(OPT)
+# CXXFLAGS = -pthread -nostdinc++ -fexceptions -fident $(OPT)
+CXXFLAGS = -pthread -fexceptions -fident $(OPT)
 endif
 
 CDEPFLAGS = -E -M
