@@ -8,12 +8,20 @@ d=`dirname $d`/build/lib
 LD_LIBRARY_PATH=$d:${LD_LIBRARY_PATH}
 export LD_LIBRARY_PATH
 
+case `uname` in
+  Linux)
+    echo="echo -e"
+    ;;
+  SunOS)
+    echo=echo
+    ;;
+esac
 
 w_lnum () {
   if [ -f $1 ] ; then
-    echo -e `wc -l < $1` "\c" >> $1
+    ${echo} `wc -l < $1` "\c" >> $1
   else
-    echo -e "0 \c" > $1
+    ${echo} "0 \c" > $1
   fi
 }
 
@@ -37,7 +45,7 @@ repeat () {
     $*
     i=`expr $i + 1`
   done
-  echo "-----------"
+  ${echo} "-----------"
   sleep 1
 }
 
@@ -63,37 +71,42 @@ repeat 10 experiment $lp $np p
 repeat 10 experiment $lb $nb b
 repeat 10 experiment $lh $nh h
 
-echo "# Server $ls/$ns"
-echo -e "$ls \c"
+${echo} "-----------"
+
+${echo} "# Server " `date` `uname -a`
+${echo} "# $ls/$ns"
+${echo} "$ls \c"
 ./stat.awk server-s.log
-echo "# Client $ls/$ns"
-echo -e "$ls \c"
-./stat.awk client-s.log
-
-echo "# Server $l0/$n0"
-echo -e "$l0 \c"
+${echo} "# $l0/$n0"
+${echo} "$l0 \c"
 ./stat.awk server-0.log
-echo "# Client $l0/$n0"
-echo -e "$l0 \c"
-./stat.awk client-0.log
-
-echo "# Server $lp/$np"
-echo -e "$lp \c"
+${echo} "# $lp/$np"
+${echo} "$lp \c"
 ./stat.awk server-p.log
-echo "# Client $lp/$np"
-echo -e "$lp \c"
-./stat.awk client-p.log
-
-echo "# Server $lb/$nb"
-echo -e "$lb \c"
+${echo} "# $lb/$nb"
+${echo} "$lb \c"
 ./stat.awk server-b.log
-echo "# Client $lb/$nb"
-echo -e "$lb \c"
-./stat.awk client-b.log
-
-echo "# Server $lh/$nh"
-echo -e "$lh \c"
+${echo} "# Server $lh/$nh"
+${echo} "$lh \c"
 ./stat.awk server-h.log
-echo "# Client $lh/$nh"
-echo -e "$lh \c"
+
+${echo} "-----------"
+
+${echo} "# Client " `date` `uname -a`
+${echo} "# ls/$ns"
+${echo} "$ls \c"
+./stat.awk client-s.log
+${echo} "# $l0/$n0"
+${echo} "$l0 \c"
+./stat.awk client-0.log
+${echo} "# $lp/$np"
+${echo} "$lp \c"
+./stat.awk client-p.log
+${echo} "# Client $lb/$nb"
+${echo} "$lb \c"
+./stat.awk client-b.log
+${echo} "# Client $lh/$nh"
+${echo} "$lh \c"
 ./stat.awk client-h.log
+
+${echo} "-----------"
