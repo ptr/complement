@@ -28,9 +28,9 @@
 #include <string>
 #include <iterator>
 
-#ifdef __STL_USE_NAMESPACES
+// #ifdef __STL_USE_NAMESPACES
 using namespace std;
-#endif
+// #endif
 
 // -----------------------------------------------------------------------------
 // The basic building block: An input iterator used to iterate over
@@ -41,11 +41,11 @@ using namespace std;
 class dir_it_rep;
 
 class dir_it :
-#ifndef __STL_USE_NAMESPACES
-    public input_iterator<string, int>
-#else
+//#ifndef __STL_USE_NAMESPACES
+//    public input_iterator<string, int>
+//#else
     public iterator<input_iterator_tag,string,int,string*,string&>
-#endif
+//#endif
 {
   public:
     // --------------------------------------------------------------------
