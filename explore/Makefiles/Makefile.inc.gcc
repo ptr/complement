@@ -1,0 +1,107 @@
+# Time-stamp: <01/03/26 15:29:20 ptr>
+# $Id$
+
+# .KEEP_STATE:
+# .PARALLEL:
+.SUFFIXES:
+.SCCS_GET:
+
+.PHONY:	$(OUTPUT_DIR) $(OUTPUT_DIR_DBG) $(OUTPUT_DIR_STLDBG) \
+        $(OUTPUT_DIR_A) $(OUTPUT_DIR_A_DBG) $(OUTPUT_DIR_A_STLDBG) \
+	clear-release-static clear-release-shared \
+        clear-dbg-static clear-dbg-shared \
+        clear-stldbg-static clear-stldbg-shared \
+	dbg-shared release-shared dbg-static release-static \
+	dbg-shared-dep stldbg-shared-dep release-shared-dep \
+        dbg-static-dep stldbg-static-dep release-static-dep \
+	.make.depend
+
+OS_VER := $(shell uname -s | sed -e s/\[\.\ \]/_/g)
+ifeq ($(OS_VER),HP-UX)
+BUILD_SYSTEM := $(shell echo `uname -n` `uname -s` `uname -r` `uname -v` `uname -m` $$USER)
+else
+BUILD_SYSTEM := $(shell echo `uname -n` `uname -s` `uname -r` `uname -v` `uname -p` $$USER)
+endif
+
+BUILD_DATE := $(shell date +'%Y/%m/%d %T %Z')
+
+ifeq ($(OS_VER),HP-UX)
+SO = sl
+else
+SO = so
+endif
+
+ARCH = a
+AR = ar
+
+INCLUDES = -I$(BASEDIR)/include
+
+# DEFS = -D__$(OS_VER)
+DEFS ?=
+OPT ?=
+
+CXX = c++
+# CCC = c++
+CC = gcc
+# CCC = gcc
+ifeq ($(OS_VER),SunOS)
+INSTALL = /usr/ucb/install
+endif
+
+ifeq ($(OS_VER),Linux)
+INSTALL = /usr/bin/install
+endif
+
+ifeq ($(OS_VER),HP-UX)
+INSTALL = $$HOME/bin/install-sh
+endif
+
+INSTALL_SO = ${INSTALL} -c -m 0755
+INSTALL_A = ${INSTALL} -c -m 0644
+INSTALL_EXE = ${INSTALL} -c -m 0755
+
+# OUTPUT_DIR = obj
+OUTPUT_OPTION = -o $@
+CPPFLAGS = $(DEFS) $(INCLUDES)
+
+ifeq ($(OS_VER),SunOS)
+CCFLAGS = -pthreads $(OPT)
+CFLAGS = -pthreads $(OPT)
+CXXFLAGS = -pthreads -nostdinc++ -fexceptions -fident $(OPT)
+endif
+
+ifeq ($(OS_VER),Linux)
+CCFLAGS = -pthread $(OPT)
+CFLAGS = -pthread $(OPT)
+CXXFLAGS = -pthread -nostdinc++ -fexceptions -fident $(OPT)
+endif
+
+CDEPFLAGS = -E -M
+CCDEPFLAGS = -E -M
+
+stldbg-shared : DEFS += -D_STLP_DEBUG
+stldbg-shared-dep : DEFS += -D_STLP_DEBUG
+
+release-shared : OPT += -O2
+release-static : OPT += -O2
+
+dbg-shared : OPT += -g
+dbg-shared-dep : OPT += -g
+stldbg-shared : OPT += -g
+stldbg-shared-dep : OPT += -g
+
+stldbg-static : DEFS += -D_STLP_DEBUG
+stldbg-static-dep : DEFS += -D_STLP_DEBUG
+
+dbg-static : OPT += -g
+dbg-static-dep : OPT += -g
+stldbg-static : OPT += -g
+stldbg-static-dep : OPT += -g
+
+ifeq ($(OS_VER),HP-UX)
+release-shared release-shared-dep : OPT += -march=2.0
+dbg-shared dbg-shared-dep stldbg-shared stldbg-shared-dep : OPT += -march=2.0
+endif
+
+-include .make.depend
+
