@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/18 11:01:04 ptr>
+// -*- C++ -*- Time-stamp: <99/10/18 18:17:33 ptr>
 
 /*
  *
@@ -128,6 +128,7 @@ struct __CronEntry
     unsigned n;
     unsigned count;
 
+#if 0
     operator <( const __CronEntry& __x ) const
       { return expired.tv_sec < __x.expired.tv_sec ? true :
                  expired.tv_sec > __x.expired.tv_sec ? false :
@@ -139,7 +140,25 @@ struct __CronEntry
     operator ==( const __CronEntry& __x ) const
       { return expired.tv_sec == __x.expired.tv_sec &&
                  expired.tv_nsec == __x.expired.tv_nsec; }
+#endif
 };
+
+inline
+bool operator <( const __CronEntry& __l, const __CronEntry& __r )
+{ return __l.expired.tv_sec < __r.expired.tv_sec ? true :
+         __l.expired.tv_sec > __r.expired.tv_sec ? false :
+         __l.expired.tv_nsec < __r.expired.tv_nsec; }
+
+inline
+bool operator >( const __CronEntry& __l, const __CronEntry& __r )
+{ return __l.expired.tv_sec > __r.expired.tv_sec ? true :
+         __l.expired.tv_sec < __r.expired.tv_sec ? false :
+         __l.expired.tv_nsec > __r.expired.tv_nsec; }
+
+inline
+bool operator ==( const __CronEntry& __l, const __CronEntry& __r )
+{ return __l.expired.tv_sec == __r.expired.tv_sec &&
+         __l.expired.tv_nsec == __r.expired.tv_nsec; }
 
 class Cron :
     public EventHandler
