@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/25 18:46:24 ptr>
+// -*- C++ -*- Time-stamp: <99/03/22 13:53:49 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -10,53 +10,7 @@
 #include <algorithm>
 
 #ifdef WIN32
-namespace std {
-// select1st and select2nd are extensions: they are not part of the standard.
-template <class _Pair>
-struct _Select1st : public unary_function<_Pair, typename _Pair::first_type> {
-  const result_type& operator()(const _Pair& __x) const {
-    return __x.first;
-  }
-};
-
-template <class _Pair>
-struct _Select2nd : public unary_function<_Pair, typename _Pair::second_type>
-{
-  const result_type& operator()(const _Pair& __x) const {
-    return __x.second;
-  }
-};
-
-template <class _Pair> struct select1st : public _Select1st<_Pair> {};
-template <class _Pair> struct select2nd : public _Select2nd<_Pair> {};
-
-// unary_compose and binary_compose (extensions, not part of the standard).
-
-template <class _Operation1, class _Operation2>
-class unary_compose
-  : public unary_function<typename _Operation2::argument_type,
-                          typename _Operation1::result_type> 
-{
-protected:
-  _Operation1 __op1;
-  _Operation2 __op2;
-public:
-  unary_compose(const _Operation1& __x, const _Operation2& __y) 
-    : __op1(__x), __op2(__y) {}
-  result_type operator()(const argument_type& __x) const {
-    return __op1(__op2(__x));
-  }
-};
-
-template <class _Operation1, class _Operation2>
-inline unary_compose<_Operation1,_Operation2> 
-compose1(const _Operation1& __op1, const _Operation2& __op2)
-{
-  return unary_compose<_Operation1,_Operation2>(__op1, __op2);
-}
-
-} // namespace std
-
+#include <_algorithm>
 #endif // WIN32
 
 using __impl::Thread;
