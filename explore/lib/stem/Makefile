@@ -5,9 +5,8 @@ INCLUDES = -I/usr/openwin/include -I../../../include
 DEFS = -DSVR4 -D__DEBUG=2
 # OPT = -g -p
 OPT = -g
-# OPT = -G
-CCFLAGS = $(OPT) -cg92 +w -pic -pto 
-#-mt
+# OPT = -G -O4
+CCFLAGS = $(OPT) -cg92 +w -pic -pto -mt
 CPPFLAGS = $(DEFS) $(INCLUDES)
 # LDFLAGS = -L$(OUTPUT_DIR) -lclass -lX11 -ldl
 PROJECT_LIBS = ../..
@@ -31,6 +30,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/GrContext.o \
 		$(OUTPUT_DIR)/Frame.o \
 		$(OUTPUT_DIR)/Button.o \
+		$(OUTPUT_DIR)/CoupleButtons.o \
 		$(OUTPUT_DIR)/varstring.o \
 		$(OUTPUT_DIR)/TextLabel.o \
 		$(OUTPUT_DIR)/InputField.o \
@@ -39,11 +39,11 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/ScrWindow.o \
 		$(OUTPUT_DIR)/ScrTable.o \
 		$(OUTPUT_DIR)/PopupMenu.o \
-		$(OUTPUT_DIR)/AlignUtils.o \
 		$(OUTPUT_DIR)/CheckList.o \
 		$(OUTPUT_DIR)/Scroller.o \
 		$(OUTPUT_DIR)/TagetUtils.o \
-		$(OUTPUT_DIR)/TableInfo.o
+		$(OUTPUT_DIR)/TableInfo.o \
+		$(OUTPUT_DIR)/CheckBox.o
 
 
 # Xlib-based project
@@ -52,7 +52,7 @@ XTESTER = xtester
 XFILES.o = \
 		$(OUTPUT_DIR)/xtester.o \
 		$(OUTPUT_DIR)/xmain.o
-PROJECT = libOXW.so
+PROJECT = ../../libOXW.so
 LIBFILES.o = $(XLIBFILES.o)
 
 .KEEP_STATE:
