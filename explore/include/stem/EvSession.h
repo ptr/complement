@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/05 14:08:12 ptr>
+// -*- C++ -*- Time-stamp: <00/12/13 20:38:10 ptr>
 
 /*
  *
@@ -271,13 +271,15 @@ template <class T>
 const SessionManager<T>::key_type SessionManager<T>::_high = 65535;
 #endif
 
-// #ifndef _MSC_VER
-// template <class T>
-// typename SessionManager<T>::key_type SessionManager<T>::_id( SessionManager<T>::_low );
-// #else
+#ifndef _MSC_VER
 template <class T>
 typename SessionManager<T>::key_type SessionManager<T>::_id = SessionManager<T>::_low;
-// #endif
+// template <class T>
+// typename SessionManager<T>::key_type SessionManager<T>::_id( SessionManager<T>::_low );
+#else
+template <class T>
+SessionManager<T>::key_type SessionManager<T>::_id = SessionManager<T>::_low;
+#endif
 
 #ifndef _MSC_VER
 template <class T>
