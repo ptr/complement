@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <03/07/07 08:33:47 ptr>
+# -*- Makefile -*- Time-stamp: <03/07/07 12:00:18 ptr>
 # $Id$
 
 BASEDIR := $(shell xtmp=`pwd`; xtmp=`dirname $$xtmp`; dirname $$xtmp)
@@ -20,7 +20,6 @@ all-debug:	dbg-shared stldbg-shared
 all-release:	release-shared
 
 include ${BASEDIR}/Makefiles/top.mak
-include ${BASEDIR}/Makefiles/lib/top.mak
 
 
 INCLUDES += -I$(STLPORT_INCLUDE_DIR)
