@@ -16,11 +16,11 @@
 #endif
 
 #ifndef LIST_H
-#include <list.h>
+#include <stl/list.h>
 #endif
 
 #ifndef ALGO_H
-#include <algo.h>
+#include <stl/algo.h>
 #endif
 
 #ifndef STRSTREAM_H
@@ -36,29 +36,11 @@ class OXWEventsTableEntry
 
   public:
     typedef void (T::*PMF)( OXWEvent& );
-    typedef void (T::*vPMF)();
-    typedef void (T::*xPMF)( XEvent& );
 
     OXWEventsTableEntry( message_type msg, PMF pmf, AnyDPMF dpmf,
 			 const char *cls, const char *pmf_name ) :
 	Msg( msg ),
 	Pmf( pmf ),
-	Pmf_name( pmf_name ),
-        class_name( cls ),
-	dispatch( dpmf )
-      { }
-    OXWEventsTableEntry( message_type msg, vPMF pmf, AnyDPMF dpmf,
-			 const char *cls, const char *pmf_name ) :
-	Msg( msg ),
-	Pmf( PMF(pmf) ),
-	Pmf_name( pmf_name ),
-        class_name( cls ),
-	dispatch( dpmf )
-      { }
-    OXWEventsTableEntry( message_type msg, xPMF pmf, AnyDPMF dpmf,
-			 const char *cls, const char *pmf_name ) :
-	Msg( msg ),
-	Pmf( PMF(pmf) ),
 	Pmf_name( pmf_name ),
         class_name( cls ),
 	dispatch( dpmf )
@@ -224,6 +206,8 @@ void OXWStateTable<T>::Out( ostrstream& out ) const
 typedef OXWEventsTableEntry<GENERIC> GENERIC_EvTblEntry;
 typedef OXWStateTable<GENERIC> GENERIC_StatesTbl;
 
+// macros to add method isA(), that return class name.
+
 #define NAME_IT                                 \
   public:					\
     virtual const char *isA() const		\
@@ -243,7 +227,10 @@ class OXWEventHandler
     void State( state_type state )
       { PushState( state ); }
     void PushState( state_type state )
-      { theHistory.push_back( state ); }
+      {
+	RemoveState( state );
+	theHistory.push_back( state );
+      }
     state_type State() const
       { return theHistory.back(); }
     void PopState();
@@ -253,6 +240,7 @@ class OXWEventHandler
 	theHistory.push_back( ST_TERMINAL );
 	theHistory.push_back( state );
       }
+    void RemoveState( state_type );
     bool isState( state_type ) const;
     bool Dispatch( OXWEvent& );
     virtual const char *Trace() const;
@@ -266,9 +254,23 @@ class OXWEventHandler
     static GENERIC_StatesTbl theStatesTable;
     static ostrstream Out;
     NAME_IT;
+
+  private:
+    list<state_type>::iterator find( state_type );
 };
 
 // ***************************************************************************
+
+// Macro for response table declaration:
+// class XX :
+//    public YY
+// {
+//   ...
+//   DECLARE_RESPONSE_TABLE( XX, YY );
+// };
+//
+// The body of response table is defined by macro DEFINE_RESPONSE_TABLE
+// (see below).
 
 #define DECLARE_RESPONSE_TABLE( cls, pcls )	\
   NAME_IT;                                      \
@@ -282,6 +284,11 @@ class OXWEventHandler
     virtual bool __Dispatch( state_type, OXWEvent& ); \
     static GENERIC_StatesTbl theStatesTable;    \
     static int ini_flag
+
+// Macro for specification of response table body beginning:
+// DEFINE_RESPONSE_TABLE( XX )
+//   RESPONSE_TABLE_ENTRY( ST_NRM, XW_EXPOSE, OXWEvExpose, XEventDispatch );
+// END_RESPONSE_TABLE
 
 #define DEFINE_RESPONSE_TABLE( cls )		\
 DEFINE_NAME_IT( cls );                          \
@@ -310,11 +317,19 @@ int cls::RespTblConfigure()                     \
     ParentThisCls::RespTblConfigure();          \
     theStatesTable = ParentThisCls::theStatesTable;
 
+// Macro for specification of response table entry:
+// RESPONSE_TABLE_ENTRY( ST_NRM, XW_EXPOSE, OXWEvExpose, XEventDispatch );
+//                       ~~~~~~  ~~~~~~~~~  ~~~~~~~~~~~  ~~~~~~~~~~~~~~
+//                       State     Event      Catcher      Dispatcher
+
 #define RESPONSE_TABLE_ENTRY( state, msg, catcher, dispatch ) \
     theStatesTable.push( state, *((GENERIC_EvTblEntry *) \
 	  &OXWEventsTableEntry<ThisCls>( msg,   \
-	  &ThisCls::catcher, AnyDPMF(dispatch), \
+	  (OXWEventsTableEntry<ThisCls>::PMF)(&ThisCls::catcher), \
+	  AnyDPMF(dispatch),                    \
           class_name, #catcher )) )
+
+// Macro for specification of response table end:
 
 #define END_RESPONSE_TABLE			\
   }                                             \
