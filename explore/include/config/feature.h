@@ -116,6 +116,10 @@
 #  define __FIT_UITHREADS
 #endif
 
+#if defined(linux) && defined(_REENTRANT) && !defined(_PTHREADS)
+#  define _PTHREADS
+#endif
+
 #if defined(WIN32) && !defined(_PTHREADS)
 #  define __FIT_WIN32THREADS
 #endif
