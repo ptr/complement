@@ -1,3 +1,8 @@
+2002-09-25  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* libxmt: prepare for public on sourceforge.net under
+	the Academic Free License Version 1.0
+
 2002-08-03  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* xmt.h: add std:: namespace for exception class,
