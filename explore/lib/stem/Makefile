@@ -1,6 +1,6 @@
-# "%Z%%Q%$RCSfile$: ($Revision$) %H%"
-# Makefile for implementation and debugging OXW (Object X Window) class library
-# Time-stamp: <96/02/27 15:27:58 ptr>
+# %Z% $Date$ $Revision$ $RCSfile$ %Q%
+# Implementation and debugging OXW (Object X Window) class library (Release 2)
+# Time-stamp: <96/03/04 10:28:39 ptr>
 
 PROJECT = ../../libOXW.so
 MENU0 = menu0
@@ -26,7 +26,7 @@ OPT = -g
 # OPT = -O4
 # OPT = -G -O4
 
-CCFLAGS = $(OPT) -cg92 +w -PIC -pto
+CCFLAGS = $(OPT) -cg92 +w -PIC -pto -mt
 CPPFLAGS = $(DEFS) $(INCLUDES)
 PROJECT_LIBS = -xildoff -L../.. -L../../../../STL.labs -lCLASS -lSTL
 # LDFLAGS = $(PROJECT_LIBS) -lX11 -lXpm -ldl
@@ -46,6 +46,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/EventsCore.o \
 		$(OUTPUT_DIR)/Actuator.o \
 		$(OUTPUT_DIR)/Resource.o \
+		$(OUTPUT_DIR)/EvManager.o \
 		$(OUTPUT_DIR)/Application.o \
 		$(OUTPUT_DIR)/RectObject.o \
 		$(OUTPUT_DIR)/WindowBase.o \
