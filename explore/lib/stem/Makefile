@@ -72,7 +72,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/Matrix.o \
 		$(OUTPUT_DIR)/ModalDialog.o \
 		$(OUTPUT_DIR)/Picture.o \
-		$(OUTPUT_DIR)/AppModal.o
+		$(OUTPUT_DIR)/ModalDialogBase.o
 
 
 # Xlib-based project
