@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/07/05 21:42:26 ptr>
+// -*- C++ -*- Time-stamp: <03/07/31 15:41:58 ptr>
 
 /*
  *
@@ -42,7 +42,7 @@
 #include <string>
 
 #ifdef WIN32
-#  include <winsock.h>
+#  include <winsock2.h>
 #else // WIN32
 #  include <unistd.h>
 #  include <sys/types.h>

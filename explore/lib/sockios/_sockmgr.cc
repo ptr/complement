@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/07/05 21:41:44 ptr>
+// -*- C++ -*- Time-stamp: <03/07/31 16:42:15 ptr>
 
 /*
  *
@@ -54,14 +54,14 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
   _state = ios_base::goodbit;
   _errno = 0;
 #ifdef WIN32
-  WSASetLastError( 0 );
+  ::WSASetLastError( 0 );
 #endif
   if ( prot == sock_base::inet ) {
     _fd = socket( PF_INET, type, 0 );
     if ( _fd == -1 ) {
       _state |= ios_base::failbit | ios_base::badbit;
 #ifdef WIN32
-      _errno = WSAGetLastError();
+      _errno = ::WSAGetLastError();
 #else
       _errno = errno;
 #endif
@@ -80,7 +80,7 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
 
     if ( ::bind( _fd, &_address.any, sizeof(_address) ) == -1 ) {
 #ifdef WIN32
-      _errno = WSAGetLastError();
+      _errno = ::WSAGetLastError();
 #else
       _errno = errno;
 #endif
