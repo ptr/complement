@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/24 19:43:07 ptr>
+// -*- C++ -*- Time-stamp: <00/03/20 15:34:15 ptr>
 
 /*
  *
@@ -127,18 +127,21 @@ class EvManager
     __PG_DECLSPEC bool Unsubscribe( addr_type id );
 
     bool is_avail( addr_type id ) const
-      { return heap.find( id ) != heap.end(); }
+      { 
+        MT_REENTRANT( _lock_heap, _1 );
+        return unsafe_is_avail(id);
+      }
 
     const string& who_is( addr_type id ) const
       {
-        heap_type::const_iterator i = heap.find( id );
-        return i == heap.end() ? inv_key_str : (*i).second.info;
+        MT_REENTRANT( _lock_heap, _1 );
+        return unsafe_who_is( id );
       }
 
     const string& annotate( addr_type id ) const
       {
-        heap_type::const_iterator i = heap.find( id );
-        return i == heap.end() ? inv_key_str : (*i).second.info;
+        MT_REENTRANT( _lock_heap, _1 );
+        return unsafe_annotate( id );
       }
 
     __PG_DECLSPEC key_type sid( addr_type object_id ) const;
@@ -154,6 +157,21 @@ class EvManager
       }
 
     void Remove( NetTransport_base * );
+
+  protected:
+    bool unsafe_is_avail( addr_type id ) const
+      { return heap.find( id ) != heap.end(); }
+
+    const string& unsafe_who_is( addr_type id ) const
+      {
+        heap_type::const_iterator i = heap.find( id );
+        return i == heap.end() ? inv_key_str : (*i).second.info;
+      }
+    const string& unsafe_annotate( addr_type id ) const
+      {
+        heap_type::const_iterator i = heap.find( id );
+        return i == heap.end() ? inv_key_str : (*i).second.info;
+      }
 
   private:
     void Send( const Event& e );
