@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/19 18:26:03 ptr>
+// -*- C++ -*- Time-stamp: <99/03/22 12:07:33 ptr>
 
 #ifndef __NetTransport_h
 #define __NetTransport_h
@@ -34,15 +34,40 @@ class NetTransport
     typedef std::map<key_type,key_type,std::less<key_type>,
       __STL_DEFAULT_ALLOCATOR(key_type) > heap_type;
 
-    __DLLEXPORT NetTransport() :
-        _count( 0 )
+    NetTransport() :
+        _count( 0 ),
+        net( 0 ),
+        _net_owner( false )
       { }
 
+    ~NetTransport()
+      {
+        if ( _net_owner ) {
+          delete net;
+        }
+      }
+
+    __DLLEXPORT
+    key_type open( const std::string& hostname, int port );
     __DLLEXPORT
     void connect( std::sockstream&, const std::string& hostname,
                   std::string& info );
     __DLLEXPORT
     bool push( const Event&, const key_type& rmkey, const key_type& srckey );
+
+    bool fail() const
+      { return net == 0 || net->fail(); }
+    bool good() const
+      { return net != 0 && net->good(); }
+    bool is_open() const
+      { return net != 0 && net->is_open(); }
+
+    void close()
+      {
+        if ( net != 0 ) {
+          net->close();
+        }
+      }
 
   private:
     bool pop( Event& );
@@ -52,6 +77,12 @@ class NetTransport
     // indeed rar can be inside connect(), but SunPro's CC 5.0
     // to be very huffy about it.
     heap_type rar; // reverce address resolution table
+
+    std::string _server_name;
+    static int _loop( void * );
+    __impl::Thread _thr;
+    // __impl::Mutex  _lock;
+    bool _net_owner;
 };
 
 
