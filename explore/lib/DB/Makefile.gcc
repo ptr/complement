@@ -24,6 +24,12 @@ include ${BASEDIR}/lib/Makefile.inc.lib
 
 INCLUDES += -I$(BASEDIR)/include
 
+ifeq ($(OS_VER),Linux)
+release-shared: LDSEARCH = -L${BASEDIR}/../STLport/lib
+stldbg-shared:  LDSEARCH = -L${BASEDIR}/../STLport/lib
+dbg-shared:     LDSEARCH = -L${BASEDIR}/../STLport/lib
+endif
+
 release-shared:	LDLIBS = -ldl -lstlport_gcc
 dbg-shared:	LDLIBS = -ldl -lstlport_gcc
 stldbg-shared:	LDLIBS = -ldl -lstlport_gcc_stldbg
