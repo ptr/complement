@@ -39,8 +39,8 @@ struct tagIParams
   union {
     unsigned long DParam;
     tagLParam DP;
-    class ASEventsCore *ECObject;
-    class ASWindowBase *WBObject;
+    class OXWEventsCore *ECObject;
+    class OXWWindowBase *WBObject;
   };
 };
 
@@ -50,7 +50,7 @@ struct tagFParams
   double YParam;
 };
 
-class ASEvent
+class OXWEvent
 {
   public:
     enum contained_type {
@@ -62,13 +62,13 @@ class ASEvent
 
     unsigned long Message;
 
-    ASEvent();
-    ASEvent( unsigned long );
-    ASEvent( unsigned long, const tagIParams& );
-    ASEvent( unsigned long, const tagFParams& );
-    ASEvent( unsigned long, const char * );
-    ASEvent( unsigned long, XEvent& );
-    ASEvent( XEvent& );
+    OXWEvent();
+    OXWEvent( unsigned long );
+    OXWEvent( unsigned long, const tagIParams& );
+    OXWEvent( unsigned long, const tagFParams& );
+    OXWEvent( unsigned long, const char * );
+    OXWEvent( unsigned long, XEvent& );
+    OXWEvent( XEvent& );
 
     void SetMessage( unsigned long );
     void SetIParams( unsigned long, const tagIParams& );
@@ -97,26 +97,26 @@ class ASEvent
     contained_type type;
 };
 
-inline ASEvent::ASEvent()
+inline OXWEvent::OXWEvent()
 {
-  memset( this, 0, sizeof( ASEvent ) );
+  memset( this, 0, sizeof( OXWEvent ) );
 }
 
-inline ASEvent::ASEvent( unsigned long msg )
+inline OXWEvent::OXWEvent( unsigned long msg )
 {
   Message = msg;
   type = IntegerParams;
   memset( &IParams, 0, sizeof( unsigned long ) * 4 );
 }
 
-inline ASEvent::ASEvent( unsigned long msg, const tagIParams& ip )
+inline OXWEvent::OXWEvent( unsigned long msg, const tagIParams& ip )
 {
   Message = msg;
   type = IntegerParams;
   memcpy( &IParams, &ip, sizeof( unsigned long ) * 4 );
 }
 
-inline ASEvent::ASEvent( unsigned long msg, const tagFParams& fp )
+inline OXWEvent::OXWEvent( unsigned long msg, const tagFParams& fp )
 {
   Message = msg;
   type = FloatParams;
@@ -124,35 +124,35 @@ inline ASEvent::ASEvent( unsigned long msg, const tagFParams& fp )
   FParams.YParam = fp.YParam;
 }
 
-inline ASEvent::ASEvent( unsigned long msg, XEvent& event )
+inline OXWEvent::OXWEvent( unsigned long msg, XEvent& event )
 {
   Message = msg;
   type = XEventParam;
   Xevent = &event;
 }
 
-inline ASEvent::ASEvent( XEvent& event )
+inline OXWEvent::OXWEvent( XEvent& event )
 {
   Message = event.type;
   type = XEventParam;
   Xevent = &event;
 }
 
-inline void ASEvent::SetMessage( unsigned long msg )
+inline void OXWEvent::SetMessage( unsigned long msg )
 {
   Message = msg;
   type = IntegerParams;
   memset( &IParams, 0, sizeof( unsigned long ) * 4 );
 }
 
-inline void ASEvent::SetIParams( unsigned long msg, const tagIParams& ip )
+inline void OXWEvent::SetIParams( unsigned long msg, const tagIParams& ip )
 {
   Message = msg;
   type = IntegerParams;
   memcpy( &IParams, &ip, sizeof( unsigned long ) * 4 );
 }
 
-inline void ASEvent::SetFParams( unsigned long msg, const tagFParams& fp )
+inline void OXWEvent::SetFParams( unsigned long msg, const tagFParams& fp )
 {
   Message = msg;
   type = FloatParams;
@@ -160,50 +160,50 @@ inline void ASEvent::SetFParams( unsigned long msg, const tagFParams& fp )
   FParams.YParam = fp.YParam;
 }
 
-inline void ASEvent::SetXEvent( unsigned long msg, XEvent& event )
+inline void OXWEvent::SetXEvent( unsigned long msg, XEvent& event )
 {
   Message = msg;
   type = XEventParam;
   Xevent = &event;
 }
 
-inline void ASEvent::SetXEvent( XEvent& event )
+inline void OXWEvent::SetXEvent( XEvent& event )
 {
   Message = event.type;
   type = XEventParam;
   Xevent = &event;
 }
 
-inline tagIParams& ASEvent::GetIParams()
+inline tagIParams& OXWEvent::GetIParams()
 {
   PRECONDITION( type == IntegerParams );
   return IParams;
 }
 
-inline tagFParams& ASEvent::GetFParams()
+inline tagFParams& OXWEvent::GetFParams()
 {
   PRECONDITION( type == FloatParams );
   return FParams;
 }
 
-inline char *ASEvent::GetSParam()
+inline char *OXWEvent::GetSParam()
 {
   PRECONDITION( type == StringParam );
   return SParam;
 }
 
-inline XEvent *ASEvent::GetXEvent()
+inline XEvent *OXWEvent::GetXEvent()
 {
   PRECONDITION( type == XEventParam );
   return Xevent;
 }
 
-inline ASEvent::contained_type ASEvent::isA() const
+inline OXWEvent::contained_type OXWEvent::isA() const
 {
   return type;
 }
 
-inline int ASEvent::isA( ASEvent::contained_type tstType ) const
+inline int OXWEvent::isA( OXWEvent::contained_type tstType ) const
 {
   return tstType == type;
 }

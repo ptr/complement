@@ -17,41 +17,41 @@
 
 
 class GENERIC;
-template <class T> class ASResponseTableEntry;  // forward declaration
-typedef ASResponseTableEntry<GENERIC> ASGenericTableEntry;
+template <class T> class OXWResponseTableEntry;  // forward declaration
+typedef OXWResponseTableEntry<GENERIC> OXWGenericTableEntry;
 
-class ASEventHandler
+class OXWEventHandler
 {
   public:
-    class ASEventInfo
+    class OXWEventInfo
     {
       public:
-        ASEventInfo( unsigned long msg, unsigned long id = 0) : 
+        OXWEventInfo( unsigned long msg, unsigned long id = 0) : 
 	  Msg(msg), Id(id), Entry(0) {}
 
         const unsigned long Msg;
         const unsigned long Id;
         GENERIC *Object;
-        ASGenericTableEntry *Entry;
+        OXWGenericTableEntry *Entry;
     };
-    typedef int(*ASEqualOperator)( ASGenericTableEntry&, ASEventInfo& );
+    typedef int(*OXWEqualOperator)( OXWGenericTableEntry&, OXWEventInfo& );
 
     // Find object corresponded to event info, return non-zero in success
     // end zero otherwise. You may make influence to selection of
     // event processor by specifying equal operator.
-    virtual int Find( ASEventInfo&, ASEqualOperator = 0 );
+    virtual int Find( OXWEventInfo&, OXWEqualOperator = 0 );
 
     // Dispatch event info (with message as parameter)
-    virtual long Dispatch( ASEventInfo&, ASEvent& );
+    virtual long Dispatch( OXWEventInfo&, OXWEvent& );
 
   protected:
-    int SearchEntries( ASGenericTableEntry *, ASEventInfo&, ASEqualOperator );
+    int SearchEntries( OXWGenericTableEntry *, OXWEventInfo&, OXWEqualOperator );
 };
 
-template <class T> class ASResponseTableEntry
+template <class T> class OXWResponseTableEntry
 {
   public:
-    typedef void (T::*PMF)( ASEvent& );
+    typedef void (T::*PMF)( OXWEvent& );
 
     union {
       unsigned long Msg;
@@ -67,16 +67,16 @@ template <class T> class ASResponseTableEntry
 
 #define DECLARE_RESPONSE_TABLE(cls)\
   private:\
-    static ASResponseTableEntry< cls > __entries[];\
+    static OXWResponseTableEntry< cls > __entries[];\
     typedef cls ThisCls;\
   public:\
-    int  Find( ASEventInfo&, ASEqualOperator = 0 )
+    int  Find( OXWEventInfo&, OXWEqualOperator = 0 )
 
 #define END_RESPONSE_TABLE\
   {0, 0, 0}}
 
 #define DEFINE_RESPONSE_TABLE_ENTRIES(cls)\
-  ASResponseTableEntry< cls > cls::__entries[] = {
+  OXWResponseTableEntry< cls > cls::__entries[] = {
 
 //
 // macro to define a response table for a class with no base response tables
@@ -88,9 +88,9 @@ template <class T> class ASResponseTableEntry
 //    END_RESPONSE_TABLE;
 //
 #define DEFINE_RESPONSE_TABLE(cls)\
-  int cls::Find(ASEventInfo& eventInfo, ASEqualOperator equal){\
+  int cls::Find(OXWEventInfo& eventInfo, OXWEqualOperator equal){\
        eventInfo.Object = (GENERIC *)this;\
-       return SearchEntries((ASGenericTableEntry *)__entries, eventInfo, equal);}\
+       return SearchEntries((OXWGenericTableEntry *)__entries, eventInfo, equal);}\
   DEFINE_RESPONSE_TABLE_ENTRIES(cls)
 
 //
@@ -98,9 +98,9 @@ template <class T> class ASResponseTableEntry
 // exactly like macro DEFINE_RESPONSE_TABLE
 //
 #define DEFINE_RESPONSE_TABLE1(cls, base)\
-  int cls::Find(ASEventInfo& eventInfo, ASEqualOperator equal){\
+  int cls::Find(OXWEventInfo& eventInfo, OXWEqualOperator equal){\
        eventInfo.Object = (GENERIC *)this;\
-       return SearchEntries((ASGenericTableEntry *)__entries, eventInfo, equal) ||\
+       return SearchEntries((OXWGenericTableEntry *)__entries, eventInfo, equal) ||\
               base::Find(eventInfo, equal);}\
   DEFINE_RESPONSE_TABLE_ENTRIES(cls)
 
@@ -109,9 +109,9 @@ template <class T> class ASResponseTableEntry
 // exactly like macro DEFINE_RESPONSE_TABLE
 //
 #define DEFINE_RESPONSE_TABLE2(cls, base1, base2)\
-  int cls::Find(ASEventInfo& eventInfo, ASEqualOperator equal){\
+  int cls::Find(OXWEventInfo& eventInfo, OXWEqualOperator equal){\
        eventInfo.Object = (GENERIC *)this;\
-       return SearchEntries((ASGenericTableEntry *)__entries, eventInfo, equal) ||\
+       return SearchEntries((OXWGenericTableEntry *)__entries, eventInfo, equal) ||\
               base1::Find(eventInfo, equal) ||\
               base2::Find(eventInfo, equal);}\
   DEFINE_RESPONSE_TABLE_ENTRIES(cls)
@@ -121,9 +121,9 @@ template <class T> class ASResponseTableEntry
 // exactly like macro DEFINE_RESPONSE_TABLE
 //
 #define DEFINE_RESPONSE_TABLE3(cls, base1, base2, base3)\
-  int cls::Find(ASEventInfo& eventInfo, ASEqualOperator equal)\
+  int cls::Find(OXWEventInfo& eventInfo, OXWEqualOperator equal)\
        eventInfo.Object = (GENERIC *)this;\
-       return SearchEntries((ASGenericTableEntry *)__entries, eventInfo, equal) ||\
+       return SearchEntries((OXWGenericTableEntry *)__entries, eventInfo, equal) ||\
               base1::Find(eventInfo, equal) ||\
               base2::Find(eventInfo, equal) ||\
               base3::Find(eventInfo, equal);}\
