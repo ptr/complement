@@ -15,9 +15,9 @@ include ${SRCROOT}/Makefiles/top.mak
 INCLUDES += -I$(STLPORT_INCLUDE_DIR)
 DEFS += -D_STLP_DONT_USE_SHORT_STRING_OPTIM
 
-release-shared:	LDSEARCH = -L../../../build/lib/malloc -Wl,-rpath=../../../build/lib/no-short-string
+release-shared:	LDSEARCH = -L../../../build/lib/noshortstr -Wl,-rpath=../../../build/lib/noshortstr
 # stldbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_STLDBG}
-# dbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_DBG}
+dbg-shared:	LDSEARCH = -L../../../build/lib/noshortstr -Wl,-rpath=../../../build/lib/noshortstr
 
 ifeq ($(OSNAME),sunos)
 release-shared : LDLIBS = -lstlport_gcc -lrt
@@ -26,6 +26,6 @@ release-shared : LDLIBS = -lstlport_gcc -lrt
 else
 release-shared : LDLIBS = -lstlport_gcc
 # stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug -lxmt_gcc_stl-g
-# dbg-shared     : LDLIBS = -lstlport_gcc -lxmt_gcc-g
+dbg-shared     : LDLIBS = -lstlport_gcc
 endif
 
