@@ -1,8 +1,29 @@
-// -*- C++ -*- Time-stamp: <96/10/11 14:17:06 ptr>
+// -*- C++ -*- Time-stamp: <96/10/14 17:02:23 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #include <EDS/EvManager.h>
 #include <EDS/EventsCore.h>
+
+EDSEvManager::EDSEvManager()
+{
+  lock_not_done.set_condition();
+  queue_lock.set_condition();
+}
+
+void EDSEvManager::push(const EDSEvManager::value_type& x)
+{
+  queue_lock.lock();
+  ParentCls::push( x );
+  queue_lock._signal();
+  queue_lock.unlock();
+  // queue_sem.post();
+}
+
+bool EDSEvManager::empty()
+{
+  MT_REENTRANT( queue_lock, lck );
+  return ParentCls::empty();
+}
 
 void EDSEvManager::dispatch()
 {
