@@ -1,4 +1,6 @@
-#ifndef __OXW_EventHandler_h // -*- C++ -*-
+#ident "%Z%$RCSfile$ v.$Revision$ %H% %T%" // -*- C++ -*-
+
+#ifndef __OXW_EventHandler_h
 #define __OXW_EventHandler_h
 
 #ifndef _XLIB_H_
