@@ -1,13 +1,10 @@
-// -*- C++ -*- Time-stamp: <99/10/14 22:04:42 ptr>
+// -*- C++ -*- Time-stamp: <99/10/15 19:23:28 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999
- * Petr Ovchenkov
- *
  * Copyright (c) 1999
  * ParallelGraphics Software Systems
- 
+ * 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -63,17 +60,24 @@ __EDS_DLL Cron::Cron( const char *info ) :
 __EDS_DLL Cron::Cron( addr_type id, const char *info ) :
     EventHandler( id, info )
 {
-  Start();
 }
 
 __EDS_DLL Cron::~Cron()
 {
+  if ( isState( CRON_ST_STARTED ) ) {
+    Stop();
+  }
   _thr.join();
+}
+
+void __EDS_DLL Cron::AddFirst( const Event_base<CronEntry>& entry )
+{
+  Add( entry );
+  Start();
 }
 
 void __EDS_DLL Cron::Add( const Event_base<CronEntry>& entry )
 {
-//  Event_base<NameRecord> rs( EV_EDS_NM_LIST );
   const CronEntry& ne = entry.value();
   __CronEntry en;
 
@@ -84,8 +88,9 @@ void __EDS_DLL Cron::Add( const Event_base<CronEntry>& entry )
   en.period.tv_nsec = ne.period.tv_nsec;
   en.n = ne.n;
 
-  if ( en.start.tv_sec == 0 ) {
-    en.start.tv_sec = time( 0 );
+  time_t current;
+  if ( en.start.tv_sec < time( &current ) ) {
+    en.start.tv_sec = current;
   }
 
   if ( en.n == 0 || (en.period.tv_sec == 0 && en.period.tv_nsec == 0 ) ||
@@ -100,59 +105,56 @@ void __EDS_DLL Cron::Add( const Event_base<CronEntry>& entry )
   MT_REENTRANT( _M_l, _1 );
   _M_c.push( en );
   if ( _M_c.top() == en ) {
-#if 0
-    // create timer before...
-    itimerspec _timer;
-
-    _timer.it_interval.tv_sec = 0;
-    _timer.it_interval.tv_nsec = 0;
-
-    _timer.it_value.tv_sec = en.tm_sec;
-    _timer.it_value.tv_nsec = en.tm_nsec;
-
-    int ii = timer_settime( _timerid, TIMER_ABSTIME, &_timer, 0 );
-    cerr << "** " << ii << endl;
-#else
     cond.signal();
-#endif
   }
-
-//  Send( Event_convert<NameRecord>()( rs ) );
 }
 
+// Remove cron entry if recipient address and event code match to request
 void __EDS_DLL Cron::Remove( const Event_base<CronEntry>& entry )
 {
-//  Event_base<NameRecord> rs( EV_EDS_NM_LIST );
+  MT_REENTRANT( _M_l, _1 );
+  cond.signal(); // in any case, remove I something or not
 
-//  Send( Event_convert<NameRecord>()( rs ) );
+  const CronEntry& ne = entry.value();
+  std::vector<value_type> tmp;
+
+  tmp.reserve( _M_c.size() );
+
+  while ( !_M_c.empty() ) {
+    if (  _M_c.top().addr != entry.src() || _M_c.top().code != ne.code ) {
+      tmp.push_back( _M_c.top() );
+    }
+    _M_c.pop();
+  }
+
+  while ( !tmp.empty() ) {
+    _M_c.push( tmp.back() );
+    tmp.pop_back();
+  }
 }
 
 void __EDS_DLL Cron::Start()
 {
-  _thr.launch( _loop, this );
+  MT_REENTRANT( _M_l, _1 );
+  if ( !_M_c.empty() ) { // start only if Cron queue not empty
+    _thr.launch( _loop, this );
+  }
 }
 
 void __EDS_DLL Cron::Stop()
 {
   PopState();
-  cond.signal(); // wrong
+  cond.signal();
 }
 
 void __EDS_DLL Cron::EmptyStart()
 {
+  // do nothing
 }
 
 void __EDS_DLL Cron::EmptyStop()
 {
-}
-
-void alarm( int sig )
-{
-  cerr << "+++++++++++>>>> " << sig << endl;
-}
-
-extern "C" {
-  typedef void(*sigev_notify_type)(sigval);
+  // do nothing
 }
 
 int Cron::_loop( void *p )
@@ -160,73 +162,34 @@ int Cron::_loop( void *p )
   Cron& me = *reinterpret_cast<Cron *>(p);
 
   me.PushState( CRON_ST_STARTED );
-  me.cond.set( false );
-#if 0
-  struct sigevent {
-        int             sigev_notify;   /* notification mode */
-        int             sigev_signo;    /* signal number */
-        union sigval    sigev_value;    /* signal value */
-        void            (*sigev_notify_function)(union sigval);
-        pthread_attr_t  *sigev_notify_attributes;
-        int             __sigev_pad2;
-  };
-#endif
 
-#if 0
-  __impl::Thread::signal_handler( SIGALRM, SIG_PF(alarm) );
-  __impl::Thread::block_signal( SIGALRM );
-  __impl::Thread::unblock_signal( SIGINT );
-
-  sigevent _sev;
-  _sev.sigev_notify = SIGEV_SIGNAL;
-  _sev.sigev_signo = SIGALRM;
-  _sev.sigev_value.sival_int = 0;
-  _sev.sigev_notify_function = 0; // (sigev_notify_type)alarm;
-  _sev.sigev_notify_attributes = 0;
-
-  int ii = timer_create( CLOCK_REALTIME, &_sev, &me._timerid );
-  cerr << "$$ " << ii << endl;
-
-  timespec tic;
-  // tic.tv_sec  = int( 2 );
-  // tic.tv_nsec = int( 0 );
-  tic.tv_sec  = int( 10 );
-  tic.tv_nsec = int( 100000000 );
-
-  while ( me.cond.set() ) {
-    nanosleep( &tic, 0 );
-  }
-
-  timer_delete( me._timerid );
-#else
   timespec abstime;
   int res;
   while ( me.isState( CRON_ST_STARTED ) ) {
-    MT_LOCK( me._M_l );
-    if ( me._M_c.empty() ) {
-      MT_UNLOCK( me._M_l );
-      me.cond.try_wait();
-      MT_LOCK( me._M_l );
-      if ( me._M_c.empty() ) { // may be it's signal for stop
-        MT_UNLOCK( me._M_l );
-        continue;
+    // At this point _M_c should never be empty!
+    // If I detect that _M_c is empty, I or don't start, or
+    // exit from this thread
+    {
+      MT_REENTRANT( me._M_l, _1 );
+      if ( me._M_c.empty() ) {
+        continue; // break?
       }
-      // MT_UNLOCK( me._M_l );
+      abstime = me._M_c.top().expired;
     }
-    // MT_UNLOCK( me._M_l );
-    // MT_LOCK( me._M_l );
-    abstime = me._M_c.top().expired;
-    MT_UNLOCK( me._M_l );
     res = me.cond.wait_time( &abstime );
     if ( res > 0 ) { // time expired
-      MT_LOCK( me._M_l );
-      __CronEntry en = me._M_c.top();
-      me._M_c.pop();
-      MT_UNLOCK( me._M_l );
+      __CronEntry en;
+      {
+        MT_REENTRANT( me._M_l, _1 );
+        if ( me._M_c.empty() ) {
+          continue; // break?
+        }
+        en = me._M_c.top();
+        me._M_c.pop();
+      }
 
       Event ev( en.code );
       ev.dest( en.addr );
-      cerr << "======= Send ======== " << en.addr << hex << "=" << en.code << endl;
       me.Send( ev );
      
       double _next = en.start.tv_sec + en.start.tv_nsec * 1.0e-9 +
@@ -235,28 +198,40 @@ int Cron::_loop( void *p )
       en.expired.tv_sec = _next;
 
       if ( en.count < en.n ) {
-        MT_LOCK( me._M_l );
+        MT_REENTRANT( me._M_l, _1 );
         me._M_c.push( en );
-        MT_UNLOCK( me._M_l );
-      } else if ( en.n == static_cast<unsigned>(-1) ) {
+      } else if ( en.n == CronEntry::infinite ) {
         en.start.tv_sec = en.expired.tv_sec;
         en.start.tv_nsec = en.expired.tv_nsec;        
         en.count = 0;
-        MT_LOCK( me._M_l );
+        MT_REENTRANT( me._M_l, _1 );
         me._M_c.push( en );
-        MT_UNLOCK( me._M_l );
+      } else {
+        MT_REENTRANT( me._M_l, _1 );
+        if ( me._M_c.empty() ) {
+          me.PopState();
+        }
       }
+    } else { // signaled or error
+      // This occur if new record added in Cron queue, or
+      // this is request for cron loop termination
+      MT_REENTRANT( me._M_l, _1 );
+      if ( me._M_c.empty() && me.isState(CRON_ST_STARTED) ) {
+        // If Cron queue is empty, no needs in loop, I terminate this thread
+        me.PopState();
+      }
+      // in case of Cron queue empty, PopState may be call outside this thread,
+      // like Cron::Stop
     }
   }
-#endif
-  cerr << "Thread terminated" << endl;
 
   return 0;
 }
 
 
 DEFINE_RESPONSE_TABLE( Cron )
-  EV_Event_base_T_(ST_NULL,EV_EDS_CRON_ADD,Add,CronEntry)
+  EV_Event_base_T_(ST_NULL,EV_EDS_CRON_ADD,AddFirst,CronEntry)
+  EV_Event_base_T_(CRON_ST_STARTED,EV_EDS_CRON_ADD,Add,CronEntry)
   EV_Event_base_T_(ST_NULL,EV_EDS_CRON_REMOVE,Remove,CronEntry)
   EV_VOID(ST_NULL,EV_EDS_CRON_START,Start)
   EV_VOID(CRON_ST_STARTED,EV_EDS_CRON_STOP,Stop)
@@ -268,7 +243,6 @@ __EDS_DLL
 void CronEntry::pack( std::ostream& s ) const
 {
   __pack( s, code );
-  // __pack( s, addr );
   __pack( s, start );
   __pack( s, period.tv_sec );
   __pack( s, period.tv_nsec );
@@ -279,7 +253,6 @@ __EDS_DLL
 void CronEntry::net_pack( std::ostream& s ) const
 {
   __net_pack( s, code );
-  // __net_pack( s, addr );
   __net_pack( s, start );
   __net_pack( s, period.tv_sec );
   __net_pack( s, period.tv_nsec );
@@ -290,7 +263,6 @@ __EDS_DLL
 void CronEntry::unpack( std::istream& s )
 {
   __unpack( s, code );
-  // __pack( s, addr );
   __unpack( s, start );
   __unpack( s, period.tv_sec );
   __unpack( s, period.tv_nsec );
@@ -301,7 +273,6 @@ __EDS_DLL
 void CronEntry::net_unpack( std::istream& s )
 {
   __net_unpack( s, code );
-  // __net_unpack( s, addr );
   __net_unpack( s, start );
   __net_unpack( s, period.tv_sec );
   __net_unpack( s, period.tv_nsec );
