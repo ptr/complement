@@ -1,3 +1,17 @@
+2003-09-15  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xmt.cc: fix wrong behaviour for wait_* functions of Semaphore
+	class on Windows platforms [thanks Anton Kholodkov].
+
+	* xmt.h: recurcive safe mutex and spinlock implementation revised.
+	
+2003-09-02  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xmt.h: IEEE Std. 1003.1j-2000 introduce spinlock functions,
+	I add wrapper classes for pthread_spin_* functions, like *mutex_*
+	wrappers. This feature added for Linux only, check for other modern
+	*nixes required.
+
 2003-03-26  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* xmt.h: broadcast signaling added to Condition for non-windows
