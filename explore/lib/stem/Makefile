@@ -103,6 +103,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/AlertPanel.o \
 		$(OUTPUT_DIR)/Picture.o \
 		$(OUTPUT_DIR)/ModalDialogBase.o \
+		$(OUTPUT_DIR)/CAPPictures.o \
 		\
 		$(OUTPUT_DIR)/CAPPropertyTypePI.o \
 		$(OUTPUT_DIR)/CAPCheckListPI.o \
