@@ -1,6 +1,9 @@
-// -*- C++ -*- Time-stamp: <01/07/19 18:08:26 ptr>
+// -*- C++ -*- Time-stamp: <02/08/04 15:28:36 ptr>
 
 /*
+ *
+ * Copyright (c) 2002
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
@@ -80,17 +83,23 @@ class Cursor
     Cursor( const char *nm );
     virtual ~Cursor();
 
+    typedef vector<string> datarow_type;
+    typedef vector<string> fields_container_type;
+    typedef vector<datarow_type> data_container_type;
+
   public:
+    typedef data_container_type::size_type size_type;
+
     virtual void fetch_all() = 0;
     const string& value( int, const string& );
     const string& value( int, const char * );
-    vector<vector<string> >::size_type size() const
+    size_type size() const
       { return data.size(); }
 
   protected:
     string name;
-    vector<string> fields;
-    vector<vector<string> > data;
+    fields_container_type fields;
+    data_container_type data;
 
     friend class DataBase;
 };
