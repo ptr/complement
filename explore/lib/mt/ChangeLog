@@ -1,3 +1,9 @@
+2003-02-05  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xmt.h, xmt.cc: add Semaphor wait with timeouts.
+
+	* libxmt: Version 1.6.5
+
 2003-01-19  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* xmt.h: modified portable mutex templates---separate
