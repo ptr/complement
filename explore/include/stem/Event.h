@@ -11,8 +11,8 @@
 #include <OXW/OXWdefs.h>
 #endif
 
-#ifndef __CLASSLIB_checks_h
-#include <CLASSLIB/checks.h>
+#ifndef __CLASS_checks_h
+#include <CLASS/checks.h>
 #endif
 
 struct tagLParam {

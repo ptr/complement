@@ -1,7 +1,7 @@
 #ident "%Z%$RCSfile$ v.$Revision$ %H% %T%"
 
 #include <OXW/EventHandler.h>
-#include <CLASSLIB/checks.h>
+#include <CLASS/checks.h>
 
 int ASEventHandler::Find( ASEventInfo&, ASEqualOperator )
 {
