@@ -36,6 +36,10 @@ os.system( 'echo 4 `../stat.awk s.log` >> libstd++.dat' )
 time.sleep(60*10)
 test( 'params-ref/libstd++' )
 os.system( 'echo 5 `../stat.awk s.log` >> libstd++.dat' )
+time.sleep(60*10)
+test( 'params-short/libstd++' )
+os.system( 'echo 6 `../stat.awk s.log` >> libstd++.dat' )
+os.system( 'echo 7 `../stat.awk s.log` >> libstd++.dat' )
 
 time.sleep(60*15)
 
@@ -53,6 +57,12 @@ os.system( 'echo 4 `../stat.awk s.log` >> STLport.dat' )
 time.sleep(60*6)
 test( 'params-ref/STLport-default' )
 os.system( 'echo 5 `../stat.awk s.log` >> STLport.dat' )
+time.sleep(60*6)
+test( 'params-short/STLport-default' )
+os.system( 'echo 6 `../stat.awk s.log` >> STLport.dat' )
+time.sleep(60*6)
+test( 'params-short/STLport-no-short-str' )
+os.system( 'echo 7 `../stat.awk s.log` >> STLport.dat' )
 
 time.sleep(60*15)
 
