@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/01/27 13:46:38 ptr>
+// -*- C++ -*- Time-stamp: <00/02/17 12:45:30 ptr>
 
 /*
  *
@@ -48,12 +48,37 @@ namespace EDS {
 using namespace std;
 #endif
 
-
+#ifdef __sparc
 #define EDS_MAGIC 0xc2454453U
+#elif defined( __i386 )
+#define EDS_MAGIC 0x534445c2U
+#else
+#error "Can't determine platform byte order!"
+#endif
+
+#ifdef __SGI_STL_OWN_IOSTREAMS
+#  define MT_IO_REENTRANT( s ) \
+         __STLPORT_STD::_STL_auto_lock __AutoLock( (s).rdbuf()->_M_lock );
+#  define MT_IO_LOCK( s ) (s).rdbuf()->_M_lock._M_acquire_lock();
+#  define MT_IO_UNLOCK( s ) (s).rdbuf()->_M_lock._M_release_lock();
+#  define MT_IO_REENTRANT_W( s ) \
+         __STLPORT_STD::_STL_auto_lock __AutoLock( (s).rdbuf()->_M_lock_w );
+#  define MT_IO_LOCK_W( s ) (s).rdbuf()->_M_lock_w._M_acquire_lock();
+#  define MT_IO_UNLOCK_W( s ) (s).rdbuf()->_M_lock_w._M_release_lock();
+#else
+#  define MT_IO_REENTRANT( s )
+#  define MT_IO_LOCK( s )
+#  define MT_IO_UNLOCK( s )
+#  define MT_IO_REENTRANT_W( s )
+#  define MT_IO_LOCK_W( s )
+#  define MT_IO_UNLOCK_W( s )
+#endif
+
 
 __EDS_DLL
 void dump( std::ostream& o, const EDS::Event& e )
 {
+  MT_IO_REENTRANT( o )
   o << setiosflags(ios_base::showbase) << hex
     << "Code: " << e.code() << " Destination: " << e.dest() << " Source: " << e.src()
     << "\nData:\n";
@@ -152,11 +177,15 @@ bool NetTransport_base::pop( Event& _rs )
   unsigned buf[8];
 
   __stl_assert( net != 0 );
+
+  MT_IO_REENTRANT( *net )
+
   if ( !net->read( (char *)buf, sizeof(unsigned) ).good() ) {
     return false;
   }
 
-  if ( from_net( buf[0] ) != EDS_MAGIC ) {
+  // if ( from_net( buf[0] ) != EDS_MAGIC ) {
+  if ( buf[0] != EDS_MAGIC ) {
     cerr << "Magic fail" << endl;
     close();
     return false;
@@ -208,7 +237,8 @@ bool NetTransport_base::push( const Event& _rs )
   __stl_assert( net != 0 );
   unsigned buf[8];
 
-  buf[0] = to_net( EDS_MAGIC );
+  // buf[0] = to_net( EDS_MAGIC );
+  buf[0] = EDS_MAGIC;
   buf[1] = to_net( _rs.code() );
   buf[2] = to_net( _rs.dest() );
   buf[3] = to_net( _rs.src() );
@@ -225,6 +255,7 @@ bool NetTransport_base::push( const Event& _rs )
   buf[6] = to_net( _rs.value().size() );
   buf[7] = to_net( adler32( (unsigned char *)buf, sizeof(unsigned) * 7 ) ); // crc
 
+  MT_IO_REENTRANT_W( *net )
   net->write( (const char *)buf, sizeof(unsigned) * 8 );
 
   copy( _rs.value().begin(), _rs.value().end(),
