@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/01/22 14:08:53 ptr>
+// -*- C++ -*- Time-stamp: <01/01/30 12:49:35 ptr>
 
 /*
  *
@@ -147,7 +147,6 @@ void NetTransport_base::disconnect()
       if ( info._control != badaddr ) {
         Event_base<key_type> ev_disconnect( EV_EDS_DISCONNECT, _sid );
         ev_disconnect.dest( info._control );
-        smgr.unsafe_erase( _sid );
         _sid = badkey;
         _count = 0;
         smgr.unlock();
@@ -156,6 +155,7 @@ void NetTransport_base::disconnect()
 //      cerr << "===== Pass" << endl;
         return; // required: smgr.unlock() done.
       }
+      smgr.unsafe_erase( _sid );
     }
     _sid = badkey;
     _count = 0;
