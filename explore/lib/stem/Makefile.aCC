@@ -7,7 +7,7 @@ LIBDIR  := $(shell xtmp=`pwd`; dirname $$xtmp)
 
 COMPILER_NAME = aCC
 INSTALL_PRE_LIB_DIR = ${BASEDIR}/package/PGslib/PG/lib
-INSTALL_SC_LIB_DIR = ${BASEDIR}/package/SubClub/PGsbinsc/SC/bin
+INSTALL_SC_LIB_DIR = ${BASEDIR}/package/SubClub/PGslibsc/SC/lib
 include ${BASEDIR}/lib/EDS/Makefile.inc
 
 all:	all-release all-debug
