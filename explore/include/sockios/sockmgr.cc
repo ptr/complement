@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/06/12 17:08:30 ptr>
+// -*- C++ -*- Time-stamp: <02/06/21 20:21:08 ptr>
 
 /*
  *
@@ -602,15 +602,40 @@ sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>::accept_udp()
 }
 
 template <class Connect>
+void sockmgr_stream_MP<Connect>::_close_by_signal( int )
+{
+  cerr << "_close_by_signal" << endl;
+  // this function provide sanity of 'loop' call:
+  // close all open connections>, associated with listen socket.
+#ifdef _PTHREADS
+  void *_uw_save = *((void **)pthread_getspecific( Thread::mtkey() ) + _idx );
+  sockmgr_stream_MP *me = static_cast<sockmgr_stream_MP *>( _uw_save );
+
+  me->_c_lock._M_acquire_lock();
+
+  typename container_type::iterator i = me->_M_c.begin();
+  while ( i != me->_M_c.end() ) {
+    (*i++)->s->close();
+  }
+  me->close();
+  me->_c_lock._M_release_lock();
+  me->loop_id.kill( SIGTERM ); // request for thread termination
+#else
+#error "Fix me!"
+#endif
+}
+
+template <class Connect>
 int sockmgr_stream_MP<Connect>::loop( void *p )
 {
   sockmgr_stream_MP *me = static_cast<sockmgr_stream_MP *>(p);
-
+  me->loop_id.pword( _idx ) = me; // push pointer to self for signal processing
 #ifdef __unix
   Thread::unblock_signal( SIGPIPE );
   Thread::unblock_signal( SIGINT );
-  Thread::signal_handler( SIGPIPE, signal_throw );
-  Thread::signal_handler( SIGINT, signal_throw );
+//  Thread::signal_handler( SIGPIPE, signal_throw );
+  Thread::signal_handler( SIGPIPE, sockmgr_stream_MP<Connect>::_close_by_signal );
+  Thread::signal_handler( SIGINT, sockmgr_stream_MP<Connect>::_close_by_signal );
 #endif
 
   try {
@@ -643,7 +668,6 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
     }
   }
   catch ( ... ) {
-    cerr << __FILE__ << ":" << __LINE__ << endl;
     me->_c_lock._M_acquire_lock();
 
     typename container_type::iterator i = me->_M_c.begin();
@@ -654,7 +678,6 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
     me->_c_lock._M_release_lock();
     throw;
   }
-  cerr << __FILE__ << ":" << __LINE__ << endl;
 
   me->_c_lock._M_acquire_lock();
 
