@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/03/19 18:37:31 ptr>
+// -*- C++ -*- Time-stamp: <01/03/20 15:46:57 ptr>
 
 /*
  *
@@ -78,7 +78,30 @@ struct SessionInfo
     //        _conn = _last;
   }
 
-    SessionInfo( const SessionInfo& );
+#ifndef WIN32
+    __PG_DECLSPEC SessionInfo( const SessionInfo& );
+#else
+    SessionInfo( const SessionInfo& si )
+      {
+        _host = si._host;
+        _port = si._port;
+
+        _sz_from = si._sz_from;
+        _un_from = si._un_from;
+        _sz_to = si._sz_to;
+        _un_to = si._un_to;
+        _lun_from = si._lun_from;
+        _lun_to = si._lun_to;
+        _start = si._start;
+        _on_line = si._on_line;
+        _conn = si._conn;
+        _last = si._last;
+        _reconnect_cnt = si._reconnect_cnt;
+        _is_connected = si._is_connected;
+
+        _control = si._control;
+      }
+#endif
 
 
 //    ConnectSession( sockstream *s )
@@ -181,7 +204,32 @@ struct SessionInfo
     return _on_line;
   }
 
-  SessionInfo& operator =( const SessionInfo& );
+#ifndef WIN32
+   __PG_DECLSPEC SessionInfo& operator =( const SessionInfo& );
+#else
+   SessionInfo& operator =( const SessionInfo& si )
+      {
+        _host = si._host;
+        _port = si._port;
+
+        _sz_from = si._sz_from;
+        _un_from = si._un_from;
+        _sz_to = si._sz_to;
+        _un_to = si._un_to;
+        _lun_from = si._lun_from;
+        _lun_to = si._lun_to;
+        _start = si._start;
+        _on_line = si._on_line;
+        _conn = si._conn;
+        _last = si._last;
+        _reconnect_cnt = si._reconnect_cnt;
+        _is_connected = si._is_connected;
+
+        _control = si._control;
+
+        return *this;
+      }
+#endif
 };
 
 template <class T>

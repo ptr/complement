@@ -106,10 +106,10 @@ class NetTransport_base :
     addr_type ns() const
       { return _net_ns; }
 
-    static SessionInfo session_info( const EvSessionManager::key_type& k )
+    static EDS::SessionInfo session_info( const EvSessionManager::key_type& k )
       {
         smgr.lock();
-        SessionInfo si = smgr[k];
+        EDS::SessionInfo si( smgr[k] );
         smgr.unlock();
         return si;
       }
