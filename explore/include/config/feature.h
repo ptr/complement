@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/12/19 14:36:29 ptr>
+// -*- C++ -*- Time-stamp: <00/12/21 10:49:59 ptr>
 
 /*
  *
@@ -210,18 +210,18 @@
 #endif // __FIT_NEED_TYPENAME_IN_ARGS_BUG
 
 #ifdef WIN32
-#include <winsock.h>
-#  if defined(BIGENDIAN) && (BIGENDIAN > 0)
+// #include <winsock.h>
+// #  if defined(BIGENDIAN) && (BIGENDIAN > 0)
 #    define _BIG_ENDIAN
-#  else
-#    define _LITTLE_ENDIAN
-#  endif
+// #  else
+// #    define _LITTLE_ENDIAN
+// #  endif
 #else // !WIN32
 #  ifdef __sun
 #    include <sys/isa_defs.h>
 #  elif defined(__hpux)
 #    include <machine/param.h>
-#  else // __linux
+#  else // elif defined(__linux)
 #    include <sys/types.h>
 #    if !defined(__BYTE_ORDER) || !defined(__LITTLE_ENDIAN) || !defined(__BIG_ENDIAN)
 #      error "One of __BYTE_ORDER, __LITTLE_ENDIAN and __BIG_ENDIAN undefined; Fix me!"
