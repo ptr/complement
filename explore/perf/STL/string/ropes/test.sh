@@ -20,7 +20,7 @@ w_lnum () {
 
 experiment () {
   #w_lnum test$3.log
-  ${time} -a -o test$3.log obj/gcc/shared/str $3 -i=$2 -b=$1
+  ${time} -a -o test$3.log STLport-default/obj/gcc/shared/str $3 -i=$2 -b=$1
   echo -e ".\c"
 }
 
@@ -37,7 +37,7 @@ repeat () {
 }
 
 block=64
-iter=10000
+iter=100000
 
 run () {
   rm -f test-s.log
@@ -55,17 +55,17 @@ run () {
 rm -f string.dat rope.dat
 
 run $block $iter
-run 128 10000
-run 512 10000
-run 1024 10000
-run 4096 10000
-run 10240 10000
-run 20480 10000
-run 30420 10000
-run 40960 10000
-run 51200 10000
-run 81920 10000
-run 102400 10000
-## run 1024000 1000
+run 128 100000
+run 512 100000
+run 1024 100000
+run 4096 100000
+run 10240 100000
+run 20480 100000
+run 30420 100000
+run 40960 100000
+run 51200 100000
+run 81920 100000
+run 102400 100000
+## run 1024000 10000
 
 exit 0
