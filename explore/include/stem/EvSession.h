@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/12/13 20:38:10 ptr>
+// -*- C++ -*- Time-stamp: <01/02/02 12:59:59 ptr>
 
 /*
  *
@@ -77,6 +77,9 @@ struct SessionInfo
     //        _start = time( &_last );
     //        _conn = _last;
   }
+
+    SessionInfo( const SessionInfo& );
+
 
 //    ConnectSession( sockstream *s )
 //      { connect( s ); }
@@ -177,6 +180,8 @@ struct SessionInfo
     }
     return _on_line;
   }
+
+  SessionInfo& operator =( const SessionInfo& );
 };
 
 template <class T>
@@ -198,19 +203,6 @@ class SessionManager
         return unsafe_create();
       }
 
-    key_type unsafe_create()
-      {
-        key_type new_key = create_unique();
-        heap[new_key];
-        return new_key;
-      }
-
-    T& operator[]( const key_type& k )
-      {
-        // MT_REENTRANT( _lock, _x1 );
-        return heap[k];
-      }
-
     void lock()
       { MT_LOCK( _lock ); }
 
@@ -229,6 +221,28 @@ class SessionManager
         unsafe_erase( k );
       }
 
+    void assign( const key_type& k, const T& v )
+      {
+        MT_REENTRANT( _lock, _x1 );
+        heap[k] = v;
+      }
+
+  protected:
+    heap_type heap;
+
+    key_type unsafe_create()
+      {
+        key_type new_key = create_unique();
+        heap[new_key];
+        return new_key;
+      }
+
+    T& operator[]( const key_type& k )
+      {
+        // MT_REENTRANT( _lock, _x1 );
+        return heap[k];
+      }
+
     void erase( iterator& k )
       {
         MT_REENTRANT( _lock, _x1 );
@@ -244,8 +258,7 @@ class SessionManager
     void unsafe_erase( iterator& k )
       { heap.erase( k ); }
 
-  protected:
-    heap_type heap;
+    friend class NetTransport_base;
 
   private:
     key_type create_unique();
