@@ -10,9 +10,14 @@ int ASEventHandler::Find( ASEventInfo&, ASEqualOperator )
 
 class GENERIC
 {
+  virtual void pure( ASEvent& ) = 0; // This is to allow usage of virtual
+                                     // catchers, indeed never used.
 };
 
-long ASEventDispatch(GENERIC& generic, void (GENERIC::*pmf)( ASEvent& ), ASEvent& event )
+typedef void (GENERIC::*GENERIC_PMF)( ASEvent& );
+
+inline
+long ASEventDispatch( GENERIC& generic, GENERIC_PMF pmf, ASEvent& event )
 {
   (generic.*pmf)( event );
   return 0;
