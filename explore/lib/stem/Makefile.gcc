@@ -14,7 +14,7 @@ include ${BASEDIR}/lib/Makefile.inc.lib
 
 INCLUDES += -I$(BASEDIR)/include
 
-ifeq ($(OSTYPE),Linux)
+ifeq ($(shell uname),Linux)
 dbg : LDFLAGS += -L$(BASEDIR)/lib/mt/obj/${COMPILER_NAME}${DBG_SUFFIX}
 dbg : LDFLAGS += -L$(BASEDIR)/lib/sockios/obj/${COMPILER_NAME}${DBG_SUFFIX} -L$(HOME)/lib
 release : LDFLAGS += -L$(BASEDIR)/lib/mt/obj/${COMPILER_NAME}
