@@ -109,38 +109,6 @@ class OXWEventsTable
     list<table_entry> table;
 };
 
-template <class T>
-void OXWEventsTable<T>::push( const OXWEventsTableEntry<T>& entry )
-{
-  list<table_entry>::iterator i = find( table.begin(), table.end(), entry );
-  if ( i != table.end() ) {
-    table.erase( i ); // only one entry allowed
-  }
-  table.push_back( entry );
-}
-
-template <class T>
-bool OXWEventsTable<T>::Dispatch( const T *generic, OXWEvent& event ) const
-{
-  list<table_entry>::const_iterator i = find( table.begin(), table.end(),
-					table_entry( event.Message ) );
-  return i != table.end() ? (*i).Dispatch( generic, event ) : 0;
-}
-
-template <class T>
-void OXWEventsTable<T>::Out( ostrstream& out ) const
-{
-  list<table_entry>::const_iterator i = table.begin();
-
-  out << "State " << theState << "\n";
-  while ( i != table.end() ) {
-    out << "\t";
-    (*i).Out( out );
-    out << "\n";
-    ++i;
-  }
-}
-
 // ************************************************************* OXWStateTable
 
 template <class T>
@@ -159,49 +127,6 @@ class OXWStateTable
   private:
     list<table_entry> table;
 };
-
-template <class T>
-void OXWStateTable<T>::push( state_type state, OXWEventsTableEntry<T>& entry )
-{
-  list<table_entry>::iterator i = table.begin();
-
-  while ( i != table.end() ) {
-    if ( (*i).State() == state ) {
-      (*i).push( entry );
-      return;
-    }
-    ++i;
-  }
-  table_entry new_state( state );
-  new_state.push( entry );
-  table.push_back( new_state );
-}
-
-template <class T>
-bool OXWStateTable<T>::Dispatch( const T *generic, state_type state,
-				 OXWEvent& event )
-{
-  list<table_entry>::iterator i = table.begin();
-
-  while ( i != table.end() ) {
-    if ( (*i).State() == state ) {
-      return (*i).Dispatch( generic, event );
-    }
-    ++i;
-  }
-  return 0;
-}
-
-template <class T>
-void OXWStateTable<T>::Out( ostrstream& out ) const
-{
-  list<table_entry>::const_iterator i = table.begin();
-
-  while ( i != table.end() ) {
-    (*i).Out( out );
-    ++i;
-  }
-}
 
 typedef OXWEventsTableEntry<GENERIC> GENERIC_EvTblEntry;
 typedef OXWStateTable<GENERIC> GENERIC_StatesTbl;
@@ -256,7 +181,7 @@ class OXWEventHandler
     NAME_IT;
 
   private:
-    list<state_type>::iterator find( state_type );
+    list<state_type>::iterator __find( state_type );
 };
 
 // ***************************************************************************
@@ -335,5 +260,9 @@ int cls::RespTblConfigure()                     \
   }                                             \
   return 1;                                     \
 }
+
+#ifndef __TEMPLATE_DB__
+#include "EventHandler.cc"
+#endif
 
 #endif          // __OXW_EventHandler_h
