@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/01/11 12:17:25 ptr>
+// -*- C++ -*- Time-stamp: <00/01/18 15:43:43 ptr>
 
 /*
  *
@@ -268,12 +268,12 @@ void EvManager::Send( const Event& e )
       } else { // remote delivery
 //       std::cerr << "Remote\n";
         __Remote_Object_Entry *remote = (*i).second.remote;
-        MT_UNLOCK( _lock_heap );
         __stl_assert( remote != 0 );
         addr_type save_dest = e.dest();
         e.dest( remote->key ); // substitute address on remote system
         remote->channel->push( e );
         e.dest( save_dest ); // restore original (may be used more)
+        MT_UNLOCK( _lock_heap );
       }
     } else {
       MT_UNLOCK( _lock_heap );
