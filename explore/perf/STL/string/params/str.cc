@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/07/23 23:03:00 ptr>
+// -*- C++ -*- Time-stamp: <04/07/14 23:39:44 ptr>
 
 #include <string>
 
@@ -16,7 +16,7 @@ int main( int, char * const * )
   string s( "qyweyuewunfkHBUKGYUGL,wehbYGUW^\
 (@T@H!BALWD:h^&@#*@(#:JKHWJ:CND" );
 
-  for ( int i = 0; i < 20000000; ++i ) {
+  for ( int i = 0; i < 10000000; ++i ) {
     string sx = func( s );
   }
 
