@@ -17,6 +17,12 @@ stldbg-shared:	$(OUTPUT_DIR_STLDBG) ${PRG_STLDBG}
 
 release-shared:	$(OUTPUT_DIR) ${PRG}
 
+dbg-static:	$(OUTPUT_DIR_DBG) ${PRG_DBG}
+
+stldbg-static:	$(OUTPUT_DIR_STLDBG) ${PRG_STLDBG}
+
+release-static:	$(OUTPUT_DIR) ${PRG}
+
 ${PRG}:	$(OBJ) $(LIBSDEP)
 	$(LINK.cc) $(OUTPUT_OPTION) $(OBJ) $(LDLIBS)
 
