@@ -1,4 +1,4 @@
-# Time-stamp: <01/01/23 13:13:50 ptr>
+# Time-stamp: <01/03/29 13:57:15 ptr>
 # $Id$
 
 BASEDIR := $(shell xtmp=`pwd`; \
@@ -7,6 +7,7 @@ LIBDIR  := $(shell xtmp=`pwd`; dirname $$xtmp)
 
 COMPILER_NAME = aCC
 INSTALL_PRE_LIB_DIR = ${BASEDIR}/package/PGslib/PG/lib
+INSTALL_SC_LIB_DIR = ${BASEDIR}/package/SubClub/PGsbinsc/SC/bin
 include ${BASEDIR}/lib/EDS/Makefile.inc
 
 all:	all-release all-debug

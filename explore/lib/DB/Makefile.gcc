@@ -1,4 +1,4 @@
-# Time-stamp: <01/03/21 13:37:50 ptr>
+# Time-stamp: <01/03/29 13:56:00 ptr>
 # $Id$
 
 BASEDIR := $(shell xtmp=`pwd`; \
@@ -9,6 +9,7 @@ COMPILER_NAME = gcc
 # post_nm = pgsql
 # EXTRA_DIRS = /${post_nm}
 INSTALL_PRE_LIB_DIR = ${BASEDIR}/package/PGslib/PG/lib
+INSTALL_SC_LIB_DIR = ${BASEDIR}/package/SubClub/PGsbinsc/SC/bin
 
 include ${BASEDIR}/lib/DB/Makefile.inc
 
