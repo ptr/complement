@@ -1,0 +1,20 @@
+# Time-stamp: <01/04/11 12:45:53 ptr>
+# $Id$
+
+# LDFLAGS += -L${HOME}/lib
+LDFLAGS += -nostdlib -L"${MWCW_NOVELL_SDK_BASE}/imports" -L"${MWCW_NOVELL_R}/Libraries/Runtime" -lclib.imp -lthreads.imp -lnlmlib.imp -lfpsm.imp -llocnlm32.imp -lmwcrtl.lib
+
+# release-shared : LDFLAGS += -L${HOME}/lib
+# release-static : LDFLAGS += -L${HOME}/lib
+
+# dbg-shared : LDFLAGS += -L${HOME}/lib
+# dbg-static : LDFLAGS += -L${HOME}/lib
+# stldbg-shared : LDFLAGS += -L${HOME}/lib
+# stldbg-static : LDFLAGS += -L${HOME}/lib
+
+prepare-pkg-shared:	release-shared
+	if [ ! -d $(INSTALL_PRE_BIN_DIR) ] ; then \
+	  mkdir -p $(INSTALL_PRE_BIN_DIR); \
+	fi
+	$(INSTALL_EXE) ${PRG} $(INSTALL_PRE_BIN_DIR)
+
