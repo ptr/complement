@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/26 20:37:10 ptr>
+// -*- C++ -*- Time-stamp: <99/08/19 14:58:29 ptr>
 
 #ifndef __SOCKMGR_H
 #define __SOCKMGR_H
@@ -153,10 +153,11 @@ class sockmgr_stream :
 
   private:
     Thread     loop_id;
-    __impl::Mutex _params_lock;
+    // __impl::Mutex _params_lock;
     __impl::ThreadMgr  thr_mgr;
 
   protected:
+    typedef sockmgr_stream<Connect> _Self_type;
     typedef std::vector<sockmgr_client *,__STL_DEFAULT_ALLOCATOR(sockmgr_client *)> _Sequence;
     // typedef less_sockmgr_client _Compare;
     typedef fd_equal _Compare;
@@ -169,7 +170,8 @@ class sockmgr_stream :
 
     _Sequence _M_c;
     _Compare  _M_comp;
-    __impl::Mutex _c_lock;
+    // __impl::Mutex _c_lock;
+    __STLPORT_STD::_STL_mutex_lock _c_lock;
 };
 
 // Policy: multiplex all clients connections in one thread

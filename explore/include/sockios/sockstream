@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/08/02 18:15:08 ptr>
+// -*- C++ -*- Time-stamp: <99/08/19 12:47:15 ptr>
 
 #ifndef __SOCKSTREAM__
 #define __SOCKSTREAM__
@@ -32,13 +32,13 @@
 #include <stropts.h>
 #include <sys/conf.h>
 
-#ifdef queue // in sys/stream.h queue exist and conflict with stl
-#undef queue
-#endif
+// #ifdef queue // in sys/stream.h queue exist and conflict with stl
+// #undef queue
+// #endif
 
-#define queue _queue_
+// #define queue _queue_
 #include <netinet/in.h>
-#undef queue
+// #undef queue
 
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -162,8 +162,6 @@ class basic_sockbuf :
     */
       
     basic_sockbuf() :
-      basic_streambuf<charT, traits>(),
-      _stream_base<charT,__STL_DEFAULT_ALLOCATOR(charT) >(__STL_DEFAULT_ALLOCATOR(charT)()),
       _fd( -1 ),
       _open( false ),
       _mode( 0 )
@@ -171,8 +169,6 @@ class basic_sockbuf :
     basic_sockbuf( const char *hostname, int port,
 		   sock_base::stype type = sock_base::sock_stream,
 		   sock_base::protocol prot = sock_base::inet ) :
-      basic_streambuf<charT, traits>(),
-      _stream_base<charT,__STL_DEFAULT_ALLOCATOR(charT) >(__STL_DEFAULT_ALLOCATOR(charT)()),
       _fd( -1 ),
       _open( false ),
       _mode( 0 )
@@ -268,6 +264,7 @@ class basic_sockbuf :
     virtual streamsize xsputn(const char_type *s, streamsize n);
 
   private:
+    typedef basic_sockbuf<charT,traits> _Self_type;
     int __rdsync();
     int (basic_sockbuf<charT,traits>::*_xwrite)( const void *, size_t );
     int (basic_sockbuf<charT,traits>::*_xread)( void *, size_t );
