@@ -1,6 +1,24 @@
-// -*- C++ -*- Time-stamp: <00/02/29 17:00:59 ptr>
+// -*- C++ -*- Time-stamp: <00/07/14 20:32:08 ptr>
 
-#ident "$SunId$ %Q%"
+/*
+ *
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
+ *
+ * Copyright (c) 1997-1999
+ * Petr Ovchenkov
+ *
+ * This material is provided "as is", with absolutely no warranty expressed
+ * or implied. Any use is at your own risk.
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies and
+ * that both that copyright notice and this permission notice appear
+ * in supporting documentation.
+ */
+
+#ident "$SunId$"
 
 #include <algorithm>
 
@@ -49,22 +67,28 @@ sockmgr_client *sockmgr_stream<Connect>::accept_tcp()
     return 0;
   }
 
-  __STLPORT_STD::_STL_auto_lock _1(_c_lock);
   sockmgr_client *cl;
+  try {
+    _c_lock._M_acquire_lock();
 
-  container_type::iterator i = 
-    find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, -1 ) );
+    container_type::iterator i = 
+      find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, -1 ) );
 
-  if ( i == _M_c.end() ) {
-    cl = new sockmgr_client();
-    _M_c.push_back( cl );
-  } else {
-    cl = *i;
-  }
+    if ( i == _M_c.end() ) {
+      cl = new sockmgr_client();
+      _M_c.push_back( cl );
+    } else {
+      cl = *i;
+    }
   
-  cl->s.open( _sd, addr.any );
-  // cl->s.rdbuf()->hostname( _M_c.front()->hostname );
+    cl->s.open( _sd, addr.any );
+    // cl->s.rdbuf()->hostname( _M_c.front()->hostname );
 
+    _c_lock._M_release_lock();
+  }
+  catch ( ... ) {
+    _c_lock._M_release_lock();
+  }
   return cl;
 }
 

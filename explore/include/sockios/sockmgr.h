@@ -1,13 +1,13 @@
-// -*- C++ -*- Time-stamp: <00/02/24 19:51:54 ptr>
+// -*- C++ -*- Time-stamp: <00/07/14 20:31:03 ptr>
 
 /*
+ *
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999
- * ParallelGraphics Software Systems
- 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -21,7 +21,7 @@
 #ifndef __SOCKMGR_H
 #define __SOCKMGR_H
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -197,7 +197,8 @@ class sockmgr_stream :
     _Sequence _M_c;
     _Compare  _M_comp;
     // __impl::Mutex _c_lock;
-    __STLPORT_STD::_STL_mutex_lock _c_lock;
+    // __STLPORT_STD::_STL_mutex_lock _c_lock;
+    __STLPORT_STD::_STL_mutex _c_lock;
 };
 
 // Policy: multiplex all clients connections in one thread
