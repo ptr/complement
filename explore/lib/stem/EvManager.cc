@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/11/05 17:09:00 ptr>
+// -*- C++ -*- Time-stamp: <99/12/27 20:04:58 ptr>
 
 /*
  *
@@ -71,7 +71,43 @@ __EDS_DLL EvManager::EvManager() :
     _x_low( begextaddr ),
     _x_high( endextaddr ),
     _x_id( _x_low )
-{ }
+{
+  _ev_queue_thr.launch( _Dispatch, this );
+}
+
+__EDS_DLL EvManager::~EvManager()
+{
+  _ev_queue_cond.set( false );
+  _ev_queue_thr.join();
+}
+
+__EDS_DLL int EvManager::_Dispatch( void *p )
+{
+  EvManager& me = *reinterpret_cast<EvManager *>(p);
+
+  while ( me._ev_queue_cond.set() ) {
+    MT_LOCK( me._lock_queue );
+    swap( me.in_ev_queue, me.out_ev_queue );
+    MT_UNLOCK( me._lock_queue );
+    while ( !me.out_ev_queue.empty() ) {
+      me.Send( me.out_ev_queue.front() );
+      me.out_ev_queue.pop();
+    }
+    MT_LOCK( me._lock_queue );
+    if ( me.in_ev_queue.empty() ) {
+      MT_UNLOCK( me._lock_queue );
+//      timespec t;
+//      t.tv_sec = 0;
+//      t.tv_nsec = 10000000;
+//      __impl::Thread::sleep( &t );
+      me._ev_queue_thr.suspend();
+    } else {
+      MT_UNLOCK( me._lock_queue );
+    }
+  }
+
+  return 0;
+}
 
 __EDS_DLL
 addr_type EvManager::Subscribe( EventHandler *object, const std::string& info )
@@ -168,7 +204,7 @@ addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
 __EDS_DLL
 bool EvManager::Unsubscribe( addr_type id )
 {
-  // MT_REENTRANT( _lock_heap, _1 );
+  MT_REENTRANT( _lock_heap, _1 );
   heap.erase( /* (const heap_type::key_type&)*/ id );
   return true; // may be here check object's reference count
 }
@@ -220,26 +256,36 @@ __EDS_DLL NetTransport_base *EvManager::transport( addr_type id ) const
 // (this method allow to forward remote-object-event to another remote-object
 void EvManager::Send( const Event& e )
 {
-  // Will be useful to block on erase/insert operations...
-  // MT_REENTRANT( _lock_heap, _1 );
-  heap_type::iterator i = heap.find( e.dest() );
-  if ( i != heap.end() ) {
-    if ( (*i).second.ref != 0 ) { // local delivery
+  try {
+    // Will be useful to block on erase/insert operations...
+    MT_LOCK( _lock_heap );
+    heap_type::iterator i = heap.find( e.dest() );
+    if ( i != heap.end() ) {
+      if ( (*i).second.ref != 0 ) { // local delivery
+        EventHandler *object = (*i).second.ref;
 //       std::cerr << "Local\n";
-      (*i).second.ref->Dispatch( e );
-    } else { // remote delivery
+        MT_UNLOCK( _lock_heap );
+        object->Dispatch( e );
+      } else { // remote delivery
 //       std::cerr << "Remote\n";
-      __stl_assert( (*i).second.remote != 0 );
-      addr_type save_dest = e.dest();
-      e.dest( (*i).second.remote->key ); // substitute address on remote system
-      (*i).second.remote->channel->push( e );
-      e.dest( save_dest ); // restore original (may be used more)
+        __Remote_Object_Entry *remote = (*i).second.remote;
+        MT_UNLOCK( _lock_heap );
+        __stl_assert( remote != 0 );
+        addr_type save_dest = e.dest();
+        e.dest( remote->key ); // substitute address on remote system
+        remote->channel->push( e );
+        e.dest( save_dest ); // restore original (may be used more)
+      }
+    } else {
+      MT_UNLOCK( _lock_heap );
+      std::cerr << "===== EDS: "
+                << std::hex << std::setiosflags(std::ios_base::showbase)
+                << e.dest()
+                << " not found\n" << std::dec;
     }
-  } else {
-    std::cerr << "===== EDS: "
-              << std::hex << std::setiosflags(std::ios_base::showbase)
-              << e.dest()
-              << " not found\n" << std::dec;
+  }
+  catch ( ... ) {
+    MT_UNLOCK( _lock_heap );
   }
 }
 
