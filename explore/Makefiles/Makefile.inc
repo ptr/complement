@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <01/07/27 14:26:33 ptr>
+# -*- Makefile -*- Time-stamp: <02/03/11 21:34:56 ptr>
 # $Id$
 
 DBG_SUFFIX = -g
@@ -11,7 +11,8 @@ OUTPUT_DIR_A     = obj/$(COMPILER_NAME)/static$(EXTRA_DIRS)
 OUTPUT_DIR_A_DBG = obj/$(COMPILER_NAME)/static-g$(EXTRA_DIRS)
 OUTPUT_DIR_A_STLDBG = obj/$(COMPILER_NAME)/static-stlg$(EXTRA_DIRS)
 
-INSTALL_LIB_DIR = $$HOME/lib
+INSTALL_LIB_DIR = ${BASEDIR}/build/lib
+INSTALL_BIN_DIR = ${BASEDIR}/build/bin
 
 $(OUTPUT_DIR):
 	@if [ ! -d ${OUTPUT_DIR} ] ; then \
@@ -46,10 +47,16 @@ $(OUTPUT_DIR_A_STLDBG):
 $(OUTPUT_DIR)/%.o:	%.cc
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
+$(OUTPUT_DIR)/%.o:	%.cpp
+	$(COMPILE.cc) $(OUTPUT_OPTION) $<
+
 $(OUTPUT_DIR)/%.o:	%.c
 	$(COMPILE.c) $(OUTPUT_OPTION) $<
 
 $(OUTPUT_DIR_DBG)/%.o:	%.cc
+	$(COMPILE.cc) $(OUTPUT_OPTION) $<
+
+$(OUTPUT_DIR_DBG)/%.o:	%.cpp
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
 $(OUTPUT_DIR_DBG)/%.o:	%.c
@@ -58,10 +65,16 @@ $(OUTPUT_DIR_DBG)/%.o:	%.c
 $(OUTPUT_DIR_STLDBG)/%.o:	%.cc
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
+$(OUTPUT_DIR_STLDBG)/%.o:	%.cpp
+	$(COMPILE.cc) $(OUTPUT_OPTION) $<
+
 $(OUTPUT_DIR_STLDBG)/%.o:	%.c
 	$(COMPILE.c) $(OUTPUT_OPTION) $<
 
 $(OUTPUT_DIR_A)/%.o:	%.cc
+	$(COMPILE.cc) $(OUTPUT_OPTION) $<
+
+$(OUTPUT_DIR_A)/%.o:	%.cpp
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
 $(OUTPUT_DIR_A)/%.o:	%.c
@@ -70,39 +83,57 @@ $(OUTPUT_DIR_A)/%.o:	%.c
 $(OUTPUT_DIR_A_DBG)/%.o:	%.cc
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
+$(OUTPUT_DIR_A_DBG)/%.o:	%.cpp
+	$(COMPILE.cc) $(OUTPUT_OPTION) $<
+
 $(OUTPUT_DIR_A_DBG)/%.o:	%.c
 	$(COMPILE.c) $(OUTPUT_OPTION) $<
 
 $(OUTPUT_DIR_A_STLDBG)/%.o:	%.cc
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
+$(OUTPUT_DIR_A_STLDBG)/%.o:	%.cpp
+	$(COMPILE.cc) $(OUTPUT_OPTION) $<
+
 $(OUTPUT_DIR_A_STLDBG)/%.o:	%.c
 	$(COMPILE.c) $(OUTPUT_OPTION) $<
 
 OBJ      = $(SRC_CC:%.cc=$(OUTPUT_DIR)/%.o)
+OBJ     += $(SRC_CPP:%.cpp=$(OUTPUT_DIR)/%.o)
 OBJ     += $(SRC_C:%.c=$(OUTPUT_DIR)/%.o)
 OBJ_DBG  = $(SRC_CC:%.cc=$(OUTPUT_DIR_DBG)/%.o)
+OBJ_DBG += $(SRC_CPP:%.cpp=$(OUTPUT_DIR_DBG)/%.o)
 OBJ_DBG += $(SRC_C:%.c=$(OUTPUT_DIR_DBG)/%.o)
 OBJ_STLDBG  = $(SRC_CC:%.cc=$(OUTPUT_DIR_STLDBG)/%.o)
+OBJ_STLDBG += $(SRC_CPP:%.cpp=$(OUTPUT_DIR_STLDBG)/%.o)
 OBJ_STLDBG += $(SRC_C:%.c=$(OUTPUT_DIR_STLDBG)/%.o)
 DEP      = $(SRC_CC:%.cc=$(OUTPUT_DIR)/%.d)
+DEP     += $(SRC_CPP:%.cpp=$(OUTPUT_DIR)/%.d)
 DEP     += $(SRC_C:%.c=$(OUTPUT_DIR)/%.d)
 DEP_DBG  = $(SRC_CC:%.cc=$(OUTPUT_DIR_DBG)/%.d)
+DEP_DBG += $(SRC_CPP:%.cpp=$(OUTPUT_DIR_DBG)/%.d)
 DEP_DBG += $(SRC_C:%.c=$(OUTPUT_DIR_DBG)/%.d)
 DEP_STLDBG  = $(SRC_CC:%.cc=$(OUTPUT_DIR_STLDBG)/%.d)
+DEP_STLDBG += $(SRC_CPP:%.cpp=$(OUTPUT_DIR_STLDBG)/%.d)
 DEP_STLDBG += $(SRC_C:%.c=$(OUTPUT_DIR_STLDBG)/%.d)
 
 OBJ_A    = $(SRC_CC:%.cc=$(OUTPUT_DIR_A)/%.o)
+OBJ_A   += $(SRC_CPP:%.cpp=$(OUTPUT_DIR_A)/%.o)
 OBJ_A   += $(SRC_C:%.c=$(OUTPUT_DIR_A)/%.o)
 OBJ_A_DBG  = $(SRC_CC:%.cc=$(OUTPUT_DIR_A_DBG)/%.o)
+OBJ_A_DBG += $(SRC_CPP:%.cpp=$(OUTPUT_DIR_A_DBG)/%.o)
 OBJ_A_DBG += $(SRC_C:%.c=$(OUTPUT_DIR_A_DBG)/%.o)
 OBJ_A_STLDBG  = $(SRC_CC:%.cc=$(OUTPUT_DIR_A_STLDBG)/%.o)
+OBJ_A_STLDBG += $(SRC_CPP:%.cpp=$(OUTPUT_DIR_A_STLDBG)/%.o)
 OBJ_A_STLDBG += $(SRC_C:%.c=$(OUTPUT_DIR_A_STLDBG)/%.o)
 DEP_A    = $(SRC_CC:%.cc=$(OUTPUT_DIR_A)/%.d)
+DEP_A   += $(SRC_CPP:%.cpp=$(OUTPUT_DIR_A)/%.d)
 DEP_A   += $(SRC_C:%.c=$(OUTPUT_DIR_A)/%.d)
 DEP_A_DBG  = $(SRC_CC:%.cc=$(OUTPUT_DIR_A_DBG)/%.d)
+DEP_A_DBG += $(SRC_CPP:%.cpp=$(OUTPUT_DIR_A_DBG)/%.d)
 DEP_A_DBG += $(SRC_C:%.c=$(OUTPUT_DIR_A_DBG)/%.d)
 DEP_A_STLDBG  = $(SRC_CC:%.cc=$(OUTPUT_DIR_A_STLDBG)/%.d)
+DEP_A_STLDBG += $(SRC_CPP:%.cpp=$(OUTPUT_DIR_A_STLDBG)/%.d)
 DEP_A_STLDBG += $(SRC_C:%.c=$(OUTPUT_DIR_A_STLDBG)/%.d)
 
 clear-release-shared::
