@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/03 14:53:29 ptr>
+// -*- C++ -*- Time-stamp: <99/02/04 17:11:23 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -6,24 +6,30 @@
 
 #ifdef WIN32
 
+// The Microsoft's cool programmers made two wanderful things:
+// 1. All sockets must be initialized via WSAStartup
+// 2. Do it procedure once per every new thread.
+// 
+// So I do this via Tls* functions (TlsAlloc() in plock.cc)
+
 #include <ostream>
 #include <xxx/plock.h>
 
 namespace __impl {
 
 static char __xbuff[16];
-static Mutex __init_lock;
 static const char *WINSOCK_ERR_MSG = "WinSock DLL not 2.0";
+
+extern int __thr_key; // plock.cc
 
 } // namespace __impl
 
 namespace std {
-int sock_base::Init::__init_cnt = 0;
 
 sock_base::Init::Init()
 {
-  MT_REENTRANT( __impl::__init_lock, _1 );
-  if ( __init_cnt++ == 0 ) {
+  int __tls_init_cnt = (int)TlsGetValue( __impl::__thr_key );
+  if ( __tls_init_cnt++ == 0 ) {
     WORD    __vers;
     WSADATA __wsadata;
 
@@ -31,23 +37,25 @@ sock_base::Init::Init()
     int __err = WSAStartup( __vers, &__wsadata );
 
     if ( __err != 0 ) {
-      --__init_cnt;
+      TlsSetValue( __impl::__thr_key, 0 );
       throw domain_error( __impl::WINSOCK_ERR_MSG );
     }
     if ( LOBYTE(__wsadata.wVersion) != 2 || HIBYTE(__wsadata.wVersion) != 0 ) {
       WSACleanup();
-      --__init_cnt;
+      TlsSetValue( __impl::__thr_key, 0 );
       throw domain_error( __impl::WINSOCK_ERR_MSG );
     }
   }
+  TlsSetValue( __impl::__thr_key, (void *)__tls_init_cnt );
 }
 
 sock_base::Init::~Init()
 {
-  MT_REENTRANT( __impl::__init_lock, _1 );
-  if ( --__init_cnt == 0 ) {
+  int __tls_init_cnt = (int)TlsGetValue( __impl::__thr_key );
+  if ( --__tls_init_cnt == 0 ) {
     WSACleanup();
   }
+  TlsSetValue( __impl::__thr_key, (void *)__tls_init_cnt );
 }
 
 sock_base::sock_base()
