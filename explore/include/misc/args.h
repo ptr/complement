@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/21 15:45:13 ptr>
+// -*- C++ -*- Time-stamp: <00/05/23 17:12:31 ptr>
 /*
  *
  * Copyright (c) 1997-1998
@@ -17,7 +17,7 @@
 #ifndef __args_h
 #define __args_h
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
 #ifndef __config_feature_h
 #include <config/feature.h>
