@@ -50,6 +50,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/RubberTextLabel.o \
 		$(OUTPUT_DIR)/InputField.o \
 		$(OUTPUT_DIR)/InputMoney.o \
+		$(OUTPUT_DIR)/InputDate.o \
 		$(OUTPUT_DIR)/TextFilter.o \
 		$(OUTPUT_DIR)/TextCursor.o \
 		$(OUTPUT_DIR)/ScrVCollector.o \
