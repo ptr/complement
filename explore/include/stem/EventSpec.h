@@ -1,10 +1,11 @@
-// -*- C++ -*- Time-stamp: <99/04/01 14:41:35 ptr>
+// -*- C++ -*- Time-stamp: <99/04/01 14:45:35 ptr>
 
 // Only for MS VC!
-// don't direct include!
+// NEVER direct include!
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
+__STL_TEMPLATE_NULL
 class Event_base<short> :
         public __Event_Base
 {
@@ -112,6 +113,7 @@ class Event_base<short> :
     value_type _data;
 };
 
+__STL_TEMPLATE_NULL
 class Event_base<unsigned short> :
         public __Event_Base
 {
@@ -219,6 +221,7 @@ class Event_base<unsigned short> :
     value_type _data;
 };
 
+__STL_TEMPLATE_NULL
 class Event_base<int> :
         public __Event_Base
 {
@@ -326,6 +329,7 @@ class Event_base<int> :
     value_type _data;
 };
 
+__STL_TEMPLATE_NULL
 class Event_base<unsigned> :
         public __Event_Base
 {
@@ -433,6 +437,7 @@ class Event_base<unsigned> :
     value_type _data;
 };
 
+__STL_TEMPLATE_NULL
 class Event_base<long> :
         public __Event_Base
 {
@@ -540,6 +545,7 @@ class Event_base<long> :
     value_type _data;
 };
 
+__STL_TEMPLATE_NULL
 class Event_base<unsigned long> :
         public __Event_Base
 {
@@ -647,6 +653,7 @@ class Event_base<unsigned long> :
     value_type _data;
 };
 
+__STL_TEMPLATE_NULL
 class Event_base<char> :
         public __Event_Base
 {
@@ -754,6 +761,7 @@ class Event_base<char> :
     value_type _data;
 };
 
+__STL_TEMPLATE_NULL
 class Event_base<unsigned char> :
         public __Event_Base
 {
@@ -861,6 +869,7 @@ class Event_base<unsigned char> :
     value_type _data;
 };
 
+__STL_TEMPLATE_NULL
 class Event_base<signed char> :
         public __Event_Base
 {
