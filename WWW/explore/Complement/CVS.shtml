@@ -1,17 +1,19 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
-<!-- Time-stamp: <02/10/07 16:24:05 ptr> -->
+<!-- Time-stamp: <02/10/10 12:23:02 ptr> -->
 <!-- $Id$ -->
 
 <html>
   <head>
-    <link rel="stylesheet" type="text/css" href="main.css">
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <link rel="stylesheet" type="text/css" href="main.css" media="screen" title="general">
+    <link rel="stylesheet" type="text/css" href="decor.css" media="screen" title="general">
     <title>Complement: CVS access</title>
   </head>
 
   <body>
 <!--#include file="head.shtml" -->
+<!--#include file="booklet-1s.shtml" -->
 <h2>CVS access</h2>
 
 <p>
@@ -26,11 +28,11 @@ through anonymous (pserver) CVS with the following instruction set.
 When prompted for a password for anonymous, simply press the Enter key.
 </p>
 
-<pre>
+<pre class="ddisplay">
 cvs -d:pserver:anonymous@cvs.complement.sourceforge.net:/cvsroot/complement login 
 </pre>
  
-<pre>
+<pre class="ddisplay">
 cvs -z3 -d:pserver:anonymous@cvs.complement.sourceforge.net:/cvsroot/complement co complement
 </pre>
 
@@ -49,11 +51,12 @@ Name of module is 'complement' here. Enter your site password when
 prompted.
 </p>
 
-<pre>
+<pre class="ddisplay">
 export CVS_RSH=ssh
 
 cvs -z3 -d:ext:developername@cvs.complement.sourceforge.net:/cvsroot/complement co complement
 </pre>
+<!--#include file="booklet-1e.shtml" -->
 <!--#include file="foot.shtml" -->
   </body>
 </html>

@@ -1,4 +1,4 @@
- /* Time-stamp: <02/10/08 18:07:38 ptr> */
+ /* Time-stamp: <02/10/10 11:56:35 ptr> */
  /* $Id$ */
 
 body {
@@ -64,22 +64,22 @@ body table tr td {
 
 
 a:link {
-  text-decoration: none;
-  color: black;
+  text-decoration: underline;
+  color: DarkGoldenrod;
 }
 
 a:visited {
-  text-decoration: none;
+  text-decoration: underline;
   color: DarkGoldenrod;
 }
 
 a:active {
-  text-decoration: none;
-  color: black;
+  text-decoration: underline;
+  color: DarkGoldenrod;
 }
 
 a:hover {
-  text-decoration: none;
-  color: black;
+  text-decoration: underline;
+  color: DarkGoldenrod;
 }
 

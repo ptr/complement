@@ -1,9 +1,11 @@
-<!-- Time-stamp: <02/10/07 18:00:51 ptr> -->
+<!-- Time-stamp: <02/10/11 13:46:25 ptr> -->
 <!-- $Id$ -->
-<h2 class="ident"><a href="index.shtml">Home</a></h2>
-<h2 class="ident"><a href="Requirements.shtml">Requirements</a></h2>
-<h2 class="ident"><a href="Related.shtml">Related issues</a></h2>
-<h2 class="ident"><a href="Download.shtml">Download</a></h2>
-<h2 class="ident"><a href="CVS.shtml">CVS</a></h2>
+<img src="img/gif/t1x1.gif" width="128" height="20"><br>
+<img src="img/jpg/Co-yw1.jpg">
+<h2 class="ident nodecor"><a href="index.shtml">Home</a></h2>
+<h2 class="ident nodecor"><a href="Requirements.shtml">Requirements</a></h2>
+<h2 class="ident nodecor"><a href="Related.shtml">Related issues</a></h2>
+<h2 class="ident nodecor"><a href="Download.shtml">Download</a></h2>
+<h2 class="ident nodecor"><a href="CVS.shtml">CVS</a></h2>
 <!-- Created: Mon Oct  7 17:32:53 MSD 2002 -->
 
