@@ -1,18 +1,26 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
-<!-- $Id$ Time-stamp: <02/09/27 18:56:25 ptr> -->
+<!-- Time-stamp: <02/10/08 16:53:08 ptr> -->
+<!-- $Id$ -->
 
 <html>
   <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <link rel="stylesheet" type="text/css" href="main.css" media="screen" title="general">
+    <link rel="stylesheet" type="text/css" href="decor.css" media="screen" title="general">
     <title>Complement C++ libraries</title>
   </head>
 
   <body>
+<!--#include file="head.shtml" -->
+<!--#include file="booklet-1s.shtml" -->
     <h1>Complement C++ libraries</h1>
 <h2>What is this</h2>
+<p>
 Complement is a set of C++ libraries.
 This libraries provide multiplatform C++ framework
 for multithreaded programming and communication.
+</p>
 
 <!--
 <h2>Key features</h2>
@@ -54,54 +62,6 @@ to use another?
   </dd>
 </dl>
 
-<h2>Platforms and Compilers</h2>
-<p>
-Libraries worked with following platforms and C++ compilers:
-</p>
-<center>
-<table>
-  <tr>
-   <th>Target Platform</th><th>C++ compilers</th>
-  </tr>
-  <tr>
-   <td>Sun Solaris (IA-32)</td><td>gcc 2.95.3, gcc 3.1.1, (SunSoft CC 5.2)</td>
-  </tr>
-  <tr>
-   <td>Sun Solaris (SPARC)</td><td>gcc 2.95.3, gcc 3.1.1, (SunSoft CC 5.2)</td>
-  </tr>
-  <tr>
-   <td>Linux</td><td>gcc 2.95.3, gcc 3.1.1</td>
-  </tr>
-  <tr>
-   <td>HP-UX 11.00 (PA-RISC)</td><td>HP aCC A.03.13</td>
-  </tr>
-  <tr>
-   <td>Windows</td><td>(VC++ 5, VC++ 6)</td>
-  </tr>
-</table>
-</center>
-
-<h2>Other requirements</h2>
-
-  <ul>
-   <li>GNU make v. 3.79.1 (for Unix-like platforms);</li>
-   <li>Good C++ compiler; I hope now it is not problem:
-       you can use GNU gcc 2.95.3 or 3.1.1 (other gcc versions may work too,
-       but in particular I am not recommend to use gcc before 2.95.3,
-       and early 3.x releases; 2.96, that shipout with RedHat,
-       IMHO isn't good choice too);
-   </li>
-   <li><a href="http://www.stlport.org">STLport</a>---STL implementation.
-     Very efficient, very portable STL implementation. Instead of
-     have troubles with different (and sometimes ugly) STL implementations
-     that come with C++ compilers, I use STLport.
-   </li>
-   <li><a href="http://www.python.org">Python</a> interpreter
-     to make more-or-less automatic tests.
-   </li>
-  </ul>
-
-
 <h2>Present State of Complement Project</h2>
 
 <p>
@@ -112,107 +72,8 @@ gcc 3.1.1/STLport 5.x. Some time ago this libraries was working on Windows
 work on MS Windows), HP-UX 11.00 (HP aCC A.03.13) and Solaris (SunSoft CC 5.2).
 </p>
 
-<h3>Download</h3>
-
-You can visit <a href="http://sourceforge.net/projects/complement">project page on SourceForge</a> and download current sources tarball.
-
-
-<h2>Related links</h2>
-
-  <p>One of the best STL implementation:
-  </p>
-  <ul>
-    <li><a href="http://www.stlport.org">STLport</a></li>
-  </ul>
-
-  <p>Portable C++ interfaces for MT programming
-  </p>
-  <ul>
-    <li><a href="http://www.boost.org">Boost.Threads</a>, the part
-        of Boost project.
-    </li>
-  </ul>
-
-  <p>C++ interfaces for sockets:
-  </p>
-  <ul>
-    <li><a href="http://www.jezuk.co.uk/cgi-bin/view/SAX/">SAXinCPP/Utils/socket_stream.h</a>
-    </li>
-    <li><a href="http://www.trolltech.com">Qt</a>
-    </li>
-  </ul>
-
-  <p>Methodology of Operational Specifications.
-  </p>
-  <ul>
-    <li><a href="http://www.ddj.com/documents/s=990/ddj9506a/">Constructing Operational Specifications by Mark Coats and Terry Mellon</a><li>
-  </ul>
-
-  <p>C++ communication frameworks
-  </p>
-  <ul>
-    <li><a href="http://www.ece.ucdavis.edu/~kenelson/libsigc++">libsigc++</a>
-    </li>
-    <li><a href="http://www.trolltech.com">Qt</a>
-    </li>
-    <li><a href="http://www.corba.org">CORBA - Common Object Request Broker Architecture</a>
-    </li>
-    <li><a href="http://www.cs.wustl.edu/~schmidt/ACE.html">The ADAPTIVE Communication Environment (ACE)</a>
-    </li>
-    <li><a href="http://www.ddj.com/articles/1996/9608/">DDJ August 1996, Object-Oriented Interprocess Communication by Stephen Blaha</a>
-    </li>
-    <li><a href="http://www.ddj.com/articles/1996/9608/">DDJ August 1996, Dynamic Message Passing in C++ by Pierre Arnaud</a>
-    </li>
-  </ul>
-
-<h2>CVS access</h2>
-
-<p>
-You can read directives for CVS access <a href="http://sourceforge.net/cvs/?group_id=63160">here</a> or below on this page.
-</p>
-
-<h3>Anonymous CVS Access</h3>
-
-<p>
-This project's SourceForge.net CVS repository can be checked out
-through anonymous (pserver) CVS with the following instruction set.
-When prompted for a password for anonymous, simply press the Enter key.
-</p>
-
-<pre>
-cvs -d:pserver:anonymous@cvs.complement.sourceforge.net:/cvsroot/complement login 
-</pre>
- 
-<pre>
-cvs -z3 -d:pserver:anonymous@cvs.complement.sourceforge.net:/cvsroot/complement co complement
-</pre>
-
-<p>
-Updates from within the module's directory do not need the -d parameter.
-</p>
-
-
-<h3>Developer CVS Access via SSH</h3>
-
-<p>
-Only project developers can access the CVS tree via this method.
-SSH (either SSH1 or SSH2) must be installed on your client machine.
-Substitute developername with the proper values.
-Name of module is 'complement' here. Enter your site password when
-prompted.
-</p>
-
-<pre>
-export CVS_RSH=ssh
-
-cvs -z3 -d:ext:developername@cvs.complement.sourceforge.net:/cvsroot/complement co complement
-</pre>
-
-    <hr>
-<a href="http://sourceforge.net"><img src="http://sourceforge.net/sflogo.php?group_id=63160&amp;type=3" width="125" height="37" border="0" alt="SourceForge.net Logo"></a>
+<!--#include file="booklet-1e.shtml" -->
+<!--#include file="foot.shtml" -->
 <!-- Created: Thu Sep 12 11:00:09 MSD 2002 -->
-<!-- hhmts start -->
-Last modified: Fri Sep 27 18:56:25 MSD 2002
-<!-- hhmts end -->
   </body>
 </html>
