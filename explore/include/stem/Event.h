@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/10/08 18:12:05 ptr>
+// -*- C++ -*- Time-stamp: <96/11/03 10:40:16 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -21,169 +21,218 @@
 #endif
 
 template <class T> class OXWEventsTable<T>;
-template <class S, class D > class OXWEventT;
+template <class S, class D> class OXWEventT;
 
 class GENERIC;
 class OXWEventsCore;
 
-typedef OXWEventT<OXWEventsCore,void> OXWEvent;
-
-// ***************************************************************** OXWEventT
-
-template <class S, class D >
-class OXWEventT
+template <class S, class D>
+class EDSEvent_basic
 {
-  friend OXWEvent;
-
   public:
-    typedef allocator<D> Allocator;
-    typedef Allocator::value_type value_type;
-    typedef Allocator::pointer pointer;
-    typedef Allocator::const_pointer const_pointer;
-    typedef Allocator::reference reference;
-    typedef Allocator::const_reference const_reference;
+    typedef D value_type;
+    typedef D * pointer;
+    typedef size_t size_type;
+    typedef const D * const_pointer;
 
-    OXWEventT() :
+    EDSEvent_basic() :
 	Message( 0 ),
 	theSender( 0 ),
 	DataObject( 0 ),
-	sz( 0 )
+	sz( 0 ),
+	n( 0 )
       { }
-    OXWEventT( message_type msg ) :
+
+    EDSEvent_basic( message_type msg ) :
 	Message( msg ),
 	theSender( 0 ),
 	DataObject( 0 ),
-	sz( 0 )
+	sz( 0 ),
+	n( 0 )
       { }
-    OXWEventT( message_type msg, const D& data ) :
+
+    EDSEvent_basic( message_type msg, size_type num, size_type size ) :
 	Message( msg ),
-	theSender( 0 )
-      {
-	DataObject = data_allocator.allocate(1);
-	construct( DataObject, data );
-	sz = sizeof( D );
-      }
-    OXWEventT( const OXWEvent& e ) :
-	Message( e.GetMessage() ),
-	theSender( (S *)e.Sender() ),
-	sz( e.DataSize() )
-      {
-	if ( sz ) {
-	  WARN( sz != sizeof( D ), "Inconsistent data size!" );
-	  DataObject = data_allocator.allocate(1);
-	  construct( DataObject, *((D *)e.Data()) );
-	} else {
-	  DataObject = (D *)e.Data();
-	}
-      }
-    ~OXWEventT()
-      {
-	if ( sz ) {
-	  data_allocator.deallocate( DataObject );
-	}
-      }
+	theSender( 0 ),
+	DataObject( 0 ),
+	sz( size ),
+	n( num )
+      { }
+
+    EDSEvent_basic( const EDSEvent_basic& e ) :
+	Message( e.Message ),
+	theSender( (S *)e.theSender ),
+	DataObject( 0 ),
+	sz( e.sz ),
+	n( e.n )
+      { }
 
     message_type GetMessage() const
       { return Message; }
     S *Sender() const
       { return theSender; }
-    D *Data() const
+    pointer Data() const
       { return DataObject; }
-    size_t DataSize() const
+    size_type DataSize() const
       { return sz; }
-    void Sender( S *x )
-      { theSender = x; }
-    operator OXWEvent& ()
-      { return *( (OXWEvent *)this ); }
-    operator const OXWEvent& () const
-      { return *( (OXWEvent *)this ); }
-    operator D& ()
-      {
-	WARN( sz == 0, "You made attempt to read not allocated data!" );
-	return sz ? *DataObject : error_data;
-      }
-    operator const D& () const
-      {
-	WARN( sz == 0, "You made attempt to read not allocated data!" );
-	return sz ? *DataObject : error_data;
-      }
-    static D error_data;
+    size_type Count() const
+      { return n; }
+    void Sender( const S *x ) const
+      { const_cast<S *>(theSender) = const_cast<S *>(x); }
 
-  private:
+  protected:
     message_type Message;
     S *theSender;
-    D *DataObject;
-    size_t sz;
-
-    static Allocator data_allocator;
+    size_type sz;
+    size_type n;
+    pointer DataObject;
 };
 
-template <class S, class D >
-OXWEventT<S,D>::Allocator OXWEventT<S,D>::data_allocator;
+typedef OXWEventT<OXWEventsCore,void> OXWEvent;
 
-template <class S, class D >
-D OXWEventT<S,D>::error_data;
+// ***************************************************************** OXWEventT
+
+template <class S, class D>
+class OXWEventT :
+    public EDSEvent_basic<S,D>
+{
+  friend OXWEvent;
+
+  public:
+    typedef D& reference;
+    typedef const D& const_reference;
+
+    OXWEventT() :
+	EDSEvent_basic()
+      { }
+    OXWEventT( message_type msg, size_type num = 1,
+	       size_type size = sizeof( D ) );
+    OXWEventT( message_type msg, const_reference data, size_type num = 1,
+	       size_type size = sizeof( D ) );
+    OXWEventT( const OXWEvent& e );
+    ~OXWEventT();
+
+    operator OXWEvent& ()
+      { return *reinterpret_cast<OXWEvent *>(this); }
+    operator const OXWEvent& () const
+      { return *reinterpret_cast<const OXWEvent * const >(this); }
+    operator reference ()
+      {
+	CHECK_LENGTH( sz != 0 );
+	return *DataObject;
+      }
+    operator const_reference () const
+      {
+	CHECK_LENGTH( sz != 0 );
+	return *DataObject;
+      }
+    reference operator []( size_t i )
+      {
+	CHECK_LENGTH( sz != 0 );
+	CHECK_RANGE( i < n );
+	return *reinterpret_cast<pointer>(
+	  reinterpret_cast<char *>(DataObject) + i * sz);
+      }
+    const_reference operator []( size_t i ) const
+      {
+	CHECK_LENGTH( sz != 0 );
+	CHECK_RANGE( i < n );
+	return *reinterpret_cast<const_pointer>(
+	  reinterpret_cast<char *>(DataObject) + i * sz);
+      }
+};
+
+template <class S, class D>
+OXWEventT<S,D>::OXWEventT( message_type msg, OXWEventT::const_reference data,
+			   OXWEventT::size_type num,
+			   OXWEventT::size_type size ) :
+    EDSEvent_basic<S,D>( msg, num, size )
+{
+  CHECK_OUT_OF_RANGE( n >= 1 && sz >= sizeof( value_type ) );
+  DataObject = (pointer)::operator new( n * sz );
+  while ( num-- ) {
+    construct( reinterpret_cast<pointer>(
+      reinterpret_cast<char *>(DataObject) + num * sz),
+	       *reinterpret_cast<const_pointer>(
+		 reinterpret_cast<const char *>(&data) + num * sz) );
+  }
+}
+
+template <class S, class D>
+OXWEventT<S,D>::OXWEventT( message_type msg, OXWEventT::size_type num,
+			   OXWEventT::size_type size ) :
+    EDSEvent_basic<S,D>( msg, num, size )
+{
+  CHECK_OUT_OF_RANGE( n >= 1 && sz >= sizeof( value_type ) );
+  DataObject = reinterpret_cast<pointer>(::operator new( n * sz ));
+  while ( num-- ) {
+    new (reinterpret_cast<char *>(DataObject) + num * sz) D();
+  }
+}
+
+template <class S, class D>
+OXWEventT<S,D>::OXWEventT( const OXWEvent& e ) :
+    EDSEvent_basic<S,D>( e )
+{
+  if ( sz ) {
+    CHECK_OUT_OF_RANGE( n >= 1 && sz >= sizeof( value_type ) );
+    DataObject = reinterpret_cast<pointer>(::operator new( n * sz ));
+    size_type num = n;
+    while ( num-- ) {
+      construct( reinterpret_cast<pointer>(
+	reinterpret_cast<char *>(DataObject) + num * sz),
+		 *reinterpret_cast<const_pointer>(
+		   reinterpret_cast<const char *>(e.Data()) + num * sz) );
+    }
+  } else {
+    DataObject = reinterpret_cast<pointer>(e.Data());
+  }
+}
+
+template <class S, class D>
+OXWEventT<S,D>::~OXWEventT()
+{
+  if ( sz ) {
+    while ( n-- ) {
+      destroy( reinterpret_cast<pointer>(
+	reinterpret_cast<char *>(DataObject) + n * sz) );
+    }
+    ::operator delete( DataObject );
+  }
+}
 
 // ********************************************* OXWEventT<OXWEventsCore,void>
 
-class OXWEventT<OXWEventsCore,void>
+class OXWEventT<OXWEventsCore,void> :
+    public EDSEvent_basic<OXWEventsCore,void>
 {
   friend OXWEventsTable<GENERIC>;
   friend OXWEvent;
 
   public:
     OXWEventT() :
-	Message( 0 ),
-	theSender( 0 ),
-	DataObject( 0 ),
-	sz( 0 )
+	EDSEvent_basic<OXWEventsCore,void>()
       { }
     OXWEventT( message_type msg ) :
-	Message( msg ),
-	theSender( 0 ),
-	DataObject( 0 ),
-	sz( 0 )
+	EDSEvent_basic<OXWEventsCore,void>( msg )
       { }
-    ~OXWEventT()
-      {
-	if ( sz ) {
-	  delete DataObject;
-	}
-      }
-
-    message_type GetMessage() const
-      { return Message; }
-    OXWEventsCore *Sender() const
-      { return theSender; }
-    void *Data() const
-      { return DataObject; }
-    size_t DataSize() const
-      { return sz; }
-    void Sender( OXWEventsCore *x )
-      { theSender = x; }
-
     OXWEventT( const OXWEventT& e ) :
-	Message( e.Message ),
-	theSender( e.theSender ),
-	sz( e.sz )
+	EDSEvent_basic<OXWEventsCore,void>( e )
       {
 	if ( sz ) {
-	  DataObject = (void *)new char [sz];
-	  memcpy( DataObject, e.DataObject, sz );
+	  CHECK_OUT_OF_RANGE( n >= 1 );
+	  DataObject = ::operator new( n * sz );
+	  memcpy( DataObject, e.DataObject, n * sz );
 	} else {
 	  DataObject = e.DataObject;
 	}
       }
-
-  protected:
-    operator =( const OXWEventT& e )
-      { construct( this, e ); }
-
-  private:
-    message_type Message;
-    OXWEventsCore *theSender;
-    void *DataObject;
-    size_t sz;
+    ~OXWEventT()
+      {
+	if ( sz ) {
+	  ::operator delete( DataObject );
+	}
+      }
 };
 
 #endif
