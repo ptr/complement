@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/26 20:36:07 ptr>
+// -*- C++ -*- Time-stamp: <99/03/29 14:55:35 ptr>
 #ifndef __EvManager_h
 #define __EvManager_h
 
@@ -139,6 +139,9 @@ class EvManager
     EvSessionManager::key_type sid( const key_type& object_id ) const;
     SessionInfo& session_info( EvSessionManager::key_type& k )
       { return smgr[k]; }
+
+    void erase_session( EvSessionManager::key_type& k )
+      { smgr.erase( k ); }
 
     void Send( const Event& e, const key_type& src_id );
 
