@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/10/07 19:29:14 ptr>
+// -*- C++ -*- Time-stamp: <96/10/08 18:26:21 ptr>
 #ifndef __EDS_EvManager_h
 #define __EDS_EvManager_h
 
@@ -26,12 +26,12 @@
 
 class OXWEventsCore;
 
-struct OXWEvTarget
+struct EDSEvTarget
 {
     enum CallType { Parent, Siblings, Branch, BranchChilds, This};
     enum DestType { Local, Global };
 
-    OXWEvTarget( OXWEventsCore *x, CallType ct, DestType dt = Local ) :
+    EDSEvTarget( OXWEventsCore *x, CallType ct, DestType dt = Local ) :
 	target( x ),
 	ctype( ct ),
 	dtype( dt )
@@ -42,17 +42,17 @@ struct OXWEvTarget
     DestType dtype;
 };
 
-typedef pair<OXWEvTarget,OXWEvent> OXWEvInfo;
+typedef pair<EDSEvTarget,OXWEvent> OXWEvInfo;
 
-class OXWEvManager :
+class EDSEvManager :
     public queue<deque<OXWEvInfo> >
 {
     typedef queue<deque<OXWEvInfo> > ParentCls;
   public:
-    OXWEvManager()
+    EDSEvManager()
       { lock_not_done.set_condition(); queue_lock.set_condition(); }
 
-    ~OXWEvManager()
+    ~EDSEvManager()
       { }
 
     void Register( unsigned long, OXWEventsCore * );
@@ -83,4 +83,4 @@ class OXWEvManager :
     // Semaphore queue_sem;
 };
 
-#endif // __OXW_EvManager_h
+#endif // __EDS_EvManager_h
