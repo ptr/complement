@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/10/14 17:02:24 ptr>
+// -*- C++ -*- Time-stamp: <96/11/25 10:47:15 ptr>
 #ifndef __EDS_EvManager_h
 #define __EDS_EvManager_h
 
@@ -24,30 +24,30 @@
 #include <EDS/Event.h>
 #endif
 
-class OXWEventsCore;
+class EDSEventsCore;
 
 struct EDSEvTarget
 {
     enum CallType { Parent, Siblings, Branch, BranchChilds, This};
     enum DestType { Local, Global };
 
-    EDSEvTarget( OXWEventsCore *x, CallType ct, DestType dt = Local ) :
+    EDSEvTarget( EDSEventsCore *x, CallType ct, DestType dt = Local ) :
 	target( x ),
 	ctype( ct ),
 	dtype( dt )
       { }
 
-    OXWEventsCore *target;
+    EDSEventsCore *target;
     CallType ctype;
     DestType dtype;
 };
 
-typedef pair<EDSEvTarget,OXWEvent> OXWEvInfo;
+typedef pair<EDSEvTarget,EDSEvent> EDSEvInfo;
 
 class EDSEvManager :
-    public queue<deque<OXWEvInfo> >
+    public queue<deque<EDSEvInfo> >
 {
-    typedef queue<deque<OXWEvInfo> > ParentCls;
+    typedef queue<deque<EDSEvInfo> > ParentCls;
   public:
     EDSEvManager();
 
@@ -63,7 +63,6 @@ class EDSEvManager :
   private:
     MutexCondition queue_lock;
     MutexCondition lock_not_done;
-    // Semaphore queue_sem;
 };
 
 #endif // __EDS_EvManager_h

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/11/03 11:01:05 ptr>
+// -*- C++ -*- Time-stamp: <96/11/25 11:28:25 ptr>
 #ifndef __EDS_EventHandler_h
 #define __EDS_EventHandler_h
 
@@ -36,7 +36,7 @@
 #include <strstream.h>
 #endif
 
-class OXWEventHandler;
+class EDSEventHandler;
 
 typedef list<state_type> HistoryContainer;
 typedef HistoryContainer::iterator h_iterator;
@@ -45,7 +45,7 @@ typedef HistoryContainer::const_iterator const_h_iterator;
 
 class GENERIC
 {
-  virtual void foo( OXWEvent& ) = 0; // This is to allow usage of virtual
+  virtual void foo( EDSEvent& ) = 0; // This is to allow usage of virtual
 	                             // catchers, indeed never used.
   public:
     typedef void (GENERIC::*PMF)();
@@ -289,15 +289,15 @@ class __EvHandler
 
     __EvHandler( const char *, __DeclareAnyPMF<T> * );
 
-    bool Dispatch( T *, InputIterator, InputIterator, const OXWEvent& event );
+    bool Dispatch( T *, InputIterator, InputIterator, const EDSEvent& event );
     bool DispatchStub( T *, InputIterator, InputIterator,
-		       const OXWEvent& event );
+		       const EDSEvent& event );
     bool DispatchTrace( InputIterator first, InputIterator last,
-			const OXWEvent& event, ostrstream& out );
+			const EDSEvent& event, ostrstream& out );
     void Out( ostrstream& ) const;
 
-    convert<GENERIC::PMF, __member_function<T,OXWEvent>::pmf_type>  pmf;
-    convert<GENERIC::DPMF,__member_function<T,OXWEvent>::dpmf_type> dpmf;
+    convert<GENERIC::PMF, __member_function<T,EDSEvent>::pmf_type>  pmf;
+    convert<GENERIC::DPMF,__member_function<T,EDSEvent>::dpmf_type> dpmf;
 
     table_type table;
     const char *class_name;
@@ -318,7 +318,7 @@ __EvHandler<T, InputIterator>::__EvHandler( const char *nm,
 
 template <class T, class InputIterator>
 bool __EvHandler<T, InputIterator>::Dispatch( T *c, InputIterator first,
-				   InputIterator last, const OXWEvent& event )
+				   InputIterator last, const EDSEvent& event )
 {
   if ( first == last ) {
     return false;
@@ -342,7 +342,7 @@ bool __EvHandler<T, InputIterator>::Dispatch( T *c, InputIterator first,
 
 template <class T, class InputIterator>
 bool __EvHandler<T, InputIterator>::DispatchStub( T *, InputIterator first,
-				   InputIterator last, const OXWEvent& event )
+				   InputIterator last, const EDSEvent& event )
 {
   if ( first == last ) {
     return false;
@@ -364,7 +364,7 @@ bool __EvHandler<T, InputIterator>::DispatchStub( T *, InputIterator first,
 
 template <class T, class InputIterator >
 bool __EvHandler<T, InputIterator>::DispatchTrace( InputIterator first,
-                  InputIterator last, const OXWEvent& event, ostrstream& out )
+                  InputIterator last, const EDSEvent& event, ostrstream& out )
 {
   if ( first == last ) {
     out << "\n\tStates stack empty?";
@@ -406,20 +406,20 @@ void __EvHandler<T, InputIterator>::Out( ostrstream& out ) const
   }
 }
 
-class __EvHandler<OXWEventHandler,h_iterator>
+class __EvHandler<EDSEventHandler,h_iterator>
 {
   public:
     typedef __EvTable<message_type,state_type,__AnyPMFentry *> table_type;
 
-    __EvHandler( const char *nm, __DeclareAnyPMF<OXWEventHandler> * )
+    __EvHandler( const char *nm, __DeclareAnyPMF<EDSEventHandler> * )
       {	class_name = nm; }
 
-    bool Dispatch( OXWEventHandler *, h_iterator, h_iterator, const OXWEvent& )
+    bool Dispatch( EDSEventHandler *, h_iterator, h_iterator, const EDSEvent& )
       { return false; }
-    bool DispatchStub( OXWEventHandler *, h_iterator, h_iterator,
-		       const OXWEvent& )
+    bool DispatchStub( EDSEventHandler *, h_iterator, h_iterator,
+		       const EDSEvent& )
       { return false; }
-    bool DispatchTrace( h_iterator, h_iterator, const OXWEvent&, ostrstream& )
+    bool DispatchTrace( h_iterator, h_iterator, const EDSEvent&, ostrstream& )
       { return false; }
     void Out( ostrstream& ) const
       { }
@@ -440,23 +440,23 @@ class __EvHandler<OXWEventHandler,h_iterator>
 #define DEFINE_NAME_IT( cls )                   \
 const char *cls::class_name = #cls
 
-// *********************************************************** OXWEventHandler
+// *********************************************************** EDSEventHandler
 
-class OXWEventHandler
+class EDSEventHandler
 {
   public:
-    typedef __EvHandler<OXWEventHandler,h_iterator> evtable_type;
+    typedef __EvHandler<EDSEventHandler,h_iterator> evtable_type;
     typedef evtable_type::table_type table_type;
 
   protected:
     HistoryContainer& theHistory;
     static evtable_type theEventsTable;
-    static __DeclareAnyPMF<OXWEventHandler> theDeclEventsTable[];
+    static __DeclareAnyPMF<EDSEventHandler> theDeclEventsTable[];
     NAME_IT;
 
   public:
-    OXWEventHandler();
-    ~OXWEventHandler();
+    EDSEventHandler();
+    ~EDSEventHandler();
 
     void State( state_type state )
       { PushState( state ); }
@@ -467,9 +467,9 @@ class OXWEventHandler
     void PushTState( state_type state );
     void RemoveState( state_type );
     bool isState( state_type ) const;
-    virtual bool Dispatch( const OXWEvent& );
-    virtual bool DispatchStub( const OXWEvent& );
-    virtual void DispatchTrace( const OXWEvent&, ostrstream&  );
+    virtual bool Dispatch( const EDSEvent& );
+    virtual bool DispatchStub( const EDSEvent& );
+    virtual void DispatchTrace( const EDSEvent&, ostrstream&  );
     virtual void Trace( ostrstream& ) const;
     void TraceStack( ostrstream& ) const;
     static const table_type& get_ev_table()
@@ -497,15 +497,15 @@ class OXWEventHandler
   NAME_IT;                                      \
   public:                                       \
     virtual void Trace( ostrstream& ) const;    \
-    virtual void DispatchTrace( const OXWEvent&, ostrstream& );\
+    virtual void DispatchTrace( const EDSEvent&, ostrstream& );\
     typedef __EvHandler<cls,h_iterator> evtable_type;\
     typedef cls ThisCls;			\
     typedef pcls ParentThisCls;			\
     static const table_type& get_ev_table()     \
       { return theEventsTable.table; }          \
   protected:					\
-    virtual bool Dispatch( const OXWEvent& );   \
-    virtual bool DispatchStub( const OXWEvent& ); \
+    virtual bool Dispatch( const EDSEvent& );   \
+    virtual bool DispatchStub( const EDSEvent& ); \
     static evtable_type theEventsTable;         \
     static __DeclareAnyPMF<cls> theDeclEventsTable[]
 
@@ -518,19 +518,19 @@ class OXWEventHandler
 DEFINE_NAME_IT( cls );                          \
 cls::evtable_type cls::theEventsTable( #cls, theDeclEventsTable ); \
                                                 \
-bool cls::Dispatch( const OXWEvent& __event__ ) \
+bool cls::Dispatch( const EDSEvent& __event__ ) \
 {						\
   return theEventsTable.Dispatch( this, theHistory.begin(), \
 				  theHistory.end(), __event__ ); \
 }						\
                                                 \
-bool cls::DispatchStub( const OXWEvent& __event__ ) \
+bool cls::DispatchStub( const EDSEvent& __event__ ) \
 {						\
   return theEventsTable.DispatchStub( this, theHistory.begin(), \
 				      theHistory.end(), __event__ ); \
 }						\
                                                 \
-void cls::DispatchTrace( const OXWEvent& __event__, ostrstream& out )  \
+void cls::DispatchTrace( const EDSEvent& __event__, ostrstream& out )  \
 {						\
   theEventsTable.DispatchTrace( theHistory.begin(), \
 	 		        theHistory.end(), __event__, out ); \

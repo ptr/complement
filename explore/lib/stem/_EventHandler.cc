@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/11/03 10:46:18 ptr>
+// -*- C++ -*- Time-stamp: <96/11/25 10:31:02 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #include <CLASS/checks.h>
@@ -12,33 +12,33 @@ DIAG_DEFINE_GROUP(EventDispatch,0,3);
 
 #endif // __TRACE || __WARN
 
-OXWEventHandler::evtable_type OXWEventHandler::theEventsTable(
-  "OXWEventHandler", OXWEventHandler::theDeclEventsTable );
+EDSEventHandler::evtable_type EDSEventHandler::theEventsTable(
+  "EDSEventHandler", EDSEventHandler::theDeclEventsTable );
 
-__DeclareAnyPMF<OXWEventHandler> OXWEventHandler::theDeclEventsTable[] = {
+__DeclareAnyPMF<EDSEventHandler> EDSEventHandler::theDeclEventsTable[] = {
   { 0, 0, { 0, 0, "End of table" }}
 };
 
-DEFINE_NAME_IT( OXWEventHandler );
+DEFINE_NAME_IT( EDSEventHandler );
 
-void OXWEventHandler::PushState( state_type state )
+void EDSEventHandler::PushState( state_type state )
 {
   RemoveState( state );
   theHistory.push_front( state );
 }
 
-state_type OXWEventHandler::State() const
+state_type EDSEventHandler::State() const
 {
   return theHistory.front();
 }
 
-void OXWEventHandler::PushTState( state_type state )
+void EDSEventHandler::PushTState( state_type state )
 {
   theHistory.push_front( ST_TERMINAL );
   theHistory.push_front( state );
 }
 
-void OXWEventHandler::PopState()
+void EDSEventHandler::PopState()
 {
   theHistory.pop_front();
   while ( theHistory.front() == ST_TERMINAL ) {
@@ -46,7 +46,7 @@ void OXWEventHandler::PopState()
   }
 }
 
-void OXWEventHandler::PopState( state_type state )
+void EDSEventHandler::PopState( state_type state )
 {
   h_iterator hst_i = __find( state );
   if ( hst_i != theHistory.end() && *hst_i != ST_TERMINAL ) {
@@ -54,7 +54,7 @@ void OXWEventHandler::PopState( state_type state )
   }
 }
 
-void OXWEventHandler::RemoveState( state_type state )
+void EDSEventHandler::RemoveState( state_type state )
 {
   h_iterator hst_i = __find( state );
   if ( hst_i != theHistory.end() && *hst_i != ST_TERMINAL ) {
@@ -62,7 +62,7 @@ void OXWEventHandler::RemoveState( state_type state )
   }
 }
 
-bool OXWEventHandler::isState( state_type state ) const
+bool EDSEventHandler::isState( state_type state ) const
 {
   const HistoryContainer& hst = theHistory;
   const_h_iterator hst_i = __find( state );
@@ -72,7 +72,7 @@ bool OXWEventHandler::isState( state_type state ) const
   return false;
 }
 
-h_iterator OXWEventHandler::__find( state_type state )
+h_iterator EDSEventHandler::__find( state_type state )
 {
   if ( theHistory.empty() ) {
     return theHistory.end();
@@ -86,7 +86,7 @@ h_iterator OXWEventHandler::__find( state_type state )
   return hst_i;
 }
 
-const_h_iterator OXWEventHandler::__find( state_type state ) const
+const_h_iterator EDSEventHandler::__find( state_type state ) const
 {
   if ( theHistory.empty() ) {
     return theHistory.end();
@@ -106,36 +106,36 @@ const_h_iterator OXWEventHandler::__find( state_type state ) const
 // Of cause, you can found this only if theHistory is a template with static
 // member (stl/list, for example).
 
-OXWEventHandler::OXWEventHandler() :
+EDSEventHandler::EDSEventHandler() :
     theHistory( *(new HistoryContainer()) )
 {
   State( ST_NULL );
 }
 
-OXWEventHandler::~OXWEventHandler()
+EDSEventHandler::~EDSEventHandler()
 {
   delete &theHistory;
 }
 
-bool OXWEventHandler::Dispatch( const OXWEvent& event )
+bool EDSEventHandler::Dispatch( const EDSEvent& event )
 {
   return theEventsTable.Dispatch( this, theHistory.begin(),theHistory.end(),
 				  event );
 }
 
-bool OXWEventHandler::DispatchStub( const OXWEvent& event )
+bool EDSEventHandler::DispatchStub( const EDSEvent& event )
 {
   return theEventsTable.DispatchStub( this, theHistory.begin(),
 				      theHistory.end(), event );
 }
-void OXWEventHandler::DispatchTrace( const OXWEvent& __event__,
+void EDSEventHandler::DispatchTrace( const EDSEvent& __event__,
 				     ostrstream& out )
 {
   theEventsTable.DispatchTrace( theHistory.begin(),theHistory.end(),
 				__event__, out );
 }
 
-void OXWEventHandler::TraceStack( ostrstream& out ) const
+void EDSEventHandler::TraceStack( ostrstream& out ) const
 {
   const HistoryContainer& hst = theHistory;
   HistoryContainer::const_iterator hst_i = hst.begin();
@@ -145,7 +145,7 @@ void OXWEventHandler::TraceStack( ostrstream& out ) const
   out << endl;
 }
 
-void OXWEventHandler::Trace( ostrstream& out ) const
+void EDSEventHandler::Trace( ostrstream& out ) const
 {
-  OXWEventHandler::theEventsTable.Out( out );
+  EDSEventHandler::theEventsTable.Out( out );
 }
