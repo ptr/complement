@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/01/22 14:14:59 ptr>
+// -*- C++ -*- Time-stamp: <01/02/01 20:33:06 ptr>
 
 /*
  *
@@ -300,9 +300,9 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::_shift_fd()
       // We should distinguish closed socket from income message
       typename container_type::iterator i = 
         find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, _pfd[j].fd ) );
-#ifdef __sun // Solaris return ERROR on poll, before close socket
-      __STL_ASSERT( i != _M_c.end() );
-#else
+// #ifdef __sun // Solaris return ERROR on poll, before close socket
+//      __STL_ASSERT( i != _M_c.end() );
+// #else
       if ( i == _M_c.end() ) { // Socket already closed (may be after read/write failure)
         // this way may not notify poll (like in HP-UX 11.00) via POLLERR flag
         // as made in Solaris
@@ -320,7 +320,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::_shift_fd()
         }
         continue;
       } else
-#endif // !__sun
+// #endif // !__sun
       if ( _pfd[j].revents & POLLERR /* | POLLHUP | POLLNVAL */ ) { // poll first see closed socket
         --_fdcount;
 #if !defined( _RWSTD_VER ) // bogus RogueWave
@@ -329,9 +329,9 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::_shift_fd()
         memmove( &_pfd[j], &_pfd[j+1], sizeof(_pfd[0]) * (_fdcount - j) );
 #endif
         (*i)->s.close();
-#ifndef __sun
+// #ifndef __sun
         (*i)->_proc.close();
-#endif
+// #endif
         continue;
       }
       if ( msg == 0 ) {
@@ -594,10 +594,13 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
 
   try {
     sockmgr_client_MP<Connect> *s;
+#if 1
     unsigned _sfd;
+#endif
 
     while ( (s = me->accept()) != 0 ) {    
       // The user connect function: application processing
+#if 1
       if ( s->s.is_open() ) {
         _sfd = s->s.rdbuf()->fd();
         s->_proc.connect( s->s );
@@ -623,6 +626,9 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
           // me->_c_lock._M_release_lock();
         }
       }
+#else // 0
+      s->_proc.connect( s->s );
+#endif // 0
     }
   }
   catch ( ... ) {
@@ -637,6 +643,17 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
     me->_c_lock._M_release_lock();
     throw;
   }
+
+  cerr << "Out of loop!" << endl;
+  me->shutdown( sock_base::stop_in );
+  me->_c_lock._M_acquire_lock();
+
+  typename container_type::iterator i = me->_M_c.begin();
+  while ( i != me->_M_c.end() ) {
+    (*i++)->s.close();
+  }
+  me->close();
+  me->_c_lock._M_release_lock();
 
   return 0;
 }
