@@ -1,4 +1,4 @@
-# Time-stamp: <00/08/03 15:36:19 ptr>
+# Time-stamp: <00/10/03 19:21:59 ptr>
 # $SunId$
 
 CC=gcc
@@ -10,7 +10,15 @@ LIBDIR  := $(shell xtmp=`pwd`; dirname $$xtmp)
 COMPILER_NAME = gcc
 include ${BASEDIR}/lib/aux/Makefile.inc
 
-all:	dbg release
+all:	all-release all-debug
+
+all-shared:	release-shared dbg-shared stldbg-shared
+
+all-static:	release-static dbg-static stldbg-static
+
+all-debug:	dbg-shared stldbg-shared dbg-static stldbg-static
+
+all-release:	release-shared release-static
 
 # include ${BASEDIR}/Makefile.inc.${COMPILER_NAME}
 include ${BASEDIR}/lib/Makefile.inc.lib

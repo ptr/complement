@@ -1,4 +1,4 @@
-# Time-stamp: <00/08/03 15:34:13 ptr>
+# Time-stamp: <00/10/03 19:22:12 ptr>
 # $SunId$
 
 BASEDIR := $(shell xtmp=`pwd`; \
@@ -8,7 +8,15 @@ LIBDIR  := $(shell xtmp=`pwd`; dirname $$xtmp)
 COMPILER_NAME = gcc
 include ${BASEDIR}/lib/EDS/Makefile.inc
 
-all:	dbg release
+all:	all-release all-debug
+
+all-shared:	release-shared dbg-shared stldbg-shared
+
+all-static:	release-static dbg-static stldbg-static
+
+all-debug:	dbg-shared stldbg-shared dbg-static stldbg-static
+
+all-release:	release-shared release-static
 
 include ${BASEDIR}/lib/Makefile.inc.lib
 
