@@ -21,6 +21,12 @@ stldbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR}
 dbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR}
 endif
 
+ifeq ($(OSNAME),openbsd)
+release-shared:	LDSEARCH = -L${STLPORT_LIB_DIR}
+stldbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR}
+dbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR}
+endif
+
 ifeq ($(OSNAME),sunos)
 release-shared : LDLIBS = -lstlport_gcc -lrt
 stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug -lrt
