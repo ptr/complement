@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/10 15:53:18 ptr>
+// -*- C++ -*- Time-stamp: <99/09/13 11:54:11 ptr>
 #ident "$SunId$ %Q%"
 
 #ifdef _MSC_VER
@@ -44,7 +44,10 @@ std::string EvManager::inv_key_str( "invalid key" );
 __EDS_DLL EvManager::EvManager() :
     _low( beglocaddr ),
     _high( endlocaddr ),
-    _id( _low )
+    _id( _low ),
+    _x_low( begextaddr ),
+    _x_high( endextaddr ),
+    _x_id( _x_low )
 { }
 
 __EDS_DLL
@@ -111,7 +114,7 @@ addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
                                       const std::string& info )
 {
   MT_REENTRANT( _lock_heap, _1 );
-  addr_type id = create_unique() | extbit;
+  addr_type id = create_unique_x();
   __Object_Entry& record = heap[id];
   // record.ref = object;
   record.info = info;
@@ -127,7 +130,7 @@ addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
                                       const char *info )
 {
   MT_REENTRANT( _lock_heap, _1 );
-  addr_type id = create_unique() | extbit;
+  addr_type id = create_unique_x();
   __Object_Entry& record = heap[id];
   // record.ref = object;
   if ( info ) {
@@ -178,20 +181,10 @@ key_type EvManager::sid( addr_type id ) const
   return (*i).second.remote->channel->sid();
 }
 
-// Local access to object from remote call: only local object may be here;
-// This function used only from NetTransport after mapping remote object
-// address to its local address. (Incoming remote events only).
-void EvManager::Dispatch( const Event& e )
-{
-  heap_type::iterator i = heap.find( e.dest() );
-  if ( i != heap.end() && (*i).second.ref != 0 ) {
-    (*i).second.ref->Dispatch( e );
-  }
-}
-
 // Resolve Address -> Object Reference, call Object's dispatcher in case
 // of local object, or call appropriate channel delivery function for
-// remote object. (Outcoming local and remote events).
+// remote object. All outgoing events, and incoming remote events
+// (this method allow to forward remote-object-event to another remote-object
 void EvManager::Send( const Event& e )
 {
   // Will be useful to block on erase/insert operations...
@@ -223,6 +216,17 @@ addr_type EvManager::create_unique()
   } while ( heap.find( _id ) != heap.end() );
 
   return _id;
+}
+
+addr_type EvManager::create_unique_x()
+{
+  do {
+    if ( ++_x_id > _x_high ) {
+      _x_id = (_x_id - _x_low) % (_x_high - _x_low) + _x_low;
+    }
+  } while ( heap.find( _x_id ) != heap.end() );
+
+  return _x_id;
 }
 
 } // namespace EDS
