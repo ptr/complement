@@ -1,8 +1,8 @@
-# -*- Makefile -*- Time-stamp: <02/07/14 13:53:16 ptr>
+# -*- Makefile -*- Time-stamp: <02/08/01 09:23:14 ptr>
 # $Id$
 
 LIBNAME = xmt
 MAJOR = .1
 MINOR = .6
-PATCH = .0
+PATCH = .1
 SRC_CC = xmt.cc thr_mgr.cc time.cc
