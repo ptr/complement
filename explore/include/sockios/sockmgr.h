@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/07/11 21:28:34 ptr>
+// -*- C++ -*- Time-stamp: <02/07/14 13:07:44 ptr>
 
 /*
  *
@@ -113,115 +113,6 @@ class basic_sockmgr :
     static __impl::Mutex _idx_lck;
 };
 
-struct sockmgr_client
-{
-    sockmgr_client()
-      { }
-
-    sockstream s;
-};
-
-struct less_sockmgr_client :
-    public binary_function<sockmgr_client *,sockmgr_client *,bool> 
-{
-  bool operator()(const sockmgr_client *__x, const sockmgr_client *__y) const { return !__y->s.is_open() && __x->s.is_open(); }
-};
-
-struct fd_equal :
-    public binary_function<sockmgr_client *,int,bool> 
-{
-  bool operator()(const sockmgr_client *__x, int __y) const
-      { return __x->s.rdbuf()->fd() == __y; }
-};
-
-struct in_buf_avail :
-    public unary_function<sockmgr_client *,bool> 
-{
-  bool operator()(const sockmgr_client *__x) const
-      { return __x->s.rdbuf()->in_avail() > 0; }
-};
-
-// Policy: thread per client connection
-template <class Connect>
-class sockmgr_stream :
-    public basic_sockmgr
-{
-  public:
-    sockmgr_stream() :
-	basic_sockmgr()
-      { }
-
-    explicit sockmgr_stream( int port, sock_base::stype t = sock_base::sock_stream ) :
-	basic_sockmgr()
-      {	open( port, t ); }
-
-    ~sockmgr_stream()
-      {
-      }
-
-    // To do: virtual
-    void open( int port, sock_base::stype t = sock_base::sock_stream );
-    // To do: 
-    // void __open( int port, sock_base::stype t = sock_base::sock_stream );
-
-    virtual void close()
-      { basic_sockmgr::close(); }
-
-    void wait()
-      {	loop_id.join(); }
-
-  protected:
-    struct params
-    {
-	sockmgr_stream *me;
-	sockmgr_client *client;
-    };
-
-    static int loop( void * );
-    static int connection( void * );
-
-    typedef sockmgr_client *(sockmgr_stream<Connect>::*accept_type)();
-
-    accept_type _accept;
-    sockmgr_client *accept() // workaround for CC
-      { return (this->*_accept)(); }
-    sockmgr_client *accept_tcp();
-    sockmgr_client *accept_udp();
-
-  private:
-    Thread     loop_id;
-    // __impl::Mutex _params_lock;
-    __impl::ThreadMgr  thr_mgr;
-
-  protected:
-    typedef sockmgr_stream<Connect> _Self_type;
-    typedef std::vector<sockmgr_client *> _Sequence;
-    // typedef less_sockmgr_client _Compare;
-    typedef fd_equal _Compare;
-#if !defined(__HP_aCC) || (__HP_aCC > 1)
-    typedef typename _Sequence::value_type      value_type;
-    typedef typename _Sequence::size_type       size_type;
-    typedef          _Sequence                  container_type;
-
-    typedef typename _Sequence::reference       reference;
-    typedef typename _Sequence::const_reference const_reference;
-#else
-    typedef _Sequence::value_type      value_type;
-    typedef _Sequence::size_type       size_type;
-    typedef          _Sequence                  container_type;
-
-    typedef _Sequence::reference       reference;
-    typedef _Sequence::const_reference const_reference;
-#endif
-
-    _Sequence _M_c;
-    _Compare  _M_comp;
-    // __impl::Mutex _c_lock;
-    // __STLPORT_STD::_STL_mutex_lock _c_lock;
-    _STLP_mutex _c_lock;
-};
-
-
 class ConnectionProcessorTemplate_MP // As reference
 {
   public:
@@ -234,9 +125,8 @@ class ConnectionProcessorTemplate_MP // As reference
       { }
 };
 
-// Policy: multiplex all clients connections in one thread
 template <class Connect>
-class sockmgr_stream_MP : // multiplexor
+class sockmgr_stream_MP :
     public basic_sockmgr
 {
   public:
@@ -275,6 +165,9 @@ class sockmgr_stream_MP : // multiplexor
 
     void wait()
       {	loop_id.join(); }
+
+    void detach( sockstream& ) // remove sockstream from polling in manager
+      { }
 
   protected:
     static int loop( void * );
