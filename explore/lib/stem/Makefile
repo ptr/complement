@@ -5,6 +5,7 @@ INCLUDES = -I/usr/openwin/include -I.
 DEFS = -DSVR4 -D__DEBUG=2
 # OPT = -g -p
 OPT = -g
+# OPT = -G
 CCFLAGS = $(OPT) -cg92 +w -pic -pto -mt
 CPPFLAGS = $(DEFS) $(INCLUDES)
 # LDFLAGS = -L$(OUTPUT_DIR) -lclass -lX11 -ldl
@@ -47,7 +48,8 @@ XTESTER = xtester
 XFILES.o = \
 		$(OUTPUT_DIR)/xtester.o \
 		$(OUTPUT_DIR)/xmain.o
-
+PROJECT = libOXW.so
+LIBFILES.o = $(XLIBFILES.o)
 
 .KEEP_STATE:
 
@@ -55,8 +57,8 @@ XFILES.o = \
 
 all:	$(PROJECT)
 
-$(PROJECT):	$(LIBFILES.o) $(PROJECTFILES.o)
-	$(LINK.cc) -o $@ $(LIBFILES.o) $(PROJECTFILES.o)
+$(PROJECT):	$(LIBFILES.o)
+	$(LINK.cc) -o $@ $(LIBFILES.o)
 
 $(XTESTER):	$(XLIBFILES.o) $(XFILES.o)
 	$(LINK.cc) -o $@ $(XLIBFILES.o) $(XFILES.o)
