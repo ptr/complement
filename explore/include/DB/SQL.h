@@ -1,14 +1,21 @@
-// -*- C++ -*- Time-stamp: <99/11/16 14:06:59 ptr>
+// -*- C++ -*- Time-stamp: <99/12/01 19:50:47 ptr>
 
 #ifndef __SQL_h
 #define __SQL_h
 
 #ident "$SunId$ %Q%"
 
+#if defined( __DB_POSTGRES )
 extern "C" {
-struct pg_conn;
-// struct PGconn;
+  struct pg_conn;
 } // extern "C"
+#elif defined( __DB_MYSQL )
+extern "C" {
+  struct st_mysql;
+} // extern "C"
+#else
+#  error "------------ Unsupported DB -------------"
+#endif
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -20,6 +27,12 @@ struct pg_conn;
 #include <sstream>
 
 namespace database {
+
+#if defined( __DB_POSTGRES )
+typedef ::pg_conn    DBconn;
+#elif defined( __DB_MYSQL )
+typedef ::st_mysql  DBconn;
+#endif
 
 class DataBase;
 
@@ -166,7 +179,7 @@ class DataBase
       failbit = 2
     };
 
-    DataBase( const char *name,
+    DataBase( const char *name, const char *usr = 0, const char *passwd = 0,
               const char *host = 0, const char *port = 0, const char *opt = 0,
               const char *tty = 0 );
     ~DataBase();
@@ -200,7 +213,7 @@ class DataBase
 
   private:
     // std::string _exec_str;
-    ::pg_conn *_conn;
+    DBconn *_conn;
     unsigned _flags;
     typedef std::vector<Table*> tbl_container_type;
     tbl_container_type tables;
