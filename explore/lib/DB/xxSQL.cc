@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/07/19 18:44:42 ptr>
+// -*- C++ -*- Time-stamp: <01/08/15 17:24:17 ptr>
 
 /*
  *
@@ -37,7 +37,7 @@ namespace xxSQL {
 typedef void *(*DBimpl_type)( const void * );
 
 #ifdef __GNUC__
-const char *lname_pg  = "libDBpg_gcc.so";
+const char *lname_pg  = "libDBpg_gcc.so.0.6";
 const char *lname_ora = "libDBora_gcc.so";
 #else
 #  error "-------> Please fix load library name\n"
