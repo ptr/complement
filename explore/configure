@@ -4,7 +4,7 @@
 # $Id$
 
 
-configmak=../Makefiles/config.mak
+configmak=Makefiles/config.mak
 
 # rm -f ${configmak}
 
