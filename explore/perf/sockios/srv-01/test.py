@@ -1,6 +1,6 @@
 #!/opt/python-2.2.1/bin/python
 #
-# Time-stamp: <02/09/10 14:54:19 ptr>
+# Time-stamp: <02/12/10 09:17:17 ptr>
 #
 # $Id$
 #
@@ -8,19 +8,27 @@
 import sys
 import os
 
-BASEDIR = "/export/home/ptr/workshop/explore"
+BASEDIR = os.path.normpath( os.getcwd() + "/../../../" );
+time = BASEDIR + "/app/utils/time/obj/gcc/shared/time"
+# time = '/usr/bin/time'
 SRV_PID = "./srv.pid"
 PORT = 1990
 NUM = 10000
 
 os.environ["LD_LIBRARY_PATH"] = BASEDIR + '/build/lib:' + os.environ["LD_LIBRARY_PATH"]
 
+try:
+  os.unlink( SRV_PID )
+
+except OSError:
+  pass
+  
 pid = os.fork()
 if ( pid == 0 ):
   # print os.getpid()
-  os.execve( "/usr/bin/time", \
-             ['', '-f', '%E %S %U %P %r %s', '--quiet', \
-              'srv-01/obj/gcc/shared/srv', \
+  os.execve( time, \
+             ['', '-a', '-o', 'server.log', # '-f', '%E %S %U %P %r %s', '--quiet', \
+              'obj/gcc/shared/srv', \
               '-pid=' + SRV_PID, \
               "-p=" + str(PORT) ], \
              os.environ )
@@ -50,7 +58,7 @@ while ( no_srv ): # wait for server begin listen socket
 
 print 'Server started'
 print 'Client: '
-os.system( "/usr/bin/time -f '%E %S %U %P %r %s' cln-01/obj/gcc/shared/cln -p=" + str(PORT) + ' -host=localhost -n=' + str(NUM) )
+os.system( time + " -a -o client.log ../cln-01/obj/gcc/shared/cln -p=" + str(PORT) + ' -host=localhost -n=' + str(NUM) )
 print 'Client done'
 print 'Server:'
 os.kill( srvpid, 2 ) # INT
