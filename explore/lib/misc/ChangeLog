@@ -1,3 +1,7 @@
+2001-08-13  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
+
+	* args.cc (Repository): Change in option style: -option=value now.
+
 2001-08-09  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
 
 	* libAux: Version 1.7.0
