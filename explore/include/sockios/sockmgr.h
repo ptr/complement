@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/06 18:54:35 ptr>
+// -*- C++ -*- Time-stamp: <00/10/11 10:15:22 ptr>
 
 /*
  *
@@ -279,6 +279,9 @@ class sockmgr_stream_MP : // multiplexor
     fd_set _pfd;
 #endif
     unsigned _fdcount;
+
+  private:
+    sockmgr_client_MP<Connect> *_shift_fd();
 };
 
 __STL_END_NAMESPACE

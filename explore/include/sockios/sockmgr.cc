@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/06 20:41:22 ptr>
+// -*- C++ -*- Time-stamp: <00/10/11 11:45:11 ptr>
 
 /*
  *
@@ -291,6 +291,54 @@ void sockmgr_stream_MP<Connect>::open( int port, sock_base::stype t )
 }
 
 template <class Connect>
+sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::_shift_fd()
+{
+  sockmgr_client_MP<Connect> *msg = 0;
+  int j = 1;
+  while ( j < _fdcount ) {
+    if ( _pfd[j].revents != 0 ) {
+      // We should distinguish closed socket from income message
+      typename container_type::iterator i = 
+        find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, _pfd[j].fd ) );
+      // __STL_ASSERT( i != _M_c.end() );
+      if ( i == _M_c.end() ) { // Socket already closed (may be after read/write failure)
+        // this way may not notify poll (like in HP-UX 11.00) via POLLERR flag
+        // as made in Solaris
+        --_fdcount;
+#if !defined( _RWSTD_VER ) // bogus RogueWave
+        memmove( &_pfd[j], &_pfd[j+1], sizeof(struct pollfd) * (_fdcount - j) );
+#else
+        memmove( &_pfd[j], &_pfd[j+1], sizeof(_pfd[0]) * (_fdcount - j) );
+#endif
+        for ( i = _M_c.begin(); i != _M_c.end(); ++i ) {
+          if ( (*i)->s.rdbuf()->fd() == -1 ) {
+            (*i)->s.close();
+            (*i)->_proc.close();
+          }
+        }
+        continue;
+      } else if ( _pfd[j].revents & POLLERR /* | POLLHUP | POLLNVAL */ ) { // poll first see closed socket
+        --_fdcount;
+#if !defined( _RWSTD_VER ) // bogus RogueWave
+        memmove( &_pfd[j], &_pfd[j+1], sizeof(struct pollfd) * (_fdcount - j) );
+#else
+        memmove( &_pfd[j], &_pfd[j+1], sizeof(_pfd[0]) * (_fdcount - j) );
+#endif
+        (*i)->s.close();
+        continue;
+      }
+      if ( msg == 0 ) {
+        _pfd[j].revents = 0;
+        msg = *i;
+      }
+    }
+    ++j;
+  }
+
+  return msg;
+}
+
+template <class Connect>
 sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
 {
   if ( !is_open() ) {
@@ -302,12 +350,14 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
 
 #ifdef __unix
   if ( _pfd == 0 ) {
-    _pfd = new pollfd[256];
+    _pfd = new pollfd[1024];
     _pfd[0].fd = fd();
     _pfd[0].events = POLLIN;
     ++_fdcount;
   }
 #endif
+
+  sockmgr_client_MP<Connect> *cl;
 
   do {
 #ifdef WIN32
@@ -328,12 +378,12 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
 
     if (
 #ifdef __unix
-      _pfd[0].revents != 0
+      _pfd[0].revents != 0 && (_pfd[0].revents & POLLERR) == 0
 #endif
 #ifdef WIN32
     FD_ISSET( fd(), &_pfd )
 #endif
-      ) {
+      ) { // poll found event on binded socket
       sock_base::socket_type _sd = ::accept( fd(), &addr.any, &sz );
       if ( _sd == -1 ) {
         // check and set errno
@@ -341,20 +391,14 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
         return 0;
       }
 
-      sockmgr_client_MP<Connect> *cl;
-
       try {
-        _c_lock._M_acquire_lock();
-// #if defined(__HP_aCC) && (__HP_aCC==1)
-        typename
-// #endif
-        container_type::iterator i = 
-        find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, -1 ) );
+        typename container_type::iterator i = 
+          find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, -1 ) );
     
-        if ( i == _M_c.end() ) {
+        if ( i == _M_c.end() ) { // we need new message processor
           cl = new sockmgr_client_MP<Connect>();
-          _M_c.push_back( cl );      
-        } else {
+          _M_c.push_back( cl );
+        } else { // we can reuse old
           cl = *i;
         }
 
@@ -370,11 +414,17 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
 #ifdef WIN32
         FD_SET( _sd, &_pfd );
 #endif
-        _c_lock._M_release_lock();
       }
       catch ( ... ) {
-        _c_lock._M_release_lock();
       }
+    }
+    cl = _shift_fd(); // find polled and return it
+    if ( cl != 0 ) {
+      return cl; // return message processor
+    } else if ( _pfd[0].revents & POLLERR ) {
+      return 0; // return 0 only for binded socket
+    } else {    // nothing found, may be only closed sockets
+      _pfd[0].revents = 1; // we return to poll again
     }
   } while (
 #ifdef __unix
@@ -384,29 +434,8 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
     FD_ISSET( fd(), &_pfd )
 #endif
     );
-  // find polled and return it
 #ifdef __unix
-  for ( int j = 1; j < _fdcount; ++j ) {
-    if ( _pfd[j].revents != 0 ) {
-//#if defined(__HP_aCC) && (__HP_aCC==1)
-      typename
-//#endif
-      container_type::iterator i = 
-        find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, _pfd[j].fd ) );
-      __STL_ASSERT( i != _M_c.end() );
-      if ( _pfd[j].revents & POLLERR ) {
-#if !defined( _RWSTD_VER ) // bogus RogueWave
-        memmove( &_pfd[j], &_pfd[j+1], sizeof(struct pollfd) * (_fdcount - j - 1) );
-#else
-        memmove( &_pfd[j], &_pfd[j+1], sizeof(_pfd[0]) * (_fdcount - j - 1) );
-#endif
-        --_fdcount;
-        (*i)->s.close();
-      }
-      _pfd[j].revents = 0;
-      return *i;
-    }
-  }
+  return 0; // Unexpected; should never occur
 #endif
 #ifdef WIN32
   container_type::iterator i = _M_c.begin();
@@ -416,8 +445,9 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
     }
     ++i;
   }
-#endif
+
   return 0;
+#endif
 }
 
 template <class Connect>
@@ -458,10 +488,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_udp()
   sockmgr_client_MP<Connect> *cl;
   try {
     _c_lock._M_acquire_lock();
-// #if defined(__HP_aCC) && (__HP_aCC==1)
-    typename
-// #endif
-      container_type::iterator i = _M_c.begin();
+    typename container_type::iterator i = _M_c.begin();
     sockbuf *b;
     while ( i != _M_c.end() ) {
       b = (*i)->s.rdbuf();
@@ -512,25 +539,26 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
       if ( s->s.is_open() ) {
         _sfd = s->s.rdbuf()->fd();
         s->_proc.connect( s->s );
-        // if ( !s->s.good() ) {
-        //  s->s.close();
-        // }
-        if ( !s->s.is_open() ) {
+        if ( !s->s.good() ) {
+          s->s.close();
+        }
+        if ( !s->s.is_open() ) { // remove all closed sockets from poll
 #ifdef __unix
           for ( int i = 1; i < me->_fdcount; ++i ) {
             if ( me->_pfd[i].fd == _sfd ) {
-#if !defined( _RWSTD_VER ) // bogus RogueWave
-              memmove( &me->_pfd[i], &me->_pfd[i+1], sizeof(struct pollfd) * (me->_fdcount - i - 1) );
-#else
-              memmove( &me->_pfd[i], &me->_pfd[i+1], sizeof(&me->_pfd[0]) * (me->_fdcount - i - 1) );
-#endif
               --me->_fdcount;
+#if !defined( _RWSTD_VER ) // bogus RogueWave
+              memmove( &me->_pfd[i], &me->_pfd[i+1], sizeof(struct pollfd) * (me->_fdcount - i) );
+#else
+              memmove( &me->_pfd[i], &me->_pfd[i+1], sizeof(&me->_pfd[0]) * (me->_fdcount - i) );
+#endif
             }
           }
 #endif
 #ifdef WIN32
           FD_CLR( _sfd, &me->_pfd );
 #endif
+          // me->_c_lock._M_release_lock();
         }
       }
     }
@@ -539,10 +567,7 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
     me->shutdown( sock_base::stop_in );
     me->_c_lock._M_acquire_lock();
 
-//#if defined(__HP_aCC) && (__HP_aCC==1)
-    typename
-//#endif
-    container_type::iterator i = me->_M_c.begin();
+    typename container_type::iterator i = me->_M_c.begin();
     while ( i != me->_M_c.end() ) {
       (*i++)->s.close();
     }
