@@ -1,10 +1,11 @@
 # "%Z%$RCSfile$ v.$Revision$ %H% %T%"
 # Makefile for implementation and debugging OXW (Object X Window) class library
 
-INCLUDES = \
-	-I/usr/hostel/STL/include \
-	-I/usr/openwin/include \
-	-I../../../include
+#	-I/usr/hostel/STL/include \
+
+INCLUDES = -I/usr/openwin/include \
+	   -I../../../include
+
 DEFS = \
 	-DSVR4 \
 	-D__DEBUG=2
@@ -68,6 +69,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/Filter.o \
 		$(OUTPUT_DIR)/PanelItem.o \
 		$(OUTPUT_DIR)/Panel.o \
+		$(OUTPUT_DIR)/Matrix.o \
 		$(OUTPUT_DIR)/ModalDialog.o \
 		$(OUTPUT_DIR)/Picture.o \
 		$(OUTPUT_DIR)/AppModal.o
