@@ -1,4 +1,4 @@
-/* -*- C -*- Time-stamp: <04/04/21 12:22:20 ptr> */
+/* -*- C -*- Time-stamp: <04/05/18 09:06:09 ptr> */
 
 #if defined(__unix) || defined(__unix__)
 #  ifdef __HP_aCC
@@ -7,6 +7,8 @@
 #ident "@(#)$Id$"
 #  endif
 #endif
+
+#include <config/feature.h>
 
 #if defined(__unix) || defined(__unix__)
 # include <fcntl.h>
@@ -38,7 +40,7 @@
  *
  */
 
-# if !defined(_REENTRANT) && !defined(_THREAD_SAFE) && !defined(_POSIX_THREADS)
+# if !defined(_REENTRANT) && !defined(_THREAD_SAFE) && !(defined(_POSIX_THREADS) && defined(__OpenBSD__))
 /* 
  * In case of non-MT-safe application the fcntl approach
  * has advantage (FS-independent). So we use fcntl call
@@ -46,7 +48,7 @@
  * flock(), just uncomment line below.
  */
 /* #  define __USE_FLOCK */
-# else /* _REENTRANT || _THREAD_SAFE */
+# else /* _REENTRANT || _THREAD_SAFE || _POSIX_THREADS */
 #  if defined(__USE_GNU) && !defined(__USE_UNIX98)
 #   include <pthread.h>
 
@@ -55,7 +57,7 @@ pthread_mutex_t __mr = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 static int __mr_flag = 0;
 
 #   define __USE_TWO_MTX
-#  endif
+#  endif /* __USE_GNU && !__USE_UNIX98 */
 
 #  if defined(__USE_UNIX98) || defined(__FreeBSD__) || defined(__OpenBSD__)
 #   include <pthread.h>
@@ -64,19 +66,23 @@ pthread_rwlock_t __ml = PTHREAD_RWLOCK_INITIALIZER;
 
 #   define __USE_RW_MTX
 #  endif
-# endif /* _REENTRANT || _THREAD_SAFE */
-# ifndef __USE_FLOCK
 
-#if !defined(__FreeBSD__) && !defined(__OpenBSD__)
+#  if !defined(__USE_TWO_MTX) && !defined(__USE_RW_MTX)
+#   error Check configuration: you one of the locking teqnique should be in use in MT environment!
+#  endif /* !__USE_TWO_MTX && !__USE_RW_MTX */
+
+# endif /* _REENTRANT || _THREAD_SAFE */
+
+# ifndef __USE_FLOCK
+#  if !defined(__FreeBSD__) && !defined(__OpenBSD__)
 static struct flock _flw = { F_WRLCK, SEEK_SET, 0, 0, 0 };
 static struct flock _flr = { F_RDLCK, SEEK_SET, 0, 0, 0 };
 static struct flock _flu = { F_UNLCK, SEEK_SET, 0, 0, 0 };
-#else
+#  else
 static struct flock _flw = { 0, 0, 0, F_WRLCK, SEEK_SET };
 static struct flock _flr = { 0, 0, 0, F_RDLCK, SEEK_SET };
 static struct flock _flu = { 0, 0, 0, F_UNLCK, SEEK_SET };
-#endif
-
+#  endif
 # endif /* !__USE_FLOCK */
 #endif /* __unix || __unix__ */
 
