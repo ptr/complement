@@ -115,7 +115,12 @@ struct my_gramma:
 
         definition(const my_gramma& self )
           {
-            main = *( ch_p('{')[var(std::cout) << " @@@ "] );
+            main = *( ch_p(Op_Left_Brace)[var(std::cout) << " 1@@@ "]
+                      >> anychar_p
+                      >> ch_p(Op_Right_Brace)[var(std::cout) << " 2@@@ "]
+                      >> anychar_p ); 
+// |
+//                                                                         anychar_p[OutToken][var(std::cout) << " "] | ch_p(Op_Right_Brace)[var(std::cout) << " 2@@@ "]);
           }
 
         rule_t main;
