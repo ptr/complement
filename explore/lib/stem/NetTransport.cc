@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/04/16 15:33:00 ptr>
+// -*- C++ -*- Time-stamp: <99/05/19 18:59:53 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -6,6 +6,7 @@
 #include <NetTransport.h>
 #include <EventHandler.h>
 #include <EvManager.h>
+#include <crc.h>
 
 namespace EDS {
 
@@ -13,14 +14,14 @@ namespace EDS {
 using namespace std;
 #endif
 
+
+#define EDS_MAGIC 0xc2454453U
+
 __DLLEXPORT
 void dump( std::ostream& o, const EDS::Event& e )
 {
   o << setiosflags(ios_base::showbase) << hex
     << "Code: " << e.code() << " Destination: " << e.dest() << " Source: " << e.src()
-    << " SID: " << e.sid()
-    << "\nSN: " << e.seq()
-    << "\nRN: " << e.responce()
     << "\nData:\n";
 
   string mark_line( "-----------| 4 --------| 8 --------| b --------|10 --------|14 --------|\n" );
@@ -85,17 +86,17 @@ __DLLEXPORT NetTransport_base::~NetTransport_base()
 
 // passive side (server) function
 
-void NetTransport_base::event_process( Event& ev, SessionInfo& sess, const string& hostname )
+void NetTransport_base::event_process( Event& ev, const string& hostname )
 {
 //      cerr << "------------------------>>>>>>>>\n";
 //      dump( std::cerr, ev );
   __stl_assert( EventHandler::manager() != 0 );
   // if _mgr == 0, best choice is close connection...
-  sess.inc_from( sizeof(__Event_Base) + sizeof(std::string::size_type) +
-                 ev.value_size() );
-  if ( sess.un_from( ev.seq() ) != 0 ) {
-    cerr << "Event(s) lost, or miss range event" << endl;
-  }
+  // sess.inc_from( sizeof(__Event_Base) + sizeof(std::string::size_type) +
+  //               ev.value_size() );
+  // if ( sess.un_from( ev.seq() ) != 0 ) {
+  //   cerr << "Event(s) lost, or miss range event" << endl;
+  // }
   heap_type::iterator r = rar.find( ev._src );
   if ( r == rar.end() ) {
     r = rar.insert(
@@ -106,29 +107,45 @@ void NetTransport_base::event_process( Event& ev, SessionInfo& sess, const strin
   }
   ev._src = (*r).second; // substitute my local id
 
-  if ( ev.sid() != _sid ) {
-    ev.sid( _sid );
-  }
+  // if ( ev.sid() != _sid ) {
+  //   ev.sid( _sid );
+  // }
         
   EventHandler::manager()->Dispatch( ev );
 }
 
-bool NetTransport_base::pop( Event& __rs )
+bool NetTransport_base::pop( Event& __rs, SessionInfo& sess )
 {
-  unsigned buf[7];
+  unsigned buf[8];
 
   __stl_assert( net != 0 );
-  if ( !net->read( (char *)&buf, sizeof(unsigned) * 7 ).good() ) {
+  if ( !net->read( (char *)buf, sizeof(unsigned) ).good() ) {
     return false;
   }
-  __rs.code( from_net( buf[0] ) );
-  __rs.dest( from_net( buf[1] ) );
-  __rs.src( from_net( buf[2] ) );
-  __rs.sid( from_net( buf[3] ) );
-  __rs.seq( from_net( buf[4] ) );
-  __rs.responce( from_net( buf[5] ) );
 
+  if ( from_net( buf[0] ) != EDS_MAGIC ) {
+    cerr << "Magic fail" << endl;
+    net->close();
+    return false;
+  }
+
+  if ( !net->read( (char *)&buf[1], sizeof(unsigned) * 7 ).good() ) {
+    return false;
+  }
+  __rs.code( from_net( buf[1] ) );
+  __rs.dest( from_net( buf[2] ) );
+  __rs.src( from_net( buf[3] ) );
+  unsigned _x_count = from_net( buf[4] );
+  unsigned _x_time = from_net( buf[5] ); // time?
   unsigned sz = from_net( buf[6] );
+
+  adler32_type adler = adler32( (unsigned char *)buf, sizeof(unsigned) * 7 );
+  if ( adler != from_net( buf[7] ) ) {
+    cerr << "Adler-32 fail" << endl;
+    net->close();
+    return false;
+  }
+
   string& str = __rs.value();
 
   str.erase();  // str.clear(); absent in VC's STL
@@ -137,35 +154,51 @@ bool NetTransport_base::pop( Event& __rs )
     str += (char)net->get();
   }
 
-  return true;
+  sess.inc_from( 8 * sizeof(unsigned) + str.size() );
+  if ( sess._un_from != _x_count ) {
+    cerr << "Event(s) lost, or missrange event: " << sess._un_from
+         << ", " << _x_count << "(" << _sid << ") --- ";
+    cerr << endl;
+    sess._un_from = _x_count; // Retransmit?    
+  }
+
+  return net->good();
 }
 
 __DLLEXPORT
 bool NetTransport_base::push( const Event& __rs, const Event::key_type& rmkey,
-                              const Event::key_type& srckey, const Event::key_type& __sid )
+                              const Event::key_type& srckey )
 {
-//  cerr << "<<<<<<<-------------------------\n";
-//  dump( std::cerr, __rs );
-//  std::cerr << "Src key " << hex << srckey << ", remote key " << rmkey
-//            << " SID: " << _sid << "\n";
-
   __stl_assert( net != 0 );
-  unsigned buf[7];
+  unsigned buf[8];
 
-  buf[0] = to_net( __rs.code() );
-  buf[1] = to_net( /* __rs.dest() */ rmkey );
-  buf[2] = to_net( /* __rs.src() */ srckey );
-  buf[3] = to_net( /* __rs.sid() */ _sid ); // should be changed: that's another session!
+  buf[0] = to_net( EDS_MAGIC );
+  buf[1] = to_net( __rs.code() );
+  buf[2] = to_net( rmkey );
+  buf[3] = to_net( srckey );
+
+  MT_REENTRANT( _lock, _1 );
+
   buf[4] = to_net( ++_count );
-  buf[5] = to_net( __rs.responce() );
-  buf[6] = to_net( __rs.value().size() );
 
-  net->write( (const char *)buf, sizeof(unsigned) * 7 );
+  SessionInfo& sess = smgr[_sid];
+  sess.inc_to( 8 * sizeof(unsigned) + __rs.value().size() );
+
+  buf[5] = 0; // time?
+  buf[6] = to_net( __rs.value().size() );
+  buf[7] = to_net( adler32( (unsigned char *)buf, sizeof(unsigned) * 7 ) ); // crc
+
+  net->write( (const char *)buf, sizeof(unsigned) * 8 );
 
   copy( __rs.value().begin(), __rs.value().end(),
         ostream_iterator<char,char,char_traits<char> >(*net) );
 
   net->flush();
+
+  if ( sess._un_to != _count ) {
+    cerr << "Event(s) lost, or missrange event: " << sess._un_to
+         << ", " << _count << "(" << _sid << ")" << endl;
+  }
 
   return net->good();
 }
@@ -185,8 +218,8 @@ void NetTransport::connect( sockstream& s, const string& hostname, string& info 
 
   try {
 //    if ( s.rdbuf()->stype() == sock_base::sock_stream ) {
-      while ( pop( ev ) ) {
-        event_process( ev, sess, hostname );
+      while ( pop( ev, sess ) ) {
+        event_process( ev, hostname );
       }
 //    } else if ( s.rdbuf()->stype() == sock_base::sock_dgram ) {
       // indeed here need more check: data of event
@@ -238,6 +271,7 @@ NetTransport_base::key_type NetTransportMgr::open(
     r = rar.insert( 
       heap_type::value_type( 0,
                              EventHandler::manager()->SubscribeRemote( this, 0, _partner_name ) ) ).first;
+    _sid = smgr.create();
     _thr.launch( _loop, this ); // start thread here
     return (*r).second;
   }
@@ -249,11 +283,11 @@ int NetTransportMgr::_loop( void *p )
   NetTransportMgr& me = *reinterpret_cast<NetTransportMgr *>(p);
   heap_type::iterator r;
   Event ev;
-//  me._sid = EventHandler::_mgr->establish_session();
-//  SessionInfo& sess =  EventHandler::_mgr->session_info( _sid );
+
+  SessionInfo& sess = smgr[me._sid];
 
   try {
-    while ( me.pop( ev ) ) {
+    while ( me.pop( ev, sess ) ) {
       // dump( std::cerr, ev );
       __stl_assert( EventHandler::manager() != 0 );
       // if _mgr == 0, best choice is close connection...
@@ -271,9 +305,9 @@ int NetTransportMgr::_loop( void *p )
 //             << " [" << ev._src << "]\n";
       }
       ev._src = (*r).second; // substitute my local id
-      if ( me._sid == -1 ) {
-        me._sid = ev.sid();
-      }
+//      if ( me._sid == -1 ) {
+//        me._sid = ev.sid();
+//      }
 
       EventHandler::manager()->Dispatch( ev );
     }
@@ -311,8 +345,8 @@ void NetTransportMP::connect( sockstream& s, const string& hostname, string& inf
     // indeed here need more check: data of event
     // and another: message can be break, and other datagram can be
     // in the middle of message...
-    if ( pop( ev ) ) {
-      event_process( ev, sess, hostname );
+    if ( pop( ev, sess ) ) {
+      event_process( ev, hostname );
     }
   }
   catch ( ios_base::failure& e ) {
