@@ -24,6 +24,8 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/RectObject.o \
 		$(OUTPUT_DIR)/WindowBase.o \
 		$(OUTPUT_DIR)/Window.o \
+		$(OUTPUT_DIR)/Chameleon.o \
+		$(OUTPUT_DIR)/Collector.o \
 		$(OUTPUT_DIR)/Resource.o \
 		$(OUTPUT_DIR)/DrawTools.o \
 		$(OUTPUT_DIR)/TopLevel.o \
@@ -33,11 +35,13 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/CoupleButtons.o \
 		$(OUTPUT_DIR)/varstring.o \
 		$(OUTPUT_DIR)/TextLabel.o \
+		$(OUTPUT_DIR)/RubberTextLabel.o \
 		$(OUTPUT_DIR)/InputField.o \
 		$(OUTPUT_DIR)/TextCursor.o \
 		$(OUTPUT_DIR)/ScrVCollector.o \
 		$(OUTPUT_DIR)/ScrWindow.o \
 		$(OUTPUT_DIR)/ScrTable.o \
+		$(OUTPUT_DIR)/SpeedyButton.o \
 		$(OUTPUT_DIR)/PopupMenu.o \
 		$(OUTPUT_DIR)/CheckList.o \
 		$(OUTPUT_DIR)/Scroller.o \
