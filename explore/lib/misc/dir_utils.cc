@@ -1,12 +1,12 @@
-// -*- C++ -*- Time-stamp: <98/01/16 14:37:25 ptr>
+// -*- C++ -*- Time-stamp: <99/03/13 22:29:26 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
-#include "dir_utils.h"
+#include <dir_utils.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "directory.h"
+#include <directory.h>
 
 string mkunique_dir( const string& base, const string& prefix )
 {
@@ -28,9 +28,11 @@ string mkunique_dir( const string& base, const string& prefix )
 void rm_dir_all( const string& d )
 {
   struct stat buf;
+  static const string dot( "." );
+  static const string dotdot( "." );
 
   for ( dir_it current(d); current != dir_it(); ++current ) {
-    if (*current != "." && *current != ".." ) {
+    if (*current != dot && *current != dotdot ) {
       stat( (*current).c_str(), &buf );
       if ( buf.st_mode & S_IFDIR ) {
 	rm_dir_all( (*current).c_str() );

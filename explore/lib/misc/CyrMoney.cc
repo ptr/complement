@@ -1,8 +1,10 @@
-// -*- C++ -*- Time-stamp: <98/03/24 12:31:53 ptr>
+// -*- C++ -*- Time-stamp: <99/03/13 23:03:20 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
-#include "../include/CyrMoney.h"
-#include "../include/i_string.h"
+#include <CyrMoney.h>
+#include <sstream>
+
+using namespace std;
 
 string theUnits_ISO8859_5[] =
 { "", "ÞÔØÝ", "ÔÒÐ", "âàØ", "çÕâëàÕ", "ßïâì", "èÕáâì", "áÕÜì", "ÒÞáÕÜì",
@@ -92,6 +94,14 @@ string cents_CP1251[] = { " êîïåéêà", " êîïåéêè", " êîïååê" };
 
 string *cents[] = { cents_ISO8859_5, cents_CP1251 };
 
+string months_CP1251[] = { "ÿíâàðÿ", "ôåâðàëÿ", "ìàðòà", "àïðåëÿ",
+"ìàÿ", "èþíÿ", "èþëÿ", "àâãóñòà", "ñåíòÿáðÿ", "îêòÿáðÿ", "íîÿáðÿ", "äåêàáðÿ" };
+
+string months_ISO8859_5[] = { "ïÝÒÐàï", "äÕÒàÐÛï", "ÜÐàâÐ", "ÐßàÕÛï",
+"ÜÐï", "ØîÝï", "ØîÛï", "ÐÒÓãáâÐ", "áÕÝâïÑàï", "ÞÚâïÑàï", "ÝÞïÑàï", "ÔÕÚÐÑàï" };
+
+string *monthes[] = { months_ISO8859_5, months_CP1251 };
+
 string cyr_money_converter::x1000( int u, string s0, string s1, string s2,
 				   encoding enc, bool alt )
 {
@@ -140,7 +150,7 @@ string cyr_money_converter::x100( int x, encoding enc, bool alt )
   return res;
 }
 
-string cyr_money_converter::conv( int n, encoding enc )
+string cyr_money_converter::conv( int n, cyr_money_converter::encoding enc )
 {
   int units     = n % 1000; n /= 1000;
   int thousands = n % 1000; n /= 1000;
@@ -164,15 +174,18 @@ string cyr_money_converter::conv( int n, encoding enc )
   return res;
 }
 
-string cyr_money_converter::conv( const string& n, encoding enc )
+string cyr_money_converter::conv( const string& n, cyr_money_converter::encoding enc )
 {
   string nn( n );
+  stringstream ss;
   string::size_type point = nn.find( '.' );
   string s_cents;
   if ( point != string::npos ) {
     s_cents = nn.substr( point + 1 );
     nn.erase( point );
-    int u = string_to_i( s_cents );
+    ss.str( s_cents );
+    int u;
+    ss >> u;
     if ( u % 10 == 1 && (u % 100) / 10 != 1 ) {
       s_cents += cents[enc][0];
     } else if ( u % 10 < 5 && (u % 100) / 10 != 1 && u % 10 > 0 ) {
@@ -189,27 +202,35 @@ string cyr_money_converter::conv( const string& n, encoding enc )
   int thousands = 0;
   int millions = 0;
   int billions = 0;
+
   if ( sz > 3 ) {
     sz -= 3;
-    units = string_to_i( nn.substr( sz ) );
+    ss.str( nn.substr( sz ) );
+    ss >> units;
     nn.erase( sz );
     if ( sz > 3 ) {
       sz -= 3;
-      thousands = string_to_i( nn.substr( sz ) );
+      ss.str( nn.substr( sz ) );
+      ss >> thousands;
       nn.erase( sz );
       if ( sz > 3 ) {
 	sz -= 3;
-	millions = string_to_i( nn.substr( sz ) );
+	ss.str( nn.substr( sz ) );
+	ss >> millions;
 	nn.erase( sz );
-	billions = string_to_i( nn );
+	ss.str( nn );
+	ss >> billions;
       } else {
-	millions = string_to_i( nn );
+	ss.str( nn );
+	ss >> millions;
       }
     } else {
-      thousands = string_to_i( nn );
+      ss.str( nn );
+      ss >> thousands;
     }
   } else {
-    units = string_to_i( nn );
+    ss.str( nn );
+    ss >> units;
   }
 
   string res;
@@ -231,3 +252,4 @@ string cyr_money_converter::conv( const string& n, encoding enc )
   res[fp] = res[fp] - char(0x20); // first letter to caps...
   return res;
 }
+

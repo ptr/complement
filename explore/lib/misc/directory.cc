@@ -18,7 +18,7 @@
 
 //------------------------------------------------------------------------------
 
-#include "directory.h"
+#include <directory.h>
 
 #include <dirent.h>
 #include <unistd.h>
