@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/24 12:00:21 ptr>
+// -*- C++ -*- Time-stamp: <99/05/24 19:45:13 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -54,6 +54,8 @@ sockmgr_client *sockmgr_stream<Connect>::accept_tcp()
   if ( i == _M_c.end() ) {
     cl = new sockmgr_client();
     _M_c.push_back( cl );
+  } else {
+    cl = *i;
   }
   
   cl->s.open( _sd, addr.any );
@@ -129,6 +131,8 @@ sockmgr_client *sockmgr_stream<Connect>::accept_udp()
       if ( i == _M_c.end() ) {
         cl = new sockmgr_client();
         _M_c.push_back( cl );
+      } else {
+        cl = *i;
       }
 #ifdef __unix
       cl->s.open( dup( fd() ), addr.any, sock_base::sock_dgram );
