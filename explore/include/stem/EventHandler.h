@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/29 14:31:20 ptr>
+// -*- C++ -*- Time-stamp: <99/04/07 13:50:32 ptr>
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
@@ -565,7 +565,7 @@ class EventHandler
 
     const string& who_is( const Event::key_type& k ) const;
     unsigned sid( const Event::key_type& k ) const;
-    EvManager *manager()
+    static EvManager *manager()
       { return _mgr; }
     void Send( const Event& e );
     void Send( const EventVoid& e );
