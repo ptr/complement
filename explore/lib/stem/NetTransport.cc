@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/26 14:35:38 ptr>
+// -*- C++ -*- Time-stamp: <99/03/29 14:22:34 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -168,6 +168,10 @@ void NetTransport::connect( sockstream& s, const string& hostname, string& info 
 //             << " [" << ev._src << "]\n";
       }
       ev._src = (*r).second; // substitute my local id
+
+      if ( ev.sid() != _sid ) {
+        ev.sid( _sid );
+      }
 
       EventHandler::_mgr->Dispatch( ev );
     }
