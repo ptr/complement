@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/04 18:55:44 ptr>
+// -*- C++ -*- Time-stamp: <99/02/04 20:02:55 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -200,7 +200,6 @@ int sockmgr_stream<Connect>::loop( void *p )
       s->hostname += inet_ntoa( in );
       s->hostname += "]";
     
-      cerr << s->hostname << endl;
       pass.client = s;
 
       s->thrID.launch( connection, &pass, sizeof(pass) );
@@ -251,7 +250,8 @@ int sockmgr_stream<Connect>::connection( void *p )
   try {
     Connect _proc;
 
-    _proc.connect( client->s ); // The user connect function: application processing
+    // The user connect function: application processing
+    _proc.connect( client->s, client->hostname, client->info );
   }
   catch ( ios_base::failure& ) {
     
@@ -260,7 +260,6 @@ int sockmgr_stream<Connect>::connection( void *p )
     ret_code = -1;
   }
 
-  // may be set call of pos-mortem function here?
   me->erase( &client->s );
 
   return ret_code;
