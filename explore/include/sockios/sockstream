@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/06 18:54:39 ptr>
+// -*- C++ -*- Time-stamp: <00/10/09 10:38:18 ptr>
 
 /*
  *
@@ -63,9 +63,9 @@
 #  include <arpa/inet.h>
 #  include <netdb.h>
 #  ifdef __hpux
-#    ifndef socklen_t // HP-UX 10.01
-typedef int socklen_t;
-#    endif
+// #    ifndef socklen_t // HP-UX 10.01
+// typedef int socklen_t;
+// #    endif
 #  endif
 #  include <cerrno>
 #endif // !WIN32
