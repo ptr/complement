@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/11/05 17:15:38 ptr>
+// -*- C++ -*- Time-stamp: <99/12/21 20:41:16 ptr>
 
 /*
  *
@@ -29,6 +29,7 @@
 
 #include <string>
 #include <map>
+#include <queue>
 
 #ifndef __Event_h
 #include <EDS/Event.h>
@@ -105,8 +106,10 @@ class EvManager
   public:
     typedef std::map<key_type,__Object_Entry,std::less<key_type>,
                               __STL_DEFAULT_ALLOCATOR(__Object_Entry) > heap_type;
+    typedef std::queue< Event > queue_type;
 
     __EDS_DLL EvManager();
+    __EDS_DLL ~EvManager();
 
     __EDS_DLL addr_type Subscribe( EventHandler *object, const std::string& info );
     __EDS_DLL addr_type Subscribe( EventHandler *object, const char *info = 0 );
@@ -140,31 +143,43 @@ class EvManager
     __EDS_DLL key_type sid( addr_type object_id ) const;
     __EDS_DLL NetTransport_base *transport( addr_type object_id ) const;
 
-    void Send( const Event& e );
-
-  private:
-    addr_type create_unique();
-    addr_type create_unique_x();
+    void push( const Event& e )
+      {
+        MT_REENTRANT( _lock_queue, _1 );
+        in_ev_queue.push( e );
+        if ( out_ev_queue.size() == 0 ) {
+          _ev_queue_thr.resume();
+        }
+      }
 
     void Remove( NetTransport_base * );
+
+  private:
+    void Send( const Event& e );
+
+    addr_type create_unique();
+    addr_type create_unique_x();
 
     const addr_type _low;
     const addr_type _high;
     addr_type _id;
     heap_type heap;
+    queue_type in_ev_queue;
+    queue_type out_ev_queue;
 
     const addr_type _x_low;
     const addr_type _x_high;
     addr_type _x_id;
 
+    static int _Dispatch( void * );
+
+    __impl::Thread _ev_queue_thr;
+    __impl::Condition _ev_queue_cond;
+
     __impl::Mutex _lock_heap;
+    __impl::Mutex _lock_queue;
 
     static std::string inv_key_str;
-
-    friend class NetTransport_base;
-    friend class NetTransport;
-    friend class NetTransportMgr;
-    friend class NetTransportMP;
 
     friend class Names;
 };
