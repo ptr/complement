@@ -138,12 +138,6 @@ class OXWEventT
     static Allocator data_allocator;
 };
 
-template <class S, class D >
-OXWEventT<S,D>::Allocator OXWEventT<S,D>::data_allocator;
-
-template <class S, class D >
-D OXWEventT<S,D>::error_data;
-
 // ********************************************* OXWEventT<OXWEventsCore,void>
 
 class OXWEventT<OXWEventsCore,void>
@@ -252,5 +246,9 @@ class OXWEventT<OXWEventsCore,XEvent>
     XEvent *DataObject;
     size_t sz;
 };
+
+#ifndef __TEMPLATE_DB__
+#include "Event.cc"
+#endif
 
 #endif
