@@ -1,13 +1,12 @@
-// -*- C++ -*- Time-stamp: <00/05/19 17:45:48 ptr>
+// -*- C++ -*- Time-stamp: <00/05/26 10:47:47 ptr>
 
 /*
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
  *
  * Copyright (c) 1995-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999-2000
- * ParallelGraphics
- 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -65,6 +64,12 @@ __PG_DECLSPEC
 const string& EventHandler::who_is( addr_type k ) const
 {
   return _mgr->who_is( k );
+}
+
+__PG_DECLSPEC
+bool EventHandler::is_avail( addr_type id ) const
+{
+  return _mgr->is_avail( id );
 }
 
 __PG_DECLSPEC

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/03/20 15:32:01 ptr>
+// -*- C++ -*- Time-stamp: <00/05/29 19:44:49 ptr>
 
 /*
  *
@@ -286,6 +286,7 @@ void EvManager::Send( const Event& e )
     } else {
 //      _XMB( "MT_UNLOCK" )
       MT_UNLOCK( _lock_heap );
+#if 0
       try {
         __STD::cerr << "===== EDS: "
                     << __STD::hex 
@@ -296,6 +297,7 @@ void EvManager::Send( const Event& e )
       }
       catch ( ... ) {
       }
+#endif
     }
   }
   catch ( ... ) {

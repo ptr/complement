@@ -1,9 +1,9 @@
-// -*- C++ -*- Time-stamp: <00/05/23 21:17:10 ptr>
+// -*- C++ -*- Time-stamp: <00/05/26 10:53:36 ptr>
 
 /*
  *
- * Copyright (c) 1999
- * ParallelGraphics Software Systems
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
  * 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -15,7 +15,7 @@
  * in supporting documentation.
  */
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4804 )
@@ -178,9 +178,17 @@ int Cron::_loop( void *p )
       en = me._M_c.top();
       me._M_c.pop();
 
-      Event ev( en.code );
-      ev.dest( en.addr );
-      me.Send( ev );
+      // check if abonent exist
+      if ( me.is_avail( en.addr ) ) {
+        Event ev( en.code );
+        ev.dest( en.addr );
+        me.Send( ev );
+      } else { // remove invalid abonent from Cron
+        if ( me._M_c.empty() ) {
+          me.PopState();
+        }
+        continue;
+      }
 
 #ifndef __STL_LONG_LONG     
       double _next = en.start.tv_sec + en.start.tv_nsec * 1.0e-9 +
