@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/02 21:50:39 ptr>
+// -*- C++ -*- Time-stamp: <99/09/14 20:51:04 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -441,7 +441,7 @@ int basic_sockbuf<charT, traits>::__rdsync()
 template<class charT, class traits>
 int basic_sockbuf<charT, traits>::recvfrom( void *buf, size_t n )
 {
-  int sz = sizeof( sockaddr_in );
+  size_t sz = sizeof( sockaddr_in );
 
   union {
       sockaddr_in inet;
