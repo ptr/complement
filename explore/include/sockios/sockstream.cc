@@ -1,9 +1,13 @@
-// -*- C++ -*- Time-stamp: <00/02/29 16:56:00 ptr>
+// -*- C++ -*- Time-stamp: <00/05/10 16:34:21 ptr>
 
 #ident "$SunId$ %Q%"
 
 #ifdef __unix
 extern "C" int nanosleep(const struct timespec *, struct timespec *);
+#endif
+
+#ifdef __Linux
+#include <sys/poll.h> // polldf
 #endif
 
 #ifdef __SGI_STL_OWN_IOSTREAMS
@@ -547,8 +551,16 @@ void basic_sockbuf<charT, traits, _Alloc>::__hostname()
     _hostname = "unknown";
   }
 #else
-  if ( gethostbyaddr_r( (char *)&in.s_addr, sizeof(in_addr), AF_INET,
-                        &he, tmp_buff, 1024, &err ) != 0 ) {
+  if (
+#ifndef __Linux
+       gethostbyaddr_r( (char *)&in.s_addr, sizeof(in_addr), AF_INET,
+                        &he, tmp_buff, 1024, &err ) != 0
+#else
+       gethostbyaddr_r( (char *)&in.s_addr, sizeof(in_addr), AF_INET,
+                        &he, tmp_buff, 1024, 0, &err ) != 0
+#endif
+     )
+  {
     _hostname = he.h_name;
   } else {
     _hostname = "unknown";
@@ -566,7 +578,12 @@ void basic_sockbuf<charT, traits, _Alloc>::findhost( const char *hostname )
 #ifndef WIN32
   hostent _host;
   char tmpbuf[1024];
+#ifdef __Linux
+  hostent *host = 0;
+  gethostbyname_r( hostname, &_host, tmpbuf, 1024, &host,  &_errno );
+#else
   hostent *host = gethostbyname_r( hostname, &_host, tmpbuf, 1024, &_errno );
+#endif
   if ( host != 0 ) {
     memcpy( (char *)&_address.inet.sin_addr,
             (char *)host->h_addr, host->h_length );

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/24 19:43:57 ptr>
+// -*- C++ -*- Time-stamp: <00/05/10 16:28:19 ptr>
 
 /*
  *
@@ -35,7 +35,9 @@
 #    define _LITTLE_ENDIAN
 #  endif
 #else // !WIN32
-#  include <sys/isa_defs.h>
+#  ifndef __Linux
+#    include <sys/isa_defs.h>
+#  endif
 #endif // WIN32
 
 #ifdef _LITTLE_ENDIAN
