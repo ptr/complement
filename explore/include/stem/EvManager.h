@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/03 17:26:59 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 16:43:08 ptr>
 
 /*
  *
@@ -87,7 +87,7 @@ struct __Object_Entry
       { remote = new __Remote_Object_Entry( key, channel ); }
         
     EventHandler *ref;  // system dependent? for Win may be WND HANDLER?    
-    std::string info; // even IDL interface...
+    __STD::string info; // even IDL interface...
     __Remote_Object_Entry *remote;
  // string location; // if ref invalid;
  // int refcount;    // references on object
@@ -104,23 +104,23 @@ namespace EDS {
 class EvManager
 {
   public:
-//    typedef std::map<key_type,__Object_Entry,std::less<key_type>,
+//    typedef __STD::map<key_type,__Object_Entry,__STD::less<key_type>,
 //                              __STL_DEFAULT_ALLOCATOR(__Object_Entry) > heap_ty
-    typedef std::map<key_type,__Object_Entry> heap_type;
-    typedef std::queue< Event > queue_type;
+    typedef __STD::map<key_type,__Object_Entry> heap_type;
+    typedef __STD::queue< Event > queue_type;
 
     __EDS_DLL EvManager();
     __EDS_DLL ~EvManager();
 
-    __EDS_DLL addr_type Subscribe( EventHandler *object, const std::string& info );
+    __EDS_DLL addr_type Subscribe( EventHandler *object, const __STD::string& info );
     __EDS_DLL addr_type Subscribe( EventHandler *object, const char *info = 0 );
     __EDS_DLL addr_type SubscribeID( addr_type id, EventHandler *object,
-                                    const std::string& info );
+                                    const __STD::string& info );
     __EDS_DLL addr_type SubscribeID( addr_type id, EventHandler *object,
                                     const char *info = 0 );
     __EDS_DLL addr_type SubscribeRemote( NetTransport_base *channel,
                                          addr_type rmkey,
-                                         const std::string& info );
+                                         const __STD::string& info );
     __EDS_DLL addr_type SubscribeRemote( NetTransport_base *channel,
                                          addr_type rmkey,
                                          const char *info = 0 );
@@ -180,7 +180,7 @@ class EvManager
     __impl::Mutex _lock_heap;
     __impl::Mutex _lock_queue;
 
-    static std::string inv_key_str;
+    static __STD::string inv_key_str;
 
     friend class Names;
 };

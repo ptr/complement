@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/12/22 14:53:49 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 16:49:10 ptr>
 
 /*
  *
@@ -53,28 +53,28 @@
 namespace EDS {
 
 __EDS_DLL
-void SessionRsp::pack( std::ostream& s ) const
+void SessionRsp::pack( __STD::ostream& s ) const
 {
   __pack( s, key );
   __pack( s, addr );
 }
 
 __EDS_DLL
-void SessionRsp::net_pack( std::ostream& s ) const
+void SessionRsp::net_pack( __STD::ostream& s ) const
 {
   __net_pack( s, key );
   __net_pack( s, addr );
 }
 
 __EDS_DLL
-void SessionRsp::unpack( std::istream& s )
+void SessionRsp::unpack( __STD::istream& s )
 {
   __unpack( s, key );
   __unpack( s, addr );
 }
 
 __EDS_DLL
-void SessionRsp::net_unpack( std::istream& s )
+void SessionRsp::net_unpack( __STD::istream& s )
 {
   __net_unpack( s, key );
   __net_unpack( s, addr );

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 10:31:37 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 15:40:49 ptr>
 
 /*
  *
@@ -26,7 +26,7 @@
 
 #include <string>
 
-using std::string;
+using __STD::string;
 
 class cyr_money_converter
 {

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/14 20:09:45 ptr>
+// -*- C++ -*- Time-stamp: <00/02/22 10:39:49 ptr>
 
 /*
  *
@@ -38,7 +38,8 @@
 #define __USE_SGI_STL_PORT  0x400
 
 #if defined( __STL_DEBUG ) && (__USE_SGI_STL_PORT >= 0x400)
-#  define __STD __stl_native_std
+// #  define __STD __stl_native_std
+#  define __STD __STLPORT_STD // __std_alias
 #else
 #  define __STD std
 #endif

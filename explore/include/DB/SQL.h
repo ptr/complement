@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/12/01 19:50:47 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 16:52:21 ptr>
 
 #ifndef __SQL_h
 #define __SQL_h
@@ -50,14 +50,14 @@ class Table
       _NONNILL
     };
 
-    typedef std::pair<std::string,_data_type> entry_type;
+    typedef __STD::pair<__STD::string,_data_type> entry_type;
 
   public:
     Table( const char *n, DataBase *_db ) :
         _name( n ),
         db( _db )
       { }
-    Table( const std::string& n, DataBase *_db ) :
+    Table( const __STD::string& n, DataBase *_db ) :
         _name( n ),
         db( _db )
       { }
@@ -80,7 +80,7 @@ class Table
 
     Table& operator <<( int x )
       {
-        std::ostringstream s;
+        __STD::ostringstream s;
         s << x;
         header[_count].second = _NONNILL;
         row[_count++] = s.str();
@@ -89,7 +89,7 @@ class Table
 
     Table& operator <<( unsigned x )
       {
-        std::ostringstream s;
+        __STD::ostringstream s;
         s << x;
         header[_count].second = _NONNILL;
         row[_count++] = s.str();
@@ -98,7 +98,7 @@ class Table
 
     Table& operator <<( long x )
       {
-        std::ostringstream s;
+        __STD::ostringstream s;
         s << x;
         header[_count].second = _NONNILL;
         row[_count++] = s.str();
@@ -107,7 +107,7 @@ class Table
 
     Table& operator <<( unsigned long x )
       {
-        std::ostringstream s;
+        __STD::ostringstream s;
         s << x;
         header[_count].second = _NONNILL;
         row[_count++] = s.str();
@@ -119,7 +119,7 @@ class Table
         header[_count].second = _NONNILL;
         row[_count] = "'";
         row[_count] += x;
-        std::string::size_type p = row[_count].rfind( '\'' );
+        __STD::string::size_type p = row[_count].rfind( '\'' );
         
         while ( p != 0 ) {
           row[_count].insert( p, 1, '\\' );
@@ -129,12 +129,12 @@ class Table
         return *this;
       }
 
-     Table& operator <<( const std::string& x )
+     Table& operator <<( const __STD::string& x )
       {
         header[_count].second = _NONNILL;
         row[_count] = "'";
         row[_count] += x;
-        std::string::size_type p = row[_count].rfind( '\'' );
+        __STD::string::size_type p = row[_count].rfind( '\'' );
         
         while ( p != 0 ) {
           row[_count].insert( p, 1, '\\' );
@@ -145,22 +145,22 @@ class Table
       }
 
     void done();
-    const std::string& name()
+    const __STD::string& name()
       { return _name; }
 
     // protected:
 
     void field( const char *fn )
       {
-        std::string s;
+        __STD::string s;
         header.push_back( entry_type(fn,_NILL) );
         row.push_back( s );
       }
 
   protected:
-    std::string _name;
-    std::vector<entry_type>  header;
-    std::vector<std::string> row;
+    __STD::string _name;
+    __STD::vector<entry_type>  header;
+    __STD::vector<__STD::string> row;
     int _count;
     DataBase *db;
 
@@ -192,11 +192,11 @@ class DataBase
       { return (_flags & failbit) != 0; }
     void clear()
       { _flags = goodbit; }
-    void exec( const std::string& );
+    void exec( const __STD::string& );
 
     void exec();
 
-    void state( const std::string& s )
+    void state( const __STD::string& s )
       {
         if ( sentence.length() != 0 ) {
           sentence += "; ";
@@ -212,13 +212,13 @@ class DataBase
     Table& define_table( const char * );
 
   private:
-    // std::string _exec_str;
+    // __STD::string _exec_str;
     DBconn *_conn;
     unsigned _flags;
-    typedef std::vector<Table*> tbl_container_type;
+    typedef __STD::vector<Table*> tbl_container_type;
     tbl_container_type tables;
 
-    std::string sentence;
+    __STD::string sentence;
 
     friend class Transaction;
     friend class Cursor;
@@ -230,12 +230,12 @@ class Transaction
     Transaction( DataBase& );
     ~Transaction();
 
-    void exec( const std::string& s )
+    void exec( const __STD::string& s )
       { _exec_str = s; }
 
   private:
     DataBase& _db;
-    std::string _exec_str;
+    __STD::string _exec_str;
     friend class Cursor;
 };
 
@@ -247,24 +247,24 @@ class Cursor
 
 
     void fetch_all();
-    const std::string& value( int, const std::string& );
-    std::vector<std::vector<std::string> >::size_type size() const
+    const __STD::string& value( int, const __STD::string& );
+    __STD::vector<__STD::vector<__STD::string> >::size_type size() const
       { return data.size(); }
 
   private:
-    std::string name;
+    __STD::string name;
     Transaction& tr;
-    std::vector<std::string> fields;
-    std::vector<std::vector<std::string> > data;
+    __STD::vector<__STD::string> fields;
+    __STD::vector<__STD::vector<__STD::string> > data;
 };
 
 #if 0
 class cursor_iterator :
-    public std::iterator<std::input_iterator_tag,std::string,
-                         std::ptrdiff_t,std::string*,std::string&>
+    public __STD::iterator<__STD::input_iterator_tag,__STD::string,
+                         __STD::ptrdiff_t,__STD::string*,__STD::string&>
 {
   public:
-    typedef std::vector<<std::string>      vector_type;
+    typedef __STD::vector<<__STD::string>      vector_type;
     typedef Cursor                         cursor_type;
     typedef int                            int_type;
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/15 13:34:42 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 17:16:37 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -10,7 +10,7 @@ extern "C" int nanosleep(const struct timespec *, struct timespec *);
 
 using __impl::Thread;
 
-namespace std {
+__STL_BEGIN_NAMESPACE
 
 template <class Connect>
 void sockmgr_stream<Connect>::open( int port, sock_base::stype t )
@@ -183,8 +183,8 @@ int sockmgr_stream<Connect>::loop( void *p )
 
   pass.me = me;
 
-  __STD::set_unexpected( __STD::unexpected );
-  __STD::set_terminate( __STD::terminate );
+  std::set_unexpected( std::unexpected );
+  std::set_terminate( std::terminate );
 
   try {
     while ( (s = me->accept()) != 0 ) {
@@ -495,4 +495,4 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
   return 0;
 }
 
-} // namespace std
+__STL_END_NAMESPACE

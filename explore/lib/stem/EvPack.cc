@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 10:45:16 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 16:46:56 ptr>
 
 /*
  *
@@ -36,10 +36,10 @@
 
 namespace EDS {
 
-using std::string;
-using std::istream;
-using std::ostream;
-using std::copy;
+using __STD::string;
+using __STD::istream;
+using __STD::ostream;
+using __STD::copy;
 
 __EDS_DLL
 void __pack_base::__net_unpack( istream& s, string& str )
@@ -62,7 +62,7 @@ void __pack_base::__net_pack( ostream& s, const string& str )
   string::size_type sz = str.size();
   sz = to_net( sz );
   s.write( (const char *)&sz, 4 );
-  copy( str.begin(), str.end(), std::ostream_iterator<char,char,std::char_traits<char> >(s) );
+  copy( str.begin(), str.end(), __STD::ostream_iterator<char,char,__STD::char_traits<char> >(s) );
 }
 
 __EDS_DLL
@@ -84,7 +84,7 @@ void __pack_base::__pack( ostream& s, const string& str )
 {
   string::size_type sz = str.size();
   s.write( (const char *)&sz, 4 );
-  copy( str.begin(), str.end(), std::ostream_iterator<char,char,std::char_traits<char> >(s) );
+  copy( str.begin(), str.end(), __STD::ostream_iterator<char,char,__STD::char_traits<char> >(s) );
 }
 
 } // namespace EDS

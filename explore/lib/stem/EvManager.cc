@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/16 15:07:30 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 16:47:40 ptr>
 
 /*
  *
@@ -62,7 +62,7 @@ const           addr_type endlocaddr = 0x3fffffff;
 const           addr_type begextaddr = extbit;
 const           addr_type endextaddr = 0xbfffffff;
 
-std::string EvManager::inv_key_str( "invalid key" );
+__STD::string EvManager::inv_key_str( "invalid key" );
 
 __EDS_DLL EvManager::EvManager() :
     _low( beglocaddr ),
@@ -110,7 +110,7 @@ int EvManager::_Dispatch( void *p )
 }
 
 __EDS_DLL
-addr_type EvManager::Subscribe( EventHandler *object, const std::string& info )
+addr_type EvManager::Subscribe( EventHandler *object, const __STD::string& info )
 {
   MT_REENTRANT( _lock_heap, _1 );
   addr_type id = create_unique();
@@ -137,7 +137,7 @@ addr_type EvManager::Subscribe( EventHandler *object, const char *info )
 
 __EDS_DLL
 addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
-                                  const std::string& info )
+                                  const __STD::string& info )
 {
   MT_REENTRANT( _lock_heap, _1 );
   if ( (id & extbit) || is_avail( id ) ) {
@@ -170,7 +170,7 @@ addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
 __EDS_DLL
 addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
                                       addr_type rmkey,
-                                      const std::string& info )
+                                      const __STD::string& info )
 {
   MT_REENTRANT( _lock_heap, _1 );
   addr_type id = create_unique_x();
@@ -262,11 +262,11 @@ void EvManager::Send( const Event& e )
     if ( i != heap.end() ) {
       if ( (*i).second.ref != 0 ) { // local delivery
         EventHandler *object = (*i).second.ref;
-//       std::cerr << "Local\n";
+//       __STD::cerr << "Local\n";
         MT_UNLOCK( _lock_heap );
         object->Dispatch( e );
       } else { // remote delivery
-//       std::cerr << "Remote\n";
+//       __STD::cerr << "Remote\n";
         __Remote_Object_Entry *remote = (*i).second.remote;
         __stl_assert( remote != 0 );
         addr_type save_dest = e.dest();
@@ -277,11 +277,11 @@ void EvManager::Send( const Event& e )
       }
     } else {
       MT_UNLOCK( _lock_heap );
-      std::cerr << "===== EDS: "
-                << std::hex << std::setiosflags(std::ios_base::showbase)
+      __STD::cerr << "===== EDS: "
+                << __STD::hex << __STD::setiosflags(__STD::ios_base::showbase)
                 << e.dest()
                 << " not found, source: " << e.src()
-                << ", code " << e.code() << std::dec << endl;
+                << ", code " << e.code() << __STD::dec << endl;
     }
   }
   catch ( ... ) {

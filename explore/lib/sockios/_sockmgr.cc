@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 10:27:54 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 15:39:32 ptr>
 
 /*
  *
@@ -38,7 +38,7 @@
 #include <cerrno>
 #include <sockios/sockmgr.h>
 
-namespace std {
+__STL_BEGIN_NAMESPACE
 
 __SOCKIOS_DLL
 void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol prot )
@@ -133,4 +133,4 @@ void basic_sockmgr::close()
 }
 
 
-} // namespace std
+__STL_END_NAMESPACE

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/17 12:45:30 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 16:46:03 ptr>
 
 /*
  *
@@ -76,7 +76,7 @@ using namespace std;
 
 
 __EDS_DLL
-void dump( std::ostream& o, const EDS::Event& e )
+void dump( __STD::ostream& o, const EDS::Event& e )
 {
   MT_IO_REENTRANT( o )
   o << setiosflags(ios_base::showbase) << hex
@@ -329,7 +329,7 @@ NetTransportMgr::~NetTransportMgr()
 
 __EDS_DLL
 addr_type NetTransportMgr::open( const char *hostname, int port,
-                                 std::sock_base::stype stype )
+                                 __STD::sock_base::stype stype )
 {
   if ( net == 0 ) {
     net = new sockstream( hostname, port, stype );

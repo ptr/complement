@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 09:50:35 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 16:35:59 ptr>
 
 /*
  *
@@ -62,7 +62,7 @@ class __byte_swapper
 {
   public:
     static void __byte_swap( char *i )
-      { std::swap( *i, *(i+S-1) );  __byte_swapper<S-2>::__byte_swap( i + 1 ); }
+      { __STD::swap( *i, *(i+S-1) );  __byte_swapper<S-2>::__byte_swap( i + 1 ); }
 };
 
 template <>
@@ -231,104 +231,104 @@ unsigned long from_net( const unsigned long& x )
 struct __pack_base
 {
     // To be released for data structure you want pass via EDS:
-    __EDS_DLL virtual void pack( std::ostream& ) const = 0 ;
-    __EDS_DLL virtual void unpack( std::istream& ) = 0 ;
-    __EDS_DLL virtual void net_pack( std::ostream& ) const = 0 ;
-    __EDS_DLL virtual void net_unpack( std::istream& ) = 0 ;
+    __EDS_DLL virtual void pack( __STD::ostream& ) const = 0 ;
+    __EDS_DLL virtual void unpack( __STD::istream& ) = 0 ;
+    __EDS_DLL virtual void net_pack( __STD::ostream& ) const = 0 ;
+    __EDS_DLL virtual void net_unpack( __STD::istream& ) = 0 ;
 
     // basic types
 
     // string
-    static __EDS_DLL void __net_unpack( std::istream& s, std::string& str );
-    static __EDS_DLL void __net_pack( std::ostream& s, const std::string& str );
-    static __EDS_DLL void __unpack( std::istream& s, std::string& str );
-    static __EDS_DLL void __pack( std::ostream& s, const std::string& str );
+    static __EDS_DLL void __net_unpack( __STD::istream& s, __STD::string& str );
+    static __EDS_DLL void __net_pack( __STD::ostream& s, const __STD::string& str );
+    static __EDS_DLL void __unpack( __STD::istream& s, __STD::string& str );
+    static __EDS_DLL void __pack( __STD::ostream& s, const __STD::string& str );
     // int
-    static void __net_unpack( std::istream& s, int& x )
+    static void __net_unpack( __STD::istream& s, int& x )
       {
         s.read( (char *)&x, sizeof(int) );
         x = EDS::from_net( x );
       }
-    static void __net_pack( std::ostream& s, int x )
+    static void __net_pack( __STD::ostream& s, int x )
       {
         x = EDS::to_net( x );
         s.write( (const char *)&x, 4 );
       }
-    static void __unpack( std::istream& s, int& x )
+    static void __unpack( __STD::istream& s, int& x )
       { s.read( (char *)&x, sizeof(int) ); }
-    static void __pack( std::ostream& s, int x )
+    static void __pack( __STD::ostream& s, int x )
       { s.write( (const char *)&x, 4 ); }
     // unsigned
-    static void __net_unpack( std::istream& s, unsigned& x )
+    static void __net_unpack( __STD::istream& s, unsigned& x )
       {
         s.read( (char *)&x, sizeof(unsigned) );
         x = EDS::from_net( x );
       }
-    static void __net_pack( std::ostream& s, unsigned x )
+    static void __net_pack( __STD::ostream& s, unsigned x )
       {
         x = EDS::to_net( x );
         s.write( (const char *)&x, sizeof(unsigned) );
       }
-    static void __unpack( std::istream& s, unsigned& x )
+    static void __unpack( __STD::istream& s, unsigned& x )
       { s.read( (char *)&x, sizeof(unsigned) ); }
-    static void __pack( std::ostream& s, unsigned x )
+    static void __pack( __STD::ostream& s, unsigned x )
       { s.write( (const char *)&x, sizeof(unsigned) ); }
     // long
-    static void __net_unpack( std::istream& s, long& x )
+    static void __net_unpack( __STD::istream& s, long& x )
       {
         s.read( (char *)&x, sizeof(long) );
         x = EDS::from_net( x );
       }
-    static void __net_pack( std::ostream& s, long x )
+    static void __net_pack( __STD::ostream& s, long x )
       {
         x = EDS::to_net( x );
         s.write( (const char *)&x, sizeof(long) );
       }
-    static void __unpack( std::istream& s, long& x )
+    static void __unpack( __STD::istream& s, long& x )
       { s.read( (char *)&x, sizeof(long) ); }
-    static void __pack( std::ostream& s, long x )
+    static void __pack( __STD::ostream& s, long x )
       { s.write( (const char *)&x, sizeof(long) ); }
     // unsigned long
-    static void __net_unpack( std::istream& s, unsigned long& x )
+    static void __net_unpack( __STD::istream& s, unsigned long& x )
       {
         s.read( (char *)&x, sizeof(unsigned long) );
         x = EDS::from_net( x );
       }
-    static void __net_pack( std::ostream& s, unsigned long x )
+    static void __net_pack( __STD::ostream& s, unsigned long x )
       {
         x = EDS::to_net( x );
         s.write( (const char *)&x, sizeof(unsigned long) );
       }
-    static void __unpack( std::istream& s, unsigned long& x )
+    static void __unpack( __STD::istream& s, unsigned long& x )
       { s.read( (char *)&x, sizeof(unsigned long) ); }
-    static void __pack( std::ostream& s, unsigned long x )
+    static void __pack( __STD::ostream& s, unsigned long x )
       { s.write( (const char *)&x, sizeof(unsigned long) ); }
     // char
-    static void __net_unpack( std::istream& s, char& x )
+    static void __net_unpack( __STD::istream& s, char& x )
       { s.read( (char *)&x, sizeof(char) ); }
-    static void __net_pack( std::ostream& s, char x )
+    static void __net_pack( __STD::ostream& s, char x )
       { s.write( (const char *)&x, 1 ); }
-    static void __unpack( std::istream& s, char& x )
+    static void __unpack( __STD::istream& s, char& x )
       { s.read( (char *)&x, sizeof(char) ); }
-    static void __pack( std::ostream& s, char x )
+    static void __pack( __STD::ostream& s, char x )
       { s.write( (const char *)&x, 1 ); }
     // signed char
-    static void __net_unpack( std::istream& s, signed char& x )
+    static void __net_unpack( __STD::istream& s, signed char& x )
       { s.read( (char *)&x, sizeof(signed char) ); }
-    static void __net_pack( std::ostream& s, signed char x )
+    static void __net_pack( __STD::ostream& s, signed char x )
       { s.write( (const char *)&x, 1 ); }
-    static void __unpack( std::istream& s, signed char& x )
+    static void __unpack( __STD::istream& s, signed char& x )
       { s.read( (char *)&x, sizeof(signed char) ); }
-    static void __pack( std::ostream& s, signed char x )
+    static void __pack( __STD::ostream& s, signed char x )
       { s.write( (const char *)&x, 1 ); }
     // unsigned char
-    static void __net_unpack( std::istream& s, unsigned char& x )
+    static void __net_unpack( __STD::istream& s, unsigned char& x )
       { s.read( (char *)&x, sizeof(unsigned char) ); }
-    static void __net_pack( std::ostream& s, unsigned char x )
+    static void __net_pack( __STD::ostream& s, unsigned char x )
       { s.write( (const char *)&x, 1 ); }
-    static void __unpack( std::istream& s, unsigned char& x )
+    static void __unpack( __STD::istream& s, unsigned char& x )
       { s.read( (char *)&x, sizeof(unsigned char) ); }
-    static void __pack( std::ostream& s, unsigned char x )
+    static void __pack( __STD::ostream& s, unsigned char x )
       { s.write( (const char *)&x, 1 ); }
 };
 

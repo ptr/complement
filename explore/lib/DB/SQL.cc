@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/03 14:04:07 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 16:57:08 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -18,15 +18,15 @@ using std::FILE;
 
 namespace database {
 
-using std::string;
-using std::vector;
-using namespace std;
+using __STD::string;
+using __STD::vector;
+using namespace __STD;
 
 NILL_type NILL;
 
 void Table::done()
 {
-  std::ostringstream s;
+  __STD::ostringstream s;
   bool is_first = true;
   switch ( _op ) {
     case _INSERT:
@@ -325,7 +325,7 @@ const string& Cursor::value( int n, const string& f )
 {
   vector<string>::iterator i = find( fields.begin(), fields.end(), f );
   if ( i == fields.end() ) {
-    throw std::invalid_argument( f );
+    throw __STD::invalid_argument( f );
   }
   vector<string>::size_type j = 0;
   distance( fields.begin(), i, j );

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/12/22 15:01:18 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 16:53:02 ptr>
 
 /*
  *
@@ -76,8 +76,8 @@ class SessionMgr :
 
   protected:
 
-    virtual __EDS_DLL EventHandler *session_leader( const std::string& account,
-                                                    const std::string& passwd,
+    virtual __EDS_DLL EventHandler *session_leader( const __STD::string& account,
+                                                    const __STD::string& passwd,
                                                     addr_type addr ) throw();
     virtual __EDS_DLL void destroy_session_leader( EventHandler * ) throw();
 
@@ -92,14 +92,14 @@ class SessionMgr :
         time_t timeout;
     };
 
-    typedef std::pair<key_type,__S> account_type;
-    typedef std::vector<account_type> Container;
+    typedef __STD::pair<key_type,__S> account_type;
+    typedef __STD::vector<account_type> Container;
 
     key_type key_generate();
     Container _M_c;
-    std::select1st<account_type> _skey;
-    std::select2nd<account_type> _sess;
-    std::equal_to<key_type>      _eq_key;
+    __STD::select1st<account_type> _skey;
+    __STD::select2nd<account_type> _sess;
+    __STD::equal_to<key_type>      _eq_key;
 
     DECLARE_RESPONSE_TABLE( SessionMgr, EventHandler );
 };
@@ -111,10 +111,10 @@ struct SessionRsp :
     key_type  key;
     addr_type addr;
 
-    virtual __EDS_DLL void pack( std::ostream& s ) const;
-    virtual __EDS_DLL void net_pack( std::ostream& s ) const;
-    virtual __EDS_DLL void unpack( std::istream& s );
-    virtual __EDS_DLL void net_unpack( std::istream& s );
+    virtual __EDS_DLL void pack( __STD::ostream& s ) const;
+    virtual __EDS_DLL void net_pack( __STD::ostream& s ) const;
+    virtual __EDS_DLL void unpack( __STD::istream& s );
+    virtual __EDS_DLL void net_unpack( __STD::istream& s );
 };
 
 } // namespace EDS

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/03 10:08:09 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 15:32:46 ptr>
 #ident "$SunId$ %Q%"
 
 #ifdef WIN32
@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <functional>
 
-using namespace std;
+using namespace __STD;
 
 namespace __impl {
 

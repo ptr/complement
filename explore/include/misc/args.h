@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 10:32:29 ptr>
+// -*- C++ -*- Time-stamp: <00/02/21 15:45:13 ptr>
 /*
  *
  * Copyright (c) 1997-1998
@@ -30,20 +30,20 @@
 
 class ArgsParser
 {
-    typedef std::list<std::string> container_type;
+    typedef __STD::list<__STD::string> container_type;
   public:
     typedef container_type::iterator iterator;
 
     ArgsParser( int argc, char * const *argv );
-    ArgsParser( const std::string& in );
-    ArgsParser( std::istream& in );
+    ArgsParser( const __STD::string& in );
+    ArgsParser( __STD::istream& in );
 
-    bool is_option( const std::string& op )
-      { return std::find( arg.begin(), arg.end(), op ) != arg.end(); }
-    bool is_option_X( const std::string& op );
+    bool is_option( const __STD::string& op )
+      { return __STD::find( arg.begin(), arg.end(), op ) != arg.end(); }
+    bool is_option_X( const __STD::string& op );
 
-    std::string get_next( const std::string& op );
-    std::string get( int n );
+    __STD::string get_next( const __STD::string& op );
+    __STD::string get( int n );
 
     unsigned size() const
       { return arg.size(); }
@@ -55,21 +55,21 @@ class ArgsParser
 class IniParser
 {
   public:
-    IniParser( std::istream& );
-    std::string value( const std::string& key, const std::string& def );
+    IniParser( __STD::istream& );
+    __STD::string value( const __STD::string& key, const __STD::string& def );
 
   protected:
     struct par
     {
 	par() 
 	  { }
-	par( const std::string& n, const std::string& v ) :
+	par( const __STD::string& n, const __STD::string& v ) :
 	    name( n ),
 	    value( v )
 	  { }
 
-	std::string name;
-	std::string value;
+	__STD::string name;
+	__STD::string value;
 
 	bool operator ==( const par& p ) const
 	  { return name == p.name; }
@@ -77,7 +77,7 @@ class IniParser
 	  { return name != p.name; }
     };
 
-    typedef std::list<par> container_type;
+    typedef __STD::list<par> container_type;
 
     container_type pars;
 };
