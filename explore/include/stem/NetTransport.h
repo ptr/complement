@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/05 21:45:00 ptr>
+// -*- C++ -*- Time-stamp: <99/10/06 10:15:18 ptr>
 
 /*
  *
@@ -90,9 +90,11 @@ class NetTransport_base :
     __EDS_DLL ~NetTransport_base();
 
     bool fail() const
-      { return net == 0 || net->fail(); }
+      { return net == 0 ? false : net->fail(); }
     bool good() const
       { return net != 0 && net->good(); }
+    bool bad() const
+      { return net == 0 || net->bad(); }
     bool is_open() const
       { return net != 0 && net->is_open(); }
     __EDS_DLL void close();
