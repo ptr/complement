@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/24 15:23:36 ptr>
+// -*- C++ -*- Time-stamp: <99/05/27 18:16:12 ptr>
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
@@ -508,6 +508,7 @@ void __EvHandler<T, InputIterator>::Out( std::ostream& out ) const
   }
 }
 
+template <>
 class __EvHandler<EventHandler,h_iterator>
 {
   public:
