@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <03/08/15 12:46:45 ptr>
+# -*- Makefile -*- Time-stamp: <05/02/22 22:27:37 ptr>
 # $Id$
 
 SRCROOT := ../../../../../explore
@@ -14,6 +14,6 @@ release-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR}
 stldbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_STLDBG}
 dbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_DBG}
 
-release-shared : LDLIBS = -Wl,-rpath=${STLPORT_LIB_DIR}:${CoMT_LIB_DIR} -lstlport_gcc -lboost_fs_gcc
-stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug -lboost_fs_gcc_stl-g
-dbg-shared     : LDLIBS = -lstlport_gcc -lboost_fs_gcc-g
+release-shared : LDLIBS = -Wl,-rpath=${STLPORT_LIB_DIR}:${CoMT_LIB_DIR} -lstlport -lboost_fs
+stldbg-shared  : LDLIBS = -lstlportstlg -lboost_fsstlg
+dbg-shared     : LDLIBS = -lstlport -lboost_fs
