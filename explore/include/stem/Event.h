@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 09:51:35 ptr>
+// -*- C++ -*- Time-stamp: <99/09/22 12:05:16 ptr>
 
 /*
  *
@@ -474,7 +474,7 @@ class Event_base<void> :
 
 // VC instantiate only whole class, so I need stupid specializaton for it:
 #ifdef _MSC_VER
-#include <EventSpec.h>
+#include <EDS/EventSpec.h>
 #endif
 
 } // namespace EDS
