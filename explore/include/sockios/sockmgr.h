@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/06/20 10:24:48 ptr>
+// -*- C++ -*- Time-stamp: <02/07/11 21:28:34 ptr>
 
 /*
  *
@@ -121,16 +121,6 @@ struct sockmgr_client
     sockstream s;
 };
 
-// template <class Connect>
-// struct sockmgr_client_MP :
-//     public sockmgr_client
-// {
-//     sockmgr_client_MP()
-//       { }
-//
-//     Connect    _proc;
-// };
-
 struct less_sockmgr_client :
     public binary_function<sockmgr_client *,sockmgr_client *,bool> 
 {
@@ -175,11 +165,7 @@ class sockmgr_stream :
     // void __open( int port, sock_base::stype t = sock_base::sock_stream );
 
     virtual void close()
-      {
-        basic_sockmgr::close();
-        // loop_id.kill( SIGINT );
-        // loop_id.kill( SIGPIPE );
-      }
+      { basic_sockmgr::close(); }
 
     void wait()
       {	loop_id.join(); }
@@ -242,7 +228,6 @@ class ConnectionProcessorTemplate_MP // As reference
     ConnectionProcessorTemplate_MP( std::sockstream& )
       { }
 
-//    void open( std::sockstream& );
     void connect( std::sockstream& )
       { }
     void close()
@@ -286,11 +271,7 @@ class sockmgr_stream_MP : // multiplexor
     void open( int port, sock_base::stype t = sock_base::sock_stream );
 
     virtual void close()
-      {
-        basic_sockmgr::close();
-        // loop_id.kill( SIGINT );
-        loop_id.kill( SIGPIPE );
-      }
+      { basic_sockmgr::close(); }
 
     void wait()
       {	loop_id.join(); }
@@ -316,15 +297,12 @@ class sockmgr_stream_MP : // multiplexor
         bool operator()(const _Connect *__x) const
           { return __x->s->rdbuf()->in_avail() > 0; }
     };
-    // typedef sockmgr_client_MP<Connect> *(sockmgr_stream_MP<Connect>::*accept_type)();
+
     typedef _Connect *(sockmgr_stream_MP<Connect>::*accept_type)();
 
     accept_type _accept;
-    // sockmgr_client_MP<Connect> *accept() // workaround for CC
     _Connect *accept() // workaround for CC
       { return (this->*_accept)(); }
-    // sockmgr_client_MP<Connect> *accept_tcp();
-    // sockmgr_client_MP<Connect> *accept_udp();
     _Connect *accept_tcp();
     _Connect *accept_udp();
 
@@ -333,7 +311,6 @@ class sockmgr_stream_MP : // multiplexor
 
   protected:
     typedef sockmgr_stream_MP<Connect> _Self_type;
-    // typedef std::vector<sockmgr_client_MP<Connect> *> _Sequence;
     typedef std::vector<_Connect *> _Sequence;
     typedef fd_equal _Compare;
     typedef typename _Sequence::value_type      value_type;
@@ -357,7 +334,6 @@ class sockmgr_stream_MP : // multiplexor
     unsigned _fdcount;
 
   private:
-    // sockmgr_client_MP<Connect> *_shift_fd();
     _Connect *_shift_fd();
     static void _close_by_signal( int );
 };
