@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/08/10 21:06:59 ptr>
+// -*- C++ -*- Time-stamp: <02/08/01 09:29:37 ptr>
 
 /*
  *
@@ -59,7 +59,7 @@ class Option_base
       { throw std::domain_error( "wrong type" ); }
     virtual bool assign( bool& ) const
       { throw std::domain_error( "wrong type" ); }
-    virtual const type_info& type() const = 0;
+    virtual const std::type_info& type() const = 0;
 
     bool operator ==( const Option_base& s ) const
       { return _nm == s._nm; }
@@ -100,7 +100,7 @@ class Option :
         v = _v;
         return is_set;
       }
-    virtual const type_info& type() const
+    virtual const std::type_info& type() const
       { return typeid( T ); }
   private:
     T _v;
@@ -136,7 +136,7 @@ class Option<std::string> :
         return is_set;
       }
 
-    virtual const type_info& type() const
+    virtual const std::type_info& type() const
       { return typeid( std::string ); }
   private:
     std::string _v;
@@ -162,7 +162,7 @@ class Option<char *> :
         return is_set;
       }
 
-    virtual const type_info& type() const
+    virtual const std::type_info& type() const
       { return typeid( std::string ); }
   private:
     std::string _v;
