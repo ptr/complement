@@ -1,11 +1,13 @@
-// -*- C++ -*- Time-stamp: <02/07/12 23:59:30 ptr>
+// -*- C++ -*- Time-stamp: <02/09/25 12:08:26 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002
  * Petr Ovtchenkov
  *
- * Copyright (c) 1999-2000
+ * Portion Copyright (c) 1999-2000
  * Parallel Graphics Ltd.
+ *
+ * Licensed under the Academic Free License Version 1.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -15,6 +17,7 @@
  * provided that the above copyright notice appear in all copies and
  * that both that copyright notice and this permission notice appear
  * in supporting documentation.
+ *
  */
 
 #ifdef __unix

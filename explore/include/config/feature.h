@@ -1,12 +1,14 @@
-// -*- C++ -*- Time-stamp: <02/08/26 18:40:58 ptr>
+// -*- C++ -*- Time-stamp: <02/09/25 12:00:39 ptr>
 
 /*
  *
  * Copyright (c) 1999, 2002
  * Petr Ovtchenkov
  *
- * Copyright (c) 1999-2001
+ * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
+ *
+ * Licensed under the Academic Free License Version 1.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -16,7 +18,9 @@
  * provided that the above copyright notice appear in all copies and
  * that both that copyright notice and this permission notice appear
  * in supporting documentation.
+ *
  */
+
 #ifndef __config_feature_h
 #define __config_feature_h
 
@@ -24,7 +28,7 @@
 #  ifdef __HP_aCC
 #pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "@(#)$Id$"
+#ident "@(#)$Id$"
 #  endif
 #endif
 
