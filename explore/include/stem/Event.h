@@ -60,6 +60,7 @@ class ASEvent
 
     unsigned long Message;
 
+    ASEvent();
     ASEvent( unsigned long );
     ASEvent( unsigned long, const tagIParams& );
     ASEvent( unsigned long, const tagFParams& );
@@ -92,6 +93,16 @@ class ASEvent
     };
     contained_type type;
 };
+
+inline ASEvent::ASEvent()
+{
+  Message = 0;
+  type = IntegerParams;
+  IParams.AParam = 0;
+  IParams.BParam = 0;
+  IParams.CParam = 0;
+  IParams.DParam = 0;
+}
 
 inline ASEvent::ASEvent( unsigned long msg )
 {
