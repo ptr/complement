@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/19 17:13:59 ptr>
+// -*- C++ -*- Time-stamp: <99/03/23 13:02:26 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #include <EventHandler.h>
@@ -36,6 +36,11 @@ EventHandler::Init::~Init()
   if ( --_count == 0 ) {
     delete _mgr;
   }
+}
+
+const string& EventHandler::who_is( const Event::key_type& k )
+{
+  return _mgr->who_is( k );
 }
 
 void EventHandler::Send( const Event& e )
@@ -136,7 +141,7 @@ EventHandler::EventHandler()// :
   _id = _mgr->Subscribe( this, "" );
 }
 
-EventHandler::EventHandler( Event::key_type id )// :
+EventHandler::EventHandler( const Event::key_type& id )// :
 //    theHistory( *(new HistoryContainer()) )
 {
   new( Init_buf ) Init();
