@@ -3,4 +3,3 @@
 
 PRGNAME = walk
 SRC_CC = walk.cc
-SRC_CPP = convenience.cpp exception.cpp operations_posix_windows.cpp path_posix_windows.cpp
