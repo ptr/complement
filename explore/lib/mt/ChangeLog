@@ -1,3 +1,10 @@
+2002-08-03  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xmt.h: add std:: namespace for exception class,
+	as required by gcc 3.1.1
+
+	* libxmt: Version 1.6.1
+	
 2002-07-15  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* Makefile.inc, time.h, time.cc (Repository):
