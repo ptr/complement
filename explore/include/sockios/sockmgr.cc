@@ -1,12 +1,12 @@
-// -*- C++ -*- Time-stamp: <01/03/26 18:37:25 ptr>
+// -*- C++ -*- Time-stamp: <02/05/02 17:05:30 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999
- * Petr Ovchenkov
+ * Copyright (c) 1997-1999, 2002
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
- * ParallelGraphics Ltd.
+ * Parallel Graphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -208,7 +208,11 @@ int sockmgr_stream<Connect>::loop( void *p )
   sockmgr_stream *me = static_cast<sockmgr_stream *>(p);
 
 #ifdef __unix
+  Thread::unblock_signal( SIGPIPE );
   Thread::unblock_signal( SIGINT );
+  Thread::signal_handler( SIGPIPE, signal_throw );
+  Thread::signal_handler( SIGINT, signal_throw );
+  // Thread::signal_handler( SIGINT, SIG_DFL );
 #endif
 
   sockmgr_client *s;
@@ -242,6 +246,9 @@ int sockmgr_stream<Connect>::connection( void *p )
 
 #ifdef __unix
   Thread::unblock_signal( SIGPIPE );
+  Thread::unblock_signal( SIGINT );
+  Thread::signal_handler( SIGPIPE, signal_throw );
+  Thread::signal_handler( SIGINT, signal_throw );
 #endif
 
 
@@ -588,7 +595,10 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
   sockmgr_stream_MP *me = static_cast<sockmgr_stream_MP *>(p);
 
 #ifdef __unix
+  Thread::unblock_signal( SIGPIPE );
   Thread::unblock_signal( SIGINT );
+  Thread::signal_handler( SIGPIPE, signal_throw );
+  Thread::signal_handler( SIGINT, signal_throw );
 #endif
 
   try {
