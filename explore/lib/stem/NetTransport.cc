@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/06 21:41:45 ptr>
+// -*- C++ -*- Time-stamp: <00/10/10 14:32:56 ptr>
 
 /*
  *
@@ -381,7 +381,7 @@ __PG_DECLSPEC
 NetTransportMgr::~NetTransportMgr()
 {
   if ( net ) {
-    // net->close();
+    net->close(); // otherwise _loop may not exited
     // this->close();
     join();
     delete net;
