@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/01/18 16:36:46 ptr>
+// -*- C++ -*- Time-stamp: <00/01/19 13:10:13 ptr>
 
 /*
  *
@@ -149,16 +149,8 @@ class NetTransportMgr :
         NetTransport_base( "EDS::NetTransportMgr" )
       { }
 
-    ~NetTransportMgr()
-      {
-        if ( net ) {
-          net->close();
-          this->close();
-          join();
-        }        
-        delete net;
-        net = 0;
-      }
+    __EDS_DLL
+    ~NetTransportMgr();
 
     __EDS_DLL
     addr_type open( const char *hostname, int port,
