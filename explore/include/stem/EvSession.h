@@ -7,6 +7,8 @@
 #include <string>
 #include <ctime>
 #include <sockstream>
+#include <map>
+#include <xmt.h>
 
 namespace EDS {
 
@@ -186,7 +188,11 @@ SessionManager<T>::key_type SessionManager<T>::create_unique()
   const key_type _low  = 0;
   const key_type _high = 65535;
 
+#ifndef _MSC_VER
   pair<heap_type::iterator,bool> ret;
+#else
+  std::pair<heap_type::iterator,bool> ret;
+#endif
 
   do {
     if ( ++_id > _high ) {
@@ -200,5 +206,9 @@ SessionManager<T>::key_type SessionManager<T>::create_unique()
 typedef SessionManager<SessionInfo> EvSessionManager;
 
 } // namespace EDS
+
+#ifdef _MSC_VER
+typedef EDS::SessionInfo SessionInfo;
+#endif
 
 #endif // __EvSession_h
