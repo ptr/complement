@@ -642,7 +642,6 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
     throw;
   }
 
-  cerr << "Out of loop!" << endl;
   me->_c_lock._M_acquire_lock();
 
   typename container_type::iterator i = me->_M_c.begin();

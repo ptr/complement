@@ -100,6 +100,9 @@
 #ifdef __hpux
 #  define _XOPEN_SOURCE_EXTENDED 1
 #  define _INCLUDE_AES_SOURCE
+#  ifndef _PTHREADS
+#    define _PTHREADS
+#  endif
 #endif
 
 #ifdef __SUNPRO_CC
