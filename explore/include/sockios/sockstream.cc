@@ -1,6 +1,10 @@
-// -*- C++ -*- Time-stamp: <99/05/25 10:00:58 ptr>
+// -*- C++ -*- Time-stamp: <99/05/28 10:24:17 ptr>
 
 #ident "$SunId$ %Q%"
+
+#ifdef __unix
+extern "C" int nanosleep(const struct timespec *, struct timespec *);
+#endif
 
 namespace std {
 
@@ -286,12 +290,12 @@ basic_sockbuf<charT, traits>::underflow()
   // be unlocked to allow output operations; Before return, I should
   // recover status quo: indeed I am in critical section, that will
   // be unlocked outside this code (as it was locked outside it).
-  MT_UNLOCK( __locker( *this ) );
+  MT_UNLOCK( __locker() );
   if ( poll( &pfd, 1, -1 ) <= 0 ) { // wait infinite
-    MT_LOCK( __locker( *this ) );
+    MT_LOCK( __locker() );
     return traits::eof();
   }
-  MT_LOCK( __locker( *this ) );
+  MT_LOCK( __locker() );
 #endif
 
   __stl_assert( eback() != 0 );
