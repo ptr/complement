@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/11/05 17:19:51 ptr>
+// -*- C++ -*- Time-stamp: <99/12/27 18:18:01 ptr>
 
 /*
  *
@@ -156,6 +156,7 @@ class NetTransportMgr :
           join();
         }        
         delete net;
+        net = 0;
       }
 
     __EDS_DLL
