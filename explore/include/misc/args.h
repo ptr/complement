@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <04/06/15 18:05:48 ptr>
+// -*- C++ -*- Time-stamp: <04/07/01 12:29:26 ptr>
 
 /*
  *
@@ -54,12 +54,21 @@ class Option_base
 
     virtual bool assign( int& ) const
       { throw std::domain_error( "wrong type" ); }
+    virtual bool assign( long& ) const
+      { throw std::domain_error( "wrong type" ); }
+    virtual bool assign( short& ) const
+      { throw std::domain_error( "wrong type" ); }
     virtual bool assign( std::string& ) const
       { throw std::domain_error( "wrong type" ); }
     virtual bool assign( unsigned& ) const
       { throw std::domain_error( "wrong type" ); }
+    virtual bool assign( unsigned long& ) const
+      { throw std::domain_error( "wrong type" ); }
+    virtual bool assign( unsigned short& ) const
+      { throw std::domain_error( "wrong type" ); }
     virtual bool assign( bool& ) const
       { throw std::domain_error( "wrong type" ); }
+
     virtual const std::type_info& type() const = 0;
 
     bool operator ==( const Option_base& s ) const
