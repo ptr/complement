@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/08 15:46:38 ptr>
+// -*- C++ -*- Time-stamp: <00/10/06 20:41:22 ptr>
 
 /*
  *
@@ -279,9 +279,9 @@ void sockmgr_stream_MP<Connect>::open( int port, sock_base::stype t )
   basic_sockmgr::open( port, t, sock_base::inet );
   if ( is_open() ) {
     if ( t == sock_base::sock_stream ) {
-      _accept = accept_tcp;
+      _accept = &_Self_type::accept_tcp;
     } else if ( t == sock_base::sock_dgram ) {
-      _accept = accept_udp;
+      _accept = &_Self_type::accept_udp;
     } else {
       throw invalid_argument( "sockmgr_stream_MP" );
     }
@@ -341,48 +341,56 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
         return 0;
       }
 
-      __STLPORT_STD::_STL_auto_lock _x1(_c_lock);
       sockmgr_client_MP<Connect> *cl;
 
-#if defined(__HP_aCC) && (__HP_aCC==1)
-      typename
-#endif
-      container_type::iterator i = 
+      try {
+        _c_lock._M_acquire_lock();
+// #if defined(__HP_aCC) && (__HP_aCC==1)
+        typename
+// #endif
+        container_type::iterator i = 
         find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, -1 ) );
     
-      if ( i == _M_c.end() ) {
-        cl = new sockmgr_client_MP<Connect>();
-        _M_c.push_back( cl );      
-      } else {
-        cl = *i;
+        if ( i == _M_c.end() ) {
+          cl = new sockmgr_client_MP<Connect>();
+          _M_c.push_back( cl );      
+        } else {
+          cl = *i;
+        }
+
+        cl->s.open( _sd, addr.any );
+
+#ifdef __unix
+        int j = _fdcount++;
+
+        _pfd[j].fd = _sd;
+        _pfd[j].events = POLLIN;
+        _pfd[j].revents = 0;
+#endif
+#ifdef WIN32
+        FD_SET( _sd, &_pfd );
+#endif
+        _c_lock._M_release_lock();
       }
-
-      cl->s.open( _sd, addr.any );
-
-#ifdef __unix
-      int j = _fdcount++;
-
-      _pfd[j].fd = _sd;
-      _pfd[j].events = POLLIN;
-      _pfd[j].revents = 0;
-#endif
-#ifdef WIN32
-      FD_SET( _sd, &_pfd );
-#endif
+      catch ( ... ) {
+        _c_lock._M_release_lock();
+      }
     }
+  } while (
 #ifdef __unix
-  } while ( _pfd[0].revents != 0 );
+    _pfd[0].revents != 0
 #endif
 #ifdef WIN32
-  } while ( FD_ISSET( fd(), &_pfd ) );
+    FD_ISSET( fd(), &_pfd )
 #endif
+    );
   // find polled and return it
 #ifdef __unix
   for ( int j = 1; j < _fdcount; ++j ) {
     if ( _pfd[j].revents != 0 ) {
-#if defined(__HP_aCC) && (__HP_aCC==1)
+//#if defined(__HP_aCC) && (__HP_aCC==1)
       typename
-#endif
+//#endif
       container_type::iterator i = 
         find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, _pfd[j].fd ) );
       __STL_ASSERT( i != _M_c.end() );
@@ -409,7 +417,6 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
     ++i;
   }
 #endif
-
   return 0;
 }
 
@@ -430,11 +437,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_udp()
     ++_fdcount;
   }
 
-  if ( select( fd() + 1, &_pfd, 0, 0, 0 ) > 0 ) {
-    // get address of caller only
-    char buff[32];    
-    ::recvfrom( fd(), buff, 32, MSG_PEEK, &addr.any, &sz );
-  } else {
+  if ( select( fd() + 1, &_pfd, 0, 0, 0 ) < 0 ) {
     return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
   }
 #else
@@ -445,43 +448,49 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_udp()
     ++_fdcount;
   }
 
-  if ( poll( _pfd, 1, -1 ) > 0 ) { // wait infinite
-    // get address of caller only
-    char buff[32];    
-    ::recvfrom( fd(), buff, 32, MSG_PEEK, &addr.any, &sz );
-  } else {
+  if ( poll( _pfd, 1, -1 ) < 0 ) { // wait infinite
     return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
   }
 #endif
-  __STLPORT_STD::_STL_auto_lock _x1(_c_lock);
-#if defined(__HP_aCC) && (__HP_aCC==1)
-  typename
-#endif
-  container_type::iterator i = _M_c.begin();
-  sockbuf *b;
-  while ( i != _M_c.end() ) {
-    b = (*i)->s.rdbuf();
-    if ( (*i)->s.is_open() && b->stype() == sock_base::sock_dgram &&
-         b->port() == addr.inet.sin_port &&
-         b->inet_addr() == addr.inet.sin_addr.s_addr ) {
-      return *i;
-    }
-    ++i;
-  }
-
+  // get address of caller only
+  char buff[32];    
+  ::recvfrom( fd(), buff, 32, MSG_PEEK, &addr.any, &sz );
   sockmgr_client_MP<Connect> *cl;
-  cl = new sockmgr_client_MP<Connect>();
-  _M_c.push_back( cl );
+  try {
+    _c_lock._M_acquire_lock();
+// #if defined(__HP_aCC) && (__HP_aCC==1)
+    typename
+// #endif
+      container_type::iterator i = _M_c.begin();
+    sockbuf *b;
+    while ( i != _M_c.end() ) {
+      b = (*i)->s.rdbuf();
+      if ( (*i)->s.is_open() && b->stype() == sock_base::sock_dgram &&
+           b->port() == addr.inet.sin_port &&
+           b->inet_addr() == addr.inet.sin_addr.s_addr ) {
+        _c_lock._M_release_lock();
+        return *i;
+      }
+      ++i;
+    }
+
+    cl = new sockmgr_client_MP<Connect>();
+    _M_c.push_back( cl );
 #ifdef __unix
-  cl->s.open( dup( fd() ), addr.any, sock_base::sock_dgram );
+    cl->s.open( dup( fd() ), addr.any, sock_base::sock_dgram );
 #endif
 #ifdef WIN32
-  SOCKET dup_fd;
-  HANDLE proc = GetCurrentProcess();
-  DuplicateHandle( proc, (HANDLE)fd(), proc, (HANDLE *)&dup_fd, 0, FALSE, DUPLICATE_SAME_ACCESS );
-  cl->s.open( dup_fd, addr.any, sock_base::sock_dgram );
+    SOCKET dup_fd;
+    HANDLE proc = GetCurrentProcess();
+    DuplicateHandle( proc, (HANDLE)fd(), proc, (HANDLE *)&dup_fd, 0, FALSE, DUPLICATE_SAME_ACCESS );
+    cl->s.open( dup_fd, addr.any, sock_base::sock_dgram );
 #endif
-
+    _c_lock._M_release_lock();
+  }
+  catch ( ... ) {
+    _c_lock._M_release_lock();
+    cl = 0;
+  }
   return cl;
 }
 
@@ -503,9 +512,9 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
       if ( s->s.is_open() ) {
         _sfd = s->s.rdbuf()->fd();
         s->_proc.connect( s->s );
-        if ( !s->s.good() ) {
-          s->s.close();
-        }
+        // if ( !s->s.good() ) {
+        //  s->s.close();
+        // }
         if ( !s->s.is_open() ) {
 #ifdef __unix
           for ( int i = 1; i < me->_fdcount; ++i ) {
@@ -528,15 +537,17 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
   }
   catch ( ... ) {
     me->shutdown( sock_base::stop_in );
-    __STLPORT_STD::_STL_auto_lock _x1(me->_c_lock);
-#if defined(__HP_aCC) && (__HP_aCC==1)
+    me->_c_lock._M_acquire_lock();
+
+//#if defined(__HP_aCC) && (__HP_aCC==1)
     typename
-#endif
+//#endif
     container_type::iterator i = me->_M_c.begin();
     while ( i != me->_M_c.end() ) {
       (*i++)->s.close();
     }
     me->close();
+    me->_c_lock._M_release_lock();
     throw;
   }
 

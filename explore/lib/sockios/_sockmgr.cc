@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/08 13:55:57 ptr>
+// -*- C++ -*- Time-stamp: <00/10/06 22:06:20 ptr>
 
 /*
  *
@@ -63,6 +63,7 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
     _address.inet.sin_port = htons( port );
     _address.inet.sin_addr.s_addr = htons( INADDR_ANY );
     int attempt = 0;
+
     while ( ::bind( _fd, &_address.any, sizeof(_address) ) == -1 ) {
 #ifdef WIN32
       _errno = WSAGetLastError();
@@ -96,6 +97,8 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
     }
     if ( type == sock_base::sock_stream ||
 	 type == sock_base::sock_seqpacket ) {
+      // let's try reuse local address
+      setoptions( sock_base::so_reuseaddr, true );
       // I am shure, this is socket of type SOCK_STREAM | SOCK_SEQPACKET,
       // so don't check return code from listen
       ::listen( _fd, SOMAXCONN );
@@ -128,5 +131,53 @@ void basic_sockmgr::close()
   _open = false;
 }
 
+void basic_sockmgr::shutdown( sock_base::shutdownflg dir )
+{
+  if ( is_open() ) {
+    if ( (dir & (sock_base::stop_in | sock_base::stop_out)) ==
+         (sock_base::stop_in | sock_base::stop_out) ) {
+      ::shutdown( _fd, 2 );
+    } else if ( dir & sock_base::stop_in ) {
+      ::shutdown( _fd, 0 );
+    } else if ( dir & sock_base::stop_out ) {
+      ::shutdown( _fd, 1 );
+    }
+  }
+}
+
+void basic_sockmgr::setoptions( sock_base::so_t optname, bool on_off, int __v )
+{
+#ifdef __unix
+  if ( is_open() ) {
+    if ( optname != sock_base::so_linger ) {
+      if ( setsockopt( _fd, SOL_SOCKET, (int)optname, (const void *)&on_off,
+                       (socklen_t)sizeof(bool) ) != 0 ) {
+        _state |= sock_base::sockfailbit;
+#ifdef WIN32
+        _errno = WSAGetLastError();
+#else
+        _errno = errno;
+#endif
+      }
+    } else {
+      linger l;
+      l.l_onoff = on_off ? 1 : 0;
+      l.l_linger = __v;
+      if ( setsockopt( _fd, SOL_SOCKET, (int)optname, (const void *)&l,
+                       (socklen_t)sizeof(linger) ) != 0 ) {
+        _state |= sock_base::sockfailbit;
+#ifdef WIN32
+        _errno = WSAGetLastError();
+#else
+        _errno = errno;
+#endif
+      }
+      
+    }
+  } else {
+    _state |= sock_base::sockfailbit;
+  }
+#endif
+}
 
 __STL_END_NAMESPACE

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/08 15:04:01 ptr>
+// -*- C++ -*- Time-stamp: <00/10/06 18:54:35 ptr>
 
 /*
  *
@@ -88,19 +88,9 @@ class basic_sockmgr :
 
     sock_base::socket_type fd() const { return _fd;}
 
-    void shutdown( sock_base::shutdownflg dir )
-      {
-	if ( is_open() ) {
-	  if ( (dir & (sock_base::stop_in | sock_base::stop_out)) ==
-	              (sock_base::stop_in | sock_base::stop_out) ) {
-	    ::shutdown( _fd, 2 );
-	  } else if ( dir & sock_base::stop_in ) {
-	    ::shutdown( _fd, 0 );
-	  } else if ( dir & sock_base::stop_out ) {
-	    ::shutdown( _fd, 1 );
-	  }
-	}
-      }
+    void shutdown( sock_base::shutdownflg dir );
+    void setoptions( sock_base::so_t optname, bool on_off = true,
+                     int __v = 0 );
 
   private:
     sock_base::socket_type _fd;    // master socket
@@ -268,6 +258,7 @@ class sockmgr_stream_MP : // multiplexor
     Thread     loop_id;
 
   protected:
+    typedef sockmgr_stream_MP<Connect> _Self_type;
     typedef __STD::vector<sockmgr_client_MP<Connect> *,__STL_DEFAULT_ALLOCATOR(sockmgr_client_MP<Connect> *)> _Sequence;
     typedef fd_equal _Compare;
     typedef typename _Sequence::value_type      value_type;
@@ -279,7 +270,7 @@ class sockmgr_stream_MP : // multiplexor
 
     _Sequence _M_c;
     _Compare  _M_comp;
-    __impl::Mutex _c_lock;
+    __STLPORT_STD::_STL_mutex _c_lock;
 
 #ifdef __unix
     pollfd *_pfd;

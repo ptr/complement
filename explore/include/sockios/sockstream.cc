@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/08 14:52:34 ptr>
+// -*- C++ -*- Time-stamp: <00/10/06 18:59:21 ptr>
 
 /*
  *
@@ -275,25 +275,34 @@ void basic_sockbuf<charT, traits, _Alloc>::shutdown( sock_base::shutdownflg dir 
 }
 
 template<class charT, class traits, class _Alloc>
-void basic_sockbuf<charT, traits, _Alloc>::setoptions( int optname, bool __v )
+void basic_sockbuf<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, bool on_off, int __v )
 {
 #ifdef __unix
   if ( is_open() ) {
-    int _val = __v ? 1 : 0;
-    if ( setsockopt( _fd, SOL_SOCKET, optname,
-                     (const void *)&_val,
-#ifdef socklen_t
-                     (socklen_t)sizeof(int)
-#else // HP-UX 10.01
-                     (int)sizeof(int)
-#endif
-                   ) != 0 ) {
-      _state |= sock_base::sockfailbit;
+    if ( optname != sock_base::so_linger ) {
+      if ( setsockopt( _fd, SOL_SOCKET, (int)optname, (const void *)&on_off,
+                       (socklen_t)sizeof(bool) ) != 0 ) {
+        _state |= sock_base::sockfailbit;
 #ifdef WIN32
-      _errno = WSAGetLastError();
+        _errno = WSAGetLastError();
 #else
-      _errno = errno;
+        _errno = errno;
 #endif
+      }
+    } else {
+      linger l;
+      l.l_onoff = on_off ? 1 : 0;
+      l.l_linger = __v;
+      if ( setsockopt( _fd, SOL_SOCKET, (int)optname, (const void *)&l,
+                       (socklen_t)sizeof(linger) ) != 0 ) {
+        _state |= sock_base::sockfailbit;
+#ifdef WIN32
+        _errno = WSAGetLastError();
+#else
+        _errno = errno;
+#endif
+      }
+      
     }
   } else {
     _state |= sock_base::sockfailbit;
