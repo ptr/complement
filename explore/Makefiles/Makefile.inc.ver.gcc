@@ -1,4 +1,4 @@
-# Time-stamp: <03/03/23 15:04:16 ptr>
+# Time-stamp: <03/03/31 15:14:48 ptr>
 # $Id$
 
 # This file reflect versions of third-party libraries that
@@ -11,4 +11,5 @@ ifeq ($(OS_VER),Linux)
 PG_DIR ?= /usr/pgsql
 endif
 
-gSOAP_DIR ?= /opt/gSOAP-2.2.1a
+gSOAP_DIR ?= /opt/gSOAP-2.2.3
+BOOST_DIR ?= /export/hostel/build/dev-utils/boost_1_30_0
