@@ -1,10 +1,41 @@
-// -*- C++ -*- Time-stamp: <00/02/24 19:53:29 ptr>
+// -*- C++ -*- Time-stamp: <00/05/23 22:06:56 ptr>
 
-#ident "$SunId$ %Q%"
+/*
+ *
+ * Copyright (c) 1997-1999
+ * Petr Ovchenkov
+ *
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
+ *
+ * This material is provided "as is", with absolutely no warranty expressed
+ * or implied. Any use is at your own risk.
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies and
+ * that both that copyright notice and this permission notice appear
+ * in supporting documentation.
+ */
 
-#ifdef WIN32
+#ident "$SunId$"
 
 #include <sockios/sockstream>
+
+#ifdef __SGI_STL_OWN_IOSTREAMS
+__STL_BEGIN_NAMESPACE
+#else
+namespace std {
+#endif
+template class basic_sockbuf<char, char_traits<char>, __STL_DEFAULT_ALLOCATOR(char) >;
+template class basic_sockstream<char, char_traits<char>, __STL_DEFAULT_ALLOCATOR(char) >;
+#ifdef __SGI_STL_OWN_IOSTREAMS
+__STL_END_NAMESPACE
+#else
+} // namespace std
+#endif
+
+#ifdef WIN32
 
 // The Microsoft's cool programmers made two wanderful things:
 // 1. All sockets must be initialized via WSAStartup
