@@ -31,7 +31,15 @@ ifeq ($(OSNAME),sunos)
 release-shared : LDLIBS = -lstlport_gcc -lrt
 stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug -lrt
 dbg-shared     : LDLIBS = -lstlport_gcc -lrt
-else
+endif
+
+ifeq ($(OSNAME),linux)
+release-shared : LDLIBS = -lstlport_gcc
+stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug
+dbg-shared     : LDLIBS = -lstlport_gcc
+endif
+
+ifeq ($(OSNAME),freebsd)
 release-shared : LDLIBS = -lstlport_gcc
 stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug
 dbg-shared     : LDLIBS = -lstlport_gcc
