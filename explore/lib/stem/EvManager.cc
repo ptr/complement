@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/23 12:57:45 ptr>
+// -*- C++ -*- Time-stamp: <99/03/24 18:32:31 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #include <EvManager.h>
@@ -8,22 +8,42 @@ namespace EDS {
 
 std::string EvManager::inv_key_str( "invalid key" );
 
+void EvManager::Remove( NetTransport *channel )
+{
+  heap_type::iterator i = heap.begin();
+
+  while ( i != heap.end() ) {
+    if ( (*i).second.remote != 0 && (*i).second.remote->channel == channel ) {
+      heap.erase( i++ );
+    } else {
+      ++i;
+    }
+  }
+}
+
+unsigned EvManager::sid( const key_type& id ) const
+{
+  heap_type::const_iterator i = heap.find( id );
+  if ( i == heap.end() || (*i).second.remote == 0 ) {
+    return 0;
+  }
+  return (*i).second.remote->channel->sid();       
+}
+
 void EvManager::Send( const Event& e, const EvManager::key_type& src_id )
 {
-  dump( std::cerr, e );
-  std::cerr << "Send: " << std::hex << src_id << "\n";
   heap_type::iterator i = heap.find( e.dest() );
   if ( i != heap.end() ) {
     if ( (*i).second.ref != 0 ) { // local deliver
-       std::cerr << "Local\n";
+//       std::cerr << "Local\n";
       (*i).second.ref->Dispatch( e );
     } else { // remote object
-       std::cerr << "Remote\n";
+//       std::cerr << "Remote\n";
       __stl_assert( (*i).second.remote != 0 );
       (*i).second.remote->channel->push( e, (*i).second.remote->key, src_id );
     }
   } else {
-    std::cerr << "Not found\n";
+    std::cerr << "===================== Not found\n";
   }
 }
 
