@@ -42,10 +42,8 @@
 extern "C" {
 #endif
 
-#ifndef uint32_t // HP-UX 10.01
+#if defined(__hpux) && !defined(_INO32_T) // seems this is HP-UX ~10.01
 typedef unsigned uint32_t;
-#endif
-#ifndef uint8_t  // HP-UX 10.01
 typedef unsigned char uint8_t;
 #endif
 
