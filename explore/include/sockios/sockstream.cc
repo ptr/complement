@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/06 18:59:21 ptr>
+// -*- C++ -*- Time-stamp: <00/11/03 19:52:45 ptr>
 
 /*
  *
@@ -328,55 +328,28 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
   FD_ZERO( &pfd );
   FD_SET( fd(), &pfd );
 
-  // See comments for __unix section; I don't understand how in wins
-  // buffers locked.
-
-  // Seems with MS's iostream work fine without MT_UNLOCK/MT_LOCK
-  // (and more: with MS's ios buffers and MT_UNLOCK/MT_LOCK this
-  // shouldn't work) while with my ones it's required
-
-  // !!!! If use native MS iostreams, comment three lines <---- i below !!!
-#  ifndef __SGI_STL_OWN_IOSTREAMS 
-  __locker()._M_release_lock();   // <---- 1
-#  endif
   if ( select( fd() + 1, &pfd, 0, 0, 0 ) <= 0 ) {
-#  ifndef __SGI_STL_OWN_IOSTREAMS 
-    __locker()._M_acquire_lock(); // <---- 2
-#  endif
     return traits::eof();
   }
-#  ifndef __SGI_STL_OWN_IOSTREAMS 
-  __locker()._M_acquire_lock();   // <---- 3
-#  endif
 #else // WIN32
   pollfd pfd;
   pfd.fd = fd();
   pfd.events = POLLIN;
   pfd.revents = 0;
 
-  // Here trick with buffer locking: while I sleep on poll, buffer should
-  // be unlocked to allow output operations; Before return, I should
-  // recover status quo: indeed I am in critical section, that will
-  // be unlocked outside this code (as it was locked outside it).
-#  ifndef __SGI_STL_OWN_IOSTREAMS 
-  __locker()._M_release_lock();
-#  endif
+  // cerr << ((unsigned)this) << " before poll" << endl;
   if ( poll( &pfd, 1, -1 ) <= 0 ) { // wait infinite
-#  ifndef __SGI_STL_OWN_IOSTREAMS 
-    __locker()._M_acquire_lock();
-#  endif
+    // cerr << "after poll -1" << endl;
     return traits::eof();
   }
-#ifndef __SGI_STL_OWN_IOSTREAMS 
-  __locker()._M_acquire_lock();
-#endif
+  // cerr << ((unsigned)this) << "after poll, read" << endl;
 #endif
 
   __STL_ASSERT( this->eback() != 0 );
   __STL_ASSERT( _ebuf != 0 );
 
-  // cerr << "Read" << endl;
   long offset = (this->*_xread)( this->eback(), sizeof(char_type) * (_ebuf - this->eback()) );
+  // cerr << ((unsigned)this) << "after poll, read " << offset << endl;
   if ( offset <= 0 ) // don't allow message of zero length
     return traits::eof();
   offset /= sizeof(charT);

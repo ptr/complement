@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/10/11 12:43:26 ptr>
+// -*- C++ -*- Time-stamp: <00/11/04 11:27:52 ptr>
 
 /*
  *
@@ -461,12 +461,12 @@ void NetTransportMP::connect( sockstream& s )
       smgr[ _sid ]._port = s.rdbuf()->port();
       smgr.unlock();
       net = &s;
-#ifndef __hpux
+// #ifndef __hpux
       if ( !sock_dgr ) {
         net->rdbuf()->setoptions( std::sock_base::so_linger, true, 10 );
         net->rdbuf()->setoptions( std::sock_base::so_keepalive, true );
       }
-#endif
+// #endif
     } else if ( sock_dgr /* && _sid != badkey */ ) {
       smgr.lock();
       if ( smgr.unsafe_is_avail( _sid ) ) {
