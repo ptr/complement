@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/11/25 11:45:31 ptr>
+// -*- C++ -*- Time-stamp: <97/04/21 13:30:34 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
@@ -152,17 +152,19 @@ template <class S, class D>
 EDSEventT<S,D>::EDSEventT( message_type msg, const D *first, const D *last ) :
     EDSEvent_base<S,D>( msg, first, last )
 {
-  CHECK_OUT_OF_RANGE( n >= 1 && sz >= sizeof( value_type ) );
-  DataObject = (pointer)::operator new( n * sz );
-  uninitialized_copy( first, last, DataObject );
+  if ( n > 0 ) {
+    CHECK_RANGE( sz > 0 );
+    DataObject = (pointer)::operator new( n * sz );
+    uninitialized_copy( first, last, DataObject );
+  }
 }
 
 template <class S, class D>
 EDSEventT<S,D>::EDSEventT( const EDSEvent& e ) :
     EDSEvent_base<S,D>( e )
 {
-  if ( sz ) {
-    CHECK_OUT_OF_RANGE( n >= 1 && sz >= sizeof( value_type ) );
+  if ( n > 0 ) {
+    CHECK_RANGE( sz > 0 );
     DataObject = reinterpret_cast<pointer>(::operator new( n * sz ));
     const_pointer first = reinterpret_cast<const_pointer>( e.Data() );
     uninitialized_copy( first, first + n, DataObject );
@@ -174,7 +176,8 @@ EDSEventT<S,D>::EDSEventT( const EDSEvent& e ) :
 template <class S, class D>
 EDSEventT<S,D>::~EDSEventT()
 {
-  if ( sz ) {
+  if ( n > 0 ) {
+    CHECK_RANGE( sz > 0 );
     destroy( DataObject, DataObject + n );
     ::operator delete( DataObject );
   }
@@ -198,8 +201,8 @@ class EDSEventT<EDSEventsCore,void> :
     EDSEventT( const EDSEventT& e ) :
 	EDSEvent_base<EDSEventsCore,void>( e )
       {
-	if ( sz ) {
-	  CHECK_OUT_OF_RANGE( n >= 1 );
+	if ( n > 0 ) {
+	  CHECK_RANGE( sz > 0 );
 	  DataObject = ::operator new( n * sz );
 	  memcpy( DataObject, e.DataObject, n * sz );
 	} else {
@@ -208,7 +211,8 @@ class EDSEventT<EDSEventsCore,void> :
       }
     ~EDSEventT()
       {
-	if ( sz ) {
+	if ( n > 0 ) {
+	  CHECK_RANGE( sz > 0 );
 	  ::operator delete( DataObject );
 	}
       }
