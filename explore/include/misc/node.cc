@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/03/19 16:41:18 ptr>
+// -*- C++ -*- Time-stamp: <02/08/01 09:58:50 ptr>
 
 /*
  *
@@ -87,10 +87,7 @@ __nodes_heap_base::key_type nodes_heap<Node>::create_root( unsigned prot )
 }
 
 template <class Node>
-#if defined(__HP_aCC) && (__HP_aCC==1)
-typename
-#endif
-nodes_heap_cursor<Node>::iterator
+__FIT_TYPENAME nodes_heap_cursor<Node>::iterator
 nodes_heap_cursor<Node>::create_catalog( const std::string& name, unsigned prot )
 {
   if ( !can_write() ) {
@@ -108,15 +105,9 @@ nodes_heap_cursor<Node>::create_catalog( const std::string& name, unsigned prot 
 }
 
 template <class Node>
-#if defined(__HP_aCC) && (__HP_aCC==1)
-typename
-#endif
-nodes_heap_cursor<Node>::iterator
-nodes_heap_cursor<Node>::insert_catalog(
-#if defined(__HP_aCC) && (__HP_aCC==1)
-typename
-#endif
-nodes_heap_cursor<Node>::iterator i, const std::string& name, unsigned prot )
+__FIT_TYPENAME nodes_heap_cursor<Node>::iterator
+nodes_heap_cursor<Node>::insert_catalog( __FIT_TYPENAME nodes_heap_cursor<Node>::iterator i,
+                                         const std::string& name, unsigned prot )
 {
   if ( !can_write() ) {
     return catalog->end(); // no permission
@@ -204,10 +195,7 @@ void nodes_heap_cursor<Node>::cd( iterator i )
 }
 
 template <class Node>
-#if defined(__HP_aCC) && (__HP_aCC==1)
-typename
-#endif
-nodes_heap_cursor<Node>::iterator
+__FIT_TYPENAME nodes_heap_cursor<Node>::iterator
 nodes_heap_cursor<Node>::mv( iterator i, nodes_heap_cursor<Node>& cursor )
 {
   if ( cursor._heap != _heap ) {
@@ -233,10 +221,7 @@ nodes_heap_cursor<Node>::mv( iterator i, nodes_heap_cursor<Node>& cursor )
 }
 
 template <class Node>
-#if defined(__HP_aCC) && (__HP_aCC==1)
-typename
-#endif
-nodes_heap_cursor<Node>::iterator
+__FIT_TYPENAME nodes_heap_cursor<Node>::iterator
 nodes_heap_cursor<Node>::mv( key_type k, nodes_heap_cursor<Node>& cursor )
 {
   if ( cursor._heap != _heap ) {
@@ -266,10 +251,7 @@ nodes_heap_cursor<Node>::mv( key_type k, nodes_heap_cursor<Node>& cursor )
 }
 
 template <class Node>
-#if defined(__HP_aCC) && (__HP_aCC==1)
-typename
-#endif
-nodes_heap_cursor<Node>::iterator
+__FIT_TYPENAME nodes_heap_cursor<Node>::iterator
 nodes_heap_cursor<Node>::mv( key_type k, nodes_heap_cursor<Node>& cursor, iterator ic )
 {
   if ( cursor._heap != _heap ) {
@@ -300,10 +282,7 @@ nodes_heap_cursor<Node>::mv( key_type k, nodes_heap_cursor<Node>& cursor, iterat
 }
 
 template <class Node>
-#if defined(__HP_aCC) && (__HP_aCC==1)
-typename
-#endif
-nodes_heap_cursor<Node>::iterator
+__FIT_TYPENAME nodes_heap_cursor<Node>::iterator
 nodes_heap_cursor<Node>::mv( iterator i, nodes_heap_cursor<Node>& cursor, const std::string& name )
 {
   if ( cursor._heap != _heap ) {
@@ -330,11 +309,7 @@ nodes_heap_cursor<Node>::mv( iterator i, nodes_heap_cursor<Node>& cursor, const 
 
 
 template <class Node>
-#if defined(__HP_aCC) && (__HP_aCC==1)
-typename
-#endif
-nodes_heap_cursor<Node>::iterator
-nodes_heap_cursor<Node>::ln( iterator i )
+__FIT_TYPENAME nodes_heap_cursor<Node>::iterator nodes_heap_cursor<Node>::ln( iterator i )
 {
   if ( is_catalog( i ) ) {
     throw entry_error( "can't link catalog" );
@@ -356,10 +331,7 @@ nodes_heap_cursor<Node>::ln( iterator i )
 }
 
 template <class Node>
-#if defined(__HP_aCC) && (__HP_aCC==1)
-typename
-#endif
-nodes_heap_cursor<Node>::iterator
+__FIT_TYPENAME nodes_heap_cursor<Node>::iterator
 nodes_heap_cursor<Node>::ln( key_type k, nodes_heap_cursor<Node>& cursor )
 {
   iterator i = cursor.entry( k );
