@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/11/05 17:48:54 ptr>
+// -*- C++ -*- Time-stamp: <99/12/22 14:53:49 ptr>
 
 /*
  *
@@ -80,24 +80,39 @@ void SessionRsp::net_unpack( std::istream& s )
   __net_unpack( s, addr );
 }
 
+void SessionMgr::raw_establish_session( EventHandler *_session_leader, addr_type addr )
+{
+  Event_base<SessionRsp> rs( EV_EDS_RS_SESSION );
+  rs.dest( addr );
+  key_type k = key_generate();  // generate new session id
+
+  __S _s;
+
+  _s.leader = _session_leader;  // store session leader
+  _s.timeout = time( 0 ) + 20 * 60;
+
+  Container::iterator i = find_if( _M_c.begin(), _M_c.end(),
+                                   compose1( bind2nd( _eq_key, -1 ), _skey ) );
+  if ( i == _M_c.end() ) {
+    _M_c.push_back( account_type(k,_s) );
+  } else {
+    (*i).first = k;
+    (*i).second = _s;
+  }
+  rs.value().key = k;
+  rs.value().addr = _session_leader->self_id();
+  _session_leader->Send( Event_convert<SessionRsp>()(rs) );
+}
+
 void SessionMgr::establish_session( const Event& ev )
 {
   stringstream s( ev.value() );
   string account;
   string passwd;
 
-#ifndef _MSC_VER
   getline( s, account );
   getline( s, passwd );
-#else
-  char ch;
-  while ( s.get( ch ).good() && ch != '\n' ) {
-    account += ch;
-  }
-  while ( s.get( ch ).good() && ch != '\n' ) {
-    passwd += ch;
-  }
-#endif
+
   // check account and permissions, create session leader (or 0)
   EventHandler *_session_leader = session_leader( account, passwd, ev.src() );
   Event_base<SessionRsp> rs( EV_EDS_RS_SESSION );
