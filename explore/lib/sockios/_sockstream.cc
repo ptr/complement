@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/04/14 20:11:47 ptr>
+// -*- C++ -*- Time-stamp: <02/06/11 09:29:53 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002
@@ -25,6 +25,9 @@
 #  endif
 #endif
 
+#include <string>
+#include <sockios/sockstream>
+
 #ifdef WIN32
 
 // The Microsoft's cool programmers made two wanderful things:
@@ -40,12 +43,7 @@
 
 #include <ostream>
 #include <sstream>
-
-#ifndef __XMT_H
 #include <mt/xmt.h>
-#endif
-
-#include <sockios/sockstream>
 
 #  if 0
 extern "C" int APIENTRY
@@ -207,3 +205,138 @@ sock_base::~sock_base()
 } // namespace std
 
 #endif // WIN32
+
+_STLP_BEGIN_NAMESPACE
+
+// For WIN32 and HP-UX 11.00 gethostbyaddr is reeentrant
+// ptr: _PTHREADS_DRAFT4 has sense only for HP-UX 11.00
+// ptr: PTHREAD_THREADS_MAX defined in HP-UX 10.01
+#if defined(WIN32) || (defined(__hpux) && \
+                        (!defined(_REENTRANT) || \
+                        (!defined(_PTHREADS_DRAFT4) && \
+                         !defined(PTHREAD_THREADS_MAX))))
+#  define __GETHOSTBYADDR__
+#endif
+
+::in_addr findhost( const char *hostname ) throw( std::domain_error )
+{
+  in_addr inet;
+  int _errno;
+
+#ifndef __GETHOSTBYADDR__
+  hostent _host;
+#  ifndef __hpux
+  char tmpbuf[1024];
+#  else // __hpux
+  hostent_data tmpbuf;
+#  endif // __hpux
+#  ifdef __linux
+  hostent *host = 0;
+  gethostbyname_r( hostname, &_host, tmpbuf, 1024, &host, &_errno );
+#  elif defined(__hpux)
+  _errno = gethostbyname_r( hostname, &_host, &tmpbuf );
+  hostent *host = &_host;
+#  elif defined(__sun)
+  hostent *host = gethostbyname_r( hostname, &_host, tmpbuf, 1024, &_errno );
+#  else // !__linux !__hpux !__sun
+#    error "Check port of gethostbyname_r"
+#  endif // __linux __hpux __sun
+  if ( host != 0 ) {
+    memcpy( (char *)&inet, (char *)host->h_addr, host->h_length );
+  }
+#else // __GETHOSTBYADDR__
+  hostent *host = gethostbyname( hostname );
+  if ( host != 0 ) {
+    memcpy( (char *)&inet, (char *)host->h_addr, host->h_length );
+  }
+#  ifdef WIN32
+    else {
+    _errno = WSAGetLastError();
+
+    // specific to Wins only:
+    // cool M$ can't resolve IP address in gethostbyname, try once more
+    // via inet_addr() and gethostbyaddr()
+    // Returned _errno depend upon WinSock version, and applied patches,
+    // with some of it even gethostbyname may be succeed.
+    if ( _errno == WSAHOST_NOT_FOUND || _errno == WSATRY_AGAIN ) {
+      unsigned long ipaddr = ::inet_addr( hostname );
+      if ( ipaddr != INADDR_NONE ) {
+        host = gethostbyaddr( (const char *)&ipaddr, sizeof(ipaddr), AF_INET );
+        if ( host != 0 ) { // Oh, that's was IP indeed...
+          memcpy( (char *)&inet, (char *)host->h_addr, host->h_length );
+          WSASetLastError( 0 ); // clear error
+          _errno = 0;
+        } else {
+          _errno = WSAGetLastError();
+        }
+      }
+    }
+  }
+#  endif // WIN32
+#endif // __GETHOSTBYADDR__
+  if ( host == 0 ) {
+    throw std::domain_error( "host not found" );
+  }
+
+  return inet;
+}
+
+std::string hostname( unsigned long inet_addr )
+{
+  std::string _hostname;
+
+#ifdef __GETHOSTBYADDR__
+  hostent *he;
+#else
+  hostent he;
+#ifndef __hpux
+  char tmp_buff[1024];
+#else
+  hostent_data tmp_buff;
+#endif
+#  ifdef __linux
+  hostent *phe = 0;
+#  endif
+#endif
+  int err = 0;
+  in_addr in;
+  in.s_addr = inet_addr;
+#ifdef __GETHOSTBYADDR__
+  // For Win 'he' is thread private data, so that's safe
+  // It's MT-safe also for HP-UX 11.00
+  he = gethostbyaddr( (char *)&in.s_addr, sizeof(in_addr), AF_INET );
+  if ( he != 0 ) {
+    _hostname = he->h_name;
+  } else {
+    _hostname = "unknown";
+  }
+#else // __GETHOSTBYADDR__
+  if (
+#  ifdef __sun
+       gethostbyaddr_r( (char *)&in.s_addr, sizeof(in_addr), AF_INET,
+                        &he, tmp_buff, 1024, &err ) != 0
+#  elif defined(__linux)
+       gethostbyaddr_r( (char *)&in.s_addr, sizeof(in_addr), AF_INET,
+                        &he, tmp_buff, 1024, &phe, &err ) == 0
+#  elif defined(__hpux) // reentrant variant for HP-UX before 11.00
+       gethostbyaddr_r( (char *)&in.s_addr, sizeof(in_addr), AF_INET,
+                        &he, &tmp_buff ) == 0
+#  else
+#    error "Check port of gethostbyaddr_r"
+#  endif
+     )
+  {
+    _hostname = he.h_name;
+  } else {
+    _hostname = "unknown";
+  }
+#endif // __GETHOSTBYADDR__
+
+  _hostname += " [";
+  _hostname += inet_ntoa( in );
+  _hostname += "]";
+
+  return _hostname;
+}
+
+_STLP_END_NAMESPACE
