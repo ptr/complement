@@ -26,6 +26,7 @@ void Arguments::parseArgs( istream& is )
   if( is.good() )
   {
     typedef istream_iterator<char,char> Iter;
+		is.unsetf( ios_base::skipws );
     copy( Iter( is ), Iter(), back_inserter( data ) );
     _args.push_back( data );
   }
