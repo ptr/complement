@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/12/06 11:54:43 ptr>
+// -*- C++ -*- Time-stamp: <00/02/03 14:04:07 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -162,7 +162,7 @@ Table& DataBase::define_table( const char *nm )
 {
   tables.push_back( new Table( nm, this ) );
 
-  return **(--tables.end());
+  return *tables.back(); // **(--tables.end());
 }
 
 Table& DataBase::table( const char *nm )
@@ -172,7 +172,12 @@ Table& DataBase::table( const char *nm )
     if ( (*i)->name() == nm ) {
       return **i;
     }
+    ++i;
   }
+  string err( "No table " );
+  err += nm;
+  err += " defined";
+  throw logic_error( err );
 }
 
 void DataBase::begin_transaction()
