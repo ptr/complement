@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/23 13:02:26 ptr>
+// -*- C++ -*- Time-stamp: <99/03/24 18:04:11 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #include <EventHandler.h>
@@ -38,9 +38,14 @@ EventHandler::Init::~Init()
   }
 }
 
-const string& EventHandler::who_is( const Event::key_type& k )
+const string& EventHandler::who_is( const Event::key_type& k ) const
 {
   return _mgr->who_is( k );
+}
+
+unsigned EventHandler::sid( const Event::key_type& k ) const
+{
+  return _mgr->sid( k );
 }
 
 void EventHandler::Send( const Event& e )
