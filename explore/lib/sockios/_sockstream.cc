@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/06/11 09:29:53 ptr>
+// -*- C++ -*- Time-stamp: <02/07/12 23:59:30 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002
@@ -337,6 +337,67 @@ std::string hostname( unsigned long inet_addr )
   _hostname += "]";
 
   return _hostname;
+}
+
+int service( const char *name, const char *proto ) throw( std::domain_error )
+{
+#ifndef __GETHOSTBYADDR__
+  char tmp_buf[1024];
+  struct servent se;
+#  ifdef __linux
+  struct servent *sep = 0;
+  if ( getservbyname_r( name, proto, &se, tmp_buf, 1024, &sep ) != 0 ) {
+    throw std::domain_error( "service not found" );
+  }
+  return ntohs( uint16_t(se.s_port) );
+#  endif
+#  ifdef __sun
+  if ( getservbyname_r( name, proto, &se, tmp_buf, 1024 ) == 0 ) {
+    throw std::domain_error( "service not found" );
+  }
+  return ntohs( uint16_t(se.s_port) );
+#  endif
+#else // __GETHOSTBYADDR__
+  struct servent *s = ::getservbyname( name, proto );
+  if ( s == 0 ) {
+    throw std::domain_error( "service not found" );
+  }
+  return ntohs( uint16_t(s->s_port) );
+#endif
+}
+
+std::string service( int port, const char *proto ) throw( std::domain_error )
+{
+  std::string _servname;
+
+  port = htons( uint16_t(port) );
+
+#ifndef __GETHOSTBYADDR__
+  char tmp_buf[1024];
+  struct servent se;
+#  ifdef __linux
+  struct servent *sep = 0;
+  if ( getservbyport_r( port, proto, &se, tmp_buf, 1024, &sep ) != 0 ) {
+    throw std::domain_error( "service not found" );
+  }
+  _servname.assign( se.s_name );
+  return _servname;
+#  endif
+#  ifdef __sun
+  if ( getservbyport_r( port, proto, &se, tmp_buf, 1024 ) == 0 ) {
+    throw std::domain_error( "service not found" );
+  }
+  _servname.assign( se.s_name );
+  return _servname;
+#  endif
+#else // __GETHOSTBYADDR__
+  struct servent *s = ::getservbyport( name, proto );
+  if ( s == 0 ) {
+    throw std::domain_error( "service not found" );
+  }
+  _servname.assign( s->s_name );
+  return _servname;
+#endif
 }
 
 _STLP_END_NAMESPACE
