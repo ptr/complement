@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/18 18:00:52 ptr>
+// -*- C++ -*- Time-stamp: <99/06/18 19:31:39 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -13,24 +13,28 @@
 
 namespace EDS {
 
+__DLLEXPORT
 void SessionRsp::pack( std::ostream& s ) const
 {
   __pack( s, key );
   __pack( s, addr );
 }
 
+__DLLEXPORT
 void SessionRsp::net_pack( std::ostream& s ) const
 {
   __net_pack( s, key );
   __net_pack( s, addr );
 }
 
+__DLLEXPORT
 void SessionRsp::unpack( std::istream& s )
 {
   __unpack( s, key );
   __unpack( s, addr );
 }
 
+__DLLEXPORT
 void SessionRsp::net_unpack( std::istream& s )
 {
   __net_unpack( s, key );
