@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/15 11:39:30 ptr>
+// -*- C++ -*- Time-stamp: <99/09/17 10:04:42 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -36,7 +36,11 @@ sockmgr_client *sockmgr_stream<Connect>::accept_tcp()
   }
 
   _xsockaddr addr;
+#ifdef _WIN32 // specific to wins headers
+  int sz = sizeof( sockaddr_in );
+#else
   size_t sz = sizeof( sockaddr_in );
+#endif
   
   sock_base::socket_type _sd = ::accept( fd(), &addr.any, &sz );
   if ( _sd == -1 ) {
@@ -71,7 +75,11 @@ sockmgr_client *sockmgr_stream<Connect>::accept_udp()
     return 0;
   }
 
+#ifdef _WIN32 // specific to wins headers
+  int sz = sizeof( sockaddr_in );
+#else
   size_t sz = sizeof( sockaddr_in );
+#endif
   _xsockaddr addr;
 #ifdef __unix
   timespec t;

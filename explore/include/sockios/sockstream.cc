@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/16 20:23:40 ptr>
+// -*- C++ -*- Time-stamp: <99/09/17 10:11:33 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -441,7 +441,11 @@ int basic_sockbuf<charT, traits>::__rdsync()
 template<class charT, class traits>
 int basic_sockbuf<charT, traits>::recvfrom( void *buf, size_t n )
 {
+#ifdef _WIN32 // specific for Wins headers
+  int sz = sizeof( sockaddr_in );
+#else
   size_t sz = sizeof( sockaddr_in );
+#endif
 
   union {
       sockaddr_in inet;
@@ -567,7 +571,7 @@ void basic_sockbuf<charT, traits>::findhost( const char *hostname )
   // cool M$ can't resolve IP address in gethostbyname, try once more
   // via inet_addr() and gethostbyaddr()
   if ( _errno == WSAHOST_NOT_FOUND ) {
-    unsigned long ipaddr = inet_addr( hostname );
+    unsigned long ipaddr = ::inet_addr( hostname );
     if ( ipaddr != INADDR_NONE ) {
       host = gethostbyaddr( (const char *)&ipaddr, sizeof(ipaddr), AF_INET );
       if ( host != 0 ) { // that's was IP indeed...
