@@ -1,19 +1,15 @@
-// -*- C++ -*- Time-stamp: <96/02/27 15:35:25 ptr>
-#ifndef __OXW_Event_h
-#define __OXW_Event_h
+// -*- C++ -*- Time-stamp: <96/08/22 21:10:52 ptr>
+#ifndef __EDS_Event_h
+#define __EDS_Event_h
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
-
-#ifndef _XLIB_H_
-#include <X11/Xlib.h>
-#endif
 
 #ifndef DEFALLOC_H
 #include <stl/defalloc.h>
 #endif
 
-#ifndef __OXW_OXWdefs_h
-#include <OXW/OXWdefs.h>
+#ifndef __EDS_EDSdefs_h
+#include <EDS/EDSdefs.h>
 #endif
 
 #ifndef __CLASS_checks_h
@@ -25,38 +21,12 @@
 #endif
 
 template <class T> class OXWEventsTable<T>;
-template <class T> class OXWCallbackObject;
 template <class S, class D > class OXWEventT;
 
 class GENERIC;
 class OXWEventsCore;
 
 typedef OXWEventT<OXWEventsCore,void> OXWEvent;
-typedef OXWEventT<OXWEventsCore,XEvent> OXWEventX;
-typedef OXWEventT<OXWEventsCore,OXWCallbackObject<GENERIC> > OXWEventCb;
-
-template <class T>
-class OXWCallbackObject
-{
-  public:
-    typedef void (T::*PMF)();
-    OXWCallbackObject( T *o, PMF pmf )
-      { object = o; Pmf = pmf; }
-    OXWCallbackObject()
-      { object = 0; Pmf = 0; }
-    operator OXWCallbackObject<GENERIC>&()
-      { return *((OXWCallbackObject<GENERIC> *)this); }
-    operator const OXWCallbackObject<GENERIC>&() const
-      { return *((OXWCallbackObject<GENERIC> *)this); }
-    T *object;
-    PMF Pmf;
-};
-
-struct OXWInt2
-{
-  int A;
-  int B;
-};
 
 // ***************************************************************** OXWEventT
 
@@ -185,16 +155,6 @@ class OXWEventT<OXWEventsCore,void>
       { return sz; }
     void Sender( OXWEventsCore *x )
       { theSender = x; }
-    operator OXWEventX& ()
-      {
-	PRECONDITION( Message < LASTEvent );
-	return *((OXWEventX *)this);
-      }
-    operator const OXWEventX& () const
-      {
-	PRECONDITION( Message < LASTEvent );
-	return *((OXWEventX *)this);
-      }
 
     OXWEventT( const OXWEventT& e ) :
 	Message( e.Message ),
@@ -217,52 +177,6 @@ class OXWEventT<OXWEventsCore,void>
     message_type Message;
     OXWEventsCore *theSender;
     void *DataObject;
-    size_t sz;
-};
-
-// ******************************************* OXWEventT<OXWEventsCore,XEvent>
-
-class OXWEventT<OXWEventsCore,XEvent>
-{
-  friend OXWEvent;
-
-  public:
-    OXWEventT() :
-	Message( 0 ),
-	theSender( 0 ),
-	DataObject( 0 ),
-	sz( 0 )
-      { }
-    OXWEventT( const XEvent& x ) :
-	Message( x.type ),
-	theSender( 0 ),
-	DataObject( (XEvent *)&x ),
-	sz( 0 )
-      { }
-    OXWEventT( const OXWEvent& e ) :
-	Message( e.GetMessage() ),
-	theSender( 0 ),
-	DataObject( (XEvent *)e.Data() )
-	sz( 0 )
-      {
-	PRECONDITION( Message < LASTEvent );
-      }
-    message_type GetMessage() const
-      { return Message; }
-
-    operator XEvent& ()
-      {	return *DataObject; }
-    operator OXWEvent& ()
-      { return *( (OXWEvent *)this ); }
-    operator const XEvent& () const
-      {	return *DataObject; }
-    operator const OXWEvent& () const
-      { return *( (OXWEvent *)this ); }
-
-  private:
-    message_type Message;
-    OXWEventsCore *theSender;
-    XEvent *DataObject;
     size_t sz;
 };
 

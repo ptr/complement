@@ -1,6 +1,6 @@
-// -*- C++ -*- Time-stamp: <96/03/05 18:09:13 ptr>
-#ifndef __OXW_EvManager_h
-#define __OXW_EvManager_h
+// -*- C++ -*- Time-stamp: <96/08/22 22:21:09 ptr>
+#ifndef __EDS_EvManager_h
+#define __EDS_EvManager_h
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -20,8 +20,8 @@
 #include <stl/stack.h>
 #endif
 
-#ifndef __OXW_Event_h
-#include <OXW/Event.h>
+#ifndef __EDS_Event_h
+#include <EDS/Event.h>
 #endif
 
 class OXWEventsCore;
@@ -83,7 +83,6 @@ class OXWEvManager :
     bool wait_empty();
     bool wait_not_empty();
     void dispatch();
-    void X_dispatch();
     void Done();
     bool isDone()
       { return done; }
