@@ -1,82 +1,90 @@
 #!/usr/bin/env python
 #
-# Time-stamp: <03/07/23 23:41:51 ptr>
+# Time-stamp: <03/07/23 23:40:42 ptr>
 #
 # $Id$
 #
 
 import sys
 import os
+import time
 
 BASEDIR = os.path.normpath( os.getcwd() + "/../../../" );
-time = BASEDIR + "/app/utils/time/obj/gcc/shared/time"
-# time = '/usr/bin/time'
+timeprg = BASEDIR + "/app/utils/time/obj/gcc/shared/time"
+# timeprg = '/usr/bin/time'
 
-en = os.environ["LD_LIBRARY_PATH"]
+#os.environ["LD_LIBRARY_PATH"] = BASEDIR + '/build/lib:' + os.environ["LD_LIBRARY_PATH"]
 
-def test( d, lib ):
+def test( d ):
   os.unlink( 's.log' )
-  os.environ["LD_LIBRARY_PATH"] = lib + ':' + en
   for i in range(10):
     print '.',
-    os.spawnve( os.P_WAIT, time, ['', '-a', '-o', 's.log', d + '/obj/gcc/shared/str' ], os.environ )
+    os.spawnve( os.P_WAIT, timeprg, ['', '-a', '-o', 's.log', d + '/obj/gcc/shared/str' ], os.environ )
+    time.sleep(120)
 
-os.system( 'cd add; make -f Makefile-g++-3 clobber depend all' )
-test( 'add', '.' )
-os.system( 'echo 1 `../stat.awk s.log` > g++-3.dat' )
+test( 'add/libstd++' )
+os.system( 'echo 1 `../stat.awk s.log` > libstd++.dat' )
+time.sleep(60*10)
+test( 'find/libstd++' )
+os.system( 'echo 2 `../stat.awk s.log` >> libstd++.dat' )
+time.sleep(60*10)
+test( 'ops/libstd++' )
+os.system( 'echo 3 `../stat.awk s.log` >> libstd++.dat' )
+time.sleep(60*10)
+test( 'params/libstd++' )
+os.system( 'echo 4 `../stat.awk s.log` >> libstd++.dat' )
+time.sleep(60*10)
+test( 'params-ref/libstd++' )
+os.system( 'echo 5 `../stat.awk s.log` >> libstd++.dat' )
 
-os.system( 'cd find; make -f Makefile-g++-3 clobber depend all' )
-test( 'find', '.' )
-os.system( 'echo 2 `../stat.awk s.log` >> g++-3.dat' )
+time.sleep(60*15)
 
-os.system( 'cd ops; make -f Makefile-g++-3 clobber depend all' )
-test( 'ops', '.' )
-os.system( 'echo 3 `../stat.awk s.log` >> g++-3.dat' )
-
-os.system( 'cd params; make -f Makefile-g++-3 clobber depend all' )
-test( 'params', '.' )
-os.system( 'echo 4 `../stat.awk s.log` >> g++-3.dat' )
-
-os.system( 'cd params-ref; make -f Makefile-g++-3 clobber depend all' )
-test( 'params-ref', '.' )
-os.system( 'echo 5 `../stat.awk s.log` >> g++-3.dat' )
-
-os.system( 'cd add; make -f Makefile-STLport clobber depend all' )
-test( 'add', '/export/home/ptr/STLport.lab/STLport/lib' )
+test( 'add/STLport-default' )
 os.system( 'echo 1 `../stat.awk s.log` > STLport.dat' )
-
-os.system( 'cd find; make -f Makefile-STLport clobber depend all' )
-test( 'find', '/export/home/ptr/STLport.lab/STLport/lib' )
+time.sleep(60*6)
+test( 'find/STLport-default' )
 os.system( 'echo 2 `../stat.awk s.log` >> STLport.dat' )
-
-os.system( 'cd ops; make -f Makefile-STLport clobber depend all' )
-test( 'ops', '/export/home/ptr/STLport.lab/STLport/lib' )
+time.sleep(60*6)
+test( 'ops/STLport-default' )
 os.system( 'echo 3 `../stat.awk s.log` >> STLport.dat' )
-
-os.system( 'cd params; make -f Makefile-STLport clobber depend all' )
-test( 'params', '/export/home/ptr/STLport.lab/STLport/lib' )
+time.sleep(60*6)
+test( 'params/STLport-default' )
 os.system( 'echo 4 `../stat.awk s.log` >> STLport.dat' )
-
-os.system( 'cd params-ref; make -f Makefile-STLport clobber depend all' )
-test( 'params-ref', '/export/home/ptr/STLport.lab/STLport/lib' )
+time.sleep(60*6)
+test( 'params-ref/STLport-default' )
 os.system( 'echo 5 `../stat.awk s.log` >> STLport.dat' )
 
-os.system( 'cd add; make -f Makefile-STLport.malloc clobber depend all' )
-test( 'add', '/export/home/ptr/STLport.lab/STLport.malloc/lib' )
+time.sleep(60*15)
+
+test( 'add/STLport-malloc' )
 os.system( 'echo 1 `../stat.awk s.log` > STLport-malloc.dat' )
-
-os.system( 'cd find; make -f Makefile-STLport.malloc clobber depend all' )
-test( 'find', '/export/home/ptr/STLport.lab/STLport.malloc/lib' )
+time.sleep(60*6)
+test( 'find/STLport-malloc' )
 os.system( 'echo 2 `../stat.awk s.log` >> STLport-malloc.dat' )
-
-os.system( 'cd ops; make -f Makefile-STLport.malloc clobber depend all' )
-test( 'ops', '/export/home/ptr/STLport.lab/STLport.malloc/lib' )
+time.sleep(60*6)
+test( 'ops/STLport-malloc' )
 os.system( 'echo 3 `../stat.awk s.log` >> STLport-malloc.dat' )
-
-os.system( 'cd params; make -f Makefile-STLport.malloc clobber depend all' )
-test( 'params', '/export/home/ptr/STLport.lab/STLport.malloc/lib' )
+time.sleep(60*6)
+test( 'params/STLport-malloc' )
 os.system( 'echo 4 `../stat.awk s.log` >> STLport-malloc.dat' )
-
-os.system( 'cd params-ref; make -f Makefile-STLport.malloc clobber depend all' )
-test( 'params-ref', '/export/home/ptr/STLport.lab/STLport.malloc/lib' )
+time.sleep(60*6)
+test( 'params-ref/STLport-malloc' )
 os.system( 'echo 5 `../stat.awk s.log` >> STLport-malloc.dat' )
+
+time.sleep(60*15)
+
+test( 'add-ropes/STLport-default' )
+os.system( 'echo 1 `../stat.awk s.log` > STLport-ropes.dat' )
+time.sleep(60*6)
+test( 'find-ropes/STLport-default' )
+os.system( 'echo 2 `../stat.awk s.log` >> STLport-ropes.dat' )
+time.sleep(60*60)
+test( 'ops-ropes/STLport-default' )
+os.system( 'echo 3 `../stat.awk s.log` >> STLport-ropes.dat' )
+time.sleep(60*6)
+test( 'params-ropes/STLport-default' )
+os.system( 'echo 4 `../stat.awk s.log` >> STLport-ropes.dat' )
+time.sleep(60*6)
+test( 'params-ref-ropes/STLport-default' )
+os.system( 'echo 5 `../stat.awk s.log` >> STLport-ropes.dat' )
+
