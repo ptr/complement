@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 10:06:37 ptr>
+// -*- C++ -*- Time-stamp: <00/02/25 18:06:51 ptr>
 
 /*
  *
@@ -66,7 +66,7 @@ class Event_base<short> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         net_pack( ss );
         s.value() = ss.str();
       }
@@ -76,7 +76,7 @@ class Event_base<short> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        net_unpack( std::stringstream( s.value() ) );
+        net_unpack( __STD::stringstream( s.value() ) );
       }
 
     void pack( Event& s ) const
@@ -84,7 +84,7 @@ class Event_base<short> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         pack( ss );
         s.value() = ss.str();
       }
@@ -94,19 +94,19 @@ class Event_base<short> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        unpack( std::stringstream( s.value() ) );
+        unpack( __STD::stringstream( s.value() ) );
       }
 
-    void pack( std::ostream& __s ) const
+    void pack( __STD::ostream& __s ) const
       { __s.write( (const char *)&_data, sizeof(D) ); }
-    void unpack( std::istream& __s )
+    void unpack( __STD::istream& __s )
       { __s.read( (char *)&_data, sizeof(D) ); }
-    void net_pack( std::ostream& __s ) const
+    void net_pack( __STD::ostream& __s ) const
       {
         value_type tmp = to_net( _data );
         __s.write( (const char *)&tmp, sizeof(D) );
       }
-    void net_unpack( std::istream& __s )
+    void net_unpack( __STD::istream& __s )
       {
         value_type tmp;
         __s.read( (char *)&tmp, sizeof(D) );
@@ -160,7 +160,7 @@ class Event_base<unsigned short> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         net_pack( ss );
         s.value() = ss.str();
       }
@@ -170,7 +170,7 @@ class Event_base<unsigned short> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        net_unpack( std::stringstream( s.value() ) );
+        net_unpack( __STD::stringstream( s.value() ) );
       }
 
     void pack( Event& s ) const
@@ -178,7 +178,7 @@ class Event_base<unsigned short> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         pack( ss );
         s.value() = ss.str();
       }
@@ -188,19 +188,19 @@ class Event_base<unsigned short> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        unpack( std::stringstream( s.value() ) );
+        unpack( __STD::stringstream( s.value() ) );
       }
 
-    void pack( std::ostream& __s ) const
+    void pack( __STD::ostream& __s ) const
       { __s.write( (const char *)&_data, sizeof(D) ); }
-    void unpack( std::istream& __s )
+    void unpack( __STD::istream& __s )
       { __s.read( (char *)&_data, sizeof(D) ); }
-    void net_pack( std::ostream& __s ) const
+    void net_pack( __STD::ostream& __s ) const
       {
         value_type tmp = to_net( _data );
         __s.write( (const char *)&tmp, sizeof(D) );
       }
-    void net_unpack( std::istream& __s )
+    void net_unpack( __STD::istream& __s )
       {
         value_type tmp;
         __s.read( (char *)&tmp, sizeof(D) );
@@ -254,7 +254,7 @@ class Event_base<int> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         net_pack( ss );
         s.value() = ss.str();
       }
@@ -264,7 +264,7 @@ class Event_base<int> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        net_unpack( std::stringstream( s.value() ) );
+        net_unpack( __STD::stringstream( s.value() ) );
       }
 
     void pack( Event& s ) const
@@ -272,7 +272,7 @@ class Event_base<int> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         pack( ss );
         s.value() = ss.str();
       }
@@ -282,19 +282,19 @@ class Event_base<int> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        unpack( std::stringstream( s.value() ) );
+        unpack( __STD::stringstream( s.value() ) );
       }
 
-    void pack( std::ostream& __s ) const
+    void pack( __STD::ostream& __s ) const
       { __s.write( (const char *)&_data, sizeof(D) ); }
-    void unpack( std::istream& __s )
+    void unpack( __STD::istream& __s )
       { __s.read( (char *)&_data, sizeof(D) ); }
-    void net_pack( std::ostream& __s ) const
+    void net_pack( __STD::ostream& __s ) const
       {
         value_type tmp = to_net( _data );
         __s.write( (const char *)&tmp, sizeof(D) );
       }
-    void net_unpack( std::istream& __s )
+    void net_unpack( __STD::istream& __s )
       {
         value_type tmp;
         __s.read( (char *)&tmp, sizeof(D) );
@@ -348,7 +348,7 @@ class Event_base<unsigned> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         net_pack( ss );
         s.value() = ss.str();
       }
@@ -358,7 +358,7 @@ class Event_base<unsigned> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        net_unpack( std::stringstream( s.value() ) );
+        net_unpack( __STD::stringstream( s.value() ) );
       }
 
     void pack( Event& s ) const
@@ -366,7 +366,7 @@ class Event_base<unsigned> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         pack( ss );
         s.value() = ss.str();
       }
@@ -376,19 +376,19 @@ class Event_base<unsigned> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        unpack( std::stringstream( s.value() ) );
+        unpack( __STD::stringstream( s.value() ) );
       }
 
-    void pack( std::ostream& __s ) const
+    void pack( __STD::ostream& __s ) const
       { __s.write( (const char *)&_data, sizeof(D) ); }
-    void unpack( std::istream& __s )
+    void unpack( __STD::istream& __s )
       { __s.read( (char *)&_data, sizeof(D) ); }
-    void net_pack( std::ostream& __s ) const
+    void net_pack( __STD::ostream& __s ) const
       {
         value_type tmp = to_net( _data );
         __s.write( (const char *)&tmp, sizeof(D) );
       }
-    void net_unpack( std::istream& __s )
+    void net_unpack( __STD::istream& __s )
       {
         value_type tmp;
         __s.read( (char *)&tmp, sizeof(D) );
@@ -442,7 +442,7 @@ class Event_base<long> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         net_pack( ss );
         s.value() = ss.str();
       }
@@ -452,7 +452,7 @@ class Event_base<long> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        net_unpack( std::stringstream( s.value() ) );
+        net_unpack( __STD::stringstream( s.value() ) );
       }
 
     void pack( Event& s ) const
@@ -460,7 +460,7 @@ class Event_base<long> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         pack( ss );
         s.value() = ss.str();
       }
@@ -470,19 +470,19 @@ class Event_base<long> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        unpack( std::stringstream( s.value() ) );
+        unpack( __STD::stringstream( s.value() ) );
       }
 
-    void pack( std::ostream& __s ) const
+    void pack( __STD::ostream& __s ) const
       { __s.write( (const char *)&_data, sizeof(D) ); }
-    void unpack( std::istream& __s )
+    void unpack( __STD::istream& __s )
       { __s.read( (char *)&_data, sizeof(D) ); }
-    void net_pack( std::ostream& __s ) const
+    void net_pack( __STD::ostream& __s ) const
       {
         value_type tmp = to_net( _data );
         __s.write( (const char *)&tmp, sizeof(D) );
       }
-    void net_unpack( std::istream& __s )
+    void net_unpack( __STD::istream& __s )
       {
         value_type tmp;
         __s.read( (char *)&tmp, sizeof(D) );
@@ -536,7 +536,7 @@ class Event_base<unsigned long> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         net_pack( ss );
         s.value() = ss.str();
       }
@@ -546,7 +546,7 @@ class Event_base<unsigned long> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        net_unpack( std::stringstream( s.value() ) );
+        net_unpack( __STD::stringstream( s.value() ) );
       }
 
     void pack( Event& s ) const
@@ -554,7 +554,7 @@ class Event_base<unsigned long> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         pack( ss );
         s.value() = ss.str();
       }
@@ -564,19 +564,19 @@ class Event_base<unsigned long> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        unpack( std::stringstream( s.value() ) );
+        unpack( __STD::stringstream( s.value() ) );
       }
 
-    void pack( std::ostream& __s ) const
+    void pack( __STD::ostream& __s ) const
       { __s.write( (const char *)&_data, sizeof(D) ); }
-    void unpack( std::istream& __s )
+    void unpack( __STD::istream& __s )
       { __s.read( (char *)&_data, sizeof(D) ); }
-    void net_pack( std::ostream& __s ) const
+    void net_pack( __STD::ostream& __s ) const
       {
         value_type tmp = to_net( _data );
         __s.write( (const char *)&tmp, sizeof(D) );
       }
-    void net_unpack( std::istream& __s )
+    void net_unpack( __STD::istream& __s )
       {
         value_type tmp;
         __s.read( (char *)&tmp, sizeof(D) );
@@ -630,7 +630,7 @@ class Event_base<char> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         net_pack( ss );
         s.value() = ss.str();
       }
@@ -640,7 +640,7 @@ class Event_base<char> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        net_unpack( std::stringstream( s.value() ) );
+        net_unpack( __STD::stringstream( s.value() ) );
       }
 
     void pack( Event& s ) const
@@ -648,7 +648,7 @@ class Event_base<char> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         pack( ss );
         s.value() = ss.str();
       }
@@ -658,19 +658,19 @@ class Event_base<char> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        unpack( std::stringstream( s.value() ) );
+        unpack( __STD::stringstream( s.value() ) );
       }
 
-    void pack( std::ostream& __s ) const
+    void pack( __STD::ostream& __s ) const
       { __s.write( (const char *)&_data, sizeof(D) ); }
-    void unpack( std::istream& __s )
+    void unpack( __STD::istream& __s )
       { __s.read( (char *)&_data, sizeof(D) ); }
-    void net_pack( std::ostream& __s ) const
+    void net_pack( __STD::ostream& __s ) const
       {
         value_type tmp = to_net( _data );
         __s.write( (const char *)&tmp, sizeof(D) );
       }
-    void net_unpack( std::istream& __s )
+    void net_unpack( __STD::istream& __s )
       {
         value_type tmp;
         __s.read( (char *)&tmp, sizeof(D) );
@@ -724,7 +724,7 @@ class Event_base<unsigned char> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         net_pack( ss );
         s.value() = ss.str();
       }
@@ -734,7 +734,7 @@ class Event_base<unsigned char> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        net_unpack( std::stringstream( s.value() ) );
+        net_unpack( __STD::stringstream( s.value() ) );
       }
 
     void pack( Event& s ) const
@@ -742,7 +742,7 @@ class Event_base<unsigned char> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         pack( ss );
         s.value() = ss.str();
       }
@@ -752,19 +752,19 @@ class Event_base<unsigned char> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        unpack( std::stringstream( s.value() ) );
+        unpack( __STD::stringstream( s.value() ) );
       }
 
-    void pack( std::ostream& __s ) const
+    void pack( __STD::ostream& __s ) const
       { __s.write( (const char *)&_data, sizeof(D) ); }
-    void unpack( std::istream& __s )
+    void unpack( __STD::istream& __s )
       { __s.read( (char *)&_data, sizeof(D) ); }
-    void net_pack( std::ostream& __s ) const
+    void net_pack( __STD::ostream& __s ) const
       {
         value_type tmp = to_net( _data );
         __s.write( (const char *)&tmp, sizeof(D) );
       }
-    void net_unpack( std::istream& __s )
+    void net_unpack( __STD::istream& __s )
       {
         value_type tmp;
         __s.read( (char *)&tmp, sizeof(D) );
@@ -818,7 +818,7 @@ class Event_base<signed char> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         net_pack( ss );
         s.value() = ss.str();
       }
@@ -828,7 +828,7 @@ class Event_base<signed char> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        net_unpack( std::stringstream( s.value() ) );
+        net_unpack( __STD::stringstream( s.value() ) );
       }
 
     void pack( Event& s ) const
@@ -836,7 +836,7 @@ class Event_base<signed char> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
-        std::stringstream ss;
+        __STD::stringstream ss;
         pack( ss );
         s.value() = ss.str();
       }
@@ -846,19 +846,19 @@ class Event_base<signed char> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
-        unpack( std::stringstream( s.value() ) );
+        unpack( __STD::stringstream( s.value() ) );
       }
 
-    void pack( std::ostream& __s ) const
+    void pack( __STD::ostream& __s ) const
       { __s.write( (const char *)&_data, sizeof(D) ); }
-    void unpack( std::istream& __s )
+    void unpack( __STD::istream& __s )
       { __s.read( (char *)&_data, sizeof(D) ); }
-    void net_pack( std::ostream& __s ) const
+    void net_pack( __STD::ostream& __s ) const
       {
         value_type tmp = to_net( _data );
         __s.write( (const char *)&tmp, sizeof(D) );
       }
-    void net_unpack( std::istream& __s )
+    void net_unpack( __STD::istream& __s )
       {
         value_type tmp;
         __s.read( (char *)&tmp, sizeof(D) );
