@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/07 19:49:49 ptr>
+// -*- C++ -*- Time-stamp: <00/02/17 12:07:19 ptr>
 
 /*
  *
@@ -301,6 +301,9 @@ class basic_sockbuf :
     virtual streamsize xsputn(const char_type *s, streamsize n);
 
 #ifdef __SGI_STL_OWN_IOSTREAMS
+  public:
+    _STL_mutex_base _M_lock_w; // lock for writing
+    // _STL_mutex_base _M_lock; used for read lock
   private: // Helper functions
     charT* _base;
     charT* _ebuf;
@@ -405,29 +408,16 @@ class basic_sockstream :
     typedef typename traits::off_type off_type;
     */
     basic_sockstream() :
-#if defined( WIN32 ) || defined(__SGI_STL_OWN_IOSTREAMS)
 	sock_base(),
-	basic_iostream<charT,traits>( &_sb )
-	  { }
-#else
-        sock_base(),
-	basic_iostream<charT,traits>()
-          { init( &_sb ); }
-#endif
+	basic_iostream<charT,traits>( 0 )
+	  { basic_ios<charT,traits>::init(&_sb); }
     explicit basic_sockstream( const char *hostname, int port,
 			       sock_base::stype type = sock_base::sock_stream,
 			       sock_base::protocol pro = sock_base::inet ) :
-#if defined( WIN32 ) || defined( __SGI_STL_OWN_IOSTREAMS )
 	sock_base(),
-        basic_iostream<charT,traits>( &_sb )
-#else
-        sock_base(),
-	basic_iostream<charT,traits>()
-#endif
+	basic_iostream<charT,traits>( 0 )
       {
-#if !defined( WIN32 ) && !defined( __SGI_STL_OWN_IOSTREAMS )
-	init( &_sb );
-#endif
+        basic_ios<charT,traits>::init(&_sb);
 	clear();
 	if ( _sb.open( hostname, port, type, pro ) == 0 ) {
 	  setstate( ios_base::failbit );
@@ -436,17 +426,10 @@ class basic_sockstream :
 
     explicit basic_sockstream( sock_base::socket_type s, const sockaddr& addr,
                                sock_base::stype type = sock_base::sock_stream ) :
-#if defined( WIN32 ) || defined( __SGI_STL_OWN_IOSTREAMS )
 	sock_base(),
-        basic_iostream<charT,traits>( &_sb )
-#else
-        sock_base(),
-	basic_iostream<charT,traits>()
-#endif
+	basic_iostream<charT,traits>( 0 )
       {
-#if !defined( WIN32 ) && !defined( __SGI_STL_OWN_IOSTREAMS )
-	init( &_sb );
-#endif
+        basic_ios<charT,traits>::init(&_sb);
 	clear();
 	if ( _sb.open( s, addr, type ) == 0 ) {
 	  setstate( ios_base::failbit );
