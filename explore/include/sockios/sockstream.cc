@@ -1,13 +1,31 @@
-// -*- C++ -*- Time-stamp: <00/05/10 16:34:21 ptr>
+// -*- C++ -*- Time-stamp: <00/05/23 19:38:07 ptr>
 
-#ident "$SunId$ %Q%"
+/*
+ *
+ * Copyright (c) 1997-1999
+ * Petr Ovchenkov
+ *
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
+ 
+ * This material is provided "as is", with absolutely no warranty expressed
+ * or implied. Any use is at your own risk.
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies and
+ * that both that copyright notice and this permission notice appear
+ * in supporting documentation.
+ */
+
+#ident "$SunId$"
 
 #ifdef __unix
 extern "C" int nanosleep(const struct timespec *, struct timespec *);
 #endif
 
 #ifdef __Linux
-#include <sys/poll.h> // polldf
+#include <sys/poll.h> // pollfd
 #endif
 
 #ifdef __SGI_STL_OWN_IOSTREAMS
