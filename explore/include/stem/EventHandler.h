@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/19 17:11:27 ptr>
+// -*- C++ -*- Time-stamp: <99/03/19 19:43:16 ptr>
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
@@ -590,6 +590,8 @@ class EventHandler
         EventHandler::Send( EDS::Event_convert<T>()( e ) ); \
       }
 
+    Event::key_type self_id() const
+      { return _id; }
     void State( state_type state )
       { PushState( state ); }
     void PushState( state_type state );
