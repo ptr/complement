@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/12/20 17:53:32 ptr>
+// -*- C++ -*- Time-stamp: <00/01/19 13:10:08 ptr>
 
 /*
  *
@@ -273,6 +273,18 @@ void NetTransport::connect( sockstream& s )
 }
 
 // connect initiator (client) function
+
+__EDS_DLL
+NetTransportMgr::~NetTransportMgr()
+{
+  if ( net ) {
+    net->close();
+    this->close();
+    join();
+  }        
+  delete net;
+  net = 0;
+}
 
 __EDS_DLL
 addr_type NetTransportMgr::open( const char *hostname, int port,
