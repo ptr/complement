@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/10/18 11:04:52 ptr>
+// -*- C++ -*- Time-stamp: <99/10/18 18:19:33 ptr>
 
 /*
  *
@@ -198,7 +198,7 @@ int Cron::_loop( void *p )
       en.expired.tv_nsec = 1.0e9 * modf( _next, &_next );
       en.expired.tv_sec = _next;
 
-      if ( en.count < en.n ) {
+      if ( (en.count) < (en.n) ) { // This SC5.0 patch 107312-06 bug
         MT_REENTRANT( me._M_l, _1 );
         me._M_c.push( en );
       } else if ( en.n == CronEntry::infinite ) {
