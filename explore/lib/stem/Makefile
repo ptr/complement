@@ -67,14 +67,17 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/varstring.o \
 		$(OUTPUT_DIR)/TextLabel.o \
 		$(OUTPUT_DIR)/RubberTextLabel.o \
+		$(OUTPUT_DIR)/ANInputField.o \
 		$(OUTPUT_DIR)/InputPIBase.o \
 		$(OUTPUT_DIR)/InputPI.o \
 		$(OUTPUT_DIR)/InputNumPI.o \
 		$(OUTPUT_DIR)/InputMoneyPI.o \
+		$(OUTPUT_DIR)/ANInputMoneyPI.o \
 		$(OUTPUT_DIR)/InputField.o \
 		$(OUTPUT_DIR)/InputMoney.o \
 		$(OUTPUT_DIR)/InputDate.o \
 		$(OUTPUT_DIR)/TextFilter.o \
+		$(OUTPUT_DIR)/ANTextFilter.o \
 		$(OUTPUT_DIR)/TextCursor.o \
 		$(OUTPUT_DIR)/ScrVCollector.o \
 		$(OUTPUT_DIR)/ScrWindow.o \
