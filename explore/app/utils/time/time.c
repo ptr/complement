@@ -1,4 +1,4 @@
-/* -*- C -*- Time-stamp: <02/12/01 13:25:42 ptr> */
+/* -*- C -*- Time-stamp: <03/04/09 22:20:28 ptr> */
 
 /*
  *
@@ -91,7 +91,7 @@ int main( int argc, char * const * argv )
 
     pid_t ch_pid = fork();
     if ( ch_pid == 0 ) {
-      execvp( argv[1], argv + 2 ); /* start command with ones args */
+      execvp( argv[1], argv + 1 ); /* start command with ones args */
     } else {
       struct rusage r;
       struct timespec te;
