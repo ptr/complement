@@ -1,9 +1,9 @@
- /* Time-stamp: <02/10/10 12:20:41 ptr> */
+ /* Time-stamp: <02/10/15 23:51:22 ptr> */
  /* $Id$ */
 
 h1.ident {
   font: bold 12pt Sans-Serif, Arial, Helvetica;
-  margine-left: 0cm;
+  margin-left: 0cm;
   padding-left: 0cm;
 }
 
@@ -25,26 +25,6 @@ td.margines {
   padding-top:    0.5in;
   padding-right:  0.5in;
   padding-bottom: 0.5in;
-}
-
-/*
-table td.decor {
-}
-*/
-
-.bml {
-  background-image:       url(img/png/bml1.png);
-  background-color:       white;
-  background-position:    center;
-  color:                  #000000;
-  padding-left:   0in;
-  padding-top:    0in;
-  padding-right:  0in;
-  padding-bottom: 0in;
-  margine-left:   0cm;
-  margine-top:    0cm;
-  height:         31px;
-  width:          24px;
 }
 
 .nodecor a:link {
@@ -74,6 +54,6 @@ table td.decor {
   padding-bottom: 3ex;
   color: #00ff44;
   background-color: black;
-  font-size: 11pt;
-  font-family: courier, typewriter;
+  font-size: 10pt;
+  font-family: courier, monospace;
 }
