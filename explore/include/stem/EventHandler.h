@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <96/03/04 20:36:56 ptr>
+// -*- C++ -*- Time-stamp: <96/03/06 14:41:30 ptr>
 #ifndef __OXW_EventHandler_h
 #define __OXW_EventHandler_h
 
@@ -40,6 +40,7 @@ class OXWEventHandler;
 
 typedef list<state_type> HistoryContainer;
 typedef HistoryContainer::iterator h_iterator;
+typedef HistoryContainer::const_iterator const_h_iterator;
 
 
 class GENERIC
@@ -302,10 +303,10 @@ class __EvHandler
 	  ++first;
 	}
 	if ( first == last ) {
-	  out << "\n\tCatcher not found for message 0x" << hex << msg << dec;
+	  out << "\tCatcher not found for message 0x" << hex << msg << dec;
 	  return false;
 	}
-	out << "\n\tMessage 0x" << hex << msg << dec << " catcher "
+	out << "\tMessage 0x" << hex << msg << dec << " catcher "
 	    << entry->pmf_name << " (state " << *first << ")";
 	return true;
       }
@@ -469,6 +470,7 @@ class OXWEventHandler
 
   private:
     h_iterator __find( state_type );
+    const_h_iterator __find( state_type ) const;
 };
 
 // ***************************************************************************
@@ -578,7 +580,7 @@ DIAG_DECLARE_GROUP(EventDispatch);
   CLDiagBase::Out << ends;                                           \
   CLDiagGroup##g::Trace(l,CLDiagBase::Out.str(),__FILE__,__LINE__);
 
-#define TRACE_ED(handler,e)         TRACEX_ED(EventHandler,3,(handler),e)
+#define TRACE_ED(handler,e)         TRACEX_ED(EventDispatch,3,(handler),e)
 #define TRACEX_ED(g,l,handler,e)                                     \
   CLDiagBase::Out.seekp(0,ostream::beg);                             \
   CLDiagBase::Out << "\n\t" << handler.isA() << " -> ";              \
@@ -602,7 +604,7 @@ DIAG_DECLARE_GROUP(EventDispatch);
     CLDiagGroup##g::Warn(l,CLDiagBase::Out.str(),__FILE__,__LINE__);\
   }
 
-#define WARN_ED(c,handler,e)        WARNX_ED(EventHandler,c,3,(handler),e)
+#define WARN_ED(c,handler,e)        WARNX_ED(EventDispatch,c,3,(handler),e)
 #define WARNX_ED(g,c,l,handler,e)                                   \
   if(c) {                                                           \
     CLDiagBase::Out.seekp(0,ostream::beg);                          \
