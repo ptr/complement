@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/08/19 14:58:29 ptr>
+// -*- C++ -*- Time-stamp: <99/09/03 11:40:21 ptr>
 
 #ifndef __SOCKMGR_H
 #define __SOCKMGR_H
@@ -18,6 +18,14 @@
 
 #ifndef __THR_MGR_H
 #include <thr_mgr.h>
+#endif
+
+#ifndef __SOCKIOS_DLL
+#  if defined( WIN32 ) && defined( _MSC_VER )
+#    define __SOCKIOS_DLL __declspec( dllimport )
+#  else
+#    define __SOCKIOS_DLL
+#  endif
 #endif
 
 using __impl::Thread;
@@ -45,9 +53,9 @@ class basic_sockmgr :
     ~basic_sockmgr()
       { close(); }
 
-    __DLLEXPORT void open( int port, sock_base::stype type, sock_base::protocol prot );
+    __SOCKIOS_DLL void open( int port, sock_base::stype type, sock_base::protocol prot );
 
-    __DLLEXPORT void close();
+    __SOCKIOS_DLL void close();
 
     bool is_open() const
       { return _open; }
@@ -250,7 +258,7 @@ class sockmgr_stream_MP : // multiplexor
 
 } // namespace std
 
-#ifndef __STL_SEPARATE_INSTANTIATION
+#ifndef __STL_LINK_TIME_INSTANTIATION
 #include <sockmgr.cc>
 #endif
 

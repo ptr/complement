@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/08/19 12:47:15 ptr>
+// -*- C++ -*- Time-stamp: <99/09/03 11:34:08 ptr>
 
 #ifndef __SOCKSTREAM__
 #define __SOCKSTREAM__
@@ -49,6 +49,14 @@
 
 #ifndef ___xsballoc_h
 #include <_xsballoc.h>
+#endif
+
+#ifndef __SOCKIOS_DLL
+#  if defined( WIN32 ) && defined( _MSC_VER )
+#    define __SOCKIOS_DLL __declspec( dllimport )
+#  else
+#    define __SOCKIOS_DLL
+#  endif
 #endif
 
 namespace std {
@@ -133,8 +141,8 @@ class sock_base
     };
 
   protected:
-    __declspec( dllexport ) sock_base();
-    __declspec( dllexport ) ~sock_base();
+    __SOCKIOS_DLL sock_base();
+    __SOCKIOS_DLL ~sock_base();
 #endif
 };
 
@@ -424,7 +432,7 @@ typedef basic_sockstream<wchar_t,char_traits<wchar_t> > wsockstream;
 
 } // namespace std
 
-#ifndef __STL_SEPARATE_INSTANTIATION
+#ifndef __STL_LINK_TIME_INSTANTIATION
 #include <sockstream.cc>
 #endif
 
