@@ -2,7 +2,7 @@
 # $Id$
 
 LIBNAME = DB
-MAJOR = .0
-MINOR = .6
-PATCH = .3
+MAJOR = 0
+MINOR = 6
+PATCH = 3
 SRC_CC = xxSQL_i.cc xxSQL.cc
