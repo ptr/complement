@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/01/19 13:22:52 ptr>
+/* -*- C -*- Time-stamp: <04/05/18 08:46:15 ptr> */
 
 /*
  *
@@ -23,12 +23,15 @@
 
 #ident "@(#)$Id$"
 
-// #if defined(__GNUC__) && (__GNUC__==3) // gcc 3.1.1 at least
-// #  define __FIT_TYPENAME_TEMPLATE_PARAMETER_RET
-// #endif
+/*
+#if defined(__GNUC__) && (__GNUC__==3) // gcc 3.1.1 at least
+#  define __FIT_TYPENAME_TEMPLATE_PARAMETER_RET
+#endif
+*/
 #if defined(__GNUC__) && ( __GNUC__ == 2 ) && (__GNUC_MINOR__ == 95)
-  // at least 2.95.3
-// #define __FIT_STD_AS_GLOBAL
+/* at least 2.95.3
+#define __FIT_STD_AS_GLOBAL
+*/
 #endif
 
-#endif // __config__gcc_h
+#endif /* __config__gcc_h */
