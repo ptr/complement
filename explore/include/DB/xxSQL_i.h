@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/11/09 10:54:58 ptr>
+// -*- C++ -*- Time-stamp: <01/02/13 12:24:21 ptr>
 
 /*
  *
@@ -70,7 +70,7 @@ class DataBase
 
     DataBase( const char *name, const char *usr = 0, const char *passwd = 0,
               const char *host = 0, const char *port = 0, const char *opt = 0,
-              const char *tty = 0 );
+              const char *tty = 0, std::ostream *err = 0 );
     virtual ~DataBase();
 
     virtual void reconnect() = 0;
@@ -110,6 +110,7 @@ class DataBase
     unsigned _dbport;
     string _dbopt;
     string _dbtty;
+    std::ostream& _dberr;
 
     friend class Cursor;
 };
