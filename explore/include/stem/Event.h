@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <99/05/12 15:00:52 ptr>
+// -*- C++ -*- Time-stamp: <99/06/04 14:08:23 ptr>
 #ifndef __EDS_Event_h
 #define __EDS_Event_h
 
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+#ident "$SunId$ %Q%"
 
 #include <string>
 #include <istream>
@@ -13,11 +13,6 @@
 #include <EvPack.h>
 
 namespace EDS {
-
-// Control events:
-
-#define EV_CONNECT        0x6
-#define EV_DISCONNECT     0x7
 
 class __Event_Base
 {
