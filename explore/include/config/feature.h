@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/07 17:34:52 ptr>
+// -*- C++ -*- Time-stamp: <00/02/14 20:09:45 ptr>
 
 /*
  *
@@ -35,25 +35,37 @@
 #  endif // __STL_DEBUG_ALLOC
 #endif // _DEBUG_ALLOC
 
-# define __STL_STD_REBUILD 1
-# define  __STL_USE_SGI_STRING  1
-// # define   __STL_USE_NEW_IOSTREAMS	1
-# define __SGI_STL_OWN_IOSTREAMS 1
-// # define  __STL_HAS_WCHAR_T
-#  define __STL_NO_OWN_NAMESPACE  1
-// #  define __STL_VENDOR_CSTD std
-#ifndef __GNUC__
-#  define __STL_USE_NEW_C_HEADERS
+#define __USE_SGI_STL_PORT  0x400
+
+#if defined( __STL_DEBUG ) && (__USE_SGI_STL_PORT >= 0x400)
+#  define __STD __stl_native_std
 #else
-#  define __STL_NO_CSTD_FUNCTION_IMPORTS
-// #  define __STL_NO_METHOD_SPECIALIZATION
+#  define __STD std
 #endif
 
-#ifndef _REENTRANT
-#  define _REENTRANT
-#  define __STL_SOLARIS_THREADS
-#else
-#  define __STL_SOLARIS_THREADS
+#if __USE_SGI_STL_PORT >= 0x322
+// #  if __USE_SGI_STL_PORT < 0x400
+#    define __STL_STD_REBUILD 1
+#    define  __STL_USE_SGI_STRING  1
+// # define   __STL_USE_NEW_IOSTREAMS	1
+#    define __SGI_STL_OWN_IOSTREAMS 1
+// # define  __STL_HAS_WCHAR_T
+#     define __STL_NO_OWN_NAMESPACE  1
+// #  define __STL_VENDOR_CSTD std
+#    ifndef __GNUC__
+#      define __STL_USE_NEW_C_HEADERS
+#    else
+#      define __STL_NO_CSTD_FUNCTION_IMPORTS
+// #  define __STL_NO_METHOD_SPECIALIZATION
+#    endif
+// #  endif // __USE_SGI_STL_PORT
+
+#  ifndef _REENTRANT
+#    define _REENTRANT
+#    define __STL_SOLARIS_THREADS
+#  else
+#    define __STL_SOLARIS_THREADS
+#  endif
 #endif
 
 /*
