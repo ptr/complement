@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/22 09:53:47 ptr>
+// -*- C++ -*- Time-stamp: <99/10/05 21:45:00 ptr>
 
 /*
  *
@@ -95,8 +95,7 @@ class NetTransport_base :
       { return net != 0 && net->good(); }
     bool is_open() const
       { return net != 0 && net->is_open(); }
-    void close()
-      { if ( net != 0 ) net->close(); }
+    __EDS_DLL void close();
 
     __EDS_DLL
     bool push( const Event& );
