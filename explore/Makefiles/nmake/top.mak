@@ -1,7 +1,7 @@
-# Time-stamp: <03/07/15 14:48:29 ptr>
+# Time-stamp: <03/09/12 17:55:56 ptr>
 # $Id$
 
-.SUFFIXES:
+.SUFFIXES: .o .cc
 
 !ifndef RULESBASE
 RULESBASE = $(SRCROOT)/Makefiles
@@ -11,8 +11,10 @@ RULESBASE = $(SRCROOT)/Makefiles
 ALL_TAGS = release-shared	dbg-shared	stldbg-shared
 !endif
 
-!if [echo $(ALL_TAGS)]
-!endif
+#!if [echo $(ALL_TAGS)]
+#!endif
+#!if [echo $(RULESBASE)]
+#!endif
 
 all:	dirs $(ALL_TAGS)
 

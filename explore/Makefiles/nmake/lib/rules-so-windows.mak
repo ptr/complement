@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <03/07/10 16:11:12 ptr>
+# -*- makefile -*- Time-stamp: <03/09/15 14:23:35 ptr>
 # $Id$
 
 # Shared libraries tags
@@ -9,8 +9,10 @@ dbg-shared:	$(OUTPUT_DIR_DBG) $(SO_NAME_OUT_DBG)
 
 stldbg-shared:	$(OUTPUT_DIR_STLDBG) $(SO_NAME_OUT_STLDBG)
 
+# .o{$(OUTPUT_DIR)}.o:
+
 $(SO_NAME_OUT):	$(OBJ) $(LIBSDEP)
-	$(LINK_cc) $(LINK_OUTPUT_OPTION) $(OBJ) $(LDLIBS)
+	$(LINK_cc_REL) $(LINK_OUTPUT_OPTION) $(OBJ) $(LDLIBS)
 
 $(SO_NAME_OUT_DBG):	$(OBJ_DBG) $(LIBSDEP)
 	$(LINK_cc) $(LINK_OUTPUT_OPTION) $(OBJ_DBG) $(LDLIBS)
