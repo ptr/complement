@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/04/14 20:11:47 ptr>
+// -*- C++ -*- Time-stamp: <02/06/12 15:29:55 ptr>
 
 /*
  *
@@ -30,10 +30,11 @@
 extern "C" int nanosleep(const struct timespec *, struct timespec *);
 #endif
 
-// #ifdef __linux
 #if !defined(__sun) && !defined(_WIN32) // i.e. __linux and __hpux
 #include <sys/poll.h> // pollfd
 #endif
+
+#include <stropts.h> // for ioctl() call
 
 _STLP_BEGIN_NAMESPACE
 
@@ -46,103 +47,103 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
   if ( is_open() ) {
     return 0;
   }
-  _mode = ios_base::in | ios_base::out;
-  _errno = 0;
-  _type = type;
+  try {
+    _mode = ios_base::in | ios_base::out;
+    _errno = 0;
+    _type = type;
 #ifdef WIN32
-  WSASetLastError( 0 );
+    WSASetLastError( 0 );
 #endif
-  if ( prot == sock_base::inet ) {
-    _fd = socket( PF_INET, type, 0 );
-    if ( _fd == -1 ) {
-#ifdef WIN32
-      _errno = WSAGetLastError();
-#else
-      _errno = errno;
-#endif
-      return 0;
-    }
-    _address.inet.sin_family = AF_INET;
-    // htons is a define at least in Linux 2.2.5-15, and it's expantion fail
-    // for gcc 2.95.3
+    if ( prot == sock_base::inet ) {
+      _fd = socket( PF_INET, type, 0 );
+      if ( _fd == -1 ) {
+        throw std::runtime_error( "can't open socket" );
+      }
+      _address.inet.sin_family = AF_INET;
+      // htons is a define at least in Linux 2.2.5-15, and it's expantion fail
+      // for gcc 2.95.3
 #if defined(linux) && defined(htons) && defined(__bswap_16)
-    _address.inet.sin_port = ((((port) >> 8) & 0xff) | (((port) & 0xff) << 8));
+      _address.inet.sin_port = ((((port) >> 8) & 0xff) | (((port) & 0xff) << 8));
 #else
-    _address.inet.sin_port = htons( port );
+      _address.inet.sin_port = htons( port );
 #endif // linux && htons
-    if ( !findhost( name ) ) {
-#ifdef WIN32
-      ::closesocket( _fd );
-#else
-      ::close( _fd );
-#endif
-      _fd = -1;
-      return 0;
-    }
+      _address.inet.sin_addr = std::findhost( name );
 	  
-    // Generally, stream sockets may successfully connect() only once
-    if ( connect( _fd, &_address.any, sizeof( _address ) ) == -1 ) {
+      // Generally, stream sockets may successfully connect() only once
+      if ( connect( _fd, &_address.any, sizeof( _address ) ) == -1 ) {
+        throw std::domain_error( "connect fail" );
+      }
+      if ( type == sock_base::sock_stream ) {
+        _xwrite = &_Self_type::write;
+        _xread = &_Self_type::read;
+      } else if ( type == sock_base::sock_dgram ) {
+        _xwrite = &_Self_type::send;
+        _xread = &_Self_type::recv;
+      }
+    } else if ( prot == sock_base::local ) {
+      _fd = socket( PF_UNIX, type, 0 );
+      if ( _fd == -1 ) {
+        throw std::runtime_error( "can't open socket" );
+      }
+    } else { // other protocols not implemented yet
+      throw std::invalid_argument( "protocol not implemented" );
+    }
+    if ( _bbuf == 0 )
+      _M_allocate_block( 0xb00 ); // max 1460 (dec) [0x5b4] --- single segment
+    if ( _bbuf == 0 ) {
+      throw std::length_error( "can't allocate block" );
+    }
+
+    setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
+    setg( this->epptr(), this->epptr(), this->epptr() );
+
+    _STLP_ASSERT( this->pbase() != 0 );
+    _STLP_ASSERT( this->pptr() != 0 );
+    _STLP_ASSERT( this->epptr() != 0 );
+    _STLP_ASSERT( this->eback() != 0 );
+    _STLP_ASSERT( this->gptr() != 0 );
+    _STLP_ASSERT( this->egptr() != 0 );
+    _STLP_ASSERT( _bbuf != 0 );
+    _STLP_ASSERT( _ebuf != 0 );
+
+    _errno = 0; // if any
+    // __hostname();
+
+//	in_port_t ppp = 0x5000;
+//	cerr << hex << _address.inet.sin_port << " " << ppp << endl;
+//	cerr << hex << _address.inet.sin_addr.s_addr << endl;
+  }
+  catch ( std::domain_error& ) {
 #ifdef WIN32
-      _errno = WSAGetLastError();
-      ::closesocket( _fd );
+    _errno = WSAGetLastError();
+    ::closesocket( _fd );
 #else
-      _errno = errno;
-      ::close( _fd );
+    _errno = errno;
+    ::close( _fd );
 #endif
-      _fd = -1;
-      return 0;
-    }
-    if ( type == sock_base::sock_stream ) {
-      _xwrite = &_Self_type::write;
-      _xread = &_Self_type::read;
-    } else if ( type == sock_base::sock_dgram ) {
-      _xwrite = &_Self_type::send;
-      _xread = &_Self_type::recv;
-    }
-  } else if ( prot == sock_base::local ) {
-    _fd = socket( PF_UNIX, type, 0 );
-    if ( _fd == -1 ) {
-#ifdef WIN32
-      _errno = WSAGetLastError();
-#else
-      _errno = errno;
-#endif
-      return 0;
-    }
-  } else { // other protocols not implemented yet
+    _fd = -1;
     return 0;
   }
-  if ( _bbuf == 0 )
-    _M_allocate_block( 0xb00 ); // max 1460 (dec) [0x5b4] --- single segment
-  if ( _bbuf == 0 ) {
+  catch ( std::length_error& ) {
 #ifdef WIN32
     ::closesocket( _fd );
 #else
     ::close( _fd );
 #endif
     _fd = -1;
-
     return 0;
   }
-
-  setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
-  setg( this->epptr(), this->epptr(), this->epptr() );
-
-  _STLP_ASSERT( this->pbase() != 0 );
-  _STLP_ASSERT( this->pptr() != 0 );
-  _STLP_ASSERT( this->epptr() != 0 );
-  _STLP_ASSERT( this->eback() != 0 );
-  _STLP_ASSERT( this->gptr() != 0 );
-  _STLP_ASSERT( this->egptr() != 0 );
-  _STLP_ASSERT( _bbuf != 0 );
-  _STLP_ASSERT( _ebuf != 0 );
-
-  _errno = 0; // if any
-  __hostname();
-
-//	in_port_t ppp = 0x5000;
-//	cerr << hex << _address.inet.sin_port << " " << ppp << endl;
-//	cerr << hex << _address.inet.sin_addr.s_addr << endl;
+  catch ( std::runtime_error& ) {
+#ifdef WIN32
+    _errno = WSAGetLastError();
+#else
+    _errno = errno;
+#endif
+    return 0;
+  }
+  catch ( std::invalid_argument& ) {
+    return 0;
+  }
 
   return this;
 }
@@ -201,7 +202,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, const sock
   _STLP_ASSERT( _ebuf != 0 );
 
   _errno = 0; // if any
-  __hostname();
+  // __hostname();
 //	in_port_t ppp = 0x5000;
 //	cerr << hex << _address.inet.sin_port << " " << ppp << endl;
 //	cerr << hex << _address.inet.sin_addr.s_addr << endl;
@@ -280,7 +281,7 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
   if ( this->gptr() < this->egptr() )
     return traits::to_int_type(*this->gptr());
 
-#ifdef WIN32
+#ifdef __FIT_SELECT
   fd_set pfd;
   FD_ZERO( &pfd );
   FD_SET( fd(), &pfd );
@@ -288,36 +289,32 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
   if ( select( fd() + 1, &pfd, 0, 0, 0 ) <= 0 ) {
     return traits::eof();
   }
-#else // WIN32
+#endif // __FIT_SELECT
+#ifdef __FIT_POLL
   pollfd pfd;
   pfd.fd = fd();
   pfd.events = POLLIN;
   pfd.revents = 0;
 
-  // cerr << ((unsigned)this) << " before poll" << endl;
   if ( !is_open() /* || (_state != ios_base::goodbit) */ ) {
     return traits::eof();
   }
   if ( poll( &pfd, 1, -1 ) <= 0 ) { // wait infinite
-    // cerr << "after poll -1" << endl;
     return traits::eof();
   }
   if ( (pfd.revents & POLLERR) != 0 ) {
     // _state |= ios_base::failbit;
     return traits::eof();
   }
-  // cerr << ((unsigned)this) << "after poll, read" << endl;
-#endif
+#endif // __FIT_POLL
 
   _STLP_ASSERT( this->eback() != 0 );
   _STLP_ASSERT( _ebuf != 0 );
 
   long offset = (this->*_xread)( this->eback(), sizeof(char_type) * (_ebuf - this->eback()) );
-  // cerr << ((unsigned)this) << "after poll, read " << offset << endl;
   if ( offset <= 0 ) // don't allow message of zero length
     return traits::eof();
   offset /= sizeof(charT);
-  // cerr << "Read " << offset << endl;
         
 //	cerr << "Underflow: " << hex << unsigned(eback()) << " + " << dec
 //	     << offset << " = " << hex << unsigned( eback() + offset ) << dec << endl;
@@ -403,6 +400,7 @@ xsputn( const char_type *s, streamsize n )
   return n;
 }
 
+#if 0 // No needs: the sockets are essential bi-direction entities
 template<class charT, class traits, class _Alloc>
 int basic_sockbuf<charT, traits, _Alloc>::__rdsync()
 {
@@ -411,7 +409,7 @@ int basic_sockbuf<charT, traits, _Alloc>::__rdsync()
   int nmsg = ioctlsocket( fd(), FIONREAD, &nlen );
 #else
   long nlen = 0;
-  int nmsg = ioctl( fd(), I_NREAD, &nlen );
+  int nmsg = ioctl( fd(), I_NREAD, &nlen ); // shouldn't work, as I understand...
 #endif
   if ( nmsg > 0 && nlen > 0 ) {
     _STLP_ASSERT( _bbuf != 0 );
@@ -419,7 +417,6 @@ int basic_sockbuf<charT, traits, _Alloc>::__rdsync()
     _STLP_ASSERT( this->gptr() != 0 );
     _STLP_ASSERT( this->egptr() != 0 );
 
-//    cerr << "ioctl: " << dec << nmsg << ", " << nlen << endl;
     bool shift_req = this->gptr() == this->eback() ? false : (_ebuf - this->gptr()) > nlen ? false : true;
     if ( shift_req ) {
       _STLP_ASSERT( this->gptr() > this->eback() );
@@ -431,7 +428,6 @@ int basic_sockbuf<charT, traits, _Alloc>::__rdsync()
       return -1;             // otherwise I can't write without pipe broken
     }
     long offset = (this->*_xread)( this->egptr(), sizeof(char_type) * (_ebuf - this->egptr()) );
-//    cerr << "I read here " << offset << endl;
     if ( offset < 0 ) // allow message of zero length
       return -1;
     offset /= sizeof(charT);
@@ -440,6 +436,7 @@ int basic_sockbuf<charT, traits, _Alloc>::__rdsync()
 
   return 0;
 }
+#endif // 0
 
 #if defined(__HP_aCC) && (__HP_aCC == 1)
   union basic_sockbuf_sockaddr {
@@ -465,7 +462,7 @@ int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
       sockaddr    any;
   } addr;
 #endif
-#ifdef __unix
+#ifdef __FIT_POLL
   timespec t;
 
   t.tv_sec = 0;
@@ -474,13 +471,13 @@ int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
   pollfd pfd;
   pfd.fd = _fd;
   pfd.events = POLLIN;
-#endif
-#ifdef WIN32
+#endif // __FIT_POLL
+#ifdef __FIT_SELECT
   int t = 10;
   fd_set pfd;
-#endif
+#endif // __FIT_SELECT
   do {
-#ifdef WIN32
+#ifdef __FIT_SELECT
     FD_ZERO( &pfd );
     FD_SET( _fd, &pfd );
 
@@ -491,7 +488,8 @@ int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
     } else {
       return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
     }
-#else
+#endif // __FIT_SELECT
+#ifdef __FIT_POLL
     pfd.revents = 0;
     if ( poll( &pfd, 1, -1 ) > 0 ) { // wait infinite
       // get address of caller only
@@ -500,7 +498,7 @@ int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
     } else {
       return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
     }
-#endif
+#endif // __FIT_POLL
     if ( port() == addr.inet.sin_port && inet_addr() == addr.inet.sin_addr.s_addr ) {
 //    if ( memcmp( (void *)&_address.any, (const void *)&addr, sizeof(sockaddr) ) == 0 ) {
 #ifdef WIN32
@@ -521,131 +519,6 @@ int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
   } while ( true );
 
   return 0; // never
-}
-
-// For WIN32 and HP-UX 11.00 gethostbyaddr is reeentrant
-// ptr: _PTHREADS_DRAFT4 has sence only for HP-UX 11.00
-// ptr: PTHREAD_THREADS_MAX defined in HP-UX 10.01 and
-#if defined(WIN32) || (defined(__hpux) && \
-                        (!defined(_REENTRANT) || \
-                        (!defined(_PTHREADS_DRAFT4) && \
-                         !defined(PTHREAD_THREADS_MAX))))
-#  define __GETHOSTBYADDR__
-#endif
-
-template<class charT, class traits, class _Alloc>
-void basic_sockbuf<charT, traits, _Alloc>::__hostname()
-{
-#ifdef __GETHOSTBYADDR__
-  hostent *he;
-#else
-  hostent he;
-#ifndef __hpux
-  char tmp_buff[1024];
-#else
-  hostent_data tmp_buff;
-#endif
-#  ifdef __linux
-  hostent *phe = 0;
-#  endif
-#endif
-  int err = 0;
-  in_addr in;
-  in.s_addr = inet_addr();
-#ifdef __GETHOSTBYADDR__
-  // For Win he is thread private data, so that's safe
-  // It's MT-safe also for HP-UX 11.00
-  he = gethostbyaddr( (char *)&in.s_addr, sizeof(in_addr), AF_INET );
-  if ( he != 0 ) {
-    _hostname = he->h_name;
-  } else {
-    _hostname = "unknown";
-  }
-#else // __GETHOSTBYADDR__
-  if (
-#  ifdef __sun
-       gethostbyaddr_r( (char *)&in.s_addr, sizeof(in_addr), AF_INET,
-                        &he, tmp_buff, 1024, &err ) != 0
-#  elif defined(__linux)
-       gethostbyaddr_r( (char *)&in.s_addr, sizeof(in_addr), AF_INET,
-                        &he, tmp_buff, 1024, &phe, &err ) == 0
-#  elif defined(__hpux) // reentrant variant for HP-UX before 11.00
-       gethostbyaddr_r( (char *)&in.s_addr, sizeof(in_addr), AF_INET,
-                        &he, &tmp_buff ) == 0
-#  else
-#    error "Check port of gethostbyaddr_r"
-#  endif
-     )
-  {
-    _hostname = he.h_name;
-  } else {
-    _hostname = "unknown";
-  }
-#endif // __GETHOSTBYADDR__
-
-  _hostname += " [";
-  _hostname += inet_ntoa( in );
-  _hostname += "]";
-}
-
-template<class charT, class traits, class _Alloc>
-bool basic_sockbuf<charT, traits, _Alloc>::findhost( const char *hostname )
-{
-#ifndef __GETHOSTBYADDR__
-  hostent _host;
-#  ifndef __hpux
-  char tmpbuf[1024];
-#  else // __hpux
-  hostent_data tmpbuf;
-#  endif // __hpux
-#  ifdef __linux
-  hostent *host = 0;
-  gethostbyname_r( hostname, &_host, tmpbuf, 1024, &host, &_errno );
-#  elif defined(__hpux)
-  _errno = gethostbyname_r( hostname, &_host, &tmpbuf );
-  hostent *host = &_host;
-#  elif defined(__sun)
-  hostent *host = gethostbyname_r( hostname, &_host, tmpbuf, 1024, &_errno );
-#  else // !__linux !__hpux !__sun
-#    error "Check port of gethostbyname_r"
-#  endif // __linux __hpux __sun
-  if ( host != 0 ) {
-    memcpy( (char *)&_address.inet.sin_addr,
-            (char *)host->h_addr, host->h_length );
-  }
-#else // __GETHOSTBYADDR__
-  hostent *host = gethostbyname( hostname );
-  if ( host != 0 ) {
-    memcpy( (char *)&_address.inet.sin_addr,
-            (char *)host->h_addr, host->h_length );
-  }
-#  ifdef WIN32
-    else {
-    _errno = WSAGetLastError();
-
-    // specific to Wins only:
-    // cool M$ can't resolve IP address in gethostbyname, try once more
-    // via inet_addr() and gethostbyaddr()
-    // Returned _errno depend upon WinSock version, and applied patches,
-    // with some of it even gethostbyname may be succeed.
-    if ( _errno == WSAHOST_NOT_FOUND || _errno == WSATRY_AGAIN ) {
-      unsigned long ipaddr = ::inet_addr( hostname );
-      if ( ipaddr != INADDR_NONE ) {
-        host = gethostbyaddr( (const char *)&ipaddr, sizeof(ipaddr), AF_INET );
-        if ( host != 0 ) { // Oh, that's was IP indeed...
-          memcpy( (char *)&_address.inet.sin_addr,
-                  (char *)host->h_addr, host->h_length );
-          WSASetLastError( 0 ); // clear error
-          _errno = 0;
-        } else {
-          _errno = WSAGetLastError();
-        }
-      }
-    }
-  }
-#  endif // WIN32
-#endif // __GETHOSTBYADDR__
-  return host == 0 ? false : true;
 }
 
 template<class charT, class traits, class _Alloc>
@@ -673,10 +546,6 @@ void basic_sockstream<charT, traits, _Alloc>::setoptions( sock_base::so_t optnam
   }
 #endif // __unix
 }
-
-#ifdef __GETHOSTBYADDR__
-#undef __GETHOSTBYADDR__
-#endif
 
 _STLP_END_NAMESPACE
 
