@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/06/04 14:07:08 ptr>
+// -*- C++ -*- Time-stamp: <99/08/18 22:56:55 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #include <EvManager.h>
@@ -34,7 +34,7 @@ EvSessionManager::key_type EvManager::sid( const key_type& id ) const
   MT_REENTRANT( _lock_heap, _1 );
   heap_type::const_iterator i = heap.find( id );
   if ( i == heap.end() || (*i).second.remote == 0 ) {
-    return -1;
+    return static_cast<EvSessionManager::key_type>(-1);
   }
   return (*i).second.remote->channel->sid();
 }
