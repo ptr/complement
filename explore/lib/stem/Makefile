@@ -1,9 +1,11 @@
-# Time-stamp: <96/10/16 13:23:38 ptr>
+# Time-stamp: <97/01/28 15:55:06 ptr>
 # %Z% $Date$ $Revision$ $RCSfile$ %Q%
 # Implementation and debugging EDS (Event-Driven System) class library
 # (Release 2), derived from OXW project: EDS is parent library for OXW.
 
-PROJECT = ./libEDS.so
+# PROJECT  = ./libEDS.so
+PROJECTD = ./libEDSd.so
+PROJECT = $(PROJECTD)
 
 INCLUDES = \
 	-I/usr/openwin/include \
@@ -11,19 +13,19 @@ INCLUDES = \
 	-I../../../../STL.labs
 
 DEFS = \
-	-DSVR4 \
+	-DSVR4
+DBG_DEFS = $(DEFS) \
 	-D__DEBUG=2 \
 	-D__TRACE -D__WARN
-# OPT = -g -p
-OPT = -g
-# OPT = -O4
+OPT = -O
+DBG_OPT = -g
 
 # CCFLAGS = $(OPT) -cg92 +w -PIC -instances=static -mt
-CCFLAGS = $(OPT) +w -PIC -instances=static -mt -features=no%anachronisms \
+CCFLAGS = $(DBG_OPT) +w -pic -instances=static -mt -features=no%anachronisms \
 	-features=rtti
-CPPFLAGS = $(DEFS) $(INCLUDES)
+CPPFLAGS = $(DBG_DEFS) $(INCLUDES)
 PROJECT_LIBS = -L$(INSTALL_LIB_DIR) -lCLASS -lSTL
-LDFLAGS = $(PROJECT_LIBS)
+LDFLAGS = -lCLASS -lSTL -lSTD
 
 INSTALL_LIB_DIR = /usr/home/ptr/lib
 INSTALL_CMD = /usr/home/ptr/bin/install-sh
@@ -48,6 +50,9 @@ LIBFILES.o = \
 all:	dir $(PROJECT)
 
 $(PROJECT):	$(LIBFILES.o)
+	$(LINK.cc) -G -o $@ $(LIBFILES.o)
+
+$(PROJECTD):	$(LIBFILES.o)
 	$(LINK.cc) -G -o $@ $(LIBFILES.o)
 
 $(OUTPUT_DIR)/%.o:	%.cc
