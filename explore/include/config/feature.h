@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/02/25 21:32:02 ptr>
+// -*- C++ -*- Time-stamp: <00/05/12 16:08:40 ptr>
 
 
 /*
@@ -55,6 +55,7 @@
 // #  endif 
 #endif
 
+#if 0
 #if __USE_SGI_STL_PORT >= 0x322
 // #  if __USE_SGI_STL_PORT < 0x400
 #    define __STL_STD_REBUILD 1
@@ -94,6 +95,7 @@
 #  define __STL_USE_NEW_IOSTREAMS
 #  define __STLPORT_NEW_IOSTREAMS 
 #endif
+#endif // 0
 
 #if defined( WIN32 ) && !defined(__PG_USE_STATIC_LIB) && !defined(_LIB)
 #  undef  __PG_USE_DECLSPEC
