@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/24 17:58:59 ptr>
+// -*- C++ -*- Time-stamp: <99/03/26 20:36:07 ptr>
 #ifndef __EvManager_h
 #define __EvManager_h
 
@@ -14,6 +14,12 @@
 #ifndef __EventHandler_h
 #include <EventHandler.h>
 #endif
+
+#ifndef __EvSession_h
+#include <EvSession.h>
+#endif
+
+#include <xmt.h>
 
 namespace EDS {
 
@@ -76,6 +82,7 @@ class EvManager
 
     key_type Subscribe( EventHandler *object, const std::string& info )
       {
+        MT_REENTRANT( _lock_heap, _1 );
         key_type id = create_unique();
         EDS::__Object_Entry& record = heap[id];
         record.ref = object;
@@ -86,6 +93,7 @@ class EvManager
 
     key_type SubscribeID( key_type id, EventHandler *object, const std::string& info )
       {
+        MT_REENTRANT( _lock_heap, _1 );
         if ( (id & Event::extbit) || is_avail( id ) ) {
           return -1;
         }
@@ -98,6 +106,7 @@ class EvManager
 
     key_type SubscribeRemote( NetTransport *channel, const key_type& rmkey, const std::string& info )
       {
+        MT_REENTRANT( _lock_heap, _1 );
         key_type id = create_unique() | Event::extbit;
         EDS::__Object_Entry& record = heap[id];
         // record.ref = object;
@@ -110,16 +119,9 @@ class EvManager
 
     bool Unsubscribe( const key_type& id )
       {
+        // MT_REENTRANT( _lock_heap, _1 );
         heap.erase( /* (const heap_type::key_type&)*/ id );
         return true; // may be here check object's reference count
-      }
-
-    void Dispatch( const Event& e )
-      {
-        heap_type::iterator i = heap.find( e.dest() );
-        if ( i != heap.end() && (*i).second.ref != 0 ) {
-          (*i).second.ref->Dispatch( e );
-        }
       }
 
     bool is_avail( const key_type& id ) const
@@ -134,18 +136,28 @@ class EvManager
         return (*i).second.info;
       }
 
-    unsigned sid( const key_type& id ) const;
+    EvSessionManager::key_type sid( const key_type& object_id ) const;
+    SessionInfo& session_info( EvSessionManager::key_type& k )
+      { return smgr[k]; }
 
     void Send( const Event& e, const key_type& src_id );
-    void Remove( NetTransport * );
 
   private:
     key_type create_unique();
 
+    EvSessionManager::key_type establish_session();
+    void Remove( NetTransport * );
+    void disconnect( const EvSessionManager::key_type& _sid );
+    void Dispatch( const Event& e );
+
     key_type _id;
     heap_type heap;
+    EvSessionManager smgr;
+
+    __impl::Mutex _lock_heap;
 
     static std::string inv_key_str;
+    friend class NetTransport;
 };
 
 } // namespace EDS
