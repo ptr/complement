@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/04/14 20:46:10 ptr>
+// -*- C++ -*- Time-stamp: <02/06/12 17:08:30 ptr>
 
 /*
  *
@@ -110,15 +110,15 @@ struct sockmgr_client
     sockstream s;
 };
 
-template <class Connect>
-struct sockmgr_client_MP :
-    public sockmgr_client
-{
-    sockmgr_client_MP()
-      { }
-
-    Connect    _proc;
-};
+// template <class Connect>
+// struct sockmgr_client_MP :
+//     public sockmgr_client
+// {
+//     sockmgr_client_MP()
+//       { }
+//
+//     Connect    _proc;
+// };
 
 struct less_sockmgr_client :
     public binary_function<sockmgr_client *,sockmgr_client *,bool> 
@@ -223,6 +223,20 @@ class sockmgr_stream :
     _STLP_mutex _c_lock;
 };
 
+
+class ConnectionProcessorTemplate_MP // As reference
+{
+  public:
+    ConnectionProcessorTemplate_MP( std::sockstream& )
+      { }
+
+//    void open( std::sockstream& );
+    void connect( std::sockstream& )
+      { }
+    void close()
+      { }
+};
+
 // Policy: multiplex all clients connections in one thread
 template <class Connect>
 class sockmgr_stream_MP : // multiplexor
@@ -233,7 +247,7 @@ class sockmgr_stream_MP : // multiplexor
 	basic_sockmgr(),
         _fdcount( 0 )
       {
-#ifdef __unix
+#ifdef __FIT_POLL
         _pfd = 0;
 #endif
       }
@@ -242,7 +256,7 @@ class sockmgr_stream_MP : // multiplexor
 	basic_sockmgr(),
         _fdcount( 0 )
       {
-#ifdef __unix
+#ifdef __FIT_POLL
         _pfd = 0;
 #endif
         open( port, t );
@@ -250,7 +264,7 @@ class sockmgr_stream_MP : // multiplexor
 
     ~sockmgr_stream_MP()
       {
-#ifdef __unix
+#ifdef __FIT_POLL
         if ( _pfd != 0 ) {
           delete [] _pfd;
         }
@@ -270,20 +284,44 @@ class sockmgr_stream_MP : // multiplexor
 
   protected:
     static int loop( void * );
-    typedef sockmgr_client_MP<Connect> *(sockmgr_stream_MP<Connect>::*accept_type)();
+
+    struct _Connect {
+        sockstream *s;
+        Connect *_proc;
+    };
+
+    struct fd_equal :
+        public std::binary_function<_Connect *,int,bool> 
+    {
+        bool operator()(const _Connect *__x, int __y) const
+          { return __x->s->rdbuf()->fd() == __y; }
+    };
+
+    struct in_buf_avail :
+        public std::unary_function<_Connect *,bool> 
+    {
+        bool operator()(const _Connect *__x) const
+          { return __x->s->rdbuf()->in_avail() > 0; }
+    };
+    // typedef sockmgr_client_MP<Connect> *(sockmgr_stream_MP<Connect>::*accept_type)();
+    typedef _Connect *(sockmgr_stream_MP<Connect>::*accept_type)();
 
     accept_type _accept;
-    sockmgr_client_MP<Connect> *accept() // workaround for CC
+    // sockmgr_client_MP<Connect> *accept() // workaround for CC
+    _Connect *accept() // workaround for CC
       { return (this->*_accept)(); }
-    sockmgr_client_MP<Connect> *accept_tcp();
-    sockmgr_client_MP<Connect> *accept_udp();
+    // sockmgr_client_MP<Connect> *accept_tcp();
+    // sockmgr_client_MP<Connect> *accept_udp();
+    _Connect *accept_tcp();
+    _Connect *accept_udp();
 
   private:
     Thread     loop_id;
 
   protected:
     typedef sockmgr_stream_MP<Connect> _Self_type;
-    typedef std::vector<sockmgr_client_MP<Connect> *> _Sequence;
+    // typedef std::vector<sockmgr_client_MP<Connect> *> _Sequence;
+    typedef std::vector<_Connect *> _Sequence;
     typedef fd_equal _Compare;
     typedef typename _Sequence::value_type      value_type;
     typedef typename _Sequence::size_type       size_type;
@@ -297,16 +335,17 @@ class sockmgr_stream_MP : // multiplexor
     in_buf_avail _M_av;
     _STLP_mutex _c_lock;
 
-#ifdef __unix
+#ifdef __FIT_POLL
     pollfd *_pfd;
 #endif
-#ifdef WIN32
+#ifdef __FIT_SELECT
     fd_set _pfd;
 #endif
     unsigned _fdcount;
 
   private:
-    sockmgr_client_MP<Connect> *_shift_fd();
+    // sockmgr_client_MP<Connect> *_shift_fd();
+    _Connect *_shift_fd();
 };
 
 _STLP_END_NAMESPACE
