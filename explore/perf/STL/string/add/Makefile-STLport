@@ -6,7 +6,7 @@ COMPILER_NAME := gcc
 
 ALL_TAGS := release-shared
 
-STLPORT_DIR := /export/home/ptr/STLport.lab/cvs.stlport.com/STLport-R451_dev
+STLPORT_DIR := /export/home/ptr/STLport.lab/cvs.stlport.com/STLport
 
 include Makefile.inc
 include ${SRCROOT}/Makefiles/top.mak
@@ -14,7 +14,7 @@ include ${SRCROOT}/Makefiles/top.mak
 
 INCLUDES += -I$(STLPORT_INCLUDE_DIR)
 
-release-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -Wl,-rpath=${STLPORT_LIB_DIR}
+release-shared:	LDSEARCH = -L../../build/lib -Wl,-rpath=../../build/lib
 # stldbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_STLDBG}
 # dbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_DBG}
 

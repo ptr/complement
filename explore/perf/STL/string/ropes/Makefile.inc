@@ -2,4 +2,4 @@
 # $Id$
 
 PRGNAME = str
-SRC_CC = str.cc
+SRC_CC = ../str.cc
