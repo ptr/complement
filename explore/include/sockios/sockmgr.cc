@@ -296,7 +296,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_tcp()
       _pfd[0].revents != 0
 #endif
 #ifdef WIN32
-      FD_ISSET( fd(), &_pfd );
+    FD_ISSET( fd(), &_pfd )
 #endif
       ) {
       sock_base::socket_type _sd = ::accept( fd(), &addr.any, &sz );
@@ -385,7 +385,7 @@ sockmgr_client_MP<Connect> *sockmgr_stream_MP<Connect>::accept_udp()
     ++_fdcount;
   }
 
-  if ( select( fd() + 1, &pfd, 0, 0, 0 ) > 0 ) {
+  if ( select( fd() + 1, &_pfd, 0, 0, 0 ) > 0 ) {
     // get address of caller only
     char buff[32];    
     ::recvfrom( fd(), buff, 32, MSG_PEEK, &addr.any, &sz );
