@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/09/10 15:29:29 ptr>
+// -*- C++ -*- Time-stamp: <00/11/21 20:09:16 ptr>
 
 /*
  *
@@ -76,18 +76,21 @@ void __PG_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
   en.code = ne.code;
   en.addr = entry.src();
   en.start.tv_sec = ne.start;
-  en.period.tv_sec = ne.period.tv_sec;
-  en.period.tv_nsec = ne.period.tv_nsec;
   en.n = ne.n;
+  if ( en.n == 1 ) {
+    en.period.tv_sec = 0;
+    en.period.tv_nsec = 0;
+  } else {
+    en.period.tv_sec = ne.period.tv_sec;
+    en.period.tv_nsec = ne.period.tv_nsec;
+    if ( en.n == 0 || en.period.tv_nsec >= 1000000000 ||
+         (en.period.tv_sec == 0 && en.period.tv_nsec == 0) ) 
+      return;
+  }
 
   time_t current;
   if ( en.start.tv_sec < time( &current ) ) {
     en.start.tv_sec = current;
-  }
-
-  if ( en.n == 0 || (en.period.tv_sec == 0 && en.period.tv_nsec == 0 ) ||
-       en.period.tv_nsec >= 1000000000 ) {
-    return;
   }
 
   en.expired.tv_sec = en.start.tv_sec;
