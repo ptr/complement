@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/04/12 12:38:46 ptr>
+// -*- C++ -*- Time-stamp: <99/05/25 18:50:10 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -18,12 +18,20 @@
 #include <xmt.h>
 #endif
 
+extern "C" int APIENTRY
+DllMain( HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved )
+{
+  return TRUE;   // ok
+}
+
 namespace __impl {
 
 static char __xbuff[16];
 static const char *WINSOCK_ERR_MSG = "WinSock DLL not 2.0";
 
-extern __declspec( dllexport ) int __thr_key; // xmt.cc
+// extern __declspec( dllexport ) int __thr_key; // xmt.cc
+int __thr_key = TlsAlloc();
+
 // static int _sb_idx = Thread::xalloc();
 
 } // namespace __impl
