@@ -25,7 +25,7 @@
  * documentation and/or software.
  */
 
-#include "aux/md5.h"
+#include "misc/md5.h"
 #include <string.h>
 
 /* Constants for MD5Transform routine.

@@ -3,11 +3,7 @@
 //#include <algorithm>
 #include <iterator>
 
-#ifndef _WIN32
-#include <aux/arguments.h>
-#else
-#include <aux_/arguments.h>
-#endif
+#include <misc/arguments.h>
 
 Arguments::Arguments( const string& s )
 {

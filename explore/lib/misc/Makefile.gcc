@@ -1,4 +1,4 @@
-# Time-stamp: <01/07/27 16:48:26 ptr>
+# Time-stamp: <01/09/20 11:47:04 ptr>
 # $Id$
 
 BASEDIR := $(shell xtmp=`pwd`; \
@@ -8,7 +8,7 @@ LIBDIR  := $(shell xtmp=`pwd`; dirname $$xtmp)
 COMPILER_NAME = gcc
 INSTALL_PRE_LIB_DIR = ${BASEDIR}/package/PGslib/PG/lib
 INSTALL_SC_LIB_DIR = ${BASEDIR}/package/SubClub/PGslibsc/SC/lib
-include ${BASEDIR}/lib/aux/Makefile.inc
+include ${BASEDIR}/lib/misc/Makefile.inc
 
 all:	all-release all-debug
 

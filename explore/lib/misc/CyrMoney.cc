@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/03/19 16:28:09 ptr>
+// -*- C++ -*- Time-stamp: <01/09/20 11:43:12 ptr>
 
 /*
  *
@@ -17,9 +17,9 @@
 
 #ifdef __unix
 #  ifdef __HP_aCC
-#pragma VERSIONID "$SunId$"
+#pragma VERSIONID "$Id$"
 #  else
-#pragma ident "$SunId$"
+#pragma ident "$Id$"
 #  endif
 #endif
 
@@ -28,12 +28,7 @@
 #endif
 
 #include <sstream>
-
-#ifndef _WIN32
-#include "aux/CyrMoney.h"
-#else
-#include "aux_/CyrMoney.h"
-#endif
+#include "misc/CyrMoney.h"
 
 using namespace std;
 
