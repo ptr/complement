@@ -275,7 +275,13 @@ void basic_sockbuf<charT, traits, _Alloc>::setoptions( int optname, bool __v )
   if ( is_open() ) {
     int _val = __v ? 1 : 0;
     if ( setsockopt( _fd, SOL_SOCKET, optname,
-                     (const void *)&_val, (socklen_t)sizeof(int) ) != 0 ) {
+                     (const void *)&_val,
+#ifdef socklen_t
+                     (socklen_t)sizeof(int)
+#else // HP-UX 10.01
+                     (int)sizeof(int)
+#endif
+                   ) != 0 ) {
       _state |= sock_base::sockfailbit;
 #ifdef WIN32
       _errno = WSAGetLastError();
@@ -480,7 +486,7 @@ int basic_sockbuf<charT, traits, _Alloc>::__rdsync()
 template<class charT, class traits, class _Alloc>
 int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
 {
-#ifdef _WIN32 // specific for Wins headers
+#if defined(_WIN32) || (defined(__hpux) && !defined(_INCLUDE_POSIX1C_SOURCE))
   int sz = sizeof( sockaddr_in );
 #else
   size_t sz = sizeof( sockaddr_in );
@@ -565,7 +571,11 @@ void basic_sockbuf<charT, traits, _Alloc>::__hostname()
   hostent *he;
 #else
   hostent he;
+#ifndef __hpux
   char tmp_buff[1024];
+#else
+  hostent_data tmp_buff;
+#endif
 #  ifdef __linux
   hostent *phe = 0;
 #  endif
@@ -592,7 +602,7 @@ void basic_sockbuf<charT, traits, _Alloc>::__hostname()
                         &he, tmp_buff, 1024, &phe, &err ) == 0
 #  elif defined(__hpux) // reentrant variant for HP-UX before 11.00
        gethostbyaddr_r( (char *)&in.s_addr, sizeof(in_addr), AF_INET,
-                        &he, tmp_buff ) == 0
+                        &he, &tmp_buff ) == 0
 #  else
 #    error "Check port of gethostbyaddr_r"
 #  endif
@@ -614,13 +624,17 @@ void basic_sockbuf<charT, traits, _Alloc>::findhost( const char *hostname )
 {
 #ifndef __GETHOSTBYADDR__
   hostent _host;
+#ifndef __hpux
   char tmpbuf[1024];
+#else
+  hostent_data tmpbuf;
+#endif
 #ifdef __linux
   hostent *host = 0;
   gethostbyname_r( hostname, &_host, tmpbuf, 1024, &host, &_errno );
 #elif defined(__hpux)
-  _errno = gethostbyname_r( hostname, &_host, tmpbuf );
-  hostent *host = _host;
+  _errno = gethostbyname_r( hostname, &_host, &tmpbuf );
+  hostent *host = &_host;
 #elif defined(__sun)
   hostent *host = gethostbyname_r( hostname, &_host, tmpbuf, 1024, &_errno );
 #else

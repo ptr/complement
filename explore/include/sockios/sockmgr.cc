@@ -54,7 +54,7 @@ sockmgr_client *sockmgr_stream<Connect>::accept_tcp()
   }
 
   _xsockaddr addr;
-#ifdef _WIN32 // specific to wins headers
+#if defined(_WIN32) || (defined(__hpux) && !defined(_INCLUDE_POSIX1C_SOURCE))
   int sz = sizeof( sockaddr_in );
 #else
   size_t sz = sizeof( sockaddr_in );
@@ -99,7 +99,7 @@ sockmgr_client *sockmgr_stream<Connect>::accept_udp()
     return 0;
   }
 
-#ifdef _WIN32 // specific to wins headers
+#if defined(_WIN32) || (defined(__hpux) && !defined(_INCLUDE_POSIX1C_SOURCE))
   int sz = sizeof( sockaddr_in );
 #else
   size_t sz = sizeof( sockaddr_in );
