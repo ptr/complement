@@ -1,3 +1,14 @@
+2003-09-25  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* xmt.cc, xmt.h: add Thread state flags, intended to show
+	if underlined thread is still running without restrictions
+	for detached threads; method 'good' show that underlined
+	thread still running, 'bad'---not running or in bad state
+	and 'is_join_req' show if 'join' applicable to this thread,
+	even if thread terminated and became bad; add support
+	for FreeBSD 5.1; remove STLport specific macros.
+
+
 2003-09-15  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* xmt.cc: fix wrong behaviour for wait_* functions of Semaphore
