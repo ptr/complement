@@ -1,12 +1,14 @@
-// -*- C++ -*- Time-stamp: <01/03/19 19:18:54 ptr>
+// -*- C++ -*- Time-stamp: <03/11/06 07:49:46 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999
+ * Copyright (c) 1997-1999, 2002, 2003
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
+ *
+ * Licensed under the Academic Free License version 2.0
  * 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -25,7 +27,7 @@
 #  ifdef __HP_aCC
 #pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "@(#)$Id$"
+#ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -40,11 +42,11 @@
 #endif
 
 #ifndef __EventHandler_h
-#include <EDS/EventHandler.h>
+#include <stem/EventHandler.h>
 #endif
 
 #ifndef __EvPack_h
-#include <EDS/EvPack.h>
+#include <stem/EvPack.h>
 #endif
 
 namespace EDS {
@@ -53,14 +55,14 @@ class Names :
     public EventHandler
 {
   public:
-    __PG_DECLSPEC Names();
-    explicit __PG_DECLSPEC Names( const char * );
-    explicit __PG_DECLSPEC Names( addr_type id, const char *info = 0 );
-    __PG_DECLSPEC ~Names();
+    __FIT_DECLSPEC Names();
+    explicit __FIT_DECLSPEC Names( const char * );
+    explicit __FIT_DECLSPEC Names( addr_type id, const char *info = 0 );
+    __FIT_DECLSPEC ~Names();
 
-    __PG_DECLSPEC void get_list( const Event& );
-    __PG_DECLSPEC void get_ext_list( const Event& );
-    __PG_DECLSPEC void get_by_name( const Event& );
+    __FIT_DECLSPEC void get_list( const Event& );
+    __FIT_DECLSPEC void get_ext_list( const Event& );
+    __FIT_DECLSPEC void get_by_name( const Event& );
 
   private:
     DECLARE_RESPONSE_TABLE( Names, EventHandler );
@@ -81,10 +83,10 @@ struct NameRecord :
     addr_type    addr;
     std::string  record;
 
-    virtual __PG_DECLSPEC void pack( std::ostream& s ) const;
-    virtual __PG_DECLSPEC void net_pack( std::ostream& s ) const;
-    virtual __PG_DECLSPEC void unpack( std::istream& s );
-    virtual __PG_DECLSPEC void net_unpack( std::istream& s );
+    virtual __FIT_DECLSPEC void pack( std::ostream& s ) const;
+    virtual __FIT_DECLSPEC void net_pack( std::ostream& s ) const;
+    virtual __FIT_DECLSPEC void unpack( std::istream& s );
+    virtual __FIT_DECLSPEC void net_unpack( std::istream& s );
 };
 
 } // namespace EDS

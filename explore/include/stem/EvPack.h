@@ -1,12 +1,14 @@
-// -*- C++ -*- Time-stamp: <01/03/19 18:24:39 ptr>
+// -*- C++ -*- Time-stamp: <03/11/06 07:46:48 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999
+ * Copyright (c) 1997-1999, 2002, 2003
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
+ *
+ * Licensed under the Academic Free License version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -25,7 +27,7 @@
 #  ifdef __HP_aCC
 #pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "@(#)$Id$"
+#ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -221,18 +223,18 @@ unsigned long from_net( const unsigned long& x )
 struct __pack_base
 {
     // To be released for data structure you want pass via EDS:
-    __PG_DECLSPEC virtual void pack( std::ostream& ) const = 0 ;
-    __PG_DECLSPEC virtual void unpack( std::istream& ) = 0 ;
-    __PG_DECLSPEC virtual void net_pack( std::ostream& ) const = 0 ;
-    __PG_DECLSPEC virtual void net_unpack( std::istream& ) = 0 ;
+    __FIT_DECLSPEC virtual void pack( std::ostream& ) const = 0 ;
+    __FIT_DECLSPEC virtual void unpack( std::istream& ) = 0 ;
+    __FIT_DECLSPEC virtual void net_pack( std::ostream& ) const = 0 ;
+    __FIT_DECLSPEC virtual void net_unpack( std::istream& ) = 0 ;
 
     // basic types
 
     // string
-    static __PG_DECLSPEC void __net_unpack( std::istream& s, std::string& str );
-    static __PG_DECLSPEC void __net_pack( std::ostream& s, const std::string& str );
-    static __PG_DECLSPEC void __unpack( std::istream& s, std::string& str );
-    static __PG_DECLSPEC void __pack( std::ostream& s, const std::string& str );
+    static __FIT_DECLSPEC void __net_unpack( std::istream& s, std::string& str );
+    static __FIT_DECLSPEC void __net_pack( std::ostream& s, const std::string& str );
+    static __FIT_DECLSPEC void __unpack( std::istream& s, std::string& str );
+    static __FIT_DECLSPEC void __pack( std::ostream& s, const std::string& str );
     // int
     static void __net_unpack( std::istream& s, int& x )
       {

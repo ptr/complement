@@ -1,11 +1,13 @@
-// -*- C++ -*- Time-stamp: <01/03/19 18:36:15 ptr>
+// -*- C++ -*- Time-stamp: <03/11/06 07:48:39 ptr>
 
 /*
- * Copyright (c) 1995-1999
+ * Copyright (c) 1995-1999, 2002, 2003
  * Petr Ovchenkov
  * 
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
+ *
+ * Licensed under the Academic Free License version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -24,7 +26,7 @@
 #  ifdef __HP_aCC
 #pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "@(#)$Id$"
+#ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -33,7 +35,7 @@
 #endif
 
 #ifndef __Event_h
-#include <EDS/Event.h>
+#include <stem/Event.h>
 #endif
 
 #include <algorithm>
@@ -266,7 +268,7 @@ struct __DeclareAnyPMF
 {
     state_type    st;
 #ifndef _MSC_VER
-    __FIT_TYPENAME EDS::code_type code;
+    /* __FIT_TYPENAME */ EDS::code_type code;
     __FIT_TYPENAME EDS::__PMFentry<T> func;
 #else // _MSC_VER
 #  ifdef _DEBUG
@@ -546,7 +548,7 @@ class EventHandler
     // See comment near EventHandler::EventHandler() implementation
     // HistoryContainer& theHistory;
     HistoryContainer theHistory;
-    __impl::MutexSDS _theHistory_lock;
+    __impl::MutexRS _theHistory_lock;
 
   public:
 
@@ -559,20 +561,20 @@ class EventHandler
         static int _count;
     };
 
-    __PG_DECLSPEC EventHandler();
-    explicit __PG_DECLSPEC EventHandler( const char *info );
-    explicit __PG_DECLSPEC EventHandler( addr_type id, const char *info = 0 );
-    virtual __PG_DECLSPEC ~EventHandler();
+    __FIT_DECLSPEC EventHandler();
+    explicit __FIT_DECLSPEC EventHandler( const char *info );
+    explicit __FIT_DECLSPEC EventHandler( addr_type id, const char *info = 0 );
+    virtual __FIT_DECLSPEC ~EventHandler();
 
-    __PG_DECLSPEC const string& who_is( addr_type k ) const;
-    __PG_DECLSPEC bool is_avail( addr_type id ) const;
-    __PG_DECLSPEC key_type sid( addr_type k ) const;
+    __FIT_DECLSPEC const string& who_is( addr_type k ) const;
+    __FIT_DECLSPEC bool is_avail( addr_type id ) const;
+    __FIT_DECLSPEC key_type sid( addr_type k ) const;
     static EvManager *manager()
       { return _mgr; }
-    __PG_DECLSPEC void Send( const Event& e );
-    __PG_DECLSPEC void Send( const EventVoid& e );
-    __PG_DECLSPEC void Forward( const Event& e );
-    __PG_DECLSPEC void Forward( const EventVoid& e );
+    __FIT_DECLSPEC void Send( const Event& e );
+    __FIT_DECLSPEC void Send( const EventVoid& e );
+    __FIT_DECLSPEC void Forward( const Event& e );
+    __FIT_DECLSPEC void Forward( const EventVoid& e );
 
 /* ************************************************************ *\
    Member template will be nice here, but sorry...
@@ -615,13 +617,13 @@ class EventHandler
       { return _id; }
     void State( state_type state )
       { PushState( state ); }
-    __PG_DECLSPEC void PushState( state_type state );
-    __PG_DECLSPEC state_type State() const;
-    __PG_DECLSPEC void PopState();
-    __PG_DECLSPEC void PopState( state_type );
-    __PG_DECLSPEC void PushTState( state_type state );
-    __PG_DECLSPEC void RemoveState( state_type );
-    __PG_DECLSPEC bool isState( state_type ) const;
+    __FIT_DECLSPEC void PushState( state_type state );
+    __FIT_DECLSPEC state_type State() const;
+    __FIT_DECLSPEC void PopState();
+    __FIT_DECLSPEC void PopState( state_type );
+    __FIT_DECLSPEC void PushTState( state_type state );
+    __FIT_DECLSPEC void RemoveState( state_type );
+    __FIT_DECLSPEC bool isState( state_type ) const;
     virtual bool Dispatch( const Event& )
       { return false; }
     virtual bool DispatchStub( const Event& )
@@ -630,7 +632,7 @@ class EventHandler
       { return false; }
     virtual void Trace( ostream& ) const
       { }
-    __PG_DECLSPEC void TraceStack( ostream& ) const;
+    __FIT_DECLSPEC void TraceStack( ostream& ) const;
 
   private:
     h_iterator __find( state_type );
@@ -701,7 +703,7 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
     typedef EDS::__DeclareAnyPMF<cls> evtable_decl_type;                  \
     typedef cls ThisCls;			                          \
     typedef pcls::ThisCls ParentThisCls;	                          \
-    static __PG_DECLSPEC const evtable_decl_type *get_ev_table_decl();    \
+    static __FIT_DECLSPEC const evtable_decl_type *get_ev_table_decl();    \
   protected:					                          \
     virtual bool Dispatch( const EDS::Event& __e )                        \
        {                                                                  \
@@ -713,8 +715,8 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
          MT_REENTRANT_SDS( this->_theHistory_lock, _x1 );                  \
          return theEventsTable.DispatchStub( this, theHistory.begin(),    \
                                              theHistory.end(), __e ); }   \
-    static __PG_DECLSPEC evtable_type theEventsTable;                     \
-    static __PG_DECLSPEC evtable_decl_type theDeclEventsTable[]
+    static __FIT_DECLSPEC evtable_type theEventsTable;                     \
+    static __FIT_DECLSPEC evtable_decl_type theDeclEventsTable[]
 
 // Macro for specification of response table body beginning:
 // DEFINE_RESPONSE_TABLE( XX )
@@ -722,11 +724,11 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
 // END_RESPONSE_TABLE
 
 #define DEFINE_RESPONSE_TABLE( cls )		                          \
-__PG_DECLSPEC cls::evtable_type cls::theEventsTable;                      \
+__FIT_DECLSPEC cls::evtable_type cls::theEventsTable;                      \
                                                                           \
-__PG_DECLSPEC const cls::evtable_decl_type *cls::get_ev_table_decl()      \
+__FIT_DECLSPEC const cls::evtable_decl_type *cls::get_ev_table_decl()      \
        { return theDeclEventsTable; }                                     \
-__PG_DECLSPEC EDS::__DeclareAnyPMF<cls> cls::theDeclEventsTable[] = {
+__FIT_DECLSPEC EDS::__DeclareAnyPMF<cls> cls::theDeclEventsTable[] = {
 
 // Macro for specification of response table entry:
 // RESPONSE_TABLE_ENTRY( ST_NRM, XW_EXPOSE, OXWEvExpose, XEventDispatch );

@@ -1,11 +1,13 @@
-// -*- C++ -*- Time-stamp: <01/03/19 18:52:02 ptr>
+// -*- C++ -*- Time-stamp: <03/11/06 07:44:18 ptr>
 
 /*
- * Copyright (c) 1998
+ * Copyright (c) 1998, 2002, 2003
  * Petr Ovchenkov
  * 
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
+ *
+ * Licensed under the Academic Free License version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -24,7 +26,7 @@
 #  ifdef __HP_aCC
 #pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "@(#)$Id$"
+#ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -37,11 +39,11 @@
 #endif
 
 #ifndef __EventHandler_h
-#include <EDS/EventHandler.h>
+#include <stem/EventHandler.h>
 #endif
 
 #ifndef __EvPack_h
-#include <EDS/EvPack.h>
+#include <stem/EvPack.h>
 #endif
 
 #include <ctime>
@@ -85,10 +87,10 @@ struct CronEntry :
     unsigned n;
     unsigned arg;
 
-    virtual __PG_DECLSPEC void pack( std::ostream& s ) const;
-    virtual __PG_DECLSPEC void net_pack( std::ostream& s ) const;
-    virtual __PG_DECLSPEC void unpack( std::istream& s );
-    virtual __PG_DECLSPEC void net_unpack( std::istream& s );
+    virtual __FIT_DECLSPEC void pack( std::ostream& s ) const;
+    virtual __FIT_DECLSPEC void net_pack( std::ostream& s ) const;
+    virtual __FIT_DECLSPEC void unpack( std::istream& s );
+    virtual __FIT_DECLSPEC void net_unpack( std::istream& s );
 };
 
 struct __CronEntry
@@ -165,21 +167,21 @@ class Cron :
     public EventHandler
 {
   public:
-    __PG_DECLSPEC Cron();
-    explicit __PG_DECLSPEC Cron( const char * );
-    explicit __PG_DECLSPEC Cron( addr_type id, const char *info = 0 );
+    __FIT_DECLSPEC Cron();
+    explicit __FIT_DECLSPEC Cron( const char * );
+    explicit __FIT_DECLSPEC Cron( addr_type id, const char *info = 0 );
 
-    __PG_DECLSPEC ~Cron();
+    __FIT_DECLSPEC ~Cron();
 
-    __PG_DECLSPEC void Add( const Event_base<CronEntry>& );
-    __PG_DECLSPEC void AddFirst( const Event_base<CronEntry>& );
-    __PG_DECLSPEC void Remove( const Event_base<CronEntry>& );
-    __PG_DECLSPEC void RemoveArg( const Event_base<CronEntry>& );
-    __PG_DECLSPEC void Start();
-    __PG_DECLSPEC void Stop();
+    __FIT_DECLSPEC void Add( const Event_base<CronEntry>& );
+    __FIT_DECLSPEC void AddFirst( const Event_base<CronEntry>& );
+    __FIT_DECLSPEC void Remove( const Event_base<CronEntry>& );
+    __FIT_DECLSPEC void RemoveArg( const Event_base<CronEntry>& );
+    __FIT_DECLSPEC void Start();
+    __FIT_DECLSPEC void Stop();
 
-    __PG_DECLSPEC void EmptyStart();
-    __PG_DECLSPEC void EmptyStop();
+    __FIT_DECLSPEC void EmptyStart();
+    __FIT_DECLSPEC void EmptyStop();
 
   private:
     static int _loop( void * );

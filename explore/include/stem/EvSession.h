@@ -1,12 +1,14 @@
-// -*- C++ -*- Time-stamp: <01/03/20 15:46:57 ptr>
+// -*- C++ -*- Time-stamp: <03/11/06 07:47:24 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999
+ * Copyright (c) 1997-1999, 2002, 2003
  * Petr Ovchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
+ *
+ * Licensed under the Academic Free License version 2.0
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -25,7 +27,7 @@
 #  ifdef __HP_aCC
 #pragma VERSIONID "@(#)$Id$"
 #  else
-#pragma ident "@(#)$Id$"
+#ident "@(#)$Id$"
 #  endif
 #endif
 
@@ -47,7 +49,7 @@
 #endif
 
 #ifndef __Event_h
-#include <EDS/Event.h>
+#include <stem/Event.h>
 #endif
 
 namespace EDS {
@@ -79,7 +81,7 @@ struct SessionInfo
   }
 
 #ifndef WIN32
-    __PG_DECLSPEC SessionInfo( const SessionInfo& );
+    __FIT_DECLSPEC SessionInfo( const SessionInfo& );
 #else
     SessionInfo( const SessionInfo& si )
       {
@@ -205,7 +207,7 @@ struct SessionInfo
   }
 
 #ifndef WIN32
-   __PG_DECLSPEC SessionInfo& operator =( const SessionInfo& );
+   __FIT_DECLSPEC SessionInfo& operator =( const SessionInfo& );
 #else
    SessionInfo& operator =( const SessionInfo& si )
       {
