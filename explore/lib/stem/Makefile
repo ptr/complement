@@ -72,6 +72,7 @@ XLIBFILES.o = \
 		$(OUTPUT_DIR)/InputPI.o \
 		$(OUTPUT_DIR)/BlindInputPI.o \
 		$(OUTPUT_DIR)/InputNumPI.o \
+		$(OUTPUT_DIR)/InputPcPI.o \
 		$(OUTPUT_DIR)/InputMoneyPI.o \
 		$(OUTPUT_DIR)/ANInputMoneyPI.o \
 		$(OUTPUT_DIR)/InputField.o \
