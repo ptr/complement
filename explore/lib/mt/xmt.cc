@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <01/05/30 18:59:25 ptr>
+// -*- C++ -*- Time-stamp: <02/04/14 18:01:24 ptr>
 
 /*
- * Copyright (c) 1997-1999
- * Petr Ovchenkov
+ * Copyright (c) 1997-1999, 2002
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
- * ParallelGraphics Ltd.
+ * Parallel Graphics Ltd.
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -35,9 +35,8 @@
 #ifndef _WIN32
 #  include <ostream>
 #endif
-// #ifdef __SGI_STL_OWN_IOSTREAMS
+
 #include <iostream>
-// #endif
 #include <memory>
 #include <functional>
 #include <cerrno>
@@ -153,7 +152,7 @@ using std::cerr;
 using std::endl;
 #endif
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 int Condition::wait_time( const timespec *abstime )
 {
 #ifdef WIN32
@@ -212,7 +211,7 @@ int& Thread::Init::_count( ::Init_count );
 const std::string msg1( "Can't create thread" );
 const std::string msg2( "Can't fork" );
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void signal_throw( int sig ) throw( int )
 { throw sig; }
 
@@ -278,7 +277,7 @@ const Thread::thread_key_type Thread::bad_thread_key = __STATIC_CAST(Thread::thr
 Thread::thread_key_type& Thread::_mt_key( ::_mt_key );
 #endif
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 Thread::Thread( unsigned __f ) :
     _id( bad_thread_key ),
     _entrance( 0 ),
@@ -290,7 +289,7 @@ Thread::Thread( unsigned __f ) :
   new( Init_buf ) Init();
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 Thread::Thread( Thread::entrance_type entrance, const void *p, size_t psz, unsigned __f ) :
     _entrance( entrance ),
     _param( 0 ),
@@ -302,7 +301,7 @@ Thread::Thread( Thread::entrance_type entrance, const void *p, size_t psz, unsig
   _create( p, psz );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 Thread::~Thread()
 {
   long **user_words;
@@ -330,7 +329,7 @@ Thread::~Thread()
 #endif
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void Thread::launch( entrance_type entrance, const void *p, size_t psz )
 {
   if ( _id == bad_thread_key ) {
@@ -339,7 +338,7 @@ void Thread::launch( entrance_type entrance, const void *p, size_t psz )
   }
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 int Thread::join()
 {
 #ifdef __FIT_WIN32THREADS
@@ -365,7 +364,7 @@ int Thread::join()
   return ret_code;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 int Thread::suspend()
 {
   if ( _id != bad_thread_key ) {
@@ -395,7 +394,7 @@ int Thread::suspend()
   return -1;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 int Thread::resume()
 {
   if ( _id != bad_thread_key ) {
@@ -422,7 +421,7 @@ int Thread::resume()
   return -1;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 int Thread::kill( int sig )
 {
   if ( _id != bad_thread_key ) {
@@ -441,7 +440,7 @@ int Thread::kill( int sig )
   return -1;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void Thread::exit( int code )
 {
 #ifdef _PTHREADS
@@ -456,7 +455,7 @@ void Thread::exit( int code )
 }
 
 #ifdef __FIT_UITHREADS
-__PG_DECLSPEC
+__FIT_DECLSPEC
 int Thread::join_all()
 {
   while ( thr_join( 0, 0, 0 ) == 0 ) ;
@@ -465,7 +464,7 @@ int Thread::join_all()
 }
 #endif
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void Thread::block_signal( int sig )
 {
 #ifdef __unix
@@ -482,7 +481,7 @@ void Thread::block_signal( int sig )
 #endif // __unix
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void Thread::unblock_signal( int sig )
 {
 #ifdef __unix
@@ -499,7 +498,7 @@ void Thread::unblock_signal( int sig )
 #endif // __unix
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void Thread::signal_handler( int sig, SIG_PF handler )
 {
 #ifdef __unix  // catch SIGPIPE here
@@ -514,7 +513,7 @@ void Thread::signal_handler( int sig, SIG_PF handler )
 #endif // __unix
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void Thread::sleep( timespec *t, timespec *r )
 {
 #ifdef __unix
@@ -531,7 +530,7 @@ void Thread::sleep( timespec *t, timespec *r )
 #endif
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void Thread::gettime( timespec *t )
 {
 #ifdef __linux
@@ -549,7 +548,7 @@ void Thread::gettime( timespec *t )
 #endif
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void Thread::fork() throw( fork_in_parent, std::runtime_error )
 {
   fork_in_parent f( ::fork() );
@@ -561,7 +560,7 @@ void Thread::fork() throw( fork_in_parent, std::runtime_error )
   }
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void Thread::become_daemon() throw( fork_in_parent, std::runtime_error )
 {
   try {
@@ -750,7 +749,7 @@ void Thread::terminate()
   Thread::exit( -2 );
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 long& Thread::iword( int __idx )
 {
   long **user_words;
@@ -808,7 +807,7 @@ long& Thread::iword( int __idx )
   return *_ytmp;
 }
 
-__PG_DECLSPEC
+__FIT_DECLSPEC
 void*& Thread::pword( int __idx )
 {
   long **user_words;
