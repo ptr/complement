@@ -1,4 +1,4 @@
-% -*- LaTeX -*- Time-stamp: <02/12/05 10:24:12 ptr>
+% -*- LaTeX -*- Time-stamp: <02/12/05 18:14:43 ptr>
 
 \documentclass[a4paper]{article}
 
@@ -49,7 +49,7 @@ possible solutions.
     % \input test.pstex_t
     \epsfig{file=test.eps,width=5in}
   \end{center}
-  \caption{Local Loopback, sockios: system \ref{fort}.}
+  \caption{Test time diagram.\ref{TimeDiagram}.}
 \end{figure}
 
 \begin{enumerate}
@@ -60,6 +60,16 @@ possible solutions.
         buffer of size $b$, data overwritten.
 \end{enumerate}
 
+This procedure repeat $10$ times. During tests we collect some statistic
+data: client and server user CPU time, system CPU time and elapsed (real) time.
+Than we find mean values and dispersion. So we can estimate the real
+load from client and server programs in the real environments.
+
+In case of client and server run on different computers, we start server on
+the local system, login via \texttt{ssh} on remote hoste and start here client.
+Login via ssh is done under \texttt{ssh-agent}, to avoid manual password typing.
+
+To compare
 
 \section{Results}
 
