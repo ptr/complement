@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/12/27 17:31:11 ptr>
+// -*- C++ -*- Time-stamp: <00/01/05 18:50:12 ptr>
 
 /*
  *
@@ -333,7 +333,7 @@ class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<
         _data( d )
       { }
 
-#ifndef __GNUG__ // otherwise gcc can't return structure
+#if !defined( __GNUG__ ) && !defined( _MSC_VER ) // otherwise gcc can't return structure
     explicit
 #endif
     Event_base( const Event_base& e ) :
