@@ -4,6 +4,15 @@
 
 using namespace std;
 
+class A
+{
+  public:
+    A()
+     { cerr << "Hello from static!" << endl; }
+};
+
+A a;
+
 int main( int argc, char * const *argv )
 {
   cerr << "Hello, world!" << endl;
