@@ -1,13 +1,10 @@
-// -*- C++ -*- Time-stamp: <99/10/14 21:41:00 ptr>
+// -*- C++ -*- Time-stamp: <99/10/15 12:21:44 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999
- * Petr Ovchenkov
- *
  * Copyright (c) 1999
  * ParallelGraphics Software Systems
- 
+ *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -62,11 +59,16 @@ namespace EDS {
 struct CronEntry :
    public __pack_base
 {
+    enum {
+      immediate = 0,
+      infinite = -1
+    };
+
     CronEntry() :
         code( static_cast<code_type>(-1) ),
         // addr( badaddr ),
-        start( 0 ),
-        n( static_cast<unsigned>(-1) )
+        start( immediate ),
+        n( infinite )
       { period.tv_sec = 0; period.tv_nsec = 0; }
 
     CronEntry( const CronEntry& x ) :
@@ -76,8 +78,6 @@ struct CronEntry :
       { period.tv_sec = x.period.tv_sec; period.tv_nsec = x.period.tv_nsec; }
 
     code_type code;
-    // addr_type addr;
-    
     time_t start;
     // time_t end;
     timespec period;
@@ -148,6 +148,7 @@ class Cron :
     __EDS_DLL ~Cron();
 
     __EDS_DLL void Add( const Event_base<CronEntry>& );
+    __EDS_DLL void AddFirst( const Event_base<CronEntry>& );
     __EDS_DLL void Remove( const Event_base<CronEntry>& );
     __EDS_DLL void Start();
     __EDS_DLL void Stop();
@@ -160,7 +161,6 @@ class Cron :
 
     __impl::Thread _thr;
     __impl::Condition cond;
-    // timer_t _timerid;
 
     typedef __CronEntry value_type;
     typedef std::priority_queue<value_type,
