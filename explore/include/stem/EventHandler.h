@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/24 12:37:47 ptr>
+// -*- C++ -*- Time-stamp: <99/03/24 17:13:42 ptr>
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
@@ -571,7 +571,8 @@ class EventHandler
     explicit EventHandler( const Event::key_type& id );
     ~EventHandler();
 
-    const string& who_is( const Event::key_type& k );
+    const string& who_is( const Event::key_type& k ) const;
+    unsigned sid( const Event::key_type& k ) const;
     void Send( const Event& e );
 
 /* ************************************************************ *\
