@@ -1,7 +1,9 @@
-# Time-stamp: <00/05/23 16:14:26 ptr>
+# Time-stamp: <00/06/02 17:56:35 ptr>
 # $SunId$
 
-LIBNAME = DB${post_nm}
-SRC_CC = SQL.cc xxSQL_i.cc PgSQL.cc xxSQL.cc
+# LIBNAME = DB${post_nm}
+LIBNAME = DB
+MINOR = .2
+SRC_CC = xxSQL_i.cc PgSQL.cc xxSQL.cc
 
 

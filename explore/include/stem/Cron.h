@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/05/26 10:54:31 ptr>
+// -*- C++ -*- Time-stamp: <00/06/02 14:44:35 ptr>
 
 /*
  * Copyright (c) 1999-2000
@@ -50,15 +50,15 @@ struct CronEntry :
    public __pack_base
 {
     enum {
-      immediate = 0,
-      infinite = -1
+      immediate = 0U,
+      infinite = ~0U
     };
 
     CronEntry() :
         code( static_cast<code_type>(-1) ),
         // addr( badaddr ),
         start( immediate ),
-        n( infinite )
+        n( static_cast<unsigned>(infinite) )
       { period.tv_sec = 0; period.tv_nsec = 0; }
 
     CronEntry( const CronEntry& x ) :

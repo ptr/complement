@@ -1,4 +1,4 @@
-# Time-stamp: <00/05/12 14:03:27 ptr>
+# Time-stamp: <00/06/05 12:18:51 ptr>
 # $SunId$
 
 BASEDIR :sh = (xtmp=`pwd`; \
@@ -20,6 +20,6 @@ dbg := LDFLAGS += -L../sockios/obj/${COMPILER_NAME}${DBG_SUFFIX}
 release := LDFLAGS += -L../mt/obj/${COMPILER_NAME}
 release := LDFLAGS += -L../sockios/obj/${COMPILER_NAME}
 
-release := LDLIBS += -lxmt -lsockios -lstlport_sunpro
-dbg     := LDLIBS += -lxmt${DBG_SUFFIX} -lsockios${DBG_SUFFIX} \
+release := LDLIBS += -lxmt_${COMPILER_NAME} -lsockios_${COMPILER_NAME} -lstlport_sunpro
+dbg     := LDLIBS += -lxmt_${COMPILER_NAME}${DBG_SUFFIX} -lsockios_${COMPILER_NAME}${DBG_SUFFIX} \
                      -lstlport_sunpro_stldebug

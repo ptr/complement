@@ -1,4 +1,19 @@
-// -*- C++ -*- Time-stamp: <00/05/23 16:12:55 ptr>
+// -*- C++ -*- Time-stamp: <00/06/02 18:16:14 ptr>
+
+/*
+ *
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
+ * 
+ * This material is provided "as is", with absolutely no warranty expressed
+ * or implied. Any use is at your own risk.
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies and
+ * that both that copyright notice and this permission notice appear
+ * in supporting documentation.
+ */
 
 #ifndef __DB_xxSQL_i_h
 #define __DB_xxSQL_i_h
@@ -15,8 +30,26 @@
 
 namespace xxSQL {
 
-class DataBase;
-class Cursor;
+class Cursor
+{
+  protected:
+    Cursor( const char *nm );
+    virtual ~Cursor();
+
+  public:
+    virtual void fetch_all() = 0;
+    const __STD::string& value( int, const __STD::string& );
+    const __STD::string& value( int, const char * );
+    __STD::vector<__STD::vector<__STD::string> >::size_type size() const
+      { return data.size(); }
+
+  protected:
+    __STD::string name;
+    __STD::vector<__STD::string> fields;
+    __STD::vector<__STD::vector<__STD::string> > data;
+
+    friend class DataBase;
+};
 
 class DataBase
 {
@@ -49,7 +82,8 @@ class DataBase
     virtual void end_transaction() = 0;
 
     virtual Cursor *create_cursor( const char * ) = 0;
-    virtual void delete_cursor( Cursor * ) = 0;
+    void delete_cursor( Cursor *_c )
+      { delete _c; }
 
   protected:
     unsigned _flags;
@@ -63,27 +97,6 @@ class DataBase
     __STD::string _dbtty;
 
     friend class Cursor;
-};
-
-class Cursor
-{
-  protected:
-    Cursor( const char *nm );
-    virtual ~Cursor();
-
-  public:
-    virtual void fetch_all() = 0;
-    const __STD::string& value( int, const __STD::string& );
-    const __STD::string& value( int, const char * );
-    __STD::vector<__STD::vector<__STD::string> >::size_type size() const
-      { return data.size(); }
-
-  protected:
-    __STD::string name;
-    __STD::vector<__STD::string> fields;
-    __STD::vector<__STD::vector<__STD::string> > data;
-
-    friend class DataBase;
 };
 
 } // namespace xxSQL
