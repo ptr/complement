@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/09/14 15:08:41 ptr>
+// -*- C++ -*- Time-stamp: <99/09/16 18:32:42 ptr>
 
 #ident "$SunId$ %Q%"
 
@@ -44,43 +44,60 @@ int __thr_key = TlsAlloc();
 
 namespace std {
 
+static int __glob_init_cnt = 0;
+
+enum {
+  WINDOWS_NT_4,
+  WINDOWS_NT_3,
+  WINDOWS_98,
+  WINDOWS_95,
+  WINDOWS_3_1
+};
+
+int WinVer()
+{
+  OSVERSIONINFO info;
+  info.dwOSVersionInfoSize = sizeof(info);
+  GetVersionEx(&info);
+
+  if ( info.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS ) { // Win 9x
+    if ( info.dwMinorVersion == 0 ) {
+      return WINDOWS_95;
+    }
+    return WINDOWS_98;
+  } else if ( info.dwPlatformId == VER_PLATFORM_WIN32_NT ) { // Win NT
+    if ( info.dwMajorVersion == 3 ) {
+      return WINDOWS_NT_3;
+    }
+    return WINDOWS_NT_4;
+  }
+  return WINDOWS_3_1;
+}
+
 sock_base::Init::Init()
 {
   int __tls_init_cnt = (int)TlsGetValue( __impl::__thr_key );
 //  long& __tls_init_cnt = __impl::Thread::iword( _sb_idx );
   if ( __tls_init_cnt++ == 0 ) {
+    int win_ver = WinVer();
+
     WORD    __vers;
     WSADATA __wsadata;
 
-    __vers = MAKEWORD( 2, 0 );
-    int __err = WSAStartup( __vers, &__wsadata );
+    if ( win_ver != WINDOWS_3_1 && !(win_ver == WINDOWS_95 && __glob_init_cnt++ > 0) ) {
+      __vers = MAKEWORD( 2, 0 );
+      int __err = WSAStartup( __vers, &__wsadata );
 
-    if ( __err != 0 ) {
-      TlsSetValue( __impl::__thr_key, 0 );
-      throw domain_error( __impl::WINSOCK_ERR_MSG );
-    }
-    if ( LOBYTE(__wsadata.wVersion) != 2 || HIBYTE(__wsadata.wVersion) != 0 ) {
-      OSVERSIONINFO info;
-      info.dwOSVersionInfoSize = sizeof(info);
-      GetVersionEx(&info);
-      
-      if ( info.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS ) { // 98 or 95
-        if ( info.dwMajorVersion < 4 ) {
+      if ( __err != 0 ) {
+        TlsSetValue( __impl::__thr_key, 0 );
+        throw domain_error( __impl::WINSOCK_ERR_MSG );
+      }
+      if ( LOBYTE(__wsadata.wVersion) != 2 || HIBYTE(__wsadata.wVersion) != 0 ) {
+        if ( win_ver != WINDOWS_95 ) {
           WSACleanup();
           TlsSetValue( __impl::__thr_key, 0 );
           throw domain_error( __impl::WINSOCK_ERR_MSG );          
         }
-        if ( info.dwMinorVersion > 0 ) { // that's at least 98, should be socket 2
-          WSACleanup();
-          TlsSetValue( __impl::__thr_key, 0 );
-          throw domain_error( __impl::WINSOCK_ERR_MSG );                    
-        }
-        // WinSock DLL not 2.0, may be net problems,
-        // but this is Win 95...
-      } else { // 3.1 or NT, if in NT socket not 2.0 go away.
-        WSACleanup();
-        TlsSetValue( __impl::__thr_key, 0 );
-        throw domain_error( __impl::WINSOCK_ERR_MSG );
       }
     }
   }
@@ -90,8 +107,14 @@ sock_base::Init::Init()
 sock_base::Init::~Init()
 {
   int __tls_init_cnt = (int)TlsGetValue( __impl::__thr_key );
+  int win_ver = WinVer();
+  --__glob_init_cnt; // only for Win 95
   if ( --__tls_init_cnt == 0 ) {
-    WSACleanup();
+    if ( win_ver != WINDOWS_95 ) {
+      WSACleanup();
+    } else if ( __glob_init_cnt == 0 ) {
+      WSACleanup();
+    }
   }
   TlsSetValue( __impl::__thr_key, (void *)__tls_init_cnt );
 }
