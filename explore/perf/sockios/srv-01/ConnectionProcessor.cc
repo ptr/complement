@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/09/09 11:15:55 ptr>
+// -*- C++ -*- Time-stamp: <02/12/19 11:22:50 ptr>
 
 /*
  *
@@ -28,14 +28,16 @@
 
 using namespace std;
 
-// int nc = 0;
+int nc = 0;
 
 ConnectionProcessor::ConnectionProcessor( std::sockstream& s )
 {
+  // cerr << ++nc << endl;
 }
 
 void ConnectionProcessor::connect( std::sockstream& s )
 {
+  // cerr << ++nc << endl;
 
   return;
 }
