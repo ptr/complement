@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <00/05/23 20:35:34 ptr>
+// -*- C++ -*- Time-stamp: <00/07/27 19:20:16 ptr>
 
 /*
  *
@@ -21,7 +21,7 @@
 #ifndef __Names_h
 #define __Names_h
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
 #ifndef __config_feature_h
 #include <config/feature.h>

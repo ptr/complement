@@ -1,12 +1,12 @@
-// -*- C++ -*- Time-stamp: <00/05/26 10:56:06 ptr>
+// -*- C++ -*- Time-stamp: <00/08/08 20:58:32 ptr>
 
 /*
- * Copyright (c) 1999-2000
- * ParallelGraphics
- *
  * Copyright (c) 1995-1999
  * Petr Ovchenkov
  * 
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
+ *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -76,8 +76,10 @@ typedef unsigned state_type;
 #define EV_T_(state,event,handler,T) \
    RESPONSE_TABLE_ENTRY(state,event,handler,__D_T(ThisCls,T)::dispatch)
 
-// #define EV_CALL(state,event,handler) \
-//   RESPONSE_TABLE_ENTRY(state,event,handler,D3(ThisCls)::dispatch)
+/*
+#define EV_CALL(state,event,handler) \
+  RESPONSE_TABLE_ENTRY(state,event,handler,D3(ThisCls)::dispatch)
+*/
 
 class EventHandler;
 class EvManager;
@@ -106,7 +108,7 @@ struct convert
 template <class T /* EDS::Event_base<X> */ >
 struct convert_Event // from transport
 {
-      T operator ()( const EDS::Event& x ) const
+    T operator ()( const EDS::Event& x ) const
       {
         T tmp;
         if ( x.is_from_foreign() ) {
@@ -122,7 +124,7 @@ struct convert_Event // from transport
 template <class T>
 struct convert_Event_extr // from transport and extract value
 {
-     T operator ()( const EDS::Event& x ) const
+    T operator ()( const EDS::Event& x ) const
       {
         EDS::Event_base<T> tmp;
         if ( x.is_from_foreign() ) {
@@ -187,7 +189,7 @@ struct __dispatcher
 {
     static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf,
 	                  typename PMF::const_reference_argument_type arg )
-      {	(c->*pmf)( arg ); }
+      { (c->*pmf)( arg ); }
 };
 
 template <class PMF, class Arg >
@@ -201,7 +203,7 @@ template <class PMF, class Arg >
 struct __dispatcher_convert
 {
     static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, const Arg& arg )
-      {	(c->*pmf)( convert<Arg,typename PMF::argument_type>()(arg) ); }
+      { (c->*pmf)( convert<Arg,typename PMF::argument_type>()(arg) ); }
 };
 
 template <class PMF, class Arg >
@@ -658,7 +660,7 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
        { theEventsTable.Out( out ); }                                     \
     virtual bool DispatchTrace( const EDS::Event& __e, __STD::ostream& __s )\
        {                                                                  \
-         MT_REENTRANT_SDS( this->_theHistory_lock, _1 );     \
+         MT_REENTRANT_SDS( this->_theHistory_lock, _x1 );                 \
          return theEventsTable.DispatchTrace( theHistory.begin(),         \
                                               theHistory.end(), __e, __s ); } \
     typedef EDS::__EvHandler<cls,EDS::h_iterator> evtable_type;           \
@@ -669,12 +671,12 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
   protected:					                          \
     virtual bool Dispatch( const EDS::Event& __e )                        \
        {                                                                  \
-         MT_REENTRANT_SDS( this->_theHistory_lock, _1 );                  \
+         MT_REENTRANT_SDS( this->_theHistory_lock, _x1 );                 \
          return theEventsTable.Dispatch( this, theHistory.begin(),        \
                                          theHistory.end(), __e ); }       \
     virtual bool DispatchStub( const EDS::Event& __e )                    \
        {                                                                  \
-         MT_REENTRANT_SDS( this->_theHistory_lock, _1 );                  \
+         MT_REENTRANT_SDS( this->_theHistory_lock, _x1 );                  \
          return theEventsTable.DispatchStub( this, theHistory.begin(),    \
                                              theHistory.end(), __e ); }   \
     static __PG_DECLSPEC evtable_type theEventsTable;                     \

@@ -1,12 +1,12 @@
-// -*- C++ -*- Time-stamp: <00/05/26 10:47:58 ptr>
+// -*- C++ -*- Time-stamp: <00/08/03 12:57:21 ptr>
 
 /*
- * Copyright (c) 1999-2000
- * ParallelGraphics
- *
  * Copyright (c) 1995-1999
  * Petr Ovchenkov
  * 
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
+ *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -20,7 +20,7 @@
 #ifndef __EvManager_h
 #define __EvManager_h
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -127,19 +127,19 @@ class EvManager
 
     bool is_avail( addr_type id ) const
       {
-        MT_REENTRANT( _lock_heap, _1 );
+        MT_REENTRANT( _lock_heap, _x1 );
         return unsafe_is_avail(id);
       }
 
     const string& who_is( addr_type id ) const
       {
-        MT_REENTRANT( _lock_heap, _1 );
+        MT_REENTRANT( _lock_heap, _x1 );
         return unsafe_who_is( id );
       }
 
     const string& annotate( addr_type id ) const
       {
-        MT_REENTRANT( _lock_heap, _1 );
+        MT_REENTRANT( _lock_heap, _x1 );
         return unsafe_annotate( id );
       }
 
@@ -148,14 +148,17 @@ class EvManager
 
     void push( const Event& e )
       {
-        MT_REENTRANT( _lock_queue, _1 );
+        MT_REENTRANT( _lock_queue, _x1 );
         in_ev_queue.push( e );
         if ( out_ev_queue.size() == 0 ) {
           _ev_queue_thr.resume();
         }
       }
 
-    void Remove( NetTransport_base * );
+    __PG_DECLSPEC void Remove( NetTransport_base * );
+#ifdef __hpux
+    __PG_DECLSPEC void StartEvQueue();
+#endif
 
   protected:
     bool unsafe_is_avail( addr_type id ) const

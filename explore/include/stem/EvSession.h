@@ -1,13 +1,13 @@
-// -*- C++ -*- Time-stamp: <00/02/21 16:41:48 ptr>
+// -*- C++ -*- Time-stamp: <00/08/01 13:04:28 ptr>
 
 /*
  *
  * Copyright (c) 1997-1999
  * Petr Ovchenkov
  *
- * Copyright (c) 1999
- * ParallelGraphics Software Systems
- 
+ * Copyright (c) 1999-2000
+ * ParallelGraphics
+ *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -21,7 +21,7 @@
 #ifndef __EvSession_h
 #define __EvSession_h
 
-#ident "$SunId$ %Q%"
+#ident "$SunId$"
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -187,7 +187,7 @@ class SessionManager
 
     key_type create()
       {
-        MT_REENTRANT( _lock, _1 );
+        MT_REENTRANT( _lock, _x1 );
         key_type new_key = create_unique();
         heap[new_key];
         return new_key;
@@ -195,7 +195,7 @@ class SessionManager
 
     T& operator[]( const key_type& k )
       {
-        // MT_REENTRANT( _lock, _1 );
+        // MT_REENTRANT( _lock, _x1 );
         return heap[k];
       }
 
@@ -207,19 +207,19 @@ class SessionManager
 
     bool is_avail( const key_type& k ) const
       {
-        MT_REENTRANT( _lock, _1 );
+        MT_REENTRANT( _lock, _x1 );
         return heap.find( k ) != heap.end();
       }
 
     void erase( const key_type& k )
       {
-        MT_REENTRANT( _lock, _1 );
+        MT_REENTRANT( _lock, _x1 );
         heap.erase( k );
       }
 
     void erase( heap_type::iterator& k )
       {
-        MT_REENTRANT( _lock, _1 );
+        MT_REENTRANT( _lock, _x1 );
         heap.erase( k );
       }
 
@@ -250,13 +250,13 @@ template <class T>
 const SessionManager<T>::key_type SessionManager<T>::_high = 65535;
 #endif
 
-#ifndef _MSC_VER
-template <class T>
-typename SessionManager<T>::key_type SessionManager<T>::_id( SessionManager<T>::_low );
-#else
+// #ifndef _MSC_VER
+// template <class T>
+// typename SessionManager<T>::key_type SessionManager<T>::_id( SessionManager<T>::_low );
+// #else
 template <class T>
 SessionManager<T>::key_type SessionManager<T>::_id = SessionManager<T>::_low;
-#endif
+// #endif
 
 #ifndef _MSC_VER
 template <class T>
