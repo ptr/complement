@@ -22,5 +22,5 @@ INSTALL_A = $(INSTALL)
 INSTALL_EXE = $(INSTALL)
 
 # compiler, compiler options
-!include $(RULESBASE)/$(USE_MAKE)/compiler-$(COMPILER_NAME).mak
+!include $(RULESBASE)/$(USE_MAKE)/$(COMPILER_NAME).mak
 
