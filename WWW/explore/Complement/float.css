@@ -1,9 +1,5 @@
- /* Time-stamp: <02/12/16 23:36:53 ptr> */
+ /* Time-stamp: <02/12/16 09:37:40 ptr> */
  /* $Id$ */
-
-div.inline {
-  display: inline;
-}
 
 div.leftfloat {
   float: left;
@@ -16,5 +12,6 @@ div.rightfloat {
 div.spacer {
   clear:      both;
 }
+
 
 

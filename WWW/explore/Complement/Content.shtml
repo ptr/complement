@@ -1,6 +1,6 @@
-<!-- Time-stamp: <02/12/16 22:45:57 ptr> -->
+<!-- Time-stamp: <03/05/04 16:14:18 ptr> -->
 <!-- $Id$ -->
-<div class="toc-spacer nodecor">
+<div class="nodecor">
 <a href="index.shtml">Home</a><br>
 <a href="Requirements.shtml">Requirements</a><br>
 <a href="Related.shtml">Related issues</a><br>
@@ -8,5 +8,7 @@
 <a href="CVS.shtml">CVS</a><br>
 <a href="History.shtml">Project history</a><br>
 <a href="Developers.shtml">Developers</a><br>
+<br>
+<a href="http://sourceforge.net"><img src="http://sourceforge.net/sflogo.php?group_id=63160&amp;type=2" width="125" height="37" border="0" alt="SourceForge.net Logo"></a><br>
 </div>
 <!-- Created: Mon Oct  7 17:32:53 MSD 2002 -->

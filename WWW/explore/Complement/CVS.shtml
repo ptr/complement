@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
-<!-- Time-stamp: <02/10/15 21:37:50 ptr> -->
+<!-- Time-stamp: <03/05/04 20:33:15 ptr> -->
 <!-- $Id$ -->
 
 <html>
@@ -14,7 +14,11 @@
 
   <body>
 <!--#include file="head.shtml" -->
-    <h2>CVS access</h2>
+<div class="toppic">
+<img src="img/jpg/cvs.jpg">
+</div>
+<div class="main">
+<!--    <h2 class="lheader">CVS access</h2> -->
 
     <p>
       You can read directives for CVS access either
@@ -22,7 +26,7 @@
       or below on this page.
     </p>
 
-    <h3>Anonymous CVS Access</h3>
+    <h2 class="lheader">Anonymous CVS Access</h2>
 
     <p>
       This project's SourceForge.net CVS repository can be checked out
@@ -31,18 +35,20 @@
     </p>
 
     <pre class="ddisplay">
-cvs -d:pserver:anonymous@cvs.complement.sourceforge.net:/cvsroot/complement login 
+cvs -d:pserver:anonymous@cvs.complement.sourceforge.net:\
+/cvsroot/complement login 
     </pre>
  
     <pre class="ddisplay">
-cvs -z3 -d:pserver:anonymous@cvs.complement.sourceforge.net:/cvsroot/complement co complement
+cvs -z3 -d:pserver:anonymous@cvs.complement.sourceforge.net:\
+/cvsroot/complement co complement
     </pre>
 
     <p>
       Updates from within the module's directory do not need the -d parameter.
     </p>
 
-    <h3>Developer CVS Access via SSH</h3>
+    <h2 class="lheader">Developer CVS Access via SSH</h2>
 
     <p>
       Only project developers can access the CVS tree via this method.
@@ -55,8 +61,10 @@ cvs -z3 -d:pserver:anonymous@cvs.complement.sourceforge.net:/cvsroot/complement 
     <pre class="ddisplay">
 export CVS_RSH=ssh
 
-cvs -z3 -d:ext:developername@cvs.complement.sourceforge.net:/cvsroot/complement co complement
+cvs -z3 -d:ext:developername@cvs.complement.sourceforge.net:\
+/cvsroot/complement co complement
     </pre>
+</div>
 <!--#include file="foot.shtml" -->
   </body>
 </html>

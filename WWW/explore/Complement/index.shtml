@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
-<!-- Time-stamp: <02/12/16 23:30:16 ptr> -->
+<!-- Time-stamp: <03/05/04 20:59:35 ptr> -->
 <!-- $Id$ -->
 
 <html>
@@ -15,12 +15,26 @@
 
   <body>
 <!--#include file="head.shtml" -->
-    <h1>Complement C++ libraries</h1>
-    <h2>What is this</h2>
+<div class="toppic">
+<img src="img/jpg/login.jpg">
+</div>
+<div class="main">
+<!--    <h1>Complement C++ libraries</h1> -->
+
+<!--    <h2 class="lheader">What is this</h2> -->
     <p>
       Complement is a set of C++ libraries.
       This libraries provide multiplatform C++ framework
-      for multithreaded programming and communication.
+      for
+    </p>
+    <ul>
+      <li>multithreaded programming,
+      </li>
+      <li>sockets programming,
+      </li>
+      <li>communication programming.
+      </li>
+    </ul>
     </p>
 
 <!--
@@ -31,7 +45,7 @@ is very power, and it is a part of every C++ compiler, so why we need
 to use another?
 -->
 
-    <h2>Brief Description</h2>
+    <h2 class="lheader">Brief Description</h2>
 
     <dl>
       <dt>xmt</dt>
@@ -63,7 +77,7 @@ to use another?
       </dd>
     </dl>
 
-    <h2>Present State of Complement Project</h2>
+    <h2 class="lheader">Present State of Complement Project</h2>
 
     <p>
       Active development for Unix-like systems
@@ -72,6 +86,7 @@ to use another?
       (95, 98, NT) with VC++ 5 SP3 (client part, connections processing server never
       work on MS Windows), HP-UX 11.00 (HP aCC A.03.13) and Solaris (SunSoft CC 5.2).
     </p>
+</div>
 
 <!--#include file="foot.shtml" -->
 <!-- Created: Thu Sep 12 11:00:09 MSD 2002 -->
