@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Time-stamp: <03/07/15 15:09:50 ptr>
+# Time-stamp: <03/07/31 14:20:30 ptr>
 # $Id$
 
 
@@ -8,5 +8,5 @@ configmak=./Makefiles/config.mak
 
 rm -f ${configmak}
 
-echo "STLPORT_DIR := /export/home/windows/guest/STLlab/STLport" >> ${configmak}
-
+echo "# STLPORT_DIR := /export/home/windows/guest/STLlab/STLport" >> ${configmak}
+echo "# MSVC_DIR := c:/Program Files/Microsoft Visual Studio/VC98" >> ${configmak}

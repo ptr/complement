@@ -1,4 +1,4 @@
-# Time-stamp: <03/07/15 17:46:38 ptr>
+# Time-stamp: <03/07/31 14:20:16 ptr>
 # $Id$
 
 # This is Complement project (really not extern):
@@ -60,3 +60,6 @@ gSOAP_DIR ?= /opt/gSOAP-2.2.3
 BOOST_DIR ?= ${SRCROOT}/../extern/boost
 STLPORT_DIR ?= e:/STLlab/STLport
 CoMT_DIR ?= ${SRCROOT}
+
+MSVC_DIR ?= c:/Program Files/Microsoft Visual Studio/VC98
+MSVC_LIB_DIR ?= $(MSVC_DIR)/Lib

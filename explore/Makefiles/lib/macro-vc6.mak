@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <03/07/11 13:17:40 ptr>
+# -*- makefile -*- Time-stamp: <03/07/31 14:22:15 ptr>
 # $Id$
 
 
@@ -8,6 +8,7 @@
 # (really that more correct).
 
 LDLIBS ?=
+LDSEARCH += /LIBPATH:"$(MSVC_LIB_DIR)"
 
 dbg-shared:	OPT += /MDd
 stldbg-shared:	OPT += /MDd
