@@ -1,3 +1,13 @@
+2002-08-03  Petr Ovchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* CyrMoney.cc: fix not cleared eof flag in strstreams.
+
+	* libmisc: library renamed.
+
+	* libmisc: version 1.8.1.
+
+	* libmisc: library come to 'explore' source tree.
+
 2001-09-20  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
 
 	* libAux change location; it now in misc catalogs. This done to satisfy
