@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <01/02/02 12:05:03 ptr>
+// -*- C++ -*- Time-stamp: <01/02/28 14:35:04 ptr>
 
 /*
  *
@@ -366,8 +366,8 @@ void NetTransport::connect( sockstream& s )
 {
   const string& hostname = s.rdbuf()->hostname();
   cerr << "Connected: " << hostname << endl;
-  s.rdbuf()->setoptions( std::sock_base::so_linger, true, 10 );
-  s.rdbuf()->setoptions( std::sock_base::so_keepalive, true );
+  s.setoptions( std::sock_base::so_linger, true, 10 );
+  s.setoptions( std::sock_base::so_keepalive, true );
 
   Event ev;
   net = &s;
@@ -430,8 +430,8 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
     join(); // This is safe: transparent if no _loop, and wait it if one exist
     net->open( hostname, port, stype );
   }
-  net->rdbuf()->setoptions( std::sock_base::so_linger, true, 10 );
-  net->rdbuf()->setoptions( std::sock_base::so_keepalive, true );
+  net->setoptions( std::sock_base::so_linger, true, 10 );
+  net->setoptions( std::sock_base::so_keepalive, true );
 
   if ( net->good() ) {
     _net_ns = rar_map( nsaddr, __ns_at + hostname );
@@ -494,8 +494,8 @@ void NetTransportMP::connect( sockstream& s )
       net = &s;
 // #ifndef __hpux
       if ( !sock_dgr ) {
-        net->rdbuf()->setoptions( std::sock_base::so_linger, true, 10 );
-        net->rdbuf()->setoptions( std::sock_base::so_keepalive, true );
+        net->setoptions( std::sock_base::so_linger, true, 10 );
+        net->setoptions( std::sock_base::so_keepalive, true );
       }
 // #endif
     } else if ( sock_dgr /* && _sid != badkey */ ) {
