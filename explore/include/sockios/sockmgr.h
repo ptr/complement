@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/02/03 16:20:53 ptr>
+// -*- C++ -*- Time-stamp: <99/02/04 19:01:10 ptr>
 
 #ifndef __SOCKMGR_H
 #define __SOCKMGR_H
@@ -12,11 +12,14 @@
 #include <map>
 #include <cerrno>
 
+#include <xxx/plock.h>
+
 using __impl::Thread;
 
 namespace std {
 
-class basic_sockmgr
+class basic_sockmgr :
+	public sock_base
 {
   public:
     basic_sockmgr() :
@@ -150,13 +153,17 @@ struct sockmgr_client
     string    info;
 };
 
+// #ifdef _MSC_VER
+// #pragma warning( disable : 4786 )
+// #endif
+
 template <class Connect>
 class sockmgr_stream :
     public basic_sockmgr
 {
   private:
     typedef map<_xsockaddr,sockmgr_client*,less<_xsockaddr>,
-                __STL_DEFAULT_ALLOCATOR(_xsockaddr) > container_type;
+                __STL_DEFAULT_ALLOCATOR(sockmgr_client*) > container_type;
 
   public:
     sockmgr_stream() :
