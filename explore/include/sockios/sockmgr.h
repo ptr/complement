@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/01/29 19:05:44 ptr>
+// -*- C++ -*- Time-stamp: <99/02/03 16:20:53 ptr>
 
 #ifndef __SOCKMGR_H
 #define __SOCKMGR_H
@@ -10,18 +10,11 @@
 #endif
 
 #include <map>
-
-// #ifndef WIN32
 #include <cerrno>
-// #endif
 
 using __impl::Thread;
 
 namespace std {
-
-extern "C" {
-  typedef void *(*thread_entrance_type)( void * );
-}
 
 class basic_sockmgr
 {
@@ -30,7 +23,7 @@ class basic_sockmgr
 	_open( false ),
 	_errno( 0 ),
 	_mode( ios_base::in | ios_base::out ),
-	_state( sock_base::failbit ),
+	_state( ios_base::failbit ),
 	_fd( -1 )
       { }
 
@@ -44,7 +37,7 @@ class basic_sockmgr
     bool is_open() const
       { return _open; }
     bool good() const
-      { return _state == sock_base::goodbit; }
+      { return _state == ios_base::goodbit; }
 
     SOCKET fd() const { return _fd;}
 
@@ -147,30 +140,12 @@ class _xsockaddr
       }
 };
 
-class sockmgr_client
+struct sockmgr_client
 {
-  public:
-
-//    SOCKET _fd;
-//    union {
-//	sockaddr_in inet;
-//	sockaddr    any;
-//    } _address;
     sockstream s;
 
-#if 0
-#ifdef _PTHREADS
-    pthread_t thrID;
-#endif
-#ifdef _SOLARIS_THREADS
-    thread_t thrID;
-#endif
-#ifdef WIN32
-    HANDLER thrID;
-#endif
-#else
     Thread thrID;
-#endif
+
     string    hostname;
     string    info;
 };
