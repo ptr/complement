@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/01/26 16:11:17 ptr>
+// -*- C++ -*- Time-stamp: <99/02/03 15:53:01 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -15,7 +15,7 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
     return;
   }
   _mode = ios_base::in | ios_base::out;
-  _state = sock_base::goodbit;
+  _state = ios_base::goodbit;
   _errno = 0;
 #ifdef WIN32
   WSASetLastError( 0 );
@@ -45,7 +45,11 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
 #endif
       {
 	_state |= sock_base::bindfailbit;
+#ifdef WIN32
 	::closesocket( _fd );
+#else
+	::close( _fd );
+#endif
 	return;
       }
 #ifdef WIN32
@@ -65,7 +69,7 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
     if ( type == sock_base::sock_stream ||
 	 type == sock_base::sock_seqpacket ) {
       // I am shure, this is socket of type SOCK_STREAM | SOCK_SEQPACKET,
-      // so don't check listen return code
+      // so don't check return code from listen
       ::listen( _fd, SOMAXCONN );
     }
   } else if ( prot == sock_base::local ) {
@@ -73,7 +77,7 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
   } else {
     return;
   }
-  _state = sock_base::goodbit;
+  _state = ios_base::goodbit;
   _errno = 0; // if any
   _open = true;
 
@@ -86,7 +90,11 @@ void basic_sockmgr::close()
     return;
   }
   shutdown( sock_base::stop_in | sock_base::stop_out );
+#ifdef WIN32
   ::closesocket( _fd );
+#else
+  ::close( _fd );
+#endif
   _fd = -1;
   _open = false;
 }
