@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/22 12:07:33 ptr>
+// -*- C++ -*- Time-stamp: <99/03/24 12:18:49 ptr>
 
 #ifndef __NetTransport_h
 #define __NetTransport_h
@@ -36,6 +36,7 @@ class NetTransport
 
     NetTransport() :
         _count( 0 ),
+        _sid( 0 ),
         net( 0 ),
         _net_owner( false )
       { }
@@ -73,12 +74,13 @@ class NetTransport
     bool pop( Event& );
 
     std::sockstream *net;
+    unsigned _sid;
     unsigned _count;
     // indeed rar can be inside connect(), but SunPro's CC 5.0
     // to be very huffy about it.
     heap_type rar; // reverce address resolution table
 
-    std::string _server_name;
+    std::string _partner_name;
     static int _loop( void * );
     __impl::Thread _thr;
     // __impl::Mutex  _lock;
