@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/24 18:25:52 ptr>
+// -*- C++ -*- Time-stamp: <99/03/26 14:35:38 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -73,7 +73,7 @@ int NetTransport::_loop( void *p )
 
   try {
     while ( me.pop(ev) ) {
-      dump( std::cerr, ev );
+      // dump( std::cerr, ev );
       __stl_assert( EventHandler::_mgr != 0 );
       // if _mgr == 0, best choice is close connection...
       r = me.rar.find( ev._src );
@@ -85,7 +85,7 @@ int NetTransport::_loop( void *p )
 //             << " [" << ev._src << "]\n";
       }
       ev._src = (*r).second; // substitute my local id
-      if ( me._sid == 0 ) {
+      if ( me._sid == -1 ) {
         me._sid = ev.sid();
       }
 
@@ -137,8 +137,6 @@ NetTransport::key_type NetTransport::open( const string& hostname, int port )
 
 // passive side (server) function
 
-static __sid_ = 0;
-
 __DLLEXPORT
 void NetTransport::connect( sockstream& s, const string& hostname, string& info )
 {
@@ -146,22 +144,28 @@ void NetTransport::connect( sockstream& s, const string& hostname, string& info 
 
   heap_type::iterator r;
   Event ev;
-  _sid = ++__sid_;
+  _sid = EventHandler::_mgr->establish_session();
+  SessionInfo& sess =  EventHandler::_mgr->session_info( _sid );
 
   try {
     net = &s;
     while ( pop(ev) ) {
-      cerr << "------------------------>>>>>>>>\n";
-      dump( std::cerr, ev );
+//      cerr << "------------------------>>>>>>>>\n";
+//      dump( std::cerr, ev );
       __stl_assert( EventHandler::_mgr != 0 );
       // if _mgr == 0, best choice is close connection...
+      sess.inc_from( sizeof(__Event_Base) + sizeof(std::string::size_type) +
+                     ev.value_size() );
+      if ( sess.un_from( ev.seq() ) != 0 ) {
+        cerr << "Event(s) lost, or miss range event" << endl;
+      }
       r = rar.find( ev._src );
       if ( r == rar.end() ) {        
         r = rar.insert( 
           heap_type::value_type( ev._src,
           EventHandler::_mgr->SubscribeRemote( this, ev._src, hostname ) ) ).first;
-        cerr << "Create remote object: " << hex << (*r).second
-             << " [" << ev._src << "]\n";
+//        cerr << "Create remote object: " << hex << (*r).second
+//             << " [" << ev._src << "]\n";
       }
       ev._src = (*r).second; // substitute my local id
 
@@ -214,10 +218,10 @@ __DLLEXPORT
 bool NetTransport::push( const Event& __rs, const Event::key_type& rmkey,
                          const Event::key_type& srckey )
 {
-  cerr << "<<<<<<<-------------------------\n";
-  dump( std::cerr, __rs );
-  std::cerr << "Src key " << hex << srckey << ", remote key " << rmkey
-            << " SID: " << _sid << "\n";
+//  cerr << "<<<<<<<-------------------------\n";
+//  dump( std::cerr, __rs );
+//  std::cerr << "Src key " << hex << srckey << ", remote key " << rmkey
+//            << " SID: " << _sid << "\n";
 
   unsigned buf[7];
 

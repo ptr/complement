@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/03/24 18:32:31 ptr>
+// -*- C++ -*- Time-stamp: <99/03/26 20:37:52 ptr>
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
 #include <EvManager.h>
@@ -10,6 +10,7 @@ std::string EvManager::inv_key_str( "invalid key" );
 
 void EvManager::Remove( NetTransport *channel )
 {
+  MT_REENTRANT( _lock_heap, _1 );
   heap_type::iterator i = heap.begin();
 
   while ( i != heap.end() ) {
@@ -19,25 +20,37 @@ void EvManager::Remove( NetTransport *channel )
       ++i;
     }
   }
+  disconnect( channel->sid() );
 }
 
-unsigned EvManager::sid( const key_type& id ) const
+EvSessionManager::key_type EvManager::sid( const key_type& id ) const
 {
+  MT_REENTRANT( _lock_heap, _1 );
   heap_type::const_iterator i = heap.find( id );
   if ( i == heap.end() || (*i).second.remote == 0 ) {
-    return 0;
+    return -1;
   }
-  return (*i).second.remote->channel->sid();       
+  return (*i).second.remote->channel->sid();
+}
+
+void EvManager::Dispatch( const Event& e )
+{
+  heap_type::iterator i = heap.find( e.dest() );
+  if ( i != heap.end() && (*i).second.ref != 0 ) {
+    (*i).second.ref->Dispatch( e );
+  }
 }
 
 void EvManager::Send( const Event& e, const EvManager::key_type& src_id )
 {
+  // Will be useful to block on erase/insert operations...
+  // MT_REENTRANT( _lock_heap, _1 );
   heap_type::iterator i = heap.find( e.dest() );
   if ( i != heap.end() ) {
-    if ( (*i).second.ref != 0 ) { // local deliver
+    if ( (*i).second.ref != 0 ) { // local delivery
 //       std::cerr << "Local\n";
       (*i).second.ref->Dispatch( e );
-    } else { // remote object
+    } else { // remote delivery
 //       std::cerr << "Remote\n";
       __stl_assert( (*i).second.remote != 0 );
       (*i).second.remote->channel->push( e, (*i).second.remote->key, src_id );
@@ -59,6 +72,20 @@ EvManager::key_type EvManager::create_unique()
   } while ( heap.find( _id ) != heap.end() );
 
   return _id;
+}
+
+EvSessionManager::key_type EvManager::establish_session()
+{
+  // EvSessionManager::key_type new_key = smgr.create();
+
+  return /* new_key */ smgr.create();
+}
+
+void EvManager::disconnect( const EvSessionManager::key_type& _sid )
+{
+  if ( smgr.is_avail( _sid ) ) {
+    smgr[_sid].disconnect();
+  }
 }
 
 } // namespace EDS
