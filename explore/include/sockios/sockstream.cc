@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/05/07 11:05:17 ptr>
+// -*- C++ -*- Time-stamp: <99/05/19 18:02:37 ptr>
 
 #ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
 
@@ -184,6 +184,27 @@ basic_sockbuf<charT, traits>::open( sock_base::socket_type s, const sockaddr& ad
 }
 
 template<class charT, class traits>
+void basic_sockbuf<charT, traits>::setoptions( int optname, bool __v )
+{
+#ifdef __unix
+  if ( is_open() ) {
+    int _val = __v ? 1 : 0;
+    if ( setsockopt( _fd, SOL_SOCKET, optname,
+                     (const void *)&_val, (socklen_t)sizeof(int) ) != 0 ) {
+      _state |= sock_base::sockfailbit;
+#ifdef WIN32
+      _errno = WSAGetLastError();
+#else
+      _errno = errno;
+#endif
+    }
+  } else {
+    _state |= sock_base::sockfailbit;
+  }
+#endif
+}
+
+template<class charT, class traits>
 basic_sockbuf<charT, traits>::int_type
 basic_sockbuf<charT, traits>::underflow()
 {
@@ -214,7 +235,7 @@ basic_sockbuf<charT, traits>::underflow()
   // recover status quo: indeed I am in critical section, that will
   // be unlocked outside this code (as it was locked outside it).
   MT_UNLOCK( __locker( *this ) );
-  if ( poll( &pfd, 1, -1 ) <= 0 ) { // timeout 200 (milliseconds)
+  if ( poll( &pfd, 1, -1 ) <= 0 ) { // wait infinite
     MT_LOCK( __locker( *this ) );
     return traits::eof();
   }
@@ -255,9 +276,13 @@ basic_sockbuf<charT, traits>::overflow( int_type c )
   if ( count ) {
     __stl_assert( pbase() != 0 );
 
-    if ( __rdsync() != 0 ) { // I should read something, if other side write
-      return traits::eof();  // otherwise I can't write without pipe broken
-    }
+    // Never do this: read and and write in basic_sockbuf are independent,
+    // so reading here lead to lost message if reading and writing occur
+    // simultaneously from different threads
+
+//    if ( __rdsync() != 0 ) { // I should read something, if other side write
+//      return traits::eof();  // otherwise I can't write without pipe broken
+//    }
 
     if ( (this->*_xwrite)( pbase(), sizeof(charT) * count ) != count * sizeof(charT) )
       return traits::eof();

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <99/04/16 19:24:14 ptr>
+// -*- C++ -*- Time-stamp: <99/05/19 17:55:29 ptr>
 
 #ifndef __SOCKSTREAM__
 #define __SOCKSTREAM__
@@ -258,6 +258,7 @@ class basic_sockbuf :
      { return _type; }
 
    void hostname( string& hostname );
+   void setoptions( int optname, bool __v );
 
   protected:
     void findhost( const char *hostname );
@@ -303,14 +304,9 @@ class basic_sockbuf :
 	  return -1;
 	}
 
-	if ( __rdsync() != 0 ) {
-	  return -1;
-	}
-
 	long count = pptr() - pbase();
 	if ( count ) {
 	  __stl_assert( pbase() != 0 );
-
 	  if ( (this->*_xwrite)( pbase(), sizeof(charT) * count ) != count * sizeof(charT) )
 	    return -1;
 	  setp( pbase(), epptr() ); // require: set pptr
