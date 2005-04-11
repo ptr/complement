@@ -1,3 +1,7 @@
+2005-04-11  Petr Ovtchenkov  <ptr@island.plnet.ru>
+
+	* gmake/targets.mak, gmake/app/rules.mak: use C as linker, if no any C++ files
+
 2005-03-29  Petr Ovtchenkov  <ptr@island.plnet.ru>
 
 	* gmake/app/rules.mak, gmake/freebsd/rules-so.mak, gmake/linux/rules-so.mak,
