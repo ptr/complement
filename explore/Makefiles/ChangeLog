@@ -1,3 +1,16 @@
+2005-04-18  Petr Ovtchenkov  <ptr@island.plnet.ru>
+
+	* rules-o.mak: distinguish .s and .S sources.
+
+2005-04-15  Petr Ovtchenkov  <ptr@island.plnet.ru>
+
+	* rules-o.mak, gmake/gcc.mak, gmake/targets.mak: add asm sources,
+	including cross.
+
+	* gmake/linux/sys.mak: use cross-ar in case of cross
+
+	* gmake/linux/rules-so.mak: use C linker if no C++ sources
+
 2005-04-11  Petr Ovtchenkov  <ptr@island.plnet.ru>
 
 	* gmake/targets.mak, gmake/app/rules.mak: use C as linker, if no any C++ files
