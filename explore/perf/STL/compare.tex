@@ -48,12 +48,12 @@ STL implementations as well proper choice of strings implementation.
 In the tests was used following computers and operational envirinments:
 \begin{enumerate}
   \item Hands-made machine (assembled by Tersys company) with 2 $1.33$-GHz
-        AMD Athlon XP 1500+ processors under Linux (kernel 2.4.20, \verb|glibc| 2{.}2{.}5).
+        AMD Athlon XP 1500+ processors under Linux (kernel 2.4.20, and 2.4.26, \verb|glibc| 2{.}2{.}5).
 \end{enumerate}
 
 \section{Compilers}
 
-For Unix-like systems was used GNU gcc 3{.}3{.}3 % 3{.}1{.}1 and 3{.}2{.}3
+For Unix-like systems was used GNU gcc 3{.}3{.}3 and 3{.}4{.}1\footnote{tests \#6 and \#7} % 3{.}1{.}1 and 3{.}2{.}3
 with appropriate
 \verb|libstd++| libraries (version~3).
 % I don't see
@@ -61,8 +61,6 @@ with appropriate
 The GNU gcc 3{.}1{.}1 and 3{.}2{.}3 are worse up to $28\%$ (for some
 tests).
 % in range $0\%$--$6.58\%$.
-I still have problems with GNU gcc 3{.}4{.}1, so don't base test on it
-(may be a bit later).
 
 \section{Time Measure\label{timemeasure}}
 
