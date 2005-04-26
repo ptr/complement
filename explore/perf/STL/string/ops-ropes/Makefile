@@ -5,15 +5,15 @@ DIRS = STLport-default STLport-malloc STLport-newalloc
 
 all:
 	for d in $(DIRS); do \
-	  (cd $$d; make);\
+	  (cd $$d; ${MAKE});\
 	done
 
 clean:
 	for d in $(DIRS); do \
-	  (cd $$d; make clean); \
+	  (cd $$d; ${MAKE} clean); \
 	done
 
 depend:
 	for d in $(DIRS); do \
-	  (cd $$d; make depend); \
+	  (cd $$d; ${MAKE} depend); \
 	done

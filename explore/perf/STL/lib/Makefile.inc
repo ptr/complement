@@ -5,38 +5,37 @@ LIBNAME = stlport
 MAJOR = 5
 MINOR = 0
 PATCH = 0
-SRC_CPP = ${SRCROOT}/../dll_main.cpp \
-          ${SRCROOT}/../fstream.cpp \
-          ${SRCROOT}/../strstream.cpp \
-          ${SRCROOT}/../sstream.cpp \
-          ${SRCROOT}/../ios.cpp \
-          ${SRCROOT}/../stdio_streambuf.cpp \
-          ${SRCROOT}/../istream.cpp \
-          ${SRCROOT}/../ostream.cpp \
-          ${SRCROOT}/../iostream.cpp \
-          ${SRCROOT}/../codecvt.cpp \
-          ${SRCROOT}/../collate.cpp \
-          ${SRCROOT}/../ctype.cpp \
-          ${SRCROOT}/../monetary.cpp \
-          ${SRCROOT}/../num_get.cpp \
-          ${SRCROOT}/../num_put.cpp \
-          ${SRCROOT}/../num_get_float.cpp \
-          ${SRCROOT}/../num_put_float.cpp \
-          ${SRCROOT}/../numpunct.cpp \
-          ${SRCROOT}/../time_facets.cpp \
-          ${SRCROOT}/../messages.cpp \
-          ${SRCROOT}/../locale_impl.cpp \
-          ${SRCROOT}/../locale.cpp \
-          ${SRCROOT}/../locale_catalog.cpp \
-          ${SRCROOT}/../facets_byname.cpp \
-          ${SRCROOT}/../c_locale_stub.cpp \
-          ${SRCROOT}/../complex.cpp \
-          ${SRCROOT}/../complex_exp.cpp \
-          ${SRCROOT}/../complex_io.cpp \
-          ${SRCROOT}/../complex_trig.cpp \
-          ${SRCROOT}/../complex_io_w.cpp \
-          ${SRCROOT}/../string_w.cpp
+SRC_CPP = ${STLPORT_SRC_DIR}/src/dll_main.cpp \
+          ${STLPORT_SRC_DIR}/src/fstream.cpp \
+          ${STLPORT_SRC_DIR}/src/strstream.cpp \
+          ${STLPORT_SRC_DIR}/src/sstream.cpp \
+          ${STLPORT_SRC_DIR}/src/ios.cpp \
+          ${STLPORT_SRC_DIR}/src/stdio_streambuf.cpp \
+          ${STLPORT_SRC_DIR}/src/istream.cpp \
+          ${STLPORT_SRC_DIR}/src/ostream.cpp \
+          ${STLPORT_SRC_DIR}/src/iostream.cpp \
+          ${STLPORT_SRC_DIR}/src/codecvt.cpp \
+          ${STLPORT_SRC_DIR}/src/collate.cpp \
+          ${STLPORT_SRC_DIR}/src/ctype.cpp \
+          ${STLPORT_SRC_DIR}/src/monetary.cpp \
+          ${STLPORT_SRC_DIR}/src/num_get.cpp \
+          ${STLPORT_SRC_DIR}/src/num_put.cpp \
+          ${STLPORT_SRC_DIR}/src/num_get_float.cpp \
+          ${STLPORT_SRC_DIR}/src/num_put_float.cpp \
+          ${STLPORT_SRC_DIR}/src/numpunct.cpp \
+          ${STLPORT_SRC_DIR}/src/time_facets.cpp \
+          ${STLPORT_SRC_DIR}/src/messages.cpp \
+          ${STLPORT_SRC_DIR}/src/locale_impl.cpp \
+          ${STLPORT_SRC_DIR}/src/locale_catalog.cpp \
+          ${STLPORT_SRC_DIR}/src/facets_byname.cpp \
+          ${STLPORT_SRC_DIR}/src/c_locale_stub.cpp \
+          ${STLPORT_SRC_DIR}/src/complex.cpp \
+          ${STLPORT_SRC_DIR}/src/complex_exp.cpp \
+          ${STLPORT_SRC_DIR}/src/complex_io.cpp \
+          ${STLPORT_SRC_DIR}/src/complex_trig.cpp \
+          ${STLPORT_SRC_DIR}/src/complex_io_w.cpp \
+          ${STLPORT_SRC_DIR}/src/string_w.cpp
 
-SRC_C = ${SRCROOT}/../c_locale.c
+SRC_C = ${STLPORT_SRC_DIR}/src/c_locale.c
 
-SRC_RC = ${SRCROOT}/../stlport.rc
+SRC_RC = ${STLPORT_SRC_DIR}/src/stlport.rc
