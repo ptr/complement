@@ -19,14 +19,3 @@ release-shared:	LDSEARCH = -L${INSTALL_LIB_DIR} -Wl,-rpath=${INSTALL_LIB_DIR}
 stldbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR}
 dbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR}
 endif
-
-ifeq ($(OSNAME),sunos)
-release-shared : LDLIBS = -lstlport_gcc -lrt
-stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug -lrt
-dbg-shared     : LDLIBS = -lstlport_gcc -lrt
-else
-release-shared : LDLIBS = -lstlport_gcc
-stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug
-dbg-shared     : LDLIBS = -lstlport_gcc
-endif
-

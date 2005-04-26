@@ -2,7 +2,7 @@
 # $Id$
 
 STLPORT_SRC_DIR := /export/home/ptr/STLport.lab/cvs.stlport.com/STLport
-SRCROOT := ${STLPORT_SRC_DIR}/src/explore
+SRCROOT := ${STLPORT_SRC_DIR}/build
 INSTALL_LIB_DIR        := ../../build/lib/malloc
 INSTALL_LIB_DIR_DBG    := .
 INSTALL_LIB_DIR_STLDBG := .
@@ -21,7 +21,7 @@ include ${SRCROOT}/Makefiles/top.mak
 INCLUDES += -I$(STLPORT_INCLUDE_DIR)
 
 ifeq ($(OSNAME),linux)
-DEFS += -D_STLP_REAL_LOCALE_IMPLEMENTED -D_GNU_SOURCE
+DEFS += -D_STLP_REAL_LOCALE_IMPLEMENTED -D_GNU_SOURCE -D_STLP_LEAKS_PEDANTIC
 endif
 
 DEFS += -D_STLP_USE_MALLOC
