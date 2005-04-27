@@ -7,6 +7,10 @@
 
 PHONY ?=
 
+ifdef WITHOUT_STLPORT
+NOT_USE_NOSTDLIB := 1
+endif
+
 RULESBASE ?= $(SRCROOT)/Makefiles
 
 ALL_TAGS ?= release-shared	dbg-shared	stldbg-shared
