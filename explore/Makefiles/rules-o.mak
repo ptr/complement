@@ -9,6 +9,9 @@ $(OUTPUT_DIR)/%.o:	$(WORD1)%.cpp
 $(OUTPUT_DIR)/%.o:	$(WORD1)%.cc
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
+$(OUTPUT_DIR)/%.o:	$(WORD1)%.cxx
+	$(COMPILE.cc) $(OUTPUT_OPTION) $<
+
 $(OUTPUT_DIR)/%.o:	$(WORD1)%.c
 	$(COMPILE.c) $(OUTPUT_OPTION) $<
 
@@ -24,6 +27,9 @@ $(OUTPUT_DIR_A)/%.o:	$(WORD1)%.cpp
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
 $(OUTPUT_DIR_A)/%.o:	$(WORD1)%.cc
+	$(COMPILE.cc) $(OUTPUT_OPTION) $<
+
+$(OUTPUT_DIR_A)/%.o:	$(WORD1)%.cxx
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
 $(OUTPUT_DIR_A)/%.o:	$(WORD1)%.c
@@ -45,6 +51,9 @@ $(OUTPUT_DIR_DBG)/%.o:	$(WORD1)%.cpp
 $(OUTPUT_DIR_DBG)/%.o:	$(WORD1)%.cc
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
+$(OUTPUT_DIR_DBG)/%.o:	$(WORD1)%.cxx
+	$(COMPILE.cc) $(OUTPUT_OPTION) $<
+
 $(OUTPUT_DIR_DBG)/%.o:	$(WORD1)%.c
 	$(COMPILE.c) $(OUTPUT_OPTION) $<
 
@@ -60,6 +69,9 @@ $(OUTPUT_DIR_A_DBG)/%.o:	$(WORD1)%.cpp
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
 $(OUTPUT_DIR_A_DBG)/%.o:	$(WORD1)%.cc
+	$(COMPILE.cc) $(OUTPUT_OPTION) $<
+
+$(OUTPUT_DIR_A_DBG)/%.o:	$(WORD1)%.cxx
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
 $(OUTPUT_DIR_A_DBG)/%.o:	$(WORD1)%.c
@@ -81,6 +93,9 @@ $(OUTPUT_DIR_STLDBG)/%.o:	$(WORD1)%.cpp
 $(OUTPUT_DIR_STLDBG)/%.o:	$(WORD1)%.cc
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
+$(OUTPUT_DIR_STLDBG)/%.o:	$(WORD1)%.cxx
+	$(COMPILE.cc) $(OUTPUT_OPTION) $<
+
 $(OUTPUT_DIR_STLDBG)/%.o:	$(WORD1)%.c
 	$(COMPILE.c) $(OUTPUT_OPTION) $<
 
@@ -96,6 +111,9 @@ $(OUTPUT_DIR_A_STLDBG)/%.o:	$(WORD1)%.cpp
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
 $(OUTPUT_DIR_A_STLDBG)/%.o:	$(WORD1)%.cc
+	$(COMPILE.cc) $(OUTPUT_OPTION) $<
+
+$(OUTPUT_DIR_A_STLDBG)/%.o:	$(WORD1)%.cxx
 	$(COMPILE.cc) $(OUTPUT_OPTION) $<
 
 $(OUTPUT_DIR_A_STLDBG)/%.o:	$(WORD1)%.c
