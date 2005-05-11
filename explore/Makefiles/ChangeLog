@@ -1,3 +1,15 @@
+2005-05-11  Petr Ovtchenkov  <ptr@island.plnet.ru>
+
+	* rules-o.mak, gmake/targets.mak: add .cxx as C++ sources.
+
+	* gmake/gcc.mak: always add path to STLport include, if not requested
+	WITHOUT_STLPORT.
+
+	* gmake/app/rules.mak: add EXTRA_POST [_DBG,_STLDBG] and
+	EXTRA_PRE [_DBG,_STLDBG] macro as targets to do before make output
+	dirs and compile, and after linkage. Useful for pre- and post- build
+	additional processing.
+
 2005-04-18  Petr Ovtchenkov  <ptr@island.plnet.ru>
 
 	* rules-o.mak: distinguish .s and .S sources.
