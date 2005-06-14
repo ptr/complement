@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/11/06 07:48:39 ptr>
+// -*- C++ -*- Time-stamp: <05/06/14 15:53:28 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003
@@ -612,6 +612,14 @@ class EventHandler
         e.dest( dst ); \
         EventHandler::Send( EDS::Event_convert<T>()( e ) ); \
       }
+
+    template <class D>
+    void Send( const EDS::Event_base<D>& e )
+      { EventHandler::Send( EDS::Event_convert<D>()( e ) ); }
+
+    template <class D>
+    void Forward( const EDS::Event_base<D>& e )
+      { EventHandler::Forward( EDS::Event_convert<D>()( e ) ); }
 
     addr_type self_id() const
       { return _id; }
