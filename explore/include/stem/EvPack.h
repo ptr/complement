@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <03/11/06 07:46:48 ptr>
+// -*- C++ -*- Time-stamp: <05/06/28 17:03:38 ptr>
 
 /*
  *
@@ -244,12 +244,12 @@ struct __pack_base
     static void __net_pack( std::ostream& s, int x )
       {
         x = EDS::to_net( x );
-        s.write( (const char *)&x, 4 );
+        s.write( (const char *)&x, sizeof(int) );
       }
     static void __unpack( std::istream& s, int& x )
       { s.read( (char *)&x, sizeof(int) ); }
     static void __pack( std::ostream& s, int x )
-      { s.write( (const char *)&x, 4 ); }
+      { s.write( (const char *)&x, sizeof(int) ); }
     // unsigned
     static void __net_unpack( std::istream& s, unsigned& x )
       {
@@ -322,6 +322,36 @@ struct __pack_base
       { s.read( (char *)&x, sizeof(unsigned char) ); }
     static void __pack( std::ostream& s, unsigned char x )
       { s.write( (const char *)&x, 1 ); }
+    // short
+    static void __net_unpack( std::istream& s, short& x )
+      {
+        s.read( (char *)&x, sizeof(short) );
+        x = EDS::from_net( x );
+      }
+    static void __net_pack( std::ostream& s, short x )
+      {
+        x = EDS::to_net( x );
+        s.write( (const char *)&x, sizeof(short) );
+      }
+    static void __unpack( std::istream& s, short& x )
+      { s.read( (char *)&x, sizeof(short) ); }
+    static void __pack( std::ostream& s, short x )
+      { s.write( (const char *)&x, sizeof(short) ); }
+    // unsigned short
+    static void __net_unpack( std::istream& s, unsigned short& x )
+      {
+        s.read( (char *)&x, sizeof(unsigned short) );
+        x = EDS::from_net( x );
+      }
+    static void __net_pack( std::ostream& s, unsigned short x )
+      {
+        x = EDS::to_net( x );
+        s.write( (const char *)&x, sizeof(unsigned short) );
+      }
+    static void __unpack( std::istream& s, unsigned short& x )
+      { s.read( (char *)&x, sizeof(unsigned short) ); }
+    static void __pack( std::ostream& s, unsigned short x )
+      { s.write( (const char *)&x, sizeof(unsigned short) ); }
 };
 
 }
