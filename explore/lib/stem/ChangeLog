@@ -8,6 +8,12 @@
 	so member template methods Send and Forward added for
 	parametric Event.
 
+2005-03-30  Petr Ovtchenkov  <ptr@island.plnet.ru>
+
+	* libstem (Repository): fix problems with modern compiler
+	[gcc 3.4.2, more strict and near Standard]; reincarnation
+	in CVS repository under version 4.0.
+
 2003-11-06  Petr Ovtchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* libEDS: library renamed to 'stem' == lower of 'StEM'
