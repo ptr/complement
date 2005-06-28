@@ -9,3 +9,5 @@ include ${SRCROOT}/Makefiles/top.mak
 
 INCLUDES += -I$(SRCROOT)/include -I$(STLPORT_INCLUDE_DIR)
 
+LDLIBS += -ldl
+
