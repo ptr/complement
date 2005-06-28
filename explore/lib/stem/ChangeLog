@@ -1,3 +1,7 @@
+2005-06-28  Petr Ovtchenkov  <Petr.Ovchenkov@Kaspersky.COM>
+
+	* EvPack.h: add missed short and unsigned short to transport.
+
 2005-06-14  Petr Ovtchenkov  <Petr.Ovchenkov@Kaspersky.COM>
 
 	* EventHandler.h: modern compilers support member templates,
