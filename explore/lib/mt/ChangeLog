@@ -1,3 +1,11 @@
+2005-06-30  Petr Ovtchenkov  <ptr@island.plnet.ru>
+
+	* xmt.cc: Use local define to detect Netware;
+	don't use set_terminate, set_unexpected on Netware
+
+	* mwccnlm.mak: makefile for MetroWerks CodeWarrior for
+	Novell Netware.
+
 2005-03-25  Petr Ovtchenkov  <ptr@island.plnet.ru>
 
 	* Makefile: revision of Makefiles---path to stlport lib and
