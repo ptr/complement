@@ -1,14 +1,14 @@
-/* -*- C -*- Time-stamp: <04/05/18 08:44:56 ptr> */
+/* -*- C -*- Time-stamp: <05/06/29 19:29:20 ptr> */
 
 /*
  *
- * Copyright (c) 1999, 2002, 2003, 2004
+ * Copyright (c) 1999, 2002, 2003, 2004, 2005
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 2.0
+ * Licensed under the Academic Free License Version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -86,7 +86,10 @@
 #endif
 
 #ifdef N_PLAT_NLM
-#include <config/_mwccnlm.h>
+#  include <config/_netware.h>
+#  ifdef __MWERKS__
+#    include <config/_mwccnlm.h>
+#  endif 
 #endif
 
 #ifdef __FIT_USE_DECLSPEC /* using export/import technique */

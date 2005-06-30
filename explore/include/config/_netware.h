@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <05/06/29 19:01:14 ptr>
+// -*- C++ -*- Time-stamp: <05/06/29 19:29:34 ptr>
 
 /*
  *
- * Copyright (c) 2003
- * Petr Ovchenkov
+ * Copyright (c) 2005
+ * Petr Ovtchenkov
  *
- * Licensed under the Academic Free License Version 1.0
+ * Licensed under the Academic Free License Version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -18,10 +18,13 @@
  *
  */
 
-#ifndef __config__mwccnlm_h
-#define __config__mwccnlm_h
+#ifndef __config__netware_h
+#define __config__netware_h
 
 #ident "@(#)$Id$"
 
+#define __FIT_NETWARE // mark target: Novell Netware
+#define __FIT_NOVELL_THREADS
+#define _LITTLE_ENDIAN // Novell NetWare run only on Intel
 
-#endif // __config__mwccnlm_h
+#endif // __config__netware_h
