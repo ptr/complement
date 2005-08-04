@@ -1,3 +1,14 @@
+2005-08-04  Petr Ovtchenkov  <ptr@island.plnet.ru>
+
+	* rules-d.mak: add .cxx as C++ sources.
+
+2005-06-30  Petr Ovtchenkov  <ptr@island.plnet.ru>
+
+	* gmake/mwccnlm.mak, gmake/app/mwccnlm.mak, gmake/lib/mwccnlm.mak:
+	mwccnlm [CodeWarrior for Netware] support
+
+	* gmake/sysid.mak: mwccnlm is really cross-compiler
+
 2005-05-11  Petr Ovtchenkov  <ptr@island.plnet.ru>
 
 	* rules-o.mak, gmake/targets.mak: add .cxx as C++ sources.
