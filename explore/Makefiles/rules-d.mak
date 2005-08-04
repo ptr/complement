@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <03/10/27 17:20:22 ptr>
+# -*- Makefile -*- Time-stamp: <05/08/04 07:42:06 ptr>
 # $Id$
 
 # Rules for release output:
@@ -7,6 +7,9 @@ $(OUTPUT_DIR)/%.d:	$(WORD1)%.cpp
 	@$(COMPILE.cc) $(CCDEPFLAGS) $< $(DP_OUTPUT_DIR)
 
 $(OUTPUT_DIR)/%.d:	$(WORD1)%.cc
+	@$(COMPILE.cc) $(CCDEPFLAGS) $< $(DP_OUTPUT_DIR)
+
+$(OUTPUT_DIR)/%.d:	$(WORD1)%.cxx
 	@$(COMPILE.cc) $(CCDEPFLAGS) $< $(DP_OUTPUT_DIR)
 
 $(OUTPUT_DIR)/%.d:	$(WORD1)%.c
@@ -18,6 +21,9 @@ $(OUTPUT_DIR_A)/%.d:	$(WORD1)%.cpp
 	@$(COMPILE.cc) $(CCDEPFLAGS) $< $(DP_OUTPUT_DIR)
 
 $(OUTPUT_DIR_A)/%.d:	$(WORD1)%.cc
+	@$(COMPILE.cc) $(CCDEPFLAGS) $< $(DP_OUTPUT_DIR)
+
+$(OUTPUT_DIR_A)/%.d:	$(WORD1)%.cxx
 	@$(COMPILE.cc) $(CCDEPFLAGS) $< $(DP_OUTPUT_DIR)
 
 $(OUTPUT_DIR_A)/%.d:	$(WORD1)%.c
@@ -33,6 +39,9 @@ $(OUTPUT_DIR_DBG)/%.d:	$(WORD1)%.cpp
 $(OUTPUT_DIR_DBG)/%.d:	$(WORD1)%.cc
 	@$(COMPILE.cc) $(CCDEPFLAGS) $< $(DP_OUTPUT_DIR_DBG)
 
+$(OUTPUT_DIR_DBG)/%.d:	$(WORD1)%.cxx
+	@$(COMPILE.cc) $(CCDEPFLAGS) $< $(DP_OUTPUT_DIR_DBG)
+
 $(OUTPUT_DIR_DBG)/%.d:	$(WORD1)%.c
 	@$(COMPILE.c) $(CDEPFLAGS) $< $(DP_OUTPUT_DIR_DBG)
 
@@ -42,6 +51,9 @@ $(OUTPUT_DIR_A_DBG)/%.d:	$(WORD1)%.cpp
 	@$(COMPILE.cc) $(CCDEPFLAGS) $< $(DP_OUTPUT_DIR_DBG)
 
 $(OUTPUT_DIR_A_DBG)/%.d:	$(WORD1)%.cc
+	@$(COMPILE.cc) $(CCDEPFLAGS) $< $(DP_OUTPUT_DIR_DBG)
+
+$(OUTPUT_DIR_A_DBG)/%.d:	$(WORD1)%.cxx
 	@$(COMPILE.cc) $(CCDEPFLAGS) $< $(DP_OUTPUT_DIR_DBG)
 
 $(OUTPUT_DIR_A_DBG)/%.d:	$(WORD1)%.c
@@ -57,6 +69,9 @@ $(OUTPUT_DIR_STLDBG)/%.d:	$(WORD1)%.cpp
 $(OUTPUT_DIR_STLDBG)/%.d:	$(WORD1)%.cc
 	@$(COMPILE.cc) $(CCDEPFLAGS) $< $(DP_OUTPUT_DIR_STLDBG)
 
+$(OUTPUT_DIR_STLDBG)/%.d:	$(WORD1)%.cxx
+	@$(COMPILE.cc) $(CCDEPFLAGS) $< $(DP_OUTPUT_DIR_STLDBG)
+
 $(OUTPUT_DIR_STLDBG)/%.d:	$(WORD1)%.c
 	@$(COMPILE.c) $(CDEPFLAGS) $< $(DP_OUTPUT_DIR_STLDBG)
 
@@ -66,6 +81,9 @@ $(OUTPUT_DIR_A_STLDBG)/%.d:	$(WORD1)%.cpp
 	@$(COMPILE.cc) $(CCDEPFLAGS) $< $(DP_OUTPUT_DIR_STLDBG)
 
 $(OUTPUT_DIR_A_STLDBG)/%.d:	$(WORD1)%.cc
+	@$(COMPILE.cc) $(CCDEPFLAGS) $< $(DP_OUTPUT_DIR_STLDBG)
+
+$(OUTPUT_DIR_A_STLDBG)/%.d:	$(WORD1)%.cxx
 	@$(COMPILE.cc) $(CCDEPFLAGS) $< $(DP_OUTPUT_DIR_STLDBG)
 
 $(OUTPUT_DIR_A_STLDBG)/%.d:	$(WORD1)%.c
