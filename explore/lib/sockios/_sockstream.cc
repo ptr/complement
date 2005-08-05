@@ -1,13 +1,13 @@
-// -*- C++ -*- Time-stamp: <03/07/31 15:49:03 ptr>
+// -*- C++ -*- Time-stamp: <05/08/05 18:11:21 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002
+ * Copyright (c) 1997-1999, 2002, 2005
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2000
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 1.0
+ * Licensed under the Academic Free License Version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -338,6 +338,21 @@ std::string hostname( unsigned long inet_addr )
   _hostname += " [";
   _hostname += inet_ntoa( in );
   _hostname += "]";
+
+  return _hostname;
+}
+
+std::string hostname()
+{
+  std::string _hostname;
+  char tmp_buff[1024];
+
+  if ( gethostname( tmp_buff, 1024 ) == 0 ) {
+    _hostname = tmp_buff;
+  } else {
+    _hostname = "unknown";
+  }
+  // getdomainname may be called here, but POSIX not specify such call
 
   return _hostname;
 }
