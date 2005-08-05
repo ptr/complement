@@ -1,14 +1,13 @@
-// -*- C++ -*- Time-stamp: <03/07/05 09:26:36 ptr>
+// -*- C++ -*- Time-stamp: <05/08/05 18:11:55 ptr>
 
 /*
- *
- * Copyright (c) 1997-1999, 2002, 2003
+ * Copyright (c) 1997-1999, 2002, 2003, 2005
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 1.2
+ * Licensed under the Academic Free License Version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -84,6 +83,8 @@ class basic_sockmgr :
       { basic_sockmgr::close(); }
 
   protected:
+    __FIT_DECLSPEC void open( const in_addr& addr, int port, sock_base::stype type, sock_base::protocol prot );
+    __FIT_DECLSPEC void open( unsigned long addr, int port, sock_base::stype type, sock_base::protocol prot );
     __FIT_DECLSPEC void open( int port, sock_base::stype type, sock_base::protocol prot );
 
     virtual __FIT_DECLSPEC void close();
@@ -156,6 +157,22 @@ class sockmgr_stream_MP :
         _pfd = 0;
       }
 
+    explicit sockmgr_stream_MP( const in_addr& addr, int port, sock_base::stype t = sock_base::sock_stream ) :
+	basic_sockmgr(),
+        _fdcount( 0 )
+      {
+        _pfd = 0;
+        open( addr, port, t );
+      }
+
+    explicit sockmgr_stream_MP( unsigned long addr, int port, sock_base::stype t = sock_base::sock_stream ) :
+	basic_sockmgr(),
+        _fdcount( 0 )
+      {
+        _pfd = 0;
+        open( addr, port, t );
+      }
+
     explicit sockmgr_stream_MP( int port, sock_base::stype t = sock_base::sock_stream ) :
 	basic_sockmgr(),
         _fdcount( 0 )
@@ -171,6 +188,8 @@ class sockmgr_stream_MP :
         }
       }
 
+    void open( const in_addr& addr, int port, sock_base::stype t = sock_base::sock_stream );
+    void open( unsigned long addr, int port, sock_base::stype t = sock_base::sock_stream );
     void open( int port, sock_base::stype t = sock_base::sock_stream );
 
     virtual void close()
@@ -183,6 +202,7 @@ class sockmgr_stream_MP :
       { }
 
   protected:
+    void _open( sock_base::stype t = sock_base::sock_stream );
     static int loop( void * );
 
     struct _Connect {
@@ -254,6 +274,20 @@ class sockmgr_stream_MP_SELECT :
       {
       }
 
+    explicit sockmgr_stream_MP_SELECT( const in_addr& addr, int port, sock_base::stype t = sock_base::sock_stream ) :
+	basic_sockmgr(),
+        _fdmax( 0 )
+      {
+        open( addr, port, t );
+      }
+
+    explicit sockmgr_stream_MP_SELECT( unsigned long addr, int port, sock_base::stype t = sock_base::sock_stream ) :
+	basic_sockmgr(),
+        _fdmax( 0 )
+      {
+        open( addr, port, t );
+      }
+
     explicit sockmgr_stream_MP_SELECT( int port, sock_base::stype t = sock_base::sock_stream ) :
 	basic_sockmgr(),
         _fdmax( 0 )
@@ -265,6 +299,8 @@ class sockmgr_stream_MP_SELECT :
       {
       }
 
+    void open( const in_addr& addr, int port, sock_base::stype t = sock_base::sock_stream );
+    void open( unsigned long addr, int port, sock_base::stype t = sock_base::sock_stream );
     void open( int port, sock_base::stype t = sock_base::sock_stream );
 
     virtual void close()
@@ -277,6 +313,7 @@ class sockmgr_stream_MP_SELECT :
       { }
 
   protected:
+    void _open( sock_base::stype t = sock_base::sock_stream );
     static int loop( void * );
 
     struct _Connect {
