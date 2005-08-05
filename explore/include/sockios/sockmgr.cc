@@ -1,14 +1,13 @@
-// -*- C++ -*- Time-stamp: <03/11/17 08:46:06 ptr>
+// -*- C++ -*- Time-stamp: <05/08/05 18:12:18 ptr>
 
 /*
- *
- * Copyright (c) 1997-1999, 2002, 2003
- * Petr Ovchenkov
+ * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 2.0
+ * Licensed under the Academic Free License Version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -39,10 +38,10 @@ using __impl::Thread;
 _STLP_BEGIN_NAMESPACE
 
 #ifndef __FIT_NO_POLL
+
 template <class Connect>
-void sockmgr_stream_MP<Connect>::open( int port, sock_base::stype t )
+void sockmgr_stream_MP<Connect>::_open( sock_base::stype t )
 {
-  basic_sockmgr::open( port, t, sock_base::inet );
   MT_REENTRANT( _fd_lck, _1 );
   if ( is_open_unsafe() ) {
     if ( t == sock_base::sock_stream ) {
@@ -68,6 +67,27 @@ void sockmgr_stream_MP<Connect>::open( int port, sock_base::stype t )
     
     loop_id.launch( loop, this );
   }
+}
+
+template <class Connect>
+void sockmgr_stream_MP<Connect>::open( const in_addr& addr, int port, sock_base::stype t )
+{
+  basic_sockmgr::open( addr, port, t, sock_base::inet );
+  sockmgr_stream_MP<Connect>::_open( t );
+}
+
+template <class Connect>
+void sockmgr_stream_MP<Connect>::open( unsigned long addr, int port, sock_base::stype t )
+{
+  basic_sockmgr::open( addr, port, t, sock_base::inet );
+  sockmgr_stream_MP<Connect>::_open( t );
+}
+
+template <class Connect>
+void sockmgr_stream_MP<Connect>::open( int port, sock_base::stype t )
+{
+  basic_sockmgr::open( port, t, sock_base::inet );
+  sockmgr_stream_MP<Connect>::_open( t );
 }
 
 template <class Connect>
@@ -337,10 +357,10 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
 #endif // !__FIT_NO_POLL
 
 #ifndef __FIT_NO_SELECT
+
 template <class Connect>
-void sockmgr_stream_MP_SELECT<Connect>::open( int port, sock_base::stype t )
+void sockmgr_stream_MP_SELECT<Connect>::_open( sock_base::stype t )
 {
-  basic_sockmgr::open( port, t, sock_base::inet );
   MT_REENTRANT( _fd_lck, _1 );
   if ( is_open_unsafe() ) {
     if ( t == sock_base::sock_stream ) {
@@ -359,6 +379,27 @@ void sockmgr_stream_MP_SELECT<Connect>::open( int port, sock_base::stype t )
     
     loop_id.launch( loop, this );
   }
+}
+
+template <class Connect>
+void sockmgr_stream_MP_SELECT<Connect>::open( const in_addr& addr, int port, sock_base::stype t )
+{
+  basic_sockmgr::open( addr, port, t, sock_base::inet );
+  sockmgr_stream_MP_SELECT<Connect>::_open( t );
+}
+
+template <class Connect>
+void sockmgr_stream_MP_SELECT<Connect>::open( unsigned long addr, int port, sock_base::stype t )
+{
+  basic_sockmgr::open( addr, port, t, sock_base::inet );
+  sockmgr_stream_MP_SELECT<Connect>::_open( t );
+}
+
+template <class Connect>
+void sockmgr_stream_MP_SELECT<Connect>::open( int port, sock_base::stype t )
+{
+  basic_sockmgr::open( port, t, sock_base::inet );
+  sockmgr_stream_MP_SELECT<Connect>::_open( t );
 }
 
 template <class Connect>

@@ -1,14 +1,13 @@
-// -*- C++ -*- Time-stamp: <04/01/21 14:33:52 ptr>
+// -*- C++ -*- Time-stamp: <05/08/05 18:12:15 ptr>
 
 /*
- *
- * Copyright (c) 1997-1999, 2002, 2003
+ * Copyright (c) 1997-1999, 2002, 2003, 2005
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 1.2
+ * Licensed under the Academic Free License Version 2.1
  * 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -42,9 +41,7 @@ _STLP_BEGIN_NAMESPACE
 int basic_sockmgr::_idx = -1;
 __impl::Mutex basic_sockmgr::_idx_lck;
 
-
-__FIT_DECLSPEC
-void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol prot )
+void basic_sockmgr::open( const in_addr& addr, int port, sock_base::stype type, sock_base::protocol prot )
 {
   MT_REENTRANT( _fd_lck, _1 );
   if ( is_open_unsafe() ) {
@@ -70,7 +67,7 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
     // _open = true;
     _address.inet.sin_family = AF_INET;
     _address.inet.sin_port = htons( port );
-    _address.inet.sin_addr.s_addr = htons( INADDR_ANY );
+    _address.inet.sin_addr.s_addr = addr.s_addr;
 
     if ( type == sock_base::sock_stream ||
 	 type == sock_base::sock_seqpacket ) {
@@ -109,6 +106,20 @@ void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol p
   _errno = 0; // if any
 
   return;
+}
+
+__FIT_DECLSPEC
+void basic_sockmgr::open( unsigned long addr, int port, sock_base::stype type, sock_base::protocol prot )
+{
+  in_addr _addr;
+  _addr.s_addr = htonl( addr );
+  basic_sockmgr::open( _addr, port, type, prot );
+}
+
+__FIT_DECLSPEC
+void basic_sockmgr::open( int port, sock_base::stype type, sock_base::protocol prot )
+{
+  basic_sockmgr::open(INADDR_ANY, port, type, prot);
 }
 
 __FIT_DECLSPEC
