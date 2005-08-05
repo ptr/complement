@@ -1,14 +1,13 @@
-// -*- C++ -*- Time-stamp: <04/01/21 16:55:44 ptr>
+// -*- C++ -*- Time-stamp: <05/08/05 18:15:33 ptr>
 
 /*
- *
- * Copyright (c) 1997-1999, 2002, 2003
- * Petr Ovchenkov
+ * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 2.0
+ * Licensed under the Academic Free License Version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
