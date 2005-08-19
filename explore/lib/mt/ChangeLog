@@ -3,6 +3,8 @@
 	* xmt.h: created class LockerExt that work like Locker
 	[auto-unlock in destructor] but take native mutex object.
 
+	* libxmt: version 1.8.0
+
 2005-06-30  Petr Ovtchenkov  <ptr@island.plnet.ru>
 
 	* xmt.cc: Use local define to detect Netware;
