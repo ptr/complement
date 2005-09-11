@@ -1,13 +1,14 @@
-// -*- C++ -*- Time-stamp: <02/08/04 15:20:53 ptr>
+// -*- C++ -*- Time-stamp: <05/09/11 11:43:36 ptr>
 
 /*
- *
- * Copyright (c) 2002
+ * Copyright (c) 2002, 2005
  * Petr Ovtchenkov
  *
  * Copyright (c) 2001
  * ParallelGraphics Ltd.
  * 
+ * Licensed under the Academic Free License Version 2.1
+ *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
  *
@@ -17,14 +18,6 @@
  * that both that copyright notice and this permission notice appear
  * in supporting documentation.
  */
-
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#pragma ident "@(#)$Id$"
-#  endif
-#endif
 
 #include <config/feature.h>
 #include "DB/xxSQL_i.h"
@@ -55,7 +48,8 @@ DataBase_connect::DataBase_connect() :
 
 DataBase::DataBase( const DataBase_connect& c ) :
     _flags( 0 ),
-    _dberr( c.err != 0 ? *c.err : std::cerr )
+    _dberr( c.err != 0 ? *c.err : std::cerr ),
+    _xc( 0 )
 {
   if ( c.name.length() != 0 ) {
     _dbname = c.name;
