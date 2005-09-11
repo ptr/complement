@@ -1,3 +1,9 @@
+2005-09-11  Petr Ovtchenkov  <ptr@island.plnet.ru>
+
+	* xxSQL_i.cc: fix uninitialized var; thanks valgrind.
+
+	* PgSQL.cc: use c_str, not data; thanks valgrind.
+
 2005-03-25  Petr Ovtchenkov  <ptr@island.plnet.ru>
 
 	* Makefile: revision of Makefiles---path to stlport lib and
