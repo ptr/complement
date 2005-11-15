@@ -28,7 +28,6 @@ SRC_CPP = ${STLPORT_SRC_DIR}/src/dll_main.cpp \
           ${STLPORT_SRC_DIR}/src/locale_impl.cpp \
           ${STLPORT_SRC_DIR}/src/locale_catalog.cpp \
           ${STLPORT_SRC_DIR}/src/facets_byname.cpp \
-          ${STLPORT_SRC_DIR}/src/c_locale_stub.cpp \
           ${STLPORT_SRC_DIR}/src/complex.cpp \
           ${STLPORT_SRC_DIR}/src/complex_exp.cpp \
           ${STLPORT_SRC_DIR}/src/complex_io.cpp \
