@@ -1,7 +1,7 @@
 # -*- Makefile -*- Time-stamp: <03/10/12 20:35:49 ptr>
 # $Id$
 
-STLPORT_SRC_DIR := /export/home/ptr/STLport.lab/cvs.stlport.com/STLport
+STLPORT_SRC_DIR := /export/home/ptr/STLport.lab/STLport
 SRCROOT := ${STLPORT_SRC_DIR}/build
 INSTALL_LIB_DIR        := ../../build/lib/malloc
 INSTALL_LIB_DIR_DBG    := .
