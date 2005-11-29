@@ -1,3 +1,9 @@
+2005-11-29  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xmt.h: add pthread_rwlock_* functionality.
+
+	* libxmt: version 1.8.1
+
 2005-08-19  Petr Ovtchenkov  <Petr.Ovchenkov@Kaspersky.COM>
 
 	* xmt.h: created class LockerExt that work like Locker
