@@ -1,11 +1,11 @@
-/* -*- C++ -*- Time-stamp: <05/03/30 16:24:27 ptr> */
+/* -*- C++ -*- Time-stamp: <05/11/29 01:13:49 ptr> */
 
 /*
  *
- * Copyright (c) 2003, 2004
+ * Copyright (c) 2003-2005
  * Petr Ovtchenkov
  *
- * Licensed under the Academic Free License Version 2.0
+ * Licensed under the Academic Free License Version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -20,8 +20,6 @@
 
 #ifndef __config__linux_h
 #define __config__linux_h
-
-#ident "@(#)$Id$"
 
 #ifndef _GNU_SOURCE
 # define _GNU_SOURCE
@@ -52,6 +50,7 @@
 /* The IEEE Std. 1003.1j-2000 introduces functions to implement spinlocks. */
 #   ifndef __UCLIBC__ /* There are no spinlocks in uClibc 0.9.27 */
 #     define __FIT_PTHREAD_SPINLOCK
+#     define __FIT_RWLOCK
 #   endif
 #   define __FIT_PSHARED_MUTEX
 #  endif
