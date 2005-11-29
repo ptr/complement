@@ -1,7 +1,6 @@
-/* -*- C -*- Time-stamp: <05/06/29 19:29:20 ptr> */
+/* -*- C -*- Time-stamp: <05/09/02 00:47:41 ptr> */
 
 /*
- *
  * Copyright (c) 1999, 2002, 2003, 2004, 2005
  * Petr Ovtchenkov
  *
@@ -23,14 +22,6 @@
 
 #ifndef __config_feature_h
 #define __config_feature_h
-
-#if defined(__unix) || defined(__OpenBSD__)
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
 
 #ifndef _REENTRANT
 #  define _REENTRANT

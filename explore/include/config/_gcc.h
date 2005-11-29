@@ -1,11 +1,11 @@
-/* -*- C -*- Time-stamp: <04/05/18 08:46:15 ptr> */
+/* -*- C -*- Time-stamp: <05/09/02 00:27:37 ptr> */
 
 /*
  *
  * Copyright (c) 2003
  * Petr Ovtchenkov
  *
- * Licensed under the Academic Free License Version 1.0
+ * Licensed under the Academic Free License Version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -20,8 +20,6 @@
 
 #ifndef __config__gcc_h
 #define __config__gcc_h
-
-#ident "@(#)$Id$"
 
 /*
 #if defined(__GNUC__) && (__GNUC__==3) // gcc 3.1.1 at least
