@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/12/01 15:49:43 ptr>
+// -*- C++ -*- Time-stamp: <05/12/01 20:10:49 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005
@@ -21,14 +21,6 @@
 
 #ifndef __SOCKSTREAM__
 #define __SOCKSTREAM__
-
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -77,11 +69,11 @@ std::string service( int port, const char *proto ) throw( std::domain_error );
 
 /*
  * Expected host name, return (via back insert iterator)
- * all IPs for specified host name; nothing will be added in case of
+ * all IPs (in_addr) for specified host name; nothing will be added in case of
  * failure.
  */
 template <class BackInsertIterator>
-void ip_by_name( const char *hostname, BackInsertIterator bi )
+void gethostaddr( const char *hostname, BackInsertIterator bi )
 {
   int _errno = 0;
 
@@ -133,28 +125,38 @@ void ip_by_name( const char *hostname, BackInsertIterator bi )
 
   if ( host != 0 && host->h_length == sizeof(in_addr) ) {
     for ( char **_inet = host->h_addr_list; *_inet != 0; ++_inet ) {
-      *bi++ = ((in_addr *)*_inet)->s_addr;
+      *bi++ = *((in_addr *)*_inet);
     }
   }
 }
 
+/*
+ * Expected host name, return (via back insert iterator)
+ * all sockaddr for specified host name; nothing will be added in case of
+ * failure. (Alternative implementation to gethostaddr above; it most
+ * useful on systems without reentrant gethostbyname_r, but that has
+ * reentrant getaddrinfo, like FreeBSD >= 5.3)
+ */
 template <class BackInsertIterator>
-void ip_by_name2( const char *hostname, BackInsertIterator bi )
+void gethostaddr2( const char *hostname, BackInsertIterator bi )
 {
-#if 0
   // addrinfo hints;
   addrinfo *hosts_list = 0;
 
   int _errno = getaddrinfo( hostname, 0, 0, &hosts_list );
   if ( _errno == 0 ) {
     addrinfo *host = hosts_list;
-    if ( host != 0 && host->ai_addr != 0 ->h_length == sizeof(in_addr) ) {
-      for ( char **_inet = host->h_addr_list; *_inet != 0; ++_inet ) {
-        *bi++ = ((in_addr *)*_inet)->s_addr;
+    if ( host != 0 && host->ai_addr != 0 ) {
+      while ( host != 0 ) {
+        // *bi++ = ((in_addr *)host->ai_addr->sa_data)->s_addr;
+        *bi++ = *host->ai_addr;
+        host = host->ai_next;
       }
     }
   }
-#endif
+  if ( hosts_list != 0 ) {
+    freeaddrinfo( hosts_list );
+  }
 }
 
 
