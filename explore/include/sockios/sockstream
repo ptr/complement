@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/08/05 18:12:34 ptr>
+// -*- C++ -*- Time-stamp: <05/12/01 15:49:43 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005
@@ -74,6 +74,88 @@ std::string hostname();
 
 int service( const char *name, const char *proto ) throw( std::domain_error );
 std::string service( int port, const char *proto ) throw( std::domain_error );
+
+/*
+ * Expected host name, return (via back insert iterator)
+ * all IPs for specified host name; nothing will be added in case of
+ * failure.
+ */
+template <class BackInsertIterator>
+void ip_by_name( const char *hostname, BackInsertIterator bi )
+{
+  int _errno = 0;
+
+#ifndef __GETHOSTBYADDR__
+  hostent _host;
+#  ifndef __hpux
+  char tmpbuf[4096];
+#  else // __hpux
+  hostent_data tmpbuf;
+#  endif // __hpux
+#  ifdef __linux
+  hostent *host = 0;
+  gethostbyname_r( hostname, &_host, tmpbuf, 4096, &host, &_errno );
+#  elif defined(__hpux)
+  _errno = gethostbyname_r( hostname, &_host, &tmpbuf );
+  hostent *host = &_host;
+#  elif defined(__sun)
+  hostent *host = gethostbyname_r( hostname, &_host, tmpbuf, 4096, &_errno );
+#  else // !__linux !__hpux !__sun
+#    error "Check port of gethostbyname_r"
+#  endif // __linux __hpux __sun
+#else // __GETHOSTBYADDR__
+  hostent *host = gethostbyname( hostname );
+#  ifdef WIN32
+  if ( host == 0 ) {
+    _errno = WSAGetLastError();
+
+    // specific to Wins only:
+    // cool M$ can't resolve IP address in gethostbyname, try once more
+    // via inet_addr() and gethostbyaddr()
+    // Returned _errno depend upon WinSock version, and applied patches,
+    // with some of it even gethostbyname may be succeed.
+    if ( _errno == WSAHOST_NOT_FOUND || _errno == WSATRY_AGAIN ) {
+      unsigned long ipaddr = ::inet_addr( hostname );
+      if ( ipaddr != INADDR_NONE ) {
+        host = gethostbyaddr( (const char *)&ipaddr, sizeof(ipaddr), AF_INET );
+        if ( host != 0 ) { // Oh, that's was IP indeed...
+          memcpy( (char *)&inet, (char *)host->h_addr, host->h_length );
+          WSASetLastError( 0 ); // clear error
+          _errno = 0;
+        } else {
+          _errno = WSAGetLastError();
+        }
+      }
+    }
+  }
+#  endif // WIN32
+#endif // __GETHOSTBYADDR__
+
+  if ( host != 0 && host->h_length == sizeof(in_addr) ) {
+    for ( char **_inet = host->h_addr_list; *_inet != 0; ++_inet ) {
+      *bi++ = ((in_addr *)*_inet)->s_addr;
+    }
+  }
+}
+
+template <class BackInsertIterator>
+void ip_by_name2( const char *hostname, BackInsertIterator bi )
+{
+#if 0
+  // addrinfo hints;
+  addrinfo *hosts_list = 0;
+
+  int _errno = getaddrinfo( hostname, 0, 0, &hosts_list );
+  if ( _errno == 0 ) {
+    addrinfo *host = hosts_list;
+    if ( host != 0 && host->ai_addr != 0 ->h_length == sizeof(in_addr) ) {
+      for ( char **_inet = host->h_addr_list; *_inet != 0; ++_inet ) {
+        *bi++ = ((in_addr *)*_inet)->s_addr;
+      }
+    }
+  }
+#endif
+}
 
 
 class sock_base
