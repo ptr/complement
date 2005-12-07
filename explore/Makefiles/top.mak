@@ -1,5 +1,4 @@
-# Time-stamp: <04/03/09 20:14:25 ptr>
-# $Id$
+# Time-stamp: <05/12/08 00:42:42 ptr>
 
 .SUFFIXES:
 .SCCS_GET:
@@ -24,10 +23,14 @@ all-shared:	release-shared	dbg-shared	stldbg-shared
 -include ${RULESBASE}/config.mak
 # define what make clone we use
 include ${RULESBASE}/make.mak
+ifndef OSNAME
 # identify OS and build date
 include ${RULESBASE}/$(USE_MAKE)/sysid.mak
-# OS-specific definitions, like ar, ln, install, etc.
-include ${RULESBASE}/$(USE_MAKE)/$(OSNAME)/sys.mak
+endif
+# OS-specific definitions, like ln, install, etc. (guest host)
+include ${RULESBASE}/$(USE_MAKE)/$(BUILD_OSNAME)/sys.mak
+# target OS-specific definitions, like ar, etc.
+include ${RULESBASE}/$(USE_MAKE)/$(OSNAME)/targetsys.mak
 # compiler, compiler options
 include ${RULESBASE}/$(USE_MAKE)/$(COMPILER_NAME).mak
 # rules to make dirs for targets
