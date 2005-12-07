@@ -31,12 +31,10 @@
 #  ifndef __USE_UNIX98
 #    define __USE_UNIX98
 #  endif
-// This feature exist at least since glibc 2.2.4
 #  define __FIT_XSI_THR  // Unix 98 or X/Open System Interfaces Extention
-#  ifdef __USE_XOPEN2K
 // The IEEE Std. 1003.1j-2000 introduces functions to implement spinlocks.
-#   define __FIT_PTHREAD_SPINLOCK
-#  endif
+#  define __FIT_PTHREAD_SPINLOCK
+#  define __FIT_RWLOCK
 #endif
 
 // Endiannes
@@ -52,5 +50,8 @@
 // #else
 // #  error "BYTE_ORDER neither BIG_ENDIAN nor LITTLE_ENDIAN; Fix me!"
 // #endif
+
+// No gethostbyname_r and gethostbyaddr_r functions
+#define __FIT_GETHOSTBYADDR
 
 #endif // __config__freebsd_h

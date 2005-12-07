@@ -41,7 +41,7 @@
 #    define _INCLUDE_XOPEN_SOURCE_EXTENDED
 #  endif
 #  include <sys/socket.h>
-#  ifndef __UCLIBC__
+#  if !defined(__UCLIBC__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__)
 #   include <stropts.h>
 #  endif
 #  ifdef __sun
@@ -77,7 +77,7 @@ void gethostaddr( const char *hostname, BackInsertIterator bi )
 {
   int _errno = 0;
 
-#ifndef __GETHOSTBYADDR__
+#ifndef __FIT_GETHOSTBYADDR
   hostent _host;
 #  ifndef __hpux
   char tmpbuf[4096];
@@ -95,7 +95,7 @@ void gethostaddr( const char *hostname, BackInsertIterator bi )
 #  else // !__linux !__hpux !__sun
 #    error "Check port of gethostbyname_r"
 #  endif // __linux __hpux __sun
-#else // __GETHOSTBYADDR__
+#else // __FIT_GETHOSTBYADDR
   hostent *host = gethostbyname( hostname );
 #  ifdef WIN32
   if ( host == 0 ) {
@@ -121,7 +121,7 @@ void gethostaddr( const char *hostname, BackInsertIterator bi )
     }
   }
 #  endif // WIN32
-#endif // __GETHOSTBYADDR__
+#endif // __FIT_GETHOSTBYADDR
 
   if ( host != 0 && host->h_length == sizeof(in_addr) ) {
     for ( char **_inet = host->h_addr_list; *_inet != 0; ++_inet ) {

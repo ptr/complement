@@ -20,14 +20,6 @@
  */
 
 #ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
-
-#ifdef __unix
 extern "C" int nanosleep(const struct timespec *, struct timespec *);
 #endif
 
@@ -35,8 +27,8 @@ extern "C" int nanosleep(const struct timespec *, struct timespec *);
 #include <sys/poll.h> // pollfd
 #endif
 
-#if defined(__unix) && !defined(__UCLIBC__)
-#include <stropts.h> // for ioctl() call
+#if defined(__unix) && !defined(__UCLIBC__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__)
+# include <stropts.h> // for ioctl() call
 #endif
 
 
