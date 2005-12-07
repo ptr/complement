@@ -1,13 +1,13 @@
 // -*- C++ -*- Time-stamp: <02/09/25 12:04:20 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002
+ * Copyright (c) 1997-1999, 2002, 2005
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 1.0
+ * Licensed under the Academic Free License Version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -19,19 +19,11 @@
  * in supporting documentation.
  */
 
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
-
 #include "mt/thr_mgr.h"
 #include <algorithm>
 #include <functional>
 
-namespace __impl {
+namespace xmt {
 
 using namespace std;
 
@@ -85,4 +77,4 @@ void ThreadMgr::garbage_collector()
   }
 }
 
-} // namespace __impl
+} // namespace xmt

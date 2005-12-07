@@ -1,3 +1,17 @@
+2005-12-07  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* config/_freebsd.h: fix _FIT defines for spinlock
+	and rwlock functions on FreeBSD 5.3.
+
+	* xmt.h, xmt.cc: throw invalid_argument exception
+	if shared or recursive mutex not supported by platform;
+	use namespace xmt instead of __impl.
+
+	* thr_mgr.h, thr_mgr.cc: use namespace xmt instead
+	of __impl.
+
+	* libxmt: version 1.8.2
+
 2005-11-29  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* xmt.h: add pthread_rwlock_* functionality.
