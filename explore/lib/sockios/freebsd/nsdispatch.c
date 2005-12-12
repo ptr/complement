@@ -2,6 +2,11 @@
 
 #ifdef __FIT_NONREENTRANT
 
+static int __isthreaded = 1;
+
+#define _pthread_mutex_lock   pthread_mutex_lock
+#define _pthread_mutex_unlock pthread_mutex_unlock
+
 /*-
  * Copyright (c) 1997, 1998, 1999 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -71,7 +76,7 @@
  */
 #include <sys/cdefs.h>
 
-#include "namespace.h"
+/* #include "namespace.h" */
 #include <sys/param.h>
 #include <sys/stat.h>
 
@@ -79,14 +84,14 @@
 #include <errno.h>
 #include <fcntl.h>
 #define _NS_PRIVATE
-#include <nsswitch.h>
+#include "nsswitch.h"
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
 #include <unistd.h>
-#include "un-namespace.h"
+/* #include "un-namespace.h" */
 
 enum _nss_constants {
 	/* Number of elements allocated when we grow a vector */
@@ -163,8 +168,8 @@ static	void	 nss_load_builtin_modules(void);
 static	void	 nss_load_module(const char *, nss_module_register_fn);
 static	void	 nss_atexit(void);
 /* nsparser */
-extern	FILE	*_nsyyin;
-
+/* extern	FILE	*_nsyyin; */
+FILE	*_nsyyin;
 
 /*
  * The vector operations
@@ -343,7 +348,7 @@ nss_configure(void)
 	    if (result != 0)
 		    goto fin2;
 	}
-	_nsyyin = fopen(path, "r");
+	_nsyyin = NULL; /* fopen(path, "r"); */
 	if (_nsyyin == NULL)
 		goto fin;
 	VECTOR_FREE(_nsmap, &_nsmapsize, sizeof(*_nsmap),
@@ -351,7 +356,7 @@ nss_configure(void)
 	VECTOR_FREE(_nsmod, &_nsmodsize, sizeof(*_nsmod),
 	    (vector_free_elem)ns_mod_free);
 	nss_load_builtin_modules();
-	_nsyyparse();
+	/* _nsyyparse(); */
 	(void)fclose(_nsyyin);
 	vector_sort(_nsmap, _nsmapsize, sizeof(*_nsmap), string_compare);
 	if (confmod == 0)
@@ -420,14 +425,14 @@ ns_src_free(ns_src **src, int srclistsize)
 /* The built-in NSS modules are all loaded at once. */
 #define NSS_BACKEND(name, reg) \
 ns_mtab	*reg(unsigned int *, nss_module_unregister_fn *);
-#include "nss_backends.h"
+/* #include "nss_backends.h" */
 #undef NSS_BACKEND
 
 static void
 nss_load_builtin_modules(void)
 {
 #define NSS_BACKEND(name, reg) nss_load_module(#name, reg);
-#include "nss_backends.h"
+  /* #include "nss_backends.h" */
 #undef NSS_BACKEND
 }
 
@@ -471,7 +476,7 @@ nss_load_module(const char *source, nss_module_register_fn reg_fn)
 #endif
 			goto fin;
 		}
-		fn = (nss_module_register_fn)dlfunc(mod.handle,
+		fn = (nss_module_register_fn)dlsym(mod.handle,
 		    "nss_module_register");
 		if (fn == NULL) {
 			(void)dlclose(mod.handle);
