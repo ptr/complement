@@ -7,8 +7,6 @@ static int __isthreaded = 1;
 #define _pthread_mutex_lock   pthread_mutex_lock
 #define _pthread_mutex_unlock pthread_mutex_unlock
 
-/*	$KAME: getaddrinfo.c,v 1.15 2000/07/09 04:37:24 itojun Exp $	*/
-
 /*      $KAME: getaddrinfo.c,v 1.15 2000/07/09 04:37:24 itojun Exp $    */
 
 /*
@@ -72,7 +70,6 @@ static int __isthreaded = 1;
  * - FreeBSD supported $GAI.  The code does not.
  * - FreeBSD allowed classful IPv4 numeric (127.1), the code does not.
  */
-__FBSDID("$FreeBSD: src/lib/libc/net/getaddrinfo.c,v 1.52 2004/06/16 16:41:23 ume Exp $");
 
 #include <sys/cdefs.h>
 
