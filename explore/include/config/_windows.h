@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <03/06/29 19:53:27 ptr>
+/* Time-stamp: <03/06/29 19:53:27 ptr> */
 
 /*
  *
  * Copyright (c) 2003
  * Petr Ovtchenkov
  *
- * Licensed under the Academic Free License Version 1.0
+ * Licensed under the Academic Free License Version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -20,8 +20,6 @@
 
 #ifndef __config__windows_h
 #define __config__windows_h
-
-// "@(#)$Id$"
 
 #if !defined(__FIT_USE_STATIC_LIB) && !defined(_LIB)
 #  undef  __FIT_USE_DECLSPEC
@@ -44,13 +42,18 @@
 #define __FIT_SELECT // use select system call
 #define __FIT_NO_POLL
 
-// *** Endians issues
+/* *** Endians issues */
 
-// #include <winsock.h>
-// #  if defined(BIGENDIAN) && (BIGENDIAN > 0)
-// #    define _BIG_ENDIAN
-// #  else
-#define _LITTLE_ENDIAN // Wins run only on Intel
-// #  endif
+/*
+#include <winsock.h>
+#  if defined(BIGENDIAN) && (BIGENDIAN > 0)
+#    define _BIG_ENDIAN
+#  else
+*/
+#define _LITTLE_ENDIAN /* Wins run only on Intel */
+/*#  endif */
 
-#endif // __config___windows_h
+/* For WIN32 gethostbyaddr is reeentrant */
+#define __FIT_GETHOSTBYADDR
+
+#endif /* __config___windows_h */

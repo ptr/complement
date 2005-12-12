@@ -20,14 +20,6 @@
  *
  */
 
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#pragma ident "@(#)$Id$"
-#  endif
-#endif
-
 #include <string>
 #include <sockios/sockstream>
 
@@ -211,22 +203,12 @@ sock_base::~sock_base()
 
 _STLP_BEGIN_NAMESPACE
 
-// For WIN32 and HP-UX 11.00 gethostbyaddr is reeentrant
-// ptr: _PTHREADS_DRAFT4 has sense only for HP-UX 11.00
-// ptr: PTHREAD_THREADS_MAX defined in HP-UX 10.01
-#if defined(WIN32) || (defined(__hpux) && \
-                        (!defined(_REENTRANT) || \
-                        (!defined(_PTHREADS_DRAFT4) && \
-                         !defined(PTHREAD_THREADS_MAX))))
-#  define __GETHOSTBYADDR__
-#endif
-
 ::in_addr findhost( const char *hostname ) throw( std::domain_error )
 {
   in_addr inet;
   int _errno;
 
-#ifndef __GETHOSTBYADDR__
+#ifndef __FIT_GETHOSTBYADDR
   hostent _host;
 #  ifndef __hpux
   char tmpbuf[1024];
@@ -247,7 +229,7 @@ _STLP_BEGIN_NAMESPACE
   if ( host != 0 ) {
     memcpy( (char *)&inet, (char *)host->h_addr, host->h_length );
   }
-#else // __GETHOSTBYADDR__
+#else // __FIT_GETHOSTBYADDR
   hostent *host = gethostbyname( hostname );
   if ( host != 0 ) {
     memcpy( (char *)&inet, (char *)host->h_addr, host->h_length );
@@ -276,7 +258,7 @@ _STLP_BEGIN_NAMESPACE
     }
   }
 #  endif // WIN32
-#endif // __GETHOSTBYADDR__
+#endif // __FIT_GETHOSTBYADDR
   if ( host == 0 ) {
     throw std::domain_error( "host not found" );
   }
@@ -288,7 +270,7 @@ std::string hostname( unsigned long inet_addr )
 {
   std::string _hostname;
 
-#ifdef __GETHOSTBYADDR__
+#ifdef __FIT_GETHOSTBYADDR
   hostent *he;
 #else
   hostent he;
@@ -304,7 +286,7 @@ std::string hostname( unsigned long inet_addr )
   int err = 0;
   in_addr in;
   in.s_addr = inet_addr;
-#ifdef __GETHOSTBYADDR__
+#ifdef __FIT_GETHOSTBYADDR
   // For Win 'he' is thread private data, so that's safe
   // It's MT-safe also for HP-UX 11.00
   he = gethostbyaddr( (char *)&in.s_addr, sizeof(in_addr), AF_INET );
@@ -313,7 +295,7 @@ std::string hostname( unsigned long inet_addr )
   } else {
     _hostname = "unknown";
   }
-#else // __GETHOSTBYADDR__
+#else // __FIT_GETHOSTBYADDR
   if (
 #  ifdef __sun
        gethostbyaddr_r( (char *)&in.s_addr, sizeof(in_addr), AF_INET,
@@ -333,7 +315,7 @@ std::string hostname( unsigned long inet_addr )
   } else {
     _hostname = "unknown";
   }
-#endif // __GETHOSTBYADDR__
+#endif // __FIT_GETHOSTBYADDR
 
   _hostname += " [";
   _hostname += inet_ntoa( in );
@@ -362,7 +344,7 @@ int service( const char *name, const char *proto ) throw( std::domain_error )
 #ifdef _WIN32
   typedef u_short uint16_t;
 #endif
-#ifndef __GETHOSTBYADDR__
+#ifndef __FIT_GETHOSTBYADDR
   char tmp_buf[1024];
   struct servent se;
 #  ifdef __linux
@@ -378,7 +360,7 @@ int service( const char *name, const char *proto ) throw( std::domain_error )
   }
   return ntohs( uint16_t(se.s_port) );
 #  endif
-#else // __GETHOSTBYADDR__
+#else // __FIT_GETHOSTBYADDR
   struct servent *s = ::getservbyname( name, proto );
   if ( s == 0 ) {
     throw std::domain_error( "service not found" );
@@ -396,7 +378,7 @@ std::string service( int port, const char *proto ) throw( std::domain_error )
 
   port = htons( uint16_t(port) );
 
-#ifndef __GETHOSTBYADDR__
+#ifndef __FIT_GETHOSTBYADDR
   char tmp_buf[1024];
   struct servent se;
 #  ifdef __linux
@@ -414,7 +396,7 @@ std::string service( int port, const char *proto ) throw( std::domain_error )
   _servname.assign( se.s_name );
   return _servname;
 #  endif
-#else // __GETHOSTBYADDR__
+#else // __FIT_GETHOSTBYADDR
   struct servent *s = ::getservbyport( port, proto );
   if ( s == 0 ) {
     throw std::domain_error( "service not found" );
