@@ -61,7 +61,14 @@
 #  define freeaddrinfo      x_freeaddrinfo
 
 #  define gai_strerror      x_gai_strerror
+
+#  define _nsdispatch       x__nsdispatch
 #endif
+
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/nameser.h>
+#include <resolv.h>
 
 #include <iosfwd>
 #include <ios>
