@@ -40,6 +40,8 @@
 
 #define gai_strerror      x_gai_strerror
 
+#define _nsdispatch       x__nsdispatch
+
 #endif /* __FIT_NONREENTRANT */
 
 #endif /* ___freebsd_dummy_h */
