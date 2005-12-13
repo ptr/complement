@@ -20,8 +20,6 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: src/lib/libc/net/ns_parse.c,v 1.4 2002/03/22 21:52:29 obrien Exp $");
-
 #include <sys/types.h>
 
 #include <netinet/in.h>
