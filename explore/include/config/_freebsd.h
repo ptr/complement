@@ -23,6 +23,7 @@
 
 /* Endiannes */
 #include <sys/types.h>
+#include <osreldate.h>
 
 #define __FIT__P_PROBLEM /* Hide __P from sys/cdefs.h. Workaround for glibc. */
 
