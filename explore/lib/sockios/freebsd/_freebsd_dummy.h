@@ -72,7 +72,6 @@
 #undef __gai_strerror
 #undef ___nsdispatch
 
-
 #define skiprr            x_skiprr
 #define ns_initparse      x_ns_initparse
 #define dn_skipname       x_dn_skipname
@@ -110,7 +109,6 @@
 
 #define _nsdispatch       x__nsdispatch
 
-
 #define __skiprr            x_skiprr
 #define __ns_initparse      x_ns_initparse
 #define __dn_skipname       x_dn_skipname
@@ -147,11 +145,13 @@
 #define __gai_strerror      x_gai_strerror
 
 #define ___nsdispatch       x__nsdispatch
+#define __res_send_private  x_res_send_private
 
 int x_res_hnok( const char * );
 const char *x_hostalias(const char *);
 int x_res_send(const u_char *, int, u_char *, int);
 void x_res_close(void);
+int x_res_init(void);
 
 #endif /* __FIT_NONREENTRANT */
 
