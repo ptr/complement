@@ -1,3 +1,8 @@
+2005-12-16  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/lib/rules-a.mak: remove archive before add files; this allow
+	to avoid unexpected append of files to the end of existent archive.
+
 2005-08-04  Petr Ovtchenkov  <ptr@island.plnet.ru>
 
 	* rules-d.mak: add .cxx as C++ sources.
