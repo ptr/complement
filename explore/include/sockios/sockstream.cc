@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/08/05 18:15:33 ptr>
+// -*- C++ -*- Time-stamp: <05/12/19 15:11:01 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005
@@ -38,7 +38,8 @@ template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
 basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
 				    sock_base::stype type,
-				    sock_base::protocol prot )
+				    sock_base::protocol prot,
+                    const timespec *timeout )
 {
   if ( is_open() ) {
     return 0;
@@ -49,6 +50,22 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
     _type = type;
 #ifdef WIN32
     WSASetLastError( 0 );
+#endif
+#ifdef __FIT_POLL
+    if ( timeout != 0 ) {
+      _timeout = timeout->tv_sec * 1000 + timeout->tv_nsec / 1000000;
+    } else {
+      _timeout = -1;
+    }
+#endif
+#ifdef __FIT_SELECT
+    if ( timeout != 0 ) {
+      _timeout.tv_sec = timeout->tv_sec;
+      _timeout.tv_usec = timeout->tv_nsec / 1000;
+      _timeout_ref = &_timeout;
+    } else {
+      _timeout_ref = 0;
+    }
 #endif
     if ( prot == sock_base::inet ) {
       _fd = socket( PF_INET, type, 0 );
@@ -147,7 +164,8 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
 template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
 basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, const sockaddr& addr,
-				    sock_base::stype t )
+				    sock_base::stype t,
+                    const timespec *timeout )
 {
   if ( is_open() || s == -1 ) {
     return 0;
@@ -159,6 +177,22 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, const sock
   _type = t;
 #ifdef WIN32
   WSASetLastError( 0 );
+#endif
+#ifdef __FIT_POLL
+  if ( timeout != 0 ) {
+    _timeout = timeout->tv_sec * 1000 + timeout->tv_nsec / 1000000;
+  } else {
+    _timeout = -1;
+  }
+#endif
+#ifdef __FIT_SELECT
+  if ( timeout != 0 ) {
+    _timeout.tv_sec = timeout->tv_sec;
+    _timeout.tv_usec = timeout->tv_nsec / 1000;
+    _timeout_ref = &_timeout;
+  } else {
+    _timeout_ref = 0;
+  }
 #endif
   if ( t == sock_base::sock_stream ) {
     _xwrite = &_Self_type::write;
@@ -266,7 +300,7 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
   FD_ZERO( &pfd );
   FD_SET( fd(), &pfd );
 
-  if ( select( fd() + 1, &pfd, 0, 0, 0 ) <= 0 ) {
+  if ( select( fd() + 1, &pfd, 0, 0, _timeout_ref ) <= 0 ) {
     return traits::eof();
   }
 #endif // __FIT_SELECT
@@ -279,7 +313,7 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
   if ( !is_open() /* || (_state != ios_base::goodbit) */ ) {
     return traits::eof();
   }
-  if ( poll( &pfd, 1, -1 ) <= 0 ) { // wait infinite
+  if ( poll( &pfd, 1, _timeout ) <= 0 ) { // wait infinite
     return traits::eof();
   }
   if ( (pfd.revents & POLLERR) != 0 ) {
@@ -459,7 +493,7 @@ int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
     FD_ZERO( &pfd );
     FD_SET( _fd, &pfd );
 
-    if ( select( _fd + 1, &pfd, 0, 0, 0 ) > 0 ) {
+    if ( select( _fd + 1, &pfd, 0, 0, _timeout_ref ) > 0 ) {
       // get address of caller only
       char buff[32];
       ::recvfrom( _fd, buff, 32, MSG_PEEK, &addr.any, &sz );
@@ -469,7 +503,7 @@ int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
 #endif // __FIT_SELECT
 #ifdef __FIT_POLL
     pfd.revents = 0;
-    if ( poll( &pfd, 1, -1 ) > 0 ) { // wait infinite
+    if ( poll( &pfd, 1, _timeout ) > 0 ) { // wait infinite
       // get address of caller only
       char buff[32];    
       ::recvfrom( _fd, buff, 32, MSG_PEEK, &addr.any, &sz );
