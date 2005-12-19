@@ -4,27 +4,11 @@
 SRCROOT := ../../..
 COMPILER_NAME := gcc
 
-#STLPORT_DIR := /export/home/ptr/STLport.lab/cvs.stlport.com/STLport-R451_dev
-STLPORT_DIR := /export/home/ptr/STLport.lab/STLport
+# STLPORT_DIR := /export/home/ptr/STLport.lab/STLport
 include Makefile.inc
 include ${SRCROOT}/Makefiles/top.mak
 
 
-INCLUDES += -I$(SRCROOT)/include -I$(STLPORT_INCLUDE_DIR)
+INCLUDES += -I$(SRCROOT)/include
 
 LDFLAGS += -Wl,-rpath=$(STLPORT_LIB_DIR)
-
-release-shared:	LDSEARCH = -L${STLPORT_LIB_DIR}
-stldbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR}
-dbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR}
-
-ifeq ($(OSNAME),sunos)
-release-shared : LDLIBS = -lstlport_gcc -lrt
-stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug -lrt
-dbg-shared     : LDLIBS = -lstlport_gcc -lrt
-else
-release-shared : LDLIBS = -lstlport_gcc
-stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug
-dbg-shared     : LDLIBS = -lstlport_gccdebug
-endif
-
