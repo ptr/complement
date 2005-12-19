@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/12/19 15:11:01 ptr>
+// -*- C++ -*- Time-stamp: <05/12/19 19:54:45 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005
@@ -170,7 +170,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, const sock
   if ( is_open() || s == -1 ) {
     return 0;
   }
-  _fd = s;
+  _fd = dup( s );
   memcpy( (void *)&_address.any, (const void *)&addr, sizeof(sockaddr) );
   _mode = ios_base::in | ios_base::out;
   _errno = 0;
