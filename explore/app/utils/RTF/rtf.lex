@@ -1,19 +1,19 @@
-  // -*- C++ -*- Time-stamp: <02/08/21 10:05:03 ptr>
+ // -*- C++ -*- Time-stamp: <05/04/01 09:02:05 ptr>
 
  /*
- *
- * Copyright (c) 2002
- * Petr Ovtchenkov
- *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
- */
+  *
+  * Copyright (c) 2002, 2005
+  * Petr Ovtchenkov
+  *
+  * This material is provided "as is", with absolutely no warranty expressed
+  * or implied. Any use is at your own risk.
+  *
+  * Permission to use, copy, modify, distribute and sell this software
+  * and its documentation for any purpose is hereby granted without fee,
+  * provided that the above copyright notice appear in all copies and
+  * that both that copyright notice and this permission notice appear
+  * in supporting documentation.
+  */
 
 
 %option c++
@@ -29,8 +29,9 @@
 
 #include <iostream>
 #include <iomanip>
-#include <strstream>
+#include <sstream>
 #include <list>
+#include <cstdio>
 
 using namespace std;
 
@@ -58,25 +59,28 @@ Lex la;
 %}
 
 %s PREAMBLE FONTBL COLORTBL FONT STYLESHEET LISTBL INFO LIST LISTOVER
-%s TITLE AUTHOR OPERATOR TIME COMPANY
+%s TITLE AUTHOR OPERATOR TIME COMPANY GENERATOR RSIDTBL
 
 %%
 
 \{       la.brace++; // cerr << la.brace << endl;
 
 \\\'[0-9a-f][[0-9a-f] {
-  istrstream i( YYText(), YYLeng() );
+  istringstream i( YYText(), YYLeng() );
   unsigned c;
+  // char ch;
   i.seekg( 2, ios_base::beg );
-  i >> hex >> c;
+  i /* >> ch >> ch */ >> hex >> c;
   if ( c == 0x93 ) {
     cout << "<<";
   } else if ( c == 0x94 ) {
     cout << ">>";
   } else if ( c == 0x85 ) {
     cout << "-";
+  } else if ( c == 0xb9 ) {
+    cout << "\\No";
   } else {
-    cout << (char)c;
+    cout /* << hex << c << ":" */ << (char)c;
   }
 }
 
@@ -137,6 +141,21 @@ Lex la;
     BEGIN(LISTOVER);
     la.brace++;
     la.level.push_back( la.brace - 1 );
+    // cerr << "\n===== Start ListOver\n";
+  }
+
+  \{\\\*\\rsidtbl\ * {
+    BEGIN(RSIDTBL);
+    la.brace++;
+    la.level.push_back( la.brace - 1 );
+    // cerr << "\n===== Start ListOver\n";
+  }
+
+  \{\\\*\\generator\ * {
+    BEGIN(GENERATOR);
+    la.brace++;
+    la.level.push_back( la.brace - 1 );
+    cout << "% Generator: ";
     // cerr << "\n===== Start ListOver\n";
   }
 
@@ -248,9 +267,10 @@ Lex la;
   \\f[0-9]+ |
   \\ql\ * |
   \\cell\ * |
-  \\row\ *
+  \\row\ * |
+  \\pararsid[0-9]+\ *
 
-  \\par\ * cout << "% par\n";
+  \\par\ * cout << /* "% par\n" */ "\n\n";
 
   \\clcfpat[0-9]+ |
   \\clcbpat[0-9]+ |
@@ -259,10 +279,28 @@ Lex la;
   \\qj |
   \\trbrdrb |
   \\s[0-9]+\ * |
-  \\itap[0-9]+
+  \\itap[0-9]+ |
+  \\stshfdbch[0-9] |
+  \\stshfloch[0-9] |
+  \\stshfhich[0-9] |
+  \\stshfbi[0-9]
 
   \\endash cout << "--";
   \\emdash cout << "---";
+
+  \\rsidroot[0-9]+\ * |
+  \\sftnbj\ * |
+  \\keepn\ * |
+  \\outlinelevel[0-9]+\ * |
+  \\insrsid[0-9]+\ * |
+  \\charrsid[0-9]+\ * |
+  \\fi-?[0-9]+\ * |
+  \\i |
+  \\ul
+
+  \r\n
+
+    \ *\\line\ * cout << "\n";
 }
 
 <FONTBL>{
@@ -279,7 +317,7 @@ Lex la;
     BEGIN(FONT);
     la.mode = FONT;
     la.brace++;
-    istrstream s( YYText(), YYLeng() );
+    istringstream s( YYText(), YYLeng() );
     s.seekg( 3, ios_base::beg );
     int n;
     s >> n;
@@ -300,10 +338,12 @@ Lex la;
   }
 
   \\froman |
+  \\fswiss |
+  \\fmodern |
   \\fcharset[0-9]+ |
   \\fprq[0-9]+ |
   \\\* |
-  \\panose\ [0-9]* |
+  \\panose\ [0-9a-f]* |
   [a-zA-Z0-9 ()]+;
 }
 
@@ -329,7 +369,7 @@ Lex la;
   \\s[0-9]+  |
   \\rin[0-9]+ |
   \\lin[0-9]+ |
-  \\itap[0-9]+ |
+  \\itap[0-9]+\ * |
   \\f[0-9]+ |
   \\fs[0-9]+ |
   \\lang[0-9]+ |
@@ -338,12 +378,33 @@ Lex la;
   \\langnp[0-9]+ |
   \\langfenp[0-9]+ |
   \\sbasedon[0-9]+ |
-  \\snext[0-9]+ |
+  \\snext[0-9]+\ * |
   \\\* |
   [a-zA-Z0-9 ()]+; |
-  \\cs[0-9]+ |
-  \\additive |
-  \\i
+  \\cs[0-9]+\ * |
+  \\additive\ * |
+  \\i |
+  \\qr\ * |
+  \\keepn |
+  \\outlinelevel[0-9]+ |
+  \\b |
+  \\ssemihidden\ * |
+  \\ts[0-9]+ |
+  \\tsrowd |
+  \\trpaddl[0-9]+ |
+  \\trpaddr[0-9]+ |
+  \\trpaddfl[0-9]+ |
+  \\trpaddft[0-9]+ |
+  \\trpaddfb[0-9]+ |
+  \\trpaddfr[0-9]+ |
+  \\tscellwidthfts[0-9]+ |
+  \\tsvertalt |
+  \\tsbrdr[^\\]+ |
+  \\trfts[^\\]+ |
+  \\tx[0-9]+ |
+  \\ul |
+  \\fi-?[0-9]+ |
+  \\qj
 }
 
 <COLORTBL>{
@@ -425,7 +486,8 @@ Lex la;
   \\b[0-9]+ |
   \\i[0-9]+ |
   \\fs[0-9]+ |
-  \\levelold
+  \\levelold |
+  \\lin[0-9]+\ *
 }
 
 <LISTOVER>{
@@ -444,6 +506,35 @@ Lex la;
   \\ls[0-9]
 }
 
+<RSIDTBL>{
+  \} {
+    la.brace--;
+    if ( la.brace == la.level.back() ) {
+      BEGIN(PREAMBLE);
+      la.mode = PREAMBLE;
+      // cerr << "\n===== End List Table\n\n";
+      la.level.pop_back();
+    }
+  }
+
+  \\rsid[0-9]+
+}
+
+<GENERATOR>{
+  \;\ *\} {
+    la.brace--;
+    if ( la.brace == la.level.back() ) {
+      BEGIN(PREAMBLE);
+      la.mode = PREAMBLE;
+      // cerr << "\n===== End List Table\n\n";
+      la.level.pop_back();
+      cout << "\n";
+    }
+  }
+
+  \\rsid[0-9]+
+}
+
 <INFO>{
   \} {
     la.brace--;
@@ -453,7 +544,7 @@ Lex la;
       // cerr << "\n===== End Info\n\n";
       la.level.pop_back();
     }
-  }  
+  }
 
   "\{\\title " {
     BEGIN(TITLE);
@@ -501,7 +592,7 @@ Lex la;
   }
 
   \\version[0-9]+ {
-    istrstream i( YYText(), YYLeng() );
+    istringstream i( YYText(), YYLeng() );
     unsigned c;
     i.seekg( 8, ios_base::beg );
     i >> c;
@@ -509,7 +600,7 @@ Lex la;
   }
 
   \\edmins[0-9]+ {
-    istrstream i( YYText(), YYLeng() );
+    istringstream i( YYText(), YYLeng() );
     unsigned c;
     i.seekg( 7, ios_base::beg );
     i >> c;
@@ -517,7 +608,7 @@ Lex la;
   }
 
   \\nofpages[0-9]+ {
-    istrstream i( YYText(), YYLeng() );
+    istringstream i( YYText(), YYLeng() );
     unsigned c;
     i.seekg( 9, ios_base::beg );
     i >> c;
@@ -545,6 +636,7 @@ Lex la;
       la.mode = INFO;
       // cerr << "\n===== End Title\n\n";
       la.level.pop_back();
+      cout << "\n";
     }
   }
 }
@@ -557,6 +649,7 @@ Lex la;
       la.mode = INFO;
       // cerr << "\n===== End Author\n\n";
       la.level.pop_back();
+      cout << "\n";
     }
   }
 }
@@ -569,6 +662,7 @@ Lex la;
       la.mode = INFO;
       // cerr << "\n===== End Operator\n\n";
       la.level.pop_back();
+      cout << "\n";
     }
   }
 }
@@ -584,35 +678,35 @@ Lex la;
     }
   }
   \\yr[0-9]{4} {
-    istrstream i( YYText(), YYLeng() );
+    istringstream i( YYText(), YYLeng() );
     unsigned c;
     i.seekg( 3, ios_base::beg );
     i >> c;
     cout << c;
   }
   \\mo[0-9]{1,2} {
-    istrstream i( YYText(), YYLeng() );
+    istringstream i( YYText(), YYLeng() );
     unsigned c;
     i.seekg( 3, ios_base::beg );
     i >> c;
     cout << "-" << setw(2) << setfill('0') << c;
   }
   \\dy[0-9]{1,2} {
-    istrstream i( YYText(), YYLeng() );
+    istringstream i( YYText(), YYLeng() );
     unsigned c;
     i.seekg( 3, ios_base::beg );
     i >> c;
     cout << "-" << setw(2) << setfill('0') << c;
   }
   \\hr[0-9]{1,2} {
-    istrstream i( YYText(), YYLeng() );
+    istringstream i( YYText(), YYLeng() );
     unsigned c;
     i.seekg( 3, ios_base::beg );
     i >> c;
     cout << " " << setw(2) << setfill('0') << c;
   }
   \\min[0-9]{1,2} {
-    istrstream i( YYText(), YYLeng() );
+    istringstream i( YYText(), YYLeng() );
     unsigned c;
     i.seekg( 4, ios_base::beg );
     i >> c;
