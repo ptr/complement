@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/12/21 10:25:33 ptr>
+// -*- C++ -*- Time-stamp: <05/12/21 17:05:11 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005
@@ -224,7 +224,7 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
       _pfd[0].revents = 1; // we return to poll again
     }
   } while ( _pfd[0].revents != 0 );
-
+  
   return 0; // Unexpected; should never occur
 }
 
