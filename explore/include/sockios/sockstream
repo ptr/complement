@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/12/19 15:15:54 ptr>
+// -*- C++ -*- Time-stamp: <05/12/21 17:29:39 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005
@@ -266,6 +266,7 @@ class basic_sockbuf :
 {
   public:
     typedef basic_ios<charT, traits>       ios_type;
+    typedef basic_sockbuf<charT, traits, _Alloc> sockbuf_type;
     typedef typename traits::state_type    state_t;
 #ifdef WIN32
     typedef u_short                        family_type;
@@ -288,7 +289,8 @@ class basic_sockbuf :
       
     basic_sockbuf() :
         _fd( -1 ),
-        _mode( 0 ), _bbuf(0), _ebuf(0), _allocated( true )   
+        _mode( 0 ), _bbuf(0), _ebuf(0), _allocated( true )
+      // , _doclose( true )
       {
         _M_lock_w._M_initialize();
 #ifdef __FIT_POLL
@@ -303,7 +305,8 @@ class basic_sockbuf :
                    sock_base::protocol prot = sock_base::inet,
                    const timespec *timeout = 0 ) :
         _fd( -1 ),
-        _mode( 0 ), _bbuf(0), _ebuf(0), _allocated( true )   
+        _mode( 0 ), _bbuf(0), _ebuf(0), _allocated( true )
+      // , _doclose( true )
       {
         _M_lock_w._M_initialize();
         open( hostname, port, type, prot, timeout );
@@ -318,16 +321,28 @@ class basic_sockbuf :
     bool is_open() const
       { return _fd != -1; }
 
-    basic_sockbuf<charT, traits, _Alloc> *open( const char *hostname, int port,
-                                                sock_base::stype type = sock_base::sock_stream,
-                                                sock_base::protocol prot = sock_base::inet,
-                                                const timespec *timeout = 0 );
+    sockbuf_type *open( const char *hostname, int port,
+                        sock_base::stype type = sock_base::sock_stream,
+                        sock_base::protocol prot = sock_base::inet,
+                        const timespec *timeout = 0 );
 
-    basic_sockbuf<charT, traits, _Alloc> *open( sock_base::socket_type s, const sockaddr& addr,
-                                                sock_base::stype t = sock_base::sock_stream,
-                                                const timespec *timeout = 0 );
+    sockbuf_type *open( sock_base::socket_type s,
+                        sock_base::stype t = sock_base::sock_stream,
+                        const timespec *timeout = 0 );
 
-    basic_sockbuf<charT, traits, _Alloc> *close();
+    sockbuf_type *open( sock_base::socket_type s, const sockaddr& addr,
+                        sock_base::stype t = sock_base::sock_stream,
+                        const timespec *timeout = 0 );
+
+    sockbuf_type *attach( sock_base::socket_type s,
+                          sock_base::stype t = sock_base::sock_stream,
+                          const timespec *timeout = 0 );
+
+    sockbuf_type *attach( sock_base::socket_type s, const sockaddr& addr,
+                          sock_base::stype t = sock_base::sock_stream,
+                          const timespec *timeout = 0 );
+
+    sockbuf_type *close();
     void shutdown( sock_base::shutdownflg dir );
 
     sock_base::socket_type fd() const { return _fd;}
@@ -499,6 +514,7 @@ class basic_sockbuf :
     ios_base::openmode  _mode;
     int                 _errno;
     sock_base::stype    _type;
+    // bool                _doclose;
     // if open, and connected, other side hostname,
     // otherwise undefined:
     // string              _hostname; 
@@ -547,6 +563,19 @@ class basic_sockstream :
         }
       }
 
+    basic_sockstream( sock_base::socket_type s,
+                      sock_base::stype type = sock_base::sock_stream,
+                      const timespec *timeout = 0 ) :
+        sock_base(),
+        basic_iostream<charT,traits>( 0 )
+      {
+        basic_ios<charT,traits>::init(&_sb);
+        basic_iostream<charT,traits>::clear();
+        if ( _sb.open( s, type, timeout ) == 0 ) {
+          basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
+        }
+      }
+
     basic_sockbuf<charT,traits,_Alloc>* rdbuf() const
       { return const_cast<basic_sockbuf<charT,traits,_Alloc>*>(&_sb); }
     bool is_open() const
@@ -569,6 +598,36 @@ class basic_sockstream :
       {
         basic_iostream<charT,traits>::clear();
         if ( _sb.open( s, addr, type, timeout ) == 0 ) {
+          basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
+        }
+      }
+
+    void open( sock_base::socket_type s,
+               sock_base::stype type = sock_base::sock_stream,
+               const timespec *timeout = 0 )
+      {
+        basic_iostream<charT,traits>::clear();
+        if ( _sb.open( s, type, timeout ) == 0 ) {
+          basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
+        }
+      }
+
+    void attach( sock_base::socket_type s, const sockaddr& addr,
+                 sock_base::stype type = sock_base::sock_stream,
+                 const timespec *timeout = 0 )
+      {
+        basic_iostream<charT,traits>::clear();
+        if ( _sb.attach( s, addr, type, timeout ) == 0 ) {
+          basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
+        }
+      }
+
+    void attach( sock_base::socket_type s,
+                 sock_base::stype type = sock_base::sock_stream,
+                 const timespec *timeout = 0 )
+      {
+        basic_iostream<charT,traits>::clear();
+        if ( _sb.attach( s, type, timeout ) == 0 ) {
           basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
         }
       }

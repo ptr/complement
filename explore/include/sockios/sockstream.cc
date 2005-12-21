@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/12/19 19:54:45 ptr>
+// -*- C++ -*- Time-stamp: <05/12/21 17:27:39 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005
@@ -163,14 +163,32 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
 
 template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
-basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, const sockaddr& addr,
-				    sock_base::stype t,
-                    const timespec *timeout )
+basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s,
+                                            sock_base::stype t,
+                                            const timespec *timeout )
 {
   if ( is_open() || s == -1 ) {
     return 0;
   }
-  _fd = dup( s );
+
+  sockaddr sa;
+  socklen_t sl = sizeof(sa);
+  getsockname( s, &sa, &sl );
+
+  return basic_sockbuf<charT, traits, _Alloc>::open( s, sa, t, timeout );
+}
+
+template<class charT, class traits, class _Alloc>
+basic_sockbuf<charT, traits, _Alloc> *
+basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s,
+                                            const sockaddr& addr,
+                                            sock_base::stype t,
+                                            const timespec *timeout )
+{
+  if ( is_open() || s == -1 ) {
+    return 0;
+  }
+  _fd = s;
   memcpy( (void *)&_address.any, (const void *)&addr, sizeof(sockaddr) );
   _mode = ios_base::in | ios_base::out;
   _errno = 0;
@@ -249,16 +267,50 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, const sock
 
 template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
+basic_sockbuf<charT, traits, _Alloc>::attach( sock_base::socket_type s,
+                                              sock_base::stype t,
+                                              const timespec *timeout )
+{
+  if ( is_open() || s == -1 ) {
+    return 0;
+  }
+
+  sockaddr sa;
+  socklen_t sl = sizeof(sa);
+  getsockname( s, &sa, &sl );
+
+  return basic_sockbuf<charT, traits, _Alloc>::attach( s, sa, t, timeout );
+}
+
+template<class charT, class traits, class _Alloc>
+basic_sockbuf<charT, traits, _Alloc> *
+basic_sockbuf<charT, traits, _Alloc>::attach( sock_base::socket_type s,
+                                              const sockaddr& addr,
+                                              sock_base::stype t,
+                                              const timespec *timeout )
+{
+  if ( is_open() || s == -1 ) {
+    return 0;
+  }
+
+  // _doclose = false;
+  return basic_sockbuf<charT, traits, _Alloc>::open( dup(s), addr, t, timeout );
+}
+
+template<class charT, class traits, class _Alloc>
+basic_sockbuf<charT, traits, _Alloc> *
 basic_sockbuf<charT, traits, _Alloc>::close()
 {
   if ( !is_open() )
     return 0;
 
+  // if ( _doclose ) {
 #ifdef WIN32
-  ::closesocket( _fd );
+    ::closesocket( _fd );
 #else
-  ::close( _fd );
+    ::close( _fd );
 #endif
+  // }
 
   // _STLP_ASSERT( _bbuf != 0 );
   // put area before get area
