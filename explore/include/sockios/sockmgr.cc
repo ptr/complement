@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/08/05 18:12:18 ptr>
+// -*- C++ -*- Time-stamp: <05/12/21 10:25:33 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005
@@ -19,21 +19,11 @@
  * in supporting documentation.
  */
 
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
-
 #include <algorithm>
 
 #ifdef __unix
 extern "C" int nanosleep(const struct timespec *, struct timespec *);
 #endif
-
-using __impl::Thread;
 
 _STLP_BEGIN_NAMESPACE
 
@@ -65,7 +55,9 @@ void sockmgr_stream_MP<Connect>::_open( sock_base::stype t )
       throw invalid_argument( "sockmgr_stream_MP" );
     }
     
+    _loop_cnd.set( false );
     loop_id.launch( loop, this );
+    _loop_cnd.try_wait();
   }
 }
 
@@ -286,7 +278,7 @@ template <class Connect>
 void sockmgr_stream_MP<Connect>::_close_by_signal( int )
 {
 #ifdef _PTHREADS
-  void *_uw_save = *((void **)pthread_getspecific( Thread::mtkey() ) + _idx );
+  void *_uw_save = *((void **)pthread_getspecific( xmt::Thread::mtkey() ) + _idx );
   _Self_type *me = static_cast<_Self_type *>( _uw_save );
 
   me->close();
@@ -304,6 +296,8 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
   try {
     _Connect *s;
     unsigned _sfd;
+
+    me->_loop_cnd.set( true );
 
     while ( (s = me->accept()) != 0 ) {    
       // The user connect function: application processing
@@ -604,14 +598,14 @@ template <class Connect>
 void sockmgr_stream_MP_SELECT<Connect>::_close_by_signal( int )
 {
 #ifdef _PTHREADS
-  void *_uw_save = *((void **)pthread_getspecific( Thread::mtkey() ) + _idx );
+  void *_uw_save = *((void **)pthread_getspecific( xmt::Thread::mtkey() ) + _idx );
   _Self_type *me = static_cast<_Self_type *>( _uw_save );
 
   me->close();
 #else
 // #error "Fix me!"
 #ifdef __FIT_WIN32THREADS
-  void *_uw_save = *((void **)TlsGetValue( Thread::mtkey() ) + _idx );
+  void *_uw_save = *((void **)TlsGetValue( xmt::Thread::mtkey() ) + _idx );
   _Self_type *me = static_cast<_Self_type *>( _uw_save );
 
   me->close();

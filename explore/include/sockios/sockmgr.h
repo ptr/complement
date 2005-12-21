@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/08/05 18:11:55 ptr>
+// -*- C++ -*- Time-stamp: <05/12/21 10:25:41 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005
@@ -21,14 +21,6 @@
 
 #ifndef __SOCKMGR_H
 #define __SOCKMGR_H
-
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -53,9 +45,6 @@
 #include <poll.h>
 #endif
 
-using __impl::Thread;
-using __impl::Condition;
-
 _STLP_BEGIN_NAMESPACE
 
 union _xsockaddr {
@@ -75,7 +64,7 @@ class basic_sockmgr :
       {
         __impl::Locker _l( _idx_lck );
         if ( _idx == -1 ) {
-          _idx = Thread::xalloc();
+          _idx = xmt::Thread::xalloc();
         }
       }
 
@@ -128,7 +117,8 @@ class basic_sockmgr :
     static __impl::Mutex _idx_lck;
 
   protected:
-    __impl::Mutex _fd_lck;
+    xmt::Mutex _fd_lck;
+    xmt::Condition _loop_cnd;
 };
 
 class ConnectionProcessorTemplate_MP // As reference
@@ -233,7 +223,7 @@ class sockmgr_stream_MP :
     _Connect *accept_udp();
 
   private:
-    Thread     loop_id;
+    xmt::Thread     loop_id;
 
   protected:
     typedef sockmgr_stream_MP<Connect> _Self_type;
@@ -344,7 +334,7 @@ class sockmgr_stream_MP_SELECT :
     _Connect *accept_udp();
 
   private:
-    Thread     loop_id;
+    xmt::Thread     loop_id;
 
   protected:
     typedef sockmgr_stream_MP_SELECT<Connect> _Self_type;
