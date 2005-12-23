@@ -29,6 +29,8 @@
 #ifdef __FIT_NONREENTRANT
 extern "C" int x_getaddrinfo(const char *, const char *, const struct addrinfo *, struct addrinfo **);
 extern "C" void x_freeaddrinfo( struct addrinfo * );
+extern "C" int x_res_search(const char *, int, int, unsigned char *, int);
+extern "C" int x_res_init(void);
 #endif
 
 #include <netdb.h>
