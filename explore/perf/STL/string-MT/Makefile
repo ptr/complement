@@ -1,5 +1,4 @@
-# -*- Makefile -*- Time-stamp: <04/07/14 23:08:07 ptr>
-# $Id$
+# -*- Makefile -*- Time-stamp: <05/12/27 00:48:42 ptr>
 
 DIRS = add add-ropes find find-ropes ops ops-ropes params params-ropes params-ref params-ref-ropes params-short
 
@@ -8,10 +7,14 @@ all:
 	  (cd $$d; ${MAKE}); \
 	done
 
-
 clean:
 	for d in $(DIRS); do \
 	  (cd $$d; ${MAKE} clean); \
+	done
+
+clobber:
+	for d in $(DIRS); do \
+	  (cd $$d; ${MAKE} clobber); \
 	done
 
 depend:

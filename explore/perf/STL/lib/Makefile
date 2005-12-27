@@ -1,5 +1,4 @@
-# -*- Makefile -*- Time-stamp: <03/10/12 20:35:49 ptr>
-# $Id$
+# -*- Makefile -*- Time-stamp: <05/12/26 23:57:38 ptr>
 
 DIRS = default malloc newalloc misc noshortstr
 
