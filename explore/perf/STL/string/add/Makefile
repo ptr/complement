@@ -1,5 +1,4 @@
-# -*- Makefile -*- Time-stamp: <04/07/14 23:08:48 ptr>
-# $Id$
+# -*- Makefile -*- Time-stamp: <05/12/27 00:16:09 ptr>
 
 DIRS = STLport-default STLport-malloc STLport-newalloc libstd++
 
@@ -11,6 +10,11 @@ all:
 clean:
 	for d in $(DIRS); do \
 	  (cd $$d; ${MAKE} clean); \
+	done
+
+clobber:
+	for d in $(DIRS); do \
+	  (cd $$d; ${MAKE} clobber); \
 	done
 
 depend:
