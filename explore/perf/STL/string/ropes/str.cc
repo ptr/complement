@@ -1,8 +1,10 @@
-// -*- C++ -*- Time-stamp: <03/04/13 19:24:46 ptr>
+// -*- C++ -*- Time-stamp: <06/01/03 23:09:43 ptr>
 
 #include <misc/args.h>
 
-#include <rope>
+#ifdef STLPORT
+#  include <rope>
+#endif
 #include <string>
 #include <iostream>
 
@@ -38,7 +40,7 @@ int main( int argc, char * const *argv )
 {
   try {
     Argv arg;
-    arg.copyright( "Copyright (C) Petr Ovchenkov, 2003" );
+    arg.copyright( "Copyright (C) Petr Ovtchenkov, 2003, 2005" );
     arg.brief( "Comparison of ropes and strings" );
     arg.option( "-h", false, "print this help message" );
     arg.option( "-r", true, "use ropes" );
@@ -84,7 +86,9 @@ int main( int argc, char * const *argv )
   }
 
   if ( !use_str ) {
+#ifdef STLPORT
     test<rope<char> > t( bs, n );
+#endif
   } else {
     test<string> t( bs, n );
   }
