@@ -1,14 +1,7 @@
 #!/bin/sh
 
-d=`dirname \`dirname \\\`pwd\\\`\``
-d=`dirname $d`
-#d=`dirname $d`
-time=`dirname $d`/app/utils/time/obj/gcc/shared/time
-# time="/usr/bin/time -f \"%U %S %e\""
-d=`dirname $d`/build/lib
-
-LD_LIBRARY_PATH=$d:${LD_LIBRARY_PATH}
-export LD_LIBRARY_PATH
+BASEDIR=${PWD}/../../../..
+timeprg=${BASEDIR}/app/utils/time/obj/gcc/shared/time
 
 w_lnum () {
   if [ -f $1 ] ; then
@@ -20,7 +13,7 @@ w_lnum () {
 
 experiment () {
   #w_lnum test$3.log
-  ${time} -a -o test$3.log STLport-default/obj/gcc/shared/str $3 -i=$2 -b=$1
+  ${timeprg} -a -o test$5.log $4/obj/gcc/shared/str $3 -i=$2 -b=$1
   echo -e ".\c"
 }
 
@@ -41,18 +34,22 @@ iter=100000
 
 run () {
   rm -f test-s.log
-  repeat 10 experiment $1 $2 -s
+  repeat 10 experiment $1 $2 -s STLport-default -s
   echo "# strings: block $1 iterations $2"
-  echo $1 `./stat.awk test-s.log` >> string.dat
-  echo $1 `./stat.awk test-s.log`
+  echo $1 `../../stat.awk test-s.log` >> string.dat
+  echo $1 `../../stat.awk test-s.log`
   rm -f test-r.log
-  repeat 10 experiment $1 $2 -r
+  repeat 10 experiment $1 $2 -r STLport-default -r
   echo "# ropes: block $1 iterations $2"
-  echo $1 `./stat.awk test-r.log` >> rope.dat
-  echo $1 `./stat.awk test-r.log`
+  echo $1 `../../stat.awk test-r.log` >> rope.dat
+  echo $1 `../../stat.awk test-r.log`
+  repeat 10 experiment $1 $2 -s libstdc++ -std
+  echo "# libstdc++ strings: block $1 iterations $2"
+  echo $1 `../../stat.awk test-std.log` >> libstdc++.dat
+  echo $1 `../../stat.awk test-std.log`
 }
 
-rm -f string.dat rope.dat
+rm -f string.dat rope.dat *.log libstdc++.dat
 
 run $block $iter
 run 128 100000
