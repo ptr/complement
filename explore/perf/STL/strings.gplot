@@ -22,12 +22,25 @@ set xtics 1, 1
 
 set output "strings.eps"
 
-plot [0.9:7.1] 'string/STLport.dat' using ($1):($6) notitle w l lt 1, \
+plot [0.9:7.1][0:25] 'string/STLport.dat' using ($1):($6) notitle w l lt 1, \
       'string/STLport.dat' using ($1):($6):($7) title "STLport" w yerrorbars lt 1, \
      'string/libstd++.dat' using ($1):($6) notitle w l lt 2, \
      'string/libstd++.dat' using ($1):($6):($7) title "libstd++" w yerrorbars lt 2, \
      'string/STLport-ropes.dat' using ($1):($6) notitle w l lt 3, \
      'string/STLport-ropes.dat' using ($1):($6):($7) title "STLport, ropes" w yerrorbars lt 3
+
+#pause(-1)
+
+set output "intel-amd.eps"
+
+plot [0.9:7.1] 'string/STLport.dat' using ($1):($6) notitle w l lt 1, \
+      'string/STLport.dat' using ($1):($6):($7) title "STLport, computer \\#1" w yerrorbars lt 1, \
+     'string/libstd++.dat' using ($1):($6) notitle w l lt 2, \
+     'string/libstd++.dat' using ($1):($6):($7) title "libstd++, computer \\#1" w yerrorbars lt 2, \
+     'string/STLport-1.dat' using ($1):($6) notitle w l lt 3, \
+     'string/STLport-1.dat' using ($1):($6):($7) title "STLport, computer \\#2" w yerrorbars lt 3, \
+     'string/libstd++-1.dat' using ($1):($6) notitle w l lt 4, \
+     'string/libstd++-1.dat' using ($1):($6):($7) title "libstd++, computer \\#2" w yerrorbars lt 4
 
 #pause(-1)
 
@@ -44,14 +57,14 @@ plot  [0.9:7.1] 'string/STLport.dat' using ($1):($6) notitle w l lt 1, \
 
 set output "strings-MT.eps"
 
-plot  [0.9:7.1] 'string-MT/STLport.dat' using ($1):($6) notitle w l lt 1, \
+plot  [0.9:7.1][0:250] 'string-MT/STLport.dat' using ($1):($6) notitle w l lt 1, \
       'string-MT/STLport.dat' using ($1):($6):($7) title "node alloc" w yerrorbars lt 1, \
      'string-MT/libstd++.dat' using ($1):($6) notitle w l lt 2, \
      'string-MT/libstd++.dat' using ($1):($6):($7) title "libstd++" w yerrorbars lt 2, \
      'string-MT/STLport-malloc.dat' using ($1):($6) notitle w l lt 3, \
      'string-MT/STLport-malloc.dat' using ($1):($6):($7) title "malloc" w yerrorbars lt 3, \
-     'string/STLport-ropes.dat' using ($1):($6) notitle w l lt 4, \
-     'string/STLport-ropes.dat' using ($1):($6):($7) title "STLport, ropes" w yerrorbars lt 4
+     'string-MT/STLport-ropes.dat' using ($1):($6) notitle w l lt 4, \
+     'string-MT/STLport-ropes.dat' using ($1):($6):($7) title "STLport, ropes" w yerrorbars lt 4
 
 #pause(-1)
 
@@ -63,8 +76,8 @@ plot  [0.9:7.1][0:50] 'string-MT/STLport.dat' using ($1):($6) notitle w l lt 1, 
      'string-MT/libstd++.dat' using ($1):($6):($7) title "libstd++" w yerrorbars lt 2, \
      'string-MT/STLport-malloc.dat' using ($1):($6) notitle w l lt 3, \
      'string-MT/STLport-malloc.dat' using ($1):($6):($7) title "malloc" w yerrorbars lt 3, \
-     'string/STLport-ropes.dat' using ($1):($6) notitle w l lt 4, \
-     'string/STLport-ropes.dat' using ($1):($6):($7) title "STLport, ropes" w yerrorbars lt 4
+     'string-MT/STLport-ropes.dat' using ($1):($6) notitle w l lt 4, \
+     'string-MT/STLport-ropes.dat' using ($1):($6):($7) title "STLport, ropes" w yerrorbars lt 4
 
 #pause(-1)
 
@@ -119,7 +132,9 @@ set output "str-rope.eps"
 plot 'string/ropes/string.dat' using ($1):($6) notitle w l lt 1, \
      'string/ropes/string.dat' using ($1):($6):($7) title "string" w yerrorbars lt 1, \
      'string/ropes/rope.dat' using ($1):($6) notitle w l lt 2, \
-     'string/ropes/rope.dat' using ($1):($6):($7) title "rope" w yerrorbars lt 2
+     'string/ropes/rope.dat' using ($1):($6):($7) title "rope" w yerrorbars lt 2, \
+     'string/ropes/libstdc++.dat' using ($1):($6) notitle w l lt 3, \
+     'string/ropes/libstdc++.dat' using ($1):($6):($7) title "libstdc++" w yerrorbars lt 3
 
 #pause(-1)
 
@@ -128,7 +143,34 @@ set output "str-rope-1.eps"
 plot [0:25000] 'string/ropes/string.dat' using ($1):($6) notitle w l lt 1, \
      'string/ropes/string.dat' using ($1):($6):($7) title "string" w yerrorbars lt 1, \
      'string/ropes/rope.dat' using ($1):($6) notitle w l lt 2, \
-     'string/ropes/rope.dat' using ($1):($6):($7) title "rope" w yerrorbars lt 2
+     'string/ropes/rope.dat' using ($1):($6):($7) title "rope" w yerrorbars lt 2, \
+     'string/ropes/libstdc++.dat' using ($1):($6) notitle w l lt 3, \
+     'string/ropes/libstdc++.dat' using ($1):($6):($7) title "libstdc++" w yerrorbars lt 3
 
 #pause(-1)
 
+set output "str-rope-2.eps"
+
+plot [0:2500] 'string/ropes/string.dat' using ($1):($6) notitle w l lt 1, \
+     'string/ropes/string.dat' using ($1):($6):($7) title "string" w yerrorbars lt 1, \
+     'string/ropes/rope.dat' using ($1):($6) notitle w l lt 2, \
+     'string/ropes/rope.dat' using ($1):($6):($7) title "rope" w yerrorbars lt 2, \
+     'string/ropes/libstdc++.dat' using ($1):($6) notitle w l lt 3, \
+     'string/ropes/libstdc++.dat' using ($1):($6):($7) title "libstdc++" w yerrorbars lt 3
+
+#pause(-1)
+
+set xtics 1, 1
+set xlabel "Test number"
+set output "streams.eps"
+
+plot [0.9:3.1] 'stream/STLport.dat' using ($1):($6) notitle w l lt 1, \
+     'stream/STLport.dat' using ($1):($6):($7) title "node alloc" w yerrorbars lt 1, \
+     'stream/STLport-malloc.dat' using ($1):($6) notitle w l lt 2, \
+     'stream/STLport-malloc.dat' using ($1):($6):($7) title "malloc" w yerrorbars lt 2, \
+     'stream/libstdc++.dat' using ($1):($6) notitle w l lt 3, \
+     'stream/libstdc++.dat' using ($1):($6):($7) title "libstdc++" w yerrorbars lt 3, \
+     'stream/stdio.dat' using ($1):($6) notitle w l lt 4, \
+     'stream/stdio.dat' using ($1):($6):($7) title "stdio" w yerrorbars lt 4
+
+#pause(-1)

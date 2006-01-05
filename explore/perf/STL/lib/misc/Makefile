@@ -1,6 +1,6 @@
-# -*- Makefile -*- Time-stamp: <05/12/27 00:05:49 ptr>
+# -*- Makefile -*- Time-stamp: <06/01/03 17:07:22 ptr>
 
-DIRS = default malloc newalloc
+DIRS = default malloc newalloc libstdc++
 
 all:
 	for d in $(DIRS); do \

@@ -8,7 +8,7 @@ int main( int, char * const * )
 {
   stringstream s;
 
-  for ( int i = 0; i < 3000000; ++i ) {
+  for ( int i = 0; i < 10000000; ++i ) {
     s.write( (const char *)&i, sizeof(i) );
   }
 
