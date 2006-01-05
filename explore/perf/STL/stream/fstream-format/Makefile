@@ -1,6 +1,6 @@
-# -*- Makefile -*- Time-stamp: <05/12/30 23:51:07 ptr>
+# -*- Makefile -*- Time-stamp: <06/01/04 00:32:06 ptr>
 
-DIRS = STLport-default STLport-malloc libstd++
+DIRS = STLport-default STLport-malloc libstdc++ stdio
 
 all:
 	for d in $(DIRS); do \

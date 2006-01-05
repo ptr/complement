@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Time-stamp: <05/12/31 00:18:31 ptr>
+# Time-stamp: <06/01/04 00:33:20 ptr>
 #
 
 BASEDIR=${PWD}/../../..
@@ -20,17 +20,15 @@ function runtest ()
   echo =========
 }
 
-rm -f libstd++.dat
-touch libstd++.dat
+rm -f libstdc++.dat
+touch libstdc++.dat
 
 j=1
 for d in fstream-format fstream-raw sstream-raw ; do
-  runtest ${d}/libstd++
-  echo $j `../stat.awk s.log` >> libstd++.dat
+  runtest ${d}/libstdc++
+  echo $j `../stat.awk s.log` >> libstdc++.dat
   let j=j+1
 done
-# dummy:
-echo $j `../stat.awk s.log` >> libstd++.dat
 
 rm -f STLport.dat
 touch STLport.dat
@@ -41,8 +39,6 @@ for d in fstream-format fstream-raw sstream-raw ; do
   echo $j `../stat.awk s.log` >> STLport.dat
   let j=j+1
 done
-runtest params-short/STLport-no-short-str
-echo $j `../stat.awk s.log` >> STLport.dat
 
 rm -f STLport-malloc.dat
 touch STLport-malloc.dat
@@ -54,4 +50,12 @@ for d in fstream-format fstream-raw sstream-raw ; do
   let j=j+1
 done
 
+rm -f stdio.dat
+touch stdio.dat
 
+j=1
+for d in fstream-format fstream-raw sstream-raw ; do
+  runtest ${d}/stdio
+  echo $j `../stat.awk s.log` >> stdio.dat
+  let j=j+1
+done

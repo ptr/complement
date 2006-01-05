@@ -1,5 +1,7 @@
 *.pcl
 compare.dvi
+compare.aux
+compare.toc
 compare.log
 compare.ps
 compare.pdf
@@ -23,3 +25,9 @@ strings-MT2.eps
 strings-MT2.tex
 strings.eps
 strings.tex
+streams.eps
+streams.tex
+str-rope-2.eps
+str-rope-2.tex
+intel-amd.eps
+intel-amd.tex

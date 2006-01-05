@@ -1,6 +1,6 @@
 # -*- Makefile -*- Time-stamp: <05/12/27 00:00:15 ptr>
 
-DIRS := lib string string-MT
+DIRS := lib string string-MT stream
 
 all:
 	for d in $(DIRS); do \
