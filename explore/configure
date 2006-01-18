@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Time-stamp: <05/03/21 10:39:01 ptr>
+# Time-stamp: <06/01/18 14:42:01 ptr>
 
 configmak=Makefiles/config.mak
 
@@ -36,6 +36,9 @@ Available options:
                         i.e. something like "c:/Novell/ndk/nwsdk"
   --with-extra-cxxflags=<options>
                         pass extra options to C++ compiler
+  --use-static-gcc      use static gcc libs instead of shared libgcc_s (useful for gcc compiler,
+                        that was builded with --enable-shared [default]; if compiler was builded
+                        with --disable-shared, static libraries will be used in any case)
   --clean               remove custom settings (file ${configmak})
                         and use default values
 
@@ -90,6 +93,9 @@ do
       ;;
     --with-mwcw=*)
       write_option "$option" MWCW_BASE
+      ;;
+    --use-static-gcc)
+      write_option "$option" USE_STATIC_LIBGCC
       ;;
   esac
 done
