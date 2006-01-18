@@ -1,3 +1,11 @@
+2006-01-18  Petr Ovtchenkov  <Petr.Ovchenkov@Kaspersky.COM>
+
+	* gmake/app/gcc.mak, gmake/lib/gcc.mak: detect whether gcc
+	was builded with --disable-shared and use correct libgcc.
+
+	* gmake/app/rules-install.mak: use common directories creation;
+	use same program name for all modes.
+
 2005-12-16  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/sysid.mak: parse two-token target system identification
