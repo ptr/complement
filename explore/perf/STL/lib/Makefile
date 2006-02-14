@@ -1,6 +1,6 @@
 # -*- Makefile -*- Time-stamp: <05/12/26 23:57:38 ptr>
 
-DIRS = default malloc newalloc misc noshortstr
+DIRS = default malloc newalloc misc noshortstr forcestringterm
 
 all:
 	for d in $(DIRS); do \
