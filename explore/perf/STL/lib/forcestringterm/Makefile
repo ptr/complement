@@ -2,7 +2,7 @@
 
 STLPORT_SRC_DIR := /export/home/ptr/STLport.lab/STLport
 SRCROOT := ${STLPORT_SRC_DIR}/build
-INSTALL_LIB_DIR        := ../../build/lib/noshortstr
+INSTALL_LIB_DIR        := ../../build/lib/forcestringterm
 INSTALL_LIB_DIR_DBG    := .
 INSTALL_LIB_DIR_STLDBG := .
 INSTALL_BIN_DIR        := .
