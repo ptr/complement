@@ -1,14 +1,14 @@
-// -*- C++ -*- Time-stamp: <03/11/16 22:07:47 ptr>
+// -*- C++ -*- Time-stamp: <05/12/30 22:06:08 ptr>
 
 /*
  *
- * Copyright (c) 1995-1999, 2002, 2003
- * Petr Ovchenkov
+ * Copyright (c) 1995-1999, 2002, 2003, 2005
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.0
+ * Licensed under the Academic Free License version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -20,14 +20,6 @@
  * in supporting documentation.
  */
 
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
-
 #ifdef _MSC_VER
 #pragma warning( disable : 4804 )
 #endif
@@ -37,7 +29,11 @@
 #include "stem/NetTransport.h"
 #include <iomanip>
 
-namespace EDS {
+namespace stem {
+
+#ifdef nsaddr
+# undef nsaddr
+#endif
 
 #ifndef WIN32
 const addr_type badaddr    = 0xffffffff;
@@ -314,7 +310,7 @@ void EvManager::Send( const Event& e )
      MT_UNLOCK( _lock_heap );
 #if 0
       try {
-        std::cerr << "===== EDS: "
+        std::cerr << "===== stem: "
                   << std::hex 
                   << std::setiosflags(std::ios_base::showbase)
                   << e.dest()
@@ -354,4 +350,4 @@ addr_type EvManager::create_unique_x()
   return _x_id;
 }
 
-} // namespace EDS
+} // namespace stem

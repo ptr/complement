@@ -1,14 +1,14 @@
-// -*- C++ -*- Time-stamp: <03/11/06 07:43:25 ptr>
+// -*- C++ -*- Time-stamp: <05/12/30 00:20:35 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999, 2002, 2003
- * Petr Ovchenkov
+ * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.0
+ * Licensed under the Academic Free License version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -22,14 +22,6 @@
 
 #ifndef __NetTransport_h
 #define __NetTransport_h
-
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -47,21 +39,21 @@
 #include <sstream>
 #include <map>
 
-#ifndef __Event_h
+#ifndef __stem_Event_h
 #include <stem/Event.h>
 #endif
 
-#ifndef __EvSession_h
+#ifndef __stem_EvSession_h
 #include <stem/EvSession.h>
 #endif
 
-#ifndef __EventHandler_h
+#ifndef __stem_EventHandler_h
 #include <stem/EventHandler.h>
 #endif
 
-namespace EDS {
+namespace stem {
 
-extern __FIT_DECLSPEC void dump( std::ostream&, const EDS::Event& );
+extern __FIT_DECLSPEC void dump( std::ostream&, const stem::Event& );
 
 class NetTransport_base :
     public EventHandler // to avoid dependence from creation order
@@ -108,16 +100,16 @@ class NetTransport_base :
     addr_type ns() const
       { return _net_ns; }
 
-    static EDS::SessionInfo session_info( const EvSessionManager::key_type& k )
+    static stem::SessionInfo session_info( const EvSessionManager::key_type& k )
       {
         smgr.lock();
-        EDS::SessionInfo si( smgr[k] );
+        stem::SessionInfo si( smgr[k] );
         smgr.unlock();
         return si;
       }
 
     static void session_control( const EvSessionManager::key_type& k,
-                                 const EDS::addr_type& a )
+                                 const stem::addr_type& a )
       {
         smgr.lock();
         smgr[k]._control = a;
@@ -166,7 +158,7 @@ class NetTransport :
 {
   public:
     NetTransport() :
-        NetTransport_base( "EDS::NetTransport" )
+        NetTransport_base( "stem::NetTransport" )
       { }
 
     __FIT_DECLSPEC
@@ -178,7 +170,7 @@ class NetTransportMgr :
 {
   public:
     NetTransportMgr() :
-        NetTransport_base( "EDS::NetTransportMgr" )
+        NetTransport_base( "stem::NetTransportMgr" )
       { }
 
     __FIT_DECLSPEC
@@ -204,7 +196,7 @@ class NetTransportMP :
 {
   public:
     NetTransportMP() :
-        NetTransport_base( "EDS::NetTransportMP" )
+        NetTransport_base( "stem::NetTransportMP" )
       { }
 
     __FIT_DECLSPEC

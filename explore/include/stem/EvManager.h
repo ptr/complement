@@ -1,13 +1,13 @@
-// -*- C++ -*- Time-stamp: <03/11/06 07:45:50 ptr>
+// -*- C++ -*- Time-stamp: <05/12/30 00:14:38 ptr>
 
 /*
- * Copyright (c) 1995-1999, 2002, 2003
- * Petr Ovchenkov
+ * Copyright (c) 1995-1999, 2002, 2003, 2005
+ * Petr Ovtchenkov
  * 
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.0
+ * Licensed under the Academic Free License version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -19,16 +19,8 @@
  * in supporting documentation.
  */
 
-#ifndef __EvManager_h
-#define __EvManager_h
-
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#pragma ident "@(#)$Id$"
-#  endif
-#endif
+#ifndef __stem_EvManager_h
+#define __stem_EvManager_h
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -38,15 +30,15 @@
 #include <map>
 #include <queue>
 
-#ifndef __Event_h
+#ifndef __stem_Event_h
 #include <stem/Event.h>
 #endif
 
-#ifndef __EventHandler_h
+#ifndef __stem_EventHandler_h
 #include <stem/EventHandler.h>
 #endif
 
-#ifndef __EvSession_h
+#ifndef __stem_EvSession_h
 #include <stem/EvSession.h>
 #endif
 
@@ -58,7 +50,7 @@
 #include <sockios/sockstream>
 #endif
 
-namespace EDS {
+namespace stem {
 
 class NetTransport_base;
 class NetTransport;
@@ -101,11 +93,11 @@ struct __Object_Entry
 };
 
 #ifdef _MSC_VER
-} // namespace EDS
+} // namespace stem
 namespace std {
-typedef  EDS::__Object_Entry __Object_Entry;
+typedef  stem::__Object_Entry __Object_Entry;
 } // namespace std
-namespace EDS {
+namespace stem {
 #endif
 
 class EvManager
@@ -199,17 +191,17 @@ class EvManager
 
     static int _Dispatch( void * );
 
-    __impl::Thread _ev_queue_thr;
-    __impl::Condition _ev_queue_cond;
+    xmt::Thread _ev_queue_thr;
+    xmt::Condition _ev_queue_cond;
 
-    __impl::Mutex _lock_heap;
-    __impl::Mutex _lock_queue;
+    xmt::Mutex _lock_heap;
+    xmt::Mutex _lock_queue;
 
     static std::string inv_key_str;
 
     friend class Names;
 };
 
-} // namespace EDS
+} // namespace stem
 
-#endif // __EvManager_h
+#endif // __stem_EvManager_h

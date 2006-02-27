@@ -1,13 +1,13 @@
-// -*- C++ -*- Time-stamp: <03/11/06 07:44:18 ptr>
+// -*- C++ -*- Time-stamp: <05/12/30 22:13:48 ptr>
 
 /*
- * Copyright (c) 1998, 2002, 2003
- * Petr Ovchenkov
+ * Copyright (c) 1998, 2002, 2003, 2005
+ * Petr Ovtchenkov
  * 
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.0
+ * Licensed under the Academic Free License version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -19,16 +19,8 @@
  * in supporting documentation.
  */
 
-#ifndef __Cron_h
-#define __Cron_h
-
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
+#ifndef __stem_Cron_h
+#define __stem_Cron_h
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -38,11 +30,11 @@
 #include <iosfwd>
 #endif
 
-#ifndef __EventHandler_h
+#ifndef __stem_EventHandler_h
 #include <stem/EventHandler.h>
 #endif
 
-#ifndef __EvPack_h
+#ifndef __stem_EvPack_h
 #include <stem/EvPack.h>
 #endif
 
@@ -51,7 +43,7 @@
 
 #include <queue>
 
-namespace EDS {
+namespace stem {
 
 struct CronEntry :
    public __pack_base
@@ -186,8 +178,8 @@ class Cron :
   private:
     static int _loop( void * );
 
-    __impl::Thread _thr;
-    __impl::Condition cond;
+    xmt::Thread _thr;
+    xmt::Condition cond;
 
     typedef __CronEntry value_type;
     typedef std::priority_queue<value_type,
@@ -201,6 +193,6 @@ class Cron :
     DECLARE_RESPONSE_TABLE( Cron, EventHandler );
 };
 
-} // namespace EDS
+} // namespace stem
 
 #endif // __Cron_h

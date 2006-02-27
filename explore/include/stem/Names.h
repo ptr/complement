@@ -1,14 +1,14 @@
-// -*- C++ -*- Time-stamp: <03/11/06 07:49:46 ptr>
+// -*- C++ -*- Time-stamp: <05/12/30 00:15:36 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999, 2002, 2003
- * Petr Ovchenkov
+ * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.0
+ * Licensed under the Academic Free License version 2.1
  * 
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -20,16 +20,8 @@
  * in supporting documentation.
  */
 
-#ifndef __Names_h
-#define __Names_h
-
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
+#ifndef __stem_Names_h
+#define __stem_Names_h
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -41,15 +33,15 @@
 #include <iosfwd>
 #endif
 
-#ifndef __EventHandler_h
+#ifndef __stem_EventHandler_h
 #include <stem/EventHandler.h>
 #endif
 
-#ifndef __EvPack_h
+#ifndef __stem_EvPack_h
 #include <stem/EvPack.h>
 #endif
 
-namespace EDS {
+namespace stem {
 
 class Names :
     public EventHandler
@@ -89,6 +81,6 @@ struct NameRecord :
     virtual __FIT_DECLSPEC void net_unpack( std::istream& s );
 };
 
-} // namespace EDS
+} // namespace stem
 
 #endif // __Names_h

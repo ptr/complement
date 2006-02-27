@@ -1,14 +1,14 @@
-// -*- C++ -*- Time-stamp: <03/11/06 07:53:51 ptr>
+// -*- C++ -*- Time-stamp: <05/12/30 22:10:56 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999, 2002, 2003
- * Petr Ovchenkov
+ * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.0
+ * Licensed under the Academic Free License version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -20,14 +20,6 @@
  * in supporting documentation.
  */
 
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
-
 #ifdef _MSC_VER
 #pragma warning( disable : 4804 )
 #endif
@@ -37,7 +29,7 @@
 #include "stem/EvManager.h"
 #include "stem/EDSEv.h"
 
-namespace EDS {
+namespace stem {
 
 __FIT_DECLSPEC Names::Names() :
     EventHandler()
@@ -165,4 +157,4 @@ DEFINE_RESPONSE_TABLE( Names )
   EV_EDS(ST_NULL,EV_EDS_RQ_ADDR_BY_NAME,get_by_name)
 END_RESPONSE_TABLE
 
-} // namespace EDS
+} // namespace stem

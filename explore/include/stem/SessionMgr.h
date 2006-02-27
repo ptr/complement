@@ -1,14 +1,14 @@
-// -*- C++ -*- Time-stamp: <03/11/06 07:50:17 ptr>
+// -*- C++ -*- Time-stamp: <05/12/30 22:09:31 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999, 2002, 2003
- * Petr Ovchenkov
+ * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.0
+ * Licensed under the Academic Free License version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -20,36 +20,28 @@
  * in supporting documentation.
  */
 
-#ifndef __SessionMgr_h
-#define __SessionMgr_h
-
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#pragma ident "@(#)$Id$"
-#  endif
-#endif
+#ifndef __stem_SessionMgr_h
+#define __stem_SessionMgr_h
 
 #ifndef __config_feature_h
 #include <config/feature.h>
 #endif
 
-#ifndef __Event_h
+#ifndef __stem_Event_h
 #include <stem/Event.h>
 #endif
 
-#ifndef __EventHandler_h
+#ifndef __stem_EventHandler_h
 #include <stem/EventHandler.h>
 #endif
 
 #include <ctime>
 
-#ifndef __EvPack_h
+#ifndef __stem_EvPack_h
 #include <stem/EvPack.h>
 #endif
 
-namespace EDS {
+namespace stem {
 
 class SessionMgr :
     public EventHandler
@@ -105,6 +97,6 @@ struct SessionRsp :
     virtual __FIT_DECLSPEC void net_unpack( std::istream& s );
 };
 
-} // namespace EDS
+} // namespace stem
 
-#endif // __SessionMgr_h
+#endif // __stem_SessionMgr_h

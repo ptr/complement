@@ -1,13 +1,13 @@
-// -*- C++ -*- Time-stamp: <03/11/06 07:48:11 ptr>
+// -*- C++ -*- Time-stamp: <05/12/29 23:47:48 ptr>
 
 /*
- * Copyright (c) 1995-1999, 2002, 2003
- * Petr Ovchenkov
+ * Copyright (c) 1995-1999, 2002, 2003, 2005
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.0
+ * Licensed under the Academic Free License version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -19,16 +19,8 @@
  * in supporting documentation.
  */
 
-#ifndef __EDS_Event_h
-#define __EDS_Event_h
-
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
+#ifndef __stem_Event_h
+#define __stem_Event_h
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -44,7 +36,11 @@
 #include <stem/EvPack.h>
 #endif
 
-namespace EDS {
+namespace stem {
+
+#ifdef nsadddr // defined for compatibility in resolv.h
+# undef nsaddr
+#endif
 
 typedef unsigned addr_type;
 typedef unsigned code_type;
@@ -519,6 +515,8 @@ class Event_base<void> :
 #include <EDS/EventSpec.h>
 #endif
 
-} // namespace EDS
+} // namespace stem
+
+namespace EDS = stem;
 
 #endif
