@@ -38,10 +38,6 @@
 
 namespace stem {
 
-#ifdef nsadddr // defined for compatibility in resolv.h
-# undef nsaddr
-#endif
-
 typedef unsigned addr_type;
 typedef unsigned code_type;
 typedef unsigned key_type;
@@ -49,7 +45,7 @@ typedef unsigned key_type;
 #ifndef WIN32
 extern const addr_type badaddr;
 extern const addr_type extbit;
-extern const addr_type nsaddr;
+extern const addr_type ns_addr;
 extern const key_type  badkey;
 extern const code_type badcode;
 #endif
@@ -57,7 +53,7 @@ extern const code_type badcode;
 #ifdef WIN32
 extern __PG_DECLSPEC addr_type badaddr;
 extern __PG_DECLSPEC addr_type extbit;
-extern __PG_DECLSPEC addr_type nsaddr;
+extern __PG_DECLSPEC addr_type ns_addr;
 extern __PG_DECLSPEC key_type  badkey;
 extern __PG_DECLSPEC code_type badcode;
 #endif
