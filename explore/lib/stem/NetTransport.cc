@@ -367,7 +367,7 @@ void NetTransport::connect( sockstream& s )
 
   try {
     establish_session( s );
-    _net_ns = rar_map( nsaddr, __ns_at + _hostname );
+    _net_ns = rar_map( ns_addr, __ns_at + _hostname );
     while ( pop( ev ) ) {
       ev.src( rar_map( ev.src(), _at_hostname ) ); // substitute my local id
       manager()->push( ev );
@@ -426,7 +426,7 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
   net->setoptions( std::sock_base::so_keepalive, true );
 
   if ( net->good() ) {
-    _net_ns = rar_map( nsaddr, __ns_at + hostname );
+    _net_ns = rar_map( ns_addr, __ns_at + hostname );
     addr_type zero_object = rar_map( 0, __at + hostname );
     _sid = smgr.create();
     _thr.launch( _loop, this ); // start thread here

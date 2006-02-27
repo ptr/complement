@@ -1,3 +1,13 @@
+2006-02-27  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* EvManager.cc, NetTransport.cc, _EventHandler.cc: rename nsaddr to
+	ns_addr to fix conflict with define in resolv.h for backword
+	compatibility.
+
+	* Event.h: ditto.
+
+	* libstem (Repository): library version 4.0.1.
+
 2005-06-28  Petr Ovtchenkov  <Petr.Ovchenkov@Kaspersky.COM>
 
 	* EvPack.h: add missed short and unsigned short to transport.

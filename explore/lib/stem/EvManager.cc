@@ -31,16 +31,12 @@
 
 namespace stem {
 
-#ifdef nsaddr
-# undef nsaddr
-#endif
-
 #ifndef WIN32
 const addr_type badaddr    = 0xffffffff;
 const key_type  badkey     = 0xffffffff;
 const code_type badcode    = static_cast<code_type>(-1);
 const addr_type extbit     = 0x80000000;
-const addr_type nsaddr     = 0x00000001;
+const addr_type ns_addr    = 0x00000001;
 #endif
 
 #ifdef WIN32
@@ -48,7 +44,7 @@ __PG_DECLSPEC addr_type badaddr    = 0xffffffff;
 __PG_DECLSPEC key_type  badkey     = 0xffffffff;
 __PG_DECLSPEC code_type badcode    = static_cast<code_type>(-1);
 __PG_DECLSPEC addr_type extbit     = 0x80000000;
-__PG_DECLSPEC addr_type nsaddr     = 0x00000001;
+__PG_DECLSPEC addr_type ns_addr    = 0x00000001;
 #endif
 
 const           addr_type beglocaddr = 0x00000100;

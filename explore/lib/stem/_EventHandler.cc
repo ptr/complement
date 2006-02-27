@@ -37,10 +37,6 @@
 
 namespace stem {
 
-#ifdef nsaddr
-# undef nsaddr
-#endif
-
 char *Init_buf[32];
 EvManager *EventHandler::_mgr = 0;
 stem::Names *_ns = 0;
@@ -52,7 +48,7 @@ EventHandler::Init::Init()
 {
   if ( _count++ == 0 ) {
     EventHandler::_mgr = new EvManager();
-    stem::_ns = new Names( nsaddr, _ns_name );
+    stem::_ns = new Names( ns_addr, _ns_name );
   }
 }
 
