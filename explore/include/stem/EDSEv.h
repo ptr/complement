@@ -1,14 +1,14 @@
-// -*- C++ -*- Time-stamp: <03/11/06 07:45:09 ptr>
+// -*- C++ -*- Time-stamp: <05/12/30 00:21:23 ptr>
 
 /*
  *
- * Copyright (c) 1995-1999, 2002, 2003
- * Petr Ovchenkov
+ * Copyright (c) 1995-1999, 2002, 2003, 2005
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.0
+ * Licensed under the Academic Free License version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -23,15 +23,7 @@
 #ifndef __EDSEv_h
 #define __EDSEv_h
 
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
-
-namespace EDS {
+namespace stem {
 
 #define EV_EDS_CONNECT           0x06
 #define EV_EDS_DISCONNECT        0x07
@@ -58,6 +50,6 @@ namespace EDS {
                               // 0x1c
                               // 0x1d
 
-} // namespace EDS
+} // namespace stem
 
 #endif // __EDSEv_h

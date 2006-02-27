@@ -1,14 +1,14 @@
-// -*- C++ -*- Time-stamp: <05/06/28 17:03:38 ptr>
+// -*- C++ -*- Time-stamp: <05/12/29 23:57:13 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999, 2002, 2003
- * Petr Ovchenkov
+ * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.0
+ * Licensed under the Academic Free License version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -20,16 +20,8 @@
  * in supporting documentation.
  */
 
-#ifndef __EvPack_h
-#define __EvPack_h
-
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
+#ifndef __stem_EvPack_h
+#define __stem_EvPack_h
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -45,7 +37,7 @@
 #include <winsock.h>
 #endif
 
-namespace EDS {
+namespace stem {
 
 #ifndef _MSC_VER
 
@@ -158,11 +150,11 @@ class __net_converter<signed char>
 
 template <class T>
 T to_net( const T& x )
-{ return EDS::__net_converter<T>::to_net( x ); }
+{ return stem::__net_converter<T>::to_net( x ); }
 
 template <class T>
 T from_net( const T& x )
-{ return EDS::__net_converter<T>::from_net( x ); }
+{ return stem::__net_converter<T>::from_net( x ); }
 
 #else // !_MSC_VER
 
@@ -222,7 +214,7 @@ unsigned long from_net( const unsigned long& x )
 
 struct __pack_base
 {
-    // To be released for data structure you want pass via EDS:
+    // To be released for data structure you want pass via stem:
     __FIT_DECLSPEC virtual void pack( std::ostream& ) const = 0 ;
     __FIT_DECLSPEC virtual void unpack( std::istream& ) = 0 ;
     __FIT_DECLSPEC virtual void net_pack( std::ostream& ) const = 0 ;
@@ -239,11 +231,11 @@ struct __pack_base
     static void __net_unpack( std::istream& s, int& x )
       {
         s.read( (char *)&x, sizeof(int) );
-        x = EDS::from_net( x );
+        x = stem::from_net( x );
       }
     static void __net_pack( std::ostream& s, int x )
       {
-        x = EDS::to_net( x );
+        x = stem::to_net( x );
         s.write( (const char *)&x, sizeof(int) );
       }
     static void __unpack( std::istream& s, int& x )
@@ -254,11 +246,11 @@ struct __pack_base
     static void __net_unpack( std::istream& s, unsigned& x )
       {
         s.read( (char *)&x, sizeof(unsigned) );
-        x = EDS::from_net( x );
+        x = stem::from_net( x );
       }
     static void __net_pack( std::ostream& s, unsigned x )
       {
-        x = EDS::to_net( x );
+        x = stem::to_net( x );
         s.write( (const char *)&x, sizeof(unsigned) );
       }
     static void __unpack( std::istream& s, unsigned& x )
@@ -269,11 +261,11 @@ struct __pack_base
     static void __net_unpack( std::istream& s, long& x )
       {
         s.read( (char *)&x, sizeof(long) );
-        x = EDS::from_net( x );
+        x = stem::from_net( x );
       }
     static void __net_pack( std::ostream& s, long x )
       {
-        x = EDS::to_net( x );
+        x = stem::to_net( x );
         s.write( (const char *)&x, sizeof(long) );
       }
     static void __unpack( std::istream& s, long& x )
@@ -284,11 +276,11 @@ struct __pack_base
     static void __net_unpack( std::istream& s, unsigned long& x )
       {
         s.read( (char *)&x, sizeof(unsigned long) );
-        x = EDS::from_net( x );
+        x = stem::from_net( x );
       }
     static void __net_pack( std::ostream& s, unsigned long x )
       {
-        x = EDS::to_net( x );
+        x = stem::to_net( x );
         s.write( (const char *)&x, sizeof(unsigned long) );
       }
     static void __unpack( std::istream& s, unsigned long& x )
@@ -326,11 +318,11 @@ struct __pack_base
     static void __net_unpack( std::istream& s, short& x )
       {
         s.read( (char *)&x, sizeof(short) );
-        x = EDS::from_net( x );
+        x = stem::from_net( x );
       }
     static void __net_pack( std::ostream& s, short x )
       {
-        x = EDS::to_net( x );
+        x = stem::to_net( x );
         s.write( (const char *)&x, sizeof(short) );
       }
     static void __unpack( std::istream& s, short& x )
@@ -341,11 +333,11 @@ struct __pack_base
     static void __net_unpack( std::istream& s, unsigned short& x )
       {
         s.read( (char *)&x, sizeof(unsigned short) );
-        x = EDS::from_net( x );
+        x = stem::from_net( x );
       }
     static void __net_pack( std::ostream& s, unsigned short x )
       {
-        x = EDS::to_net( x );
+        x = stem::to_net( x );
         s.write( (const char *)&x, sizeof(unsigned short) );
       }
     static void __unpack( std::istream& s, unsigned short& x )
@@ -354,6 +346,8 @@ struct __pack_base
       { s.write( (const char *)&x, sizeof(unsigned short) ); }
 };
 
-}
+} // stem
 
-#endif // __EvPack_h
+namespace EDS = stem;
+
+#endif // __stem_EvPack_h

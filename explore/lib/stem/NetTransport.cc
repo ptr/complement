@@ -1,14 +1,14 @@
-// -*- C++ -*- Time-stamp: <03/11/16 21:58:38 ptr>
+// -*- C++ -*- Time-stamp: <05/12/30 00:22:12 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999, 2002, 2003
- * Petr Ovchenkov
+ * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.0
+ * Licensed under the Academic Free License version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -19,14 +19,6 @@
  * that both that copyright notice and this permission notice appear
  * in supporting documentation.
  */
-
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4804 )
@@ -43,7 +35,7 @@
 
 const unsigned EDS_MSG_LIMIT = 0x400000; // 4MB
 
-namespace EDS {
+namespace stem {
 
 #ifndef _MSC_VER
 using namespace std;

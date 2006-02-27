@@ -1,13 +1,13 @@
-// -*- C++ -*- Time-stamp: <05/06/14 15:53:28 ptr>
+// -*- C++ -*- Time-stamp: <05/12/30 00:04:36 ptr>
 
 /*
- * Copyright (c) 1995-1999, 2002, 2003
- * Petr Ovchenkov
+ * Copyright (c) 1995-1999, 2002, 2003, 2005
+ * Petr Ovtchenkov
  * 
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.0
+ * Licensed under the Academic Free License version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -22,19 +22,11 @@
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
-
 #ifndef __config_feature_h
 #include <config/feature.h>
 #endif
 
-#ifndef __Event_h
+#ifndef __stem_Event_h
 #include <stem/Event.h>
 #endif
 
@@ -50,14 +42,14 @@
 #pragma warning( disable : 4786 )
 #endif
 
-namespace EDS {
+namespace stem {
 
 using namespace std;
 
 typedef unsigned state_type;
 
-#define ST_NULL     (EDS::state_type)(0)
-#define ST_TERMINAL (EDS::state_type)(-1)
+#define ST_NULL     (stem::state_type)(0)
+#define ST_TERMINAL (stem::state_type)(-1)
 
 #ifdef __PG_USE_ABBREV
 #  define __dispatcher                    _dch_
@@ -67,13 +59,13 @@ typedef unsigned state_type;
 #  define __AnyPMFentry APMFE
 #endif
 
-#define D1(cls) EDS::__dispatcher<EDS::__member_function<cls,EDS::Event> >
-#define D2(cls) EDS::__dispatcher_void<EDS::__member_function_void<cls>,EDS::EventVoid>
+#define D1(cls) stem::__dispatcher<stem::__member_function<cls,stem::Event> >
+#define D2(cls) stem::__dispatcher_void<stem::__member_function_void<cls>,stem::EventVoid>
 
-#define __D_EV_T(cls,T) EDS::__dispatcher_convert_Event<EDS::__member_function<cls,\
-                                      EDS::Event_base< T > >,EDS::Event>
-#define __D_T(cls,T) EDS::__dispatcher_convert_Event_extr<EDS::__member_function<cls,T >,\
-                                                          EDS::Event>
+#define __D_EV_T(cls,T) stem::__dispatcher_convert_Event<stem::__member_function<cls,\
+                                      stem::Event_base< T > >,stem::Event>
+#define __D_T(cls,T) stem::__dispatcher_convert_Event_extr<stem::__member_function<cls,T >,\
+                                                          stem::Event>
 
 #ifndef __FIT_TEMPLATE_CLASSTYPE_BUG
 #  define EV_EDS(state,event,handler) \
@@ -82,9 +74,9 @@ typedef unsigned state_type;
      RESPONSE_TABLE_ENTRY(state,event,handler,D2(ThisCls)::dispatch)
 #else // __FIT_TEMPLATE_CLASSTYPE_BUG
 #  define EV_EDS(state,event,handler) \
-     RESPONSE_TABLE_ENTRY(state,event,handler,__EDS_Event::dispatch)
+     RESPONSE_TABLE_ENTRY(state,event,handler,__stem_Event::dispatch)
 #  define EV_VOID(state,event,handler) \
-     RESPONSE_TABLE_ENTRY(state,event,handler,__EDS_Void::dispatch)
+     RESPONSE_TABLE_ENTRY(state,event,handler,__stem_Void::dispatch)
 #endif // __FIT_TEMPLATE_CLASSTYPE_BUG
 
 #define EV_Event_base_T_(state,event,handler,T) \
@@ -116,10 +108,10 @@ struct convert
       { return (const U&)(x); }
 };
 
-template <class T /* EDS::Event_base<X> */ >
+template <class T /* stem::Event_base<X> */ >
 struct convert_Event // from transport
 {
-    T operator ()( const EDS::Event& x ) const
+    T operator ()( const stem::Event& x ) const
       {
         T tmp;
         if ( x.is_from_foreign() ) {
@@ -135,9 +127,9 @@ struct convert_Event // from transport
 template <class T>
 struct convert_Event_extr // from transport and extract value
 {
-    T operator ()( const EDS::Event& x ) const
+    T operator ()( const stem::Event& x ) const
       {
-        EDS::Event_base<T> tmp;
+        stem::Event_base<T> tmp;
         if ( x.is_from_foreign() ) {
           tmp.net_unpack( x );
         } else {
@@ -151,9 +143,9 @@ struct convert_Event_extr // from transport and extract value
 template <class T>
 struct Event_convert // to transport
 {
-    EDS::Event operator ()( const EDS::Event_base<T>& x ) const
+    stem::Event operator ()( const stem::Event_base<T>& x ) const
       {
-        EDS::Event tmp;
+        stem::Event tmp;
         // first is evident, the second introduced
         // to support Forward autodetection
         if ( x.is_to_foreign() || x.is_from_foreign() ) {
@@ -243,8 +235,8 @@ struct __dispatcher_convert_Event_extr
 
 struct __AnyPMFentry
 {
-    EDS::GENERIC::PMF  pmf;
-    EDS::GENERIC::DPMF dpmf;
+    stem::GENERIC::PMF  pmf;
+    stem::GENERIC::DPMF dpmf;
 
     const char *pmf_name;
 };
@@ -256,7 +248,7 @@ struct __PMFentry
 
     PMF  pmf;
 #if !defined( _MSC_VER ) || defined( _DEBUG )
-    __FIT_TYPENAME EDS::GENERIC::DPMF dpmf;
+    __FIT_TYPENAME stem::GENERIC::DPMF dpmf;
 #else // _MSC_VER && !_DEBUG
     GENERIC::DPMF dpmf;
 #endif
@@ -268,12 +260,12 @@ struct __DeclareAnyPMF
 {
     state_type    st;
 #ifndef _MSC_VER
-    /* __FIT_TYPENAME */ EDS::code_type code;
-    __FIT_TYPENAME EDS::__PMFentry<T> func;
+    /* __FIT_TYPENAME */ stem::code_type code;
+    __FIT_TYPENAME stem::__PMFentry<T> func;
 #else // _MSC_VER
 #  ifdef _DEBUG
-    EDS::code_type code;
-    EDS::__PMFentry<T> func;
+    stem::code_type code;
+    stem::__PMFentry<T> func;
 #  else  // !_DEBUG
     code_type code; // workaround for VC 5.0
     __PMFentry<T> func;
@@ -396,7 +388,7 @@ class __EvHandler
 #ifndef _MSC_VER
     typedef typename T::table_type table_type;
 #else // should sync at least with EventHandler::table_type below: 
-    typedef __EvTable<EDS::code_type,state_type,__AnyPMFentry *> table_type;
+    typedef __EvTable<stem::code_type,state_type,__AnyPMFentry *> table_type;
 #endif // (that was workaround of M$ VC 5.0 bug)
 
     __EvHandler()
@@ -422,7 +414,7 @@ bool __EvHandler<T, InputIterator>::Dispatch( T *c, InputIterator first,
   if ( first == last ) {
     return false;
   }
-  EDS::code_type code = event.code();
+  stem::code_type code = event.code();
   __AnyPMFentry *entry;
   typename table_type::const_iterator1 i1 = table.find( code );
   if ( i1 == table.end() ) {
@@ -444,7 +436,7 @@ bool __EvHandler<T, InputIterator>::DispatchStub( T *, InputIterator first,
   if ( first == last ) {
     return false;
   }
-  EDS::code_type code = event.code();
+  stem::code_type code = event.code();
   __AnyPMFentry *entry;
   typename table_type::const_iterator1 i1 = table.find( code );
   if ( i1 == table.end() ) {
@@ -466,7 +458,7 @@ bool __EvHandler<T, InputIterator>::DispatchTrace( InputIterator first,
     out << "\n\tStates stack empty?";
     return false;
   }
-  EDS::code_type code = event.code();
+  stem::code_type code = event.code();
   __AnyPMFentry *entry;
   while ( first != last ) {
     if ( table.get( code, *first, entry ) ) {
@@ -489,7 +481,7 @@ void __EvHandler<T, InputIterator>::Out( std::ostream& out ) const
   __AnyPMFentry *entry;
   typename table_type::const_iterator1 i1 = table.begin();
   while ( i1 != table.end() ) {
-    EDS::code_type key1 = table.key1st(*i1);
+    stem::code_type key1 = table.key1st(*i1);
     typename table_type::const_iterator2 i2 = table.begin( i1 );
     out << "\tMessage: " << std::hex << key1 << std::dec << std::endl;
     while ( i2 != table.end( i1 ) ) {
@@ -535,7 +527,7 @@ class __EvHandler<EventHandler,h_iterator >
 };
 
 
-// *********************************************************** EDSEventHandler
+// *********************************************************** EventHandler
 
 class EventHandler
 {
@@ -606,20 +598,20 @@ class EventHandler
 
 \* ************************************************************ */
 #define SEND_T_(T) \
-    void SendMessage( EDS::key_type dst, EDS::code_type code, const T& s ) \
+    void SendMessage( stem::key_type dst, stem::code_type code, const T& s ) \
       { \
         Event_base<T> e( code, s ); \
         e.dest( dst ); \
-        EventHandler::Send( EDS::Event_convert<T>()( e ) ); \
+        EventHandler::Send( stem::Event_convert<T>()( e ) ); \
       }
 
     template <class D>
-    void Send( const EDS::Event_base<D>& e )
-      { EventHandler::Send( EDS::Event_convert<D>()( e ) ); }
+    void Send( const stem::Event_base<D>& e )
+      { EventHandler::Send( stem::Event_convert<D>()( e ) ); }
 
     template <class D>
-    void Forward( const EDS::Event_base<D>& e )
-      { EventHandler::Forward( EDS::Event_convert<D>()( e ) ); }
+    void Forward( const stem::Event_base<D>& e )
+      { EventHandler::Forward( stem::Event_convert<D>()( e ) ); }
 
     addr_type self_id() const
       { return _id; }
@@ -678,8 +670,8 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
 
 #ifdef __FIT_TEMPLATE_CLASSTYPE_BUG
 #  define  __FIT_TEMPLATE_CLASSTYPE_BUG_PARTIAL_WORAROUND(cls) \
-     typedef D2(cls) __EDS_Void; \
-     typedef D1(cls) __EDS_Event;
+     typedef D2(cls) __stem_Void; \
+     typedef D1(cls) __stem_Event;
 #else // __FIT_TEMPLATE_CLASSTYPE_BUG
 #  define  __FIT_TEMPLATE_CLASSTYPE_BUG_PARTIAL_WORAROUND(cls)
 #endif // __FIT_TEMPLATE_CLASSTYPE_BUG
@@ -702,23 +694,23 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
     __FIT_TEMPLATE_CLASSTYPE_BUG_PARTIAL_WORAROUND(cls)                   \
     virtual void Trace( std::ostream& out ) const                       \
        { theEventsTable.Out( out ); }                                     \
-    virtual bool DispatchTrace( const EDS::Event& __e, std::ostream& __s )\
+    virtual bool DispatchTrace( const stem::Event& __e, std::ostream& __s )\
        {                                                                  \
          MT_REENTRANT_SDS( this->_theHistory_lock, _x1 );                 \
          return theEventsTable.DispatchTrace( theHistory.begin(),         \
                                               theHistory.end(), __e, __s ); } \
-    typedef EDS::__EvHandler<cls,EDS::h_iterator> evtable_type;           \
-    typedef EDS::__DeclareAnyPMF<cls> evtable_decl_type;                  \
+    typedef stem::__EvHandler<cls,stem::h_iterator> evtable_type;           \
+    typedef stem::__DeclareAnyPMF<cls> evtable_decl_type;                  \
     typedef cls ThisCls;			                          \
     typedef pcls::ThisCls ParentThisCls;	                          \
     static __FIT_DECLSPEC const evtable_decl_type *get_ev_table_decl();    \
   protected:					                          \
-    virtual bool Dispatch( const EDS::Event& __e )                        \
+    virtual bool Dispatch( const stem::Event& __e )                        \
        {                                                                  \
          MT_REENTRANT_SDS( this->_theHistory_lock, _x1 );                 \
          return theEventsTable.Dispatch( this, theHistory.begin(),        \
                                          theHistory.end(), __e ); }       \
-    virtual bool DispatchStub( const EDS::Event& __e )                    \
+    virtual bool DispatchStub( const stem::Event& __e )                    \
        {                                                                  \
          MT_REENTRANT_SDS( this->_theHistory_lock, _x1 );                  \
          return theEventsTable.DispatchStub( this, theHistory.begin(),    \
@@ -736,7 +728,7 @@ __FIT_DECLSPEC cls::evtable_type cls::theEventsTable;                      \
                                                                           \
 __FIT_DECLSPEC const cls::evtable_decl_type *cls::get_ev_table_decl()      \
        { return theDeclEventsTable; }                                     \
-__FIT_DECLSPEC EDS::__DeclareAnyPMF<cls> cls::theDeclEventsTable[] = {
+__FIT_DECLSPEC stem::__DeclareAnyPMF<cls> cls::theDeclEventsTable[] = {
 
 // Macro for specification of response table entry:
 // RESPONSE_TABLE_ENTRY( ST_NRM, XW_EXPOSE, OXWEvExpose, XEventDispatch );
@@ -745,7 +737,7 @@ __FIT_DECLSPEC EDS::__DeclareAnyPMF<cls> cls::theDeclEventsTable[] = {
 
 #define RESPONSE_TABLE_ENTRY( state, code, catcher, dispatch )            \
   { state, code,                                                          \
-    {(EDS::__PMFentry<ThisCls>::PMF)&ThisCls::catcher, (EDS::GENERIC::DPMF)dispatch, #catcher }},
+    {(stem::__PMFentry<ThisCls>::PMF)&ThisCls::catcher, (stem::GENERIC::DPMF)dispatch, #catcher }},
 
 // Macro for specification of response table end:
 
@@ -822,7 +814,7 @@ __FIT_DECLSPEC EDS::__DeclareAnyPMF<cls> cls::theDeclEventsTable[] = {
 #endif // __TRACE || __WARN
 
 // #ifndef __FIT_NAMESPACE_TYPEDEF_BUG
-} // namespace EDS
+} // namespace stem
 // #endif
 
 #endif  // __EventHandler_h

@@ -1,13 +1,13 @@
-// -*- C++ -*- Time-stamp: <03/11/16 21:57:49 ptr>
+// -*- C++ -*- Time-stamp: <05/12/30 00:18:43 ptr>
 
 /*
- * Copyright (c) 1995-1999, 2002, 2003
- * Petr Ovchenkov
+ * Copyright (c) 1995-1999, 2002, 2003, 2005
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.0
+ * Licensed under the Academic Free License version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -18,14 +18,6 @@
  * that both that copyright notice and this permission notice appear
  * in supporting documentation.
  */
-
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4804 )
@@ -43,11 +35,15 @@
 
 #endif // __TRACE || __WARN
 
-namespace EDS {
+namespace stem {
+
+#ifdef nsaddr
+# undef nsaddr
+#endif
 
 char *Init_buf[32];
 EvManager *EventHandler::_mgr = 0;
-EDS::Names *_ns = 0;
+stem::Names *_ns = 0;
 const char *_ns_name = "ns";
 
 int EventHandler::Init::_count = 0;
@@ -56,14 +52,14 @@ EventHandler::Init::Init()
 {
   if ( _count++ == 0 ) {
     EventHandler::_mgr = new EvManager();
-    EDS::_ns = new Names( nsaddr, _ns_name );
+    stem::_ns = new Names( nsaddr, _ns_name );
   }
 }
 
 EventHandler::Init::~Init()
 {
   if ( --_count == 0 ) {
-    delete EDS::_ns;
+    delete stem::_ns;
     delete EventHandler::_mgr;
   }
 }
@@ -97,7 +93,7 @@ __FIT_DECLSPEC
 void EventHandler::Send( const EventVoid& e )
 {
   e.src( _id );
-  _mgr->push( EDS::Event_convert<void>()( e ) );
+  _mgr->push( stem::Event_convert<void>()( e ) );
 }
 
 __FIT_DECLSPEC
@@ -109,7 +105,7 @@ void EventHandler::Forward( const Event& e )
 __FIT_DECLSPEC
 void EventHandler::Forward( const EventVoid& e )
 {
-  _mgr->push( EDS::Event_convert<void>()( e ) );
+  _mgr->push( stem::Event_convert<void>()( e ) );
 }
 
 __FIT_DECLSPEC
@@ -252,4 +248,4 @@ void EventHandler::TraceStack( ostream& out ) const
   out << endl;
 }
 
-} // namespace EDS
+} // namespace stem

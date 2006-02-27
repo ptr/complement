@@ -1,14 +1,14 @@
-// -*- C++ -*- Time-stamp: <03/11/06 07:47:24 ptr>
+// -*- C++ -*- Time-stamp: <05/12/30 00:12:22 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999, 2002, 2003
- * Petr Ovchenkov
+ * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.0
+ * Licensed under the Academic Free License version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -20,16 +20,8 @@
  * in supporting documentation.
  */
 
-#ifndef __EvSession_h
-#define __EvSession_h
-
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
+#ifndef __stem_EvSession_h
+#define __stem_EvSession_h
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -52,7 +44,7 @@
 #include <stem/Event.h>
 #endif
 
-namespace EDS {
+namespace stem {
 
 #if defined(__SUNPRO_CC) && defined(__STL_USE_NEW_C_HEADERS)
 using std::time;
@@ -369,10 +361,10 @@ SessionManager<T>::key_type SessionManager<T>::create_unique()
 
 typedef SessionManager<SessionInfo> EvSessionManager;
 
-} // namespace EDS
+} // namespace stem
 
 #ifdef _MSC_VER
-typedef EDS::SessionInfo SessionInfo;
+typedef stem::SessionInfo SessionInfo;
 #endif
 
 #endif // __EvSession_h
