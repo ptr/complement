@@ -1,3 +1,33 @@
+/*
+ * The size of member function address (&A::f) may be very different,
+ * depends upon OS, compiler and class inheritance.
+ * You see, gcc 3.4.4 on Linux IA32 give for program below:
+ * 
+ * 8
+ * 8
+ * 8
+ * 8
+ * 8
+ * 8
+ * 8
+ * 8
+ *
+ * while VC 6 on any Windows (IA32):
+ *
+ * 4
+ * 4
+ * 4
+ * 4
+ * 8
+ * 12
+ * 12
+ * 12
+ *
+ * Enjoy and relax.
+ *
+ */
+
+
 #include <iostream>
 
 using namespace std;
