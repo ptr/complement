@@ -3,7 +3,7 @@
 SRCROOT := ../../..
 COMPILER_NAME := gcc
 
-STLPORT_DIR := /export/home/ptr/STLport.lab/STLport
+STLPORT_DIR := /export/home/ptr/STLport.lab/STLport.HEAD
 include Makefile.inc
 include ${SRCROOT}/Makefiles/top.mak
 
