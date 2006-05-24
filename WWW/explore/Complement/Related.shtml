@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<!-- Time-stamp: <03/10/07 15:50:35 ptr> -->
+<!-- $Id$ -->
+
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <link rel="stylesheet" type="text/css" href="main.css" media="screen" title="general">
+    <link rel="stylesheet" type="text/css" href="decor.css" media="screen" title="general">
+    <link rel="stylesheet" type="text/css" href="float.css" media="screen" title="general">
+    <title>Complement: Related Links</title>
+  </head>
+
+  <body>
+<!--#include file="head.shtml" -->
+<div class="toppic">
+<img src="img/jpg/apropos.jpg">
+</div>
+<div class="main">
+    <!-- <h2 class="lheader">Related links</h2> -->
+    <p>Links that has relation to this project.</p>
+
+    <h2 class="lheader">STL</h2>
+    <p>Bests STL implementations:</p>
+    <ul>
+      <li><a href="http://www.stlport.org">STLport</a></li>
+      <li><a href="http://www.sgi.com/tech/stl/">SGI STL</a></li>
+      <li><a href="http://www.dinkumware.com/">Dinkumware STL</a></li>
+    </ul>
+    <p>Discussion about strings implementation:</p>
+    <ul>
+      <li><a href="http://www.sgi.com/tech/stl/string_discussion.html">String discussion on SGI</a></li>
+      <li><a href="string-compare.shtml">C++ string implementations performance comparison</a></li>
+    </ul>
+
+    <h2 class="lheader">Programming with threads</h2>
+    <p>Portable C++ interfaces for MT programming
+    </p>
+    <ul>
+      <li><a href="http://www.boost.org">Boost.Threads</a>, the part
+        of Boost project.
+      </li>
+      <li><a href="http://sctl.sourceforge.net/">Solaris-compatible Threads Library</a>: wrapper for simulation Solaris Threads for non-Solaris platforms.
+      </li>
+      <li><a href="http://www.ossp.org/pkg/lib/pth/">GNU portable threads</a>:
+          POSIX/ANSI-C based library for Unix platforms;
+      </li>
+      <li><a href="http://pauillac.inria.fr/~xleroy/linuxthreads/">LinuxThreads</a>
+          is an implementation of the Posix 1003.1c thread package for Linux.
+      </li>
+      <li><a href="ftp://people.redhat.com/drepper/nptl/">New POSIX Thread Library</a> by RedHat.
+      </li>
+      <li><a href="http://www-124.ibm.com/developerworks/oss/pthreads/">Next Generation POSIX Threading</a> by IBM (N:M threads model; note,
+          <a href="http://soldc.sun.com/articles/alt_thread_lib.html">that Sun chuck in this model, and prefer 1:1 now</a>).
+      </li>
+    </ul>
+
+
+    <h2 class="lheader">Programming with sockets</h2>
+    <p>C++ interfaces for sockets:</p>
+    <ul>
+      <li><a href="http://www.jezuk.co.uk/cgi-bin/view/SAX/">SAXinCPP/Utils/socket_stream.h</a>
+      </li>
+      <li><a href="http://www.trolltech.com">Qt</a>
+      </li>
+    </ul>
+
+    <h2 class="lheader">Communicating Objects</h2>
+    <p>Methodology of Operational Specifications.</p>
+    <ul>
+      <li><a href="http://www.ddj.com/documents/s=990/ddj9506a/">Constructing Operational Specifications by Mark Coats and Terry Mellon</a></li>
+    </ul>
+
+    <p>C++ communication frameworks and techniques</p>
+    <ul>
+      <li><a href="http://libsigc.sourceforge.net/">libsigc++</a></li>
+      <li><a href="http://www.boost.org/libs/signals/doc/index.html">Boost signals</a></li>
+      <li><a href="http://www.trolltech.com">Qt</a></li>
+      <li><a href="http://www.corba.org">CORBA - Common Object Request Broker Architecture</a></li>
+      <li><a href="http://www.cs.wustl.edu/~schmidt/ACE.html">The ADAPTIVE Communication Environment (ACE)</a></li>
+      <li><a href="http://www.ddj.com/articles/1996/9608/">DDJ August 1996, Object-Oriented Interprocess Communication by Stephen Blaha</a></li>
+      <li><a href="http://www.ddj.com/articles/1996/9608/">DDJ August 1996, Dynamic Message Passing in C++ by Pierre Arnaud</a></li>
+      <li><a href="http://www.jamesodell.com/">James Odell articles about agents.</a>
+      </li>
+    </ul>
+</div>
+<!--#include file="foot.shtml" -->
+<!-- Created: Mon Oct  7 16:33:17 MSD 2002 -->
+  </body>
+</html>
+
