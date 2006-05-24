@@ -31,6 +31,7 @@
 #endif
 
 #include <algorithm>
+#include <functional>
 #include <utility>
 #include <vector>
 #include <list>

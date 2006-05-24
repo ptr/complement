@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/12/21 17:29:39 ptr>
+// -*- C++ -*- Time-stamp: <06/05/24 00:09:02 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005
@@ -43,6 +43,7 @@ extern "C" int x_res_init(void);
 #include <streambuf>
 #include <iostream>
 #include <string>
+#include <stdexcept>
 
 #ifdef WIN32
 #  include <winsock2.h>

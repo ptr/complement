@@ -1,3 +1,7 @@
+2006-05-24  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* EventHandler.h: explicitly add stdexcept header.
+
 2006-02-27  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* EvManager.cc, NetTransport.cc, _EventHandler.cc: rename nsaddr to
