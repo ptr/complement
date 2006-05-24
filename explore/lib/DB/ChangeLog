@@ -1,3 +1,7 @@
+2006-05-24  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xxSQL_i.cc:  explicitly add stdexcept header.
+
 2005-09-11  Petr Ovtchenkov  <ptr@island.plnet.ru>
 
 	* xxSQL_i.cc: fix uninitialized var; thanks valgrind.
