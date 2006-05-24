@@ -2,31 +2,15 @@
 #ifndef __LA_Integer_h
 #define __LA_Integer_h
 
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
+#include <iostream>
 
-#ifndef __GNUC__
-#ifndef BOOL_H
-#include <stl/bool.h>
-#endif
-#endif
+#include <algorithm>
 
-#ifndef _IOSTREAM_H
-#include <iostream.h>
-#endif
+// #ifndef _SYS_ISA_DEFS_H
+// #include <sys/isa_defs.h>
+// #endif
 
-#ifndef __GNUC__
-#include <stl/algobase.h>
-#else
-#include <LA/tmp.h>
-#endif
-
-#ifndef _SYS_ISA_DEFS_H
-#include <sys/isa_defs.h>
-#endif
-
-#ifndef __std_string_h
-#include <std/string.h>
-#endif
+#include <string>
 
 class Integer_overflow
 {
@@ -45,25 +29,14 @@ struct la_int_traits {
 template <int P, class LL, class UL, class L, class T> class la_int;
 typedef la_int<4, long long, unsigned long, long, la_int_traits> Integer4;
 
-#ifdef __GNUC__
-
-typedef long long long_base_type;
-typedef unsigned long ubase_type;
-typedef long base_type;
-typedef la_int_traits traits_type;
-
-#endif
-
 template <int P, class LL, class UL, class L, class T>
 class la_int
 {
   public:
-#ifndef __GNUC__
     typedef LL long_base_type;
     typedef UL ubase_type;
     typedef L base_type;
     typedef T traits_type;
-#endif
 
     la_int()
       { }
@@ -123,9 +96,11 @@ class la_int
     bool operator <( base_type ) const;
     bool operator ==( const la_int& ) const;
 
+#if 0
     la_int& assign( const string& ); // input from string
     operator string();               // output to string
     operator string() const;
+#endif
     
   protected:
     bool __overflow( ubase_type x ) const
@@ -145,7 +120,6 @@ class la_int
 
     ubase_type d[P];
 
-#ifndef __GNUC__
     union __longlong {
 	long_base_type A;
 	struct {
@@ -165,34 +139,10 @@ class la_int
 	t.a.hi = hi >> 1;
 	t.a.lo = lo | (hi << traits_type::shift_first_to_hi );
       }
-#endif
 
-    friend ostream& operator <<( ostream&, const la_int& );
-    friend istream& operator >>( istream&, la_int& );
+    friend std::ostream& operator <<( std::ostream&, const la_int& );
+    friend std::istream& operator >>( std::istream&, la_int& );
 };
-
-#ifdef __GNUC__
-union __longlong {
-    long long A;
-    struct {
-#ifdef _BIG_ENDIAN
-	    unsigned long hi;
-	    unsigned long lo;
-#endif
-#ifdef _LITTLE_ENDIAN
-	    unsigned long lo;
-	    unsigned long hi;
-#endif
-    } a;
-};
-
-inline
-void __load( __longlong& t, unsigned long hi, unsigned long lo )
-{
-  t.a.hi = hi >> 1;
-  t.a.lo = lo | (hi << la_int_traits::shift_first_to_hi );
-}
-#endif
 
 template <int P, class LL, class UL, class L, class T>
 la_int<P,LL,UL,L,T>::la_int( base_type x )
@@ -338,7 +288,7 @@ la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::operator +=( const la_int& x )
 template <int P, class LL, class UL, class L, class T>
 la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::operator +=( base_type x )
 {
-  ubase_type *³°®­last   = d+P;
+  ubase_type *last   = d+P;
   ubase_type *first  = d;
   if ( x >= 0) {
     ubase_type k = x;
@@ -761,8 +711,10 @@ la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::div1( const la_int& x, la_int& r )
   digit).
 */
 template <int P, class LL, class UL, class L, class T>
-ubase_type *la_int<P,LL,UL,L,T>::divide_aux( ubase_type *u, ubase_type v,
-				   ubase_type *q ) const
+typename la_int<P,LL,UL,L,T>::ubase_type *
+la_int<P,LL,UL,L,T>::divide_aux( typename la_int<P,LL,UL,L,T>::ubase_type *u,
+                                 typename la_int<P,LL,UL,L,T>::ubase_type v,
+				 typename la_int<P,LL,UL,L,T>::ubase_type *q ) const
 {
   __longlong t;
   
@@ -789,8 +741,11 @@ ubase_type *la_int<P,LL,UL,L,T>::divide_aux( ubase_type *u, ubase_type v,
 }
 
 template <int P, class LL, class UL, class L, class T>
-ubase_type *la_int<P,LL,UL,L,T>::divide_aux2( ubase_type *u, ubase_type *v,
-				    ubase_type *q, int m, int n ) const
+typename la_int<P,LL,UL,L,T>::ubase_type *
+la_int<P,LL,UL,L,T>::divide_aux2( typename la_int<P,LL,UL,L,T>::ubase_type *u,
+                                  typename la_int<P,LL,UL,L,T>::ubase_type *v,
+				  typename la_int<P,LL,UL,L,T>::ubase_type *q,
+                                  int m, int n ) const
 {
   // D2
   ubase_type qt;
@@ -867,7 +822,7 @@ ubase_type *la_int<P,LL,UL,L,T>::divide_aux2( ubase_type *u, ubase_type *v,
   return qj;
 }
 
-template <int P, class LL, class UL, class, class T>
+template <int P, class LL, class UL, class L, class T>
 void la_int<P,LL,UL,L,T>::divide_aux3( const la_int& x, ubase_type *r,
 			     ubase_type *modulo ) const
 {
@@ -981,7 +936,9 @@ void la_int<P,LL,UL,L,T>::shr_aux( ubase_type *first, ubase_type *last,
     *last |= *(last-1) << shr;
     *last &= traits_type::no_sign_mask;
   }
-  *last >>= sh;~|ztspps
+  *last >>= sh;
+  // ~|ztspps
+}
 
 template <int P, class LL, class UL, class L, class T>
 void la_int<P,LL,UL,L,T>::shr_aux2( ubase_type *first, ubase_type *last ) const
@@ -1042,6 +999,7 @@ la_int<P,LL,UL,L,T> la_int<P,LL,UL,L,T>::gcd( const la_int& x ) const
   return u;
 }
 
+#if 0
 template <int P, class LL, class UL, class L, class T>
 la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::assign( const string& s )
 {
@@ -1124,5 +1082,6 @@ la_int<P,LL,UL,L,T>::operator string() const
   reverse( s.begin(), s.end() );
   return s;
 }
+#endif
 
 #endif // __LA_Integer_h
