@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <05/10/03 22:52:16 ptr>
+// -*- C++ -*- Time-stamp: <06/05/30 00:37:13 ptr>
 
 /*
  *
- * Copyright (c) 2002
+ * Copyright (c) 2002, 2006
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -18,14 +18,6 @@
  * in supporting documentation.
  */
 
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#pragma ident "@(#)$Id$"
-#  endif
-#endif
-
 #include <config/feature.h>
 
 #include "DB/xxSQL.h"
@@ -40,14 +32,17 @@ namespace xxSQL {
 typedef void *(*DBimpl_type)( const void * );
 
 #ifdef _STLP_DEBUG
-const char *lname_pg  = "libDBpgstlg.so";
-const char *lname_ora = "libDBorastlg.so";
+const char *lname_pg    = "libDBpgstlg.so";
+const char *lname_ora   = "libDBorastlg.so";
+const char *lname_mysql = "libDBmysqlstlg.so";
 #elif defined(__DEBUG)
-const char *lname_pg  = "libDBpgg.so";
-const char *lname_ora = "libDBorag.so";
+const char *lname_pg    = "libDBpgg.so";
+const char *lname_ora   = "libDBorag.so";
+const char *lname_mysql = "libDBmysqlg.so";
 #else
-const char *lname_pg  = "libDBpg.so";
-const char *lname_ora = "libDBora.so";
+const char *lname_pg    = "libDBpg.so";
+const char *lname_ora   = "libDBora.so";
+const char *lname_mysql = "libDBmysql.so";
 #endif
 
 DBxx::DBxx( DBvendor vendor, const DataBase_connect& conn ) :
@@ -83,6 +78,12 @@ DBxx::DBxx( DBvendor vendor, const DataBase_connect& conn ) :
           throw vendor;
         }
         break;
+      case MySQL:
+        lh = dlopen( lname_mysql, RTLD_LAZY );
+        if ( lh == 0 ) {
+          throw vendor;
+        }
+        break;
       default:
         _db = 0;
         throw Unknown;
@@ -98,6 +99,9 @@ DBxx::DBxx( DBvendor vendor, const DataBase_connect& conn ) :
         break;
       case Oracle8i:
         *conn.err << "Can't find " << lname_ora << endl;
+        break;
+      case MySQL:
+        *conn.err << "Can't find " << lname_mysql << endl;
         break;
       default:
         *conn.err << "Unsupported database" << endl;
