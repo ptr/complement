@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/08/26 12:57:55 ptr>
+// -*- C++ -*- Time-stamp: <06/05/30 00:28:50 ptr>
 
 /*
  *
@@ -21,14 +21,6 @@
 #ifndef __xxSQL_h
 #define __xxSQL_h
 
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#pragma ident "@(#)$Id$"
-#  endif
-#endif
-
 #ifndef __DB_xxSQL_i_h
 #include <DB/xxSQL_i.h>
 #endif
@@ -43,7 +35,8 @@ class DBxx
     enum DBvendor {
       Unknown,
       PostgreSQL,
-      Oracle8i
+      Oracle8i,
+      MySQL
     };
 
     enum flags_t {
