@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/12/30 22:12:03 ptr>
+// -*- C++ -*- Time-stamp: <06/06/28 15:17:33 ptr>
 
 /*
  * Copyright (c) 1998, 2002, 2003, 2005
@@ -228,11 +228,11 @@ int Cron::_loop( void *p )
         continue;
       }
 
-#ifndef _STLP_LONG_LONG     
+#if !defined(_STLP_LONG_LONG) && !defined(_GLIBCXX_USE_LONG_LONG)
       double _next = en.start.tv_sec + en.start.tv_nsec * 1.0e-9 +
         (en.period.tv_sec + en.period.tv_nsec * 1.0e-9) * ++en.count;
-      en.expired.tv_nsec = 1.0e9 * modf( _next, &_next );
-      en.expired.tv_sec = _next;
+      en.expired.tv_nsec = static_cast<long>(1.0e9 * modf( _next, &_next ));
+      en.expired.tv_sec = static_cast<long>(_next);
 #else
 #  ifdef _MSC_VER
       __int64

@@ -1,3 +1,18 @@
+2006-06-28  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Makefile: remove -ISTLPORT, may be build without one; but
+	boost is required in this case.
+
+	* Cron.cc: check LONG_LONG in libstdc++ too
+
+	* Event.h: define __type_traits (from STLport) in case of
+	build with libstdc++.
+
+	* EventHandler.h: use ext/functional and namespace __gnu_cxx
+	for some functors when compile with libstdc++.
+
+	* SessionMgr.h: ditto
+
 2006-05-24  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* EventHandler.h: explicitly add stdexcept header.

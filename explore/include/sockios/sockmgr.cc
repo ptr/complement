@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/06/28 11:42:02 ptr>
+// -*- C++ -*- Time-stamp: <06/06/28 13:52:30 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -153,7 +153,7 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
   }
 
   _xsockaddr addr;
-  size_t sz = sizeof( sockaddr_in );
+  socklen_t sz = sizeof( sockaddr_in );
   _Connect *cl;
 
   do {
@@ -239,7 +239,7 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
     return 0;
   }
 
-  size_t sz = sizeof( sockaddr_in );
+  socklen_t sz = sizeof( sockaddr_in );
   _xsockaddr addr;
 
   if ( poll( _pfd, 1, -1 ) < 0 ) { // wait infinite

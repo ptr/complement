@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <05/12/30 00:04:36 ptr>
+// -*- C++ -*- Time-stamp: <06/06/28 15:08:43 ptr>
 
 /*
- * Copyright (c) 1995-1999, 2002, 2003, 2005
+ * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
  * Petr Ovtchenkov
  * 
  * Copyright (c) 1999-2001
@@ -32,6 +32,9 @@
 
 #include <algorithm>
 #include <functional>
+#ifndef STLPORT
+# include <ext/functional>
+#endif
 #include <utility>
 #include <vector>
 #include <list>
@@ -295,10 +298,22 @@ class __EvTable
     bool get_1( const_iterator1 i1, Key2 key2, Value& value ) const;
     const_iterator1 find( Key1 key1 ) const
       { return std::find_if( storage.begin(), storage.end(),
-                        std::compose1( std::bind2nd( eq_key1, key1 ), key1st ) ); }
+#ifdef STLPORT
+                        std::compose1( std::bind2nd( eq_key1, key1 ), key1st )
+#else
+                        __gnu_cxx::compose1( std::bind2nd( eq_key1, key1 ), key1st )
+#endif
+          );
+      }
     iterator1 find( Key1 key1 )
       { return std::find_if( storage.begin(), storage.end(),
-                        std::compose1( std::bind2nd( eq_key1, key1 ), key1st ) ); }
+#ifdef STLPORT
+                        std::compose1( std::bind2nd( eq_key1, key1 ), key1st )
+#else
+                        __gnu_cxx::compose1( std::bind2nd( eq_key1, key1 ), key1st )
+#endif
+          );
+      }
     iterator1 begin()
       { return storage.begin(); }
     iterator1 end()
@@ -320,8 +335,13 @@ class __EvTable
 
     void append( Key1 key1, Key2 key2, const Value& value );
 
+#ifdef STLPORT
     std::select1st<pair1_type> key1st;
     std::select1st<pair2_type> key2nd;
+#else
+    __gnu_cxx::select1st<pair1_type> key1st;
+    __gnu_cxx::select1st<pair2_type> key2nd;
+#endif
     std::equal_to<Key1> eq_key1;
     std::equal_to<Key2> eq_key2;
  
@@ -333,12 +353,22 @@ template <class Key1, class Key2, class Value>
 bool __EvTable<Key1,Key2,Value>::get( Key1 key1, Key2 key2, Value& value ) const
 {
   const_iterator1 i1 = std::find_if( storage.begin(), storage.end(),
-                                std::compose1( std::bind2nd( eq_key1, key1 ), key1st ) );
+#ifdef STLPORT
+                                std::compose1( std::bind2nd( eq_key1, key1 ), key1st )
+#else
+                                __gnu_cxx::compose1( std::bind2nd( eq_key1, key1 ), key1st )
+#endif
+    );
   if ( i1 == storage.end() ) {
     return false;
   }
   const_iterator2 i2 = std::find_if( (*i1).second.begin(), (*i1).second.end(),
-                                std::compose1( std::bind2nd( eq_key2, key2 ), key2nd ) );
+#ifdef STLPORT
+                                std::compose1( std::bind2nd( eq_key2, key2 ), key2nd )
+#else
+                                 __gnu_cxx::compose1( std::bind2nd( eq_key2, key2 ), key2nd )
+#endif
+    );
   if ( i2 == (*i1).second.end() ) {
     return false;
   }
@@ -351,7 +381,12 @@ template <class Key1, class Key2, class Value>
 bool __EvTable<Key1,Key2,Value>::get_1( __FIT_TYPENAME_ARG __EvTable<Key1,Key2,Value>::const_iterator1 i1, Key2 key2, Value& value ) const
 {
   const_iterator2 i2 = std::find_if( (*i1).second.begin(), (*i1).second.end(),
-                                std::compose1( std::bind2nd( eq_key2, key2 ), key2nd ) );
+#ifdef STLPORT
+                                std::compose1( std::bind2nd( eq_key2, key2 ), key2nd )
+#else
+                                __gnu_cxx::compose1( std::bind2nd( eq_key2, key2 ), key2nd )
+#endif
+    );
   if ( i2 == (*i1).second.end() ) {
     return false;
   }
@@ -373,7 +408,12 @@ void __EvTable<Key1,Key2,Value>::append( Key1 key1, Key2 key2, const Value& valu
     return;
   }
   iterator2 i2 = std::find_if( (*i1).second.begin(), (*i1).second.end(),
-                          std::compose1( std::bind2nd( eq_key2, key2 ), key2nd ) );
+#ifdef STLPORT
+                          std::compose1( std::bind2nd( eq_key2, key2 ), key2nd )
+#else
+                          __gnu_cxx::compose1( std::bind2nd( eq_key2, key2 ), key2nd )
+#endif
+    );
   if ( i2 == (*i1).second.end() ) {
     std::pair<Key2,Value> p2( key2, value );
     (*i1).second.push_back( p2 );
