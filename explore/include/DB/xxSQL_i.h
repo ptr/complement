@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <02/08/26 12:55:53 ptr>
+// -*- C++ -*- Time-stamp: <06/06/10 19:04:02 ptr>
 
 /*
  *
@@ -45,6 +45,8 @@ class DataBase_connect
 {
   public:
     DataBase_connect();
+    DataBase_connect( const char *db_name, const char *usr = 0, const char *passwd = 0,
+                      const char *db_host = 0, unsigned db_port = 0 );
 
     void dbname( const char *nm )
       { name = nm; }
