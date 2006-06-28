@@ -1,3 +1,8 @@
+2006-06-10  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xxSQL_i.h: DataBase_connect constructor with connect
+	parameters added
+
 2006-05-30  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* MySQL.h, xxSQL.h, xxSQL.cc, MySQL/MySQL.cc:
