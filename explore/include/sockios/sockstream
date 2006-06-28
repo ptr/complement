@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/06/28 10:26:34 ptr>
+// -*- C++ -*- Time-stamp: <06/06/28 12:27:35 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -300,7 +300,12 @@ class basic_sockbuf :
       
     basic_sockbuf() :
         _fd( -1 ),
-        _mode( 0 ), _bbuf(0), _ebuf(0), _allocated( true )
+#ifndef STLPORT
+        _mode( _S_in | _S_out ),
+#else
+        _mode( 0 ),
+#endif
+        _bbuf(0), _ebuf(0), _allocated( true )
       // , _doclose( true )
       {
 #ifdef __FIT_POLL
@@ -315,7 +320,12 @@ class basic_sockbuf :
                    sock_base::protocol prot = sock_base::inet,
                    const timespec *timeout = 0 ) :
         _fd( -1 ),
-        _mode( 0 ), _bbuf(0), _ebuf(0), _allocated( true )
+#ifndef STLPORT
+        _mode( _S_in | _S_out ),
+#else
+        _mode( 0 ),
+#endif
+        _bbuf(0), _ebuf(0), _allocated( true )
       // , _doclose( true )
       {
         open( hostname, port, type, prot, timeout );
@@ -466,10 +476,19 @@ class basic_sockbuf :
   
     size_t max_size() const { return (size_t(-1) / sizeof(charT)) - 1; }
 
+#ifdef STLPORT
     void _M_throw_length_error() const
       { _STLP_THROW(length_error("basic_sockbuf")); }
+#else
+    void _M_throw_length_error() const
+      { throw length_error("basic_sockbuf"); }
+#endif
 
+#ifdef STLPORT
     typedef typename _Alloc_traits<charT, _Alloc>::allocator_type allocator_type;
+#else
+    typedef _Alloc allocator_type;
+#endif
     /* typedef __allocator<charT, _Alloc> _Alloc_type; */
 
     /* _Alloc_type */ allocator_type _M_data_allocator;    
