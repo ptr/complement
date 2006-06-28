@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <06/05/24 00:09:02 ptr>
+// -*- C++ -*- Time-stamp: <06/06/28 10:26:34 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -24,6 +24,10 @@
 
 #ifndef __config_feature_h
 #include <config/feature.h>
+#endif
+
+#ifndef __XMT_H
+#include <mt/xmt.h>
 #endif
 
 #ifdef __FIT_NONREENTRANT
@@ -71,7 +75,11 @@ extern "C" int x_res_init(void);
 #  include <cerrno>
 #endif // !WIN32
 
+#ifdef STLPORT
 _STLP_BEGIN_NAMESPACE
+#else
+namespace std {
+#endif
 
 in_addr findhost( const char *hostname ) throw( std::domain_error );
 std::string hostname( unsigned long inet_addr );
@@ -295,7 +303,6 @@ class basic_sockbuf :
         _mode( 0 ), _bbuf(0), _ebuf(0), _allocated( true )
       // , _doclose( true )
       {
-        _M_lock_w._M_initialize();
 #ifdef __FIT_POLL
         _timeout = -1;
 #endif
@@ -311,14 +318,12 @@ class basic_sockbuf :
         _mode( 0 ), _bbuf(0), _ebuf(0), _allocated( true )
       // , _doclose( true )
       {
-        _M_lock_w._M_initialize();
         open( hostname, port, type, prot, timeout );
       }
     virtual ~basic_sockbuf()
       {
         close();
         _M_deallocate_block();
-        _M_lock_w._M_destroy();
       }
 
     bool is_open() const
@@ -425,7 +430,7 @@ class basic_sockbuf :
     virtual streamsize xsputn(const char_type *s, streamsize n);
 
   public:
-    _STLP_mutex_base _M_lock_w; // lock for writing
+    xmt::Mutex _M_lock_w; // lock for writing
     // _STL_mutex_base _M_lock; used for read lock
   private: // Helper functions
     charT* _bbuf;
@@ -658,7 +663,11 @@ typedef basic_sockbuf<wchar_t,char_traits<wchar_t>,allocator<wchar_t> >  wsockbu
 typedef basic_sockstream<char,char_traits<char>,allocator<char> >     sockstream;
 typedef basic_sockstream<wchar_t,char_traits<wchar_t>,allocator<wchar_t> > wsockstream;
 
+#ifdef STLPORT
 _STLP_END_NAMESPACE
+#else
+} // namespace std
+#endif
 
 #ifndef __STL_LINK_TIME_INSTANTIATION
 #include <sockios/sockstream.cc>
