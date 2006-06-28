@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <05/12/21 17:05:11 ptr>
+// -*- C++ -*- Time-stamp: <06/06/28 11:42:02 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -25,7 +25,11 @@
 extern "C" int nanosleep(const struct timespec *, struct timespec *);
 #endif
 
+#ifdef STLPORT
 _STLP_BEGIN_NAMESPACE
+#else
+namespace std {
+#endif
 
 #ifndef __FIT_NO_POLL
 
@@ -246,7 +250,7 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
   ::recvfrom( fd(), buff, 32, MSG_PEEK, &addr.any, &sz );
   _Connect *cl;
   try {
-    _c_lock._M_acquire_lock();
+    _c_lock.lock();
     typename container_type::iterator i = _M_c.begin();
     sockbuf *b;
     while ( i != _M_c.end() ) {
@@ -254,7 +258,7 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
       if ( (*i)->s->is_open() && b->stype() == sock_base::sock_dgram &&
            b->port() == addr.inet.sin_port &&
            b->inet_addr() == addr.inet.sin_addr.s_addr ) {
-        _c_lock._M_release_lock();
+        _c_lock.unlock();
         return *i;
       }
       ++i;
@@ -265,10 +269,10 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
     _M_c.push_back( cl );
     cl->s->open( dup( fd() ), addr.any, sock_base::sock_dgram );
     cl->_proc = new Connect( *cl->s );
-    _c_lock._M_release_lock();
+    _c_lock.unlock();
   }
   catch ( ... ) {
-    _c_lock._M_release_lock();
+    _c_lock.unlock();
     cl = 0;
   }
   return cl;
@@ -321,7 +325,7 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
     }
   }
   catch ( ... ) {
-    me->_c_lock._M_acquire_lock();
+    me->_c_lock.lock();
     
     for ( typename container_type::iterator i = me->_M_c.begin(); i != me->_M_c.end(); ++i ) {
       if ( (*i)->s->is_open() ) { // close all not closed yet
@@ -330,11 +334,11 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
       }
     }
     me->close();
-    me->_c_lock._M_release_lock();
+    me->_c_lock.unlock();
     throw;
   }
 
-  me->_c_lock._M_acquire_lock();
+  me->_c_lock.lock();
   
   for ( typename container_type::iterator i = me->_M_c.begin(); i != me->_M_c.end(); ++i ) {
     if ( (*i)->s->is_open() ) { // close all not closed yet
@@ -343,7 +347,7 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
     }
   }
   me->close();
-  me->_c_lock._M_release_lock();
+  me->_c_lock.unlock();
 
   return 0;
 }
@@ -559,7 +563,7 @@ __FIT_TYPENAME sockmgr_stream_MP_SELECT<Connect>::_Connect *sockmgr_stream_MP_SE
   ::recvfrom( fd(), buff, 32, MSG_PEEK, &addr.any, &sz );
   _Connect *cl;
   try {
-    _c_lock._M_acquire_lock();
+    _c_lock.lock();
     typename container_type::iterator i = _M_c.begin();
     sockbuf *b;
     while ( i != _M_c.end() ) {
@@ -567,7 +571,7 @@ __FIT_TYPENAME sockmgr_stream_MP_SELECT<Connect>::_Connect *sockmgr_stream_MP_SE
       if ( (*i)->s->is_open() && b->stype() == sock_base::sock_dgram &&
            b->port() == addr.inet.sin_port &&
            b->inet_addr() == addr.inet.sin_addr.s_addr ) {
-        _c_lock._M_release_lock();
+        _c_lock.unlock();
         return *i;
       }
       ++i;
@@ -585,10 +589,10 @@ __FIT_TYPENAME sockmgr_stream_MP_SELECT<Connect>::_Connect *sockmgr_stream_MP_SE
     cl->s->open( dup( fd() ), addr.any, sock_base::sock_dgram ); 
 #endif
     cl->_proc = new Connect( *cl->s );
-    _c_lock._M_release_lock();
+    _c_lock.unlock();
   }
   catch ( ... ) {
-    _c_lock._M_release_lock();
+    _c_lock.unlock();
     cl = 0;
   }
   return cl;
@@ -636,7 +640,7 @@ int sockmgr_stream_MP_SELECT<Connect>::loop( void *p )
     }
   }
   catch ( ... ) {
-    me->_c_lock._M_acquire_lock();
+    me->_c_lock.lock();
     
     for ( typename container_type::iterator i = me->_M_c.begin(); i != me->_M_c.end(); ++i ) {
       if ( (*i)->s->is_open() ) { // close all not closed yet
@@ -645,11 +649,11 @@ int sockmgr_stream_MP_SELECT<Connect>::loop( void *p )
       }
     }
     me->close();
-    me->_c_lock._M_release_lock();
+    me->_c_lock.unlock();
     throw;
   }
 
-  me->_c_lock._M_acquire_lock();
+  me->_c_lock.lock();
   
   for ( typename container_type::iterator i = me->_M_c.begin(); i != me->_M_c.end(); ++i ) {
     if ( (*i)->s->is_open() ) { // close all not closed yet
@@ -658,11 +662,15 @@ int sockmgr_stream_MP_SELECT<Connect>::loop( void *p )
     }
   }
   me->close();
-  me->_c_lock._M_release_lock();
+  me->_c_lock.unlock();
 
   return 0;
 }
 
 #endif // !__FIT_NO_SELECT
 
+#ifdef STLPORT
 _STLP_END_NAMESPACE
+#else
+} // namespace std
+#endif

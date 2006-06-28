@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <05/12/21 10:25:41 ptr>
+// -*- C++ -*- Time-stamp: <06/06/28 11:33:44 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -45,7 +45,11 @@
 #include <poll.h>
 #endif
 
+#ifdef STLPORT
 _STLP_BEGIN_NAMESPACE
+#else
+namespace std {
+#endif
 
 union _xsockaddr {
     sockaddr_in inet;
@@ -62,7 +66,7 @@ class basic_sockmgr :
 	_state( ios_base::goodbit ),
 	_fd( -1 )
       {
-        __impl::Locker _l( _idx_lck );
+        xmt::Locker _l( _idx_lck );
         if ( _idx == -1 ) {
           _idx = xmt::Thread::xalloc();
         }
@@ -114,7 +118,7 @@ class basic_sockmgr :
     static int _idx;
 
   private:
-    static __impl::Mutex _idx_lck;
+    static xmt::Mutex _idx_lck;
 
   protected:
     xmt::Mutex _fd_lck;
@@ -239,7 +243,7 @@ class sockmgr_stream_MP :
     _Sequence _M_c;
     _Compare  _M_comp;
     in_buf_avail _M_av;
-    _STLP_mutex _c_lock;
+    xmt::Mutex _c_lock;
 
     pollfd *_pfd;
     unsigned _fdcount;
@@ -350,7 +354,7 @@ class sockmgr_stream_MP_SELECT :
     _Sequence _M_c;
     _Compare  _M_comp;
     in_buf_avail _M_av;
-    _STLP_mutex _c_lock;
+    xmt::Mutex _c_lock;
 
     fd_set _pfdr;
     fd_set _pfde;
@@ -362,7 +366,11 @@ class sockmgr_stream_MP_SELECT :
 };
 #endif // !__FIT_NO_SELECT
 
+#ifdef STLPORT
 _STLP_END_NAMESPACE
+#else
+} // namespace std
+#endif
 
 #ifndef __STL_LINK_TIME_INSTANTIATION
 #include <sockios/sockmgr.cc>
