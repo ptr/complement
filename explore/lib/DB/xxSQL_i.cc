@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/09/11 11:43:36 ptr>
+// -*- C++ -*- Time-stamp: <06/06/11 15:19:14 ptr>
 
 /*
  * Copyright (c) 2002, 2005
@@ -44,7 +44,32 @@ DataBase_connect::DataBase_connect() :
     tty(),
     err( 0 ),
     port( 0 )
-{  
+{
+}
+
+DataBase_connect::DataBase_connect( const char *db_name, const char *db_usr, const char *passwd,
+                                    const char *db_host, unsigned db_port ) :
+    name(),
+    user(),
+    pass(),
+    host(),
+    opt(),
+    tty(),
+    err( 0 ),
+    port( db_port )
+{
+  if ( db_name != 0 ) {
+    name = db_name;
+  }
+  if ( db_usr != 0 ) {
+    user = db_usr;
+  }
+  if ( passwd != 0 ) {
+    pass = passwd;
+  }
+  if ( db_host != 0 ) {
+    host = db_host;
+  }
 }
 
 DataBase::DataBase( const DataBase_connect& c ) :
@@ -64,11 +89,9 @@ DataBase::DataBase( const DataBase_connect& c ) :
   if ( c.host.length() != 0 ) {
     _dbhost = c.host;
   }
-  if ( c.port != 0 ) {
-    // 
-  } else {
-    _dbport = ~0U;
-  }
+
+  _dbport = c.port;
+
   if ( c.opt.length() != 0 ) {
     _dbopt = c.opt;
   }
