@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/08/05 18:11:21 ptr>
+// -*- C++ -*- Time-stamp: <06/06/28 10:33:02 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2005
@@ -48,7 +48,7 @@ DllMain( HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved )
 }
 #  endif
 
-namespace __impl {
+namespace xmt {
 
 static char __xbuff[16];
 static const char *WINSOCK_ERR_MSG  = "WinSock DLL not 2.0";
@@ -59,14 +59,14 @@ int __thr_key = TlsAlloc();
 
 // static int _sb_idx = Thread::xalloc();
 
-} // namespace __impl
+} // namespace xmt
 
 namespace std {
 
 static int __glob_init_cnt = 0;
 static int __glob_init_wsock2 = 0;
 
-static __impl::Mutex _SI_lock;
+static xmt::Mutex _SI_lock;
 
 enum {
   WINDOWS_NT_4,
@@ -106,8 +106,8 @@ sock_base::Init::Init()
   MT_REENTRANT( _SI_lock, _1 );
   int __err = 0;
   try {
-    int __tls_init_cnt = (int)TlsGetValue( __impl::__thr_key );
-//  long& __tls_init_cnt = __impl::Thread::iword( _sb_idx );
+    int __tls_init_cnt = (int)TlsGetValue( xmt::__thr_key );
+//  long& __tls_init_cnt = xmt::Thread::iword( _sb_idx );
     if ( __tls_init_cnt++ == 0 ) {
       int win_ver = WinVer();
 
@@ -119,14 +119,14 @@ sock_base::Init::Init()
         __err = WSAStartup( __vers, &__wsadata );
 
         if ( __err != 0 && __err != WSAVERNOTSUPPORTED ) {
-          TlsSetValue( __impl::__thr_key, 0 );
-          throw domain_error( __impl::WINSOCK_ERR_MSG );
+          TlsSetValue( xmt::__thr_key, 0 );
+          throw domain_error( xmt::WINSOCK_ERR_MSG );
         }
         if ( LOBYTE(__wsadata.wVersion) != 2 || HIBYTE(__wsadata.wVersion) != 0 ) {
           if ( win_ver != WINDOWS_95 ) {
             WSACleanup();
-            TlsSetValue( __impl::__thr_key, 0 );
-            throw domain_error( __impl::WINSOCK_ERR_MSG1 );
+            TlsSetValue( xmt::__thr_key, 0 );
+            throw domain_error( xmt::WINSOCK_ERR_MSG1 );
           }
         } else if ( win_ver == WINDOWS_95 ) {
           __glob_init_wsock2 = 1;
@@ -134,7 +134,7 @@ sock_base::Init::Init()
 
       }
     }
-    TlsSetValue( __impl::__thr_key, (void *)__tls_init_cnt );
+    TlsSetValue( xmt::__thr_key, (void *)__tls_init_cnt );
     int a = 1;
     int b = 2;
     int c = 3;
@@ -164,7 +164,7 @@ __FIT_DECLSPEC
 sock_base::Init::~Init()
 {
   MT_REENTRANT( _SI_lock, _1 );
-  int __tls_init_cnt = (int)TlsGetValue( __impl::__thr_key );
+  int __tls_init_cnt = (int)TlsGetValue( xmt::__thr_key );
   int win_ver = WinVer();
   // --__glob_init_cnt; // only for Win 95
   if ( --__tls_init_cnt == 0 ) {
@@ -182,26 +182,30 @@ sock_base::Init::~Init()
       // WSACleanup();
     }
   }
-  TlsSetValue( __impl::__thr_key, (void *)__tls_init_cnt );
+  TlsSetValue( xmt::__thr_key, (void *)__tls_init_cnt );
 }
 
 __FIT_DECLSPEC
 sock_base::sock_base()
 {
-  new( __impl::__xbuff ) Init();
+  new( xmt::__xbuff ) Init();
 }
 
 __FIT_DECLSPEC
 sock_base::~sock_base()
 {
-  reinterpret_cast<Init *>(__impl::__xbuff)->~Init();
+  reinterpret_cast<Init *>(xmt::__xbuff)->~Init();
 }
 
 } // namespace std
 
 #endif // WIN32
 
+#ifdef STLPORT
 _STLP_BEGIN_NAMESPACE
+#else
+namespace std {
+#endif
 
 ::in_addr findhost( const char *hostname ) throw( std::domain_error )
 {
@@ -406,4 +410,8 @@ std::string service( int port, const char *proto ) throw( std::domain_error )
 #endif
 }
 
+#ifdef STLPORT
 _STLP_END_NAMESPACE
+#else
+} // namespace std
+#endif

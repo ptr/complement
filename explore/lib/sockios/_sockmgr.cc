@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <05/08/05 18:12:15 ptr>
+// -*- C++ -*- Time-stamp: <06/06/28 10:35:10 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -20,14 +20,6 @@
  *
  */
 
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
-
 #ifdef _MSC_VER
 #pragma warning( disable : 4804 )
 #endif
@@ -36,10 +28,14 @@
 #include <cerrno>
 #include <sockios/sockmgr.h>
 
+#ifdef STLPORT
 _STLP_BEGIN_NAMESPACE
+#else
+namespace std {
+#endif
 
 int basic_sockmgr::_idx = -1;
-__impl::Mutex basic_sockmgr::_idx_lck;
+xmt::Mutex basic_sockmgr::_idx_lck;
 
 void basic_sockmgr::open( const in_addr& addr, int port, sock_base::stype type, sock_base::protocol prot )
 {
@@ -191,4 +187,8 @@ void basic_sockmgr::setoptions_unsafe( sock_base::so_t optname, bool on_off, int
 #endif // __unix
 }
 
+#ifdef STLPORT
 _STLP_END_NAMESPACE
+#else
+} // namespace std
+#endif

@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <05/12/21 17:27:39 ptr>
+// -*- C++ -*- Time-stamp: <06/06/28 10:29:02 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -32,7 +32,11 @@ extern "C" int nanosleep(const struct timespec *, struct timespec *);
 #endif
 
 
+#ifdef STLPORT
 _STLP_BEGIN_NAMESPACE
+#else
+namespace std {
+#endif
 
 template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
@@ -611,5 +615,9 @@ void basic_sockstream<charT, traits, _Alloc>::setoptions( sock_base::so_t optnam
 #endif // __unix
 }
 
+#ifdef STLPORT
 _STLP_END_NAMESPACE
+#else
+} // namespace std
+#endif
 
