@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/06/28 10:29:02 ptr>
+// -*- C++ -*- Time-stamp: <06/06/28 13:53:59 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -519,7 +519,7 @@ int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
 #if defined(_WIN32) || (defined(__hpux) && !defined(_INCLUDE_POSIX1C_SOURCE))
   int sz = sizeof( sockaddr_in );
 #else
-  size_t sz = sizeof( sockaddr_in );
+  socklen_t sz = sizeof( sockaddr_in );
 #endif
 
 #if defined(__HP_aCC) && (__HP_aCC == 1)

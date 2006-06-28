@@ -1,5 +1,4 @@
-# -*- Makefile -*- Time-stamp: <03/09/25 12:02:31 ptr>
-# $Id$
+# -*- Makefile -*- Time-stamp: <06/06/28 14:47:11 ptr>
 
 SRCROOT := ../..
 COMPILER_NAME := gcc
@@ -7,5 +6,8 @@ COMPILER_NAME := gcc
 include Makefile.inc
 include ${SRCROOT}/Makefiles/top.mak
 
-INCLUDES += -I$(SRCROOT)/include -I$(STLPORT_INCLUDE_DIR)
+INCLUDES += -I$(SRCROOT)/include
 
+ifdef WITHOUT_STLPORT
+INCLUDES += -I${BOOST_INCLUDE_DIR}
+endif

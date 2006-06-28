@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <05/12/29 23:47:48 ptr>
+// -*- C++ -*- Time-stamp: <06/06/28 14:54:20 ptr>
 
 /*
- * Copyright (c) 1995-1999, 2002, 2003, 2005
+ * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -36,6 +36,43 @@
 #include <stem/EvPack.h>
 #endif
 
+#ifndef STLPORT
+#include <bits/cpp_type_traits.h>
+#include <boost/type_traits.hpp>
+
+//bool to type
+template <int _Is>
+struct __bool2type
+{ typedef __true_type _Ret; };
+
+template <>
+struct __bool2type<1> { typedef __true_type _Ret; };
+
+template <>
+struct __bool2type<0> { typedef __false_type _Ret; };
+
+template <class _Tp>
+struct __type_traits {
+  enum { trivial_constructor = ::boost::has_trivial_constructor<_Tp>::value };
+  typedef typename __bool2type<trivial_constructor>::_Ret has_trivial_default_constructor;
+
+  enum { trivial_copy = ::boost::has_trivial_copy<_Tp>::value };
+  typedef typename __bool2type<trivial_copy>::_Ret has_trivial_copy_constructor;
+
+  enum { trivial_assign = ::boost::has_trivial_assign<_Tp>::value };
+  typedef typename __bool2type<trivial_assign>::_Ret has_trivial_assignment_operator;
+
+  enum { trivial_destructor = ::boost::has_trivial_destructor<_Tp>::value };
+  typedef typename __bool2type<trivial_destructor>::_Ret has_trivial_destructor;
+
+  enum { pod = ::boost::is_pod<_Tp>::value };
+  typedef typename __bool2type<pod>::_Ret is_POD_type;
+};
+
+#define _STLP_TEMPLATE_NULL template <>
+
+#endif
+
 namespace stem {
 
 typedef unsigned addr_type;
@@ -58,9 +95,15 @@ extern __PG_DECLSPEC key_type  badkey;
 extern __PG_DECLSPEC code_type badcode;
 #endif
 
+#ifdef STLPORT
 using std::__true_type;
 using std::__false_type;
 using std::__type_traits;
+#else
+using ::__true_type;
+using ::__false_type;
+using ::__type_traits;
+#endif
 
 class __Event_Base
 {
@@ -113,9 +156,9 @@ class __Event_Base
 };
 
 #if defined(_MSC_VER) && !defined(_DEBUG)  // workaround for VC 5.0 / Release
-} // namespace EDS
-typedef EDS::__Event_Base __Event_Base;
-namespace EDS {
+} // namespace stem
+typedef stem::__Event_Base __Event_Base;
+namespace stem {
 #endif
 
 // Forward declarations

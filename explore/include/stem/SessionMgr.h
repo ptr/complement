@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <05/12/30 22:09:31 ptr>
+// -*- C++ -*- Time-stamp: <06/06/28 15:09:44 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -77,8 +77,13 @@ class SessionMgr :
 
     key_type key_generate();
     Container _M_c;
+#ifdef STLPORT
     std::select1st<account_type> _skey;
     std::select2nd<account_type> _sess;
+#else
+    __gnu_cxx::select1st<account_type> _skey;
+    __gnu_cxx::select2nd<account_type> _sess;
+#endif
     std::equal_to<key_type>      _eq_key;
 
     DECLARE_RESPONSE_TABLE( SessionMgr, EventHandler );
