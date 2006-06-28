@@ -1,3 +1,9 @@
+2006-06-28  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xmt.cc: clean pass thread's return code---avoid
+	warnings on machines with sizeof(void *) > sizeof(int),
+	i.e. on ia64/amd64.
+
 2005-12-07  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* config/_freebsd.h: fix _FIT defines for spinlock
