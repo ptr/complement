@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/06/07 09:34:42 ptr>
+// -*- C++ -*- Time-stamp: <06/06/10 16:56:23 ptr>
 
 /*
  *
@@ -25,16 +25,18 @@
 
 using namespace std;
 
-void pg_create_table()
+void mysql_create_table()
 {
   try {
     xxSQL::DataBase_connect dbc;
 
     dbc.dbname( "ut" );
-    dbc.dbuser( "" );
+    // dbc.dbuser( "" );
     dbc.dberr( &std::cerr );
 
     xxSQL::DBxx db( xxSQL::DBxx::MySQL, dbc );
+
+    BOOST_CHECK( db.good() );
 
     string rq( "CREATE TABLE t1 ( f1 INTEGER );" );
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/06/07 09:16:09 ptr>
+// -*- C++ -*- Time-stamp: <06/06/10 14:54:22 ptr>
 
 /*
  *
@@ -22,13 +22,13 @@
 
 using namespace boost::unit_test_framework;
 
-void pg_create_table();
+void mysql_create_table();
 
 test_suite *init_unit_test_suite( int argc, char * * const argv )
 {
   test_suite *ts = BOOST_TEST_SUITE( "libDB test" );
 
-  ts->add( BOOST_TEST_CASE( &pg_create_table ) );
+  ts->add( BOOST_TEST_CASE( &mysql_create_table ) );
 
   return ts;
 }
