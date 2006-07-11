@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/06/28 13:53:59 ptr>
+// -*- C++ -*- Time-stamp: <06/07/11 12:24:56 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -41,9 +41,9 @@ namespace std {
 template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
 basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
-				    sock_base::stype type,
-				    sock_base::protocol prot,
-                    const timespec *timeout )
+                                            sock_base::stype type,
+                                            sock_base::protocol prot,
+                                            const timespec *timeout )
 {
   if ( is_open() ) {
     return 0;
@@ -164,6 +164,135 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
 
   return this;
 }
+
+// --
+template<class charT, class traits, class _Alloc>
+basic_sockbuf<charT, traits, _Alloc> *
+basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
+                                            sock_base::stype type,
+                                            sock_base::protocol prot,
+                                            const timespec *timeout )
+{
+  if ( is_open() ) {
+    return 0;
+  }
+  try {
+    _mode = ios_base::in | ios_base::out;
+    _errno = 0;
+    _type = type;
+#ifdef WIN32
+    WSASetLastError( 0 );
+#endif
+#ifdef __FIT_POLL
+    if ( timeout != 0 ) {
+      _timeout = timeout->tv_sec * 1000 + timeout->tv_nsec / 1000000;
+    } else {
+      _timeout = -1;
+    }
+#endif
+#ifdef __FIT_SELECT
+    if ( timeout != 0 ) {
+      _timeout.tv_sec = timeout->tv_sec;
+      _timeout.tv_usec = timeout->tv_nsec / 1000;
+      _timeout_ref = &_timeout;
+    } else {
+      _timeout_ref = 0;
+    }
+#endif
+    if ( prot == sock_base::inet ) {
+      _fd = socket( PF_INET, type, 0 );
+      if ( _fd == -1 ) {
+        throw std::runtime_error( "can't open socket" );
+      }
+      _address.inet.sin_family = AF_INET;
+      // htons is a define at least in Linux 2.2.5-15, and it's expantion fail
+      // for gcc 2.95.3
+#if defined(linux) && defined(htons) && defined(__bswap_16)
+      _address.inet.sin_port = ((((port) >> 8) & 0xff) | (((port) & 0xff) << 8));
+#else
+      _address.inet.sin_port = htons( port );
+#endif // linux && htons
+      _address.inet.sin_addr = addr;
+  
+      // Generally, stream sockets may successfully connect() only once
+      if ( connect( _fd, &_address.any, sizeof( _address ) ) == -1 ) {
+        throw std::domain_error( "connect fail" );
+      }
+      if ( type == sock_base::sock_stream ) {
+        _xwrite = &_Self_type::write;
+        _xread = &_Self_type::read;
+      } else if ( type == sock_base::sock_dgram ) {
+        _xwrite = &_Self_type::send;
+        _xread = &_Self_type::recv;
+      }
+    } else if ( prot == sock_base::local ) {
+      _fd = socket( PF_UNIX, type, 0 );
+      if ( _fd == -1 ) {
+        throw std::runtime_error( "can't open socket" );
+      }
+    } else { // other protocols not implemented yet
+      throw std::invalid_argument( "protocol not implemented" );
+    }
+    if ( _bbuf == 0 )
+      _M_allocate_block( 0xb00 ); // max 1460 (dec) [0x5b4] --- single segment
+    if ( _bbuf == 0 ) {
+      throw std::length_error( "can't allocate block" );
+    }
+
+    setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
+    setg( this->epptr(), this->epptr(), this->epptr() );
+
+    // _STLP_ASSERT( this->pbase() != 0 );
+    // _STLP_ASSERT( this->pptr() != 0 );
+    // _STLP_ASSERT( this->epptr() != 0 );
+    // _STLP_ASSERT( this->eback() != 0 );
+    // _STLP_ASSERT( this->gptr() != 0 );
+    // _STLP_ASSERT( this->egptr() != 0 );
+    // _STLP_ASSERT( _bbuf != 0 );
+    // _STLP_ASSERT( _ebuf != 0 );
+
+    _errno = 0; // if any
+    // __hostname();
+
+//	in_port_t ppp = 0x5000;
+//	cerr << hex << _address.inet.sin_port << " " << ppp << endl;
+//	cerr << hex << _address.inet.sin_addr.s_addr << endl;
+  }
+  catch ( std::domain_error& ) {
+#ifdef WIN32
+    _errno = WSAGetLastError();
+    ::closesocket( _fd );
+#else
+    _errno = errno;
+    ::close( _fd );
+#endif
+    _fd = -1;
+    return 0;
+  }
+  catch ( std::length_error& ) {
+#ifdef WIN32
+    ::closesocket( _fd );
+#else
+    ::close( _fd );
+#endif
+    _fd = -1;
+    return 0;
+  }
+  catch ( std::runtime_error& ) {
+#ifdef WIN32
+    _errno = WSAGetLastError();
+#else
+    _errno = errno;
+#endif
+    return 0;
+  }
+  catch ( std::invalid_argument& ) {
+    return 0;
+  }
+
+  return this;
+}
+// --
 
 template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/06/28 12:27:35 ptr>
+// -*- C++ -*- Time-stamp: <06/07/11 12:28:37 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -41,6 +41,8 @@ extern "C" int x_res_init(void);
 #include <netinet/in.h>
 #include <arpa/nameser.h>
 #include <resolv.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
 
 #include <iosfwd>
 #include <ios>
@@ -188,6 +190,90 @@ void gethostaddr2( const char *hostname, BackInsertIterator bi )
   }
 }
 
+struct net_iface
+{
+    net_iface()
+      { }
+
+    net_iface( const char *nm, unsigned f, const sockaddr& address ) :
+        name( nm ),
+        flags( f )
+      {
+        addr.any = address;
+      }
+
+    std::string name;
+    union {
+        sockaddr_in inet;
+        sockaddr    any;
+    } addr;
+    // struct in_addr mask;
+    unsigned flags;
+};
+
+template <class C>
+void get_ifaces( C& lst )
+{
+  int sock = socket(AF_INET, SOCK_DGRAM, 0);
+  struct ifconf ifc;
+  char st_buf[100 * sizeof(struct ifreq)];
+  char *buf = 0;
+  int len = sizeof( st_buf );
+  ifc.ifc_len = len;
+  ifc.ifc_buf = st_buf;
+  for ( ; ; ) {
+    if ( ioctl(sock, SIOCGIFCONF, &ifc) < 0 ) {
+      if ( errno != EINVAL ) {
+        if ( ifc.ifc_buf != st_buf ) {
+          free( ifc.ifc_buf );
+        }
+        close( sock );
+        throw std::runtime_error( std::string("SIOCGIFCONF ioctl error getting list of interfaces") );
+      }
+    } else {
+      if ( ifc.ifc_len < sizeof(struct ifreq) ) {
+        if ( ifc.ifc_buf != st_buf ) {
+          free( ifc.ifc_buf );
+        }
+        close( sock );
+        throw std::runtime_error( std::string("SIOCGIFCONF ioctl gave too small return buffer") );
+      }
+    }
+    if ( ifc.ifc_len >= len ) {
+      len = ifc.ifc_len + 10 * sizeof(struct ifreq);
+      if ( ifc.ifc_buf != st_buf ) {
+        free( ifc.ifc_buf );
+      }
+      ifc.ifc_buf = (char *)malloc( len );
+      ifc.ifc_len = len;
+    } else {
+      break;
+    }
+  }
+  struct ifreq* ifr = (struct ifreq *) ifc.ifc_req;
+  struct ifreq* last = (struct ifreq *) ((char *) ifr + ifc.ifc_len);
+  struct ifreq ifrflags;
+  while ( ifr < last ) {
+    memset(&ifrflags, 0, sizeof(ifrflags) );
+    strncpy( ifrflags.ifr_name, ifr->ifr_name, sizeof( ifrflags.ifr_name ) );
+    if ( ioctl(sock, SIOCGIFFLAGS, (char *)&ifrflags) < 0 ) {
+      if ( errno != ENXIO ) {
+        if ( ifc.ifc_buf != st_buf ) {
+          free( ifc.ifc_buf );
+        }
+        close( sock );
+        throw std::runtime_error( std::string("SIOCGIFFLAGS error getting flags for interface") );
+      }
+    }
+    lst.push_back( net_iface( ifr->ifr_name, ifrflags.ifr_flags, ifr->ifr_addr ) );
+    ifr = (struct ifreq *) ((char *) ifr + sizeof(struct ifreq));
+  }
+
+  if ( ifc.ifc_buf != st_buf ) {
+    free( ifc.ifc_buf );
+  }
+  close( sock );
+}
 
 class sock_base
 {
@@ -330,6 +416,21 @@ class basic_sockbuf :
       {
         open( hostname, port, type, prot, timeout );
       }
+    basic_sockbuf( const in_addr& addr, int port,
+                   sock_base::stype type = sock_base::sock_stream,
+                   sock_base::protocol prot = sock_base::inet,
+                   const timespec *timeout = 0 ) :
+        _fd( -1 ),
+#ifndef STLPORT
+        _mode( _S_in | _S_out ),
+#else
+        _mode( 0 ),
+#endif
+        _bbuf(0), _ebuf(0), _allocated( true )
+      // , _doclose( true )
+      {
+        open( addr, type, prot, timeout );
+      }
     virtual ~basic_sockbuf()
       {
         close();
@@ -340,6 +441,11 @@ class basic_sockbuf :
       { return _fd != -1; }
 
     sockbuf_type *open( const char *hostname, int port,
+                        sock_base::stype type = sock_base::sock_stream,
+                        sock_base::protocol prot = sock_base::inet,
+                        const timespec *timeout = 0 );
+
+    sockbuf_type *open( const in_addr& addr, int port,
                         sock_base::stype type = sock_base::sock_stream,
                         sock_base::protocol prot = sock_base::inet,
                         const timespec *timeout = 0 );
@@ -577,6 +683,20 @@ class basic_sockstream :
         }
       }
 
+    basic_sockstream( const in_addr& addr, int port,
+                      sock_base::stype type = sock_base::sock_stream,
+                      sock_base::protocol pro = sock_base::inet,
+                      const timespec *timeout = 0 ) :
+        sock_base(),
+        basic_iostream<charT,traits>( 0 )
+      {
+        basic_ios<charT,traits>::init(&_sb);
+        basic_iostream<charT,traits>::clear();
+        if ( _sb.open( addr, port, type, pro, timeout ) == 0 ) {
+          basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
+        }
+      }
+
     basic_sockstream( sock_base::socket_type s, const sockaddr& addr,
                       sock_base::stype type = sock_base::sock_stream,
                       const timespec *timeout = 0 ) :
@@ -614,6 +734,17 @@ class basic_sockstream :
       {
         basic_iostream<charT,traits>::clear();
         if ( _sb.open( hostname, port, type, pro, timeout ) == 0 ) {
+          basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
+        }
+      }
+
+    void open( const in_addr& addr, int port,
+               sock_base::stype type = sock_base::sock_stream,
+               sock_base::protocol pro = sock_base::inet,
+               const timespec *timeout = 0 )
+      {
+        basic_iostream<charT,traits>::clear();
+        if ( _sb.open( addr, port, type, pro, timeout ) == 0 ) {
           basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
         }
       }
