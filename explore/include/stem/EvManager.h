@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/12/30 00:14:38 ptr>
+// -*- C++ -*- Time-stamp: <06/07/12 23:17:59 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005
@@ -191,8 +191,12 @@ class EvManager
 
     static int _Dispatch( void * );
 
+    bool not_finished();
+
+    bool _dispatch_stop;
+
     xmt::Thread _ev_queue_thr;
-    xmt::Condition _ev_queue_cond;
+    xmt::Spinlock _ev_queue_dispatch_guard;
 
     xmt::Mutex _lock_heap;
     xmt::Mutex _lock_queue;
