@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <05/12/30 00:22:12 ptr>
+// -*- C++ -*- Time-stamp: <06/07/12 23:19:41 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -32,6 +32,7 @@
 #include "stem/EvManager.h"
 #include "crc.h"
 #include "stem/EDSEv.h"
+#include <mt/xmt.h>
 
 const unsigned EDS_MSG_LIMIT = 0x400000; // 4MB
 
@@ -49,35 +50,10 @@ static const unsigned EDS_MAGIC = 0x534445c2U;
 #  error "Can't determine platform byte order!"
 #endif
 
-#ifdef __SGI_STL_OWN_IOSTREAMS
-
-struct _auto_lock
-{
-    _STL_mutex& _M_lock;
-  
-    _auto_lock(_STL_mutex& __lock) : _M_lock(__lock)
-      { _M_lock._M_acquire_lock(); }
-    ~_auto_lock() { _M_lock._M_release_lock(); }
-
-  private:
-    void operator=(const _auto_lock&);
-    _auto_lock(const _auto_lock&);
-};
-
-#  define MT_IO_REENTRANT( s )   _auto_lock __AutoLock( (s).rdbuf()->_M_lock );
-#  define MT_IO_LOCK( s )        (s).rdbuf()->_M_lock._M_acquire_lock();
-#  define MT_IO_UNLOCK( s )      (s).rdbuf()->_M_lock._M_release_lock();
-#  define MT_IO_REENTRANT_W( s ) _auto_lock __AutoLock( (s).rdbuf()->_M_lock_w );
-#  define MT_IO_LOCK_W( s )      (s).rdbuf()->_M_lock_w._M_acquire_lock();
-#  define MT_IO_UNLOCK_W( s )    (s).rdbuf()->_M_lock_w._M_release_lock();
-#else // !__SGI_STL_OWN_IOSTREAMS
-#  define MT_IO_REENTRANT( s )
-#  define MT_IO_LOCK( s )
-#  define MT_IO_UNLOCK( s )
-#  define MT_IO_REENTRANT_W( s )
-#  define MT_IO_LOCK_W( s )
-#  define MT_IO_UNLOCK_W( s )
-#endif
+#define MT_IO_REENTRANT( s )   // MT_REENTRANT( (s).rdbuf()->_M_lock, _0 );
+#define MT_IO_REENTRANT_W( s ) // MT_REENTRANT( (s).rdbuf()->_M_lock_w, _0 );
+#define MT_IO_LOCK_W( s )      // (s).rdbuf()->_M_lock_w.lock();
+#define MT_IO_UNLOCK_W( s )    // (s).rdbuf()->_M_lock_w.unlock();
 
 
 __FIT_DECLSPEC
@@ -165,11 +141,14 @@ __FIT_DECLSPEC NetTransport_base::~NetTransport_base()
 
 __FIT_DECLSPEC void NetTransport_base::close()
 {
+  // cerr << __FILE__ << ":" << __LINE__ << endl;
   if ( net != 0 ) {
     manager()->Remove( this );
     disconnect();
     rar.clear();
     net->close();
+    // cerr << __FILE__ << ":" << __LINE__ << endl;
+    net = 0;
   }
 }
 
@@ -217,14 +196,18 @@ addr_type NetTransport_base::rar_map( addr_type k, const string& name )
 bool NetTransport_base::pop( Event& _rs )
 {
   unsigned buf[8];
+  using namespace std;
 
   // _STLP_ASSERT( net != 0 );
 
+  // cerr << __FILE__ << ":" << __LINE__ << endl;
   MT_IO_REENTRANT( *net )
 
   if ( !net->read( (char *)buf, sizeof(unsigned) ).good() ) {
+    // cerr << __FILE__ << ":" << __LINE__ << endl;
     return false;
   }
+  // cerr << __FILE__ << ":" << __LINE__ << endl;
 
   // if ( from_net( buf[0] ) != EDS_MAGIC ) {
   if ( buf[0] != EDS_MAGIC ) {
@@ -354,40 +337,46 @@ bool NetTransport_base::push( const Event& _rs )
 }
 
 __FIT_DECLSPEC
-void NetTransport::connect( sockstream& s )
+NetTransport::NetTransport( std::sockstream& s ) :
+    NetTransport_base( "stem::NetTransport" )
 {
   const string& _hostname = hostname( s.rdbuf()->inet_addr() );
-  cerr << "Connected: " << _hostname << endl;
+  // cerr << "Connected: " << _hostname << endl;
   s.setoptions( std::sock_base::so_linger, true, 10 );
   s.setoptions( std::sock_base::so_keepalive, true );
 
-  Event ev;
   net = &s;
-  const string _at_hostname( __at + _hostname );
+  _at_hostname = __at + _hostname;
 
   try {
     establish_session( s );
     _net_ns = rar_map( ns_addr, __ns_at + _hostname );
-    while ( pop( ev ) ) {
+  }
+  catch ( std::domain_error& ex ) {
+    cerr << ex.what() << endl;
+  }
+}
+
+__FIT_DECLSPEC
+void NetTransport::connect( sockstream& s )
+{
+  Event ev;
+
+  try {
+    if ( pop( ev ) ) {
       ev.src( rar_map( ev.src(), _at_hostname ) ); // substitute my local id
       manager()->push( ev );
     }
-    if ( !s.good() ) {
-      s.close();
-    }
   }
-  catch ( ios_base::failure& ) {
-    s.close();
-    // Policy for NetTransport is thread per connect, so it's destructor
-    // will be called bit later, and it do this.
-    // disconnect();
+  catch ( ios_base::failure& ex ) {
+    cerr << ex.what() << endl;
   }
   catch ( ... ) {
     s.close();
     // disconnect();
-    throw;
+    // throw;
   }
-  cerr << "Disconnected: " << _hostname << endl;
+  // cerr << "Disconnected" << endl;
 }
 
 // connect initiator (client) function
@@ -395,11 +384,16 @@ void NetTransport::connect( sockstream& s )
 __FIT_DECLSPEC
 NetTransportMgr::~NetTransportMgr()
 {
+  // cerr << __FILE__ << ":" << __LINE__ << endl;
   if ( net ) {
+    // cerr << __FILE__ << ":" << __LINE__ << endl;
+    net->rdbuf()->shutdown( sock_base::stop_in | sock_base::stop_out );
     net->close(); // otherwise _loop may not exited
     // this->close();
+    // cerr << __FILE__ << ":" << __LINE__ << endl;
     join();
     // NetTransport_base::close() called during loop thread termination (see _loop)
+    // cerr << __FILE__ << ":" << __LINE__ << endl;
     delete net;
     net = 0;
   }        
@@ -438,6 +432,7 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
 __FIT_DECLSPEC
 void NetTransportMgr::close()
 {
+  // cerr << __FILE__ << ":" << __LINE__ << endl;
   NetTransport_base::close();
   join(); // I should wait termination of _loop
 }
@@ -453,11 +448,12 @@ int NetTransportMgr::_loop( void *p )
       ev.src( me.rar_map( ev.src(), __at + hostname( me.net->rdbuf()->inet_addr()) ) ); // substitute my local id
       manager()->push( ev );
     }
+    // cerr << __FILE__ << ":" << __LINE__ << endl;
     me.NetTransport_base::close();
   }
   catch ( ... ) {
     me.NetTransport_base::close();
-    throw;
+    // throw;
   }
 
   return 0;  
@@ -479,6 +475,7 @@ void NetTransportMP::connect( sockstream& s )
   bool sock_dgr = (s.rdbuf()->stype() == std::sock_base::sock_stream) ? false : true;
 
   Event ev;
+  // cerr << "Connected: " << _hostname << endl;
 
   try {
     if ( _sid == badkey ) {
@@ -511,6 +508,7 @@ void NetTransportMP::connect( sockstream& s )
     this->close(); // clear connection
     net = 0;
   }
+  // cerr << "Connected: " << _hostname << endl;
 }
 
-} // namespace EDS
+} // namespace stem
