@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <05/12/30 00:18:43 ptr>
+// -*- C++ -*- Time-stamp: <06/06/29 02:29:06 ptr>
 
 /*
- * Copyright (c) 1995-1999, 2002, 2003, 2005
+ * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -27,6 +27,7 @@
 #include "stem/EventHandler.h"
 #include "stem/EvManager.h"
 #include "stem/Names.h"
+#include "mt/xmt.h"
 
 #if defined(__TRACE) || defined(__WARN)
 
@@ -43,9 +44,11 @@ stem::Names *_ns = 0;
 const char *_ns_name = "ns";
 
 int EventHandler::Init::_count = 0;
+xmt::MutexRS _init_lock;
 
 EventHandler::Init::Init()
 {
+  MT_REENTRANT_RS( _init_lock, _x );
   if ( _count++ == 0 ) {
     EventHandler::_mgr = new EvManager();
     stem::_ns = new Names( ns_addr, _ns_name );
@@ -54,8 +57,10 @@ EventHandler::Init::Init()
 
 EventHandler::Init::~Init()
 {
-  if ( --_count == 0 ) {
+  MT_REENTRANT_RS( _init_lock, _x );
+  if ( --_count == 1 ) {
     delete stem::_ns;
+  } else if ( --_count == 0 ) {
     delete EventHandler::_mgr;
   }
 }
