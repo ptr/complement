@@ -1,3 +1,13 @@
+2006-07-13  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xmt.cc: fix thread suspend functional for POSIX threads.
+
+2006-06-29  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xmt.h: use template specialization for recursive-safe/unsafe
+	spinlock as for Mutexes; use common template for __Locker
+	for all Mutex-like locks; add typedefs for Spinlock family.
+
 2006-06-28  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* xmt.cc: clean pass thread's return code---avoid
