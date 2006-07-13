@@ -1,3 +1,20 @@
+2006-07-13  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* EvManager.cc: add guard for dispatch loop stop flag.
+
+	* EvManager.h: idem
+
+	* NetTransport.cc: socket manager already provide connection
+	loop; socket in NetTransport should be shutdown to break down
+	through infinite read.
+
+	* NetTransport.h: prepare NetTransport to current sockmgr.
+
+	* _EventHandler.cc: add guard for Init, where EvManager and Names
+	started.
+
+	* libstem (Repository): library version 4.1.0.
+
 2006-06-28  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* Makefile: remove -ISTLPORT, may be build without one; but
