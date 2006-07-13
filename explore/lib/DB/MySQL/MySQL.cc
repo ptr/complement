@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/05/30 00:34:59 ptr>
+// -*- C++ -*- Time-stamp: <06/06/10 18:07:30 ptr>
 
 /*
  *
@@ -79,14 +79,16 @@ int DataBase::conn_proc( void *p )
 {
   DataBase *me = reinterpret_cast<DataBase *>(p);
   MYSQL* my = mysql_init( 0 );
-  me->_conn = mysql_real_connect( my, me->_dbhost.length() > 0 ? me->_dbhost.c_str() : 0,
-                            me->_dbusr.length() > 0 ? me->_dbusr.c_str() : 0,
-                            me->_dbpass.length() > 0 ? me->_dbpass.c_str() : 0,
-                            me->_dbname.length() > 0 ? me->_dbname.c_str() : 0,
-                            0 /* _dbport 3306? */,
-                            0 /* unix socket */,
-                            0 /* me->_dbopt.length() > 0 */ );
+  me->_conn = mysql_real_connect( my,
+                                  me->_dbhost.length() > 0 ? me->_dbhost.c_str() : 0,
+                                  me->_dbusr.length() > 0 ? me->_dbusr.c_str() : 0,
+                                  me->_dbpass.length() > 0 ? me->_dbpass.c_str() : 0,
+                                  me->_dbname.length() > 0 ? me->_dbname.c_str() : 0,
+                                  0 /* _dbport 3306? */,
+                                  0 /* unix socket */,
+                                  0 /* me->_dbopt.length() > 0 */ );
   if ( me->_conn == 0 ) {
+    cerr << "Fail" << endl;
     me->_flags = badbit | failbit;
     mysql_close( my );
     me->_conn = 0;
@@ -135,7 +137,9 @@ void DataBase::exec( const string& s )
     return;
   }
 
+  cerr << s << " |||| " << (void *)_conn << endl;
   int _result = mysql_real_query( _conn, s.data(), s.length() );
+  cerr << s << " |||| " << (void *)_conn << endl;
   if ( _result != 0 ) {
     _flags = failbit;
     if ( _result == CR_COMMANDS_OUT_OF_SYNC ) {
@@ -150,7 +154,9 @@ void DataBase::exec( const char *s )
     return;
   }
 
+  cerr << s << " |||| " << (void *)_conn << endl;
   int _result = mysql_query( _conn, s );
+  cerr << s << " |||| " << (void *)_conn << endl;
   if ( _result != 0 ) {
     _flags = failbit;
   }
@@ -221,7 +227,9 @@ Cursor::Cursor( const char *nm, DataBase *_db, const char *s ) :
   tmp += " CURSOR FOR ";
   tmp += s;
 
+  cerr << tmp << " |||| " << (void *)db << ", " << (void *)db->_conn << endl;
   db->exec( tmp );
+  cerr << tmp << " |||| " << (void *)db << ", " << (void *)db->_conn << endl;
 }
 
 Cursor::~Cursor()
@@ -235,6 +243,8 @@ void Cursor::fetch_all()
 {
   string tmp = "FETCH ALL IN ";
   tmp += name;
+
+  cerr << tmp << " |||| " << (void *)db << ", " << (void *)db->_conn << endl;
   int _qresult = mysql_real_query( db->_conn, tmp.data(), tmp.length() );
   if ( _qresult != 0 ) {
     db->_flags = DataBase::failbit;
