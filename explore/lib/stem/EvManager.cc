@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/12/30 22:06:08 ptr>
+// -*- C++ -*- Time-stamp: <06/07/12 23:18:49 ptr>
 
 /*
  *
@@ -60,7 +60,8 @@ __FIT_DECLSPEC EvManager::EvManager() :
     _id( _low ),
     _x_low( begextaddr ),
     _x_high( endextaddr ),
-    _x_id( _x_low )
+    _x_id( _x_low ),
+    _dispatch_stop( false )
 {
 // #ifndef __hpux
   _ev_queue_thr.launch( _Dispatch, this );
@@ -69,15 +70,23 @@ __FIT_DECLSPEC EvManager::EvManager() :
 
 __FIT_DECLSPEC EvManager::~EvManager()
 {
-  _ev_queue_cond.set( false );
+  _ev_queue_dispatch_guard.lock();
+  _dispatch_stop = true;
+  _ev_queue_dispatch_guard.unlock();
   _ev_queue_thr.join();
+}
+
+bool EvManager::not_finished()
+{
+  xmt::LockerSpin _lk( _ev_queue_dispatch_guard );
+  return !_dispatch_stop;
 }
 
 int EvManager::_Dispatch( void *p )
 {
   EvManager& me = *reinterpret_cast<EvManager *>(p);
 
-  while ( me._ev_queue_cond.set() ) {
+  while ( me.not_finished() ) {
     MT_LOCK( me._lock_queue );
     // swap( me.in_ev_queue, me.out_ev_queue );
     // _STLP_ASSERT( me.out_ev_queue.empty() );
