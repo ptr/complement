@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/12/30 00:20:35 ptr>
+// -*- C++ -*- Time-stamp: <06/06/29 18:41:17 ptr>
 
 /*
  *
@@ -134,16 +134,7 @@ class NetTransport_base :
     bool pop( Event& );
     void disconnect();
 
-// #ifdef __SGI_STL_OWN_IOSTREAMS
-// #ifndef __GNUC__
     std::sockstream *net;
-// #else
-//    STLPORT::basic_sockstream<char,STLPORT::char_traits<char>,
-//      STLPORT::allocator<char> > *net;
-// #endif
-// #else
-//    __STD::sockstream *net;
-// #endif
     EvSessionManager::key_type _sid;
     unsigned _count;
     // indeed rar can be inside connect(), but SunPro's CC 5.0
@@ -157,12 +148,14 @@ class NetTransport :
     public NetTransport_base
 {
   public:
-    NetTransport() :
-        NetTransport_base( "stem::NetTransport" )
-      { }
+    __FIT_DECLSPEC
+    NetTransport( std::sockstream& );
 
     __FIT_DECLSPEC
     void connect( std::sockstream& );
+
+  private:
+    std::string _at_hostname;
 };
 
 class NetTransportMgr :
@@ -188,21 +181,21 @@ class NetTransportMgr :
 
   protected:
     static int _loop( void * );
-    __impl::Thread _thr;
+    xmt::Thread _thr;
 };
 
 class NetTransportMP :
     public NetTransport_base
 {
   public:
-    NetTransportMP() :
+    NetTransportMP( std::sockstream& s ) :
         NetTransport_base( "stem::NetTransportMP" )
-      { }
+      { this->connect( s ); }
 
     __FIT_DECLSPEC
     void connect( std::sockstream& );
 };
 
-} // namespace EDS
+} // namespace stem
 
 #endif // __NetTransport_h
