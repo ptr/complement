@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/07/11 12:56:31 ptr>
+// -*- C++ -*- Time-stamp: <06/07/17 10:39:52 ptr>
 
 /*
  *
@@ -456,6 +456,7 @@ void test_shared_socket()
 #include "client-wc.h"
 
 void test_client_close_socket();
+void test_more_bytes_in_socket();
 
 test_suite *init_unit_test_suite( int argc, char **argv )
 {
@@ -490,6 +491,7 @@ test_suite *init_unit_test_suite( int argc, char **argv )
   ts->add( BOOST_TEST_CASE( &test_shared_socket ) );
 
   ts->add( BOOST_TEST_CASE( &test_client_close_socket ) );
+  ts->add( BOOST_TEST_CASE( &test_more_bytes_in_socket ), 0, 5 );
 
   return ts;
 }
