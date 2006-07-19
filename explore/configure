@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Time-stamp: <06/01/18 14:42:01 ptr>
+# Time-stamp: <06/06/28 12:05:08 ptr>
 
 configmak=Makefiles/config.mak
 
@@ -28,6 +28,9 @@ Available options:
   --target=<target>     target platform (cross-compiling)
   --help                print this help message and exit
   --with-stlport=<dir>  use STLport in catalog <dir>
+  --without-stlport     compile without STLport
+  --with-boost=<dir>    use boost headers in catalog <dir>
+  --with-system-boost   use boost from system, don't build boost
   --with-msvc=<dir>     use MS VC from this catalog
   --with-mssdk=<dir>    use MS SDK from this catalog
   --with-mwcw=<dir>     Metrowerks CodeWarrior compiler catalog (useful for mw* compilers)
@@ -78,6 +81,15 @@ do
       ;;
     --with-stlport=*)
       write_option "$option" STLPORT_DIR
+      ;;
+    --without-stlport)
+      write_option "1" WITHOUT_STLPORT
+      ;;
+    --with-boost=*)
+      write_option "$option" BOOST_DIR
+      ;;
+    --with-system-boost)
+      write_option "1" USE_SYSTEM_BOOST
       ;;
     --with-msvc=*)
       write_option "$option" MSVC_DIR
