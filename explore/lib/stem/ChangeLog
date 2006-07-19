@@ -1,3 +1,9 @@
+2006-07-19  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Event.h: libstdc++ v3, timestamp 20050519 (gcc 3.4.4)
+	has __type_traits, while libstdc++ v3, timestamp 20050921
+	(gcc 4.0.2) not; I use boost's staff instead.
+
 2006-07-13  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* EvManager.cc: add guard for dispatch loop stop flag.
