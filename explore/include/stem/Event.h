@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/06/28 14:54:20 ptr>
+// -*- C++ -*- Time-stamp: <06/07/19 12:52:51 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -38,6 +38,10 @@
 
 #ifndef STLPORT
 #include <bits/cpp_type_traits.h>
+
+// libstdc++ v3, timestamp 20050519 (3.4.4) has __type_traits,
+// while libstdc++ v3, 20050921 (4.0.2) not; use boost's staff instead
+# if !defined(__GLIBCXX__) || (__GLIBCXX__ > 20050519) 
 #include <boost/type_traits.hpp>
 
 //bool to type
@@ -68,6 +72,9 @@ struct __type_traits {
   enum { pod = ::boost::is_pod<_Tp>::value };
   typedef typename __bool2type<pod>::_Ret is_POD_type;
 };
+# else
+#  include <bits/type_traits.h>
+# endif // __GLIBCXX__
 
 #define _STLP_TEMPLATE_NULL template <>
 
