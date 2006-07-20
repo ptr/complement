@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/12/30 22:07:14 ptr>
+// -*- C++ -*- Time-stamp: <06/07/20 11:17:10 ptr>
 
 /*
  *
@@ -26,20 +26,17 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
+#include <stdint.h>
 
 namespace stem {
 
-// using __STD::string;
-// using __STD::istream;
-// using __STD::ostream;
-// using __STD::copy;
 using namespace std;
 
 __FIT_DECLSPEC
 void __pack_base::__net_unpack( istream& s, string& str )
 {
-  string::size_type sz;
-  s.read( (char *)&sz, 4 );
+  uint32_t sz;
+  s.read( (char *)&sz, sizeof(uint32_t) );
   sz = from_net( sz );
   if ( sz > 0 ) {
     str.erase();
@@ -61,9 +58,9 @@ void __pack_base::__net_unpack( istream& s, string& str )
 __FIT_DECLSPEC
 void __pack_base::__net_pack( ostream& s, const string& str )
 {
-  string::size_type sz = str.size();
+  uint32_t sz = static_cast<uint32_t>( str.size() );
   sz = to_net( sz );
-  s.write( (const char *)&sz, 4 );
+  s.write( (const char *)&sz, sizeof(uint32_t) );
 #if !defined(__HP_aCC) || (__HP_aCC > 1) // linker problem, not compiler
   copy( str.begin(), str.end(), std::ostream_iterator<char,char,std::char_traits<char> >(s) );
 #else // Mmm, may be with __STL_DEBUG should be a bit different...
@@ -79,7 +76,7 @@ __FIT_DECLSPEC
 void __pack_base::__unpack( istream& s, string& str )
 {
   string::size_type sz;
-  s.read( (char *)&sz, 4 );
+  s.read( (char *)&sz, sizeof(sz) );
   if ( sz > 0 ) {
     str.erase();
     str.reserve( sz );
@@ -101,7 +98,7 @@ __FIT_DECLSPEC
 void __pack_base::__pack( ostream& s, const string& str )
 {
   string::size_type sz = str.size();
-  s.write( (const char *)&sz, 4 );
+  s.write( (const char *)&sz, sizeof(sz) );
 #if !defined(__HP_aCC) || (__HP_aCC > 1) // linker problem, not compiler
   std::copy( str.begin(), str.end(), std::ostream_iterator<char,char,std::char_traits<char> >(s) );
 #else // Mmm, may be with __STL_DEBUG should be a bit different...
