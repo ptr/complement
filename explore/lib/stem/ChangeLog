@@ -7,6 +7,8 @@
 
 	* Cron.h, EvSession.h, Event.h: ditto
 
+	* EvPack.cc: ditto
+
 2006-07-19  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* Event.h: libstdc++ v3, timestamp 20050519 (gcc 3.4.4)
