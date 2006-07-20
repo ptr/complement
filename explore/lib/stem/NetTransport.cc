@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/07/20 10:14:08 ptr>
+// -*- C++ -*- Time-stamp: <06/07/20 12:58:55 ptr>
 
 /*
  *
@@ -294,7 +294,7 @@ bool NetTransport_base::push( const Event& _rs )
 
   buf[4] = to_net( ++_count );
   buf[5] = 0; // time?
-  buf[6] = to_net( _rs.value().size() );
+  buf[6] = to_net( static_cast<uint32_t>(_rs.value().size()) );
   buf[7] = to_net( adler32( (unsigned char *)buf, sizeof(uint32_t) * 7 ) ); // crc
 
   try {
