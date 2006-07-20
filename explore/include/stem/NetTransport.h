@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/06/29 18:41:17 ptr>
+// -*- C++ -*- Time-stamp: <06/07/20 12:57:20 ptr>
 
 /*
  *
@@ -136,7 +136,7 @@ class NetTransport_base :
 
     std::sockstream *net;
     EvSessionManager::key_type _sid;
-    unsigned _count;
+    uint32_t _count;
     // indeed rar can be inside connect(), but SunPro's CC 5.0
     // to be very huffy about it.
     heap_type rar; // reverce address resolution table
