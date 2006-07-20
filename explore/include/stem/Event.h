@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/07/19 12:52:51 ptr>
+// -*- C++ -*- Time-stamp: <06/07/20 10:26:33 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -31,6 +31,7 @@
 #include <ostream>
 #include <utility>
 #include <sstream>
+#include <stdint.h>
 
 #ifndef __EvPack_h
 #include <stem/EvPack.h>
@@ -82,9 +83,9 @@ struct __type_traits {
 
 namespace stem {
 
-typedef unsigned addr_type;
-typedef unsigned code_type;
-typedef unsigned key_type;
+typedef uint32_t addr_type;
+typedef uint32_t code_type;
+typedef uint32_t key_type;
 
 #ifndef WIN32
 extern const addr_type badaddr;

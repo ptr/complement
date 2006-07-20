@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/12/30 00:12:22 ptr>
+// -*- C++ -*- Time-stamp: <06/07/20 10:32:22 ptr>
 
 /*
  *
@@ -307,7 +307,7 @@ class SessionManager
     static const key_type _low;
     static const key_type _high;
     static key_type _id;
-    mutable __impl::Mutex _lock;
+    mutable xmt::Mutex _lock;
 };
 
 #ifndef _MSC_VER

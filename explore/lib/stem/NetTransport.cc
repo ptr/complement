@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/07/12 23:19:41 ptr>
+// -*- C++ -*- Time-stamp: <06/07/20 10:14:08 ptr>
 
 /*
  *
@@ -34,7 +34,7 @@
 #include "stem/EDSEv.h"
 #include <mt/xmt.h>
 
-const unsigned EDS_MSG_LIMIT = 0x400000; // 4MB
+const uint32_t EDS_MSG_LIMIT = 0x400000; // 4MB
 
 namespace stem {
 
@@ -43,9 +43,9 @@ using namespace std;
 #endif
 
 #ifdef _BIG_ENDIAN
-static const unsigned EDS_MAGIC = 0xc2454453U;
+static const uint32_t EDS_MAGIC = 0xc2454453U;
 #elif defined(_LITTLE_ENDIAN)
-static const unsigned EDS_MAGIC = 0x534445c2U;
+static const uint32_t EDS_MAGIC = 0x534445c2U;
 #else
 #  error "Can't determine platform byte order!"
 #endif
@@ -195,7 +195,7 @@ addr_type NetTransport_base::rar_map( addr_type k, const string& name )
 
 bool NetTransport_base::pop( Event& _rs )
 {
-  unsigned buf[8];
+  uint32_t buf[8];
   using namespace std;
 
   // _STLP_ASSERT( net != 0 );
@@ -203,7 +203,7 @@ bool NetTransport_base::pop( Event& _rs )
   // cerr << __FILE__ << ":" << __LINE__ << endl;
   MT_IO_REENTRANT( *net )
 
-  if ( !net->read( (char *)buf, sizeof(unsigned) ).good() ) {
+  if ( !net->read( (char *)buf, sizeof(uint32_t) ).good() ) {
     // cerr << __FILE__ << ":" << __LINE__ << endl;
     return false;
   }
@@ -216,15 +216,15 @@ bool NetTransport_base::pop( Event& _rs )
     return false;
   }
 
-  if ( !net->read( (char *)&buf[1], sizeof(unsigned) * 7 ).good() ) {
+  if ( !net->read( (char *)&buf[1], sizeof(uint32_t) * 7 ).good() ) {
     return false;
   }
   _rs.code( from_net( buf[1] ) );
   _rs.dest( from_net( buf[2] ) );
   _rs.src( from_net( buf[3] ) );
-  unsigned _x_count = from_net( buf[4] );
-  unsigned _x_time = from_net( buf[5] ); // time?
-  unsigned sz = from_net( buf[6] );
+  uint32_t _x_count = from_net( buf[4] );
+  uint32_t _x_time = from_net( buf[5] ); // time?
+  uint32_t sz = from_net( buf[6] );
 
   if ( sz >= EDS_MSG_LIMIT ) {
     cerr << "EDS Message size too big: " << sz << endl;
@@ -232,7 +232,7 @@ bool NetTransport_base::pop( Event& _rs )
     return false;
   }
 
-  adler32_type adler = adler32( (unsigned char *)buf, sizeof(unsigned) * 7 );
+  adler32_type adler = adler32( (unsigned char *)buf, sizeof(uint32_t) * 7 );
   if ( adler != from_net( buf[7] ) ) {
     cerr << "EDS Adler-32 fail" << endl;
     NetTransport_base::close();
@@ -259,7 +259,7 @@ bool NetTransport_base::pop( Event& _rs )
     smgr.lock();
     if ( smgr.unsafe_is_avail( _sid ) ) {
       SessionInfo& sess = smgr[_sid];
-      sess.inc_from( 8 * sizeof(unsigned) + str.size() );
+      sess.inc_from( 8 * sizeof(uint32_t) + str.size() );
       if ( sess._un_from != _x_count ) {
         cerr << "EDS Incoming event(s) lost, or missrange event: " << sess._un_from
              << ", " << _x_count << " (Session: " << _sid << ") --- ";
@@ -281,7 +281,7 @@ bool NetTransport_base::push( const Event& _rs )
   if ( _sid == badkey || !net->good() ) {
     return false;
   }
-  unsigned buf[8];
+  uint32_t buf[8];
 
   // buf[0] = to_net( EDS_MAGIC );
   buf[0] = EDS_MAGIC;
@@ -295,10 +295,10 @@ bool NetTransport_base::push( const Event& _rs )
   buf[4] = to_net( ++_count );
   buf[5] = 0; // time?
   buf[6] = to_net( _rs.value().size() );
-  buf[7] = to_net( adler32( (unsigned char *)buf, sizeof(unsigned) * 7 ) ); // crc
+  buf[7] = to_net( adler32( (unsigned char *)buf, sizeof(uint32_t) * 7 ) ); // crc
 
   try {
-    net->write( (const char *)buf, sizeof(unsigned) * 8 );
+    net->write( (const char *)buf, sizeof(uint32_t) * 8 );
         
     copy( _rs.value().begin(), _rs.value().end(),
           ostream_iterator<char,char,char_traits<char> >(*net) );
@@ -308,7 +308,7 @@ bool NetTransport_base::push( const Event& _rs )
       smgr.lock();
       if ( smgr.unsafe_is_avail( _sid ) ) {
         SessionInfo& sess = smgr[_sid];
-        sess.inc_to( 8 * sizeof(unsigned) + _rs.value().size() );
+        sess.inc_to( 8 * sizeof(uint32_t) + _rs.value().size() );
         if ( sess._un_to != _count ) {
           cerr << "Outgoing event(s) lost, or missrange event: " << sess._un_to
                << ", " << _count << " (Session " << _sid << ")" << endl;

@@ -1,9 +1,9 @@
-// -*- C++ -*- Time-stamp: <03/11/06 07:59:03 ptr>
+// -*- C++ -*- Time-stamp: <06/07/20 09:53:57 ptr>
 
 /*
  *
- * Copyright (c) 1998-1999, 2002, 2003
- * Petr Ovchenkov
+ * Copyright (c) 1998-1999, 2002, 2003, 2006
+ * Petr Ovtchenkov
  *
  * Copyright (c) 1999
  * ParallelGraphics Ltd.
@@ -36,6 +36,7 @@
 #endif
 
 #include <cstdlib>
+#include <stdint.h>
 
 namespace std {
 
@@ -46,7 +47,7 @@ enum CRC_const
   ADLER32_INIT = 1L
 };
 
-typedef unsigned long crc24_type;
+typedef uint32_t crc24_type;
 
 /*
   Update a running crc with the bytes buf[0..len-1] and return
@@ -68,7 +69,7 @@ crc24_type crc24_update( crc24_type crc, unsigned char *octets, size_t len );
 inline crc24_type crc24( unsigned char *octets, size_t len )
 { return crc24_update( CRC24_INIT, octets, len ); }
 
-typedef unsigned long crc32_type;
+typedef uint32_t crc32_type;
 
 /*
   Update a running crc with the bytes buf[0..len-1] and return
@@ -91,7 +92,7 @@ inline crc32_type crc( unsigned char *buf, int len )
 { return crc32_update( 0L, buf, len ); }
 
 
-typedef unsigned long adler32_type;
+typedef uint32_t adler32_type;
 
 /*
   Update a running Adler-32 checksum with the bytes buf[0..len-1]

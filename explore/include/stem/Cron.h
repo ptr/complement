@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <05/12/30 22:13:48 ptr>
+// -*- C++ -*- Time-stamp: <06/07/20 10:30:46 ptr>
 
 /*
  * Copyright (c) 1998, 2002, 2003, 2005
@@ -76,8 +76,8 @@ struct CronEntry :
     timespec start;
     // time_t end;
     timespec period;
-    unsigned n;
-    unsigned arg;
+    uint32_t n;
+    uint32_t arg;
 
     virtual __FIT_DECLSPEC void pack( std::ostream& s ) const;
     virtual __FIT_DECLSPEC void net_pack( std::ostream& s ) const;
@@ -187,7 +187,7 @@ class Cron :
       std::greater<value_type> > container_type;
 
     container_type _M_c;
-    __impl::Mutex _M_l;
+    xmt::Mutex _M_l;
 
   private:
     DECLARE_RESPONSE_TABLE( Cron, EventHandler );
