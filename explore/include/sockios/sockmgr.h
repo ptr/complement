@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/06/28 11:33:44 ptr>
+// -*- C++ -*- Time-stamp: <06/08/04 11:56:57 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -197,7 +197,7 @@ class sockmgr_stream_MP :
 
   protected:
     void _open( sock_base::stype t = sock_base::sock_stream );
-    static int loop( void * );
+    static xmt::Thread::ret_code loop( void * );
 
     struct _Connect {
         sockstream *s;
@@ -308,7 +308,7 @@ class sockmgr_stream_MP_SELECT :
 
   protected:
     void _open( sock_base::stype t = sock_base::sock_stream );
-    static int loop( void * );
+    static xmt::Thread::ret_code loop( void * );
 
     struct _Connect {
         sockstream *s;

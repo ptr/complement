@@ -1,3 +1,10 @@
+2006-08-04  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xmt.h, xmt.cc: join should return either pointer or
+	integer, but fit both in size; this is critical on platforms
+	where sizeof(int) != sizeof(void *), for example 64-bits Linux;
+	change in declaration of thread entry function.
+
 2006-07-13  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* xmt.cc: fix thread suspend functional for POSIX threads.

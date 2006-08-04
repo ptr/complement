@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/07/20 10:30:46 ptr>
+// -*- C++ -*- Time-stamp: <06/08/04 00:02:55 ptr>
 
 /*
  * Copyright (c) 1998, 2002, 2003, 2005
@@ -176,7 +176,7 @@ class Cron :
     __FIT_DECLSPEC void EmptyStop();
 
   private:
-    static int _loop( void * );
+    static xmt::Thread::ret_code _loop( void * );
 
     xmt::Thread _thr;
     xmt::Condition cond;

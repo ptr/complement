@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/06/28 13:52:30 ptr>
+// -*- C++ -*- Time-stamp: <06/08/04 11:58:26 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -20,6 +20,7 @@
  */
 
 #include <algorithm>
+#include <functional>
 
 #ifdef __unix
 extern "C" int nanosleep(const struct timespec *, struct timespec *);
@@ -90,7 +91,7 @@ template <class Connect>
 __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>::_shift_fd()
 {
   _Connect *msg = 0;
-  int j = 1;
+  unsigned j = 1;
   while ( j < _fdcount ) {
     if ( _pfd[j].revents != 0 ) {
       // We should distinguish closed socket from income message
@@ -211,7 +212,7 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
           cl_new->_proc = new Connect( *cl_new->s );
         }
 
-        int j = _fdcount++;
+        unsigned j = _fdcount++;
 
         _pfd[j].fd = _sd;
         _pfd[j].events = POLLIN;
@@ -292,10 +293,12 @@ void sockmgr_stream_MP<Connect>::_close_by_signal( int )
 }
 
 template <class Connect>
-int sockmgr_stream_MP<Connect>::loop( void *p )
+xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
 {
   _Self_type *me = static_cast<_Self_type *>(p);
   me->loop_id.pword( _idx ) = me; // push pointer to self for signal processing
+  xmt::Thread::ret_code rtc;
+  rtc.iword = 0;
 
   try {
     _Connect *s;
@@ -335,7 +338,9 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
     }
     me->close();
     me->_c_lock.unlock();
-    throw;
+    rtc.iword = -1;
+    return rtc;
+    // throw;
   }
 
   me->_c_lock.lock();
@@ -349,7 +354,7 @@ int sockmgr_stream_MP<Connect>::loop( void *p )
   me->close();
   me->_c_lock.unlock();
 
-  return 0;
+  return rtc;
 }
 
 #endif // !__FIT_NO_POLL
@@ -404,7 +409,7 @@ template <class Connect>
 __FIT_TYPENAME sockmgr_stream_MP_SELECT<Connect>::_Connect *sockmgr_stream_MP_SELECT<Connect>::_shift_fd()
 {
   _Connect *msg = 0;
-  for ( int j = 0; j <= _fdmax; ++j ) {
+  for ( unsigned j = 0; j <= _fdmax; ++j ) {
     if ( FD_ISSET( j, &_pfde ) || FD_ISSET( j, &_pfdr ) ) {
       // We should distinguish closed socket from income message
       typename container_type::iterator i = 
@@ -618,10 +623,13 @@ void sockmgr_stream_MP_SELECT<Connect>::_close_by_signal( int )
 }
 
 template <class Connect>
-int sockmgr_stream_MP_SELECT<Connect>::loop( void *p )
+xmt::Thread::ret_code sockmgr_stream_MP_SELECT<Connect>::loop( void *p )
 {
   _Self_type *me = static_cast<_Self_type *>(p);
   me->loop_id.pword( _idx ) = me; // push pointer to self for signal processing
+
+  xmt::Thread::ret_code rtc;
+  rtc.iword = 0;
 
   try {
     _Connect *s;
@@ -650,7 +658,9 @@ int sockmgr_stream_MP_SELECT<Connect>::loop( void *p )
     }
     me->close();
     me->_c_lock.unlock();
-    throw;
+    rtc.iword = -1;
+    return rtc;
+    // throw;
   }
 
   me->_c_lock.lock();
@@ -664,7 +674,7 @@ int sockmgr_stream_MP_SELECT<Connect>::loop( void *p )
   me->close();
   me->_c_lock.unlock();
 
-  return 0;
+  return rtc;
 }
 
 #endif // !__FIT_NO_SELECT

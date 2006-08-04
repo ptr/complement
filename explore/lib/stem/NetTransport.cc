@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/07/20 12:58:55 ptr>
+// -*- C++ -*- Time-stamp: <06/08/03 23:56:40 ptr>
 
 /*
  *
@@ -437,11 +437,13 @@ void NetTransportMgr::close()
   join(); // I should wait termination of _loop
 }
 
-int NetTransportMgr::_loop( void *p )
+xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
 {
   NetTransportMgr& me = *reinterpret_cast<NetTransportMgr *>(p);
   heap_type::iterator r;
   Event ev;
+  xmt::Thread::ret_code rt;
+  rt.iword = 0;
 
   try {
     while ( me.pop( ev ) ) {
@@ -454,9 +456,10 @@ int NetTransportMgr::_loop( void *p )
   catch ( ... ) {
     me.NetTransport_base::close();
     // throw;
+    rt.iword = -1;
   }
 
-  return 0;  
+  return rt;
 }
 
 __FIT_DECLSPEC addr_type NetTransportMgr::make_map( addr_type k, const char *name )
