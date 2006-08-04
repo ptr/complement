@@ -1,3 +1,10 @@
+2006-08-04  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Cron.h, EvManager.h, NetTransport.h: changes in 
+	thread entry function.
+	
+	* Cron.cc, EvManager.cc, NetTransport.cc: ditto.
+
 2006-07-20  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* crc.h: use platform-independent uint32_t for CRC types.

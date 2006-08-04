@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/06/28 15:17:33 ptr>
+// -*- C++ -*- Time-stamp: <06/08/04 00:01:51 ptr>
 
 /*
  * Copyright (c) 1998, 2002, 2003, 2005
@@ -184,7 +184,7 @@ void __FIT_DECLSPEC Cron::EmptyStop()
   // do nothing
 }
 
-int Cron::_loop( void *p )
+xmt::Thread::ret_code Cron::_loop( void *p )
 {
   // After creation cron loop (one per every Cron object),
   // this loop should exit in following cases:
@@ -193,6 +193,9 @@ int Cron::_loop( void *p )
   // If Cron's container empty, this thread suspend, and can be alarmed
   // after Add (Cron entry) event.
   Cron& me = *reinterpret_cast<Cron *>(p);
+
+  xmt::Thread::ret_code rt;
+  rt.iword = 0;
 
   me.PushState( CRON_ST_STARTED );
 
@@ -262,7 +265,7 @@ int Cron::_loop( void *p )
     }
   }
 
-  return 0;
+  return rt;
 }
 
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/07/12 23:17:59 ptr>
+// -*- C++ -*- Time-stamp: <06/08/03 23:59:33 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005
@@ -189,7 +189,7 @@ class EvManager
     const addr_type _x_high;
     addr_type _x_id;
 
-    static int _Dispatch( void * );
+    static xmt::Thread::ret_code _Dispatch( void * );
 
     bool not_finished();
 

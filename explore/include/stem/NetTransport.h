@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/07/20 12:57:20 ptr>
+// -*- C++ -*- Time-stamp: <06/08/03 23:56:03 ptr>
 
 /*
  *
@@ -175,12 +175,12 @@ class NetTransportMgr :
     virtual __FIT_DECLSPEC void close();
 
     int join()
-      { return _thr.join(); }
+      { return _thr.join().iword; }
 
     __FIT_DECLSPEC addr_type make_map( addr_type k, const char *name );
 
   protected:
-    static int _loop( void * );
+    static xmt::Thread::ret_code _loop( void * );
     xmt::Thread _thr;
 };
 
