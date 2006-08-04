@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/07/08 00:26:36 ptr>
+// -*- C++ -*- Time-stamp: <06/08/04 12:03:39 ptr>
 
 /*
  *
@@ -107,8 +107,11 @@ Condition cnd1;
 // Condition cnd2;
 std::sockstream *psock = 0;
 
-int thread_entry_call( void * )
+Thread::ret_code thread_entry_call( void * )
 {
+  Thread::ret_code rt;
+  rt.iword = 0;
+
   cnd1.set( true );
 
   pr_lock.lock();
@@ -123,7 +126,7 @@ int thread_entry_call( void * )
   cnd2.set( true );
   psock->read( &c, 1 );
 
-  return 0;
+  return rt;
 }
 
 void test_client_close_socket()

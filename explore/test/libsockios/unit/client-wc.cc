@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <05/12/01 20:29:48 ptr>
+// -*- C++ -*- Time-stamp: <06/08/04 12:01:50 ptr>
 
 /*
  *
- * Copyright (c) 2004
+ * Copyright (c) 2004, 2006
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 2.1
@@ -30,7 +30,7 @@
 #include "message.h"
 
 using namespace std;
-using namespace __impl;
+using namespace xmt;
 
 /*
   Check correct processing of case when server close connection.
@@ -80,7 +80,7 @@ typedef sockmgr_stream_MP_SELECT<Srv> srv_type;
 static srv_type *srv_p;
 Condition cnd;
 
-int server_proc( void * )
+Thread::ret_code server_proc( void * )
 {
   cnd.set( false );
   srv_type srv( port ); // start server
@@ -91,11 +91,17 @@ int server_proc( void * )
 
   srv.wait();
 
-  return 0;
+  Thread::ret_code rt;
+  rt.iword = 0;
+
+  return rt;
 }
 
-int client_proc( void * )
+Thread::ret_code client_proc( void * )
 {
+  Thread::ret_code rt;
+  rt.iword = 0;
+
   cnd.try_wait();
 
   pr_lock.lock();
@@ -136,6 +142,8 @@ int client_proc( void * )
   pr_lock.lock();
   BOOST_MESSAGE( "Client end" );
   pr_lock.unlock();
+
+  return rt;
 }
 
 void srv_close_connection_test()
