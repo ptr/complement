@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/07/11 12:24:56 ptr>
+// -*- C++ -*- Time-stamp: <06/08/18 12:50:12 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -485,20 +485,28 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
   FD_ZERO( &pfd );
   FD_SET( fd(), &pfd );
 
-  if ( select( fd() + 1, &pfd, 0, 0, _timeout_ref ) <= 0 ) {
+  while ( select( fd() + 1, &pfd, 0, 0, _timeout_ref ) <= 0 ) {
+    if ( errno == EINTR ) {
+      errno = 0;
+      continue;
+    }
     return traits::eof();
   }
 #endif // __FIT_SELECT
 #ifdef __FIT_POLL
   pollfd pfd;
   pfd.fd = fd();
-  pfd.events = POLLIN;
+  pfd.events = POLLIN | POLLHUP | POLLRDNORM;
   pfd.revents = 0;
 
   if ( !is_open() /* || (_state != ios_base::goodbit) */ ) {
     return traits::eof();
   }
-  if ( poll( &pfd, 1, _timeout ) <= 0 ) { // wait infinite
+  while ( poll( &pfd, 1, _timeout ) <= 0 ) { // wait infinite
+    if ( errno == EINTR ) {
+      errno = 0;
+      continue;
+    }
     return traits::eof();
   }
   if ( (pfd.revents & POLLERR) != 0 ) {
