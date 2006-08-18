@@ -21,14 +21,6 @@
 #ifndef __PgSQL_h
 #define __PgSQL_h
 
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#pragma ident "@(#)$Id$"
-#  endif
-#endif
-
 extern "C" {
   struct pg_conn;
 } // extern "C"
@@ -76,11 +68,11 @@ class DataBase :
     virtual std::string IS_NOT_NULL() const;
 
   private:
-    static int conn_proc( void * );
+    static xmt::Thread::ret_code conn_proc( void * );
 
     DBconn *_conn;
-    __impl::Thread thr;
-    __impl::Condition con_cond;
+    xmt::Thread thr;
+    xmt::Condition con_cond;
 
     friend class Cursor;
 };
