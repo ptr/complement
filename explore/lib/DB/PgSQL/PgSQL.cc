@@ -18,14 +18,6 @@
  * in supporting documentation.
  */
 
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#pragma ident "@(#)$Id$"
-#  endif
-#endif
-
 #include <config/feature.h>
 #include "DB/PgSQL.h"
 
@@ -52,7 +44,7 @@ using namespace std;
 
 DataBase::DataBase( const xxSQL::DataBase_connect& c ) :
     xxSQL::DataBase( c ),
-    thr( __impl::Thread::detached )
+    thr( xmt::Thread::detached )
 {
   /*
     For PostgreSQL 6.5.1 (at least) we need quotes around db name,
@@ -66,9 +58,9 @@ DataBase::DataBase( const xxSQL::DataBase_connect& c ) :
   */
 
   con_cond.set( false );
-  thr.launch( (__impl::Thread::entrance_type)conn_proc, (void *)this );
+  thr.launch( conn_proc, this );
   timespec tm;
-  __impl::Thread::gettime( &tm );
+  xmt::Thread::gettime( &tm );
 
   tm.tv_sec += 10; // wait 10 secs
 
@@ -92,9 +84,11 @@ DataBase::~DataBase()
   //}
 }
 
-int DataBase::conn_proc( void *p )
+xmt::Thread::ret_code DataBase::conn_proc( void *p )
 {
   DataBase *me = reinterpret_cast<DataBase *>(p);
+  xmt::Thread::ret_code ret;
+  ret.iword = 0;
   me->_conn = PQsetdbLogin( me->_dbhost.length() > 0 ? me->_dbhost.c_str() : 0,
                             0 /* _dbport */,
                             me->_dbopt.length() > 0 ? me->_dbopt.c_str() : 0,
@@ -113,7 +107,7 @@ int DataBase::conn_proc( void *p )
   }
   me->con_cond.set( true );
 
-  return 0;
+  return ret;
 }
 
 void DataBase::reconnect()
@@ -125,7 +119,7 @@ void DataBase::reconnect()
 
   if ( thr.good() ) {
     timespec tm;
-    __impl::Thread::gettime( &tm );
+    xmt::Thread::gettime( &tm );
 
     tm.tv_sec += 2; // thread already running, so wait only 2 secs
 
@@ -136,7 +130,7 @@ void DataBase::reconnect()
   } else {
     thr.launch( (__impl::Thread::entrance_type)conn_proc, (void *)this );
     timespec tm;
-    __impl::Thread::gettime( &tm );
+    xmt::Thread::gettime( &tm );
 
     tm.tv_sec += 5; // wait 5 secs
 
