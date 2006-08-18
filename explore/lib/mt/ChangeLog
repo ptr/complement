@@ -1,3 +1,15 @@
+2006-08-18  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xmt.h, xmt.cc: use locker in the fork(), instead of body of
+	atfork handlers, due to most implementations inherit mutex
+	state through fork and this method more safe;
+	Hmm, a few hours later I removed lock from this functions at all
+	[looks like it cause to sporadic deadlock here, on fork call]
+
+	* xmt.h, xmt.cc: allow SCOPE (process local or interprocess)
+	for Condition, like for Mutex. But use it in the shared memory
+	to have expected effect!
+
 2006-08-04  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* xmt.h, xmt.cc: join should return either pointer or
