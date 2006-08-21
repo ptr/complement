@@ -342,8 +342,6 @@ NetTransport::NetTransport( std::sockstream& s ) :
 {
   const string& _hostname = hostname( s.rdbuf()->inet_addr() );
   // cerr << "Connected: " << _hostname << endl;
-  s.setoptions( std::sock_base::so_linger, true, 10 );
-  s.setoptions( std::sock_base::so_keepalive, true );
 
   net = &s;
   _at_hostname = __at + _hostname;
@@ -416,8 +414,6 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
     join(); // This is safe: transparent if no _loop, and wait it if one exist
     net->open( hostname, port, stype );
   }
-  net->setoptions( std::sock_base::so_linger, true, 10 );
-  net->setoptions( std::sock_base::so_keepalive, true );
 
   if ( net->good() ) {
     _net_ns = rar_map( ns_addr, __ns_at + hostname );
@@ -493,12 +489,6 @@ void NetTransportMP::connect( sockstream& s )
     if ( _sid == badkey ) {
       establish_session( s );
       net = &s;
-// #ifndef __hpux
-      if ( !sock_dgr ) {
-        net->setoptions( std::sock_base::so_linger, true, 10 );
-        net->setoptions( std::sock_base::so_keepalive, true );
-      }
-// #endif
     } else if ( sock_dgr /* && _sid != badkey */ ) {
       mark_session_onoff( true );
     }
