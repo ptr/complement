@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/08/03 23:56:40 ptr>
+// -*- C++ -*- Time-stamp: <06/08/21 08:46:50 ptr>
 
 /*
  *
@@ -432,9 +432,18 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
 __FIT_DECLSPEC
 void NetTransportMgr::close()
 {
-  // cerr << __FILE__ << ":" << __LINE__ << endl;
-  NetTransport_base::close();
-  join(); // I should wait termination of _loop
+  if ( net ) {
+    // cerr << __FILE__ << ":" << __LINE__ << endl;
+    net->rdbuf()->shutdown( sock_base::stop_in | sock_base::stop_out );
+    net->close(); // otherwise _loop may not exited
+    // this->close();
+    // cerr << __FILE__ << ":" << __LINE__ << endl;
+    join();
+    // NetTransport_base::close() called during loop thread termination (see _loop)
+    // cerr << __FILE__ << ":" << __LINE__ << endl;
+    delete net;
+    net = 0;
+  }        
 }
 
 xmt::Thread::ret_code NetTransportMgr::_loop( void *p )

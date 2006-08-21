@@ -1,3 +1,8 @@
+2006-08-21  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* NetTransport.cc: close() should shutdown connection
+	in NetTransportMgr, like in dtor.
+
 2006-08-04  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* Cron.h, EvManager.h, NetTransport.h: changes in 
