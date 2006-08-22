@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/08/18 12:50:12 ptr>
+// -*- C++ -*- Time-stamp: <06/08/21 23:58:48 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -486,7 +486,7 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
   FD_SET( fd(), &pfd );
 
   while ( select( fd() + 1, &pfd, 0, 0, _timeout_ref ) <= 0 ) {
-    if ( errno == EINTR ) {
+    if ( errno == EINTR ) {  // may be interrupted, check and ignore
       errno = 0;
       continue;
     }
@@ -503,7 +503,7 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
     return traits::eof();
   }
   while ( poll( &pfd, 1, _timeout ) <= 0 ) { // wait infinite
-    if ( errno == EINTR ) {
+    if ( errno == EINTR ) { // may be interrupted, check and ignore
       errno = 0;
       continue;
     }
