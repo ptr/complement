@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/08/04 11:58:26 ptr>
+// -*- C++ -*- Time-stamp: <06/08/21 23:59:34 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -170,7 +170,11 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
     }
 
     _pfd[0].revents = 0;
-    if ( poll( _pfd, _fdcount, -1 ) < 0 ) { // wait infinite
+    while ( poll( _pfd, _fdcount, -1 ) < 0 ) { // wait infinite
+      if ( errno == EINTR ) { // may be interrupted, check and ignore
+        errno = 0;
+        continue;
+      }
       return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
     }
 
@@ -492,58 +496,60 @@ __FIT_TYPENAME sockmgr_stream_MP_SELECT<Connect>::_Connect *sockmgr_stream_MP_SE
     }
 
     // select wait infinite here, so it can't return 0 (timeout), so it return -1.
-    if ( select( _fdmax + 1, &_pfdr, 0, &_pfde, 0 ) > 0 ) {
-      MT_REENTRANT( _fd_lck, _1 );
-      if ( !is_open_unsafe() || FD_ISSET( fd_unsafe(), &_pfde ) ) { // may be already closed
+    while ( select( _fdmax + 1, &_pfdr, 0, &_pfde, 0 ) < 0 ) { // wait infinite
+      if ( errno == EINTR ) { // may be interrupted, check and ignore
+        errno = 0;
+        continue;
+      }
+      return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
+    }
+
+    MT_REENTRANT( _fd_lck, _1 );
+    if ( !is_open_unsafe() || FD_ISSET( fd_unsafe(), &_pfde ) ) { // may be already closed
+      return 0;
+    }
+
+    if ( FD_ISSET( fd_unsafe(), &_pfdr ) ) { // select found event on binded socket
+      sock_base::socket_type _sd = ::accept( fd_unsafe(), &addr.any, &sz );
+      if ( _sd == -1 ) {
+        // check and set errno
+        // _STLP_ASSERT( _sd == -1 );
         return 0;
       }
 
-      if ( FD_ISSET( fd_unsafe(), &_pfdr ) ) { // select found event on binded socket
-        sock_base::socket_type _sd = ::accept( fd_unsafe(), &addr.any, &sz );
-        if ( _sd == -1 ) {
-          // check and set errno
-          // _STLP_ASSERT( _sd == -1 );
-          return 0;
+      try {
+        // sockmgr_client_MP<Connect> *cl_new;
+        _Connect *cl_new;
+        typename container_type::iterator i = 
+          find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, -1 ) );
+
+        if ( i == _M_c.end() ) { // we need new message processor
+          cl_new = new _Connect();
+          cl_new->s = new sockstream();
+          cl_new->s->open( _sd, addr.any );
+          cl_new->_proc = new Connect( *cl_new->s );
+          _M_c.push_back( cl_new );
+        } else { // we can reuse old
+          cl_new = *i;
+          cl_new->s->open( _sd, addr.any );
+          delete cl_new->_proc; // may be new ( cl_new->_proc ) Connect( *cl_new->s );
+          cl_new->_proc = new Connect( *cl_new->s );
         }
 
-        try {
-          // sockmgr_client_MP<Connect> *cl_new;
-          _Connect *cl_new;
-          typename container_type::iterator i = 
-            find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, -1 ) );
-
-          if ( i == _M_c.end() ) { // we need new message processor
-            cl_new = new _Connect();
-            cl_new->s = new sockstream();
-            cl_new->s->open( _sd, addr.any );
-            cl_new->_proc = new Connect( *cl_new->s );
-            _M_c.push_back( cl_new );
-          } else { // we can reuse old
-            cl_new = *i;
-            cl_new->s->open( _sd, addr.any );
-            delete cl_new->_proc; // may be new ( cl_new->_proc ) Connect( *cl_new->s );
-            cl_new->_proc = new Connect( *cl_new->s );
-          }
-
-          FD_SET( _sd, &_pfdr );
-          FD_SET( _sd, &_pfde );
-        }
-        catch ( ... ) {
-        }
+        FD_SET( _sd, &_pfdr );
+        FD_SET( _sd, &_pfde );
       }
-
-      cl = _shift_fd(); // find polled and return it
-      if ( cl != 0 ) {
-        return cl; // return message processor
-      } else {    // nothing found, may be only closed sockets
-        FD_SET( fd_unsafe(), &_pfdr ); // we return to poll again
+      catch ( ... ) {
       }
-    } else { // select return < 0
-      return 0;
     }
-    MT_LOCK( _fd_lck );
+
+    cl = _shift_fd(); // find polled and return it
+    if ( cl != 0 ) {
+      return cl; // return message processor
+    } else {    // nothing found, may be only closed sockets
+      FD_SET( fd_unsafe(), &_pfdr ); // we return to poll again
+    }
     more = is_open_unsafe() && FD_ISSET( fd_unsafe(), &_pfdr );
-    MT_UNLOCK( _fd_lck );
   } while ( more );
 
   return 0; // Unexpected; should never occur
