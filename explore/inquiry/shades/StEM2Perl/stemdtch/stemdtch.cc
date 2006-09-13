@@ -1,7 +1,8 @@
-// -*- C++ -*- Time-stamp: <06/09/12 17:19:46 ptr>
+// -*- C++ -*- Time-stamp: <06/09/13 11:14:45 ptr>
 
 #include <string>
 #include <iostream>
+
 #include <sockios/sockstream>
 #include <sockios/sockmgr.h>
 
@@ -22,6 +23,8 @@ class Sample :
     ~Sample();
 
     void translate( const char *, size_t len );
+    void wait()
+      { cnd.try_wait(); }
 
   private:
     void echo( const stem::Event& );
@@ -46,9 +49,15 @@ Sample::Sample( stem::addr_type id ) :
   stemaddr = stemsrv.open( "localhost", 6995 );
 }
 
+Sample::~Sample()
+{
+}
+
 void Sample::echo( const stem::Event& ev )
 {
-  cout << ev.value();
+  cout << "In echo:\n";
+  cout << ev.value() << endl;
+  cnd.set( true );
 }
 
 void Sample::translate( const char *m, size_t sz )
@@ -71,7 +80,15 @@ END_RESPONSE_TABLE
 
 Sample sample( 0 );
 
-void send_msg( char *msg, unsigned msglen )
+void _send_msg( const char *msg, unsigned msglen )
 {
   sample.translate( msg, msglen );
+  // cerr << "Here\n";
+  // printf( "%s", msg );
 }
+
+void _wait_stem()
+{
+  sample.wait();
+}
+
