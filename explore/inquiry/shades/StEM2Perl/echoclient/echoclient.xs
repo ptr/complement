@@ -9,8 +9,12 @@
 
 MODULE = echoclient		PACKAGE = echoclient		
 
-void send_message( msg )
+void send_message( msg, len )
         const char *msg
         unsigned    len
         CODE:
-          send_msg( msg, len );
+          _send_msg( msg, len );
+
+void wait_stem()
+        CODE:
+          _wait_stem();

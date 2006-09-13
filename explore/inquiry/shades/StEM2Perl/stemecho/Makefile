@@ -7,7 +7,8 @@ include Makefile.inc
 include ${SRCROOT}/Makefiles/top.mak
 
 INCLUDES += -I${CoMT_INCLUDE_DIR}
+LDSEARCH += -L${CoMT_LIB_DIR}
 
-#release-shared : LDFLAGS += -Wl,-rpath=${STLPORT_LIB_DIR}
+release-shared : LDFLAGS += -Wl,-rpath=${STLPORT_LIB_DIR}:${PWD}/${CoMT_LIB_DIR} -lxmt -lsockios -lstem
 #dbg-shared : LDFLAGS += -Wl,-rpath=${STLPORT_LIB_DIR}
 #stldbg-shared : LDFLAGS += -Wl,-rpath=${STLPORT_LIB_DIR}
