@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/14 17:46:32 ptr>
+// -*- C++ -*- Time-stamp: <06/09/15 18:34:29 ptr>
 
 #include <stem/EventHandler.h>
 #include <stem/NetTransport.h>
@@ -7,6 +7,7 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <iomanip>
 #include <mt/xmt.h>
 
 #include <cstdlib>
@@ -76,7 +77,11 @@ void Simulator::loop()
 
     tm.tv_nsec = (unsigned)tmp;
 
-    Thread::delay( &tm ); // random delay: [0,1) sec
+    tmp = (double)rand_r( &sand ) / RAND_MAX * 10.0;
+
+    tm.tv_sec = (unsigned)tmp;
+
+    Thread::delay( &tm ); // random delay: [0,10) sec
   }
 }
 
@@ -94,7 +99,7 @@ void Simulator::echo( const stem::Event& ev )
   
   timespec tm_diff = tm_mark - tm_stored;
 
-  timing << n << " " << ((double)tm_mark.tv_sec + tm_mark.tv_nsec / 1.0e+9) << " " << ((double)tm_diff.tv_sec + tm_diff.tv_nsec / 1.0e+9) << endl;
+  timing << n << " " << fixed << ((double)tm_mark.tv_sec + tm_mark.tv_nsec / 1.0e+9) << " " << ((double)tm_diff.tv_sec + tm_diff.tv_nsec / 1.0e+9) << endl;
 }
 
 DEFINE_RESPONSE_TABLE( Simulator )
@@ -115,9 +120,9 @@ int main()
   cnd.set( false );
   timespec tm;
   tm.tv_sec = 0;
-  tm.tv_nsec = 500000000;
+  tm.tv_nsec = 100000000;
 
-  for ( int i = 0; i < 200; ++i ) {
+  for ( int i = 0; i < 1000; ++i ) {
     new Thread( client_thread, (void *)i );
 
     Thread::delay( &tm );
