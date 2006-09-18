@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/08/04 11:56:57 ptr>
+// -*- C++ -*- Time-stamp: <06/09/18 16:24:19 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -7,16 +7,8 @@
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 2.1
+ * Licensed under the Academic Free License Version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #ifndef __SOCKMGR_H
@@ -145,42 +137,23 @@ class sockmgr_stream_MP :
 {
   public:
     sockmgr_stream_MP() :
-	basic_sockmgr(),
-        _fdcount( 0 )
-      {
-        _pfd = 0;
-      }
+	basic_sockmgr()
+      { }
 
     explicit sockmgr_stream_MP( const in_addr& addr, int port, sock_base::stype t = sock_base::sock_stream ) :
-	basic_sockmgr(),
-        _fdcount( 0 )
-      {
-        _pfd = 0;
-        open( addr, port, t );
-      }
+	basic_sockmgr()
+      { open( addr, port, t ); }
 
     explicit sockmgr_stream_MP( unsigned long addr, int port, sock_base::stype t = sock_base::sock_stream ) :
-	basic_sockmgr(),
-        _fdcount( 0 )
-      {
-        _pfd = 0;
-        open( addr, port, t );
-      }
+	basic_sockmgr()
+      { open( addr, port, t ); }
 
     explicit sockmgr_stream_MP( int port, sock_base::stype t = sock_base::sock_stream ) :
-	basic_sockmgr(),
-        _fdcount( 0 )
-      {
-        _pfd = 0;
-        open( port, t );
-      }
+	basic_sockmgr()
+      { open( port, t ); }
 
     ~sockmgr_stream_MP()
-      {
-        if ( _pfd != 0 ) {
-          delete [] _pfd;
-        }
-      }
+      { }
 
     void open( const in_addr& addr, int port, sock_base::stype t = sock_base::sock_stream );
     void open( unsigned long addr, int port, sock_base::stype t = sock_base::sock_stream );
@@ -232,6 +205,7 @@ class sockmgr_stream_MP :
   protected:
     typedef sockmgr_stream_MP<Connect> _Self_type;
     typedef std::vector<_Connect *> _Sequence;
+    typedef std::vector<pollfd> _fd_sequence;
     typedef fd_equal _Compare;
     typedef typename _Sequence::value_type      value_type;
     typedef typename _Sequence::size_type       size_type;
@@ -245,8 +219,8 @@ class sockmgr_stream_MP :
     in_buf_avail _M_av;
     xmt::Mutex _c_lock;
 
-    pollfd *_pfd;
-    unsigned _fdcount;
+    _fd_sequence _pfd;
+    // unsigned _fdcount;
 
   private:
     _Connect *_shift_fd();

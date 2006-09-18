@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/08/21 23:59:34 ptr>
+// -*- C++ -*- Time-stamp: <06/09/18 18:36:20 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -7,16 +7,8 @@
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 2.1
+ * Licensed under the Academic Free License Version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #include <algorithm>
@@ -41,27 +33,25 @@ void sockmgr_stream_MP<Connect>::_open( sock_base::stype t )
   if ( is_open_unsafe() ) {
     if ( t == sock_base::sock_stream ) {
       _accept = &_Self_type::accept_tcp;
-      if ( _pfd == 0 ) { // ?? seems _pfd here always should be 0
-        _pfd = new pollfd[1024];
+      _pfd.reserve( 32 );
+      if ( _pfd.size() == 0 ) {
+        _pfd.resize( 1 );
         _pfd[0].fd = fd_unsafe();
         _pfd[0].events = POLLIN;
-        ++_fdcount;
-        // _STLP_ASSERT( _fdcount == 1 );
       }
     } else if ( t == sock_base::sock_dgram ) {
       _accept = &_Self_type::accept_udp;
-      if ( _pfd == 0 ) {
-        _pfd = new pollfd[1];
+      if ( _pfd.size() == 0 ) {
+        _pfd.resize( 1 );
         _pfd[0].fd = fd_unsafe();
         _pfd[0].events = POLLIN;
-        ++_fdcount;
       }
     } else {
       throw invalid_argument( "sockmgr_stream_MP" );
     }
     
     _loop_cnd.set( false );
-    loop_id.launch( loop, this );
+    loop_id.launch( loop, this, 0, PTHREAD_STACK_MIN * 2 );
     _loop_cnd.try_wait();
   }
 }
@@ -91,19 +81,20 @@ template <class Connect>
 __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>::_shift_fd()
 {
   _Connect *msg = 0;
-  unsigned j = 1;
-  while ( j < _fdcount ) {
-    if ( _pfd[j].revents != 0 ) {
+  _fd_sequence::iterator j = _pfd.begin();
+  _fd_sequence::iterator k = j++;
+
+  for ( ; j != _pfd.end(); ++j ) {
+    if ( j->revents != 0 ) {
       // We should distinguish closed socket from income message
       typename container_type::iterator i = 
-        find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, _pfd[j].fd ) );
+        find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, j->fd ) );
       // Solaris return ERROR on poll, before close socket
       if ( i == _M_c.end() ) {
         // Socket already closed (may be after read/write failure)
         // this way may not notify poll (like in HP-UX 11.00) via POLLERR flag
         // as made in Solaris
-        --_fdcount;
-        memmove( &_pfd[j], &_pfd[j+1], sizeof(struct pollfd) * (_fdcount - j) );
+        _pfd.erase( j-- );
         for ( i = _M_c.begin(); i != _M_c.end(); ++i ) {
           if ( (*i)->s->rdbuf()->fd() == -1 ) {
             (*i)->s->close();
@@ -111,10 +102,9 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
           }
         }
         continue;
-      } else if ( _pfd[j].revents & POLLERR /* | POLLHUP | POLLNVAL */ ) {
+      } else if ( j->revents & POLLERR /* | POLLHUP | POLLNVAL */ ) {
         // poll first see closed socket
-        --_fdcount;
-        memmove( &_pfd[j], &_pfd[j+1], sizeof(struct pollfd) * (_fdcount - j) );
+        _pfd.erase( j-- );
         (*i)->s->close();
         (*i)->_proc->close();
         continue;
@@ -125,22 +115,26 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
         // Due to this fd isn't stream (it's upper than stream),
         // I can't use ioctl with I_PEEK command here.
         char x;
-        int nr = recv( _pfd[j].fd, reinterpret_cast<void *>(&x), 1, MSG_PEEK );
+        int nr = recv( j->fd, reinterpret_cast<void *>(&x), 1, MSG_PEEK );
         if ( nr <= 0 ) { // I can't read even one byte: this designate closed
                          // socket operation
-          --_fdcount;
-          memmove( &_pfd[j], &_pfd[j+1], sizeof(struct pollfd) * (_fdcount - j) );
+          _pfd.erase( j-- );
           (*i)->s->close();
           (*i)->_proc->close();
           continue;
         }
       }
       if ( msg == 0 ) {
-        _pfd[j].revents = 0;
+        j->revents = 0;
         msg = *i;
+        k = j;
       }
     }
-    ++j;
+  }
+
+  if ( _pfd.size() > 2 && k != _pfd.begin() && k != --_pfd.end() ) {
+    // random_shuffle( ++_pfd.begin(), _pfd.end() );
+    std::swap( *k, *--_pfd.end() );
   }
 
   return msg;
@@ -170,7 +164,7 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
     }
 
     _pfd[0].revents = 0;
-    while ( poll( _pfd, _fdcount, -1 ) < 0 ) { // wait infinite
+    while ( poll( &_pfd[0], _pfd.size(), -1 ) < 0 ) { // wait infinite
       if ( errno == EINTR ) { // may be interrupted, check and ignore
         errno = 0;
         continue;
@@ -216,11 +210,13 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
           cl_new->_proc = new Connect( *cl_new->s );
         }
 
-        unsigned j = _fdcount++;
+        pollfd newfd;
 
-        _pfd[j].fd = _sd;
-        _pfd[j].events = POLLIN;
-        _pfd[j].revents = 0;
+        newfd.fd = _sd;
+        newfd.events = POLLIN;
+        newfd.revents = 0;
+
+        _pfd.push_back( newfd );
       }
       catch ( ... ) {
       }
@@ -247,7 +243,7 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
   socklen_t sz = sizeof( sockaddr_in );
   _xsockaddr addr;
 
-  if ( poll( _pfd, 1, -1 ) < 0 ) { // wait infinite
+  if ( poll( &_pfd[0], 1, -1 ) < 0 ) { // wait infinite
     return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
   }
   // get address of caller only
@@ -320,10 +316,11 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
           s->_proc->close();
         }
         if ( !s->s->is_open() ) { // remove all closed sockets from poll
-          for ( int i = 1; i < me->_fdcount; ++i ) {
-            if ( me->_pfd[i].fd == _sfd ) {
-              --me->_fdcount;
-              memmove( &me->_pfd[i], &me->_pfd[i+1], sizeof(struct pollfd) * (me->_fdcount - i) );
+          _fd_sequence::iterator i = me->_pfd.begin();
+          ++i;
+          for ( ; i != me->_pfd.end(); ++i ) {
+            if ( i->fd == _sfd ) {
+              me->_pfd.erase( i );
               break;
             }
           }
@@ -384,7 +381,7 @@ void sockmgr_stream_MP_SELECT<Connect>::_open( sock_base::stype t )
     FD_SET( fd_unsafe(), &_pfde );
     _fdmax = fd_unsafe();
     
-    loop_id.launch( loop, this );
+    loop_id.launch( loop, this, 0, 0, PTHREAD_STACK_MIN * 2 );
   }
 }
 
