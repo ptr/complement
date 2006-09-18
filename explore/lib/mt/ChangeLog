@@ -1,3 +1,12 @@
+2006-09-18  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xmt.h, xmt.cc: add stack size attribute to thread creation
+	in POSIX model; [if we create many threads with default stack
+	size in Linux, we quick exhaust process' virtual address space;
+	this has releation to nptl model].
+	
+	* libxmt: version 1.9.0, significant changes
+
 2006-08-18  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* xmt.h, xmt.cc: use locker in the fork(), instead of body of
