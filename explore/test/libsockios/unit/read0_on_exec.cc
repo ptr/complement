@@ -1,20 +1,12 @@
-// -*- C++ -*- Time-stamp: <06/08/18 13:08:27 ptr>
+// -*- C++ -*- Time-stamp: <06/08/21 23:48:43 ptr>
 
 /*
  *
  * Copyright (c) 2006
  * Petr Ovtchenkov
  *
- * Licensed under the Academic Free License Version 2.1
+ * Licensed under the Academic Free License Version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #include <boost/test/unit_test.hpp>
@@ -60,6 +52,9 @@ using namespace xmt;
  *  Client open socket  --------- system()
  *                      \
  *                        read...[poll signaled, read -> 0]
+ *
+ * The same issue on server side: poll that wait POLLIN from clients
+ * signaled too.
  *
  */
 
@@ -173,3 +168,70 @@ void test_read0()
   }
 }
 
+class ConnectionProcessor6 // dummy variant
+{
+  public:
+    ConnectionProcessor6( std::sockstream& );
+
+    void connect( std::sockstream& );
+    void close();
+};
+
+static Semaphore sem2( 2, false );
+
+ConnectionProcessor6::ConnectionProcessor6( std::sockstream& s )
+{
+  pr_lock.lock();
+  BOOST_MESSAGE( "Server seen connection" );
+
+  BOOST_REQUIRE( s.good() );
+  pr_lock.unlock();
+
+  sem2.post();
+}
+
+void ConnectionProcessor6::connect( std::sockstream& s )
+{
+}
+
+void ConnectionProcessor6::close()
+{
+  pr_lock.lock();
+  BOOST_MESSAGE( "Server: client close connection" );
+  pr_lock.unlock();
+}
+
+void test_read0_srv()
+{
+  sockmgr_stream_MP<ConnectionProcessor6> srv( ::port );
+
+  {
+    // It should work as before system call...
+    sockstream s( "localhost", ::port );
+
+    s << "1" << endl;
+
+    BOOST_CHECK( s.good() );
+
+    sem2.wait();
+  }
+
+  system( "echo > /dev/null" );  // <------ key line
+
+  {
+    // ... as after system call.
+    sockstream s( "localhost", ::port );
+
+    s << "1" << endl;
+
+    BOOST_CHECK( s.good() );
+
+    sem2.wait();
+  }
+
+  BOOST_CHECK( srv.good() ); // server must correctly process interrupt during system call
+
+  srv.close();
+
+  srv.wait();
+}
