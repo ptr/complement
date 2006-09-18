@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/08/21 08:46:50 ptr>
+// -*- C++ -*- Time-stamp: <06/09/18 18:33:19 ptr>
 
 /*
  *
@@ -8,16 +8,8 @@
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.1
+ * Licensed under the Academic Free License version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #ifdef _MSC_VER
@@ -419,7 +411,7 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
     _net_ns = rar_map( ns_addr, __ns_at + hostname );
     addr_type zero_object = rar_map( 0, __at + hostname );
     _sid = smgr.create();
-    _thr.launch( _loop, this ); // start thread here
+    _thr.launch( _loop, this, 0, PTHREAD_STACK_MIN * 2 ); // start thread here
     return zero_object;
   }
   return badaddr;
