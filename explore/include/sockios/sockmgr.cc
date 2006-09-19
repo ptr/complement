@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/18 18:36:20 ptr>
+// -*- C++ -*- Time-stamp: <06/09/19 21:06:14 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -132,9 +132,13 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
     }
   }
 
-  if ( _pfd.size() > 2 && k != _pfd.begin() && k != --_pfd.end() ) {
-    // random_shuffle( ++_pfd.begin(), _pfd.end() );
-    std::swap( *k, *--_pfd.end() );
+  if ( _pfd.size() > 2 ) {
+    j = _pfd.end();
+    --j;
+    if ( k != _pfd.begin() && k != j ) {
+      // random_shuffle( ++_pfd.begin(), _pfd.end() );
+      std::swap( *k, *j );
+    }
   }
 
   return msg;
@@ -381,7 +385,7 @@ void sockmgr_stream_MP_SELECT<Connect>::_open( sock_base::stype t )
     FD_SET( fd_unsafe(), &_pfde );
     _fdmax = fd_unsafe();
     
-    loop_id.launch( loop, this, 0, 0, PTHREAD_STACK_MIN * 2 );
+    loop_id.launch( loop, this, 0, PTHREAD_STACK_MIN * 2 );
   }
 }
 
