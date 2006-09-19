@@ -1,20 +1,12 @@
-// -*- C++ -*- Time-stamp: <06/08/21 23:45:50 ptr>
+// -*- C++ -*- Time-stamp: <06/09/19 18:58:16 ptr>
 
 /*
  *
  * Copyright (c) 2002, 2003, 2005
  * Petr Ovtchenkov
  *
- * Licensed under the Academic Free License Version 2.1
+ * Licensed under the Academic Free License version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #include <boost/test/unit_test.hpp>
@@ -29,112 +21,6 @@ using namespace boost::unit_test_framework;
 #include <sockios/sockmgr.h>
 
 using namespace std;
-
-void hostname_test()
-{
-  unsigned long local = htonl( 0x7f000001 ); // 127.0.0.1
-
-#ifdef _LITTLE_ENDIAN
-  BOOST_CHECK_EQUAL( local, 0x0100007f );
-#endif
-
-#ifdef _BIG_ENDIAN
-  BOOST_CHECK_EQUAL( local, 0x7f000001 );
-#endif
-
-  BOOST_CHECK_EQUAL( hostname( local ), "localhost [127.0.0.1]" );
-
-#ifdef __unix
-  char buff[1024];
-
-  gethostname( buff, 1024 );
-
-  BOOST_CHECK_EQUAL( hostname(), buff );
-#endif
-}
-
-void service_test()
-{
-#ifdef __unix
-  BOOST_CHECK( service( "ftp", "tcp" ) == 21 );
-  BOOST_CHECK( service( 7, "udp" ) == "echo" );
-#else
-  BOOST_ERROR( "requests for service (/etc/services) not implemented on this platform" );
-#endif
-}
-
-void hostaddr_test1()
-{
-#ifdef __unix
-  in_addr addr = findhost( "localhost" );
-
-# ifdef _LITTLE_ENDIAN
-  BOOST_CHECK_EQUAL( addr.s_addr, 0x0100007f );
-# endif
-
-# ifdef _BIG_ENDIAN
-  BOOST_CHECK_EQUAL( addr.s_addr, 0x7f000001 );
-# endif
-  
-#else
-  BOOST_ERROR( "Not implemented" );
-#endif
-}
-
-void hostaddr_test2()
-{
-#ifdef __unix
-  list<in_addr> haddrs;
-  gethostaddr( "localhost", back_inserter(haddrs) );
-
-  bool localhost_found = false;
-
-  for ( list<in_addr>::const_iterator i = haddrs.begin(); i != haddrs.end(); ++i ) {
-    if ( i->s_addr == htonl( 0x7f000001 ) ) { // 127.0.0.1
-      localhost_found = true;
-      break;
-    }
-  }
-  
-  BOOST_CHECK( localhost_found == true );
-  
-#else
-  BOOST_ERROR( "Not implemented" );
-#endif
-}
-
-void hostaddr_test3()
-{
-#ifdef __unix
-  list<sockaddr> haddrs;
-  gethostaddr2( "localhost", back_inserter(haddrs) );
-
-  bool localhost_found = false;
-
-  for ( list<sockaddr>::const_iterator i = haddrs.begin(); i != haddrs.end(); ++i ) {
-    switch ( i->sa_family ) {
-      case PF_INET:
-        if ( ((sockaddr_in *)&*i)->sin_addr.s_addr == htonl( 0x7f000001 ) ) {
-          localhost_found = true;
-        }
-        break;
-      case PF_INET6:
-        if ( ((sockaddr_in6 *)&*i)->sin6_addr.in6_u.u6_addr32[0] == 0 &&
-             ((sockaddr_in6 *)&*i)->sin6_addr.in6_u.u6_addr32[1] == 0 && 
-             ((sockaddr_in6 *)&*i)->sin6_addr.in6_u.u6_addr32[2] == 0 &&
-             ((sockaddr_in6 *)&*i)->sin6_addr.in6_u.u6_addr32[3] == 1 ) {
-          localhost_found = true;
-        }
-        break;
-    }
-  }
-  
-  BOOST_CHECK( localhost_found == true );
-  
-#else
-  BOOST_ERROR( "Not implemented" );
-#endif
-}
 
 #include "message.h"
 
@@ -460,16 +346,161 @@ void test_more_bytes_in_socket();
 void test_read0();
 void test_read0_srv();
 
+struct sockios_test
+{
+    void hostname_test();
+    void service_test();
+
+    void hostaddr_test1();
+    void hostaddr_test2();
+    void hostaddr_test3();
+};
+
+void sockios_test::hostname_test()
+{
+  unsigned long local = htonl( 0x7f000001 ); // 127.0.0.1
+
+#ifdef _LITTLE_ENDIAN
+  BOOST_CHECK_EQUAL( local, 0x0100007f );
+#endif
+
+#ifdef _BIG_ENDIAN
+  BOOST_CHECK_EQUAL( local, 0x7f000001 );
+#endif
+
+  BOOST_CHECK_EQUAL( hostname( local ), "localhost [127.0.0.1]" );
+
+#ifdef __unix
+  char buff[1024];
+
+  gethostname( buff, 1024 );
+
+  BOOST_CHECK_EQUAL( hostname(), buff );
+#endif
+}
+
+void sockios_test::service_test()
+{
+#ifdef __unix
+  BOOST_CHECK( service( "ftp", "tcp" ) == 21 );
+  BOOST_CHECK( service( 7, "udp" ) == "echo" );
+#else
+  BOOST_ERROR( "requests for service (/etc/services) not implemented on this platform" );
+#endif
+}
+
+void sockios_test::hostaddr_test1()
+{
+#ifdef __unix
+  in_addr addr = findhost( "localhost" );
+
+# ifdef _LITTLE_ENDIAN
+  BOOST_CHECK_EQUAL( addr.s_addr, 0x0100007f );
+# endif
+
+# ifdef _BIG_ENDIAN
+  BOOST_CHECK_EQUAL( addr.s_addr, 0x7f000001 );
+# endif
+  
+#else
+  BOOST_ERROR( "Not implemented" );
+#endif
+}
+
+void sockios_test::hostaddr_test2()
+{
+#ifdef __unix
+  list<in_addr> haddrs;
+  gethostaddr( "localhost", back_inserter(haddrs) );
+
+  bool localhost_found = false;
+
+  for ( list<in_addr>::const_iterator i = haddrs.begin(); i != haddrs.end(); ++i ) {
+    if ( i->s_addr == htonl( 0x7f000001 ) ) { // 127.0.0.1
+      localhost_found = true;
+      break;
+    }
+  }
+  
+  BOOST_CHECK( localhost_found == true );
+  
+#else
+  BOOST_ERROR( "Not implemented" );
+#endif
+}
+
+void sockios_test::hostaddr_test3()
+{
+#ifdef __unix
+  list<sockaddr> haddrs;
+  gethostaddr2( "localhost", back_inserter(haddrs) );
+
+  bool localhost_found = false;
+
+  for ( list<sockaddr>::const_iterator i = haddrs.begin(); i != haddrs.end(); ++i ) {
+    switch ( i->sa_family ) {
+      case PF_INET:
+        if ( ((sockaddr_in *)&*i)->sin_addr.s_addr == htonl( 0x7f000001 ) ) {
+          localhost_found = true;
+        }
+        break;
+      case PF_INET6:
+        if ( ((sockaddr_in6 *)&*i)->sin6_addr.in6_u.u6_addr32[0] == 0 &&
+             ((sockaddr_in6 *)&*i)->sin6_addr.in6_u.u6_addr32[1] == 0 && 
+             ((sockaddr_in6 *)&*i)->sin6_addr.in6_u.u6_addr32[2] == 0 &&
+             ((sockaddr_in6 *)&*i)->sin6_addr.in6_u.u6_addr32[3] == 1 ) {
+          localhost_found = true;
+        }
+        break;
+    }
+  }
+  
+  BOOST_CHECK( localhost_found == true );
+  
+#else
+  BOOST_ERROR( "Not implemented" );
+#endif
+}
+
+struct sockios_test_suite :
+    public test_suite
+{
+    sockios_test_suite();
+};
+
+sockios_test_suite::sockios_test_suite() :
+    test_suite( "sockios library test suite" )
+{
+  boost::shared_ptr<sockios_test> instance( new sockios_test() );
+  test_case *hostname_tc = BOOST_CLASS_TEST_CASE( &sockios_test::hostname_test, instance );
+  test_case *service_tc = BOOST_CLASS_TEST_CASE( &sockios_test::service_test, instance );
+
+  test_case *hostaddr1_tc = BOOST_CLASS_TEST_CASE( &sockios_test::hostaddr_test1, instance );
+  test_case *hostaddr2_tc = BOOST_CLASS_TEST_CASE( &sockios_test::hostaddr_test2, instance );
+  test_case *hostaddr3_tc = BOOST_CLASS_TEST_CASE( &sockios_test::hostaddr_test3, instance );
+
+  // hostaddr2_tc->depends_on( hostaddr1_tc );
+
+  add( hostname_tc );
+  add( service_tc );
+
+  add( hostaddr1_tc );
+  add( hostaddr2_tc );
+  add( hostaddr3_tc );
+}
+
 test_suite *init_unit_test_suite( int argc, char **argv )
 {
   test_suite *ts = BOOST_TEST_SUITE( "libsockios test" );
 
-  ts->add( BOOST_TEST_CASE( &hostname_test ) );
-  ts->add( BOOST_TEST_CASE( &service_test ) );
+  ts->add( new sockios_test_suite() );
 
-  ts->add( BOOST_TEST_CASE( &hostaddr_test1 ) );
-  ts->add( BOOST_TEST_CASE( &hostaddr_test2 ) );
-  ts->add( BOOST_TEST_CASE( &hostaddr_test3 ) );
+  // ts->add( BOOST_TEST_CASE( &hostname_test ) );
+  // ts->add( BOOST_TEST_CASE( &service_test ) );
+
+  // ts->add( BOOST_TEST_CASE( &hostaddr_test1 ) );
+  // ts->add( BOOST_TEST_CASE( &hostaddr_test2 ) );
+  // ts->add( BOOST_TEST_CASE( &hostaddr_test3 ) );
 
   ts->add( BOOST_TEST_CASE( &test_client_server_poll ) );
   ts->add( BOOST_TEST_CASE( &test_client_server_select ) );
