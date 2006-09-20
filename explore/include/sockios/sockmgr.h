@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/18 16:24:19 ptr>
+// -*- C++ -*- Time-stamp: <06/09/20 11:21:28 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -23,6 +23,7 @@
 #endif
 
 #include <vector>
+#include <deque>
 #include <cerrno>
 
 #ifndef __XMT_H
@@ -171,6 +172,7 @@ class sockmgr_stream_MP :
   protected:
     void _open( sock_base::stype t = sock_base::sock_stream );
     static xmt::Thread::ret_code loop( void * );
+    static xmt::Thread::ret_code connect_processor( void * );
 
     struct _Connect {
         sockstream *s;
@@ -189,6 +191,22 @@ class sockmgr_stream_MP :
     {
         bool operator()(const _Connect *__x) const
           { return __x->s->rdbuf()->in_avail() > 0; }
+    };
+
+    struct _ProcState
+    {
+        _ProcState( std::deque<_Connect *>& cpool, xmt::Mutex& pool_lock ) :
+            conn_pool( cpool ),
+            dlock( pool_lock ),
+            follow( false )
+          { }
+
+        std::deque<_Connect *>& conn_pool;
+        xmt::Mutex& dlock;
+
+        xmt::Condition cnd;
+        xmt::Mutex lock;
+        bool follow;
     };
 
     typedef _Connect *(sockmgr_stream_MP<Connect>::*accept_type)();
