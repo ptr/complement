@@ -1,7 +1,0 @@
-2001-07-19  Petr Ovchenkov  <ptr@ParallelGraphics.COM>
-
-	* libDBora: Version 0.6.0. Candidate for version 1.0.0.
-	This library is a Oracle 8i DB wrapper library, derived from libDB.
-	The purpose is hide link-time and compile-time dependences from
-	DB for end application. Not checked after splitting From libDB.
-
