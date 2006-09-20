@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/19 18:58:16 ptr>
+// -*- C++ -*- Time-stamp: <06/09/20 20:15:07 ptr>
 
 /*
  *
@@ -519,7 +519,7 @@ test_suite *init_unit_test_suite( int argc, char **argv )
 
   ts->add( BOOST_TEST_CASE( &srv_close_connection_test ) );
 
-  ts->add( BOOST_TEST_CASE( &udp_test_client_server_poll ) );
+  // ts->add( BOOST_TEST_CASE( &udp_test_client_server_poll ) );
 
   ts->add( BOOST_TEST_CASE( &test_shared_socket ) );
 
