@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/19 21:06:14 ptr>
+// -*- C++ -*- Time-stamp: <06/09/20 11:59:41 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -308,9 +308,39 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
     _Connect *s;
     unsigned _sfd;
 
+    std::deque<_Connect *> conn_pool;
+    xmt::Mutex dlock;
+
+    _ProcState _state( conn_pool, dlock );
+    xmt::Thread *thr = 0;
+
     me->_loop_cnd.set( true );
 
-    while ( (s = me->accept()) != 0 ) {    
+    while ( (s = me->accept()) != 0 ) {
+      _state.s = s;
+      _state.follow = true;
+#if 0
+      dlock.lock();
+      conn_pool.push_back( s );
+      // remove 
+      _sfd = s->s->rdbuf()->fd();
+      { // erase
+        _fd_sequence::iterator i = me->_pfd.begin();
+        ++i;
+        for ( ; i != me->_pfd.end(); ++i ) {
+          if ( i->fd == _sfd ) {
+            me->_pfd.erase( i );
+            break;
+          }
+        }
+      }
+      dlock.unlock();
+
+      if ( thr == 0 ) {
+        thr = new Thread();
+      }
+      
+#else
       // The user connect function: application processing
       if ( s->s->is_open() ) {
         _sfd = s->s->rdbuf()->fd();
@@ -330,6 +360,7 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
           }
         }
       }
+#endif
     }
   }
   catch ( ... ) {
@@ -359,6 +390,46 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
   me->close();
   me->_c_lock.unlock();
 
+  return rtc;
+}
+
+template <class Connect>
+xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
+{
+  _ProcState *s = static_cast<_ProcState *>(p);
+  xmt::Thread::ret_code rtc;
+  rtc.iword = 0;
+
+  try {
+    sockstream *stream;
+    _Connect *c;
+
+    while ( s->follow ) {
+      s->dlock.lock();
+      c = s->conn_pool.front();
+      s->conn_pool.pop_front();
+      s->dlock.unlock();
+
+      s->cnd.set( false );
+
+      stream = c->s;
+      if ( stream->is_open() ) {
+        c->_proc->connect( *stream );
+        if ( !stream->good() ) {
+          stream->close();
+          c->_proc->close();
+        } else if ( stream->is_open() ) {
+          s->dlock.lock();
+          // _pfd.push_back( stream->rdbuf()->fd() );
+          s->dlock.unlock();
+        }
+      }
+
+      s->cnd.try_wait();
+    }
+  }
+  catch ( ... ) {
+  }
   return rtc;
 }
 

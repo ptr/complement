@@ -1,9 +1,12 @@
-// -*- C++ -*- Time-stamp: <04/04/23 18:03:27 ptr>
+// -*- C++ -*- Time-stamp: <06/08/04 11:29:48 ptr>
 
 /*
  *
+ * Copyright (c) 2006
+ * Petr Ovtchenkov
+ *
  * Copyright (c) 2004
- * Kaspersky Labs
+ * Kaspersky Lab
  *
  * Copyright (c) 1999
  * Silicon Graphics Computer Systems, Inc.
@@ -11,7 +14,7 @@
  * Copyright (c) 1999 
  * Boris Fomitchev
  *
- * Licensed under the Academic Free License Version 2.0
+ * Licensed under the Academic Free License Version 2.1
  *
  * This material is provided "as is", with absolutely no warranty expressed
  * or implied. Any use is at your own risk.
@@ -26,12 +29,78 @@
 #ifndef __mt_lfstream_h
 #define __mt_lfstream_h
 
-#include <mt/flck.h>
 #include <fstream>
+#include <config/feature.h>
+
+#if defined(__unix) || defined(__unix__)
+# include <fcntl.h>
+# include <sys/file.h>
+# include <sys/types.h>
+# include <unistd.h>
+# include <errno.h>
+#endif /* __unix || __unix__ */
+
+#ifdef WIN32
+# include <io.h>
+# include <windows.h>
+#endif /* WIN32 */
 
 #if defined(WIN32) && !defined(_STLPORT_VERSION) && !defined(__GNUC__)
 # include <mt/_fbuf.h>
 #endif
+
+#if defined(__unix) || defined(__unix__)
+
+/*
+ * Note: POSIX fcntl-based file locking don't provide
+ * file lock within same process, so I combine fcntl with
+ * one of the synchronization primitive; I prefer pthread_rwlock
+ * for this, but if one not available, I will use two mutexes.
+ *
+ * The BSD-style flock is free from fcntl's disadvantage,
+ * but not work properly in MT-applications on FreeBSD
+ * (ironic!) and depends upon file system (not work with
+ * NFS in most cases, SMBFS, FAT*, may be with NTFS too).
+ *
+ */
+
+# if !defined(_REENTRANT) && !defined(_THREAD_SAFE) && !(defined(_POSIX_THREADS) && defined(__OpenBSD__))
+/* 
+ * In case of non-MT-safe application the fcntl approach
+ * has advantage (FS-independent). So I use fcntl call
+ * in this case too, only without mutexes; but if you prefer
+ * flock(), just uncomment line below.
+ */
+/* #  define __USE_FLOCK */
+# else /* _REENTRANT || _THREAD_SAFE || _POSIX_THREADS */
+
+#  if defined(__USE_GNU) && !defined(__USE_UNIX98)
+#   include <pthread.h>
+#   define __USE_TWO_MTX
+#  endif /* __USE_GNU && !__USE_UNIX98 */
+
+#  if defined(__USE_UNIX98) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#   include <pthread.h>
+#   define __USE_RW_MTX
+#  endif
+
+#  if !defined(__USE_TWO_MTX) && !defined(__USE_RW_MTX)
+#   error Check configuration: you one of the locking teqnique should be in use in MT environment!
+#  endif /* !__USE_TWO_MTX && !__USE_RW_MTX */
+
+# endif /* _REENTRANT || _THREAD_SAFE */
+#endif /* __unix || __unix__ */
+
+#ifndef __flck_h
+/* flags for following flck call: */
+
+#define _F_LCK_W 0   /* lock file for writing (exclusive lock) */
+#define _F_LCK_R 1   /* lock file for reading (shared lock) */
+#define _F_UNLCK 2   /* unlock file */
+
+extern "C" int flck( int fd, int operation );  /* lock/unlock file, use flags above */
+
+#endif // __flck_h
 
 #ifndef _STLPORT_VERSION
 # define _STLP_BEGIN_NAMESPACE namespace std {
@@ -101,6 +170,18 @@ class basic_lfilebuf :
 
   private:
     bool _is_locked;
+
+#if 0
+#ifdef __USE_TWO_MTX
+    pthread_mutex_t __mw = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+    pthread_mutex_t __mr = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+    static int __mr_flag = 0;
+#endif
+
+#ifdef __USE_RW_MTX
+    pthread_rwlock_t __ml = PTHREAD_RWLOCK_INITIALIZER;
+#endif
+#endif // 0
 
 #ifndef _STLPORT_VERSION
   public:
