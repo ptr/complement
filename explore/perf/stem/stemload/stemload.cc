@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/15 18:34:29 ptr>
+// -*- C++ -*- Time-stamp: <06/09/18 13:56:12 ptr>
 
 #include <stem/EventHandler.h>
 #include <stem/NetTransport.h>
@@ -123,7 +123,7 @@ int main()
   tm.tv_nsec = 100000000;
 
   for ( int i = 0; i < 1000; ++i ) {
-    new Thread( client_thread, (void *)i );
+    new Thread( client_thread, (void *)i, 0, 0, PTHREAD_STACK_MIN * 2 );
 
     Thread::delay( &tm );
   }
