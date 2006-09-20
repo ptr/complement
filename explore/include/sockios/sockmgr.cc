@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/20 11:59:41 ptr>
+// -*- C++ -*- Time-stamp: <06/09/20 21:21:46 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -35,16 +35,28 @@ void sockmgr_stream_MP<Connect>::_open( sock_base::stype t )
       _accept = &_Self_type::accept_tcp;
       _pfd.reserve( 32 );
       if ( _pfd.size() == 0 ) {
-        _pfd.resize( 1 );
+        int pipefd[2];
+        pipe( pipefd ); // check err
+        _cfd = pipefd[1];
+
+        _pfd.resize( 2 );
         _pfd[0].fd = fd_unsafe();
         _pfd[0].events = POLLIN;
+        _pfd[1].fd = pipefd[0];
+        _pfd[1].events = POLLIN;        
       }
     } else if ( t == sock_base::sock_dgram ) {
       _accept = &_Self_type::accept_udp;
       if ( _pfd.size() == 0 ) {
-        _pfd.resize( 1 );
+        int pipefd[2];
+        pipe( pipefd ); // check err
+        _cfd = pipefd[1];
+
+        _pfd.resize( 2 );
         _pfd[0].fd = fd_unsafe();
         _pfd[0].events = POLLIN;
+        _pfd[1].fd = pipefd[0];
+        _pfd[1].events = POLLIN;        
       }
     } else {
       throw invalid_argument( "sockmgr_stream_MP" );
@@ -82,9 +94,10 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
 {
   _Connect *msg = 0;
   _fd_sequence::iterator j = _pfd.begin();
-  _fd_sequence::iterator k = j++;
+  // _fd_sequence::iterator k = j++;
+  ++j; ++j;
 
-  for ( ; j != _pfd.end(); ++j ) {
+  for ( ; j != _pfd.end(); ++j ) { // _pfd at least 2 in size
     if ( j->revents != 0 ) {
       // We should distinguish closed socket from income message
       typename container_type::iterator i = 
@@ -127,12 +140,13 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
       if ( msg == 0 ) {
         j->revents = 0;
         msg = *i;
-        k = j;
+        // k = j;
       }
     }
   }
 
-  if ( _pfd.size() > 2 ) {
+#if 0
+  if ( _pfd.size() > 3 ) {
     j = _pfd.end();
     --j;
     if ( k != _pfd.begin() && k != j ) {
@@ -140,6 +154,7 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
       std::swap( *k, *j );
     }
   }
+#endif
 
   return msg;
 }
@@ -168,6 +183,7 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
     }
 
     _pfd[0].revents = 0;
+    _pfd[1].revents = 0;
     while ( poll( &_pfd[0], _pfd.size(), -1 ) < 0 ) { // wait infinite
       if ( errno == EINTR ) { // may be interrupted, check and ignore
         errno = 0;
@@ -179,8 +195,8 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
     // New connction open before data read from opened sockets.
     // This policy may be worth to revise.
 
-    if ( (_pfd[0].revents & POLLERR) != 0 ) {
-      return 0; // return 0 only for binded socket
+    if ( (_pfd[0].revents & POLLERR) != 0 || (_pfd[1].revents & POLLERR) != 0 ) {
+      return 0; // return 0 only for binded socket, or control socket
     }
 
     if ( _pfd[0].revents != 0 ) {
@@ -225,14 +241,22 @@ __FIT_TYPENAME sockmgr_stream_MP<Connect>::_Connect *sockmgr_stream_MP<Connect>:
       catch ( ... ) {
       }
     }
+    if ( _pfd[1].revents != 0 ) { // fd come back for poll
+      pollfd rfd;
+      ::read( _pfd[1].fd, (char *)&rfd.fd, sizeof(sock_base::socket_type) );
+      rfd.events = POLLIN;
+      rfd.revents = 0;
+
+      _pfd.push_back( rfd );
+    }
 
     cl = _shift_fd(); // find polled and return it
     if ( cl != 0 ) {
       return cl; // return message processor
-    } else { // nothing found, may be only closed sockets
-      _pfd[0].revents = 1; // we return to poll again
-    }
-  } while ( _pfd[0].revents != 0 );
+    } // else { // nothing found, may be only closed sockets
+    //  _pfd[0].revents = 1; // we return to poll again
+    // }
+  } while ( /* _pfd[0].revents != 0 */ true );
   
   return 0; // Unexpected; should never occur
 }
@@ -304,27 +328,31 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
   xmt::Thread::ret_code rtc;
   rtc.iword = 0;
 
+  std::deque<_Connect *> conn_pool;
+  xmt::Mutex dlock;
+
+  _ProcState _state( conn_pool, dlock, me->_cfd );
+  xmt::Thread *thr = 0;
+
   try {
     _Connect *s;
     unsigned _sfd;
 
-    std::deque<_Connect *> conn_pool;
-    xmt::Mutex dlock;
-
-    _ProcState _state( conn_pool, dlock );
-    xmt::Thread *thr = 0;
-
     me->_loop_cnd.set( true );
 
     while ( (s = me->accept()) != 0 ) {
-      _state.s = s;
-      _state.follow = true;
-#if 0
+#if 1
       dlock.lock();
       conn_pool.push_back( s );
+      _state.cnd.set( true );
       // remove 
       _sfd = s->s->rdbuf()->fd();
-      { // erase
+      {
+        // erase: I don't want to listen socket that in processing
+        // (it may be polled elsewhere)
+        // This help avoid unwanted processing of the same socket
+        // in different threads: the socket in process can't
+        // come here before it will be re-added after processing
         _fd_sequence::iterator i = me->_pfd.begin();
         ++i;
         for ( ; i != me->_pfd.end(); ++i ) {
@@ -334,12 +362,12 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
           }
         }
       }
-      dlock.unlock();
 
       if ( thr == 0 ) {
-        thr = new Thread();
+        _state.follow = true;
+        thr = new xmt::Thread( connect_processor, &_state, 0 );
       }
-      
+      dlock.unlock();
 #else
       // The user connect function: application processing
       if ( s->s->is_open() ) {
@@ -372,9 +400,20 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
         (*i)->_proc->close();
       }
     }
+    ::close( me->_cfd );
+    ::close( me->_pfd[1].fd );
     me->close();
     me->_c_lock.unlock();
     rtc.iword = -1;
+
+    if ( thr != 0 ) {
+      _state.dlock.lock();
+      _state.follow = false;
+      _state.cnd.set( true );
+      _state.dlock.unlock();
+      thr->join();
+      delete thr;
+    }
     return rtc;
     // throw;
   }
@@ -387,8 +426,19 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
       (*i)->_proc->close();
     }
   }
+  ::close( me->_cfd );
+  ::close( me->_pfd[1].fd );
   me->close();
   me->_c_lock.unlock();
+
+  if ( thr != 0 ) {
+    _state.dlock.lock();
+    _state.follow = false;
+    _state.cnd.set( true );
+    _state.dlock.unlock();
+    thr->join();
+    delete thr;
+  }
 
   return rtc;
 }
@@ -402,16 +452,13 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
 
   try {
     sockstream *stream;
-    _Connect *c;
+    // no lock here, due to lock around 'new Thread' in loop;
+    // if I create new thread, I give preference for it
+    // for processing connection
+    _Connect *c = s->conn_pool.front();
+    s->conn_pool.pop_front();
 
-    while ( s->follow ) {
-      s->dlock.lock();
-      c = s->conn_pool.front();
-      s->conn_pool.pop_front();
-      s->dlock.unlock();
-
-      s->cnd.set( false );
-
+    do {
       stream = c->s;
       if ( stream->is_open() ) {
         c->_proc->connect( *stream );
@@ -419,14 +466,30 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
           stream->close();
           c->_proc->close();
         } else if ( stream->is_open() ) {
-          s->dlock.lock();
-          // _pfd.push_back( stream->rdbuf()->fd() );
-          s->dlock.unlock();
+          sock_base::socket_type rfd = stream->rdbuf()->fd();
+          ::write( s->fd, (const char *)&rfd, sizeof(sock_base::socket_type) );
+        } else {
+          stream->close();
+          c->_proc->close();
         }
       }
 
-      s->cnd.try_wait();
-    }
+      for ( ;; ) {
+        { 
+          MT_REENTRANT( s->dlock, _1 );
+          if ( !s->follow ) {
+            break;
+          }
+          if ( s->conn_pool.size() != 0 ) {
+            c = s->conn_pool.front();
+            s->conn_pool.pop_front();
+            break;
+          }
+          s->cnd.set( false );
+        }
+        s->cnd.try_wait();
+      }
+    } while ( s->is_follow() );
   }
   catch ( ... ) {
   }

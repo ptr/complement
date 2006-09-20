@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/20 11:21:28 ptr>
+// -*- C++ -*- Time-stamp: <06/09/20 19:23:36 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -195,17 +195,22 @@ class sockmgr_stream_MP :
 
     struct _ProcState
     {
-        _ProcState( std::deque<_Connect *>& cpool, xmt::Mutex& pool_lock ) :
+        _ProcState( std::deque<_Connect *>& cpool, xmt::Mutex& pool_lock, int control ) :
             conn_pool( cpool ),
             dlock( pool_lock ),
+            fd( control ),
             follow( false )
           { }
+
+        bool is_follow() const
+          { MT_REENTRANT( lock, _1 ); return follow; }
 
         std::deque<_Connect *>& conn_pool;
         xmt::Mutex& dlock;
 
         xmt::Condition cnd;
         xmt::Mutex lock;
+        int fd;
         bool follow;
     };
 
@@ -238,7 +243,7 @@ class sockmgr_stream_MP :
     xmt::Mutex _c_lock;
 
     _fd_sequence _pfd;
-    // unsigned _fdcount;
+    int _cfd; // sock_base::socket_type
 
   private:
     _Connect *_shift_fd();
