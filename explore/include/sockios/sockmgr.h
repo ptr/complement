@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/20 19:23:36 ptr>
+// -*- C++ -*- Time-stamp: <06/09/21 21:36:36 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -170,14 +170,19 @@ class sockmgr_stream_MP :
       { }
 
   protected:
-    void _open( sock_base::stype t = sock_base::sock_stream );
-    static xmt::Thread::ret_code loop( void * );
-    static xmt::Thread::ret_code connect_processor( void * );
 
     struct _Connect {
         sockstream *s;
         Connect *_proc;
     };
+
+    typedef std::vector<pollfd> _fd_sequence;
+    typedef std::deque<_Connect *> _connect_pool_sequence;
+
+    void _open( sock_base::stype t = sock_base::sock_stream );
+    static xmt::Thread::ret_code loop( void * );
+    static xmt::Thread::ret_code connect_processor( void * );
+
 
     struct fd_equal :
         public std::binary_function<_Connect *,int,bool> 
@@ -186,41 +191,37 @@ class sockmgr_stream_MP :
           { return __x->s->rdbuf()->fd() == __y; }
     };
 
-    struct in_buf_avail :
-        public std::unary_function<_Connect *,bool> 
+    struct pfd_equal :
+        public std::binary_function<typename _fd_sequence::value_type,int,bool>
     {
-        bool operator()(const _Connect *__x) const
-          { return __x->s->rdbuf()->in_avail() > 0; }
+        bool operator()(const typename _fd_sequence::value_type& __x, int __y) const
+          { return __x.fd == __y; }
     };
-
+    
     struct _ProcState
     {
-        _ProcState( std::deque<_Connect *>& cpool, xmt::Mutex& pool_lock, int control ) :
-            conn_pool( cpool ),
-            dlock( pool_lock ),
-            fd( control ),
+        _ProcState() :
             follow( false )
           { }
 
         bool is_follow() const
           { MT_REENTRANT( lock, _1 ); return follow; }
 
-        std::deque<_Connect *>& conn_pool;
-        xmt::Mutex& dlock;
-
-        xmt::Condition cnd;
         xmt::Mutex lock;
-        int fd;
         bool follow;
     };
 
-    typedef _Connect *(sockmgr_stream_MP<Connect>::*accept_type)();
+    typedef bool (sockmgr_stream_MP<Connect>::*accept_type)();
 
+#if 0
     accept_type _accept;
     _Connect *accept() // workaround for CC
       { return (this->*_accept)(); }
-    _Connect *accept_tcp();
-    _Connect *accept_udp();
+#else
+    accept_type _accept;
+#endif
+    bool accept_tcp();
+    bool accept_udp();
 
   private:
     xmt::Thread     loop_id;
@@ -228,7 +229,6 @@ class sockmgr_stream_MP :
   protected:
     typedef sockmgr_stream_MP<Connect> _Self_type;
     typedef std::vector<_Connect *> _Sequence;
-    typedef std::vector<pollfd> _fd_sequence;
     typedef fd_equal _Compare;
     typedef typename _Sequence::value_type      value_type;
     typedef typename _Sequence::size_type       size_type;
@@ -239,14 +239,19 @@ class sockmgr_stream_MP :
 
     _Sequence _M_c;
     _Compare  _M_comp;
-    in_buf_avail _M_av;
+    pfd_equal _pfdcomp;
     xmt::Mutex _c_lock;
 
     _fd_sequence _pfd;
     int _cfd; // sock_base::socket_type
+    _connect_pool_sequence _conn_pool;
+    xmt::Condition _pool_cnd;
+    xmt::Mutex _dlock;
+
+    _ProcState _state;
 
   private:
-    _Connect *_shift_fd();
+    bool _shift_fd();
     static void _close_by_signal( int );
 };
 
