@@ -1,0 +1,4 @@
+#!/usr/bin/env gnuplot
+
+plot 'stemload.log' using ($2 - 1158855155.402390):($3) w d
+pause (-1)

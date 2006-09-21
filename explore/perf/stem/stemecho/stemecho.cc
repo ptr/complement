@@ -50,7 +50,7 @@ END_RESPONSE_TABLE
 int main()
 {
   try {
-    xmt::Thread::become_daemon();
+    // xmt::Thread::become_daemon();
 
     StEMecho echo( 0 );
     sockmgr_stream_MP<NetTransport> srv( 6995 );
