@@ -1,23 +1,14 @@
-// -*- C++ -*- Time-stamp: <02/09/25 11:37:29 ptr>
+// -*- C++ -*- Time-stamp: <06/09/22 20:01:52 ptr>
 
 /*
- *
- * Copyright (c) 1997-1999, 2002, 2005
+ * Copyright (c) 1997-1999, 2002, 2005, 2006
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 2.1
- * 
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
+ * Licensed under the Academic Free License version 3.0
  *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #ifndef __THR_MGR_H
@@ -46,8 +37,10 @@ class ThreadMgr
     __FIT_DECLSPEC ~ThreadMgr();
 
     __FIT_DECLSPEC
-    void launch( Thread::entrance_type entrance, const void *p = 0, size_t psz = 0 );    
+    void launch( Thread::entrance_type entrance, const void *p = 0, size_t psz = 0, unsigned flags = 0, size_t stack_sz = 0 );    
     __FIT_DECLSPEC void garbage_collector();
+
+    container_type::size_type size();
 
   protected:
     _Sequence _M_c;

@@ -1,3 +1,16 @@
+2006-09-22  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xmt.cc: no need to lock around thread creation;
+	_state should be setup in goodbit in parent thread,
+	not in just created [info in parent, and it should
+	be joinable].
+
+	* thr_mgr.h, thr_mgr.cc: reincarnation of threads pool;
+	don't reuse allocated Thread space---Thread flags may differ
+	in the future.
+
+	* libxmt: version 1.9.1
+
 2006-09-18  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* xmt.h, xmt.cc: add stack size attribute to thread creation

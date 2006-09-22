@@ -1,22 +1,14 @@
-// -*- C++ -*- Time-stamp: <02/09/25 12:04:20 ptr>
+// -*- C++ -*- Time-stamp: <06/09/22 20:02:16 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2005
+ * Copyright (c) 1997-1999, 2002, 2005, 2006
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 2.1
+ * Licensed under the Academic Free License version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #include "mt/thr_mgr.h"
@@ -42,23 +34,30 @@ __FIT_DECLSPEC ThreadMgr::~ThreadMgr()
   while ( i != _M_c.end() ) {
     if ( (*i)->good() ) {
       (*i)->kill( SIGTERM );
-      (*i)->join();
     }
+    (*i)->join(); 
     delete *i;
     _M_c.erase( i++ );
   }
 }
 
 __FIT_DECLSPEC
-void ThreadMgr::launch( Thread::entrance_type entrance, const void *p, size_t psz )
+void ThreadMgr::launch( Thread::entrance_type entrance, const void *p, size_t psz, unsigned flags, size_t stack_sz )
 {
   MT_REENTRANT( _lock, _x1 );
-  container_type::iterator i = find_if( _M_c.begin(), _M_c.end(), bad_thread() );
-  if ( i == _M_c.end() ) {
-    _M_c.push_back( new Thread( unsigned(Thread::daemon | Thread::detached) ) );
-    i = --_M_c.end();
+  container_type::iterator i = _M_c.begin();
+
+  while ( i != _M_c.end() ) {
+    if ( !(*i)->good() ) {
+      (*i)->join();
+      delete *i;
+      _M_c.erase( i++ );
+    } else {
+      ++i;
+    }
   }
-  (*i)->launch( entrance, p, psz );
+
+  _M_c.push_back( new Thread( entrance, p, psz, flags, stack_sz ) );
 }
 
 __FIT_DECLSPEC
@@ -69,12 +68,30 @@ void ThreadMgr::garbage_collector()
 
   while ( i != _M_c.end() ) {
     if ( !(*i)->good() ) {
+      (*i)->join();
       delete *i;
       _M_c.erase( i++ );
     } else {
       ++i;
     }
   }
+}
+
+ThreadMgr::container_type::size_type ThreadMgr::size()
+{
+  MT_REENTRANT( _lock, _x1 );
+  container_type::iterator i = _M_c.begin();
+
+  while ( i != _M_c.end() ) {
+    if ( !(*i)->good() ) {
+      (*i)->join();
+      delete *i;
+      _M_c.erase( i++ );
+    } else {
+      ++i;
+    }
+  }
+  return _M_c.size();
 }
 
 } // namespace xmt
