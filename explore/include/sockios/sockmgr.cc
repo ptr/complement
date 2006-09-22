@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/21 21:37:55 ptr>
+// -*- C++ -*- Time-stamp: <06/09/22 22:04:59 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -139,7 +139,9 @@ bool sockmgr_stream_MP<Connect>::_shift_fd()
         } else { // normal data available for reading
           _dlock.lock();
           _conn_pool.push_back( *i );
+          // xmt::Thread::gettime( &_tpush );
           _pool_cnd.set( true );
+          _observer_cnd.set( true );
           _dlock.unlock();
 
           /* erase: I don't want to listen this socket
@@ -312,16 +314,21 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
   xmt::Thread::ret_code rtc;
   rtc.iword = 0;
 
-  xmt::Thread *thr = 0;
-
   try {
     me->_loop_cnd.set( true );
 
+    me->_state.follow = true;
+    me->_observer_run = false;
+
     while ( (me->*me->_accept)() ) {
-      if ( thr == 0 ) {
-        me->_state.follow = true;
-        thr = new xmt::Thread( connect_processor, me, 0 );
+      if ( me->mgr.size() < 2 ) {
+        me->mgr.launch( connect_processor, me );
       }
+      me->_orlock.lock();
+      if ( !me->_observer_run ) {
+        me->mgr.launch( observer, me );
+      }
+      me->_orlock.unlock();
     }
   }
   catch ( ... ) {
@@ -339,14 +346,12 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
     me->_c_lock.unlock();
     rtc.iword = -1;
 
-    if ( thr != 0 ) {
-      me->_dlock.lock();
-      me->_state.follow = false;
-      me->_pool_cnd.set( true );
-      me->_dlock.unlock();
-      thr->join();
-      delete thr;
-    }
+    me->_dlock.lock();
+    me->_state.follow = false;
+    me->_pool_cnd.set( true, true );
+    me->_observer_cnd.set( true );
+    me->_dlock.unlock();
+
     return rtc;
     // throw;
   }
@@ -364,14 +369,11 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
   me->close();
   me->_c_lock.unlock();
 
-  if ( thr != 0 ) {
-    me->_dlock.lock();
-    me->_state.follow = false;
-    me->_pool_cnd.set( true );
-    me->_dlock.unlock();
-    thr->join();
-    delete thr;
-  }
+  me->_dlock.lock();
+  me->_state.follow = false;
+  me->_pool_cnd.set( true, true );
+  me->_observer_cnd.set( true );
+  me->_dlock.unlock();
 
   return rtc;
 }
@@ -385,35 +387,49 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
 
   try {
     sockstream *stream;
+    timespec idle;
+    idle.tv_sec = 300;
+    idle.tv_nsec = 0;
+    int idle_count = 0;
 
     me->_dlock.lock();
-    _Connect *c = me->_conn_pool.front();
-    me->_conn_pool.pop_front();
+    _Connect *c = 0;
+    if ( me->_conn_pool.size() != 0 ) {
+      c = me->_conn_pool.front();
+      me->_conn_pool.pop_front();
+      xmt::Thread::gettime( &me->_tpop );
+    }
     me->_dlock.unlock();
 
     do {
-      stream = c->s;
-      if ( stream->is_open() ) {
-        c->_proc->connect( *stream );
-        if ( !stream->good() ) {
-          stream->close();
-          c->_proc->close();
-        } else if ( stream->is_open() ) {
-          if ( stream->rdbuf()->in_avail() > 0) {
-            // socket has buffered data, push it back to queue
-            MT_REENTRANT( me->_dlock, _1 );
-            me->_conn_pool.push_back( c );
-          } else { // no buffered data, return socket to poll
-            sock_base::socket_type rfd = stream->rdbuf()->fd();
-            ::write( me->_cfd, reinterpret_cast<const char *>(&rfd), sizeof(sock_base::socket_type) );
+      if ( c != 0 ) {
+        stream = c->s;
+        if ( stream->is_open() ) {
+          c->_proc->connect( *stream );
+          if ( !stream->good() ) {
+            stream->close();
+            c->_proc->close();
+          } else if ( stream->is_open() ) {
+            if ( stream->rdbuf()->in_avail() > 0) {
+              // socket has buffered data, push it back to queue
+              MT_REENTRANT( me->_dlock, _1 );
+              me->_conn_pool.push_back( c );
+              me->_observer_cnd.set( true );
+              me->_pool_cnd.set( true );
+              // xmt::Thread::gettime( &me->_tpush );
+            } else { // no buffered data, return socket to poll
+              sock_base::socket_type rfd = stream->rdbuf()->fd();
+              ::write( me->_cfd, reinterpret_cast<const char *>(&rfd), sizeof(sock_base::socket_type) );
+            }
+          } else {
+            stream->close();
+            c->_proc->close();
           }
-        } else {
-          stream->close();
-          c->_proc->close();
         }
       }
 
-      for ( ;; ) {
+      for ( idle_count = 0; idle_count < 3; ++idle_count ) {
+      // for ( ; ; ) {
         { 
           MT_REENTRANT( me->_dlock, _1 );
           if ( !me->_state.follow ) {
@@ -423,16 +439,102 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
             // cout << s->conn_pool.size() << " " << (void *)&s->conn_pool.front() << endl;
             c = me->_conn_pool.front();
             me->_conn_pool.pop_front();
+            xmt::Thread::gettime( &me->_tpop );
             break;
           }
           me->_pool_cnd.set( false );
+          me->_observer_cnd.set( false );
         }
+#if 1
+        if ( me->_pool_cnd.try_wait_delay( &idle ) != 0 ) {
+          idle_count = 3;
+          cout << __FILE__ << ":" << __LINE__ << " proc idle timeout" << endl;
+        }
+#else
         me->_pool_cnd.try_wait();
+#endif
+      }
+    } while ( me->_state.is_follow() && idle_count < 3 );
+    cout << __FILE__ << ":" << __LINE__ << " proc idle, out" << endl;
+  }
+  catch ( ... ) {
+  }
+  return rtc;
+}
+
+template <class Connect>
+xmt::Thread::ret_code sockmgr_stream_MP<Connect>::observer( void *p )
+{
+  _Self_type *me = static_cast<_Self_type *>(p);
+  xmt::Thread::ret_code rtc;
+  rtc.iword = 0;
+  size_t pool_size[3];
+  // timespec tpush;
+  timespec tpop;
+  timespec delta;
+  timespec alarm;
+
+  delta.tv_sec = 0;
+  delta.tv_nsec = 50000000; // i.e 0.05 sec
+
+  alarm.tv_sec = 0;
+  alarm.tv_nsec = 50000000; // i.e 0.05 sec
+
+  timespec idle;
+  idle.tv_sec = 300;
+  idle.tv_nsec = 0;
+
+  timespec now;
+  std::fill( pool_size, pool_size + 3, 0 );
+
+  me->_orlock.lock();
+  me->_observer_run = true;
+  me->_orlock.unlock();
+
+  try {
+    do {
+      std::swap( pool_size[0], pool_size[1] );
+      {
+        MT_REENTRANT( me->_dlock, _1 );
+        // std::rotate( pool_size, pool_size, pool_size + 3 );
+        pool_size[1] = me->_conn_pool.size();
+        // tpush = me->_tpush;
+        tpop = me->_tpop;
+      }
+      if ( pool_size[1] > 3 && pool_size[0] <= pool_size[1] ) {
+        // queue not empty and not decrease
+        me->mgr.launch( connect_processor, me );
+        cout << __FILE__ << ":" << __LINE__ << " observer +1" << endl;
+      } else if ( pool_size[1] > 0 ) {
+        xmt::Thread::gettime( &now );
+        if ( (tpop + delta) < now ) {
+          // a long time was since last pop from queue
+          me->mgr.launch( connect_processor, me );
+          cout << __FILE__ << ":" << __LINE__ << " observer +1" << endl;
+        }
+      }
+
+      if ( pool_size[1] == 0 ) {
+#if 1
+        if ( me->_observer_cnd.try_wait_delay( &idle ) != 0 ) {
+          MT_REENTRANT( me->_orlock, _1 );
+          me->_observer_run = false;
+
+          cout << __FILE__ << ":" << __LINE__ << " observer idle, out" << endl;
+          return rtc;
+        }
+#endif
+      } else {
+        xmt::Thread::delay( &alarm );
       }
     } while ( me->_state.is_follow() );
   }
   catch ( ... ) {
   }
+
+  MT_REENTRANT( me->_orlock, _1 );
+  me->_observer_run = false;
+
   return rtc;
 }
 

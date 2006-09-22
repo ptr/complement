@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/21 21:36:36 ptr>
+// -*- C++ -*- Time-stamp: <06/09/22 19:30:52 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -182,7 +182,7 @@ class sockmgr_stream_MP :
     void _open( sock_base::stype t = sock_base::sock_stream );
     static xmt::Thread::ret_code loop( void * );
     static xmt::Thread::ret_code connect_processor( void * );
-
+    static xmt::Thread::ret_code observer( void * );
 
     struct fd_equal :
         public std::binary_function<_Connect *,int,bool> 
@@ -247,6 +247,12 @@ class sockmgr_stream_MP :
     _connect_pool_sequence _conn_pool;
     xmt::Condition _pool_cnd;
     xmt::Mutex _dlock;
+    // timespec _tpush;
+    timespec _tpop;
+    xmt::ThreadMgr mgr;
+    xmt::Condition _observer_cnd;
+    xmt::Mutex _orlock;
+    bool _observer_run;
 
     _ProcState _state;
 
