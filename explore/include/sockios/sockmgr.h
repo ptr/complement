@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/22 19:30:52 ptr>
+// -*- C++ -*- Time-stamp: <06/09/25 13:50:39 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -138,20 +138,55 @@ class sockmgr_stream_MP :
 {
   public:
     sockmgr_stream_MP() :
-	basic_sockmgr()
-      { }
+	basic_sockmgr(),
+        _thr_limit( 31 )
+      {
+        _busylimit.tv_sec = 0;
+        _busylimit.tv_nsec = 90000000; // i.e 0.09 sec
+        _alarm.tv_sec = 0;
+        _alarm.tv_nsec = 50000000; // i.e 0.05 sec
+        _idle.tv_sec = 300;
+        _idle.tv_nsec = 0; // i.e 5 min
+      }
 
     explicit sockmgr_stream_MP( const in_addr& addr, int port, sock_base::stype t = sock_base::sock_stream ) :
-	basic_sockmgr()
-      { open( addr, port, t ); }
+	basic_sockmgr(),
+        _thr_limit( 31 )
+      {
+        open( addr, port, t );
+        _busylimit.tv_sec = 0;
+        _busylimit.tv_nsec = 90000000; // i.e 0.09 sec
+        _alarm.tv_sec = 0;
+        _alarm.tv_nsec = 50000000; // i.e 0.05 sec
+        _idle.tv_sec = 300;
+        _idle.tv_nsec = 0; // i.e 5 min
+      }
 
     explicit sockmgr_stream_MP( unsigned long addr, int port, sock_base::stype t = sock_base::sock_stream ) :
-	basic_sockmgr()
-      { open( addr, port, t ); }
+	basic_sockmgr(),
+        _thr_limit( 31 )
+      {
+        open( addr, port, t );
+        _busylimit.tv_sec = 0;
+        _busylimit.tv_nsec = 90000000; // i.e 0.09 sec
+        _alarm.tv_sec = 0;
+        _alarm.tv_nsec = 50000000; // i.e 0.05 sec
+        _idle.tv_sec = 300;
+        _idle.tv_nsec = 0; // i.e 5 min
+      }
 
     explicit sockmgr_stream_MP( int port, sock_base::stype t = sock_base::sock_stream ) :
-	basic_sockmgr()
-      { open( port, t ); }
+	basic_sockmgr(),
+        _thr_limit( 30 )
+      {
+        open( port, t );
+        _busylimit.tv_sec = 0;
+        _busylimit.tv_nsec = 50000000; // i.e 0.05 sec
+        _alarm.tv_sec = 0;
+        _alarm.tv_nsec = 50000000; // i.e 0.05 sec
+        _idle.tv_sec = 300;
+        _idle.tv_nsec = 0; // i.e 5 min
+      }
 
     ~sockmgr_stream_MP()
       { }
@@ -168,6 +203,18 @@ class sockmgr_stream_MP :
 
     void detach( sockstream& ) // remove sockstream from polling in manager
       { }
+
+    void setbusytime( const timespec& t )
+      { _busylimit = t; }
+
+    void setobservertime( const timespec& t )
+      { _alarm = t; }
+
+    void setidletime( const timespec& t )
+      { _idle = t; }
+
+    void setthreadlimit( unsigned lim )
+      { _thr_limit = std::max( 3U, lim ) - 1; }
 
   protected:
 
@@ -198,19 +245,6 @@ class sockmgr_stream_MP :
           { return __x.fd == __y; }
     };
     
-    struct _ProcState
-    {
-        _ProcState() :
-            follow( false )
-          { }
-
-        bool is_follow() const
-          { MT_REENTRANT( lock, _1 ); return follow; }
-
-        xmt::Mutex lock;
-        bool follow;
-    };
-
     typedef bool (sockmgr_stream_MP<Connect>::*accept_type)();
 
 #if 0
@@ -247,18 +281,31 @@ class sockmgr_stream_MP :
     _connect_pool_sequence _conn_pool;
     xmt::Condition _pool_cnd;
     xmt::Mutex _dlock;
-    // timespec _tpush;
     timespec _tpop;
     xmt::ThreadMgr mgr;
+
+    xmt::Mutex _flock;
+    bool _follow;
+
     xmt::Condition _observer_cnd;
     xmt::Mutex _orlock;
     bool _observer_run;
 
-    _ProcState _state;
+    timespec _busylimit; // start new thread to process incoming
+                         // requests, if processing thread busy
+                         // more then _busylimit
+    timespec _alarm;     // check and make decision about start
+                         // new thread with _alarm interval
+    timespec _idle;      // do nothing _idle time before thread
+                         // terminate
+
+    unsigned _thr_limit;
 
   private:
     bool _shift_fd();
     static void _close_by_signal( int );
+    bool _is_follow() const
+      { MT_REENTRANT( _flock, _1 ); return _follow; }
 };
 
 #endif // !__FIT_NO_POLL
