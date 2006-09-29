@@ -20,7 +20,6 @@ extern "C" {
 
 #include <stem/NetTransport.h>
 #include "mprocessor.h"
-// #include <iostream>
 
 using namespace std;
 using namespace stem;
@@ -67,11 +66,41 @@ public:
         void sendbinary( unsigned a, const char *m, unsigned l )
           { prc->send( a, m, l ); }
 
+        const char *get()
+          {
+            const char *str = prc->get();
+            if ( str != 0 ) {
+              return str;
+            }
+            croak( "No message" );
+          }
+
+        const char *getbinary( unsigned *len )
+          {
+            const char *str = prc->getbinary( *len );
+            if ( str != 0 ) {
+              return str;
+            }
+            croak( "No message" );
+          }
+
+        const char *get_with_timeout( unsigned sec, unsigned nsec )
+          {
+            const char *str = prc->get( sec, nsec );
+            if ( str != 0 ) {
+              return str;
+            }
+            croak( "No message" );
+          }
+
+        unsigned self_id() const
+          { return prc->self_id(); }
+
 };
 
 // ___________________
 // C-Perl
-MODULE = stem::NetTransport     PACKAGE = stem::NetTransport
+MODULE = stem     PACKAGE = stem::NetTransport
 
 StEM_NetMgr *
 StEM_NetMgr::new()
@@ -88,7 +117,7 @@ StEM_NetMgr::close()
 int
 StEM_NetMgr::join()
 
-MODULE = stem::NetTransport     PACKAGE = stem::mprocessor
+MODULE = stem     PACKAGE = stem::mprocessor
 
 mprocessor *
 mprocessor::new( const char* info )
@@ -101,3 +130,15 @@ mprocessor::send( unsigned a, const char *m )
 
 void
 mprocessor::sendbinary( unsigned a, const char *m, unsigned l )
+
+const char *
+mprocessor::get()
+
+const char *
+mprocessor::getbinary( unsigned& len )
+
+const char *
+mprocessor::get_with_timeout( unsigned sec, unsigned nsec )
+
+unsigned
+mprocessor::self_id()

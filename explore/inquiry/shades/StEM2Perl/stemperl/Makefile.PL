@@ -1,24 +1,37 @@
 use 5.006;
 use ExtUtils::MakeMaker;
 
-$CC = 'c++ -pthread';
+$CC = 'c++';
+
+# well, I use STLport and skip libstdc++ from link process
+# (of cause, I can do the same without STLport; ask me how)
+
+$beginS = `$CC -print-file-name=crtbeginS.o`;
+$endS = `$CC -print-file-name=crtendS.o`;
+$crtn = `$CC -print-file-name=crtn.o`;
+$STLport = '$(HOME)/STLport.lab/STLport';
+
+# my configuration assume boost, I like most of it;
+# but I can live without boost
+
+$Boost = '$(HOME)/labs/boost';
+
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 WriteMakefile(
-    NAME              => 'stem::NetTransport',
-    VERSION_FROM      => 'lib/stem/NetTransport.pm', # finds $VERSION
+    NAME              => 'stem',
+    VERSION_FROM      => 'lib/stem.pm', # finds $VERSION
     PREREQ_PM         => {}, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
-      (ABSTRACT_FROM  => 'lib/stem/NetTransport.pm', # retrieve abstract from module
+      (ABSTRACT_FROM  => 'lib/stem.pm', # retrieve abstract from module
        AUTHOR         => 'Petr Ovtchenkov <ptr@island.corbina.net>') : ()),
-    LIBS              => ['-L/export/home/ptr/STLport.lab/STLport/lib -L../../../../build/lib -lxmt -lsockios -lstem'], # e.g., '-lm'
+    LIBS              => [ '-L' . $STLport . '/lib -L../../../../build/lib -lxmt -lsockios -lstem -lpthread'], # e.g., '-lm'
     DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
     'CC'              => $CC,
-    'LD'              => '$(CC) -nostdlib',
-    INC               => '-I. -I../../../../include -I$(HOME)/STLport.lab/STLport/stlport -I$(HOME)/labs/boost', # e.g., '-I. -I/usr/include/other'
-	# Un-comment this if you add C files to link with later:
-    # OBJECT            => '$(O_FILES)', # link all the C files too
-    OBJECT            => '/opt/gcc-4.1.1/lib/gcc/i686-pc-linux-gnu/4.1.1/crtbeginS.o $(O_FILES) /opt/gcc-4.1.1/lib/gcc/i686-pc-linux-gnu/4.1.1/crtendS.o /usr/lib/crtn.o',
+    'CCFLAGS'         => '-pthread -fexceptions',
+    'LD'              => '$(CC) -pthread -fexceptions -nostdlib',
+    INC               => '-I. -I../../../../include -I' . $STLport . '/stlport -I' . $Boost,
+    OBJECT            => "$beginS " . '$(O_FILES)' . " $endS $crtn",
     'XSOPT'           => '-C++',
     'TYPEMAPS'        => ['perlobject.map' ],
 );
