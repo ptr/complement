@@ -1,4 +1,4 @@
-package stem::NetTransport;
+package stem;
 
 use 5.006;
 use strict;
@@ -12,7 +12,7 @@ our @ISA = qw(Exporter);
 # names by default without a very good reason. Use EXPORT_OK instead.
 # Do not simply export all your public functions/methods/constants.
 
-# This allows declaration	use stem::NetTransport ':all';
+# This allows declaration	use stem ':all';
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
 our %EXPORT_TAGS = ( 'all' => [ qw(
@@ -28,7 +28,7 @@ our @EXPORT = qw(
 our $VERSION = '0.01';
 
 require XSLoader;
-XSLoader::load('stem::NetTransport', $VERSION);
+XSLoader::load('stem', $VERSION);
 
 # Preloaded methods go here.
 
@@ -38,16 +38,16 @@ __END__
 
 =head1 NAME
 
-stem::NetTransport - Perl extension for blah blah blah
+stem - Perl extension for blah blah blah
 
 =head1 SYNOPSIS
 
-  use stem::NetTransport;
+  use stem;
   blah blah blah
 
 =head1 DESCRIPTION
 
-Stub documentation for stem::NetTransport, created by h2xs. It looks like the
+Stub documentation for stem, created by h2xs. It looks like the
 author of the extension was negligent enough to leave the stub
 unedited.
 
@@ -70,7 +70,7 @@ Original version; created by h2xs 1.23 with options
 	-C
 	-b
 	5.6.0
-	stem::NetTransport
+	stem
 
 =back
 
