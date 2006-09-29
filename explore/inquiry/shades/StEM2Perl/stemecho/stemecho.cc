@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/12 17:50:30 ptr>
+// -*- C++ -*- Time-stamp: <06/09/28 19:09:27 ptr>
 
 #include <stem/EventHandler.h>
 #include <stem/NetTransport.h>
@@ -6,9 +6,11 @@
 #include <sockios/sockmgr.h>
 #include <string>
 #include <mt/xmt.h>
+#include <iostream>
 
 using namespace stem;
 using namespace xmt;
+using namespace std;
 
 class StEMecho :
     public stem::EventHandler
@@ -41,6 +43,7 @@ void StEMecho::echo( const Event& ev )
 
   Send( eev );
 
+  cerr << ev.value() << endl;
 }
 
 DEFINE_RESPONSE_TABLE( StEMecho )
@@ -50,7 +53,7 @@ END_RESPONSE_TABLE
 int main()
 {
   try {
-    xmt::Thread::become_daemon();
+    // xmt::Thread::become_daemon();
 
     StEMecho echo( 0 );
     sockmgr_stream_MP<NetTransport> srv( 6995 );
