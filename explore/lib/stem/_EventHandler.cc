@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/06/29 02:29:06 ptr>
+// -*- C++ -*- Time-stamp: <06/09/30 00:01:05 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -58,9 +58,10 @@ EventHandler::Init::Init()
 EventHandler::Init::~Init()
 {
   MT_REENTRANT_RS( _init_lock, _x );
-  if ( --_count == 1 ) {
+  --_count;
+  if ( _count == 1 ) {
     delete stem::_ns;
-  } else if ( --_count == 0 ) {
+  } else if ( _count == 0 ) {
     delete EventHandler::_mgr;
   }
 }
