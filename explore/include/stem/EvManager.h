@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/08/03 23:59:33 ptr>
+// -*- C++ -*- Time-stamp: <06/09/30 09:03:44 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005
@@ -149,9 +149,7 @@ class EvManager
       {
         MT_REENTRANT( _lock_queue, _x1 );
         in_ev_queue.push( e );
-        if ( out_ev_queue.size() == 0 ) {
-          _ev_queue_thr.resume();
-        }
+        _cnd_queue.set( true );
       }
 
     __FIT_DECLSPEC void Remove( NetTransport_base * );
@@ -200,6 +198,7 @@ class EvManager
 
     xmt::Mutex _lock_heap;
     xmt::Mutex _lock_queue;
+    xmt::Condition _cnd_queue;
 
     static std::string inv_key_str;
 

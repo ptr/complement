@@ -1,3 +1,11 @@
+2006-09-30  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* _EventHandler.cc: fix wrong decrement and deinitialization
+	of EvManager.
+
+	* EventManager.cc: directly use loop thread wake up condition
+	[fix problem with thread-safe signaling about loop termination].
+
 2006-08-21  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* NetTransport.cc: close() should shutdown connection

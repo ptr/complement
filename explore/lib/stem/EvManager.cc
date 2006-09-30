@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/08/03 23:58:45 ptr>
+// -*- C++ -*- Time-stamp: <06/09/30 09:03:06 ptr>
 
 /*
  *
@@ -64,6 +64,7 @@ __FIT_DECLSPEC EvManager::EvManager() :
     _dispatch_stop( false )
 {
 // #ifndef __hpux
+  _cnd_queue.set( false );
   _ev_queue_thr.launch( _Dispatch, this );
 // #endif
 }
@@ -72,6 +73,7 @@ __FIT_DECLSPEC EvManager::~EvManager()
 {
   _ev_queue_dispatch_guard.lock();
   _dispatch_stop = true;
+  _cnd_queue.set( true );
   _ev_queue_dispatch_guard.unlock();
   _ev_queue_thr.join();
 }
@@ -90,9 +92,6 @@ xmt::Thread::ret_code EvManager::_Dispatch( void *p )
 
   while ( me.not_finished() ) {
     MT_LOCK( me._lock_queue );
-    // swap( me.in_ev_queue, me.out_ev_queue );
-    // _STLP_ASSERT( me.out_ev_queue.empty() );
-    // (const_cast<queue_type::container_type&>(me.in_ev_queue._Get_c())).swap( const_cast<queue_type::container_type&>(me.out_ev_queue._Get_c()) );
     swap( me.in_ev_queue, me.out_ev_queue );
     MT_UNLOCK( me._lock_queue );
     while ( !me.out_ev_queue.empty() ) {
@@ -100,13 +99,10 @@ xmt::Thread::ret_code EvManager::_Dispatch( void *p )
       me.out_ev_queue.pop();
     }
     MT_LOCK( me._lock_queue );
-    if ( me.in_ev_queue.empty() ) {
+    if ( me.in_ev_queue.empty() && me.not_finished() ) {
+      me._cnd_queue.set( false );
       MT_UNLOCK( me._lock_queue );
-//      timespec t;
-//      t.tv_sec = 0;
-//      t.tv_nsec = 10000000;
-//      __impl::Thread::sleep( &t );
-      me._ev_queue_thr.suspend();
+      me._cnd_queue.try_wait();
     } else {
       MT_UNLOCK( me._lock_queue );
     }
