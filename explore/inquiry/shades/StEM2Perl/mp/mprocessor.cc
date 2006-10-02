@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/29 18:40:31 ptr>
+// -*- C++ -*- Time-stamp: <06/10/02 17:19:19 ptr>
 
 #include "mprocessor.h"
 #include <iostream>
@@ -17,14 +17,15 @@ MProcessor::MProcessor( const char *srv_name ) :
 
 void MProcessor::send( stem::addr_type addr, const char *msg )
 {
-  cerr << hex << (unsigned)get_ev_table_decl() << dec << endl;
+  // cerr << hex << (unsigned)get_ev_table_decl() << dec << endl;
+  // cerr << hex << addr << endl;
   Event ev( /* 0x7200 */ 0x5000 );
 
   ev.dest( addr );
   ev.value() = msg;
 
-  DispatchTrace( ev, cerr );
-  Trace( cerr );
+  // DispatchTrace( ev, cerr );
+  // Trace( cerr );
   Send( ev );
 }
 
@@ -40,12 +41,12 @@ void MProcessor::send( stem::addr_type addr, const char *msg, size_t len )
 
 void MProcessor::receive( const stem::Event& ev )
 {
-  cerr << "I see event " << ev.value() << endl;
+  // cerr << "I see event " << ev.value() << endl;
   MT_REENTRANT( lock, _1 );
 
   income_queue.push_back( ev );
   cnd.set( true );
-  cerr << "I see event " << ev.value() << endl;
+  // cerr << "I see event " << ev.value() << endl;
 }
 
 const char *MProcessor::get()
@@ -98,3 +99,27 @@ DEFINE_RESPONSE_TABLE( MProcessor )
 END_RESPONSE_TABLE
 
 }
+
+test::MProcessor mp( "qq" );
+
+class XXxx :
+        public stem::EventHandler
+{
+  public:
+    XXxx()
+      {}
+        
+  private:
+    void test();
+
+    DECLARE_RESPONSE_TABLE(XXxx,stem::EventHandler);
+};
+
+void XXxx::test()
+{}
+
+DEFINE_RESPONSE_TABLE( XXxx )
+  EV_VOID(0,0x20000,test)
+END_RESPONSE_TABLE
+
+XXxx xx;
