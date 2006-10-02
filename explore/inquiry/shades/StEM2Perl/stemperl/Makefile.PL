@@ -25,7 +25,7 @@ WriteMakefile(
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/stem.pm', # retrieve abstract from module
        AUTHOR         => 'Petr Ovtchenkov <ptr@island.corbina.net>') : ()),
-    LIBS              => [ '-L' . $STLport . '/lib -L../../../../build/lib -lxmt -lsockios -lstem -lpthread'], # e.g., '-lm'
+    LIBS              => [ '-L' . $STLport . '/lib -L../../../../build/lib -L../mp/obj/gcc/shared -lpthread -lmprocessor'], # e.g., '-lm'
     DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
     'CC'              => $CC,
     'CCFLAGS'         => '-pthread -fexceptions',

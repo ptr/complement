@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/28 19:09:27 ptr>
+// -*- C++ -*- Time-stamp: <06/09/29 17:20:32 ptr>
 
 #include <stem/EventHandler.h>
 #include <stem/NetTransport.h>
@@ -43,7 +43,7 @@ void StEMecho::echo( const Event& ev )
 
   Send( eev );
 
-  cerr << ev.value() << endl;
+  cerr << ev.value() << ", " << hex << ev.src() << dec << endl;
 }
 
 DEFINE_RESPONSE_TABLE( StEMecho )
