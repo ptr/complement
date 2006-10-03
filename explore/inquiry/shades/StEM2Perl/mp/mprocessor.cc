@@ -1,13 +1,68 @@
-// -*- C++ -*- Time-stamp: <06/10/02 17:19:19 ptr>
+// -*- C++ -*- Time-stamp: <06/10/03 17:47:37 ptr>
 
 #include "mprocessor.h"
 #include <iostream>
+#include <stem/EDSEv.h>
+
 
 namespace test {
 
 using namespace stem;
 using namespace std;
 using namespace xmt;
+
+NsWrapper::NsWrapper()
+{
+}
+
+void NsWrapper::ask_names( addr_type nsaddr )
+{
+  if ( nsaddr != badaddr ) {
+    lcnd.set( false );
+    lst.clear();
+
+    Event ev( EV_EDS_RQ_ADDR_LIST );
+    // Event ev( EV_EDS_RQ_EXT_ADDR_LIST );
+    ev.dest( nsaddr );
+
+    Send( ev );
+  }
+}
+
+const list<stem::NameRecord>& NsWrapper::names()
+{
+  timespec t;
+  t.tv_sec = 2;
+  t.tv_nsec = 0;
+
+  lcnd.try_wait_delay( &t );
+
+  return lst;
+}
+
+void NsWrapper::names_list( const stem::NameRecord& nr )
+{
+  if ( nr.addr == stem::badaddr ) { // the last record
+    lcnd.set(true);
+  } else {
+    lst.push_back( nr );
+    cerr << hex << nr.addr << " " << nr.record << endl;
+  }
+}
+
+void NsWrapper::names_name( const stem::NameRecord& nr )
+{
+  if ( nr.addr == stem::badaddr ) { // the last record
+    lcnd.set(true);
+  } else {
+    lst.push_back( nr );
+  }
+}
+
+DEFINE_RESPONSE_TABLE( NsWrapper )
+  EV_T_(0,EV_EDS_NM_LIST,names_list,stem::NameRecord)
+  EV_T_(0,EV_EDS_NS_ADDR,names_name,stem::NameRecord)
+END_RESPONSE_TABLE
 
 MProcessor::MProcessor( const char *srv_name ) :
     EventHandler( srv_name )
@@ -100,26 +155,3 @@ END_RESPONSE_TABLE
 
 }
 
-test::MProcessor mp( "qq" );
-
-class XXxx :
-        public stem::EventHandler
-{
-  public:
-    XXxx()
-      {}
-        
-  private:
-    void test();
-
-    DECLARE_RESPONSE_TABLE(XXxx,stem::EventHandler);
-};
-
-void XXxx::test()
-{}
-
-DEFINE_RESPONSE_TABLE( XXxx )
-  EV_VOID(0,0x20000,test)
-END_RESPONSE_TABLE
-
-XXxx xx;
