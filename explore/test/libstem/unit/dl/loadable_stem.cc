@@ -38,15 +38,15 @@ NodeDL::~NodeDL()
 
 void NodeDL::handler1( const stem::Event& )
 {
-  std::cerr << "I am here 1\n";
+  // std::cerr << "I am here 1\n";
   v = 1;
   cnd.set(true);
-  std::cerr << "I am here 2\n";
+  // std::cerr << "I am here 2\n";
 }
 
 void NodeDL::wait()
 {
-  cnd.wait();
+  cnd.try_wait();
 }
 
 DEFINE_RESPONSE_TABLE( NodeDL )
@@ -76,15 +76,15 @@ NewNodeDL::~NewNodeDL()
 
 void NewNodeDL::handler1( const stem::Event& )
 {
-  std::cerr << "I am here 1\n";
+  // std::cerr << "I am here 1\n";
   v = 1;
   cnd.set(true);
-  std::cerr << "I am here 2\n";
+  // std::cerr << "I am here 2\n";
 }
 
 void NewNodeDL::wait()
 {
-  cnd.wait();
+  cnd.try_wait();
 }
 
 DEFINE_RESPONSE_TABLE( NewNodeDL )
