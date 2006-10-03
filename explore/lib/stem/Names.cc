@@ -1,23 +1,14 @@
-// -*- C++ -*- Time-stamp: <05/12/30 22:10:56 ptr>
+// -*- C++ -*- Time-stamp: <06/10/03 11:06:19 ptr>
 
 /*
- *
- * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.1
+ * Licensed under the Academic Free License version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #ifdef _MSC_VER
@@ -28,8 +19,11 @@
 #include "stem/Names.h"
 #include "stem/EvManager.h"
 #include "stem/EDSEv.h"
+#include <list>
 
 namespace stem {
+
+using namespace std;
 
 __FIT_DECLSPEC Names::Names() :
     EventHandler()
@@ -52,22 +46,23 @@ __FIT_DECLSPEC Names::~Names()
 
 void __FIT_DECLSPEC Names::get_list( const Event& rq )
 {
+  list<NameRecord> lst;
+  {
+    MT_REENTRANT( manager()->_lock_heap, _x1 );
+    for ( EvManager::heap_type::iterator i = manager()->heap.begin(); i != manager()->heap.end(); ++i ) {
+      if ( ((*i).first & extbit) == 0 ) { // only local...
+        lst.push_back( NameRecord((*i).first, (*i).second.info ) );
+      }
+    }
+  }
+
   Event_base<NameRecord> rs( EV_EDS_NM_LIST );
 
   rs.dest( rq.src() );
-
-  MT_REENTRANT( manager()->_lock_heap, _x1 );
-  EvManager::heap_type::iterator i = manager()->heap.begin();
-  while ( i != manager()->heap.end() ) {
-    if ( ((*i).first & extbit) == 0 ) { // only local...
-      rs.value().addr = (*i).first;
-      rs.value().record = (*i).second.info;
-
-      Send( Event_convert<NameRecord>()( rs ) );
-    }
-    ++i;
+  for ( list<NameRecord>::const_iterator i = lst.begin(); i != lst.end(); ++i ) {
+    rs.value() = *i;
+    Send( Event_convert<NameRecord>()( rs ) );
   }
-
   // end of table
   rs.value().addr = badaddr;
   rs.value().record.clear();
@@ -76,22 +71,22 @@ void __FIT_DECLSPEC Names::get_list( const Event& rq )
 
 void __FIT_DECLSPEC Names::get_ext_list( const Event& rq )
 {
+  list<NameRecord> lst;
+  {
+    MT_REENTRANT( manager()->_lock_heap, _x1 );
+    for ( EvManager::heap_type::const_iterator i = manager()->heap.begin(); i != manager()->heap.end(); ++i ) {
+      if ( ((*i).first & extbit) != 0 ) { // only external...
+        lst.push_back( NameRecord((*i).first, (*i).second.info ) );
+      }
+    }
+  }
   Event_base<NameRecord> rs( EV_EDS_NM_LIST );
 
   rs.dest( rq.src() );
-
-  MT_REENTRANT( manager()->_lock_heap, _x1 );
-  EvManager::heap_type::iterator i = manager()->heap.begin();
-  while ( i != manager()->heap.end() ) {
-    if ( ((*i).first & extbit) != 0 ) { // only external...
-      rs.value().addr = (*i).first;
-      rs.value().record = (*i).second.info;
-
-      Send( Event_convert<NameRecord>()( rs ) );
-    }
-    ++i;
+  for ( list<NameRecord>::const_iterator i = lst.begin(); i != lst.end(); ++i ) {
+    rs.value() = *i;
+    Send( Event_convert<NameRecord>()( rs ) );
   }
-
   // end of table
   rs.value().addr = badaddr;
   rs.value().record.clear();
@@ -100,23 +95,22 @@ void __FIT_DECLSPEC Names::get_ext_list( const Event& rq )
 
 void __FIT_DECLSPEC Names::get_by_name( const Event& rq )
 {
+  list<NameRecord> lst;
+  {
+    MT_REENTRANT( manager()->_lock_heap, _x1 );
+    for ( EvManager::heap_type::const_iterator i = manager()->heap.begin(); i != manager()->heap.end(); ++i ) {
+      if ( ((*i).first & extbit) == 0 && (*i).second.info == rq.value() ) { // only local...
+        lst.push_back( NameRecord((*i).first, (*i).second.info ) );
+      }
+    }
+  }
   Event_base<NameRecord> rs( EV_EDS_NS_ADDR );
 
   rs.dest( rq.src() );
-
-  MT_REENTRANT( manager()->_lock_heap, _x1 );
-  EvManager::heap_type::iterator i = manager()->heap.begin();
-  while ( i != manager()->heap.end() ) {
-    if ( ((*i).first & extbit) == 0 && (*i).second.info == rq.value() ) { // only local...
-      rs.value().addr = (*i).first;
-      rs.value().record = (*i).second.info;
-
-      Send( Event_convert<NameRecord>()( rs ) );
-      return;
-    }
-    ++i;
+  for ( list<NameRecord>::const_iterator i = lst.begin(); i != lst.end(); ++i ) {
+    rs.value() = *i;
+    Send( Event_convert<NameRecord>()( rs ) );
   }
-
   // end of table
   rs.value().addr = badaddr;
   rs.value().record.clear();

@@ -2,5 +2,6 @@
 
 PRGNAME = stem_ut
 SRC_CC = unit_test.cc \
-         Node.cc
+         Node.cc \
+         NameService.cc
 

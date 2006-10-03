@@ -1,23 +1,14 @@
-// -*- C++ -*- Time-stamp: <05/12/30 00:15:36 ptr>
+// -*- C++ -*- Time-stamp: <06/10/03 10:55:31 ptr>
 
 /*
- *
- * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.1
+ * Licensed under the Academic Free License version 3.0
  * 
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #ifndef __stem_Names_h
@@ -28,10 +19,8 @@
 #endif
 
 #include <string>
-
-#ifndef __IOSFWD__
 #include <iosfwd>
-#endif
+#include <functional>
 
 #ifndef __stem_EventHandler_h
 #include <stem/EventHandler.h>
@@ -72,6 +61,11 @@ struct NameRecord :
         record( nr.record )
       { }
 
+    NameRecord( addr_type a, const std::string& r ) :
+        addr( a ),
+        record( r )
+      { }
+
     addr_type    addr;
     std::string  record;
 
@@ -80,6 +74,18 @@ struct NameRecord :
     virtual __FIT_DECLSPEC void unpack( std::istream& s );
     virtual __FIT_DECLSPEC void net_unpack( std::istream& s );
 };
+
+inline bool operator == ( const NameRecord& nr, const std::string& s )
+{ return nr.record == s; }
+
+// bool operator == ( const std::string& s, const NameRecord& nr )
+// { return nr.record == s; }
+
+inline bool operator == ( const NameRecord& nr, addr_type a )
+{ return nr.addr == a; }
+
+// bool operator == ( addr_type a, const NameRecord& nr )
+// { return nr.addr == a; }
 
 } // namespace stem
 
