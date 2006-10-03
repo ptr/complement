@@ -1,3 +1,9 @@
+2006-10-03  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Names.h, Names.cc: localize heap locking---no wait in
+	the Send call [use temporary container instead]; get_by_name
+	return sequence of name entries too, as get_list, not single record.
+
 2006-09-30  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* _EventHandler.cc: fix wrong decrement and deinitialization
