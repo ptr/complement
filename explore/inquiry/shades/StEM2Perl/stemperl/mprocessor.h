@@ -1,10 +1,29 @@
-// -*- C++ -*- Time-stamp: <06/09/29 18:36:51 ptr>
+// -*- C++ -*- Time-stamp: <06/10/03 16:16:41 ptr>
 
 #include <stem/EventHandler.h>
+#include <stem/Names.h>
 #include <list>
 #include <mt/xmt.h>
 
 namespace test {
+
+class NsWrapper :
+        public stem::EventHandler
+{
+  public:
+    NsWrapper();
+    void ask_names( stem::addr_type );
+    const std::list<stem::NameRecord>& names();
+
+  private:
+    void names_list( const stem::NameRecord& );
+    void names_name( const stem::NameRecord& );
+
+    std::list<stem::NameRecord> lst;
+    xmt::Condition lcnd;
+
+    DECLARE_RESPONSE_TABLE( NsWrapper, stem::EventHandler );
+};
 
 class MProcessor :
         public stem::EventHandler
@@ -27,7 +46,7 @@ class MProcessor :
     stem::Event last;
     xmt::Condition cnd;
 
-    DECLARE_RESPONSE_TABLE( test::MProcessor, stem::EventHandler );
+    DECLARE_RESPONSE_TABLE( MProcessor, stem::EventHandler );
 };
 
 } // namespace test

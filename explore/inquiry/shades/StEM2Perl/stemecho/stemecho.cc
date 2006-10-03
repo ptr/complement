@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/29 17:20:32 ptr>
+// -*- C++ -*- Time-stamp: <06/10/03 17:44:45 ptr>
 
 #include <stem/EventHandler.h>
 #include <stem/NetTransport.h>
@@ -18,6 +18,7 @@ class StEMecho :
   public:
     StEMecho();
     StEMecho( stem::addr_type id );
+    StEMecho( stem::addr_type id, const char * );
 
     void echo( const stem::Event& );
 
@@ -31,6 +32,11 @@ StEMecho::StEMecho()
 
 StEMecho::StEMecho( addr_type id ) :
     EventHandler( id )
+{
+}
+
+StEMecho::StEMecho( addr_type id, const char *info ) :
+    EventHandler( id, info )
 {
 }
 
@@ -55,7 +61,7 @@ int main()
   try {
     // xmt::Thread::become_daemon();
 
-    StEMecho echo( 0 );
+    StEMecho echo( 0, "echo service");
     sockmgr_stream_MP<NetTransport> srv( 6995 );
 
     srv.wait();

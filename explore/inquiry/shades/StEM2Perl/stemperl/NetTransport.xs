@@ -28,28 +28,44 @@ class StEM_NetMgr
 {
 public:
         NetTransportMgr* mgr;
+        test::NsWrapper* wrp;
 
-        StEM_NetMgr() {
-          this->mgr = new NetTransportMgr();
-        }
+        StEM_NetMgr()
+          {
+            this->mgr = new NetTransportMgr();
+            this->wrp = new test::NsWrapper();
+          }
 
-        ~StEM_NetMgr() {
-          /* delete mgr; */
-        }
+        ~StEM_NetMgr()
+           {
+             /* delete mgr; */
+             /* delete wrp; */
+           }
 
-        unsigned open( const char *hostname, int port ) {
-          return mgr->open( hostname, port );
-          // cout << mgr->ns() << endl;
-          // return (unsigned)mgr;
-        }
+        unsigned open( const char *hostname, int port )
+          {
+            unsigned zero = mgr->open( hostname, port );
+            wrp->ask_names( mgr->ns() );
+            return zero;
+          }
 
-        void close() {
-          mgr->close();
-        }
+        bool good()
+          { return mgr->good(); }
 
-        int join() {
-          return mgr->join();
-        }
+        bool bad()
+          { return mgr->bad(); }
+
+        bool fail()
+          { return mgr->fail(); }
+
+        bool is_open()
+          { return mgr->is_open(); }
+
+        void close()
+          { mgr->close(); }
+
+        int join()
+          { return mgr->join(); }
 };
 
 class mprocessor
@@ -116,6 +132,30 @@ StEM_NetMgr::close()
 
 int
 StEM_NetMgr::join()
+
+void
+StEM_NetMgr::names()
+PPCODE:
+        std::list<stem::NameRecord> l = THIS->wrp->names();
+        // HV * rh = (HV *)sv_2mortal( (SV *)newHV() );
+        for ( std::list<stem::NameRecord>::const_iterator i = l.begin(); i != l.end(); ++i ) {
+          // hv_store( rh, newSVnv(i->addr), 0, i->record.c_str(), i->record.size() );
+          XPUSHs( sv_2mortal(newSVnv(i->addr)) );
+          XPUSHs( sv_2mortal(newSVpv(i->record.c_str(),i->record.size())) );
+        }
+        // XPUSHs( (SV *)rh );
+
+bool
+StEM_NetMgr::good()
+
+bool
+StEM_NetMgr::bad()
+
+bool
+StEM_NetMgr::fail()
+
+bool
+StEM_NetMgr::is_open()
 
 MODULE = stem     PACKAGE = stem::mprocessor
 
