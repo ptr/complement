@@ -1,6 +1,8 @@
 /* Time-stamp: <06/01/04 01:31:49 ptr> */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 int main( int argc, char *argv[] )
 {
