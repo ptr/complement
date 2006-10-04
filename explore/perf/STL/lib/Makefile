@@ -4,9 +4,6 @@ DIRS = default malloc newalloc misc noshortstr forcestringterm
 
 STLPORT_SRC_DIR = ${HOME}/STLport.lab/STLport
 
-Makefile.inc:	${STLPORT_SRC_DIR}/build/lib/Makefile.inc
-	sed -e 's|\.\./\.\./src|\$${STLPORT_SRC_DIR}/src|g' ${STLPORT_SRC_DIR}/build/lib/Makefile.inc > Makefile.inc
-
 all:	Makefile.inc
 	for d in $(DIRS); do \
 	  (cd $$d; ${MAKE}); \
@@ -28,3 +25,5 @@ clobber:	Makefile.inc
 	done
 	rm -f Makefile.inc
 
+Makefile.inc:	${STLPORT_SRC_DIR}/build/lib/Makefile.inc
+	sed -e 's|\.\./\.\./src|\$${STLPORT_SRC_DIR}/src|g' ${STLPORT_SRC_DIR}/build/lib/Makefile.inc > Makefile.inc
