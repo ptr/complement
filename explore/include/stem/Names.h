@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/03 10:55:31 ptr>
+// -*- C++ -*- Time-stamp: <06/10/04 09:35:52 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -20,7 +20,7 @@
 
 #include <string>
 #include <iosfwd>
-#include <functional>
+#include <stdint.h>
 
 #ifndef __stem_EventHandler_h
 #include <stem/EventHandler.h>
@@ -86,6 +86,88 @@ inline bool operator == ( const NameRecord& nr, addr_type a )
 
 // bool operator == ( addr_type a, const NameRecord& nr )
 // { return nr.addr == a; }
+
+template <class Addr, class Info, class Sequence = std::list< std::pair<Addr, Info> > >
+struct NameRecords :
+   public __pack_base
+{
+    NameRecords()
+      { }
+
+    NameRecords( const NameRecords& nr ) :
+        container( nr.container )
+      { }
+
+    typedef Sequence container_type;
+    typedef typename container_type::iterator iterator;
+    typedef typename container_type::const_iterator const_iterator;
+    typedef Addr address_type;
+    typedef Info name_type;
+
+    container_type container;
+
+    virtual void pack( std::ostream& s ) const;
+    virtual void net_pack( std::ostream& s ) const;
+    virtual void unpack( std::istream& s );
+    virtual void net_unpack( std::istream& s );
+};
+
+
+template <class Addr, class Info, class Sequence>
+void NameRecords<Addr,Info,Sequence>::pack( std::ostream& s ) const
+{
+  __pack( s, container.size() );
+  for ( const_iterator i = container.begin(); i != container.end(); ++i ) {
+    __pack( s, i->first );
+    __pack( s, i->second );
+  }
+}
+
+template <class Addr, class Info, class Sequence>
+void NameRecords<Addr,Info,Sequence>::net_pack( std::ostream& s ) const
+{
+  __net_pack( s, static_cast<uint32_t>(container.size()) );
+  for ( const_iterator i = container.begin(); i != container.end(); ++i ) {
+    __net_pack( s, i->first );
+    __net_pack( s, i->second );
+  }
+}
+
+template <class Addr, class Info, class Sequence>
+void NameRecords<Addr,Info,Sequence>::unpack( std::istream& s )
+{
+  typename container_type::size_type sz;
+  container.clear();
+
+  __unpack( s, sz );
+  // container.reserve( sz );
+  Addr a;
+  Info i;
+
+  while ( sz-- > 0 ) {
+    __unpack( s, a );
+    __unpack( s, i );
+    container.push_back( std::make_pair(a, i) );
+  }
+}
+
+template <class Addr, class Info, class Sequence>
+void NameRecords<Addr,Info,Sequence>::net_unpack( std::istream& s )
+{
+  uint32_t sz;
+  container.clear();
+
+  __net_unpack( s, sz );
+  // container.reserve( sz );
+  Addr a;
+  Info i;
+
+  while ( sz-- > 0 ) {
+    __net_unpack( s, a );
+    __net_unpack( s, i );
+    container.push_back( std::make_pair(a, i) );
+  }
+}
 
 } // namespace stem
 
