@@ -1,8 +1,7 @@
-// -*- C++ -*- Time-stamp: <06/10/03 11:16:29 ptr>
+// -*- C++ -*- Time-stamp: <06/10/04 10:55:44 ptr>
 
 /*
- *
- * Copyright (c) 2002, 2003, 2006
+ * Copyright (c) 2006
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -28,11 +27,17 @@ class Naming :
     void names_list( const stem::NameRecord& );
     void names_name( const stem::NameRecord& );
 
+    typedef stem::NameRecords<stem::addr_type,std::string> nsrecords_type;
+
+    void names_list1( const nsrecords_type& );
+    void names_name1( const nsrecords_type& );
+
     void wait();
     void reset()
       { cnd.set( false ); }
 
     std::list<stem::NameRecord> lst;
+    nsrecords_type::container_type lst1;
 
   private:
     xmt::Condition cnd;

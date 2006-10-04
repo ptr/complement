@@ -1,8 +1,7 @@
-// -*- C++ -*- Time-stamp: <06/10/03 11:17:22 ptr>
+// -*- C++ -*- Time-stamp: <06/10/04 10:57:46 ptr>
 
 /*
- *
- * Copyright (c) 2002, 2003, 2006
+ * Copyright (c) 2006
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -14,6 +13,8 @@
 using namespace boost::unit_test_framework;
 
 #include <iostream>
+#include <functional>
+#include <iterator>
 
 #include <stem/EDSEv.h>
 #include "NameService.h"
@@ -61,6 +62,22 @@ void Naming::names_name( const stem::NameRecord& nr )
   }
 }
 
+void Naming::names_list1( const nsrecords_type& nr )
+{
+  // std::cerr << hex << nr.addr << " " << nr.record << dec << endl;
+  copy( nr.container.begin(), nr.container.end(), back_insert_iterator<nsrecords_type::container_type>(lst1) );
+
+  cnd.set(true);
+}
+
+void Naming::names_name1( const nsrecords_type& nr )
+{
+  // std::cerr << hex << nr.addr << dec << endl;
+  copy( nr.container.begin(), nr.container.end(), back_insert_iterator<nsrecords_type::container_type>(lst1) );
+
+  cnd.set(true);
+}
+
 void Naming::wait()
 {
   cnd.try_wait();
@@ -69,4 +86,6 @@ void Naming::wait()
 DEFINE_RESPONSE_TABLE( Naming )
   EV_T_(0,EV_EDS_NM_LIST,names_list,stem::NameRecord)
   EV_T_(0,EV_EDS_NS_ADDR,names_name,stem::NameRecord)
+  EV_T_(0,EV_STEM_NS1_LIST,names_list1,nsrecords_type)
+  EV_T_(0,EV_STEM_NS1_NAME,names_name1,nsrecords_type)
 END_RESPONSE_TABLE

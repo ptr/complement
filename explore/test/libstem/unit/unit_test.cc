@@ -1,7 +1,6 @@
-// -*- C++ -*- Time-stamp: <06/10/03 10:01:35 ptr>
+// -*- C++ -*- Time-stamp: <06/10/04 11:18:42 ptr>
 
 /*
- *
  * Copyright (c) 2002, 2003, 2006
  * Petr Ovtchenkov
  *
@@ -36,6 +35,7 @@ struct stem_test
     void basic2new();
     void dl();
     void ns();
+    void ns1();
 
     static xmt::Thread::ret_code thr1( void * );
     static xmt::Thread::ret_code thr1new( void * );
@@ -226,6 +226,82 @@ void stem_test::ns()
   BOOST_CHECK( nm.lst.empty() );
 }
 
+void stem_test::ns1()
+{
+  Node node( 2003, "Node" );
+  Naming nm;
+
+  stem::Event ev( EV_STEM_RQ_ADDR_LIST1 );
+  ev.dest( stem::ns_addr );
+  nm.Send( ev );
+
+  nm.wait();
+
+  // this is sample of all inline find:
+  Naming::nsrecords_type::const_iterator i = find_if( nm.lst1.begin(), nm.lst1.end(), compose1( bind2nd( equal_to<string>(), string( "ns" ) ), select2nd<pair<stem::addr_type,string> >() ) );
+
+  BOOST_CHECK( i != nm.lst1.end() );
+  BOOST_CHECK( i->second == "ns" );
+  BOOST_CHECK( i->first == stem::ns_addr );
+
+  // well, but for few seaches declare and reuse functors:
+  equal_to<string> eq;
+  equal_to<stem::addr_type> eqa;
+
+  select1st<pair<stem::addr_type,string> > first;
+  select2nd<pair<stem::addr_type,string> > second;
+
+  i = find_if( nm.lst1.begin(), nm.lst1.end(), compose1( bind2nd( eq, string( "Node" ) ), second ) );
+
+  BOOST_CHECK( i != nm.lst1.end() );
+  BOOST_CHECK( i->second == "Node" );
+  BOOST_CHECK( i->first == 2003 );
+
+  i = find_if( nm.lst1.begin(), nm.lst1.end(), compose1( bind2nd( eqa, nm.self_id() ), first ) );
+
+  BOOST_CHECK( i != nm.lst1.end() );
+  BOOST_CHECK( i->first == nm.self_id() );
+  BOOST_CHECK( i->second.length() == 0 );
+
+  nm.lst1.clear();
+  nm.reset();
+
+  BOOST_CHECK( nm.lst1.empty() );
+
+  stem::Event evname( EV_STEM_RQ_ADDR_BY_NAME1 );
+  evname.dest( stem::ns_addr );
+  evname.value() = "Node";
+  nm.Send( evname );
+
+  nm.wait();
+
+  i = find_if( nm.lst1.begin(), nm.lst1.end(), compose1( bind2nd( eq, string( "ns" ) ), second ) );
+
+  BOOST_CHECK( i == nm.lst1.end() );
+
+  i = find_if( nm.lst1.begin(), nm.lst1.end(), compose1( bind2nd( eq, string( "Node" ) ), second ) );
+
+  BOOST_CHECK( i != nm.lst1.end() );
+  BOOST_CHECK( i->second == "Node" );
+  BOOST_CHECK( i->first == 2003 );
+
+  i = find_if( nm.lst1.begin(), nm.lst1.end(), compose1( bind2nd( eqa, nm.self_id() ), first ) );
+
+  BOOST_CHECK( i == nm.lst1.end() );
+
+  nm.lst1.clear();
+  nm.reset();
+
+  BOOST_CHECK( nm.lst1.empty() );
+
+  evname.value() = "No-such-name";
+  nm.Send( evname );
+
+  nm.wait();
+
+  BOOST_CHECK( nm.lst1.empty() );
+}
+
 struct stem_test_suite :
     public test_suite
 {
@@ -244,6 +320,7 @@ stem_test_suite::stem_test_suite() :
   test_case *basic2n_tc = BOOST_CLASS_TEST_CASE( &stem_test::basic2new, instance );
   test_case *dl_tc = BOOST_CLASS_TEST_CASE( &stem_test::dl, instance );
   test_case *ns_tc = BOOST_CLASS_TEST_CASE( &stem_test::ns, instance );
+  test_case *ns1_tc = BOOST_CLASS_TEST_CASE( &stem_test::ns1, instance );
 
   basic2_tc->depends_on( basic1_tc );
   basic1n_tc->depends_on( basic1_tc );
@@ -251,6 +328,7 @@ stem_test_suite::stem_test_suite() :
   basic2n_tc->depends_on( basic1n_tc );
   dl_tc->depends_on( basic2n_tc );
   ns_tc->depends_on( basic1_tc );
+  ns1_tc->depends_on( basic1_tc );
 
   add( basic1_tc );
   add( basic2_tc );
@@ -258,6 +336,7 @@ stem_test_suite::stem_test_suite() :
   add( basic2n_tc );
   add( dl_tc );
   add( ns_tc );
+  add( ns1_tc );
 }
 
 test_suite *init_unit_test_suite( int argc, char **argv )

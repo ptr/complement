@@ -1,3 +1,12 @@
+2006-10-04  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* EvPack.cc: erase target string in any case---length of string
+	may be indeed 0.
+
+	* Names.h, Names.cc: add one-message report about ns records
+
+	* EDSEv.h: provide defines for one-message report about ns records
+
 2006-10-03  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* Names.h, Names.cc: localize heap locking---no wait in
