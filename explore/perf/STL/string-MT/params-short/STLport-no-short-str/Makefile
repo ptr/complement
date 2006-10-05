@@ -11,4 +11,4 @@ include ${SRCROOT}/Makefiles/top.mak
 
 DEFS += -D_STLP_DONT_USE_SHORT_STRING_OPTIM
 
-release-shared:	LDSEARCH = -L../../../build/lib/noshortstr -Wl,-rpath=../../../build/lib/noshortstr
+release-shared:	LDSEARCH = -L../../../build/lib/noshortstr -Wl,-rpath=../build/lib/noshortstr

@@ -12,4 +12,4 @@ include ${SRCROOT}/Makefiles/top.mak
 
 INCLUDES += -I$(STLPORT_INCLUDE_DIR)
 
-release-shared:	LDSEARCH = -L../../../build/lib -Wl,-rpath=../../../build/lib
+release-shared:	LDSEARCH = -L../../../build/lib -Wl,-rpath=../build/lib

@@ -11,4 +11,4 @@ include ${SRCROOT}/Makefiles/top.mak
 
 DEFS += -D_STLP_USE_NEWALLOC
 
-release-shared:	LDSEARCH = -L../../../build/lib/newalloc -Wl,-rpath=../../../build/lib/newalloc
+release-shared:	LDSEARCH = -L../../../build/lib/newalloc -Wl,-rpath=../build/lib/newalloc
