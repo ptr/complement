@@ -1,4 +1,4 @@
-#! /usr/bin/nawk -f
+#! /usr/bin/awk -f
 
 BEGIN {
 # if ( ARGC == 3 ) {
