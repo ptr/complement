@@ -1,6 +1,6 @@
 # -*- Makefile -*- Time-stamp: <05/12/27 00:15:29 ptr>
 
-DIRS = add add-ropes find find-ropes ops ops-ropes params params-ropes params-ref params-ref-ropes params-short
+DIRS = add add-ropes find find-ropes ops ops-ropes params params-ropes/STLport-default params-ropes/STLport-malloc params-ref params-ref-ropes/STLport-default params-ref-ropes/STLport-malloc params-ref-ropes/STLport-newalloc params-short
 
 all:
 	for d in $(DIRS); do \
