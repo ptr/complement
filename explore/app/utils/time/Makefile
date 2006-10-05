@@ -1,5 +1,4 @@
 # -*- makefile -*- Time-stamp: <02/12/02 12:49:02 ptr>
-# $Id$
 
 SRCROOT := ../../..
 COMPILER_NAME := gcc
