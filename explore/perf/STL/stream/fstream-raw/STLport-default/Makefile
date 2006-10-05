@@ -11,4 +11,4 @@ include ../Makefile.inc
 include ${SRCROOT}/Makefiles/top.mak
 
 
-release-shared:	LDSEARCH = -L../../../build/lib -Wl,-rpath=../../../build/lib
+release-shared:	LDSEARCH = -L../../../build/lib -Wl,-rpath=../build/lib
