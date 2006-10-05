@@ -2,8 +2,6 @@
 
 SRCROOT := ../../../../..
 COMPILER_NAME := gcc
-STLPORT_SRC_DIR := /export/home/ptr/STLport.lab/STLport
-STLPORT_INCLUDE_DIR := $(STLPORT_SRC_DIR)/stlport
 INSTALL_LIB_DIR     := ../../../build/lib/malloc
 ALL_TAGS := install-release-shared
 
