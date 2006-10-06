@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/30 09:44:11 ptr>
+// -*- C++ -*- Time-stamp: <06/10/06 19:39:22 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -81,9 +81,9 @@ class NetTransport_base :
       { return net != 0 && net->is_open(); }
     virtual __FIT_DECLSPEC void close();
 
-    __FIT_DECLSPEC
-    bool push( const Event& );
+    __FIT_DECLSPEC bool push( const Event& );
 
+    __FIT_DECLSPEC addr_type make_map( addr_type k, const char *name );
 
     EvSessionManager::key_type sid() const
       { return _sid; }
@@ -167,8 +167,6 @@ class NetTransportMgr :
 
     int join()
       { return _thr.join().iword; }
-
-    __FIT_DECLSPEC addr_type make_map( addr_type k, const char *name );
 
   protected:
     static xmt::Thread::ret_code _loop( void * );
