@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/18 18:33:19 ptr>
+// -*- C++ -*- Time-stamp: <06/10/06 19:40:42 ptr>
 
 /*
  *
@@ -328,6 +328,15 @@ bool NetTransport_base::push( const Event& _rs )
   return net->good();
 }
 
+__FIT_DECLSPEC addr_type NetTransport_base::make_map( addr_type k, const char *name )
+{
+  string full_name = name;
+  full_name += __at;
+  full_name += hostname( net->rdbuf()->inet_addr() );
+
+  return rar_map( k, full_name );
+}
+
 __FIT_DECLSPEC
 NetTransport::NetTransport( std::sockstream& s ) :
     NetTransport_base( "stem::NetTransport" )
@@ -457,15 +466,6 @@ xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
   }
 
   return rt;
-}
-
-__FIT_DECLSPEC addr_type NetTransportMgr::make_map( addr_type k, const char *name )
-{
-  string full_name = name;
-  full_name += __at;
-  full_name += hostname( net->rdbuf()->inet_addr() );
-
-  return rar_map( k, full_name );
 }
 
 __FIT_DECLSPEC
