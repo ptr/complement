@@ -13,5 +13,5 @@ include ${SRCROOT}/Makefiles/top.mak
 
 INCLUDES += -I${CoMT_INCLUDE_DIR}
 
-release-shared:	LDSEARCH = -L../../../build/lib/libstdc++ -Wl,-rpath=../build/lib/libstdc++
+release-shared:	LDSEARCH = -L../../../build/lib/libstdc++ -Wl,-rpath=../../build/lib/libstdc++
 release-shared: LDLIBS = -lmisc
