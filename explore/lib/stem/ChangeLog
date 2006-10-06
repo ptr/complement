@@ -1,3 +1,9 @@
+2006-10-06  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* NetTransport.h, NetTransport.cc: move make_map
+	from NetTransportMgr to NetTransport_base, it
+	useful for any net transport.
+
 2006-10-04  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* EvPack.cc: erase target string in any case---length of string
