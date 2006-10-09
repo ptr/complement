@@ -1,3 +1,9 @@
+2006-10-09  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/linux/rules-so.mak, gmake/linux/rules-install-so.mak:
+	check links content and don't modify links and installed
+	library	if ones are correct.
+
 2006-08-24  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/depend.mak: generate TAGS and tags by demand (with
