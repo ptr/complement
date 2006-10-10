@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/22 20:02:16 ptr>
+// -*- C++ -*- Time-stamp: <06/10/10 19:33:54 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2005, 2006
@@ -33,7 +33,7 @@ __FIT_DECLSPEC ThreadMgr::~ThreadMgr()
 
   while ( i != _M_c.end() ) {
     if ( (*i)->good() ) {
-      (*i)->kill( SIGTERM );
+      // (*i)->kill( SIGTERM );
     }
     (*i)->join(); 
     delete *i;
