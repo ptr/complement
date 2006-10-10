@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/30 09:44:46 ptr>
+// -*- C++ -*- Time-stamp: <06/10/10 18:12:26 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -68,12 +68,6 @@ __FIT_DECLSPEC
 bool EventHandler::is_avail( addr_type id ) const
 {
   return _mgr->is_avail( id );
-}
-
-__FIT_DECLSPEC
-key_type EventHandler::sid( addr_type k ) const
-{
-  return _mgr->sid( k );
 }
 
 __FIT_DECLSPEC

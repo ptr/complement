@@ -1,3 +1,11 @@
+2006-10-10  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* NetTransport.h, EventHandler.h, EvManager.h: remove
+	SessionMgr---it not used anyway. This functionality
+	should be reimplemented in different manner.
+
+	* _EventHandler.cc, NetTransport.cc, EvManager.cc: ditto.
+
 2006-10-06  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* NetTransport.h, NetTransport.cc: move make_map

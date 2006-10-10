@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/06 19:39:22 ptr>
+// -*- C++ -*- Time-stamp: <06/10/10 18:09:19 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -56,7 +56,6 @@ class NetTransport_base :
 
     NetTransport_base() :
         _count( 0 ),
-        _sid( badkey ),
         net( 0 ),
         _net_ns( badaddr )
       { }
@@ -64,7 +63,6 @@ class NetTransport_base :
     NetTransport_base( const char *info ) :
         EventHandler( info ),
         _count( 0 ),
-        _sid( badkey ),
         net( 0 ),
         _net_ns( badaddr )
       { }
@@ -85,54 +83,19 @@ class NetTransport_base :
 
     __FIT_DECLSPEC addr_type make_map( addr_type k, const char *name );
 
-    EvSessionManager::key_type sid() const
-      { return _sid; }
-
     addr_type ns() const
       { return _net_ns; }
 
-    static stem::SessionInfo session_info( const EvSessionManager::key_type& k )
-      {
-        smgr.lock();
-        stem::SessionInfo si( smgr[k] );
-        smgr.unlock();
-        return si;
-      }
-
-    static void session_control( const EvSessionManager::key_type& k,
-                                 const stem::addr_type& a )
-      {
-        smgr.lock();
-        smgr[k]._control = a;
-        smgr.unlock();
-      }
-
-    static std::string session_host( const EvSessionManager::key_type& k )
-      {
-        smgr.lock();
-        std::string h( smgr[k]._host );
-        smgr.unlock();
-        return h;
-      }
-
-    static void erase_session( const EvSessionManager::key_type& k )
-      { smgr.erase( k ); }
-
   protected:
-    void establish_session( std::sockstream& s ) throw (std::domain_error);
-    void mark_session_onoff( bool );
     addr_type rar_map( addr_type k, const std::string& name );
     bool pop( Event& );
-    void disconnect();
 
     std::sockstream *net;
-    EvSessionManager::key_type _sid;
     uint32_t _count;
     // indeed rar can be inside connect(), but SunPro's CC 5.0
     // to be very huffy about it.
     heap_type rar; // reverce address resolution table
     addr_type _net_ns; // reflection of address of remote name service
-    static __FIT_DECLSPEC EvSessionManager smgr;
 };
 
 class NetTransport :
@@ -179,7 +142,7 @@ class NetTransportMP :
   public:
     NetTransportMP( std::sockstream& s ) :
         NetTransport_base( "stem::NetTransportMP" )
-      { this->connect( s ); }
+      { net = &s; }
 
     __FIT_DECLSPEC
     void connect( std::sockstream& );

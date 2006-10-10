@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/06 19:40:42 ptr>
+// -*- C++ -*- Time-stamp: <06/10/10 18:15:52 ptr>
 
 /*
  *
@@ -90,42 +90,6 @@ void dump( std::ostream& o, const EDS::Event& e )
   }
 }
 
-__FIT_DECLSPEC EvSessionManager NetTransport_base::smgr;
-
-void NetTransport_base::disconnect()
-{
-  if ( _sid == badkey ) {
-    _count = 0;
-    return;
-  }
-  try {
-    smgr.lock();
-    if ( smgr.unsafe_is_avail( _sid ) ) {
-      SessionInfo& info = smgr[_sid];
-      info.disconnect();
-//    cerr << "EvManager::disconnect: " << _sid << endl;
-      if ( info._control != badaddr ) {
-        Event_base<key_type> ev_disconnect( EV_EDS_DISCONNECT, _sid );
-        ev_disconnect.dest( info._control );
-        _sid = badkey;
-        _count = 0;
-        smgr.unlock();
-//      cerr << "EvManager::disconnect, info._control: " << info._control << endl;
-        Send( Event_convert<key_type>()(ev_disconnect) );
-//      cerr << "===== Pass" << endl;
-        return; // required: smgr.unlock() done.
-      }
-      smgr.unsafe_erase( _sid );
-    }
-    _sid = badkey;
-    _count = 0;
-    smgr.unlock();
-  }
-  catch ( ... ) {
-    smgr.unlock();
-  }
-}
-
 __FIT_DECLSPEC NetTransport_base::~NetTransport_base()
 {
   NetTransport_base::close();
@@ -136,38 +100,11 @@ __FIT_DECLSPEC void NetTransport_base::close()
   // cerr << __FILE__ << ":" << __LINE__ << endl;
   if ( net != 0 ) {
     manager()->Remove( this );
-    disconnect();
     rar.clear();
     net->close();
     // cerr << __FILE__ << ":" << __LINE__ << endl;
     net = 0;
   }
-}
-
-__FIT_DECLSPEC
-void NetTransport_base::establish_session( std::sockstream& s ) throw (std::domain_error)
-{
-  smgr.lock();
-  _sid = smgr.unsafe_create();
-  if ( _sid == badkey ) {
-    smgr.unlock();
-    throw std::domain_error( "bad session id" );
-  }
-  smgr[_sid]._host = hostname( s.rdbuf()->inet_addr() );
-  smgr[_sid]._port = s.rdbuf()->port();
-  smgr.unlock();
-}
-
-void NetTransport_base::mark_session_onoff( bool f )
-{
-  smgr.lock();
-  if ( smgr.unsafe_is_avail( _sid ) ) {
-    if ( f ) 
-      smgr[ _sid ].connect();
-    else
-      smgr[ _sid ].disconnect();
-  }
-  smgr.unlock();
 }
 
 const string __ns_at( "ns@" );
@@ -196,7 +133,6 @@ bool NetTransport_base::pop( Event& _rs )
   MT_IO_REENTRANT( *net )
 
   if ( !net->read( (char *)buf, sizeof(uint32_t) ).good() ) {
-    // cerr << __FILE__ << ":" << __LINE__ << endl;
     return false;
   }
   // cerr << __FILE__ << ":" << __LINE__ << endl;
@@ -247,21 +183,6 @@ bool NetTransport_base::pop( Event& _rs )
 #endif
   }
 
-  if ( _sid != badkey ) {
-    smgr.lock();
-    if ( smgr.unsafe_is_avail( _sid ) ) {
-      SessionInfo& sess = smgr[_sid];
-      sess.inc_from( 8 * sizeof(uint32_t) + str.size() );
-      if ( sess._un_from != _x_count ) {
-        cerr << "EDS Incoming event(s) lost, or missrange event: " << sess._un_from
-             << ", " << _x_count << " (Session: " << _sid << ") --- ";
-        cerr << endl;
-        sess._un_from = _x_count; // Retransmit?    
-      }
-    }
-    smgr.unlock();
-  }
-
   return net->good();
 }
 
@@ -270,7 +191,7 @@ __FIT_DECLSPEC
 bool NetTransport_base::push( const Event& _rs )
 {
   // _STLP_ASSERT( net != 0 );
-  if ( _sid == badkey || !net->good() ) {
+  if ( !net->good() ) {
     return false;
   }
   uint32_t buf[8];
@@ -296,26 +217,13 @@ bool NetTransport_base::push( const Event& _rs )
           ostream_iterator<char,char,char_traits<char> >(*net) );
 
     net->flush();
-    if ( _sid != badkey && net->good() ) {
-      smgr.lock();
-      if ( smgr.unsafe_is_avail( _sid ) ) {
-        SessionInfo& sess = smgr[_sid];
-        sess.inc_to( 8 * sizeof(uint32_t) + _rs.value().size() );
-        if ( sess._un_to != _count ) {
-          cerr << "Outgoing event(s) lost, or missrange event: " << sess._un_to
-               << ", " << _count << " (Session " << _sid << ")" << endl;
-          // kill( getpid(), SIGQUIT );
-        }
-      }
-      smgr.unlock();
-    } else {
+    if ( !net->good() ) {
       throw ios_base::failure( "net not good" );
     }
   }
   catch ( ios_base::failure& ) {
     if ( net != 0 ) { // clear connection: required by non-Solaris OS
-      disconnect();   // for MP connection policy  
-      rar.clear();
+      rar.clear();    // for MP connection policy  
       net->close();
     }
   }
@@ -348,7 +256,6 @@ NetTransport::NetTransport( std::sockstream& s ) :
   _at_hostname = __at + _hostname;
 
   try {
-    establish_session( s );
     _net_ns = rar_map( ns_addr, __ns_at + _hostname );
   }
   catch ( std::domain_error& ex ) {
@@ -372,8 +279,6 @@ void NetTransport::connect( sockstream& s )
   }
   catch ( ... ) {
     s.close();
-    // disconnect();
-    // throw;
   }
   // cerr << "Disconnected" << endl;
 }
@@ -419,7 +324,6 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
   if ( net->good() ) {
     _net_ns = rar_map( ns_addr, __ns_at + hostname );
     addr_type zero_object = rar_map( 0, __at + hostname );
-    _sid = smgr.create();
     _thr.launch( _loop, this, 0, PTHREAD_STACK_MIN * 2 ); // start thread here
     return zero_object;
   }
@@ -472,30 +376,18 @@ __FIT_DECLSPEC
 void NetTransportMP::connect( sockstream& s )
 {
   const string& _hostname = hostname( s.rdbuf()->inet_addr() );
-  bool sock_dgr = (s.rdbuf()->stype() == std::sock_base::sock_stream) ? false : true;
+  // bool sock_dgr = (s.rdbuf()->stype() == std::sock_base::sock_stream) ? false : true;
 
   Event ev;
   // cerr << "Connected: " << _hostname << endl;
 
   try {
-    if ( _sid == badkey ) {
-      establish_session( s );
-      net = &s;
-    } else if ( sock_dgr /* && _sid != badkey */ ) {
-      mark_session_onoff( true );
-    }
-    // indeed here need more check: data of event
-    // and another: message can be break, and other datagram can be
-    // in the middle of message...
     if ( pop( ev ) ) {
       ev.src( rar_map( ev.src(), __at + _hostname ) ); // substitute my local id
       manager()->push( ev );
     }
     if ( !s.good() ) {
       throw ios_base::failure( "sockstream not good" );
-    }
-    if ( sock_dgr && _sid != badkey ) {
-      mark_session_onoff( false );
     }
   }
   catch ( ... ) {
