@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/20 20:15:07 ptr>
+// -*- C++ -*- Time-stamp: <06/10/10 21:00:28 ptr>
 
 /*
  *
@@ -343,6 +343,7 @@ void test_shared_socket()
 
 void test_client_close_socket();
 void test_more_bytes_in_socket();
+void test_more_bytes_in_socket2();
 void test_read0();
 void test_read0_srv();
 
@@ -525,8 +526,9 @@ test_suite *init_unit_test_suite( int argc, char **argv )
 
   ts->add( BOOST_TEST_CASE( &test_client_close_socket ) );
   ts->add( BOOST_TEST_CASE( &test_more_bytes_in_socket ), 0, 5 );
-  ts->add( BOOST_TEST_CASE( &test_read0 )/* , 0, 7 */ );
-  ts->add( BOOST_TEST_CASE( &test_read0_srv ) );
+  ts->add( BOOST_TEST_CASE( &test_more_bytes_in_socket2 ), 0, 5 );
+  // ts->add( BOOST_TEST_CASE( &test_read0 ), 0, 7 );
+  // ts->add( BOOST_TEST_CASE( &test_read0_srv ) );
 
   return ts;
 }
