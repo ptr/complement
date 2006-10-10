@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/25 13:50:39 ptr>
+// -*- C++ -*- Time-stamp: <06/10/10 19:44:38 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -177,7 +177,7 @@ class sockmgr_stream_MP :
 
     explicit sockmgr_stream_MP( int port, sock_base::stype t = sock_base::sock_stream ) :
 	basic_sockmgr(),
-        _thr_limit( 30 )
+        _thr_limit( 31 )
       {
         open( port, t );
         _busylimit.tv_sec = 0;
