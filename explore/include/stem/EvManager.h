@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/30 09:42:35 ptr>
+// -*- C++ -*- Time-stamp: <06/10/10 18:11:49 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -134,7 +134,6 @@ class EvManager
         return unsafe_annotate( id );
       }
 
-    __FIT_DECLSPEC key_type sid( addr_type object_id ) const;
     __FIT_DECLSPEC NetTransport_base *transport( addr_type object_id ) const;
 
     void push( const Event& e )

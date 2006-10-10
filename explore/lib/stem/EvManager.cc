@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/30 09:43:12 ptr>
+// -*- C++ -*- Time-stamp: <06/10/10 18:11:29 ptr>
 
 /*
  *
@@ -226,18 +226,6 @@ void EvManager::unsafe_Remove( NetTransport_base *channel )
       ++i;
     }
   }
-}
-
-// return session id of object with address 'id' if this is external
-// object; otherwise return -1;
-__FIT_DECLSPEC key_type EvManager::sid( addr_type id ) const
-{
-  MT_REENTRANT( _lock_heap, _x1 );
-  heap_type::const_iterator i = heap.find( id );
-  if ( i == heap.end() || (*i).second.remote == 0 ) {
-    return badkey;
-  }
-  return (*i).second.remote->channel->sid();
 }
 
 __FIT_DECLSPEC NetTransport_base *EvManager::transport( addr_type id ) const

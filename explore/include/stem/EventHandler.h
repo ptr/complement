@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/06/28 15:08:43 ptr>
+// -*- C++ -*- Time-stamp: <06/10/10 18:12:54 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -601,7 +601,6 @@ class EventHandler
 
     __FIT_DECLSPEC const string& who_is( addr_type k ) const;
     __FIT_DECLSPEC bool is_avail( addr_type id ) const;
-    __FIT_DECLSPEC key_type sid( addr_type k ) const;
     static EvManager *manager()
       { return _mgr; }
     __FIT_DECLSPEC void Send( const Event& e );

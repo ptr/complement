@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/04 11:18:42 ptr>
+// -*- C++ -*- Time-stamp: <06/10/10 16:49:12 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -25,6 +25,10 @@ using namespace boost::unit_test_framework;
 
 #include <dlfcn.h>
 
+#include "Echo.h"
+#include <stem/NetTransport.h>
+#include <sockios/sockmgr.h>
+
 using namespace std;
 
 struct stem_test
@@ -36,6 +40,8 @@ struct stem_test
     void dl();
     void ns();
     void ns1();
+
+    void echo();
 
     static xmt::Thread::ret_code thr1( void * );
     static xmt::Thread::ret_code thr1new( void * );
@@ -302,6 +308,41 @@ void stem_test::ns1()
   BOOST_CHECK( nm.lst1.empty() );
 }
 
+void stem_test::echo()
+{
+  try {
+    sockmgr_stream_MP<stem::NetTransport> srv( 6995 );
+    stem::NetTransportMgr mgr;
+
+    StEMecho echo( 0, "echo service"); // <= zero!
+
+    stem::addr_type zero = mgr.open( "localhost", 6995 );
+
+    BOOST_CHECK( zero != stem::badaddr );
+    BOOST_CHECK( zero != 0 );
+
+    EchoClient node;
+    
+    EDS::Event ev( NODE_EV_ECHO );
+
+    ev.dest( zero );
+    ev.value() = node.mess;
+
+    node.Send( ev );
+
+    node.wait();
+    
+    mgr.close();
+    // mgr.join();
+
+    srv.close();
+    srv.wait();
+  }
+  catch ( ... ) {
+  }
+  // cerr << "Fine\n";
+}
+
 struct stem_test_suite :
     public test_suite
 {
@@ -321,6 +362,7 @@ stem_test_suite::stem_test_suite() :
   test_case *dl_tc = BOOST_CLASS_TEST_CASE( &stem_test::dl, instance );
   test_case *ns_tc = BOOST_CLASS_TEST_CASE( &stem_test::ns, instance );
   test_case *ns1_tc = BOOST_CLASS_TEST_CASE( &stem_test::ns1, instance );
+  test_case *echo_tc = BOOST_CLASS_TEST_CASE( &stem_test::echo, instance );
 
   basic2_tc->depends_on( basic1_tc );
   basic1n_tc->depends_on( basic1_tc );
@@ -330,6 +372,8 @@ stem_test_suite::stem_test_suite() :
   ns_tc->depends_on( basic1_tc );
   ns1_tc->depends_on( basic1_tc );
 
+  echo_tc->depends_on( basic2_tc );
+
   add( basic1_tc );
   add( basic2_tc );
   add( basic1n_tc );
@@ -337,6 +381,8 @@ stem_test_suite::stem_test_suite() :
   add( dl_tc );
   add( ns_tc );
   add( ns1_tc );
+
+  add( echo_tc );
 }
 
 test_suite *init_unit_test_suite( int argc, char **argv )
