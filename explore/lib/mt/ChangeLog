@@ -1,3 +1,9 @@
+2006-10-10  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* thr_mgr.cc: don't kill not finished threads in ThreadMgr's
+	dtor, this lead to whole process termination [I should
+	investigate why].
+
 2006-09-22  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* xmt.cc: no need to lock around thread creation;
