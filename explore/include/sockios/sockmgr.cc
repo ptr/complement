@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/25 15:12:12 ptr>
+// -*- C++ -*- Time-stamp: <06/10/10 21:47:30 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -173,8 +173,10 @@ bool sockmgr_stream_MP<Connect>::accept_tcp()
 
   _xsockaddr addr;
   socklen_t sz = sizeof( sockaddr_in );
+  bool _in_buf;
 
   do {
+    _in_buf = false;
     _pfd[0].revents = 0;
     _pfd[1].revents = 0;
     while ( poll( &_pfd[0], _pfd.size(), -1 ) < 0 ) { // wait infinite
@@ -216,11 +218,29 @@ bool sockmgr_stream_MP<Connect>::accept_tcp()
           cl_new->s->open( _sd, addr.any );
           cl_new->_proc = new Connect( *cl_new->s );
           _M_c.push_back( cl_new );
+          if ( cl_new->s->rdbuf()->in_avail() > 0 ) {
+            // this is the case when user read from sockstream
+            // in ctor above; push processing of this stream
+            MT_REENTRANT( _dlock, _1 );
+            _conn_pool.push_back( cl_new );
+            _pool_cnd.set( true );
+            _observer_cnd.set( true );
+            _in_buf = true;
+          }
         } else { // we can reuse old
           cl_new = *i;
           cl_new->s->open( _sd, addr.any );
           delete cl_new->_proc; // may be new ( cl_new->_proc ) Connect( *cl_new->s );
           cl_new->_proc = new Connect( *cl_new->s );
+          if ( cl_new->s->rdbuf()->in_avail() > 0 ) {
+            // this is the case when user read from sockstream
+            // in ctor above; push processing of this stream
+            MT_REENTRANT( _dlock, _1 );
+            _conn_pool.push_back( cl_new );
+            _pool_cnd.set( true );
+            _observer_cnd.set( true );
+            _in_buf = true;
+          }
         }
 
         pollfd newfd;
@@ -242,7 +262,7 @@ bool sockmgr_stream_MP<Connect>::accept_tcp()
 
       _pfd.push_back( rfd );
     }
-  } while ( !_shift_fd() );
+  } while ( !_shift_fd() && !_in_buf );
   
   return true; // something was pushed in connection queue (by _shift_fd)
 }
@@ -408,7 +428,7 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
             stream->close();
             c->_proc->close();
           } else if ( stream->is_open() ) {
-            if ( stream->rdbuf()->in_avail() > 0) {
+            if ( stream->rdbuf()->in_avail() > 0 ) {
               // socket has buffered data, push it back to queue
               MT_REENTRANT( me->_dlock, _1 );
               me->_conn_pool.push_back( c );
