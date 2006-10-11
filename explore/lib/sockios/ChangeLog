@@ -1,3 +1,8 @@
+2006-10-11  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.cc: fix inconsistency with observer_run
+	flag.
+
 2006-10-10  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* sockmgr.cc: user can read from socket immediate
