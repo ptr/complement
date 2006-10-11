@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/10 16:49:12 ptr>
+// -*- C++ -*- Time-stamp: <06/10/11 01:24:22 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -42,6 +42,7 @@ struct stem_test
     void ns1();
 
     void echo();
+    void peer();
 
     static xmt::Thread::ret_code thr1( void * );
     static xmt::Thread::ret_code thr1new( void * );
@@ -323,7 +324,7 @@ void stem_test::echo()
 
     EchoClient node;
     
-    EDS::Event ev( NODE_EV_ECHO );
+    stem::Event ev( NODE_EV_ECHO );
 
     ev.dest( zero );
     ev.value() = node.mess;
@@ -341,6 +342,71 @@ void stem_test::echo()
   catch ( ... ) {
   }
   // cerr << "Fine\n";
+}
+
+void stem_test::peer()
+{
+  sockmgr_stream_MP<stem::NetTransport> srv( 6995 );
+
+  stem::NetTransportMgr mgr;
+  StEMecho echo( 0, "echo service"); // <= zero!
+
+  echo.cnd.set( false );
+
+  stem::addr_type zero = mgr.open( "localhost", 6995 );
+
+  BOOST_CHECK( zero != stem::badaddr );
+  BOOST_CHECK( zero != 0 );
+
+  PeerClient c1( "c1 local" );
+
+  stem::Event ev( NODE_EV_REGME );
+  ev.dest( zero );
+
+  ev.value() = "c1";
+  c1.Send( ev );
+
+  echo.cnd.try_wait();
+  echo.cnd.set( false );
+
+  PeerClient c2( "c2 local" );
+
+  ev.value() = "c2";
+  c2.Send( ev );
+
+  echo.cnd.try_wait();
+
+  Naming nm;
+
+  // stem::Event ev_nm( EV_STEM_RQ_ADDR_LIST1 );
+  stem::Event ev_nm( EV_STEM_RQ_EXT_ADDR_LIST1 );
+  ev_nm.dest( /* stem::ns_addr */ mgr.ns() );
+  nm.Send( ev_nm );
+
+  nm.wait();
+
+  stem::addr_type peer_addr = stem::badaddr;
+  for ( Naming::nsrecords_type::const_iterator i = nm.lst1.begin(); i != nm.lst1.end(); ++i ) {
+    if ( i->second.find( "c2@" ) == 0 ) {
+      peer_addr = i->first;
+    }
+    // cerr << hex << i->first << dec << " => " << i->second << endl;
+  }
+
+  stem::Event echo_ev( NODE_EV_ECHO );
+
+  echo_ev.dest( 0x8000000b );
+  echo_ev.value() = "c2 local";
+
+  c1.Send( echo_ev );
+
+  c2.wait();
+
+  cerr << "qq\n";
+
+  srv.close();
+  cerr << "xx\n";
+  srv.wait();
 }
 
 struct stem_test_suite :
@@ -363,6 +429,7 @@ stem_test_suite::stem_test_suite() :
   test_case *ns_tc = BOOST_CLASS_TEST_CASE( &stem_test::ns, instance );
   test_case *ns1_tc = BOOST_CLASS_TEST_CASE( &stem_test::ns1, instance );
   test_case *echo_tc = BOOST_CLASS_TEST_CASE( &stem_test::echo, instance );
+  test_case *peer_tc = BOOST_CLASS_TEST_CASE( &stem_test::peer, instance );
 
   basic2_tc->depends_on( basic1_tc );
   basic1n_tc->depends_on( basic1_tc );
@@ -373,6 +440,7 @@ stem_test_suite::stem_test_suite() :
   ns1_tc->depends_on( basic1_tc );
 
   echo_tc->depends_on( basic2_tc );
+  peer_tc->depends_on( echo_tc );
 
   add( basic1_tc );
   add( basic2_tc );
@@ -383,6 +451,7 @@ stem_test_suite::stem_test_suite() :
   add( ns1_tc );
 
   add( echo_tc );
+  add( peer_tc );
 }
 
 test_suite *init_unit_test_suite( int argc, char **argv )
