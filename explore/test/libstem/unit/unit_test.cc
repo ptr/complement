@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/11 01:24:22 ptr>
+// -*- C++ -*- Time-stamp: <06/10/11 15:36:32 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -27,6 +27,7 @@ using namespace boost::unit_test_framework;
 
 #include "Echo.h"
 #include <stem/NetTransport.h>
+#include <stem/EvManager.h>
 #include <sockios/sockmgr.h>
 
 using namespace std;
@@ -346,37 +347,63 @@ void stem_test::echo()
 
 void stem_test::peer()
 {
-  sockmgr_stream_MP<stem::NetTransport> srv( 6995 );
+
+  /*
+   * Scheme:
+   *                      / NetTransport      / c1
+   *  Local Event Manager  -  NetTransportMgr - c2
+   *                      \ echo
+   * Due to all objects in the same process space,
+   * c1 and c2 use the same Local Event Manager
+   * but I try to bypass this fact.
+   * I.e. I try to simulate
+   *
+   *                      / NetTransport ~~ NetTransportMgr - LEM - c1
+   *  Local Event Manager               \
+   *                      \ echo         ~~ NetTransportMgr - LEM - c2
+   *
+   * and provide simulation of logical connection
+   *
+   *        / c1
+   *   echo
+   *        \ c2
+   *
+   * (c1 <-> c2, through 'echo')
+   */
+
+  sockmgr_stream_MP<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
 
   stem::NetTransportMgr mgr;
-  StEMecho echo( 0, "echo service"); // <= zero!
-
+  StEMecho echo( 0, "echo service"); // <= zero! 'echo' server, default ('zero' address)
+ 
   echo.cnd.set( false );
 
-  stem::addr_type zero = mgr.open( "localhost", 6995 );
+  stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
+  // It done like it should on client side
 
   BOOST_CHECK( zero != stem::badaddr );
   BOOST_CHECK( zero != 0 );
+  BOOST_CHECK( zero & stem::extbit ); // "external" address
 
-  PeerClient c1( "c1 local" );
+  PeerClient c1( "c1 local" );  // c1 client
 
   stem::Event ev( NODE_EV_REGME );
   ev.dest( zero );
 
   ev.value() = "c1";
-  c1.Send( ev );
+  c1.Send( ev ); // 'register' c1 client on 'echo' server
 
   echo.cnd.try_wait();
   echo.cnd.set( false );
 
-  PeerClient c2( "c2 local" );
+  PeerClient c2( "c2 local" ); // c2 client
 
   ev.value() = "c2";
-  c2.Send( ev );
+  c2.Send( ev ); // 'register' c2 client on 'echo' server
 
   echo.cnd.try_wait();
 
-  Naming nm;
+  Naming nm; // use it to take names from NS
 
   // stem::Event ev_nm( EV_STEM_RQ_ADDR_LIST1 );
   stem::Event ev_nm( EV_STEM_RQ_EXT_ADDR_LIST1 );
@@ -386,26 +413,38 @@ void stem_test::peer()
   nm.wait();
 
   stem::addr_type peer_addr = stem::badaddr;
+
+  // This is to make chance for mapping address later:
+  stem::NetTransport_base *tr = c1.manager()->transport( mgr.ns() );
+
+  BOOST_CHECK( tr != 0 ); // processed via network transport, indeed
+
   for ( Naming::nsrecords_type::const_iterator i = nm.lst1.begin(); i != nm.lst1.end(); ++i ) {
+    BOOST_CHECK( i->first & stem::extbit ); // "external"
     if ( i->second.find( "c2@" ) == 0 ) {
-      peer_addr = i->first;
+      // make pair: address on side of c1 -> address on side of 'echo'
+      // note: on side of 'echo' server there are mapping too,
+      // address on side of 'echo' -> address on side of c2 
+      peer_addr = tr->make_map( i->first, "c2@foreign" );
     }
     // cerr << hex << i->first << dec << " => " << i->second << endl;
+    // cerr << hex << tr->make_map( i->first, "map" ) << dec << endl;
   }
+  BOOST_CHECK( peer_addr != stem::badaddr ); // address found
+  BOOST_CHECK( peer_addr & stem::extbit );   // address external
 
   stem::Event echo_ev( NODE_EV_ECHO );
 
-  echo_ev.dest( 0x8000000b );
+  echo_ev.dest( /* 0x8000000b */ peer_addr );
   echo_ev.value() = "c2 local";
 
   c1.Send( echo_ev );
 
   c2.wait();
 
-  cerr << "qq\n";
-
+  mgr.close();
   srv.close();
-  cerr << "xx\n";
+
   srv.wait();
 }
 

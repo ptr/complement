@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/10 21:47:30 ptr>
+// -*- C++ -*- Time-stamp: <06/10/11 15:30:02 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -346,9 +346,12 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
       }
       me->_orlock.lock();
       if ( !me->_observer_run ) {
+        me->_observer_run = true;
+        me->_orlock.unlock();
         me->mgr.launch( observer, me, 0, 0, PTHREAD_STACK_MIN * 2 );
+      } else {
+        me->_orlock.unlock();
       }
-      me->_orlock.unlock();
     }
   }
   catch ( ... ) {
@@ -488,10 +491,6 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::observer( void *p )
 
   timespec now;
   std::fill( pool_size, pool_size + 3, 0 );
-
-  me->_orlock.lock();
-  me->_observer_run = true;
-  me->_orlock.unlock();
 
   try {
     do {
