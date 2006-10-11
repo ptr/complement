@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/10 15:42:36 ptr>
+// -*- C++ -*- Time-stamp: <06/10/11 00:56:13 ptr>
 
 /*
  * Copyright (c) 2006
@@ -28,6 +28,8 @@ class StEMecho :
     void echo( const stem::Event& );
     void regme( const stem::Event& );
 
+    xmt::Condition cnd;
+
   private:
     DECLARE_RESPONSE_TABLE( StEMecho, stem::EventHandler );
 };
@@ -53,6 +55,29 @@ class EchoClient :
     DECLARE_RESPONSE_TABLE( EchoClient, stem::EventHandler );
 };
 
-#define NODE_EV_ECHO 0x903
+class PeerClient :
+    public stem::EventHandler
+{
+  public:
+    PeerClient();
+    PeerClient( stem::addr_type id );
+    PeerClient( const char *info );
+    PeerClient( stem::addr_type id, const char *info );
+    ~PeerClient();
+
+    void handler1( const stem::Event& );
+
+    void wait();    
+
+    const std::string mess;
+
+  private:
+    xmt::Condition cnd;
+
+    DECLARE_RESPONSE_TABLE( PeerClient, stem::EventHandler );
+};
+
+#define NODE_EV_ECHO  0x903
+#define NODE_EV_REGME 0x904
 
 #endif // __Echo_h
