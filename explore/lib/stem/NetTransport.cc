@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/10 18:15:52 ptr>
+// -*- C++ -*- Time-stamp: <06/10/12 14:24:31 ptr>
 
 /*
  *
@@ -234,15 +234,6 @@ bool NetTransport_base::push( const Event& _rs )
   MT_IO_UNLOCK_W( *net )
 
   return net->good();
-}
-
-__FIT_DECLSPEC addr_type NetTransport_base::make_map( addr_type k, const char *name )
-{
-  string full_name = name;
-  full_name += __at;
-  full_name += hostname( net->rdbuf()->inet_addr() );
-
-  return rar_map( k, full_name );
 }
 
 __FIT_DECLSPEC
