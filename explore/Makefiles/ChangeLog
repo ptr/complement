@@ -1,3 +1,14 @@
+2006-10-12  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/targetdirs.mak: use 'so' prefix instead of 'shared';
+	use '_g', '_stlg' suffixes instead of '-g' and '-stlg';
+	generalize path to output and install catalogs.
+	
+	* gmake/linux/rules-install-so.mak: fix typo
+
+	* gmake/lib/clean.mak: remove output directories on clean
+	and install directories on distclean, but only if ones are empty
+
 2006-10-09  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/linux/rules-so.mak, gmake/linux/rules-install-so.mak:
