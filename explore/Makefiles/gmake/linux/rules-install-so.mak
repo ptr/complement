@@ -1,4 +1,13 @@
-# -*- makefile -*- Time-stamp: <06/10/09 17:38:01 ptr>
+# -*- makefile -*- Time-stamp: <06/10/12 19:53:51 ptr>
+#
+# Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+# Petr Ovtchenkov
+#
+# Portion Copyright (c) 1999-2001
+# Parallel Graphics Ltd.
+#
+# Licensed under the Academic Free License version 3.0
+#
 
 INSTALL_TAGS ?= install-release-shared install-dbg-shared install-stldbg-shared
 
@@ -72,13 +81,13 @@ $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxxx}:	${SO_NAME_OUT_STLDBGxxx}
 	@if [ -h $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxx} ] ; then \
 	  if [ `readlink $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxx}` != "${SO_NAME_STLDBGxxx}" ]; then \
 	    rm $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxx}; \
-	    ln -s ${SO_NAME_STLDBGxxx} $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_DSTLBGxx}; \
+	    ln -s ${SO_NAME_STLDBGxxx} $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxx}; \
 	  fi \
 	else \
-	  ln -s ${SO_NAME_STLDBGxxx} $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_DSTLBGxx}; \
+	  ln -s ${SO_NAME_STLDBGxxx} $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxx}; \
 	fi
 	@if [ -h $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGx} ] ; then \
-	  if [ `readlink $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGx}` != "${SO_NAME_DBGxx}" ]; then \
+	  if [ `readlink $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGx}` != "${SO_NAME_STLDBGxx}" ]; then \
 	    rm $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGx}; \
 	    ln -s ${SO_NAME_STLDBGxx} $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGx}; \
 	  fi \

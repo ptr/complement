@@ -1,5 +1,13 @@
-# -*- makefile -*- Time-stamp: <04/03/03 15:34:48 ptr>
-# $Id$
+# -*- makefile -*- Time-stamp: <06/10/12 19:53:46 ptr>
+#
+# Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+# Petr Ovtchenkov
+#
+# Portion Copyright (c) 1999-2001
+# Parallel Graphics Ltd.
+#
+# Licensed under the Academic Free License version 3.0
+#
 
 clobber::
 	@-rm -f ${SO_NAME_OUT}
@@ -17,6 +25,7 @@ clobber::
 	@-rm -f ${A_NAME_OUT}
 	@-rm -f ${A_NAME_OUT_DBG}
 	@-rm -f ${A_NAME_OUT_STLDBG}
+	@-rmdir -p ${OUTPUT_DIR} ${OUTPUT_DIR_DBG} ${OUTPUT_DIR_STLDBG} 2>/dev/null || exit 0
 ifeq ($(OSNAME), cygming)
 	@-rm -f ${LIB_NAME_OUT}
 	@-rm -f ${LIB_NAME_OUT_DBG}
@@ -42,3 +51,4 @@ distclean::
 	@-rm -f $(INSTALL_LIB_DIR)/${A_NAME_OUT}
 	@-rm -f $(INSTALL_LIB_DIR_DBG)/${A_NAME_OUT_DBG}
 	@-rm -f $(INSTALL_LIB_DIR_STLDBG)/${A_NAME_OUT_STLDBG}
+	@-rmdir -p $(INSTALL_LIB_DIR) $(INSTALL_LIB_DIR_DBG) $(INSTALL_LIB_DIR_STLDBG) 2>/dev/null || exit 0
