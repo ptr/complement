@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/10 18:09:19 ptr>
+// -*- C++ -*- Time-stamp: <06/10/12 14:24:02 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -80,8 +80,6 @@ class NetTransport_base :
     virtual __FIT_DECLSPEC void close();
 
     __FIT_DECLSPEC bool push( const Event& );
-
-    __FIT_DECLSPEC addr_type make_map( addr_type k, const char *name );
 
     addr_type ns() const
       { return _net_ns; }
