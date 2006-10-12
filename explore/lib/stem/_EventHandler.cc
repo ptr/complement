@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/10 18:12:26 ptr>
+// -*- C++ -*- Time-stamp: <06/10/12 14:09:20 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -59,7 +59,7 @@ EventHandler::Init::~Init()
 }
 
 __FIT_DECLSPEC
-const string& EventHandler::who_is( addr_type k ) const
+const string EventHandler::who_is( addr_type k ) const
 {
   return _mgr->who_is( k );
 }
