@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/11 14:54:52 ptr>
+// -*- C++ -*- Time-stamp: <06/10/12 15:12:19 ptr>
 
 /*
  * Copyright (c) 2006
@@ -45,12 +45,8 @@ void StEMecho::echo( const Event& ev )
 
 void StEMecho::regme( const stem::Event& ev )
 {
+  manager()->change_announce( ev.src(), ev.value() );
   cnd.set( true );
-  stem::NetTransport_base *b = manager()->transport( ev.src() );
-  BOOST_CHECK( b != 0 );
-  if ( b != 0 ) {
-    b->make_map( ev.src(), (ev.value() /* + who_is( ev.src() ) */ ).c_str() );
-  }
 }
 
 DEFINE_RESPONSE_TABLE( StEMecho )

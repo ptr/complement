@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/10 18:11:49 ptr>
+// -*- C++ -*- Time-stamp: <06/10/12 15:10:18 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -122,16 +122,28 @@ class EvManager
         return unsafe_is_avail(id);
       }
 
-    const string& who_is( addr_type id ) const
+    const std::string who_is( addr_type id ) const
       {
         MT_REENTRANT( _lock_heap, _x1 );
         return unsafe_who_is( id );
       }
 
-    const string& annotate( addr_type id ) const
+    const std::string annotate( addr_type id ) const
       {
         MT_REENTRANT( _lock_heap, _x1 );
         return unsafe_annotate( id );
+      }
+
+    void change_announce( addr_type id, const std::string& info )
+      {
+        MT_REENTRANT( _lock_heap, _x1 );
+        unsafe_change_announce( id, info );
+      }
+
+    void change_announce( addr_type id, const char *info )
+      {
+        MT_REENTRANT( _lock_heap, _x1 );
+        unsafe_change_announce( id, info );
       }
 
     __FIT_DECLSPEC NetTransport_base *transport( addr_type object_id ) const;
@@ -149,15 +161,31 @@ class EvManager
     bool unsafe_is_avail( addr_type id ) const
       { return heap.find( id ) != heap.end(); }
 
-    const string& unsafe_who_is( addr_type id ) const
+    const std::string& unsafe_who_is( addr_type id ) const
       {
         heap_type::const_iterator i = heap.find( id );
         return i == heap.end() ? inv_key_str : (*i).second.info;
       }
-    const string& unsafe_annotate( addr_type id ) const
+    const std::string& unsafe_annotate( addr_type id ) const
       {
         heap_type::const_iterator i = heap.find( id );
         return i == heap.end() ? inv_key_str : (*i).second.info;
+      }
+
+    void unsafe_change_announce( addr_type id, const std::string& info )
+      {
+        heap_type::iterator i = heap.find( id );
+        if ( i != heap.end() ) {
+          i->second.info = info;
+        }
+      }
+
+    void unsafe_change_announce( addr_type id, const char *info )
+      {
+        heap_type::iterator i = heap.find( id );
+        if ( i != heap.end() ) {
+          i->second.info = info;
+        }
       }
 
   private:

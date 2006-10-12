@@ -1,3 +1,13 @@
+2006-10-12  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* NetTransport.h, NetTransport.cc: remove make_map,
+	it useless and even dangerous in practice.
+
+	* EvManager.h, EventHandler.h, _EventHandler.cc:
+	allow change announce of object's info; return
+	string object instead of const reference from
+	annotate by safety reasons.
+
 2006-10-10  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* NetTransport.h, EventHandler.h, EvManager.h: remove

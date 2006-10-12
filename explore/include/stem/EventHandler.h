@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/10 18:12:54 ptr>
+// -*- C++ -*- Time-stamp: <06/10/12 14:12:15 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -7,16 +7,8 @@
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.1
+ * Licensed under the Academic Free License version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #ifndef __EventHandler_h
@@ -535,19 +527,8 @@ void __EvHandler<T, InputIterator>::Out( std::ostream& out ) const
 }
 
 typedef std::list<state_type> HistoryContainer;
-// #ifndef __FIT_TEMPLATE_TYPEDEF_BUG
 typedef HistoryContainer::iterator h_iterator;
 typedef HistoryContainer::const_iterator const_h_iterator;
-// #else // __FIT_TEMPLATE_TYPEDEF_BUG
-// be careful: list implementation dependence
-// #  ifndef __STL_DEBUG
-// typedef _List_iterator<state_type, _Nonconst_traits<state_type> > h_iterator;
-// typedef _List_iterator<state_type, _Const_traits<state_type> > const_h_iterator;
-// #  else // HP's aCC A.03.13 nevertheless fail here (or near).
-// typedef _DBG_iter<__list<state_type,__STL_DEFAULT_ALLOCATOR(state_type) >, _Nonconst_traits<state_type> > h_iterator;
-// typedef _DBG_iter<__list<state_type,__STL_DEFAULT_ALLOCATOR(state_type) >, _Const_traits<state_type> > const_h_iterator;
-// #  endif
-// #endif // __FIT_TEMPLATE_TYPEDEF_BUG
 
 _STLP_TEMPLATE_NULL
 class __EvHandler<EventHandler,h_iterator >
@@ -581,7 +562,7 @@ class EventHandler
     // See comment near EventHandler::EventHandler() implementation
     // HistoryContainer& theHistory;
     HistoryContainer theHistory;
-    __impl::MutexRS _theHistory_lock;
+    xmt::MutexRS _theHistory_lock;
 
   public:
 
@@ -599,7 +580,7 @@ class EventHandler
     explicit __FIT_DECLSPEC EventHandler( addr_type id, const char *info = 0 );
     virtual __FIT_DECLSPEC ~EventHandler();
 
-    __FIT_DECLSPEC const string& who_is( addr_type k ) const;
+    __FIT_DECLSPEC const std::string who_is( addr_type k ) const;
     __FIT_DECLSPEC bool is_avail( addr_type id ) const;
     static EvManager *manager()
       { return _mgr; }

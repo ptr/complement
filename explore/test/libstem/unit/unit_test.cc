@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/11 15:36:32 ptr>
+// -*- C++ -*- Time-stamp: <06/10/12 15:15:13 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -390,7 +390,7 @@ void stem_test::peer()
   stem::Event ev( NODE_EV_REGME );
   ev.dest( zero );
 
-  ev.value() = "c1";
+  ev.value() = "c1@here";
   c1.Send( ev ); // 'register' c1 client on 'echo' server
 
   echo.cnd.try_wait();
@@ -398,7 +398,7 @@ void stem_test::peer()
 
   PeerClient c2( "c2 local" ); // c2 client
 
-  ev.value() = "c2";
+  ev.value() = "c2@here";
   c2.Send( ev ); // 'register' c2 client on 'echo' server
 
   echo.cnd.try_wait();
@@ -423,9 +423,7 @@ void stem_test::peer()
     BOOST_CHECK( i->first & stem::extbit ); // "external"
     if ( i->second.find( "c2@" ) == 0 ) {
       // make pair: address on side of c1 -> address on side of 'echo'
-      // note: on side of 'echo' server there are mapping too,
-      // address on side of 'echo' -> address on side of c2 
-      peer_addr = tr->make_map( i->first, "c2@foreign" );
+      peer_addr = c1.manager()->SubscribeRemote( tr, i->first, "c2@foreign" );
     }
     // cerr << hex << i->first << dec << " => " << i->second << endl;
     // cerr << hex << tr->make_map( i->first, "map" ) << dec << endl;
