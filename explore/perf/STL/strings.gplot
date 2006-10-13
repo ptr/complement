@@ -171,6 +171,7 @@ plot [0.9:3.1] 'stream/STLport.dat' using ($1):($6) notitle w l lt 1, \
      'stream/libstdc++.dat' using ($1):($6) notitle w l lt 3, \
      'stream/libstdc++.dat' using ($1):($6):($7) title "libstdc++" w yerrorbars lt 3, \
      'stream/stdio.dat' using ($1):($6) notitle w l lt 4, \
-     'stream/stdio.dat' using ($1):($6):($7) title "stdio" w yerrorbars lt 4
+     'stream/stdio.dat' using ($1):($6):($7) title "stdio" w yerrorbars lt 4, \
+     'stream/unistd.dat' using ($1):($6):($7) title "unistd" w yerrorbars lt 5
 
 #pause(-1)
