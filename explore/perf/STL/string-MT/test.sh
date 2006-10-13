@@ -4,7 +4,7 @@
 #
 
 BASEDIR=${PWD}/../../..
-timeprg=${BASEDIR}/app/utils/time/obj/gcc/shared/time
+timeprg=${BASEDIR}/app/utils/time/obj/gcc/so/time
 # time='/usr/bin/time'
 
 function runtest ()
@@ -14,7 +14,7 @@ function runtest ()
   while [ $i -lt 10 ] ; do
     echo -n .
     let i=i+1
-    $timeprg -a -o s.log "$1/obj/gcc/shared/str"
+    $timeprg -a -o s.log "$1/obj/gcc/so/str"
   done
   echo
   echo =========
