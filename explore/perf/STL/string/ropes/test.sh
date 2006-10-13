@@ -1,7 +1,7 @@
 #!/bin/sh
 
 BASEDIR=${PWD}/../../../..
-timeprg=${BASEDIR}/app/utils/time/obj/gcc/shared/time
+timeprg=${BASEDIR}/app/utils/time/obj/gcc/so/time
 
 w_lnum () {
   if [ -f $1 ] ; then
@@ -13,7 +13,7 @@ w_lnum () {
 
 experiment () {
   #w_lnum test$3.log
-  ${timeprg} -a -o test$5.log $4/obj/gcc/shared/str $3 -i=$2 -b=$1
+  ${timeprg} -a -o test$5.log $4/obj/gcc/so/str $3 -i=$2 -b=$1
   echo -e ".\c"
 }
 
