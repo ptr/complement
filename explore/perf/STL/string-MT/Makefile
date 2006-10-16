@@ -1,6 +1,6 @@
-# -*- Makefile -*- Time-stamp: <05/12/27 00:48:42 ptr>
+# -*- Makefile -*- Time-stamp: <06/10/16 21:49:49 ptr>
 
-DIRS = add add-ropes find find-ropes ops ops-ropes params params-ropes params-ref params-ref-ropes params-short
+DIRS = add add-ropes find find-ropes ops ops-ropes params params-ropes params-ref params-ref-ropes params-short add-proxy
 
 all:
 	for d in $(DIRS); do \

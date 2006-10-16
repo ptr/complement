@@ -55,9 +55,20 @@ plot  [0.9:9.1] 'string/STLport.dat' using ($1):($6) notitle w l lt 1, \
 
 #pause(-1)
 
+set output "alloc-2.2.5.eps"
+
+plot  [0.9:9.1] 'string/STLport-2.2.5.dat' using ($1):($6) notitle w l lt 1, \
+      'string/STLport-2.2.5.dat' using ($1):($6):($7) title "node alloc" w yerrorbars lt 1, \
+     'string/STLport-newalloc-2.2.5.dat' using ($1):($6) notitle w l lt 2, \
+     'string/STLport-newalloc-2.2.5.dat' using ($1):($6):($7) title "new alloc" w yerrorbars lt 2, \
+     'string/STLport-malloc-2.2.5.dat' using ($1):($6) notitle w l lt 3, \
+     'string/STLport-malloc-2.2.5.dat' using ($1):($6):($7) title "malloc" w yerrorbars lt 3 
+
+#pause(-1)
+
 set output "strings-MT.eps"
 
-plot  [0.9:7.1][0:250] 'string-MT/STLport.dat' using ($1):($6) notitle w l lt 1, \
+plot  [0.9:9.1][0:250] 'string-MT/STLport.dat' using ($1):($6) notitle w l lt 1, \
       'string-MT/STLport.dat' using ($1):($6):($7) title "node alloc" w yerrorbars lt 1, \
      'string-MT/libstd++.dat' using ($1):($6) notitle w l lt 2, \
      'string-MT/libstd++.dat' using ($1):($6):($7) title "libstd++" w yerrorbars lt 2, \
@@ -70,7 +81,7 @@ plot  [0.9:7.1][0:250] 'string-MT/STLport.dat' using ($1):($6) notitle w l lt 1,
 
 set output "strings-MT2.eps"
 
-plot  [0.9:7.1][0:50] 'string-MT/STLport.dat' using ($1):($6) notitle w l lt 1, \
+plot  [0.9:9.1][0:50] 'string-MT/STLport.dat' using ($1):($6) notitle w l lt 1, \
       'string-MT/STLport.dat' using ($1):($6):($7) title "node alloc" w yerrorbars lt 1, \
      'string-MT/libstd++.dat' using ($1):($6) notitle w l lt 2, \
      'string-MT/libstd++.dat' using ($1):($6):($7) title "libstd++" w yerrorbars lt 2, \
@@ -83,7 +94,7 @@ plot  [0.9:7.1][0:50] 'string-MT/STLport.dat' using ($1):($6) notitle w l lt 1, 
 
 set output "strings-MT-t-stlp-n.eps"
 
-plot  [0.9:7.1] 'string-MT/STLport.dat' using ($1):($6) notitle w l lt 1, \
+plot  [0.9:9.1] 'string-MT/STLport.dat' using ($1):($6) notitle w l lt 1, \
       'string-MT/STLport.dat' using ($1):($6):($7) title "node alloc" w yerrorbars lt 1, \
       'string-MT/STLport.dat' using ($1):($2/2) notitle w l lt 2, \
       'string-MT/STLport.dat' using ($1):($2/2):($3) title "node alloc, user time per thread" w yerrorbars lt 2, \
@@ -93,7 +104,7 @@ plot  [0.9:7.1] 'string-MT/STLport.dat' using ($1):($6) notitle w l lt 1, \
 #pause(-1)
 set output "strings-MT-t-libstd.eps"
 
-plot  [0.9:7.1] 'string-MT/libstd++.dat' using ($1):($6) notitle w l lt 1, \
+plot  [0.9:9.1] 'string-MT/libstd++.dat' using ($1):($6) notitle w l lt 1, \
      'string-MT/libstd++.dat' using ($1):($6):($7) title "libstd++" w yerrorbars lt 1, \
      'string-MT/libstd++.dat' using ($1):($2/2) notitle w l lt 2, \
      'string-MT/libstd++.dat' using ($1):($2/2):($3) title "libstd++, user time per thread" w yerrorbars lt 2, \
