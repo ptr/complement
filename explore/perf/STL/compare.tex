@@ -1,4 +1,4 @@
-% -*- LaTeX -*- Time-stamp: <06/10/16 19:00:51 ptr>
+% -*- LaTeX -*- Time-stamp: <06/10/17 00:43:24 ptr>
 
 \documentclass[a4paper]{article}
 
@@ -49,12 +49,13 @@ and STL usage technique.
 In the tests was used following computers and operational envirinments:
 \begin{enumerate}
   \item Tyan Tiger motherboard, two $1.33$-GHz
-        AMD$^{\mbox{\tiny\textregistered}}$ Athlon$^{\mbox{\tiny\textregistered}}$ XP 1500+ processors under Linux (kernel 2.6.16.26, \verb|glibc| 2{.}3{.}6);\label{AMD}
+        AMD$^{\mbox{\tiny\textregistered}}$ Athlon$^{\mbox{\tiny TM}}$ XP 1500+ processors under Linux (kernel 2{.}6{.}16{.}26, \verb|glibc| 2{.}3{.}6);\label{AMD}
+  \item Two $2.6$-GHz AMD$^{\mbox{\tiny\textregistered}}$ Opteron$^{\mbox{\tiny TM}}$ 252 processors under Linux (kernel 2{.}6{.}15, x86\_64, \verb|glibc| 2{.}3{.}6)\label{AMD64}
 \end{enumerate}
 
 \section{Compilers}
 
-In tests was used GNU gcc 3{.}4{.}4 or 4{.}1{.}1
+In tests was used GNU gcc 3{.}4{.}4 (on AMD64) or 4{.}1{.}1 (on AMD)
 with appropriate
 \verb|libstdc++| libraries (version~3).
 
@@ -137,7 +138,7 @@ concatenation of strings.
     \input strings.tex
   \end{center}
   \caption{STL strings implementations comparison. Single thread. $t$ is a wall time
-           for tests.
+           for tests. On X-axis you see test's number (see text).
            The implementation of strings in \STLport{} (non-COW)
            drammaticaly faster than COW implementations (\libstd{} and
            ropes in \STLport{}) in tests that modify strings.
@@ -232,6 +233,10 @@ Test \#8 is default \STLport{}, in test \#9 used temporary string objects.
 For \libstd{} both \#8 and \#9 are the same test.
 
 
+The figure~\ref{STLport-gpp-strings} show that \STLport{} implementation
+give better results even without expression templates. But with
+expression templates the results are better more then twice.
+
 \section{Role of Allocators}
 
 Note: in the \verb|glibc| 2{.}3{.}6 enhancement of memory allocation
@@ -258,6 +263,14 @@ In the \STLport{} implemented three base memory allocators:
            Wall time for tests. \label{STLport-alloc-strings}}
 \end{figure}
 
+\begin{figure}
+  \begin{center}
+    \input alloc-2_2_5.tex
+  \end{center}
+  \caption{Role of memory allocator in strings implementation (\STLport), \texttt{glibc} 2{.}2{.}5.
+           Wall time for tests. \label{STLport-alloc-ii-ii-v-strings}}
+\end{figure}
+
 Let's repeat tests from section~\ref{TestsDescr} for \STLport{} with different
 allocators. We see (fig.~\ref{STLport-alloc-strings}) that all allocators
 are good enough
@@ -266,10 +279,14 @@ are good enough
 %operations (test~1) the ``optimized'' \verb|node_alloc| has a tiny advantage
 %(difference between best and worst allocators is $3\%$).
 For search operations (test~2) the results as expected
-are the same (within measure of inaccuracy). The tests 4 and 5 show
+are the same (within measure of inaccuracy).
+
+The tests 4 and 5 show
 that cost of \verb|malloc| system call---\verb|node_alloc| reuse once
 allocated memory. But copy of string's content still present (compare with time of
-\libstd{} on fig.~\ref{STLport-gpp-strings}).
+\libstd{} on fig.~\ref{STLport-gpp-strings}). In the past (\verb|glibc| 2{.}2{.}5)
+the cost of \verb|malloc| was significant, but now it near zero (compare graphics
+\ref{STLport-alloc-strings} and \ref{STLport-alloc-ii-ii-v-strings}).
 
 \section{Strings in Multithreaded Environment}
 
@@ -289,7 +306,7 @@ except that every test run simultaneously in two threads.
     \input strings-MT.tex
   \end{center}
   \caption{Tests wall time (\libstd{} and \STLport{}
-           strings) in  MT environment (two threads).
+           strings) in multi-threaded environment (two threads).
            \label{STLport-gpp-MT-strings}}
 \end{figure}
 
@@ -298,7 +315,7 @@ except that every test run simultaneously in two threads.
     \input strings-MT2.tex
   \end{center}
   \caption{Tests wall time (\libstd{} and \STLport{}
-           strings) in  MT environment (two threads) (same as fig.~\ref{STLport-gpp-MT-strings}, another scale).
+           strings) in multi-threaded environment (two threads) (same as fig.~\ref{STLport-gpp-MT-strings}, another scale).
            \label{STLport-gpp-MT-strings2}}
 \end{figure}
 
@@ -318,7 +335,7 @@ implementation it good enough.
   \end{center}
   \caption{
            Wall time, user time and system time per thread for 
-           \libstd{} in MT environment.
+           \libstd{} in multi-threaded environment.
            \label{gpp-MT-strings-t}}
 \end{figure}
 
@@ -342,7 +359,7 @@ user time, in test~3 I can associate only with thread synchronization primitives
   \end{center}
   \caption{
            Wall time, user time and system time per thread for 
-           \STLport{} (node allocator) in MT environment.
+           \STLport{} (node allocator) in multi-threaded environment.
            \label{STLport-MT-strings-t}}
 \end{figure}
 
@@ -352,7 +369,7 @@ user time, in test~3 I can associate only with thread synchronization primitives
   \end{center}
   \caption{
            Wall time, user time and system time per thread for 
-           \STLport{} (malloc allocator) in MT environment.
+           \STLport{} (malloc allocator) in multi-threaded environment.
            \label{STLport-MT-strings-m}}
 \end{figure}
 
@@ -362,7 +379,7 @@ user time, in test~3 I can associate only with thread synchronization primitives
   \end{center}
   \caption{
            Wall time, user time and system time per thread for 
-           \STLport{} ropes in MT environment.
+           \STLport{} ropes in multi-threaded environment.
            \label{STLport-MT-strings-r}}
 \end{figure}
 
@@ -371,14 +388,14 @@ and wall time for tests with STLport with
 \texttt{node\_alloc}-based,
 figure~\ref{STLport-MT-strings-m} show profile for tests with \texttt{malloc}-based allocators, and figure~\ref{STLport-MT-strings-r} for ropes.
 
-The surprise for me was that \texttt{malloc}-based variant
+The surprise for me was that \texttt{malloc}-based variants
 win (in $1.5--2$ times faster) over \texttt{node\_alloc}-based variant in tests \#3,
 \#4 and \#5.
 This fact can be explained by usage of memory allocated chunks vector
 in \texttt{node\_alloc}. This vector accessed from different threads
 and such access should use thread synchronization primitives.
 Compare figures~\ref{STLport-alloc-strings} and \ref{STLport-gpp-MT-strings}.
-The tests~1--2 has the same time in MT and non-MT context for
+The tests~1--2 has the same time in multi-threaded and single-threaded context for
 \texttt{malloc}-based and \texttt{node\_alloc}-based allocators.
 In test~3 \texttt{malloc}-based variant climb down, while
 \texttt{node\_alloc}-based keep position. 
@@ -516,7 +533,7 @@ the \STLport's implementation is a bit better than \libstd{} (and both are
 significant better than C \verb|fwrite|). With raw write to string stream
 (or in char buffer in case of C) the pure C variant is 3--4 times faster.
 
-As about Intel$^{\mbox{\tiny\textregistered}}$ vs. AMD$^{\mbox{\tiny\textregistered}}$, no comments---see figure~\ref{intel-amd} on page~\pageref{intel-amd}.
+% As about Intel$^{\mbox{\tiny\textregistered}}$ vs. AMD$^{\mbox{\tiny\textregistered}}$, no comments---see figure~\ref{intel-amd} on page~\pageref{intel-amd}.
 
 \section{References}
 

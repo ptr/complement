@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Time-stamp: <06/10/16 21:52:27 ptr>
+# Time-stamp: <06/10/17 01:00:43 ptr>
 #
 
 BASEDIR=${PWD}/../../..
@@ -65,6 +65,9 @@ for d in add find ops params params-ref ; do
   echo $j `../stat.awk s.log` >> STLport-malloc.dat
   let j=j+1
 done
+let j=j+1
+runtest add-proxy/STLport-malloc
+echo $j `../stat.awk s.log` >> STLport-malloc.dat
 
 rm -f STLport-newalloc.dat
 touch STLport-newalloc.dat
