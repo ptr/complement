@@ -5,7 +5,7 @@
 -include ../../../../Makefiles/config.mak
 
 SRCROOT := ${STLPORT_DIR}/build
-INSTALL_LIB_DIR        := ../../build/lib/forcestringterm
+INSTALL_LIB_DIR        := ../../build/lib/texpr
 INSTALL_LIB_DIR_DBG    := .
 INSTALL_LIB_DIR_STLDBG := .
 INSTALL_BIN_DIR        := .
@@ -23,7 +23,7 @@ ifeq ($(OSNAME),linux)
 DEFS += -D_STLP_REAL_LOCALE_IMPLEMENTED -D_GNU_SOURCE -D_STLP_LEAKS_PEDANTIC
 endif
 
-DEFS += -D_STLP_FORCE_STRING_TERMINATION=1
+DEFS += -D_STLP_USE_TEMPLATE_EXPRESSION
 
 # options for build with boost support
 ifdef STLP_BUILD_BOOST_PATH

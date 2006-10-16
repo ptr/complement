@@ -1,4 +1,4 @@
-% -*- LaTeX -*- Time-stamp: <06/01/05 13:08:22 ptr>
+% -*- LaTeX -*- Time-stamp: <06/10/16 19:00:51 ptr>
 
 \documentclass[a4paper]{article}
 
@@ -30,21 +30,16 @@
 \maketitle
 
 \begin{abstract}
-This article present comparison of 
-strings implementation in \STLport{} and \libstd.
+This article present comparison of STL strings with copy-on-write and
+non-copy-on-write argorithms, based on \STLport{} strings and ropes
+and \libstd{} implementations.
 
-This tests also can help to answer on question:
-is it strings copy algorithm with constant complexity
-better than algorithm with linear complexity?
-This comparison is done on the base of STLport strings, ropes
-and \libstd{} strings.
-
-Small mesure for iostreams implementations (and adequate C code)
-and publication of test times for two hardware (but both has x86 architecture)
-platforms was recently added.
+Some related issues, like fstream and stringstream performance
+are also under consideration.
 
 I expect that this results will help to make decision between
-STL implementations as well proper choice of strings implementation.
+STL implementations as well proper choice of strings implementation
+and STL usage technique.
 \end{abstract}
 
 \tableofcontents
@@ -53,14 +48,13 @@ STL implementations as well proper choice of strings implementation.
 
 In the tests was used following computers and operational envirinments:
 \begin{enumerate}
-  \item Hands-made machine (assembled by Tersys company) with two $1.33$-GHz
-        AMD$^{\mbox{\tiny\textregistered}}$ Athlon$^{\mbox{\tiny\textregistered}}$ XP 1500+ processors under Linux (kernel 2.6.12.5, \verb|glibc| 2{.}2{.}5);\label{AMD}
-  \item ASUS assembled computer with Intel$^{\mbox{\tiny\textregistered}}$ Pentium$^{\mbox{\tiny\textregistered}}$ 4 $2.4$-GHz processor under Linux (kernel 2.6.12.5, \verb|glibc| 2{.}2{.}5).
+  \item Tyan Tiger motherboard, two $1.33$-GHz
+        AMD$^{\mbox{\tiny\textregistered}}$ Athlon$^{\mbox{\tiny\textregistered}}$ XP 1500+ processors under Linux (kernel 2.6.16.26, \verb|glibc| 2{.}3{.}6);\label{AMD}
 \end{enumerate}
 
 \section{Compilers}
 
-For Unix-like systems was used GNU gcc 3{.}4{.}4
+In tests was used GNU gcc 3{.}4{.}4 or 4{.}1{.}1
 with appropriate
 \verb|libstdc++| libraries (version~3).
 
@@ -68,7 +62,7 @@ with appropriate
 
 Due to ``time'' function has different options and output format on Linux
 and other UINIXes, I use program \texttt{time} from
-\texttt{complement}\footnote{\texttt{http://complement.sourceforge.net}}
+\texttt{complement}\footnote{\texttt{http://complement.sourceforge.net}, see appropriate SVN repository on SourceForge.}
 project bundle\footnote{Portability note: system should has \texttt{wait3} function.}.
 By the way this function provide high-precision time measure.
 
@@ -108,6 +102,9 @@ load time/unload time, but still to be acceptable for experimentator's patience.
 
 \section{The Tests Descriptions\label{TestsDescr}}
 
+All tests are ``synthetic'', to show the diference in programming
+technique.
+
 \subsection{Add Characters to String\label{incr-string}
 (test \#1)}
 
@@ -139,29 +136,29 @@ concatenation of strings.
   \begin{center}
     \input strings.tex
   \end{center}
-  \caption{Comparison of \libstd{} and \STLport{}
-           strings implementation. Single thread. $t$ is a wall time for tests.
-           The implementation of strings in \STLport{} (copy algorithm complexity $O(n)$)
-           drammaticaly faster than ones in \libstd{} or ropes in \STLport{}
-           (copy algorithm complexity $O(1)$) for tests with strings modification.
-           If the test only copy string, the implementation with $O(1)$ complexity
-           is better.
+  \caption{STL strings implementations comparison. Single thread. $t$ is a wall time
+           for tests.
+           The implementation of strings in \STLport{} (non-COW)
+           drammaticaly faster than COW implementations (\libstd{} and
+           ropes in \STLport{}) in tests that modify strings.
+           But if the test only copy string, the COW implementation show better
+           performance.
            \label{STLport-gpp-strings}}
 \end{figure}
 
-\begin{figure}
-  \begin{center}
-    \input intel-amd.tex
-  \end{center}
-  \caption{Comparison of two x86 platforms. See platforms description
-           on page~\pageref{AMD}. This graphics show that higher frequency isn't
-           synonym of better perfomance\label{intel-amd}}
-\end{figure}
+%\begin{figure}
+%  \begin{center}
+%    \input intel-amd.tex
+%  \end{center}
+%  \caption{Comparison of two x86 platforms. See platforms description
+%           on page~\pageref{AMD}. This graphics show that higher frequency isn't
+%           synonym of better perfomance\label{intel-amd}}
+%\end{figure}
 
 \subsection{String copy\label{params-string} (test \#4)}
 
 This test intended to hilight the cost of strings copy (jusr copy, without modifications).
-Implementations of strings that use algorithms with constant copy time ($O(1)$)
+Implementations of strings that use copy-on-write algorithms
 expected to show better results here.
 
 
@@ -169,7 +166,7 @@ expected to show better results here.
 
 You can see (fig.~\ref{STLport-gpp-strings}) that \libstd{} show better
 results than \STLport{} in this test. The reason is that \libstd{}
-use copy algorithm with $O(1)$ complexity: during copy operation
+use COW algorithm: during copy operation
 there are no memory allocation occur---two strings refer to the same
 memory chunk (like \verb|tmp| and \verb|par| on line~$9$). This test
 has three copy operations (lines~$7$, $9$ and $20$).
@@ -208,7 +205,38 @@ not shown on figures).
 But you see, for ``short'' strings test with ``short'' strings optimization
 show time that $43\%$ better!
 
+\subsection{String proxy objects\label{add-string-proxy} (tests \#8 and \#9)}
+
+The agregation of strings using the \verb|+| operator is an expensive operation
+as it requires construction of temporary objects that need memory allocation
+and deallocation. The problem can be even more important if you are adding
+several strings together in a single expression. To avoid this problem \STLport{}
+implement expression template. With this technique addition of 2 strings is not
+a string anymore but a temporary object having a reference to each of the
+original strings involved in the expression. This object carry information
+directly to the destination string to set its size correctly and only make
+a single call to the allocator. This technique also works for the addition of
+$N$ elements where elements are \verb|basic_string|, \verb|C| string or a
+single character.
+
+The drawback can be longer compilation time and bigger executable size.
+
+Another problem is that some compilers (gcc) fail to use string proxy object
+if do with class derived from string.
+
+Let's try to estimate the benefits from string proxy technique with following test.
+
+\lstinputlisting{string/add-proxy/str.cc}
+
+Test \#8 is default \STLport{}, in test \#9 used temporary string objects.
+For \libstd{} both \#8 and \#9 are the same test.
+
+
 \section{Role of Allocators}
+
+Note: in the \verb|glibc| 2{.}3{.}6 enhancement of memory allocation
+(over \verb|glibc| 2{.}2{.}5) leads to
+advantage of \STLport{}'s \verb|node_alloc| became insignificant.
 
 The \STLport{} provide default ``optimized'' memory allocator
 (\verb|node_alloc|). This allocator was used when I run strings tests
@@ -254,7 +282,7 @@ The tests are the same as described in section~\ref{TestsDescr},
 except that every test run simultaneously in two threads.
 
 
-\subsection{Comparison of \STLport{} and \libstd}
+\subsection{Comparison of \STLport{} and \libstd in multi-threaded applications}
 
 \begin{figure}
   \begin{center}
@@ -424,6 +452,13 @@ is high enough.
   \caption{Streams.\label{streams}}
 \end{figure}
 
+\begin{figure}
+  \begin{center}
+    \input streams-1.tex
+  \end{center}
+  \caption{Streams.\label{streamsOne}}
+\end{figure}
+
 \subsection{Format output to file\label{fstream-format} (test \#1)}
 
 First test is a format output to a file. File stream opened for writing
@@ -446,6 +481,10 @@ Raw write to file.
 Near the same test on pure C (stdio).
 
 \lstinputlisting{stream/fstream-raw/str2.c}
+
+And, as reference, unbuffered output (unistd):
+
+\lstinputlisting{stream/fstream-raw/str3.c}
 
 \subsection{Raw output to string\label{sstream-raw} (test \#3)}
 
