@@ -12,7 +12,7 @@ int main( int, char * const * )
   string s3 = ".ext";
   string s4 = " /* my comment about this */";
 
-  for ( int i = 0; i < 100000000; ++i ) {
+  for ( int i = 0; i < 5000000; ++i ) {
     s = s1 + "/" + s2 + s3 + " => " + s4;
   }
 
