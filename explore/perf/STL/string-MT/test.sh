@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Time-stamp: <04/07/15 01:16:23 ptr>
+# Time-stamp: <06/10/16 21:52:27 ptr>
 #
 
 BASEDIR=${PWD}/../../..
@@ -31,6 +31,12 @@ for d in add find ops params params-ref params-short ; do
 done
 # dummy:
 echo $j `../stat.awk s.log` >> libstd++.dat
+let j=j+1
+runtest add-proxy/libstdc++
+echo $j `../stat.awk s.log` >> libstd++.dat
+# and dummy again:
+let j=j+1
+echo $j `../stat.awk s.log` >> libstd++.dat
 
 rm -f STLport.dat
 touch STLport.dat
@@ -42,6 +48,12 @@ for d in add find ops params params-ref params-short ; do
   let j=j+1
 done
 runtest params-short/STLport-no-short-str
+echo $j `../stat.awk s.log` >> STLport.dat
+let j=j+1
+runtest add-proxy/STLport-default
+echo $j `../stat.awk s.log` >> STLport.dat
+let j=j+1
+runtest add-proxy/STLport-add-str-proxy
 echo $j `../stat.awk s.log` >> STLport.dat
 
 rm -f STLport-malloc.dat
