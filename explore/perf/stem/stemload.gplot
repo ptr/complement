@@ -1,0 +1,7 @@
+#!/usr/bin/env gnuplot
+
+set logscale y
+plot 'load.log' using ($2):($3) w d lt 1, \
+     'stat.dat' using ($1):($2) w l lt 2, \
+     'stat.dat' using ($1):($2):($3) w yerrorbars lt 2
+pause (-1)

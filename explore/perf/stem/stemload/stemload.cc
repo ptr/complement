@@ -24,23 +24,33 @@ class Simulator :
     void echo( const stem::Event& );
     void loop();
 
+    static Mutex thcount_lock;
+    static int thcount;
+    static Condition last;
+
   private:
     NetTransportMgr echosrv;
     addr_type echo_addr;
     ofstream timing;
 
     int n;
+    int lcount;
 
     DECLARE_RESPONSE_TABLE( Simulator, stem::EventHandler );
 };
 
+Mutex Simulator::thcount_lock;
+int Simulator::thcount = 0;
+Condition Simulator::last;
+
 Simulator::Simulator( int i ) :
-    n( i )
+    n( i ),
+    lcount( 300 )
 {
   echo_addr = echosrv.open( "localhost", 6995 );
   stringstream s;
   
-  s << "stemload_log." << i;
+  s << "log/stemload_log." << i;
 
   timing.open( s.str().c_str() );
 }
@@ -55,7 +65,7 @@ void Simulator::loop()
 
   unsigned sand = 0;
 
-  while ( true ) {
+  while ( lcount-- > 0 ) {
     Event ev( 0x5000 );
     ev.dest( echo_addr );
     
@@ -108,27 +118,40 @@ END_RESPONSE_TABLE
 
 Thread::ret_code client_thread( void *p )
 {
+  Simulator::thcount_lock.lock();
+  ++Simulator::thcount;
+  Simulator::thcount_lock.unlock();
+
+  Thread::ret_code rc;
+  rc.iword = 0;
+
   Simulator simulator( (int)p );
 
   simulator.loop();
+
+  Simulator::thcount_lock.lock();
+  if ( --Simulator::thcount == 0 ) {
+    Simulator::last.set( true );
+  }
+  Simulator::thcount_lock.unlock();
+
+  return rc;
 }
 
 int main()
 {
-  Condition cnd;
-
-  cnd.set( false );
+  Simulator::last.set( false );
   timespec tm;
   tm.tv_sec = 0;
   tm.tv_nsec = 100000000;
 
-  for ( int i = 0; i < 1000; ++i ) {
-    new Thread( client_thread, (void *)i, 0, 0, PTHREAD_STACK_MIN * 2 );
+  for ( int i = 0; i < 400; ++i ) {
+    new Thread( client_thread, (void *)i, 0, Thread::detached, PTHREAD_STACK_MIN * 2 );
 
     Thread::delay( &tm );
   }
 
-  cnd.wait();
+  Simulator::last.try_wait();
 
   return 0;
 }
