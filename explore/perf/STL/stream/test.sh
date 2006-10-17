@@ -60,6 +60,9 @@ for d in fstream-format fstream-raw sstream-raw ; do
   let j=j+1
 done
 
+rm -f unistd
+touch unistd
+
 runtest fstream-raw/unistd
 echo 2 `../stat.awk s.log` >> unistd.dat
 
