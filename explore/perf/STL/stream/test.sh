@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Time-stamp: <06/01/04 00:33:20 ptr>
+# Time-stamp: <06/10/17 10:39:31 ptr>
 #
 
 BASEDIR=${PWD}/../../..
@@ -60,9 +60,8 @@ for d in fstream-format fstream-raw sstream-raw ; do
   let j=j+1
 done
 
-rm -f unistd
-touch unistd
+rm -f unistd.dat
+touch unistd.dat
 
 runtest fstream-raw/unistd
 echo 2 `../stat.awk s.log` >> unistd.dat
-
