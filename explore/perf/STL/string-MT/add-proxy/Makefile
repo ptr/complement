@@ -1,6 +1,6 @@
 # -*- Makefile -*- Time-stamp: <05/12/27 00:39:55 ptr>
 
-DIRS = STLport-default STLport-malloc STLport-add-str-proxy libstdc++
+DIRS = STLport-default STLport-malloc STLport-add-str-proxy STLport-add-str-proxy-malloc libstdc++
 
 all:
 	for d in $(DIRS); do \
