@@ -1,4 +1,4 @@
-% -*- LaTeX -*- Time-stamp: <06/10/17 00:43:24 ptr>
+% -*- LaTeX -*- Time-stamp: <06/10/17 01:47:22 ptr>
 
 \documentclass[a4paper]{article}
 
@@ -520,17 +520,23 @@ This tests show that
 \begin{itemize}
   \item for processing long strings (greater than 50K) the best choice is
         ropes;
-  \item if you use strings with sizes 1K--50K then strings implementation in 
+  \item if you use strings with sizes $0.5$K--$50$K then strings implementation in 
         \libstd{} is a best choice; this will be good too if you only pass
         strings as parameters, without modifictions;
-  \item if you work (modify) strings with sizes less then 1K,
-        the strings from \STLport{} are for you.
+  \item if you work (modify) strings with sizes less then $0.5$K,
+        the strings from \STLport{} are for you;
+  \item the time of advantage of \texttt{node\_alloc} in \STLport{} is in the past;
+        progress in allocation algorithms in core system eliminate positive
+        effect of \texttt{node\_alloc} in single-threaded applications and
+        significant advantage of core system allocators in multi-threaded
+        applications.
 \end{itemize}
 
 As for streams, we see that format output to file show near the same time
 for \STLport{}, \libstd{} and (even!) C \verb|fprintf|. For raw write
 the \STLport's implementation is a bit better than \libstd{} (and both are
-significant better than C \verb|fwrite|). With raw write to string stream
+significant better than C \verb|fwrite| and all has huge advantage over
+unbuffered output). With raw write to string stream
 (or in char buffer in case of C) the pure C variant is 3--4 times faster.
 
 % As about Intel$^{\mbox{\tiny\textregistered}}$ vs. AMD$^{\mbox{\tiny\textregistered}}$, no comments---see figure~\ref{intel-amd} on page~\pageref{intel-amd}.
