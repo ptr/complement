@@ -128,7 +128,7 @@ plot  [0.9:9.1] 'string-MT/libstd++.dat' using ($1):($6) notitle w l lt 1, \
 #pause(-1)
 set output "strings-MT-t-stlp-m.eps"
 
-plot  [0.9:5.1] 'string-MT/STLport-malloc.dat' using ($1):($6) notitle w l lt 1, \
+plot  [0.9:9.1] 'string-MT/STLport-malloc.dat' using ($1):($6) notitle w l lt 1, \
      'string-MT/STLport-malloc.dat' using ($1):($6):($7) title "malloc" w yerrorbars lt 1, \
      'string-MT/STLport-malloc.dat' using ($1):($2/2) notitle w l lt 2, \
      'string-MT/STLport-malloc.dat' using ($1):($2/2):($3) title "malloc, user time per thread" w yerrorbars lt 2, \
@@ -138,7 +138,7 @@ plot  [0.9:5.1] 'string-MT/STLport-malloc.dat' using ($1):($6) notitle w l lt 1,
 #pause(-1)
 set output "strings-MT-t-stlp-r.eps"
 
-plot  [0.9:5.1] 'string/STLport-ropes.dat' using ($1):($6) notitle w l lt 1, \
+plot  [0.9:9.1] 'string/STLport-ropes.dat' using ($1):($6) notitle w l lt 1, \
      'string/STLport-ropes.dat' using ($1):($6):($7) title "STLport, ropes" w yerrorbars lt 1, \
      'string/STLport-ropes.dat' using ($1):($2/2) notitle w l lt 2, \
      'string/STLport-ropes.dat' using ($1):($2/2):($3) title "STLport, ropes, user time per thread" w yerrorbars lt 2, \
