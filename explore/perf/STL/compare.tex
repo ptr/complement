@@ -1,4 +1,4 @@
-% -*- LaTeX -*- Time-stamp: <06/10/17 01:47:22 ptr>
+% -*- LaTeX -*- Time-stamp: <06/10/18 10:38:28 ptr>
 
 \documentclass[a4paper]{article}
 
@@ -23,7 +23,7 @@
 \newcommand{\CPP}{\mbox{{C}{+}{+}}}
 
 \title{Comparison of Strings Implementations \\ in \CPP{} language}
-\author{Petr Ovtchenkov\footnote{\copiright{} Petr Ovtchenkov, 2003--2006. Licensed under the Academic Free License version 3{.}0.}}
+\author{Petr Ovtchenkov\footnote{\copyright{} Petr Ovtchenkov, 2003--2006. Licensed under the Academic Free License version 3{.}0.}}
 
 \begin{document}
 
@@ -31,7 +31,7 @@
 
 \begin{abstract}
 This article present comparison of STL strings with copy-on-write and
-non-copy-on-write argorithms, based on \STLport{} strings and ropes
+non-copy-on-write argorithms, based on \STLport{} strings, ropes
 and \libstd{} implementations.
 
 Some related issues, like fstream and stringstream performance
@@ -152,8 +152,10 @@ concatenation of strings.
     \input amd-amd64.tex
   \end{center}
   \caption{Progress of systems over 3 years: two processors systems. See platforms description
-           on page~\pageref{AMD}. This graphics show that higher frequency isn't
-           synonym of better perfomance\label{amd-amd64}}
+           on page~\pageref{AMD}. This graphics show that progress was not only in
+           frequency (computer \#2 has twice frequency over \#1, but most times
+           are more then twice better),
+           but in core architecture too (or this is compiler?)\label{amd-amd64}}
 \end{figure}
 
 \subsection{String copy\label{params-string} (test \#4)}
@@ -197,14 +199,15 @@ this allow to skip memory allocation for short strings.
 \lstinputlisting{string/params-short/str.cc}
 
 Test \#6 is default \STLport{}, with ``short string optimization'', while
-test \#7 present results without ``short string optimization''. In case of \libstd{}
+test \#7 present results without ``short string optimization''\footnote{define
+\texttt{\_STLP\_DONT\_USE\_SHORT\_STRING\_OPTIM}}. In case of \libstd{}
 tests \#6 and \#7 are the same.
 
 \STLport{} was build with ``short string'' size 16. ``Short strings optimization'' give
 test time $3\%$ longer then without ones (for strings with size 20, this test case
 not shown on figures).
 But you see, for ``short'' strings test with ``short'' strings optimization
-show time that $43\%$ better!
+show time that $64\%$ better!
 
 \subsection{String proxy objects\label{add-string-proxy} (tests \#8 and \#9)}
 
@@ -229,11 +232,13 @@ Let's try to estimate the benefits from string proxy technique with following te
 
 \lstinputlisting{string/add-proxy/str.cc}
 
-Test \#8 is default \STLport{}, in test \#9 used temporary string objects.
+Test \#8 is default \STLport{}, in test \#9 temporary string objects
+in use\footnote{define \texttt{\_STLP\_USE\_TEMPLATE\_EXPRESSION} turn on}.
 For \libstd{} both \#8 and \#9 are the same test.
 
 
 The figure~\ref{STLport-gpp-strings} show that \STLport{} implementation
+in comparison with \libstd{}
 give better results even without expression templates. But with
 expression templates the results are better more then twice.
 
@@ -267,8 +272,10 @@ In the \STLport{} implemented three base memory allocators:
   \begin{center}
     \input alloc-2_2_5.tex
   \end{center}
-  \caption{Role of memory allocator in strings implementation (\STLport), \texttt{glibc} 2{.}2{.}5.
-           Wall time for tests. \label{STLport-alloc-ii-ii-v-strings}}
+  \caption{Role of memory allocator in strings implementation (\STLport), \texttt{glibc} 2{.}2{.}5, compiler GNU gcc 3{.}4{.}4. 
+           Wall time for tests.
+  The hardware are the same as for results on figure~\ref{STLport-alloc-strings}.
+  \label{STLport-alloc-ii-ii-v-strings}}
 \end{figure}
 
 Let's repeat tests from section~\ref{TestsDescr} for \STLport{} with different
@@ -284,9 +291,19 @@ are the same (within measure of inaccuracy).
 The tests 4 and 5 show
 that cost of \verb|malloc| system call---\verb|node_alloc| reuse once
 allocated memory. But copy of string's content still present (compare with time of
-\libstd{} on fig.~\ref{STLport-gpp-strings}). In the past (\verb|glibc| 2{.}2{.}5)
+\libstd{} on fig.~\ref{STLport-gpp-strings}). In the past (\verb|glibc| 2{.}2{.}5,
+compiler GNU gcc 3{.}4{.}4)
 the cost of \verb|malloc| was significant, but now it near zero (compare graphics
 \ref{STLport-alloc-strings} and \ref{STLport-alloc-ii-ii-v-strings}).
+
+The hardware are the same on figures~\ref{STLport-alloc-strings}
+and \ref{STLport-alloc-ii-ii-v-strings}, different Linux kernel
+(2{.}6{.}16{.}26 vs 2{.}6{.}12{.}5), different
+glibc (2{.}3{.}6 vs 2{.}2{.}5) and different versions of compiler (gcc 4{.}1{.}1 vs 3{.}4{.}4).
+
+Tests for parameters pass (by referenece, \#5) give the same results, in tests
+\#7 (short strings, no ``short string optimization'') older implementation slightly win.
+But in other tests fresh implementation is much better!
 
 \section{Strings in Multithreaded Environment}
 
@@ -299,7 +316,7 @@ The tests are the same as described in section~\ref{TestsDescr},
 except that every test run simultaneously in two threads.
 
 
-\subsection{Comparison of \STLport{} and \libstd in multi-threaded applications}
+\subsection{Comparison of \STLport{} and \libstd{} in multi-threaded applications}
 
 \begin{figure}
   \begin{center}
@@ -514,30 +531,37 @@ the maximum size of buffer.
 
 \lstinputlisting{stream/sstream-raw/str2.c}
 
+We see that format output to file show near the same time
+for \STLport{}, \libstd{} and (even!) C \verb|fprintf|. For raw write
+the \STLport's implementation is a bit better than \libstd{} (C \verb|fwrite|
+show best results here, but breakaway is minimal; all has huge advantage over
+unbuffered output). With raw write to string stream
+(or in char buffer in case of C) the pure C variant is 3--4 times faster,
+but this not what iostreams was intended for.
+
 \section{Conclusions}
 
 This tests show that
 \begin{itemize}
   \item for processing long strings (greater than 50K) the best choice is
         ropes;
-  \item if you use strings with sizes $0.5$K--$50$K then strings implementation in 
-        \libstd{} is a best choice; this will be good too if you only pass
-        strings as parameters, without modifictions;
-  \item if you work (modify) strings with sizes less then $0.5$K,
+  \item if you use strings with sizes $0.5$K--$50$K then strings implementation
+        from native \libstd{} is a good choice; this will be good too if you only pass
+        strings as parameters, without modifictions (but this is bad programming
+        technique nevertheless);
+  \item if you general work is modification of strings with sizes less then $0.5$K,
         the strings from \STLport{} are for you;
   \item the time of advantage of \texttt{node\_alloc} in \STLport{} is in the past;
         progress in allocation algorithms in core system eliminate positive
-        effect of \texttt{node\_alloc} in single-threaded applications and
+        effect of \texttt{node\_alloc} in single-threaded applications and demonstrate
         significant advantage of core system allocators in multi-threaded
-        applications.
+        applications;
+  \item no valuable performance advantage of C format output over \CPP{} iosreams;
+  \item unbuffered output has ugly performance (is it new fact for you?);
+  \item no reasons to use \verb|node_alloc| in \STLport{}---\verb|malloc_alloc|
+        show better (or significant better) results;
+  \item string proxy object (aka expression template) technique is very useful.
 \end{itemize}
-
-As for streams, we see that format output to file show near the same time
-for \STLport{}, \libstd{} and (even!) C \verb|fprintf|. For raw write
-the \STLport's implementation is a bit better than \libstd{} (and both are
-significant better than C \verb|fwrite| and all has huge advantage over
-unbuffered output). With raw write to string stream
-(or in char buffer in case of C) the pure C variant is 3--4 times faster.
 
 % As about Intel$^{\mbox{\tiny\textregistered}}$ vs. AMD$^{\mbox{\tiny\textregistered}}$, no comments---see figure~\ref{intel-amd} on page~\pageref{intel-amd}.
 
