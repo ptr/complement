@@ -145,7 +145,7 @@ int main()
   tm.tv_sec = 0;
   tm.tv_nsec = 100000000;
 
-  for ( int i = 0; i < 400; ++i ) {
+  for ( int i = 0; i < 2000; ++i ) {
     new Thread( client_thread, (void *)i, 0, Thread::detached, PTHREAD_STACK_MIN * 2 );
 
     Thread::delay( &tm );
