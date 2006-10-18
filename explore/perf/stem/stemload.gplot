@@ -1,7 +1,17 @@
 #!/usr/bin/env gnuplot
 
+set xlabel "$t$, sec"
+set ylabel "$\Delta t$, sec"
+
 set logscale y
-plot 'load.log' using ($2):($3) w d lt 1, \
-     'stat.dat' using ($1):($2) w l lt 2, \
-     'stat.dat' using ($1):($2):($3) w yerrorbars lt 2
+plot 'load.log' using ($2):($3) w d lt 2, \
+     'stat.dat' using ($1):($2) w l lt 4, \
+     'stat.dat' using ($1):($2):($3) w yerrorbars lt 4
 pause (-1)
+
+unset logscale
+set ylabel "messeges, sec$^{-1}$" 
+plot 'stat.dat' using ($1):($4) w l
+
+pause (-1)
+
