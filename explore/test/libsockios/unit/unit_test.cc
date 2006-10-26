@@ -527,8 +527,8 @@ test_suite *init_unit_test_suite( int argc, char **argv )
   ts->add( BOOST_TEST_CASE( &test_client_close_socket ) );
   ts->add( BOOST_TEST_CASE( &test_more_bytes_in_socket ), 0, 5 );
   ts->add( BOOST_TEST_CASE( &test_more_bytes_in_socket2 ), 0, 5 );
-  // ts->add( BOOST_TEST_CASE( &test_read0 ), 0, 7 );
-  // ts->add( BOOST_TEST_CASE( &test_read0_srv ) );
+  ts->add( BOOST_TEST_CASE( &test_read0 ), 0, 7 );
+  ts->add( BOOST_TEST_CASE( &test_read0_srv ) );
 
   return ts;
 }
