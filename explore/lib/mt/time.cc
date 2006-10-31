@@ -10,6 +10,8 @@
 
 #include <mt/time.h>
 #include <mt/xmt.h>
+#include <cmath>
+#include <sys/time.h>
 
 #ifdef _WIN32
 xmt::Mutex _l;
