@@ -1,0 +1,422 @@
+2006-10-12  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* NetTransport.h, NetTransport.cc: remove make_map,
+	it useless and even dangerous in practice.
+
+	* EvManager.h, EventHandler.h, _EventHandler.cc:
+	allow change announce of object's info; return
+	string object instead of const reference from
+	annotate by safety reasons.
+
+2006-10-10  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* NetTransport.h, EventHandler.h, EvManager.h: remove
+	SessionMgr---it not used anyway. This functionality
+	should be reimplemented in different manner.
+
+	* _EventHandler.cc, NetTransport.cc, EvManager.cc: ditto.
+
+2006-10-06  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* NetTransport.h, NetTransport.cc: move make_map
+	from NetTransportMgr to NetTransport_base, it
+	useful for any net transport.
+
+2006-10-04  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* EvPack.cc: erase target string in any case---length of string
+	may be indeed 0.
+
+	* Names.h, Names.cc: add one-message report about ns records
+
+	* EDSEv.h: provide defines for one-message report about ns records
+
+2006-10-03  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Names.h, Names.cc: localize heap locking---no wait in
+	the Send call [use temporary container instead]; get_by_name
+	return sequence of name entries too, as get_list, not single record.
+
+2006-09-30  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* _EventHandler.cc: fix wrong decrement and deinitialization
+	of EvManager.
+
+	* EventManager.cc: directly use loop thread wake up condition
+	[fix problem with thread-safe signaling about loop termination].
+
+2006-08-21  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* NetTransport.cc: close() should shutdown connection
+	in NetTransportMgr, like in dtor.
+
+	* NetTransport.cc: remove linger and keepalive socket
+	options, it not useful, but may lead to rpblems
+
+2006-08-04  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Cron.h, EvManager.h, NetTransport.h: changes in 
+	thread entry function.
+	
+	* Cron.cc, EvManager.cc, NetTransport.cc: ditto.
+
+2006-07-20  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* crc.h: use platform-independent uint32_t for CRC types.
+
+	* NetTransport.cc: use platform-independent uint32_t for
+	network communication.
+
+	* Cron.h, EvSession.h, Event.h: ditto
+
+	* EvPack.cc: ditto
+
+2006-07-19  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Event.h: libstdc++ v3, timestamp 20050519 (gcc 3.4.4)
+	has __type_traits, while libstdc++ v3, timestamp 20050921
+	(gcc 4.0.2) not; I use boost's staff instead.
+
+2006-07-13  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* EvManager.cc: add guard for dispatch loop stop flag.
+
+	* EvManager.h: idem
+
+	* NetTransport.cc: socket manager already provide connection
+	loop; socket in NetTransport should be shutdown to break down
+	through infinite read.
+
+	* NetTransport.h: prepare NetTransport to current sockmgr.
+
+	* _EventHandler.cc: add guard for Init, where EvManager and Names
+	started.
+
+	* libstem (Repository): library version 4.1.0.
+
+2006-06-28  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Makefile: remove -ISTLPORT, may be build without one; but
+	boost is required in this case.
+
+	* Cron.cc: check LONG_LONG in libstdc++ too
+
+	* Event.h: define __type_traits (from STLport) in case of
+	build with libstdc++.
+
+	* EventHandler.h: use ext/functional and namespace __gnu_cxx
+	for some functors when compile with libstdc++.
+
+	* SessionMgr.h: ditto
+
+2006-05-24  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* EventHandler.h: explicitly add stdexcept header.
+
+2006-02-27  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* EvManager.cc, NetTransport.cc, _EventHandler.cc: rename nsaddr to
+	ns_addr to fix conflict with define in resolv.h for backword
+	compatibility.
+
+	* Event.h: ditto.
+
+	* libstem (Repository): library version 4.0.1.
+
+2005-06-28  Petr Ovtchenkov  <Petr.Ovchenkov@Kaspersky.COM>
+
+	* EvPack.h: add missed short and unsigned short to transport.
+
+2005-06-14  Petr Ovtchenkov  <Petr.Ovchenkov@Kaspersky.COM>
+
+	* EventHandler.h: modern compilers support member templates,
+	so member template methods Send and Forward added for
+	parametric Event.
+
+2005-03-30  Petr Ovtchenkov  <ptr@island.plnet.ru>
+
+	* libstem (Repository): fix problems with modern compiler
+	[gcc 3.4.2, more strict and near Standard]; reincarnation
+	in CVS repository under version 4.0.
+
+2003-11-06  Petr Ovtchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* libEDS: library renamed to 'stem' == lower of 'StEM'
+
+	* libstem: compilation with present libxmt and libsockios
+
+2001-07-27  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* libEDS: Version 3.5.2
+	
+	* Makefile.gcc (Repository): provide workaround for
+	bug in GNU make 3.79*---it foget old value of variable when
+	tag-dependent variable use += operator, if includes of makefiles
+	is too deep---near deepth of 3. This influence to libraries building.
+	Add explicit link with other C++ shared libraries---this significantly
+	reduce library size.
+
+2001-06-13  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* NetTransport.cc (Repository): The limit of EDS message is increased
+	from 1M to 4M;
+	* libEDS: new patch number, library version 3.5.1 now.
+
+2001-06-05  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* Makefile.inc (Message): library version 3.5.0
+	This reflect real major libEDS release.
+
+2001-06-04  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* libEDS: Work with STLport 4.5 beta 8 (from stlport cvs);
+	remove obsolete in any case dependence from non-STLport iostreams
+	realization (it should not work).
+
+2001-06-01  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* The fork and become_daemon now in xmt library.
+
+	* New exception class fork_in_parent added in xmt.
+
+	* libEDS: version 0.5.0
+	
+2001-03-20  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* Modified namespace to satisfy STLport 4.1 beta 5
+
+	* EvSession.h:
+	problems with non-inline copy constructor and operator (VC5 sp3)
+
+	* Satisfy for STLport 4.1 beta 5.
+
+	* Increment patch number.
+
+2001-03-01  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* sockios:
+	setoptions for socket moved from basic_sockbuf to sockstream.
+
+	* Incremented patch number (in version presentation) after sockstream
+	modifications.
+
+2001-02-15  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* Change version
+
+2001-02-06  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* Under hard load I see the same behavior as under HP-UX and Linux.
+	Fix code: remove difference in code between Solaris and non-Solaris
+	for MCSF polisy of socket manager.
+
+	* EvSession.h, _EvSession.cc:
+	Added copy constructor and assignment operator. All MT-unsafe
+	operations are protected now. Public accesable operations return
+	copy of object, not reference.
+
+	* EventHandler.h:
+	Destructor marked as virtual.
+
+	* NetTransport.h, NetTransport.cc:
+	Unsafe operations with sessions are protected now. Public accessable
+	operations return copy of SessionInfo instead of reference.
+
+2001-01-30  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* Cron:
+	Remove event from Cron service with consideration of arg number.
+
+	* NetTransport:
+	We should not erase session when control object exist, but should
+	do this when no such object.
+
+2001-01-22  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* Approach for fix problem with lost info about closed connections
+	on non-Solaris OSes. Should be checked on other OS, including Solaris
+	and non-MP variant.
+
+	* Cron: I should use RemoveState(), not PopState()
+
+2001-01-16  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* Cron (Cron.h, Cron.cc, NetTransport.cc):
+	only one Cron loop thread per instance start now, it go	to suspended
+	state if no messages in queue instead of exit.
+
+	* NetTransportMgs (NetTransport.h):
+	before open we sure that _loop terminated.
+
+	* Increment libEDS version.
+
+2000-12-29  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* Cron (Cron.h, EvPack.h, Cron.cc):
+	Start of cron events: added nanoseconds;
+	Cron entry has now unsigned argument, and notification send
+	this argument.
+
+	* NetTransport (NetTransport.h, NetTransport.cc):
+	Fix problem for NetTransportMgr: when close communication socket I
+	join thread with read (pop) loop.
+
+2000-12-08  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* Change STLport version
+	
+2000-12-06  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* Cron: Remove waiting: no sense.
+
+2000-12-05  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* Cron: Add wait to Cron---no join_all for POSIX threads.
+
+2001-11-21  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* Cron.cc: Accept zero period if event planning to send only once.
+
+2000-11-04  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* sockios:
+	Multiplexsor variant of Sock manager---data from net, that was
+	readed from net and buffered in sockbuf, not extracted befor next
+	data recieved (I wait on poll). Now I check is available data
+	in buffer and return this sockstream if yes before calling poll.
+	
+2000-09-12  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	ifdef #ident directive (for vary compilers)
+	Removed wrong 'explicit' declaration:
+  	'explicit' may be used only for converting constructors.
+	this-> for inherited functions (HP's aCC A.03.13 don't understand
+	inheritance and 'using' clause). Created Makefiles for HP's aCC
+	compiler. Workarounds for HP's aCC names resolution.
+	This is release that start working on HP-UX 11.00 (with aCC A.03.13).
+
+2000-08-10  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	Port to HP-UX. Changes in posix threads---bug fixes.
+	Less hostid defines --- no needs in it.
+
+2000-05-31  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	Cron bug fixed; Less cerr printing
+	
+2000-05-23  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	GNU C++: required abbreviations for Sun
+	
+2000-02-24  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	DLL export/import/none
+	
+2000-01-05  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	Asynchronous internal events processing
+	
+1999-11-09  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	Event::key_type obsolete
+	
+1999-10-20  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	MT problem during access to state history stack.
+	
+1999-09-13  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	Allow forward event from one object to another.
+	
+1999-09-10  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	NameService established. Fix message addressing bug for internal
+	messages transport.
+	
+1999-06-04  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libEDS:
+	Removed dependency from static constructors run order for events
+	tables. Removed unneeded calls and methods.
+
+1999-03-19  Petr Ovtchenkov
+
+	* libEDS:
+	Reincarnation of EDS. EDS 3 Now! Support net and local events
+	traffic; Total rewritten addressing scheme.
+
+1998-05-21  Petr Ovtchenkov
+
+	* The road to EDS 3: Start revision of OXW
+	
+1996-11-25  Petr Ovtchenkov  
+
+	* libOXW:
+	Names changed in EDS (EDSEvent, EDSEventT, EDSCallbackObject,
+	EDSEventsCore, etc.) in spirit of separate libraries.
+
+1996-11-03  Petr Ovtchenkov  
+
+	* libOXW:
+	The events transfer has made as const event transfer. This has done
+	to avoid implicit events modification during transport ones.
+	Such modifications dangerous and depend upon events dispatcher
+	realization.
+
+1996-10-07  Petr Ovtchenkov  
+
+	* libOXW:
+	Variant without X. Some names changed.
+	
+1996-03-06  Petr Ovtchenkov  
+
+	* libOXW:
+	Fixed bug with wrong find of states: now states push_front in
+	theHistory.
+	
+1996-03-05  Petr Ovtchenkov  
+
+	* libOXW:
+	DispatchStub added (find, but not call).
+	
+1996-02-29  Petr Ovtchenkov  
+
+	* libOXW:
+	Radical revision of events---states container.
+	
+1995-12-28  Petr Ovtchenkov  
+
+	* libOXW:
+	Modification in search of appropriate state in states stack.
+	
+1995-11-21  Petr Ovtchenkov  
+
+	* libOXW:
+	Tracing of events, and more pretty release.
+	
+1995-11-11  Petr Ovtchenkov  
+
+	* libOXW:
+	stack of object's states
+	
+1995-11-02  Petr Ovtchenkov  
+
+	* libOXW (Revision 2 start)
+
+1995-10-01  Petr Ovtchenkov  
+
+	* Events dispatcher can find both virtual and non-virtual catchers.
+
+1995-04-26  Petr Ovtchenkov  
+
+	* Initial revision (?) libAS

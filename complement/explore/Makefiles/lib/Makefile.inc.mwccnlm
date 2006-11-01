@@ -1,0 +1,15 @@
+# -*- makefile -*- Time-stamp: <03/05/05 13:15:10 ptr>
+# $Id$
+
+
+# Oh, the commented below work for gmake 3.78.1 and above,
+# but phrase without tag not work for it. Since gmake 3.79 
+# tag with assignment fail, but work assignment for all tags
+# (really that more correct).
+
+dbg-shared:	LDFLAGS += -type generic -w off ${LDSEARCH}
+stldbg-shared:	LDFLAGS += -type generic -w off ${LDSEARCH}
+release-shared:	LDFLAGS += -type generic -w off ${LDSEARCH}
+dbg-static:	LDFLAGS += -msgstyle gcc -w off ${LDSEARCH}
+stldbg-static:	LDFLAGS += -msgstyle gcc -w off ${LDSEARCH}
+release-static:	LDFLAGS += -msgstyle gcc -w off ${LDSEARCH}

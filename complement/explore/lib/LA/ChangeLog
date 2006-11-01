@@ -1,0 +1,39 @@
+2006-05-24  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Integer.h, Makefile, Makefile.ini: fix some corrupted
+	text; compiled on modern compilers
+	
+2006-05-23  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* repair after HD crash.
+
+2006-04-02  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Integer.h, Rational.h, tmp.h, Integer.cc, Rational.cc:
+	restored from SCCS.
+
+1997-01-16  Petr Ovtchenkov  <ptr@asoft.ru>
+
+	* Integer.h, Rational.h, tmp.h, Integer.cc, Rational.cc:
+	NPOS replaced by npos (changes in std/string.h)
+
+1997-01-15  Petr Ovtchenkov  <ptr@asoft.ru>
+
+	* Integer.h, Rational.h, tmp.h, Integer.cc, Rational.cc:
+	Previously inlined functions moved in .cc file.
+
+1996-04-09  Petr Ovtchenkov  <ptr@asoft.ru>
+
+	* Integer.h, Rational.h, tmp.h, Integer.cc, Rational.cc:
+	workaround for GNU C, typedefs for base types.
+	Big endian --- little endian problem recognized.
+
+1996-04-08  Petr Ovtchenkov  <ptr@asoft.ru>
+
+	* Integer.h, Rational.h, tmp.h, Integer.cc, Rational.cc:
+	first working version for  Solaris, SunPro compiler.
+
+1996-04-04  Petr Ovtchenkov  <ptr@asoft.ru>
+
+	* Integer.h, Rational.h, tmp.h, Integer.cc, Rational.cc:
+	initial implementation.

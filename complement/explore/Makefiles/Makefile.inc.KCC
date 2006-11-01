@@ -1,0 +1,38 @@
+# Time-stamp: <99/12/23 14:17:26 ptr>
+# $SunId$ %Q%
+
+.KEEP_STATE:
+.PARALLEL:
+.SUFFIXES:
+.SCCS_GET:
+
+OS_VER:sh =uname -sr | sed -e s/\[\.\ \]/_/g
+
+INCLUDES = -I$(BASEDIR)/include/stlport-3.2.2
+
+DEFS = -D__$(OS_VER)
+
+CCC = KCC
+INSTALL = /usr/ucb/install
+# OUTPUT_DIR = obj
+OUTPUT_OPTION = -o $@
+CPPFLAGS = $(DEFS) $(INCLUDES)
+LDFLAGS = 
+libdbg_a := DEFS += -D_DEBUG -D_DEBUG_ALLOC
+libdbg_so := DEFS += -D_DEBUG -D_DEBUG_ALLOC
+dbg := DEFS += -D_DEBUG -D_DEBUG_ALLOC
+
+# For CC
+
+dbg := OPT = -g +K0
+libdbg_a := OPT = -g +K0
+libdbg_so := OPT = -g +K0 -Kpic
+CCFLAGS = --thread_safe $(OPT)
+libdbg_a := LDFLAGS += 
+libdbg_so := LDFLAGS += 
+
+%.o:	../%.cc
+	$(COMPILE.cc) $(OUTPUT_OPTION) $<
+
+clear::
+	?-rm -f .make.state core

@@ -1,0 +1,8 @@
+main: create thread two
+thread_two: create thread one
+thread_one: unblock signal SIGINT
+thread_one: set own handler for signal SIGINT
+thread_one: send SIGINT
+thread_one: Handler
+thred_two: EOL of thread one
+main: EOL of thread two
