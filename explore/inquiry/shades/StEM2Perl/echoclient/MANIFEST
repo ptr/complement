@@ -1,8 +1,0 @@
-Changes
-echoclient.xs
-Makefile.PL
-MANIFEST
-ppport.h
-README
-t/echoclient.t
-lib/echoclient.pm

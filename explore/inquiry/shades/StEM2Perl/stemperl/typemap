@@ -1,3 +1,0 @@
-TYPEMAP
-StEM_NetMgr *           O_OBJECT
-mprocessor *            O_OBJECT
