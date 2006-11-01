@@ -1,0 +1,10 @@
+.make.depend
+obj
+*.dvi
+*.lot
+*.lof
+*.loc
+*.aux
+*.log
+lex.yy.cc
+res

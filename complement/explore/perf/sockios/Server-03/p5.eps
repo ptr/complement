@@ -1,0 +1,1002 @@
+%%!PS-Adobe-3.0 EPSF-3.0
+%%Title: (p5.eps)
+%%Creator: gnuplot 3.7 patchlevel 2
+%%CreationDate: Wed Dec  4 23:33:55 2002
+%%BoundingBox: 72 72 432 288
+%%EndComments
+/Gpdict 100 dict def
+Gpdict begin
+/Color true def
+/Dashed true def
+/Gplinewidth 20.000 def
+/hpt_ 100.000 def
+/vpt_ 100.000 def
+ /hpt hpt_ def  
+ /vpt vpt_ def  
+ /Gppointsize_ 1 def 
+ /Gplinewidth_ 1 def 
+  
+ /ArrowDict 25 dict def  
+  
+ /M /moveto load def  
+ /L /lineto load def  
+ /R /rmoveto load def  
+ /V /rlineto load def  
+ /ED { exch def} bind def  
+  
+ /Atan {/atan load stopped {pop pop 0} if } def  
+ /Div {dup 0 eq { pop } { div } ifelse } def  
+ /Pyth {dup mul exch dup mul add sqrt} def  
+  
+ %Sizes  
+ /Gpsetlinewidth  
+ { 
+   dup 
+ %  /Gplinewidth_ ED %save 
+   Gplinewidth mul setlinewidth 
+ } def  
+  
+ /Gpsetpointsize   
+ {  
+   dup  
+   /Gppointsize_ ED %save 
+   dup  
+   vpt_ mul /vpt ED 
+   hpt_ mul /hpt ED  
+ } def  
+      
+ %Color  
+ /SetHsbColor { Color {sethsbcolor} {pop pop pop} ifelse } def  
+ /SetCmykColor { Color {setcmykcolor} {pop pop pop pop} ifelse } def  
+ /SimpleSetColor {6 div 1 1 SetHsbColor} def  
+ /Black {0 0 0 0 SetCmykColor} def  
+ /Red {0 SimpleSetColor} def  
+ /Blue {1 1 0 0 SetCmykColor} def  
+ /Cyan {1 0 0 0 SetCmykColor} def  
+ /Magenta {0 1 0 0 SetCmykColor} def 
+  
+ %Stroking  
+ /PathLength@ % z = z + sqrt{(x-xlast)^2 + (y-ylast)^2}  
+  {  
+    /z   
+    z  
+    y ylast sub  
+    x xlast sub  
+    Pyth  
+    add  
+    def   
+    /ylast y def  
+    /xlast x def  
+  } def  
+      
+  /PathLength  
+  {  
+    flattenpath  
+    /z 0 def  
+    { %move  
+      /ystart ED  
+      /xstart ED  
+      /xlast xstart def  
+      /ylast ystart def  
+    }  
+    { %line  
+      /y ED  
+      /x ED  
+      PathLength@  
+    }  
+    { %curve  
+    }  
+    { %close  
+      /x xstart def  
+      /y ystart def  
+      PathLength@   
+    }  
+    /pathforall load  
+    stopped {pop pop pop pop} if  
+    z  
+  } def  
+    
+ %dotsep DotLine  
+ /DotLine   
+ {  
+   PathLength /b ED   
+   /z ED   
+   /y currentlinewidth def   
+   /z y z add def   
+   [ 0 b b z Div round Div dup 0 le { pop 1 } if] 0 setdash   
+   1 setlinecap  
+ } def  
+  
+ /DashLine   
+  {  
+    PathLength /b ED   
+    /x ED   
+    /y ED   
+    /z y x add def   
+    b y sub z Div round z mul y add b exch Div 
+    dup  
+    y mul /y ED   
+    x mul /x ED   
+    x 0 gt y 0 gt and   
+    { [ y x ] 0 }  
+    { [ 1 0 ] 0 }  
+    ifelse  
+    setdash  
+  } def  
+  
+ /DashLineTwo 
+  {  
+    PathLength /b ED   
+    /u ED 
+    /v ED 
+    /x ED   
+    /y ED 
+    /z y x add u add v add def   
+    b y sub z Div round z mul y add b exch Div 
+    dup  
+    y mul /y ED   
+    x mul /x ED   
+    x 0 gt y 0 gt and   
+    { [ y x v u] 0 }  
+    { [ 1 0 ] 0 }  
+    ifelse  
+    setdash  
+  } def  
+      
+  
+ /DotLineStroke   
+ {  
+   gsave  
+     Dashed {currentlinewidth 2 mul DotLine} if  
+     stroke  
+   grestore  
+ } def  
+    
+ /SolidLineStroke  
+ {  
+   gsave  
+     [] 0 setdash  
+     stroke  
+   grestore  
+ } def  
+    
+ /DashLineStroke  
+ {  
+   gsave   
+     Dashed {Gplinewidth 8 mul Gplinewidth 5 mul DashLine} if  
+     stroke  
+   grestore  
+ } def  
+   
+ /DashDotLineStroke  
+ {  
+   gsave   
+     Dashed {Gplinewidth 8 mul Gplinewidth 5 mul 0 Gplinewidth 5 mul DashLineTwo} if  
+     stroke  
+   grestore  
+ } def  
+    
+ /DashShortLineStroke  
+ {  
+   gsave   
+     Dashed {Gplinewidth 4 mul dup DashLine} if  
+     stroke  
+   grestore  
+ } def  
+    
+ /ArrowHead  
+ {   
+   currentlinewidth mul add dup 2 div /w ED  
+   mul dup /h ED  
+   mul /a ED   
+   w neg h moveto   
+   0 0 L   
+   w h L   
+   w neg a neg rlineto   
+   gsave fill grestore   
+ } def  
+    
+  %/DrawArrowHead {1 dup scale 0.2 1.4 50 3 ArrowHead} def  
+  %%%%%  
+  %inset length dim num  
+  %arrowwidth = dim + num*linewidth  
+  %arrowlength = length*arrowwidth  
+  %arrowinset = width * inset  
+    
+  /DrawArrowHead {0.2 1.4 Gplinewidth 3 mul 4 ArrowHead} def  
+    
+  /Arrow  
+  {  
+    currentpoint  
+    4 2 roll  
+    ArrowDict  
+    begin  
+      /@mtrx matrix currentmatrix def  
+      gsave  
+        2 copy translate  
+        2 index sub neg exch  
+        3 index sub exch Atan  
+        rotate  
+        newpath  
+        DrawArrowHead  
+        @mtrx setmatrix  
+        currentpoint  
+      grestore  
+    end %ArrowDicht  
+    lineto  
+    Gpstroke  
+  } def  
+    
+  %axis  
+  /LTa   
+  {  
+    Gpstroke      
+    newpath  
+    0 setgray  
+    /Gpstroke {DotLineStroke newpath} def  
+  } def  
+    
+  %border  
+  /LTb  
+  {  
+    Gpstroke      
+    newpath  
+    0 setgray  
+    /Gpstroke {SolidLineStroke newpath} def  
+  } def  
+    
+  /LT0  
+  {  
+    Gpstroke      
+    newpath  
+    Red  
+    /Gpstroke {SolidLineStroke newpath} def  
+  } def  
+    
+  /LT1  
+  {  
+    Gpstroke      
+    newpath  
+    Blue  
+    /Gpstroke {DashLineStroke newpath} def  
+  } def  
+    
+  /LT2   
+  {  
+    Gpstroke  
+    newpath  
+    Cyan  
+    /Gpstroke {DashShortLineStroke newpath} def  
+  } def  
+  
+  /LT3   
+  {  
+    Gpstroke  
+    newpath  
+    Magenta  
+    /Gpstroke {DashDotLineStroke newpath} def  
+  } def  
+    
+  /Pnt  
+  {  
+    gsave   
+      [] 0 setdash  
+      1 setlinecap   
+      Gplinewidth Gppointsize_ mul setlinewidth 
+      M  
+      0 0 V  
+      stroke  
+    grestore  
+  } def  
+    
+  /DiaPath  
+  {  
+      [] 0 setdash  
+      Gplinewidth setlinewidth  
+      2 copy   
+      newpath  
+      vpt add moveto  
+      hpt neg vpt neg rlineto   
+      hpt vpt neg rlineto  
+      hpt vpt rlineto   
+      hpt neg vpt rlineto  
+      closepath  
+  } def  
+    
+  /Dia   
+  {   
+    gsave  
+      DiaPath  
+      stroke  
+    grestore  
+  } def  
+    
+  /DaF  
+  {  
+    gsave  
+      DiaPath  
+      fill  
+    grestore  
+  } def  
+    
+  /Crc  
+  {  
+    gsave  
+      [] 0 setdash  
+      Gplinewidth setlinewidth  
+      newpath  
+      vpt 0.85 mul 0 360 arc  
+      closepath  
+      stroke  
+    grestore  
+  } def  
+        
+    
+  /Crs  
+  {  
+    gsave  
+      [] 0 setdash  
+      Gplinewidth setlinewidth  
+      0 setlinecap  
+      newpath  
+      vpt sub  
+      moveto  
+      0 vpt 2 mul rlineto  
+      hpt vpt neg rmoveto  
+      hpt 2 mul neg 0 rlineto  
+      stroke  
+    grestore  
+  } def  
+    
+  /CrX  
+  {  
+  gsave  
+   translate  
+   45 rotate  
+   0 0 Crs  
+  grestore  
+  } def  
+    
+  /CcF  
+  {  
+    gsave  
+      [] 0 setdash  
+      Gplinewidth setlinewidth  
+      newpath  
+      vpt 0.85 mul 0 360 arc  
+      closepath  
+      fill  
+    grestore  
+  } def  
+    
+  /Box  
+  {  
+     gsave  
+       translate  
+       45 rotate  
+       0 0 DiaPath  
+       stroke  
+     grestore  
+  } def  
+    
+  /BxF  
+  {  
+     gsave  
+       translate  
+       45 rotate  
+       0 0 DiaPath  
+       fill  
+     grestore  
+  } def  
+    
+  /Gpstroke {stroke} def  
+  1 setlinecap  
+  1 setlinejoin 
+end
+%%%%EndProlog
+Gpdict begin
+gsave
+72 72 translate
+0.0200 0.0200 scale
+0 setgray
+newpath
+1.000 Gpsetpointsize
+1.000 Gpsetlinewidth
+1.000 Gpsetlinewidth
+LTb
+1.000 Gpsetlinewidth
+LTa
+2250 1500 M
+15000 0 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTb
+2250 1500 M
+300 0 V
+Gpstroke
+17250 1500 M
+-300 0 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTa
+2250 2757 M
+15000 0 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTb
+2250 2757 M
+300 0 V
+Gpstroke
+17250 2757 M
+-300 0 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTa
+2250 4014 M
+15000 0 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTb
+2250 4014 M
+300 0 V
+Gpstroke
+17250 4014 M
+-300 0 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTa
+2250 5271 M
+15000 0 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTb
+2250 5271 M
+300 0 V
+Gpstroke
+17250 5271 M
+-300 0 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTa
+2250 6529 M
+15000 0 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTb
+2250 6529 M
+300 0 V
+Gpstroke
+17250 6529 M
+-300 0 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTa
+2250 7786 M
+8450 0 V
+Gpstroke
+17000 7786 M
+250 0 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTb
+2250 7786 M
+300 0 V
+Gpstroke
+17250 7786 M
+-300 0 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTa
+2250 9043 M
+8450 0 V
+Gpstroke
+17000 9043 M
+250 0 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTb
+2250 9043 M
+300 0 V
+Gpstroke
+17250 9043 M
+-300 0 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTa
+2250 10300 M
+15000 0 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTb
+2250 10300 M
+300 0 V
+Gpstroke
+17250 10300 M
+-300 0 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTa
+2250 1500 M
+0 8800 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTb
+2250 1500 M
+0 300 V
+Gpstroke
+2250 10300 M
+0 -300 V
+Gpstroke
+3153 1500 M
+0 150 V
+Gpstroke
+3153 10300 M
+0 -150 V
+Gpstroke
+4347 1500 M
+0 150 V
+Gpstroke
+4347 10300 M
+0 -150 V
+Gpstroke
+4959 1500 M
+0 150 V
+Gpstroke
+4959 10300 M
+0 -150 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTa
+5250 1500 M
+0 8800 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTb
+5250 1500 M
+0 300 V
+Gpstroke
+5250 10300 M
+0 -300 V
+Gpstroke
+6153 1500 M
+0 150 V
+Gpstroke
+6153 10300 M
+0 -150 V
+Gpstroke
+7347 1500 M
+0 150 V
+Gpstroke
+7347 10300 M
+0 -150 V
+Gpstroke
+7959 1500 M
+0 150 V
+Gpstroke
+7959 10300 M
+0 -150 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTa
+8250 1500 M
+0 8800 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTb
+8250 1500 M
+0 300 V
+Gpstroke
+8250 10300 M
+0 -300 V
+Gpstroke
+9153 1500 M
+0 150 V
+Gpstroke
+9153 10300 M
+0 -150 V
+Gpstroke
+10347 1500 M
+0 150 V
+Gpstroke
+10347 10300 M
+0 -150 V
+Gpstroke
+10959 1500 M
+0 150 V
+Gpstroke
+10959 10300 M
+0 -150 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTa
+11250 1500 M
+0 6000 V
+Gpstroke
+11250 10000 M
+0 300 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTb
+11250 1500 M
+0 300 V
+Gpstroke
+11250 10300 M
+0 -300 V
+Gpstroke
+12153 1500 M
+0 150 V
+Gpstroke
+12153 10300 M
+0 -150 V
+Gpstroke
+13347 1500 M
+0 150 V
+Gpstroke
+13347 10300 M
+0 -150 V
+Gpstroke
+13959 1500 M
+0 150 V
+Gpstroke
+13959 10300 M
+0 -150 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTa
+14250 1500 M
+0 6000 V
+Gpstroke
+14250 10000 M
+0 300 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTb
+14250 1500 M
+0 300 V
+Gpstroke
+14250 10300 M
+0 -300 V
+Gpstroke
+15153 1500 M
+0 150 V
+Gpstroke
+15153 10300 M
+0 -150 V
+Gpstroke
+16347 1500 M
+0 150 V
+Gpstroke
+16347 10300 M
+0 -150 V
+Gpstroke
+16959 1500 M
+0 150 V
+Gpstroke
+16959 10300 M
+0 -150 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTa
+17250 1500 M
+0 8800 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTb
+17250 1500 M
+0 300 V
+Gpstroke
+17250 10300 M
+0 -300 V
+Gpstroke
+1.000 Gpsetlinewidth
+LTb
+2250 1500 M
+15000 0 V
+0 8800 V
+-15000 0 V
+0 -8800 V
+Gpstroke
+1.000 Gpsetlinewidth
+LT0
+2281 1681 M
+1806 -96 V
+7225 -17 V
+5097 28 V
+1.000 Gpsetpointsize
+Gpstroke
+1.000 Gpsetlinewidth
+LT0
+15450 9750 M
+1300 0 V
+Gpstroke
+15450 9900 M
+0 -300 V
+Gpstroke
+16750 9900 M
+0 -300 V
+Gpstroke
+2281 1608 M
+0 146 V
+Gpstroke
+2131 1608 M
+300 0 V
+Gpstroke
+2131 1754 M
+300 0 V
+Gpstroke
+4087 1534 M
+0 103 V
+Gpstroke
+3937 1534 M
+300 0 V
+Gpstroke
+3937 1637 M
+300 0 V
+Gpstroke
+11312 1540 M
+0 56 V
+Gpstroke
+11162 1540 M
+300 0 V
+Gpstroke
+11162 1596 M
+300 0 V
+Gpstroke
+16409 1543 M
+0 105 V
+Gpstroke
+16259 1543 M
+300 0 V
+Gpstroke
+16259 1648 M
+300 0 V
+Gpstroke
+2281 1681 Dia
+4087 1585 Dia
+11312 1568 Dia
+16409 1596 Dia
+16100 9750 Dia
+1.000 Gpsetlinewidth
+LT1
+2281 2569 M
+4087 2189 L
+7225 -20 V
+5097 890 V
+1.000 Gpsetpointsize
+Gpstroke
+1.000 Gpsetlinewidth
+LT1
+15450 9250 M
+1300 0 V
+Gpstroke
+15450 9400 M
+0 -300 V
+Gpstroke
+16750 9400 M
+0 -300 V
+Gpstroke
+2281 2469 M
+0 199 V
+Gpstroke
+2131 2469 M
+300 0 V
+Gpstroke
+2131 2668 M
+300 0 V
+Gpstroke
+4087 2089 M
+0 200 V
+Gpstroke
+3937 2089 M
+300 0 V
+Gpstroke
+3937 2289 M
+300 0 V
+Gpstroke
+11312 2069 M
+0 199 V
+Gpstroke
+11162 2069 M
+300 0 V
+Gpstroke
+11162 2268 M
+300 0 V
+Gpstroke
+16409 2877 M
+0 364 V
+Gpstroke
+16259 2877 M
+300 0 V
+Gpstroke
+16259 3241 M
+300 0 V
+Gpstroke
+2281 2569 Crc
+4087 2189 Crc
+11312 2169 Crc
+16409 3059 Crc
+16100 9250 Crc
+1.000 Gpsetlinewidth
+LT2
+2281 4699 M
+4087 3546 L
+7225 397 V
+5097 2718 V
+1.000 Gpsetpointsize
+Gpstroke
+1.000 Gpsetlinewidth
+LT2
+15450 8750 M
+1300 0 V
+Gpstroke
+15450 8900 M
+0 -300 V
+Gpstroke
+16750 8900 M
+0 -300 V
+Gpstroke
+2281 4339 M
+0 720 V
+Gpstroke
+2131 4339 M
+300 0 V
+Gpstroke
+2131 5059 M
+300 0 V
+Gpstroke
+4087 3321 M
+0 450 V
+Gpstroke
+3937 3321 M
+300 0 V
+Gpstroke
+3937 3771 M
+300 0 V
+Gpstroke
+11312 3898 M
+0 89 V
+Gpstroke
+11162 3898 M
+300 0 V
+Gpstroke
+11162 3987 M
+300 0 V
+Gpstroke
+16409 3170 M
+0 6982 V
+Gpstroke
+16259 3170 M
+300 0 V
+Gpstroke
+16259 10152 M
+300 0 V
+Gpstroke
+2281 4699 Crs
+4087 3546 Crs
+11312 3943 Crs
+16409 6661 Crs
+16100 8750 Crs
+1.000 Gpsetlinewidth
+LT3
+2281 1940 M
+4087 1764 L
+7225 -234 V
+5097 -7 V
+1.000 Gpsetpointsize
+Gpstroke
+1.000 Gpsetlinewidth
+LT3
+15450 8250 M
+1300 0 V
+Gpstroke
+15450 8400 M
+0 -300 V
+Gpstroke
+16750 8400 M
+0 -300 V
+Gpstroke
+2281 1736 M
+0 408 V
+Gpstroke
+2131 1736 M
+300 0 V
+Gpstroke
+2131 2144 M
+300 0 V
+Gpstroke
+4087 1662 M
+0 204 V
+Gpstroke
+3937 1662 M
+300 0 V
+Gpstroke
+3937 1866 M
+300 0 V
+Gpstroke
+11312 1520 M
+0 20 V
+Gpstroke
+11162 1520 M
+300 0 V
+Gpstroke
+11162 1540 M
+300 0 V
+Gpstroke
+16409 1502 M
+0 42 V
+Gpstroke
+16259 1502 M
+300 0 V
+Gpstroke
+16259 1544 M
+300 0 V
+Gpstroke
+2281 1940 CrX
+4087 1764 CrX
+11312 1530 CrX
+16409 1523 CrX
+16100 8250 CrX
+1.000 Gpsetlinewidth
+LT0
+2281 2631 M
+4087 2186 L
+7225 621 V
+5097 280 V
+1.000 Gpsetpointsize
+Gpstroke
+1.000 Gpsetlinewidth
+LT0
+15450 7750 M
+1300 0 V
+Gpstroke
+15450 7900 M
+0 -300 V
+Gpstroke
+16750 7900 M
+0 -300 V
+Gpstroke
+2281 2453 M
+0 357 V
+Gpstroke
+2131 2453 M
+300 0 V
+Gpstroke
+2131 2810 M
+300 0 V
+Gpstroke
+4087 2063 M
+0 247 V
+Gpstroke
+3937 2063 M
+300 0 V
+Gpstroke
+3937 2310 M
+300 0 V
+Gpstroke
+11312 2727 M
+0 161 V
+Gpstroke
+11162 2727 M
+300 0 V
+Gpstroke
+11162 2888 M
+300 0 V
+Gpstroke
+16409 2892 M
+0 389 V
+Gpstroke
+16259 2892 M
+300 0 V
+Gpstroke
+16259 3281 M
+300 0 V
+Gpstroke
+2281 2631 Box
+4087 2186 Box
+11312 2807 Box
+16409 3087 Box
+16100 7750 Box
+grestore
+end
+showpage
+%%%%EOF

@@ -1,0 +1,14 @@
+# -*- Makefile -*- Time-stamp: <05/12/27 00:35:30 ptr>
+
+SRCROOT := ../../../../..
+COMPILER_NAME := gcc
+
+ALL_TAGS := release-shared
+
+
+include ../Makefile.inc
+include ${SRCROOT}/Makefiles/top.mak
+
+DEFS += -D_STLP_USE_MALLOC
+
+release-shared:	LDSEARCH = -L../../../build/lib/malloc -Wl,-rpath=../build/lib/malloc
