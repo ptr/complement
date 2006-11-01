@@ -1,9 +1,0 @@
-*.ps
-*.dvi
-*.pdf
-*.log
-*.aux
-LastMatch.tex
-obj
-.make.depend
-*.pcl
