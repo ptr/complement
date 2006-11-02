@@ -1,4 +1,13 @@
-# -*- makefile -*- Time-stamp: <06/10/09 17:36:05 ptr>
+# -*- makefile -*- Time-stamp: <06/11/02 10:40:52 ptr>
+#
+# Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+# Petr Ovtchenkov
+#
+# Portion Copyright (c) 1999-2001
+# Parallel Graphics Ltd.
+#
+# Licensed under the Academic Free License version 3.0
+#
 
 # Shared libraries tags
 
@@ -8,7 +17,11 @@ release-shared:	$(OUTPUT_DIR) ${SO_NAME_OUTxxx}
 
 dbg-shared:	$(OUTPUT_DIR_DBG) ${SO_NAME_OUT_DBGxxx}
 
+ifndef WITHOUT_STLPORT
+
 stldbg-shared:	$(OUTPUT_DIR_STLDBG) ${SO_NAME_OUT_STLDBGxxx}
+
+endif
 
 ifeq ("${_C_SOURCES_ONLY}","")
 
@@ -66,6 +79,8 @@ ${SO_NAME_OUT_DBGxxx}:	$(OBJ_DBG) $(LIBSDEP)
 	  ln -s ${SO_NAME_DBGx} $(OUTPUT_DIR_DBG)/${SO_NAME_DBG}; \
 	fi
 
+ifndef WITHOUT_STLPORT
+
 ${SO_NAME_OUT_STLDBGxxx}:	$(OBJ_STLDBG) $(LIBSDEP)
 	$(LINK.cc) $(LINK_OUTPUT_OPTION) ${START_OBJ} $(OBJ_STLDBG) $(LDLIBS) ${STDLIBS} ${END_OBJ}
 	@if [ -h $(OUTPUT_DIR_STLDBG)/${SO_NAME_STLDBGxx} ] ; then \
@@ -93,6 +108,10 @@ ${SO_NAME_OUT_STLDBGxxx}:	$(OBJ_STLDBG) $(LIBSDEP)
 	  ln -s ${SO_NAME_STLDBGx} $(OUTPUT_DIR_STLDBG)/${SO_NAME_STLDBG}; \
 	fi
 
+# WITHOUT_STLPORT
+endif
+
+# _C_SOURCES_ONLY
 else
 
 ${SO_NAME_OUTxxx}:	$(OBJ) $(LIBSDEP)
@@ -149,6 +168,8 @@ ${SO_NAME_OUT_DBGxxx}:	$(OBJ_DBG) $(LIBSDEP)
 	  ln -s ${SO_NAME_DBGx} $(OUTPUT_DIR_DBG)/${SO_NAME_DBG}; \
 	fi
 
+ifndef WITHOUT_STLPORT
+
 ${SO_NAME_OUT_STLDBGxxx}:	$(OBJ_STLDBG) $(LIBSDEP)
 	$(LINK.c) $(LINK_OUTPUT_OPTION) $(OBJ_STLDBG) $(LDLIBS)
 	@if [ -h $(OUTPUT_DIR_STLDBG)/${SO_NAME_STLDBGxx} ] ; then \
@@ -176,4 +197,8 @@ ${SO_NAME_OUT_STLDBGxxx}:	$(OBJ_STLDBG) $(LIBSDEP)
 	  ln -s ${SO_NAME_STLDBGx} $(OUTPUT_DIR_STLDBG)/${SO_NAME_STLDBG}; \
 	fi
 
+# WITHOUT_STLPORT
+endif
+
+# !_C_SOURCES_ONLY
 endif
