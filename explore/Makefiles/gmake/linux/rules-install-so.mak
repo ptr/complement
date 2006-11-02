@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <06/10/12 19:53:51 ptr>
+# -*- makefile -*- Time-stamp: <06/11/02 10:43:02 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -9,7 +9,11 @@
 # Licensed under the Academic Free License version 3.0
 #
 
+ifndef WITHOUT_STLPORT
 INSTALL_TAGS ?= install-release-shared install-dbg-shared install-stldbg-shared
+else
+INSTALL_TAGS ?= install-release-shared install-dbg-shared
+endif
 
 PHONY += install $(INSTALL_TAGS)
 
@@ -76,6 +80,7 @@ $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGxxx}:	${SO_NAME_OUT_DBGxxx}
 install-dbg-shared:	dbg-shared $(INSTALL_LIB_DIR_DBG) $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGxxx}
 	${POST_INSTALL_DBG}
 
+ifndef WITHOUT_STLPORT
 $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxxx}:	${SO_NAME_OUT_STLDBGxxx}
 	$(INSTALL_SO) ${SO_NAME_OUT_STLDBGxxx} $(INSTALL_LIB_DIR_STLDBG)
 	@if [ -h $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxx} ] ; then \
@@ -106,3 +111,5 @@ $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxxx}:	${SO_NAME_OUT_STLDBGxxx}
 install-stldbg-shared:	stldbg-shared $(INSTALL_LIB_DIR_STLDBG) $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxxx}
 	${POST_INSTALL_STLDBG}
 
+# WITHOUT_STLPORT
+endif
