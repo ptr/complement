@@ -1,7 +1,6 @@
 # -*- Makefile -*- Time-stamp: <06/08/04 10:54:19 ptr>
 
 SRCROOT := ../../..
-BOOST_DIR := ${HOME}/labs/boost
 COMPILER_NAME := gcc
 
 include Makefile.inc
@@ -12,6 +11,11 @@ INCLUDES += -I$(SRCROOT)/include -I$(BOOST_INCLUDE_DIR)
 
 # temporary, before dums fix strings:
 # DEFS += -D_STLP_DONT_USE_TEMPLATE_EXPRESSION
+
+# RPATH := $(realpath ${CoMT_LIB_DIR})
+# ifndef WITHOUT_STLPORT
+# RPATH := ${RPATH}:$(realpath ${STLPORT_LIB_DIR}):$(realpath /usr/lib)
+# endif
 
 ifeq ($(OSNAME),linux)
 release-shared:	LDSEARCH += -L${CoMT_LIB_DIR} -Wl,--rpath=${CoMT_LIB_DIR}:${STLPORT_LIB_DIR}

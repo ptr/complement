@@ -1,11 +1,21 @@
-# -*- makefile -*- Time-stamp: <05/05/04 22:58:09 ptr>
-# $Id$
+# -*- makefile -*- Time-stamp: <06/11/02 10:47:37 ptr>
+#
+# Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+# Petr Ovtchenkov
+#
+# Portion Copyright (c) 1999-2001
+# Parallel Graphics Ltd.
+#
+# Licensed under the Academic Free License version 3.0
+#
 
 dbg-shared:	$(EXTRA_PRE_DBG) $(OUTPUT_DIR_DBG) ${PRG_DBG} $(EXTRA_POST_DBG)
 
-stldbg-shared:	$(EXTRA_PRE_STLDBG) $(OUTPUT_DIR_STLDBG) ${PRG_STLDBG} $(EXTRA_POST_STLDBG)
-
 release-shared:	$(EXTRA_PRE) $(OUTPUT_DIR) ${PRG} $(EXTRA_POST)
+
+ifndef WITHOUT_STLPORT
+stldbg-shared:	$(EXTRA_PRE_STLDBG) $(OUTPUT_DIR_STLDBG) ${PRG_STLDBG} $(EXTRA_POST_STLDBG)
+endif
 
 ifeq ("${_C_SOURCES_ONLY}","")
 
@@ -15,8 +25,10 @@ ${PRG}:	$(OBJ) $(LIBSDEP)
 ${PRG_DBG}:	$(OBJ_DBG) $(LIBSDEP)
 	$(LINK.cc) $(LINK_OUTPUT_OPTION) ${START_OBJ} $(OBJ_DBG) $(LDLIBS) ${STDLIBS} ${END_OBJ}
 
+ifndef WITHOUT_STLPORT
 ${PRG_STLDBG}:	$(OBJ_STLDBG) $(LIBSDEP)
 	$(LINK.cc) $(LINK_OUTPUT_OPTION) ${START_OBJ} $(OBJ_STLDBG) $(LDLIBS) ${STDLIBS} ${END_OBJ}
+endif
 
 else
 
@@ -26,7 +38,9 @@ ${PRG}:	$(OBJ) $(LIBSDEP)
 ${PRG_DBG}:	$(OBJ_DBG) $(LIBSDEP)
 	$(LINK.c) $(LINK_OUTPUT_OPTION) $(OBJ_DBG) $(LDLIBS)
 
+ifndef WITHOUT_STLPORT
 ${PRG_STLDBG}:	$(OBJ_STLDBG) $(LIBSDEP)
 	$(LINK.c) $(LINK_OUTPUT_OPTION) $(OBJ_STLDBG) $(LDLIBS)
+endif
 
 endif

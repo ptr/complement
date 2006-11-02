@@ -1,5 +1,13 @@
-# -*- makefile -*- Time-stamp: <04/03/16 17:23:52 ptr>
-# $Id$
+# -*- makefile -*- Time-stamp: <06/11/02 10:34:43 ptr>
+#
+# Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+# Petr Ovtchenkov
+#
+# Portion Copyright (c) 1999-2001
+# Parallel Graphics Ltd.
+#
+# Licensed under the Academic Free License version 3.0
+#
 
 PHONY += install-release-static install-dbg-static install-stldbg-static
 
@@ -15,8 +23,12 @@ install-dbg-static:	dbg-static
 	fi
 	$(INSTALL_A) ${A_NAME_OUT_DBG} $(INSTALL_LIB_DIR_DBG)
 
+ifndef WITHOUT_STLPORT
+
 install-stldbg-static:	stldbg-static
 	@if [ ! -d $(INSTALL_LIB_DIR_STLDBG) ] ; then \
 	  mkdir -p $(INSTALL_LIB_DIR_STLDBG) ; \
 	fi
 	$(INSTALL_A) ${A_NAME_OUT_STLDBG} $(INSTALL_LIB_DIR_STLDBG)
+
+endif
