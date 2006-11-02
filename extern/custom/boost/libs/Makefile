@@ -1,4 +1,4 @@
-# Time-stamp: <06/11/01 22:59:18 ptr>
+# -*- makefile -*- Time-stamp: <06/11/01 22:56:34 ptr>
 #
 # Copyright (c) 2006
 # Petr Ovtchenkov
@@ -6,8 +6,8 @@
 # Licensed under the Academic Free License version 3.0
 #
 
-SRCROOT := ..
-SUBDIRS := mt sockios stem misc
+SRCROOT := ../../../../explore
+SUBDIRS := date_time filesystem program_options regex serialization test/unit_test_framework thread
 
 include ${SRCROOT}/Makefiles/gmake/subdirs.mak
 
