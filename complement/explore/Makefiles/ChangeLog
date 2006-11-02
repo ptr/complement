@@ -1,3 +1,19 @@
+2006-11-02  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/app/rules-install.mak, gmake/app/rules.mak:
+	remove excessive build/install without STLport
+
+	* gmake/lib/rules-install-a.mak: ditto
+
+	* gmake/linux/rules-install-so.mak, gmake/linux/rules-so.mak:
+	ditto
+
+	* gmake/unix/lib.mak, top.mak: ditto
+
+2006-11-01  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/subdirs.mak: reuse code to traverse catalogs
+
 2006-10-12  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/targetdirs.mak: use 'so' prefix instead of 'shared';
