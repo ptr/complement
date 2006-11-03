@@ -1,3 +1,20 @@
+2006-11-03  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/linux/rules-so.mak, gmake/linux/rules-install-so.mak:
+	generate rules with macro expansion---real metaprogramming
+	within make;
+
+	* gmake/targets.mak: generate rules with macro expansion,
+	recursive file inclusion to build rules for few catalogs not
+	required more.
+	
+	* rules-d.mak, rules-res.mak, rules-o.mak, gmake/dirsrc.mak:
+	removed
+
+	* Notes: this changes may confuse GNU make 3.79.x; I check
+	this with GNU make 3.80 and 3.81---support of 3.80 has required
+	few workarounds relative smooth code for 3.81.
+
 2006-11-02  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/app/rules-install.mak, gmake/app/rules.mak:

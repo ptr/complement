@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <06/11/02 10:43:02 ptr>
+# -*- makefile -*- Time-stamp: <06/11/03 11:47:01 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -19,97 +19,35 @@ PHONY += install $(INSTALL_TAGS)
 
 install:	$(INSTALL_TAGS)
 
-$(INSTALL_LIB_DIR)/${SO_NAMExxx}:	${SO_NAME_OUTxxx}
-	$(INSTALL_SO) ${SO_NAME_OUTxxx} $(INSTALL_LIB_DIR)
-	@if [ -h $(INSTALL_LIB_DIR)/${SO_NAMExx} ] ; then \
-	  if [ `readlink $(INSTALL_LIB_DIR)/${SO_NAMExx}` != "${SO_NAMExxx}" ]; then \
-	    rm $(INSTALL_LIB_DIR)/${SO_NAMExx}; \
-	    ln -s ${SO_NAMExxx} $(INSTALL_LIB_DIR)/${SO_NAMExx}; \
-	  fi \
-	else \
-	  ln -s ${SO_NAMExxx} $(INSTALL_LIB_DIR)/${SO_NAMExx}; \
-	fi
-	@if [ -h $(INSTALL_LIB_DIR)/${SO_NAMEx} ] ; then \
-	  if [ `readlink $(INSTALL_LIB_DIR)/${SO_NAMEx}` != "${SO_NAMExx}" ]; then \
-	    rm $(INSTALL_LIB_DIR)/${SO_NAMEx}; \
-	    ln -s ${SO_NAMExx} $(INSTALL_LIB_DIR)/${SO_NAMEx}; \
-	  fi \
-	else \
-	  ln -s ${SO_NAMExx} $(INSTALL_LIB_DIR)/${SO_NAMEx}; \
-	fi
-	@if [ -h $(INSTALL_LIB_DIR)/${SO_NAME} ] ; then \
-	  if [ `readlink $(INSTALL_LIB_DIR)/${SO_NAME}` != "${SO_NAMEx}" ]; then \
-	    rm $(INSTALL_LIB_DIR)/${SO_NAME}; \
-	    ln -s ${SO_NAMEx} $(INSTALL_LIB_DIR)/${SO_NAME}; \
-	  fi \
-	else \
-	  ln -s ${SO_NAMEx} $(INSTALL_LIB_DIR)/${SO_NAME}; \
-	fi
+# Workaround forGNU make 3.80; see comments in rules-so.mak
+define do_install_so_links
+$${INSTALL_LIB_DIR$(1)}/$${SO_NAME$(1)xxx}:	${SO_NAME_OUT$(1)xxx}
+	$$(INSTALL_SO) $${SO_NAME_OUT$(1)xxx} $(INSTALL_LIB_DIR$(1))
+	$(call do_so_links_1,$$(INSTALL_LIB_DIR$(1)),$${SO_NAME$(1)xx},$${SO_NAME$(1)xxx})
+	$(call do_so_links_1,$$(INSTALL_LIB_DIR$(1)),$${SO_NAME$(1)x},$${SO_NAME$(1)xx})
+	$(call do_so_links_1,$$(INSTALL_LIB_DIR$(1)),$${SO_NAME$(1)},$${SO_NAME$(1)x})
+endef
+
+define do_install_so_links_wk
+# expand to nothing, if WITHOUT_STLPORT
+ifndef WITHOUT_STLPORT
+$(call do_install_so_links,$(1))
+endif
+endef
+
+$(eval $(call do_install_so_links,))
+$(eval $(call do_install_so_links,_DBG))
+# ifndef WITHOUT_STLPORT
+$(eval $(call do_install_so_links_wk,_STLDBG))
+# endif
 
 install-release-shared:	release-shared $(INSTALL_LIB_DIR) $(INSTALL_LIB_DIR)/${SO_NAMExxx}
 	${POST_INSTALL}
-
-$(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGxxx}:	${SO_NAME_OUT_DBGxxx}
-	$(INSTALL_SO) ${SO_NAME_OUT_DBGxxx} $(INSTALL_LIB_DIR_DBG)
-	@if [ -h $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGxx} ] ; then \
-	  if [ `readlink $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGxx}` != "${SO_NAME_DBGxxx}" ]; then \
-	    rm $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGxx}; \
-	    ln -s ${SO_NAME_DBGxxx} $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGxx}; \
-	  fi \
-	else \
-	  ln -s ${SO_NAME_DBGxxx} $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGxx}; \
-	fi
-	@if [ -h $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGx} ] ; then \
-	  if [ `readlink $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGx}` != "${SO_NAME_DBGxx}" ]; then \
-	    rm $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGx}; \
-	    ln -s ${SO_NAME_DBGxx} $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGx}; \
-	  fi \
-	else \
-	  ln -s ${SO_NAME_DBGxx} $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGx}; \
-	fi
-	@if [ -h $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBG} ] ; then \
-	  if [ `readlink $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBG}` != "${SO_NAME_DBGx}" ]; then \
-	    rm $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBG}; \
-	    ln -s ${SO_NAME_DBGx} $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBG}; \
-	  fi \
-	else \
-	  ln -s ${SO_NAME_DBGx} $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBG}; \
-	fi
-
 
 install-dbg-shared:	dbg-shared $(INSTALL_LIB_DIR_DBG) $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGxxx}
 	${POST_INSTALL_DBG}
 
 ifndef WITHOUT_STLPORT
-$(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxxx}:	${SO_NAME_OUT_STLDBGxxx}
-	$(INSTALL_SO) ${SO_NAME_OUT_STLDBGxxx} $(INSTALL_LIB_DIR_STLDBG)
-	@if [ -h $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxx} ] ; then \
-	  if [ `readlink $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxx}` != "${SO_NAME_STLDBGxxx}" ]; then \
-	    rm $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxx}; \
-	    ln -s ${SO_NAME_STLDBGxxx} $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxx}; \
-	  fi \
-	else \
-	  ln -s ${SO_NAME_STLDBGxxx} $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxx}; \
-	fi
-	@if [ -h $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGx} ] ; then \
-	  if [ `readlink $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGx}` != "${SO_NAME_STLDBGxx}" ]; then \
-	    rm $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGx}; \
-	    ln -s ${SO_NAME_STLDBGxx} $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGx}; \
-	  fi \
-	else \
-	  ln -s ${SO_NAME_STLDBGxx} $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGx}; \
-	fi
-	@if [ -h $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBG} ] ; then \
-	  if [ `readlink $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBG}` != "${SO_NAME_STLDBGx}" ]; then \
-	    rm $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBG}; \
-	    ln -s ${SO_NAME_STLDBGx} $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBG}; \
-	  fi \
-	else \
-	  ln -s ${SO_NAME_STLDBGx} $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBG}; \
-	fi
-
 install-stldbg-shared:	stldbg-shared $(INSTALL_LIB_DIR_STLDBG) $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxxx}
 	${POST_INSTALL_STLDBG}
-
-# WITHOUT_STLPORT
 endif
