@@ -1,5 +1,13 @@
-# Time-stamp: <05/04/15 17:23:30 ptr>
-# $Id$
+# Time-stamp: <06/11/03 12:09:39 ptr>
+#
+# Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+# Petr Ovtchenkov
+#
+# Portion Copyright (c) 1999-2001
+# Parallel Graphics Ltd.
+#
+# Licensed under the Academic Free License version 3.0
+#
 
 # If we have no C++ sources, let's use C compiler for linkage instead of C++.
 ifeq ("$(sort ${SRC_CC} ${SRC_CPP} ${SRC_CXX})","")
@@ -7,15 +15,84 @@ NOT_USE_NOSTDLIB := 1
 _C_SOURCES_ONLY := true
 endif
 
-# if sources disposed in several dirs, calculate
-# appropriate rules; here is recursive call!
+# if sources disposed in several dirs, calculate appropriate rules
 
 DIRS_UNIQUE_SRC := $(dir $(SRC_CPP) $(SRC_CC) $(SRC_CXX) $(SRC_C) $(SRC_S) )
 ifeq (${OSNAME},cygming)
-DIRS_UNIQUE_SRC += $(dir $(SRC_RC) )
+DIRS_UNIQUE_SRC := ${DIRS_UNIQUE_SRC} $(dir $(SRC_RC) )
 endif
 DIRS_UNIQUE_SRC := $(sort $(DIRS_UNIQUE_SRC) )
-include ${RULESBASE}/${USE_MAKE}/dirsrc.mak
+
+# The rules below may be even simpler (i.e. define macro that generate
+# rules for COMPILE.xx), but this GNU make 3.80 unhappy with it;
+# GNU make 3.81 work fine, but 3.81 is new...
+# The code below verbose, but this is price for compatibility with 3.80
+
+define rule_o
+$$(OUTPUT_DIR$(1))/%.o:	$(2)%.cc
+	$$(COMPILE.cc) $$(OUTPUT_OPTION) $$<
+
+$$(OUTPUT_DIR$(1))/%.d:	$(2)%.cc
+	@$$(COMPILE.cc) $$(CCDEPFLAGS) $$< $$(DP_OUTPUT_DIR$(1))
+
+$$(OUTPUT_DIR$(1))/%.o:	$(2)%.cpp
+	$$(COMPILE.cc) $$(OUTPUT_OPTION) $$<
+
+$$(OUTPUT_DIR$(1))/%.d:	$(2)%.cpp
+	@$$(COMPILE.cc) $$(CCDEPFLAGS) $$< $$(DP_OUTPUT_DIR$(1))
+
+$$(OUTPUT_DIR$(1))/%.o:	$(2)%.cxx
+	$$(COMPILE.cc) $$(OUTPUT_OPTION) $$<
+
+$$(OUTPUT_DIR$(1))/%.d:	$(2)%.cxx
+	@$$(COMPILE.cc) $$(CCDEPFLAGS) $$< $$(DP_OUTPUT_DIR$(1))
+
+$$(OUTPUT_DIR$(1))/%.o:	$(2)%.c
+	$$(COMPILE.c) $$(OUTPUT_OPTION) $$<
+
+$$(OUTPUT_DIR$(1))/%.d:	$(2)%.c
+	@$$(COMPILE.c) $$(CCDEPFLAGS) $$< $$(DP_OUTPUT_DIR$(1))
+
+$$(OUTPUT_DIR$(1))/%.o:	$(2)%.s
+	$$(COMPILE.s) $$(OUTPUT_OPTION) $$<
+
+$$(OUTPUT_DIR$(1))/%.o:	$(2)%.S
+	$$(COMPILE.S) $$(OUTPUT_OPTION) $$<
+
+$$(OUTPUT_DIR$(1))/%.d:	$(2)%.S
+	@$$(COMPILE.S) $$(SDEPFLAGS) $$< $$(DP_OUTPUT_DIR$(1))
+endef
+
+define rule_rc
+$$(OUTPUT_DIR$(1))/%.res:	$(2)%.rc
+	$$(COMPILE.rc) $$(RC_OUTPUT_OPTION) $$<
+endef
+
+define rules_
+$(call rule_o,,$(1))
+ifneq ($(OUTPUT_DIR),$(OUTPUT_DIR_A))
+$(call rule_o,_A,$(1))
+endif
+$(call rule_o,_DBG,$(1))
+ifneq ($(OUTPUT_DIR_DBG),$(OUTPUT_DIR_A_DBG))
+$(call rule_o,_A_DBG,$(1))
+endif
+ifndef WITHOUT_STLPORT
+$(call rule_o,_STLDBG,$(1))
+ifneq ($(OUTPUT_DIR_STLDBG),$(OUTPUT_DIR_A_STLDBG))
+$(call rule_o,_A_STLDBG,$(1))
+endif
+endif
+ifeq ($(OSNAME),cygming)
+$(call rule_rc,,$(1))
+$(call rule_rc,_DBG,$(1))
+ifndef WITHOUT_STLPORT
+$(call rule_rc,_STLDBG,$(1))
+endif
+endif
+endef
+
+$(foreach dir,$(DIRS_UNIQUE_SRC),$(eval $(call rules_,$(dir))))
 
 ALLBASE    := $(basename $(notdir $(SRC_CC) $(SRC_CPP) $(SRC_CXX) $(SRC_C) $(SRC_S)))
 ifeq (${OSNAME},cygming)
