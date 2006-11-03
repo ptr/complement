@@ -23,9 +23,9 @@ install:	$(INSTALL_TAGS)
 define do_install_so_links
 $${INSTALL_LIB_DIR$(1)}/$${SO_NAME$(1)xxx}:	${SO_NAME_OUT$(1)xxx}
 	$$(INSTALL_SO) $${SO_NAME_OUT$(1)xxx} $(INSTALL_LIB_DIR$(1))
-	$(call do_so_links_1,$$(INSTALL_LIB_DIR$(1)),$${SO_NAME$(1)xx},$${SO_NAME$(1)xxx})
-	$(call do_so_links_1,$$(INSTALL_LIB_DIR$(1)),$${SO_NAME$(1)x},$${SO_NAME$(1)xx})
-	$(call do_so_links_1,$$(INSTALL_LIB_DIR$(1)),$${SO_NAME$(1)},$${SO_NAME$(1)x})
+	@$(call do_so_links_1,$$(INSTALL_LIB_DIR$(1)),$${SO_NAME$(1)xx},$${SO_NAME$(1)xxx})
+	@$(call do_so_links_1,$$(INSTALL_LIB_DIR$(1)),$${SO_NAME$(1)x},$${SO_NAME$(1)xx})
+	@$(call do_so_links_1,$$(INSTALL_LIB_DIR$(1)),$${SO_NAME$(1)},$${SO_NAME$(1)x})
 endef
 
 define do_install_so_links_wk
