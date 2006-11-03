@@ -22,14 +22,14 @@ stldbg-shared:	$(OUTPUT_DIR_STLDBG) ${SO_NAME_OUT_STLDBGxxx}
 endif
 
 define do_so_links_1
-@if [ -h $(1)/$(2)} ] ; then \
+if [ -h $(1)/$(2) ]; then \
   if [ `readlink $(1)/$(2)` != "$(3)" ]; then \
     rm $(1)/$(2); \
     ln -s $(3) $(1)/$(2); \
-  fi \
+  fi; \
 else \
   ln -s $(3) $(1)/$(2); \
-fi
+fi;
 endef
 
 # Workaround for GNU make 3.80: it fail on 'eval' within 'if'
@@ -53,9 +53,9 @@ ifeq ("${_C_SOURCES_ONLY}","")
 else
 	$$(LINK.c) $$(LINK_OUTPUT_OPTION) $$(OBJ$(1)) $$(LDLIBS)
 endif
-	$(call do_so_links_1,$$(OUTPUT_DIR$(1)),$${SO_NAME$(1)xx},$${SO_NAME$(1)xxx})
-	$(call do_so_links_1,$$(OUTPUT_DIR$(1)),$${SO_NAME$(1)x},$${SO_NAME$(1)xx})
-	$(call do_so_links_1,$$(OUTPUT_DIR$(1)),$${SO_NAME$(1)},$${SO_NAME$(1)x})
+	@$(call do_so_links_1,$$(OUTPUT_DIR$(1)),$${SO_NAME$(1)xx},$${SO_NAME$(1)xxx})
+	@$(call do_so_links_1,$$(OUTPUT_DIR$(1)),$${SO_NAME$(1)x},$${SO_NAME$(1)xx})
+	@$(call do_so_links_1,$$(OUTPUT_DIR$(1)),$${SO_NAME$(1)},$${SO_NAME$(1)x})
 endef
 
 define do_so_links_wk
