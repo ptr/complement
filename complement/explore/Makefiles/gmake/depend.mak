@@ -1,21 +1,43 @@
-# Time-stamp: <06/08/24 10:09:17 ptr>
+# Time-stamp: <06/11/03 18:38:39 ptr>
+#
+# Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+# Petr Ovtchenkov
+#
+# Portion Copyright (c) 1999-2001
+# Parallel Graphics Ltd.
+#
+# Licensed under the Academic Free License version 3.0
+#
 
 PHONY += release-static-dep release-shared-dep dbg-static-dep dbg-shared-dep \
-         stldbg-static-dep stldbg-shared-dep depend
+         depend
+
+ifndef WITHOUT_STLPORT
+PHONY += stldbg-static-dep stldbg-shared-dep
+endif
 
 release-static-dep release-shared-dep:	$(DEP)
 
 dbg-static-dep dbg-shared-dep:	$(DEP_DBG)
 
+ifndef WITHOUT_STLPORT
 stldbg-static-dep stldbg-shared-dep:	$(DEP_STLDBG)
 
-depend:	$(OUTPUT_DIRS) release-shared-dep dbg-shared-dep stldbg-shared-dep
-	@cat -s $(DEP) $(DEP_DBG) $(DEP_STLDBG) /dev/null > $(DEPENDS_COLLECTION)
+_ALL_DEP := $(DEP) $(DEP_DBG) $(DEP_STLDBG)
+_DASH_DEP := release-shared-dep dbg-shared-dep stldbg-shared-dep
+else
+_ALL_DEP := $(DEP) $(DEP_DBG)
+_DASH_DEP := release-shared-dep dbg-shared-dep
+endif
 
-TAGS:	$(OUTPUT_DIRS) release-shared-dep dbg-shared-dep stldbg-shared-dep
-	@etags -i -m `cat -s $(DEP) $(DEP_DBG) $(DEP_STLDBG) | sed 's/^.*://;s/\\\\$$//'`
 
-tags:	$(OUTPUT_DIRS) release-shared-dep dbg-shared-dep stldbg-shared-dep
-	@ctags -d -g -i -m -t `cat -s $(DEP) $(DEP_DBG) $(DEP_STLDBG) | sed 's/^.*://;s/\\\\$$//'`
+depend:	$(OUTPUT_DIRS) ${_DASH_DEP}
+	@cat -s $(_ALL_DEP) /dev/null > $(DEPENDS_COLLECTION)
+
+TAGS:	$(OUTPUT_DIRS) ${_DASH_DEP}
+	@etags -i -m `cat -s $(_ALL_DEP) /dev/null | sed 's/^.*://;s/\\\\$$//'`
+
+tags:	$(OUTPUT_DIRS) ${_DASH_DEP}
+	@ctags -d -g -i -m -t `cat -s $(_ALL_DEP) /dev/null | sed 's/^.*://;s/\\\\$$//'`
 
 -include $(DEPENDS_COLLECTION)
