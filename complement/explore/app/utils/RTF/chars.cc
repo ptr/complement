@@ -15,16 +15,8 @@
  * in supporting documentation.
  */
 
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#pragma ident "@(#)$Id$"
-#  endif
-#endif
-
-#include <iostream>
-#include <strstream>
+// #include <iostream>
+// #include <sstream>
 
 using namespace std;
 

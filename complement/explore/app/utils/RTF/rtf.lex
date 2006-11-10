@@ -19,14 +19,6 @@
 %option c++
 
 %{
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#pragma ident "@(#)$Id$"
-#  endif
-#endif
-
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -34,6 +26,8 @@
 #include <cstdio>
 
 using namespace std;
+
+extern "C" int yywrap();
 
 struct Lex {
     Lex() :
@@ -66,7 +60,7 @@ Lex la;
 \{       la.brace++; // cerr << la.brace << endl;
 
 \\\'[0-9a-f][[0-9a-f] {
-  istringstream i( YYText(), YYLeng() );
+  istringstream i( string(YYText(), YYLeng()) );
   unsigned c;
   // char ch;
   i.seekg( 2, ios_base::beg );
@@ -317,7 +311,7 @@ Lex la;
     BEGIN(FONT);
     la.mode = FONT;
     la.brace++;
-    istringstream s( YYText(), YYLeng() );
+    istringstream s( string(YYText(), YYLeng()) );
     s.seekg( 3, ios_base::beg );
     int n;
     s >> n;
@@ -592,7 +586,7 @@ Lex la;
   }
 
   \\version[0-9]+ {
-    istringstream i( YYText(), YYLeng() );
+    istringstream i( string(YYText(), YYLeng()) );
     unsigned c;
     i.seekg( 8, ios_base::beg );
     i >> c;
@@ -600,7 +594,7 @@ Lex la;
   }
 
   \\edmins[0-9]+ {
-    istringstream i( YYText(), YYLeng() );
+    istringstream i( string(YYText(), YYLeng()) );
     unsigned c;
     i.seekg( 7, ios_base::beg );
     i >> c;
@@ -608,7 +602,7 @@ Lex la;
   }
 
   \\nofpages[0-9]+ {
-    istringstream i( YYText(), YYLeng() );
+    istringstream i( string(YYText(), YYLeng()) );
     unsigned c;
     i.seekg( 9, ios_base::beg );
     i >> c;
@@ -678,35 +672,35 @@ Lex la;
     }
   }
   \\yr[0-9]{4} {
-    istringstream i( YYText(), YYLeng() );
+    istringstream i( string(YYText(), YYLeng()) );
     unsigned c;
     i.seekg( 3, ios_base::beg );
     i >> c;
     cout << c;
   }
   \\mo[0-9]{1,2} {
-    istringstream i( YYText(), YYLeng() );
+    istringstream i( string(YYText(), YYLeng()) );
     unsigned c;
     i.seekg( 3, ios_base::beg );
     i >> c;
     cout << "-" << setw(2) << setfill('0') << c;
   }
   \\dy[0-9]{1,2} {
-    istringstream i( YYText(), YYLeng() );
+    istringstream i( string(YYText(), YYLeng()) );
     unsigned c;
     i.seekg( 3, ios_base::beg );
     i >> c;
     cout << "-" << setw(2) << setfill('0') << c;
   }
   \\hr[0-9]{1,2} {
-    istringstream i( YYText(), YYLeng() );
+    istringstream i( string(YYText(), YYLeng()) );
     unsigned c;
     i.seekg( 3, ios_base::beg );
     i >> c;
     cout << " " << setw(2) << setfill('0') << c;
   }
   \\min[0-9]{1,2} {
-    istringstream i( YYText(), YYLeng() );
+    istringstream i( string(YYText(), YYLeng()) );
     unsigned c;
     i.seekg( 4, ios_base::beg );
     i >> c;
