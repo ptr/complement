@@ -1,7 +1,25 @@
-# Time-stamp: <05/12/08 00:11:56 ptr>
+# Time-stamp: <06/11/10 15:53:35 ptr>
+#
+# Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+# Petr Ovtchenkov
+#
+# Portion Copyright (c) 1999-2001
+# Parallel Graphics Ltd.
+#
+# Licensed under the Academic Free License version 3.0
+#
 
+ifndef _FORCE_CXX
 CXX := c++
+else
+CXX := $_FORCE_CXX
+endif
+
+ifndef _FORCE_CC
 CC := gcc
+else
+CC := $_FORCE_CC
+endif
 
 ifeq ($(OSNAME), cygming)
 RC := windres

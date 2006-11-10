@@ -1,16 +1,26 @@
-# Time-stamp: <05/03/21 10:42:37 ptr>
-# $Id$
+# Time-stamp: <06/11/10 15:54:03 ptr>
+#
+# Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+# Petr Ovtchenkov
+#
+# Portion Copyright (c) 1999-2001
+# Parallel Graphics Ltd.
+#
+# Licensed under the Academic Free License version 3.0
+#
 
-
-#INCLUDES = -I$(SRCROOT)/include
 INCLUDES :=
 
+ifndef _FORCE_CXX
 CXX := aCC
-CC := aCC
+else
+CXX := $_FORCE_CXX
+endif
 
-ifdef TARGET_OS
-CXX := ${TARGET_OS}-${CXX}
-CC := ${TARGET_OS}-${CC}
+ifndef _FORCE_CC
+CC := aCC
+else
+CC := $_FORCE_CC
 endif
 
 CXX_VERSION := $(shell ${CXX} --version | grep ${CXX} | awk '{ print $$3; }')
