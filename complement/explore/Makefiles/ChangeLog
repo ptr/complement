@@ -1,3 +1,18 @@
+2006-11-10  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/app/rules.mak, gmake/app/gcc.mak: add static tags;
+	this is the same as shared, except link with static libstlport.
+
+	* gmake/CC.mak, gmake/aCC.mak, gmake/gcc.mak, gmake/mwccnlm.mak:
+	allow insist on C and C++ compilers names. This may make happy
+	Debian users, because of package may use names like g++-3.4 here.
+
+	* top.mak: form ALL_TAGS depends upon options from config.mak,
+	i.e. take into account static, dynamic variants and possible
+	disabling dbg and stldbg variants plus build without STLport.
+	Note, that configure assume WITHOUT_STLPORT by default now!
+	Assume gcc compilers family, if no COMPILER_NAME set.
+
 2006-11-03  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/linux/rules-so.mak, gmake/linux/rules-install-so.mak:

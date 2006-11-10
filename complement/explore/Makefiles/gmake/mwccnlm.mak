@@ -1,12 +1,25 @@
-# Time-stamp: <05/06/03 21:30:03 ptr>
-# $Id$
+# Time-stamp: <06/11/10 15:56:39 ptr>
+#
+# Copyright (c) 2005, 2006
+# Petr Ovtchenkov
+#
+# Licensed under the Academic Free License version 3.0
+#
 
-
-#INCLUDES = -I$(SRCROOT)/include
 INCLUDES :=
 
+ifndef _FORCE_CXX
 CXX := mwccnlm
+else
+CXX := $_FORCE_CXX
+endif
+
+ifndef _FORCE_CC
 CC := mwccnlm
+else
+CC := $_FORCE_CC
+endif
+
 LINK.cc = mwldnlm $(LDFLAGS) $(TARGET_ARCH)
 
 ifeq ($(OSNAME), cygming)

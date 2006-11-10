@@ -1,5 +1,4 @@
-# Time-stamp: <03/07/15 17:54:22 ptr>
-# $Id$
+# Time-stamp: <06/11/10 17:27:33 ptr>
 
 PRG        := $(OUTPUT_DIR)/${PRGNAME}${EXE}
 PRG_DBG    := $(OUTPUT_DIR_DBG)/${PRGNAME}${EXE}
