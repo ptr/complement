@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <06/11/03 11:47:01 ptr>
+# -*- makefile -*- Time-stamp: <06/11/10 18:42:44 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -9,10 +9,38 @@
 # Licensed under the Academic Free License version 3.0
 #
 
-ifndef WITHOUT_STLPORT
-INSTALL_TAGS ?= install-release-shared install-dbg-shared install-stldbg-shared
+ifndef INSTALL_TAGS
+
+ifndef _NO_SHARED_BUILD
+INSTALL_TAGS := install-release-shared
 else
-INSTALL_TAGS ?= install-release-shared install-dbg-shared
+INSTALL_TAGS := 
+endif
+
+ifdef _STATIC_BUILD
+INSTALL_TAGS += install-release-static
+endif
+
+ifndef _NO_DBG_BUILD
+ifndef _NO_SHARED_BUILD
+INSTALL_TAGS += install-dbg-shared
+endif
+ifdef _STATIC_BUILD
+INSTALL_TAGS += install-dbg-static
+endif
+endif
+
+ifndef _NO_STLDBG_BUILD
+ifndef WITHOUT_STLPORT
+ifndef _NO_SHARED_BUILD
+INSTALL_TAGS += install-stldbg-shared
+endif
+ifdef _STATIC_BUILD
+INSTALL_TAGS += install-stldbg-static
+endif
+endif
+endif
+
 endif
 
 PHONY += install $(INSTALL_TAGS)
