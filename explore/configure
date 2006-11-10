@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Time-stamp: <06/06/28 12:05:08 ptr>
+# Time-stamp: <06/11/10 15:47:21 ptr>
 
 configmak=Makefiles/config.mak
 
@@ -28,9 +28,9 @@ Available options:
   --target=<target>     target platform (cross-compiling)
   --help                print this help message and exit
   --with-stlport=<dir>  use STLport in catalog <dir>
-  --without-stlport     compile without STLport
+  --without-stlport     compile without STLport (default)
   --with-boost=<dir>    use boost headers in catalog <dir>
-  --with-system-boost   use boost from system, don't build boost
+  --with-system-boost   use boost installed on this system
   --with-msvc=<dir>     use MS VC from this catalog
   --with-mssdk=<dir>    use MS SDK from this catalog
   --with-mwcw=<dir>     Metrowerks CodeWarrior compiler catalog (useful for mw* compilers)
@@ -44,24 +44,63 @@ Available options:
                         with --disable-shared, static libraries will be used in any case)
   --clean               remove custom settings (file ${configmak})
                         and use default values
+  --with-cxx=<name>     use <name> as C++ compiler
+  --with-cc=<name>      use <name> as C compiler
+  --use-compiler-family=<name> use compiler family; one of:
+                        gcc      GNU compilers
+                        icc      Intel compilers
+                        mwccnlm  Metrowerks CodeWarrior for Novell Netware
+                        aCC      HP\'s aCC compilers
+                        CC       SunPro\'s CC compilers
+
+                        default is 'gcc' family
+  --without-debug       don\'t build debug variant
+  --without-stldebug    don\'t build STLport\'s STLP_DEBUG mode
+  --enable-static       build static
+  --disable-shared      don\'t build shared 
 
 EOF
 }
 
+default_settings () {
+  # if [ "$boost_set" = "" ]; then
+  #   write_option "${PWD}/external/boost" BOOST_DIR
+  # fi
+
+  if [ "$stlport_set" = "" ]; then
+    # write_option "${PWD}/external/STLport" STLPORT_DIR
+    write_option "1" WITHOUT_STLPORT
+  fi
+  # write_option "${PWD}/build/" BASE_INSTALL_DIR
+  if [ "$compiler_family_set" = "" ]; then
+    write_option gcc COMPILER_NAME
+  fi
+}
+
 case $# in
   0)
+    if [ ! -f ${configmak} ]; then
+      default_settings
+    fi
     exit 0
     ;;
 esac
 
-case $1 in
-  --help)
-    print_help
-    exit 0
-    ;;
-esac
+for a in $@ ; do
+  case $a in
+    --help)
+      print_help
+      exit 0
+      ;;
+    --clean)
+      rm -f ${configmak}
+      exit 0
+      ;;
+  esac
+done
 
 rm -f ${configmak}
+touch ${configmak}
 
 while :
 do
@@ -70,20 +109,20 @@ do
       break
       ;;
   esac
-  option=$1
+  option="$1"
   shift
   case $option in
-    --clean)
-      rm -f ${configmak}
-      ;; 
     --target=*)
       write_option "$option" TARGET_OS
+      target_set=y
       ;;
     --with-stlport=*)
       write_option "$option" STLPORT_DIR
+      stlport_set=y
       ;;
     --without-stlport)
       write_option "1" WITHOUT_STLPORT
+      stlport_set=y
       ;;
     --with-boost=*)
       write_option "$option" BOOST_DIR
@@ -99,6 +138,7 @@ do
       ;;
     --with-extra-cxxflags=*)
       write_option "$option" EXTRA_CXXFLAGS
+      cxxflags_set=y
       ;;
     --with-nwsdk=*)
       write_option "$option" NWSDK_DIR
@@ -107,8 +147,71 @@ do
       write_option "$option" MWCW_BASE
       ;;
     --use-static-gcc)
-      write_option "$option" USE_STATIC_LIBGCC
+      write_option "1" USE_STATIC_LIBGCC
+      ;;
+    --without-debug)
+      write_option "1" _NO_DBG_BUILD
+      ;;
+    --without-stldebug)
+      write_option "1" _NO_STLDBG_BUILD
+      ;;
+    --enable-static)
+      write_option "1" _STATIC_BUILD
+      ;;
+    --disable-shared)
+      write_option "1" _NO_SHARED_BUILD
+      ;;
+    --with-cxx=*)
+      write_option "$option" _FORCE_CXX
+      cxx_set=y
+      ;;
+    --with-cc=*)
+      write_option "$option" _FORCE_CC
+      cc_set=y
+      ;;
+    --use-compiler-family=*)
+      case `echo $option | sed -e 's/^[^=]*=//'` in
+        gcc|icc|aCC|CC|mwccnlm)
+          write_option "$option" COMPILER_NAME
+          ;;
+        *)
+          echo "Not supported compilers family"
+          exit -1
+          ;;
+      esac
+      compiler_family_set=y
       ;;
   esac
 done
 
+if [ "$CXX" != "" ]; then
+  if [ "$target_set" != "" ]; then
+    echo "For cross-compilation with gcc use --target option only"
+  else
+    write_option "$CXX" _FORCE_CXX
+  fi
+  if [ "$cxx_set" != "" ]; then
+    echo "Both --with-cxx and \$CXX set, using the first"
+  fi
+  if [ "$CC" = "" ] && [ "$cc_set" = "" ]; then
+    echo "\$CXX set, but I don't see \$CC!"
+  fi
+fi
+
+if [ "$CC" != "" ]; then
+  if [ "$cxx_set" != "" ]; then
+    echo "Both --with-cc and \$CC set, using the first"
+  fi
+fi
+
+if [ "$CXXFLAGS" != "" ]; then
+  if [ "$cxxflags_set" = "" ]; then
+    write_option "$CXXFLAGS" EXTRA_CXXFLAGS
+  else
+    echo "Both --with-extra-cxxflags and \$CXXFLAGS set, using the first"
+  fi
+fi
+
+# default settings
+
+default_settings

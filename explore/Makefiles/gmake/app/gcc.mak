@@ -1,4 +1,13 @@
-# -*- Makefile -*- Time-stamp: <06/01/18 15:04:43 ptr>
+# -*- Makefile -*- Time-stamp: <06/11/10 17:28:41 ptr>
+#
+# Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+# Petr Ovtchenkov
+#
+# Portion Copyright (c) 1999-2001
+# Parallel Graphics Ltd.
+#
+# Licensed under the Academic Free License version 3.0
+#
 
 ifndef NOT_USE_NOSTDLIB
 
@@ -52,8 +61,12 @@ ifndef WITHOUT_STLPORT
 LDSEARCH += -L${STLPORT_LIB_DIR}
 
 release-shared:	STLPORT_LIB = -lstlport
+release-static:	STLPORT_LIB = -Wl,-Bstatic -lstlport -Wl,-Bdynamic
 dbg-shared:	STLPORT_LIB = -lstlportg
+dbg-static:	STLPORT_LIB = -Wl,-Bstatic -lstlportg -Wl,-Bdynamic
 stldbg-shared:	STLPORT_LIB = -lstlportstlg
+stldbg-static:	STLPORT_LIB = -Wl,-Bstatic -lstlportstlg -Wl,-Bdynamic
+
 
 ifeq ($(OSNAME),cygming)
 LIB_VERSION = ${LIBMAJOR}.${LIBMINOR}

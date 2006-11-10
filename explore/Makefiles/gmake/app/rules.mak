@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <06/11/02 10:47:37 ptr>
+# -*- makefile -*- Time-stamp: <06/11/10 17:10:45 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -11,10 +11,16 @@
 
 dbg-shared:	$(EXTRA_PRE_DBG) $(OUTPUT_DIR_DBG) ${PRG_DBG} $(EXTRA_POST_DBG)
 
+dbg-static:	$(EXTRA_PRE_DBG) $(OUTPUT_DIR_DBG) ${PRG_DBG} $(EXTRA_POST_DBG)
+
 release-shared:	$(EXTRA_PRE) $(OUTPUT_DIR) ${PRG} $(EXTRA_POST)
+
+release-static:	$(EXTRA_PRE) $(OUTPUT_DIR) ${PRG} $(EXTRA_POST)
 
 ifndef WITHOUT_STLPORT
 stldbg-shared:	$(EXTRA_PRE_STLDBG) $(OUTPUT_DIR_STLDBG) ${PRG_STLDBG} $(EXTRA_POST_STLDBG)
+
+stldbg-static:	$(EXTRA_PRE_STLDBG) $(OUTPUT_DIR_STLDBG) ${PRG_STLDBG} $(EXTRA_POST_STLDBG)
 endif
 
 ifeq ("${_C_SOURCES_ONLY}","")
