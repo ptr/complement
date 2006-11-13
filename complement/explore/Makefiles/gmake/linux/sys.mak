@@ -1,4 +1,4 @@
-# Time-stamp: <06/11/10 19:18:10 ptr>
+# Time-stamp: <06/11/10 23:43:27 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -14,6 +14,8 @@ INSTALL := /usr/bin/install
 STRIP := /usr/bin/strip
 
 install-strip:	_INSTALL_STRIP_OPTION = -s
+
+install-strip:	_SO_STRIP_OPTION = -S
 
 INSTALL_SO := ${INSTALL} -c -m 0755 ${_INSTALL_STRIP_OPTION}
 INSTALL_A := ${INSTALL} -c -m 0644

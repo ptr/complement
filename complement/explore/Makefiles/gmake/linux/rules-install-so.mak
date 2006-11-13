@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <06/11/10 18:42:44 ptr>
+# -*- makefile -*- Time-stamp: <06/11/11 00:23:29 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -43,14 +43,52 @@ endif
 
 endif
 
-PHONY += install $(INSTALL_TAGS)
+
+ifndef INSTALL_STRIP_TAGS
+
+ifndef _NO_SHARED_BUILD
+INSTALL_STRIP_TAGS := install-strip-shared
+else
+INSTALL_STRIP_TAGS := 
+endif
+
+ifdef _STATIC_BUILD
+INSTALL_STRIP_TAGS += install-release-static
+endif
+
+ifndef _NO_DBG_BUILD
+ifndef _NO_SHARED_BUILD
+INSTALL_STRIP_TAGS += install-dbg-shared
+endif
+ifdef _STATIC_BUILD
+INSTALL_STRIP_TAGS += install-dbg-static
+endif
+endif
+
+ifndef _NO_STLDBG_BUILD
+ifndef WITHOUT_STLPORT
+ifndef _NO_SHARED_BUILD
+INSTALL_STRIP_TAGS += install-stldbg-shared
+endif
+ifdef _STATIC_BUILD
+INSTALL_STRIP_TAGS += install-stldbg-static
+endif
+endif
+endif
+
+endif
+
+
+PHONY += install install-strip $(INSTALL_TAGS) $(INSTALL_STRIP_TAGS)
 
 install:	$(INSTALL_TAGS)
 
+install-strip:	$(INSTALL_STRIP_TAGS)
+
 # Workaround forGNU make 3.80; see comments in rules-so.mak
 define do_install_so_links
-$${INSTALL_LIB_DIR$(1)}/$${SO_NAME$(1)xxx}:	${SO_NAME_OUT$(1)xxx}
-	$$(INSTALL_SO) $${SO_NAME_OUT$(1)xxx} $(INSTALL_LIB_DIR$(1))
+$${INSTALL_LIB_DIR$(1)}/$${SO_NAME$(1)xxx}:	$${SO_NAME_OUT$(1)xxx}
+	$$(INSTALL_SO) $${SO_NAME_OUT$(1)xxx} $$(INSTALL_LIB_DIR$(1))
 	@$(call do_so_links_1,$$(INSTALL_LIB_DIR$(1)),$${SO_NAME$(1)xx},$${SO_NAME$(1)xxx})
 	@$(call do_so_links_1,$$(INSTALL_LIB_DIR$(1)),$${SO_NAME$(1)x},$${SO_NAME$(1)xx})
 	@$(call do_so_links_1,$$(INSTALL_LIB_DIR$(1)),$${SO_NAME$(1)},$${SO_NAME$(1)x})
@@ -70,6 +108,10 @@ $(eval $(call do_install_so_links_wk,_STLDBG))
 # endif
 
 install-release-shared:	release-shared $(INSTALL_LIB_DIR) $(INSTALL_LIB_DIR)/${SO_NAMExxx}
+	${POST_INSTALL}
+
+install-strip-shared:	release-shared $(INSTALL_LIB_DIR) $(INSTALL_LIB_DIR)/${SO_NAMExxx}
+	${STRIP} ${_SO_STRIP_OPTION} $(INSTALL_LIB_DIR)/${SO_NAMExxx}
 	${POST_INSTALL}
 
 install-dbg-shared:	dbg-shared $(INSTALL_LIB_DIR_DBG) $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBGxxx}
