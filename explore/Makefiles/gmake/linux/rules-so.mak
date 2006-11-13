@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <06/11/03 11:45:22 ptr>
+# -*- makefile -*- Time-stamp: <06/11/11 00:23:27 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
