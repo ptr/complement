@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <06/10/12 19:53:46 ptr>
+# -*- makefile -*- Time-stamp: <06/11/11 00:43:08 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -9,7 +9,7 @@
 # Licensed under the Academic Free License version 3.0
 #
 
-clobber::
+clean::
 	@-rm -f ${SO_NAME_OUT}
 	@-rm -f ${SO_NAME_OUTx}
 	@-rm -f ${SO_NAME_OUTxx}
@@ -25,7 +25,6 @@ clobber::
 	@-rm -f ${A_NAME_OUT}
 	@-rm -f ${A_NAME_OUT_DBG}
 	@-rm -f ${A_NAME_OUT_STLDBG}
-	@-rmdir -p ${OUTPUT_DIR} ${OUTPUT_DIR_DBG} ${OUTPUT_DIR_STLDBG} 2>/dev/null || exit 0
 ifeq ($(OSNAME), cygming)
 	@-rm -f ${LIB_NAME_OUT}
 	@-rm -f ${LIB_NAME_OUT_DBG}
@@ -36,6 +35,10 @@ ifeq ($(OSNAME), cygming)
 endif
 
 distclean::
+	@-rm -f $(DEPENDS_COLLECTION)
+	@-rmdir -p ${OUTPUT_DIR} ${OUTPUT_DIR_DBG} ${OUTPUT_DIR_STLDBG} 2>/dev/null || exit 0
+
+uninstall:
 	@-rm -f $(INSTALL_LIB_DIR)/$(SO_NAME)
 	@-rm -f $(INSTALL_LIB_DIR)/$(SO_NAMEx)
 	@-rm -f $(INSTALL_LIB_DIR)/$(SO_NAMExx)
@@ -52,3 +55,4 @@ distclean::
 	@-rm -f $(INSTALL_LIB_DIR_DBG)/${A_NAME_OUT_DBG}
 	@-rm -f $(INSTALL_LIB_DIR_STLDBG)/${A_NAME_OUT_STLDBG}
 	@-rmdir -p $(INSTALL_LIB_DIR) $(INSTALL_LIB_DIR_DBG) $(INSTALL_LIB_DIR_STLDBG) 2>/dev/null || exit 0
+

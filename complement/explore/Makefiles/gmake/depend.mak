@@ -1,4 +1,4 @@
-# Time-stamp: <06/11/03 18:38:39 ptr>
+# Time-stamp: <06/11/11 01:04:15 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -35,9 +35,9 @@ depend:	$(OUTPUT_DIRS) ${_DASH_DEP}
 	@cat -s $(_ALL_DEP) /dev/null > $(DEPENDS_COLLECTION)
 
 TAGS:	$(OUTPUT_DIRS) ${_DASH_DEP}
-	@etags -i -m `cat -s $(_ALL_DEP) /dev/null | sed 's/^.*://;s/\\\\$$//'`
+	@etags -i -m `cat -s $(_ALL_DEP) /dev/null | sed 's/^.*://;s/\\\\$$//' | uniq -u`
 
 tags:	$(OUTPUT_DIRS) ${_DASH_DEP}
-	@ctags -d -g -i -m -t `cat -s $(_ALL_DEP) /dev/null | sed 's/^.*://;s/\\\\$$//'`
+	@ctags -d --globals --declarations -t -w `cat -s $(_ALL_DEP) /dev/null | sed 's/^.*://;s/\\\\$$//' | uniq -u`
 
 -include $(DEPENDS_COLLECTION)
