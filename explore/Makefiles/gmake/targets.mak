@@ -1,4 +1,4 @@
-# Time-stamp: <06/11/03 12:09:39 ptr>
+# Time-stamp: <06/11/17 10:29:59 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -8,6 +8,34 @@
 #
 # Licensed under the Academic Free License version 3.0
 #
+
+PRGS_DIR_SRC =
+define prog_
+PRGS_DIR_SRC += $$(dir $${$(1)_SRC_CPP} $${$(1)_SRC_CC} $${$(1)_SRC_CXX} $${$(1)_SRC_C} $${$(1)_SRC_S} )
+$(1)_ALLBASE := $$(basename $$(notdir $${$(1)_SRC_CC} $${$(1)_SRC_CPP} $${$(1)_SRC_CXX} $${$(1)_SRC_C} $${$(1)_SRC_S} ) )
+$(1)_ALLOBJS    := $$(addsuffix .o,$${$(1)_ALLBASE})
+$(1)_ALLDEPS    := $$(addsuffix .d,$${$(1)_ALLBASE})
+
+$(1)_OBJ        := $$(addprefix $$(OUTPUT_DIR)/,$${$(1)_ALLOBJS})
+$(1)_OBJ_DBG    := $$(addprefix $$(OUTPUT_DIR_DBG)/,$${$(1)_ALLOBJS})
+$(1)_OBJ_STLDBG := $$(addprefix $$(OUTPUT_DIR_STLDBG)/,$${$(1)_ALLOBJS})
+
+$(1)_DEP        := $$(addprefix $$(OUTPUT_DIR)/,$${$(1)_ALLDEPS})
+$(1)_DEP_DBG    := $$(addprefix $$(OUTPUT_DIR_DBG)/,$${$(1)_ALLDEPS})
+$(1)_DEP_STLDBG := $$(addprefix $$(OUTPUT_DIR_STLDBG)/,$${$(1)_ALLDEPS})
+
+$(1)_RES        := $$(addprefix $$(OUTPUT_DIR)/,$${$(1)_ALLRESS})
+$(1)_RES_DBG    := $$(addprefix $$(OUTPUT_DIR_DBG)/,$${$(1)_ALLRESS})
+$(1)_RES_STLDBG := $$(addprefix $$(OUTPUT_DIR_STLDBG)/,$${$(1)_ALLRESS})
+
+ifeq ("$$(sort $${$(1)_SRC_CC} $${$(1)_SRC_CPP} $${$(1)_SRC_CXX})","")
+$(1)_NOT_USE_NOSTDLIB := 1
+_$(1)_C_SOURCES_ONLY := true
+endif
+
+endef
+
+$(foreach prg,$(PRGNAMES),$(eval $(call prog_,$(prg))))
 
 # If we have no C++ sources, let's use C compiler for linkage instead of C++.
 ifeq ("$(sort ${SRC_CC} ${SRC_CPP} ${SRC_CXX})","")
@@ -21,7 +49,7 @@ DIRS_UNIQUE_SRC := $(dir $(SRC_CPP) $(SRC_CC) $(SRC_CXX) $(SRC_C) $(SRC_S) )
 ifeq (${OSNAME},cygming)
 DIRS_UNIQUE_SRC := ${DIRS_UNIQUE_SRC} $(dir $(SRC_RC) )
 endif
-DIRS_UNIQUE_SRC := $(sort $(DIRS_UNIQUE_SRC) )
+DIRS_UNIQUE_SRC := $(sort $(DIRS_UNIQUE_SRC) $(PRGS_DIR_SRC))
 
 # The rules below may be even simpler (i.e. define macro that generate
 # rules for COMPILE.xx), but this GNU make 3.80 unhappy with it;
@@ -138,5 +166,4 @@ else
 OBJ_A_STLDBG := $(addprefix $(OUTPUT_DIR_A_STLDBG)/,$(ALLOBJS))
 DEP_A_STLDBG := $(addprefix $(OUTPUT_DIR_A_STLDBG)/,$(ALLDEPS))
 endif
-
 

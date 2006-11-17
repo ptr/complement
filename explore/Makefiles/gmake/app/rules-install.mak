@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <06/11/02 10:45:53 ptr>
+# -*- makefile -*- Time-stamp: <06/11/17 00:21:21 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -15,38 +15,49 @@ else
 install:	install-release-shared install-dbg-shared
 endif
 
-# The program name to be installed will be the same as compiled name,
-# but it will be a bit altered in case of installation debug and/or
-# stlport-debug program in the same catalog as 'release' program.
+INSTALL_PRGNAME_CMD =
+INSTALL_PRGNAME_CMD_DBG =
+INSTALL_PRGNAME_CMD_STLDBG =
 
-INSTALL_PRGNAME := ${PRGNAME}${EXE}
+define prog_install
+INSTALL_$(1)_PRGNAME := $(1)${EXE}
+INSTALL_PRGNAME_CMD += $$(INSTALL_EXE) $${$(1)_PRG} $$(INSTALL_BIN_DIR)/$${INSTALL_$(1)_PRGNAME}; \
 
-#ifeq (${INSTALL_BIN_DIR},${INSTALL_BIN_DIR_DBG})
-#INSTALL_PRGNAME_DBG := ${PRGNAME}g${EXE}
-#else
-INSTALL_PRGNAME_DBG := ${INSTALL_PRGNAME}
-#endif
+INSTALL_$(1)_PRGNAME_DBG := $${INSTALL_$(1)_PRGNAME}
+INSTALL_PRGNAME_CMD_DBG += $$(INSTALL_EXE) $${$(1)_PRG_DBG} $$(INSTALL_BIN_DIR_DBG)/$${INSTALL_$(1)_PRGNAME_DBG}; \
 
 ifndef WITHOUT_STLPORT
-#ifeq (${INSTALL_BIN_DIR},${INSTALL_BIN_DIR_STLDBG})
-#INSTALL_PRGNAME_STLDBG := ${PRGNAME}stlg${EXE}
-#else
+INSTALL_$(1)_PRGNAME_STLDBG := $${INSTALL_$(1)_PRGNAME}
+INSTALL_PRGNAME_CMD_STLDBG += $$(INSTALL_EXE) $${$(1)_PRG_STLDBG} $$(INSTALL_BIN_DIR_STLDBG)/$${INSTALL_$(1)_PRGNAME_STLDBG}; \
+
+endif
+endef
+
+INSTALL_PRGNAME := ${PRGNAME}${EXE}
+$(foreach prg,$(PRGNAMES),$(eval $(call prog_install,$(prg))))
+
+INSTALL_PRGNAME_DBG := ${INSTALL_PRGNAME}
+
+ifndef WITHOUT_STLPORT
 INSTALL_PRGNAME_STLDBG := ${INSTALL_PRGNAME}
-#endif
 endif
 
-#ifeq (${INSTALL_BIN_DIR_DBG},${INSTALL_BIN_DIR_STLDBG})
-#INSTALL_PRGNAME_DBG := ${PRGNAME}g${EXE}
-#INSTALL_PRGNAME_STLDBG := ${PRGNAME}stlg${EXE}
-#endif
-
 install-release-shared: release-shared $(INSTALL_BIN_DIR)
+ifdef PRGNAME
 	$(INSTALL_EXE) ${PRG} $(INSTALL_BIN_DIR)/${INSTALL_PRGNAME}
+endif
+	$(INSTALL_PRGNAME_CMD)
 
 install-dbg-shared: dbg-shared $(INSTALL_BIN_DIR_DBG)
+ifdef PRGNAME
 	$(INSTALL_EXE) ${PRG_DBG} $(INSTALL_BIN_DIR_DBG)/${INSTALL_PRGNAME_DBG}
+endif
+	$(INSTALL_PRGNAME_CMD_DBG)
 
 ifndef WITHOUT_STLPORT
 install-stldbg-shared: stldbg-shared $(INSTALL_BIN_DIR_STLDBG)
+ifdef PRGNAME
 	$(INSTALL_EXE) ${PRG_STLDBG} $(INSTALL_BIN_DIR_STLDBG)/${INSTALL_PRGNAME_STLDBG}
+endif
+	$(INSTALL_PRGNAME_CMD_STLDBG)
 endif
