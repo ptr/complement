@@ -1,3 +1,16 @@
+2006-11-17  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/app/rules.mak, rules-install.mak, macro.mak, clean.mak:
+	ability to build few programs from same Makefile; pure C linkage
+	may not work properly for multiple progrmas yet.
+
+	* gmake/targets.mak: idem
+
+	* clean.mak, top.mak: idem
+
+	* gmake/lib/clean.mak: idem, but main functionality for libraries
+	not completed yet.
+
 2006-11-10  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/app/rules.mak, gmake/app/gcc.mak: add static tags;

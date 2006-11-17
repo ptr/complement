@@ -111,4 +111,8 @@ ifdef PRGNAME
 include ${RULESBASE}/$(USE_MAKE)/app/top.mak
 endif
 
+ifdef PRGNAMES
+# include ${RULESBASE}/$(USE_MAKE)/app/top.mak
+endif
+
 .PHONY: $(PHONY)
