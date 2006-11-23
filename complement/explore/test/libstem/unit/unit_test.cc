@@ -30,6 +30,11 @@ using namespace boost::unit_test_framework;
 #include <stem/EvManager.h>
 #include <sockios/sockmgr.h>
 
+#ifndef STLPORT
+#include <ext/functional>
+using namespace __gnu_cxx;
+#endif
+
 using namespace std;
 
 struct stem_test
