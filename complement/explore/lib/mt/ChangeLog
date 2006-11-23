@@ -1,3 +1,9 @@
+2006-11-23  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* uid.h, uid.cc: return hostid on Linux
+
+	* libxmt: version 1.9.2
+
 2006-10-31  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* time.cc: add useful includes, detected when compile
