@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 13:06:12 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 17:19:05 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -12,7 +12,7 @@
  */
 
 #include <config/feature.h>
-#include "stem/EvPack.h"
+#include "stem/Event.h"
 #include <iterator>
 #include <iostream>
 #include <string>
@@ -119,6 +119,26 @@ __FIT_DECLSPEC void gaddr_type::net_unpack( std::istream& s )
   s.read( (char *)hid.u.b, 16 );
   __net_unpack( s, pid );
   __net_unpack( s, addr );
+}
+
+__FIT_DECLSPEC void gaddr_type::_xnet_pack( char *buf ) const
+{
+  uint64_t _pid = to_net( pid );
+  addr_type _addr = to_net( addr );
+
+  // copy( (char *)hid.u.b, (char *)hid.u.b + 16, buf );
+  memcpy( (void *)buf, (const void *)hid.u.b, 16 );
+  memcpy( (void *)(buf + 16), &_pid, sizeof(pid) );
+  memcpy( (void *)(buf + 16 + sizeof(pid)), &_addr, sizeof(addr_type) );
+}
+
+__FIT_DECLSPEC void gaddr_type::_xnet_unpack( const char *buf )
+{
+  memcpy( (void *)hid.u.b, (const void *)buf, 16 );
+  memcpy( (void *)&pid, (const void *)(buf + 16), sizeof(pid) );
+  memcpy( (void *)&addr, (const void *)(buf + 16 + sizeof(pid)), sizeof(addr_type) );
+  pid = from_net( pid );
+  addr = from_net( addr );
 }
 
 __FIT_DECLSPEC bool gaddr_type::operator <( const gaddr_type& ga ) const

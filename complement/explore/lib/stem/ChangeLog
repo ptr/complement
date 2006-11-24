@@ -1,3 +1,19 @@
+2006-11-24  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Event.h, EvPack.h, EvPack.cc: introduce 'global
+	address'---unique object address as composition
+	of hostid, pid adn local address;
+
+	* NetTransport.h, NetTransport.cc, EvManager.h, EvManager.cc:
+	rewritten scheme of mapping between internal and external
+	addresses and message routing logic.
+	
+	* Names.cc, Names.h, EDSEv.h: return gloabal addresses
+	list; remove obsolete requests/responses;
+	
+	* Makefile.inc: _EvSession.cc, _SessionMgr.cc removed
+	from compilation; library version 4.2.0
+
 2006-10-12  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* NetTransport.h, NetTransport.cc: remove make_map,
