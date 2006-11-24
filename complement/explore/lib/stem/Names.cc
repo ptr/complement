@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 18:19:55 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 20:17:46 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -21,6 +21,8 @@
 #include "stem/EDSEv.h"
 #include <list>
 #include <mt/xmt.h>
+
+#include <iostream>
 
 namespace stem {
 

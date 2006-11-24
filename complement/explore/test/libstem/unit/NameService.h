@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/04 10:55:44 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 19:33:11 ptr>
 
 /*
  * Copyright (c) 2006
@@ -24,20 +24,16 @@ class Naming :
     Naming( stem::addr_type id );
     ~Naming();
 
-    void names_list( const stem::NameRecord& );
-    void names_name( const stem::NameRecord& );
+    typedef stem::NameRecords<stem::gaddr_type,std::string> nsrecords_type;
 
-    typedef stem::NameRecords<stem::addr_type,std::string> nsrecords_type;
-
-    void names_list1( const nsrecords_type& );
-    void names_name1( const nsrecords_type& );
+    void names_list( const nsrecords_type& );
+    void names_name( const nsrecords_type& );
 
     void wait();
     void reset()
       { cnd.set( false ); }
 
-    std::list<stem::NameRecord> lst;
-    nsrecords_type::container_type lst1;
+    nsrecords_type::container_type lst;
 
   private:
     xmt::Condition cnd;

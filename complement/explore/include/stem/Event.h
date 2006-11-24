@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 14:50:06 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 20:57:55 ptr>
 
 /*
  *
@@ -109,6 +109,24 @@ using ::__type_traits;
 struct gaddr_type :
         public __pack_base
 {
+    gaddr_type() :
+        hid(),
+        pid( -1 ),
+        addr( badaddr )
+      { }
+
+    gaddr_type( const xmt::uuid_type& _hid, pid_t _pid, stem::addr_type _addr ) :
+        hid( _hid ),
+        pid( _pid ),
+        addr( _addr )
+      { }
+
+    gaddr_type( const gaddr_type& g ) :
+        hid( g.hid ),
+        pid( g.pid ),
+        addr( g.addr )
+      { }
+
     xmt::uuid_type  hid;
     int64_t         pid; // pid_t defined as int, so it may be int64_t
     stem::addr_type addr;
@@ -117,6 +135,9 @@ struct gaddr_type :
     __FIT_DECLSPEC virtual void unpack( std::istream& );
     __FIT_DECLSPEC virtual void net_pack( std::ostream& ) const;
     __FIT_DECLSPEC virtual void net_unpack( std::istream& );
+
+    gaddr_type& operator =( const gaddr_type& g )
+      { hid = g.hid; pid = g.pid; addr = g.addr; return *this; }
 
     bool operator ==( const gaddr_type& ga ) const
       { return hid == ga.hid && pid == ga.pid && addr == ga.addr; }

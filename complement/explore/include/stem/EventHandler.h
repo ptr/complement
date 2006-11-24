@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/12 14:12:15 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 20:32:06 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -636,6 +636,8 @@ class EventHandler
 
     addr_type self_id() const
       { return _id; }
+    __FIT_DECLSPEC gaddr_type self_glid() const;
+
     void State( state_type state )
       { PushState( state ); }
     __FIT_DECLSPEC void PushState( state_type state );

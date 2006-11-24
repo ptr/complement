@@ -9,9 +9,13 @@
 	addresses and message routing logic.
 	
 	* Names.cc, Names.h, EDSEv.h: return gloabal addresses
-	list; remove obsolete requests/responses;
+	list, addresses not associated with communication channel;
+	remove obsolete NS requests/responses;
+
+	* _EventHandler.cc, EventHandler.h: object can return
+	own global id.
 	
-	* Makefile.inc: _EvSession.cc, _SessionMgr.cc removed
+	* Makefile.inc: _EvSession.cc and _SessionMgr.cc removed
 	from compilation; library version 4.2.0
 
 2006-10-12  Petr Ovtchenkov  <ptr@island.corbina.net>
