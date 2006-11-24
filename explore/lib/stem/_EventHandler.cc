@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/12 14:09:20 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 20:59:03 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -41,7 +41,7 @@ xmt::MutexRS _init_lock;
 EventHandler::Init::Init()
 {
   MT_REENTRANT_RS( _init_lock, _x );
-  if ( _count++ == 0 ) {
+  if ( _count++ == 0 ) {    
     EventHandler::_mgr = new EvManager();
     stem::_ns = new Names( ns_addr, _ns_name );
   }
@@ -234,6 +234,12 @@ void EventHandler::TraceStack( ostream& out ) const
     out << "[" << *hst_i++ << "]";
   }
   out << endl;
+}
+
+__FIT_DECLSPEC
+gaddr_type EventHandler::self_glid() const
+{
+  return gaddr_type(xmt::hostid(), getpid(), _id );
 }
 
 } // namespace stem

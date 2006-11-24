@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/12 15:15:13 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 21:05:01 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -45,7 +45,6 @@ struct stem_test
     void basic2new();
     void dl();
     void ns();
-    void ns1();
 
     void echo();
     void peer();
@@ -176,143 +175,77 @@ void stem_test::ns()
   Node node( 2003, "Node" );
   Naming nm;
 
-  stem::Event ev( EV_EDS_RQ_ADDR_LIST );
-  ev.dest( stem::ns_addr );
-  nm.Send( ev );
-
-  nm.wait();
-
-  list<stem::NameRecord>::const_iterator i = find( nm.lst.begin(), nm.lst.end(), string( "ns" ) );
-
-  BOOST_CHECK( i != nm.lst.end() );
-  BOOST_CHECK( i->record == "ns" );
-  BOOST_CHECK( i->addr == stem::ns_addr );
-
-  i = find( nm.lst.begin(), nm.lst.end(), string( "Node" ) );
-
-  BOOST_CHECK( i != nm.lst.end() );
-  BOOST_CHECK( i->record == "Node" );
-  BOOST_CHECK( i->addr == 2003 );
-
-  i = find( nm.lst.begin(), nm.lst.end(), nm.self_id() );
-
-  BOOST_CHECK( i != nm.lst.end() );
-  BOOST_CHECK( i->addr == nm.self_id() );
-  BOOST_CHECK( i->record.length() == 0 );
-
-  nm.lst.clear();
-  nm.reset();
-
-  BOOST_CHECK( nm.lst.empty() );
-
-  stem::Event evname( EV_EDS_RQ_ADDR_BY_NAME );
-  evname.dest( stem::ns_addr );
-  evname.value() = "Node";
-  nm.Send( evname );
-
-  nm.wait();
-
-  i = find( nm.lst.begin(), nm.lst.end(), string( "ns" ) );
-
-  BOOST_CHECK( i == nm.lst.end() );
-
-  i = find( nm.lst.begin(), nm.lst.end(), string( "Node" ) );
-
-  BOOST_CHECK( i != nm.lst.end() );
-  BOOST_CHECK( i->record == "Node" );
-  BOOST_CHECK( i->addr == 2003 );
-
-  i = find( nm.lst.begin(), nm.lst.end(), nm.self_id() );
-
-  BOOST_CHECK( i == nm.lst.end() );
-
-  nm.lst.clear();
-  nm.reset();
-
-  BOOST_CHECK( nm.lst.empty() );
-
-  evname.value() = "No-such-name";
-  nm.Send( evname );
-
-  nm.wait();
-
-  BOOST_CHECK( nm.lst.empty() );
-}
-
-void stem_test::ns1()
-{
-  Node node( 2003, "Node" );
-  Naming nm;
-
-  stem::Event ev( EV_STEM_RQ_ADDR_LIST1 );
+  stem::Event ev( EV_STEM_GET_NS_LIST );
   ev.dest( stem::ns_addr );
   nm.Send( ev );
 
   nm.wait();
 
   // this is sample of all inline find:
-  Naming::nsrecords_type::const_iterator i = find_if( nm.lst1.begin(), nm.lst1.end(), compose1( bind2nd( equal_to<string>(), string( "ns" ) ), select2nd<pair<stem::addr_type,string> >() ) );
+  Naming::nsrecords_type::const_iterator i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "ns" ) ), select2nd<pair<stem::gaddr_type,string> >() ) );
 
-  BOOST_CHECK( i != nm.lst1.end() );
+  BOOST_CHECK( i != nm.lst.end() );
   BOOST_CHECK( i->second == "ns" );
-  BOOST_CHECK( i->first == stem::ns_addr );
+  BOOST_CHECK( i->first.hid == xmt::hostid() );
+  BOOST_CHECK( i->first.pid == getpid() );
+  BOOST_CHECK( i->first.addr == stem::ns_addr );
 
   // well, but for few seaches declare and reuse functors:
   equal_to<string> eq;
-  equal_to<stem::addr_type> eqa;
+  equal_to<stem::gaddr_type> eqa;
 
-  select1st<pair<stem::addr_type,string> > first;
-  select2nd<pair<stem::addr_type,string> > second;
+  select1st<pair<stem::gaddr_type,string> > first;
+  select2nd<pair<stem::gaddr_type,string> > second;
 
-  i = find_if( nm.lst1.begin(), nm.lst1.end(), compose1( bind2nd( eq, string( "Node" ) ), second ) );
+  i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eq, string( "Node" ) ), second ) );
 
-  BOOST_CHECK( i != nm.lst1.end() );
+  BOOST_CHECK( i != nm.lst.end() );
   BOOST_CHECK( i->second == "Node" );
-  BOOST_CHECK( i->first == 2003 );
+  BOOST_CHECK( i->first.addr == 2003 );
 
-  i = find_if( nm.lst1.begin(), nm.lst1.end(), compose1( bind2nd( eqa, nm.self_id() ), first ) );
+  i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eqa, nm.self_glid() ), first ) );
 
-  BOOST_CHECK( i != nm.lst1.end() );
-  BOOST_CHECK( i->first == nm.self_id() );
+  BOOST_CHECK( i != nm.lst.end() );
+  BOOST_CHECK( i->first == nm.self_glid() );
   BOOST_CHECK( i->second.length() == 0 );
 
-  nm.lst1.clear();
+  nm.lst.clear();
   nm.reset();
 
-  BOOST_CHECK( nm.lst1.empty() );
+  BOOST_CHECK( nm.lst.empty() );
 
-  stem::Event evname( EV_STEM_RQ_ADDR_BY_NAME1 );
+  stem::Event evname( EV_STEM_GET_NS_NAME );
   evname.dest( stem::ns_addr );
   evname.value() = "Node";
   nm.Send( evname );
 
   nm.wait();
 
-  i = find_if( nm.lst1.begin(), nm.lst1.end(), compose1( bind2nd( eq, string( "ns" ) ), second ) );
+  i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eq, string( "ns" ) ), second ) );
 
-  BOOST_CHECK( i == nm.lst1.end() );
+  BOOST_CHECK( i == nm.lst.end() );
 
-  i = find_if( nm.lst1.begin(), nm.lst1.end(), compose1( bind2nd( eq, string( "Node" ) ), second ) );
+  i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eq, string( "Node" ) ), second ) );
 
-  BOOST_CHECK( i != nm.lst1.end() );
+  BOOST_CHECK( i != nm.lst.end() );
   BOOST_CHECK( i->second == "Node" );
-  BOOST_CHECK( i->first == 2003 );
+  BOOST_CHECK( i->first.addr == 2003 );
 
-  i = find_if( nm.lst1.begin(), nm.lst1.end(), compose1( bind2nd( eqa, nm.self_id() ), first ) );
+  i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eqa, nm.self_glid() ), first ) );
 
-  BOOST_CHECK( i == nm.lst1.end() );
+  BOOST_CHECK( i == nm.lst.end() );
 
-  nm.lst1.clear();
+  nm.lst.clear();
   nm.reset();
 
-  BOOST_CHECK( nm.lst1.empty() );
+  BOOST_CHECK( nm.lst.empty() );
 
   evname.value() = "No-such-name";
   nm.Send( evname );
 
   nm.wait();
 
-  BOOST_CHECK( nm.lst1.empty() );
+  BOOST_CHECK( nm.lst.empty() );
 }
 
 void stem_test::echo()
@@ -352,7 +285,7 @@ void stem_test::echo()
 
 void stem_test::peer()
 {
-
+#if 0
   /*
    * Scheme:
    *                      / NetTransport      / c1
@@ -449,6 +382,7 @@ void stem_test::peer()
   srv.close();
 
   srv.wait();
+#endif
 }
 
 struct stem_test_suite :
@@ -469,7 +403,6 @@ stem_test_suite::stem_test_suite() :
   test_case *basic2n_tc = BOOST_CLASS_TEST_CASE( &stem_test::basic2new, instance );
   test_case *dl_tc = BOOST_CLASS_TEST_CASE( &stem_test::dl, instance );
   test_case *ns_tc = BOOST_CLASS_TEST_CASE( &stem_test::ns, instance );
-  test_case *ns1_tc = BOOST_CLASS_TEST_CASE( &stem_test::ns1, instance );
   test_case *echo_tc = BOOST_CLASS_TEST_CASE( &stem_test::echo, instance );
   test_case *peer_tc = BOOST_CLASS_TEST_CASE( &stem_test::peer, instance );
 
@@ -479,7 +412,6 @@ stem_test_suite::stem_test_suite() :
   basic2n_tc->depends_on( basic1n_tc );
   dl_tc->depends_on( basic2n_tc );
   ns_tc->depends_on( basic1_tc );
-  ns1_tc->depends_on( basic1_tc );
 
   echo_tc->depends_on( basic2_tc );
   peer_tc->depends_on( echo_tc );
@@ -490,7 +422,6 @@ stem_test_suite::stem_test_suite() :
   add( basic2n_tc );
   add( dl_tc );
   add( ns_tc );
-  add( ns1_tc );
 
   add( echo_tc );
   add( peer_tc );

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 17:09:01 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 21:44:47 ptr>
 
 /*
  *
@@ -288,6 +288,8 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
   if ( net->good() ) {
     // _net_ns = rar_map( ns_addr, __ns_at + hostname );
     // addr_type zero_object = rar_map( 0, __at + hostname );
+    detail::transport tr( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 );
+    // addr_type zero_object = manager()->SubscribeRemote( tr, src );
     _thr.launch( _loop, this, 0, PTHREAD_STACK_MIN * 2 ); // start thread here
     return 0; // zero_object;
   }
