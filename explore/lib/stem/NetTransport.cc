@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 13:09:57 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 17:09:01 ptr>
 
 /*
  *
@@ -105,12 +105,11 @@ __FIT_DECLSPEC void NetTransport_base::close()
   }
 }
 
-bool NetTransport_base::pop( Event& _rs )
+bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
 {
-  uint32_t buf[8];
+  const int bsz = 2+(4+2+1)*2+4;
+  uint32_t buf[bsz];
   using namespace std;
-
-  // _STLP_ASSERT( net != 0 );
 
   // cerr << __FILE__ << ":" << __LINE__ << endl;
   MT_IO_REENTRANT( *net )
@@ -120,22 +119,21 @@ bool NetTransport_base::pop( Event& _rs )
   }
   // cerr << __FILE__ << ":" << __LINE__ << endl;
 
-  // if ( from_net( buf[0] ) != EDS_MAGIC ) {
   if ( buf[0] != EDS_MAGIC ) {
     cerr << "EDS Magic fail" << endl;
     NetTransport_base::close();
     return false;
   }
 
-  if ( !net->read( (char *)&buf[1], sizeof(uint32_t) * 7 ).good() ) {
+  if ( !net->read( (char *)&buf[1], sizeof(uint32_t) * (bsz-1) ).good() ) {
     return false;
   }
   _rs.code( from_net( buf[1] ) );
-  _rs.dest( from_net( buf[2] ) );
-  _rs.src( from_net( buf[3] ) );
-  uint32_t _x_count = from_net( buf[4] );
-  uint32_t _x_time = from_net( buf[5] ); // time?
-  uint32_t sz = from_net( buf[6] );
+  dst._xnet_unpack( (const char *)&buf[2] );
+  src._xnet_unpack( (const char *)&buf[9] );
+  uint32_t _x_count = from_net( buf[16] );
+  uint32_t _x_time = from_net( buf[17] ); // time?
+  uint32_t sz = from_net( buf[18] );
 
   if ( sz >= EDS_MSG_LIMIT ) {
     cerr << "EDS Message size too big: " << sz << endl;
@@ -143,8 +141,8 @@ bool NetTransport_base::pop( Event& _rs )
     return false;
   }
 
-  adler32_type adler = adler32( (unsigned char *)buf, sizeof(uint32_t) * 7 );
-  if ( adler != from_net( buf[7] ) ) {
+  adler32_type adler = adler32( (unsigned char *)buf, sizeof(uint32_t) * 19 );
+  if ( adler != from_net( buf[19] ) ) {
     cerr << "EDS Adler-32 fail" << endl;
     NetTransport_base::close();
     return false;
@@ -152,18 +150,10 @@ bool NetTransport_base::pop( Event& _rs )
 
   string& str = _rs.value();
 
-  str.erase();  // str.clear(); absent in VC's STL
+  str.erase();
   str.reserve( sz );
-#if defined(_MSC_VER) && (_MSC_VER < 1200)
-  char ch;
-#endif
   while ( sz-- > 0 ) {
-#if defined(_MSC_VER) && (_MSC_VER < 1200)
-    net->get( ch );
-    str += ch;
-#else
     str += (char)net->get();
-#endif
   }
 
   return net->good();
@@ -173,29 +163,28 @@ bool NetTransport_base::pop( Event& _rs )
 __FIT_DECLSPEC
 bool NetTransport_base::push( const Event& _rs, const gaddr_type& dst, const gaddr_type& src )
 {
-  // _STLP_ASSERT( net != 0 );
   if ( !net->good() ) {
     return false;
   }
-  // const int bsz = 8-2+(4+2+1)*2;
-  // uint32_t buf[bsz];
+  const int bsz = 2+(4+2+1)*2+4;
+  uint32_t buf[bsz];
 
-  ostringstream sbuf;                                        // 4 bytes
-  sbuf.write( (const char *)&EDS_MAGIC, sizeof(EDS_MAGIC) ); // 0
-  __pack_base::__net_pack( sbuf, _rs.code() );               // 1
-  dst.net_pack( sbuf );                                      // 2-8
-  src.net_pack( sbuf );                                      // 9-15
+  // ostringstream sbuf;                                        // 4 bytes
+  buf[0] = EDS_MAGIC;
+  buf[1] = to_net( _rs.code() );
+  dst._xnet_pack( reinterpret_cast<char *>(buf + 2) );
+  src._xnet_pack( reinterpret_cast<char *>(buf + 9) );
 
   // MT_IO_REENTRANT_W( *net )
   MT_IO_LOCK_W( *net )
 
-  __pack_base::__net_pack( sbuf, ++_count );                 // 16
-  __pack_base::__net_pack( sbuf, 0 );                        // 17 time?
-  __pack_base::__net_pack( sbuf, static_cast<uint32_t>(_rs.value().size()) ); // 18
-  __pack_base::__net_pack( sbuf, adler32( (unsigned char *)sbuf.str().c_str(), sizeof(uint32_t) * 19 ) ); // 19 crc
+  buf[16] = to_net( ++_count );
+  buf[17] = 0; // time?
+  buf[18] = to_net( static_cast<uint32_t>(_rs.value().size()) );
+  buf[19] = to_net( adler32( (unsigned char *)buf, sizeof(uint32_t) * 19 )); // crc
 
   try {
-    net->write( sbuf.str().c_str(), sizeof(uint32_t) * 20 );
+    net->write( (const char *)buf, sizeof(uint32_t) * 20 );
         
     copy( _rs.value().begin(), _rs.value().end(),
           ostream_iterator<char,char,char_traits<char> >(*net) );
@@ -207,7 +196,6 @@ bool NetTransport_base::push( const Event& _rs, const gaddr_type& dst, const gad
   }
   catch ( ios_base::failure& ) {
     if ( net != 0 ) { // clear connection: required by non-Solaris OS
-      rar.clear();    // for MP connection policy  
       net->close();
     }
   }
@@ -230,10 +218,23 @@ __FIT_DECLSPEC
 void NetTransport::connect( sockstream& s )
 {
   Event ev;
+  gaddr_type dst;
+  gaddr_type src;
 
   try {
-    if ( pop( ev ) ) {
-      ev.src( rar_map( ev.src(), _at_hostname ) ); // substitute my local id
+    if ( pop( ev, dst, src ) ) {
+      addr_type xdst = manager()->reflect( dst );
+      if ( xdst == badaddr ) {
+        return;
+      }
+      ev.dest( xdst );
+      addr_type xsrc = manager()->reflect( src );
+      if ( xsrc == badaddr ) {
+        detail::transport tr( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 );
+        ev.src( manager()->SubscribeRemote( tr, src ) );
+      } else {
+        ev.src( xsrc );
+      }
       manager()->push( ev );
     }
   }
@@ -285,10 +286,10 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
   }
 
   if ( net->good() ) {
-    _net_ns = rar_map( ns_addr, __ns_at + hostname );
-    addr_type zero_object = rar_map( 0, __at + hostname );
+    // _net_ns = rar_map( ns_addr, __ns_at + hostname );
+    // addr_type zero_object = rar_map( 0, __at + hostname );
     _thr.launch( _loop, this, 0, PTHREAD_STACK_MIN * 2 ); // start thread here
-    return zero_object;
+    return 0; // zero_object;
   }
   return badaddr;
 }
@@ -313,14 +314,26 @@ void NetTransportMgr::close()
 xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
 {
   NetTransportMgr& me = *reinterpret_cast<NetTransportMgr *>(p);
-  heap_type::iterator r;
   Event ev;
   xmt::Thread::ret_code rt;
   rt.iword = 0;
+  gaddr_type dst;
+  gaddr_type src;
 
   try {
-    while ( me.pop( ev ) ) {
-      ev.src( me.rar_map( ev.src(), __at + hostname( me.net->rdbuf()->inet_addr()) ) ); // substitute my local id
+    while ( me.pop( ev, dst, src ) ) {
+      addr_type xdst = manager()->reflect( dst );
+      if ( xdst == badaddr ) {
+        continue;
+      }
+      ev.dest( xdst );
+      addr_type xsrc = manager()->reflect( src );
+      if ( xsrc == badaddr ) {
+        detail::transport tr( static_cast<NetTransport_base *>(&me), detail::transport::socket_tcp, 10 );
+        ev.src( manager()->SubscribeRemote( tr, src ) );
+      } else {
+        ev.src( xsrc );
+      }
       manager()->push( ev );
     }
     // cerr << __FILE__ << ":" << __LINE__ << endl;
@@ -338,15 +351,25 @@ xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
 __FIT_DECLSPEC
 void NetTransportMP::connect( sockstream& s )
 {
-  const string& _hostname = hostname( s.rdbuf()->inet_addr() );
-  // bool sock_dgr = (s.rdbuf()->stype() == std::sock_base::sock_stream) ? false : true;
-
   Event ev;
   // cerr << "Connected: " << _hostname << endl;
+  gaddr_type dst;
+  gaddr_type src;
 
   try {
-    if ( pop( ev ) ) {
-      ev.src( rar_map( ev.src(), __at + _hostname ) ); // substitute my local id
+    if ( pop( ev, dst, src ) ) {
+      addr_type xdst = manager()->reflect( dst );
+      if ( xdst == badaddr ) {
+        return;
+      }
+      ev.dest( xdst );
+      addr_type xsrc = manager()->reflect( src );
+      if ( xsrc == badaddr ) {
+        detail::transport tr( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 );
+        ev.src( manager()->SubscribeRemote( tr, src ) );
+      } else {
+        ev.src( xsrc );
+      }
       manager()->push( ev );
     }
     if ( !s.good() ) {

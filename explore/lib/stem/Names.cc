@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/04 09:51:02 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 18:19:55 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -20,10 +20,12 @@
 #include "stem/EvManager.h"
 #include "stem/EDSEv.h"
 #include <list>
+#include <mt/xmt.h>
 
 namespace stem {
 
 using namespace std;
+using namespace xmt;
 
 __FIT_DECLSPEC Names::Names() :
     EventHandler()
@@ -44,139 +46,93 @@ __FIT_DECLSPEC Names::~Names()
 {
 }
 
-void __FIT_DECLSPEC Names::get_list( const Event& rq )
+void __FIT_DECLSPEC Names::ns_list( const Event& rq )
 {
-  typedef NameRecords<addr_type,string> Seq;
-  Event_base<Seq> rs( EV_STEM_NS1_LIST );
+  typedef NameRecords<gaddr_type,string> Seq;
+  Event_base<Seq> rs( EV_STEM_NS_LIST );
   Seq::container_type& lst = rs.value().container;
 
-  manager()->_lock_heap.lock();
-  for ( EvManager::heap_type::iterator i = manager()->heap.begin(); i != manager()->heap.end(); ++i ) {
-    if ( ((*i).first & extbit) == 0 ) { // only local...
-      lst.push_back( make_pair((*i).first, (*i).second.info) );
+  manager()->_lock_xheap.lock();
+  manager()->_lock_iheap.lock();
+  for ( EvManager::uuid_ext_heap_type::const_iterator i = manager()->_ui_heap.begin(); i != manager()->_ui_heap.end(); ++i ) {
+    EvManager::info_heap_type::const_iterator j = manager()->iheap.find( i->second );
+    if ( j != manager()->iheap.end() ) {
+      lst.push_back( make_pair( i->first, j->second ) );
+    } else {
+      lst.push_back( make_pair( i->first, string() ) );
     }
   }
-  manager()->_lock_heap.unlock();
+  manager()->_lock_iheap.unlock();
+  manager()->_lock_xheap.unlock();
 
-  if ( rq.code() == EV_STEM_RQ_ADDR_LIST1 ) {
-    rs.dest( rq.src() );
-    Send( rs );
-  } else {
-    Event_base<NameRecord> rs_( EV_EDS_NM_LIST );
-
-    rs_.dest( rq.src() );
-    for ( Seq::const_iterator i = lst.begin(); i != lst.end(); ++i ) {
-      rs_.value().addr = i->first;
-      rs_.value().record = i->second;
-      Send( Event_convert<NameRecord>()( rs_ ) );
-    }
-    // end of table
-    rs_.value().addr = badaddr;
-    rs_.value().record.clear();
-    Send( Event_convert<NameRecord>()( rs_ ) );
-  }
+  rs.dest( rq.src() );
+  Send( rs );
 }
 
-void __FIT_DECLSPEC Names::get_ext_list( const Event& rq )
+void __FIT_DECLSPEC Names::ns_name( const Event& rq )
 {
-  typedef NameRecords<addr_type,string> Seq;
-  Event_base<Seq> rs( EV_STEM_NS1_LIST );
+  typedef NameRecords<gaddr_type,string> Seq;
+  Event_base<Seq> rs( EV_STEM_NS_NAME );
   Seq::container_type& lst = rs.value().container;
 
-  manager()->_lock_heap.lock();
-  for ( EvManager::heap_type::const_iterator i = manager()->heap.begin(); i != manager()->heap.end(); ++i ) {
-    if ( ((*i).first & extbit) != 0 ) { // only external...
-      lst.push_back( make_pair((*i).first, (*i).second.info) );
+  manager()->_lock_iheap.lock();
+  for ( EvManager::info_heap_type::const_iterator i = manager()->iheap.begin(); i != manager()->iheap.end(); ++i ) {    
+    if ( i->second == rq.value() ) {
+      if ( /* i->first & extbit */ true ) {
+        Locker lk( manager()->_lock_xheap );
+        EvManager::ext_uuid_heap_type::const_iterator j = manager()->_ex_heap.find( i->first );
+        if ( j != manager()->_ex_heap.end() ) {
+          lst.push_back( make_pair( j->second, i->second ) );
+        }
+      } else {
+        Locker lk( manager()->_lock_heap );
+        EvManager::local_heap_type::const_iterator j = manager()->heap.find( i->first );
+        if ( j != manager()->heap.end() ) {
+          gaddr_type gaddr;
+          gaddr.hid = xmt::hostid();
+          gaddr.pid = getpid();
+          gaddr.addr = j->first;
+          lst.push_back( make_pair( gaddr, i->second ) );
+        }
+      }
     }
   }
-  manager()->_lock_heap.unlock();
+  manager()->_lock_iheap.unlock();
 
-  if ( rq.code() == EV_STEM_RQ_EXT_ADDR_LIST1 ) {
-    rs.dest( rq.src() );
-    Send( rs );
-  } else {
-    Event_base<NameRecord> rs_( EV_EDS_NM_LIST );
-
-    rs_.dest( rq.src() );
-    for ( Seq::const_iterator i = lst.begin(); i != lst.end(); ++i ) {
-      rs_.value().addr = i->first;
-      rs_.value().record = i->second;
-      Send( Event_convert<NameRecord>()( rs_ ) );
-    }
-    // end of table
-    rs_.value().addr = badaddr;
-    rs_.value().record.clear();
-    Send( Event_convert<NameRecord>()( rs_ ) );
-  }
-}
-
-void __FIT_DECLSPEC Names::get_by_name( const Event& rq )
-{
-  typedef NameRecords<addr_type,string> Seq;
-  Event_base<Seq> rs( EV_STEM_NS1_NAME );
-  Seq::container_type& lst = rs.value().container;
-
-  manager()->_lock_heap.lock();
-  for ( EvManager::heap_type::const_iterator i = manager()->heap.begin(); i != manager()->heap.end(); ++i ) {
-    if ( ((*i).first & extbit) == 0 && (*i).second.info == rq.value() ) { // only local...
-      lst.push_back( make_pair((*i).first, (*i).second.info) );
-    }
-  }
-  manager()->_lock_heap.unlock();
-
-  if ( rq.code() == EV_STEM_RQ_ADDR_BY_NAME1 ) {
-    rs.dest( rq.src() );
-    Send( rs );
-  } else {
-    Event_base<NameRecord> rs_( EV_EDS_NS_ADDR );
-
-    rs_.dest( rq.src() );
-    for ( Seq::const_iterator i = lst.begin(); i != lst.end(); ++i ) {
-      rs_.value().addr = i->first;
-      rs_.value().record = i->second;
-      Send( Event_convert<NameRecord>()( rs_ ) );
-    }
-    // end of table
-    rs_.value().addr = badaddr;
-    rs_.value().record.clear();
-    Send( Event_convert<NameRecord>()( rs_ ) );
-  }
+  rs.dest( rq.src() );
+  Send( rs );
 }
 
 DEFINE_RESPONSE_TABLE( Names )
-  EV_EDS(ST_NULL,EV_EDS_RQ_ADDR_LIST,get_list)
-  EV_EDS(ST_NULL,EV_STEM_RQ_ADDR_LIST1,get_list)
-  EV_EDS(ST_NULL,EV_EDS_RQ_EXT_ADDR_LIST,get_ext_list)
-  EV_EDS(ST_NULL,EV_STEM_RQ_EXT_ADDR_LIST1,get_ext_list)
-  EV_EDS(ST_NULL,EV_EDS_RQ_ADDR_BY_NAME,get_by_name)
-  EV_EDS(ST_NULL,EV_STEM_RQ_ADDR_BY_NAME1,get_by_name)
+  EV_EDS(ST_NULL,EV_STEM_GET_NS_LIST,ns_list)
+  EV_EDS(ST_NULL,EV_STEM_GET_NS_NAME,ns_name)
 END_RESPONSE_TABLE
 
 __FIT_DECLSPEC
 void NameRecord::pack( std::ostream& s ) const
 {
-  __pack( s, addr );
+  addr.pack( s );
   __pack( s, record );
 }
 
 __FIT_DECLSPEC
 void NameRecord::net_pack( std::ostream& s ) const
 {
-  __net_pack( s, addr );
+  addr.net_pack( s );
   __net_pack( s, record );
 }
 
 __FIT_DECLSPEC
 void NameRecord::unpack( std::istream& s )
 {
-  __unpack( s, addr );
+  addr.unpack( s );
   __unpack( s, record );
 }
 
 __FIT_DECLSPEC
 void NameRecord::net_unpack( std::istream& s )
 {
-  __net_unpack( s, addr );
+  addr.net_unpack( s );
   __net_unpack( s, record );
 }
 

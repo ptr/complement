@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 13:07:19 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 14:50:06 ptr>
 
 /*
  *
@@ -123,6 +123,10 @@ struct gaddr_type :
     bool operator !=( const gaddr_type& ga ) const
       { return hid != ga.hid || pid != ga.pid || addr != ga.addr; }
     __FIT_DECLSPEC bool operator <( const gaddr_type& ga ) const;
+
+    
+    __FIT_DECLSPEC void _xnet_pack( char *buf ) const;
+    __FIT_DECLSPEC void _xnet_unpack( const char *buf );
 };
 
 class __Event_Base

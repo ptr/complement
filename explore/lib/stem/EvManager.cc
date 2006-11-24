@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 11:59:21 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 17:17:05 ptr>
 
 /*
  *
@@ -20,8 +20,12 @@
 #include "stem/EvManager.h"
 #include "stem/NetTransport.h"
 #include <iomanip>
+#include <mt/xmt.h>
 
 namespace stem {
+
+using namespace std;
+using namespace xmt;
 
 #ifndef WIN32
 const addr_type badaddr    = 0xffffffff;
@@ -202,7 +206,7 @@ addr_type EvManager::SubscribeRemote( const detail::transport& tr,
 
 __FIT_DECLSPEC
 addr_type EvManager::SubscribeRemote( const detail::transport& tr,
-                                      const gaddr_type addr,
+                                      const gaddr_type& addr,
                                       const char *info )
 {
   addr_type id;
@@ -231,7 +235,7 @@ bool EvManager::Unsubscribe( addr_type id )
       
     pair<uuid_tr_heap_type::iterator,uuid_tr_heap_type::iterator> range = _tr_heap.equal_range( addr );
     for ( uuid_tr_heap_type::iterator i = range.first; i != range.second; ++i ) {
-      pair<tr_uuid_heap_type::iterator,tr_uuid_heap_type::iterator> ch_range = _ch_heap.equal_range( i->link );
+      pair<tr_uuid_heap_type::iterator,tr_uuid_heap_type::iterator> ch_range = _ch_heap.equal_range( i->second.link );
       for ( tr_uuid_heap_type::iterator j = ch_range.first; j != ch_range.second; ) {
         if ( j->second == i->first ) {
           _ch_heap.erase( j++ );
@@ -253,6 +257,27 @@ bool EvManager::Unsubscribe( addr_type id )
   iheap.erase( id );
 
   return true;
+}
+
+__FIT_DECLSPEC
+addr_type EvManager::reflect( const gaddr_type& addr ) const
+{
+  if ( addr.hid == xmt::hostid() && addr.pid == getpid() ) { // this host, this process
+    if ( (addr.addr & extbit) == 0 ) { // looks like local object
+      Locker _x1( _lock_heap );
+      local_heap_type::const_iterator l = heap.find( addr.addr );
+      if ( l != heap.end() ) {
+        return addr.addr; // l->first
+      }
+    }
+  }
+
+  Locker _x1( _lock_xheap );
+  uuid_ext_heap_type::const_iterator i = _ui_heap.find( addr );
+  if ( i == _ui_heap.end() ) {
+    return badaddr;
+  }
+  return i->second;
 }
 
 __FIT_DECLSPEC
@@ -285,15 +310,15 @@ __FIT_DECLSPEC const detail::transport& EvManager::transport( addr_type id ) con
 {
   Locker _x1( _lock_xheap );
   if ( (id & extbit) != 0 ) {
-    ext_uuid_heap_type::iterator i = _ex_heap.find( id );
+    ext_uuid_heap_type::const_iterator i = _ex_heap.find( id );
     if ( i == _ex_heap.end() ) {
       throw range_error( string( "no such address" ) );
     }
-    pair<uuid_tr_heap_type::iterator,uuid_tr_heap_type::iterator> range = _tr_heap.equal_range( i->second );
+    pair<uuid_tr_heap_type::const_iterator,uuid_tr_heap_type::const_iterator> range = _tr_heap.equal_range( i->second );
     if ( range.first == _tr_heap.end() ) {
       throw range_error( string( "no transport" ) );
     }
-    return min_element( range.first, range.second, tr_compare ).second;
+    return min_element( range.first, range.second, tr_compare )->second;
   }
   throw range_error( string( "internal address" ) );
 }
@@ -318,11 +343,11 @@ void EvManager::Send( const Event& e )
       if ( range.first == _tr_heap.end() ) {
         throw range_error( string( "no transport" ) );
       }
-      detail::transport& tr = min_element( range.first, range.second, tr_compare ).second;
+      detail::transport& tr = min_element( range.first, range.second, tr_compare )->second;
       detail::transport::kind_type k = tr.kind;
       void *link = tr.link;
-      uuid_type gaddr_dst( i->second );
-      uuid_type gaddr_src;
+      gaddr_type gaddr_dst( i->second );
+      gaddr_type gaddr_src;
 
       ext_uuid_heap_type::iterator j = _ex_heap.find( e.src() );
       if ( j == _ex_heap.end() ) {
@@ -340,7 +365,7 @@ void EvManager::Send( const Event& e )
       _lock_xheap.unlock();
 
       switch ( k ) {
-        detail::transport::socket_tcp:
+        case detail::transport::socket_tcp:
           if ( reinterpret_cast<NetTransport_base *>(link)->push( e, gaddr_dst, gaddr_src) ) {
             // if I detect bad connection during writing to net
             // (in the push), I remove this connetion related entries.
@@ -349,7 +374,7 @@ void EvManager::Send( const Event& e )
             unsafe_Remove( link );
           }
           break;
-        detail::transport::unknown:
+        case detail::transport::unknown:
           break;
         default:
           break;
