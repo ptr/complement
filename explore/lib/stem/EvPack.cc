@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/04 11:13:07 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 13:06:12 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -91,6 +91,52 @@ void __pack_base::__pack( ostream& s, const string& str )
 #else // Mmm, may be with __STL_DEBUG should be a bit different...
   copy( str.begin(), str.end(), ostream_iterator<char>(s) );
 #endif
+}
+
+__FIT_DECLSPEC void gaddr_type::pack( std::ostream& s ) const
+{
+  s.write( (const char *)hid.u.b, 16 );
+  __pack( s, pid );
+  __pack( s, addr );
+}
+
+__FIT_DECLSPEC void gaddr_type::unpack( std::istream& s )
+{
+  s.read( (char *)hid.u.b, 16 );
+  __unpack( s, pid );
+  __unpack( s, addr );
+}
+
+__FIT_DECLSPEC void gaddr_type::net_pack( std::ostream& s ) const
+{
+  s.write( (const char *)hid.u.b, 16 );
+  __net_pack( s, pid );
+  __net_pack( s, addr );
+}
+
+__FIT_DECLSPEC void gaddr_type::net_unpack( std::istream& s )
+{
+  s.read( (char *)hid.u.b, 16 );
+  __net_unpack( s, pid );
+  __net_unpack( s, addr );
+}
+
+__FIT_DECLSPEC bool gaddr_type::operator <( const gaddr_type& ga ) const
+{
+  if ( hid < ga.hid ) {
+    return true;
+  } else if ( ga.hid < hid ) {
+    return false;
+  }
+  if ( pid < ga.pid ) {
+    return true;
+  } else if ( ga.pid < pid ) {
+    return false;
+  }
+  if ( addr < ga.addr ) {
+    return true;
+  }
+  return false;
 }
 
 } // namespace stem

@@ -1,23 +1,15 @@
-// -*- C++ -*- Time-stamp: <05/12/29 23:57:13 ptr>
+// -*- C++ -*- Time-stamp: <06/11/23 22:19:50 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999, 2002, 2003, 2005
+ * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.1
+ * Licensed under the Academic Free License version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #ifndef __stem_EvPack_h
@@ -222,6 +214,7 @@ struct __pack_base
 
     // basic types
 
+#if 0
     // string
     static __FIT_DECLSPEC void __net_unpack( std::istream& s, std::string& str );
     static __FIT_DECLSPEC void __net_pack( std::ostream& s, const std::string& str );
@@ -287,6 +280,36 @@ struct __pack_base
       { s.read( (char *)&x, sizeof(unsigned long) ); }
     static void __pack( std::ostream& s, unsigned long x )
       { s.write( (const char *)&x, sizeof(unsigned long) ); }
+    // long long
+    static void __net_unpack( std::istream& s, long long& x )
+      {
+        s.read( (char *)&x, sizeof(long long) );
+        x = stem::from_net( x );
+      }
+    static void __net_pack( std::ostream& s, long long x )
+      {
+        x = stem::to_net( x );
+        s.write( (const char *)&x, sizeof(long long) );
+      }
+    static void __unpack( std::istream& s, long long& x )
+      { s.read( (char *)&x, sizeof(long long) ); }
+    static void __pack( std::ostream& s, long long x )
+      { s.write( (const char *)&x, sizeof(long long) ); }
+    // unsigned long long
+    static void __net_unpack( std::istream& s, unsigned long long& x )
+      {
+        s.read( (char *)&x, sizeof(unsigned long long) );
+        x = stem::from_net( x );
+      }
+    static void __net_pack( std::ostream& s, unsigned long long x )
+      {
+        x = stem::to_net( x );
+        s.write( (const char *)&x, sizeof(unsigned long long) );
+      }
+    static void __unpack( std::istream& s, unsigned long long& x )
+      { s.read( (char *)&x, sizeof(unsigned long long) ); }
+    static void __pack( std::ostream& s, unsigned long long x )
+      { s.write( (const char *)&x, sizeof(unsigned long long) ); }
     // char
     static void __net_unpack( std::istream& s, char& x )
       { s.read( (char *)&x, sizeof(char) ); }
@@ -344,6 +367,31 @@ struct __pack_base
       { s.read( (char *)&x, sizeof(unsigned short) ); }
     static void __pack( std::ostream& s, unsigned short x )
       { s.write( (const char *)&x, sizeof(unsigned short) ); }
+#else
+    template <class T>
+    static void __net_unpack( std::istream& s, T& x )
+      {
+        s.read( (char *)&x, sizeof(T) );
+        x = stem::from_net( x );
+      }
+    template <class T>
+    static void __net_pack( std::ostream& s, T x )
+      {
+        x = stem::to_net( x );
+        s.write( (const char *)&x, sizeof(T) );
+      }
+    template <class T>
+    static void __unpack( std::istream& s, T& x )
+      { s.read( (char *)&x, sizeof(T) ); }
+    template <class T>
+    static void __pack( std::ostream& s, T x )
+      { s.write( (const char *)&x, sizeof(T) ); }
+
+    static __FIT_DECLSPEC void __net_unpack( std::istream& s, std::string& str );
+    static __FIT_DECLSPEC void __net_pack( std::ostream& s, const std::string& str );
+    static __FIT_DECLSPEC void __unpack( std::istream& s, std::string& str );
+    static __FIT_DECLSPEC void __pack( std::ostream& s, const std::string& str );
+#endif
 };
 
 } // stem

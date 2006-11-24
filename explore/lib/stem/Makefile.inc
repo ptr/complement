@@ -1,9 +1,9 @@
-# -*- Makefile -*- Time-stamp: <01/07/27 14:54:18 ptr>
+# -*- Makefile -*- Time-stamp: <06/11/23 23:37:53 ptr>
 
 LIBNAME = stem
 MAJOR = 4
-MINOR = 1
+MINOR = 2
 PATCH = 0
 SRC_CC = _EventHandler.cc NetTransport.cc EvManager.cc EvPack.cc crc.cc \
-         _SessionMgr.cc Names.cc Cron.cc _EvSession.cc
+         Names.cc Cron.cc
 
