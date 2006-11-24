@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/12 14:24:02 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 13:07:32 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -18,29 +18,16 @@
 #include <config/feature.h>
 #endif
 
-#ifndef __SOCKSTREAM__
 #include <sockios/sockstream>
-#endif
 
-#ifndef __XMT_H
 #include <mt/xmt.h>
-#endif
 
 #include <string>
 #include <sstream>
 #include <map>
 
-#ifndef __stem_Event_h
 #include <stem/Event.h>
-#endif
-
-#ifndef __stem_EvSession_h
-#include <stem/EvSession.h>
-#endif
-
-#ifndef __stem_EventHandler_h
 #include <stem/EventHandler.h>
-#endif
 
 namespace stem {
 
@@ -50,21 +37,15 @@ class NetTransport_base :
     public EventHandler // to avoid dependence from creation order
 {
   public:
-    typedef std::map<key_type,key_type> heap_type;
-//    typedef std::map<key_type,key_type,std::less<key_type>,
-//      __STL_DEFAULT_ALLOCATOR(key_type) > heap_type;
-
     NetTransport_base() :
         _count( 0 ),
-        net( 0 ),
-        _net_ns( badaddr )
+        net( 0 )
       { }
 
     NetTransport_base( const char *info ) :
         EventHandler( info ),
         _count( 0 ),
-        net( 0 ),
-        _net_ns( badaddr )
+        net( 0 )
       { }
 
     __FIT_DECLSPEC ~NetTransport_base();
@@ -79,21 +60,13 @@ class NetTransport_base :
       { return net != 0 && net->is_open(); }
     virtual __FIT_DECLSPEC void close();
 
-    __FIT_DECLSPEC bool push( const Event& );
-
-    addr_type ns() const
-      { return _net_ns; }
+    __FIT_DECLSPEC bool push( const Event&, const gaddr_type& dst, const gaddr_type& src );
 
   protected:
-    addr_type rar_map( addr_type k, const std::string& name );
     bool pop( Event& );
 
     std::sockstream *net;
     uint32_t _count;
-    // indeed rar can be inside connect(), but SunPro's CC 5.0
-    // to be very huffy about it.
-    heap_type rar; // reverce address resolution table
-    addr_type _net_ns; // reflection of address of remote name service
 };
 
 class NetTransport :

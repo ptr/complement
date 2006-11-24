@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/10 18:11:29 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 11:59:21 ptr>
 
 /*
  *
@@ -106,11 +106,16 @@ xmt::Thread::ret_code EvManager::_Dispatch( void *p )
 __FIT_DECLSPEC
 addr_type EvManager::Subscribe( EventHandler *object, const std::string& info )
 {
-  MT_REENTRANT( _lock_heap, _x1 );
-  addr_type id = create_unique();
-  __Object_Entry& record = heap[id];
-  record.ref = object;
-  record.info = info;
+  addr_type id;
+  {
+    Locker _x1( _lock_heap );
+    id = create_unique();
+    heap[id] = object;
+  }
+  {
+    Locker _x1( _lock_iheap );
+    iheap[id] = info;
+  }
   
   return id;
 }
@@ -118,12 +123,15 @@ addr_type EvManager::Subscribe( EventHandler *object, const std::string& info )
 __FIT_DECLSPEC
 addr_type EvManager::Subscribe( EventHandler *object, const char *info )
 {
-  MT_REENTRANT( _lock_heap, _x1 );
-  addr_type id = create_unique();
-  __Object_Entry& record = heap[id];
-  record.ref = object;
+  addr_type id;
+  {
+    Locker _x1( _lock_heap );
+    id = create_unique();
+    heap[id] = object;
+  }
   if ( info ) {
-    record.info = info;
+    Locker _x1( _lock_iheap );
+    iheap[id] = info;
   }
   
   return id;
@@ -133,13 +141,18 @@ __FIT_DECLSPEC
 addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
                                   const std::string& info )
 {
-  MT_REENTRANT( _lock_heap, _x1 );
-  if ( (id & extbit) || unsafe_is_avail( id ) ) {
+  if ( (id & extbit) ) {
     return badaddr;
+  } else {
+    Locker _x1( _lock_heap );
+    if ( unsafe_is_avail( id ) ) {
+      return badaddr;
+    }
+    heap[id] = object;
   }
-  __Object_Entry& record = heap[id];
-  record.ref = object;
-  record.info = info;
+
+  Locker _x1( _lock_iheap );
+  iheap[id] = info;
 
   return id;
 }
@@ -148,49 +161,63 @@ __FIT_DECLSPEC
 addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
                                   const char *info )
 {
-  MT_REENTRANT( _lock_heap, _x1 );
-  if ( (id & extbit) || unsafe_is_avail( id ) ) {
+  if ( (id & extbit) ) {
     return badaddr;
+  } else {
+    Locker _x1( _lock_heap );
+    if ( unsafe_is_avail( id ) ) {
+      return badaddr;
+    }
+    heap[id] = object;
   }
-  __Object_Entry& record = heap[id];
-  record.ref = object;
   if ( info ) {
-    record.info = info;
+    Locker _x1( _lock_iheap );
+    iheap[id] = info;
   }
 
   return id;
 }
 
 __FIT_DECLSPEC
-addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
-                                      addr_type rmkey,
+addr_type EvManager::SubscribeRemote( const detail::transport& tr,
+                                      const gaddr_type& addr,
                                       const std::string& info )
 {
-  MT_REENTRANT( _lock_heap, _x1 );
-  addr_type id = create_unique_x();
-  __Object_Entry& record = heap[id];
-  // record.ref = object;
-  record.info = info;
-  // _STLP_ASSERT( channel != 0 );
-  record.addremote( rmkey, channel );
+  addr_type id;
+  {
+    Locker _x1( _lock_xheap );
+    id = create_unique_x();
+    _ex_heap[id] = addr;
+    _ui_heap[addr] = id;
+    _tr_heap.insert( make_pair( addr, tr ) );
+    _ch_heap.insert( make_pair( tr.link, addr ) );
+  }
+  {
+    Locker _x1( _lock_iheap );
+    iheap[id] = info;
+  }
 
   return id;
 }
 
 __FIT_DECLSPEC
-addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
-                                      addr_type rmkey,
+addr_type EvManager::SubscribeRemote( const detail::transport& tr,
+                                      const gaddr_type addr,
                                       const char *info )
 {
-  MT_REENTRANT( _lock_heap, _x1 );
-  addr_type id = create_unique_x();
-  __Object_Entry& record = heap[id];
-  // record.ref = object;
-  if ( info ) {
-    record.info = info;
+  addr_type id;
+  {
+    Locker _x1( _lock_xheap );
+    id = create_unique_x();
+    _ex_heap[id] = addr;
+    _ui_heap[addr] = id;
+    _tr_heap.insert( make_pair( addr, tr ) );
+    _ch_heap.insert( make_pair( tr.link, addr ) );
   }
-  // _STLP_ASSERT( channel != 0 );
-  record.addremote( rmkey, channel );
+  if ( info ) {
+    Locker _x1( _lock_iheap );
+    iheap[id] = info;
+  }
 
   return id;
 }
@@ -198,15 +225,41 @@ addr_type EvManager::SubscribeRemote( NetTransport_base *channel,
 __FIT_DECLSPEC
 bool EvManager::Unsubscribe( addr_type id )
 {
-  MT_REENTRANT( _lock_heap, _x1 );
-  heap.erase( /* (const heap_type::key_type&)*/ id );
-  return true; // may be here check object's reference count
+  if ( (id & extbit) ) {
+    Locker _x1( _lock_xheap );
+    gaddr_type& addr = _ex_heap[id];
+      
+    pair<uuid_tr_heap_type::iterator,uuid_tr_heap_type::iterator> range = _tr_heap.equal_range( addr );
+    for ( uuid_tr_heap_type::iterator i = range.first; i != range.second; ++i ) {
+      pair<tr_uuid_heap_type::iterator,tr_uuid_heap_type::iterator> ch_range = _ch_heap.equal_range( i->link );
+      for ( tr_uuid_heap_type::iterator j = ch_range.first; j != ch_range.second; ) {
+        if ( j->second == i->first ) {
+          _ch_heap.erase( j++ );
+          continue;
+        }
+        ++j;
+      }
+    }
+    _tr_heap.erase( range.first, range.second );
+    _ui_heap.erase( addr );
+    _ex_heap.erase( id );
+  } else {
+    Locker _x1( _lock_heap );
+    heap.erase( id );
+
+    // Notify remotes?
+  }
+  Locker _x1( _lock_iheap );
+  iheap.erase( id );
+
+  return true;
 }
 
 __FIT_DECLSPEC
-void EvManager::Remove( NetTransport_base *channel )
+void EvManager::Remove( void *channel )
 {
-  MT_REENTRANT( _lock_heap, _x1 );
+  Locker _x1( _lock_xheap );
+  Locker _x2( _lock_iheap );
   unsafe_Remove( channel );
 }
 
@@ -215,99 +268,115 @@ void EvManager::Remove( NetTransport_base *channel )
 // from [remote name -> local name] mapping table, and mark related session as
 // 'disconnected'.
 __FIT_DECLSPEC
-void EvManager::unsafe_Remove( NetTransport_base *channel )
+void EvManager::unsafe_Remove( void *channel )
 {
-  heap_type::iterator i = heap.begin();
+  pair<tr_uuid_heap_type::iterator,tr_uuid_heap_type::iterator> ch_range = _ch_heap.equal_range( channel );
+  for (tr_uuid_heap_type::iterator i = ch_range.first; i != ch_range.second; ++i ) {
+    _tr_heap.erase( i->second );
+    addr_type address = _ui_heap[i->second];
+    _ex_heap.erase( address );
+    iheap.erase( address );
+    _ui_heap.erase( i->second );
+  }
+  _ch_heap.erase( ch_range.first, ch_range.second );
+}
 
-  while ( i != heap.end() ) {
-    if ( (*i).second.remote != 0 && (*i).second.remote->channel == channel ) {
-      heap.erase( i++ );
-    } else {
-      ++i;
+__FIT_DECLSPEC const detail::transport& EvManager::transport( addr_type id ) const
+{
+  Locker _x1( _lock_xheap );
+  if ( (id & extbit) != 0 ) {
+    ext_uuid_heap_type::iterator i = _ex_heap.find( id );
+    if ( i == _ex_heap.end() ) {
+      throw range_error( string( "no such address" ) );
     }
+    pair<uuid_tr_heap_type::iterator,uuid_tr_heap_type::iterator> range = _tr_heap.equal_range( i->second );
+    if ( range.first == _tr_heap.end() ) {
+      throw range_error( string( "no transport" ) );
+    }
+    return min_element( range.first, range.second, tr_compare ).second;
   }
+  throw range_error( string( "internal address" ) );
 }
-
-__FIT_DECLSPEC NetTransport_base *EvManager::transport( addr_type id ) const
-{
-  MT_REENTRANT( _lock_heap, _x1 );
-  heap_type::const_iterator i = heap.find( id );
-  if ( i == heap.end() || (*i).second.remote == 0 ) {
-    return 0;
-  }
-  return (*i).second.remote->channel;
-}
-
-#if 0
-#define _XMB( msg ) \
-{ \
-  ostringstream ss; \
-  ss << msg << "\n" \
-     << __FILE__ << ":" << __LINE__ << endl; \
-  MessageBox( 0, ss.str().c_str(), "Planet Problem", MB_OK ); \
-}
-
-#endif
 
 // Resolve Address -> Object Reference, call Object's dispatcher in case
 // of local object, or call appropriate channel delivery function for
 // remote object. All outgoing events, and incoming remote events
-// (this method allow to forward remote-object-event to another remote-object
+// (this method allow to forward event from remote object to another remote object,
+// i.e. work as 'proxy' with 'transit objects')
+
 void EvManager::Send( const Event& e )
 {
-  try {
-    // Will be useful to block on erase/insert operations...
-    MT_LOCK( _lock_heap );
-//    _XMB( "MT_LOCK" )
-    heap_type::iterator i = heap.find( e.dest() );
-    if ( i != heap.end() ) {
-      if ( (*i).second.ref != 0 ) { // local delivery
-        EventHandler *object = (*i).second.ref;
-//       std::cerr << "Local\n";
-//        _XMB( "MT_UNLOCK" )
-        MT_UNLOCK( _lock_heap );
-        try {
-          object->Dispatch( e );
-        } 
-        catch ( ... ) {
-        }
-      } else { // remote delivery
-//       std::cerr << "Remote\n";
-        __Remote_Object_Entry *remote = (*i).second.remote;
-        // _STLP_ASSERT( remote != 0 );
-        addr_type save_dest = e.dest();
-        e.dest( remote->key ); // substitute address on remote system
-        if ( !remote->channel->push( e ) ) {
-          // if I detect bad connection during writing to net
-          // (in the push), I remove this connetion related entries.
-          // Required by non-Solaris OS. Unsafe variant allow avoid
-          // deadlock here.
-          unsafe_Remove( remote->channel );
-        }
-        e.dest( save_dest ); // restore original (may be used more)
-//      _XMB( "MT_UNLOCK" )
-        MT_UNLOCK( _lock_heap );
+  if ( e.dest() & extbit ) { // external object
+    try {
+      _lock_xheap.lock();
+      ext_uuid_heap_type::iterator i = _ex_heap.find( e.dest() );
+      if ( i == _ex_heap.end() ) { // destination not found
+        throw invalid_argument( string("external address unknown") );
       }
-    } else {
-//      _XMB( "MT_UNLOCK" )
-     MT_UNLOCK( _lock_heap );
-#if 0
-      try {
-        std::cerr << "===== stem: "
-                  << std::hex 
-                  << std::setiosflags(std::ios_base::showbase)
-                  << e.dest()
-                  << " not found, source: " << e.src()
-                  << ", code " << e.code() << std::dec << endl;
+
+      pair<uuid_tr_heap_type::iterator,uuid_tr_heap_type::iterator> range = _tr_heap.equal_range( i->second );
+      if ( range.first == _tr_heap.end() ) {
+        throw range_error( string( "no transport" ) );
       }
-      catch ( ... ) {
+      detail::transport& tr = min_element( range.first, range.second, tr_compare ).second;
+      detail::transport::kind_type k = tr.kind;
+      void *link = tr.link;
+      uuid_type gaddr_dst( i->second );
+      uuid_type gaddr_src;
+
+      ext_uuid_heap_type::iterator j = _ex_heap.find( e.src() );
+      if ( j == _ex_heap.end() ) {
+        gaddr_type& _gaddr_src = _ex_heap[e.src()];
+        _gaddr_src.hid = xmt::hostid();
+        _gaddr_src.pid = getpid();
+        _gaddr_src.addr = e.src(); // it may be as local as foreign; if e.src()
+                                   // is foreign, the object is 'transit object'
+        _ui_heap[_gaddr_src] = e.src();
+        gaddr_src = _gaddr_src;
+      } else {
+        gaddr_src = j->second;
       }
-#endif
+
+      _lock_xheap.unlock();
+
+      switch ( k ) {
+        detail::transport::socket_tcp:
+          if ( reinterpret_cast<NetTransport_base *>(link)->push( e, gaddr_dst, gaddr_src) ) {
+            // if I detect bad connection during writing to net
+            // (in the push), I remove this connetion related entries.
+            // Required by non-Solaris OS. Unsafe variant allow avoid
+            // deadlock here.
+            unsafe_Remove( link );
+          }
+          break;
+        detail::transport::unknown:
+          break;
+        default:
+          break;
+      }
     }
-  }
-  catch ( ... ) {
-//    _XMB( "MT_UNLOCK" )
-    MT_UNLOCK( _lock_heap );
+    catch ( ... ) {
+      _lock_xheap.unlock();
+    }
+  } else { // local object
+    try {
+      _lock_heap.lock();
+      local_heap_type::iterator i = heap.find( e.dest() );
+      if ( i == heap.end() ) { // destination not found
+        throw invalid_argument( string("address unknown") );
+      }
+      EventHandler *object = i->second; // target object
+      _lock_heap.unlock();
+
+      try {
+        object->Dispatch( e ); // call dispatcher
+      } 
+      catch ( ... ) {
+      }      
+    }
+    catch ( ... ) {
+      _lock_heap.unlock();
+    }
   }
 }
 
