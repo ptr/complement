@@ -143,11 +143,11 @@ xmt::Thread::ret_code stem_test::thr1new( void * )
 void stem_test::dl()
 {
 #ifdef _STLP_DEBUG
-  void *lh = dlopen( "dl/obj/gcc/shared-stlg/libloadable_stemstlg.so", RTLD_LAZY );
+  void *lh = dlopen( "dl/obj/gcc/so_stlg/libloadable_stemstlg.so", RTLD_LAZY );
 #elif defined(DEBUG)
-  void *lh = dlopen( "dl/obj/gcc/shared-g/libloadable_stemg.so", RTLD_LAZY );
+  void *lh = dlopen( "dl/obj/gcc/so_g/libloadable_stemg.so", RTLD_LAZY );
 #else
-  void *lh = dlopen( "dl/obj/gcc/shared/libloadable_stem.so", RTLD_LAZY );
+  void *lh = dlopen( "dl/obj/gcc/so/libloadable_stem.so", RTLD_LAZY );
 #endif
   BOOST_REQUIRE( lh != NULL );
   void *(*f)(unsigned) = reinterpret_cast<void *(*)(unsigned)>( dlsym( lh, "create_NewNodeDL" ) );
