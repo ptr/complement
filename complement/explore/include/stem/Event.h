@@ -1,22 +1,15 @@
-// -*- C++ -*- Time-stamp: <06/07/20 10:26:33 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 13:07:19 ptr>
 
 /*
+ *
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.1
+ * Licensed under the Academic Free License version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #ifndef __stem_Event_h
@@ -33,9 +26,8 @@
 #include <sstream>
 #include <stdint.h>
 
-#ifndef __EvPack_h
 #include <stem/EvPack.h>
-#endif
+#include <mt/uid.h>
 
 #ifndef STLPORT
 #include <bits/cpp_type_traits.h>
@@ -113,6 +105,25 @@ using ::__true_type;
 using ::__false_type;
 using ::__type_traits;
 #endif
+
+struct gaddr_type :
+        public __pack_base
+{
+    xmt::uuid_type  hid;
+    int64_t         pid; // pid_t defined as int, so it may be int64_t
+    stem::addr_type addr;
+
+    __FIT_DECLSPEC virtual void pack( std::ostream& ) const;
+    __FIT_DECLSPEC virtual void unpack( std::istream& );
+    __FIT_DECLSPEC virtual void net_pack( std::ostream& ) const;
+    __FIT_DECLSPEC virtual void net_unpack( std::istream& );
+
+    bool operator ==( const gaddr_type& ga ) const
+      { return hid == ga.hid && pid == ga.pid && addr == ga.addr; }
+    bool operator !=( const gaddr_type& ga ) const
+      { return hid != ga.hid || pid != ga.pid || addr != ga.addr; }
+    __FIT_DECLSPEC bool operator <( const gaddr_type& ga ) const;
+};
 
 class __Event_Base
 {

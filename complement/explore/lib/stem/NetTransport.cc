@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/12 14:24:31 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 13:09:57 ptr>
 
 /*
  *
@@ -19,6 +19,7 @@
 #include <config/feature.h>
 #include <iterator>
 #include <iomanip>
+#include <sstream>
 #include "stem/NetTransport.h"
 #include "stem/EventHandler.h"
 #include "stem/EvManager.h"
@@ -30,9 +31,7 @@ const uint32_t EDS_MSG_LIMIT = 0x400000; // 4MB
 
 namespace stem {
 
-#ifndef _MSC_VER
 using namespace std;
-#endif
 
 #ifdef _BIG_ENDIAN
 static const uint32_t EDS_MAGIC = 0xc2454453U;
@@ -100,26 +99,10 @@ __FIT_DECLSPEC void NetTransport_base::close()
   // cerr << __FILE__ << ":" << __LINE__ << endl;
   if ( net != 0 ) {
     manager()->Remove( this );
-    rar.clear();
     net->close();
     // cerr << __FILE__ << ":" << __LINE__ << endl;
     net = 0;
   }
-}
-
-const string __ns_at( "ns@" );
-const string __at( "@" );
-
-addr_type NetTransport_base::rar_map( addr_type k, const string& name )
-{
-  heap_type::iterator r = rar.find( k );
-  if ( r == rar.end() ) {
-    r = rar.insert(
-      heap_type::value_type( k,
-                             manager()->SubscribeRemote( this, k, name ) ) ).first;
-  }
-
-  return (*r).second;
 }
 
 bool NetTransport_base::pop( Event& _rs )
@@ -188,30 +171,31 @@ bool NetTransport_base::pop( Event& _rs )
 
 
 __FIT_DECLSPEC
-bool NetTransport_base::push( const Event& _rs )
+bool NetTransport_base::push( const Event& _rs, const gaddr_type& dst, const gaddr_type& src )
 {
   // _STLP_ASSERT( net != 0 );
   if ( !net->good() ) {
     return false;
   }
-  uint32_t buf[8];
+  // const int bsz = 8-2+(4+2+1)*2;
+  // uint32_t buf[bsz];
 
-  // buf[0] = to_net( EDS_MAGIC );
-  buf[0] = EDS_MAGIC;
-  buf[1] = to_net( _rs.code() );
-  buf[2] = to_net( _rs.dest() );
-  buf[3] = to_net( _rs.src() );
+  ostringstream sbuf;                                        // 4 bytes
+  sbuf.write( (const char *)&EDS_MAGIC, sizeof(EDS_MAGIC) ); // 0
+  __pack_base::__net_pack( sbuf, _rs.code() );               // 1
+  dst.net_pack( sbuf );                                      // 2-8
+  src.net_pack( sbuf );                                      // 9-15
 
   // MT_IO_REENTRANT_W( *net )
   MT_IO_LOCK_W( *net )
 
-  buf[4] = to_net( ++_count );
-  buf[5] = 0; // time?
-  buf[6] = to_net( static_cast<uint32_t>(_rs.value().size()) );
-  buf[7] = to_net( adler32( (unsigned char *)buf, sizeof(uint32_t) * 7 ) ); // crc
+  __pack_base::__net_pack( sbuf, ++_count );                 // 16
+  __pack_base::__net_pack( sbuf, 0 );                        // 17 time?
+  __pack_base::__net_pack( sbuf, static_cast<uint32_t>(_rs.value().size()) ); // 18
+  __pack_base::__net_pack( sbuf, adler32( (unsigned char *)sbuf.str().c_str(), sizeof(uint32_t) * 19 ) ); // 19 crc
 
   try {
-    net->write( (const char *)buf, sizeof(uint32_t) * 8 );
+    net->write( sbuf.str().c_str(), sizeof(uint32_t) * 20 );
         
     copy( _rs.value().begin(), _rs.value().end(),
           ostream_iterator<char,char,char_traits<char> >(*net) );
@@ -240,18 +224,6 @@ __FIT_DECLSPEC
 NetTransport::NetTransport( std::sockstream& s ) :
     NetTransport_base( "stem::NetTransport" )
 {
-  const string& _hostname = hostname( s.rdbuf()->inet_addr() );
-  // cerr << "Connected: " << _hostname << endl;
-
-  net = &s;
-  _at_hostname = __at + _hostname;
-
-  try {
-    _net_ns = rar_map( ns_addr, __ns_at + _hostname );
-  }
-  catch ( std::domain_error& ex ) {
-    cerr << ex.what() << endl;
-  }
 }
 
 __FIT_DECLSPEC

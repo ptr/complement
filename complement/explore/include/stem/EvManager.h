@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/12 15:10:18 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 13:03:42 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -18,85 +18,76 @@
 #include <config/feature.h>
 #endif
 
+#include <stdint.h>
+
 #include <string>
 #include <map>
 #include <queue>
 
-#ifndef __stem_Event_h
-#include <stem/Event.h>
-#endif
-
-#ifndef __stem_EventHandler_h
-#include <stem/EventHandler.h>
-#endif
-
-#ifndef __stem_EvSession_h
-#include <stem/EvSession.h>
-#endif
-
-#ifndef __XMT_H
 #include <mt/xmt.h>
-#endif
+#include <mt/uid.h>
 
-#ifndef __SOCKSTREAM__
-#include <sockios/sockstream>
-#endif
+#include <stem/Event.h>
+#include <stem/EventHandler.h>
 
 namespace stem {
 
-class NetTransport_base;
-class NetTransport;
-class NetTransportMgr;
+namespace detail {
 
-struct __Remote_Object_Entry
+typedef void * transport_entry;
+
+struct transport
 {
-    __Remote_Object_Entry() :
-        key( 0 ),
-        channel( 0 )
+    enum kind_type {
+      unknown = -1,
+      socket_tcp = 0
+    };
+
+    transport() :
+        link( 0 ),
+        metric( 0 ),
+        kind( unknown )
       { }
 
-    __Remote_Object_Entry( key_type __k, NetTransport_base *__c ) :
-        key( __k ),
-        channel( __c )
+    transport( transport_entry *l, kind_type k, int m = 0 ) :
+        link( l ),
+        metric( m ),
+        kind( k )
       { }
 
-    key_type key;
-    NetTransport_base *channel;
+    transport( const transport& t ) :
+        link( t.link ),
+        metric( t.metric ),
+        kind( t.kind )
+      { }
+
+    transport_entry link;
+    int metric;
+
+    kind_type kind;
 };
 
-struct __Object_Entry
-{
-    __Object_Entry() :
-        ref( 0 ),
-        remote( 0 )
-      { }
+inline bool operator <( const transport& l, const transport& r )
+{ return l.metric < r.metric; }
 
-    ~__Object_Entry()
-      { delete remote; }
-
-    void addremote( key_type key, NetTransport_base *channel )
-      { remote = new __Remote_Object_Entry( key, channel ); }
-        
-    EventHandler *ref;  // system dependent? for Win may be WND HANDLER?    
-    std::string info; // even IDL interface...
-    __Remote_Object_Entry *remote;
- // string location; // if ref invalid;
- // int refcount;    // references on object
-};
-
-#ifdef _MSC_VER
-} // namespace stem
-namespace std {
-typedef  stem::__Object_Entry __Object_Entry;
-} // namespace std
-namespace stem {
-#endif
+} // namespace detail
 
 class EvManager
 {
+  private:
+    typedef std::map<addr_type,EventHandler *> local_heap_type;
+    typedef std::map<addr_type,std::string>    info_heap_type;
+
+    typedef std::map<gaddr_type,addr_type> uuid_ext_heap_type;
+    typedef std::map<addr_type,gaddr_type> ext_uuid_heap_type;
+
+    typedef std::multimap<gaddr_type,detail::transport> uuid_tr_heap_type;
+    typedef std::multimap<detail::transport_entry,gaddr_type> tr_uuid_heap_type;
+
+    static bool tr_compare( const std::pair<gaddr_type,detail::transport>& l, const std::pair<gaddr_type,detail::transport>& r )
+      { return l.second < r.second; }
+
   public:
-//    typedef std::map<key_type,__Object_Entry,std::less<key_type>> heap_type;
-    typedef std::map<key_type,__Object_Entry> heap_type;
     typedef std::queue< Event > queue_type;
 
     __FIT_DECLSPEC EvManager();
@@ -105,15 +96,15 @@ class EvManager
     __FIT_DECLSPEC addr_type Subscribe( EventHandler *object, const std::string& info );
     __FIT_DECLSPEC addr_type Subscribe( EventHandler *object, const char *info = 0 );
     __FIT_DECLSPEC addr_type SubscribeID( addr_type id, EventHandler *object,
-                                    const std::string& info );
+                                          const std::string& info );
     __FIT_DECLSPEC addr_type SubscribeID( addr_type id, EventHandler *object,
-                                    const char *info = 0 );
-    __FIT_DECLSPEC addr_type SubscribeRemote( NetTransport_base *channel,
-                                         addr_type rmkey,
-                                         const std::string& info );
-    __FIT_DECLSPEC addr_type SubscribeRemote( NetTransport_base *channel,
-                                         addr_type rmkey,
-                                         const char *info = 0 );
+                                          const char *info = 0 );
+    __FIT_DECLSPEC addr_type SubscribeRemote( const detail::transport& tr,
+                                              const gaddr_type& addr,
+                                              const std::string& info );
+    __FIT_DECLSPEC addr_type SubscribeRemote( const detail::transport& tr,
+                                              const gaddr_type& addr,
+                                              const char *info = 0 );
     __FIT_DECLSPEC bool Unsubscribe( addr_type id );
 
     bool is_avail( addr_type id ) const
@@ -124,29 +115,29 @@ class EvManager
 
     const std::string who_is( addr_type id ) const
       {
-        MT_REENTRANT( _lock_heap, _x1 );
+        MT_REENTRANT( _lock_iheap, _x1 );
         return unsafe_who_is( id );
       }
 
     const std::string annotate( addr_type id ) const
       {
-        MT_REENTRANT( _lock_heap, _x1 );
+        MT_REENTRANT( _lock_iheap, _x1 );
         return unsafe_annotate( id );
       }
 
     void change_announce( addr_type id, const std::string& info )
       {
-        MT_REENTRANT( _lock_heap, _x1 );
+        MT_REENTRANT( _lock_iheap, _x1 );
         unsafe_change_announce( id, info );
       }
 
     void change_announce( addr_type id, const char *info )
       {
-        MT_REENTRANT( _lock_heap, _x1 );
+        MT_REENTRANT( _lock_iheap, _x1 );
         unsafe_change_announce( id, info );
       }
 
-    __FIT_DECLSPEC NetTransport_base *transport( addr_type object_id ) const;
+    __FIT_DECLSPEC const detail::transport& transport( addr_type object_id ) const;
 
     void push( const Event& e )
       {
@@ -155,42 +146,47 @@ class EvManager
         _cnd_queue.set( true );
       }
 
-    __FIT_DECLSPEC void Remove( NetTransport_base * );
+    __FIT_DECLSPEC void Remove( void * );
 
   protected:
     bool unsafe_is_avail( addr_type id ) const
-      { return heap.find( id ) != heap.end(); }
+      {
+        if ( id & extbit ) {
+          return _ex_heap.find( id ) != _ex_heap.end();
+        }
+        return heap.find( id ) != heap.end();
+      }
 
     const std::string& unsafe_who_is( addr_type id ) const
       {
-        heap_type::const_iterator i = heap.find( id );
-        return i == heap.end() ? inv_key_str : (*i).second.info;
+        info_heap_type::const_iterator i = iheap.find( id );
+        return i == iheap.end() ? inv_key_str : (*i).second;
       }
     const std::string& unsafe_annotate( addr_type id ) const
       {
-        heap_type::const_iterator i = heap.find( id );
-        return i == heap.end() ? inv_key_str : (*i).second.info;
+        info_heap_type::const_iterator i = iheap.find( id );
+        return i == iheap.end() ? inv_key_str : (*i).second;
       }
 
     void unsafe_change_announce( addr_type id, const std::string& info )
       {
-        heap_type::iterator i = heap.find( id );
-        if ( i != heap.end() ) {
-          i->second.info = info;
+        info_heap_type::iterator i = iheap.find( id );
+        if ( i != iheap.end() ) {
+          i->second = info;
         }
       }
 
     void unsafe_change_announce( addr_type id, const char *info )
       {
-        heap_type::iterator i = heap.find( id );
-        if ( i != heap.end() ) {
-          i->second.info = info;
+        info_heap_type::iterator i = iheap.find( id );
+        if ( i != iheap.end() ) {
+          i->second = info;
         }
       }
 
   private:
     void Send( const Event& e );
-    __FIT_DECLSPEC void unsafe_Remove( NetTransport_base * );
+    __FIT_DECLSPEC void unsafe_Remove( void * );
 
     addr_type create_unique();
     addr_type create_unique_x();
@@ -198,7 +194,15 @@ class EvManager
     const addr_type _low;
     const addr_type _high;
     addr_type _id;
-    heap_type heap;
+
+    local_heap_type heap;   // address -> EventHandler *
+    info_heap_type  iheap;  // address -> info string (both local and external)
+
+    uuid_ext_heap_type _ui_heap; // gloabal address -> address
+    ext_uuid_heap_type _ex_heap; // address -> global address
+    uuid_tr_heap_type _tr_heap;  // global address -> transport
+    tr_uuid_heap_type _ch_heap;  // transport channel -> global address
+
     queue_type in_ev_queue;
     queue_type out_ev_queue;
 
@@ -216,6 +220,9 @@ class EvManager
     xmt::Spinlock _ev_queue_dispatch_guard;
 
     xmt::Mutex _lock_heap;
+    xmt::Mutex _lock_iheap;
+    xmt::Mutex _lock_xheap;
+
     xmt::Mutex _lock_queue;
     xmt::Condition _cnd_queue;
 
