@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/23 23:34:55 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 20:50:19 ptr>
 
 /*
  * Copyright (c) 2006
@@ -23,23 +23,25 @@ namespace xmt {
 
 struct uuid_type
 {
-  union {
-    uint8_t  b[16];
-    uint32_t i[4];
-    uint64_t l[2];
-  } u;
+    union {
+      uint8_t  b[16];
+      uint32_t i[4];
+      uint64_t l[2];
+    } u;
 
   
-  uuid_type()
-  {}
+    uuid_type()
+      { u.l[0] = 0; u.l[1] = 0; }
 
-  uuid_type( const uuid_type& uid )
-  {
-    // u.i[0] = uid.u.i[0]; u.i[1] = uid.u.i[1];
-    // u.i[2] = uid.u.i[2]; u.i[3] = uid.u.i[3];
-    u.l[0] = uid.u.l[0]; u.l[1] = uid.u.l[1];
-  }
+    uuid_type( const uuid_type& uid )
+      {
+        // u.i[0] = uid.u.i[0]; u.i[1] = uid.u.i[1];
+        // u.i[2] = uid.u.i[2]; u.i[3] = uid.u.i[3];
+        u.l[0] = uid.u.l[0]; u.l[1] = uid.u.l[1];
+      }
 
+    uuid_type& operator =( const uuid_type& uid )
+      { u.l[0] = uid.u.l[0]; u.l[1] = uid.u.l[1]; return *this; }
 
     bool operator ==( const uuid_type& uid ) const
       {
