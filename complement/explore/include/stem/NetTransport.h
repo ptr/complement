@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 13:07:32 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 15:29:19 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -63,7 +63,7 @@ class NetTransport_base :
     __FIT_DECLSPEC bool push( const Event&, const gaddr_type& dst, const gaddr_type& src );
 
   protected:
-    bool pop( Event& );
+    bool pop( Event&, gaddr_type& dst, gaddr_type& src );
 
     std::sockstream *net;
     uint32_t _count;
@@ -78,9 +78,6 @@ class NetTransport :
 
     __FIT_DECLSPEC
     void connect( std::sockstream& );
-
-  private:
-    std::string _at_hostname;
 };
 
 class NetTransportMgr :

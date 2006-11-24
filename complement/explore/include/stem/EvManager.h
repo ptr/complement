@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 13:03:42 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 17:11:52 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -49,7 +49,7 @@ struct transport
         kind( unknown )
       { }
 
-    transport( transport_entry *l, kind_type k, int m = 0 ) :
+    transport( transport_entry l, kind_type k, int m = 0 ) :
         link( l ),
         metric( m ),
         kind( k )
@@ -106,6 +106,7 @@ class EvManager
                                               const gaddr_type& addr,
                                               const char *info = 0 );
     __FIT_DECLSPEC bool Unsubscribe( addr_type id );
+    __FIT_DECLSPEC addr_type reflect( const gaddr_type& addr ) const;
 
     bool is_avail( addr_type id ) const
       {
