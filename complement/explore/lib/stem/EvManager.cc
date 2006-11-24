@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 17:17:05 ptr>
+// -*- C++ -*- Time-stamp: <06/11/24 20:11:46 ptr>
 
 /*
  *
@@ -112,15 +112,22 @@ addr_type EvManager::Subscribe( EventHandler *object, const std::string& info )
 {
   addr_type id;
   {
-    Locker _x1( _lock_heap );
+    Locker lk( _lock_heap );
     id = create_unique();
     heap[id] = object;
   }
   {
-    Locker _x1( _lock_iheap );
-    iheap[id] = info;
+    Locker lk( _lock_xheap );
+    gaddr_type& gaddr = _ex_heap[id];
+    gaddr.hid = xmt::hostid();
+    gaddr.pid = getpid();
+    gaddr.addr = id;
+    _ui_heap[gaddr] = id;
   }
   
+  Locker lk( _lock_iheap );
+  iheap[id] = info;
+
   return id;
 }
 
@@ -132,6 +139,14 @@ addr_type EvManager::Subscribe( EventHandler *object, const char *info )
     Locker _x1( _lock_heap );
     id = create_unique();
     heap[id] = object;
+  }
+  {
+    Locker lk( _lock_xheap );
+    gaddr_type& gaddr = _ex_heap[id];
+    gaddr.hid = xmt::hostid();
+    gaddr.pid = getpid();
+    gaddr.addr = id;
+    _ui_heap[gaddr] = id;
   }
   if ( info ) {
     Locker _x1( _lock_iheap );
@@ -154,6 +169,14 @@ addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
     }
     heap[id] = object;
   }
+  {
+    Locker lk( _lock_xheap );
+    gaddr_type& gaddr = _ex_heap[id];
+    gaddr.hid = xmt::hostid();
+    gaddr.pid = getpid();
+    gaddr.addr = id;
+    _ui_heap[gaddr] = id;
+  }
 
   Locker _x1( _lock_iheap );
   iheap[id] = info;
@@ -173,6 +196,14 @@ addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
       return badaddr;
     }
     heap[id] = object;
+  }
+  {
+    Locker lk( _lock_xheap );
+    gaddr_type& gaddr = _ex_heap[id];
+    gaddr.hid = xmt::hostid();
+    gaddr.pid = getpid();
+    gaddr.addr = id;
+    _ui_heap[gaddr] = id;
   }
   if ( info ) {
     Locker _x1( _lock_iheap );
