@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 20:50:19 ptr>
+// -*- C++ -*- Time-stamp: <06/11/27 18:07:44 ptr>
 
 /*
  * Copyright (c) 2006
@@ -58,7 +58,7 @@ struct uuid_type
     bool operator <( const uuid_type& uid ) const
       {
         // return std::lexicographical_compare( u.i, u.i + 4, uid.u.i, uid.u.i + 4 );
-        return u.l < uid.u.l ? true : u.l > uid.u.l ? false : (u.l[1] < uid.u.l[1]);
+        return u.l[0] < uid.u.l[0] ? true : u.l[0] > uid.u.l[0] ? false : (u.l[1] < uid.u.l[1]);
       }
 };
 
