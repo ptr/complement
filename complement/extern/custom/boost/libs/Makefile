@@ -11,7 +11,7 @@ SUBDIRS := date_time filesystem program_options regex serialization test/unit_te
 
 include ${SRCROOT}/Makefiles/gmake/subdirs.mak
 
-all install depend clean clobber distclean:
+all install install-release-static depend clean clobber distclean:
 	$(doinsubdirs)
 
-.PHONY: all install depend clean clobber distclean
+.PHONY: all install install-release-static depend clean clobber distclean
