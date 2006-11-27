@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 21:05:01 ptr>
+// -*- C++ -*- Time-stamp: <06/11/27 11:08:36 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -47,6 +47,7 @@ struct stem_test
     void ns();
 
     void echo();
+    void echo_net();
     void peer();
 
     static xmt::Thread::ret_code thr1( void * );
@@ -259,7 +260,7 @@ void stem_test::echo()
     stem::addr_type zero = mgr.open( "localhost", 6995 );
 
     BOOST_CHECK( zero != stem::badaddr );
-    BOOST_CHECK( zero != 0 );
+    BOOST_CHECK( zero == 0 ); // NetTransportMgr should detect local delivery
 
     EchoClient node;
     
@@ -283,8 +284,170 @@ void stem_test::echo()
   // cerr << "Fine\n";
 }
 
+void stem_test::echo_net()
+{
+  xmt::__Condition<true> fcnd;
+  fcnd.set( false );
+
+  try {
+    xmt::Thread::fork();
+
+    stem::NetTransportMgr mgr;
+
+    fcnd.try_wait();
+
+    stem::addr_type zero = mgr.open( "localhost", 6995 );
+
+    BOOST_CHECK( zero != stem::badaddr );
+    BOOST_CHECK( zero != 0 ); // NetTransportMgr should detect external delivery
+
+    EchoClient node;
+    
+    stem::Event ev( NODE_EV_ECHO );
+
+    ev.dest( zero );
+    ev.value() = node.mess;
+
+    node.Send( ev );
+
+    node.wait();
+    
+    mgr.close();
+
+    exit( 0 );
+  }
+  catch ( xmt::fork_in_parent& ) {
+    
+  }
+
+  try {
+    sockmgr_stream_MP<stem::NetTransport> srv( 6995 );
+
+    StEMecho echo( 0, "echo service"); // <= zero!
+
+    fcnd.set( true );
+
+    // mgr.join();
+
+    srv.close();
+    srv.wait();
+  }
+  catch ( ... ) {
+  }
+  // cerr << "Fine\n";
+}
+
 void stem_test::peer()
 {
+  xmt::__Condition<true> fcnd;
+  fcnd.set( false );
+
+  xmt::__Condition<true> pcnd;
+  pcnd.set( false );
+
+  xmt::__Condition<true> scnd;
+  scnd.set( false );
+
+  try {
+    xmt::Thread::fork();
+    stem::NetTransportMgr mgr;
+
+    PeerClient c1( "c1 local" );  // c1 client
+    Naming nm;
+
+    cerr << "1\n";
+    fcnd.try_wait();
+
+    stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
+  // It done like it should on client side
+
+    BOOST_CHECK( zero != stem::badaddr );
+    BOOST_CHECK( zero != 0 );
+    BOOST_CHECK( zero & stem::extbit ); // "external" address
+
+    stem::Event ev( NODE_EV_REGME );
+    ev.dest( zero );
+
+    ev.value() = "c1@here";
+    c1.Send( ev ); // 'register' c1 client on 'echo' server
+
+    stem::gaddr_type ga( c1.manager()->reflect( zero ) );
+
+    BOOST_CHECK( ga.addr == 0 );
+    BOOST_CHECK( ga.pid != -1 );
+
+    ga.addr = stem::ns_addr; // this will be global address of ns of the same process
+                             // as zero
+
+    BOOST_CHECK( c1.manager()->reflect( ga ) != stem::badaddr );
+
+    stem::Event evname( EV_STEM_GET_NS_NAME );
+    evname.dest( c1.manager()->reflect( ga ) );
+    evname.value() = "c2@here";
+
+    pcnd.try_wait();
+
+    nm.Send( evname );
+    nm.wait();
+
+    Naming::nsrecords_type::const_iterator i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "c2@here" ) ), select2nd<pair<stem::gaddr_type,string> >() ) );
+
+    BOOST_CHECK( i != nm.lst.end() );
+    BOOST_CHECK( i->second == "c2@here" );
+
+    // c1.manager()->reflect( i->first );
+
+    cerr << "1.1\n";
+
+    scnd.set( true );
+    exit( 0 );
+  }
+  catch ( xmt::fork_in_parent& ) {
+    
+  }
+#if 0
+  try {
+    xmt::Thread::fork();
+    stem::NetTransportMgr mgr;
+
+    cerr << "2\n";
+
+    PeerClient c2( "c2 local" ); // c2 client
+
+    fcnd.try_wait();
+    stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
+    // It done like it should on client side
+
+    BOOST_CHECK( zero != stem::badaddr );
+    BOOST_CHECK( zero != 0 );
+    BOOST_CHECK( zero & stem::extbit ); // "external" address
+
+    stem::Event ev( NODE_EV_REGME );
+    ev.dest( zero );
+
+    ev.value() = "c2@here";
+    c2.Send( ev ); // 'register' c2 client on 'echo' server
+
+    cerr << "2.1\n";
+
+    pcnd.set( true );
+    exit( 0 );
+  }
+  catch ( xmt::fork_in_parent& ) {
+    
+  }
+#endif
+  sockmgr_stream_MP<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
+  StEMecho echo( 0, "echo service"); // <= zero! 'echo' server, default ('zero' address)
+  cerr << "3\n";
+
+  fcnd.set( true );
+
+  scnd.try_wait();
+
+  srv.close();
+  srv.wait();
+
 #if 0
   /*
    * Scheme:
@@ -404,6 +567,7 @@ stem_test_suite::stem_test_suite() :
   test_case *dl_tc = BOOST_CLASS_TEST_CASE( &stem_test::dl, instance );
   test_case *ns_tc = BOOST_CLASS_TEST_CASE( &stem_test::ns, instance );
   test_case *echo_tc = BOOST_CLASS_TEST_CASE( &stem_test::echo, instance );
+  test_case *echo_net_tc = BOOST_CLASS_TEST_CASE( &stem_test::echo_net, instance );
   test_case *peer_tc = BOOST_CLASS_TEST_CASE( &stem_test::peer, instance );
 
   basic2_tc->depends_on( basic1_tc );
@@ -414,6 +578,7 @@ stem_test_suite::stem_test_suite() :
   ns_tc->depends_on( basic1_tc );
 
   echo_tc->depends_on( basic2_tc );
+  echo_net_tc->depends_on( echo_tc );
   peer_tc->depends_on( echo_tc );
 
   add( basic1_tc );
@@ -424,6 +589,7 @@ stem_test_suite::stem_test_suite() :
   add( ns_tc );
 
   add( echo_tc );
+  add( echo_net_tc );
   add( peer_tc );
 }
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 20:59:03 ptr>
+// -*- C++ -*- Time-stamp: <06/11/26 12:22:42 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -21,12 +21,7 @@
 #include "stem/Names.h"
 #include "mt/xmt.h"
 
-#if defined(__TRACE) || defined(__WARN)
-
-// DIAG_DEFINE_GROUP(EventHandler,0,4);
-// DIAG_DEFINE_GROUP(EventDispatch,0,3);
-
-#endif // __TRACE || __WARN
+#include <unistd.h>
 
 namespace stem {
 

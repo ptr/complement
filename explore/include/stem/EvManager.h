@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 17:11:52 ptr>
+// -*- C++ -*- Time-stamp: <06/11/26 21:10:31 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -107,6 +107,7 @@ class EvManager
                                               const char *info = 0 );
     __FIT_DECLSPEC bool Unsubscribe( addr_type id );
     __FIT_DECLSPEC addr_type reflect( const gaddr_type& addr ) const;
+    __FIT_DECLSPEC gaddr_type reflect( addr_type addr ) const;
 
     bool is_avail( addr_type id ) const
       {
