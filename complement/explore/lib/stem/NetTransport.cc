@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 21:44:47 ptr>
+// -*- C++ -*- Time-stamp: <06/11/26 19:14:58 ptr>
 
 /*
  *
@@ -111,13 +111,11 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
   uint32_t buf[bsz];
   using namespace std;
 
-  // cerr << __FILE__ << ":" << __LINE__ << endl;
   MT_IO_REENTRANT( *net )
 
   if ( !net->read( (char *)buf, sizeof(uint32_t) ).good() ) {
     return false;
   }
-  // cerr << __FILE__ << ":" << __LINE__ << endl;
 
   if ( buf[0] != EDS_MAGIC ) {
     cerr << "EDS Magic fail" << endl;
@@ -212,16 +210,51 @@ __FIT_DECLSPEC
 NetTransport::NetTransport( std::sockstream& s ) :
     NetTransport_base( "stem::NetTransport" )
 {
+  net = &s;
+
+  try {
+    Event ev;
+    gaddr_type dst;
+    gaddr_type src;
+
+    if ( pop( ev, dst, src ) ) {
+      if ( ev.code() == EV_STEM_TRANSPORT ) {
+        src.addr = ns_addr;
+        addr_type xsrc = manager()->reflect( src );
+        if ( xsrc == badaddr ) {
+          manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
+        }
+        src.addr = default_addr;
+        xsrc = manager()->reflect( src );
+        if ( xsrc == badaddr ) {
+          manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
+        }
+        Event ack( EV_STEM_TRANSPORT_ACK );
+        push( ack, src, self_glid() );
+      } else {
+        throw runtime_error( "net handshake error" );
+      }
+    } else {
+      throw runtime_error( "net error or net handshake error" );
+    }
+  }
+  catch ( runtime_error& err ) {
+    s.close();
+    cerr << err.what() << endl;
+  }
+  catch ( ... ) {
+    s.close();
+  }
 }
 
 __FIT_DECLSPEC
 void NetTransport::connect( sockstream& s )
 {
-  Event ev;
-  gaddr_type dst;
-  gaddr_type src;
-
   try {
+    Event ev;
+    gaddr_type dst;
+    gaddr_type src;
+
     if ( pop( ev, dst, src ) ) {
       addr_type xdst = manager()->reflect( dst );
       if ( xdst == badaddr ) {
@@ -230,8 +263,7 @@ void NetTransport::connect( sockstream& s )
       ev.dest( xdst );
       addr_type xsrc = manager()->reflect( src );
       if ( xsrc == badaddr ) {
-        detail::transport tr( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 );
-        ev.src( manager()->SubscribeRemote( tr, src ) );
+        ev.src( manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src ) );
       } else {
         ev.src( xsrc );
       }
@@ -271,27 +303,54 @@ __FIT_DECLSPEC
 addr_type NetTransportMgr::open( const char *hostname, int port,
                                  std::sock_base::stype stype )
 {
-  // I should be sure, that not more then one _loop running from here!
-  // For this, I enforce close connection before I try open new,
-  // and wait thread with _loop before start new.
-  if ( net == 0 ) {
-    net = new sockstream( hostname, port, stype );
-  } else if ( net->is_open() ) {
-    // net->close();
-    close(); // I should wait termination of _loop, clear EDS address mapping, etc.
-    net->open( hostname, port, stype );
-  } else {
-    join(); // This is safe: transparent if no _loop, and wait it if one exist
-    net->open( hostname, port, stype );
-  }
+  try {
+    // I should be sure, that not more then one _loop running from here!
+    // For this, I enforce close connection before I try open new,
+    // and wait thread with _loop before start new.
+    if ( net == 0 ) {
+      net = new sockstream( hostname, port, stype );
+    } else if ( net->is_open() ) {
+      // net->close();
+      close(); // I should wait termination of _loop, clear EDS address mapping, etc.
+      net->open( hostname, port, stype );
+    } else {
+      join(); // This is safe: transparent if no _loop, and wait it if one exist
+      net->open( hostname, port, stype );
+    }
 
-  if ( net->good() ) {
-    // _net_ns = rar_map( ns_addr, __ns_at + hostname );
-    // addr_type zero_object = rar_map( 0, __at + hostname );
-    detail::transport tr( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 );
-    // addr_type zero_object = manager()->SubscribeRemote( tr, src );
-    _thr.launch( _loop, this, 0, PTHREAD_STACK_MIN * 2 ); // start thread here
-    return 0; // zero_object;
+    if ( net->good() ) {
+      // _net_ns = rar_map( ns_addr, __ns_at + hostname );
+      // addr_type zero_object = rar_map( 0, __at + hostname );
+
+      Event ev( EV_STEM_TRANSPORT );
+      gaddr_type dst;
+      gaddr_type src;
+      addr_type xsrc = badaddr;
+      push( ev, gaddr_type(), self_glid() );
+      if ( pop( ev, dst, src ) ) {
+        if ( ev.code() == EV_STEM_TRANSPORT_ACK ) {
+          src.addr = ns_addr;
+          xsrc = manager()->reflect( src );
+          if ( xsrc == badaddr ) {
+            manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
+          }
+          src.addr = default_addr;
+          xsrc = manager()->reflect( src );
+          if ( xsrc == badaddr ) {
+            xsrc = manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
+          }
+        } else {
+          throw runtime_error( "net handshake error" );
+        }
+      } else {
+        throw runtime_error( "net error or net handshake error" );
+      }
+      _thr.launch( _loop, this, 0, PTHREAD_STACK_MIN * 2 ); // start thread here
+      return xsrc; // zero_object;
+    }
+  }
+  catch ( runtime_error& err ) {
+    cerr << err.what() << endl;
   }
   return badaddr;
 }
@@ -331,8 +390,7 @@ xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
       ev.dest( xdst );
       addr_type xsrc = manager()->reflect( src );
       if ( xsrc == badaddr ) {
-        detail::transport tr( static_cast<NetTransport_base *>(&me), detail::transport::socket_tcp, 10 );
-        ev.src( manager()->SubscribeRemote( tr, src ) );
+        ev.src( manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(&me), detail::transport::socket_tcp, 10 ), src ) );
       } else {
         ev.src( xsrc );
       }

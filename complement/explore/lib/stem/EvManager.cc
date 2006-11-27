@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 20:11:46 ptr>
+// -*- C++ -*- Time-stamp: <06/11/26 21:21:55 ptr>
 
 /*
  *
@@ -27,26 +27,16 @@ namespace stem {
 using namespace std;
 using namespace xmt;
 
-#ifndef WIN32
 const addr_type badaddr    = 0xffffffff;
-const key_type  badkey     = 0xffffffff;
 const code_type badcode    = static_cast<code_type>(-1);
 const addr_type extbit     = 0x80000000;
+const addr_type default_addr = 0x00000000;
 const addr_type ns_addr    = 0x00000001;
-#endif
 
-#ifdef WIN32
-__PG_DECLSPEC addr_type badaddr    = 0xffffffff;
-__PG_DECLSPEC key_type  badkey     = 0xffffffff;
-__PG_DECLSPEC code_type badcode    = static_cast<code_type>(-1);
-__PG_DECLSPEC addr_type extbit     = 0x80000000;
-__PG_DECLSPEC addr_type ns_addr    = 0x00000001;
-#endif
-
-const           addr_type beglocaddr = 0x00000100;
-const           addr_type endlocaddr = 0x3fffffff;
-const           addr_type begextaddr = extbit;
-const           addr_type endextaddr = 0xbfffffff;
+const addr_type beglocaddr = 0x00000100;
+const addr_type endlocaddr = 0x3fffffff;
+const addr_type begextaddr = extbit;
+const addr_type endextaddr = 0xbfffffff;
 
 std::string EvManager::inv_key_str( "invalid key" );
 
@@ -293,7 +283,8 @@ bool EvManager::Unsubscribe( addr_type id )
 __FIT_DECLSPEC
 addr_type EvManager::reflect( const gaddr_type& addr ) const
 {
-  if ( addr.hid == xmt::hostid() && addr.pid == getpid() ) { // this host, this process
+  if ( addr.hid == xmt::hostid() && addr.pid == getpid() ) {
+    // this host, this process
     if ( (addr.addr & extbit) == 0 ) { // looks like local object
       Locker _x1( _lock_heap );
       local_heap_type::const_iterator l = heap.find( addr.addr );
@@ -302,6 +293,22 @@ addr_type EvManager::reflect( const gaddr_type& addr ) const
       }
     }
   }
+#if 0
+  else if ( addr.hid == gaddr_type() && addr.pid == -1 ) {
+    // this host, special case:
+    // peer don't know host ids, used as access to 'standard' services and initial
+    // communication
+    if ( (addr.addr & extbit) == 0 && addr.addr <= _low ) {
+      Locker _x1( _lock_heap );
+      local_heap_type::const_iterator l = heap.find( addr.addr );
+      if ( l != heap.end() ) {
+        return addr.addr; // l->first
+      }
+    }
+    // disable external objects here; restrict to 'standard' services
+    return badaddr;
+  }
+#endif
 
   Locker _x1( _lock_xheap );
   uuid_ext_heap_type::const_iterator i = _ui_heap.find( addr );
@@ -309,6 +316,17 @@ addr_type EvManager::reflect( const gaddr_type& addr ) const
     return badaddr;
   }
   return i->second;
+}
+
+__FIT_DECLSPEC
+gaddr_type EvManager::reflect( addr_type addr ) const
+{
+  Locker lk( _lock_xheap );
+  ext_uuid_heap_type::const_iterator i = _ex_heap.find( addr );
+  if ( i != _ex_heap.end() ) {
+    return i->second;
+  }
+  return gaddr_type();
 }
 
 __FIT_DECLSPEC
