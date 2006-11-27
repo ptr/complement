@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/11 15:30:02 ptr>
+// -*- C++ -*- Time-stamp: <06/11/27 17:13:31 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -362,6 +362,8 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
         (*i)->s->close();
         (*i)->_proc->close();
       }
+      delete (*i)->_proc;
+      delete (*i)->s;
     }
     ::close( me->_cfd );
     ::close( me->_pfd[1].fd );
@@ -386,6 +388,8 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
       (*i)->s->close();
       (*i)->_proc->close();
     }
+    delete (*i)->_proc;
+    delete (*i)->s;
   }
   ::close( me->_cfd );
   ::close( me->_pfd[1].fd );

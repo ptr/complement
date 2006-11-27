@@ -1,3 +1,12 @@
+2006-11-27  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: delete connect processors and
+	sockstreams at exit from loop; wait loop thread in sockmgr
+	dtor, it safe even after wait() call, but keep from bogus
+	confuse.
+
+	* libsockios: Version 1.10.0
+
 2006-10-11  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* sockmgr.cc: fix inconsistency with observer_run
