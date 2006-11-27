@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/26 12:22:42 ptr>
+// -*- C++ -*- Time-stamp: <06/11/27 17:26:35 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -33,10 +33,28 @@ const char *_ns_name = "ns";
 int EventHandler::Init::_count = 0;
 xmt::MutexRS _init_lock;
 
+#if 0 // depends where fork happens: in the EvManager loop (stack) or not.
+extern "C" void __at_fork_prepare()
+{
+}
+
+extern "C" void __at_fork_child()
+{
+  if ( EventHandler::Init::_count != 0 ) {
+    // delete EventHandler::_mgr;
+    EventHandler::_mgr = new( EventHandler::_mgr ) EvManager();
+  }
+}
+
+extern "C" void __at_fork_parent()
+{
+}
+#endif
+
 EventHandler::Init::Init()
 {
   MT_REENTRANT_RS( _init_lock, _x );
-  if ( _count++ == 0 ) {    
+  if ( _count++ == 0 ) {
     EventHandler::_mgr = new EvManager();
     stem::_ns = new Names( ns_addr, _ns_name );
   }

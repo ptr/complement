@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/26 21:21:55 ptr>
+// -*- C++ -*- Time-stamp: <06/11/27 21:40:35 ptr>
 
 /*
  *
@@ -39,6 +39,8 @@ const addr_type begextaddr = extbit;
 const addr_type endextaddr = 0xbfffffff;
 
 std::string EvManager::inv_key_str( "invalid key" );
+
+// int EvManager_flags = 0;
 
 __FIT_DECLSPEC EvManager::EvManager() :
     _low( beglocaddr ),
@@ -244,6 +246,8 @@ addr_type EvManager::SubscribeRemote( const detail::transport& tr,
     iheap[id] = info;
   }
 
+  cerr << "EvManager:: " << tr.link << " / " << hex << addr.pid << " + " << addr.addr << " - " << id << " = " << getpid() << dec << endl;
+
   return id;
 }
 
@@ -344,13 +348,19 @@ void EvManager::Remove( void *channel )
 __FIT_DECLSPEC
 void EvManager::unsafe_Remove( void *channel )
 {
+  cerr << "Remove channel " << channel << hex << " " << getpid() << dec << endl;
   pair<tr_uuid_heap_type::iterator,tr_uuid_heap_type::iterator> ch_range = _ch_heap.equal_range( channel );
   for (tr_uuid_heap_type::iterator i = ch_range.first; i != ch_range.second; ++i ) {
+#if 1
     _tr_heap.erase( i->second );
     addr_type address = _ui_heap[i->second];
     _ex_heap.erase( address );
     iheap.erase( address );
     _ui_heap.erase( i->second );
+#else
+    cerr << i->first << "; " << hex << i->second.addr << dec << endl;
+    cerr << hex << _ui_heap[i->second] << dec << endl;
+#endif
   }
   _ch_heap.erase( ch_range.first, ch_range.second );
 }
@@ -383,22 +393,25 @@ void EvManager::Send( const Event& e )
   if ( e.dest() & extbit ) { // external object
     try {
       _lock_xheap.lock();
-      ext_uuid_heap_type::iterator i = _ex_heap.find( e.dest() );
+      ext_uuid_heap_type::const_iterator i = _ex_heap.find( e.dest() );
       if ( i == _ex_heap.end() ) { // destination not found
-        throw invalid_argument( string("external address unknown") );
+        ostringstream s;
+        s << "external address unknown: " << hex << e.dest() << " from "
+          << e.src() << ", pid " << getpid() << dec;
+        throw invalid_argument( s.str() );
       }
 
-      pair<uuid_tr_heap_type::iterator,uuid_tr_heap_type::iterator> range = _tr_heap.equal_range( i->second );
+      pair<uuid_tr_heap_type::const_iterator,uuid_tr_heap_type::const_iterator> range = _tr_heap.equal_range( i->second );
       if ( range.first == _tr_heap.end() ) {
         throw range_error( string( "no transport" ) );
       }
-      detail::transport& tr = min_element( range.first, range.second, tr_compare )->second;
+      const detail::transport& tr = min_element( range.first, range.second, tr_compare )->second;
       detail::transport::kind_type k = tr.kind;
       void *link = tr.link;
       gaddr_type gaddr_dst( i->second );
       gaddr_type gaddr_src;
 
-      ext_uuid_heap_type::iterator j = _ex_heap.find( e.src() );
+      ext_uuid_heap_type::const_iterator j = _ex_heap.find( e.src() );
       if ( j == _ex_heap.end() ) {
         gaddr_type& _gaddr_src = _ex_heap[e.src()];
         _gaddr_src.hid = xmt::hostid();
@@ -429,6 +442,14 @@ void EvManager::Send( const Event& e )
           break;
       }
     }
+    catch ( std::logic_error& err ) {
+      cerr << err.what() << endl;
+      _lock_xheap.unlock();
+    }
+    catch ( std::runtime_error& err ) {
+      cerr << err.what() << endl;
+      _lock_xheap.unlock();
+    }
     catch ( ... ) {
       _lock_xheap.unlock();
     }
@@ -447,6 +468,14 @@ void EvManager::Send( const Event& e )
       } 
       catch ( ... ) {
       }      
+    }
+    catch ( std::logic_error& err ) {
+      cerr << err.what() << endl;
+      _lock_heap.unlock();
+    }
+    catch ( std::runtime_error& err ) {
+      cerr << err.what() << endl;
+      _lock_heap.unlock();
     }
     catch ( ... ) {
       _lock_heap.unlock();

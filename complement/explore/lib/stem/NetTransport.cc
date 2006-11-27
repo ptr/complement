@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/26 19:14:58 ptr>
+// -*- C++ -*- Time-stamp: <06/11/27 20:24:50 ptr>
 
 /*
  *
@@ -230,7 +230,7 @@ NetTransport::NetTransport( std::sockstream& s ) :
           manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
         }
         Event ack( EV_STEM_TRANSPORT_ACK );
-        push( ack, src, self_glid() );
+        push( ack, src, self_glid() ); // the source (second arg) is NetTransport
       } else {
         throw runtime_error( "net handshake error" );
       }
@@ -256,15 +256,21 @@ void NetTransport::connect( sockstream& s )
     gaddr_type src;
 
     if ( pop( ev, dst, src ) ) {
+      cerr << getpid() << "= " << __FILE__ << ":" << __LINE__ << endl;
       addr_type xdst = manager()->reflect( dst );
+      cerr << getpid() << "= " << __FILE__ << ":" << __LINE__ << " " << hex << xdst << dec << endl;
       if ( xdst == badaddr ) {
+        cerr << getpid() << "= " << __FILE__ << ":" << __LINE__ << endl;
         return;
       }
+      cerr << __FILE__ << ":" << __LINE__ << endl;
       ev.dest( xdst );
       addr_type xsrc = manager()->reflect( src );
       if ( xsrc == badaddr ) {
+        cerr << __FILE__ << ":" << __LINE__ << endl;
         ev.src( manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src ) );
       } else {
+        cerr << __FILE__ << ":" << __LINE__ << endl;
         ev.src( xsrc );
       }
       manager()->push( ev );
@@ -319,9 +325,6 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
     }
 
     if ( net->good() ) {
-      // _net_ns = rar_map( ns_addr, __ns_at + hostname );
-      // addr_type zero_object = rar_map( 0, __at + hostname );
-
       Event ev( EV_STEM_TRANSPORT );
       gaddr_type dst;
       gaddr_type src;
@@ -331,9 +334,12 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
         if ( ev.code() == EV_STEM_TRANSPORT_ACK ) {
           src.addr = ns_addr;
           xsrc = manager()->reflect( src );
+          // indeed src is something like NetTransport, so substitute ns:
+          src.addr = ns_addr;
           if ( xsrc == badaddr ) {
             manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
           }
+          // indeed src is something like NetTransport, so substitute default:
           src.addr = default_addr;
           xsrc = manager()->reflect( src );
           if ( xsrc == badaddr ) {

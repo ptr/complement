@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/27 11:15:16 ptr>
+// -*- C++ -*- Time-stamp: <06/11/27 18:20:55 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -34,6 +34,8 @@ using namespace boost::unit_test_framework;
 #include <ext/functional>
 using namespace __gnu_cxx;
 #endif
+
+#include <sys/shm.h>
 
 using namespace std;
 
@@ -281,7 +283,6 @@ void stem_test::echo()
   }
   catch ( ... ) {
   }
-  // cerr << "Fine\n";
 }
 
 void stem_test::echo_net()
@@ -339,13 +340,28 @@ void stem_test::echo_net()
 
 void stem_test::peer()
 {
-  xmt::__Condition<true> fcnd;
+  cerr << "peer" << endl;
+
+  shmid_ds ds;
+  int id = shmget( 5000, 1024, IPC_CREAT | IPC_EXCL | 0600 );
+  if ( id == -1 ) {
+    cerr << "Error on shmget" << endl;
+  }
+  if ( shmctl( id, IPC_STAT, &ds ) == -1 ) {
+    cerr << "Error on shmctl" << endl;
+  }
+  void *buf = shmat( id, 0, 0 );
+  if ( buf == reinterpret_cast<void *>(-1) ) {
+    cerr << "Error on shmat" << endl;
+  }
+
+  xmt::__Condition<true>& fcnd = *new( buf ) xmt::__Condition<true>();
   fcnd.set( false );
 
-  xmt::__Condition<true> pcnd;
+  xmt::__Condition<true>& pcnd = *new( (char *)buf + sizeof(xmt::__Condition<true>) ) xmt::__Condition<true>();
   pcnd.set( false );
 
-  xmt::__Condition<true> scnd;
+  xmt::__Condition<true>& scnd = *new( (char *)buf + sizeof(xmt::__Condition<true>) * 2 ) xmt::__Condition<true>();
   scnd.set( false );
 
   try {
@@ -387,8 +403,10 @@ void stem_test::peer()
 
     pcnd.try_wait();
 
+    cerr << "@1\n";
     nm.Send( evname );
     nm.wait();
+    cerr << "@2\n";
 
     Naming::nsrecords_type::const_iterator i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "c2@here" ) ), select2nd<pair<stem::gaddr_type,string> >() ) );
 
@@ -399,13 +417,13 @@ void stem_test::peer()
 
     cerr << "1.1\n";
 
-    scnd.set( true );
+    scnd.set( true, true );
     exit( 0 );
   }
   catch ( xmt::fork_in_parent& ) {
     
   }
-#if 0
+
   try {
     xmt::Thread::fork();
     stem::NetTransportMgr mgr;
@@ -431,19 +449,27 @@ void stem_test::peer()
     cerr << "2.1\n";
 
     pcnd.set( true );
+    scnd.try_wait();
     exit( 0 );
   }
   catch ( xmt::fork_in_parent& ) {
     
   }
-#endif
+
   sockmgr_stream_MP<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
   StEMecho echo( 0, "echo service"); // <= zero! 'echo' server, default ('zero' address)
   cerr << "3\n";
 
-  fcnd.set( true );
+  fcnd.set( true, true );
 
   scnd.try_wait();
+
+  (&fcnd)->~__Condition<true>();
+  (&pcnd)->~__Condition<true>();
+  (&scnd)->~__Condition<true>();
+
+  shmdt( buf );
+  shmctl( id, IPC_RMID, &ds );
 
   srv.close();
   srv.wait();
@@ -569,7 +595,6 @@ stem_test_suite::stem_test_suite() :
   test_case *echo_tc = BOOST_CLASS_TEST_CASE( &stem_test::echo, instance );
   test_case *echo_net_tc = BOOST_CLASS_TEST_CASE( &stem_test::echo_net, instance );
   test_case *peer_tc = BOOST_CLASS_TEST_CASE( &stem_test::peer, instance );
-
   basic2_tc->depends_on( basic1_tc );
   basic1n_tc->depends_on( basic1_tc );
   basic2n_tc->depends_on( basic2_tc );
@@ -590,7 +615,7 @@ stem_test_suite::stem_test_suite() :
 
   add( echo_tc );
   add( echo_net_tc );
-  // add( peer_tc );
+  add( peer_tc );
 }
 
 test_suite *init_unit_test_suite( int argc, char **argv )
