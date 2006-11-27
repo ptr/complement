@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/27 11:08:36 ptr>
+// -*- C++ -*- Time-stamp: <06/11/27 11:15:16 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -590,7 +590,7 @@ stem_test_suite::stem_test_suite() :
 
   add( echo_tc );
   add( echo_net_tc );
-  add( peer_tc );
+  // add( peer_tc );
 }
 
 test_suite *init_unit_test_suite( int argc, char **argv )
