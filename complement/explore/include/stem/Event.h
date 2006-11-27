@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 20:57:55 ptr>
+// -*- C++ -*- Time-stamp: <06/11/26 14:32:35 ptr>
 
 /*
  *
@@ -78,23 +78,12 @@ namespace stem {
 
 typedef uint32_t addr_type;
 typedef uint32_t code_type;
-typedef uint32_t key_type;
 
-#ifndef WIN32
 extern const addr_type badaddr;
 extern const addr_type extbit;
+extern const addr_type default_addr;
 extern const addr_type ns_addr;
-extern const key_type  badkey;
 extern const code_type badcode;
-#endif
-
-#ifdef WIN32
-extern __PG_DECLSPEC addr_type badaddr;
-extern __PG_DECLSPEC addr_type extbit;
-extern __PG_DECLSPEC addr_type ns_addr;
-extern __PG_DECLSPEC key_type  badkey;
-extern __PG_DECLSPEC code_type badcode;
-#endif
 
 #ifdef STLPORT
 using std::__true_type;
@@ -175,9 +164,9 @@ class __Event_Base
 
     code_type code() const
       { return _code; }
-    key_type dest() const
+    addr_type dest() const
       { return _dst; }
-    key_type src() const
+    addr_type src() const
       { return _src; }
     bool is_from_foreign() const
       { return ((_src & extbit) != 0) && (_src != badaddr); }
