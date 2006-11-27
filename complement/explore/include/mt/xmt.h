@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/24 09:24:01 ptr>
+// -*- C++ -*- Time-stamp: <06/11/27 10:30:33 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2006
@@ -1047,7 +1047,7 @@ class __Condition
           pthread_condattr_t attr;
           pthread_condattr_init( &attr );
           pthread_condattr_setpshared( &attr, PTHREAD_PROCESS_SHARED );
-          pthread_cond_init( &_cond, 0 );
+          pthread_cond_init( &_cond, &attr );
           pthread_condattr_destroy( &attr );
         } else {
           pthread_cond_init( &_cond, 0 );
@@ -1177,7 +1177,7 @@ class __Condition
         return 0;
 #endif
 #if defined(_PTHREADS) || defined(__FIT_UITHREADS)
-        MT_REENTRANT( _lock, _x1 );
+        __Locker<__Mutex<false,SCOPE> > lk( _lock );
         _val = false;
         int ret;
         while ( !_val ) {
