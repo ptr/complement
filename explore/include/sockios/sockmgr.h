@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/10 19:44:38 ptr>
+// -*- C++ -*- Time-stamp: <06/11/27 17:13:22 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -189,7 +189,7 @@ class sockmgr_stream_MP :
       }
 
     ~sockmgr_stream_MP()
-      { }
+      { loop_id.join(); }
 
     void open( const in_addr& addr, int port, sock_base::stype t = sock_base::sock_stream );
     void open( unsigned long addr, int port, sock_base::stype t = sock_base::sock_stream );
