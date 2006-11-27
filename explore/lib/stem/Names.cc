@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/26 12:22:27 ptr>
+// -*- C++ -*- Time-stamp: <06/11/27 18:45:00 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -77,6 +77,7 @@ void __FIT_DECLSPEC Names::ns_list( const Event& rq )
 
 void __FIT_DECLSPEC Names::ns_name( const Event& rq )
 {
+  cerr << __FILE__ << ":" << __LINE__ << endl;
   typedef NameRecords<gaddr_type,string> Seq;
   Event_base<Seq> rs( EV_STEM_NS_NAME );
   Seq::container_type& lst = rs.value().container;
@@ -105,6 +106,7 @@ void __FIT_DECLSPEC Names::ns_name( const Event& rq )
   }
   manager()->_lock_iheap.unlock();
 
+  cerr << __FILE__ << ":" << __LINE__ << endl;
   rs.dest( rq.src() );
   Send( rs );
 }
