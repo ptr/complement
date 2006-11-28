@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/23 17:35:29 ptr>
+// -*- C++ -*- Time-stamp: <06/11/28 12:31:04 ptr>
 
 /*
  * Copyright (c) 2006
@@ -42,18 +42,41 @@ __uid_init::__uid_init()
 
   getline( f, _host_id_str );
 
-  istringstream s( _host_id_str );
-  char delimiter;
-
-  s >> hex >> _host_id.u.b[0] >> _host_id.u.b[1] >> _host_id.u.b[2] >> _host_id.u.b[3]
-    >> delimiter
-    >> _host_id.u.b[4] >> _host_id.u.b[5]
-    >> delimiter
-    >> _host_id.u.b[6] >> _host_id.u.b[7]
-    >> delimiter
-    >> _host_id.u.b[8] >> _host_id.u.b[9]
-    >> delimiter
-    >> _host_id.u.b[10] >> _host_id.u.b[11] >> _host_id.u.b[12] >> _host_id.u.b[13] >> _host_id.u.b[14] >> _host_id.u.b[15];
+  stringstream s;
+  s << _host_id_str[0]  << _host_id_str[1]  << ' '  
+    << _host_id_str[2]  << _host_id_str[3]  << ' '
+    << _host_id_str[4]  << _host_id_str[5]  << ' '
+    << _host_id_str[6]  << _host_id_str[7]  << ' ' // -
+    << _host_id_str[9]  << _host_id_str[10] << ' '
+    << _host_id_str[11] << _host_id_str[12] << ' ' // -
+    << _host_id_str[14] << _host_id_str[15] << ' '
+    << _host_id_str[16] << _host_id_str[17] << ' ' // -
+    << _host_id_str[19] << _host_id_str[20] << ' '
+    << _host_id_str[21] << _host_id_str[22] << ' ' // -
+    << _host_id_str[24] << _host_id_str[25] << ' '
+    << _host_id_str[26] << _host_id_str[27] << ' '
+    << _host_id_str[28] << _host_id_str[29] << ' '
+    << _host_id_str[30] << _host_id_str[31] << ' '
+    << _host_id_str[32] << _host_id_str[33] << ' '
+    << _host_id_str[34] << _host_id_str[35];
+    
+  s >> hex
+    >> reinterpret_cast<unsigned&>(_host_id.u.b[0])
+    >> reinterpret_cast<unsigned&>(_host_id.u.b[1])
+    >> reinterpret_cast<unsigned&>(_host_id.u.b[2])
+    >> reinterpret_cast<unsigned&>(_host_id.u.b[3])
+    >> reinterpret_cast<unsigned&>(_host_id.u.b[4])
+    >> reinterpret_cast<unsigned&>(_host_id.u.b[5])
+    >> reinterpret_cast<unsigned&>(_host_id.u.b[6])
+    >> reinterpret_cast<unsigned&>(_host_id.u.b[7])
+    >> reinterpret_cast<unsigned&>(_host_id.u.b[8])
+    >> reinterpret_cast<unsigned&>(_host_id.u.b[9])
+    >> reinterpret_cast<unsigned&>(_host_id.u.b[10])
+    >> reinterpret_cast<unsigned&>(_host_id.u.b[11])
+    >> reinterpret_cast<unsigned&>(_host_id.u.b[12])
+    >> reinterpret_cast<unsigned&>(_host_id.u.b[13])
+    >> reinterpret_cast<unsigned&>(_host_id.u.b[14])
+    >> reinterpret_cast<unsigned&>(_host_id.u.b[15]);
 }
 
 } // namespace detail
