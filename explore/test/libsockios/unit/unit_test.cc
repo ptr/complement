@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/10 21:00:28 ptr>
+// -*- C++ -*- Time-stamp: <06/11/28 10:07:49 ptr>
 
 /*
  *
@@ -355,6 +355,8 @@ struct sockios_test
     void hostaddr_test1();
     void hostaddr_test2();
     void hostaddr_test3();
+
+    void ctor_dtor();
 };
 
 void sockios_test::hostname_test()
@@ -463,6 +465,88 @@ void sockios_test::hostaddr_test3()
 #endif
 }
 
+class Cnt
+{
+  public:
+    Cnt( sockstream& )
+      { xmt::Locker lk(lock); ++cnt; }
+
+    ~Cnt()
+      { xmt::Locker lk(lock); --cnt; }
+
+    void connect( sockstream& )
+      { }
+
+    void close()
+      { }
+
+    static xmt::Mutex lock;
+    static int cnt;
+};
+
+xmt::Mutex Cnt::lock;
+int Cnt::cnt = 0;
+
+void sockios_test::ctor_dtor()
+{
+  // Check, that naumber of ctors of Cnt is the same as number of called dtors
+  // i.e. all created Cnt freed.
+  // due to async nature of communication, no way to check Cnt::cnt
+  // before server stop.
+  {
+    sockmgr_stream_MP<Cnt> srv( port );
+
+    {
+      sockstream s1( "localhost", port );
+
+      BOOST_CHECK( s1.good() );
+      BOOST_CHECK( s1.is_open() );
+
+      s1 << "1234" << endl;
+
+      BOOST_CHECK( s1.good() );
+      BOOST_CHECK( s1.is_open() );
+    }
+
+    srv.close();
+    srv.wait();
+
+    Cnt::lock.lock();
+    BOOST_CHECK( Cnt::cnt == 0 );
+    Cnt::lock.unlock();
+    
+  }
+  {
+    sockmgr_stream_MP<Cnt> srv( port );
+
+    {
+      sockstream s1( "localhost", port );
+      sockstream s2( "localhost", port );
+
+      BOOST_CHECK( s1.good() );
+      BOOST_CHECK( s1.is_open() );
+      BOOST_CHECK( s2.good() );
+      BOOST_CHECK( s2.is_open() );
+
+      s1 << "1234" << endl;
+      s2 << "1234" << endl;
+
+      BOOST_CHECK( s1.good() );
+      BOOST_CHECK( s1.is_open() );
+      BOOST_CHECK( s2.good() );
+      BOOST_CHECK( s2.is_open() );
+    }
+
+    srv.close();
+    srv.wait();
+
+    Cnt::lock.lock();
+    BOOST_CHECK( Cnt::cnt == 0 );
+    Cnt::lock.unlock();
+    
+  }
+}
+
 struct sockios_test_suite :
     public test_suite
 {
@@ -479,6 +563,7 @@ sockios_test_suite::sockios_test_suite() :
   test_case *hostaddr1_tc = BOOST_CLASS_TEST_CASE( &sockios_test::hostaddr_test1, instance );
   test_case *hostaddr2_tc = BOOST_CLASS_TEST_CASE( &sockios_test::hostaddr_test2, instance );
   test_case *hostaddr3_tc = BOOST_CLASS_TEST_CASE( &sockios_test::hostaddr_test3, instance );
+  test_case *ctor_dtor_tc = BOOST_CLASS_TEST_CASE( &sockios_test::ctor_dtor, instance );
 
   // hostaddr2_tc->depends_on( hostaddr1_tc );
 
@@ -488,6 +573,7 @@ sockios_test_suite::sockios_test_suite() :
   add( hostaddr1_tc );
   add( hostaddr2_tc );
   add( hostaddr3_tc );
+  add( ctor_dtor_tc );
 }
 
 test_suite *init_unit_test_suite( int argc, char **argv )
@@ -504,17 +590,17 @@ test_suite *init_unit_test_suite( int argc, char **argv )
   // ts->add( BOOST_TEST_CASE( &hostaddr_test3 ) );
 
   ts->add( BOOST_TEST_CASE( &test_client_server_poll ) );
-  ts->add( BOOST_TEST_CASE( &test_client_server_select ) );
+  // ts->add( BOOST_TEST_CASE( &test_client_server_select ) );
 
   ts->add( BOOST_TEST_CASE( &test_client_server_poll_nonlocal_ack ) );
   ts->add( BOOST_TEST_CASE( &test_client_server_poll_nonlocal_nac ) );
 
   ts->add( BOOST_TEST_CASE( &test_client_server_poll_local_ack ) );
 
-  ts->add( BOOST_TEST_CASE( &test_client_server_select_nonlocal_ack ) );
-  ts->add( BOOST_TEST_CASE( &test_client_server_select_nonlocal_nac ) );
+  // ts->add( BOOST_TEST_CASE( &test_client_server_select_nonlocal_ack ) );
+  // ts->add( BOOST_TEST_CASE( &test_client_server_select_nonlocal_nac ) );
 
-  ts->add( BOOST_TEST_CASE( &test_client_server_select_local_ack ) );
+  // ts->add( BOOST_TEST_CASE( &test_client_server_select_local_ack ) );
 
   ts->add( BOOST_TEST_CASE( &test_mass_processing_poll ) );
 
