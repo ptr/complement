@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/27 17:13:31 ptr>
+// -*- C++ -*- Time-stamp: <06/11/28 01:31:14 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -112,6 +112,8 @@ bool sockmgr_stream_MP<Connect>::_shift_fd()
           if ( (*i)->s->rdbuf()->fd() == -1 ) {
             (*i)->s->close();
             (*i)->_proc->close();
+            delete (*i)->_proc;
+            (*i)->_proc = 0;
           }
         }
       } else if ( j->revents & POLLERR /* | POLLHUP | POLLNVAL */ ) {
@@ -121,6 +123,8 @@ bool sockmgr_stream_MP<Connect>::_shift_fd()
         j = _pfd.begin() + (d - 1);
         (*i)->s->close();
         (*i)->_proc->close();
+        delete (*i)->_proc;
+        (*i)->_proc = 0;
       } else {
         // Check that other side close socket:
         // on Linux and (?) Solaris I see normal POLLIN event, and see error
@@ -136,6 +140,8 @@ bool sockmgr_stream_MP<Connect>::_shift_fd()
           j = _pfd.begin() + (d - 1);
           (*i)->s->close();
           (*i)->_proc->close();
+          delete (*i)->_proc;
+          (*i)->_proc = 0;
         } else { // normal data available for reading
           _dlock.lock();
           _conn_pool.push_back( *i );
@@ -230,7 +236,7 @@ bool sockmgr_stream_MP<Connect>::accept_tcp()
         } else { // we can reuse old
           cl_new = *i;
           cl_new->s->open( _sd, addr.any );
-          delete cl_new->_proc; // may be new ( cl_new->_proc ) Connect( *cl_new->s );
+          // delete cl_new->_proc; // may be new ( cl_new->_proc ) Connect( *cl_new->s );
           cl_new->_proc = new Connect( *cl_new->s );
           if ( cl_new->s->rdbuf()->in_avail() > 0 ) {
             // this is the case when user read from sockstream
@@ -362,8 +368,10 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
         (*i)->s->close();
         (*i)->_proc->close();
       }
-      delete (*i)->_proc;
       delete (*i)->s;
+      (*i)->s = 0;
+      delete (*i)->_proc;
+      (*i)->_proc = 0;
     }
     ::close( me->_cfd );
     ::close( me->_pfd[1].fd );
@@ -388,8 +396,10 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
       (*i)->s->close();
       (*i)->_proc->close();
     }
-    delete (*i)->_proc;
     delete (*i)->s;
+    (*i)->s = 0;
+    delete (*i)->_proc;
+    (*i)->_proc = 0;
   }
   ::close( me->_cfd );
   ::close( me->_pfd[1].fd );
@@ -434,6 +444,8 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
           if ( !stream->good() ) {
             stream->close();
             c->_proc->close();
+            delete c->_proc;
+            c->_proc = 0;
           } else if ( stream->is_open() ) {
             if ( stream->rdbuf()->in_avail() > 0 ) {
               // socket has buffered data, push it back to queue
@@ -449,6 +461,8 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
           } else {
             stream->close();
             c->_proc->close();
+            delete c->_proc;
+            c->_proc = 0;
           }
         }
       }
@@ -607,6 +621,8 @@ __FIT_TYPENAME sockmgr_stream_MP_SELECT<Connect>::_Connect *sockmgr_stream_MP_SE
           if ( (*i)->s->rdbuf()->fd() == -1 ) {
             (*i)->s->close();
             (*i)->_proc->close();
+            delete (*i)->_proc;
+            (*i)->_proc = 0;
           }
         }
         continue;
@@ -615,6 +631,8 @@ __FIT_TYPENAME sockmgr_stream_MP_SELECT<Connect>::_Connect *sockmgr_stream_MP_SE
         // decrement of _fdmax may be here // --_fdcount;
         (*i)->s->close();
         (*i)->_proc->close();
+        delete (*i)->_proc;
+        (*i)->_proc = 0;
         continue;
       } else {
         // Check that other side close socket:
@@ -629,6 +647,8 @@ __FIT_TYPENAME sockmgr_stream_MP_SELECT<Connect>::_Connect *sockmgr_stream_MP_SE
           // decrement of _fdmax may be here // --_fdcount;
           (*i)->s->close();
           (*i)->_proc->close();
+          delete (*i)->_proc;
+          (*i)->_proc = 0;
           continue;
         }
       }
@@ -711,7 +731,7 @@ __FIT_TYPENAME sockmgr_stream_MP_SELECT<Connect>::_Connect *sockmgr_stream_MP_SE
         } else { // we can reuse old
           cl_new = *i;
           cl_new->s->open( _sd, addr.any );
-          delete cl_new->_proc; // may be new ( cl_new->_proc ) Connect( *cl_new->s );
+          // delete cl_new->_proc; // may be new ( cl_new->_proc ) Connect( *cl_new->s );
           cl_new->_proc = new Connect( *cl_new->s );
         }
 
@@ -828,6 +848,8 @@ xmt::Thread::ret_code sockmgr_stream_MP_SELECT<Connect>::loop( void *p )
         if ( !s->s->good() ) {
           s->s->close();
           s->_proc->close();
+          delete s->_proc;
+          s->_proc = 0;
         }
       }
     }
@@ -840,6 +862,10 @@ xmt::Thread::ret_code sockmgr_stream_MP_SELECT<Connect>::loop( void *p )
         (*i)->s->close();
         (*i)->_proc->close();
       }
+      delete (*i)->s;
+      (*i)->s = 0;
+      delete (*i)->_proc;
+      (*i)->_proc = 0;
     }
     me->close();
     me->_c_lock.unlock();
@@ -855,6 +881,10 @@ xmt::Thread::ret_code sockmgr_stream_MP_SELECT<Connect>::loop( void *p )
       (*i)->s->close();
       (*i)->_proc->close();
     }
+    delete (*i)->s;
+    (*i)->s = 0;
+    delete (*i)->_proc;
+    (*i)->_proc = 0;
   }
   me->close();
   me->_c_lock.unlock();
