@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/28 11:40:21 ptr>
+// -*- C++ -*- Time-stamp: <06/11/28 21:17:59 ptr>
 
 /*
  *
@@ -32,6 +32,8 @@ const uint32_t EDS_MSG_LIMIT = 0x400000; // 4MB
 namespace stem {
 
 using namespace std;
+
+extern int superflag;
 
 #ifdef _BIG_ENDIAN
 static const uint32_t EDS_MAGIC = 0xc2454453U;
@@ -96,11 +98,9 @@ __FIT_DECLSPEC NetTransport_base::~NetTransport_base()
 
 __FIT_DECLSPEC void NetTransport_base::close()
 {
-  // cerr << __FILE__ << ":" << __LINE__ << endl;
   if ( net != 0 ) {
     manager()->Remove( this );
     net->close();
-    // cerr << __FILE__ << ":" << __LINE__ << endl;
     net = 0;
   }
 }
@@ -153,6 +153,10 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
   while ( sz-- > 0 ) {
     str += (char)net->get();
   }
+
+  // if ( superflag ) {
+  //   cerr << __FILE__ << ":" << __LINE__ << " " << net->good() << endl;
+  // }
 
   return net->good();
 }
@@ -256,21 +260,15 @@ void NetTransport::connect( sockstream& s )
     gaddr_type src;
 
     if ( pop( ev, dst, src ) ) {
-      // cerr << getpid() << "= " << __FILE__ << ":" << __LINE__ << endl;
       addr_type xdst = manager()->reflect( dst );
-      // cerr << getpid() << "= " << __FILE__ << ":" << __LINE__ << " " << hex << xdst << dec << endl;
       if ( xdst == badaddr ) {
-        // cerr << getpid() << "= " << __FILE__ << ":" << __LINE__ << endl;
         return;
       }
-      // cerr << __FILE__ << ":" << __LINE__ << endl;
       ev.dest( xdst );
       addr_type xsrc = manager()->reflect( src );
       if ( xsrc == badaddr ) {
-        // cerr << __FILE__ << ":" << __LINE__ << endl;
         ev.src( manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src ) );
       } else {
-        // cerr << __FILE__ << ":" << __LINE__ << endl;
         ev.src( xsrc );
       }
       manager()->push( ev );
@@ -282,7 +280,6 @@ void NetTransport::connect( sockstream& s )
   catch ( ... ) {
     s.close();
   }
-  // cerr << "Disconnected" << endl;
 }
 
 // connect initiator (client) function
@@ -290,16 +287,12 @@ void NetTransport::connect( sockstream& s )
 __FIT_DECLSPEC
 NetTransportMgr::~NetTransportMgr()
 {
-  // cerr << __FILE__ << ":" << __LINE__ << endl;
   if ( net ) {
-    // cerr << __FILE__ << ":" << __LINE__ << endl;
     net->rdbuf()->shutdown( sock_base::stop_in | sock_base::stop_out );
     net->close(); // otherwise _loop may not exited
     // this->close();
-    // cerr << __FILE__ << ":" << __LINE__ << endl;
     join();
     // NetTransport_base::close() called during loop thread termination (see _loop)
-    // cerr << __FILE__ << ":" << __LINE__ << endl;
     delete net;
     net = 0;
   }        
@@ -317,7 +310,13 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
       net = new sockstream( hostname, port, stype );
     } else if ( net->is_open() ) {
       // net->close();
+      if ( superflag != 0 ) {
+        // cerr << __FILE__ << ":" << __LINE__ << endl;
+      }
       close(); // I should wait termination of _loop, clear EDS address mapping, etc.
+      if ( superflag != 0 ) {
+        // cerr << __FILE__ << ":" << __LINE__ << endl;
+      }
       net->open( hostname, port, stype );
     } else {
       join(); // This is safe: transparent if no _loop, and wait it if one exist
@@ -358,6 +357,9 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
   catch ( runtime_error& err ) {
     cerr << err.what() << endl;
   }
+  catch ( ... ) {
+    // cerr << __FILE__ << ":" << __LINE__ << endl;
+  }
   return badaddr;
 }
 
@@ -365,14 +367,14 @@ __FIT_DECLSPEC
 void NetTransportMgr::close()
 {
   if ( net ) {
-    // cerr << __FILE__ << ":" << __LINE__ << endl;
+    if ( superflag != 0 ) {
+      // cerr << __FILE__ << ":" << __LINE__ << endl;
+    }
     net->rdbuf()->shutdown( sock_base::stop_in | sock_base::stop_out );
     net->close(); // otherwise _loop may not exited
     // this->close();
-    // cerr << __FILE__ << ":" << __LINE__ << endl;
     join();
     // NetTransport_base::close() called during loop thread termination (see _loop)
-    // cerr << __FILE__ << ":" << __LINE__ << endl;
     delete net;
     net = 0;
   }        
@@ -389,8 +391,17 @@ xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
 
   try {
     while ( me.pop( ev, dst, src ) ) {
+      if ( superflag ) {
+        cerr << "NetTransportMgr::_loop\n";
+        manager()->dump( cerr );
+        cerr << "===\n";
+        // cerr << dst.hid << dst.pid << dst.addr << endl;
+      }
       addr_type xdst = manager()->reflect( dst );
       if ( xdst == badaddr ) {
+        if ( superflag ) {
+          cerr << "xdst == badaddr\n";
+        }
         continue;
       }
       ev.dest( xdst );
@@ -400,9 +411,11 @@ xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
       } else {
         ev.src( xsrc );
       }
+      if ( superflag ) {
+        cerr << "Destination: " << hex << ev.dest() << " Source: " << ev.src() << dec << endl;
+      }      
       manager()->push( ev );
     }
-    // cerr << __FILE__ << ":" << __LINE__ << endl;
     me.NetTransport_base::close();
   }
   catch ( ... ) {
@@ -418,7 +431,6 @@ __FIT_DECLSPEC
 void NetTransportMP::connect( sockstream& s )
 {
   Event ev;
-  // cerr << "Connected: " << _hostname << endl;
   gaddr_type dst;
   gaddr_type src;
 
@@ -446,7 +458,6 @@ void NetTransportMP::connect( sockstream& s )
     this->close(); // clear connection
     net = 0;
   }
-  // cerr << "Connected: " << _hostname << endl;
 }
 
 } // namespace stem

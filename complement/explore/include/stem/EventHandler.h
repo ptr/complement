@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 20:32:06 ptr>
+// -*- C++ -*- Time-stamp: <06/11/28 20:29:41 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -572,7 +572,7 @@ class EventHandler
         Init();
         ~Init();
       private:
-        static int _count;
+        static void _guard( int );
     };
 
     __FIT_DECLSPEC EventHandler();
@@ -662,7 +662,8 @@ class EventHandler
     const_h_iterator __find( state_type ) const;
 
     addr_type _id;
-    static EvManager *_mgr;
+    static class EvManager *_mgr;
+    static class Names     *_ns;
 
     friend class Init;
 };
