@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/28 11:06:04 ptr>
+// -*- C++ -*- Time-stamp: <06/11/28 16:52:05 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -178,6 +178,8 @@ class EvManager
         info_heap_type::iterator i = iheap.find( id );
         if ( i != iheap.end() ) {
           i->second = info;
+        } else {
+          iheap[id] = info;
         }
       }
 
@@ -185,7 +187,13 @@ class EvManager
       {
         info_heap_type::iterator i = iheap.find( id );
         if ( i != iheap.end() ) {
-          i->second = info;
+          if ( info != 0 ) {
+            i->second = info;
+          } else {
+            i->second.clear();
+          }
+        } else if ( info != 0 ) {
+          iheap[id] = info;
         }
       }
 

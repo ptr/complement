@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/28 12:33:34 ptr>
+// -*- C++ -*- Time-stamp: <06/11/28 21:47:34 ptr>
 
 /*
  *
@@ -40,7 +40,10 @@ const addr_type endextaddr = 0xbfffffff;
 
 std::string EvManager::inv_key_str( "invalid key" );
 
-// int EvManager_flags = 0;
+extern int superflag;
+int superflag;
+
+std::ostream& operator <<( std::ostream& s, const gaddr_type& ga );
 
 __FIT_DECLSPEC EvManager::EvManager() :
     _low( beglocaddr ),
@@ -246,8 +249,6 @@ addr_type EvManager::SubscribeRemote( const detail::transport& tr,
     iheap[id] = info;
   }
 
-  // cerr << "EvManager:: " << tr.link << " / " << hex << addr.pid << " + " << addr.addr << " - " << id << " = " << getpid() << dec << endl;
-
   return id;
 }
 
@@ -287,12 +288,23 @@ bool EvManager::Unsubscribe( addr_type id )
 __FIT_DECLSPEC
 addr_type EvManager::reflect( const gaddr_type& addr ) const
 {
+  if ( stem::superflag != 0 ) {
+    cerr << "%%%%%\n";
+    cerr << addr << endl;
+    cerr << dec << getpid() << endl;
+  }
   if ( addr.hid == xmt::hostid() && addr.pid == getpid() ) {
     // this host, this process
+    if ( stem::superflag != 0 ) {
+      cerr << "%%%%% 1\n";
+    }
     if ( (addr.addr & extbit) == 0 ) { // looks like local object
       Locker _x1( _lock_heap );
       local_heap_type::const_iterator l = heap.find( addr.addr );
       if ( l != heap.end() ) {
+        if ( superflag != 0 ) {
+          cerr << "%%%%% 2\n";
+        }
         return addr.addr; // l->first
       }
     }
@@ -317,7 +329,13 @@ addr_type EvManager::reflect( const gaddr_type& addr ) const
   Locker _x1( _lock_xheap );
   uuid_ext_heap_type::const_iterator i = _ui_heap.find( addr );
   if ( i == _ui_heap.end() ) {
+    if ( stem::superflag != 0 ) {
+      cerr << "%%%%% 3\n";
+    }
     return badaddr;
+  }
+  if ( stem::superflag != 0 ) {
+    cerr << "%%%%% 4\n";
   }
   return i->second;
 }
@@ -348,21 +366,26 @@ void EvManager::Remove( void *channel )
 __FIT_DECLSPEC
 void EvManager::unsafe_Remove( void *channel )
 {
-  // cerr << "Remove channel " << channel << hex << " " << getpid() << dec << endl;
+  if ( superflag != 0 ) {
+    cerr << "Remove channel" << endl;
+    // dump( cerr );
+    cerr << "==== 1" << endl;
+    // abort();
+  }
   pair<tr_uuid_heap_type::iterator,tr_uuid_heap_type::iterator> ch_range = _ch_heap.equal_range( channel );
   for (tr_uuid_heap_type::iterator i = ch_range.first; i != ch_range.second; ++i ) {
-#if 1
     _tr_heap.erase( i->second );
     addr_type address = _ui_heap[i->second];
     _ex_heap.erase( address );
     iheap.erase( address );
     _ui_heap.erase( i->second );
-#else
-    cerr << i->first << "; " << hex << i->second.addr << dec << endl;
-    cerr << hex << _ui_heap[i->second] << dec << endl;
-#endif
   }
   _ch_heap.erase( ch_range.first, ch_range.second );
+  if ( superflag != 0 ) {
+    cerr << "==== 2" << endl;
+    dump( cerr );
+    cerr << "==== 3" << endl;
+  }
 }
 
 __FIT_DECLSPEC const detail::transport& EvManager::transport( addr_type id ) const
@@ -428,11 +451,10 @@ void EvManager::Send( const Event& e )
 
       switch ( k ) {
         case detail::transport::socket_tcp:
-          if ( reinterpret_cast<NetTransport_base *>(link)->push( e, gaddr_dst, gaddr_src) ) {
+          if ( !reinterpret_cast<NetTransport_base *>(link)->push( e, gaddr_dst, gaddr_src) ) {
             // if I detect bad connection during writing to net
             // (in the push), I remove this connetion related entries.
-            // Required by non-Solaris OS. Unsafe variant allow avoid
-            // deadlock here.
+            // Unsafe variant allow avoid deadlock here.
             unsafe_Remove( link );
           }
           break;
@@ -463,8 +485,21 @@ void EvManager::Send( const Event& e )
       EventHandler *object = i->second; // target object
       _lock_heap.unlock();
 
+      // if ( e.src() & extbit ) {
+      //   xmt::Locker lk( _lock_xheap );
+      // 
+      // }
+
       try {
+        if ( superflag ) {
+          cerr << hex << e.dest() << " " << e.src() << " " << e.code() << dec << endl;
+          object->DispatchTrace( e, cerr );
+          cerr << endl;
+        }
         object->Dispatch( e ); // call dispatcher
+        if ( superflag ) {
+          cerr << "***************" << endl;
+        }
       } 
       catch ( ... ) {
       }      
@@ -529,7 +564,7 @@ std::ostream& operator <<( ostream& s, const gaddr_type& ga )
     << "-"
     << dec << ga.pid
     << "-"
-    << setw(8) << setfill( '0' ) << ga.addr;
+    << setw(8) << hex << setfill( '0' ) << ga.addr;
 }
 
 __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const

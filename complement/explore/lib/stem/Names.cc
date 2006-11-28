@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/27 18:45:00 ptr>
+// -*- C++ -*- Time-stamp: <06/11/28 17:12:45 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -77,19 +77,20 @@ void __FIT_DECLSPEC Names::ns_list( const Event& rq )
 
 void __FIT_DECLSPEC Names::ns_name( const Event& rq )
 {
-  cerr << __FILE__ << ":" << __LINE__ << endl;
   typedef NameRecords<gaddr_type,string> Seq;
   Event_base<Seq> rs( EV_STEM_NS_NAME );
   Seq::container_type& lst = rs.value().container;
 
   manager()->_lock_iheap.lock();
-  for ( EvManager::info_heap_type::const_iterator i = manager()->iheap.begin(); i != manager()->iheap.end(); ++i ) {    
+  for ( EvManager::info_heap_type::const_iterator i = manager()->iheap.begin(); i != manager()->iheap.end(); ++i ) {
+    cerr << hex << i->first << " => " << i->second << endl;
     if ( i->second == rq.value() ) {
       if ( /* i->first & extbit */ true ) {
         Locker lk( manager()->_lock_xheap );
         EvManager::ext_uuid_heap_type::const_iterator j = manager()->_ex_heap.find( i->first );
         if ( j != manager()->_ex_heap.end() ) {
           lst.push_back( make_pair( j->second, i->second ) );
+          cerr << "Found\n";
         }
       } else {
         Locker lk( manager()->_lock_heap );
@@ -106,8 +107,8 @@ void __FIT_DECLSPEC Names::ns_name( const Event& rq )
   }
   manager()->_lock_iheap.unlock();
 
-  cerr << __FILE__ << ":" << __LINE__ << endl;
   rs.dest( rq.src() );
+  cerr << "Send\n";
   Send( rs );
 }
 

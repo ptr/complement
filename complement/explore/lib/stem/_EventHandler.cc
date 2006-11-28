@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/27 17:26:35 ptr>
+// -*- C++ -*- Time-stamp: <06/11/28 20:32:35 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -25,13 +25,9 @@
 
 namespace stem {
 
-char *Init_buf[32];
+char *Init_buf[128];
 EvManager *EventHandler::_mgr = 0;
-stem::Names *_ns = 0;
-const char *_ns_name = "ns";
-
-int EventHandler::Init::_count = 0;
-xmt::MutexRS _init_lock;
+Names     *EventHandler::_ns = 0;
 
 #if 0 // depends where fork happens: in the EvManager loop (stack) or not.
 extern "C" void __at_fork_prepare()
@@ -51,25 +47,31 @@ extern "C" void __at_fork_parent()
 }
 #endif
 
-EventHandler::Init::Init()
+void EventHandler::Init::_guard( int direction )
 {
-  MT_REENTRANT_RS( _init_lock, _x );
-  if ( _count++ == 0 ) {
-    EventHandler::_mgr = new EvManager();
-    stem::_ns = new Names( ns_addr, _ns_name );
+  static xmt::MutexRS _init_lock;
+  static int _count = 0;
+
+  if ( direction ) {
+    if ( _count++ == 0 ) {
+      EventHandler::_mgr = new EvManager();
+      EventHandler::_ns = new Names( ns_addr, "ns" );
+    }
+  } else {
+    --_count;
+    if ( _count == 1 ) {
+      delete EventHandler::_ns;
+    } else if ( _count == 0 ) {
+      delete EventHandler::_mgr;
+    }
   }
 }
 
+EventHandler::Init::Init()
+{ _guard( 1 ); }
+
 EventHandler::Init::~Init()
-{
-  MT_REENTRANT_RS( _init_lock, _x );
-  --_count;
-  if ( _count == 1 ) {
-    delete stem::_ns;
-  } else if ( _count == 0 ) {
-    delete EventHandler::_mgr;
-  }
-}
+{ _guard( 0 ); }
 
 __FIT_DECLSPEC
 const string EventHandler::who_is( addr_type k ) const
