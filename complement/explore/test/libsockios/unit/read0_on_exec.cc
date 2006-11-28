@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/08/21 23:48:43 ptr>
+// -*- C++ -*- Time-stamp: <06/11/28 09:33:13 ptr>
 
 /*
  *
@@ -21,6 +21,8 @@ using namespace boost::unit_test_framework;
 
 #include <sys/types.h>
 #include <sys/wait.h>
+
+#include <sys/shm.h>
 
 using namespace std;
 using namespace xmt;
@@ -62,7 +64,6 @@ extern int port;
 extern xmt::Mutex pr_lock;
 
 // static __Condition<true> cndf;
-static Semaphore sem( 1, true );
 
 class ConnectionProcessor5 // dummy variant
 {
@@ -125,6 +126,21 @@ Thread::ret_code thread_entry( void *par )
 
 void test_read0()
 {
+  shmid_ds ds;
+  int id = shmget( 5000, 1024, IPC_CREAT | IPC_EXCL | 0600 );
+  if ( id == -1 ) {
+    cerr << "Error on shmget" << endl;
+  }
+  if ( shmctl( id, IPC_STAT, &ds ) == -1 ) {
+    cerr << "Error on shmctl" << endl;
+  }
+  void *buf = shmat( id, 0, 0 );
+  if ( buf == reinterpret_cast<void *>(-1) ) {
+    cerr << "Error on shmat" << endl;
+  }
+
+  Semaphore& sem = *new( buf ) Semaphore( 1, true );
+
   try {
     // cerr << "** 1" << endl;
     // cndf.set( false );
@@ -166,6 +182,10 @@ void test_read0()
     srv.close();
     srv.wait();
   }
+  (&sem)->~Semaphore();
+
+  shmdt( buf );
+  shmctl( id, IPC_RMID, &ds );
 }
 
 class ConnectionProcessor6 // dummy variant
@@ -177,7 +197,7 @@ class ConnectionProcessor6 // dummy variant
     void close();
 };
 
-static Semaphore sem2( 2, false );
+static Semaphore *sem2;
 
 ConnectionProcessor6::ConnectionProcessor6( std::sockstream& s )
 {
@@ -187,7 +207,7 @@ ConnectionProcessor6::ConnectionProcessor6( std::sockstream& s )
   BOOST_REQUIRE( s.good() );
   pr_lock.unlock();
 
-  sem2.post();
+  sem2->post();
 }
 
 void ConnectionProcessor6::connect( std::sockstream& s )
@@ -203,6 +223,21 @@ void ConnectionProcessor6::close()
 
 void test_read0_srv()
 {
+  shmid_ds ds;
+  int id = shmget( 5000, 1024, IPC_CREAT | IPC_EXCL | 0600 );
+  if ( id == -1 ) {
+    cerr << "Error on shmget" << endl;
+  }
+  if ( shmctl( id, IPC_STAT, &ds ) == -1 ) {
+    cerr << "Error on shmctl" << endl;
+  }
+  void *buf = shmat( id, 0, 0 );
+  if ( buf == reinterpret_cast<void *>(-1) ) {
+    cerr << "Error on shmat" << endl;
+  }
+
+  sem2 = new( buf ) Semaphore( 2, true );
+
   sockmgr_stream_MP<ConnectionProcessor6> srv( ::port );
 
   {
@@ -213,7 +248,7 @@ void test_read0_srv()
 
     BOOST_CHECK( s.good() );
 
-    sem2.wait();
+    sem2->wait();
   }
 
   system( "echo > /dev/null" );  // <------ key line
@@ -226,7 +261,7 @@ void test_read0_srv()
 
     BOOST_CHECK( s.good() );
 
-    sem2.wait();
+    sem2->wait();
   }
 
   BOOST_CHECK( srv.good() ); // server must correctly process interrupt during system call
@@ -234,4 +269,9 @@ void test_read0_srv()
   srv.close();
 
   srv.wait();
+
+  sem2->~Semaphore();
+
+  shmdt( buf );
+  shmctl( id, IPC_RMID, &ds );
 }
