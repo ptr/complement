@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/26 21:10:31 ptr>
+// -*- C++ -*- Time-stamp: <06/11/28 11:06:04 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -29,6 +29,7 @@
 
 #include <stem/Event.h>
 #include <stem/EventHandler.h>
+#include <ostream>
 
 namespace stem {
 
@@ -149,6 +150,8 @@ class EvManager
       }
 
     __FIT_DECLSPEC void Remove( void * );
+    __FIT_DECLSPEC std::ostream& dump( std::ostream& ) const;
+    
 
   protected:
     bool unsafe_is_avail( addr_type id ) const

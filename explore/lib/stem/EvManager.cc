@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/27 21:40:35 ptr>
+// -*- C++ -*- Time-stamp: <06/11/28 12:33:34 ptr>
 
 /*
  *
@@ -246,7 +246,7 @@ addr_type EvManager::SubscribeRemote( const detail::transport& tr,
     iheap[id] = info;
   }
 
-  cerr << "EvManager:: " << tr.link << " / " << hex << addr.pid << " + " << addr.addr << " - " << id << " = " << getpid() << dec << endl;
+  // cerr << "EvManager:: " << tr.link << " / " << hex << addr.pid << " + " << addr.addr << " - " << id << " = " << getpid() << dec << endl;
 
   return id;
 }
@@ -348,7 +348,7 @@ void EvManager::Remove( void *channel )
 __FIT_DECLSPEC
 void EvManager::unsafe_Remove( void *channel )
 {
-  cerr << "Remove channel " << channel << hex << " " << getpid() << dec << endl;
+  // cerr << "Remove channel " << channel << hex << " " << getpid() << dec << endl;
   pair<tr_uuid_heap_type::iterator,tr_uuid_heap_type::iterator> ch_range = _ch_heap.equal_range( channel );
   for (tr_uuid_heap_type::iterator i = ch_range.first; i != ch_range.second; ++i ) {
 #if 1
@@ -500,9 +500,76 @@ addr_type EvManager::create_unique_x()
     if ( ++_x_id > _x_high ) {
       _x_id = (_x_id - _x_low) % (_x_high - _x_low) + _x_low;
     }
-  } while ( heap.find( _x_id ) != heap.end() );
+  } while ( _ex_heap.find( _x_id ) != _ex_heap.end() );
 
   return _x_id;
+}
+
+
+std::ostream& operator <<( ostream& s, const gaddr_type& ga )
+{
+  s.unsetf( ios_base::showbase );
+  s << hex << setfill('0')
+    << setw(2) << static_cast<unsigned>(ga.hid.u.b[0])
+    << setw(2) << static_cast<unsigned>(ga.hid.u.b[1])
+    << setw(2) << static_cast<unsigned>(ga.hid.u.b[2])
+    << setw(2) << static_cast<unsigned>(ga.hid.u.b[3])
+    << setw(2) << static_cast<unsigned>(ga.hid.u.b[4])
+    << setw(2) << static_cast<unsigned>(ga.hid.u.b[5])
+    << setw(2) << static_cast<unsigned>(ga.hid.u.b[6])
+    << setw(2) << static_cast<unsigned>(ga.hid.u.b[7])
+    << setw(2) << static_cast<unsigned>(ga.hid.u.b[8])
+    << setw(2) << static_cast<unsigned>(ga.hid.u.b[9])
+    << setw(2) << static_cast<unsigned>(ga.hid.u.b[10])
+    << setw(2) << static_cast<unsigned>(ga.hid.u.b[11])
+    << setw(2) << static_cast<unsigned>(ga.hid.u.b[12])
+    << setw(2) << static_cast<unsigned>(ga.hid.u.b[13])
+    << setw(2) << static_cast<unsigned>(ga.hid.u.b[14])
+    << setw(2) << static_cast<unsigned>(ga.hid.u.b[15])
+    << "-"
+    << dec << ga.pid
+    << "-"
+    << setw(8) << setfill( '0' ) << ga.addr;
+}
+
+__FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
+{
+  s << "Local map:\n";
+
+  s << hex << showbase;
+  for ( local_heap_type::const_iterator i = heap.begin(); i != heap.end(); ++i ) {
+    s << i->first << "\t=> " << i->second << "\n";
+  }
+
+  s << "\nInfo map:\n";
+
+  for ( info_heap_type::const_iterator i = iheap.begin(); i != iheap.end(); ++i ) {
+    s << i->first << "\t=> '" << i->second << "'\n";
+  }
+
+  s << "\nUnique Id map:\n";
+  for ( uuid_ext_heap_type::const_iterator i = _ui_heap.begin(); i != _ui_heap.end(); ++i ) {
+    s << i->first << "\t=> " << hex << showbase << i->second << "\n";
+  }
+
+  s << "\nExternal address map:\n";
+  for ( ext_uuid_heap_type::const_iterator i = _ex_heap.begin(); i != _ex_heap.end(); ++i ) {
+    s << hex << showbase << i->first << "\t=> " << i->second << "\n";
+  }
+
+  s << "\nUnique Id to transport map:\n";
+  for ( uuid_tr_heap_type::const_iterator i = _tr_heap.begin(); i != _tr_heap.end(); ++i ) {
+    s << i->first << "\t=> " << i->second.link << " " << i->second.metric << "\n";
+  }
+
+  s << "\nTransport to Unique Id map:\n";
+  for ( tr_uuid_heap_type::const_iterator i = _ch_heap.begin(); i != _ch_heap.end(); ++i ) {
+    s << i->first << "\t=> " << i->second << "\n";
+  }
+
+  s << dec << endl;
+
+  return s;
 }
 
 } // namespace stem

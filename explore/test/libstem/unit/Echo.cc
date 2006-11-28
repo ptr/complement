@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/27 18:33:21 ptr>
+// -*- C++ -*- Time-stamp: <06/11/28 11:49:49 ptr>
 
 /*
  * Copyright (c) 2006
@@ -45,7 +45,7 @@ void StEMecho::echo( const Event& ev )
 
 void StEMecho::regme( const stem::Event& ev )
 {
-  cerr << "Echo\n";
+  // cerr << "Echo\n";
   manager()->change_announce( ev.src(), ev.value() );
   cnd.set( true );
 }
