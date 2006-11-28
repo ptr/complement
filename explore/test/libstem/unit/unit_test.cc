@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/28 11:02:56 ptr>
+// -*- C++ -*- Time-stamp: <06/11/28 17:27:34 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -339,9 +339,15 @@ void stem_test::echo_net()
   // cerr << "Fine\n";
 }
 
+namespace stem {
+extern int superflag;
+}
+
 void stem_test::peer()
 {
   cerr << "peer" << endl;
+
+  stem::superflag = 0;
 
   pid_t fpid;
 
@@ -377,8 +383,11 @@ void stem_test::peer()
     cerr << "1\n";
     fcnd.try_wait();
 
+    // c1.manager()->dump( cerr );
     stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
-  // It done like it should on client side
+    // It done like it should on client side
+    // cerr << "===========" << endl;
+    // c1.manager()->dump( cerr );
 
     BOOST_CHECK( zero != stem::badaddr );
     BOOST_CHECK( zero != 0 );
@@ -400,7 +409,7 @@ void stem_test::peer()
 
     BOOST_CHECK( c1.manager()->reflect( ga ) != stem::badaddr );
 
-    c1.manager()->dump( cerr );
+    // c1.manager()->dump( cerr );
 
     stem::Event evname( EV_STEM_GET_NS_NAME );
     evname.dest( c1.manager()->reflect( ga ) );
@@ -409,11 +418,17 @@ void stem_test::peer()
     pcnd.try_wait();
 
     cerr << "@1\n";
-    nm.Send( evname );
-    nm.wait();
-    cerr << "@2\n";
 
-    Naming::nsrecords_type::const_iterator i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "c2@here" ) ), select2nd<pair<stem::gaddr_type,string> >() ) );
+    Naming::nsrecords_type::const_iterator i;
+    stem::superflag = 1;
+
+    do {
+      nm.reset();
+      nm.lst.clear();
+      nm.Send( evname );
+      nm.wait();
+      i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "c2@here" ) ), select2nd<pair<stem::gaddr_type,string> >() ) );
+    } while ( i == nm.lst.end() );
 
     BOOST_CHECK( i != nm.lst.end() );
     BOOST_CHECK( i->second == "c2@here" );
@@ -455,6 +470,7 @@ void stem_test::peer()
 
     pcnd.set( true );
     scnd.try_wait();
+    cerr << "2.2\n";
     exit( 0 );
   }
   catch ( xmt::fork_in_parent& child ) {
@@ -470,8 +486,10 @@ void stem_test::peer()
     waitpid( child.pid(), &stat, 0 );
     waitpid( fpid, &stat, 0 );
 
+    cerr << "3.1\n";
+
     srv.close();
-    srv.wait();    
+    srv.wait();
   }
 
   (&fcnd)->~__Condition<true>();
@@ -621,7 +639,7 @@ stem_test_suite::stem_test_suite() :
   add( ns_tc );
 
   add( echo_tc );
-  add( echo_net_tc );
+  // add( echo_net_tc );
   add( peer_tc );
 }
 

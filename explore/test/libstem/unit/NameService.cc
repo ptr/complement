@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 20:14:45 ptr>
+// -*- C++ -*- Time-stamp: <06/11/28 17:03:26 ptr>
 
 /*
  * Copyright (c) 2006
@@ -50,7 +50,8 @@ void Naming::names_list( const nsrecords_type& nr )
 
 void Naming::names_name( const nsrecords_type& nr )
 {
-  // std::cerr << hex << nr.addr << dec << endl;
+  std::cerr << hex << /* nr.addr */ "Naming::names_name" << dec << endl;
+  
   copy( nr.container.begin(), nr.container.end(), back_insert_iterator<nsrecords_type::container_type>(lst) );
 
   cnd.set(true);
