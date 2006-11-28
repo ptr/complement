@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/27 20:24:50 ptr>
+// -*- C++ -*- Time-stamp: <06/11/28 11:40:21 ptr>
 
 /*
  *
@@ -256,21 +256,21 @@ void NetTransport::connect( sockstream& s )
     gaddr_type src;
 
     if ( pop( ev, dst, src ) ) {
-      cerr << getpid() << "= " << __FILE__ << ":" << __LINE__ << endl;
+      // cerr << getpid() << "= " << __FILE__ << ":" << __LINE__ << endl;
       addr_type xdst = manager()->reflect( dst );
-      cerr << getpid() << "= " << __FILE__ << ":" << __LINE__ << " " << hex << xdst << dec << endl;
+      // cerr << getpid() << "= " << __FILE__ << ":" << __LINE__ << " " << hex << xdst << dec << endl;
       if ( xdst == badaddr ) {
-        cerr << getpid() << "= " << __FILE__ << ":" << __LINE__ << endl;
+        // cerr << getpid() << "= " << __FILE__ << ":" << __LINE__ << endl;
         return;
       }
-      cerr << __FILE__ << ":" << __LINE__ << endl;
+      // cerr << __FILE__ << ":" << __LINE__ << endl;
       ev.dest( xdst );
       addr_type xsrc = manager()->reflect( src );
       if ( xsrc == badaddr ) {
-        cerr << __FILE__ << ":" << __LINE__ << endl;
+        // cerr << __FILE__ << ":" << __LINE__ << endl;
         ev.src( manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src ) );
       } else {
-        cerr << __FILE__ << ":" << __LINE__ << endl;
+        // cerr << __FILE__ << ":" << __LINE__ << endl;
         ev.src( xsrc );
       }
       manager()->push( ev );

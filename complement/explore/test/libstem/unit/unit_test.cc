@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/27 18:20:55 ptr>
+// -*- C++ -*- Time-stamp: <06/11/28 11:02:56 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -36,6 +36,7 @@ using namespace __gnu_cxx;
 #endif
 
 #include <sys/shm.h>
+#include <sys/wait.h>
 
 using namespace std;
 
@@ -342,6 +343,8 @@ void stem_test::peer()
 {
   cerr << "peer" << endl;
 
+  pid_t fpid;
+
   shmid_ds ds;
   int id = shmget( 5000, 1024, IPC_CREAT | IPC_EXCL | 0600 );
   if ( id == -1 ) {
@@ -397,6 +400,8 @@ void stem_test::peer()
 
     BOOST_CHECK( c1.manager()->reflect( ga ) != stem::badaddr );
 
+    c1.manager()->dump( cerr );
+
     stem::Event evname( EV_STEM_GET_NS_NAME );
     evname.dest( c1.manager()->reflect( ga ) );
     evname.value() = "c2@here";
@@ -420,8 +425,8 @@ void stem_test::peer()
     scnd.set( true, true );
     exit( 0 );
   }
-  catch ( xmt::fork_in_parent& ) {
-    
+  catch ( xmt::fork_in_parent& child ) {
+    fpid = child.pid();
   }
 
   try {
@@ -452,17 +457,22 @@ void stem_test::peer()
     scnd.try_wait();
     exit( 0 );
   }
-  catch ( xmt::fork_in_parent& ) {
-    
+  catch ( xmt::fork_in_parent& child ) {
+    sockmgr_stream_MP<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
+    StEMecho echo( 0, "echo service"); // <= zero! 'echo' server, default ('zero' address)
+    cerr << "3\n";
+
+    fcnd.set( true, true );
+
+    scnd.try_wait();
+
+    int stat;
+    waitpid( child.pid(), &stat, 0 );
+    waitpid( fpid, &stat, 0 );
+
+    srv.close();
+    srv.wait();    
   }
-
-  sockmgr_stream_MP<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
-  StEMecho echo( 0, "echo service"); // <= zero! 'echo' server, default ('zero' address)
-  cerr << "3\n";
-
-  fcnd.set( true, true );
-
-  scnd.try_wait();
 
   (&fcnd)->~__Condition<true>();
   (&pcnd)->~__Condition<true>();
@@ -470,9 +480,6 @@ void stem_test::peer()
 
   shmdt( buf );
   shmctl( id, IPC_RMID, &ds );
-
-  srv.close();
-  srv.wait();
 
 #if 0
   /*
