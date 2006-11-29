@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/28 17:27:34 ptr>
+// -*- C++ -*- Time-stamp: <06/11/29 10:40:45 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -346,6 +346,22 @@ extern int superflag;
 void stem_test::peer()
 {
   cerr << "peer" << endl;
+  /*
+   * Scheme:
+   *                      / NetTransport      / c1
+   *  Local Event Manager  -  NetTransportMgr - c2
+   *                      \ echo
+   * Due to all objects in the same process space,
+   * c1, c2 and echo in different processes.
+   *
+   * The logical scheme is:
+   *
+   *        / c1
+   *   echo
+   *        \ c2
+   *
+   * (c1 <-> c2, through 'echo')
+   */
 
   stem::superflag = 0;
 
@@ -420,7 +436,6 @@ void stem_test::peer()
     cerr << "@1\n";
 
     Naming::nsrecords_type::const_iterator i;
-    stem::superflag = 1;
 
     do {
       nm.reset();
@@ -433,11 +448,30 @@ void stem_test::peer()
     BOOST_CHECK( i != nm.lst.end() );
     BOOST_CHECK( i->second == "c2@here" );
 
-    // c1.manager()->reflect( i->first );
+    stem::addr_type pa = c1.manager()->reflect( i->first );
+    if ( pa == stem::badaddr ) { // unknown yet
+      pa = c1.manager()->SubscribeRemote( i->first, i->second );
+    }
+
+    // stem::superflag = 1;
+    c1.manager()->dump( cerr );
+
+    if ( pa != stem::badaddr ) {
+      stem::Event pe( NODE_EV_ECHO );
+      pe.dest( pa );
+      pe.value() = "peer client";
+      c1.Send( pe );
+
+      cerr << hex << pa << dec << endl;
+    }
 
     cerr << "1.1\n";
 
-    scnd.set( true, true );
+    scnd.try_wait();
+
+    mgr.close();
+    mgr.join();
+
     exit( 0 );
   }
   catch ( xmt::fork_in_parent& child ) {
@@ -469,8 +503,15 @@ void stem_test::peer()
     cerr << "2.1\n";
 
     pcnd.set( true );
-    scnd.try_wait();
+
+    c2.wait();
     cerr << "2.2\n";
+
+    scnd.set( true );
+
+    mgr.close();
+    mgr.join();
+
     exit( 0 );
   }
   catch ( xmt::fork_in_parent& child ) {
@@ -480,7 +521,7 @@ void stem_test::peer()
 
     fcnd.set( true, true );
 
-    scnd.try_wait();
+    // scnd.try_wait();
 
     int stat;
     waitpid( child.pid(), &stat, 0 );

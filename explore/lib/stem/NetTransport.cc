@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/28 21:17:59 ptr>
+// -*- C++ -*- Time-stamp: <06/11/29 01:28:01 ptr>
 
 /*
  *
@@ -234,7 +234,9 @@ NetTransport::NetTransport( std::sockstream& s ) :
           manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
         }
         Event ack( EV_STEM_TRANSPORT_ACK );
-        push( ack, src, self_glid() ); // the source (second arg) is NetTransport
+        if ( !push( ack, src, self_glid() ) ) { // the source (second arg) is NetTransport
+          throw runtime_error( "net handshake error" );
+        }
       } else {
         throw runtime_error( "net handshake error" );
       }
@@ -328,7 +330,9 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
       gaddr_type dst;
       gaddr_type src;
       addr_type xsrc = badaddr;
-      push( ev, gaddr_type(), self_glid() );
+      if ( !push( ev, gaddr_type(), self_glid() ) ) {
+        throw runtime_error( "net error or net handshake error" );
+      }
       if ( pop( ev, dst, src ) ) {
         if ( ev.code() == EV_STEM_TRANSPORT_ACK ) {
           src.addr = ns_addr;
@@ -392,7 +396,7 @@ xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
   try {
     while ( me.pop( ev, dst, src ) ) {
       if ( superflag ) {
-        cerr << "NetTransportMgr::_loop\n";
+        cerr << "NetTransportMgr::_loop " << xmt::getpid() << " " << getppid() << endl;
         manager()->dump( cerr );
         cerr << "===\n";
         // cerr << dst.hid << dst.pid << dst.addr << endl;

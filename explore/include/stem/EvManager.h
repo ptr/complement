@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/28 16:52:05 ptr>
+// -*- C++ -*- Time-stamp: <06/11/29 02:52:45 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -89,6 +89,13 @@ class EvManager
       { return l.second < r.second; }
 
   public:
+
+    enum traceflags {
+      notrace = 0,
+      tracenet = 1,
+      tracedispatch = 2
+    };
+
     typedef std::queue< Event > queue_type;
 
     __FIT_DECLSPEC EvManager();
@@ -105,6 +112,10 @@ class EvManager
                                               const std::string& info );
     __FIT_DECLSPEC addr_type SubscribeRemote( const detail::transport& tr,
                                               const gaddr_type& addr,
+                                              const char *info = 0 );
+    __FIT_DECLSPEC addr_type SubscribeRemote( const gaddr_type& addr,
+                                              const std::string& info );
+    __FIT_DECLSPEC addr_type SubscribeRemote( const gaddr_type& addr,
                                               const char *info = 0 );
     __FIT_DECLSPEC bool Unsubscribe( addr_type id );
     __FIT_DECLSPEC addr_type reflect( const gaddr_type& addr ) const;
