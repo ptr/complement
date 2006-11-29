@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/28 12:31:04 ptr>
+// -*- C++ -*- Time-stamp: <06/11/29 13:38:19 ptr>
 
 /*
  * Copyright (c) 2006
@@ -13,6 +13,7 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <cstring>
 
 namespace xmt {
 
@@ -26,21 +27,24 @@ class __uid_init
   public:
     __uid_init();
 
-    static Mutex _lk;
     static uuid_type _host_id;
-    static string _host_id_str;
+    static char _host_id_str[48]; // 37 really
 };
 
-Mutex __uid_init::_lk;
 uuid_type __uid_init::_host_id;
-string __uid_init::_host_id_str;
+char __uid_init::_host_id_str[48];
 
 __uid_init::__uid_init()
 {
+  static Mutex _lk;
+
   Locker lock( _lk );
   ifstream f( "/proc/sys/kernel/random/boot_id" );
 
-  getline( f, _host_id_str );
+  string tmp;
+  getline( f, tmp );
+  strcpy( _host_id_str, tmp.c_str() );
+
 
   stringstream s;
   s << _host_id_str[0]  << _host_id_str[1]  << ' '  
@@ -81,7 +85,7 @@ __uid_init::__uid_init()
 
 } // namespace detail
 
-const std::string& hostid_str()
+const char *hostid_str()
 {
   static detail::__uid_init _uid;
   return detail::__uid_init::_host_id_str;
