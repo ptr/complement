@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/29 01:28:01 ptr>
+// -*- C++ -*- Time-stamp: <06/11/29 17:30:01 ptr>
 
 /*
  *
@@ -225,12 +225,12 @@ NetTransport::NetTransport( std::sockstream& s ) :
       if ( ev.code() == EV_STEM_TRANSPORT ) {
         src.addr = ns_addr;
         addr_type xsrc = manager()->reflect( src );
-        if ( xsrc == badaddr ) {
+        if ( xsrc == badaddr || (xsrc & extbit) ) { // ignore, if local; but add new transport otherwise
           manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
         }
         src.addr = default_addr;
         xsrc = manager()->reflect( src );
-        if ( xsrc == badaddr ) {
+        if ( xsrc == badaddr || (xsrc & extbit) ) { // ignore, if local; but add new transport otherwise
           manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
         }
         Event ack( EV_STEM_TRANSPORT_ACK );
@@ -339,13 +339,13 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
           xsrc = manager()->reflect( src );
           // indeed src is something like NetTransport, so substitute ns:
           src.addr = ns_addr;
-          if ( xsrc == badaddr ) {
+          if ( xsrc == badaddr || (xsrc & extbit)) { // ignore local; but add new transport otherwise
             manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
           }
           // indeed src is something like NetTransport, so substitute default:
           src.addr = default_addr;
           xsrc = manager()->reflect( src );
-          if ( xsrc == badaddr ) {
+          if ( xsrc == badaddr || (xsrc & extbit)) { // ignore local; but add new transport otherwise
             xsrc = manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
           }
         } else {
