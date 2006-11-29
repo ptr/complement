@@ -1,3 +1,12 @@
+2006-11-29  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xmt.h, xmt.cc: added xmt::getpid() and xmt:getppid(); ::getpid()
+	really return cached value, so returned pid may be parent's pid
+	really. I use syscall here and rewrite appropriate var during
+	Thread::fork().
+
+	* libxmt: version 1.9.3
+
 2006-11-23  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* uid.h, uid.cc: return hostid on Linux

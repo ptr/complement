@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/24 09:32:17 ptr>
+// -*- C++ -*- Time-stamp: <06/11/29 03:10:16 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2006
@@ -46,6 +46,7 @@
 #endif
 
 #include <stdio.h>
+#include <syscall.h>
 
 #include <cmath> // for time operations
 
@@ -78,6 +79,12 @@ namespace xmt {
 namespace detail {
 
 int Init_count = 0;
+
+// problem: ::getpid() really return cached value, so pid returned may be
+// parent's pid really. I use syscall here and rewrite it during Thread::fork().
+
+static pid_t _pid  = syscall( SYS_getpid );
+static pid_t _ppid = syscall( SYS_getppid );
 
 #ifdef __FIT_NOVELL_THREADS
 xmt::Thread::thread_key_type _mt_key = 0;
@@ -227,12 +234,7 @@ int Semaphore::wait_delay( const timespec *interval ) // wait, timeout is delay 
 }
 
 char *Init_buf[32];
-// int Thread::Init::_count = 0;
-#if defined(_MSC_VER) && (_MSC_VER <= 1200)
-int& Thread::Init::_count = detail::Init_count; // trick to avoid friend declarations
-#else
 int& Thread::Init::_count( detail::Init_count ); // trick to avoid friend declarations
-#endif
 
 const std::string msg1( "Can't create thread" );
 const std::string msg2( "Can't fork" );
@@ -311,11 +313,7 @@ const Thread::thread_id_type Thread::bad_thread_id = __STATIC_CAST(Thread::threa
 const Thread::thread_id_type Thread::bad_thread_id = EFAILURE;
 #endif // __FIT_NOVELL_THREADS
 
-#if defined(_MSC_VER) && (_MSC_VER <= 1200)
-Thread::thread_key_type& Thread::_mt_key = detail::_mt_key;
-#else
 Thread::thread_key_type& Thread::_mt_key( detail::_mt_key );
-#endif
 
 __FIT_DECLSPEC
 void Thread::_dealloc_uw()
@@ -724,6 +722,8 @@ void Thread::fork() throw( fork_in_parent, std::runtime_error )
   if ( f.pid() == -1 ) {
     throw std::runtime_error( msg2 );
   }
+  detail::_ppid = detail::_pid;
+  detail::_pid = syscall( SYS_getpid );
 #endif
 }
 
@@ -1002,6 +1002,16 @@ int Thread::xalloc()
 {
   Locker _l( _idx_lock );
   return _idx++;
+}
+
+pid_t getpid()
+{
+  return detail::_pid;
+}
+
+pid_t getppid()
+{
+  return detail::_ppid;
 }
 
 } // namespace xmt

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/27 10:30:33 ptr>
+// -*- C++ -*- Time-stamp: <06/11/29 01:50:24 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2006
@@ -1809,6 +1809,9 @@ int __Condition<SCOPE>::wait_delay( const timespec *interval )
   return 0;
 #endif
 }
+
+pid_t getpid();
+pid_t getppid();
 
 } // namespace xmt
 
