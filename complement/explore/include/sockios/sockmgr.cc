@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/28 01:31:14 ptr>
+// -*- C++ -*- Time-stamp: <06/11/29 18:43:21 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -441,11 +441,10 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
         stream = c->s;
         if ( stream->is_open() ) {
           c->_proc->connect( *stream );
-          if ( !stream->good() ) {
-            stream->close();
-            c->_proc->close();
-            delete c->_proc;
-            c->_proc = 0;
+          if ( c->s == 0 || !stream->good() ) {
+            if ( c->_proc != 0 ) {
+              c->_proc->close();
+            }
           } else if ( stream->is_open() ) {
             if ( stream->rdbuf()->in_avail() > 0 ) {
               // socket has buffered data, push it back to queue
@@ -458,11 +457,8 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
               sock_base::socket_type rfd = stream->rdbuf()->fd();
               ::write( me->_cfd, reinterpret_cast<const char *>(&rfd), sizeof(sock_base::socket_type) );
             }
-          } else {
-            stream->close();
+          } else if ( c->_proc ) {
             c->_proc->close();
-            delete c->_proc;
-            c->_proc = 0;
           }
         }
       }
