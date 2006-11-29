@@ -5,6 +5,9 @@
 	really. I use syscall here and rewrite appropriate var during
 	Thread::fork().
 
+	* uid.h, uid.cc: code reorganization to avoid problems with order
+	of static objects dtors calls and libraries unload order.
+
 	* libxmt: version 1.9.3
 
 2006-11-23  Petr Ovtchenkov  <ptr@island.corbina.net>
