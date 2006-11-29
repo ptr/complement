@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/28 21:47:34 ptr>
+// -*- C++ -*- Time-stamp: <06/11/29 10:49:19 ptr>
 
 /*
  *
@@ -115,7 +115,7 @@ addr_type EvManager::Subscribe( EventHandler *object, const std::string& info )
     Locker lk( _lock_xheap );
     gaddr_type& gaddr = _ex_heap[id];
     gaddr.hid = xmt::hostid();
-    gaddr.pid = getpid();
+    gaddr.pid = xmt::getpid();
     gaddr.addr = id;
     _ui_heap[gaddr] = id;
   }
@@ -139,7 +139,7 @@ addr_type EvManager::Subscribe( EventHandler *object, const char *info )
     Locker lk( _lock_xheap );
     gaddr_type& gaddr = _ex_heap[id];
     gaddr.hid = xmt::hostid();
-    gaddr.pid = getpid();
+    gaddr.pid = xmt::getpid();
     gaddr.addr = id;
     _ui_heap[gaddr] = id;
   }
@@ -168,7 +168,7 @@ addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
     Locker lk( _lock_xheap );
     gaddr_type& gaddr = _ex_heap[id];
     gaddr.hid = xmt::hostid();
-    gaddr.pid = getpid();
+    gaddr.pid = xmt::getpid();
     gaddr.addr = id;
     _ui_heap[gaddr] = id;
   }
@@ -196,7 +196,7 @@ addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
     Locker lk( _lock_xheap );
     gaddr_type& gaddr = _ex_heap[id];
     gaddr.hid = xmt::hostid();
-    gaddr.pid = getpid();
+    gaddr.pid = xmt::getpid();
     gaddr.addr = id;
     _ui_heap[gaddr] = id;
   }
@@ -253,6 +253,111 @@ addr_type EvManager::SubscribeRemote( const detail::transport& tr,
 }
 
 __FIT_DECLSPEC
+addr_type EvManager::SubscribeRemote( const gaddr_type& addr,
+                                      const std::string& info )
+{
+  cerr << __FILE__ << ":" << __LINE__ << endl;
+
+  addr_type id;
+  if ( addr.hid == xmt::hostid() && addr.pid == xmt::getpid() ) { // local
+    cerr << __FILE__ << ":" << __LINE__ << endl;
+    if ( addr.addr & extbit ) { // may be transit object
+      Locker lk( _lock_xheap );
+      uuid_ext_heap_type::const_iterator i = _ui_heap.find( addr );
+
+      if ( i != _ui_heap.end() ) {
+        return i->second;
+      }
+    } else { // may be local object
+      Locker lk( _lock_heap );
+      local_heap_type::const_iterator i = heap.find( addr.addr );
+      if ( i != heap.end() ) {
+        return i->first;
+      }
+    }
+    return badaddr; // don't know what I can made
+  } else { // foreign object
+    cerr << __FILE__ << ":" << __LINE__ << endl;
+    Locker lk( _lock_xheap );
+    uuid_ext_heap_type::const_iterator i = _ui_heap.find( addr );
+
+    if ( i != _ui_heap.end() ) {
+      cerr << __FILE__ << ":" << __LINE__ << endl;
+      return i->second;
+    }
+    gaddr_type peer_zero( addr );
+    peer_zero.addr = default_addr;
+    pair<uuid_tr_heap_type::const_iterator,uuid_tr_heap_type::const_iterator> range = _tr_heap.equal_range( peer_zero );
+    cerr << __FILE__ << ":" << __LINE__ << "\n" << peer_zero << endl;
+    if ( range.first == range.second ) { // no transport
+      cerr << "#####" << endl;// << __FILE__ << ":" << __LINE__ << endl;
+      return badaddr;
+    }
+    id = create_unique_x();
+    for ( uuid_tr_heap_type::const_iterator j = range.first; j != range.second; ++j ) {
+      _tr_heap.insert( make_pair( addr, j->second ) ); // all available transports
+      _ch_heap.insert( make_pair( j->second.link, addr ) );
+    }
+    _ex_heap[id] = addr;
+    _ui_heap[addr] = id;
+  }
+  {
+    Locker lk( _lock_iheap );
+    iheap[id] = info;
+  }
+  return id;
+}
+
+__FIT_DECLSPEC
+addr_type EvManager::SubscribeRemote( const gaddr_type& addr,
+                                      const char *info )
+{
+  addr_type id;
+  if ( addr.hid == xmt::hostid() && addr.pid == xmt::getpid() ) {
+    if ( addr.addr & extbit ) { // may be transit object
+      Locker lk( _lock_xheap );
+      uuid_ext_heap_type::const_iterator i = _ui_heap.find( addr );
+
+      if ( i != _ui_heap.end() ) {
+        return i->second;
+      }
+    } else { // may be local object
+      Locker lk( _lock_heap );
+      local_heap_type::const_iterator i = heap.find( addr.addr );
+      if ( i != heap.end() ) {
+        return i->first;
+      }
+    }
+    return badaddr; // don't know what I can made
+  } else {
+    Locker lk( _lock_xheap );
+    uuid_ext_heap_type::const_iterator i = _ui_heap.find( addr );
+
+    if ( i != _ui_heap.end() ) {
+      return i->second;
+    }
+    gaddr_type peer_zero( addr );
+    peer_zero.addr = default_addr;
+    pair<uuid_tr_heap_type::const_iterator,uuid_tr_heap_type::const_iterator> range = _tr_heap.equal_range( peer_zero );
+    if ( range.first == range.second ) { // no transport
+      return badaddr;
+    }
+    id = create_unique_x();
+    for ( uuid_tr_heap_type::const_iterator j = range.first; j != range.second; ++j ) {
+      _tr_heap.insert( make_pair( addr, j->second ) ); // all available transports
+      _ch_heap.insert( make_pair( j->second.link, addr ) );
+    }
+    _ex_heap[id] = addr;
+    _ui_heap[addr] = id;
+  }
+  if ( info ) {
+    Locker _x1( _lock_iheap );
+    iheap[id] = info;
+  }
+  return id;
+}
+
+__FIT_DECLSPEC
 bool EvManager::Unsubscribe( addr_type id )
 {
   if ( (id & extbit) ) {
@@ -291,9 +396,9 @@ addr_type EvManager::reflect( const gaddr_type& addr ) const
   if ( stem::superflag != 0 ) {
     cerr << "%%%%%\n";
     cerr << addr << endl;
-    cerr << dec << getpid() << endl;
+    cerr << dec << xmt::getpid() << endl;
   }
-  if ( addr.hid == xmt::hostid() && addr.pid == getpid() ) {
+  if ( addr.hid == xmt::hostid() && addr.pid == xmt::getpid() ) {
     // this host, this process
     if ( stem::superflag != 0 ) {
       cerr << "%%%%% 1\n";
@@ -420,7 +525,7 @@ void EvManager::Send( const Event& e )
       if ( i == _ex_heap.end() ) { // destination not found
         ostringstream s;
         s << "external address unknown: " << hex << e.dest() << " from "
-          << e.src() << ", pid " << getpid() << dec;
+          << e.src() << ", pid " << xmt::getpid() << dec;
         throw invalid_argument( s.str() );
       }
 
@@ -438,7 +543,7 @@ void EvManager::Send( const Event& e )
       if ( j == _ex_heap.end() ) {
         gaddr_type& _gaddr_src = _ex_heap[e.src()];
         _gaddr_src.hid = xmt::hostid();
-        _gaddr_src.pid = getpid();
+        _gaddr_src.pid = xmt::getpid();
         _gaddr_src.addr = e.src(); // it may be as local as foreign; if e.src()
                                    // is foreign, the object is 'transit object'
         _ui_heap[_gaddr_src] = e.src();
