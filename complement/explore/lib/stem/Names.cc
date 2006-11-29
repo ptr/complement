@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/28 17:12:45 ptr>
+// -*- C++ -*- Time-stamp: <06/11/29 10:21:44 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -83,24 +83,18 @@ void __FIT_DECLSPEC Names::ns_name( const Event& rq )
 
   manager()->_lock_iheap.lock();
   for ( EvManager::info_heap_type::const_iterator i = manager()->iheap.begin(); i != manager()->iheap.end(); ++i ) {
-    cerr << hex << i->first << " => " << i->second << endl;
     if ( i->second == rq.value() ) {
-      if ( /* i->first & extbit */ true ) {
+      if ( i->first & extbit /* true */ ) {
         Locker lk( manager()->_lock_xheap );
         EvManager::ext_uuid_heap_type::const_iterator j = manager()->_ex_heap.find( i->first );
         if ( j != manager()->_ex_heap.end() ) {
           lst.push_back( make_pair( j->second, i->second ) );
-          cerr << "Found\n";
         }
       } else {
         Locker lk( manager()->_lock_heap );
         EvManager::local_heap_type::const_iterator j = manager()->heap.find( i->first );
         if ( j != manager()->heap.end() ) {
-          gaddr_type gaddr;
-          gaddr.hid = xmt::hostid();
-          gaddr.pid = getpid();
-          gaddr.addr = j->first;
-          lst.push_back( make_pair( gaddr, i->second ) );
+          lst.push_back( make_pair( gaddr_type(xmt::hostid(), xmt::getpid(), j->first ), i->second ) );
         }
       }
     }
@@ -108,7 +102,6 @@ void __FIT_DECLSPEC Names::ns_name( const Event& rq )
   manager()->_lock_iheap.unlock();
 
   rs.dest( rq.src() );
-  cerr << "Send\n";
   Send( rs );
 }
 
