@@ -1,3 +1,12 @@
+2006-11-29  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.cc: don't delete objects via _conn_pool
+	container content [this is secondary structure,
+	objects will be deleted in the _M_c container];
+	this fix sporadic crashes of server on exit.
+
+	* libsockios: Version 1.10.1
+
 2006-11-27  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* sockmgr.h, sockmgr.cc: delete connect processors and
