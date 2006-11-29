@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/29 14:34:41 ptr>
+// -*- C++ -*- Time-stamp: <06/11/29 18:18:10 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -279,7 +279,7 @@ void stem_test::echo()
     node.wait();
     
     mgr.close();
-    // mgr.join();
+    mgr.join();
 
     srv.close();
     srv.wait();
