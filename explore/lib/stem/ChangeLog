@@ -1,3 +1,12 @@
+2006-11-29  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* EvManager.h, EvManager.cc, NetTransport.h, NetTransport.cc:
+	global addressing/naming scheme [communication with external
+	objects] now in working state.
+
+	* Names.cc: ditto; return not only external addresses, but
+	internal too.
+
 2006-11-24  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* Event.h, EvPack.h, EvPack.cc: introduce 'global

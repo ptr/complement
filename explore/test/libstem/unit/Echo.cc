@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/28 16:32:53 ptr>
+// -*- C++ -*- Time-stamp: <06/11/29 13:02:34 ptr>
 
 /*
  * Copyright (c) 2006
@@ -133,7 +133,6 @@ void PeerClient::handler1( const stem::Event& ev )
 {
   BOOST_CHECK( ev.value() == mess );
 
-  // cerr << mess << endl;
   cnd.set(true);
 }
 

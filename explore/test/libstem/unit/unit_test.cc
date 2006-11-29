@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/29 10:40:45 ptr>
+// -*- C++ -*- Time-stamp: <06/11/29 14:34:41 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -37,6 +37,8 @@ using namespace __gnu_cxx;
 
 #include <sys/shm.h>
 #include <sys/wait.h>
+
+#include <signal.h>
 
 using namespace std;
 
@@ -288,54 +290,80 @@ void stem_test::echo()
 
 void stem_test::echo_net()
 {
-  xmt::__Condition<true> fcnd;
+  shmid_ds ds;
+  int id = shmget( 5000, 1024, IPC_CREAT | IPC_EXCL | 0600 );
+  BOOST_REQUIRE( id != -1 );
+  // if ( id == -1 ) {
+  //   cerr << "Error on shmget" << endl;
+  // }
+  BOOST_REQUIRE( shmctl( id, IPC_STAT, &ds ) != -1 );
+  // if ( shmctl( id, IPC_STAT, &ds ) == -1 ) {
+  //   cerr << "Error on shmctl" << endl;
+  // }
+  void *buf = shmat( id, 0, 0 );
+  BOOST_REQUIRE( buf != reinterpret_cast<void *>(-1) );
+  // if ( buf == reinterpret_cast<void *>(-1) ) {
+  //   cerr << "Error on shmat" << endl;
+  // }
+
+  xmt::__Condition<true>& fcnd = *new( buf ) xmt::__Condition<true>();
   fcnd.set( false );
 
   try {
     xmt::Thread::fork();
 
-    stem::NetTransportMgr mgr;
+    try {
+      stem::NetTransportMgr mgr;
 
-    fcnd.try_wait();
+      fcnd.try_wait();
 
-    stem::addr_type zero = mgr.open( "localhost", 6995 );
+      stem::addr_type zero = mgr.open( "localhost", 6995 );
 
-    BOOST_CHECK( zero != stem::badaddr );
-    BOOST_CHECK( zero != 0 ); // NetTransportMgr should detect external delivery
+      BOOST_CHECK( zero != stem::badaddr );
+      BOOST_CHECK( zero != 0 ); // NetTransportMgr should detect external delivery
 
-    EchoClient node;
+      EchoClient node;
     
-    stem::Event ev( NODE_EV_ECHO );
+      stem::Event ev( NODE_EV_ECHO );
 
-    ev.dest( zero );
-    ev.value() = node.mess;
+      ev.dest( zero );
+      ev.value() = node.mess;
 
-    node.Send( ev );
+      node.Send( ev );
 
-    node.wait();
+      node.wait();
     
-    mgr.close();
+      mgr.close();
+      mgr.join();
+    }
+    catch ( ... ) {
+    }
 
     exit( 0 );
   }
-  catch ( xmt::fork_in_parent& ) {
-    
+  catch ( xmt::fork_in_parent& child ) {
+    try {
+      sockmgr_stream_MP<stem::NetTransport> srv( 6995 );
+
+      StEMecho echo( 0, "echo service"); // <= zero!
+
+      fcnd.set( true );
+
+      int stat;
+      waitpid( child.pid(), &stat, 0 );
+
+      srv.close();
+      srv.wait();
+    }
+    catch ( ... ) {
+    }
   }
 
-  try {
-    sockmgr_stream_MP<stem::NetTransport> srv( 6995 );
+  (&fcnd)->~__Condition<true>();
 
-    StEMecho echo( 0, "echo service"); // <= zero!
+  shmdt( buf );
+  shmctl( id, IPC_RMID, &ds );
 
-    fcnd.set( true );
-
-    // mgr.join();
-
-    srv.close();
-    srv.wait();
-  }
-  catch ( ... ) {
-  }
   // cerr << "Fine\n";
 }
 
@@ -343,9 +371,15 @@ namespace stem {
 extern int superflag;
 }
 
+extern "C" {
+
+static void dummy_signal_handler( int )
+{ }
+
+}
+
 void stem_test::peer()
 {
-  cerr << "peer" << endl;
   /*
    * Scheme:
    *                      / NetTransport      / c1
@@ -369,16 +403,19 @@ void stem_test::peer()
 
   shmid_ds ds;
   int id = shmget( 5000, 1024, IPC_CREAT | IPC_EXCL | 0600 );
-  if ( id == -1 ) {
-    cerr << "Error on shmget" << endl;
-  }
-  if ( shmctl( id, IPC_STAT, &ds ) == -1 ) {
-    cerr << "Error on shmctl" << endl;
-  }
+  BOOST_REQUIRE( id != -1 );
+  // if ( id == -1 ) {
+  //   cerr << "Error on shmget" << endl;
+  // }
+  BOOST_REQUIRE( shmctl( id, IPC_STAT, &ds ) != -1 );
+  // if ( shmctl( id, IPC_STAT, &ds ) == -1 ) {
+  //   cerr << "Error on shmctl" << endl;
+  // }
   void *buf = shmat( id, 0, 0 );
-  if ( buf == reinterpret_cast<void *>(-1) ) {
-    cerr << "Error on shmat" << endl;
-  }
+  BOOST_REQUIRE( buf != reinterpret_cast<void *>(-1) );
+  // if ( buf == reinterpret_cast<void *>(-1) ) {
+  //   cerr << "Error on shmat" << endl;
+  // }
 
   xmt::__Condition<true>& fcnd = *new( buf ) xmt::__Condition<true>();
   fcnd.set( false );
@@ -390,87 +427,99 @@ void stem_test::peer()
   scnd.set( false );
 
   try {
+    // Client 1
     xmt::Thread::fork();
-    stem::NetTransportMgr mgr;
+#if 0
+    struct sigaction action;
+    struct sigaction old_action;
+    action.sa_flags = 0;
+    action.sa_handler = &dummy_signal_handler;
+    sigemptyset( &action.sa_mask );
 
-    PeerClient c1( "c1 local" );  // c1 client
-    Naming nm;
+    sigaction( SIGFPE, &action, &old_action );
+    sigaction( SIGTRAP, &action, &old_action );
+    sigaction( SIGSEGV, &action, &old_action );
+    sigaction( SIGBUS, &action, &old_action );
+    sigaction( SIGABRT, &action, &old_action );
+    sigaction( SIGALRM, &action, &old_action );
+#endif
 
-    cerr << "1\n";
-    fcnd.try_wait();
+    try {
+      stem::NetTransportMgr mgr;
 
-    // c1.manager()->dump( cerr );
-    stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
-    // It done like it should on client side
-    // cerr << "===========" << endl;
-    // c1.manager()->dump( cerr );
+      PeerClient c1( "c1 local" );  // c1 client
+      Naming nm;
 
-    BOOST_CHECK( zero != stem::badaddr );
-    BOOST_CHECK( zero != 0 );
-    BOOST_CHECK( zero & stem::extbit ); // "external" address
+      fcnd.try_wait();
 
-    stem::Event ev( NODE_EV_REGME );
-    ev.dest( zero );
+      stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
+      // It done like it should on client side
 
-    ev.value() = "c1@here";
-    c1.Send( ev ); // 'register' c1 client on 'echo' server
+      BOOST_CHECK( zero != stem::badaddr );
+      BOOST_CHECK( zero != 0 );
+      BOOST_CHECK( zero & stem::extbit ); // "external" address
 
-    stem::gaddr_type ga( c1.manager()->reflect( zero ) );
+      stem::Event ev( NODE_EV_REGME );
+      ev.dest( zero );
 
-    BOOST_CHECK( ga.addr == 0 );
-    BOOST_CHECK( ga.pid != -1 );
+      ev.value() = "c1@here";
+      c1.Send( ev ); // 'register' c1 client on 'echo' server
 
-    ga.addr = stem::ns_addr; // this will be global address of ns of the same process
-                             // as zero
+      stem::gaddr_type ga( c1.manager()->reflect( zero ) );
 
-    BOOST_CHECK( c1.manager()->reflect( ga ) != stem::badaddr );
+      BOOST_CHECK( ga.addr == 0 );
+      BOOST_CHECK( ga.pid != -1 );
 
-    // c1.manager()->dump( cerr );
+      ga.addr = stem::ns_addr; // this will be global address of ns of the same process
+                               // as zero
 
-    stem::Event evname( EV_STEM_GET_NS_NAME );
-    evname.dest( c1.manager()->reflect( ga ) );
-    evname.value() = "c2@here";
+      BOOST_CHECK( c1.manager()->reflect( ga ) != stem::badaddr );
 
-    pcnd.try_wait();
+      stem::Event evname( EV_STEM_GET_NS_NAME );
+      evname.dest( c1.manager()->reflect( ga ) );
+      evname.value() = "c2@here";
 
-    cerr << "@1\n";
+      pcnd.try_wait();
 
-    Naming::nsrecords_type::const_iterator i;
+      Naming::nsrecords_type::const_iterator i;
 
-    do {
-      nm.reset();
-      nm.lst.clear();
-      nm.Send( evname );
-      nm.wait();
-      i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "c2@here" ) ), select2nd<pair<stem::gaddr_type,string> >() ) );
-    } while ( i == nm.lst.end() );
+      do {
+        nm.reset();
+        nm.lst.clear();
+        nm.Send( evname );
+        nm.wait();
+        i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "c2@here" ) ), select2nd<pair<stem::gaddr_type,string> >() ) );
+      } while ( i == nm.lst.end() );
 
-    BOOST_CHECK( i != nm.lst.end() );
-    BOOST_CHECK( i->second == "c2@here" );
+      BOOST_CHECK( i != nm.lst.end() );
+      BOOST_CHECK( i->second == "c2@here" );
 
-    stem::addr_type pa = c1.manager()->reflect( i->first );
-    if ( pa == stem::badaddr ) { // unknown yet
-      pa = c1.manager()->SubscribeRemote( i->first, i->second );
+      stem::addr_type pa = c1.manager()->reflect( i->first );
+      if ( pa == stem::badaddr ) { // unknown yet
+        pa = c1.manager()->SubscribeRemote( i->first, i->second );
+        if ( pa == stem::badaddr ) { // it still unknown, transport not found
+          // hint: use transport as object zero used
+          pa = c1.manager()->SubscribeRemote( c1.manager()->transport( zero ), i->first, i->second );
+        }
+      }
+
+      BOOST_CHECK( pa != stem::badaddr );
+
+      if ( pa != stem::badaddr ) {
+        stem::Event pe( NODE_EV_ECHO );
+        pe.dest( pa );
+        pe.value() = "c2 local"; // <<-- mess is like name ... |
+                                 //                            .
+        c1.Send( pe );
+      }
+
+      scnd.try_wait();
+
+      mgr.close();
+      mgr.join();
     }
-
-    // stem::superflag = 1;
-    c1.manager()->dump( cerr );
-
-    if ( pa != stem::badaddr ) {
-      stem::Event pe( NODE_EV_ECHO );
-      pe.dest( pa );
-      pe.value() = "peer client";
-      c1.Send( pe );
-
-      cerr << hex << pa << dec << endl;
+    catch ( ... ) {
     }
-
-    cerr << "1.1\n";
-
-    scnd.try_wait();
-
-    mgr.close();
-    mgr.join();
 
     exit( 0 );
   }
@@ -479,55 +528,66 @@ void stem_test::peer()
   }
 
   try {
+    // Client 2
     xmt::Thread::fork();
-    stem::NetTransportMgr mgr;
 
-    cerr << "2\n";
+#if 0
+    struct sigaction action;
+    struct sigaction old_action;
+    action.sa_flags = 0;
+    action.sa_handler = &dummy_signal_handler;
+    sigemptyset( &action.sa_mask );
 
-    PeerClient c2( "c2 local" ); // c2 client
+    sigaction( SIGFPE, &action, &old_action );
+    sigaction( SIGTRAP, &action, &old_action );
+    sigaction( SIGSEGV, &action, &old_action );
+    sigaction( SIGBUS, &action, &old_action );
+    sigaction( SIGABRT, &action, &old_action );
+    sigaction( SIGALRM, &action, &old_action );
+#endif
 
-    fcnd.try_wait();
-    stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
-    // It done like it should on client side
+    try {
+      stem::NetTransportMgr mgr;
+                                   //                                          ^
+      PeerClient c2( "c2 local" ); // <<--- name the same as mess expected ... |
 
-    BOOST_CHECK( zero != stem::badaddr );
-    BOOST_CHECK( zero != 0 );
-    BOOST_CHECK( zero & stem::extbit ); // "external" address
+      fcnd.try_wait();
+      stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
+      // It done like it should on client side
 
-    stem::Event ev( NODE_EV_REGME );
-    ev.dest( zero );
+      BOOST_CHECK( zero != stem::badaddr );
+      BOOST_CHECK( zero != 0 );
+      BOOST_CHECK( zero & stem::extbit ); // "external" address
 
-    ev.value() = "c2@here";
-    c2.Send( ev ); // 'register' c2 client on 'echo' server
+      stem::Event ev( NODE_EV_REGME );
+      ev.dest( zero );
 
-    cerr << "2.1\n";
+      ev.value() = "c2@here";
+      c2.Send( ev ); // 'register' c2 client on 'echo' server
 
-    pcnd.set( true );
+      pcnd.set( true );
 
-    c2.wait();
-    cerr << "2.2\n";
+      c2.wait();
+      cerr << "Fine!" << endl;
+      scnd.set( true );
 
-    scnd.set( true );
-
-    mgr.close();
-    mgr.join();
+      mgr.close();
+      mgr.join();
+    }
+    catch ( ... ) {
+    }
 
     exit( 0 );
   }
   catch ( xmt::fork_in_parent& child ) {
     sockmgr_stream_MP<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
     StEMecho echo( 0, "echo service"); // <= zero! 'echo' server, default ('zero' address)
-    cerr << "3\n";
 
     fcnd.set( true, true );
-
-    // scnd.try_wait();
 
     int stat;
     waitpid( child.pid(), &stat, 0 );
     waitpid( fpid, &stat, 0 );
-
-    cerr << "3.1\n";
 
     srv.close();
     srv.wait();
@@ -539,105 +599,6 @@ void stem_test::peer()
 
   shmdt( buf );
   shmctl( id, IPC_RMID, &ds );
-
-#if 0
-  /*
-   * Scheme:
-   *                      / NetTransport      / c1
-   *  Local Event Manager  -  NetTransportMgr - c2
-   *                      \ echo
-   * Due to all objects in the same process space,
-   * c1 and c2 use the same Local Event Manager
-   * but I try to bypass this fact.
-   * I.e. I try to simulate
-   *
-   *                      / NetTransport ~~ NetTransportMgr - LEM - c1
-   *  Local Event Manager               \
-   *                      \ echo         ~~ NetTransportMgr - LEM - c2
-   *
-   * and provide simulation of logical connection
-   *
-   *        / c1
-   *   echo
-   *        \ c2
-   *
-   * (c1 <-> c2, through 'echo')
-   */
-
-  sockmgr_stream_MP<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
-
-  stem::NetTransportMgr mgr;
-  StEMecho echo( 0, "echo service"); // <= zero! 'echo' server, default ('zero' address)
- 
-  echo.cnd.set( false );
-
-  stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
-  // It done like it should on client side
-
-  BOOST_CHECK( zero != stem::badaddr );
-  BOOST_CHECK( zero != 0 );
-  BOOST_CHECK( zero & stem::extbit ); // "external" address
-
-  PeerClient c1( "c1 local" );  // c1 client
-
-  stem::Event ev( NODE_EV_REGME );
-  ev.dest( zero );
-
-  ev.value() = "c1@here";
-  c1.Send( ev ); // 'register' c1 client on 'echo' server
-
-  echo.cnd.try_wait();
-  echo.cnd.set( false );
-
-  PeerClient c2( "c2 local" ); // c2 client
-
-  ev.value() = "c2@here";
-  c2.Send( ev ); // 'register' c2 client on 'echo' server
-
-  echo.cnd.try_wait();
-
-  Naming nm; // use it to take names from NS
-
-  // stem::Event ev_nm( EV_STEM_RQ_ADDR_LIST1 );
-  stem::Event ev_nm( EV_STEM_RQ_EXT_ADDR_LIST1 );
-  ev_nm.dest( /* stem::ns_addr */ mgr.ns() );
-  nm.Send( ev_nm );
-
-  nm.wait();
-
-  stem::addr_type peer_addr = stem::badaddr;
-
-  // This is to make chance for mapping address later:
-  stem::NetTransport_base *tr = c1.manager()->transport( mgr.ns() );
-
-  BOOST_CHECK( tr != 0 ); // processed via network transport, indeed
-
-  for ( Naming::nsrecords_type::const_iterator i = nm.lst1.begin(); i != nm.lst1.end(); ++i ) {
-    BOOST_CHECK( i->first & stem::extbit ); // "external"
-    if ( i->second.find( "c2@" ) == 0 ) {
-      // make pair: address on side of c1 -> address on side of 'echo'
-      peer_addr = c1.manager()->SubscribeRemote( tr, i->first, "c2@foreign" );
-    }
-    // cerr << hex << i->first << dec << " => " << i->second << endl;
-    // cerr << hex << tr->make_map( i->first, "map" ) << dec << endl;
-  }
-  BOOST_CHECK( peer_addr != stem::badaddr ); // address found
-  BOOST_CHECK( peer_addr & stem::extbit );   // address external
-
-  stem::Event echo_ev( NODE_EV_ECHO );
-
-  echo_ev.dest( /* 0x8000000b */ peer_addr );
-  echo_ev.value() = "c2 local";
-
-  c1.Send( echo_ev );
-
-  c2.wait();
-
-  mgr.close();
-  srv.close();
-
-  srv.wait();
-#endif
 }
 
 struct stem_test_suite :
@@ -680,7 +641,7 @@ stem_test_suite::stem_test_suite() :
   add( ns_tc );
 
   add( echo_tc );
-  // add( echo_net_tc );
+  add( echo_net_tc );
   add( peer_tc );
 }
 

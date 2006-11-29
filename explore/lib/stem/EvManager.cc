@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/29 10:49:19 ptr>
+// -*- C++ -*- Time-stamp: <06/11/29 13:22:14 ptr>
 
 /*
  *
@@ -256,11 +256,8 @@ __FIT_DECLSPEC
 addr_type EvManager::SubscribeRemote( const gaddr_type& addr,
                                       const std::string& info )
 {
-  cerr << __FILE__ << ":" << __LINE__ << endl;
-
   addr_type id;
   if ( addr.hid == xmt::hostid() && addr.pid == xmt::getpid() ) { // local
-    cerr << __FILE__ << ":" << __LINE__ << endl;
     if ( addr.addr & extbit ) { // may be transit object
       Locker lk( _lock_xheap );
       uuid_ext_heap_type::const_iterator i = _ui_heap.find( addr );
@@ -277,20 +274,16 @@ addr_type EvManager::SubscribeRemote( const gaddr_type& addr,
     }
     return badaddr; // don't know what I can made
   } else { // foreign object
-    cerr << __FILE__ << ":" << __LINE__ << endl;
     Locker lk( _lock_xheap );
     uuid_ext_heap_type::const_iterator i = _ui_heap.find( addr );
 
     if ( i != _ui_heap.end() ) {
-      cerr << __FILE__ << ":" << __LINE__ << endl;
       return i->second;
     }
     gaddr_type peer_zero( addr );
     peer_zero.addr = default_addr;
     pair<uuid_tr_heap_type::const_iterator,uuid_tr_heap_type::const_iterator> range = _tr_heap.equal_range( peer_zero );
-    cerr << __FILE__ << ":" << __LINE__ << "\n" << peer_zero << endl;
     if ( range.first == range.second ) { // no transport
-      cerr << "#####" << endl;// << __FILE__ << ":" << __LINE__ << endl;
       return badaddr;
     }
     id = create_unique_x();
@@ -393,23 +386,12 @@ bool EvManager::Unsubscribe( addr_type id )
 __FIT_DECLSPEC
 addr_type EvManager::reflect( const gaddr_type& addr ) const
 {
-  if ( stem::superflag != 0 ) {
-    cerr << "%%%%%\n";
-    cerr << addr << endl;
-    cerr << dec << xmt::getpid() << endl;
-  }
   if ( addr.hid == xmt::hostid() && addr.pid == xmt::getpid() ) {
     // this host, this process
-    if ( stem::superflag != 0 ) {
-      cerr << "%%%%% 1\n";
-    }
     if ( (addr.addr & extbit) == 0 ) { // looks like local object
       Locker _x1( _lock_heap );
       local_heap_type::const_iterator l = heap.find( addr.addr );
       if ( l != heap.end() ) {
-        if ( superflag != 0 ) {
-          cerr << "%%%%% 2\n";
-        }
         return addr.addr; // l->first
       }
     }
@@ -434,13 +416,7 @@ addr_type EvManager::reflect( const gaddr_type& addr ) const
   Locker _x1( _lock_xheap );
   uuid_ext_heap_type::const_iterator i = _ui_heap.find( addr );
   if ( i == _ui_heap.end() ) {
-    if ( stem::superflag != 0 ) {
-      cerr << "%%%%% 3\n";
-    }
     return badaddr;
-  }
-  if ( stem::superflag != 0 ) {
-    cerr << "%%%%% 4\n";
   }
   return i->second;
 }
@@ -471,12 +447,6 @@ void EvManager::Remove( void *channel )
 __FIT_DECLSPEC
 void EvManager::unsafe_Remove( void *channel )
 {
-  if ( superflag != 0 ) {
-    cerr << "Remove channel" << endl;
-    // dump( cerr );
-    cerr << "==== 1" << endl;
-    // abort();
-  }
   pair<tr_uuid_heap_type::iterator,tr_uuid_heap_type::iterator> ch_range = _ch_heap.equal_range( channel );
   for (tr_uuid_heap_type::iterator i = ch_range.first; i != ch_range.second; ++i ) {
     _tr_heap.erase( i->second );
@@ -486,11 +456,6 @@ void EvManager::unsafe_Remove( void *channel )
     _ui_heap.erase( i->second );
   }
   _ch_heap.erase( ch_range.first, ch_range.second );
-  if ( superflag != 0 ) {
-    cerr << "==== 2" << endl;
-    dump( cerr );
-    cerr << "==== 3" << endl;
-  }
 }
 
 __FIT_DECLSPEC const detail::transport& EvManager::transport( addr_type id ) const
@@ -590,11 +555,6 @@ void EvManager::Send( const Event& e )
       EventHandler *object = i->second; // target object
       _lock_heap.unlock();
 
-      // if ( e.src() & extbit ) {
-      //   xmt::Locker lk( _lock_xheap );
-      // 
-      // }
-
       try {
         if ( superflag ) {
           cerr << hex << e.dest() << " " << e.src() << " " << e.code() << dec << endl;
@@ -602,9 +562,6 @@ void EvManager::Send( const Event& e )
           cerr << endl;
         }
         object->Dispatch( e ); // call dispatcher
-        if ( superflag ) {
-          cerr << "***************" << endl;
-        }
       } 
       catch ( ... ) {
       }      
