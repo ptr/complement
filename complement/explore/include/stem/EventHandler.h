@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/28 20:29:41 ptr>
+// -*- C++ -*- Time-stamp: <06/11/30 20:50:13 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -31,6 +31,7 @@
 #include <vector>
 #include <list>
 #include <ostream>
+#include <typeinfo>
 
 #include <mt/xmt.h>
 
@@ -109,8 +110,11 @@ struct convert_Event // from transport
 {
     T operator ()( const stem::Event& x ) const
       {
+        if ( (x.flags() & __Event_Base::expand) == 0 ) {
+          throw std::invalid_argument( std::string("invalid conversion") );
+        }
         T tmp;
-        if ( x.is_from_foreign() ) {
+        if ( /* x.is_from_foreign() */ x.flags() & __Event_Base::conv ) {
           tmp.net_unpack( x );
         } else {
           tmp.unpack( x );
@@ -125,8 +129,11 @@ struct convert_Event_extr // from transport and extract value
 {
     T operator ()( const stem::Event& x ) const
       {
+        if ( (x.flags() & __Event_Base::expand) == 0 ) {
+          throw std::invalid_argument( std::string("invalid conversion") );
+        }
         stem::Event_base<T> tmp;
-        if ( x.is_from_foreign() ) {
+        if ( /* x.is_from_foreign() */ x.flags() & __Event_Base::conv ) {
           tmp.net_unpack( x );
         } else {
           tmp.unpack( x );
@@ -142,9 +149,9 @@ struct Event_convert // to transport
     stem::Event operator ()( const stem::Event_base<T>& x ) const
       {
         stem::Event tmp;
-        // first is evident, the second introduced
-        // to support Forward autodetection
-        if ( x.is_to_foreign() || x.is_from_foreign() ) {
+        // first is evident, the second was introduced
+        // to support Forward autodetection (and commented with addressing changes)
+        if ( x.is_to_foreign() /* || x.is_from_foreign() */ ) {
           x.net_pack( tmp );
         } else {
           x.pack( tmp );
@@ -208,25 +215,15 @@ struct __dispatcher_convert
 template <class PMF, class Arg >
 struct __dispatcher_convert_Event
 {
-#ifndef _MSC_VER
     static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, const Arg& arg )
       {	(c->*pmf)( convert_Event<typename PMF::argument_type>()(arg) ); }
-#else
-    static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, const Arg& arg )
-      {	(c->*pmf)( convert_Event<PMF::argument_type>()(arg) ); }
-#endif
 };
 
 template <class PMF, class Arg >
 struct __dispatcher_convert_Event_extr
 {
-#ifndef _MSC_VER
     static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, const Arg& arg )
       {	(c->*pmf)( convert_Event_extr<typename PMF::argument_type>()(arg) ); }
-#else
-    static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, const Arg& arg )
-      {	(c->*pmf)( convert_Event_extr<PMF::argument_type>()(arg) ); }
-#endif
 };
 
 struct __AnyPMFentry
@@ -243,11 +240,7 @@ struct __PMFentry
     typedef void (T::*PMF)();
 
     PMF  pmf;
-#if !defined( _MSC_VER ) || defined( _DEBUG )
     __FIT_TYPENAME stem::GENERIC::DPMF dpmf;
-#else // _MSC_VER && !_DEBUG
-    GENERIC::DPMF dpmf;
-#endif
     const char *pmf_name;
 };
 
@@ -255,18 +248,8 @@ template <class T>
 struct __DeclareAnyPMF
 {
     state_type    st;
-#ifndef _MSC_VER
     /* __FIT_TYPENAME */ stem::code_type code;
     __FIT_TYPENAME stem::__PMFentry<T> func;
-#else // _MSC_VER
-#  ifdef _DEBUG
-    stem::code_type code;
-    stem::__PMFentry<T> func;
-#  else  // !_DEBUG
-    code_type code; // workaround for VC 5.0
-    __PMFentry<T> func;
-#  endif // _DEBUG
-#endif // _MSC_VER
 };
 
 template <class Key1, class Key2, class Value>
@@ -274,9 +257,9 @@ class __EvTable
 {
   public:
     typedef std::pair<Key2,Value> pair2_type;
-    typedef std::vector<pair2_type,std::allocator<pair2_type > > Container2;
+    typedef std::vector<pair2_type> Container2;
     typedef std::pair<Key1,Container2> pair1_type;
-    typedef std::vector<pair1_type,std::allocator<pair1_type> > Container1;
+    typedef std::vector<pair1_type> Container1;
     typedef typename Container1::iterator iterator1;
     typedef typename Container2::iterator iterator2;
     typedef typename Container1::const_iterator const_iterator1;
@@ -418,11 +401,7 @@ template <class T, class InputIterator>
 class __EvHandler
 {
   public:
-#ifndef _MSC_VER
     typedef typename T::table_type table_type;
-#else // should sync at least with EventHandler::table_type below: 
-    typedef __EvTable<stem::code_type,state_type,__AnyPMFentry *> table_type;
-#endif // (that was workaround of M$ VC 5.0 bug)
 
     __EvHandler()
       { __EvTableLoader( &table, (T *)0 ); }
@@ -558,6 +537,7 @@ class EventHandler
     typedef __EvTable<code_type,state_type,__AnyPMFentry *> table_type;
     typedef __DeclareAnyPMF<EventHandler> evtable_decl_type;
     typedef EventHandler ThisCls;
+
   protected:
     // See comment near EventHandler::EventHandler() implementation
     // HistoryContainer& theHistory;
@@ -655,6 +635,8 @@ class EventHandler
       { return false; }
     virtual void Trace( ostream& ) const
       { }
+    virtual const std::type_info& classtype() const
+       { return typeid(EventHandler); }
     __FIT_DECLSPEC void TraceStack( ostream& ) const;
 
   private:
@@ -723,6 +705,8 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
          MT_REENTRANT_SDS( this->_theHistory_lock, _x1 );                 \
          return theEventsTable.DispatchTrace( theHistory.begin(),         \
                                               theHistory.end(), __e, __s ); } \
+    virtual const std::type_info& classtype() const                       \
+       { return typeid(ThisCls); }                                        \
     typedef stem::__EvHandler<cls,stem::h_iterator> evtable_type;           \
     typedef stem::__DeclareAnyPMF<cls> evtable_decl_type;                  \
     typedef cls ThisCls;			                          \

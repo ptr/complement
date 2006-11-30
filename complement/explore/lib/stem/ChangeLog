@@ -1,3 +1,31 @@
+2006-11-30  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Event.h: code clean; change specialization of Event_base
+	to avoid wrong code or bogus workarounds if whole class
+	specialization happens;
+
+	* EventSpec.h: removed, due to reasons above;
+
+	* Event.h, EventHandler.h: add _flags member to event, in
+	particular to detect errors during conversions and network
+	conversions;
+
+	* NetTransport.cc: pass _flags; taken unused field for this;
+
+	* _SessionMgr.cc, _EvSession.cc: removed;
+
+	* SessionMgr.h, EvSession.h: ditto.
+
+	* EventHandler.h: add classname() function, allow find
+	real name of class in the _Dispatch [well, the name
+	of last class with DECLARE_RESPONSE_TABLE]; very useful
+	for debug;
+
+	* EvManager.h, EvManager.cc: add possibility to trace
+	events in EvManager;
+
+	* Makefile.inc: library version 4.3.0
+
 2006-11-29  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* EvManager.h, EvManager.cc, NetTransport.h, NetTransport.cc:

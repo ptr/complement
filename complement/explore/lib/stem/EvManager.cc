@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/29 13:22:14 ptr>
+// -*- C++ -*- Time-stamp: <06/11/30 22:27:43 ptr>
 
 /*
  *
@@ -22,6 +22,8 @@
 #include <iomanip>
 #include <mt/xmt.h>
 
+// #include <typeinfo>
+
 namespace stem {
 
 using namespace std;
@@ -39,9 +41,9 @@ const addr_type begextaddr = extbit;
 const addr_type endextaddr = 0xbfffffff;
 
 std::string EvManager::inv_key_str( "invalid key" );
-
-extern int superflag;
-int superflag;
+xmt::Mutex EvManager::_lock_tr;
+unsigned EvManager::_trflags = 0;
+std::ostream *EvManager::_trs = 0;
 
 std::ostream& operator <<( std::ostream& s, const gaddr_type& ga );
 
@@ -440,6 +442,24 @@ void EvManager::Remove( void *channel )
   unsafe_Remove( channel );
 }
 
+void EvManager::settrf( unsigned f )
+{ _trflags |= f; }
+
+void EvManager::unsettrf( unsigned f )
+{ _trflags &= (0xffffffff & ~f); }
+
+void EvManager::resettrf( unsigned f )
+{ _trflags = f; }
+
+void EvManager::cleantrf()
+{ _trflags = 0; }
+
+unsigned EvManager::trflags()
+{ return _trflags; }
+
+void EvManager::settrs( std::ostream *s )
+{ _trs = s; }
+
 // Remove references to remote objects, that was announced via 'channel'
 // (related, may be, with socket connection)
 // from [remote name -> local name] mapping table, and mark related session as
@@ -522,6 +542,16 @@ void EvManager::Send( const Event& e )
       switch ( k ) {
         case detail::transport::socket_tcp:
           if ( !reinterpret_cast<NetTransport_base *>(link)->push( e, gaddr_dst, gaddr_src) ) {
+#ifdef __FIT_STEM_TRACE
+            try {
+              Locker lk(_lock_tr);
+              if ( _trs != 0 && _trs->good() && (_trflags & tracenet) ) {
+                *_trs << "Remove net channel " << link << endl;
+              }
+            }
+            catch ( ... ) {
+            }
+#endif // __FIT_STEM_TRACE
             // if I detect bad connection during writing to net
             // (in the push), I remove this connetion related entries.
             // Unsafe variant allow avoid deadlock here.
@@ -535,14 +565,45 @@ void EvManager::Send( const Event& e )
       }
     }
     catch ( std::logic_error& err ) {
-      cerr << err.what() << endl;
+// #ifdef __FIT_STEM_TRACE
+      try {
+        Locker lk(_lock_tr);
+        if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+          *_trs << err.what() << " "
+                << __FILE__ << ":" << __LINE__ << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+// #endif // __FIT_STEM_TRACE
       _lock_xheap.unlock();
     }
     catch ( std::runtime_error& err ) {
-      cerr << err.what() << endl;
+// #ifdef __FIT_STEM_TRACE
+      try {
+        Locker lk(_lock_tr);
+        if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+          *_trs << err.what() << " "
+                << __FILE__ << ":" << __LINE__ << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+// #endif // __FIT_STEM_TRACE
       _lock_xheap.unlock();
     }
     catch ( ... ) {
+// #ifdef __FIT_STEM_TRACE
+      try {
+        Locker lk(_lock_tr);
+        if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+          *_trs << "Unknown, uncatched exception: "
+                << __FILE__ << ":" << __LINE__ << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+// #endif // __FIT_STEM_TRACE
       _lock_xheap.unlock();
     }
   } else { // local object
@@ -556,25 +617,88 @@ void EvManager::Send( const Event& e )
       _lock_heap.unlock();
 
       try {
-        if ( superflag ) {
-          cerr << hex << e.dest() << " " << e.src() << " " << e.code() << dec << endl;
-          object->DispatchTrace( e, cerr );
-          cerr << endl;
+#ifdef __FIT_STEM_TRACE
+        try {
+          Locker lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
+            *_trs << object->classtype().name()
+                  << " (" << object << ")\n";
+            object->DispatchTrace( e, *_trs );
+            *_trs << endl;
+          }
         }
+        catch ( ... ) {
+        }
+#endif // __FIT_STEM_TRACE
         object->Dispatch( e ); // call dispatcher
-      } 
+      }
+      catch ( std::logic_error& err ) {
+        try {
+          Locker lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+            *_trs << err.what() << "\n"
+                  << object->classtype().name() << " (" << object << ")\n";
+            object->DispatchTrace( e, *_trs );
+            *_trs << endl;
+          }
+        }
+        catch ( ... ) {
+        }
+      }
       catch ( ... ) {
+        try {
+          Locker lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+            *_trs << "Unknown, uncatched exception during process:\n"
+                  << object->classtype().name() << " (" << object << ")\n";
+            object->DispatchTrace( e, *_trs );
+            *_trs << endl;
+          }
+        }
+        catch ( ... ) {
+        }
       }      
     }
     catch ( std::logic_error& err ) {
-      cerr << err.what() << endl;
+// #ifdef __FIT_STEM_TRACE
+      try {
+        Locker lk(_lock_tr);
+        if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+          *_trs << err.what() << "\n"
+                << __FILE__ << ":" << __LINE__ << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+// #endif // __FIT_STEM_TRACE
       _lock_heap.unlock();
     }
     catch ( std::runtime_error& err ) {
-      cerr << err.what() << endl;
+// #ifdef __FIT_STEM_TRACE
+      try {
+        Locker lk(_lock_tr);
+        if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+          *_trs << err.what() << " "
+                << __FILE__ << ":" << __LINE__ << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+// #endif // __FIT_STEM_TRACE
       _lock_heap.unlock();
     }
     catch ( ... ) {
+// #ifdef __FIT_STEM_TRACE
+      try {
+        Locker lk(_lock_tr);
+        if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+          *_trs << "Unknown, uncatched exception: "
+                << __FILE__ << ":" << __LINE__ << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+// #endif // __FIT_STEM_TRACE
       _lock_heap.unlock();
     }
   }
@@ -605,7 +729,8 @@ addr_type EvManager::create_unique_x()
 
 std::ostream& operator <<( ostream& s, const gaddr_type& ga )
 {
-  s.unsetf( ios_base::showbase );
+  ios_base::fmtflags f = s.flags( 0 );
+  // s.unsetf( ios_base::showbase );
   s << hex << setfill('0')
     << setw(2) << static_cast<unsigned>(ga.hid.u.b[0])
     << setw(2) << static_cast<unsigned>(ga.hid.u.b[1])
@@ -627,10 +752,12 @@ std::ostream& operator <<( ostream& s, const gaddr_type& ga )
     << dec << ga.pid
     << "-"
     << setw(8) << hex << setfill( '0' ) << ga.addr;
+  s.flags( f );
 }
 
 __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
 {
+  ios_base::fmtflags f = s.flags( 0 );
   s << "Local map:\n";
 
   s << hex << showbase;
@@ -664,7 +791,8 @@ __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
     s << i->first << "\t=> " << i->second << "\n";
   }
 
-  s << dec << endl;
+  s << endl;
+  s.flags( f );
 
   return s;
 }

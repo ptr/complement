@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/26 14:32:35 ptr>
+// -*- C++ -*- Time-stamp: <06/11/30 20:11:30 ptr>
 
 /*
  *
@@ -69,8 +69,6 @@ struct __type_traits {
 # else
 #  include <bits/type_traits.h>
 # endif // __GLIBCXX__
-
-#define _STLP_TEMPLATE_NULL template <>
 
 #endif
 
@@ -147,19 +145,22 @@ class __Event_Base
     __Event_Base() :
         _code( badcode ),
         _dst( badaddr ),
-        _src( badaddr )
+        _src( badaddr ),
+        _flags( 0 )
       { }
 
     explicit __Event_Base( code_type c ) :
         _code( c ),
         _dst( badaddr ),
-        _src( badaddr )
+        _src( badaddr ),
+        _flags( 0 )
       { }
 
     /* explicit */ __Event_Base( const __Event_Base& e ) :
         _code( e._code ),
         _dst( e._dst ),
-        _src( e._src )
+        _src( e._src ),
+        _flags( e._flags )
       { }
 
     code_type code() const
@@ -168,6 +169,8 @@ class __Event_Base
       { return _dst; }
     addr_type src() const
       { return _src; }
+    uint32_t flags() const
+      { return _flags; }
     bool is_from_foreign() const
       { return ((_src & extbit) != 0) && (_src != badaddr); }
     bool is_to_foreign() const
@@ -180,32 +183,37 @@ class __Event_Base
     void src( addr_type c ) const
       { _src = c; }
 
+    void setf( uint32_t f ) const
+      { _flags |= f; }
+    void unsetf( uint32_t f ) const
+      { _flags &= (0xffffffff & ~f); }
+    void resetf( uint32_t f ) const
+      { _flags = f; }
+    void cleanf() const
+      { _flags = 0; }
+
+    enum {
+      conv = 1,
+      expand = 2
+    };
+
   protected:
-    mutable code_type _code; // event code
+    mutable code_type  _code; // event code
     mutable addr_type  _dst;  // destination
     mutable addr_type  _src;  // source
-
-    friend class NetTransport_base;
-    friend class NetTransportMgr;
+    mutable uint32_t   _flags;
 };
-
-#if defined(_MSC_VER) && !defined(_DEBUG)  // workaround for VC 5.0 / Release
-} // namespace stem
-typedef stem::__Event_Base __Event_Base;
-namespace stem {
-#endif
 
 // Forward declarations
 
+template <class D, class POD > class __Event_base_aux;
+template <class D> class __Event_base_aux<D,__true_type>;
+template <class D> class __Event_base_aux<D,__false_type>;
+
 template <class D> class Event_base;
-// VC 5.0 to be very huffy on typedefed std::string...
-#ifndef _MSC_VER
-_STLP_TEMPLATE_NULL class Event_base<std::string>;
-#else
-_STLP_TEMPLATE_NULL
-class Event_base<std::basic_string<char, std::char_traits<char>, std::allocator<char> > >;
-#endif
-_STLP_TEMPLATE_NULL class Event_base<void>;
+
+template <> class Event_base<std::string>;
+template <> class Event_base<void>;
 
 // Typedefs:
 
@@ -239,8 +247,14 @@ typedef Event_base<std::string> Event;
 
 \* ******************************************** */
 
+template <class D, class POD >
+class __Event_base_aux :
+        public __Event_Base
+{
+};
+
 template <class D>
-class Event_base :
+class __Event_base_aux<D,__true_type> :
         public __Event_Base
 {
   public:
@@ -250,27 +264,24 @@ class Event_base :
     typedef D *       pointer;
     typedef const D * const_pointer;
 
-    Event_base() :
+    __Event_base_aux() :
         __Event_Base(),
         _data()
       { }
 
-    explicit Event_base( code_type c ) :
+    explicit __Event_base_aux( code_type c ) :
         __Event_Base( c ),
         _data()
       { }
 
-    Event_base( code_type c, const D& d ) :
+    __Event_base_aux( code_type c, const D& d ) :
         __Event_Base( c ),
         _data( d )
       { }
 
-// #ifndef __GNUG__ // otherwise gcc can't return structure
-//    explicit
-// #endif
-    Event_base( const Event_base& e ) :
+    __Event_base_aux( const __Event_Base& e, const D& d ) :
         __Event_Base( e ),
-        _data( e._data )
+        _data( d )
       { }
 
     const_reference value() const
@@ -279,187 +290,6 @@ class Event_base :
       { return _data; }
     size_type value_size() const
       { return sizeof(_data); }
-
-//#ifndef __FIT_TEMPLATE_FORWARD_BUG
-#if 0
-    void net_pack( Event& s ) const
-      {
-        s.code( _code );
-        s.dest( _dst );
-        s.src( _src );
-        std::ostringstream ss;
-        net_pack( ss );
-        s.value() = ss.str();
-      }
-
-    void net_unpack( const Event& s )
-      {
-        _code = s.code();
-        _dst  = s.dest();
-        _src  = s.src();
-        std::stringstream ss( s.value() );
-        net_unpack( ss );
-      }
-
-    void pack( Event& s ) const
-      {
-        s.code( _code );
-        s.dest( _dst );
-        s.src( _src );
-        std::stringstream ss;
-        pack( ss );
-        s.value() = ss.str();
-      }
-
-    void unpack( const Event& s )
-      {
-        _code = s.code();
-        _dst  = s.dest();
-        _src  = s.src();
-        std::stringstream ss( s.value() );
-        unpack( ss );
-      }
-#else // __FIT_TEMPLATE_FORWARD_BUG
-    void net_pack( Event& s ) const;
-    void net_unpack( const Event& s );
-    void pack( Event& s ) const;
-    void unpack( const Event& s );
-#endif
-
-#ifndef _MSC_VER
-    void pack( std::ostream& __s ) const
-      { pack( __s, typename __type_traits<D>::is_POD_type() ); }
-    void unpack( std::istream& __s )
-      { unpack( __s, typename __type_traits<D>::is_POD_type() ); }
-    void net_pack( std::ostream& __s ) const
-      { net_pack( __s, typename __type_traits<D>::is_POD_type() ); }
-    void net_unpack( std::istream& __s )
-      { net_unpack( __s, typename __type_traits<D>::is_POD_type() ); }
-#else
-// VC instantiate only whole class, so I need stupid specializaton for it,
-// and this template can be compiled for non-POD classes only
-// (specialization for integral types in separate file, included below)
-    void pack( std::ostream& __s ) const
-      { _data.pack( __s ); }
-    void unpack( std::istream& __s )
-      { _data.unpack( __s ); }
-    void net_pack( std::ostream& __s ) const
-      { _data.net_pack( __s ); }
-    void net_unpack( std::istream& __s )
-      { _data.net_unpack( __s ); }
-#endif
-
-  protected:
-    value_type _data;
-
-#ifndef _MSC_VER
-    void pack( std::ostream& __s, __true_type ) const
-      { __s.write( (const char *)&_data, sizeof(D) ); }
-
-    void pack( std::ostream& __s, __false_type ) const
-      { _data.pack( __s ); }
-
-    void unpack( std::istream& __s, __true_type )
-      { __s.read( (char *)&_data, sizeof(D) ); }
-    void unpack( std::istream& __s, __false_type )
-      { _data.unpack( __s ); }
-
-    void net_pack( std::ostream& __s, __true_type ) const
-      {
-        value_type tmp = to_net( _data );
-        __s.write( (const char *)&tmp, sizeof(D) );
-      }
-    void net_pack( std::ostream& __s, __false_type ) const
-      { _data.net_pack( __s ); }
-    void net_unpack( std::istream& __s, __true_type )
-      {
-        value_type tmp;
-        __s.read( (char *)&tmp, sizeof(D) );
-        _data = from_net( tmp );
-      }
-    void net_unpack( std::istream& __s, __false_type )
-      { _data.net_unpack( __s ); }
-#endif
-};
-
-
-// VC 5.0 to be very huffy on typedefed std::string...
-_STLP_TEMPLATE_NULL
-#ifndef _MSC_VER
-class Event_base<std::string> :
-#else
-class Event_base<std::basic_string<char,std::char_traits<char>,std::allocator<char> > > :
-#endif
-        public __Event_Base
-{
-  public:
-    typedef std::string         value_type;
-    typedef std::string&        reference;
-    typedef const std::string&  const_reference;
-    typedef std::string *       pointer;
-    typedef const std::string * const_pointer;
-
-    Event_base() :
-        __Event_Base(),
-        _data()
-      { }
-
-    explicit Event_base( code_type c ) :
-        __Event_Base( c ),
-        _data()
-      { }
-
-    Event_base( code_type c, const std::string& d ) :
-        __Event_Base( c ),
-        _data( d )
-      { }
-
-#if !defined( __GNUG__ ) && !defined( _MSC_VER ) // otherwise gcc can't return structure
-//    explicit
-#endif
-    Event_base( const Event_base& e ) :
-        __Event_Base( e ),
-        _data( e._data )
-      { }
-
-    const_reference value() const
-      { return _data; }
-    reference value()
-      { return _data; }
-    size_type value_size() const
-      { return _data.size(); }
-
-    void net_pack( Event& s ) const
-      {
-        s.code( _code );
-        s.dest( _dst );
-        s.src( _src );
-        s.value() = _data;
-      }
-
-    void net_unpack( const Event& s )
-      {
-        _code = s.code();
-        _dst  = s.dest();
-        _src  = s.src();
-        _data = s.value();
-      }
-
-    void pack( Event& s ) const
-      {
-        s.code( _code );
-        s.dest( _dst );
-        s.src( _src );
-        s.value() = _data;
-      }
-
-    void unpack( const Event& s )
-      {
-        _code = s.code();
-        _dst  = s.dest();
-        _src  = s.src();
-        _data = s.value();
-      }
 
     void pack( std::ostream& __s ) const
       { __pack_base::__pack( __s, _data ); }
@@ -474,52 +304,110 @@ class Event_base<std::basic_string<char,std::char_traits<char>,std::allocator<ch
     value_type _data;
 };
 
-//#ifdef __FIT_TEMPLATE_FORWARD_BUG
 template <class D>
-void Event_base<D>::net_pack( Event& s ) const
+class __Event_base_aux<D,__false_type> :
+        public __Event_Base
 {
-  s.code( _code );
-  s.dest( _dst );
-  s.src( _src );
-  std::ostringstream ss;
-  net_pack( ss );
-  s.value() = ss.str();
-}
+  public:
+    typedef D         value_type;
+    typedef D&        reference;
+    typedef const D&  const_reference;
+    typedef D *       pointer;
+    typedef const D * const_pointer;
 
-template <class D>
-void Event_base<D>::net_unpack( const Event& s )
+    __Event_base_aux() :
+        __Event_Base(),
+        _data()
+      { }
+
+    explicit __Event_base_aux( code_type c ) :
+        __Event_Base( c ),
+        _data()
+      { }
+
+    __Event_base_aux( code_type c, const D& d ) :
+        __Event_Base( c ),
+        _data( d )
+      { }
+
+    __Event_base_aux( const __Event_Base& e, const D& d ) :
+        __Event_Base( e ),
+        _data( d )
+      { }
+
+    const_reference value() const
+      { return _data; }
+    reference value()
+      { return _data; }
+    size_type value_size() const
+      { return sizeof(_data); }
+
+    void pack( std::ostream& __s ) const
+      { _data.pack( __s ); }
+    void unpack( std::istream& __s )
+      { _data.unpack( __s ); }
+    void net_pack( std::ostream& __s ) const
+      { _data.net_pack( __s ); }
+    void net_unpack( std::istream& __s )
+      { _data.net_unpack( __s ); }
+
+  protected:
+    value_type _data;
+};
+
+template <>
+class __Event_base_aux<std::string,__false_type> :
+        public __Event_Base
 {
-  _code = s.code();
-  _dst  = s.dest();
-  _src  = s.src();
-  std::istringstream ss( s.value() );
-  net_unpack( ss );
-}
+  public:
+    typedef std::string         value_type;
+    typedef std::string&        reference;
+    typedef const std::string&  const_reference;
+    typedef std::string *       pointer;
+    typedef const std::string * const_pointer;
 
-template <class D>
-void Event_base<D>::pack( Event& s ) const
-{
-  s.code( _code );
-  s.dest( _dst );
-  s.src( _src );
-  std::ostringstream ss;
-  pack( ss );
-  s.value() = ss.str();
-}
+    __Event_base_aux() :
+        __Event_Base(),
+        _data()
+      { }
 
-template <class D>
-void Event_base<D>::unpack( const Event& s )
-{
-  _code = s.code();
-  _dst  = s.dest();
-  _src  = s.src();
-  std::istringstream ss( s.value() );
-  unpack( ss );
-}
-//#endif // __FIT_TEMPLATE_FORWARD_BUG
+    explicit __Event_base_aux( code_type c ) :
+        __Event_Base( c ),
+        _data()
+      { }
 
-_STLP_TEMPLATE_NULL
-class Event_base<void> :
+    __Event_base_aux( code_type c, const std::string& d ) :
+        __Event_Base( c ),
+        _data( d )
+      { }
+
+    __Event_base_aux( const __Event_Base& e, const std::string& d ) :
+        __Event_Base( e ),
+        _data( d )
+      { }
+
+    const_reference value() const
+      { return _data; }
+    reference value()
+      { return _data; }
+    size_type value_size() const
+      { return sizeof(_data); }
+
+    void pack( std::ostream& __s ) const
+      { __pack_base::__pack( __s, _data ); }
+    void unpack( std::istream& __s )
+      { __pack_base::__unpack( __s, _data ); }
+    void net_pack( std::ostream& __s ) const
+      { __pack_base::__net_pack( __s, _data ); }
+    void net_unpack( std::istream& __s )
+      { __pack_base::__net_unpack( __s, _data ); }
+
+  protected:
+    value_type _data;
+};
+
+template <>
+class __Event_base_aux<void,__true_type> :
         public __Event_Base
 {
   public:
@@ -528,26 +416,202 @@ class Event_base<void> :
     typedef size_t       size_type;
     typedef const void * const_pointer;
 
-    Event_base() :
+    __Event_base_aux() :
         __Event_Base()
       { }
 
-    explicit Event_base( code_type c ) :
+    explicit __Event_base_aux( code_type c ) :
         __Event_Base( c )
       { }
 
-    __FIT_EXPLICIT Event_base( const Event_base& e ) :
+    __Event_base_aux( const __Event_Base& e ) :
         __Event_Base( e )
       { }
 
     size_type value_size() const
       { return 0; }
 
+    void pack( std::ostream& __s ) const
+      { }
+    void unpack( std::istream& __s )
+      { }
+    void net_pack( std::ostream& __s ) const
+      { }
+    void net_unpack( std::istream& __s )
+      { }
+};
+
+template <class D>
+class Event_base :
+    public __Event_base_aux<D,typename __type_traits<D>::is_POD_type>
+{
+  private:
+    typedef __Event_base_aux<D,typename __type_traits<D>::is_POD_type> _Base;
+
+  public:
+    Event_base() :
+        __Event_base_aux<D,typename __type_traits<D>::is_POD_type>()
+      { }
+
+    explicit Event_base( code_type c ) :
+        __Event_base_aux<D,typename __type_traits<D>::is_POD_type>( c )
+      { }
+
+    Event_base( code_type c, const D& d ) :
+        __Event_base_aux<D,typename __type_traits<D>::is_POD_type>( c, d )
+      { }
+
+    Event_base( const Event_base& e ) :
+        __Event_base_aux<D,typename __type_traits<D>::is_POD_type>( e, e._data )
+      { }
+
+    void net_pack( Event& s ) const;
+    void net_unpack( const Event& s );
+    void pack( Event& s ) const;
+    void unpack( const Event& s );
+};
+
+
+template <>
+class Event_base<std::string> :
+    public __Event_base_aux<std::string,__false_type>
+{
+  private:
+    typedef __Event_base_aux<std::string,__false_type> _Base;
+
+  public:
+    Event_base() :
+        __Event_base_aux<std::string,__false_type>()
+      { }
+
+    explicit Event_base( code_type c ) :
+        __Event_base_aux<std::string,__false_type>( c )
+      { }
+
+    Event_base( code_type c, const std::string& d ) :
+        __Event_base_aux<std::string,__false_type>( c, d )
+      { }
+
+    Event_base( const Event_base& e ) :
+        __Event_base_aux<std::string,__false_type>( e, e._data )
+      { }
+
     void net_pack( Event& s ) const
       {
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
+        s.resetf( _flags );
+        s.value() = _data;
+      }
+
+    void net_unpack( const Event& s )
+      {
+        _code = s.code();
+        _dst  = s.dest();
+        _src  = s.src();
+        _flags = s.flags();
+        _data = s.value();
+      }
+
+    void pack( Event& s ) const
+      {
+        s.code( _code );
+        s.dest( _dst );
+        s.src( _src );
+        s.resetf( _flags );
+        s.value() = _data;
+      }
+
+    void unpack( const Event& s )
+      {
+        _code = s.code();
+        _dst  = s.dest();
+        _src  = s.src();
+        _flags = s.flags();
+        _data = s.value();
+      }
+};
+
+template <class D>
+void Event_base<D>::net_pack( Event& s ) const
+{
+  // std::cerr << "**1\n";
+  s.code( _Base::_code );
+  s.dest( _Base::_dst );
+  s.src( _Base::_src );
+  s.resetf( _Base::_flags | (__Event_Base::conv | __Event_Base::expand) );
+  std::ostringstream ss;
+  _Base::net_pack( ss );
+  s.value() = ss.str();  
+}
+
+template <class D>
+void Event_base<D>::net_unpack( const Event& s )
+{
+  _Base::_code = s.code();
+  _Base::_dst  = s.dest();
+  _Base::_src  = s.src();
+  _Base::_flags = s.flags() & ~(__Event_Base::conv | __Event_Base::expand);
+  std::istringstream ss( s.value() );
+  _Base::net_unpack( ss );
+  // std::cerr << "**2 " << std::hex << _Base::flags() << std::dec << std::endl;
+}
+
+template <class D>
+void Event_base<D>::pack( Event& s ) const
+{
+  s.code( _Base::_code );
+  s.dest( _Base::_dst );
+  s.src( _Base::_src );
+  s.resetf( _Base::_flags | __Event_Base::expand & ~__Event_Base::conv );
+  // s.unsetf( __Event_Base::conv );
+  std::ostringstream ss;
+  _Base::pack( ss );
+  s.value() = ss.str();
+  // std::cerr << "**3 " << std::hex << s.flags() << std::dec << std::endl;
+}
+
+template <class D>
+void Event_base<D>::unpack( const Event& s )
+{
+  _Base::_code = s.code();
+  _Base::_dst  = s.dest();
+  _Base::_src  = s.src();
+  _Base::_flags = s.flags() & ~__Event_Base::expand;
+  // _Base::unsetf( __Event_Base::expand );
+  std::istringstream ss( s.value() );
+  _Base::unpack( ss );
+  // std::cerr << "**4 " << std::hex << _Base::flags() << std::dec << std::endl;
+}
+
+template <>
+class Event_base<void> :
+    public __Event_base_aux<void,__true_type>
+{
+  private:
+    typedef __Event_base_aux<void,__true_type> _Base;
+
+  public:
+
+    Event_base() :
+        __Event_base_aux<void,__true_type>()
+      { }
+
+    explicit Event_base( code_type c ) :
+        __Event_base_aux<void,__true_type>( c )
+      { }
+
+    __FIT_EXPLICIT Event_base( const Event_base& e ) :
+        __Event_base_aux<void,__true_type>( e )
+      { }
+
+    void net_pack( Event& s ) const
+      {
+        s.code( _code );
+        s.dest( _dst );
+        s.src( _src );
+        s.resetf( _Base::_flags | __Event_Base::conv | __Event_Base::expand );
         s.value().erase();
       }
 
@@ -556,6 +620,7 @@ class Event_base<void> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
+        _flags = s.flags() & ~(__Event_Base::conv | __Event_Base::expand);
       }
 
     void pack( Event& s ) const
@@ -563,6 +628,7 @@ class Event_base<void> :
         s.code( _code );
         s.dest( _dst );
         s.src( _src );
+        s.resetf( _Base::_flags & ~__Event_Base::conv | __Event_Base::expand );
         s.value().erase();
       }
 
@@ -571,6 +637,7 @@ class Event_base<void> :
         _code = s.code();
         _dst  = s.dest();
         _src  = s.src();
+        _flags = s.flags() & ~__Event_Base::expand;
       }
 
     void pack( std::ostream& ) const
@@ -582,11 +649,6 @@ class Event_base<void> :
     void net_unpack( std::istream& )
       { }
 };
-
-// VC instantiate only whole class, so I need stupid specializaton for it:
-#ifdef _MSC_VER
-#include <EDS/EventSpec.h>
-#endif
 
 } // namespace stem
 
