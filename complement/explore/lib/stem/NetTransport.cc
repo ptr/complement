@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/29 17:30:01 ptr>
+// -*- C++ -*- Time-stamp: <06/11/30 22:46:53 ptr>
 
 /*
  *
@@ -32,8 +32,6 @@ const uint32_t EDS_MSG_LIMIT = 0x400000; // 4MB
 namespace stem {
 
 using namespace std;
-
-extern int superflag;
 
 #ifdef _BIG_ENDIAN
 static const uint32_t EDS_MAGIC = 0xc2454453U;
@@ -130,7 +128,7 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
   dst._xnet_unpack( (const char *)&buf[2] );
   src._xnet_unpack( (const char *)&buf[9] );
   uint32_t _x_count = from_net( buf[16] );
-  uint32_t _x_time = from_net( buf[17] ); // time?
+  _rs.resetf( from_net( buf[17] ) );
   uint32_t sz = from_net( buf[18] );
 
   if ( sz >= EDS_MSG_LIMIT ) {
@@ -154,10 +152,6 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
     str += (char)net->get();
   }
 
-  // if ( superflag ) {
-  //   cerr << __FILE__ << ":" << __LINE__ << " " << net->good() << endl;
-  // }
-
   return net->good();
 }
 
@@ -171,7 +165,6 @@ bool NetTransport_base::push( const Event& _rs, const gaddr_type& dst, const gad
   const int bsz = 2+(4+2+1)*2+4;
   uint32_t buf[bsz];
 
-  // ostringstream sbuf;                                        // 4 bytes
   buf[0] = EDS_MAGIC;
   buf[1] = to_net( _rs.code() );
   dst._xnet_pack( reinterpret_cast<char *>(buf + 2) );
@@ -181,7 +174,7 @@ bool NetTransport_base::push( const Event& _rs, const gaddr_type& dst, const gad
   MT_IO_LOCK_W( *net )
 
   buf[16] = to_net( ++_count );
-  buf[17] = 0; // time?
+  buf[17] = to_net( _rs.flags() );
   buf[18] = to_net( static_cast<uint32_t>(_rs.value().size()) );
   buf[19] = to_net( adler32( (unsigned char *)buf, sizeof(uint32_t) * 19 )); // crc
 
@@ -312,13 +305,7 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
       net = new sockstream( hostname, port, stype );
     } else if ( net->is_open() ) {
       // net->close();
-      if ( superflag != 0 ) {
-        // cerr << __FILE__ << ":" << __LINE__ << endl;
-      }
       close(); // I should wait termination of _loop, clear EDS address mapping, etc.
-      if ( superflag != 0 ) {
-        // cerr << __FILE__ << ":" << __LINE__ << endl;
-      }
       net->open( hostname, port, stype );
     } else {
       join(); // This is safe: transparent if no _loop, and wait it if one exist
@@ -371,9 +358,6 @@ __FIT_DECLSPEC
 void NetTransportMgr::close()
 {
   if ( net ) {
-    if ( superflag != 0 ) {
-      // cerr << __FILE__ << ":" << __LINE__ << endl;
-    }
     net->rdbuf()->shutdown( sock_base::stop_in | sock_base::stop_out );
     net->close(); // otherwise _loop may not exited
     // this->close();
@@ -395,17 +379,33 @@ xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
 
   try {
     while ( me.pop( ev, dst, src ) ) {
-      if ( superflag ) {
-        cerr << "NetTransportMgr::_loop " << xmt::getpid() << " " << getppid() << endl;
-        manager()->dump( cerr );
-        cerr << "===\n";
-        // cerr << dst.hid << dst.pid << dst.addr << endl;
+#ifdef __FIT_STEM_TRACE
+      try {
+        xmt::Locker lk(manager()->_lock_tr);
+        if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->trflags() & EvManager::tracenet) ) {
+          *manager()->_trs << "Pid/ppid: " << xmt::getpid() << "/" << xmt::getppid() << "\n";
+          manager()->dump( *manager()->_trs ) << endl;
+        }
       }
+      catch ( ... ) {
+      }
+#endif // __FIT_STEM_TRACE
       addr_type xdst = manager()->reflect( dst );
       if ( xdst == badaddr ) {
-        if ( superflag ) {
-          cerr << "xdst == badaddr\n";
+#ifdef __FIT_STEM_TRACE
+        try {
+          xmt::Locker lk(manager()->_lock_tr);
+          if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->trflags() & (EvManager::tracefault)) ) {
+            *manager()->_trs << __FILE__ << ":" << __LINE__
+                             << " ("
+                             << xmt::getpid() << "/" << xmt::getppid() << ") "
+                             << "Unknown destination\n";
+            manager()->dump( *manager()->_trs ) << endl;
+          }
         }
+        catch ( ... ) {
+        }
+#endif // __FIT_STEM_TRACE
         continue;
       }
       ev.dest( xdst );
@@ -415,9 +415,16 @@ xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
       } else {
         ev.src( xsrc );
       }
-      if ( superflag ) {
-        cerr << "Destination: " << hex << ev.dest() << " Source: " << ev.src() << dec << endl;
-      }      
+#ifdef __FIT_STEM_TRACE
+      try {
+        xmt::Locker lk(manager()->_lock_tr);
+        if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->trflags() & (EvManager::tracenet)) ) {
+          *manager()->_trs << __FILE__ << ":" << __LINE__ << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+#endif // __FIT_STEM_TRACE
       manager()->push( ev );
     }
     me.NetTransport_base::close();

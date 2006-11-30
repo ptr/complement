@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/29 02:52:45 ptr>
+// -*- C++ -*- Time-stamp: <06/11/30 22:33:25 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -93,7 +93,8 @@ class EvManager
     enum traceflags {
       notrace = 0,
       tracenet = 1,
-      tracedispatch = 2
+      tracedispatch = 2,
+      tracefault = 4
     };
 
     typedef std::queue< Event > queue_type;
@@ -162,7 +163,13 @@ class EvManager
 
     __FIT_DECLSPEC void Remove( void * );
     __FIT_DECLSPEC std::ostream& dump( std::ostream& ) const;
-    
+
+    static void settrf( unsigned f );
+    static void unsettrf( unsigned f );
+    static void resettrf( unsigned f );
+    static void cleantrf();
+    static unsigned trflags();
+    static void settrs( std::ostream * );
 
   protected:
     bool unsafe_is_avail( addr_type id ) const
@@ -251,8 +258,12 @@ class EvManager
     xmt::Condition _cnd_queue;
 
     static std::string inv_key_str;
+    static xmt::Mutex _lock_tr;
+    static unsigned _trflags;
+    static std::ostream *_trs;
 
     friend class Names;
+    friend class NetTransportMgr;
 };
 
 } // namespace stem

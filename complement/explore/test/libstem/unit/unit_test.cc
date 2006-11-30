@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/29 18:18:10 ptr>
+// -*- C++ -*- Time-stamp: <06/11/30 22:13:51 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -367,10 +367,6 @@ void stem_test::echo_net()
   // cerr << "Fine\n";
 }
 
-namespace stem {
-extern int superflag;
-}
-
 extern "C" {
 
 static void dummy_signal_handler( int )
@@ -396,8 +392,6 @@ void stem_test::peer()
    *
    * (c1 <-> c2, through 'echo')
    */
-
-  stem::superflag = 0;
 
   pid_t fpid;
 
