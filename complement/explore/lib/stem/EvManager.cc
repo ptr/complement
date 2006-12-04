@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/30 22:27:43 ptr>
+// -*- C++ -*- Time-stamp: <06/12/04 19:08:21 ptr>
 
 /*
  *
@@ -119,7 +119,6 @@ addr_type EvManager::Subscribe( EventHandler *object, const std::string& info )
     gaddr.hid = xmt::hostid();
     gaddr.pid = xmt::getpid();
     gaddr.addr = id;
-    _ui_heap[gaddr] = id;
   }
   
   Locker lk( _lock_iheap );
@@ -131,26 +130,7 @@ addr_type EvManager::Subscribe( EventHandler *object, const std::string& info )
 __FIT_DECLSPEC
 addr_type EvManager::Subscribe( EventHandler *object, const char *info )
 {
-  addr_type id;
-  {
-    Locker _x1( _lock_heap );
-    id = create_unique();
-    heap[id] = object;
-  }
-  {
-    Locker lk( _lock_xheap );
-    gaddr_type& gaddr = _ex_heap[id];
-    gaddr.hid = xmt::hostid();
-    gaddr.pid = xmt::getpid();
-    gaddr.addr = id;
-    _ui_heap[gaddr] = id;
-  }
-  if ( info ) {
-    Locker _x1( _lock_iheap );
-    iheap[id] = info;
-  }
-  
-  return id;
+  return info ? Subscribe( object, string(info) ) : Subscribe( object, string() );
 }
 
 __FIT_DECLSPEC
@@ -172,7 +152,6 @@ addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
     gaddr.hid = xmt::hostid();
     gaddr.pid = xmt::getpid();
     gaddr.addr = id;
-    _ui_heap[gaddr] = id;
   }
 
   Locker _x1( _lock_iheap );
@@ -185,29 +164,7 @@ __FIT_DECLSPEC
 addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
                                   const char *info )
 {
-  if ( (id & extbit) ) {
-    return badaddr;
-  } else {
-    Locker _x1( _lock_heap );
-    if ( unsafe_is_avail( id ) ) {
-      return badaddr;
-    }
-    heap[id] = object;
-  }
-  {
-    Locker lk( _lock_xheap );
-    gaddr_type& gaddr = _ex_heap[id];
-    gaddr.hid = xmt::hostid();
-    gaddr.pid = xmt::getpid();
-    gaddr.addr = id;
-    _ui_heap[gaddr] = id;
-  }
-  if ( info ) {
-    Locker _x1( _lock_iheap );
-    iheap[id] = info;
-  }
-
-  return id;
+  return info ? SubscribeID( id, object, string(info) ) : SubscribeID( id, object, string() );
 }
 
 __FIT_DECLSPEC
@@ -220,8 +177,7 @@ addr_type EvManager::SubscribeRemote( const detail::transport& tr,
     Locker _x1( _lock_xheap );
     id = create_unique_x();
     _ex_heap[id] = addr;
-    _ui_heap[addr] = id;
-    _tr_heap.insert( make_pair( addr, tr ) );
+    _tr_heap.insert( make_pair( addr, make_pair( id, tr ) ) );
     _ch_heap.insert( make_pair( tr.link, addr ) );
   }
   {
@@ -237,21 +193,7 @@ addr_type EvManager::SubscribeRemote( const detail::transport& tr,
                                       const gaddr_type& addr,
                                       const char *info )
 {
-  addr_type id;
-  {
-    Locker _x1( _lock_xheap );
-    id = create_unique_x();
-    _ex_heap[id] = addr;
-    _ui_heap[addr] = id;
-    _tr_heap.insert( make_pair( addr, tr ) );
-    _ch_heap.insert( make_pair( tr.link, addr ) );
-  }
-  if ( info ) {
-    Locker _x1( _lock_iheap );
-    iheap[id] = info;
-  }
-
-  return id;
+  return info ? SubscribeRemote( tr, addr, string(info) ) : SubscribeRemote( tr, addr, string() );
 }
 
 __FIT_DECLSPEC
@@ -262,10 +204,9 @@ addr_type EvManager::SubscribeRemote( const gaddr_type& addr,
   if ( addr.hid == xmt::hostid() && addr.pid == xmt::getpid() ) { // local
     if ( addr.addr & extbit ) { // may be transit object
       Locker lk( _lock_xheap );
-      uuid_ext_heap_type::const_iterator i = _ui_heap.find( addr );
-
-      if ( i != _ui_heap.end() ) {
-        return i->second;
+      pair<uuid_tr_heap_type::const_iterator,uuid_tr_heap_type::const_iterator> range = _tr_heap.equal_range( addr );
+      if ( range.first != range.second ) { // transport present
+        return min_element( range.first, range.second, tr_compare )->second.first;
       }
     } else { // may be local object
       Locker lk( _lock_heap );
@@ -277,11 +218,11 @@ addr_type EvManager::SubscribeRemote( const gaddr_type& addr,
     return badaddr; // don't know what I can made
   } else { // foreign object
     Locker lk( _lock_xheap );
-    uuid_ext_heap_type::const_iterator i = _ui_heap.find( addr );
-
-    if ( i != _ui_heap.end() ) {
-      return i->second;
+    pair<uuid_tr_heap_type::const_iterator,uuid_tr_heap_type::const_iterator> tr_range = _tr_heap.equal_range( addr );
+    if ( tr_range.first != tr_range.second ) { // transport present
+      return min_element( tr_range.first, tr_range.second, tr_compare )->second.first;
     }
+
     gaddr_type peer_zero( addr );
     peer_zero.addr = default_addr;
     pair<uuid_tr_heap_type::const_iterator,uuid_tr_heap_type::const_iterator> range = _tr_heap.equal_range( peer_zero );
@@ -290,11 +231,10 @@ addr_type EvManager::SubscribeRemote( const gaddr_type& addr,
     }
     id = create_unique_x();
     for ( uuid_tr_heap_type::const_iterator j = range.first; j != range.second; ++j ) {
-      _tr_heap.insert( make_pair( addr, j->second ) ); // all available transports
-      _ch_heap.insert( make_pair( j->second.link, addr ) );
+      _tr_heap.insert( make_pair( addr, make_pair( id, j->second.second ) ) ); // all available transports
+      _ch_heap.insert( make_pair( j->second.second.link, addr ) );
     }
     _ex_heap[id] = addr;
-    _ui_heap[addr] = id;
   }
   {
     Locker lk( _lock_iheap );
@@ -307,49 +247,7 @@ __FIT_DECLSPEC
 addr_type EvManager::SubscribeRemote( const gaddr_type& addr,
                                       const char *info )
 {
-  addr_type id;
-  if ( addr.hid == xmt::hostid() && addr.pid == xmt::getpid() ) {
-    if ( addr.addr & extbit ) { // may be transit object
-      Locker lk( _lock_xheap );
-      uuid_ext_heap_type::const_iterator i = _ui_heap.find( addr );
-
-      if ( i != _ui_heap.end() ) {
-        return i->second;
-      }
-    } else { // may be local object
-      Locker lk( _lock_heap );
-      local_heap_type::const_iterator i = heap.find( addr.addr );
-      if ( i != heap.end() ) {
-        return i->first;
-      }
-    }
-    return badaddr; // don't know what I can made
-  } else {
-    Locker lk( _lock_xheap );
-    uuid_ext_heap_type::const_iterator i = _ui_heap.find( addr );
-
-    if ( i != _ui_heap.end() ) {
-      return i->second;
-    }
-    gaddr_type peer_zero( addr );
-    peer_zero.addr = default_addr;
-    pair<uuid_tr_heap_type::const_iterator,uuid_tr_heap_type::const_iterator> range = _tr_heap.equal_range( peer_zero );
-    if ( range.first == range.second ) { // no transport
-      return badaddr;
-    }
-    id = create_unique_x();
-    for ( uuid_tr_heap_type::const_iterator j = range.first; j != range.second; ++j ) {
-      _tr_heap.insert( make_pair( addr, j->second ) ); // all available transports
-      _ch_heap.insert( make_pair( j->second.link, addr ) );
-    }
-    _ex_heap[id] = addr;
-    _ui_heap[addr] = id;
-  }
-  if ( info ) {
-    Locker _x1( _lock_iheap );
-    iheap[id] = info;
-  }
-  return id;
+  return info ? SubscribeRemote( addr, string(info) ) : SubscribeRemote( addr, string() );
 }
 
 __FIT_DECLSPEC
@@ -360,8 +258,8 @@ bool EvManager::Unsubscribe( addr_type id )
     gaddr_type& addr = _ex_heap[id];
       
     pair<uuid_tr_heap_type::iterator,uuid_tr_heap_type::iterator> range = _tr_heap.equal_range( addr );
-    for ( uuid_tr_heap_type::iterator i = range.first; i != range.second; ++i ) {
-      pair<tr_uuid_heap_type::iterator,tr_uuid_heap_type::iterator> ch_range = _ch_heap.equal_range( i->second.link );
+    for ( uuid_tr_heap_type::iterator i = range.first; i != range.second; ) {
+      pair<tr_uuid_heap_type::iterator,tr_uuid_heap_type::iterator> ch_range = _ch_heap.equal_range( i->second.second.link );
       for ( tr_uuid_heap_type::iterator j = ch_range.first; j != ch_range.second; ) {
         if ( j->second == i->first ) {
           _ch_heap.erase( j++ );
@@ -369,9 +267,12 @@ bool EvManager::Unsubscribe( addr_type id )
         }
         ++j;
       }
+      if ( i->second.first == id ) {
+        _tr_heap.erase( i++ );
+        continue;
+      }
+      ++i;
     }
-    _tr_heap.erase( range.first, range.second );
-    _ui_heap.erase( addr );
     _ex_heap.erase( id );
   } else {
     Locker _x1( _lock_heap );
@@ -416,11 +317,11 @@ addr_type EvManager::reflect( const gaddr_type& addr ) const
 #endif
 
   Locker _x1( _lock_xheap );
-  uuid_ext_heap_type::const_iterator i = _ui_heap.find( addr );
-  if ( i == _ui_heap.end() ) {
-    return badaddr;
+  pair<uuid_tr_heap_type::const_iterator,uuid_tr_heap_type::const_iterator> range = _tr_heap.equal_range( addr );
+  if ( range.first != range.second ) { // transport present
+    return min_element( range.first, range.second, tr_compare )->second.first;
   }
-  return i->second;
+  return badaddr;
 }
 
 __FIT_DECLSPEC
@@ -469,11 +370,16 @@ void EvManager::unsafe_Remove( void *channel )
 {
   pair<tr_uuid_heap_type::iterator,tr_uuid_heap_type::iterator> ch_range = _ch_heap.equal_range( channel );
   for (tr_uuid_heap_type::iterator i = ch_range.first; i != ch_range.second; ++i ) {
-    _tr_heap.erase( i->second );
-    addr_type address = _ui_heap[i->second];
-    _ex_heap.erase( address );
-    iheap.erase( address );
-    _ui_heap.erase( i->second );
+    pair<uuid_tr_heap_type::iterator,uuid_tr_heap_type::iterator> range = _tr_heap.equal_range( i->second );
+    for ( uuid_tr_heap_type::iterator j = range.first; j != range.second; ) {
+      if ( j->second.second.link == channel ) {
+        _ex_heap.erase( j->second.first );
+        iheap.erase( j->second.first );
+        _tr_heap.erase( j++ );
+        continue;
+      }
+      ++j;
+    }
   }
   _ch_heap.erase( ch_range.first, ch_range.second );
 }
@@ -490,7 +396,7 @@ __FIT_DECLSPEC const detail::transport& EvManager::transport( addr_type id ) con
     if ( range.first == _tr_heap.end() ) {
       throw range_error( string( "no transport" ) );
     }
-    return min_element( range.first, range.second, tr_compare )->second;
+    return min_element( range.first, range.second, tr_compare )->second.second;
   }
   throw range_error( string( "internal address" ) );
 }
@@ -518,7 +424,7 @@ void EvManager::Send( const Event& e )
       if ( range.first == _tr_heap.end() ) {
         throw range_error( string( "no transport" ) );
       }
-      const detail::transport& tr = min_element( range.first, range.second, tr_compare )->second;
+      const detail::transport& tr = min_element( range.first, range.second, tr_compare )->second.second;
       detail::transport::kind_type k = tr.kind;
       void *link = tr.link;
       gaddr_type gaddr_dst( i->second );
@@ -531,7 +437,6 @@ void EvManager::Send( const Event& e )
         _gaddr_src.pid = xmt::getpid();
         _gaddr_src.addr = e.src(); // it may be as local as foreign; if e.src()
                                    // is foreign, the object is 'transit object'
-        _ui_heap[_gaddr_src] = e.src();
         gaddr_src = _gaddr_src;
       } else {
         gaddr_src = j->second;
@@ -771,11 +676,6 @@ __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
     s << i->first << "\t=> '" << i->second << "'\n";
   }
 
-  s << "\nUnique Id map:\n";
-  for ( uuid_ext_heap_type::const_iterator i = _ui_heap.begin(); i != _ui_heap.end(); ++i ) {
-    s << i->first << "\t=> " << hex << showbase << i->second << "\n";
-  }
-
   s << "\nExternal address map:\n";
   for ( ext_uuid_heap_type::const_iterator i = _ex_heap.begin(); i != _ex_heap.end(); ++i ) {
     s << hex << showbase << i->first << "\t=> " << i->second << "\n";
@@ -783,7 +683,7 @@ __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
 
   s << "\nUnique Id to transport map:\n";
   for ( uuid_tr_heap_type::const_iterator i = _tr_heap.begin(); i != _tr_heap.end(); ++i ) {
-    s << i->first << "\t=> " << i->second.link << " " << i->second.metric << "\n";
+    s << i->first << "\t=> " << hex << i->second.first << " " << i->second.second.link << " " << dec << i->second.second.metric << "\n";
   }
 
   s << "\nTransport to Unique Id map:\n";
