@@ -1,3 +1,12 @@
+2006-12-04  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* EvManager.h, EvManager.cc, Names.cc: remove global
+	address to internal address heap; use global address
+	to transport instead [with a bit comlpicated target
+	structure---local id added]; this resolve problems
+	with mapping external objects to local address when
+	few channels to remote system present.
+
 2006-11-30  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* Event.h: code clean; change specialization of Event_base

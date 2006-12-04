@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/30 22:33:25 ptr>
+// -*- C++ -*- Time-stamp: <06/12/04 17:32:31 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -79,14 +79,13 @@ class EvManager
     typedef std::map<addr_type,EventHandler *> local_heap_type;
     typedef std::map<addr_type,std::string>    info_heap_type;
 
-    typedef std::map<gaddr_type,addr_type> uuid_ext_heap_type;
     typedef std::map<addr_type,gaddr_type> ext_uuid_heap_type;
 
-    typedef std::multimap<gaddr_type,detail::transport> uuid_tr_heap_type;
+    typedef std::multimap<gaddr_type,std::pair<addr_type,detail::transport> > uuid_tr_heap_type;
     typedef std::multimap<detail::transport_entry,gaddr_type> tr_uuid_heap_type;
 
-    static bool tr_compare( const std::pair<gaddr_type,detail::transport>& l, const std::pair<gaddr_type,detail::transport>& r )
-      { return l.second < r.second; }
+    static bool tr_compare( const std::pair<gaddr_type,std::pair<addr_type,detail::transport> >& l, const std::pair<gaddr_type,std::pair<addr_type,detail::transport> >& r )
+      { return l.second.second < r.second.second; }
 
   public:
 
@@ -229,9 +228,8 @@ class EvManager
     local_heap_type heap;   // address -> EventHandler *
     info_heap_type  iheap;  // address -> info string (both local and external)
 
-    uuid_ext_heap_type _ui_heap; // gloabal address -> address
     ext_uuid_heap_type _ex_heap; // address -> global address
-    uuid_tr_heap_type _tr_heap;  // global address -> transport
+    uuid_tr_heap_type _tr_heap;  // global address -> address, transport
     tr_uuid_heap_type _ch_heap;  // transport channel -> global address
 
     queue_type in_ev_queue;
