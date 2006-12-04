@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/30 19:02:51 ptr>
+// -*- C++ -*- Time-stamp: <06/12/04 18:43:56 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -58,14 +58,15 @@ void __FIT_DECLSPEC Names::ns_list( const Event& rq )
   Event_base<Seq> rs( EV_STEM_NS_LIST );
   Seq::container_type& lst = rs.value().container;
 
+  EvManager::ext_uuid_heap_type::const_iterator j;
+
   manager()->_lock_xheap.lock();
   manager()->_lock_iheap.lock();
-  for ( EvManager::uuid_ext_heap_type::const_iterator i = manager()->_ui_heap.begin(); i != manager()->_ui_heap.end(); ++i ) {
-    EvManager::info_heap_type::const_iterator j = manager()->iheap.find( i->second );
-    if ( j != manager()->iheap.end() ) {
-      lst.push_back( make_pair( i->first, j->second ) );
-    } else {
-      lst.push_back( make_pair( i->first, string() ) );
+  for ( EvManager::info_heap_type::const_iterator i = manager()->iheap.begin(); i != manager()->iheap.end(); ++i ) {
+    
+    j = manager()->_ex_heap.find( i->first );
+    if ( j != manager()->_ex_heap.end() ) {
+      lst.push_back( make_pair( j->second, i->second ) );
     }
   }
   manager()->_lock_iheap.unlock();
@@ -81,25 +82,18 @@ void __FIT_DECLSPEC Names::ns_name( const Event& rq )
   Event_base<Seq> rs( EV_STEM_NS_NAME );
   Seq::container_type& lst = rs.value().container;
 
+  manager()->_lock_xheap.lock();
   manager()->_lock_iheap.lock();
   for ( EvManager::info_heap_type::const_iterator i = manager()->iheap.begin(); i != manager()->iheap.end(); ++i ) {
     if ( i->second == rq.value() ) {
-      if ( i->first & extbit /* true */ ) {
-        Locker lk( manager()->_lock_xheap );
-        EvManager::ext_uuid_heap_type::const_iterator j = manager()->_ex_heap.find( i->first );
-        if ( j != manager()->_ex_heap.end() ) {
-          lst.push_back( make_pair( j->second, i->second ) );
-        }
-      } else {
-        Locker lk( manager()->_lock_heap );
-        EvManager::local_heap_type::const_iterator j = manager()->heap.find( i->first );
-        if ( j != manager()->heap.end() ) {
-          lst.push_back( make_pair( gaddr_type(xmt::hostid(), xmt::getpid(), j->first ), i->second ) );
-        }
+      EvManager::ext_uuid_heap_type::const_iterator j = manager()->_ex_heap.find( i->first );
+      if ( j != manager()->_ex_heap.end() ) {
+        lst.push_back( make_pair( j->second, i->second ) );
       }
     }
   }
   manager()->_lock_iheap.unlock();
+  manager()->_lock_xheap.unlock();
 
   rs.dest( rq.src() );
   Send( rs );
