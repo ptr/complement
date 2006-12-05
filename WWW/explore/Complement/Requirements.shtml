@@ -1,7 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 
 <!-- Time-stamp: <03/05/04 21:08:11 ptr> -->
-<!-- $Id$ -->
 
 <html>
   <head>
@@ -18,7 +17,46 @@
 <img src="img/jpg/c++.jpg">
 </div>
 <div class="main">
-    <h2 class="lheader">Platforms and Compilers</h2>
+    <h2 class="lheader">About portability</h2>
+    <p>Project was started as cross-platform with two main target platforms: few *nixes and Windows.
+       But now I lost interest to Windows. Of cause, I don't remove code for Windows
+       specially, but I don't check code on Windows platform and don't worry about Windows when writing new code
+       during long time. But margine of code is enough, so this support may be added,
+       if somebody would want use this project under Redmond's OS.
+    </p>
+
+    <h2 class="lheader">Platforms and Compilers, current state</h2>
+    <p>My primary platform is Linux, but I made few efforts to suport FreeBSD.
+    </p>
+
+    <p>Well, in code I mentioned NetBSD and OpenBSD, but due to restrictions in
+       threads implementation on this platforms, I'm expect problems here. 
+    </p>
+
+    <p>Really, I don't see blocking problems to use libraries from this project
+       on any POSIX-compliant OS, that has good threads implementation.
+    </p>
+
+    <p>The same words applicable to compilers: now I use gcc 4.x, but 3.4 enough too
+       or any other compiler, that implement modern C++ (near ISO/IEC 14882:2003
+       standard).
+    </p>
+
+    <p>Other useful tools are not beyond the normal POSIX system tools, except Make:
+       I'm expect GNU make 3.80 or better. Not too strong requirement for *nixes.
+    </p>
+
+    <p>In the past Complement work only with <a href="http://stlport.sourceforge.net">STLport</a> STL implementation. Now
+       it may use any modern STL (libstdc++ in particular).
+    </p>
+
+    <p>Unit tests use <a href="http://www.boost.org/libs/test/doc/components/utf/">Boost Unit Test Framework</a>.
+    </p>
+
+    <h2 class="lheader">Platforms and Compilers, historical</h2>
+
+    <p>Really 
+    </p>
     <p>
       Libraries worked with following platforms and C++ compilers:
     </p>
@@ -45,7 +83,7 @@
       </table>
     </center>
 
-    <h2 class="lheader">Other requirements</h2>
+    <h2 class="lheader">Other requirements, historical</h2>
 
     <ul>
       <li>GNU make v. 3.79.1 (for Unix-like platforms);</li>
@@ -55,7 +93,7 @@
         and early 3.x releases; 2.96, that shipout with RedHat,
         IMHO isn't good choice too);
       </li>
-      <li><a href="http://www.stlport.org">STLport</a>---STL implementation.
+      <li><a href="http://stlport.sourceforge.net">STLport</a>---STL implementation.
         Very efficient, very portable STL implementation. Instead of
         have troubles with different (and sometimes ugly) STL implementations
         that come with C++ compilers, I use STLport.

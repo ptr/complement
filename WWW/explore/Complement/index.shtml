@@ -50,35 +50,35 @@
         Generic interface for interprocess communication via sockets.
         Sockios programming interface unified with C++ standard (ISO/IEC 14882)
         IO streams interface. Provide easy and evident (for C++ programmer,
-        who understand STL) interface for TCP socket: framework both for client
-        and server parts.
+        who understand STL) interface for TCP sockets: framework both for client
+        and server parts. Generic server implemented with use of <b>xmt</b> library.
       </dd>
       <dt>StEM</dt>
       <dd>
-        StEM is finite state machine, released as set of objects with
-        state and interaction via events. It used as framework for
-        asynchronous events delivery and processing.
-        Every node has a stack of states and may react on incoming
-        events (depends upon event processing handlers and state).
-        Behaviour of object may vary during it's life time.
-        Communication
-        with events in StEM framework possible as within single process,
-        as between different processes (wold-wide too), over TCP
-        (framework provided by libsockios). In contrast to similar frameworks,
-        to process StEM-designed code you need only C++ compiler.
+        StEM is a C++ framework to build application as finite state,
+        event-driven machine. Machine correspond to set of independent objects,
+        each with own state and state history, that may interact via events.
+        Objects may be situated in different processes (that may be running on different
+        hosts, connected via TCP network). Framework use asynchronous events delivery
+        and processing.<br><br>
+
+        Every node (object) has a stack of states and may react on incoming
+        events (depends upon event processing handlers, state and states history).
+        Behaviour of object may vary during it's life time (via change of it state).<br><br>
+
+        StEM follow code reuse principles: it use <b>xmt</b> and <b>sockios</b> internal
+        and external communication.<br><br>
+
+        In contrast to similar frameworks,
+        to build application based on StEM framework, you need only C++ compiler.
       </dd>
     </dl>
 
     <h2 class="lheader">Present State of Complement Project</h2>
 
     <p>
-      Active development for Unix-like systems 
-      (now Linux, some time ago it was Solaris, HP-UX, Windows). 
-      Supported compilers---all modern gcc (begin from 2.95.3, but better
-      3.4.x or 4.x). Work well with STLport 5.x.
-      Different versions and parts of this system was used on Windows
-      (95, 98, NT, 2000, XP) with VC++ 5 SP3, HP-UX 11.00 (HP aCC A.03.13),
-      Solaris (SunSoft CC 5.2), FreeBSD, Linux (glibc and uClibc).
+      Since 1996 few projects was implemented with this libraries (it's not frozen, it under development).
+      See <a href="Requirements.shtml">Requirements</a>.
     </p>
 </div>
 
