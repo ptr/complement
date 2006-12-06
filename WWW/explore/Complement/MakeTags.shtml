@@ -1,0 +1,139 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<!-- Time-stamp: <03/10/07 15:50:35 ptr> -->
+
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <link rel="stylesheet" type="text/css" href="main.css" media="screen" title="general">
+    <link rel="stylesheet" type="text/css" href="decor.css" media="screen" title="general">
+    <link rel="stylesheet" type="text/css" href="float.css" media="screen" title="general">
+    <title>Complement: Make Tags</title>
+  </head>
+
+  <body>
+<!--#include file="head-tech.shtml" -->
+<div class="toppic">
+<img src="img/jpg/apropos.jpg">
+</div>
+<div class="main">
+    <h2 class="lheader">Make versions</h2>
+    <p>
+    I stop on support on two make variants. Well, really on single
+    GNU Make
+    and one naive utility (nmake).
+    </p>
+
+    <p>
+    GNU Make is everyware (or can be
+    everyware) in *NIX world. So I don't have stimulus to play with
+    another make incarnations (for example, BSD make is very nice,
+    but GNU Make more common). If GNU Make is present, I expect that
+    other POSIX utilities (sed, awk, sh, grep, cat, test, ... )
+    present too.
+    </p>
+
+    <p>
+    To play with compilers from one Redmond's company, you may
+    use nmake. The makefiles less attached to absolute paths,
+    and really may be moved from one box to another, in contrast
+    to MS's project files. Even more, VS's projects are castrated makefiles
+    that processed by nmake; this process screened by GUI from users.
+    Nmake is really restricted, and system based on it has less
+    features and power then GNU make-based. But it work too. 
+    </p>
+
+    <h2 class="lheader">Use-case: application</h2>
+
+<pre class="ddisplay">
+# -*- Makefile -*- Time-stamp: <06/08/04 10:54:19 ptr>
+
+SRCROOT := ../../..
+COMPILER_NAME := gcc
+
+include Makefile.inc
+include ${SRCROOT}/Makefiles/top.mak
+
+
+INCLUDES += -I$(SRCROOT)/include -I$(BOOST_INCLUDE_DIR)
+
+release-shared : LDLIBS = -lxmt -lboost_test_utf
+stldbg-shared  : LDLIBS = -lxmtstlg -lboost_test_utfstlg
+dbg-shared     : LDLIBS = -lxmtg -lboost_test_utfg
+</pre>
+
+<pre class="ddisplay">
+# -*- makefile -*- Time-stamp: <04/05/06 18:40:56 ptr>
+
+PRGNAME = mt_ut
+SRC_CC = unit_test.cc timespec.cc mutex_test.cc spinlock_test.cc \
+         recursive_mutex.cc join.cc signal-1.cc signal-2.cc flck.cc lfs.cc
+</pre>
+
+<pre class="ddisplay">
+# -*- Makefile -*- Time-stamp: <03/10/17 19:42:29 ptr>
+
+SRCROOT=..\..\..
+COMPILER_NAME=vc6
+
+!include Makefile.inc
+
+INCLUDES=$(INCLUDES) /I "$(SRCROOT)/include" /I "$(STLPORT_INCLUDE_DIR)" /I "$(BOOST_INCLUDE_DIR)"
+DEFS = $(DEFS) /D_STLP_USE_DYNAMIC_LIB
+
+LDSEARCH=/LIBPATH:"$(CoMT_LIB_DIR)"
+LDLIBS = xmt_vc6.lib boost_test_utf_vc6s.lib
+!include $(SRCROOT)/Makefiles/nmake/top.mak
+</pre>
+
+    <h2 class="lheader">Use-case: library</h2>
+
+<pre class="ddisplay">
+# -*- Makefile -*- Time-stamp: <06/11/10 16:23:01 ptr>
+
+SRCROOT := ../..
+
+include Makefile.inc
+include ${SRCROOT}/Makefiles/top.mak
+
+INCLUDES += -I$(SRCROOT)/include
+</pre>
+
+<pre class="ddisplay">
+# -*- Makefile -*- Time-stamp: <06/11/29 01:59:50 ptr>
+
+LIBNAME = xmt
+MAJOR = 1
+MINOR = 9
+PATCH = 3
+SRC_CC = xmt.cc thr_mgr.cc time.cc uid.cc
+SRC_C = fl.c
+</pre>
+
+<pre class="ddisplay">
+# -*- Makefile -*- Time-stamp: <03/09/28 19:14:05 ptr>
+
+SRCROOT=..\..
+COMPILER_NAME=vc6
+
+!include Makefile.inc
+
+DEFS = /D_STLP_USE_DYNAMIC_LIB
+INCLUDES=$(INCLUDES) /I "$(SRCROOT)/include" /I "$(STLPORT_INCLUDE_DIR)"
+OPT_STLDBG = /Zm800
+LDSEARCH=$(LDSEARCH) /LIBPATH:$(STLPORT_LIB_DIR)
+
+!include $(SRCROOT)/Makefiles/nmake/top.mak
+</pre>
+
+    <h2 class="lheader">Global settings: configure again?</h2>
+    <h2 class="lheader">Build tags</h2>
+<pre class="ddisplay">
+</pre>
+
+</div>
+<!--#include file="foot.shtml" -->
+<!-- Created: Mon Oct  7 16:33:17 MSD 2002 -->
+  </body>
+</html>
+

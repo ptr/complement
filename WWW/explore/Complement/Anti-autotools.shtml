@@ -8,7 +8,7 @@
     <link rel="stylesheet" type="text/css" href="main.css" media="screen" title="general">
     <link rel="stylesheet" type="text/css" href="decor.css" media="screen" title="general">
     <link rel="stylesheet" type="text/css" href="float.css" media="screen" title="general">
-    <title>Complement: Build System</title>
+    <title>Complement: Anti-autotools</title>
   </head>
 
   <body>
