@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <06/11/11 00:23:27 ptr>
+# -*- makefile -*- Time-stamp: <06/12/12 09:43:02 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -13,12 +13,12 @@
 
 PHONY += release-shared dbg-shared stldbg-shared
 
-release-shared:	$(OUTPUT_DIR) ${SO_NAME_OUTxxx}
+release-shared:	$(EXTRA_PRE) $(OUTPUT_DIR) ${SO_NAME_OUTxxx} $(EXTRA_POST)
 
-dbg-shared:	$(OUTPUT_DIR_DBG) ${SO_NAME_OUT_DBGxxx}
+dbg-shared:	$(EXTRA_PRE_DBG) $(OUTPUT_DIR_DBG) ${SO_NAME_OUT_DBGxxx} $(EXTRA_POST_DBG)
 
 ifndef WITHOUT_STLPORT
-stldbg-shared:	$(OUTPUT_DIR_STLDBG) ${SO_NAME_OUT_STLDBGxxx}
+stldbg-shared:	$(EXTRA_PRE_STLDBG) $(OUTPUT_DIR_STLDBG) ${SO_NAME_OUT_STLDBGxxx} $(EXTRA_POST_STLDBG)
 endif
 
 define do_so_links_1
