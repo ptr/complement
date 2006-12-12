@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <06/11/17 00:21:21 ptr>
+# -*- makefile -*- Time-stamp: <06/12/12 09:37:04 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -47,12 +47,14 @@ ifdef PRGNAME
 	$(INSTALL_EXE) ${PRG} $(INSTALL_BIN_DIR)/${INSTALL_PRGNAME}
 endif
 	$(INSTALL_PRGNAME_CMD)
+	$(POST_INSTALL)
 
 install-dbg-shared: dbg-shared $(INSTALL_BIN_DIR_DBG)
 ifdef PRGNAME
 	$(INSTALL_EXE) ${PRG_DBG} $(INSTALL_BIN_DIR_DBG)/${INSTALL_PRGNAME_DBG}
 endif
 	$(INSTALL_PRGNAME_CMD_DBG)
+	$(POST_INSTALL_DBG)
 
 ifndef WITHOUT_STLPORT
 install-stldbg-shared: stldbg-shared $(INSTALL_BIN_DIR_STLDBG)
@@ -60,4 +62,5 @@ ifdef PRGNAME
 	$(INSTALL_EXE) ${PRG_STLDBG} $(INSTALL_BIN_DIR_STLDBG)/${INSTALL_PRGNAME_STLDBG}
 endif
 	$(INSTALL_PRGNAME_CMD_STLDBG)
+	$(POST_INSTALL_STLDBG)
 endif
