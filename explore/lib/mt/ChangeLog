@@ -1,3 +1,7 @@
+2006-12-13  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* thr_mgr.h, thr_mgr.cc: add join method.
+
 2006-11-29  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* xmt.h, xmt.cc: added xmt::getpid() and xmt:getppid(); ::getpid()

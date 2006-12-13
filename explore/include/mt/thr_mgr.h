@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/22 20:01:52 ptr>
+// -*- C++ -*- Time-stamp: <06/12/13 17:41:15 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2005, 2006
@@ -39,6 +39,7 @@ class ThreadMgr
     __FIT_DECLSPEC
     void launch( Thread::entrance_type entrance, const void *p = 0, size_t psz = 0, unsigned flags = 0, size_t stack_sz = 0 );    
     __FIT_DECLSPEC void garbage_collector();
+    __FIT_DECLSPEC void join();
 
     container_type::size_type size();
 
