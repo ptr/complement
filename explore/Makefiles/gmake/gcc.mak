@@ -160,8 +160,24 @@ endif
 
 # Required for correct order of static objects dtors calls:
 ifneq ($(OSNAME),cygming)
+ifneq ($(OSNAME),windows)
+ifneq ($(OSNAME),darwin)
+ifneq ($(CXX_VERSION_MAJOR),2)
 CXXFLAGS += -fuse-cxa-atexit
 endif
+endif
+endif
+endif
+
+# Code should be ready for this option
+#ifneq ($(OSNAME),windows)
+#ifneq ($(CXX_VERSION_MAJOR),2)
+#ifneq ($(CXX_VERSION_MAJOR),3)
+#CXXFLAGS += -fvisibility=hidden
+#CFLAGS += -fvisibility=hidden
+#endif
+#endif
+#endif
 
 ifdef EXTRA_CXXFLAGS
 CXXFLAGS += ${EXTRA_CXXFLAGS}
