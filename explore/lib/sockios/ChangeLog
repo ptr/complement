@@ -1,3 +1,9 @@
+2006-12-13  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: container now single owner
+	of _Connect objects; call close() and destructor of
+	Connect instance incapsulated into _Connect;
+
 2006-11-29  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* sockmgr.cc: don't delete objects via _conn_pool
