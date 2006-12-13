@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/10 19:33:54 ptr>
+// -*- C++ -*- Time-stamp: <06/12/13 17:54:09 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2005, 2006
@@ -28,7 +28,12 @@ struct bad_thread :
 
 __FIT_DECLSPEC ThreadMgr::~ThreadMgr()
 {
-  MT_REENTRANT( _lock, _x1 );
+  ThreadMgr::join();
+}
+
+__FIT_DECLSPEC void ThreadMgr::join()
+{
+  Locker lk( _lock );
   container_type::iterator i = _M_c.begin();
 
   while ( i != _M_c.end() ) {
@@ -40,6 +45,7 @@ __FIT_DECLSPEC ThreadMgr::~ThreadMgr()
     _M_c.erase( i++ );
   }
 }
+
 
 __FIT_DECLSPEC
 void ThreadMgr::launch( Thread::entrance_type entrance, const void *p, size_t psz, unsigned flags, size_t stack_sz )
