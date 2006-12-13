@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/30 22:13:51 ptr>
+// -*- C++ -*- Time-stamp: <06/12/13 02:08:08 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -54,6 +54,7 @@ struct stem_test
     void echo();
     void echo_net();
     void peer();
+    void boring_manager();
 
     static xmt::Thread::ret_code thr1( void * );
     static xmt::Thread::ret_code thr1new( void * );
@@ -595,6 +596,74 @@ void stem_test::peer()
   shmctl( id, IPC_RMID, &ds );
 }
 
+void stem_test::boring_manager()
+{
+  shmid_ds ds;
+  int id = shmget( 5000, 1024, IPC_CREAT | IPC_EXCL | 0600 );
+  BOOST_REQUIRE( id != -1 );
+  // if ( id == -1 ) {
+  //   cerr << "Error on shmget" << endl;
+  // }
+  BOOST_REQUIRE( shmctl( id, IPC_STAT, &ds ) != -1 );
+  // if ( shmctl( id, IPC_STAT, &ds ) == -1 ) {
+  //   cerr << "Error on shmctl" << endl;
+  // }
+  void *buf = shmat( id, 0, 0 );
+  BOOST_REQUIRE( buf != reinterpret_cast<void *>(-1) );
+  // if ( buf == reinterpret_cast<void *>(-1) ) {
+  //   cerr << "Error on shmat" << endl;
+  // }
+
+  xmt::__Condition<true>& fcnd = *new( buf ) xmt::__Condition<true>();
+  fcnd.set( false );
+
+  try {
+    // Client
+    xmt::Thread::fork();
+    try {
+      fcnd.try_wait();
+
+      for ( int i = 0; i < 10; ++i ) {
+        const int n = 10;
+        stem::NetTransportMgr *mgr[n];
+        mgr[0] = new stem::NetTransportMgr;
+        mgr[0]->open( "localhost", 6995 );
+
+        for ( int j = 1; j < n; ++j ) {
+          mgr[j] = new stem::NetTransportMgr;
+          stem::addr_type a = mgr[j]->open( "localhost", 6995 );
+          mgr[j]->close();
+          mgr[j]->join();
+          delete mgr[j];
+        }
+        mgr[0]->close();
+        mgr[0]->join();
+        delete mgr[0];
+      }
+    }
+    catch ( ... ) {
+    }
+    exit( 0 );
+  }
+  catch ( xmt::fork_in_parent& child ) {
+    sockmgr_stream_MP<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
+    StEMecho echo( 0, "echo service"); // <= zero! 'echo' server, default ('zero' address)
+
+    fcnd.set( true, true );
+
+    int stat;
+    waitpid( child.pid(), &stat, 0 );
+
+    srv.close();
+    srv.wait();
+  }
+
+  (&fcnd)->~__Condition<true>();
+
+  shmdt( buf );
+  shmctl( id, IPC_RMID, &ds );
+}
+
 struct stem_test_suite :
     public test_suite
 {
@@ -616,6 +685,7 @@ stem_test_suite::stem_test_suite() :
   test_case *echo_tc = BOOST_CLASS_TEST_CASE( &stem_test::echo, instance );
   test_case *echo_net_tc = BOOST_CLASS_TEST_CASE( &stem_test::echo_net, instance );
   test_case *peer_tc = BOOST_CLASS_TEST_CASE( &stem_test::peer, instance );
+  test_case *boring_manager_tc = BOOST_CLASS_TEST_CASE( &stem_test::boring_manager, instance );
   basic2_tc->depends_on( basic1_tc );
   basic1n_tc->depends_on( basic1_tc );
   basic2n_tc->depends_on( basic2_tc );
@@ -626,6 +696,7 @@ stem_test_suite::stem_test_suite() :
   echo_tc->depends_on( basic2_tc );
   echo_net_tc->depends_on( echo_tc );
   peer_tc->depends_on( echo_tc );
+  boring_manager_tc->depends_on( peer_tc );
 
   add( basic1_tc );
   add( basic2_tc );
@@ -637,6 +708,7 @@ stem_test_suite::stem_test_suite() :
   add( echo_tc );
   add( echo_net_tc );
   add( peer_tc );
+  add( boring_manager_tc );
 }
 
 test_suite *init_unit_test_suite( int argc, char **argv )
