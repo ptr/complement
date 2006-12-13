@@ -1,3 +1,9 @@
+2006-12-13  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* NetTransport.h, NetTransport.cc: NetTransportMgr
+	should have own sockstream and avoid problems with
+	order of destruction of net member.
+
 2006-12-04  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* EvManager.h, EvManager.cc, Names.cc: remove global

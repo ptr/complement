@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/27 17:22:33 ptr>
+// -*- C++ -*- Time-stamp: <06/12/13 13:22:52 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -86,7 +86,7 @@ class NetTransportMgr :
   public:
     NetTransportMgr() :
         NetTransport_base( "stem::NetTransportMgr" )
-      { }
+      { net = &_channel; }
 
     __FIT_DECLSPEC
     ~NetTransportMgr();
@@ -102,6 +102,7 @@ class NetTransportMgr :
   protected:
     static xmt::Thread::ret_code _loop( void * );
     xmt::Thread _thr;
+    std::sockstream _channel;
 };
 
 class NetTransportMP :
