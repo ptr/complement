@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/30 22:46:53 ptr>
+// -*- C++ -*- Time-stamp: <06/12/13 13:38:28 ptr>
 
 /*
  *
@@ -99,7 +99,6 @@ __FIT_DECLSPEC void NetTransport_base::close()
   if ( net != 0 ) {
     manager()->Remove( this );
     net->close();
-    net = 0;
   }
 }
 
@@ -282,15 +281,7 @@ void NetTransport::connect( sockstream& s )
 __FIT_DECLSPEC
 NetTransportMgr::~NetTransportMgr()
 {
-  if ( net ) {
-    net->rdbuf()->shutdown( sock_base::stop_in | sock_base::stop_out );
-    net->close(); // otherwise _loop may not exited
-    // this->close();
-    join();
-    // NetTransport_base::close() called during loop thread termination (see _loop)
-    delete net;
-    net = 0;
-  }        
+  NetTransportMgr::close();
 }
 
 __FIT_DECLSPEC
@@ -301,18 +292,13 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
     // I should be sure, that not more then one _loop running from here!
     // For this, I enforce close connection before I try open new,
     // and wait thread with _loop before start new.
-    if ( net == 0 ) {
-      net = new sockstream( hostname, port, stype );
-    } else if ( net->is_open() ) {
-      // net->close();
+    if ( _channel.is_open() ) {
       close(); // I should wait termination of _loop, clear EDS address mapping, etc.
-      net->open( hostname, port, stype );
-    } else {
-      join(); // This is safe: transparent if no _loop, and wait it if one exist
-      net->open( hostname, port, stype );
     }
+    join(); // This is safe: transparent if no _loop, and wait it if one exist
+    _channel.open( hostname, port, stype );
 
-    if ( net->good() ) {
+    if ( _channel.good() ) {
       Event ev( EV_STEM_TRANSPORT );
       gaddr_type dst;
       gaddr_type src;
@@ -357,15 +343,10 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
 __FIT_DECLSPEC
 void NetTransportMgr::close()
 {
-  if ( net ) {
-    net->rdbuf()->shutdown( sock_base::stop_in | sock_base::stop_out );
-    net->close(); // otherwise _loop may not exited
-    // this->close();
-    join();
-    // NetTransport_base::close() called during loop thread termination (see _loop)
-    delete net;
-    net = 0;
-  }        
+  _channel.rdbuf()->shutdown( sock_base::stop_in | sock_base::stop_out );
+  NetTransport_base::close();
+  // _channel.close();
+  join();
 }
 
 xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
