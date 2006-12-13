@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/27 17:13:22 ptr>
+// -*- C++ -*- Time-stamp: <06/12/13 17:38:44 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -145,8 +145,8 @@ class sockmgr_stream_MP :
         _busylimit.tv_nsec = 90000000; // i.e 0.09 sec
         _alarm.tv_sec = 0;
         _alarm.tv_nsec = 50000000; // i.e 0.05 sec
-        _idle.tv_sec = 300;
-        _idle.tv_nsec = 0; // i.e 5 min
+        _idle.tv_sec = 10;
+        _idle.tv_nsec = 0; // i.e 10 sec
       }
 
     explicit sockmgr_stream_MP( const in_addr& addr, int port, sock_base::stype t = sock_base::sock_stream ) :
@@ -158,8 +158,8 @@ class sockmgr_stream_MP :
         _busylimit.tv_nsec = 90000000; // i.e 0.09 sec
         _alarm.tv_sec = 0;
         _alarm.tv_nsec = 50000000; // i.e 0.05 sec
-        _idle.tv_sec = 300;
-        _idle.tv_nsec = 0; // i.e 5 min
+        _idle.tv_sec = 10;
+        _idle.tv_nsec = 0; // i.e 10 sec
       }
 
     explicit sockmgr_stream_MP( unsigned long addr, int port, sock_base::stype t = sock_base::sock_stream ) :
@@ -171,8 +171,8 @@ class sockmgr_stream_MP :
         _busylimit.tv_nsec = 90000000; // i.e 0.09 sec
         _alarm.tv_sec = 0;
         _alarm.tv_nsec = 50000000; // i.e 0.05 sec
-        _idle.tv_sec = 300;
-        _idle.tv_nsec = 0; // i.e 5 min
+        _idle.tv_sec = 10;
+        _idle.tv_nsec = 0; // i.e 10 sec
       }
 
     explicit sockmgr_stream_MP( int port, sock_base::stype t = sock_base::sock_stream ) :
@@ -184,8 +184,8 @@ class sockmgr_stream_MP :
         _busylimit.tv_nsec = 50000000; // i.e 0.05 sec
         _alarm.tv_sec = 0;
         _alarm.tv_nsec = 50000000; // i.e 0.05 sec
-        _idle.tv_sec = 300;
-        _idle.tv_nsec = 0; // i.e 5 min
+        _idle.tv_sec = 10;
+        _idle.tv_nsec = 0; // i.e 10 sec
       }
 
     ~sockmgr_stream_MP()
@@ -218,13 +218,29 @@ class sockmgr_stream_MP :
 
   protected:
 
-    struct _Connect {
-        sockstream *s;
+    struct _Connect
+    {
+        _Connect() :
+            _proc( 0 )
+          { }
+
+        _Connect( const _Connect& ) :
+            _proc( 0 )
+          { }
+
+        ~_Connect()
+          { if ( _proc ) { s.close(); _proc->close(); } delete _proc; }
+
+        void open( sock_base::socket_type st, const sockaddr& addr )
+          { s.open( st, addr ); _proc = new Connect( s ); }
+
+        sockstream s;
         Connect *_proc;
     };
 
     typedef std::vector<pollfd> _fd_sequence;
-    typedef std::deque<_Connect *> _connect_pool_sequence;
+    typedef std::list<_Connect> _Sequence;
+    typedef std::deque<typename _Sequence::iterator> _connect_pool_sequence;
 
     void _open( sock_base::stype t = sock_base::sock_stream );
     static xmt::Thread::ret_code loop( void * );
@@ -232,10 +248,10 @@ class sockmgr_stream_MP :
     static xmt::Thread::ret_code observer( void * );
 
     struct fd_equal :
-        public std::binary_function<_Connect *,int,bool> 
+        public std::binary_function<_Connect,int,bool> 
     {
-        bool operator()(const _Connect *__x, int __y) const
-          { return __x->s->rdbuf()->fd() == __y; }
+        bool operator()(const _Connect& __x, int __y) const
+          { return __x.s.rdbuf()->fd() == __y; }
     };
 
     struct pfd_equal :
@@ -262,7 +278,6 @@ class sockmgr_stream_MP :
 
   protected:
     typedef sockmgr_stream_MP<Connect> _Self_type;
-    typedef std::vector<_Connect *> _Sequence;
     typedef fd_equal _Compare;
     typedef typename _Sequence::value_type      value_type;
     typedef typename _Sequence::size_type       size_type;
@@ -274,7 +289,7 @@ class sockmgr_stream_MP :
     _Sequence _M_c;
     _Compare  _M_comp;
     pfd_equal _pfdcomp;
-    xmt::Mutex _c_lock;
+    // xmt::Mutex _c_lock;
 
     _fd_sequence _pfd;
     int _cfd; // sock_base::socket_type
