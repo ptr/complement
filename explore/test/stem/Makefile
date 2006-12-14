@@ -1,6 +1,6 @@
 # -*- Makefile -*- Time-stamp: <06/12/13 01:07:22 ptr>
 
-SRCROOT := ../../..
+SRCROOT := ../..
 COMPILER_NAME := gcc
 
 EXTRA_POST := dl
