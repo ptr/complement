@@ -145,7 +145,7 @@ void test_read0()
     // cerr << "** 1" << endl;
     // cndf.set( false );
 
-    xmt::Thread::fork();                      // <---- key line
+    xmt::fork();                      // <---- key line
     sem.wait(); // wait server for listen us
     // cerr << "** 2" << endl;
 
