@@ -1,6 +1,6 @@
 # -*- Makefile -*- Time-stamp: <06/08/04 10:54:19 ptr>
 
-SRCROOT := ../../..
+SRCROOT := ../..
 COMPILER_NAME := gcc
 
 include Makefile.inc
