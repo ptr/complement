@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/14 10:01:14 ptr>
+// -*- C++ -*- Time-stamp: <06/12/14 10:47:39 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2004, 2006
@@ -10,6 +10,8 @@
 
 #include <boost/test/unit_test.hpp>
 #include <config/feature.h>
+
+#include "mt_test_suite.h"
 
 using namespace boost::unit_test_framework;
 
@@ -24,6 +26,7 @@ void signal_1_test();
 void signal_2_test();
 void flock_test();
 void lfs_test();
+
 
 #ifdef WIN32
 test_suite *__cdecl init_unit_test_suite( int argc, char * * const argv )
@@ -49,6 +52,8 @@ test_suite *init_unit_test_suite( int argc, char * * const argv )
   // flock requre revision, commented now.
   // ts->add( BOOST_TEST_CASE( &flock_test ) );
   // ts->add( BOOST_TEST_CASE( &lfs_test ) );
+
+  ts->add( new mt_test_suite() );
 
   return ts;
 }
