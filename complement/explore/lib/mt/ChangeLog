@@ -1,3 +1,9 @@
+2006-12-14  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xmt.h, xmt.cc: move 'fork' and 'become_daemon' from Thread
+	class directly to namespace xmt; this may block usage
+	of compilers without namespaces.
+
 2006-12-13  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* thr_mgr.h, thr_mgr.cc: add join method.

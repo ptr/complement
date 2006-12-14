@@ -311,7 +311,7 @@ void stem_test::echo_net()
   fcnd.set( false );
 
   try {
-    xmt::Thread::fork();
+    xmt::fork();
 
     try {
       stem::NetTransportMgr mgr;
@@ -423,7 +423,7 @@ void stem_test::peer()
 
   try {
     // Client 1
-    xmt::Thread::fork();
+    xmt::fork();
 #if 0
     struct sigaction action;
     struct sigaction old_action;
@@ -524,7 +524,7 @@ void stem_test::peer()
 
   try {
     // Client 2
-    xmt::Thread::fork();
+    xmt::fork();
 
 #if 0
     struct sigaction action;
@@ -619,7 +619,7 @@ void stem_test::boring_manager()
 
   try {
     // Client
-    xmt::Thread::fork();
+    xmt::fork();
     try {
       fcnd.try_wait();
 

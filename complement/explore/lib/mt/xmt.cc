@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/29 03:10:16 ptr>
+// -*- C++ -*- Time-stamp: <06/12/14 17:12:53 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2006
@@ -709,9 +709,8 @@ void Thread::signal_exit( int sig )
   Thread::_exit( 0 );
 }
 
-#ifndef _WIN32
 __FIT_DECLSPEC
-void Thread::fork() throw( fork_in_parent, std::runtime_error )
+void fork() throw( fork_in_parent, std::runtime_error )
 {
 #ifdef __unix
   // MT_REENTRANT( detail::_F_lock, _1 );
@@ -728,13 +727,14 @@ void Thread::fork() throw( fork_in_parent, std::runtime_error )
 }
 
 __FIT_DECLSPEC
-void Thread::become_daemon() throw( fork_in_parent, std::runtime_error )
+void become_daemon() throw( fork_in_parent, std::runtime_error )
 {
 #ifdef __unix
   try {
-    Thread::fork();
+    xmt::fork();
 
-    // chdir( "/var/tmp" );
+    chdir( "/var/tmp" ); // for CWD: if not done, process remain with same WD
+                         // and don't allow unmount volume, for example
     ::setsid();   // become session leader
     ::close( 0 ); // close stdin
     ::close( 1 ); // close stdout
@@ -752,7 +752,6 @@ void Thread::become_daemon() throw( fork_in_parent, std::runtime_error )
   }
 #endif
 }
-#endif // _WIN32
 
 // #ifdef __GNUC__
 // void Thread::_create( const void *p, size_t psz )

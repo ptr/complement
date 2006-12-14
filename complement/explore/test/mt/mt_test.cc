@@ -43,7 +43,7 @@ void mt_test::fork()
   fcnd.set( false );
 
   try {
-    xmt::Thread::fork();
+    xmt::fork();
 
     try {
 

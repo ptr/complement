@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/29 01:50:24 ptr>
+// -*- C++ -*- Time-stamp: <06/12/14 17:08:37 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2006
@@ -1383,6 +1383,9 @@ class Semaphore
       { }
 };
 
+__FIT_DECLSPEC void fork() throw( fork_in_parent, std::runtime_error );
+__FIT_DECLSPEC void become_daemon() throw( fork_in_parent, std::runtime_error );
+
 class Thread
 {
   public:
@@ -1485,11 +1488,6 @@ class Thread
     // get precise time
     static void gettime( timespec *t )
       { xmt::gettime( t ); }
-
-#ifndef _WIN32
-    static __FIT_DECLSPEC void fork() throw( fork_in_parent, std::runtime_error );
-    static __FIT_DECLSPEC void become_daemon() throw( fork_in_parent, std::runtime_error );
-#endif
 
     bool good() const
       { return (_state == goodbit) && (_id != bad_thread_id); }
