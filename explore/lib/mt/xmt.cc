@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/15 10:10:57 ptr>
+// -*- C++ -*- Time-stamp: <06/12/15 14:39:47 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2006
@@ -695,7 +695,7 @@ void unblock_signal( int sig )
 }
 
 __FIT_DECLSPEC
-void signal_handler( int sig, SIG_PF handler )
+int signal_handler( int sig, SIG_PF handler )
 {
 #ifdef __unix  // catch SIGPIPE here
   struct sigaction act;
@@ -705,7 +705,26 @@ void signal_handler( int sig, SIG_PF handler )
  
   act.sa_flags = 0; // SA_RESTART;
   act.sa_handler = handler;
-  sigaction( sig, &act, 0 );
+  return sigaction( sig, &act, 0 );
+#else
+  return -1;
+#endif // __unix
+}
+
+__FIT_DECLSPEC
+int signal_handler( int sig, siginfo_handler_type handler )
+{
+#ifdef __unix  // catch SIGPIPE here
+  struct sigaction act;
+
+  sigemptyset( &act.sa_mask );
+  sigaddset( &act.sa_mask, sig );
+ 
+  act.sa_flags = SA_SIGINFO; // SA_RESTART;
+  act.sa_sigaction = handler;
+  return sigaction( sig, &act, 0 );
+#else
+  return -1;
 #endif // __unix
 }
 
