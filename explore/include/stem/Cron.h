@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/08/04 00:02:55 ptr>
+// -*- C++ -*- Time-stamp: <06/12/15 03:20:55 ptr>
 
 /*
  * Copyright (c) 1998, 2002, 2003, 2005
@@ -7,16 +7,8 @@
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.1
+ * Licensed under the Academic Free License version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #ifndef __stem_Cron_h
@@ -40,6 +32,7 @@
 
 #include <ctime>
 #include <mt/xmt.h>
+#include <mt/time.h>
 
 #include <queue>
 
@@ -58,8 +51,8 @@ struct CronEntry :
         n( static_cast<unsigned>(infinite) ),
         arg( 0 )
       {
-        start.tv_sec = immediate; start.tv_nsec = 0;
-        period.tv_sec = 0; period.tv_nsec = 0;
+        start = immediate;
+        period = 0;
       }
 
     CronEntry( const CronEntry& x ) :
@@ -67,15 +60,15 @@ struct CronEntry :
         n( x.n ),
         arg( x.arg )
       {
-        start.tv_sec = x.start.tv_sec; start.tv_nsec = x.start.tv_nsec;
-        period.tv_sec = x.period.tv_sec; period.tv_nsec = x.period.tv_nsec;
+        start = x.start;
+        period = x.period;
       }
 
     code_type code;
     // time_t start;
-    timespec start;
+    xmt::timespec start;
     // time_t end;
-    timespec period;
+    xmt::timespec period;
     uint32_t n;
     uint32_t arg;
 
@@ -94,9 +87,9 @@ struct __CronEntry
         count( 0 ),
         arg( 0 )
       {
-        expired.tv_sec = 0; expired.tv_nsec = 0;
-        start.tv_sec = 0; start.tv_nsec = 0;
-        period.tv_sec = 0; period.tv_nsec = 0;
+        expired = 0;
+        start = 0;
+        period = 0;
       }
 
     __CronEntry( const __CronEntry& x ) :
@@ -106,54 +99,39 @@ struct __CronEntry
         count( x.count ),
         arg( x.arg )
       {
-        expired.tv_sec = x.expired.tv_sec; expired.tv_nsec = x.expired.tv_nsec;
-        start.tv_sec = x.start.tv_sec; start.tv_nsec = x.start.tv_nsec;
-        period.tv_sec = x.period.tv_sec; period.tv_nsec = x.period.tv_nsec;
+        expired = x.expired;
+        start = x.start;
+        period = x.period;
       }
 
-    timespec expired;
+    xmt::timespec expired;
 
     code_type code;
     addr_type addr;
 
-    timespec start;
-    timespec period;
+    xmt::timespec start;
+    xmt::timespec period;
 
     unsigned n;
     unsigned count;
     unsigned arg;
-
-#if 0
-    operator <( const __CronEntry& __x ) const
-      { return expired.tv_sec < __x.expired.tv_sec ? true :
-                 expired.tv_sec > __x.expired.tv_sec ? false :
-                    expired.tv_nsec < __x.expired.tv_nsec; }
-    operator >( const __CronEntry& __x ) const
-      { return expired.tv_sec > __x.expired.tv_sec ? true :
-                 expired.tv_sec < __x.expired.tv_sec ? false :
-                    expired.tv_nsec > __x.expired.tv_nsec; }
-    operator ==( const __CronEntry& __x ) const
-      { return expired.tv_sec == __x.expired.tv_sec &&
-                 expired.tv_nsec == __x.expired.tv_nsec; }
-#endif
 };
 
 inline
 bool operator <( const __CronEntry& __l, const __CronEntry& __r )
-{ return __l.expired.tv_sec < __r.expired.tv_sec ? true :
-         __l.expired.tv_sec > __r.expired.tv_sec ? false :
-         __l.expired.tv_nsec < __r.expired.tv_nsec; }
+{ return __l.expired < __r.expired; }
 
 inline
 bool operator >( const __CronEntry& __l, const __CronEntry& __r )
-{ return __l.expired.tv_sec > __r.expired.tv_sec ? true :
-         __l.expired.tv_sec < __r.expired.tv_sec ? false :
-         __l.expired.tv_nsec > __r.expired.tv_nsec; }
+{ return __l.expired > __r.expired; }
 
 inline
 bool operator ==( const __CronEntry& __l, const __CronEntry& __r )
-{ return __l.expired.tv_sec == __r.expired.tv_sec &&
-         __l.expired.tv_nsec == __r.expired.tv_nsec; }
+{ return __l.expired == __r.expired; }
+
+inline
+bool operator !=( const __CronEntry& __l, const __CronEntry& __r )
+{ return __l.expired != __r.expired; }
 
 class Cron :
     public EventHandler

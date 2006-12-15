@@ -1,23 +1,14 @@
-// -*- C++ -*- Time-stamp: <06/08/04 11:25:15 ptr>
+// -*- C++ -*- Time-stamp: <06/12/15 10:44:27 ptr>
 
 /*
- *
  * Copyright (c) 2004, 2006
  * Petr Ovtchenkov
  *
  * Copyright (c) 2004
  * Kaspersky Lab
  *
- * Licensed under the Academic Free License Version 2.1
+ * Licensed under the Academic Free License Version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #include <boost/test/unit_test.hpp>
@@ -72,11 +63,7 @@ static Thread::ret_code thread_func( void * )
 
       cnd.set( true, true );
 
-      timespec t;
-      t.tv_sec = 1;
-      t.tv_nsec = 0;
-
-      Thread::delay( &t );
+      delay( xmt::timespec(1,0) );
 
       s.unlock();
 
@@ -142,11 +129,7 @@ static Thread::ret_code thread_func_r( void * )
         b.unlock();
       }
 
-      timespec t;
-      t.tv_sec = 1;
-      t.tv_nsec = 0;
-
-      Thread::delay( &t );
+      delay( xmt::timespec(1,0) );
 
       s.unlock();
       b.lock();
@@ -190,11 +173,7 @@ static Thread::ret_code thread_func_manip( void * )
 
     cnd.set( true, true );
 
-    timespec t;
-    t.tv_sec = 1;
-    t.tv_nsec = 0;
-
-    Thread::delay( &t );
+    delay( xmt::timespec(1,0) );
 
     s << ulck;
 
@@ -245,11 +224,7 @@ static Thread::ret_code thread_func_manip_r( void * )
       b.unlock();
     }
 
-    timespec t;
-    t.tv_sec = 1;
-    t.tv_nsec = 0;
-
-    Thread::delay( &t );
+    delay( xmt::timespec(1,0) );
 
     s >> ulck;
     b.lock();

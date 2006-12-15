@@ -1,19 +1,11 @@
-// -*- C++ -*- Time-stamp: <06/08/04 11:07:52 ptr>
+// -*- C++ -*- Time-stamp: <06/12/15 10:39:45 ptr>
 
 /*
  * Copyright (c) 2003, 2006
  * Petr Ovtchenkov
  *
- * Licensed under the Academic Free License Version 2.1
+ * Licensed under the Academic Free License Version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 
@@ -64,12 +56,8 @@ void recursive()
 
   m.lock();
   v = 2;
-  timespec t;
 
-  t.tv_sec = 1;
-  t.tv_nsec = 0;
-
-  Thread::sleep( &t );
+  xmt::sleep( xmt::timespec(1,0) );
   BOOST_CHECK( v == 2 );
   m.unlock();
   
@@ -94,12 +82,7 @@ Thread::ret_code thread_one( void * )
   // cerr << "after lock in thread one" << endl;
   // pm.unlock();
 
-  timespec t;
-
-  t.tv_sec = 1;
-  t.tv_nsec = 0;
-
-  Thread::sleep( &t );
+  xmt::sleep( xmt::timespec(1,0) );
 
   BOOST_CHECK( v == 1 );
 
@@ -139,13 +122,7 @@ Thread::ret_code thread_two( void * )
   // pm.unlock();
   BOOST_CHECK( v == 3 );
 
-
-  timespec t;
-
-  t.tv_sec = 1;
-  t.tv_nsec = 0;
-
-  Thread::sleep( &t );
+  xmt::sleep( xmt::timespec(1,0) );
   recursive();  
 
   // pm.lock();

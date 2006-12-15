@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/14 17:12:53 ptr>
+// -*- C++ -*- Time-stamp: <06/12/15 10:10:57 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2006
@@ -171,7 +171,7 @@ using std::endl;
 
 
 __FIT_DECLSPEC
-int Semaphore::wait_time( const timespec *abstime ) // wait for time t, or signal
+int Semaphore::wait_time( const ::timespec *abstime ) // wait for time t, or signal
 {
 #ifdef __FIT_WIN32THREADS
   time_t ct = time( 0 );
@@ -204,7 +204,7 @@ int Semaphore::wait_time( const timespec *abstime ) // wait for time t, or signa
 }
 
 __FIT_DECLSPEC
-int Semaphore::wait_delay( const timespec *interval ) // wait, timeout is delay t, or signal
+int Semaphore::wait_delay( const ::timespec *interval ) // wait, timeout is delay t, or signal
 {
 #ifdef __FIT_WIN32THREADS
   unsigned ms = interval->tv_sec * 1000 + interval->tv_nsec / 1000000;
@@ -219,7 +219,7 @@ int Semaphore::wait_delay( const timespec *interval ) // wait, timeout is delay 
 #endif
 #ifdef _PTHREADS
   timespec st;
-  Thread::gettime( &st );
+  xmt::gettime( &st );
   st += *interval;
 # if !(defined(__FreeBSD__) || defined(__OpenBSD__))
   return sem_timedwait( &_sem, &st );
@@ -623,60 +623,11 @@ int Thread::join_all()
 #endif
 
 __FIT_DECLSPEC
-void Thread::block_signal( int sig )
-{
-#ifdef __unix
-  sigset_t sigset;
-
-  sigemptyset( &sigset );
-  sigaddset( &sigset, sig );
-#  ifdef __FIT_UITHREADS
-  thr_sigsetmask( SIG_BLOCK, &sigset, 0 );
-#  endif
-#  ifdef _PTHREADS
-  pthread_sigmask( SIG_BLOCK, &sigset, 0 );
-#  endif
-#endif // __unix
-}
-
-__FIT_DECLSPEC
-void Thread::unblock_signal( int sig )
-{
-#ifdef __unix
-  sigset_t sigset;
-
-  sigemptyset( &sigset );
-  sigaddset( &sigset, sig );
-#  ifdef __FIT_UITHREADS
-  thr_sigsetmask( SIG_UNBLOCK, &sigset, 0 );
-#  endif
-#  ifdef _PTHREADS
-  pthread_sigmask( SIG_UNBLOCK, &sigset, 0 );
-#  endif
-#endif // __unix
-}
-
-__FIT_DECLSPEC
-void Thread::signal_handler( int sig, SIG_PF handler )
-{
-#ifdef __unix  // catch SIGPIPE here
-  struct sigaction act;
-
-  sigemptyset( &act.sa_mask );
-  sigaddset( &act.sa_mask, sig );
- 
-  act.sa_flags = 0; // SA_RESTART;
-  act.sa_handler = handler;
-  sigaction( sig, &act, 0 );
-#endif // __unix
-}
-
-__FIT_DECLSPEC
 void Thread::signal_exit( int sig )
 {
 #ifdef _PTHREADS
   _uw_alloc_type *user_words =
-    static_cast<_uw_alloc_type *>(pthread_getspecific( _mt_key ));
+    static_cast<_uw_alloc_type *>(pthread_getspecific( Thread::_mt_key ));
   if ( user_words == 0 ) {
     // async signal unsafe? or wrong thread called?
     // this a bad point, do nothing
@@ -707,6 +658,55 @@ void Thread::signal_exit( int sig )
   // well, this is suspicious, due to pthread_exit isn't async signal
   // safe; what I should use here?
   Thread::_exit( 0 );
+}
+
+__FIT_DECLSPEC
+void block_signal( int sig )
+{
+#ifdef __unix
+  sigset_t sigset;
+
+  sigemptyset( &sigset );
+  sigaddset( &sigset, sig );
+#  ifdef __FIT_UITHREADS
+  thr_sigsetmask( SIG_BLOCK, &sigset, 0 );
+#  endif
+#  ifdef _PTHREADS
+  pthread_sigmask( SIG_BLOCK, &sigset, 0 );
+#  endif
+#endif // __unix
+}
+
+__FIT_DECLSPEC
+void unblock_signal( int sig )
+{
+#ifdef __unix
+  sigset_t sigset;
+
+  sigemptyset( &sigset );
+  sigaddset( &sigset, sig );
+#  ifdef __FIT_UITHREADS
+  thr_sigsetmask( SIG_UNBLOCK, &sigset, 0 );
+#  endif
+#  ifdef _PTHREADS
+  pthread_sigmask( SIG_UNBLOCK, &sigset, 0 );
+#  endif
+#endif // __unix
+}
+
+__FIT_DECLSPEC
+void signal_handler( int sig, SIG_PF handler )
+{
+#ifdef __unix  // catch SIGPIPE here
+  struct sigaction act;
+
+  sigemptyset( &act.sa_mask );
+  sigaddset( &act.sa_mask, sig );
+ 
+  act.sa_flags = 0; // SA_RESTART;
+  act.sa_handler = handler;
+  sigaction( sig, &act, 0 );
+#endif // __unix
 }
 
 __FIT_DECLSPEC

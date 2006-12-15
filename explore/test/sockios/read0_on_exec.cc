@@ -1,7 +1,6 @@
-// -*- C++ -*- Time-stamp: <06/11/28 09:33:13 ptr>
+// -*- C++ -*- Time-stamp: <06/12/15 10:50:48 ptr>
 
 /*
- *
  * Copyright (c) 2006
  * Petr Ovtchenkov
  *
@@ -83,10 +82,7 @@ ConnectionProcessor5::ConnectionProcessor5( std::sockstream& s )
   pr_lock.unlock();
   
   // cerr << "ConnectionProcessor5::ConnectionProcessor5\n";
-  timespec tm;
-  tm.tv_sec = 3;
-  tm.tv_nsec = 0;
-  Thread::delay( &tm );
+  delay( xmt::timespec(3,0) );
 
   int n = 1;
   // cerr << "ConnectionProcessor5::ConnectionProcessor5, write\n";
@@ -156,10 +152,7 @@ void test_read0()
 
     cnd.try_wait(); // wait for read call
 
-    timespec tm;
-    tm.tv_sec = 1;
-    tm.tv_nsec = 0;
-    Thread::delay( &tm );
+    delay( xmt::timespec(1,0) );
 
     // cerr << "system" << endl;
     system( "echo > /dev/null" );  // <------ key line

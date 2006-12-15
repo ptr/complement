@@ -1,22 +1,14 @@
-// -*- C++ -*- Time-stamp: <06/08/04 00:01:51 ptr>
+// -*- C++ -*- Time-stamp: <06/12/15 03:12:28 ptr>
 
 /*
- * Copyright (c) 1998, 2002, 2003, 2005
+ * Copyright (c) 1998, 2002, 2003, 2005, 2006
  * Petr Ovtchenkov
  * 
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  *
- * Licensed under the Academic Free License version 2.1
+ * Licensed under the Academic Free License version 3.0
  * 
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #ifdef _MSC_VER
@@ -71,16 +63,13 @@ void __FIT_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
 
   en.code = ne.code;
   en.addr = entry.src();
-  en.start.tv_sec = ne.start.tv_sec;
-  en.start.tv_nsec = ne.start.tv_nsec;
+  en.start = ne.start;
   en.n = ne.n;
   en.arg = ne.arg;
   if ( en.n == 1 ) {
-    en.period.tv_sec = 0;
-    en.period.tv_nsec = 0;
+    en.period = 0;
   } else {
-    en.period.tv_sec = ne.period.tv_sec;
-    en.period.tv_nsec = ne.period.tv_nsec;
+    en.period = ne.period;
     if ( en.n == 0 || en.period.tv_nsec >= 1000000000 ||
          (en.period.tv_sec == 0 && en.period.tv_nsec == 0) ) 
       return;
@@ -91,8 +80,7 @@ void __FIT_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
     en.start.tv_sec = current;
   }
 
-  en.expired.tv_sec = en.start.tv_sec;
-  en.expired.tv_nsec = en.start.tv_nsec;
+  en.expired = en.start;
   en.count = 0;
 
   MT_REENTRANT( _M_l, _x1 );
@@ -231,31 +219,13 @@ xmt::Thread::ret_code Cron::_loop( void *p )
         continue;
       }
 
-#if !defined(_STLP_LONG_LONG) && !defined(_GLIBCXX_USE_LONG_LONG)
-      double _next = en.start.tv_sec + en.start.tv_nsec * 1.0e-9 +
-        (en.period.tv_sec + en.period.tv_nsec * 1.0e-9) * ++en.count;
-      en.expired.tv_nsec = static_cast<long>(1.0e9 * modf( _next, &_next ));
-      en.expired.tv_sec = static_cast<long>(_next);
-#else
-#  ifdef _MSC_VER
-      __int64
-#  else
-      long long 
-#  endif
-        _d = en.period.tv_nsec;
-      _d *= ++en.count;
-      _d += en.start.tv_nsec;
-      en.expired.tv_sec = en.period.tv_sec;
-      en.expired.tv_sec *= en.count;
-      en.expired.tv_sec += en.start.tv_sec;
-      en.expired.tv_sec += unsigned(_d / 1000000000);
-      en.expired.tv_nsec = unsigned(_d % 1000000000);
-#endif
+      en.expired = en.start;
+      en.expired += en.period * ++en.count;
+
       // if loop infinite, always put Cron entry in stack,
       // otherwise check counter
       if ( en.n == CronEntry::infinite ) {
-        en.start.tv_sec = en.expired.tv_sec;
-        en.start.tv_nsec = en.expired.tv_nsec;        
+        en.start = en.expired;
         en.count = 0;
         me._M_c.push( en );
       } else if ( (en.count) < (en.n) ) { // This SC5.0 patch 107312-06 bug
