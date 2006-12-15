@@ -6,11 +6,15 @@ COMPILER_NAME := gcc
 include Makefile.inc
 include ${SRCROOT}/Makefiles/top.mak
 
+PHONY += qq
 # $(foreach ${LIBNAMES})
+qq:	testx2
+
+testx2:	DEFS += -Dtestx2
 
 define P_TEMPLATE
 $(1):	$$($(1)_SRC_CPP)
-	echo "$$+ $$@ "
+	echo "$$+ $$@ $${DEFS}"
 endef
 
 $(foreach name,${LIBNAMES},$(eval $(call P_TEMPLATE,$(name))))

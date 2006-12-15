@@ -1,20 +1,11 @@
-// -*- C++ -*- Time-stamp: <06/08/04 12:01:50 ptr>
+// -*- C++ -*- Time-stamp: <06/12/15 10:49:16 ptr>
 
 /*
- *
  * Copyright (c) 2004, 2006
  * Petr Ovtchenkov
  *
- * Licensed under the Academic Free License Version 2.1
+ * Licensed under the Academic Free License Version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #include <boost/test/test_tools.hpp>
@@ -51,11 +42,7 @@ Srv::Srv( std::sockstream& s )
 {
   s << "hello" << endl;
 
-  timespec t;
-  t.tv_sec = 1;
-  t.tv_nsec = 0;
-
-  Thread::delay( &t );
+  xmt::delay( xmt::timespec( 1, 0 ) );
 
   s.close();
   // ::shutdown( s.rdbuf()->fd(), 2 );
@@ -117,11 +104,7 @@ Thread::ret_code client_proc( void * )
   BOOST_CHECK( buf == "hello" );
   pr_lock.unlock();
 
-  timespec t;
-  t.tv_sec = 5;
-  t.tv_nsec = 0;
-
-  Thread::delay( &t );
+  xmt::delay( xmt::timespec( 5, 0 ) );
 
   // sock << 'a' << endl;
 

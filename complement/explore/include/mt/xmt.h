@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/14 17:08:37 ptr>
+// -*- C++ -*- Time-stamp: <06/12/15 03:03:00 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2006
@@ -1203,10 +1203,21 @@ class __Condition
 #endif
       }
 
-    int wait_time( const timespec *abstime );
-    int wait_delay( const timespec *abstime );
-    int try_wait_time( const timespec *abstime );
-    int try_wait_delay( const timespec *abstime );
+    int wait_time( const ::timespec *abstime );
+    int wait_time( const ::timespec& abstime )
+      { return wait_time( &abstime ); }
+
+    int wait_delay( const ::timespec *abstime );
+    int wait_delay( const ::timespec& abstime )
+      { return wait_time( &abstime ); }
+
+    int try_wait_time( const ::timespec *abstime );
+    int try_wait_time( const ::timespec& abstime )
+      { return try_wait_time( &abstime ); }
+
+    int try_wait_delay( const ::timespec *abstime );
+    int try_wait_delay( const ::timespec& abstime )
+      { return try_wait_delay( &abstime ); }
 
     int signal( bool _broadcast = false )
       {
@@ -1310,8 +1321,12 @@ class Semaphore
 #endif
       }
 
-    __FIT_DECLSPEC int wait_time( const timespec *t ); // wait for time t, or signal
-    __FIT_DECLSPEC int wait_delay( const timespec *t ); // wait, timeout is delay t, or signal
+    __FIT_DECLSPEC int wait_time( const ::timespec *t ); // wait for time t, or signal
+    int wait_time( const ::timespec& t )
+      { return wait_time( &t ); }
+    __FIT_DECLSPEC int wait_delay( const ::timespec *t ); // wait, timeout is delay t, or signal
+    int wait_delay( const ::timespec& t )
+      { return wait_delay( &t ); }
 
     int try_wait()
       {
@@ -1385,6 +1400,9 @@ class Semaphore
 
 __FIT_DECLSPEC void fork() throw( fork_in_parent, std::runtime_error );
 __FIT_DECLSPEC void become_daemon() throw( fork_in_parent, std::runtime_error );
+__FIT_DECLSPEC void block_signal( int sig );
+__FIT_DECLSPEC void unblock_signal( int sig );
+__FIT_DECLSPEC void signal_handler( int sig, SIG_PF );
 
 class Thread
 {
@@ -1474,20 +1492,7 @@ class Thread
 #ifdef __FIT_UITHREADS
     static __FIT_DECLSPEC int join_all();
 #endif
-    static __FIT_DECLSPEC void block_signal( int sig );
-    static __FIT_DECLSPEC void unblock_signal( int sig );
-    static __FIT_DECLSPEC void signal_handler( int sig, SIG_PF );
     static __FIT_DECLSPEC void signal_exit( int sig ); // signal handler
-
-    // sleep at least up to time t
-    static void sleep( timespec *t, timespec *e = 0 )
-      { xmt::sleep( t, e ); }
-    // delay execution at least on time interval t
-    static void delay( timespec *t, timespec *e = 0 )
-      { xmt::delay( t, e ); }
-    // get precise time
-    static void gettime( timespec *t )
-      { xmt::gettime( t ); }
 
     bool good() const
       { return (_state == goodbit) && (_id != bad_thread_id); }
@@ -1581,7 +1586,7 @@ class Thread
 };
 
 template <bool SCOPE>
-int __Condition<SCOPE>::try_wait_time( const timespec *abstime )
+int __Condition<SCOPE>::try_wait_time( const ::timespec *abstime )
 {
 #if defined(__FIT_WIN32THREADS) || defined(__FIT_NOVELL_THREADS)
   MT_LOCK( _lock );
@@ -1607,16 +1612,15 @@ int __Condition<SCOPE>::try_wait_time( const timespec *abstime )
 #endif
 #if defined(__FIT_UITHREADS) || defined(_PTHREADS)
     int ret = 0;
-    timespec _abstime = *abstime;
     while ( !_val ) {
 # ifdef _PTHREADS
-      ret = pthread_cond_timedwait( &_cond, &_lock._M_lock, &_abstime );
+      ret = pthread_cond_timedwait( &_cond, &_lock._M_lock, abstime );
       if ( ret == ETIMEDOUT ) {
         break;
       }
 # endif
 # ifdef __FIT_UITHREADS
-      ret = cond_timedwait( &_cond, /* &_lock.mutex */ &_lock._M_lock, &_abstime );
+      ret = cond_timedwait( &_cond, /* &_lock.mutex */ &_lock._M_lock, abstime );
       if ( ret == ETIME ) {
         ret = ETIMEDOUT;
       } else if ( ret == ETIMEDOUT ) {
@@ -1644,7 +1648,7 @@ int __Condition<SCOPE>::try_wait_time( const timespec *abstime )
 }
 
 template <bool SCOPE>
-int __Condition<SCOPE>::try_wait_delay( const timespec *interval )
+int __Condition<SCOPE>::try_wait_delay( const ::timespec *interval )
 {
 #if defined(__FIT_WIN32THREADS) || defined(__FIT_NOVELL_THREADS)
   MT_LOCK( _lock );
@@ -1669,21 +1673,20 @@ int __Condition<SCOPE>::try_wait_delay( const timespec *interval )
     return 0;
 #endif
 #if defined(__FIT_UITHREADS) || defined(_PTHREADS)
-    timespec ct;
+    ::timespec ct;
     xmt::gettime( &ct );
     ct += *interval;
 
     int ret = 0;
-    timespec _abstime = ct;
     while ( !_val ) {
 # ifdef _PTHREADS
-      ret = pthread_cond_timedwait( &_cond, &_lock._M_lock, &_abstime );
+      ret = pthread_cond_timedwait( &_cond, &_lock._M_lock, &ct );
       if ( ret == ETIMEDOUT ) {
         break;
       }
 # endif
 # ifdef __FIT_UITHREADS
-      ret = cond_timedwait( &_cond, /* &_lock.mutex */ &_lock._M_lock, &_abstime );
+      ret = cond_timedwait( &_cond, /* &_lock.mutex */ &_lock._M_lock, &ct );
       if ( ret == ETIME ) {
         ret = ETIMEDOUT;
       } else if ( ret == ETIMEDOUT ) {
@@ -1711,7 +1714,7 @@ int __Condition<SCOPE>::try_wait_delay( const timespec *interval )
 }
 
 template <bool SCOPE>
-int __Condition<SCOPE>::wait_time( const timespec *abstime )
+int __Condition<SCOPE>::wait_time( const ::timespec *abstime )
 {
 #ifdef __FIT_WIN32THREADS
   MT_LOCK( _lock );
@@ -1733,8 +1736,7 @@ int __Condition<SCOPE>::wait_time( const timespec *abstime )
 #ifdef _PTHREADS
   MT_REENTRANT( _lock, _x1 ); // ??
   _val = false;
-  timespec _abstime = *abstime;
-  int ret = pthread_cond_timedwait( &_cond, &_lock._M_lock, &_abstime );
+  int ret = pthread_cond_timedwait( &_cond, &_lock._M_lock, abstime );
   if ( ret == ETIMEDOUT ) {
     _val = true;
   }
@@ -1744,9 +1746,8 @@ int __Condition<SCOPE>::wait_time( const timespec *abstime )
   MT_REENTRANT( _lock, _x1 );
   _val = false;
   int ret;
-  timespec _abstime = *abstime;
   while ( !_val ) {
-    ret = cond_timedwait( &_cond, /* &_lock.mutex */ &_lock._M_lock, &_abstime );
+    ret = cond_timedwait( &_cond, /* &_lock.mutex */ &_lock._M_lock, abstime );
     if ( ret == ETIME ) {
       _val = true;
       ret = ETIMEDOUT;
@@ -1771,7 +1772,7 @@ int __Condition<SCOPE>::wait_time( const timespec *abstime )
 }
 
 template <bool SCOPE>
-int __Condition<SCOPE>::wait_delay( const timespec *interval )
+int __Condition<SCOPE>::wait_delay( const ::timespec *interval )
 {
 #ifdef __FIT_WIN32THREADS
   MT_LOCK( _lock );
@@ -1790,7 +1791,7 @@ int __Condition<SCOPE>::wait_delay( const timespec *interval )
   return 0;
 #endif
 #if defined(__FIT_UITHREADS) || defined(_PTHREADS)
-  timespec ct;
+  ::timespec ct;
   xmt::gettime( &ct );
   ct += *interval;
 

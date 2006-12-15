@@ -1,23 +1,14 @@
-// -*- C++ -*- Time-stamp: <06/08/04 11:21:10 ptr>
+// -*- C++ -*- Time-stamp: <06/12/15 10:43:07 ptr>
 
 /*
- *
  * Copyright (c) 2004, 2006
  * Petr Ovtchenkov
  *
  * Copyright (c) 2004
  * Kaspersky Labs
  *
- * Licensed under the Academic Free License Version 2.1
+ * Licensed under the Academic Free License Version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #include <boost/test/unit_test.hpp>
@@ -74,11 +65,7 @@ static Thread::ret_code thread_func( void * )
       ++cnt;
       m.unlock();
 
-      timespec t;
-      t.tv_sec = 1;
-      t.tv_nsec = 0;
-
-      Thread::delay( &t );
+      delay( xmt::timespec(1,0) );
 
       check = flck( fd, _F_UNLCK );
 
@@ -195,11 +182,7 @@ static Thread::ret_code thread_func_r( void * )
         }
       }
 
-      timespec t;
-      t.tv_sec = 1;
-      t.tv_nsec = 0;
-
-      Thread::delay( &t );
+      delay( xmt::timespec(1,0) );
 
       check = flck( fd, _F_UNLCK );
 

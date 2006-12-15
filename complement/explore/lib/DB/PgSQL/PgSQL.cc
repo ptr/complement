@@ -1,21 +1,14 @@
-// -*- C++ -*- Time-stamp: <05/09/11 12:01:55 ptr>
+// -*- C++ -*- Time-stamp: <06/12/15 01:45:37 ptr>
 
 /*
- *
  * Copyright (c) 2002
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
  * ParallelGraphics Ltd.
  * 
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
+ * Licensed under the Academic Free License Version 3.0
  *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #include <config/feature.h>
@@ -60,7 +53,7 @@ DataBase::DataBase( const xxSQL::DataBase_connect& c ) :
   con_cond.set( false );
   thr.launch( conn_proc, this );
   timespec tm;
-  xmt::Thread::gettime( &tm );
+  xmt::gettime( &tm );
 
   tm.tv_sec += 10; // wait 10 secs
 
@@ -119,7 +112,7 @@ void DataBase::reconnect()
 
   if ( thr.good() ) {
     timespec tm;
-    xmt::Thread::gettime( &tm );
+    xmt::gettime( &tm );
 
     tm.tv_sec += 2; // thread already running, so wait only 2 secs
 
@@ -128,9 +121,9 @@ void DataBase::reconnect()
       _dberr << "Connect to DB timeout" << endl;
     }
   } else {
-    thr.launch( (__impl::Thread::entrance_type)conn_proc, (void *)this );
+    thr.launch( (xmt::Thread::entrance_type)conn_proc, (void *)this );
     timespec tm;
-    xmt::Thread::gettime( &tm );
+    xmt::gettime( &tm );
 
     tm.tv_sec += 5; // wait 5 secs
 
