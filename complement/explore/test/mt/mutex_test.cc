@@ -1,20 +1,11 @@
-// -*- C++ -*- Time-stamp: <06/08/04 10:59:26 ptr>
+// -*- C++ -*- Time-stamp: <06/12/15 10:37:09 ptr>
 
 /*
- *
  * Copyright (c) 2002, 2003, 2006
  * Petr Ovtchenkov
  *
- * Licensed under the Academic Free License Version 2.1
+ * Licensed under the Academic Free License Version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #include <boost/test/unit_test.hpp>
@@ -24,7 +15,7 @@ using namespace boost::unit_test_framework;
 #include <mt/xmt.h>
 
 using namespace std;
-using namespace __impl;
+using namespace xmt;
 
 static Mutex m1;
 
@@ -37,11 +28,7 @@ xmt::Thread::ret_code thr1( void * )
   msync = 1;
   BOOST_CHECK( v == 0 );
 
-  timespec t;
-  t.tv_sec = 1;
-  t.tv_nsec = 0;
-
-  Thread::delay( &t );
+  delay( xmt::timespec( 1, 0 ) );
 
   BOOST_CHECK( v == 0 );
   v = 1;
@@ -78,11 +65,7 @@ xmt::Thread::ret_code thr3( void * )
 
   BOOST_CHECK( v == 0 );
 
-  timespec t;
-  t.tv_sec = 1;
-  t.tv_nsec = 0;
-
-  Thread::delay( &t );
+  delay( xmt::timespec( 1, 0 ) );
 
   v = 1;
 

@@ -1,3 +1,13 @@
+2006-12-15  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* time.h, time.cc: add timespec in xmt namespace, useful
+	for conversions and inline objects; clean some code in
+	timespec operations.
+	
+	* xmt.h: changes related to timespec in xmt namespace and in
+	global namespace; now 'delay' functions family only in xmt
+	namespace and go away from Thread class.
+
 2006-12-14  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* xmt.h, xmt.cc: move 'fork' and 'become_daemon' from Thread

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/13 18:07:06 ptr>
+// -*- C++ -*- Time-stamp: <06/12/15 01:27:36 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -397,7 +397,7 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
       c = me->_conn_pool.front();
       me->_conn_pool.pop_front();
       _non_empty = true;
-      xmt::Thread::gettime( &me->_tpop );
+      xmt::gettime( &me->_tpop );
     }
     me->_dlock.unlock();
 
@@ -434,7 +434,7 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
             c = me->_conn_pool.front();
             me->_conn_pool.pop_front();
             _non_empty = true;
-            xmt::Thread::gettime( &me->_tpop );
+            xmt::gettime( &me->_tpop );
             break;
           }
           me->_pool_cnd.set( false );
@@ -485,14 +485,14 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::observer( void *p )
             // queue not empty and not decrease
             me->mgr.launch( connect_processor, me /* , 0, 0, PTHREAD_STACK_MIN * 2 */ );
           } else {
-            xmt::Thread::gettime( &now );
+            xmt::gettime( &now );
             if ( (tpop + delta) < now ) {
               // a long time was since last pop from queue
               me->mgr.launch( connect_processor, me /* , 0, 0, PTHREAD_STACK_MIN * 2 */ );
             }
           }
         }
-        xmt::Thread::delay( &alarm );
+        xmt::delay( &alarm );
       } else {
         if ( me->_observer_cnd.try_wait_delay( &idle ) != 0 ) {
           MT_REENTRANT( me->_orlock, _1 );
