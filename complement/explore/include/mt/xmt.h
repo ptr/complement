@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/15 03:03:00 ptr>
+// -*- C++ -*- Time-stamp: <06/12/15 14:35:45 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2006
@@ -123,6 +123,8 @@ typedef SIG_FUNC_TYP *SIG_TYP;
 #  define SIG_HOLD (SIG_PF)2
 # endif
 #endif // SIG_PF
+
+typedef void siginfo_handler_type( int, siginfo_t *, void * );
 
 } // extern "C"
 
@@ -1402,7 +1404,8 @@ __FIT_DECLSPEC void fork() throw( fork_in_parent, std::runtime_error );
 __FIT_DECLSPEC void become_daemon() throw( fork_in_parent, std::runtime_error );
 __FIT_DECLSPEC void block_signal( int sig );
 __FIT_DECLSPEC void unblock_signal( int sig );
-__FIT_DECLSPEC void signal_handler( int sig, SIG_PF );
+__FIT_DECLSPEC int signal_handler( int sig, SIG_PF );
+__FIT_DECLSPEC int signal_handler( int sig, siginfo_handler_type );
 
 class Thread
 {
