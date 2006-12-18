@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/14 10:47:39 ptr>
+// -*- C++ -*- Time-stamp: <06/12/16 00:36:47 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2004, 2006
@@ -24,6 +24,7 @@ void spinlock_test();
 void recursive_mutex_test();
 void signal_1_test();
 void signal_2_test();
+void signal_3_test();
 void flock_test();
 void lfs_test();
 
@@ -48,6 +49,7 @@ test_suite *init_unit_test_suite( int argc, char * * const argv )
   // (stack saved/restored, that confuse stack unwind);
   // by this reason next test is commented:
   // ts->add( BOOST_TEST_CASE( &signal_2_test ) );
+  ts->add( BOOST_TEST_CASE( &signal_3_test ) );
 
   // flock requre revision, commented now.
   // ts->add( BOOST_TEST_CASE( &flock_test ) );

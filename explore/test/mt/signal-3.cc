@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/16 00:28:34 ptr>
+// -*- C++ -*- Time-stamp: <06/12/16 00:35:45 ptr>
 
 /*
  * Copyright (c) 2003, 2006
@@ -16,13 +16,18 @@ using namespace boost::unit_test_framework;
 
 using namespace xmt;
 
+/*
+ * This is the same as signal-1, but instead of unblock signal, I block one
+ * so I don't take this signal.
+ */
 
 /* 
+ * handler (within thread 2):                           v == 1?; v = 4
+ *                                                    /
  * thread 2:  v = 1; create thread 1 ----------------------------------- join; v == 4?
- *                      \                                          /  
- * thread 1:             set handler; v == 1? - kill ----------- exit 
- *                                                 \                
- * handler (within thread 1):                         v == 1?; v = 4
+ *                      \                          /            /
+ * thread 1:             set handler; v == 1? - kill ------ exit 
+ *
  */
 
 static Thread::ret_code thread_one( void * );
@@ -58,17 +63,11 @@ extern "C" {
 
 Thread::ret_code thread_one( void * )
 {
-  xmt::unblock_signal( SIGINT ); // we wait this signal
-  // Default handler make exit() call:
-  //   Thread::signal_handler( SIGINT, SIG_DFL );
-  // That's why I set own handler:
-  xmt::signal_handler( SIGINT, handler );
-
   BOOST_CHECK( v == 1 );
 
   cnd.try_wait();
 
-  th_one->kill( SIGINT ); // send signal SIGINT to self
+  th_two->kill( SIGINT ); // send signal SIGINT to self
 
   Thread::ret_code rt;
   rt.iword = 0;
@@ -78,16 +77,18 @@ Thread::ret_code thread_one( void * )
 
 Thread::ret_code thread_two( void * )
 {
-  cnd.set( false );
+  xmt::signal_handler( SIGINT, handler );
+  xmt::block_signal( SIGINT ); // block signal
 
   v = 1;
 
   Thread t( thread_one ); // start thread_one
-  th_one = &t;            // store address to be called from thread_one
-
-  cnd.set( true );
 
   t.join();
+
+  BOOST_CHECK( v == 1 ); // signal was blocked!
+
+  xmt::unblock_signal( SIGINT ); // unblock signal
 
   BOOST_CHECK( v == 4 );
 
@@ -97,9 +98,15 @@ Thread::ret_code thread_two( void * )
   return rt;
 }
 
-void signal_1_test()
+void signal_3_test()
 {
+  cnd.set( false );
+
   Thread t( thread_two );
+
+  th_two = &t;            // store address to be called from thread_one
+
+  cnd.set( true );
 
   t.join();
 
