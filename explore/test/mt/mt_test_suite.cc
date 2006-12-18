@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/14 11:12:02 ptr>
+// -*- C++ -*- Time-stamp: <06/12/18 19:58:56 ptr>
 
 /*
  * Copyright (c) 2006
@@ -19,8 +19,10 @@ mt_test_suite::mt_test_suite() :
   boost::shared_ptr<mt_test> instance( new mt_test() );
 
   test_case *fork_tc = BOOST_CLASS_TEST_CASE( &mt_test::fork, instance );
+  test_case *pid_tc = BOOST_CLASS_TEST_CASE( &mt_test::pid, instance );
 
-  // basic2_tc->depends_on( basic1_tc );
+  pid_tc->depends_on( fork_tc );
 
   add( fork_tc );
+  add( pid_tc );
 };
