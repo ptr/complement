@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/14 10:45:35 ptr>
+// -*- C++ -*- Time-stamp: <06/12/18 19:49:04 ptr>
 
 /*
  * Copyright (c) 2006
@@ -14,6 +14,7 @@
 struct mt_test
 {
     void fork();
+    void pid();
 };
 
 #endif // __MT_TEST_H
