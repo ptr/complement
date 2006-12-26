@@ -29,9 +29,9 @@ stldbg-shared:	LDSEARCH += -L${CoMT_LIB_DIR_STLDBG} -Wl,-R${CoMT_LIB_DIR_STLDBG}
 dbg-shared:	LDSEARCH += -L${CoMT_LIB_DIR_DBG} -Wl,-R${CoMT_LIB_DIR_DBG}:${STLPORT_LIB_DIR}
 endif
 
-release-shared : LDLIBS = -lxmt -lboost_test_utf
-stldbg-shared  : LDLIBS = -lxmtstlg -lboost_test_utfstlg
-dbg-shared     : LDLIBS = -lxmtg -lboost_test_utfg
+release-shared : LDLIBS = -lxmt -lboost_test_utf -lboost_fs
+stldbg-shared  : LDLIBS = -lxmtstlg -lboost_test_utfstlg -lboost_fsstlg
+dbg-shared     : LDLIBS = -lxmtg -lboost_test_utfg -lboost_fsg
 
 ifeq ($(OSNAME),freebsd)
 release-shared : LDLIBS += -lthr
