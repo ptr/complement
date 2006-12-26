@@ -226,34 +226,59 @@ void mt_test::shm_alloc()
     {
       xmt::allocator_shm<char,0> shmall;
       size_t sz = shmall.max_size();
+      // two blocks
       char *ch1 = shmall.allocate( 3500 );
       BOOST_CHECK( ch1 != 0 );
       char *ch2 = shmall.allocate( 3500 );
       BOOST_CHECK( ch2 != 0 );
       try {
+        // try to allocate third block, not enough room
         char *ch3 = shmall.allocate( 8 * 1024 - 7000 );
         BOOST_CHECK( false );
       }
       catch ( xmt::shm_bad_alloc& err ) {
         BOOST_CHECK( true );
       }
+      // free first blocks
       shmall.deallocate( ch1, 3500 );
       ch1 = shmall.allocate( 3500 );
+      // allocate [first] block again
       BOOST_CHECK( ch1 != 0 );
+      // free second block
       shmall.deallocate( ch2, 3500 );
+      // allocate [second] block again
       ch2 = shmall.allocate( 3500 );
       BOOST_CHECK( ch2 != 0 );
+      // free both blocks
       shmall.deallocate( ch1, 3500 );
       shmall.deallocate( ch2, 3500 );
+      // allocate big block, enough for initial memory chunk
       ch1 = shmall.allocate( 7000 );
       BOOST_CHECK( ch1 != 0 );
+      // free it
       shmall.deallocate( ch1, 7000 );
+      // allocate block of maximum size
+      ch1 = shmall.allocate( sz );
+      BOOST_CHECK( ch1 != 0 );
+      // free it
+      shmall.deallocate( ch1, sz );
+      // allocate block, enough for initial memory chunk
+      ch1 = shmall.allocate( 7000 );
+      BOOST_CHECK( ch1 != 0 );
+      // free it
+      shmall.deallocate( ch1, 7000 );
+      ch1 = shmall.allocate( 3000 );
+      BOOST_CHECK( ch1 != 0 );
+      ch2 = shmall.allocate( 400 );
+      BOOST_CHECK( ch2 != 0 );
+      char *ch3 = shmall.allocate( 3500 );
+      BOOST_CHECK( ch3 != 0 );
+      shmall.deallocate( ch1, 3000 );
+      shmall.deallocate( ch2, 400 );
+      shmall.deallocate( ch3, 3500 );
       ch1 = shmall.allocate( sz );
       BOOST_CHECK( ch1 != 0 );
       shmall.deallocate( ch1, sz );
-      ch1 = shmall.allocate( 7000 );
-      BOOST_CHECK( ch1 != 0 );
-      shmall.deallocate( ch1, 7000 );
     }
     seg.deallocate();
     fs::remove( fname );
