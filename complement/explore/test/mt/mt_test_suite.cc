@@ -20,9 +20,14 @@ mt_test_suite::mt_test_suite() :
 
   test_case *fork_tc = BOOST_CLASS_TEST_CASE( &mt_test::fork, instance );
   test_case *pid_tc = BOOST_CLASS_TEST_CASE( &mt_test::pid, instance );
+  test_case *shm_segment_tc = BOOST_CLASS_TEST_CASE( &mt_test::shm_segment, instance );
+  test_case *shm_alloc_tc = BOOST_CLASS_TEST_CASE( &mt_test::shm_alloc, instance );
 
   pid_tc->depends_on( fork_tc );
+  shm_alloc_tc->depends_on( shm_segment_tc );
 
   add( fork_tc );
   add( pid_tc );
+  add( shm_segment_tc );
+  add( shm_alloc_tc );
 };

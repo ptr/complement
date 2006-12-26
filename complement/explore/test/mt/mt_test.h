@@ -15,6 +15,8 @@ struct mt_test
 {
     void fork();
     void pid();
+    void shm_segment();
+    void shm_alloc();
 };
 
 #endif // __MT_TEST_H
