@@ -341,7 +341,7 @@ class shm_alloc
 template <int _Inst>
 void shm_alloc<_Inst>::deallocate( pointer p, size_type n )
 {
-  n += (__align - n % __align) % __align;
+  n = max( n + (__align - n % __align) % __align, sizeof(_fheader) );
   _master *m = reinterpret_cast<_master *>( _seg.address() );
   if ( m != reinterpret_cast<_master *>(-1) && (reinterpret_cast<char *>(p) - reinterpret_cast<char *>(_seg.address())) < (_seg.max_size() + sizeof(_master) + sizeof(_aheader) ) ) {
     xmt::__Locker<xmt::__Mutex<false,true> > lk( m->_lock );
@@ -402,10 +402,10 @@ void shm_alloc<_Inst>::deallocate( pointer p, size_type n )
 template <int _Inst>
 void *shm_alloc<_Inst>::_traverse( size_type *_prev, size_type n )
 {
-  n += (__align - n % __align) % __align;
+  n = max( n + (__align - n % __align) % __align, sizeof(_fheader) );
   for ( _fheader *h = reinterpret_cast<_fheader *>(reinterpret_cast<char *>(_seg.address()) + *_prev); *_prev != 0;
         _prev = &h->_next, h = reinterpret_cast<_fheader *>(reinterpret_cast<char *>(_seg.address()) + *_prev)) {
-    if ( h->_sz > (n + sizeof( _fheader )) ) { // reduce this free block, write new free header
+    if ( h->_sz >= (n + sizeof( _fheader )) ) { // reduce this free block, write new free header
       *_prev += n + sizeof( _aheader );
       _fheader *hnew = reinterpret_cast<_fheader *>(reinterpret_cast<char *>(_seg.address()) + *_prev );
       hnew->_sz = h->_sz - n - sizeof( _aheader );
@@ -431,9 +431,38 @@ const uint64_t shm_alloc<_Inst>::MAGIC = 0xaa99665500000000ULL + _Inst;
 template <int _Inst>
 detail::__shm_alloc<_Inst> shm_alloc<_Inst>::_seg;
 
+namespace detail {
+
+template <class T>
+class __allocator_shm
+{
+  private:
+    __allocator_shm()
+      { }
+};
+
+template <>
+class __allocator_shm<std::__false_type>
+{
+  private:
+    __allocator_shm()
+      { }
+};
+
+template <>
+class __allocator_shm<std::__true_type>
+{
+  public:
+    __allocator_shm()
+      { }
+};
+
+} // namespace detail
+
 template <class _Tp, int _Inst>
 class allocator_shm :
-    public shm_alloc<_Inst>
+    public shm_alloc<_Inst>,
+    private detail::__allocator_shm<typename ipc_sharable<_Tp>::is_ipc_sharable>
 {
   public:
     typedef shm_alloc<_Inst> chunk_type;
