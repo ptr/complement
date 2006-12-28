@@ -170,8 +170,8 @@ h2.lheader {
 pre.ddisplay {
   font-family: Courier;
   font-size: 8pt;
-  background: grey90;
-  color: green;
+  background: gray90;
+  color: #070;
   padding-top:   10px;
   padding-left:   10px;
   padding-right:   10px;
