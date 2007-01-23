@@ -1,4 +1,4 @@
-# Time-stamp: <06/11/01 22:59:18 ptr>
+# Time-stamp: <07/01/23 14:12:04 ptr>
 #
 # Copyright (c) 2006
 # Petr Ovtchenkov
@@ -11,7 +11,7 @@ SUBDIRS := mt sockios stem misc
 
 include ${SRCROOT}/Makefiles/gmake/subdirs.mak
 
-all install depend clean clobber distclean:
+all install depend clean clobber distclean check:
 	$(doinsubdirs)
 
-.PHONY: all install depend clean clobber distclean
+.PHONY: all install depend clean clobber distclean check
