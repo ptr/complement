@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include <stdexcept>
+#include <algorithm>
 
 #include <stl/type_traits.h>
 
@@ -127,6 +128,16 @@ class __shm_alloc :
 
     static size_type max_size() throw()
       { return _id == -1 ? 0 : _ds.shm_segsz; }
+
+    static size_type count() throw()
+      {
+        if ( _id != -1 ) {
+          if ( shmctl( _id, IPC_STAT, &_ds ) == 0 ) {
+            return _ds.shm_nattch;
+          }
+        }
+        return 0;
+      }
 
   private:
     static shmid_ds _ds;
@@ -248,6 +259,125 @@ typename __shm_alloc<Inst>::pointer __shm_alloc<Inst>::reallocate( int f, void *
 
 } // detail
 
+template <int _Inst> class shm_alloc;
+
+template <int _Inst>
+class shm_name_mgr
+{
+  public:
+   typedef typename detail::__shm_alloc<_Inst>::size_type size_type;
+
+  public:
+    bool is_name_exist( int );
+
+    template <class T>
+    void named( const T& obj, int name )
+    {
+      xmt::__Locker<__Mutex<false,true> > lk( _lock );
+      if ( _last == 255 ) {
+        throw std::range_error( "too many named objects" );
+      }
+      if ( (reinterpret_cast<void *>(&obj) <= shm_alloc<_Inst>::_seg.address()) ||
+           (reinterpret_cast<void *>(&obj) > (reinterpret_cast<char *>(shm_alloc<_Inst>::_seg.address()) +
+                                              shm_alloc<_Inst>::max_size() +
+                                              sizeof(shm_alloc<_Inst>::_master) +
+                                              sizeof(shm_alloc<_Inst>::_aheader) )) ) {
+        throw std::invalid_argument( std::string("object beyond this shared segment") );
+      }
+      for ( int i = 0; _nm_table[i].name != -1; ++i ) {
+        if ( _nm_table[i].name == name ) {
+          throw std::invalid_argument( std::string("name id already exist") );
+        }
+      }
+      _nm_table[_last].name = name;
+      _nm_table[_last].offset = reinterpret_cast<char *>(&obj) - reinterpret_cast<char *>(shm_alloc<_Inst>::_seg.address());
+      _nm_table[_last].count = 1;
+      ++_last;
+    }
+
+    template <class T>
+    T& named( int name )
+    {
+      xmt::__Locker<__Mutex<false,true> > lk( _lock );
+      for ( int i = 0; _nm_table[i].name != -1; ++i ) {
+        if ( _nm_table[i].name == name ) {
+          ++_nm_table[i].count;
+          return *reinterpret_cast<T *>(reinterpret_cast<char *>(shm_alloc<_Inst>::_seg.address()) + _nm_table[i].offset );
+        }
+      }
+      throw std::invalid_argument( std::string("name id not found") );
+    }
+
+    template <class T>
+    const T& named( int name ) const
+    {
+      xmt::__Locker<__Mutex<false,true> > lk( _lock );
+      for ( int i = 0; _nm_table[i].name != -1; ++i ) {
+        if ( _nm_table[i].name == name ) {
+          ++_nm_table[i].count;
+          return *reinterpret_cast<const T *>(reinterpret_cast<char *>(shm_alloc<_Inst>::_seg.address()) + _nm_table[i].offset );
+        }
+      }
+      throw std::invalid_argument( std::string("name id not found") );
+    }
+
+    template <class T>
+    void release( int name )
+    {
+      xmt::__Locker<__Mutex<false,true> > lk( _lock );
+      for ( int i = 0; _nm_table[i].name != -1; ++i ) {
+        if ( _nm_table[i].name == name ) {
+          if ( --_nm_table[i].count == 0 ) {
+            reinterpret_cast<T *>(reinterpret_cast<char *>(shm_alloc<_Inst>::_seg.address()) + _nm_table[i].offset )->~T();
+            // shift table;
+            std::copy( _nm_table + i + 1, _nm_table + _last + 1, _nm_table + i );
+            --_last;
+          }
+          return;
+        }
+      }
+      throw std::invalid_argument( std::string("name id not found") );
+    }
+
+    int count( int name ) const throw()
+    {
+      xmt::__Locker<__Mutex<false,true> > lk( _lock );
+      for ( int i = 0; _nm_table[i].name != -1; ++i ) {
+        if ( _nm_table[i].name == name ) {
+          return _nm_table[i].count;
+        }
+      }
+      return 0;
+    }
+
+  private:
+    shm_name_mgr()
+      {
+        _nm_table[0].name = -1;
+        _last = 0;
+      }
+    shm_name_mgr( const shm_name_mgr& )
+      { }
+    shm_name_mgr& operator =( const shm_name_mgr& )
+      { return *this; }
+
+    xmt::__Mutex<false,true> _lock;
+    struct _name_rec
+    {
+      int name;
+      typename shm_name_mgr<_Inst>::size_type offset;
+      int count;
+      // size
+      // type
+    };
+
+    _name_rec _nm_table[256];
+    int _last;
+
+    friend class shm_alloc<_Inst>;
+};
+
+
 template <int _Inst>
 class shm_alloc
 {
@@ -261,6 +391,7 @@ class shm_alloc
         uint64_t _magic;
         size_type _first;
         xmt::__Mutex<false,true> _lock;
+        size_type _nm;
     };
 
     struct _fheader
@@ -297,9 +428,20 @@ class shm_alloc
       }
 
     static void deallocate( bool force = false )
-      { _seg.deallocate( force ); }
+      {
+         pointer p = _seg.address();
 
-    size_type max_size() const throw()
+         if ( p != reinterpret_cast<pointer>(-1) && (force || _seg.count() <= 1) ) {
+           _master *m = reinterpret_cast<_master *>( _seg.address() );
+           (&m->_lock)->~__Mutex<false,true>();
+           if ( m->_nm != 0 ) {
+             reinterpret_cast<shm_name_mgr<_Inst> *>(reinterpret_cast<char *>(p) + m->_nm)->~shm_name_mgr<_Inst>();
+           }
+         }
+         _seg.deallocate( force );
+      }
+
+    static size_type max_size() throw()
       { return _seg.max_size() == 0 ? 0 : (_seg.max_size() - sizeof(_master) - sizeof(_aheader)); }
 
   protected:
@@ -326,6 +468,7 @@ class shm_alloc
         new ( &m._lock ) xmt::__Mutex<false,true>();
         xmt::__Locker<xmt::__Mutex<false,true> > lk( m._lock );
         m._first = sizeof( _master );
+        m._nm = 0;
         _fheader& h = *new ( reinterpret_cast<char *>(&m) + sizeof(_master) ) _fheader();
         h._next = 0;
         h._sz = _seg.max_size() - sizeof( _master ) - sizeof( _aheader );
@@ -336,6 +479,7 @@ class shm_alloc
     static detail::__shm_alloc<_Inst> _seg;
 
     friend class detail::__shm_alloc<_Inst>;
+    friend class shm_name_mgr<_Inst>;
 };
 
 template <int _Inst>
