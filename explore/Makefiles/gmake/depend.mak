@@ -1,4 +1,4 @@
-# Time-stamp: <06/11/11 01:04:15 ptr>
+# Time-stamp: <07/01/23 14:58:21 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -31,7 +31,7 @@ _DASH_DEP := release-shared-dep dbg-shared-dep
 endif
 
 
-depend:	$(OUTPUT_DIRS) ${_DASH_DEP}
+depend::	$(OUTPUT_DIRS) ${_DASH_DEP}
 	@cat -s $(_ALL_DEP) /dev/null > $(DEPENDS_COLLECTION)
 
 TAGS:	$(OUTPUT_DIRS) ${_DASH_DEP}
