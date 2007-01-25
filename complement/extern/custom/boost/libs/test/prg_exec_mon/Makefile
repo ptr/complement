@@ -1,5 +1,4 @@
-# -*- makefile -*- Time-stamp: <03/03/31 15:18:29 ptr>
-# $Id$
+# -*- makefile -*- Time-stamp: <07/01/24 22:10:47 ptr>
 
 SRCROOT := ../../../../../../explore
 COMPILER_NAME := gcc
@@ -7,5 +6,21 @@ COMPILER_NAME := gcc
 include Makefile.inc
 include ${SRCROOT}/Makefiles/top.mak
 
-INCLUDES += -I$(STLPORT_INCLUDE_DIR) -I${BOOST_INCLUDE_DIR}
+INCLUDES += -I${BOOST_INCLUDE_DIR}
 
+check:	all-shared
+	$(MAKE) -C test check || exit 1
+
+check-release:	release-shared
+	$(MAKE) -C test check-release-shared || exit 1
+
+check-dbg:	dbg-shared
+	$(MAKE) -C test check-dbg-shared || exit 1
+
+ifndef WITHOUT_STLPORT
+check-stldbg:	stldbg-shared
+	$(MAKE) -C test check-stldbg-shared || exit 1
+endif
+
+depend::
+	$(MAKE) -C test depend
