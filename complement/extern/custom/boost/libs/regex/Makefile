@@ -24,3 +24,15 @@ endif
 
 depend::
 	$(MAKE) -C test depend
+
+clean::
+	$(MAKE) -C test clean
+
+distclean::
+	$(MAKE) -C test distclean
+
+mostlyclean::
+	$(MAKE) -C test mostlyclean
+
+maintainer-clean::
+	$(MAKE) -C test maintainer-clean
