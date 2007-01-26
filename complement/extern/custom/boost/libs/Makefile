@@ -8,7 +8,7 @@
 
 SRCROOT := ../../../../explore
 SUBDIRS := date_time filesystem program_options regex serialization \
-           test/unit_test_framework test/test_exec_mon \
+           test/unit_test_framework test/test_exec_mon test/prg_exec_mon \
            thread
 
 include ${SRCROOT}/Makefiles/gmake/subdirs.mak
