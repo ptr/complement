@@ -8,22 +8,22 @@ include ${SRCROOT}/Makefiles/top.mak
 
 INCLUDES += -I$(SRCROOT)/include
 
-check:	install
+check:	all-shared
 	$(MAKE) -C ../../test/sockios
 	(cd ../../test/sockios; ${OUTPUT_DIR}/sockios_ut) || exit 1
 	(cd ../../test/sockios; ${OUTPUT_DIR_DBG}/sockios_ut) || exit 1
 	(cd ../../test/sockios; ${OUTPUT_DIR_STLDBG}/sockios_ut) || exit 1
 
-check-release:	install-release-shared
+check-release-shared:	release-shared
 	$(MAKE) -C ../../test/sockios release-shared
 	(cd ../../test/sockios; ${OUTPUT_DIR}/sockios_ut) || exit 1
 
-check-dbg:	install-dbg-shared
+check-dbg-shared:	dbg-shared
 	$(MAKE) -C ../../test/sockios dbg-shared
 	(cd ../../test/sockios; ${OUTPUT_DIR_DBG}/sockios_ut) || exit 1
 
 ifndef WITHOUT_STLPORT
-check-stldbg:	install-stldbg-shared
+check-stldbg-shared:	stldbg-shared
 	$(MAKE) -C ../../test/sockios stldbg-shared
 	(cd ../../test/sockios; ${OUTPUT_DIR_STLDBG}/sockios_ut) || exit 1
 endif

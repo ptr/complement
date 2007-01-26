@@ -7,22 +7,22 @@ include ${SRCROOT}/Makefiles/top.mak
 
 INCLUDES += -I$(SRCROOT)/include
 
-check:	install
+check:	all-shared
 	$(MAKE) -C ../../test/mt
 	(cd ../../test/mt; ${OUTPUT_DIR}/mt_ut) || exit 1
 	(cd ../../test/mt; ${OUTPUT_DIR_DBG}/mt_ut) || exit 1
 	(cd ../../test/mt; ${OUTPUT_DIR_STLDBG}/mt_ut) || exit 1
 
-check-release:	install-release-shared
+check-release-shared:	release-shared
 	$(MAKE) -C ../../test/mt release-shared
 	(cd ../../test/mt; ${OUTPUT_DIR}/mt_ut) || exit 1
 
-check-dbg:	install-dbg-shared
+check-dbg-shared:	dbg-shared
 	$(MAKE) -C ../../test/mt dbg-shared
 	(cd ../../test/mt; ${OUTPUT_DIR_DBG}/mt_ut) || exit 1
 
 ifndef WITHOUT_STLPORT
-check-stldbg:	install-stldbg-shared
+check-stldbg-shared:	stldbg-shared
 	$(MAKE) -C ../../test/mt stldbg-shared
 	(cd ../../test/mt; ${OUTPUT_DIR_STLDBG}/mt_ut) || exit 1
 endif
