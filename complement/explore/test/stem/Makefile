@@ -10,18 +10,24 @@ EXTRA_POST_STLDBG := dl-stldbg
 include Makefile.inc
 include ${SRCROOT}/Makefiles/top.mak
 
-
 INCLUDES += -I$(SRCROOT)/include -I$(BOOST_INCLUDE_DIR)
 
-LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR}
+LIBMT_DIR = ${CoMT_DIR}/lib/mt
+LIBSOCK_DIR = ${CoMT_DIR}/lib/sockios
+LIBSTEM_DIR = ${CoMT_DIR}/lib/stem
+LIBUTF_DIR = ${CoMT_DIR}/../extern/custom/boost/libs/test/unit_test_framework
+
+ifeq ($(OSNAME),linux)
+release-shared:	LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR} -L${LIBUTF_DIR}/${OUTPUT_DIR} -L${LIBSOCK_DIR}/${OUTPUT_DIR} -L${LIBSTEM_DIR}/${OUTPUT_DIR} -Wl,--rpath=${LIBMT_DIR}/${OUTPUT_DIR}:${LIBUTF_DIR}/${OUTPUT_DIR}:${LIBSOCK_DIR}/${OUTPUT_DIR}:${LIBSTEM_DIR}/${OUTPUT_DIR}:${STLPORT_LIB_DIR}
+stldbg-shared:  LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBUTF_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSOCK_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSTEM_DIR}/${OUTPUT_DIR_STLDBG} -Wl,--rpath=${LIBMT_DIR}/${OUTPUT_DIR_STLDBG}:${LIBUTF_DIR}/${OUTPUT_DIR_STLDBG}:${LIBSOCK_DIR}/${OUTPUT_DIR_STLDBG}:${LIBSTEM_DIR}/${OUTPUT_DIR_STLDBG}:${STLPORT_LIB_DIR}
+dbg-shared:     LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR_DBG} -L${LIBUTF_DIR}/${OUTPUT_DIR_DBG} -L${LIBSOCK_DIR}/${OUTPUT_DIR_DBG} -L${LIBSTEM_DIR}/${OUTPUT_DIR_DBG} -Wl,--rpath=${LIBMT_DIR}/${OUTPUT_DIR_DBG}:${LIBUTF_DIR}/${OUTPUT_DIR_DBG}:${LIBSOCK_DIR}/${OUTPUT_DIR_DBG}:${LIBSTEM_DIR}/${OUTPUT_DIR_DBG}:${STLPORT_LIB_DIR}
+endif
 
 release-shared : LDLIBS = -lxmt -lsockios -lstem -lboost_test_utf -ldl
 stldbg-shared  : LDLIBS = -lxmtstlg -lsockiosstlg -lstemstlg -lboost_test_utfstlg -ldl
 dbg-shared     : LDLIBS = -lxmtg -lsockiosg -lstemg -lboost_test_utfg -ldl
 
 dbg-shared:	DEFS += -DDEBUG
-
-LDFLAGS += -Wl,-rpath=${STLPORT_LIB_DIR}:${CoMT_LIB_DIR}
 
 PHONY += dl dl-dbg dl-stldbg
 
