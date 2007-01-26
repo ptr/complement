@@ -11,14 +11,14 @@ INCLUDES += -I${BOOST_INCLUDE_DIR}
 check:	all-shared
 	$(MAKE) -C test check || exit 1
 
-check-release:	release-shared
+check-release-shared:	release-shared
 	$(MAKE) -C test check-release-shared || exit 1
 
-check-dbg:	dbg-shared
+check-dbg-shared:	dbg-shared
 	$(MAKE) -C test check-dbg-shared || exit 1
 
 ifndef WITHOUT_STLPORT
-check-stldbg:	stldbg-shared
+check-stldbg-shared:	stldbg-shared
 	$(MAKE) -C test check-stldbg-shared || exit 1
 endif
 
