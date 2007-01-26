@@ -39,10 +39,10 @@ distclean::	clean
 # $(DEPENDS_COLLECTION) removed before directory,
 # see app/clean.mak and lib/clean.mak
 
-mostlyclean:	clean
+mostlyclean::	clean
 	@-rm -f $(DEPENDS_COLLECTION)
 	@-rm -f TAGS tags
 
-maintainer-clean:	distclean
+maintainer-clean::	distclean
 	@rm -f ${RULESBASE}/config.mak
 	@-rm -f TAGS tags
