@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/26 10:45:51 ptr>
+// -*- C++ -*- Time-stamp: <07/01/29 15:35:05 ptr>
 
 /*
  * Copyright (c) 2006
@@ -288,3 +288,137 @@ void mt_test::shm_alloc()
   }
 }
 
+
+/*
+ * This test is similar  mt_test::fork() above, but instead plain shm_*
+ * functions it use allocator based on shared memory segment
+ */
+void mt_test::fork_shm()
+{
+  const char fname[] = "/tmp/mt_test.shm";
+  try {
+    xmt::shm_alloc<0> seg;
+
+    seg.allocate( fname, 1024, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+    xmt::allocator_shm<char,0> shm;
+
+    xmt::__Condition<true>& fcnd = *new( shm.allocate( sizeof(xmt::__Condition<true>) ) ) xmt::__Condition<true>();
+    fcnd.set( false );
+    try {
+      xmt::fork();
+
+      try {
+
+        // Child code
+        fcnd.try_wait();
+
+      }
+      catch ( ... ) {
+      }
+
+      exit( 0 );
+    }
+    catch ( xmt::fork_in_parent& child ) {
+      try {
+        BOOST_CHECK( child.pid() > 0 );
+
+        fcnd.set( true );
+
+        int stat;
+        BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      }
+      catch ( ... ) {
+      }
+    }
+    catch ( ... ) {
+    }
+
+    (&fcnd)->~__Condition<true>();
+    shm.deallocate( reinterpret_cast<char *>(&fcnd), sizeof(xmt::__Condition<true>) );
+    seg.deallocate();
+    fs::remove( fname );
+  }
+  catch (  xmt::shm_bad_alloc& err ) {
+    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+  }
+}
+
+/*
+ * Test: how to take named object
+ */
+void mt_test::shm_named_obj()
+{
+  const char fname[] = "/tmp/mt_test.shm";
+  enum {
+    test_Condition_Object = 1
+  };
+  try {
+    xmt::shm_alloc<0> seg;
+
+    seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+    xmt::shm_name_mgr<0>& nm = seg.name_mgr();
+
+    xmt::allocator_shm<xmt::__Condition<true>,0> shm;
+
+    xmt::__Condition<true>& fcnd = *new ( shm.allocate( 1 ) ) xmt::__Condition<true>();
+    nm.named( fcnd, test_Condition_Object );
+    fcnd.set( false );
+
+    try {
+      xmt::fork();
+
+      try {
+
+        // Child code 
+        xmt::shm_alloc<0> seg_ch;
+
+        if ( seg_ch.max_size() == 0 ) { // just illustration, if seg and seg_ch
+                                        // (really xmt::shm_alloc<0>)
+                                        // in totally different address spaces
+          // in our case xmt::shm_name_mgr<0> instance derived from parent
+          // process
+          seg.allocate( fname, 4*4096, 0, 0660 );
+        }
+        
+        xmt::shm_name_mgr<0>& nm_ch = seg_ch.name_mgr();
+        xmt::__Condition<true>& fcnd_ch = nm_ch.named<xmt::__Condition<true> >( test_Condition_Object );
+        fcnd_ch.set( true );
+      }
+      catch ( const xmt::shm_bad_alloc& err ) {
+        BOOST_CHECK_MESSAGE( false, "Fail in child: " << err.what() );
+      }
+      catch ( const std::invalid_argument& err ) {
+        BOOST_CHECK_MESSAGE( false, "Fail in child: " << err.what() );
+      }
+      catch ( ... ) {
+        BOOST_CHECK_MESSAGE( false, "Fail in child" );
+      }
+
+      exit( 0 );
+    }
+    catch ( xmt::fork_in_parent& child ) {
+      try {
+        BOOST_CHECK( child.pid() > 0 );
+
+        fcnd.try_wait();
+
+        int stat;
+        BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      }
+      catch ( ... ) {
+        BOOST_CHECK_MESSAGE( false, "Fail in parent" );
+      }
+    }
+    catch ( ... ) {
+      BOOST_CHECK_MESSAGE( false, "Fail in fork" );
+    }
+    
+    (&fcnd)->~__Condition<true>();
+    shm.deallocate( &fcnd, 1 );
+    seg.deallocate();
+    fs::remove( fname );
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+  }
+}
