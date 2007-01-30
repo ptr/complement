@@ -1,3 +1,11 @@
+2007-01-30  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* shm.h: add named objects manager in shared segment
+	memory allocator;
+
+	* xmt.h, xmt.cc: unification Semaphore with Condition
+	and Mutex---ipc flag passed as template parameter.
+
 2006-12-26  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* shm.h, shm.cc: shared memory-based allocator
