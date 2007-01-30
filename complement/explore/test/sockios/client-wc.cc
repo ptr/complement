@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/15 10:49:16 ptr>
+// -*- C++ -*- Time-stamp: <07/01/29 17:48:29 ptr>
 
 /*
  * Copyright (c) 2004, 2006
@@ -28,6 +28,7 @@ using namespace xmt;
   Suspicious processing with FreeBSD and OpenBSD servers.
 
  */
+static Condition cnd_close;
 
 class Srv // 
 {
@@ -42,10 +43,11 @@ Srv::Srv( std::sockstream& s )
 {
   s << "hello" << endl;
 
-  xmt::delay( xmt::timespec( 1, 0 ) );
+  // xmt::delay( xmt::timespec( 1, 0 ) );
 
   s.close();
   // ::shutdown( s.rdbuf()->fd(), 2 );
+  cnd_close.set( true );
 }
 
 void Srv::connect( std::sockstream& )
@@ -104,7 +106,7 @@ Thread::ret_code client_proc( void * )
   BOOST_CHECK( buf == "hello" );
   pr_lock.unlock();
 
-  xmt::delay( xmt::timespec( 5, 0 ) );
+  // xmt::delay( xmt::timespec( 5, 0 ) );
 
   // sock << 'a' << endl;
 
@@ -113,6 +115,8 @@ Thread::ret_code client_proc( void * )
     and no other solution! (another solution is nonblock sockets or
     aio, but this is another story)
   */
+  cnd_close.try_wait();
+
   char a;
   sock.read( &a, 1 );
 
@@ -132,6 +136,7 @@ Thread::ret_code client_proc( void * )
 void srv_close_connection_test()
 {
   Thread srv( server_proc );
+  cnd_close.set( false );
   Thread client( client_proc );
 
   client.join();
