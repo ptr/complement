@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <06/12/15 14:35:45 ptr>
+// -*- C++ -*- Time-stamp: <07/01/29 18:58:49 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002-2006
+ * Copyright (c) 1997-1999, 2002-2007
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -1266,27 +1266,28 @@ class __Condition
 
 typedef __Condition<false> Condition;
 
-class Semaphore
+template <bool SCOPE>
+class __Semaphore
 {
   public:
-    Semaphore( int cnt = 1, bool ipc = false )
+    __Semaphore( int cnt = 1 )
       {
 #ifdef __FIT_WIN32THREADS
         _sem = CreateSemaphore( NULL, cnt, INT_MAX, 0 ); // check!
         _cnt = cnt;
 #endif
 #ifdef __FIT_UITHREADS
-        sema_init( &_sem, cnt, ipc ? USYNC_PROCESS : USYNC_THREAD, 0 );
+        sema_init( &_sem, cnt, SCOPE ? USYNC_PROCESS : USYNC_THREAD, 0 );
 #endif
 #ifdef _PTHREADS
-        sem_init( &_sem, ipc ? 1 : 0, cnt );
+        sem_init( &_sem, SCOPE ? 1 : 0, cnt );
 #endif
 #ifdef __FIT_NOVELL_THREADS
         _sem = OpenLocalSemaphore( cnt );
 #endif
       }
 
-    ~Semaphore()
+    ~__Semaphore()
       {
 #ifdef __FIT_WIN32THREADS
         CloseHandle( _sem );
@@ -1396,9 +1397,75 @@ class Semaphore
     LONG _sem;
 #endif
   private:
-    Semaphore( const Semaphore& )
+    __Semaphore( const __Semaphore& )
       { }
 };
+
+typedef __Semaphore<false> Semaphore;
+
+template <bool SCOPE>
+int __Semaphore<SCOPE>::wait_time( const ::timespec *abstime ) // wait for time t, or signal
+{
+#ifdef __FIT_WIN32THREADS
+  time_t ct = time( 0 );
+  time_t _conv = abstime->tv_sec * 1000 + abstime->tv_nsec / 1000000;
+
+  unsigned ms = _conv >= ct ? _conv - ct : 1;
+
+  if ( WaitForSingleObject( _sem, ms ) == WAIT_OBJECT_0 ) {
+    return 0;
+  }
+  return -1;
+#endif
+#ifdef __FIT_UITHREADS
+#warning "Fix me!"
+#endif
+#ifdef _PTHREADS
+# if !(defined(__FreeBSD__) || defined(__OpenBSD__))
+  return sem_timedwait( &_sem, abstime );
+# else
+  return -1; // not implemented
+# endif
+#endif
+#ifdef __FIT_NOVELL_THREADS
+  time_t ct = time( 0 );
+  time_t _conv = abstime->tv_sec * 1000 + abstime->tv_nsec / 1000000;
+
+  unsigned ms = _conv >= ct ? _conv - ct : 1;
+  return TimedWaitOnLocalSemaphore( _sem, ms );
+#endif
+}
+
+template <bool SCOPE>
+int __Semaphore<SCOPE>::wait_delay( const ::timespec *interval ) // wait, timeout is delay t, or signal
+{
+#ifdef __FIT_WIN32THREADS
+  unsigned ms = interval->tv_sec * 1000 + interval->tv_nsec / 1000000;
+
+  if ( WaitForSingleObject( _sem, ms ) == WAIT_OBJECT_0 ) {
+    return 0;
+  }
+  return -1;
+#endif
+#ifdef __FIT_UITHREADS
+#warning "Fix me!"
+#endif
+#ifdef _PTHREADS
+  timespec st;
+  xmt::gettime( &st );
+  st += *interval;
+# if !(defined(__FreeBSD__) || defined(__OpenBSD__))
+  return sem_timedwait( &_sem, &st );
+# else
+  return -1; // not implemented
+# endif
+#endif
+#ifdef __FIT_NOVELL_THREADS
+  unsigned ms = interval->tv_sec * 1000 + interval->tv_nsec / 1000000;
+  return TimedWaitOnLocalSemaphore( _sem, ms );
+#endif
+}
+
 
 __FIT_DECLSPEC void fork() throw( fork_in_parent, std::runtime_error );
 __FIT_DECLSPEC void become_daemon() throw( fork_in_parent, std::runtime_error );
