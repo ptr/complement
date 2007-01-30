@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/18 19:49:04 ptr>
+// -*- C++ -*- Time-stamp: <07/01/29 13:49:41 ptr>
 
 /*
  * Copyright (c) 2006
@@ -17,6 +17,8 @@ struct mt_test
     void pid();
     void shm_segment();
     void shm_alloc();
+    void fork_shm();
+    void shm_named_obj();
 };
 
 #endif // __MT_TEST_H

@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <06/12/26 10:24:35 ptr>
+// -*- C++ -*- Time-stamp: <07/01/29 18:59:35 ptr>
 
 /*
- * Copyright (c) 2006
+ * Copyright (c) 2006, 2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -67,6 +67,30 @@ template <class T>
 struct ipc_sharable
 {
   typedef typename std::__type_traits<T>::is_POD_type is_ipc_sharable;
+};
+
+template <>
+struct ipc_sharable<xmt::__Condition<true> >
+{
+  typedef std::__true_type is_ipc_sharable;
+};
+
+template <>
+struct ipc_sharable<xmt::__Semaphore<true> >
+{
+  typedef std::__true_type is_ipc_sharable;
+};
+
+template <>
+struct ipc_sharable<xmt::__Mutex<false,true> >
+{
+  typedef std::__true_type is_ipc_sharable;
+};
+
+template <>
+struct ipc_sharable<xmt::__Mutex<true,true> >
+{
+  typedef std::__true_type is_ipc_sharable;
 };
 
 template <int _Inst> class shm_alloc;
@@ -277,11 +301,11 @@ class shm_name_mgr
       if ( _last == 255 ) {
         throw std::range_error( "too many named objects" );
       }
-      if ( (reinterpret_cast<void *>(&obj) <= shm_alloc<_Inst>::_seg.address()) ||
-           (reinterpret_cast<void *>(&obj) > (reinterpret_cast<char *>(shm_alloc<_Inst>::_seg.address()) +
+      if ( (reinterpret_cast<const void *>(&obj) <= shm_alloc<_Inst>::_seg.address()) ||
+           (reinterpret_cast<const void *>(&obj) > (reinterpret_cast<char *>(shm_alloc<_Inst>::_seg.address()) +
                                               shm_alloc<_Inst>::max_size() +
-                                              sizeof(shm_alloc<_Inst>::_master) +
-                                              sizeof(shm_alloc<_Inst>::_aheader) )) ) {
+                                              sizeof(typename shm_alloc<_Inst>::_master) +
+                                              sizeof(typename shm_alloc<_Inst>::_aheader) )) ) {
         throw std::invalid_argument( std::string("object beyond this shared segment") );
       }
       for ( int i = 0; _nm_table[i].name != -1; ++i ) {
@@ -290,7 +314,7 @@ class shm_name_mgr
         }
       }
       _nm_table[_last].name = name;
-      _nm_table[_last].offset = reinterpret_cast<char *>(&obj) - reinterpret_cast<char *>(shm_alloc<_Inst>::_seg.address());
+      _nm_table[_last].offset = reinterpret_cast<const char *>(&obj) - reinterpret_cast<char *>(shm_alloc<_Inst>::_seg.address());
       _nm_table[_last].count = 1;
       ++_last;
     }
@@ -443,6 +467,23 @@ class shm_alloc
 
     static size_type max_size() throw()
       { return _seg.max_size() == 0 ? 0 : (_seg.max_size() - sizeof(_master) - sizeof(_aheader)); }
+
+    static shm_name_mgr<_Inst>& name_mgr()
+      {
+        pointer p = _seg.address();
+        if ( p != reinterpret_cast<pointer>(-1) ) {
+          _master *m = reinterpret_cast<_master *>( p );
+          if (  m->_nm == 0 ) {
+            xmt::__Locker<xmt::__Mutex<false,true> > lk( m->_lock );
+            void *nm = _traverse( &m->_first, sizeof(shm_name_mgr<_Inst>) );
+            m->_nm = reinterpret_cast<char *>(nm) - reinterpret_cast<char *>(p);
+            return *new ( nm ) shm_name_mgr<_Inst>();
+          }
+          return *reinterpret_cast<shm_name_mgr<_Inst> *>(reinterpret_cast<char *>(p) + m->_nm);
+        }
+
+        throw shm_bad_alloc( -2 );
+      }
 
   protected:
     static void *allocate( size_type n, void *hint = 0 )
