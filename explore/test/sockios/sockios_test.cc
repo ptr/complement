@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/18 18:51:17 ptr>
+// -*- C++ -*- Time-stamp: <07/01/30 11:45:52 ptr>
 
 /*
  *
@@ -21,7 +21,9 @@
 
 #include <arpa/inet.h>
 
-#include <sys/shm.h>
+#include <mt/shm.h>
+
+// #include <sys/shm.h>
 #include <sys/wait.h>
 
 #include <signal.h>
@@ -276,79 +278,193 @@ void sigpipe_handler( int sig, siginfo_t *si, void * )
  
 void sockios_test::sigpipe()
 {
-  shmid_ds ds;
-  int id = shmget( 5000, 1024, IPC_CREAT | IPC_EXCL | 0600 );
-  BOOST_REQUIRE( id != -1 );
-  // if ( id == -1 ) {
-  //   cerr << "Error on shmget" << endl;
-  // }
-  BOOST_REQUIRE( shmctl( id, IPC_STAT, &ds ) != -1 );
-  // if ( shmctl( id, IPC_STAT, &ds ) == -1 ) {
-  //   cerr << "Error on shmctl" << endl;
-  // }
-  void *buf = shmat( id, 0, 0 );
-  BOOST_REQUIRE( buf != reinterpret_cast<void *>(-1) );
-  // if ( buf == reinterpret_cast<void *>(-1) ) {
-  //   cerr << "Error on shmat" << endl;
-  // }
-
-  xmt::__Condition<true>& fcnd = *new( buf ) xmt::__Condition<true>();
-  fcnd.set( false );
-  xmt::__Condition<true>& tcnd = *new( (char *)buf + sizeof(xmt::__Condition<true>) ) xmt::__Condition<true>();
-  tcnd.set( false );
-
+  const char fname[] = "/tmp/sockios_test.shm";
+  enum {
+    in_Child_Condition = 1,
+    threads_Started_Condition = 2
+  };
   try {
-    xmt::fork();
+    xmt::shm_alloc<0> seg;
 
-    fcnd.try_wait();
+    seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
+    xmt::shm_name_mgr<0>& nm = seg.name_mgr();
+
+    xmt::allocator_shm<xmt::__Condition<true>,0> shm;
+
+    xmt::__Condition<true>& fcnd = *new ( shm.allocate( 1 ) ) xmt::__Condition<true>();
+    nm.named( fcnd, in_Child_Condition );
+    fcnd.set( false );
+
+    xmt::__Condition<true>& tcnd = *new ( shm.allocate( 1 ) ) xmt::__Condition<true>();
+    nm.named( tcnd, threads_Started_Condition );
+    tcnd.set( false );
 
     try {
-      /*
-       * This process will be killed,
-       * so I don't care about safe termination.
-       */
-      xmt::Thread *th1 = new xmt::Thread( client_thr );
-      for ( int i = 0; i < 10; ++i ) {
-        new xmt::Thread( client_thr );
-        new xmt::Thread( client_thr );
-        new xmt::Thread( client_thr );
-        new xmt::Thread( client_thr );
+      xmt::fork();
+
+      fcnd.try_wait();
+
+      try {
+        /*
+         * This process will be killed,
+         * so I don't care about safe termination.
+         */
+        xmt::Thread *th1 = new xmt::Thread( client_thr );
+        for ( int i = 0; i < /* 10 */ 2; ++i ) {
+          new xmt::Thread( client_thr );
+          new xmt::Thread( client_thr );
+          new xmt::Thread( client_thr );
+          new xmt::Thread( client_thr );
+        }
+
+        xmt::delay( xmt::timespec(1,0) );
+
+        tcnd.set( true );
+
+        th1->join();
+
+        exit( 0 );
       }
+      catch ( ... ) {
+      }
+    }
+    catch ( xmt::fork_in_parent& child ) {
+      try {
+        xmt::signal_handler( SIGPIPE, &sigpipe_handler );
+        sockmgr_stream_MP<loader> srv( port );
 
-      xmt::delay( xmt::timespec(5,0) );
+        fcnd.set( true );
 
-      tcnd.set( true );
+        tcnd.try_wait();
 
-      th1->join();
+        kill( child.pid(), SIGTERM );
 
+        int stat;
+        waitpid( child.pid(), &stat, 0 );
+
+        srv.close();
+        srv.wait();
+      }
+      catch ( ... ) {
+      }
+    }
+
+    (&tcnd)->~__Condition<true>();
+    shm.deallocate( &tcnd, 1 );
+    (&fcnd)->~__Condition<true>();
+    shm.deallocate( &fcnd, 1 );
+
+    seg.deallocate();
+    unlink( fname );
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+  }
+}
+
+class long_msg_processor // 
+{
+  public:
+    long_msg_processor( std::sockstream& );
+
+    void connect( std::sockstream& );
+    void close();
+
+    static xmt::__Condition<true> *cnd;
+};
+
+long_msg_processor::long_msg_processor( std::sockstream& )
+{
+  cerr << "long_msg_processor::long_msg_processor" << endl;
+}
+
+void long_msg_processor::connect( std::sockstream& s )
+{
+  cerr << "long_msg_processor::connect" << endl;
+
+  string l;
+
+  getline( s, l );
+
+  cerr << "Is good? " << s.good() << endl;
+}
+
+void long_msg_processor::close()
+{
+  cerr << "long_msg_processor::close()" << endl;
+  cnd->set( true );
+}
+
+xmt::__Condition<true> *long_msg_processor::cnd;
+
+void sockios_test::long_msg_test()
+{
+  const char fname[] = "/tmp/sockios_test.shm";
+  try {
+    xmt::shm_alloc<0> seg;
+
+    seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
+    xmt::shm_name_mgr<0>& nm = seg.name_mgr();
+
+    xmt::allocator_shm<xmt::__Condition<true>,0> shm;
+
+    xmt::__Condition<true>& fcnd = *new ( shm.allocate( 1 ) ) xmt::__Condition<true>();
+    fcnd.set( false );
+
+    xmt::__Condition<true>& srv_cnd = *new ( shm.allocate( 1 ) ) xmt::__Condition<true>();
+    srv_cnd.set( false );
+
+    long_msg_processor::cnd = &srv_cnd;
+
+    try {
+      xmt::fork();
+
+      fcnd.try_wait();
+
+      {
+        sockstream s( "localhost", port );
+
+        s << "POST /test.php HTTP/1.1\r\n"
+          << "xmlrequest=<?xml version=\"1.0\"?>\
+<RWRequest><REQUEST domain=\"network\" service=\"ComplexReport\" nocache=\"n\" \
+contact_id=\"1267\" entity=\"1\" filter_entity_id=\"1\" \
+clientName=\"ui.ent\"><ROWS><ROW type=\"group\" priority=\"1\" ref=\"entity_id\" \
+includeascolumn=\"n\"/><ROW type=\"group\" priority=\"2\" \
+ref=\"advertiser_line_item_id\" includeascolumn=\"n\"/><ROW type=\"total\"/></ROWS><COLUMNS><COLUMN \
+ref=\"advertiser_line_item_name\"/><COLUMN ref=\"seller_imps\"/><COLUMN \
+ref=\"seller_clicks\"/><COLUMN ref=\"seller_convs\"/><COLUMN \
+ref=\"click_rate\"/><COLUMN ref=\"conversion_rate\"/><COLUMN ref=\"roi\"/><COLUMN \
+ref=\"network_revenue\"/><COLUMN ref=\"network_gross_cost\"/><COLUMN \
+ref=\"network_gross_profit\"/><COLUMN ref=\"network_revenue_ecpm\"/><COLUMN \
+ref=\"network_gross_cost_ecpm\"/><COLUMN \
+ref=\"network_gross_profit_ecpm\"/></COLUMNS><FILTERS><FILTER ref=\"time\" \
+macro=\"yesterday\"/></FILTERS></REQUEST></RWRequest>";
+        s.flush();
+      }     
       exit( 0 );
     }
-    catch ( ... ) {
-    }
-  }
-  catch ( xmt::fork_in_parent& child ) {
-    try {
-      xmt::signal_handler( SIGPIPE, &sigpipe_handler );
-      sockmgr_stream_MP<loader> srv( port );
-
+    catch ( xmt::fork_in_parent& child ) {
+      sockmgr_stream_MP<long_msg_processor> srv( port );
       fcnd.set( true );
 
-      tcnd.try_wait();
-
-      kill( child.pid(), SIGTERM );
-
-      int stat;
-      waitpid( child.pid(), &stat, 0 );
+      srv_cnd.try_wait();
 
       srv.close();
       srv.wait();
+      
     }
-    catch ( ... ) {
-    }
+
+    (&fcnd)->~__Condition<true>();
+    shm.deallocate( &fcnd, 1 );
+
+    (&srv_cnd)->~__Condition<true>();
+    shm.deallocate( &srv_cnd, 1 );
+
+    seg.deallocate();
+    unlink( fname );
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
   }
 
-  (&fcnd)->~__Condition<true>();
-
-  shmdt( buf );
-  shmctl( id, IPC_RMID, &ds ); 
 }
