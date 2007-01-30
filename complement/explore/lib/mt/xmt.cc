@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/15 14:39:47 ptr>
+// -*- C++ -*- Time-stamp: <07/01/29 18:53:22 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2006
@@ -168,70 +168,6 @@ namespace xmt {
 using std::cerr;
 using std::endl;
 #endif
-
-
-__FIT_DECLSPEC
-int Semaphore::wait_time( const ::timespec *abstime ) // wait for time t, or signal
-{
-#ifdef __FIT_WIN32THREADS
-  time_t ct = time( 0 );
-  time_t _conv = abstime->tv_sec * 1000 + abstime->tv_nsec / 1000000;
-
-  unsigned ms = _conv >= ct ? _conv - ct : 1;
-
-  if ( WaitForSingleObject( _sem, ms ) == WAIT_OBJECT_0 ) {
-    return 0;
-  }
-  return -1;
-#endif
-#ifdef __FIT_UITHREADS
-#warning "Fix me!"
-#endif
-#ifdef _PTHREADS
-# if !(defined(__FreeBSD__) || defined(__OpenBSD__))
-  return sem_timedwait( &_sem, abstime );
-# else
-  return -1; // not implemented
-# endif
-#endif
-#ifdef __FIT_NOVELL_THREADS
-  time_t ct = time( 0 );
-  time_t _conv = abstime->tv_sec * 1000 + abstime->tv_nsec / 1000000;
-
-  unsigned ms = _conv >= ct ? _conv - ct : 1;
-  return TimedWaitOnLocalSemaphore( _sem, ms );
-#endif
-}
-
-__FIT_DECLSPEC
-int Semaphore::wait_delay( const ::timespec *interval ) // wait, timeout is delay t, or signal
-{
-#ifdef __FIT_WIN32THREADS
-  unsigned ms = interval->tv_sec * 1000 + interval->tv_nsec / 1000000;
-
-  if ( WaitForSingleObject( _sem, ms ) == WAIT_OBJECT_0 ) {
-    return 0;
-  }
-  return -1;
-#endif
-#ifdef __FIT_UITHREADS
-#warning "Fix me!"
-#endif
-#ifdef _PTHREADS
-  timespec st;
-  xmt::gettime( &st );
-  st += *interval;
-# if !(defined(__FreeBSD__) || defined(__OpenBSD__))
-  return sem_timedwait( &_sem, &st );
-# else
-  return -1; // not implemented
-# endif
-#endif
-#ifdef __FIT_NOVELL_THREADS
-  unsigned ms = interval->tv_sec * 1000 + interval->tv_nsec / 1000000;
-  return TimedWaitOnLocalSemaphore( _sem, ms );
-#endif
-}
 
 char *Init_buf[32];
 int& Thread::Init::_count( detail::Init_count ); // trick to avoid friend declarations
