@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <06/12/18 17:10:02 ptr>
+// -*- C++ -*- Time-stamp: <07/01/30 10:57:38 ptr>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005, 2006
+ * Copyright (c) 2002, 2003, 2005, 2006, 2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -29,6 +29,7 @@ sockios_test_suite::sockios_test_suite() :
   test_case *hostaddr3_tc = BOOST_CLASS_TEST_CASE( &sockios_test::hostaddr_test3, instance );
   test_case *ctor_dtor_tc = BOOST_CLASS_TEST_CASE( &sockios_test::ctor_dtor, instance );
   test_case *sigpipe_tc   = BOOST_CLASS_TEST_CASE( &sockios_test::sigpipe, instance );
+  test_case *long_msg_tc  = BOOST_CLASS_TEST_CASE( &sockios_test::long_msg_test, instance );
 
   // hostaddr2_tc->depends_on( hostaddr1_tc );
 
@@ -40,4 +41,5 @@ sockios_test_suite::sockios_test_suite() :
   add( hostaddr3_tc );
   add( ctor_dtor_tc );
   add( sigpipe_tc );
+  add( long_msg_tc );
 }

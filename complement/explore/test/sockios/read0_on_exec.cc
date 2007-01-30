@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <06/12/15 10:50:48 ptr>
+// -*- C++ -*- Time-stamp: <07/01/29 19:17:54 ptr>
 
 /*
- * Copyright (c) 2006
+ * Copyright (c) 2006, 2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -21,7 +21,7 @@ using namespace boost::unit_test_framework;
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include <sys/shm.h>
+#include <mt/shm.h>
 
 using namespace std;
 using namespace xmt;
@@ -122,63 +122,61 @@ Thread::ret_code thread_entry( void *par )
 
 void test_read0()
 {
-  shmid_ds ds;
-  int id = shmget( 5000, 1024, IPC_CREAT | IPC_EXCL | 0600 );
-  if ( id == -1 ) {
-    cerr << "Error on shmget" << endl;
-  }
-  if ( shmctl( id, IPC_STAT, &ds ) == -1 ) {
-    cerr << "Error on shmctl" << endl;
-  }
-  void *buf = shmat( id, 0, 0 );
-  if ( buf == reinterpret_cast<void *>(-1) ) {
-    cerr << "Error on shmat" << endl;
-  }
-
-  Semaphore& sem = *new( buf ) Semaphore( 1, true );
-
+  const char fname[] = "/tmp/sockios_test.shm";
   try {
-    // cerr << "** 1" << endl;
-    // cndf.set( false );
+    xmt::shm_alloc<0> seg;
 
-    xmt::fork();                      // <---- key line
-    sem.wait(); // wait server for listen us
-    // cerr << "** 2" << endl;
+    seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
+    // xmt::shm_name_mgr<0>& nm = seg.name_mgr();
 
-    Condition cnd;
-    cnd.set( false );
+    xmt::allocator_shm<xmt::__Condition<true>,0> shm;
 
-    xmt::Thread thr( thread_entry, &cnd );
+    xmt::__Condition<true>& fcnd = *new ( shm.allocate( 1 ) ) xmt::__Condition<true>();
+    // nm.named( fcnd, 1 );
+    fcnd.set( false );
 
-    cnd.try_wait(); // wait for read call
+    try {
+      xmt::fork();                      // <---- key line
+      fcnd.try_wait(); // wait server for listen us
 
-    delay( xmt::timespec(1,0) );
+      Condition cnd;
+      cnd.set( false );
 
-    // cerr << "system" << endl;
-    system( "echo > /dev/null" );  // <------ key line
-    // cerr << "after system" << endl;
+      xmt::Thread thr( thread_entry, &cnd );
 
-    thr.join();
-    // cerr << "exit child" << endl;
-    exit( 0 );
+      cnd.try_wait(); // wait for read call
+
+      delay( xmt::timespec(1,0) );
+
+      // cerr << "system" << endl;
+      system( "echo > /dev/null" );  // <------ key line
+      // cerr << "after system" << endl;
+
+      thr.join();
+      // cerr << "exit child" << endl;
+      exit( 0 );
+    }
+    catch ( xmt::fork_in_parent& child ) {
+      // cerr << "** 3" << endl;
+      sockmgr_stream_MP<ConnectionProcessor5> srv( ::port ); // start server
+
+      fcnd.set( true );
+
+      int stat;
+      waitpid( child.pid(), &stat, 0 );
+      srv.close();
+      srv.wait();
+    }
+
+    (&fcnd)->~__Condition<true>();
+    shm.deallocate( &fcnd, 1 );
+
+    seg.deallocate();
+    unlink( fname );
   }
-  catch ( xmt::fork_in_parent& child ) {
-    // cerr << "** 3" << endl;
-    sockmgr_stream_MP<ConnectionProcessor5> srv( ::port ); // start server
-
-    // cndf.set( true ); // server wait, I hope
-    sem.post();
-    int stat;
-    // cerr << "wait " << child.pid() << endl;
-    waitpid( child.pid(), &stat, 0 );
-    // cerr << "close all" << endl;
-    srv.close();
-    srv.wait();
+  catch ( xmt::shm_bad_alloc& err ) {
+    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
   }
-  (&sem)->~Semaphore();
-
-  shmdt( buf );
-  shmctl( id, IPC_RMID, &ds );
 }
 
 class ConnectionProcessor6 // dummy variant
@@ -190,7 +188,7 @@ class ConnectionProcessor6 // dummy variant
     void close();
 };
 
-static Semaphore *sem2;
+static __Semaphore<true> *sem2;
 
 ConnectionProcessor6::ConnectionProcessor6( std::sockstream& s )
 {
@@ -216,55 +214,53 @@ void ConnectionProcessor6::close()
 
 void test_read0_srv()
 {
-  shmid_ds ds;
-  int id = shmget( 5000, 1024, IPC_CREAT | IPC_EXCL | 0600 );
-  if ( id == -1 ) {
-    cerr << "Error on shmget" << endl;
+  const char fname[] = "/tmp/sockios_test.shm";
+  try {
+    xmt::shm_alloc<0> seg;
+
+    seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
+    xmt::allocator_shm<xmt::__Semaphore<true>,0> shm;
+
+    sem2 = new ( shm.allocate( 1 ) ) xmt::__Semaphore<true>( 2 );
+
+    sockmgr_stream_MP<ConnectionProcessor6> srv( ::port );
+
+    {
+      // It should work as before system call...
+      sockstream s( "localhost", ::port );
+
+      s << "1" << endl;
+
+      BOOST_CHECK( s.good() );
+
+      sem2->wait();
+    }
+
+    system( "echo > /dev/null" );  // <------ key line
+
+    {
+      // ... as after system call.
+      sockstream s( "localhost", ::port );
+
+      s << "1" << endl;
+
+      BOOST_CHECK( s.good() );
+
+      sem2->wait();
+    }
+
+    BOOST_CHECK( srv.good() ); // server must correctly process interrupt during system call
+
+    srv.close();
+
+    srv.wait();
+
+    sem2->~__Semaphore<true>();
+    shm.deallocate( sem2, 1 );
+    seg.deallocate();
+    unlink( fname );
   }
-  if ( shmctl( id, IPC_STAT, &ds ) == -1 ) {
-    cerr << "Error on shmctl" << endl;
+  catch ( xmt::shm_bad_alloc& err ) {
+    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
   }
-  void *buf = shmat( id, 0, 0 );
-  if ( buf == reinterpret_cast<void *>(-1) ) {
-    cerr << "Error on shmat" << endl;
-  }
-
-  sem2 = new( buf ) Semaphore( 2, true );
-
-  sockmgr_stream_MP<ConnectionProcessor6> srv( ::port );
-
-  {
-    // It should work as before system call...
-    sockstream s( "localhost", ::port );
-
-    s << "1" << endl;
-
-    BOOST_CHECK( s.good() );
-
-    sem2->wait();
-  }
-
-  system( "echo > /dev/null" );  // <------ key line
-
-  {
-    // ... as after system call.
-    sockstream s( "localhost", ::port );
-
-    s << "1" << endl;
-
-    BOOST_CHECK( s.good() );
-
-    sem2->wait();
-  }
-
-  BOOST_CHECK( srv.good() ); // server must correctly process interrupt during system call
-
-  srv.close();
-
-  srv.wait();
-
-  sem2->~Semaphore();
-
-  shmdt( buf );
-  shmctl( id, IPC_RMID, &ds );
 }
