@@ -1,13 +1,13 @@
 # Time-stamp: <07/01/23 14:12:04 ptr>
 #
-# Copyright (c) 2006
+# Copyright (c) 2006, 2007
 # Petr Ovtchenkov
 #
 # Licensed under the Academic Free License version 3.0
 #
 
 SRCROOT := ..
-SUBDIRS := mt sockios stem misc
+SUBDIRS := mt sockios stem
 
 include ${SRCROOT}/Makefiles/gmake/subdirs.mak
 
