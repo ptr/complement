@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <07/01/30 11:45:52 ptr>
+// -*- C++ -*- Time-stamp: <07/01/31 10:55:45 ptr>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005, 2006
+ * Copyright (c) 2002, 2003, 2005-2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -375,23 +375,23 @@ class long_msg_processor //
 
 long_msg_processor::long_msg_processor( std::sockstream& )
 {
-  cerr << "long_msg_processor::long_msg_processor" << endl;
+  // cerr << "long_msg_processor::long_msg_processor" << endl;
 }
 
 void long_msg_processor::connect( std::sockstream& s )
 {
-  cerr << "long_msg_processor::connect" << endl;
+  // cerr << "long_msg_processor::connect" << endl;
 
   string l;
 
   getline( s, l );
 
-  cerr << "Is good? " << s.good() << endl;
+  // cerr << "Is good? " << s.good() << endl;
 }
 
 void long_msg_processor::close()
 {
-  cerr << "long_msg_processor::close()" << endl;
+  // cerr << "long_msg_processor::close()" << endl;
   cnd->set( true );
 }
 
