@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/13 17:38:44 ptr>
+// -*- C++ -*- Time-stamp: <07/01/31 08:55:49 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -289,7 +289,7 @@ class sockmgr_stream_MP :
     _Sequence _M_c;
     _Compare  _M_comp;
     pfd_equal _pfdcomp;
-    // xmt::Mutex _c_lock;
+    xmt::Mutex _c_lock;
 
     _fd_sequence _pfd;
     int _cfd; // sock_base::socket_type

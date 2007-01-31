@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <06/12/15 01:27:36 ptr>
+// -*- C++ -*- Time-stamp: <07/01/31 09:43:59 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -100,6 +100,7 @@ bool sockmgr_stream_MP<Connect>::_shift_fd()
     //   cerr << __FILE__ << ":" << __LINE__ << endl;
     // }
     if ( j->revents != 0 ) {
+      xmt::Locker _l( _c_lock );
       // We should distinguish closed socket from income message
       typename container_type::iterator i = 
         find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, j->fd ) );
@@ -114,7 +115,7 @@ bool sockmgr_stream_MP<Connect>::_shift_fd()
         i = _M_c.begin();
         while ( (i = find_if( i, _M_c.end(), bind2nd( _M_comp, -1 ) )) != _M_c.end() ) {
           _dlock.lock();
-          std::remove( _conn_pool.begin(), _conn_pool.end(), i );
+          _conn_pool.erase( std::remove( _conn_pool.begin(), _conn_pool.end(), i ), _conn_pool.end() );
           _dlock.unlock();
           _M_c.erase( i++ );
         }
@@ -124,7 +125,7 @@ bool sockmgr_stream_MP<Connect>::_shift_fd()
         _pfd.erase( j );
         j = _pfd.begin() + (d - 1);
         _dlock.lock();
-        std::remove( _conn_pool.begin(), _conn_pool.end(), i );
+        _conn_pool.erase( std::remove( _conn_pool.begin(), _conn_pool.end(), i ), _conn_pool.end() );
         _dlock.unlock();
         _M_c.erase( i );
       } else {
@@ -141,7 +142,7 @@ bool sockmgr_stream_MP<Connect>::_shift_fd()
           _pfd.erase( j );
           j = _pfd.begin() + (d - 1);
           _dlock.lock();
-          std::remove( _conn_pool.begin(), _conn_pool.end(), i );
+          _conn_pool.erase( std::remove( _conn_pool.begin(), _conn_pool.end(), i ), _conn_pool.end() );
           _dlock.unlock();
           _M_c.erase( i );
         } else { // normal data available for reading
@@ -216,10 +217,10 @@ bool sockmgr_stream_MP<Connect>::accept_tcp()
       }
 
       try {
-        _Connect *cl_new;
+        xmt::Locker _l( _c_lock );
         _M_c.push_back( _Connect() );
         _M_c.back().open( _sd, addr.any );
-        cl_new = &_M_c.back();
+        _Connect *cl_new = &_M_c.back();
         if ( cl_new->s.rdbuf()->in_avail() > 0 ) {
           // this is the case when user read from sockstream
           // in ctor above; push processing of this stream
@@ -418,6 +419,13 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
               sock_base::socket_type rfd = stream.rdbuf()->fd();
               ::write( me->_cfd, reinterpret_cast<const char *>(&rfd), sizeof(sock_base::socket_type) );
             }
+          } else {
+            me->_dlock.lock();
+            me->_conn_pool.erase( std::remove( me->_conn_pool.begin(), me->_conn_pool.end(), c ), me->_conn_pool.end() );
+            me->_dlock.unlock();
+
+            xmt::Locker _l( me->_c_lock );
+            me->_M_c.erase( c );
           }
         }
       }
