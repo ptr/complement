@@ -6,18 +6,9 @@
 # Licensed under the Academic Free License version 3.0
 #
 
-ifdef SUBDIRS
-# Do the same target in all catalogs from SUBDIRS
+# Do the same target in all catalogs as arg
 define doinsubdirs
-@for d in ${SUBDIRS}; do \
-  ${MAKE} -C $$d $@; \
+@for d in $(1); do \
+  ${MAKE} -C $$d $@ || exit 1; \
 done
 endef
-
-else
-# Dummy, do nothing
-define doinsubdirs
-endef
-
-endif
-
