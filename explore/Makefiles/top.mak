@@ -109,10 +109,10 @@ endif
 # if target is program, rules for executable
 ifdef PRGNAME
 include ${RULESBASE}/$(USE_MAKE)/app/top.mak
-endif
-
+else
 ifdef PRGNAMES
-# include ${RULESBASE}/$(USE_MAKE)/app/top.mak
+include ${RULESBASE}/$(USE_MAKE)/app/top.mak
+endif
 endif
 
 .PHONY: $(PHONY)
