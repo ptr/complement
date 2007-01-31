@@ -252,9 +252,9 @@ void test_client_server_select_nonlocal_nac()
 #endif
 }
 
+#ifndef __FIT_NO_SELECT
 void test_client_server_select_local_ack()
 {
-#ifndef __FIT_NO_POLL
   try {
     // server listen localhost (127.0.0.1), but not listen ext interface:
     sockmgr_stream_MP_SELECT<ConnectionProcessor> srv( 0x7f000001, port ); // start server
@@ -269,10 +269,8 @@ void test_client_server_select_local_ack()
     BOOST_ERROR( "host not found by name" );
     pr_lock.unlock();
   }
-#else
-  BOOST_ERROR( "poll-based sockmgr not implemented on this platform" );
-#endif
 }
+#endif
 
 void udp_test_client_server_poll()
 {
