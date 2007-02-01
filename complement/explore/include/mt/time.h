@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/15 10:21:37 ptr>
+// -*- C++ -*- Time-stamp: <07/02/01 18:35:14 ptr>
 
 /*
  * Copyright (c) 2002, 2006
@@ -57,6 +57,7 @@ std::string calendar_time( time_t t );
 ::timespec operator /( const ::timespec& a, unsigned long b );
 ::timespec operator *( const ::timespec& a, unsigned b );
 ::timespec operator *( const ::timespec& a, unsigned long b );
+::timespec operator *( const ::timespec& a, double b );
 inline ::timespec operator *( unsigned b, const ::timespec& a )
 { return a * b; }
 inline ::timespec operator *( unsigned long b, const ::timespec& a )
@@ -69,6 +70,7 @@ inline ::timespec operator *( unsigned long b, const ::timespec& a )
 ::timespec& operator /=( ::timespec& a, unsigned long b );
 ::timespec& operator *=( ::timespec& a, unsigned b );
 ::timespec& operator *=( ::timespec& a, unsigned long b );
+::timespec& operator *=( ::timespec& a, double b );
 
 bool operator >( const ::timespec& a, const ::timespec& b );
 bool operator >=( const ::timespec& a, const ::timespec& b );
