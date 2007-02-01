@@ -1,3 +1,12 @@
+2007-02-01  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* thr_mgr.cc: reduce amount of code; try to 'join' to already
+	closed threads, wait other in loop. [this is attempt to find
+	workaround for deadlock within glibc, but speedup release
+	already free resources too]
+
+	* libxmt: version 1.9.5
+	
 2007-01-30  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* shm.h: add named objects manager in shared segment
