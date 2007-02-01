@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/01/31 09:43:59 ptr>
+// -*- C++ -*- Time-stamp: <07/02/01 10:04:23 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
@@ -359,9 +359,16 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
 
     me->mgr.join();
 
+    me->_M_c.clear(); // FIN still may not come yet; forse close
+
     return rtc;
     // throw;
   }
+
+  xmt::block_signal( SIGINT );
+  xmt::block_signal( SIGPIPE );
+  xmt::block_signal( SIGCHLD );
+  xmt::block_signal( SIGPOLL );
 
   me->_dlock.lock();
   me->_follow = false;
@@ -376,6 +383,8 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
   // me->_c_lock.unlock();
 
   me->mgr.join();
+
+  me->_M_c.clear(); // FIN still may not come yet; forse close
 
   return rtc;
 }
@@ -456,6 +465,7 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
   }
   catch ( ... ) {
   }
+
   return rtc;
 }
 

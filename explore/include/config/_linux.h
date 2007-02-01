@@ -1,10 +1,12 @@
-/* Time-stamp: <05/12/12 10:47:37 ptr> */
+/* Time-stamp: <07/01/31 23:51:12 ptr> */
 
 /*
+ *
  * Copyright (c) 2003-2007
  * Petr Ovtchenkov
  *
- * Licensed under the Academic Free License Version 3.0
+ * Licensed under the Academic Free License version 3.0
+ *
  */
 
 #ifndef __config__linux_h
@@ -17,7 +19,7 @@
 /*
  * Include this first, due to <features.h> unconditionally redefine
  * a lot of macros.
-*/
+ */
 
 #include <features.h>
 
@@ -59,9 +61,10 @@
 #  error "__BYTE_ORDER neither __BIG_ENDIAN nor __LITTLE_ENDIAN; Fix me!"
 #endif
 
-/* select-based socket manager not supported a long time, and produce errors on x64
- * I turn off usage of select
-*/
+/*
+ * select-based socket manager not maintained a long time, and produce
+ * errors on x86_64, so I turn off usage of select
+ */
 
 #define __FIT_NO_SELECT
 

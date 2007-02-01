@@ -1,8 +1,16 @@
+2007-02-01  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.cc: clean container with sockstreams,
+	to force 'close' call for all connections during server
+	close process; try to block some signals during close.
+	
+	* libsockios: Version 1.10.3
+
 2007-01-31  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* sockmgr.h, sockmgr.cc: really erase iterators
 	from _conn_pool; remove sockstream from processing,
-	if it was closed during 'connect' processing.
+	if it was closed during 'connect' processing;
 
 	* libsockios: Version 1.10.2
 
