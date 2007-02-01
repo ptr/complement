@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/01/31 08:55:49 ptr>
+// -*- C++ -*- Time-stamp: <07/01/31 23:52:05 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001

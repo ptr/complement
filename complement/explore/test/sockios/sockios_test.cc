@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/01/31 10:55:45 ptr>
+// -*- C++ -*- Time-stamp: <07/01/31 23:47:57 ptr>
 
 /*
  *
@@ -141,7 +141,7 @@ class Cnt
 {
   public:
     Cnt( sockstream& )
-      { xmt::Locker lk(lock); ++cnt; }
+      { xmt::Locker lk(lock); ++cnt; ++visits; }
 
     ~Cnt()
       { xmt::Locker lk(lock); --cnt; }
@@ -152,19 +152,22 @@ class Cnt
     void close()
       { }
 
+    static int get_visits()
+      { xmt::Locker lk(lock); return visits; }
+
     static xmt::Mutex lock;
     static int cnt;
+    static int visits;
 };
 
 xmt::Mutex Cnt::lock;
 int Cnt::cnt = 0;
+int Cnt::visits = 0;
 
 void sockios_test::ctor_dtor()
 {
-  // Check, that naumber of ctors of Cnt is the same as number of called dtors
-  // i.e. all created Cnt freed.
-  // due to async nature of communication, no way to check Cnt::cnt
-  // before server stop.
+  // Check, that number of ctors of Cnt is the same as number of called dtors
+  // i.e. all created Cnt was released.
   {
     sockmgr_stream_MP<Cnt> srv( port );
 
@@ -178,6 +181,12 @@ void sockios_test::ctor_dtor()
 
       BOOST_CHECK( s1.good() );
       BOOST_CHECK( s1.is_open() );
+      while ( Cnt::get_visits() == 0 ) {
+        xmt::delay( xmt::timespec(0,10000) );
+      }
+      Cnt::lock.lock();
+      BOOST_CHECK( Cnt::cnt == 1 );
+      Cnt::lock.unlock();
     }
 
     srv.close();
@@ -185,9 +194,14 @@ void sockios_test::ctor_dtor()
 
     Cnt::lock.lock();
     BOOST_CHECK( Cnt::cnt == 0 );
+    Cnt::visits = 0;
     Cnt::lock.unlock();
-    
   }
+
+  Cnt::lock.lock();
+  BOOST_CHECK( Cnt::cnt == 0 );
+  Cnt::lock.unlock();
+
   {
     sockmgr_stream_MP<Cnt> srv( port );
 
@@ -207,6 +221,12 @@ void sockios_test::ctor_dtor()
       BOOST_CHECK( s1.is_open() );
       BOOST_CHECK( s2.good() );
       BOOST_CHECK( s2.is_open() );
+      while ( Cnt::get_visits() < 2 ) {
+        xmt::delay( xmt::timespec(0,10000) );
+      }
+      Cnt::lock.lock();
+      BOOST_CHECK( Cnt::cnt == 2 );
+      Cnt::lock.unlock();
     }
 
     srv.close();
@@ -215,8 +235,11 @@ void sockios_test::ctor_dtor()
     Cnt::lock.lock();
     BOOST_CHECK( Cnt::cnt == 0 );
     Cnt::lock.unlock();
-    
   }
+
+  Cnt::lock.lock();
+  BOOST_CHECK( Cnt::cnt == 0 );
+  Cnt::lock.unlock();
 }
 
 class loader
