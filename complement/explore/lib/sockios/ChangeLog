@@ -6,6 +6,13 @@
 	
 	* libsockios: Version 1.10.3
 
+	* sockmgr.h, sockmgr.cc: start connect_processor threads
+	only from 'observer' thread; threads pool managed only
+	from 'observer' thread; 'observer' thread not in threads
+	pool, it start from 'loop'; 
+	
+	* libsockios: Version 1.10.4
+
 2007-01-31  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* sockmgr.h, sockmgr.cc: really erase iterators

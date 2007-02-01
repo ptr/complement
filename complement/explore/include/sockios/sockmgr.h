@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/01/31 23:52:05 ptr>
+// -*- C++ -*- Time-stamp: <07/02/01 16:10:07 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
@@ -297,15 +297,11 @@ class sockmgr_stream_MP :
     xmt::Condition _pool_cnd;
     xmt::Mutex _dlock;
     timespec _tpop;
-    xmt::ThreadMgr mgr;
 
     xmt::Mutex _flock;
     bool _follow;
 
     xmt::Condition _observer_cnd;
-    xmt::Mutex _orlock;
-    bool _observer_run;
-
     timespec _busylimit; // start new thread to process incoming
                          // requests, if processing thread busy
                          // more then _busylimit
