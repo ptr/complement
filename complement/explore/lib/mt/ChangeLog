@@ -3,7 +3,13 @@
 	* thr_mgr.cc: reduce amount of code; try to 'join' to already
 	closed threads, wait other in loop. [this is attempt to find
 	workaround for deadlock within glibc, but speedup release
-	already free resources too]
+	already free resources too]; add 'signal'---send signal to all
+	good threads in pool; use fact, that thread's join in Thread
+	destructor now.
+
+	* xmt.cc: join in Thread destructor.
+
+	* time.h, time.cc: timespec multiplication on double added.
 
 	* libxmt: version 1.9.5
 	
