@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/01 10:04:23 ptr>
+// -*- C++ -*- Time-stamp: <07/02/01 19:50:14 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
@@ -321,48 +321,31 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
   _Self_type *me = static_cast<_Self_type *>(p);
   me->loop_id.pword( _idx ) = me; // push pointer to self for signal processing
   xmt::Thread::ret_code rtc;
+  xmt::Thread::ret_code rtc_observer;
   rtc.iword = 0;
+  rtc_observer.iword = 0;
+
+  xmt::Thread thr_observer;
 
   try {
     me->_loop_cnd.set( true );
 
     me->_follow = true;
-    me->_observer_run = false;
 
     while ( (me->*me->_accept)() ) {
-      if ( me->mgr.size() < 2 ) {
-        me->mgr.launch( connect_processor, me );
-      }
-      me->_orlock.lock();
-      if ( !me->_observer_run ) {
-        me->_observer_run = true;
-        me->_orlock.unlock();
-        me->mgr.launch( observer, me, 0, 0, PTHREAD_STACK_MIN * 2 );
-      } else {
-        me->_orlock.unlock();
+      if ( thr_observer.bad() ) {
+        if ( thr_observer.is_join_req() ) {
+          rtc_observer = thr_observer.join();
+          if ( rtc_observer.iword != 0 ) {
+            rtc.iword = -2; // there was connect_processor that was killed
+          }
+        }
+        thr_observer.launch( observer, me, 0, PTHREAD_STACK_MIN * 2 );
       }
     }
   }
   catch ( ... ) {
-    me->_dlock.lock();
-    me->_follow = false;
-    me->_pool_cnd.set( true, true );
-    me->_observer_cnd.set( true );
-    me->_dlock.unlock();
-
-    // me->_c_lock.lock();
-    ::close( me->_cfd );
-    ::close( me->_pfd[1].fd );
-    me->close();
-    // me->_c_lock.unlock();
     rtc.iword = -1;
-
-    me->mgr.join();
-
-    me->_M_c.clear(); // FIN still may not come yet; forse close
-
-    return rtc;
-    // throw;
   }
 
   xmt::block_signal( SIGINT );
@@ -381,10 +364,12 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
   ::close( me->_pfd[1].fd );
   me->close();
   // me->_c_lock.unlock();
+  rtc_observer = thr_observer.join();
 
-  me->mgr.join();
-
-  me->_M_c.clear(); // FIN still may not come yet; forse close
+  me->_M_c.clear(); // FIN still may not come yet; force close
+  if ( rtc_observer.iword != 0 && rtc.iword == 0 ) {
+    rtc.iword = -2; // there was connect_processor that was killed
+  }
 
   return rtc;
 }
@@ -464,6 +449,7 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
     } while ( me->_is_follow() && idle_count < 2 );
   }
   catch ( ... ) {
+    rtc.iword = -1;
   }
 
   return rtc;
@@ -487,6 +473,10 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::observer( void *p )
   std::fill( pool_size, pool_size + 3, 0 );
 
   try {
+    xmt::ThreadMgr mgr;
+
+    mgr.launch( connect_processor, me /* , 0, 0, PTHREAD_STACK_MIN * 2 */ );
+
     do {
       // std::swap( pool_size[0], pool_size[1] );
       std::rotate( pool_size, pool_size, pool_size + 3 );
@@ -496,36 +486,44 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::observer( void *p )
         tpop = me->_tpop;
       }
       if ( pool_size[2] != 0 ) {
-        if ( me->_thr_limit > me->mgr.size() ) {
+        if ( me->_thr_limit > mgr.size() ) {
           if ( (pool_size[0] - 2 * pool_size[1] + pool_size[2]) > 0 ||
-               pool_size[2] > 32
+               pool_size[2] > me->_thr_limit
                /* pool_size[1] > 3 && pool_size[0] <= pool_size[1] */ ) {
             // queue not empty and not decrease
-            me->mgr.launch( connect_processor, me /* , 0, 0, PTHREAD_STACK_MIN * 2 */ );
+            mgr.launch( connect_processor, me /* , 0, 0, PTHREAD_STACK_MIN * 2 */ );
           } else {
             xmt::gettime( &now );
             if ( (tpop + delta) < now ) {
               // a long time was since last pop from queue
-              me->mgr.launch( connect_processor, me /* , 0, 0, PTHREAD_STACK_MIN * 2 */ );
+              mgr.launch( connect_processor, me /* , 0, 0, PTHREAD_STACK_MIN * 2 */ );
             }
           }
         }
+        mgr.garbage_collector();
         xmt::delay( &alarm );
       } else {
-        if ( me->_observer_cnd.try_wait_delay( &idle ) != 0 ) {
-          MT_REENTRANT( me->_orlock, _1 );
-          me->_observer_run = false;
-
+        if (  /* me->_is_follow() && */ me->_observer_cnd.try_wait_delay( &idle ) != 0 && mgr.size() == 0 ) {
           return rtc;
         }
       }
     } while ( me->_is_follow() );
+
+    int count = 24;
+    while ( mgr.size() > 0 && count > 0 ) {
+      me->_pool_cnd.set( true, true );
+      xmt::delay( &alarm );
+      alarm *= 1.2;
+      --count;
+    }
+    if ( mgr.size() > 0 ) {
+      mgr.signal( SIGTERM );
+      rtc.iword = -1;
+    }
   }
   catch ( ... ) {
+    rtc.iword = -1;
   }
-
-  MT_REENTRANT( me->_orlock, _1 );
-  me->_observer_run = false;
 
   return rtc;
 }
