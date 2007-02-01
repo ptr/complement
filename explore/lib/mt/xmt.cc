@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/01/29 18:53:22 ptr>
+// -*- C++ -*- Time-stamp: <07/02/01 19:35:59 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002-2006
+ * Copyright (c) 1997-1999, 2002-2007
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -363,6 +363,8 @@ Thread::Thread( unsigned __f ) :
 
 __FIT_DECLSPEC
 Thread::Thread( Thread::entrance_type entrance, const void *p, size_t psz, unsigned __f, size_t stack_sz ) :
+    _id( bad_thread_id ),
+    _state( badbit ),
     _entrance( entrance ),
     _param( 0 ),
     _param_sz( 0 ),
@@ -377,6 +379,7 @@ Thread::Thread( Thread::entrance_type entrance, const void *p, size_t psz, unsig
 __FIT_DECLSPEC
 Thread::~Thread()
 {
+  Thread::join();
   ((Init *)Init_buf)->~Init();
 
   // _STLP_ASSERT( _id == bad_thread_id );

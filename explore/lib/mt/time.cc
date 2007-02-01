@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/15 10:35:48 ptr>
+// -*- C++ -*- Time-stamp: <07/02/01 18:34:48 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -141,6 +141,16 @@ timespec operator *( const timespec& a, unsigned long b )
   return c;
 }
 
+timespec operator *( const timespec& a, double b )
+{
+  timespec c;
+  double d = (a.tv_sec + 1.0e-9 * a.tv_nsec) * b;
+
+  c.tv_nsec = static_cast<long>(1.0e9 * modf( d, &d ) + 0.5);
+  c.tv_sec = static_cast<time_t>(d);
+  return c;
+}
+
 timespec& operator +=( timespec& a, const timespec& b )
 {
   a.tv_sec += b.tv_sec;
@@ -206,6 +216,16 @@ timespec& operator *=( timespec& a, unsigned long b )
   _tmp *= b;
   a.tv_sec += static_cast<time_t>(_tmp / 1000000000UL);
   a.tv_nsec = static_cast<long>(_tmp % 1000000000UL);
+
+  return a;
+}
+
+timespec& operator *=( timespec& a, double b )
+{
+  double d = (a.tv_sec + 1.0e-9 * a.tv_nsec) * b;
+
+  a.tv_nsec = static_cast<long>(1.0e9 * modf( d, &d ) + 0.5);
+  a.tv_sec = static_cast<time_t>(d);
 
   return a;
 }
