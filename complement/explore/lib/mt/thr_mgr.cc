@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <06/12/13 17:54:09 ptr>
+// -*- C++ -*- Time-stamp: <07/02/01 11:18:04 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2005, 2006
+ * Copyright (c) 1997-1999, 2002, 2005-2007
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -26,6 +26,25 @@ struct bad_thread :
       { return !__x->good(); }
 };
 
+struct rm_if_bad_thread :
+    public unary_function<Thread *,bool>
+{
+    bool operator()(Thread *__x);
+};
+
+bool rm_if_bad_thread::operator()(Thread *__x)
+{
+  if ( __x == 0 ) {
+    return true;
+  }
+  if ( !__x->good() ) {
+    __x->join();
+    delete __x;
+    return true;
+  }
+  return false;
+}
+
 __FIT_DECLSPEC ThreadMgr::~ThreadMgr()
 {
   ThreadMgr::join();
@@ -33,70 +52,39 @@ __FIT_DECLSPEC ThreadMgr::~ThreadMgr()
 
 __FIT_DECLSPEC void ThreadMgr::join()
 {
-  Locker lk( _lock );
-  container_type::iterator i = _M_c.begin();
+  // xmt::block_signal( SIGINT );
+  // xmt::block_signal( SIGTERM );
+  // xmt::block_signal( SIGPIPE );
+  // xmt::block_signal( SIGCHLD );
+  // xmt::block_signal( SIGPOLL );
 
-  while ( i != _M_c.end() ) {
-    if ( (*i)->good() ) {
-      // (*i)->kill( SIGTERM );
-    }
-    (*i)->join(); 
-    delete *i;
-    _M_c.erase( i++ );
+  Locker lk( _lock );
+  _M_c.erase( remove_if( _M_c.begin(), _M_c.end(), rm_if_bad_thread() ), _M_c.end() );
+  while ( !_M_c.empty() ) {
+    xmt::delay( xmt::timespec(0,100000000) );
+    _M_c.erase( remove_if( _M_c.begin(), _M_c.end(), rm_if_bad_thread() ), _M_c.end() );
   }
 }
-
 
 __FIT_DECLSPEC
 void ThreadMgr::launch( Thread::entrance_type entrance, const void *p, size_t psz, unsigned flags, size_t stack_sz )
 {
-  MT_REENTRANT( _lock, _x1 );
-  container_type::iterator i = _M_c.begin();
-
-  while ( i != _M_c.end() ) {
-    if ( !(*i)->good() ) {
-      (*i)->join();
-      delete *i;
-      _M_c.erase( i++ );
-    } else {
-      ++i;
-    }
-  }
-
+  Locker lk( _lock );
+  _M_c.erase( remove_if( _M_c.begin(), _M_c.end(), rm_if_bad_thread() ), _M_c.end() );
   _M_c.push_back( new Thread( entrance, p, psz, flags, stack_sz ) );
 }
 
 __FIT_DECLSPEC
 void ThreadMgr::garbage_collector()
 {
-  MT_REENTRANT( _lock, _x1 );
-  container_type::iterator i = _M_c.begin();
-
-  while ( i != _M_c.end() ) {
-    if ( !(*i)->good() ) {
-      (*i)->join();
-      delete *i;
-      _M_c.erase( i++ );
-    } else {
-      ++i;
-    }
-  }
+  Locker lk( _lock );
+  _M_c.erase( remove_if( _M_c.begin(), _M_c.end(), rm_if_bad_thread() ), _M_c.end() );
 }
 
 ThreadMgr::container_type::size_type ThreadMgr::size()
 {
-  MT_REENTRANT( _lock, _x1 );
-  container_type::iterator i = _M_c.begin();
-
-  while ( i != _M_c.end() ) {
-    if ( !(*i)->good() ) {
-      (*i)->join();
-      delete *i;
-      _M_c.erase( i++ );
-    } else {
-      ++i;
-    }
-  }
+  Locker lk( _lock );
+  _M_c.erase( remove_if( _M_c.begin(), _M_c.end(), rm_if_bad_thread() ), _M_c.end() );
   return _M_c.size();
 }
 
