@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/01 18:39:25 ptr>
+// -*- C++ -*- Time-stamp: <07/02/02 20:54:44 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2005, 2006
@@ -42,7 +42,7 @@ class ThreadMgr
     __FIT_DECLSPEC void join();
     __FIT_DECLSPEC void signal( int );
 
-    container_type::size_type size();
+    container_type::size_type size() const;
 
   protected:
     _Sequence _M_c;

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/01 20:17:50 ptr>
+// -*- C++ -*- Time-stamp: <07/02/02 20:55:08 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2005-2007
@@ -16,6 +16,8 @@
 #include <functional>
 
 // #include <iostream>
+
+// extern int my_thr_cnt;
 
 namespace xmt {
 
@@ -48,12 +50,27 @@ bool rm_if_bad_thread::operator()(Thread *__x)
   if ( __x == 0 ) {
     return true;
   }
+  // cerr << (void *)__x << " ";
   if ( __x->bad() ) {
+    // cerr << "delete\n";
     // --_supercount;
     delete __x;
     return true;
   }
+  // cerr << "?\n";
   return false;
+}
+
+struct rm_thread :
+    public unary_function<Thread *,bool>
+{
+    bool operator()(Thread *__x);
+};
+
+bool rm_thread::operator()(Thread *__x)
+{
+  delete __x;
+  return true;
 }
 
 struct thread_signal :
@@ -82,14 +99,20 @@ __FIT_DECLSPEC void ThreadMgr::join()
   // xmt::block_signal( SIGCHLD );
   // xmt::block_signal( SIGPOLL );
 
+  /*
+   * This 'soft' variant better, than walk through _M_c and call 'delete'
+   * (that assume join); following approach remain chance to see size()
+   * somewhere else, and, may be make some action, because it not block
+   * on join within lock all the time.
+   */
   _lock.lock();
   _M_c.erase( remove_if( _M_c.begin(), _M_c.end(), rm_if_bad_thread() ), _M_c.end() );
   while ( !_M_c.empty() ) {
+    // cerr << "### " << _supercount << " " << _M_c.size() << " " << my_thr_cnt << endl;
     _lock.unlock();
     xmt::delay( xmt::timespec(0,50000000) );
     _lock.lock();
     _M_c.erase( remove_if( _M_c.begin(), _M_c.end(), rm_if_bad_thread() ), _M_c.end() );
-    // cerr << "### " << _supercount << " " << _M_c.size() << endl;
   }
   // _supercount = 0;
   _lock.unlock();
@@ -100,6 +123,8 @@ void ThreadMgr::launch( Thread::entrance_type entrance, const void *p, size_t ps
 {
   Locker lk( _lock );
   _M_c.erase( remove_if( _M_c.begin(), _M_c.end(), rm_if_bad_thread() ), _M_c.end() );
+  // Thread *t = new Thread( entrance, p, psz, flags, stack_sz );
+  // cerr << (void *)t << " created\n";
   _M_c.push_back( new Thread( entrance, p, psz, flags, stack_sz ) );
   // ++_supercount;
 }
@@ -111,7 +136,7 @@ void ThreadMgr::garbage_collector()
   _M_c.erase( remove_if( _M_c.begin(), _M_c.end(), rm_if_bad_thread() ), _M_c.end() );
 }
 
-ThreadMgr::container_type::size_type ThreadMgr::size()
+ThreadMgr::container_type::size_type ThreadMgr::size() const
 {
   Locker lk( _lock );
   // ThreadMgr::container_type::size_type sz = count_if( _M_c.begin(), _M_c.end(), good_thread() );

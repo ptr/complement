@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/01/29 18:58:49 ptr>
+// -*- C++ -*- Time-stamp: <07/02/02 21:32:58 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2007
@@ -1565,11 +1565,11 @@ class Thread
     static __FIT_DECLSPEC void signal_exit( int sig ); // signal handler
 
     bool good() const
-      { return (_state == goodbit) && (_id != bad_thread_id); }
+      { /* Locker lk( _llock ); */ return (_id != bad_thread_id); }
     bool bad() const
-      { return (_state != goodbit) || (_id == bad_thread_id); }
-    bool is_join_req() // if true, you can (and should) use join()
-      { return (_id != bad_thread_id) && ((_flags & (daemon | detached)) == 0); }
+      { /* Locker lk( _llock ); */ return (_id == bad_thread_id); }
+    bool is_join_req() const // if true, you can (and should) use join()
+      { /* Locker lk( _llock ); */ return (_rip_id != bad_thread_id) && ((_flags & (daemon | detached)) == 0); }
 
     __FIT_DECLSPEC bool is_self();
 
@@ -1597,6 +1597,8 @@ class Thread
     Thread( const Thread& )
       { }
 
+    bool _not_run() const
+      { /* Locker lk( _llock ); */ return _id == bad_thread_id; }
     void _create( const void *p, size_t psz ) throw( std::runtime_error);
     static void *_call( void *p );
 
@@ -1617,12 +1619,11 @@ class Thread
     static int _idx; // user words index
     static int _self_idx; // user words index, that word point to self
     static Mutex _idx_lock;
-    static Mutex _start_lock;
     static thread_key_type& _mt_key;
     size_t uw_alloc_size;
 
     thread_id_type _id;
-    int _state; // state flags
+    thread_id_type _rip_id;
 #ifdef _PTHREADS
 # ifndef __hpux
     // sorry, POSIX threads don't have suspend/resume calls, so it should
@@ -1641,7 +1642,7 @@ class Thread
     size_t _param_sz;
     unsigned _flags;
     size_t _stack_sz; // stack size, if not 0
-    //  Mutex _params_lock; --- no needs
+    // Mutex _llock;
     friend class Init;
     // extern "C", wrap for thread_create
 #ifdef __unix

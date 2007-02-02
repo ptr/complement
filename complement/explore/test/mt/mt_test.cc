@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/01/29 15:35:05 ptr>
+// -*- C++ -*- Time-stamp: <07/02/02 20:53:03 ptr>
 
 /*
  * Copyright (c) 2006
@@ -14,6 +14,7 @@
 
 #include <mt/xmt.h>
 #include <mt/shm.h>
+#include <mt/thr_mgr.h>
 
 #include <sys/shm.h>
 #include <sys/wait.h>
@@ -421,4 +422,39 @@ void mt_test::shm_named_obj()
   catch ( xmt::shm_bad_alloc& err ) {
     BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
   }
+}
+
+
+static int my_thr_cnt = 0;
+static xmt::Mutex lock;
+
+xmt::Thread::ret_code thread_mgr_entry_call( void * )
+{
+  lock.lock();
+  ++my_thr_cnt;
+  lock.unlock();
+
+  xmt::Thread::ret_code rt;
+  rt.iword = 0;
+
+  lock.lock();
+  --my_thr_cnt;
+  lock.unlock();
+
+  return rt;
+}
+
+void mt_test::thr_mgr()
+{
+  xmt::ThreadMgr mgr;
+
+  for ( int i = 0; i < 200; ++i ) {
+    mgr.launch( thread_mgr_entry_call, (void *)this, 0, 0, 0 );
+  }
+
+  // cerr << "Join!\n";
+  mgr.join();
+
+  BOOST_CHECK( my_thr_cnt == 0 );
+  BOOST_CHECK( mgr.size() == 0 );
 }

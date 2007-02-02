@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/01 19:35:59 ptr>
+// -*- C++ -*- Time-stamp: <07/02/02 21:34:56 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2007
@@ -230,7 +230,6 @@ Thread::alloc_type Thread::alloc;
 int Thread::_idx = 0;
 int Thread::_self_idx = 0;
 Mutex Thread::_idx_lock;
-Mutex Thread::_start_lock;
 
 #ifdef __FIT_WIN32THREADS
 const Thread::thread_id_type Thread::bad_thread_id = INVALID_HANDLE_VALUE;
@@ -350,7 +349,7 @@ Thread::_uw_alloc_type *Thread::_alloc_uw( int __idx )
 __FIT_DECLSPEC
 Thread::Thread( unsigned __f ) :
     _id( bad_thread_id ),
-    _state( badbit ),
+    _rip_id( bad_thread_id ),
     _entrance( 0 ),
     _param( 0 ),
     _param_sz( 0 ),
@@ -364,7 +363,7 @@ Thread::Thread( unsigned __f ) :
 __FIT_DECLSPEC
 Thread::Thread( Thread::entrance_type entrance, const void *p, size_t psz, unsigned __f, size_t stack_sz ) :
     _id( bad_thread_id ),
-    _state( badbit ),
+    _rip_id( bad_thread_id ),
     _entrance( entrance ),
     _param( 0 ),
     _param_sz( 0 ),
@@ -373,6 +372,7 @@ Thread::Thread( Thread::entrance_type entrance, const void *p, size_t psz, unsig
     uw_alloc_size( 0 )
 {
   new( Init_buf ) Init();
+  // Locker lk( _llock );
   _create( p, psz );
 }
 
@@ -380,6 +380,14 @@ __FIT_DECLSPEC
 Thread::~Thread()
 {
   Thread::join();
+
+  if ( (_flags & (daemon | detached)) != 0 ) { // not joinable
+    // Locker lk( _llock );
+    if ( _id != bad_thread_id ) { // still run?
+      cerr << "Crash on daemon thread exit expected, threas id " << _id << endl;
+    }
+  }
+
   ((Init *)Init_buf)->~Init();
 
   // _STLP_ASSERT( _id == bad_thread_id );
@@ -390,14 +398,15 @@ Thread::~Thread()
 __FIT_DECLSPEC
 bool Thread::is_self()
 {
+  // Locker lk( _llock );
 #ifdef _PTHREADS
-  return good() && (_id == pthread_self());
+  return (_id != bad_thread_id) && (_id == pthread_self());
 #elif defined(__FIT_UITHREADS)
-  return good() && (_id == thr_self());
+  return (_id != bad_thread_id) && (_id == thr_self());
 #elif defined(__FIT_NOVELL_THREADS)
-  return good() && (_id == GetThreadID());
+  return (_id != bad_thread_id) && (_id == GetThreadID());
 #elif defined(__FIT_WIN32THREADS)
-  return good() && (_id == GetCurrentThread());
+  return (_id != bad_thread_id) && (_id == GetCurrentThread());
 #else
 #  error "Fix me! (replace pthread_self())"
 #endif
@@ -406,8 +415,9 @@ bool Thread::is_self()
 __FIT_DECLSPEC
 void Thread::launch( entrance_type entrance, const void *p, size_t psz, size_t stack_sz )
 {
+  // Locker lk( _llock );
   _stack_sz = stack_sz;
-  if ( _id == bad_thread_id ) {
+  if ( _not_run() ) {
     _entrance = entrance;
     _create( p, psz );
   }
@@ -420,31 +430,34 @@ Thread::ret_code Thread::join()
 
 #ifdef __FIT_WIN32THREADS
   rt.iword = 0;
-  if ( _id != bad_thread_id ) {
+  if ( !_not_run() ) {
     WaitForSingleObject( _id, -1 );
     GetExitCodeThread( _id, &rt.iword );
     CloseHandle( _id );
+    // Locker lk( _llock );
     _id = bad_thread_id;
   }
 #endif // __FIT_WIN32THREADS
 #if defined(__FIT_UITHREADS) || defined(_PTHREADS)
   rt.pword = 0;
-  if ( _id != bad_thread_id && (_flags & (daemon | detached) ) == 0 ) {
+  if ( is_join_req() ) {
 #  ifdef _PTHREADS
-    pthread_join( _id, &rt.pword );
+    pthread_join( _rip_id, &rt.pword );
 #  endif
 #  ifdef __FIT_UITHREADS
-    thr_join( _id, 0, &rt.pword );
+    thr_join( _rip_id, 0, &rt.pword );
 #  endif
-    _id = bad_thread_id;
+    // Locker lk( _llock );
+    _rip_id = bad_thread_id;
   }
 #endif // __FIT_UITHREADS || PTHREADS
 
 #ifdef __FIT_NOVELL_THREADS
   rt.iword = 0;
-  if ( _id != bad_thread_id ) {
+  if ( !_not_run() ) {
     _thr_join.wait();
-    _id = bad_thread_id;
+    // Locker lk( _llock );
+    _rip_id = bad_thread_id;
   }
 #endif // __FIT_NOVELL_THREADS
 
@@ -454,7 +467,8 @@ Thread::ret_code Thread::join()
 __FIT_DECLSPEC
 int Thread::suspend()
 {
-  if ( _id != bad_thread_id ) {
+  if ( good() ) {
+    // to do: fix possible race with _id, when it used here
 #ifdef __FIT_WIN32THREADS
     return SuspendThread( _id );
 #endif
@@ -484,7 +498,8 @@ int Thread::suspend()
 __FIT_DECLSPEC
 int Thread::resume()
 {
-  if ( _id != bad_thread_id ) {
+  if ( good() ) {
+    // to do: fix possible race with _id, when it used here
 #ifdef __FIT_WIN32THREADS
     return ResumeThread( _id );
 #endif
@@ -514,6 +529,8 @@ int Thread::resume()
 __FIT_DECLSPEC
 int Thread::kill( int sig )
 {
+  // Locker lk( _llock );
+
   if ( _id != bad_thread_id ) {
 #ifdef __FIT_UITHREADS
     return thr_kill( _id, sig );
@@ -576,9 +593,11 @@ void Thread::signal_exit( int sig )
   Thread *me = reinterpret_cast<Thread *>(*reinterpret_cast<void **>(user_words));
   // _STLP_ASSERT( me->is_self() );
 
-  me->_state = badbit;
   // follow part of _call
   if ( (me->_flags & (daemon | detached)) != 0 ) { // otherwise join expected
+    // Locker lk( me->_llock ); // !!!!??? in the signal handler?
+    me->_rip_id = me->_id = bad_thread_id;
+  } else {
     me->_id = bad_thread_id;
   }
   me->_dealloc_uw(); // clear user words
@@ -750,38 +769,33 @@ void Thread::_create( const void *p, size_t psz ) throw(std::runtime_error)
     // pthread_attr_setinheritsched( &attr, PTHREAD_EXPLICIT_SCHED );
     // pthread_attr_setschedpolicy(&attr,SCHED_OTHER);
   }
-  // _start_lock.lock(); // allow finish new thread creation before this 
-                      // thread will start to run
   err = pthread_create( &_id, _flags != 0 || _stack_sz != 0 ? &attr : 0, _xcall, this );
-  if ( err == 0 ) {
-    _state = goodbit;
+  if ( err != 0 ) {
+    _rip_id = _id = bad_thread_id;
+  } else {
+    _rip_id = _id;
   }
-  // _start_lock.unlock();
   if ( _flags != 0 || _stack_sz != 0 ) {
     pthread_attr_destroy( &attr );
   }
 #endif
 #ifdef __FIT_UITHREADS
-  // _start_lock.lock();
   err = thr_create( 0, 0, _xcall, this, _flags, &_id );
-  // _start_lock.unlock();
 #endif
 #ifdef __FIT_WIN32THREADS
-  // _start_lock.lock();
-  _id = CreateThread( 0, 0, _xcall, this, (_flags & suspended), &_thr_id );
+   _rip_id = _id = CreateThread( 0, 0, _xcall, this, (_flags & suspended), &_thr_id );
   err = GetLastError();
-  // _start_lock.unlock();
 #endif
 #ifdef __FIT_NOVELL_THREADS
-  // _start_lock.lock();
   _id = BeginThread( _xcall, 0, 65536, this );
   if ( _id == bad_thread_id ) {
     err = errno; // not ::errno, due to #define errno  *__get_errno_ptr()
     if ( (_flags & detached) == 0 ) {
       _thr_join.signal();
     }
+  } else {
+    _rip_id = _id;
   }
-  // _start_lock.unlock();
 #endif
 
   if ( err != 0 ) {
@@ -821,9 +835,7 @@ extern "C" {
 
 void *Thread::_call( void *p )
 {
-  // _start_lock.lock(); // allow finish thread creation in parent thread
   Thread *me = static_cast<Thread *>(p);
-  // me->_state = goodbit;
 
   // After exit of me->_entrance, there is may be no more *me itself,
   // so it's members may be unaccessible. Don't use me->"*" after call
@@ -854,28 +866,36 @@ void *Thread::_call( void *p )
   // In most cases for Linux there are problems with signals processing,
   // so I don't set it default more
   // signal_handler( SIGTERM, signal_exit ); // set handler for sanity
-  // _start_lock.unlock();
   try {
     ret = me->_entrance( _param );
-    me->_state = badbit;
+
     // I should make me->_id = bad_thread_id; here...
     // This is in conflict what I say in the begin of this function.
     // So don't delete Thread before it termination!
 
     if ( (me->_flags & (daemon | detached)) != 0 ) { // otherwise join expected
+      // Locker lk( me->_llock );
 #ifdef __FIT_WIN32THREADS
       CloseHandle( me->_id );
 #endif
+      me->_id = bad_thread_id;
+      me->_rip_id = bad_thread_id;
+    } else {
+      // Locker lk( me->_llock );
       me->_id = bad_thread_id;
     }
     me->_dealloc_uw(); // free user words
   }
   catch ( std::exception& e ) {
-    me->_state = badbit;
     if ( (me->_flags & (daemon | detached)) != 0 ) { // otherwise join expected
+      // Locker lk( me->_llock );
 #ifdef __FIT_WIN32THREADS
       CloseHandle( me->_id );
 #endif
+      me->_id = bad_thread_id;
+      me->_rip_id = bad_thread_id;
+    } else {
+      // Locker lk( me->_llock );
       me->_id = bad_thread_id;
     }
     me->_dealloc_uw(); // free user words
@@ -885,13 +905,18 @@ void *Thread::_call( void *p )
     ret.iword = -1;
   }
   catch ( int sig ) {
-    me->_state = badbit;
     if ( (me->_flags & (daemon | detached)) != 0 ) { // otherwise join expected
+      // Locker lk( me->_llock );
 #ifdef __FIT_WIN32THREADS
       CloseHandle( me->_id );
 #endif
       me->_id = bad_thread_id;
+      me->_rip_id = bad_thread_id;
+    } else {
+      // Locker lk( me->_llock );
+      me->_id = bad_thread_id;
     }
+
     me->_dealloc_uw(); // free user words
     // const char *_sig_ = strsignal( sig );
 #ifndef _WIN32
@@ -900,11 +925,15 @@ void *Thread::_call( void *p )
     ret.iword = sig;
   }
   catch ( ... ) {
-    me->_state = badbit;
     if ( (me->_flags & (daemon | detached)) != 0 ) { // otherwise join expected
+      // Locker lk( me->_llock );
 #ifdef __FIT_WIN32THREADS
       CloseHandle( me->_id );
 #endif
+      me->_id = bad_thread_id;
+      me->_rip_id = bad_thread_id;
+    } else {
+      // Locker lk( me->_llock );
       me->_id = bad_thread_id;
     }
     me->_dealloc_uw(); // free user words
