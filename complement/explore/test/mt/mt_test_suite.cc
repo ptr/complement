@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/01/31 23:51:46 ptr>
+// -*- C++ -*- Time-stamp: <07/02/02 17:15:47 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -25,6 +25,8 @@ mt_test_suite::mt_test_suite() :
   test_case *fork_shm_tc = BOOST_CLASS_TEST_CASE( &mt_test::fork_shm, instance );
   test_case *shm_nm_obj_tc = BOOST_CLASS_TEST_CASE( &mt_test::shm_named_obj, instance );
 
+  test_case *thr_mgr_tc = BOOST_CLASS_TEST_CASE( &mt_test::thr_mgr, instance );
+
   pid_tc->depends_on( fork_tc );
   shm_alloc_tc->depends_on( shm_segment_tc );
   fork_shm_tc->depends_on( shm_alloc_tc );
@@ -36,4 +38,6 @@ mt_test_suite::mt_test_suite() :
   add( shm_alloc_tc );
   add( fork_shm_tc, 0, 5 );
   add( shm_nm_obj_tc, 0, 5 );
+
+  add( thr_mgr_tc );
 };

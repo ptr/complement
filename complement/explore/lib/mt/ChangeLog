@@ -1,3 +1,20 @@
+2007-02-02  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xmt.h, xmt.cc: remove _state field, unuseful; add thread
+	id for RIP---_id used for living thread [and show that
+	thread alive], while _rip_id used in join only; this reflect
+	two independent [well, almost independent] states---thread
+	run/not run and thread require join/not require join.
+	When I trying to made all operations with _id and _rip_id
+	with MT guards, the speed of sockstreams was VERY slow,
+	so I remove ones; atomics in a few places?
+	Here remains one thing---what I should do, if I made few
+	Threads and then fork?
+
+	* thr_mgr.cc: sync with changes in xmt[.h.cc].
+
+	* libxmt: version 1.10.0
+
 2007-02-01  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* thr_mgr.cc: reduce amount of code; try to 'join' to already
