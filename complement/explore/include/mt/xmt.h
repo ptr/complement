@@ -39,6 +39,7 @@
 #  ifdef _PTHREADS
 #   include <pthread.h>
 #   include <semaphore.h>
+#   include <sched.h>
 #  else
 #   include <thread.h>
 #   include <synch.h>
@@ -1466,6 +1467,42 @@ int __Semaphore<SCOPE>::wait_delay( const ::timespec *interval ) // wait, timeou
 #endif
 }
 
+template <bool SCOPE>
+class __Barrier
+{
+  public:
+    __Barrier( unsigned cnt = 2 )
+      {
+#ifdef _PTHREADS
+        pthread_barrierattr_t attr;
+        pthread_barrierattr_init( &attr );
+        pthread_barrierattr_setpshared( &attr, SCOPE ? PTHREAD_PROCESS_SHARED : PTHREAD_PROCESS_PRIVATE );
+        pthread_barrier_init( &_barr, &attr, cnt );
+        pthread_barrierattr_destroy( &attr );
+#endif
+      }
+
+    ~__Barrier()
+      {
+#ifdef _PTHREADS
+        pthread_barrier_destroy( &_barr );
+#endif
+      }
+
+    int wait()
+      {
+#ifdef _PTHREADS
+        return pthread_barrier_wait( &_barr );
+#endif
+      }
+
+  private:
+#ifdef _PTHREADS
+    pthread_barrier_t _barr;
+#endif
+};
+
+typedef __Barrier<false> Barrier;
 
 __FIT_DECLSPEC void fork() throw( fork_in_parent, std::runtime_error );
 __FIT_DECLSPEC void become_daemon() throw( fork_in_parent, std::runtime_error );
@@ -1563,6 +1600,10 @@ class Thread
     static __FIT_DECLSPEC int join_all();
 #endif
     static __FIT_DECLSPEC void signal_exit( int sig ); // signal handler
+#if defined(_PTHREADS)
+    static int yield()
+      { return sched_yield(); }
+#endif
 
     bool good() const
       { /* Locker lk( _llock ); */ return (_id != bad_thread_id); }
