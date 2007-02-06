@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/02/02 20:53:03 ptr>
+// -*- C++ -*- Time-stamp: <07/02/06 10:36:47 ptr>
 
 /*
- * Copyright (c) 2006
+ * Copyright (c) 2006, 2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -30,6 +30,334 @@ using namespace std;
 
 using namespace boost::unit_test_framework;
 namespace fs = boost::filesystem;
+
+/* ******************************************************
+ * Degenerative case: check that one thread pass throw
+ * own barrier.
+ */
+void mt_test::barrier()
+{
+  xmt::Barrier b( 1 );
+
+  b.wait();
+}
+
+/* ******************************************************
+ * Start thread, join it.
+ */
+
+static int x = 0;
+
+xmt::Thread::ret_code thread_entry_call( void * )
+{
+  x = 1;
+
+  xmt::Thread::ret_code rt;
+  rt.iword = 0;
+
+  return rt;
+}
+
+void mt_test::join_test()
+{
+  BOOST_CHECK( x == 0 );
+
+  xmt::Thread t( thread_entry_call );
+
+  t.join();
+
+  BOOST_CHECK( x == 1 );
+}
+
+/* ******************************************************
+ * Start two threads, align ones on barrier, join.
+ */
+
+xmt::Thread::ret_code thread2_entry_call( void *p )
+{
+  xmt::Thread::ret_code rt;
+  rt.iword = 0;
+
+  xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
+  b.wait();
+
+  return rt;
+}
+
+void mt_test::barrier2()
+{
+  xmt::Barrier b;
+
+  xmt::Thread t1( thread2_entry_call, &b );
+  xmt::Thread t2( thread2_entry_call, &b );
+
+  t2.join();
+  t1.join();
+}
+
+/* ******************************************************
+ * Start two threads, align ones on barrier; one thread
+ * relinquish control to other; join (within Thread dtors)
+ */
+
+xmt::Thread::ret_code thread3_entry_call( void *p )
+{
+  xmt::Thread::ret_code rt;
+  rt.iword = 0;
+
+  xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
+  b.wait();
+  BOOST_CHECK( xmt::Thread::yield() == 0 );
+
+  return rt;
+}
+
+void mt_test::yield()
+{
+  xmt::Barrier b;
+
+  xmt::Thread t1( thread2_entry_call, &b );
+  xmt::Thread t2( thread3_entry_call, &b );
+  // .join()'s are in Thread's destructors
+}
+
+/* ******************************************************
+ * Test for plain mutex.
+ *
+ * Start two threads, align ones on barrier, thr2 relinquish
+ * control to thr1;
+ * thr1 acquire lock, try to yield control to thr2 (that 
+ * should be blocked on m1);
+ * Correct order checked by values of x.
+ */
+
+static xmt::Mutex m1;
+
+xmt::Thread::ret_code thr1( void *p )
+{
+  xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
+  b.wait();
+
+  m1.lock();
+  BOOST_CHECK( x == 0 );
+
+  xmt::Thread::yield();
+
+  BOOST_CHECK( x == 0 );
+  x = 1;
+
+  m1.unlock();
+
+  xmt::Thread::ret_code rt;
+  rt.iword = 0;
+
+  return rt;
+}
+
+xmt::Thread::ret_code thr2( void *p )
+{
+  xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
+  b.wait();
+  xmt::Thread::yield();
+
+  m1.lock();
+  BOOST_CHECK( x == 1 );
+  x = 2;
+  m1.unlock();
+
+  xmt::Thread::ret_code rt;
+  rt.iword = 0;
+
+  return rt;
+}
+
+void mt_test::mutex_test()
+{
+  x = 0;
+  xmt::Barrier b;
+
+  xmt::Thread t1( thr1, &b );
+  xmt::Thread t2( thr2, &b );
+
+  t1.join();
+  t2.join();
+
+  BOOST_CHECK( x == 2 );
+}
+
+/* ******************************************************
+ * Test for spinlocks.
+ *
+ * Start two threads, align ones on barrier, thr2 relinquish
+ * control to thr1;
+ * thr1 acquire lock, try to yield control to thr2 (that 
+ * should be blocked on sl1);
+ * Correct order checked by values of x.
+ */
+
+#ifdef __FIT_PTHREAD_SPINLOCK
+static xmt::Spinlock sl1;
+
+xmt::Thread::ret_code thr1s( void *p )
+{
+  xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
+  b.wait();
+
+  sl1.lock();
+  BOOST_CHECK( x == 0 );
+
+  xmt::Thread::yield();
+
+  BOOST_CHECK( x == 0 );
+  x = 1;
+
+  sl1.unlock();
+
+  xmt::Thread::ret_code rt;
+  rt.iword = 0;
+
+  return rt;
+}
+
+xmt::Thread::ret_code thr2s( void *p )
+{
+  xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
+  b.wait();
+  xmt::Thread::yield();
+
+  sl1.lock();
+  BOOST_CHECK( x == 1 );
+  x = 2;
+  sl1.unlock();
+
+  xmt::Thread::ret_code rt;
+  rt.iword = 0;
+
+  return rt;
+}
+
+#endif
+
+void mt_test::spinlock_test()
+{
+#ifdef __FIT_PTHREAD_SPINLOCK
+  x = 0;
+  xmt::Barrier b;
+
+  xmt::Thread t1( thr1s, &b );
+  xmt::Thread t2( thr2s, &b );
+
+  t1.join();
+  t2.join();
+
+  BOOST_CHECK( x == 2 );
+#endif
+}
+
+/* ****************************************************** */
+
+/*
+ * Test for recursive-safe mutexes (detect deadlock)
+ *
+ * 1. Start thread 1. Acquire lock on m2.
+ *
+ * 2. Start thread 2.  Yield control to thread 1, to be sure that thread 1
+ *    acquire lock on m2 first. Acquire lock on m2.
+ *    Due to m2 locked in thread 1, waiting on m2.lock.
+ *
+ * 3. Thread 1 relinquish control to thread 2, to give it chance.
+ *
+ * 4. From thread 1 call function 'recursive', where acquire lock on m2,
+ *    relinquish control to thread2, and then release m2.
+ *    If mutex recursive-safe, function 'recursive' will finished correctly.
+ *    Otherwise, deedlock will happen on m2.lock in 'recursive'.
+ *
+ * 5. Release m2 in thread 1.
+ *
+ * 6. Pass through m2 lock in thread 2. Call function 'recursive',
+ *    where acquire lock on m2, relinquish control, and then release m2. See item 4 before.
+ *
+ * 7. Release m2 in thread 2.
+ *
+ * 8. Test finished.
+ * 
+ */
+
+xmt::__Mutex<true,false> m2;
+
+void recursive()
+{
+  m2.lock();
+
+  x = 2;
+  xmt::Thread::yield();
+  BOOST_CHECK( x == 2 );
+
+  m2.unlock();
+}
+
+xmt::Thread::ret_code thr1r( void *p )
+{
+  xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
+  b.wait();
+
+  m2.lock();
+
+  BOOST_CHECK( x == 0 );
+  x = 1;
+  xmt::Thread::yield();
+  BOOST_CHECK( x == 1 );
+  recursive();
+  BOOST_CHECK( x == 2 );
+  x = 3;
+
+  m2.unlock();
+
+  xmt::Thread::ret_code rt;
+
+  rt.iword = 0;
+
+  return rt;
+}
+
+xmt::Thread::ret_code thr2r( void *p )
+{
+  xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
+  b.wait();
+
+  xmt::Thread::yield();
+
+  m2.lock();
+
+  BOOST_CHECK( x == 3 );
+  xmt::Thread::yield();
+  recursive();  
+  BOOST_CHECK( x == 2 );
+
+  m2.unlock();
+
+  xmt::Thread::ret_code rt;
+
+  rt.iword = 0;
+
+  return rt;
+}
+
+void mt_test::recursive_mutex_test()
+{
+  x = 0;
+  xmt::Barrier b;
+
+  xmt::Thread t1( thr1r, &b );
+  xmt::Thread t2( thr2r, &b );
+
+  t1.join();
+  t2.join();
+
+  BOOST_CHECK( x == 2 );
+}
+
+/* ****************************************************** */
 
 void mt_test::fork()
 {
@@ -85,6 +413,8 @@ void mt_test::fork()
   shmdt( buf );
   shmctl( id, IPC_RMID, &ds );
 }
+
+/* ****************************************************** */
 
 void mt_test::pid()
 {
@@ -147,6 +477,8 @@ void mt_test::pid()
   shmdt( buf );
   shmctl( id, IPC_RMID, &ds );
 }
+
+/* ****************************************************** */
 
 void mt_test::shm_segment()
 {
@@ -215,6 +547,8 @@ void mt_test::shm_segment()
     BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
   }
 }
+
+/* ****************************************************** */
 
 void mt_test::shm_alloc()
 {
@@ -290,7 +624,7 @@ void mt_test::shm_alloc()
 }
 
 
-/*
+/* ******************************************************
  * This test is similar  mt_test::fork() above, but instead plain shm_*
  * functions it use allocator based on shared memory segment
  */
@@ -344,8 +678,8 @@ void mt_test::fork_shm()
   }
 }
 
-/*
- * Test: how to take named object
+/* ******************************************************
+ * Test: how to take named object in shared memory segment
  */
 void mt_test::shm_named_obj()
 {
@@ -425,13 +759,23 @@ void mt_test::shm_named_obj()
 }
 
 
+/* ******************************************************
+ * Thread pool (aka ThreadMgr) test.
+ * 
+ * Start 200 threads under ThreadMgr; check that all threads
+ * started, check that all theads finished, no garbage in
+ * ThreadMgr remains.
+ */
+
 static int my_thr_cnt = 0;
+static int my_thr_scnt = 0;
 static xmt::Mutex lock;
 
 xmt::Thread::ret_code thread_mgr_entry_call( void * )
 {
   lock.lock();
   ++my_thr_cnt;
+  ++my_thr_scnt;
   lock.unlock();
 
   xmt::Thread::ret_code rt;
@@ -455,6 +799,7 @@ void mt_test::thr_mgr()
   // cerr << "Join!\n";
   mgr.join();
 
+  BOOST_CHECK( my_thr_scnt == 200 );
   BOOST_CHECK( my_thr_cnt == 0 );
   BOOST_CHECK( mgr.size() == 0 );
 }

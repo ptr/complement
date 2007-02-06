@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/02 17:15:47 ptr>
+// -*- C++ -*- Time-stamp: <07/02/06 10:06:37 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -11,6 +11,8 @@
 #include "mt_test_suite.h"
 #include "mt_test.h"
 
+#include <config/feature.h>
+
 using namespace boost::unit_test_framework;
 
 mt_test_suite::mt_test_suite() :
@@ -18,6 +20,15 @@ mt_test_suite::mt_test_suite() :
 {
   boost::shared_ptr<mt_test> instance( new mt_test() );
 
+  test_case *barrier_tc = BOOST_CLASS_TEST_CASE( &mt_test::barrier, instance );
+  test_case *join_tc = BOOST_CLASS_TEST_CASE( &mt_test::join_test, instance );
+  test_case *barrier2_tc = BOOST_CLASS_TEST_CASE( &mt_test::barrier2, instance );
+  test_case *yield_tc = BOOST_CLASS_TEST_CASE( &mt_test::yield, instance );
+  test_case *mutex_test_tc = BOOST_CLASS_TEST_CASE( &mt_test::mutex_test, instance );
+#ifdef __FIT_PTHREAD_SPINLOCK
+  test_case *spinlock_test_tc = BOOST_CLASS_TEST_CASE( &mt_test::spinlock_test, instance );
+#endif
+  test_case *recursive_mutex_test_tc = BOOST_CLASS_TEST_CASE( &mt_test::recursive_mutex_test, instance );
   test_case *fork_tc = BOOST_CLASS_TEST_CASE( &mt_test::fork, instance );
   test_case *pid_tc = BOOST_CLASS_TEST_CASE( &mt_test::pid, instance );
   test_case *shm_segment_tc = BOOST_CLASS_TEST_CASE( &mt_test::shm_segment, instance );
@@ -27,10 +38,29 @@ mt_test_suite::mt_test_suite() :
 
   test_case *thr_mgr_tc = BOOST_CLASS_TEST_CASE( &mt_test::thr_mgr, instance );
 
+  barrier2_tc->depends_on( barrier_tc );
+  barrier2_tc->depends_on( join_tc );
+  yield_tc->depends_on( barrier2_tc );
+  mutex_test_tc->depends_on( yield_tc );
+#ifdef __FIT_PTHREAD_SPINLOCK
+  spinlock_test_tc->depends_on( yield_tc );
+#endif
+  recursive_mutex_test_tc->depends_on( mutex_test_tc );
+
   pid_tc->depends_on( fork_tc );
   shm_alloc_tc->depends_on( shm_segment_tc );
   fork_shm_tc->depends_on( shm_alloc_tc );
   shm_nm_obj_tc->depends_on( fork_shm_tc );
+
+  add( barrier_tc, 0, 2 );
+  add( join_tc );
+  add( barrier2_tc, 0, 3 );
+  add( yield_tc, 0, 3 );
+  add( mutex_test_tc, 0, 3 );
+#ifdef __FIT_PTHREAD_SPINLOCK
+  add( spinlock_test_tc, 0, 3 );
+#endif
+  add( recursive_mutex_test_tc, 0, 3 );
 
   add( fork_tc );
   add( pid_tc );

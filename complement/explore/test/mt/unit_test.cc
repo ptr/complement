@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/16 00:36:47 ptr>
+// -*- C++ -*- Time-stamp: <07/02/06 10:08:47 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2004, 2006
@@ -16,12 +16,6 @@
 using namespace boost::unit_test_framework;
 
 void timespec_diff();
-void join_test();
-void mutex_test();
-#ifdef __FIT_PTHREAD_SPINLOCK
-void spinlock_test();
-#endif // __FIT_PTHREAD_SPINLOCK
-void recursive_mutex_test();
 void signal_1_test();
 void signal_2_test();
 void signal_3_test();
@@ -38,12 +32,6 @@ test_suite *init_unit_test_suite( int argc, char * * const argv )
   test_suite *ts = BOOST_TEST_SUITE( "libxmt test" );
 
   ts->add( BOOST_TEST_CASE( &timespec_diff ) );
-  ts->add( BOOST_TEST_CASE( &join_test ) );
-  ts->add( BOOST_TEST_CASE( &mutex_test ) );
-#ifdef __FIT_PTHREAD_SPINLOCK
-  ts->add( BOOST_TEST_CASE( &spinlock_test ) );
-#endif
-  ts->add( BOOST_TEST_CASE( &recursive_mutex_test ) );
   ts->add( BOOST_TEST_CASE( &signal_1_test ) );
   // You can't throw exception from signal handler
   // (stack saved/restored, that confuse stack unwind);
