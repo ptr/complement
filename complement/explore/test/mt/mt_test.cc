@@ -158,7 +158,9 @@ xmt::Thread::ret_code thr2( void *p )
 {
   xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
   b.wait();
-  xmt::Thread::yield();
+  for ( int i = 0; i < 128; ++i ) {
+    xmt::Thread::yield();
+  }
 
   m1.lock();
   BOOST_CHECK( x == 1 );
@@ -223,7 +225,9 @@ xmt::Thread::ret_code thr2s( void *p )
 {
   xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
   b.wait();
-  xmt::Thread::yield();
+  for ( int i = 0; i < 128; ++i ) {
+    xmt::Thread::yield();
+  }
 
   sl1.lock();
   BOOST_CHECK( x == 1 );
@@ -325,7 +329,9 @@ xmt::Thread::ret_code thr2r( void *p )
   xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
   b.wait();
 
-  xmt::Thread::yield();
+  for ( int i = 0; i < 128; ++i ) {
+    xmt::Thread::yield();
+  }
 
   m2.lock();
 
