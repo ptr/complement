@@ -8,7 +8,7 @@
 
 # Do the same target in all catalogs as arg
 define doinsubdirs
-@for d in $(1); do \
-  ${MAKE} -C $$d $@ || exit 1; \
+for d in $(1); do \
+  ${MAKE} -C $$d $@ || exit -1; \
 done
 endef
