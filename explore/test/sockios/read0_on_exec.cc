@@ -188,7 +188,7 @@ class ConnectionProcessor6 // dummy variant
     void close();
 };
 
-static __Semaphore<true> *sem2;
+static Condition cnd6;
 
 ConnectionProcessor6::ConnectionProcessor6( std::sockstream& s )
 {
@@ -198,7 +198,7 @@ ConnectionProcessor6::ConnectionProcessor6( std::sockstream& s )
   BOOST_REQUIRE( s.good() );
   pr_lock.unlock();
 
-  sem2->post();
+  cnd6.set( true );
 }
 
 void ConnectionProcessor6::connect( std::sockstream& s )
@@ -214,16 +214,11 @@ void ConnectionProcessor6::close()
 
 void test_read0_srv()
 {
-  const char fname[] = "/tmp/sockios_test.shm";
   try {
-    xmt::shm_alloc<0> seg;
-
-    seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
-    xmt::allocator_shm<xmt::__Semaphore<true>,0> shm;
-
-    sem2 = new ( shm.allocate( 1 ) ) xmt::__Semaphore<true>( 2 );
-
     sockmgr_stream_MP<ConnectionProcessor6> srv( ::port );
+
+    BOOST_CHECK( srv.good() );
+    cnd6.set( false );
 
     {
       // It should work as before system call...
@@ -233,10 +228,14 @@ void test_read0_srv()
 
       BOOST_CHECK( s.good() );
 
-      sem2->wait();
+      cnd6.try_wait();
     }
 
+    cnd6.set( false );
+
     system( "echo > /dev/null" );  // <------ key line
+
+    BOOST_CHECK( srv.good() );
 
     {
       // ... as after system call.
@@ -246,19 +245,13 @@ void test_read0_srv()
 
       BOOST_CHECK( s.good() );
 
-      sem2->wait();
+      cnd6.try_wait();
     }
 
     BOOST_CHECK( srv.good() ); // server must correctly process interrupt during system call
 
     srv.close();
-
     srv.wait();
-
-    sem2->~__Semaphore<true>();
-    shm.deallocate( sem2, 1 );
-    seg.deallocate();
-    unlink( fname );
   }
   catch ( xmt::shm_bad_alloc& err ) {
     BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
