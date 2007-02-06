@@ -12,6 +12,6 @@ SUBDIRS := mt sockios stem
 include ${SRCROOT}/Makefiles/gmake/subdirs.mak
 
 all install depend clean clobber distclean check:
-	$(call doinsubdirs,${SUBDIRS})
+	+$(call doinsubdirs,${SUBDIRS})
 
 .PHONY: all install depend clean clobber distclean check
