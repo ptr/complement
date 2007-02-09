@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/06 10:36:47 ptr>
+// -*- C++ -*- Time-stamp: <07/02/07 08:29:41 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -32,7 +32,7 @@ using namespace boost::unit_test_framework;
 namespace fs = boost::filesystem;
 
 /* ******************************************************
- * Degenerative case: check that one thread pass throw
+ * Degenerate case: check that one thread pass throw
  * own barrier.
  */
 void mt_test::barrier()

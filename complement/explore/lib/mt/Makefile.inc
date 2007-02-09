@@ -3,6 +3,6 @@
 LIBNAME = xmt
 MAJOR = 1
 MINOR = 10
-PATCH = 1
+PATCH = 2
 SRC_CC = xmt.cc thr_mgr.cc time.cc uid.cc shm.cc
 SRC_C = fl.c

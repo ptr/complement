@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/01/29 18:59:35 ptr>
+// -*- C++ -*- Time-stamp: <07/02/07 10:11:34 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -77,6 +77,12 @@ struct ipc_sharable<xmt::__Condition<true> >
 
 template <>
 struct ipc_sharable<xmt::__Semaphore<true> >
+{
+  typedef std::__true_type is_ipc_sharable;
+};
+
+template <>
+struct ipc_sharable<xmt::__Barrier<true> >
 {
   typedef std::__true_type is_ipc_sharable;
 };
