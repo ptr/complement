@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/01/31 23:47:57 ptr>
+// -*- C++ -*- Time-stamp: <07/02/07 11:32:06 ptr>
 
 /*
  *
@@ -17,125 +17,43 @@
 #include <sockios/sockstream>
 #include <sockios/sockmgr.h>
 
-#include <list>
-
-#include <arpa/inet.h>
-
 #include <mt/shm.h>
-
-// #include <sys/shm.h>
 #include <sys/wait.h>
-
 #include <signal.h>
 
 using namespace boost::unit_test_framework;
 using namespace std;
 
-void sockios_test::hostname_test()
+const char fname[] = "/tmp/sockios_test.shm";
+xmt::shm_alloc<0> seg;
+xmt::allocator_shm<xmt::__Condition<true>,0> shm_cnd;
+xmt::allocator_shm<xmt::__Barrier<true>,0> shm_b;
+
+sockios_test::sockios_test()
 {
-  unsigned long local = htonl( 0x7f000001 ); // 127.0.0.1
-
-#ifdef _LITTLE_ENDIAN
-  BOOST_CHECK_EQUAL( local, 0x0100007f );
-#endif
-
-#ifdef _BIG_ENDIAN
-  BOOST_CHECK_EQUAL( local, 0x7f000001 );
-#endif
-
-  BOOST_CHECK_EQUAL( std::hostname( local ), "localhost [127.0.0.1]" );
-
-#ifdef __unix
-  char buff[1024];
-
-  gethostname( buff, 1024 );
-
-  BOOST_CHECK_EQUAL( std::hostname(), buff );
-#endif
 }
 
-void sockios_test::service_test()
+sockios_test::~sockios_test()
 {
-#ifdef __unix
-  BOOST_CHECK( std::service( "ftp", "tcp" ) == 21 );
-  BOOST_CHECK( std::service( 7, "udp" ) == "echo" );
-#else
-  BOOST_ERROR( "requests for service (/etc/services) not implemented on this platform" );
-#endif
 }
 
-void sockios_test::hostaddr_test1()
+void sockios_test::init()
 {
-#ifdef __unix
-  in_addr addr = std::findhost( "localhost" );
-
-# ifdef _LITTLE_ENDIAN
-  BOOST_CHECK_EQUAL( addr.s_addr, 0x0100007f );
-# endif
-
-# ifdef _BIG_ENDIAN
-  BOOST_CHECK_EQUAL( addr.s_addr, 0x7f000001 );
-# endif
-  
-#else
-  BOOST_ERROR( "Not implemented" );
-#endif
-}
-
-void sockios_test::hostaddr_test2()
-{
-#ifdef __unix
-  list<in_addr> haddrs;
-  std::gethostaddr( "localhost", back_inserter(haddrs) );
-
-  bool localhost_found = false;
-
-  for ( list<in_addr>::const_iterator i = haddrs.begin(); i != haddrs.end(); ++i ) {
-    if ( i->s_addr == htonl( 0x7f000001 ) ) { // 127.0.0.1
-      localhost_found = true;
-      break;
-    }
+  try {
+    seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
   }
-  
-  BOOST_CHECK( localhost_found == true );
-  
-#else
-  BOOST_ERROR( "Not implemented" );
-#endif
-}
-
-void sockios_test::hostaddr_test3()
-{
-#ifdef __unix
-  list<sockaddr> haddrs;
-  gethostaddr2( "localhost", back_inserter(haddrs) );
-
-  bool localhost_found = false;
-
-  for ( list<sockaddr>::const_iterator i = haddrs.begin(); i != haddrs.end(); ++i ) {
-    switch ( i->sa_family ) {
-      case PF_INET:
-        if ( ((sockaddr_in *)&*i)->sin_addr.s_addr == htonl( 0x7f000001 ) ) {
-          localhost_found = true;
-        }
-        break;
-      case PF_INET6:
-        if ( ((sockaddr_in6 *)&*i)->sin6_addr.in6_u.u6_addr32[0] == 0 &&
-             ((sockaddr_in6 *)&*i)->sin6_addr.in6_u.u6_addr32[1] == 0 && 
-             ((sockaddr_in6 *)&*i)->sin6_addr.in6_u.u6_addr32[2] == 0 &&
-             ((sockaddr_in6 *)&*i)->sin6_addr.in6_u.u6_addr32[3] == 1 ) {
-          localhost_found = true;
-        }
-        break;
-    }
+  catch ( const xmt::shm_bad_alloc& err ) {
+    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
   }
-  
-  BOOST_CHECK( localhost_found == true );
-  
-#else
-  BOOST_ERROR( "Not implemented" );
-#endif
 }
+
+void sockios_test::finit()
+{
+  seg.deallocate();
+  unlink( fname );
+}
+
+/* ************************************************************ */
 
 class Cnt
 {
@@ -182,7 +100,7 @@ void sockios_test::ctor_dtor()
       BOOST_CHECK( s1.good() );
       BOOST_CHECK( s1.is_open() );
       while ( Cnt::get_visits() == 0 ) {
-        xmt::delay( xmt::timespec(0,10000) );
+        xmt::Thread::yield();
       }
       Cnt::lock.lock();
       BOOST_CHECK( Cnt::cnt == 1 );
@@ -222,7 +140,7 @@ void sockios_test::ctor_dtor()
       BOOST_CHECK( s2.good() );
       BOOST_CHECK( s2.is_open() );
       while ( Cnt::get_visits() < 2 ) {
-        xmt::delay( xmt::timespec(0,10000) );
+        xmt::Thread::yield();
       }
       Cnt::lock.lock();
       BOOST_CHECK( Cnt::cnt == 2 );
@@ -241,6 +159,8 @@ void sockios_test::ctor_dtor()
   BOOST_CHECK( Cnt::cnt == 0 );
   Cnt::lock.unlock();
 }
+
+/* ************************************************************ */
 
 class loader
 {
@@ -268,7 +188,7 @@ void loader::close()
 {
 }
 
-xmt::Thread::ret_code client_thr( void * )
+xmt::Thread::ret_code client_thr( void *p )
 {
   xmt::Thread::ret_code ret;
 
@@ -280,11 +200,15 @@ xmt::Thread::ret_code client_thr( void * )
 
   fill( buf, buf + 1024, 0 );
 
+  xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
+  b.wait();
+
   while( true ) {
     s.write( buf, 1024 );
     s.flush();
 
     s.read( buf, 1024 );
+    xmt::Thread::yield();
   }
 
   return ret;
@@ -292,34 +216,22 @@ xmt::Thread::ret_code client_thr( void * )
 
 void sigpipe_handler( int sig, siginfo_t *si, void * )
 {
+#if 0
   cerr << "-----------------------------------------------\n"
        << "my pid: " << xmt::getpid() << ", ppid: " << xmt::getppid() << "\n"
        << "signal: " << sig << ", number " << si->si_signo
        << " errno " << si->si_errno
        << " code " << si->si_code << endl;
+#endif
 }
  
 void sockios_test::sigpipe()
 {
-  const char fname[] = "/tmp/sockios_test.shm";
-  enum {
-    in_Child_Condition = 1,
-    threads_Started_Condition = 2
-  };
   try {
-    xmt::shm_alloc<0> seg;
-
-    seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
-    xmt::shm_name_mgr<0>& nm = seg.name_mgr();
-
-    xmt::allocator_shm<xmt::__Condition<true>,0> shm;
-
-    xmt::__Condition<true>& fcnd = *new ( shm.allocate( 1 ) ) xmt::__Condition<true>();
-    nm.named( fcnd, in_Child_Condition );
+    xmt::__Condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
     fcnd.set( false );
 
-    xmt::__Condition<true>& tcnd = *new ( shm.allocate( 1 ) ) xmt::__Condition<true>();
-    nm.named( tcnd, threads_Started_Condition );
+    xmt::__Condition<true>& tcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
     tcnd.set( false );
 
     try {
@@ -332,15 +244,15 @@ void sockios_test::sigpipe()
          * This process will be killed,
          * so I don't care about safe termination.
          */
-        xmt::Thread *th1 = new xmt::Thread( client_thr );
-        for ( int i = 0; i < /* 10 */ 2; ++i ) {
-          new xmt::Thread( client_thr );
-          new xmt::Thread( client_thr );
-          new xmt::Thread( client_thr );
-          new xmt::Thread( client_thr );
+        const int b_count = 10;
+        xmt::Barrier b( b_count );
+        xmt::Thread *th1 = new xmt::Thread( client_thr, &b );
+
+        for ( int i = 0; i < (b_count - 1); ++i ) {
+          new xmt::Thread( client_thr, &b );
         }
 
-        xmt::delay( xmt::timespec(1,0) );
+        xmt::delay( xmt::timespec(0,500000000) );
 
         tcnd.set( true );
 
@@ -373,17 +285,16 @@ void sockios_test::sigpipe()
     }
 
     (&tcnd)->~__Condition<true>();
-    shm.deallocate( &tcnd, 1 );
+    shm_cnd.deallocate( &tcnd, 1 );
     (&fcnd)->~__Condition<true>();
-    shm.deallocate( &fcnd, 1 );
-
-    seg.deallocate();
-    unlink( fname );
+    shm_cnd.deallocate( &fcnd, 1 );
   }
   catch ( xmt::shm_bad_alloc& err ) {
     BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
   }
 }
+
+/* ************************************************************ */
 
 class long_msg_processor // 
 {
@@ -420,21 +331,13 @@ void long_msg_processor::close()
 
 xmt::__Condition<true> *long_msg_processor::cnd;
 
-void sockios_test::long_msg_test()
+void sockios_test::long_msg()
 {
-  const char fname[] = "/tmp/sockios_test.shm";
   try {
-    xmt::shm_alloc<0> seg;
-
-    seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
-    xmt::shm_name_mgr<0>& nm = seg.name_mgr();
-
-    xmt::allocator_shm<xmt::__Condition<true>,0> shm;
-
-    xmt::__Condition<true>& fcnd = *new ( shm.allocate( 1 ) ) xmt::__Condition<true>();
+    xmt::__Condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
     fcnd.set( false );
 
-    xmt::__Condition<true>& srv_cnd = *new ( shm.allocate( 1 ) ) xmt::__Condition<true>();
+    xmt::__Condition<true>& srv_cnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
     srv_cnd.set( false );
 
     long_msg_processor::cnd = &srv_cnd;
@@ -478,16 +381,244 @@ macro=\"yesterday\"/></FILTERS></REQUEST></RWRequest>";
     }
 
     (&fcnd)->~__Condition<true>();
-    shm.deallocate( &fcnd, 1 );
+    shm_cnd.deallocate( &fcnd, 1 );
 
     (&srv_cnd)->~__Condition<true>();
-    shm.deallocate( &srv_cnd, 1 );
-
-    seg.deallocate();
-    unlink( fname );
+    shm_cnd.deallocate( &srv_cnd, 1 );
   }
   catch ( xmt::shm_bad_alloc& err ) {
     BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
   }
+}
 
+/* ************************************************************
+ * The problem:
+ *  1. Server listen socket (process A)
+ *  2. Client connect to server (process B, server --- process A)
+ *  3. Client try to read from socket (from server) and block on it,
+ *     due to server write nothing (thread i) [Hmm, really here 
+ *     poll with POLLIN flag and then read]
+ *  4. In another thread (thread ii) client call system()
+ *  5. Due to fork/execl (in system()) client return from read (step 3)
+ *     with 0, i.e. as on close connection
+ *
+ * The POSIX say:
+ *   (execl)
+ * If the Asynchronous Input and Output option is supported, any
+ * outstanding asynchronous I/O operations may be canceled. Those
+ * asynchronous I/O operations that are not canceled will complete
+ * as if the exec function had not yet occurred, but any associated
+ * signal notifications are suppressed. It is unspecified whether
+ * the exec function itself blocks awaiting such I/O completion. In no event,
+ * however, will the new process image created by the exec function be affected
+ * by the presence of outstanding asynchronous I/O operations at the time
+ * the exec function is called. Whether any I/O is cancelled, and which I/O may
+ * be cancelled upon exec, is implementation-dependent.
+ *
+ *  Client open socket  --------- system()
+ *                      \
+ *                        read...[poll signaled, read -> 0]
+ *
+ * The same issue on server side: poll that wait POLLIN from clients
+ * signaled too.
+ *
+ */
+
+class ConnectionProcessor5 // dummy variant
+{
+  public:
+    ConnectionProcessor5( std::sockstream& );
+
+    void connect( std::sockstream& );
+    void close();
+
+    static xmt::__Barrier<true> *b;
+};
+
+
+xmt::__Barrier<true> *ConnectionProcessor5::b = 0;
+
+ConnectionProcessor5::ConnectionProcessor5( std::sockstream& s )
+{
+  // pr_lock.lock();
+  // BOOST_MESSAGE( "Server seen connection" );
+
+  BOOST_REQUIRE( s.good() );
+  // pr_lock.unlock();
+  
+  // cerr << "ConnectionProcessor5::ConnectionProcessor5\n";
+  // delay( xmt::timespec(3,0) );
+
+  int n = 1;
+  // cerr << "ConnectionProcessor5::ConnectionProcessor5, write\n";
+  b->wait();
+  s.write( (const char *)&n, sizeof( int ) ).flush();
+}
+
+void ConnectionProcessor5::connect( std::sockstream& s )
+{
+}
+
+void ConnectionProcessor5::close()
+{
+  // pr_lock.lock();
+  // BOOST_MESSAGE( "Server: client close connection" );
+  // pr_lock.unlock();
+}
+
+xmt::Thread::ret_code thread_entry( void *par )
+{
+  xmt::Thread::ret_code rt;
+  xmt::Condition& cnd = *reinterpret_cast<xmt::Condition *>(par);
+
+  // sem.wait(); // wait server for listen us
+  sockstream sock( "localhost", ::port );
+  int buff = 0;
+  // cerr << "thread_entry" << endl;
+  cnd.set( true );
+  // Note: due to this is another process then main, boost can report
+  // about errors here, but don't count error it in summary, if it occur!
+  BOOST_CHECK( sock.read( (char *)&buff, sizeof(int) ).good() ); // <---- key line
+  BOOST_CHECK( buff == 1 );
+  // cerr << "Read pass" << endl;
+  
+  rt.iword = 0;
+  return rt;
+}
+
+void sockios_test::read0()
+{
+  try {
+    xmt::__Condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
+    xmt::__Barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__Barrier<true>();
+    ConnectionProcessor5::b = &b;
+    // nm.named( fcnd, 1 );
+    fcnd.set( false );
+
+    try {
+      xmt::fork();                      // <---- key line
+      fcnd.try_wait(); // wait server for listen us
+
+      xmt::Condition cnd;
+      cnd.set( false );
+
+      xmt::Thread thr( thread_entry, &cnd );
+
+      cnd.try_wait(); // wait for read call
+
+      // delay( xmt::timespec(1,0) );
+
+      // cerr << "system" << endl;
+      system( "echo > /dev/null" );  // <------ key line
+      // cerr << "after system" << endl;
+
+      b.wait();
+
+      thr.join();
+      // cerr << "exit child" << endl;
+      exit( 0 );
+    }
+    catch ( xmt::fork_in_parent& child ) {
+      // cerr << "** 3" << endl;
+      sockmgr_stream_MP<ConnectionProcessor5> srv( ::port ); // start server
+
+      fcnd.set( true );
+
+      int stat;
+      waitpid( child.pid(), &stat, 0 );
+      srv.close();
+      srv.wait();
+    }
+
+    (&b)->~__Barrier<true>();
+    shm_b.deallocate( &b, 1 );
+    (&fcnd)->~__Condition<true>();
+    shm_cnd.deallocate( &fcnd, 1 );
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+  }
+}
+
+/* ************************************************************ */
+
+class ConnectionProcessor6 // dummy variant
+{
+  public:
+    ConnectionProcessor6( std::sockstream& );
+
+    void connect( std::sockstream& );
+    void close();
+
+    static xmt::Condition cnd;
+};
+
+xmt::Condition ConnectionProcessor6::cnd;
+
+ConnectionProcessor6::ConnectionProcessor6( std::sockstream& s )
+{
+  // pr_lock.lock();
+  // BOOST_MESSAGE( "Server seen connection" );
+
+  BOOST_REQUIRE( s.good() );
+  // pr_lock.unlock();
+
+  cnd.set( true );
+}
+
+void ConnectionProcessor6::connect( std::sockstream& s )
+{
+}
+
+void ConnectionProcessor6::close()
+{
+  // pr_lock.lock();
+  // BOOST_MESSAGE( "Server: client close connection" );
+  // pr_lock.unlock();
+}
+
+void sockios_test::read0_srv()
+{
+  try {
+    sockmgr_stream_MP<ConnectionProcessor6> srv( ::port );
+
+    BOOST_CHECK( srv.good() );
+    ConnectionProcessor6::cnd.set( false );
+
+    {
+      // It should work as before system call...
+      sockstream s( "localhost", ::port );
+
+      s << "1" << endl;
+
+      BOOST_CHECK( s.good() );
+
+      ConnectionProcessor6::cnd.try_wait();
+    }
+
+    ConnectionProcessor6::cnd.set( false );
+
+    system( "echo > /dev/null" );  // <------ key line
+
+    BOOST_CHECK( srv.good() );
+
+    {
+      // ... as after system call.
+      sockstream s( "localhost", ::port );
+
+      s << "1" << endl;
+
+      BOOST_CHECK( s.good() );
+
+      ConnectionProcessor6::cnd.try_wait();
+    }
+
+    BOOST_CHECK( srv.good() ); // server must correctly process interrupt during system call
+
+    srv.close();
+    srv.wait();
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+  }
 }
