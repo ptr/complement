@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/01/30 10:55:51 ptr>
+// -*- C++ -*- Time-stamp: <07/02/07 10:51:25 ptr>
 
 /*
  *
@@ -12,7 +12,7 @@
 #ifndef __sockios_test_h
 #define __sockios_test_h
 
-struct sockios_test
+struct names_sockios_test
 {
     void hostname_test();
     void service_test();
@@ -20,11 +20,23 @@ struct sockios_test
     void hostaddr_test1();
     void hostaddr_test2();
     void hostaddr_test3();
+};
+
+struct sockios_test
+{
+    sockios_test();
+    ~sockios_test();
+
+    void init();
+    void finit();
 
     void ctor_dtor();
 
+    void long_msg();
+
     void sigpipe();
-    void long_msg_test();
+    void read0();
+    void read0_srv();
 };
 
 #endif // __sockios_test_h
