@@ -9,8 +9,8 @@
 # Licensed under the Academic Free License version 3.0
 #
 
-DBG_SUFFIX := g
-STLDBG_SUFFIX := stl${DBG_SUFFIX}
+DBG_SUFFIX ?= g
+STLDBG_SUFFIX ?= stl${DBG_SUFFIX}
 
 # Shared libraries:
 
