@@ -1,3 +1,10 @@
+2007-02-08  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* shm.h: process-shared barrier may be allocated in shared
+	memory segment;
+
+	* libxmt: version 1.10.2
+
 2007-02-06  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* xmt.h: add Barrier; add yield;
