@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/07 08:29:41 ptr>
+// -*- C++ -*- Time-stamp: <07/02/09 15:55:31 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -764,6 +764,23 @@ void mt_test::shm_named_obj()
   }
 }
 
+/* ******************************************************
+ */
+static const char fname1[] = "/tmp/mt_test.shm.1";
+xmt::shm_alloc<1> seg1;
+
+void mt_test::shm_init()
+{
+  seg.allocate( fname1, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+}
+
+/* ******************************************************
+ */
+void mt_test::shm_finit()
+{
+  seg1.deallocate();
+  fs::remove( fname1 );
+}
 
 /* ******************************************************
  * Thread pool (aka ThreadMgr) test.

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/06 10:06:37 ptr>
+// -*- C++ -*- Time-stamp: <07/02/09 16:00:57 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -38,6 +38,9 @@ mt_test_suite::mt_test_suite() :
 
   test_case *thr_mgr_tc = BOOST_CLASS_TEST_CASE( &mt_test::thr_mgr, instance );
 
+  test_case *shm_init_tc = BOOST_CLASS_TEST_CASE( &mt_test::shm_init_mgr, instance );
+  test_case *shm_finit_tc = BOOST_CLASS_TEST_CASE( &mt_test::shm_finit_mgr, instance );
+
   barrier2_tc->depends_on( barrier_tc );
   barrier2_tc->depends_on( join_tc );
   yield_tc->depends_on( barrier2_tc );
@@ -51,6 +54,9 @@ mt_test_suite::mt_test_suite() :
   shm_alloc_tc->depends_on( shm_segment_tc );
   fork_shm_tc->depends_on( shm_alloc_tc );
   shm_nm_obj_tc->depends_on( fork_shm_tc );
+
+  shm_init_tc->depends_on( shm_alloc_tc );
+  shm_finit_tc->depends_on( shm_init_tc );
 
   add( barrier_tc, 0, 2 );
   add( join_tc );
@@ -70,4 +76,7 @@ mt_test_suite::mt_test_suite() :
   add( shm_nm_obj_tc, 0, 5 );
 
   add( thr_mgr_tc );
+
+  add( shm_init_tc );
+  add( shm_finit_tc );
 };
