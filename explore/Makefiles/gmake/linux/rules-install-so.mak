@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <06/11/11 00:23:29 ptr>
+# -*- makefile -*- Time-stamp: <07/02/07 14:58:53 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -85,7 +85,7 @@ install:	$(INSTALL_TAGS)
 
 install-strip:	$(INSTALL_STRIP_TAGS)
 
-# Workaround forGNU make 3.80; see comments in rules-so.mak
+# Workaround for GNU make 3.80; see comments in rules-so.mak
 define do_install_so_links
 $${INSTALL_LIB_DIR$(1)}/$${SO_NAME$(1)xxx}:	$${SO_NAME_OUT$(1)xxx}
 	$$(INSTALL_SO) $${SO_NAME_OUT$(1)xxx} $$(INSTALL_LIB_DIR$(1))
@@ -94,17 +94,35 @@ $${INSTALL_LIB_DIR$(1)}/$${SO_NAME$(1)xxx}:	$${SO_NAME_OUT$(1)xxx}
 	@$(call do_so_links_1,$$(INSTALL_LIB_DIR$(1)),$${SO_NAME$(1)},$${SO_NAME$(1)x})
 endef
 
+# Workaround for GNU make 3.80; see comments in rules-so.mak
 define do_install_so_links_wk
+# expand to nothing, if equal
+ifneq (${INSTALL_LIB_DIR}/${SO_NAMExxx},${INSTALL_LIB_DIR_STLDBG}/${SO_NAME_STLDBGxxx})
 # expand to nothing, if WITHOUT_STLPORT
 ifndef WITHOUT_STLPORT
 $(call do_install_so_links,$(1))
 endif
+endif
 endef
 
+# Workaround for GNU make 3.80; see comments in rules-so.mak
+define do_install_so_links_wk2
+# expand to nothing, if equal
+ifneq (${INSTALL_LIB_DIR}/${SO_NAMExxx},${INSTALL_LIB_DIR_DBG}/${SO_NAME_DBGxxx})
+$(call do_install_so_links,$(1))
+endif
+endef
+
+
 $(eval $(call do_install_so_links,))
-$(eval $(call do_install_so_links,_DBG))
+# ifneq (${INSTALL_LIB_DIR}/${SO_NAMExxx},${INSTALL_LIB_DIR_DBG}/${SO_NAME_DBGxxx})
+# $(eval $(call do_install_so_links,_DBG))
+$(eval $(call do_install_so_links_wk2,_DBG))
+# endif
+# ifneq (${INSTALL_LIB_DIR}/${SO_NAMExxx},${INSTALL_LIB_DIR_STLDBG}/${SO_NAME_STLDBGxxx})
 # ifndef WITHOUT_STLPORT
 $(eval $(call do_install_so_links_wk,_STLDBG))
+# endif
 # endif
 
 install-release-shared:	release-shared $(INSTALL_LIB_DIR) $(INSTALL_LIB_DIR)/${SO_NAMExxx}
