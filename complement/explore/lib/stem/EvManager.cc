@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/04 19:08:21 ptr>
+// -*- C++ -*- Time-stamp: <07/02/08 16:38:41 ptr>
 
 /*
  *
@@ -85,11 +85,11 @@ xmt::Thread::ret_code EvManager::_Dispatch( void *p )
 
   while ( me.not_finished() ) {
     MT_LOCK( me._lock_queue );
-    swap( me.in_ev_queue, me.out_ev_queue );
+    me.in_ev_queue.swap( me.out_ev_queue );
     MT_UNLOCK( me._lock_queue );
     while ( !me.out_ev_queue.empty() ) {
       me.Send( me.out_ev_queue.front() );
-      me.out_ev_queue.pop();
+      me.out_ev_queue.pop_front();
     }
     MT_LOCK( me._lock_queue );
     if ( me.in_ev_queue.empty() && me.not_finished() ) {

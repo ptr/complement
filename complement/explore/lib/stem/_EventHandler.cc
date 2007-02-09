@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/28 20:32:35 ptr>
+// -*- C++ -*- Time-stamp: <07/02/08 17:27:44 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -29,20 +29,21 @@ char *Init_buf[128];
 EvManager *EventHandler::_mgr = 0;
 Names     *EventHandler::_ns = 0;
 
-#if 0 // depends where fork happens: in the EvManager loop (stack) or not.
-extern "C" void __at_fork_prepare()
+static int *_rcount = 0;
+#if 1 // depends where fork happens: in the EvManager loop (stack) or not.
+void EventHandler::Init::__at_fork_prepare()
 {
 }
 
-extern "C" void __at_fork_child()
+void EventHandler::Init::__at_fork_child()
 {
-  if ( EventHandler::Init::_count != 0 ) {
-    // delete EventHandler::_mgr;
+  if ( *_rcount != 0 ) {
+    delete EventHandler::_mgr;
     EventHandler::_mgr = new( EventHandler::_mgr ) EvManager();
   }
 }
 
-extern "C" void __at_fork_parent()
+void EventHandler::Init::__at_fork_parent()
 {
 }
 #endif
@@ -54,6 +55,10 @@ void EventHandler::Init::_guard( int direction )
 
   if ( direction ) {
     if ( _count++ == 0 ) {
+#ifdef _PTHREADS
+      _rcount = &_count;
+      pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child );
+#endif
       EventHandler::_mgr = new EvManager();
       EventHandler::_ns = new Names( ns_addr, "ns" );
     }
@@ -61,8 +66,10 @@ void EventHandler::Init::_guard( int direction )
     --_count;
     if ( _count == 1 ) {
       delete EventHandler::_ns;
+      EventHandler::_ns = 0;
     } else if ( _count == 0 ) {
       delete EventHandler::_mgr;
+      EventHandler::_mgr = 0;
     }
   }
 }

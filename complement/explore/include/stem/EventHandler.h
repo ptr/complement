@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/30 20:50:13 ptr>
+// -*- C++ -*- Time-stamp: <07/02/08 17:24:21 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -553,6 +553,9 @@ class EventHandler
         ~Init();
       private:
         static void _guard( int );
+        static void __at_fork_prepare();
+        static void __at_fork_child();
+        static void __at_fork_parent();
     };
 
     __FIT_DECLSPEC EventHandler();
