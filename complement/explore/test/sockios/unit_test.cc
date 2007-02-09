@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <07/01/29 19:19:10 ptr>
+// -*- C++ -*- Time-stamp: <07/02/07 10:09:14 ptr>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005, 2006
+ * Copyright (c) 2002, 2003, 2005-2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -344,22 +344,12 @@ void test_shared_socket()
 void test_client_close_socket();
 void test_more_bytes_in_socket();
 void test_more_bytes_in_socket2();
-void test_read0();
-void test_read0_srv();
-
 
 test_suite *init_unit_test_suite( int argc, char **argv )
 {
   test_suite *ts = BOOST_TEST_SUITE( "libsockios test" );
 
   ts->add( new sockios_test_suite() );
-
-  // ts->add( BOOST_TEST_CASE( &hostname_test ) );
-  // ts->add( BOOST_TEST_CASE( &service_test ) );
-
-  // ts->add( BOOST_TEST_CASE( &hostaddr_test1 ) );
-  // ts->add( BOOST_TEST_CASE( &hostaddr_test2 ) );
-  // ts->add( BOOST_TEST_CASE( &hostaddr_test3 ) );
 
   ts->add( BOOST_TEST_CASE( &test_client_server_poll ) );
   // ts->add( BOOST_TEST_CASE( &test_client_server_select ) );
@@ -385,8 +375,6 @@ test_suite *init_unit_test_suite( int argc, char **argv )
   ts->add( BOOST_TEST_CASE( &test_client_close_socket ) );
   ts->add( BOOST_TEST_CASE( &test_more_bytes_in_socket ), 0, 5 );
   ts->add( BOOST_TEST_CASE( &test_more_bytes_in_socket2 ), 0, 5 );
-  ts->add( BOOST_TEST_CASE( &test_read0 ), 0, 7 );
-  ts->add( BOOST_TEST_CASE( &test_read0_srv ) );
 
   return ts;
 }
