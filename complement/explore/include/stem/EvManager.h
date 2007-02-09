@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/04 17:32:31 ptr>
+// -*- C++ -*- Time-stamp: <07/02/08 16:38:05 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -22,7 +22,7 @@
 
 #include <string>
 #include <map>
-#include <queue>
+#include <deque>
 
 #include <mt/xmt.h>
 #include <mt/uid.h>
@@ -96,7 +96,7 @@ class EvManager
       tracefault = 4
     };
 
-    typedef std::queue< Event > queue_type;
+    typedef std::deque< Event > queue_type;
 
     __FIT_DECLSPEC EvManager();
     __FIT_DECLSPEC ~EvManager();
@@ -156,7 +156,7 @@ class EvManager
     void push( const Event& e )
       {
         MT_REENTRANT( _lock_queue, _x1 );
-        in_ev_queue.push( e );
+        in_ev_queue.push_back( e );
         _cnd_queue.set( true );
       }
 

@@ -1,3 +1,15 @@
+2007-02-08  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* EvManager.h, EvManager.cc: use deque instead of queue;
+	this allow to use container's swap, not exchange via temporary
+	objects [via copy];
+
+	* EventHandler.h, _EventHandler.cc: destroy and create
+	EvManager in child process after fork, if there are was
+	EvManager;
+
+	* libstem: library version 4.4.0
+
 2006-12-13  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* NetTransport.h, NetTransport.cc: NetTransportMgr
