@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/13 02:08:08 ptr>
+// -*- C++ -*- Time-stamp: <07/02/07 13:05:32 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -14,6 +14,7 @@ using namespace boost::unit_test_framework;
 
 #include <iostream>
 #include <mt/xmt.h>
+#include <mt/shm.h>
 
 #include <stem/EventHandler.h>
 #include <stem/Names.h>
@@ -35,7 +36,6 @@ using namespace boost::unit_test_framework;
 using namespace __gnu_cxx;
 #endif
 
-#include <sys/shm.h>
 #include <sys/wait.h>
 
 #include <signal.h>
@@ -44,6 +44,9 @@ using namespace std;
 
 struct stem_test
 {
+    void shm_init();
+    void shm_finit();
+
     void basic1();
     void basic2();
     void basic1new();
@@ -148,21 +151,21 @@ xmt::Thread::ret_code stem_test::thr1new( void * )
 
 void stem_test::dl()
 {
-#ifdef _STLP_DEBUG
-  void *lh = dlopen( "dl/obj/gcc/so_stlg/libloadable_stemstlg.so", RTLD_LAZY );
-#elif defined(DEBUG)
-  void *lh = dlopen( "dl/obj/gcc/so_g/libloadable_stemg.so", RTLD_LAZY );
-#else
-  void *lh = dlopen( "dl/obj/gcc/so/libloadable_stem.so", RTLD_LAZY );
-#endif
+  void *lh = dlopen( "libloadable_stem.so", RTLD_LAZY ); // Path was passed via -Wl,--rpath=
+
   BOOST_REQUIRE( lh != NULL );
-  void *(*f)(unsigned) = reinterpret_cast<void *(*)(unsigned)>( dlsym( lh, "create_NewNodeDL" ) );
+  void *(*f)(unsigned);
+  void (*g)(void *);
+  void (*w)(void *);
+  int (*v)(void *);
+
+  *(void **)(&f) = dlsym( lh, "create_NewNodeDL" );
   BOOST_REQUIRE( f != NULL );
-  void (*g)(void *) = reinterpret_cast<void (*)(void *)>( dlsym( lh, "destroy_NewNodeDL" ) );
+  *(void **)(&g) = dlsym( lh, "destroy_NewNodeDL" );
   BOOST_REQUIRE( g != NULL );
-  void (*w)(void *) = reinterpret_cast<void (*)(void *)>( dlsym( lh, "wait_NewNodeDL" ) );
+  *(void **)(&w) = dlsym( lh, "wait_NewNodeDL" );
   BOOST_REQUIRE( w != NULL );
-  int (*v)(void *) = reinterpret_cast<int (*)(void *)>( dlsym( lh, "v_NewNodeDL" ) );
+  *(void **)(&v) = dlsym( lh, "v_NewNodeDL" );
   BOOST_REQUIRE( v != NULL );
 
   NewNodeDL *node = reinterpret_cast<NewNodeDL *>( f( 2002 )  );
@@ -289,25 +292,29 @@ void stem_test::echo()
   }
 }
 
+const char fname[] = "/tmp/stem_test.shm";
+xmt::shm_alloc<0> seg;
+xmt::allocator_shm<xmt::__Condition<true>,0> shm_cnd;
+
+void stem_test::shm_init()
+{
+  try {
+    seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
+  }
+  catch ( const xmt::shm_bad_alloc& err ) {
+    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+  }
+}
+
+void stem_test::shm_finit()
+{
+  seg.deallocate();
+  unlink( fname );
+}
+
 void stem_test::echo_net()
 {
-  shmid_ds ds;
-  int id = shmget( 5000, 1024, IPC_CREAT | IPC_EXCL | 0600 );
-  BOOST_REQUIRE( id != -1 );
-  // if ( id == -1 ) {
-  //   cerr << "Error on shmget" << endl;
-  // }
-  BOOST_REQUIRE( shmctl( id, IPC_STAT, &ds ) != -1 );
-  // if ( shmctl( id, IPC_STAT, &ds ) == -1 ) {
-  //   cerr << "Error on shmctl" << endl;
-  // }
-  void *buf = shmat( id, 0, 0 );
-  BOOST_REQUIRE( buf != reinterpret_cast<void *>(-1) );
-  // if ( buf == reinterpret_cast<void *>(-1) ) {
-  //   cerr << "Error on shmat" << endl;
-  // }
-
-  xmt::__Condition<true>& fcnd = *new( buf ) xmt::__Condition<true>();
+  xmt::__Condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
   fcnd.set( false );
 
   try {
@@ -361,9 +368,7 @@ void stem_test::echo_net()
   }
 
   (&fcnd)->~__Condition<true>();
-
-  shmdt( buf );
-  shmctl( id, IPC_RMID, &ds );
+  shm_cnd.deallocate( &fcnd, 1 );
 
   // cerr << "Fine\n";
 }
@@ -396,29 +401,13 @@ void stem_test::peer()
 
   pid_t fpid;
 
-  shmid_ds ds;
-  int id = shmget( 5000, 1024, IPC_CREAT | IPC_EXCL | 0600 );
-  BOOST_REQUIRE( id != -1 );
-  // if ( id == -1 ) {
-  //   cerr << "Error on shmget" << endl;
-  // }
-  BOOST_REQUIRE( shmctl( id, IPC_STAT, &ds ) != -1 );
-  // if ( shmctl( id, IPC_STAT, &ds ) == -1 ) {
-  //   cerr << "Error on shmctl" << endl;
-  // }
-  void *buf = shmat( id, 0, 0 );
-  BOOST_REQUIRE( buf != reinterpret_cast<void *>(-1) );
-  // if ( buf == reinterpret_cast<void *>(-1) ) {
-  //   cerr << "Error on shmat" << endl;
-  // }
-
-  xmt::__Condition<true>& fcnd = *new( buf ) xmt::__Condition<true>();
+  xmt::__Condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
   fcnd.set( false );
 
-  xmt::__Condition<true>& pcnd = *new( (char *)buf + sizeof(xmt::__Condition<true>) ) xmt::__Condition<true>();
+  xmt::__Condition<true>& pcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
   pcnd.set( false );
 
-  xmt::__Condition<true>& scnd = *new( (char *)buf + sizeof(xmt::__Condition<true>) * 2 ) xmt::__Condition<true>();
+  xmt::__Condition<true>& scnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
   scnd.set( false );
 
   try {
@@ -563,7 +552,7 @@ void stem_test::peer()
       pcnd.set( true );
 
       c2.wait();
-      cerr << "Fine!" << endl;
+      // cerr << "Fine!" << endl;
       scnd.set( true );
 
       mgr.close();
@@ -589,32 +578,16 @@ void stem_test::peer()
   }
 
   (&fcnd)->~__Condition<true>();
+  shm_cnd.deallocate( &fcnd, 1 );
   (&pcnd)->~__Condition<true>();
+  shm_cnd.deallocate( &pcnd, 1 );
   (&scnd)->~__Condition<true>();
-
-  shmdt( buf );
-  shmctl( id, IPC_RMID, &ds );
+  shm_cnd.deallocate( &scnd, 1 );
 }
 
 void stem_test::boring_manager()
 {
-  shmid_ds ds;
-  int id = shmget( 5000, 1024, IPC_CREAT | IPC_EXCL | 0600 );
-  BOOST_REQUIRE( id != -1 );
-  // if ( id == -1 ) {
-  //   cerr << "Error on shmget" << endl;
-  // }
-  BOOST_REQUIRE( shmctl( id, IPC_STAT, &ds ) != -1 );
-  // if ( shmctl( id, IPC_STAT, &ds ) == -1 ) {
-  //   cerr << "Error on shmctl" << endl;
-  // }
-  void *buf = shmat( id, 0, 0 );
-  BOOST_REQUIRE( buf != reinterpret_cast<void *>(-1) );
-  // if ( buf == reinterpret_cast<void *>(-1) ) {
-  //   cerr << "Error on shmat" << endl;
-  // }
-
-  xmt::__Condition<true>& fcnd = *new( buf ) xmt::__Condition<true>();
+  xmt::__Condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
   fcnd.set( false );
 
   try {
@@ -659,9 +632,7 @@ void stem_test::boring_manager()
   }
 
   (&fcnd)->~__Condition<true>();
-
-  shmdt( buf );
-  shmctl( id, IPC_RMID, &ds );
+  shm_cnd.deallocate( &fcnd, 1 );
 }
 
 struct stem_test_suite :
@@ -683,9 +654,12 @@ stem_test_suite::stem_test_suite() :
   test_case *dl_tc = BOOST_CLASS_TEST_CASE( &stem_test::dl, instance );
   test_case *ns_tc = BOOST_CLASS_TEST_CASE( &stem_test::ns, instance );
   test_case *echo_tc = BOOST_CLASS_TEST_CASE( &stem_test::echo, instance );
+  test_case *shm_init_tc = BOOST_CLASS_TEST_CASE( &stem_test::shm_init, instance );
   test_case *echo_net_tc = BOOST_CLASS_TEST_CASE( &stem_test::echo_net, instance );
   test_case *peer_tc = BOOST_CLASS_TEST_CASE( &stem_test::peer, instance );
   test_case *boring_manager_tc = BOOST_CLASS_TEST_CASE( &stem_test::boring_manager, instance );
+  test_case *shm_finit_tc = BOOST_CLASS_TEST_CASE( &stem_test::shm_finit, instance );
+
   basic2_tc->depends_on( basic1_tc );
   basic1n_tc->depends_on( basic1_tc );
   basic2n_tc->depends_on( basic2_tc );
@@ -694,9 +668,13 @@ stem_test_suite::stem_test_suite() :
   ns_tc->depends_on( basic1_tc );
 
   echo_tc->depends_on( basic2_tc );
+  echo_net_tc->depends_on( shm_init_tc );
   echo_net_tc->depends_on( echo_tc );
   peer_tc->depends_on( echo_tc );
+  peer_tc->depends_on( shm_init_tc );
   boring_manager_tc->depends_on( peer_tc );
+  boring_manager_tc->depends_on( shm_init_tc );
+  shm_finit_tc->depends_on( shm_init_tc );
 
   add( basic1_tc );
   add( basic2_tc );
@@ -706,9 +684,11 @@ stem_test_suite::stem_test_suite() :
   add( ns_tc );
 
   add( echo_tc );
+  add( shm_init_tc );
   add( echo_net_tc );
   add( peer_tc );
   add( boring_manager_tc );
+  add( shm_finit_tc );
 }
 
 test_suite *init_unit_test_suite( int argc, char **argv )
