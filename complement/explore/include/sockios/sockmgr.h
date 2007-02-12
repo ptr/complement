@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/01 16:10:07 ptr>
+// -*- C++ -*- Time-stamp: <07/02/12 14:50:57 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
@@ -52,21 +52,22 @@ union _xsockaddr {
 class basic_sockmgr :
 	public sock_base
 {
-  public:
-    basic_sockmgr() :
-	_errno( 0 ),
-	_mode( ios_base::in | ios_base::out ),
-	_state( ios_base::goodbit ),
-	_fd( -1 )
-      {
-        xmt::Locker _l( _idx_lck );
-        if ( _idx == -1 ) {
-          _idx = xmt::Thread::xalloc();
-        }
-      }
+  private:
+    class Init
+    {
+      public:
+        Init();
+        ~Init();
+      private:
+        static void _guard( int );
+        static void __at_fork_prepare();
+        static void __at_fork_child();
+        static void __at_fork_parent();
+    };
 
-    virtual ~basic_sockmgr()
-      { basic_sockmgr::close(); }
+  public:
+    basic_sockmgr();
+    virtual ~basic_sockmgr();
 
   protected:
     __FIT_DECLSPEC void open( const in_addr& addr, int port, sock_base::stype type, sock_base::protocol prot );
@@ -109,9 +110,7 @@ class basic_sockmgr :
 
   protected:
     static int _idx;
-
-  private:
-    static xmt::Mutex _idx_lck;
+    friend class Init;
 
   protected:
     xmt::Mutex _fd_lck;
@@ -274,7 +273,7 @@ class sockmgr_stream_MP :
     bool accept_udp();
 
   private:
-    xmt::Thread     loop_id;
+    xmt::Thread loop_id;
 
   protected:
     typedef sockmgr_stream_MP<Connect> _Self_type;
