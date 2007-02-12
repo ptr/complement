@@ -1,3 +1,12 @@
+2007-02-12  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, _sockmgr.cc: use Init technique to initialize
+	static idx [thread-specific data index]---avoid global
+	mutex initialization [lead to problems after fork?];
+	reinitilize idx after fork;
+
+	* libsockios: Version 1.11.0
+
 2007-02-01  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* sockmgr.cc: clean container with sockstreams,
