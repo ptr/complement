@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/09 16:00:57 ptr>
+// -*- C++ -*- Time-stamp: <07/02/12 11:24:11 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -38,8 +38,8 @@ mt_test_suite::mt_test_suite() :
 
   test_case *thr_mgr_tc = BOOST_CLASS_TEST_CASE( &mt_test::thr_mgr, instance );
 
-  test_case *shm_init_tc = BOOST_CLASS_TEST_CASE( &mt_test::shm_init_mgr, instance );
-  test_case *shm_finit_tc = BOOST_CLASS_TEST_CASE( &mt_test::shm_finit_mgr, instance );
+  test_case *shm_init_tc = BOOST_CLASS_TEST_CASE( &mt_test::shm_init, instance );
+  test_case *shm_finit_tc = BOOST_CLASS_TEST_CASE( &mt_test::shm_finit, instance );
 
   barrier2_tc->depends_on( barrier_tc );
   barrier2_tc->depends_on( join_tc );

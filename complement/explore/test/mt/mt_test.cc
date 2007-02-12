@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/09 15:55:31 ptr>
+// -*- C++ -*- Time-stamp: <07/02/12 11:01:56 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -771,7 +771,7 @@ xmt::shm_alloc<1> seg1;
 
 void mt_test::shm_init()
 {
-  seg.allocate( fname1, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+  seg1.allocate( fname1, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 }
 
 /* ******************************************************
