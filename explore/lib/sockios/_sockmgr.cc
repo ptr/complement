@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/06/28 10:35:10 ptr>
+// -*- C++ -*- Time-stamp: <07/02/12 14:49:26 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -35,7 +35,57 @@ namespace std {
 #endif
 
 int basic_sockmgr::_idx = -1;
-xmt::Mutex basic_sockmgr::_idx_lck;
+
+void basic_sockmgr::Init::__at_fork_prepare()
+{
+}
+
+void basic_sockmgr::Init::__at_fork_child()
+{
+  basic_sockmgr::_idx = xmt::Thread::xalloc();
+}
+
+void basic_sockmgr::Init::__at_fork_parent()
+{
+}
+
+void basic_sockmgr::Init::_guard( int direction )
+{
+  static xmt::Mutex _init_lock;
+  static int _count = 0;
+
+  if ( direction ) {
+    if ( _count++ == 0 ) {
+#ifdef _PTHREADS
+      pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child );
+#endif
+      basic_sockmgr::_idx = xmt::Thread::xalloc();
+    }
+  }
+}
+
+basic_sockmgr::Init::Init()
+{ _guard( 1 ); }
+
+basic_sockmgr::Init::~Init()
+{ _guard( 0 ); }
+
+char Init_buf[128];
+
+basic_sockmgr::basic_sockmgr() :
+    _errno( 0 ),
+    _mode( ios_base::in | ios_base::out ),
+    _state( ios_base::goodbit ),
+    _fd( -1 )
+{
+  new( Init_buf ) Init();
+}
+
+basic_sockmgr::~basic_sockmgr()
+{
+  basic_sockmgr::close();
+  ((Init *)Init_buf)->~Init();
+}
 
 void basic_sockmgr::open( const in_addr& addr, int port, sock_base::stype type, sock_base::protocol prot )
 {
