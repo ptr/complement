@@ -5,6 +5,7 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <meta name="keywords" content="build, autotools, make, GNU, compilation, link">
     <link rel="stylesheet" type="text/css" href="main.css" media="screen" title="general">
     <link rel="stylesheet" type="text/css" href="decor.css" media="screen" title="general">
     <link rel="stylesheet" type="text/css" href="float.css" media="screen" title="general">
@@ -12,7 +13,7 @@
   </head>
 
   <body>
-<!--#include file="head-tech.shtml" -->
+<!--#include file="head-build.shtml" -->
 <div class="toppic">
 <img src="img/jpg/apropos.jpg">
 </div>
@@ -112,6 +113,11 @@
       <dt>EXTRA_POST_STLDBG</dt>
       <dd>tags that should be made after stldbg-shared; not defined</dd>
     </dl>
+
+  <center>
+  <a href="MakeTags.shtml">&lt;&lt; Prev</a>
+  </center>
+
 </div>
 <!--#include file="foot.shtml" -->
 <!-- Created: Fri Dec  8 14:11:17 MSD 2006 -->

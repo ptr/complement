@@ -5,6 +5,7 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <meta name="keywords" content="C++, build, autotools, threads, multithreads, event, stream, IO, library, socket, IPC, EDA">
     <link rel="stylesheet" type="text/css" href="main.css" media="screen" title="general">
     <link rel="stylesheet" type="text/css" href="decor.css" media="screen" title="general">
     <link rel="stylesheet" type="text/css" href="float.css" media="screen" title="general">
@@ -17,7 +18,20 @@
 <img src="img/jpg/apropos.jpg">
 </div>
 <div class="main">
-    <h2 class="lheader">Technology</h2>
+    <!-- <h2 class="lheader">Technology</h2> -->
+    <h2 class="lheader">Build system</h2>
+    Build system, that used for this set of projects.
+    <h2 class="lheader">Multi-threading programming and IPC</h2>
+    Tools that introduce higher abstraction layer under native system capabilities
+    for multi-threading and IPC.
+    <h2 class="lheader">Communication with sockets</h2>
+    Abstraction layer that make utilisatoin of C++ iostream interfaces to work with
+    tcp sockets, as on server as on client side.
+    <h2 class="lheader">EDA tools</h2>
+    Abstraction layer that allow propagate EDA (events-driven architecture) design
+    directly into C++ programming.
+    <h2 class="lheader">STL implementations</h2>
+    Compare STL implementations and related programming techniques.
 </div>
 <!--#include file="foot.shtml" -->
 <!-- Created: Mon Oct  7 16:33:17 MSD 2002 -->
