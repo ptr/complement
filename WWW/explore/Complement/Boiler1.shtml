@@ -12,12 +12,12 @@
   </head>
 
   <body>
-<!--#include file="head-tech.shtml" -->
+<!--#include file="head-boiler.shtml" -->
 <div class="toppic">
 <img src="img/jpg/apropos.jpg">
 </div>
 <div class="main">
-    <h2 class="lheader"></h2>
+    <h2 class="lheader">Black box</h2>
     <p>
     Let's consider design of model of boiler (design of software model).
     </p>
@@ -37,6 +37,7 @@
     on question 'What I expect from this device?'.
     </p>
 
+    <h2 class="lheader">Interacting components</h2>
     <p>
     On the next step I should define components of the whole system
     and expected interaction between ones.
@@ -46,6 +47,7 @@
 <img src="img/fig/boiler-comp.png">
 </center>
 
+    <h2 class="lheader">Decomposition: consider details</h2>
     <p>
     Now, descending in abstraction layer, consider every component separately.
     </p>

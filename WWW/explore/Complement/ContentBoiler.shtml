@@ -1,7 +1,7 @@
 <!-- Time-stamp: <06/12/08 00:48:21 ptr> -->
 <div class="nodecor">
 <a href="index.shtml">Home</a><br>
-<a href="MakeStart.shtml">Make system</a><br>
+<a href="Technical.shtml">Architecture, specifications,<br> technical descriptions</a><br>
 <a href="Boiler1.shtml">EDA sample: design and coding bioler system</a><br>
 <a href="compare.pdf">Comparison of STL Implementations (PDF)</a><br>
 <br>
