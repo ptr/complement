@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/07 10:51:25 ptr>
+// -*- C++ -*- Time-stamp: <07/02/13 10:23:29 ptr>
 
 /*
  *
@@ -37,6 +37,8 @@ struct sockios_test
     void sigpipe();
     void read0();
     void read0_srv();
+
+    void srv2_fork();
 };
 
 #endif // __sockios_test_h
