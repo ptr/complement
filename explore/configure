@@ -33,10 +33,6 @@ Available options:
   --with-system-boost   use boost installed on this system
   --with-msvc=<dir>     use MS VC from this catalog
   --with-mssdk=<dir>    use MS SDK from this catalog
-  --with-mwcw=<dir>     Metrowerks CodeWarrior compiler catalog (useful for mw* compilers)
-                        i.e. something like "c:/Program Files/Metrowerks/CodeWarrior"
-  --with-nwsdk=<dir>    use Novell NDK/SDK from this catalog (useful for *-*-netware target)
-                        i.e. something like "c:/Novell/ndk/nwsdk"
   --with-extra-cxxflags=<options>
                         pass extra options to C++ compiler
   --use-static-gcc      use static gcc libs instead of shared libgcc_s (useful for gcc compiler,
@@ -49,7 +45,6 @@ Available options:
   --use-compiler-family=<name> use compiler family; one of:
                         gcc      GNU compilers
                         icc      Intel compilers
-                        mwccnlm  Metrowerks CodeWarrior for Novell Netware
                         aCC      HP\'s aCC compilers
                         CC       SunPro\'s CC compilers
 
@@ -140,12 +135,6 @@ do
       write_option "$option" EXTRA_CXXFLAGS
       cxxflags_set=y
       ;;
-    --with-nwsdk=*)
-      write_option "$option" NWSDK_DIR
-      ;;
-    --with-mwcw=*)
-      write_option "$option" MWCW_BASE
-      ;;
     --use-static-gcc)
       write_option "1" USE_STATIC_LIBGCC
       ;;
@@ -171,7 +160,7 @@ do
       ;;
     --use-compiler-family=*)
       case `echo $option | sed -e 's/^[^=]*=//'` in
-        gcc|icc|aCC|CC|mwccnlm)
+        gcc|icc|aCC|CC)
           write_option "$option" COMPILER_NAME
           ;;
         *)
