@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/09 15:56:27 ptr>
+// -*- C++ -*- Time-stamp: <07/02/19 13:21:37 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -32,6 +32,8 @@ class mt_test
 
     void shm_init();
     void shm_finit();
+
+    void shm_named_obj_more();
 
   private:
     // static xmt::Thread::ret_code thread_entry_call( void * );

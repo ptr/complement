@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/12 11:01:56 ptr>
+// -*- C++ -*- Time-stamp: <07/02/19 14:36:01 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -780,6 +780,92 @@ void mt_test::shm_finit()
 {
   seg1.deallocate();
   fs::remove( fname1 );
+}
+
+/* ******************************************************
+ */
+
+void mt_test::shm_named_obj_more()
+{
+  enum {
+    ObjName = 1
+  };
+
+  try {
+    xmt::shm_name_mgr<1>& nm = seg1.name_mgr();
+
+    xmt::allocator_shm<xmt::__Condition<true>,1> shm;
+
+    xmt::__Condition<true>& fcnd = *new ( shm.allocate( 1 ) ) xmt::__Condition<true>();
+    nm.named( fcnd, ObjName );
+    fcnd.set( false );
+
+    try {
+      xmt::fork();
+
+      xmt::shm_name_mgr<1>& nm_ch = seg1.name_mgr();
+      xmt::allocator_shm<xmt::__Condition<true>,1> shm_ch;
+      xmt::__Condition<true>& fcnd_ch = nm_ch.named<xmt::__Condition<true> >( ObjName );
+      fcnd_ch.set( true );
+      nm_ch.release<xmt::__Condition<true> >( ObjName );
+    
+      exit( 0 );
+    }
+    catch ( xmt::fork_in_parent& child ) {
+      fcnd.try_wait();
+      int stat;
+      BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+    }
+    nm.release<xmt::__Condition<true> >( ObjName ); // fcnd should be destroyed here
+
+    xmt::__Condition<true>& fcnd1 = *new ( shm.allocate( 1 ) ) xmt::__Condition<true>();
+    nm.named( fcnd1, ObjName ); // ObjName should be free here
+    fcnd1.set( false );
+
+    try {
+      xmt::fork();
+
+      xmt::shm_name_mgr<1>& nm_ch = seg1.name_mgr();
+      xmt::allocator_shm<xmt::__Condition<true>,1> shm_ch;
+      xmt::__Condition<true>& fcnd_ch = nm_ch.named<xmt::__Condition<true> >( ObjName );
+      fcnd_ch.set( true );
+      nm_ch.release<xmt::__Condition<true> >( ObjName );
+    
+      exit( 0 );
+    }
+    catch ( xmt::fork_in_parent& child ) {
+      fcnd1.try_wait();
+      int stat;
+      BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+    }
+    nm.release<xmt::__Condition<true> >( ObjName ); // fcnd should be destroyed here
+
+    xmt::allocator_shm<xmt::__Barrier<true>,1> shm_b;
+    xmt::__Barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__Barrier<true>();
+
+    nm.named( b, ObjName ); // ObjName should be free here
+    
+    try {
+      xmt::fork();
+
+      xmt::shm_name_mgr<1>& nm_ch = seg1.name_mgr();
+      xmt::allocator_shm<xmt::__Barrier<true>,1> shm_ch;
+      xmt::__Barrier<true>& b_ch = nm_ch.named<xmt::__Barrier<true> >( ObjName );
+      b_ch.wait();
+      nm_ch.release<xmt::__Barrier<true> >( ObjName );
+    
+      exit( 0 );      
+    }
+    catch ( xmt::fork_in_parent& child ) {
+      b.wait();
+      int stat;
+      BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+    }
+    nm.release<xmt::__Barrier<true> >( ObjName ); // barrier should be destroyed here
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+  }
 }
 
 /* ******************************************************
