@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/07 11:00:07 ptr>
+// -*- C++ -*- Time-stamp: <07/02/26 15:33:23 ptr>
 
 /*
  *
@@ -47,6 +47,7 @@ sockios_test_suite::sockios_test_suite() :
 
   test_case *read0_tc     = BOOST_CLASS_TEST_CASE( &sockios_test::read0, instance );
   test_case *read0_srv_tc = BOOST_CLASS_TEST_CASE( &sockios_test::read0_srv, instance );
+  test_case *long_block_read_tc = BOOST_CLASS_TEST_CASE( &sockios_test::long_block_read, instance );
 
   long_msg_tc->depends_on( init_tc );
   long_msg_tc->depends_on( ctor_dtor_tc );
@@ -54,6 +55,7 @@ sockios_test_suite::sockios_test_suite() :
   sigpipe_tc->depends_on( init_tc );
   read0_tc->depends_on( sigpipe_tc );
   read0_srv_tc->depends_on( sigpipe_tc );
+  long_block_read_tc->depends_on( init_tc );
   finit_tc->depends_on( init_tc );
 
   add( init_tc );
@@ -62,5 +64,6 @@ sockios_test_suite::sockios_test_suite() :
   add( sigpipe_tc );
   add( read0_tc, 0, 5 );
   add( read0_srv_tc );
+  add( long_block_read_tc );
   add( finit_tc );
 }

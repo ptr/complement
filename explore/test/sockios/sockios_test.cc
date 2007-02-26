@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/07 11:32:06 ptr>
+// -*- C++ -*- Time-stamp: <07/02/26 17:18:51 ptr>
 
 /*
  *
@@ -621,4 +621,77 @@ void sockios_test::read0_srv()
   catch ( xmt::shm_bad_alloc& err ) {
     BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
   }
+}
+
+/* ************************************************************ */
+
+class LongBlockReader // dummy variant
+{
+  public:
+    LongBlockReader( std::sockstream& );
+
+    void connect( std::sockstream& );
+    void close();
+
+    static xmt::Condition cnd;
+};
+
+xmt::Condition LongBlockReader::cnd;
+
+LongBlockReader::LongBlockReader( std::sockstream& s )
+{
+  BOOST_REQUIRE( s.good() );
+}
+
+void LongBlockReader::connect( std::sockstream& s )
+{
+  char buf[1024];
+  int count = 0;
+
+  for ( int i = 0; i < 1024 * 1024; ++i ) {
+    s.read( buf, 1024 );
+  }
+  cnd.set( true );
+}
+
+void LongBlockReader::close()
+{
+  // pr_lock.lock();
+  // BOOST_MESSAGE( "Server: client close connection" );
+  // pr_lock.unlock();
+}
+
+void sockios_test::long_block_read()
+{
+  LongBlockReader::cnd.set( false );
+
+  sockmgr_stream_MP<LongBlockReader> srv( ::port );
+  
+  BOOST_REQUIRE( srv.good() );
+
+  sockstream s;
+
+  s.open( "localhost", ::port );
+
+  BOOST_REQUIRE( s.good() );
+
+  char buf[1024];
+
+  for ( int i = 0; i < 1024 * 1024; ++i ) {
+    s.write( buf, 1024 );
+  }
+  s.flush();
+
+  BOOST_CHECK( s.good() );
+
+  s.close();
+  LongBlockReader::cnd.try_wait();
+
+  srv.close();
+  srv.wait();
+
+  // try {
+  // }
+  // catch () {
+  // }
 }
