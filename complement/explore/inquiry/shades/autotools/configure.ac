@@ -1,23 +1,22 @@
 # -*- Autoconf -*- 
 # Process this file with autoconf to produce a configure script. 
+dnl Process this file with autoconf to produce a configure script
+AC_INIT([Test Autotools],[1],[nobody@nothing.com],[cxxtest])
+AC_PREREQ(2.60a)
+AC_CONFIG_AUX_DIR(ext)
+AM_INIT_AUTOMAKE
+AC_COPYRIGHT(All portions of this software are copylefted (c))
+
+# AC_LANG([C++])
+AC_PROG_CXX
+AC_PROG_RANLIB
+AC_LIBTOOL_DLOPEN
+AC_PROG_LIBTOOL
  
-AC_PREREQ(2.59) 
-AC_INIT(TestCXXProject, 1.0.0) 
-AM_INIT_AUTOMAKE 
 AC_CONFIG_SRCDIR([main.cc]) 
 AC_CONFIG_HEADER([config.h]) 
 AC_CONFIG_FILES([Makefile]) 
  
-# Checks for programs. 
-AC_PROG_CXX 
-AC_PROG_LIBTOOL 
- 
-# Checks for libraries. 
 ACX_PTHREAD 
  
-# Checks for header files. 
- 
-# Checks for typedefs, structures, and compiler characteristics. 
- 
-# Checks for library functions. 
 AC_OUTPUT 
