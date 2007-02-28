@@ -1,3 +1,10 @@
+2007-02-28  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* tfstream: fstream-like interface to unique temporary file;
+	file generated from template with mkstemp [POSIX 1003.1-2001];
+	template only, library not required; current implementation work
+	only with STLport with extentions enabled.
+
 2006-05-24  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* args.cc:  explicitly add stdexcept header.
