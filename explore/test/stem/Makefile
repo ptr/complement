@@ -3,7 +3,7 @@
 SRCROOT := ../..
 COMPILER_NAME := gcc
 
-EXTRA_POST := dl
+EXTRA_POST := dl-rel
 EXTRA_POST_DBG := dl-dbg
 EXTRA_POST_STLDBG := dl-stldbg
 
@@ -29,9 +29,9 @@ dbg-shared     : LDLIBS = -lxmtg -lsockiosg -lstemg -lboost_test_utfg -ldl
 
 # dbg-shared:	DEFS += -DDEBUG
 
-PHONY += dl dl-dbg dl-stldbg
+PHONY += dl-rel dl-dbg dl-stldbg
 
-dl:
+dl-rel:
 	${MAKE} -C dl release-shared
 
 dl-dbg:
