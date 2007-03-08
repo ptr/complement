@@ -1,4 +1,13 @@
-# -*- makefile -*- Time-stamp: <06/01/18 15:05:04 ptr>
+# -*- makefile -*- Time-stamp: <07/03/08 21:26:20 ptr>
+#
+# Copyright (c) 1997-1999, 2002, 2003, 2005-2007
+# Petr Ovtchenkov
+#
+# Portion Copyright (c) 1999-2001
+# Parallel Graphics Ltd.
+#
+# Licensed under the Academic Free License version 3.0
+#
 
 # Oh, the commented below work for gmake 3.78.1 and above,
 # but phrase without tag not work for it. Since gmake 3.79 
@@ -103,9 +112,9 @@ endif
 # Include whole language support archive (libsupc++.a) into libstlport:
 # all C++ issues are in libstlport now.
 ifeq ($(OSNAME),linux)
-START_OBJ := $(shell for o in crt{i,beginS}.o; do ${CXX} -print-file-name=$$o; done)
-#START_A_OBJ := $(shell for o in crt{i,beginT}.o; do ${CXX} -print-file-name=$$o; done)
-END_OBJ := $(shell for o in crt{endS,n}.o; do ${CXX} -print-file-name=$$o; done)
+START_OBJ := $(shell for o in crti.o crtbeginS.o; do ${CXX} -print-file-name=$$o; done)
+#START_A_OBJ := $(shell for o in crti.o crtbeginT.o; do ${CXX} -print-file-name=$$o; done)
+END_OBJ := $(shell for o in crtendS.o crtn.o; do ${CXX} -print-file-name=$$o; done)
 STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lpthread -lc -lm
 endif
 ifeq ($(OSNAME),openbsd)
@@ -121,8 +130,8 @@ END_OBJ := $(shell for o in crtendS.o crtn.o; do ${CXX} -print-file-name=$$o; do
 STDLIBS := ${STLPORT_LIB} ${_LGCC_S} -l${PTHR} -lc -lm
 endif
 ifeq ($(OSNAME),netbsd)
-START_OBJ := $(shell for o in crt{i,beginS}.o; do ${CXX} -print-file-name=$$o; done)
-END_OBJ := $(shell for o in crt{endS,n}.o; do ${CXX} -print-file-name=$$o; done)
+START_OBJ := $(shell for o in crti.o crtbeginS.o; do ${CXX} -print-file-name=$$o; done)
+END_OBJ := $(shell for o in crtendS.o crtn.o; do ${CXX} -print-file-name=$$o; done)
 STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lpthread -lc -lm
 endif
 ifeq ($(OSNAME),sunos)

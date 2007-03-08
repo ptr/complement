@@ -1,6 +1,6 @@
-# -*- Makefile -*- Time-stamp: <06/11/10 17:28:41 ptr>
+# -*- Makefile -*- Time-stamp: <07/03/08 21:23:42 ptr>
 #
-# Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+# Copyright (c) 1997-1999, 2002, 2003, 2005-2007
 # Petr Ovtchenkov
 #
 # Portion Copyright (c) 1999-2001
@@ -106,12 +106,12 @@ endif
 
 # ifeq ($(CXX_VERSION_MAJOR),3)
 ifeq ($(OSNAME),linux)
-START_OBJ := $(shell for o in crt{1,i,begin}.o; do ${CXX} -print-file-name=$$o; done)
-END_OBJ := $(shell for o in crt{end,n}.o; do ${CXX} -print-file-name=$$o; done)
+START_OBJ := $(shell for o in crt1.o crti.o crtbegin.o; do ${CXX} -print-file-name=$$o; done)
+END_OBJ := $(shell for o in crtend.o crtn.o; do ${CXX} -print-file-name=$$o; done)
 STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lpthread -lc -lm
 endif
 ifeq ($(OSNAME),openbsd)
-START_OBJ := $(shell for o in crt{0,begin}.o; do ${CXX} -print-file-name=$$o; done)
+START_OBJ := $(shell for o in crt0.o crtbegin.o; do ${CXX} -print-file-name=$$o; done)
 END_OBJ := $(shell for o in crtend.o; do ${CXX} -print-file-name=$$o; done)
 STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lpthread -lc -lm
 endif
@@ -123,8 +123,8 @@ END_OBJ := $(shell for o in crtend.o crtn.o; do ${CXX} -print-file-name=$$o; don
 STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -l${PTHR} -lc -lm
 endif
 ifeq ($(OSNAME),netbsd)
-START_OBJ := $(shell for o in crt{1,i,begin}.o; do ${CXX} -print-file-name=$$o; done)
-END_OBJ := $(shell for o in crt{end,n}.o; do ${CXX} -print-file-name=$$o; done)
+START_OBJ := $(shell for o in crt1.o crti.o crtbegin.o; do ${CXX} -print-file-name=$$o; done)
+END_OBJ := $(shell for o in crtend.o crtn.o; do ${CXX} -print-file-name=$$o; done)
 STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lpthread -lc -lm
 endif
 ifeq ($(OSNAME),sunos)
