@@ -1,3 +1,23 @@
+2007-03-08  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* make.mak: removed, make except GNU make can't work due to top.mak;
+	USE_MAKE went to top.mak;
+
+	* top.mak: use single extern.mak, intead of gmake/OSNAME/extern.mak
+
+	* gmake/OSNAME/extern.mak: removed;
+
+	* gmake/...: add copyright notice in many files;
+
+	* gmake/app/macro.mak: removed, code went to gmake/app/top.mak;
+
+	* gmake/app/top.mak: code from gmake/app/macro.mak;
+
+	* gmake/app/gcc.mak: remove bashism;
+
+	* gmake/lib/gcc.mak: ditto.
+
+
 2007-02-28  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/OSNAME, gmake/lib: group similar platforms into 'unix';

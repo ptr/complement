@@ -1,4 +1,4 @@
-# Time-stamp: <06/11/10 16:22:00 ptr>
+# Time-stamp: <07/03/08 22:57:35 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -21,6 +21,7 @@ RULESBASE ?= $(SRCROOT)/Makefiles
 -include ${RULESBASE}/config.mak
 
 ifndef COMPILER_NAME
+# gcc is default compiler, others specify explicitly;
 COMPILER_NAME := gcc
 endif
 
@@ -73,7 +74,8 @@ NOT_USE_NOSTDLIB := 1
 endif
 
 # define what make clone we use
-include ${RULESBASE}/make.mak
+USE_MAKE := gmake
+
 ifndef OSNAME
 # identify OS and build date
 include ${RULESBASE}/$(USE_MAKE)/sysid.mak
@@ -86,10 +88,10 @@ include ${RULESBASE}/$(USE_MAKE)/$(OSNAME)/targetsys.mak
 include ${RULESBASE}/$(USE_MAKE)/$(COMPILER_NAME).mak
 # rules to make dirs for targets
 include ${RULESBASE}/$(USE_MAKE)/targetdirs.mak
-# extern libraries
-include ${RULESBASE}/$(USE_MAKE)/$(OSNAME)/extern.mak
+# Extern projects for everyday usage and settings for ones
+include ${RULESBASE}/extern.mak
 
-# os-specific local rules
+# os-specific local rules (or other project-specific definitions)
 -include specific.mak
 
 # derive common targets (*.o, *.d),
