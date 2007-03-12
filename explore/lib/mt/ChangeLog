@@ -1,3 +1,9 @@
+2007-03-12  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xmt.h, xmt.cc: code for Novell NetWare removed.
+	
+	* libxmt: version 1.10.3
+
 2007-02-08  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* shm.h: process-shared barrier may be allocated in shared
