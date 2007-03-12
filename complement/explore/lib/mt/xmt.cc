@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/02 21:34:56 ptr>
+// -*- C++ -*- Time-stamp: <07/03/12 20:14:35 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2007
@@ -32,10 +32,6 @@
 #include <memory>
 #include <functional>
 #include <cerrno>
-#ifdef __FIT_NETWARE
-# include <nwerrno.h>
-# include <nwadv.h>
-#endif
 #include <string>
 
 #ifdef __linux
@@ -86,15 +82,10 @@ int Init_count = 0;
 static pid_t _pid  = syscall( SYS_getpid );
 static pid_t _ppid = syscall( SYS_getppid );
 
-#ifdef __FIT_NOVELL_THREADS
-xmt::Thread::thread_key_type _mt_key = 0;
-#else // !__FIT_NOVELL_THREADS
 xmt::Thread::thread_key_type _mt_key = __STATIC_CAST(xmt::Thread::thread_key_type,-1);
 # ifndef __FIT_WIN32THREADS
 void *_uw_save = 0;
 # endif
-#endif // !__FIT_NOVELL_THREADS
-
 
 #ifdef _PTHREADS
 xmt::Mutex _F_lock;
@@ -106,7 +97,7 @@ xmt::Mutex _F_lock;
 #  error "Unimplemented"
 #endif
 
-#if defined(__FIT_WIN32THREADS) || defined(__FIT_NOVELL_THREADS)
+#if defined(__FIT_WIN32THREADS)
 #  define _F_locklock
 #  define _F_lockunlock
 #endif
@@ -244,10 +235,6 @@ const Thread::thread_id_type Thread::bad_thread_id = __STATIC_CAST(Thread::threa
 # endif // !(__FreeBSD__ || __OpenBSD__)
 #endif // __FIT_UITHREADS || _PTHREADS
 
-#ifdef __FIT_NOVELL_THREADS
-const Thread::thread_id_type Thread::bad_thread_id = EFAILURE;
-#endif // __FIT_NOVELL_THREADS
-
 Thread::thread_key_type& Thread::_mt_key( detail::_mt_key );
 
 __FIT_DECLSPEC
@@ -266,9 +253,6 @@ void Thread::_dealloc_uw()
 #ifdef __FIT_WIN32THREADS
     _uw_alloc_type *user_words = static_cast<_uw_alloc_type *>(TlsGetValue( _mt_key ));
 #endif
-#ifdef __FIT_NOVELL_THREADS
-    _uw_alloc_type *user_words = *static_cast<_uw_alloc_type **>(GetThreadDataAreaPtr());
-#endif // __FIT_NOVELL_THREADS
     alloc.deallocate( user_words, uw_alloc_size );
     user_words = 0;
     uw_alloc_size = 0;
@@ -300,9 +284,6 @@ Thread::_uw_alloc_type *Thread::_alloc_uw( int __idx )
 #ifdef __FIT_WIN32THREADS
     TlsSetValue( _mt_key, user_words );
 #endif
-#ifdef __FIT_NOVELL_THREADS
-    SaveThreadDataAreaPtr( user_words );
-#endif
   } else {
 #ifdef __FIT_UITHREADS
     thr_getspecific( _mt_key, &(static_cast<void *>(user_words)) );
@@ -312,9 +293,6 @@ Thread::_uw_alloc_type *Thread::_alloc_uw( int __idx )
 #endif
 #ifdef __FIT_WIN32THREADS
     user_words = static_cast<_uw_alloc_type *>(TlsGetValue( _mt_key ));
-#endif
-#ifdef __FIT_NOVELL_THREADS
-    user_words = *static_cast<_uw_alloc_type **>(GetThreadDataAreaPtr());
 #endif
     if ( (__idx + 1) * sizeof( _uw_alloc_type ) > uw_alloc_size ) {
       size_t tmp = sizeof( _uw_alloc_type ) * (__idx + 1);
@@ -336,9 +314,6 @@ Thread::_uw_alloc_type *Thread::_alloc_uw( int __idx )
 #endif
 #ifdef __FIT_WIN32THREADS
       TlsSetValue( _mt_key, user_words );
-#endif
-#ifdef __FIT_NOVELL_THREADS
-      *static_cast<_uw_alloc_type **>(GetThreadDataAreaPtr()) = user_words;
 #endif
     }
   }
@@ -403,8 +378,6 @@ bool Thread::is_self()
   return (_id != bad_thread_id) && (_id == pthread_self());
 #elif defined(__FIT_UITHREADS)
   return (_id != bad_thread_id) && (_id == thr_self());
-#elif defined(__FIT_NOVELL_THREADS)
-  return (_id != bad_thread_id) && (_id == GetThreadID());
 #elif defined(__FIT_WIN32THREADS)
   return (_id != bad_thread_id) && (_id == GetCurrentThread());
 #else
@@ -452,15 +425,6 @@ Thread::ret_code Thread::join()
   }
 #endif // __FIT_UITHREADS || PTHREADS
 
-#ifdef __FIT_NOVELL_THREADS
-  rt.iword = 0;
-  if ( !_not_run() ) {
-    _thr_join.wait();
-    // Locker lk( _llock );
-    _rip_id = bad_thread_id;
-  }
-#endif // __FIT_NOVELL_THREADS
-
   return rt;
 }
 
@@ -486,9 +450,6 @@ int Thread::suspend()
 #endif // __STL_PTHREADS
 #ifdef __FIT_UITHREADS
     return thr_suspend( _id );
-#endif
-#ifdef __FIT_NOVELL_THREADS
-    return SuspendThread( _id );
 #endif
   }
 
@@ -517,9 +478,6 @@ int Thread::resume()
 #endif
 #ifdef __FIT_UITHREADS
     return thr_continue( _id );
-#endif
-#ifdef __FIT_NOVELL_THREADS
-    return ResumeThread( _id );
 #endif
   }
 
@@ -562,9 +520,6 @@ void Thread::_exit( int code )
 #endif
 #ifdef __FIT_WIN32THREADS
   ExitThread( code );
-#endif
-#ifdef __FIT_NOVELL_THREADS
-  ExitThread( EXIT_THREAD, code );
 #endif
 }
 
@@ -786,17 +741,6 @@ void Thread::_create( const void *p, size_t psz ) throw(std::runtime_error)
    _rip_id = _id = CreateThread( 0, 0, _xcall, this, (_flags & suspended), &_thr_id );
   err = GetLastError();
 #endif
-#ifdef __FIT_NOVELL_THREADS
-  _id = BeginThread( _xcall, 0, 65536, this );
-  if ( _id == bad_thread_id ) {
-    err = errno; // not ::errno, due to #define errno  *__get_errno_ptr()
-    if ( (_flags & detached) == 0 ) {
-      _thr_join.signal();
-    }
-  } else {
-    _rip_id = _id;
-  }
-#endif
 
   if ( err != 0 ) {
     if ( psz > sizeof(void *) ) { // clear allocated here
@@ -957,11 +901,7 @@ void *Thread::_call( void *p )
 #if defined( __SUNPRO_CC ) && defined( __i386 )
   Thread::_exit( ret.iword );
 #endif
-#ifdef __FIT_NOVELL_THREADS
-  if ( (me->_flags & detached) == 0 ) {
-    me->_thr_join.signal();
-  }
-#endif // __FIT_NOVELL_THREADS || __FIT_WIN32THREADS
+
   return ret.pword;
 }
 #ifdef _WIN32

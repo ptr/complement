@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/02 21:32:58 ptr>
+// -*- C++ -*- Time-stamp: <07/03/12 20:09:11 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2007
@@ -49,16 +49,6 @@
 # endif
 // #  define __DLLEXPORT
 #endif // __unix
-
-#ifdef __FIT_NOVELL_THREADS // Novell NetWare
-# if defined( _REENTRANT ) && !defined(_NOTHREADS)
-#  include <nwthread.h>
-#  include <nwsemaph.h>
-#  include <nwproc.h>
-# elif !defined(_NOTHREADS) // !_REENTRANT
-#  define _NOTHREADS
-# endif
-#endif
 
 #include <cerrno>
 
@@ -234,9 +224,6 @@ class __mutex_base
 #ifdef __FIT_WIN32THREADS
         InitializeCriticalSection( &_M_lock );
 #endif
-#ifdef __FIT_NOVELL_THREADS
-        _M_lock = OpenLocalSemaphore( 1 );
-#endif
       }
 
     ~__mutex_base()
@@ -249,9 +236,6 @@ class __mutex_base
 #endif
 #ifdef WIN32
         DeleteCriticalSection( &_M_lock );
-#endif
-#ifdef __FIT_NOVELL_THREADS
-        CloseLocalSemaphore( _M_lock );
 #endif
       }
 
@@ -268,12 +252,6 @@ class __mutex_base
 #endif
 #ifdef __FIT_WIN32THREADS
     CRITICAL_SECTION _M_lock;
-#endif
-#ifdef __FIT_NOVELL_THREADS
-    // This is for ...LocalSemaphore() calls
-    // Alternative is EnterCritSec ... ExitCritSec; but ...CritSec in Novell
-    // block all threads except current
-    LONG _M_lock;
 #endif
 
 #ifndef __FIT_WIN32THREADS
@@ -340,9 +318,6 @@ class __Mutex :
 #ifdef __FIT_WIN32THREADS
         EnterCriticalSection( &this->_M_lock );
 #endif
-#ifdef __FIT_NOVELL_THREADS
-        WaitOnLocalSemaphore( this->_M_lock );
-#endif
       }
 
 #if !defined( WIN32 ) || (defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0400)
@@ -356,9 +331,6 @@ class __Mutex :
 #endif
 #ifdef __FIT_WIN32THREADS
         return TryEnterCriticalSection( &this->_M_lock ) != 0 ? 0 : -1;
-#endif
-#ifdef __FIT_NOVELL_THREADS
-        return ExamineLocalSemaphore( this->_M_lock ) > 0 ? WaitOnLocalSemaphore( this->_M_lock ) : -1;
 #endif
 #ifdef _NOTHREADS
         return 0;
@@ -376,9 +348,6 @@ class __Mutex :
 #endif
 #ifdef __FIT_WIN32THREADS
         LeaveCriticalSection( &this->_M_lock );
-#endif
-#ifdef __FIT_NOVELL_THREADS
-        SignalLocalSemaphore( this->_M_lock );
 #endif
       }
 
@@ -453,9 +422,6 @@ class __Spinlock<true,SCOPE> : //  Recursive safe
 #  ifdef __FIT_UITHREADS
         thread_t _c_id = thr_self();
 #  endif
-#  ifdef __FIT_NOVELL_THREADS
-        int _c_id = GetThreadID();
-#  endif
         if ( _c_id == _id ) {
           ++_count;
           return;
@@ -478,9 +444,6 @@ class __Spinlock<true,SCOPE> : //  Recursive safe
 #  endif
 #  ifdef __FIT_UITHREADS
         thread_t _c_id = thr_self();
-#  endif
-#  ifdef __FIT_NOVELL_THREADS
-        int _c_id = GetThreadID();
 #  endif
         if ( _c_id == _id ) {
           ++_count;
@@ -522,9 +485,6 @@ class __Spinlock<true,SCOPE> : //  Recursive safe
 # ifdef __FIT_UITHREADS
     thread_t  _id;
 # endif
-# ifdef __FIT_NOVELL_THREADS
-    int _id;
-# endif
 };
 #endif // __FIT_PTHREAD_SPINLOCK
 
@@ -536,7 +496,7 @@ class __Spinlock<true,SCOPE> : //  Recursive safe
 // (or XSI---X/Open System Interfaces Extention) has recursive mutex option.
 // Another specialization?
 
-#if (defined(__unix) && !defined(__FIT_XSI_THR)) || defined(__FIT_NOVELL_THREADS)
+#if (defined(__unix) && !defined(__FIT_XSI_THR))
 
 // This specialization need for old POSIX and DCE threads,
 // before XSI (X/Open System Interfaces Extention) or Unix 98.
@@ -557,9 +517,6 @@ class __Mutex<true,SCOPE> : // Recursive Safe
 # ifdef _PTHREADS
         _id( __STATIC_CAST(pthread_t,-1) )
 # endif
-# ifdef __FIT_NOVELL_THREADS
-        _id( -1 )
-# endif
       { }
 
     ~__Mutex()
@@ -574,9 +531,6 @@ class __Mutex<true,SCOPE> : // Recursive Safe
 #  ifdef __FIT_UITHREADS
         thread_t _c_id = thr_self();
 #  endif
-#  ifdef __FIT_NOVELL_THREADS
-        int _c_id = GetThreadID();
-#  endif
         if ( _c_id == _id ) {
           ++_count;
           return;
@@ -586,9 +540,6 @@ class __Mutex<true,SCOPE> : // Recursive Safe
 #  endif
 #  ifdef __FIT_UITHREADS
         mutex_lock( &_M_lock );
-#  endif
-#  ifdef __FIT_NOVELL_THREADS
-        WaitOnLocalSemaphore( this->_M_lock );
 #  endif
         _id = _c_id;
         _count = 0;
@@ -613,9 +564,6 @@ class __Mutex<true,SCOPE> : // Recursive Safe
 #  ifdef __FIT_UITHREADS
         thread_t _c_id = thr_self();
 #  endif
-#  ifdef __FIT_NOVELL_THREADS
-        int _c_id = GetThreadID();
-#  endif
         if ( _c_id == _id ) {
           ++_count;
           return 0;
@@ -625,9 +573,6 @@ class __Mutex<true,SCOPE> : // Recursive Safe
 #  endif
 #  ifdef __FIT_UITHREADS
         int res = mutex_trylock( &_M_lock );
-#  endif
-#  ifdef __FIT_NOVELL_THREADS
-        int res = ExamineLocalSemaphore( this->_M_lock ) > 0 ? WaitOnLocalSemaphore( this->_M_lock ) : -1;
 #  endif
         if ( res != 0 ) {
           return res;
@@ -652,10 +597,6 @@ class __Mutex<true,SCOPE> : // Recursive Safe
           _id =  __STATIC_CAST(pthread_t,-1);
           pthread_mutex_unlock( &_M_lock );
 #  endif
-#  ifdef __FIT_NOVELL_THREADS
-          _id = -1;
-          SignalLocalSemaphore( this->_M_lock );
-#  endif
 # endif // !_NOTHREADS
         }
       }
@@ -674,9 +615,6 @@ class __Mutex<true,SCOPE> : // Recursive Safe
 # endif
 # ifdef __FIT_UITHREADS
     thread_t  _id;
-# endif
-# ifdef __FIT_NOVELL_THREADS
-    int _id;
 # endif
 };
 #endif // __unix && !__FIT_XSI_THR
@@ -719,10 +657,6 @@ class __mutex_rw_base
 #error Fix me!
         InitializeCriticalSection( &_M_lock );
 #endif
-#ifdef __FIT_NOVELL_THREADS
-#error Fix me!
-        _M_lock = OpenLocalSemaphore( 1 );
-#endif
       }
 
     ~__mutex_rw_base()
@@ -737,10 +671,6 @@ class __mutex_rw_base
 #ifdef WIN32
 #error Fix me!
         DeleteCriticalSection( &_M_lock );
-#endif
-#ifdef __FIT_NOVELL_THREADS
-#error Fix me!
-        CloseLocalSemaphore( _M_lock );
 #endif
       }
 
@@ -759,13 +689,6 @@ class __mutex_rw_base
 #ifdef __FIT_WIN32THREADS
 #error Fix me!
     CRITICAL_SECTION _M_lock;
-#endif
-#ifdef __FIT_NOVELL_THREADS
-    // This is for ...LocalSemaphore() calls
-    // Alternative is EnterCritSec ... ExitCritSec; but ...CritSec in Novell
-    // block all threads except current
-#error Fix me!
-    LONG _M_lock;
 #endif
 };
 
@@ -793,10 +716,6 @@ class __MutexRW :
 #error Fix me!
         EnterCriticalSection( &this->_M_lock );
 #endif
-#ifdef __FIT_NOVELL_THREADS
-#error Fix me!
-        WaitOnLocalSemaphore( this->_M_lock );
-#endif
       }
 
     void wrlock()
@@ -811,10 +730,6 @@ class __MutexRW :
 #ifdef __FIT_WIN32THREADS
 #error Fix me!
         EnterCriticalSection( &this->_M_lock );
-#endif
-#ifdef __FIT_NOVELL_THREADS
-#error Fix me!
-        WaitOnLocalSemaphore( this->_M_lock );
 #endif
       }
 
@@ -831,10 +746,6 @@ class __MutexRW :
 #ifdef __FIT_WIN32THREADS
 #error Fix me!
         return TryEnterCriticalSection( &this->_M_lock ) != 0 ? 0 : -1;
-#endif
-#ifdef __FIT_NOVELL_THREADS
-#error Fix me!
-        return ExamineLocalSemaphore( this->_M_lock ) > 0 ? WaitOnLocalSemaphore( this->_M_lock ) : -1;
 #endif
 #ifdef _NOTHREADS
 #error Fix me!
@@ -854,10 +765,6 @@ class __MutexRW :
 #ifdef __FIT_WIN32THREADS
 #error Fix me!
         return TryEnterCriticalSection( &this->_M_lock ) != 0 ? 0 : -1;
-#endif
-#ifdef __FIT_NOVELL_THREADS
-#error Fix me!
-        return ExamineLocalSemaphore( this->_M_lock ) > 0 ? WaitOnLocalSemaphore( this->_M_lock ) : -1;
 #endif
 #ifdef _NOTHREADS
 #error Fix me!
@@ -879,10 +786,6 @@ class __MutexRW :
 #ifdef __FIT_WIN32THREADS
 #error Fix me!
         LeaveCriticalSection( &this->_M_lock );
-#endif
-#ifdef __FIT_NOVELL_THREADS
-#error Fix me!
-        SignalLocalSemaphore( this->_M_lock );
 #endif
       }
 
@@ -978,9 +881,6 @@ class LockerExt
 #ifdef __FIT_WIN32THREADS
     explicit LockerExt( const CRITICAL_SECTION& m ) :
 #endif
-#ifdef __FIT_NOVELL_THREADS
-    explicit LockerExt( const LONG& m ) :
-#endif
         _M_lock( m )
       {
 #ifdef _PTHREADS
@@ -991,9 +891,6 @@ class LockerExt
 #endif
 #ifdef __FIT_WIN32THREADS
         EnterCriticalSection( const_cast<CRITICAL_SECTION *>(&_M_lock) );
-#endif
-#ifdef __FIT_NOVELL_THREADS
-        WaitOnLocalSemaphore( const_cast<LONG&>(_M_lock) );
 #endif
       }
 
@@ -1007,9 +904,6 @@ class LockerExt
 #endif
 #ifdef __FIT_WIN32THREADS
         LeaveCriticalSection( const_cast<CRITICAL_SECTION *>(&_M_lock) );
-#endif
-#ifdef __FIT_NOVELL_THREADS
-        SignalLocalSemaphore( const_cast<LONG&>(_M_lock) );
 #endif
       }
 
@@ -1026,13 +920,6 @@ class LockerExt
 #ifdef __FIT_WIN32THREADS
     const CRITICAL_SECTION& _M_lock;
 #endif
-#ifdef __FIT_NOVELL_THREADS
-    // This is for ...LocalSemaphore() calls
-    // Alternative is EnterCritSec ... ExitCritSec; but ...CritSec in Novell
-    // block all threads except current
-    const LONG& _M_lock;
-#endif
-    
 };
 
 template <bool SCOPE>
@@ -1059,9 +946,6 @@ class __Condition
 #ifdef __FIT_UITHREADS
         cond_init( &_cond, 0, 0 );
 #endif
-#ifdef __FIT_NOVELL_THREADS
-        _cond = OpenLocalSemaphore( 0 );
-#endif
       }
 
     ~__Condition()
@@ -1074,9 +958,6 @@ class __Condition
 #endif
 #ifdef __FIT_UITHREADS
         cond_destroy( &_cond );
-#endif
-#ifdef __FIT_NOVELL_THREADS
-        CloseLocalSemaphore( _cond );
 #endif
       }
 
@@ -1111,16 +992,6 @@ class __Condition
           }
         }
 #endif
-#ifdef __FIT_NOVELL_THREADS
-        if ( __v == true && tmp == false ) {
-          if ( _broadcast ) {
-            // Unimplemented
-            // pthread_cond_broadcast( &_cond );
-          } else {
-            SignalLocalSemaphore( _cond );
-          }
-        }
-#endif
         return tmp;
       }
 
@@ -1129,7 +1000,7 @@ class __Condition
 
     int try_wait()
       {
-#if defined(__FIT_WIN32THREADS) || defined(__FIT_NOVELL_THREADS)
+#if defined(__FIT_WIN32THREADS)
         _lock.lock();
 #endif
 #if defined(__FIT_UITHREADS) || defined(_PTHREADS)
@@ -1142,10 +1013,6 @@ class __Condition
             return -1;
           }
           return 0;
-#endif
-#ifdef __FIT_NOVELL_THREADS
-          _lock.unlock();
-          return WaitOnLocalSemaphore( _cond );
 #endif
 #if defined(__FIT_UITHREADS) || defined(_PTHREADS)
           int ret = 0;
@@ -1161,7 +1028,7 @@ class __Condition
           return ret;
 #endif
         }
-#if defined(__FIT_WIN32THREADS) || defined(__FIT_NOVELL_THREADS)
+#if defined(__FIT_WIN32THREADS)
         _lock.unlock();
 #endif
         return 0;
@@ -1194,12 +1061,6 @@ class __Condition
         }
 
         return ret;
-#endif
-#ifdef __FIT_NOVELL_THREADS
-        _lock.lock();
-        _val = false;
-        _lock.unlock();
-        return WaitOnLocalSemaphore( _cond );
 #endif
 #ifdef _NOTHREADS
         return 0;
@@ -1236,9 +1097,6 @@ class __Condition
 #ifdef __FIT_UITHREADS
         return _broadcast ? cond_broadcast( &_cond ) : cond_signal( &_cond );
 #endif
-#ifdef __FIT_NOVELL_THREADS
-        return SignalLocalSemaphore( _cond );
-#endif
 #ifdef _NOTHREADS
         return 0;
 #endif
@@ -1253,9 +1111,6 @@ class __Condition
 #endif
 #ifdef __FIT_UITHREADS
     cond_t _cond;
-#endif
-#ifdef __FIT_NOVELL_THREADS
-    LONG _cond;
 #endif
     __Mutex<false,SCOPE> _lock;
     bool _val;
@@ -1283,9 +1138,6 @@ class __Semaphore
 #ifdef _PTHREADS
         sem_init( &_sem, SCOPE ? 1 : 0, cnt );
 #endif
-#ifdef __FIT_NOVELL_THREADS
-        _sem = OpenLocalSemaphore( cnt );
-#endif
       }
 
     ~__Semaphore()
@@ -1299,9 +1151,6 @@ class __Semaphore
 #ifdef _PTHREADS
         sem_destroy( &_sem );
 #endif        
-#ifdef __FIT_NOVELL_THREADS
-        CloseLocalSemaphore( _sem );
-#endif
       }
 
     int wait()
@@ -1319,9 +1168,6 @@ class __Semaphore
 #endif
 #ifdef _PTHREADS
         return sem_wait( &_sem );
-#endif
-#ifdef __FIT_NOVELL_THREADS
-        return WaitOnLocalSemaphore( _sem );
 #endif
       }
 
@@ -1343,9 +1189,6 @@ class __Semaphore
 #ifdef _PTHREADS
         return sem_trywait( &_sem );
 #endif        
-#ifdef __FIT_NOVELL_THREADS
-        return ExamineLocalSemaphore( _sem ) > 0 ? WaitOnLocalSemaphore( _sem ) : -1;
-#endif
       }
 
     int post()
@@ -1359,9 +1202,6 @@ class __Semaphore
 #ifdef _PTHREADS
         return sem_post( &_sem );
 #endif        
-#ifdef __FIT_NOVELL_THREADS
-        return SignalLocalSemaphore( _sem );
-#endif
       }
 
     int value()
@@ -1378,9 +1218,6 @@ class __Semaphore
         
         return e == 0 ? v : -1;
 #endif        
-#ifdef __FIT_NOVELL_THREADS
-        return ExamineLocalSemaphore( _sem );
-#endif        
       }
 
   protected:
@@ -1393,9 +1230,6 @@ class __Semaphore
 #endif
 #ifdef _PTHREADS
     sem_t _sem;
-#endif
-#ifdef __FIT_NOVELL_THREADS
-    LONG _sem;
 #endif
   private:
     __Semaphore( const __Semaphore& )
@@ -1428,13 +1262,6 @@ int __Semaphore<SCOPE>::wait_time( const ::timespec *abstime ) // wait for time 
   return -1; // not implemented
 # endif
 #endif
-#ifdef __FIT_NOVELL_THREADS
-  time_t ct = time( 0 );
-  time_t _conv = abstime->tv_sec * 1000 + abstime->tv_nsec / 1000000;
-
-  unsigned ms = _conv >= ct ? _conv - ct : 1;
-  return TimedWaitOnLocalSemaphore( _sem, ms );
-#endif
 }
 
 template <bool SCOPE>
@@ -1460,10 +1287,6 @@ int __Semaphore<SCOPE>::wait_delay( const ::timespec *interval ) // wait, timeou
 # else
   return -1; // not implemented
 # endif
-#endif
-#ifdef __FIT_NOVELL_THREADS
-  unsigned ms = interval->tv_sec * 1000 + interval->tv_nsec / 1000000;
-  return TimedWaitOnLocalSemaphore( _sem, ms );
 #endif
 }
 
@@ -1534,10 +1357,6 @@ class Thread
     typedef thread_key_t thread_key_type;
     typedef thread_t     thread_id_type;
 #endif
-#ifdef __FIT_NOVELL_THREADS
-    typedef void * thread_key_type;
-    typedef int    thread_id_type;
-#endif
 
     enum {
       // thread mode flags
@@ -1560,13 +1379,6 @@ class Thread
       detached  = 0x2,
       new_lwp   = 0,
       suspended = CREATE_SUSPENDED,
-      daemon    = detached,
-#endif
-#ifdef __FIT_NOVELL_THREADS
-      bound     = 0,
-      detached  = 0x2,
-      new_lwp   = 0,
-      suspended = 0,
       daemon    = detached,
 #endif
       // state flags
@@ -1675,9 +1487,6 @@ class Thread
 #ifdef __FIT_WIN32THREADS
     unsigned long _thr_id;
 #endif
-#ifdef __FIT_NOVELL_THREADS
-    __Condition<false> _thr_join;
-#endif
     entrance_type _entrance;
     void *_param;
     size_t _param_sz;
@@ -1692,15 +1501,12 @@ class Thread
 #ifdef __FIT_WIN32THREADS
     friend unsigned long __stdcall _xcall( void *p );
 #endif
-#ifdef __FIT_NOVELL_THREADS
-    friend void _xcall( void * );
-#endif
 };
 
 template <bool SCOPE>
 int __Condition<SCOPE>::try_wait_time( const ::timespec *abstime )
 {
-#if defined(__FIT_WIN32THREADS) || defined(__FIT_NOVELL_THREADS)
+#if defined(__FIT_WIN32THREADS)
   MT_LOCK( _lock );
 #endif
 #if defined(__FIT_UITHREADS) || defined(_PTHREADS)
@@ -1743,17 +1549,11 @@ int __Condition<SCOPE>::try_wait_time( const ::timespec *abstime )
 
     return ret;
 #endif // _PTHREADS || __FIT_UITHREADS
-#ifdef __FIT_NOVELL_THREADS
-    time_t ct = time( 0 );
-    unsigned ms = abstime->tv_sec >= ct ? (abstime->tv_sec - ct) * 1000 + abstime->tv_nsec / 1000000 : 1;
-    MT_UNLOCK( _lock );
-    return TimedWaitOnLocalSemaphore( _cond, ms );
-#endif
 #ifdef _NOTHREADS
     return 0;
 #endif
   }
-#if defined(__FIT_WIN32THREADS) || defined(__FIT_NOVELL_THREADS)
+#if defined(__FIT_WIN32THREADS)
   MT_UNLOCK( _lock );
 #endif
   return 0;
@@ -1762,7 +1562,7 @@ int __Condition<SCOPE>::try_wait_time( const ::timespec *abstime )
 template <bool SCOPE>
 int __Condition<SCOPE>::try_wait_delay( const ::timespec *interval )
 {
-#if defined(__FIT_WIN32THREADS) || defined(__FIT_NOVELL_THREADS)
+#if defined(__FIT_WIN32THREADS)
   MT_LOCK( _lock );
 #endif
 #if defined(__FIT_UITHREADS) || defined(_PTHREADS)
@@ -1809,17 +1609,13 @@ int __Condition<SCOPE>::try_wait_delay( const ::timespec *interval )
 
     return ret;
 #endif // _PTHREADS || __FIT_UITHREADS
-#ifdef __FIT_NOVELL_THREADS
-    MT_UNLOCK( _lock );
-    return TimedWaitOnLocalSemaphore( _cond, interval->tv_sec * 1000 + interval->tv_nsec / 1000000 );
-#endif
 
 #ifdef _NOTHREADS
     return 0;
 #endif
   }
 
-#if defined(__FIT_WIN32THREADS) || defined(__FIT_NOVELL_THREADS)
+#if defined(__FIT_WIN32THREADS)
   MT_UNLOCK( _lock );
 #endif
   return 0;
@@ -1870,14 +1666,6 @@ int __Condition<SCOPE>::wait_time( const ::timespec *abstime )
 
   return ret;
 #endif
-#ifdef __FIT_NOVELL_THREADS
-  MT_LOCK( _lock );
-  _val = false;
-  time_t ct = time( 0 );
-  unsigned ms = abstime->tv_sec >= ct ? (abstime->tv_sec - ct) * 1000 + abstime->tv_nsec / 1000000 : 1;
-  MT_UNLOCK( _lock );
-  return TimedWaitOnLocalSemaphore( _cond, ms );
-#endif
 #ifdef _NOTHREADS
   return 0;
 #endif
@@ -1908,13 +1696,6 @@ int __Condition<SCOPE>::wait_delay( const ::timespec *interval )
   ct += *interval;
 
   return this->wait_time( &ct );
-#endif
-#ifdef __FIT_NOVELL_THREADS
-  MT_LOCK( _lock );
-  _val = false;
-  unsigned ms = interval->tv_sec * 1000 + interval->tv_nsec / 1000000;
-  MT_UNLOCK( _lock );
-  return TimedWaitOnLocalSemaphore( _cond, ms );
 #endif
 #ifdef _NOTHREADS
   return 0;
