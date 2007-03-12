@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/19 14:36:01 ptr>
+// -*- C++ -*- Time-stamp: <07/03/12 20:39:47 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -803,12 +803,16 @@ void mt_test::shm_named_obj_more()
     try {
       xmt::fork();
 
-      xmt::shm_name_mgr<1>& nm_ch = seg1.name_mgr();
-      xmt::allocator_shm<xmt::__Condition<true>,1> shm_ch;
-      xmt::__Condition<true>& fcnd_ch = nm_ch.named<xmt::__Condition<true> >( ObjName );
-      fcnd_ch.set( true );
-      nm_ch.release<xmt::__Condition<true> >( ObjName );
-    
+      try {
+        xmt::shm_name_mgr<1>& nm_ch = seg1.name_mgr();
+        xmt::allocator_shm<xmt::__Condition<true>,1> shm_ch;
+        xmt::__Condition<true>& fcnd_ch = nm_ch.named<xmt::__Condition<true> >( ObjName );
+        fcnd_ch.set( true );
+        nm_ch.release<xmt::__Condition<true> >( ObjName );
+      }
+      catch ( const std::invalid_argument& err ) {
+        BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+      }
       exit( 0 );
     }
     catch ( xmt::fork_in_parent& child ) {
@@ -825,12 +829,17 @@ void mt_test::shm_named_obj_more()
     try {
       xmt::fork();
 
-      xmt::shm_name_mgr<1>& nm_ch = seg1.name_mgr();
-      xmt::allocator_shm<xmt::__Condition<true>,1> shm_ch;
-      xmt::__Condition<true>& fcnd_ch = nm_ch.named<xmt::__Condition<true> >( ObjName );
-      fcnd_ch.set( true );
-      nm_ch.release<xmt::__Condition<true> >( ObjName );
-    
+      try {
+        xmt::shm_name_mgr<1>& nm_ch = seg1.name_mgr();
+        xmt::allocator_shm<xmt::__Condition<true>,1> shm_ch;
+        xmt::__Condition<true>& fcnd_ch = nm_ch.named<xmt::__Condition<true> >( ObjName );
+        fcnd_ch.set( true );
+        nm_ch.release<xmt::__Condition<true> >( ObjName );
+      }
+      catch ( const std::invalid_argument& err ) {
+        BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+      }
+      
       exit( 0 );
     }
     catch ( xmt::fork_in_parent& child ) {
@@ -848,11 +857,16 @@ void mt_test::shm_named_obj_more()
     try {
       xmt::fork();
 
-      xmt::shm_name_mgr<1>& nm_ch = seg1.name_mgr();
-      xmt::allocator_shm<xmt::__Barrier<true>,1> shm_ch;
-      xmt::__Barrier<true>& b_ch = nm_ch.named<xmt::__Barrier<true> >( ObjName );
-      b_ch.wait();
-      nm_ch.release<xmt::__Barrier<true> >( ObjName );
+      try {
+        xmt::shm_name_mgr<1>& nm_ch = seg1.name_mgr();
+        xmt::allocator_shm<xmt::__Barrier<true>,1> shm_ch;
+        xmt::__Barrier<true>& b_ch = nm_ch.named<xmt::__Barrier<true> >( ObjName );
+        b_ch.wait();
+        nm_ch.release<xmt::__Barrier<true> >( ObjName );
+      }
+      catch ( const std::invalid_argument& err ) {
+        BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+      }
     
       exit( 0 );      
     }
@@ -864,6 +878,9 @@ void mt_test::shm_named_obj_more()
     nm.release<xmt::__Barrier<true> >( ObjName ); // barrier should be destroyed here
   }
   catch ( xmt::shm_bad_alloc& err ) {
+    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+  }
+  catch ( const std::invalid_argument& err ) {
     BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
   }
 }
