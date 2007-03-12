@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/08 17:27:44 ptr>
+// -*- C++ -*- Time-stamp: <07/03/12 19:36:45 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -261,7 +261,7 @@ void EventHandler::TraceStack( ostream& out ) const
 __FIT_DECLSPEC
 gaddr_type EventHandler::self_glid() const
 {
-  return gaddr_type(xmt::hostid(), getpid(), _id );
+  return gaddr_type(xmt::hostid(), xmt::getpid(), _id );
 }
 
 } // namespace stem
