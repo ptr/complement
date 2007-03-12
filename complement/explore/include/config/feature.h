@@ -1,22 +1,13 @@
-/* Time-stamp: <05/12/12 10:47:17 ptr> */
+/* Time-stamp: <07/03/12 20:17:03 ptr> */
 
 /*
- * Copyright (c) 1999, 2002, 2003, 2004, 2005
+ * Copyright (c) 1999, 2002-2007
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 2.1
- *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
+ * Licensed under the Academic Free License Version 3.0
  *
  */
 
@@ -74,13 +65,6 @@
 
 #ifdef WIN32
 #include <config/_windows.h>
-#endif
-
-#ifdef N_PLAT_NLM
-#  include <config/_netware.h>
-#  ifdef __MWERKS__
-#    include <config/_mwccnlm.h>
-#  endif 
 #endif
 
 #ifdef __FIT_USE_DECLSPEC /* using export/import technique */
