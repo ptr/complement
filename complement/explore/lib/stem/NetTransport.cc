@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/13 13:38:28 ptr>
+// -*- C++ -*- Time-stamp: <07/03/12 17:25:23 ptr>
 
 /*
  *
@@ -363,7 +363,7 @@ xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
 #ifdef __FIT_STEM_TRACE
       try {
         xmt::Locker lk(manager()->_lock_tr);
-        if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->trflags() & EvManager::tracenet) ) {
+        if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracenet) ) {
           *manager()->_trs << "Pid/ppid: " << xmt::getpid() << "/" << xmt::getppid() << "\n";
           manager()->dump( *manager()->_trs ) << endl;
         }
@@ -376,7 +376,7 @@ xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
 #ifdef __FIT_STEM_TRACE
         try {
           xmt::Locker lk(manager()->_lock_tr);
-          if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->trflags() & (EvManager::tracefault)) ) {
+          if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracefault)) ) {
             *manager()->_trs << __FILE__ << ":" << __LINE__
                              << " ("
                              << xmt::getpid() << "/" << xmt::getppid() << ") "
@@ -399,7 +399,7 @@ xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
 #ifdef __FIT_STEM_TRACE
       try {
         xmt::Locker lk(manager()->_lock_tr);
-        if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->trflags() & (EvManager::tracenet)) ) {
+        if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
           *manager()->_trs << __FILE__ << ":" << __LINE__ << endl;
         }
       }

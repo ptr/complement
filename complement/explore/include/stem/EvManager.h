@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/08 16:38:05 ptr>
+// -*- C++ -*- Time-stamp: <07/03/12 17:18:41 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -163,12 +163,12 @@ class EvManager
     __FIT_DECLSPEC void Remove( void * );
     __FIT_DECLSPEC std::ostream& dump( std::ostream& ) const;
 
-    static void settrf( unsigned f );
-    static void unsettrf( unsigned f );
-    static void resettrf( unsigned f );
-    static void cleantrf();
-    static unsigned trflags();
-    static void settrs( std::ostream * );
+    void settrf( unsigned f );
+    void unsettrf( unsigned f );
+    void resettrf( unsigned f );
+    void cleantrf();
+    unsigned trflags() const;
+    void settrs( std::ostream * );
 
   protected:
     bool unsafe_is_avail( addr_type id ) const
@@ -256,9 +256,9 @@ class EvManager
     xmt::Condition _cnd_queue;
 
     static std::string inv_key_str;
-    static xmt::Mutex _lock_tr;
-    static unsigned _trflags;
-    static std::ostream *_trs;
+    xmt::Mutex _lock_tr;
+    unsigned _trflags;
+    std::ostream *_trs;
 
     friend class Names;
     friend class NetTransportMgr;

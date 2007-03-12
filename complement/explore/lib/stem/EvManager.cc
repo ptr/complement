@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/08 16:38:41 ptr>
+// -*- C++ -*- Time-stamp: <07/03/12 18:53:45 ptr>
 
 /*
  *
@@ -41,9 +41,6 @@ const addr_type begextaddr = extbit;
 const addr_type endextaddr = 0xbfffffff;
 
 std::string EvManager::inv_key_str( "invalid key" );
-xmt::Mutex EvManager::_lock_tr;
-unsigned EvManager::_trflags = 0;
-std::ostream *EvManager::_trs = 0;
 
 std::ostream& operator <<( std::ostream& s, const gaddr_type& ga );
 
@@ -54,7 +51,9 @@ __FIT_DECLSPEC EvManager::EvManager() :
     _x_low( begextaddr ),
     _x_high( endextaddr ),
     _x_id( _x_low ),
-    _dispatch_stop( false )
+    _dispatch_stop( false ),
+    _trflags( 0 ),
+    _trs( 0 )
 {
 // #ifndef __hpux
   _cnd_queue.set( false );
@@ -82,22 +81,25 @@ xmt::Thread::ret_code EvManager::_Dispatch( void *p )
   EvManager& me = *reinterpret_cast<EvManager *>(p);
   xmt::Thread::ret_code rt;
   rt.iword = 0;
+  xmt::Mutex& lq = me._lock_queue;
+  queue_type& in_ev_queue = me.in_ev_queue;
+  queue_type& out_ev_queue = me.out_ev_queue;
 
   while ( me.not_finished() ) {
-    MT_LOCK( me._lock_queue );
-    me.in_ev_queue.swap( me.out_ev_queue );
-    MT_UNLOCK( me._lock_queue );
-    while ( !me.out_ev_queue.empty() ) {
-      me.Send( me.out_ev_queue.front() );
-      me.out_ev_queue.pop_front();
+    lq.lock();
+    in_ev_queue.swap( out_ev_queue );
+    lq.unlock();
+    while ( !out_ev_queue.empty() ) {
+      me.Send( out_ev_queue.front() );
+      out_ev_queue.pop_front();
     }
-    MT_LOCK( me._lock_queue );
-    if ( me.in_ev_queue.empty() && me.not_finished() ) {
+    lq.lock();
+    if ( in_ev_queue.empty() && me.not_finished() ) {
       me._cnd_queue.set( false );
-      MT_UNLOCK( me._lock_queue );
+      lq.unlock();
       me._cnd_queue.try_wait();
     } else {
-      MT_UNLOCK( me._lock_queue );
+      lq.unlock();
     }
   }
 
@@ -344,22 +346,41 @@ void EvManager::Remove( void *channel )
 }
 
 void EvManager::settrf( unsigned f )
-{ _trflags |= f; }
+{
+  Locker _x1( _lock_tr );
+  _trflags |= f;
+}
 
 void EvManager::unsettrf( unsigned f )
-{ _trflags &= (0xffffffff & ~f); }
+{
+  Locker _x1( _lock_tr );
+  _trflags &= (0xffffffff & ~f);
+}
 
 void EvManager::resettrf( unsigned f )
-{ _trflags = f; }
+{
+  Locker _x1( _lock_tr );
+  _trflags = f;
+}
 
 void EvManager::cleantrf()
-{ _trflags = 0; }
+{
+  Locker _x1( _lock_tr );
+  _trflags = 0;
+}
 
-unsigned EvManager::trflags()
-{ return _trflags; }
+unsigned EvManager::trflags() const
+{
+  Locker _x1( _lock_tr );
+
+  return _trflags;
+}
 
 void EvManager::settrs( std::ostream *s )
-{ _trs = s; }
+{
+  Locker _x1( _lock_tr );
+  _trs = s;
+}
 
 // Remove references to remote objects, that was announced via 'channel'
 // (related, may be, with socket connection)
@@ -658,6 +679,8 @@ std::ostream& operator <<( ostream& s, const gaddr_type& ga )
     << "-"
     << setw(8) << hex << setfill( '0' ) << ga.addr;
   s.flags( f );
+
+  return s;
 }
 
 __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
@@ -666,29 +689,40 @@ __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
   s << "Local map:\n";
 
   s << hex << showbase;
-  for ( local_heap_type::const_iterator i = heap.begin(); i != heap.end(); ++i ) {
-    s << i->first << "\t=> " << i->second << "\n";
+  {
+    Locker lk( _lock_heap );
+
+    for ( local_heap_type::const_iterator i = heap.begin(); i != heap.end(); ++i ) {
+      s << i->first << "\t=> " << i->second << "\n";
+    }
   }
 
   s << "\nInfo map:\n";
+  {
+    Locker lk( _lock_iheap );
 
-  for ( info_heap_type::const_iterator i = iheap.begin(); i != iheap.end(); ++i ) {
-    s << i->first << "\t=> '" << i->second << "'\n";
+    for ( info_heap_type::const_iterator i = iheap.begin(); i != iheap.end(); ++i ) {
+      s << i->first << "\t=> '" << i->second << "'\n";
+    }
   }
 
-  s << "\nExternal address map:\n";
-  for ( ext_uuid_heap_type::const_iterator i = _ex_heap.begin(); i != _ex_heap.end(); ++i ) {
-    s << hex << showbase << i->first << "\t=> " << i->second << "\n";
-  }
+  {
+    Locker lk( _lock_xheap );
 
-  s << "\nUnique Id to transport map:\n";
-  for ( uuid_tr_heap_type::const_iterator i = _tr_heap.begin(); i != _tr_heap.end(); ++i ) {
-    s << i->first << "\t=> " << hex << i->second.first << " " << i->second.second.link << " " << dec << i->second.second.metric << "\n";
-  }
+    s << "\nExternal address map:\n";
+    for ( ext_uuid_heap_type::const_iterator i = _ex_heap.begin(); i != _ex_heap.end(); ++i ) {
+      s << hex << showbase << i->first << "\t=> " << i->second << "\n";
+    }
 
-  s << "\nTransport to Unique Id map:\n";
-  for ( tr_uuid_heap_type::const_iterator i = _ch_heap.begin(); i != _ch_heap.end(); ++i ) {
-    s << i->first << "\t=> " << i->second << "\n";
+    s << "\nUnique Id to transport map:\n";
+    for ( uuid_tr_heap_type::const_iterator i = _tr_heap.begin(); i != _tr_heap.end(); ++i ) {
+      s << i->first << "\t=> " << hex << i->second.first << " " << i->second.second.link << " " << dec << i->second.second.metric << "\n";
+    }
+
+    s << "\nTransport to Unique Id map:\n";
+    for ( tr_uuid_heap_type::const_iterator i = _ch_heap.begin(); i != _ch_heap.end(); ++i ) {
+      s << i->first << "\t=> " << i->second << "\n";
+    }
   }
 
   s << endl;
