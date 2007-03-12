@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/03/09 20:43:27 ptr>
+// -*- C++ -*- Time-stamp: <07/03/12 21:20:54 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -56,10 +56,9 @@ struct stem_test
 
     void echo();
     void echo_net();
+    void net_echo();
     void peer();
     void boring_manager();
-    void net_echo();
-    void net_echo2();
 
     static xmt::Thread::ret_code thr1( void * );
     static xmt::Thread::ret_code thr1new( void * );
@@ -361,7 +360,7 @@ void stem_test::echo_net()
       fcnd.set( true );
 
       int stat;
-      waitpid( child.pid(), &stat, 0 );
+      BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
 
       srv.close();
       srv.wait();
@@ -374,6 +373,80 @@ void stem_test::echo_net()
   shm_cnd.deallocate( &fcnd, 1 );
 
   // cerr << "Fine\n";
+}
+
+// same as echo_net(), but server in child process
+
+void stem_test::net_echo()
+{
+  try {
+    xmt::__Barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__Barrier<true>();
+    xmt::__Condition<true>& c = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
+
+    c.set( false );
+
+    try {
+      xmt::fork();
+
+      // server part
+      {
+        std::sockmgr_stream_MP<stem::NetTransport> srv( 6995 );
+        StEMecho echo( 0, "echo service");
+
+        // echo.manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch );
+        // echo.manager()->settrs( &std::cerr );
+
+        BOOST_REQUIRE( srv.good() );
+        c.set( true ); // ok, server listen
+
+        b.wait(); // server may go away
+
+        srv.close();
+        srv.wait();
+      }
+
+      exit( 0 );
+    }
+    catch ( xmt::fork_in_parent& child ) {
+      // client part
+
+      stem::NetTransportMgr mgr;
+      // mgr.manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+      // mgr.manager()->settrs( &std::cerr );
+
+      c.try_wait(); // wait server start
+
+      stem::addr_type zero = mgr.open( "localhost", 6995 );
+
+      BOOST_REQUIRE( mgr.good() );
+      BOOST_REQUIRE( zero != stem::badaddr );
+
+      EchoClient node;
+      stem::Event ev( NODE_EV_ECHO );
+      ev.dest( zero );
+
+      ev.value() = node.mess;
+      node.Send( ev );
+
+      node.wait();
+
+      mgr.close();
+      mgr.join();
+
+      b.wait(); // server may go away
+
+      int stat;
+      BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+    }
+
+    (&c)->~__Condition<true>();
+    shm_cnd.deallocate( &c, 1 );
+    (&b)->~__Barrier<true>();
+    shm_b.deallocate( &b, 1 );
+  }
+  catch (  xmt::shm_bad_alloc& err ) {
+    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+  }
 }
 
 extern "C" {
@@ -640,238 +713,6 @@ void stem_test::boring_manager()
 
 // -----------------
 
-#define EV_STU_MESS 0x801
-#define EV_STU_ECHO 0x802
-
-class TestObj :
-    public stem::EventHandler
-{
-  public:
-    TestObj()
-      { }
-
-    void reset()
-      { cnd.set( false ); }
-
-    void wait()
-      { cnd.try_wait(); }
-
-    const std::string& msg() const
-      { return m; }
-
-    void mess( const stem::Event& );
-    void echo( const stem::Event& );
-
-  private:
-    xmt::Condition cnd;
-    std::string m;
-
-    DECLARE_RESPONSE_TABLE( TestObj, stem::EventHandler );
-};
-
-void TestObj::mess( const stem::Event& ev )
-{
-  // cerr << "hi!\n";
-  m = ev.value();
-  cnd.set( true );
-}
-
-void TestObj::echo( const stem::Event& ev )
-{
-  m = ev.value();
-  cnd.set( true );
-}
-
-DEFINE_RESPONSE_TABLE( TestObj )
-  EV_EDS( ST_NULL, EV_STU_MESS, mess )
-  EV_EDS( ST_NULL, EV_STU_ECHO, echo )
-END_RESPONSE_TABLE
-
-class EchoSrv :
-    public stem::EventHandler
-{
-  public:
-    EchoSrv();
-    EchoSrv( stem::addr_type id );
-    EchoSrv( stem::addr_type id, const char * );
-
-    void echo( const stem::Event& );
-
-  private:
-    DECLARE_RESPONSE_TABLE( EchoSrv, stem::EventHandler );
-};
-
-EchoSrv::EchoSrv()
-{
-}
-
-EchoSrv::EchoSrv( stem::addr_type id ) :
-    stem::EventHandler( id )
-{
-}
-
-EchoSrv::EchoSrv( stem::addr_type id, const char *info ) :
-    stem::EventHandler( id, info )
-{
-}
-
-// Unconditionally echo message
-
-void EchoSrv::echo( const stem::Event& ev )
-{
-  cerr << __FILE__ << ":" << __LINE__ << endl;
-  ev.dest( ev.src() );
-  Forward( ev );
-}
-
-DEFINE_RESPONSE_TABLE( EchoSrv )
-  EV_EDS( ST_NULL, EV_STU_ECHO, echo )
-END_RESPONSE_TABLE
-
-void stem_test::net_echo()
-{
-  try {
-    xmt::__Barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__Barrier<true>();
-    xmt::__Condition<true>& c = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
-
-    c.set( false );
-
-    try {
-      xmt::fork();
-
-      // server part
-      {
-        std::sockmgr_stream_MP<stem::NetTransport> srv( 6890 );
-        EchoSrv echosrv( 0, "Echo service");
-
-        BOOST_REQUIRE( srv.good() );
-        c.set( true ); // ok, server listen
-
-        b.wait(); // server may go away
-
-        srv.close();
-        srv.wait();
-      }
-
-      exit( 0 );
-    }
-    catch ( xmt::fork_in_parent& child ) {
-      // client part
-
-      stem::NetTransportMgr client;
-
-      c.try_wait(); // wait server start
-
-      stem::addr_type a = client.open( "localhost", 6890 );
-
-      BOOST_REQUIRE( client.good() );
-      BOOST_REQUIRE( a != stem::badaddr );
-
-      TestObj t1;
-
-      t1.reset();
-
-      stem::Event ev( EV_STU_ECHO );
-      ev.dest( a );
-
-      ev.value() = "echo";
-      t1.Send( ev );
-
-      t1.wait();
-
-      BOOST_CHECK( t1.msg() == "echo" );
-
-      client.close();
-      client.join();
-
-      b.wait(); // server may go away
-
-      int stat;
-      BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
-    }
-
-    (&c)->~__Condition<true>();
-    shm_cnd.deallocate( &c, 1 );
-    (&b)->~__Barrier<true>();
-    shm_b.deallocate( &b, 1 );
-  }
-  catch (  xmt::shm_bad_alloc& err ) {
-    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
-  }
-}
-
-void stem_test::net_echo2()
-{
-  try {
-    xmt::__Barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__Barrier<true>();
-    xmt::__Condition<true>& c = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
-
-    c.set( false );
-
-    try {
-      xmt::fork();
-
-      // server part
-      {
-        std::sockmgr_stream_MP<stem::NetTransport> srv( 6890 );
-        EchoSrv echosrv( 0, "Echo service");
-
-        BOOST_REQUIRE( srv.good() );
-        c.set( true ); // ok, server listen
-
-        b.wait(); // server may go away
-
-        srv.close();
-        srv.wait();
-      }
-
-      exit( 0 );
-    }
-    catch ( xmt::fork_in_parent& child ) {
-      // client part
-
-      stem::NetTransportMgr client;
-
-      c.try_wait(); // wait server start
-
-      stem::addr_type a = client.open( "localhost", 6890 );
-
-      BOOST_REQUIRE( client.good() );
-      BOOST_REQUIRE( a != stem::badaddr );
-
-      TestObj t1;
-
-      t1.reset();
-
-      stem::Event ev( EV_STU_ECHO );
-      ev.dest( a );
-
-      ev.value() = "echo";
-      t1.Send( ev );
-
-      t1.wait();
-
-      BOOST_CHECK( t1.msg() == "echo" );
-
-      client.close();
-      client.join();
-
-      b.wait(); // server may go away
-
-      int stat;
-      BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
-    }
-
-    (&c)->~__Condition<true>();
-    shm_cnd.deallocate( &c, 1 );
-    (&b)->~__Barrier<true>();
-    shm_b.deallocate( &b, 1 );
-  }
-  catch (  xmt::shm_bad_alloc& err ) {
-    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
-  }
-}
-
 // -----------------
 
 struct stem_test_suite :
@@ -895,10 +736,9 @@ stem_test_suite::stem_test_suite() :
   test_case *echo_tc = BOOST_CLASS_TEST_CASE( &stem_test::echo, instance );
   test_case *shm_init_tc = BOOST_CLASS_TEST_CASE( &stem_test::shm_init, instance );
   test_case *echo_net_tc = BOOST_CLASS_TEST_CASE( &stem_test::echo_net, instance );
+  test_case *net_echo_tc = BOOST_CLASS_TEST_CASE( &stem_test::net_echo, instance );
   test_case *peer_tc = BOOST_CLASS_TEST_CASE( &stem_test::peer, instance );
   test_case *boring_manager_tc = BOOST_CLASS_TEST_CASE( &stem_test::boring_manager, instance );
-  test_case *net_echo_tc = BOOST_CLASS_TEST_CASE( &stem_test::net_echo, instance );
-  // test_case *net_echo2_tc = BOOST_CLASS_TEST_CASE( &stem_test::net_echo2, instance );
   test_case *shm_finit_tc = BOOST_CLASS_TEST_CASE( &stem_test::shm_finit, instance );
 
   basic2_tc->depends_on( basic1_tc );
@@ -911,14 +751,12 @@ stem_test_suite::stem_test_suite() :
   echo_tc->depends_on( basic2_tc );
   echo_net_tc->depends_on( shm_init_tc );
   echo_net_tc->depends_on( echo_tc );
+  net_echo_tc->depends_on( shm_init_tc );
+  net_echo_tc->depends_on( echo_net_tc );
   peer_tc->depends_on( echo_tc );
   peer_tc->depends_on( shm_init_tc );
   boring_manager_tc->depends_on( peer_tc );
   boring_manager_tc->depends_on( shm_init_tc );
-  net_echo_tc->depends_on( shm_init_tc );
-  net_echo_tc->depends_on( echo_net_tc );
-  // net_echo2_tc->depends_on( shm_init_tc );
-  // net_echo2_tc->depends_on( net_echo_tc );
   shm_finit_tc->depends_on( shm_init_tc );
 
   add( basic1_tc );
@@ -931,10 +769,9 @@ stem_test_suite::stem_test_suite() :
   add( echo_tc );
   add( shm_init_tc );
   add( echo_net_tc );
+  add( net_echo_tc );
   add( peer_tc );
   add( boring_manager_tc );
-  add( net_echo_tc );
-  // add( net_echo2_tc );
   add( shm_finit_tc );
 }
 
