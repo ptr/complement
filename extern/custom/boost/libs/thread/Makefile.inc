@@ -3,8 +3,8 @@
 BOOST_SRC = $(BOOST_INCLUDE_DIR)/libs/thread/src
 LIBNAME = boost_thread
 MAJOR = 1
-MINOR = 33
-PATCH = 1
+MINOR = 34
+PATCH = 0
 
 SRC_CPP = $(BOOST_SRC)/condition.cpp \
 	  $(BOOST_SRC)/mutex.cpp \
