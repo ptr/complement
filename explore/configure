@@ -40,19 +40,17 @@ Available options:
                         with --disable-shared, static libraries will be used in any case)
   --clean               remove custom settings (file ${configmak})
                         and use default values
-  --with-cxx=<name>     use <name> as C++ compiler
-  --with-cc=<name>      use <name> as C compiler
+  --with-cxx=<name>     use <name> as C++ compiler (use --target= for cross-compilation)
+  --with-cc=<name>      use <name> as C compiler (use --target= for cross-compilation)
   --use-compiler-family=<name> use compiler family; one of:
-                        gcc      GNU compilers
+                        gcc      GNU compilers (default)
                         icc      Intel compilers
-                        aCC      HP\'s aCC compilers
-                        CC       SunPro\'s CC compilers
-
-                        default is 'gcc' family
-  --without-debug       don\'t build debug variant
-  --without-stldebug    don\'t build STLport\'s STLP_DEBUG mode
+                        aCC      HP's aCC compilers
+                        CC       SunPro's CC compilers
+  --without-debug       don't build debug variant
+  --without-stldebug    don't build STLport's STLP_DEBUG mode
   --enable-static       build static
-  --disable-shared      don\'t build shared 
+  --disable-shared      don't build shared 
 
 EOF
 }
