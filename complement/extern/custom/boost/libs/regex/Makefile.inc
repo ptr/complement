@@ -3,8 +3,8 @@
 BOOST_REGEX_SRC = $(BOOST_INCLUDE_DIR)/libs/regex/src
 LIBNAME = boost_regex
 MAJOR = 1
-MINOR = 33
-PATCH = 1
+MINOR = 34
+PATCH = 0
 SRC_CPP = $(BOOST_REGEX_SRC)/c_regex_traits.cpp \
 	  $(BOOST_REGEX_SRC)/regex_traits_defaults.cpp \
 	  $(BOOST_REGEX_SRC)/cpp_regex_traits.cpp \
