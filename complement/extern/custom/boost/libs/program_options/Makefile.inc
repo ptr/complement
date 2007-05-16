@@ -4,8 +4,8 @@ BOOST_SR_SRC = ${BOOST_INCLUDE_DIR}/libs/program_options/src
 
 LIBNAME = boost_program_options
 MAJOR = 1
-MINOR = 33
-PATCH = 1
+MINOR = 34
+PATCH = 0
 
 SRC_CPP = ${BOOST_SR_SRC}/cmdline.cpp \
           ${BOOST_SR_SRC}/config_file.cpp \
