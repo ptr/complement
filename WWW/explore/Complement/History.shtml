@@ -77,6 +77,16 @@ Solaris (SPARC and x86), Linux and HP-UX.
 Now project became really public under the name 'complement'
 on <a href="http://sourceforge.net">SourceForge</a>.
 </p>
+
+<h2 class="lheader">Complement</h2>
+
+<p>
+I'm discover that components of project has own value, and provide good vertical
+structure. Project was splitted into few sub-projects: multi-threading and related
+inter-process communication (xmt), network communication (sockios) and event-driven
+state machine (StEM). See <a href="index.shtml">Complement project homepage</a>.
+</p>
+
 </div>
 <!--#include file="foot.shtml" -->
 <!-- Created: Thu Nov 28 14:57:17 MSD 2002 -->
