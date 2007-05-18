@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/03/07 15:53:23 ptr>
+// -*- C++ -*- Time-stamp: <07/05/17 23:30:42 ptr>
 
 #include "vtime.h"
 
@@ -57,6 +57,45 @@ void vtime::net_unpack( std::istream& s )
     vt.push_back( v );
   }
 }
+
+vtime_type operator -( const vtime_type& l, const vtime_type& r )
+{
+  if ( r.empty() ) {
+    return l;
+  }
+
+  vtime_type vt;
+  vtime_type::const_iterator i = l.begin();
+  vtime_type::const_iterator j = r.begin();
+
+  while ( i != l.end() && j != r.end() ) {
+    while ( i->first < j->first && i != l.end() ) {
+      vt.push_back( make_pair( i->first, i->second ) );
+      ++i;
+    }
+  
+    while ( i->first == j->first && i != l.end() && j != r.end() ) {
+      if ( i->second < j->second ) {
+        throw range_error( "vtime different: right value grater then left" );
+      }
+      vt.push_back( make_pair( i->first, i->second - j->second ) );
+      ++i;
+      ++j;
+    }
+  }
+
+  if ( i == l.end() && j != r.end() ) {
+    throw range_error( "vtime different: right value grater then left" );
+  }
+
+  while ( i != l.end() ) {
+    vt.push_back( make_pair( i->first, i->second ) );
+    ++i;    
+  }
+
+  return vt;
+}
+
 
 void Proc::mess( const stem::Event_base<vtime>& ev )
 {
