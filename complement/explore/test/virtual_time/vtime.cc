@@ -2,6 +2,7 @@
 
 #include "vtime.h"
 
+#include <iostream>
 #include <stdint.h>
 
 namespace vt {
@@ -58,6 +59,72 @@ void vtime::net_unpack( std::istream& s )
   }
 }
 
+void gvtime::pack( std::ostream& s ) const
+{
+  __pack( s, static_cast<uint8_t>(gvt.size()) );
+  for ( gvtime_type::const_iterator i = gvt.begin(); i != gvt.end(); ++i ) {
+    __pack( s, i->first );
+    i->second.pack( s );
+  }
+}
+
+void gvtime::net_pack( std::ostream& s ) const
+{
+  __net_pack( s, static_cast<uint8_t>(gvt.size()) );
+  for ( gvtime_type::const_iterator i = gvt.begin(); i != gvt.end(); ++i ) {
+    __net_pack( s, i->first );
+    i->second.net_pack( s );
+  }
+}
+
+void gvtime::unpack( std::istream& s )
+{
+  gvt.clear();
+  uint8_t n;
+  __unpack( s, n );
+  while ( n-- > 0 ) {
+    gvt.push_back( vtime_group_type() );
+    __unpack( s, gvt.back().first );
+    gvt.back().second.unpack( s );
+  }
+}
+
+void gvtime::net_unpack( std::istream& s )
+{
+  gvt.clear();
+  uint8_t n;
+  __net_unpack( s, n );
+  while ( n-- > 0 ) {
+    gvt.push_back( vtime_group_type() );
+    __net_unpack( s, gvt.back().first );
+    gvt.back().second.net_unpack( s );
+  }
+}
+
+void VTmess::pack( std::ostream& s ) const
+{
+  gvt.pack( s );
+  __pack( s, mess );
+}
+
+void VTmess::net_pack( std::ostream& s ) const
+{
+  gvt.net_pack( s );
+  __net_pack( s, mess );
+}
+
+void VTmess::unpack( std::istream& s )
+{
+  gvt.unpack( s );
+  __unpack( s, mess );
+}
+
+void VTmess::net_unpack( std::istream& s )
+{
+  gvt.net_unpack( s );
+  __net_unpack( s, mess );
+}
+
 vtime_type operator -( const vtime_type& l, const vtime_type& r )
 {
   if ( r.empty() ) {
@@ -97,12 +164,13 @@ vtime_type operator -( const vtime_type& l, const vtime_type& r )
 }
 
 
-void Proc::mess( const stem::Event_base<vtime>& ev )
+void Proc::mess( const stem::Event_base<VTmess>& ev )
 {
+  cout << ev.value().mess << endl;
 }
 
 DEFINE_RESPONSE_TABLE( Proc )
-  EV_Event_base_T_( ST_NULL, MESS, mess, vtime )
+  EV_Event_base_T_( ST_NULL, MESS, mess, VTmess )
 END_RESPONSE_TABLE
 
 } // namespace vt

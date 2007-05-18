@@ -5,6 +5,8 @@
 
 #include <algorithm>
 #include <list>
+#include <vector>
+#include <iterator>
 
 #include <istream>
 #include <ostream>
@@ -16,6 +18,7 @@
 namespace vt {
 
 typedef unsigned vtime_unit_type;
+typedef uint32_t group_type;
 typedef std::pair<stem::addr_type, vtime_unit_type> vtime_proc_type;
 typedef std::list<vtime_proc_type> vtime_type;
 
@@ -106,10 +109,53 @@ struct vtime :
     { }
 
   vtime& operator =( const vtime& _vt )
-  { vt.clear(); }
+  { vt.clear(); std::copy( _vt.vt.begin(), _vt.vt.end(), std::back_insert_iterator<vtime_type>(vt) ); }
 
   vtime_type vt;
 };
+
+typedef std::pair<group_type, vtime> vtime_group_type;
+typedef std::list<vtime_group_type> gvtime_type;
+
+struct gvtime :
+    public stem::__pack_base
+{
+    void pack( std::ostream& s ) const;
+    void net_pack( std::ostream& s ) const;
+    void unpack( std::istream& s );
+    void net_unpack( std::istream& s );
+
+  gvtime()
+    { }
+  gvtime( const gvtime& _gvt ) :
+    gvt( _gvt.gvt.begin(), _gvt.gvt.end() )
+    { }
+
+  gvtime& operator =( const gvtime& _gvt )
+  { gvt.clear(); std::copy( _gvt.gvt.begin(), _gvt.gvt.end(), std::back_insert_iterator<gvtime_type>(gvt) ); }
+
+  gvtime_type gvt;
+};
+
+struct VTmess :
+    public stem::__pack_base
+{
+    void pack( std::ostream& s ) const;
+    void net_pack( std::ostream& s ) const;
+    void unpack( std::istream& s );
+    void net_unpack( std::istream& s );
+
+  VTmess()
+    { }
+  VTmess( const VTmess& _gvt ) :
+    gvt( _gvt.gvt ),
+    mess( _gvt.mess )
+    { }
+
+  gvtime gvt;
+  std::string mess;
+};
+
 
 class Proc :
   public stem::EventHandler
@@ -121,9 +167,18 @@ class Proc :
         stem::EventHandler( id )
       { }
 
-    void mess( const stem::Event_base<vtime>& );
+    void mess( const stem::Event_base<VTmess>& );
 
   private:
+
+    enum vtgroup {
+      first_group,
+      second_group,
+      n_groups
+    };
+
+    std::vector<vtime> vt[n_groups];
+
     DECLARE_RESPONSE_TABLE( Proc, stem::EventHandler );
 };
 
