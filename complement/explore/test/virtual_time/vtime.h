@@ -92,7 +92,12 @@ bool operator <=( const vtime_type& l, const vtime_type& r )
 #endif
 
 
+bool operator <=( const vtime_type& l, const vtime_type& r );
 vtime_type operator -( const vtime_type& l, const vtime_type& r );
+vtime_type operator +( const vtime_type& l, const vtime_type& r );
+
+template <>
+vtime_type max( const vtime_type& l, const vtime_type& r );
 
 struct vtime :
     public stem::__pack_base
@@ -171,13 +176,16 @@ class Proc :
 
   private:
 
+  bool order_correct( const stem::Event_base<VTmess>& );
+
     enum vtgroup {
       first_group,
       second_group,
       n_groups
     };
 
-    std::vector<vtime> vt[n_groups];
+    std::vector<vtime_type> vt[n_groups];
+    std::vector<vtime_type> last_vt[n_groups];
 
     DECLARE_RESPONSE_TABLE( Proc, stem::EventHandler );
 };
