@@ -125,6 +125,43 @@ void VTmess::net_unpack( std::istream& s )
   __net_unpack( s, mess );
 }
 
+bool operator <=( const vtime_type& l, const vtime_type& r )
+{
+  if ( r.empty() ) {
+    return l.empty();
+  }
+
+  if ( l.empty() ) {
+    return true;
+  }
+
+  vtime_type::const_iterator i = l.begin();
+  vtime_type::const_iterator j = r.begin();
+
+  while ( i != l.end() && j != r.end() ) {
+    if ( i->first < j->first ) { // v <= 0 --- false
+      return false;
+    }
+    while ( i->first > j->first && j != r.end() ) { // 0 <= v --- true
+      ++j;
+    }
+  
+    while ( i != l.end() && j != r.end() && i->first == j->first ) {
+      if ( i->second > j->second ) {
+	return false;
+      }
+      ++i;
+      ++j;
+    }
+  }
+
+  if ( i == l.end() ) {
+    return true;
+  }
+
+  return false;
+}
+
 vtime_type operator -( const vtime_type& l, const vtime_type& r )
 {
   if ( r.empty() ) {
@@ -144,8 +181,9 @@ vtime_type operator -( const vtime_type& l, const vtime_type& r )
     while ( i->first == j->first && i != l.end() && j != r.end() ) {
       if ( i->second < j->second ) {
         throw range_error( "vtime different: right value grater then left" );
+      } else if ( i->second > j->second ) {
+	vt.push_back( make_pair( i->first, i->second - j->second ) );
       }
-      vt.push_back( make_pair( i->first, i->second - j->second ) );
       ++i;
       ++j;
     }
@@ -157,16 +195,148 @@ vtime_type operator -( const vtime_type& l, const vtime_type& r )
 
   while ( i != l.end() ) {
     vt.push_back( make_pair( i->first, i->second ) );
-    ++i;    
+    ++i;
   }
 
   return vt;
 }
 
+vtime_type operator +( const vtime_type& l, const vtime_type& r )
+{
+  if ( r.empty() ) {
+    return l;
+  }
+
+  if ( l.empty() ) {
+    return r;
+  }
+
+  vtime_type vt;
+  vtime_type::const_iterator i = l.begin();
+  vtime_type::const_iterator j = r.begin();
+
+  while ( i != l.end() && j != r.end() ) {
+    while ( i->first < j->first && i != l.end() ) {
+      vt.push_back( make_pair( i->first, i->second ) );
+      ++i;
+    }
+  
+    while ( i->first == j->first && i != l.end() && j != r.end() ) {
+      vt.push_back( make_pair( i->first, i->second + j->second ) );
+      ++i;
+      ++j;
+    }
+  }
+
+  while ( i != l.end() ) {
+    vt.push_back( make_pair( i->first, i->second ) );
+    ++i;
+  }
+  while ( j != l.end() ) {
+    vt.push_back( make_pair( j->first, j->second ) );
+    ++j;
+  }
+
+  return vt;
+}
+
+// template <>
+vtime_type max( const vtime_type& l, const vtime_type& r )
+{
+  if ( l.empty() ) {
+    return r;
+  }
+
+  if ( r.empty() ) {
+    return l;
+  }
+
+  // here l and r non-empty
+
+  vtime_type vt;
+  vtime_type::const_iterator i = l.begin();
+  vtime_type::const_iterator j = r.begin();
+
+  while ( i != l.end() && j != r.end() ) {
+    while ( i->first < j->first && i != l.end() ) {
+      vt.push_back( make_pair( i->first, i->second ) );
+      ++i;
+    }
+
+    while ( i->first == j->first && i != l.end() && j != r.end() ) {
+      vt.push_back( make_pair( i->first, max( i->second, j->second ) ) );
+      ++i;
+      ++j;
+    }
+  }
+  while ( i != l.end() ) {
+    vt.push_back( make_pair( i->first, i->second ) );
+    ++i;
+  }
+  while ( j != l.end() ) {
+    vt.push_back( make_pair( j->first, j->second ) );
+    ++j;
+  }
+
+  return vt;
+}
 
 void Proc::mess( const stem::Event_base<VTmess>& ev )
 {
   cout << ev.value().mess << endl;
+}
+
+bool order_correct( const stem::Event_base<VTmess>& ev )
+{
+  // assume here first_group
+
+  gvtime_type::const_iterator gr = ev.value().gvt.begin();
+  gvtime_type::const_iterator ge = ev.value().gvt.end();
+
+  for ( ; gr != ge; ++i ) {
+    if ( gr->first == first_group ) {
+      vtime_type vt_tmp = last_vt[first_group] + gr->second;
+
+      vtime_type::const_iterator i = vt_tmp.begin();
+      vtime_type::const_iterator j = vt[first_group].begin();
+
+      while ( i != vt_tmp.end() && j != vt[first_group].end() ) {
+	if ( i->first < j->first ) {
+          return false; // really protocol fail: group member was lost
+	}
+	
+	while ( i->first == j->first && i != vt_tmp.end() && j != vt[first_group].end() ) {
+	  if ( i->first == self_id() ) {
+	    if ( i->second != (j->second + 1) ) {
+	      return false;
+	    }
+	  } else {
+	    if ( i->second > j->second ) {
+	      return false;
+	    }
+	  }
+	  ++i;
+	  ++j;
+	}
+
+	if ( i != vt_tmp.end() ) {
+	  return false; // really protocol fail: group member lost
+	}
+
+	while ( j != vt[first_group].end() ) {
+	  if ( j->first == self_id() && j->second != 1 ) {
+	    return false;
+	  }
+	  ++j;
+	}
+      }
+    } else {
+      vtime_type vt_tmp = last_vt[second_group] + gr->second;
+      if ( !(vt_tmp <= vt[second_group] )) {
+	return false;
+      }
+    }
+  }
 }
 
 DEFINE_RESPONSE_TABLE( Proc )
