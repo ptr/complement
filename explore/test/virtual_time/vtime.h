@@ -54,49 +54,10 @@ inline bool operator ==( const vtime_proc_type& l, const vtime_proc_type& r )
   throw std::invalid_argument( "uncomparable vtime" );
 }
 
-
-#if 0
-bool operator <=( const vtime_type& l, const vtime_type& r )
-{
-  if ( l.size() == 0 ) { // 0 always less or equal of anything
-    return true;
-  }
-
-  bool result = true;
-  vtime_type::const_iterator i = l.begin();
-  vtime_type::const_iterator j = r.begin();
-
-  while ( j->first < i->first && j != r.end() ) {
-    ++j;
-  }
-
-  if ( j == r.end() ) { // note, that i != l.end() here!
-    return false;
-  }
-
-  for ( ; i != l.end() && j != r.end(); ) {
-    if ( i->second > j->second ) {
-    }
-    
-    if ( i->first < j->first ) {
-      ++i;
-    } else if ( i->first == j->first ) {
-      if ( i->second > j->second ) {
-        return false;
-      }
-    } else {
-      ++j;
-    }
-  }
-}
-#endif
-
-
 bool operator <=( const vtime_type& l, const vtime_type& r );
 vtime_type operator -( const vtime_type& l, const vtime_type& r );
 vtime_type operator +( const vtime_type& l, const vtime_type& r );
 
-template <>
 vtime_type max( const vtime_type& l, const vtime_type& r );
 
 struct vtime :
@@ -184,8 +145,8 @@ class Proc :
       n_groups
     };
 
-    std::vector<vtime_type> vt[n_groups];
-    std::vector<vtime_type> last_vt[n_groups];
+    vtime_type vt[n_groups];
+    vtime_type last_vt[n_groups];
 
     DECLARE_RESPONSE_TABLE( Proc, stem::EventHandler );
 };
