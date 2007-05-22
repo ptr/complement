@@ -142,7 +142,7 @@ bool operator <=( const vtime_type& l, const vtime_type& r )
     if ( i->first < j->first ) { // v <= 0 --- false
       return false;
     }
-    while ( i->first > j->first && j != r.end() ) { // 0 <= v --- true
+    while ( j != r.end() && i->first > j->first ) { // 0 <= v --- true
       ++j;
     }
   
@@ -173,12 +173,12 @@ vtime_type operator -( const vtime_type& l, const vtime_type& r )
   vtime_type::const_iterator j = r.begin();
 
   while ( i != l.end() && j != r.end() ) {
-    while ( i->first < j->first && i != l.end() ) {
+    while ( i != l.end() && i->first < j->first ) {
       vt.push_back( make_pair( i->first, i->second ) );
       ++i;
     }
   
-    while ( i->first == j->first && i != l.end() && j != r.end() ) {
+    while ( i != l.end() && j != r.end() && i->first == j->first ) {
       if ( i->second < j->second ) {
         throw range_error( "vtime different: right value grater then left" );
       } else if ( i->second > j->second ) {
@@ -216,12 +216,12 @@ vtime_type operator +( const vtime_type& l, const vtime_type& r )
   vtime_type::const_iterator j = r.begin();
 
   while ( i != l.end() && j != r.end() ) {
-    while ( i->first < j->first && i != l.end() ) {
+    while ( i != l.end() && i->first < j->first ) {
       vt.push_back( make_pair( i->first, i->second ) );
       ++i;
     }
   
-    while ( i->first == j->first && i != l.end() && j != r.end() ) {
+    while ( i != l.end() && j != r.end() && i->first == j->first ) {
       vt.push_back( make_pair( i->first, i->second + j->second ) );
       ++i;
       ++j;
@@ -232,7 +232,7 @@ vtime_type operator +( const vtime_type& l, const vtime_type& r )
     vt.push_back( make_pair( i->first, i->second ) );
     ++i;
   }
-  while ( j != l.end() ) {
+  while ( j != r.end() ) {
     vt.push_back( make_pair( j->first, j->second ) );
     ++j;
   }
@@ -258,13 +258,13 @@ vtime_type max( const vtime_type& l, const vtime_type& r )
   vtime_type::const_iterator j = r.begin();
 
   while ( i != l.end() && j != r.end() ) {
-    while ( i->first < j->first && i != l.end() ) {
+    while ( i != l.end() && i->first < j->first ) {
       vt.push_back( make_pair( i->first, i->second ) );
       ++i;
     }
 
-    while ( i->first == j->first && i != l.end() && j != r.end() ) {
-      vt.push_back( make_pair( i->first, max( i->second, j->second ) ) );
+    while ( i != l.end() && j != r.end() && i->first == j->first ) {
+      vt.push_back( make_pair( i->first, std::max( i->second, j->second ) ) );
       ++i;
       ++j;
     }
@@ -273,7 +273,7 @@ vtime_type max( const vtime_type& l, const vtime_type& r )
     vt.push_back( make_pair( i->first, i->second ) );
     ++i;
   }
-  while ( j != l.end() ) {
+  while ( j != r.end() ) {
     vt.push_back( make_pair( j->first, j->second ) );
     ++j;
   }
@@ -286,16 +286,16 @@ void Proc::mess( const stem::Event_base<VTmess>& ev )
   cout << ev.value().mess << endl;
 }
 
-bool order_correct( const stem::Event_base<VTmess>& ev )
+bool Proc::order_correct( const stem::Event_base<VTmess>& ev )
 {
   // assume here first_group
 
-  gvtime_type::const_iterator gr = ev.value().gvt.begin();
-  gvtime_type::const_iterator ge = ev.value().gvt.end();
+  gvtime_type::const_iterator gr = ev.value().gvt.gvt.begin();
+  gvtime_type::const_iterator ge = ev.value().gvt.gvt.end();
 
-  for ( ; gr != ge; ++i ) {
+  for ( ; gr != ge; ++gr ) {
     if ( gr->first == first_group ) {
-      vtime_type vt_tmp = last_vt[first_group] + gr->second;
+      vtime_type vt_tmp = last_vt[first_group] + gr->second.vt;
 
       vtime_type::const_iterator i = vt_tmp.begin();
       vtime_type::const_iterator j = vt[first_group].begin();
@@ -331,7 +331,7 @@ bool order_correct( const stem::Event_base<VTmess>& ev )
 	}
       }
     } else {
-      vtime_type vt_tmp = last_vt[second_group] + gr->second;
+      vtime_type vt_tmp = last_vt[second_group] + gr->second.vt;
       if ( !(vt_tmp <= vt[second_group] )) {
 	return false;
       }
