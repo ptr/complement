@@ -104,24 +104,28 @@ void gvtime::net_unpack( std::istream& s )
 void VTmess::pack( std::ostream& s ) const
 {
   gvt.pack( s );
+  __pack( s, grp );
   __pack( s, mess );
 }
 
 void VTmess::net_pack( std::ostream& s ) const
 {
   gvt.net_pack( s );
+  __net_pack( s, grp );
   __net_pack( s, mess );
 }
 
 void VTmess::unpack( std::istream& s )
 {
   gvt.unpack( s );
+  __unpack( s, grp );
   __unpack( s, mess );
 }
 
 void VTmess::net_unpack( std::istream& s )
 {
   gvt.net_unpack( s );
+  __net_unpack( s, grp );
   __net_unpack( s, mess );
 }
 
@@ -226,6 +230,12 @@ vtime_type operator +( const vtime_type& l, const vtime_type& r )
       ++i;
       ++j;
     }
+    if ( i != l.end() ) {
+      while ( j != r.end() && j->first < i->first ) {
+	vt.push_back( make_pair( j->first, j->second ) );
+	++j;
+      }
+    }
   }
 
   while ( i != l.end() ) {
@@ -238,6 +248,46 @@ vtime_type operator +( const vtime_type& l, const vtime_type& r )
   }
 
   return vt;
+}
+
+vtime_type& operator +=( vtime_type& l, const vtime_type& r )
+{
+  if ( r.empty() ) {
+    return l;
+  }
+
+  if ( l.empty() ) {
+    l = r;
+    return l;
+  }
+
+  vtime_type::iterator i = l.begin();
+  vtime_type::const_iterator j = r.begin();
+
+  while ( i != l.end() && j != r.end() ) {
+    while ( i != l.end() && i->first < j->first ) {
+      ++i;
+    }
+  
+    while ( i != l.end() && j != r.end() && i->first == j->first ) {
+      i->second += j->second;
+      ++i;
+      ++j;
+    }
+
+    while ( i != l.end() && j != r.end() && j->first < i->first ) {
+      l.insert( i, make_pair( j->first, j->second ) );
+      ++i;
+      ++j;
+    }
+  }
+
+  while ( j != r.end() ) {
+    l.push_back( make_pair( j->first, j->second ) );
+    ++j;
+  }
+
+  return l;
 }
 
 // template <>
@@ -281,62 +331,78 @@ vtime_type max( const vtime_type& l, const vtime_type& r )
   return vt;
 }
 
+vtime& vtime::operator += ( const vtime_proc_type& t )
+{
+  vtime_type::iterator i = vt.begin();
+
+  for ( ; i != vt.end(); ++i ) {
+    if ( i->first > t.first ) {
+      break;
+    } else if ( i->first == t.first ) {
+      i->second += t.second;
+      return *this;
+    }
+  }
+  vt.insert( i, t );
+  return *this;
+}
+
+gvtime& gvtime::operator +=( const vtime_group_type& t )
+{
+  gvtime_type::iterator i = gvt.begin();
+
+  for ( ; i != gvt.end(); ++i ) {
+    if ( i->first > t.first ) {
+      break;
+    } else if ( i->first == t.first ) {
+      i->second += t.second;
+      return *this;
+    }
+  }
+  gvt.insert( i, t );
+  return *this;  
+}
+
 void Proc::mess( const stem::Event_base<VTmess>& ev )
 {
   cout << ev.value().mess << endl;
+
+  cout << ev.value().gvt.gvt << endl;
+
+  cout << order_correct( ev ) << endl;
 }
 
 bool Proc::order_correct( const stem::Event_base<VTmess>& ev )
 {
-  // assume here first_group
-
   gvtime_type::const_iterator gr = ev.value().gvt.gvt.begin();
   gvtime_type::const_iterator ge = ev.value().gvt.gvt.end();
 
-  for ( ; gr != ge; ++gr ) {
-    if ( gr->first == first_group ) {
-      vtime_type vt_tmp = last_vt[first_group] + gr->second.vt;
+  bool fine = false;
+
+  group_type mgrp = ev.value().grp;
+
+  for ( ; gr != ge; ++gr ) { // over all groups
+    if ( gr->first == mgrp ) {
+      vtime_type vt_tmp = last_vt[ev.value().grp] + gr->second.vt;
 
       vtime_type::const_iterator i = vt_tmp.begin();
-      vtime_type::const_iterator j = vt[first_group].begin();
-
-      while ( i != vt_tmp.end() && j != vt[first_group].end() ) {
-	if ( i->first < j->first ) {
-          return false; // really protocol fail: group member was lost
-	}
-	
-	while ( i->first == j->first && i != vt_tmp.end() && j != vt[first_group].end() ) {
-	  if ( i->first == self_id() ) {
-	    if ( i->second != (j->second + 1) ) {
-	      return false;
-	    }
-	  } else {
-	    if ( i->second > j->second ) {
-	      return false;
-	    }
-	  }
-	  ++i;
-	  ++j;
-	}
-
-	if ( i != vt_tmp.end() ) {
-	  return false; // really protocol fail: group member lost
-	}
-
-	while ( j != vt[first_group].end() ) {
-	  if ( j->first == self_id() && j->second != 1 ) {
-	    return false;
-	  }
-	  ++j;
-	}
+      if ( vt[mgrp].empty() ) {
+	vtime vt_null;
+	vt_null += make_pair( ev.src(), 1 );
+	cerr << vt_tmp << vt_null.vt;
+	return vt_tmp == vt_null.vt;
+      } else {
+	vtime_type::const_iterator j = vt[mgrp].begin();
       }
     } else {
-      vtime_type vt_tmp = last_vt[second_group] + gr->second.vt;
-      if ( !(vt_tmp <= vt[second_group] )) {
+      vtime_type vt_tmp = last_vt[mgrp] + gr->second.vt;
+      if ( !(vt_tmp <= vt[mgrp] )) {
 	return false;
       }
     }
   }
+
+  return fine;
 }
 
 DEFINE_RESPONSE_TABLE( Proc )
@@ -344,3 +410,36 @@ DEFINE_RESPONSE_TABLE( Proc )
 END_RESPONSE_TABLE
 
 } // namespace vt
+
+namespace std {
+
+ostream& operator <<( ostream& o, const vt::vtime_proc_type& v )
+{
+  o << "(" << v.first << "," << v.second << ")\n";
+}
+
+ostream& operator <<( ostream& o, const vt::vtime_type& v )
+{
+  o << "[\n";
+  for ( vt::vtime_type::const_iterator i = v.begin(); i != v.end(); ++i ) {
+    o << *i;
+  }
+  o << "]\n";
+}
+
+ostream& operator <<( ostream& o, const vt::vtime_group_type& v )
+{
+  o << v.first << ": " << v.second.vt;
+}
+
+ostream& operator <<( ostream& o, const vt::gvtime_type& v )
+{
+  o << "{\n";
+  for ( vt::gvtime_type::const_iterator i = v.begin(); i != v.end(); ++i ) {
+    o << *i;
+  }
+  o << "}\n";
+}
+
+} // namespace std
+
