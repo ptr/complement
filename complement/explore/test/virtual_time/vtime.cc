@@ -370,6 +370,14 @@ void Proc::mess( const stem::Event_base<VTmess>& ev )
   cout << ev.value().gvt.gvt << endl;
 
   cout << order_correct( ev ) << endl;
+
+  if ( order_correct( ev ) ) {
+    gvtime_type::const_iterator gr = ev.value().gvt.gvt.begin();
+    gvtime_type::const_iterator ge = ev.value().gvt.gvt.end();
+    for ( ; gr != ge; ++gr ) { // over all groups
+      vt[gr->first] = max( vt[gr->first], vt[gr->first] + gr->second.vt );
+    }
+  }
 }
 
 bool Proc::order_correct( const stem::Event_base<VTmess>& ev )
