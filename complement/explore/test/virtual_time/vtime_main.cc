@@ -27,12 +27,17 @@ int main()
   vtime_group_type gvt;
 
   gvt.first = 0; // group
-  gvt.second += make_pair( 101, 1 );
+  gvt.second += make_pair( 100, 1 );
 
   mess.value().mess = "Hello!";
   mess.value().grp = 0;
   mess.value().gvt += gvt;
 
+  m1.Send( mess );
+
+  mess.value().gvt += gvt;
+
+  mess.value().mess = "How are you?";
   m1.Send( mess );
 
   cnd.wait();
