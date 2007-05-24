@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/05/17 23:30:42 ptr>
+// -*- C++ -*- Time-stamp: <07/05/24 10:24:22 ptr>
 
 #include "vtime.h"
 
@@ -415,7 +415,7 @@ namespace std {
 
 ostream& operator <<( ostream& o, const vt::vtime_proc_type& v )
 {
-  o << "(" << v.first << "," << v.second << ")\n";
+  return o << "(" << v.first << "," << v.second << ")\n";
 }
 
 ostream& operator <<( ostream& o, const vt::vtime_type& v )
@@ -424,7 +424,7 @@ ostream& operator <<( ostream& o, const vt::vtime_type& v )
   for ( vt::vtime_type::const_iterator i = v.begin(); i != v.end(); ++i ) {
     o << *i;
   }
-  o << "]\n";
+  return o << "]\n";
 }
 
 ostream& operator <<( ostream& o, const vt::vtime_group_type& v )
@@ -438,7 +438,7 @@ ostream& operator <<( ostream& o, const vt::gvtime_type& v )
   for ( vt::gvtime_type::const_iterator i = v.begin(); i != v.end(); ++i ) {
     o << *i;
   }
-  o << "}\n";
+  return o << "}\n";
 }
 
 } // namespace std
