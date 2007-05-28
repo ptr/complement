@@ -347,7 +347,7 @@ vtime& vtime::operator += ( const vtime_proc_type& t )
   return *this;
 }
 
-gvtime& gvtime::operator +=( const vtime_group_type& t )
+gvtime_type& operator +=( gvtime_type& gvt, const vtime_group_type& t )
 {
   gvtime_type::iterator i = gvt.begin();
 
@@ -356,12 +356,40 @@ gvtime& gvtime::operator +=( const vtime_group_type& t )
       break;
     } else if ( i->first == t.first ) {
       i->second += t.second;
-      return *this;
+      return gvt;
     }
   }
   gvt.insert( i, t );
+  return gvt;
+}
+
+gvtime& gvtime::operator +=( const vtime_group_type& t )
+{
+  gvt += t;
   return *this;  
 }
+
+vtime_unit_type comp( const gvtime_type& gvt, group_type g, oid_type p )
+{
+  gvtime_type::const_iterator k = gvt.begin();
+  for ( ; k != gvt.end(); ++k ) {
+    if ( k->first == g ) {
+      for ( vtime_type::const_iterator i = k->second.vt.begin(); i != k->second.vt.end(); ++i ) {
+	if ( i->first == p ) {
+	  return i->second; // found (p_i, t) in g_k
+	} else if ( i->first > p ) {
+	  return 0; // pair sorted, so no pair required (p_i, t) expected more
+	}
+      }
+      return 0; // no pair (p_i, * )
+    } else if ( k->first > g ) { // groups sorted, so no required group expected more
+      return 0;
+    }
+  }
+
+  return 0;
+}
+
 
 void Proc::mess( const stem::Event_base<VTmess>& ev )
 {
@@ -375,7 +403,7 @@ void Proc::mess( const stem::Event_base<VTmess>& ev )
     gvtime_type::const_iterator gr = ev.value().gvt.gvt.begin();
     gvtime_type::const_iterator ge = ev.value().gvt.gvt.end();
     for ( ; gr != ge; ++gr ) { // over all groups
-      vt[gr->first] = max( vt[gr->first], vt[gr->first] + gr->second.vt );
+      // vt[gr->first] = max( vt[gr->first], vt[gr->first] + gr->second.vt );
     }
   }
 }
@@ -391,8 +419,43 @@ bool Proc::order_correct( const stem::Event_base<VTmess>& ev )
 
   for ( ; gr != ge; ++gr ) { // over all groups
     if ( gr->first == mgrp ) {
-      vtime_type vt_tmp = last_vt[ev.value().grp] + gr->second.vt;
+#if 0
+      comp( vt, mgrp, ev.src() );
+      comp( vt, mgrp, ev.src() );
 
+      for ( gvtime_type::const_iterator my_gi = vt.begin(); my_gi != vt.end(); ++my_gi ) {
+	if ( my_gi->first == mgrp ) {
+	  vtime_type vt_tmp = my_gi->second.vt + gr->second.vt;
+	  for (vtime_type::const_iterator i = vt_tmp.begin(); i != vt_tmp.end(); ++i ) {
+	    if ( i->first == ev.src() ) {
+	      vtime_type::const_iterator j = my_gi->second.vt.begin();
+	      for ( ; j != my_gi->second.vt.end(); ++j ) {
+		if ( i->first == j->first ) {
+		  if ( i->second != j->second + 1) {
+		    return false;
+		  }
+		  break;
+		}
+	      }
+	      if ( j == my_gi->second.vt.end() ) {
+		if ( i->second != 1 ) {
+		  return false;
+		}
+	      }
+	    } else {
+	      if ( ) {
+	      }
+	    }
+	  }
+	  vtime_type vt_null;
+	  vt_null += make_pair( ev.src(), 1 );
+	}
+      }
+      // vtime_group_type vt_tmp = vt + *gr;
+      // vtime_type vt_tmp = last_vt[ev.value().grp] + gr->second.vt;
+#endif
+
+#if 0
       vtime_type::const_iterator i = vt_tmp.begin();
       if ( vt[mgrp].empty() ) {
 	vtime vt_null;
@@ -402,11 +465,14 @@ bool Proc::order_correct( const stem::Event_base<VTmess>& ev )
       } else {
 	vtime_type::const_iterator j = vt[mgrp].begin();
       }
+#endif
     } else {
+#if 0
       vtime_type vt_tmp = last_vt[mgrp] + gr->second.vt;
       if ( !(vt_tmp <= vt[mgrp] )) {
 	return false;
       }
+#endif
     }
   }
 
