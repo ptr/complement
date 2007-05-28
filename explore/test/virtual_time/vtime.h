@@ -116,6 +116,9 @@ struct vtime :
 typedef std::pair<group_type, vtime> vtime_group_type;
 typedef std::list<vtime_group_type> gvtime_type;
 
+vtime_unit_type comp( const gvtime_type&, group_type, oid_type );
+gvtime_type& operator +=( gvtime_type&, const vtime_group_type& );
+
 struct gvtime :
     public stem::__pack_base
 {
@@ -184,8 +187,10 @@ class Proc :
       n_groups
     };
 
-    vtime_type vt[n_groups];
-    vtime_type last_vt[n_groups];
+    // vtime_type vt[n_groups];
+    gvtime_type vt;
+    // vtime_type last_vt[n_groups];
+    // gvtime_type last_vt;
 
     DECLARE_RESPONSE_TABLE( Proc, stem::EventHandler );
 };
