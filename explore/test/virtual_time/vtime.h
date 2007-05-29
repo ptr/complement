@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <list>
 #include <vector>
+#include <hash_map>
 #include <iterator>
 
 #include <istream>
@@ -20,40 +21,10 @@ namespace vt {
 typedef stem::addr_type oid_type;
 typedef unsigned vtime_unit_type;
 typedef uint32_t group_type;
-typedef std::pair<oid_type, vtime_unit_type> vtime_proc_type;
-typedef std::list<vtime_proc_type> vtime_type;
+typedef std::hash_map<oid_type, vtime_unit_type> vtime_type;
 
-inline bool uorder( const vtime_proc_type& l, const vtime_proc_type& r )
-{
-  return l.first < r.first;
-}
-
-inline bool operator <( const vtime_proc_type& l, const vtime_proc_type& r )
-{
-  if ( l.first == r.first ) {
-    return l.second < r.second;
-  }
-
-  throw std::invalid_argument( "uncomparable vtime" );
-}
-
-inline bool operator <=( const vtime_proc_type& l, const vtime_proc_type& r )
-{
-  if ( l.first == r.first ) {
-    return l.second <= r.second;
-  }
-
-  throw std::invalid_argument( "uncomparable vtime" );
-}
-
-inline bool operator ==( const vtime_proc_type& l, const vtime_proc_type& r )
-{
-  if ( l.first == r.first ) {
-    return l.second == r.second;
-  }
-
-  throw std::invalid_argument( "uncomparable vtime" );
-}
+// typedef std::pair<oid_type, vtime_unit_type> vtime_proc_type;
+// typedef std::list<vtime_proc_type> vtime_type;
 
 bool operator <=( const vtime_type& l, const vtime_type& r );
 vtime_type operator -( const vtime_type& l, const vtime_type& r );
@@ -113,8 +84,9 @@ struct vtime :
   vtime_type vt;
 };
 
-typedef std::pair<group_type, vtime> vtime_group_type;
-typedef std::list<vtime_group_type> gvtime_type;
+// typedef std::pair<group_type, vtime> vtime_group_type;
+// typedef std::list<vtime_group_type> gvtime_type;
+typedef std::hash_map<group_type, vtime_type> gvtime_type;
 
 vtime_unit_type comp( const gvtime_type&, group_type, oid_type );
 gvtime_type& operator +=( gvtime_type&, const vtime_group_type& );
@@ -188,6 +160,7 @@ class Proc :
     };
 
     // vtime_type vt[n_groups];
+    gvtime_type lvt;
     gvtime_type vt;
     // vtime_type last_vt[n_groups];
     // gvtime_type last_vt;
