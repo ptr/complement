@@ -331,7 +331,7 @@ vtime_type max( const vtime_type& l, const vtime_type& r )
   return vt;
 }
 
-vtime& vtime::operator += ( const vtime_proc_type& t )
+vtime& vtime::operator +=( const vtime_proc_type& t )
 {
   vtime_type::iterator i = vt.begin();
 
@@ -419,60 +419,28 @@ bool Proc::order_correct( const stem::Event_base<VTmess>& ev )
 
   for ( ; gr != ge; ++gr ) { // over all groups
     if ( gr->first == mgrp ) {
-#if 0
-      comp( vt, mgrp, ev.src() );
-      comp( vt, mgrp, ev.src() );
-
-      for ( gvtime_type::const_iterator my_gi = vt.begin(); my_gi != vt.end(); ++my_gi ) {
-	if ( my_gi->first == mgrp ) {
-	  vtime_type vt_tmp = my_gi->second.vt + gr->second.vt;
-	  for (vtime_type::const_iterator i = vt_tmp.begin(); i != vt_tmp.end(); ++i ) {
-	    if ( i->first == ev.src() ) {
-	      vtime_type::const_iterator j = my_gi->second.vt.begin();
-	      for ( ; j != my_gi->second.vt.end(); ++j ) {
-		if ( i->first == j->first ) {
-		  if ( i->second != j->second + 1) {
-		    return false;
-		  }
-		  break;
-		}
-	      }
-	      if ( j == my_gi->second.vt.end() ) {
-		if ( i->second != 1 ) {
-		  return false;
-		}
-	      }
-	    } else {
-	      if ( ) {
+      if ( comp( lvt, mgrp, ev.src() ) + 1 != comp( ev.value().gvt.gvt, mgrp, ev.src() ) ) {
+	return false;
+      }
+      for ( gvtime_type::const_iterator i = lvt.begin(); i != lvt.end(); ++i ) {
+	if ( mgrp == i->first ) {
+	  for ( vtime_type::const_iterator j =   ) {
+	  }
+	}
+      }
+    } else {
+      for ( gvtime_type::const_iterator i = lvt.begin(); i != lvt.end(); ++i ) {
+	if ( gr->first == i->first ) {
+	  vtime vt_tmp = i->second + gr->second;
+	  for ( gvtime_type::const_iterator j = vt.begin(); j != vt.end(); ++j ) {
+	    if ( i->first == j->first ) {
+	      if ( !(vt_tmp <= j->second) ) {
+		return false;
 	      }
 	    }
 	  }
-	  vtime_type vt_null;
-	  vt_null += make_pair( ev.src(), 1 );
 	}
       }
-      // vtime_group_type vt_tmp = vt + *gr;
-      // vtime_type vt_tmp = last_vt[ev.value().grp] + gr->second.vt;
-#endif
-
-#if 0
-      vtime_type::const_iterator i = vt_tmp.begin();
-      if ( vt[mgrp].empty() ) {
-	vtime vt_null;
-	vt_null += make_pair( ev.src(), 1 );
-	cerr << vt_tmp << vt_null.vt;
-	return vt_tmp == vt_null.vt;
-      } else {
-	vtime_type::const_iterator j = vt[mgrp].begin();
-      }
-#endif
-    } else {
-#if 0
-      vtime_type vt_tmp = last_vt[mgrp] + gr->second.vt;
-      if ( !(vt_tmp <= vt[mgrp] )) {
-	return false;
-      }
-#endif
     }
   }
 
