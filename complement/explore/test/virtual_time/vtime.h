@@ -23,6 +23,45 @@ typedef unsigned vtime_unit_type;
 typedef uint32_t group_type;
 typedef std::hash_map<oid_type, vtime_unit_type> vtime_type;
 
+template <class _InputIter1, class _InputIter2, class _OutputIter,
+          class _Compare>
+_OutputIter vt_union(_InputIter1 __first1, _InputIter1 __last1,
+		     _InputIter2 __first2, _InputIter2 __last2,
+		     _OutputIter __result, _Equal __equal, _Aggregate __aggr )
+{
+  
+  while ( __first1 != __last1 ) {
+    _InputIter1 __cur1 = __first1;
+    for ( ; __cur1 != __last1, ++__cur1 ) {
+      if ( __equal(*__cur1, *__first2) ) {
+	__aggr( __cur1, __first2, __result );	
+	++__first2;
+	break;
+      }
+      ++__result;
+    }
+    if ( __cur1 == __last1 ) {
+      
+    }
+  }
+  
+  while (__first1 != __last1 && __first2 != __last2) {
+    if (__comp(*__first1, *__first2)) {
+      *__result = *__first1;
+      ++__first1;
+    } else if (__comp(*__first2, *__first1)) {
+      *__result = *__first2;
+      ++__first2;
+    } else {
+      *__result = *__first1;
+      ++__first1;
+      ++__first2;
+    }
+    ++__result;
+  }
+  return copy(__first2, __last2, copy(__first1, __last1, __result));
+}
+
 // typedef std::pair<oid_type, vtime_unit_type> vtime_proc_type;
 // typedef std::list<vtime_proc_type> vtime_type;
 
