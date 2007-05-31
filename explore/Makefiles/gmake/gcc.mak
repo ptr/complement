@@ -1,4 +1,4 @@
-# Time-stamp: <06/11/10 15:53:35 ptr>
+# Time-stamp: <07/05/31 01:25:52 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -21,7 +21,7 @@ else
 CC := $_FORCE_CC
 endif
 
-ifeq ($(OSNAME), cygming)
+ifeq ($(OSNAME), windows)
 RC := windres
 endif
 
@@ -37,7 +37,13 @@ CXX_VERSION := $(shell ${CXX} -dumpversion)
 CXX_VERSION_MAJOR := $(shell ${CXX} -dumpversion | awk 'BEGIN { FS = "."; } { print $1; }')
 CXX_VERSION_MINOR := $(shell ${CXX} -dumpversion | awk 'BEGIN { FS = "."; } { print $2; }')
 CXX_VERSION_PATCH := $(shell ${CXX} -dumpversion | awk 'BEGIN { FS = "."; } { print $3; }')
+# This is to differentiate Apple-builded compiler from original
+# compiler (it's has different behaviour)
+ifneq ("$(shell ${CXX} -v 2>&1 | grep Apple)", "")
+GCC_APPLE_CC := 1
+endif
 else
+ifneq ($(OSNAME), windows)
 CXX_VERSION := $(shell ${CXX} --version | grep GCC | awk '{ print $$3; }')
 
 ifeq ($(CXX_VERSION),)
@@ -48,6 +54,7 @@ endif
 CXX_VERSION_MAJOR := $(shell echo ${CXX_VERSION} | awk 'BEGIN { FS = "."; } { print $$1; }')
 CXX_VERSION_MINOR := $(shell echo ${CXX_VERSION} | awk 'BEGIN { FS = "."; } { print $$2; }')
 CXX_VERSION_PATCH := $(shell echo ${CXX_VERSION} | awk 'BEGIN { FS = "."; } { print $$3; }')
+endif
 endif
 
 DEFS ?=
@@ -63,12 +70,13 @@ OUTPUT_OPTION = -o $@
 LINK_OUTPUT_OPTION = ${OUTPUT_OPTION}
 CPPFLAGS = $(DEFS) $(INCLUDES)
 
-ifeq ($(OSNAME), cygming)
-release-shared : RCFLAGS = --include-dir=${STLPORT_INCLUDE_DIR} -DCOMP=gcc -DBUILD=r -DBUILD_INFOS="-O2" --output-format coff
-dbg-shared : RCFLAGS = --include-dir=${STLPORT_INCLUDE_DIR} -DCOMP=gcc -DBUILD=d -DBUILD_INFOS="-g" --output-format coff
-stldbg-shared : RCFLAGS = --include-dir=${STLPORT_INCLUDE_DIR} -DCOMP=gcc -DBUILD=stld -DBUILD_INFOS="-g -D_STLP_DEBUG" --output-format coff
+ifeq ($(OSNAME), windows)
+RCFLAGS = --include-dir=${STLPORT_INCLUDE_DIR} --output-format coff -DCOMP=gcc
+release-shared : RCFLAGS += -DBUILD_INFOS=-O2
+dbg-shared : RCFLAGS += -DBUILD=g -DBUILD_INFOS=-g
+stldbg-shared : RCFLAGS += -DBUILD=stlg -DBUILD_INFOS="-g -D_STLP_DEBUG"
 RC_OUTPUT_OPTION = -o $@
-CXXFLAGS = -Wall -Wsign-promo -fexceptions -fident
+CXXFLAGS = -Wall -Wsign-promo -Wcast-qual -fexceptions -fident
 ifeq ($(OSREALNAME), mingw)
 CCFLAGS += -mthreads
 CFLAGS += -mthreads
@@ -80,21 +88,22 @@ CCFLAGS += $(OPT)
 CFLAGS += $(OPT)
 CXXFLAGS += $(OPT)
 COMPILE.rc = $(RC) $(RCFLAGS)
+
+#Add Windows target.
+ifdef  STLP_BUILD_WINDOWS_95
+WINVER=0x0400
+else
+WINVER=0x0410
 endif
 
-ifeq ($(OSNAME), windows)
-release-shared : RCFLAGS = --include-dir=${STLPORT_INCLUDE_DIR} -DCOMP=gcc -DBUILD=r -DBUILD_INFOS="-O2" --output-format coff
-dbg-shared : RCFLAGS = --include-dir=${STLPORT_INCLUDE_DIR} -DCOMP=gcc -DBUILD=d -DBUILD_INFOS="-g" --output-format coff
-stldbg-shared : RCFLAGS = --include-dir=${STLPORT_INCLUDE_DIR} -DCOMP=gcc -DBUILD=stld -DBUILD_INFOS="-g -D_STLP_DEBUG" --output-format coff
-RC_OUTPUT_OPTION = -o $@
-CXXFLAGS = -Wall -Wsign-promo -fexceptions -fident
-CCFLAGS += -mthreads
-CFLAGS += -mthreads
-CXXFLAGS += -mthreads
-CCFLAGS += $(OPT)
-CFLAGS += $(OPT)
-CXXFLAGS += $(OPT)
-COMPILE.rc = $(RC) $(RCFLAGS)
+release-static :	DEFS += -D_STLP_USE_STATIC_LIB -DWINVER=$(WINVER)
+dbg-static :	DEFS += -D_DEBUG -D_STLP_USE_STATIC_LIB -DWINVER=$(WINVER)
+stldbg-static :	DEFS += -D_DEBUG -D_STLP_USE_STATIC_LIB -DWINVER=$(WINVER)
+
+release-shared:	DEFS += -DWINVER=$(WINVER)
+dbg-shared :	DEFS += -D_DEBUG -DWINVER=$(WINVER)
+stldbg-shared :	DEFS += -D_DEBUG -DWINVER=$(WINVER)
+
 endif
 
 ifeq ($(OSNAME),sunos)
@@ -159,13 +168,9 @@ CXXFLAGS += -ftemplate-depth-32
 endif
 
 # Required for correct order of static objects dtors calls:
-ifneq ($(OSNAME),cygming)
-ifneq ($(OSNAME),windows)
-ifneq ($(OSNAME),darwin)
+ifeq ("$(findstring $(OSNAME),darwin windows)","")
 ifneq ($(CXX_VERSION_MAJOR),2)
 CXXFLAGS += -fuse-cxa-atexit
-endif
-endif
 endif
 endif
 

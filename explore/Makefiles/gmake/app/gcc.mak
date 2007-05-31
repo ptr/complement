@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <07/03/08 21:23:42 ptr>
+# -*- Makefile -*- Time-stamp: <07/05/30 23:54:39 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005-2007
 # Petr Ovtchenkov
@@ -55,6 +55,10 @@ endif
 ifeq ($(OSNAME),sunos)
 _USE_NOSTDLIB := 1
 endif
+
+ifeq ($(OSNAME),darwin)
+_USE_NOSTDLIB := 1
+endif
 endif
 
 ifndef WITHOUT_STLPORT
@@ -66,14 +70,6 @@ dbg-shared:	STLPORT_LIB = -lstlportg
 dbg-static:	STLPORT_LIB = -Wl,-Bstatic -lstlportg -Wl,-Bdynamic
 stldbg-shared:	STLPORT_LIB = -lstlportstlg
 stldbg-static:	STLPORT_LIB = -Wl,-Bstatic -lstlportstlg -Wl,-Bdynamic
-
-
-ifeq ($(OSNAME),cygming)
-LIB_VERSION = ${LIBMAJOR}.${LIBMINOR}
-release-shared : STLPORT_LIB = -lstlport.${LIB_VERSION}
-dbg-shared     : STLPORT_LIB = -lstlportg.${LIB_VERSION}
-stldbg-shared  : STLPORT_LIB = -lstlportstlg.${LIB_VERSION}
-endif
 
 ifeq ($(OSNAME),windows)
 LIB_VERSION = ${LIBMAJOR}.${LIBMINOR}
@@ -131,6 +127,12 @@ ifeq ($(OSNAME),sunos)
 START_OBJ := $(shell for o in crt1.o crti.o crtbegin.o; do ${CXX} -print-file-name=$$o; done)
 END_OBJ := $(shell for o in crtend.o crtn.o; do ${CXX} -print-file-name=$$o; done)
 STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lpthread -lc -lm
+endif
+ifeq ($(OSNAME),darwin)
+START_OBJ := -lcrt1.o -lcrt2.o
+END_OBJ :=
+STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lc -lm -lsupc++
+#LDFLAGS += -dynamic
 endif
 LDFLAGS += -nostdlib
 # endif

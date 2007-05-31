@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <06/11/17 00:39:31 ptr>
+# -*- makefile -*- Time-stamp: <07/05/30 23:55:47 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -26,7 +26,7 @@ clean::
 	@-rm -f $${$(1)_A_NAME_OUT}
 	@-rm -f $${$(1)_A_NAME_OUT_DBG}
 	@-rm -f $${$(1)_A_NAME_OUT_STLDBG}
-ifeq ($(OSNAME), cygming)
+ifeq ($(OSNAME), windows)
 	@-rm -f $${$(1)_LIB_NAME_OUT}
 	@-rm -f $${$(1)_LIB_NAME_OUT_DBG}
 	@-rm -f $${$(1)_LIB_NAME_OUT_STLDBG}
@@ -73,7 +73,7 @@ ifdef LIBNAME
 	@-rm -f ${A_NAME_OUT}
 	@-rm -f ${A_NAME_OUT_DBG}
 	@-rm -f ${A_NAME_OUT_STLDBG}
-ifeq ($(OSNAME), cygming)
+ifeq ($(OSNAME), windows)
 	@-rm -f ${LIB_NAME_OUT}
 	@-rm -f ${LIB_NAME_OUT_DBG}
 	@-rm -f ${LIB_NAME_OUT_STLDBG}
