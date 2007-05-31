@@ -1,3 +1,20 @@
+2007-05-31  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/app/gcc.mak, gmake/targets.mak, gmake/windows/rules-so.mak:
+	remove bogus OSNAME cygming, replace one by normal windows;
+
+	* gmake/gcc.mak, gmake/lib/gcc.mak, gmake/sysid.mak: ditto;
+
+	* gmake/windows/rules-install-so.mak, gmake/windows/sys.mak: ditto;
+
+	* gmake/windows/targetsys.mak: ditto;
+
+	* gmake/cygming: removed; use windows instead;
+
+	* dmc.mak, bcc.mak: included from STLport;
+
+	* aCC.mak: use options from STLport, it's more fresh.
+
 2007-03-08  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* make.mak: removed, make except GNU make can't work due to top.mak;
