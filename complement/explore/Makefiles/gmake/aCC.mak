@@ -1,4 +1,4 @@
-# Time-stamp: <06/11/10 15:54:03 ptr>
+# Time-stamp: <07/05/31 01:07:37 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -8,8 +8,6 @@
 #
 # Licensed under the Academic Free License version 3.0
 #
-
-INCLUDES :=
 
 ifndef _FORCE_CXX
 CXX := aCC
@@ -23,13 +21,12 @@ else
 CC := $_FORCE_CC
 endif
 
-CXX_VERSION := $(shell ${CXX} --version | grep ${CXX} | awk '{ print $$3; }')
+CXX_VERSION := $(shell ${CXX} --version 2>&1 | grep ${CXX} | awk '{ print $$6; }')
 ifeq ($(CXX_VERSION),)
 CXX_VERSION := $(shell ${CXX} --version)
 endif
-CXX_VERSION_MAJOR := $(shell echo ${CXX_VERSION} | awk 'BEGIN { FS = "."; } { print $$1; }')
-CXX_VERSION_MINOR := $(shell echo ${CXX_VERSION} | awk 'BEGIN { FS = "."; } { print $$2; }')
-CXX_VERSION_PATCH := $(shell echo ${CXX_VERSION} | awk 'BEGIN { FS = "."; } { print $$3; }')
+CXX_VERSION_MAJOR := $(shell echo ${CXX_VERSION} | awk 'BEGIN { FS = "."; } { print $$2; }')
+CXX_VERSION_MINOR := $(shell echo ${CXX_VERSION} | awk 'BEGIN { FS = "."; } { print $$3; }')
 
 DEFS ?=
 OPT ?=
@@ -39,8 +36,8 @@ OUTPUT_OPTION = -o $@
 LINK_OUTPUT_OPTION = ${OUTPUT_OPTION}
 CPPFLAGS = $(DEFS) $(INCLUDES)
 
-CFLAGS = -Aa -z $(OPT)
-CXXFLAGS = -Aa -z $(OPT)
+CFLAGS = -Aa +z $(OPT)
+CXXFLAGS = -Aa +z -mt $(OPT)
 
 CDEPFLAGS = -E +Md
 CCDEPFLAGS = -E +Md
@@ -65,7 +62,7 @@ stldbg-shared : OPT += -g
 #stldbg-static-dep : OPT += -g
 #stldbg-shared-dep : OPT += -g
 
-OPT += +Onolimit +W495,749
+OPT += +W495,749,2186,2191,2340,2430,2550
 
 # dependency output parser (dependencies collector)
 

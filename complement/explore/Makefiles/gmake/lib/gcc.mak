@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <07/03/08 21:26:20 ptr>
+# -*- makefile -*- Time-stamp: <07/05/31 00:55:13 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005-2007
 # Petr Ovtchenkov
@@ -14,7 +14,9 @@
 # tag with assignment fail, but work assignment for all tags
 # (really that more correct).
 
+ifneq ($(OSNAME), windows)
 OPT += -fPIC
+endif
 
 ifndef NOT_USE_NOSTDLIB
 
@@ -62,6 +64,10 @@ endif
 ifeq ($(OSNAME),sunos)
 _USE_NOSTDLIB := 1
 endif
+
+ifeq ($(OSNAME),darwin)
+_USE_NOSTDLIB := 1
+endif
 endif
 
 ifndef WITHOUT_STLPORT
@@ -70,13 +76,6 @@ LDSEARCH += -L${STLPORT_LIB_DIR}
 release-shared:	STLPORT_LIB = -lstlport
 dbg-shared:	STLPORT_LIB = -lstlportg
 stldbg-shared:	STLPORT_LIB = -lstlportstlg
-
-ifeq ($(OSNAME),cygming)
-LIB_VERSION = ${LIBMAJOR}.${LIBMINOR}
-release-shared : STLPORT_LIB = -lstlport.${LIB_VERSION}
-dbg-shared     : STLPORT_LIB = -lstlportg.${LIB_VERSION}
-stldbg-shared  : STLPORT_LIB = -lstlportstlg.${LIB_VERSION}
-endif
 
 ifeq ($(OSNAME),windows)
 LIB_VERSION = ${LIBMAJOR}.${LIBMINOR}
@@ -139,6 +138,16 @@ START_OBJ := $(shell for o in crti.o crtbegin.o; do ${CXX} -print-file-name=$$o;
 END_OBJ := $(shell for o in crtend.o crtn.o; do ${CXX} -print-file-name=$$o; done)
 STDLIBS := ${STLPORT_LIB} ${_LGCC_S} -lpthread -lc -lm -lrt
 endif
+ifeq ($(OSNAME),darwin)
+START_OBJ :=
+END_OBJ :=
+ifdef GCC_APPLE_CC
+STDLIBS := ${STLPORT_LIB} -lgcc -lc -lm
+else
+LDFLAGS += -single_module
+STDLIBS := ${STLPORT_LIB} ${_LGCC_S} -lc -lm
+endif
+endif
 #END_A_OBJ := $(shell for o in crtn.o; do ${CXX} -print-file-name=$$o; done)
 NOSTDLIB := -nostdlib
 # endif
@@ -151,9 +160,9 @@ endif
 endif
 
 ifeq ($(OSNAME),hp-ux)
-dbg-shared:	LDFLAGS += -shared -Wl,-C20 -Wl,-dynamic  -Wl,+h$(SO_NAME_DBGxx) ${LDSEARCH}
-stldbg-shared:	LDFLAGS += -shared -Wl,-C20 -Wl,-dynamic  -Wl,+h$(SO_NAME_STLDBGxx) ${LDSEARCH}
-release-shared:	LDFLAGS += -shared -Wl,-C20 -Wl,-dynamic -Wl,+h$(SO_NAMExx) ${LDSEARCH}
+dbg-shared:	LDFLAGS += -shared -Wl,-dynamic -Wl,+h$(SO_NAME_DBGxx) ${LDSEARCH}
+stldbg-shared:	LDFLAGS += -shared -Wl,-dynamic -Wl,+h$(SO_NAME_STLDBGxx) ${LDSEARCH}
+release-shared:	LDFLAGS += -shared -Wl,-dynamic -Wl,+h$(SO_NAMExx) ${LDSEARCH}
 endif
 
 ifeq ($(OSNAME),sunos)
@@ -174,11 +183,10 @@ stldbg-static:	LDFLAGS += ${LDSEARCH}
 release-static:	LDFLAGS += ${LDSEARCH}
 endif
 
-ifeq ($(OSNAME),cygming)
-OPT := 
-dbg-shared:	LDFLAGS += -shared -Wl,--out-implib=${LIB_NAME_OUT_DBG},--export-all-symbols,--disable-auto-import
-stldbg-shared:	LDFLAGS += -shared -Wl,--out-implib=${LIB_NAME_OUT_STLDBG},--export-all-symbols
-release-shared:	LDFLAGS += -shared -Wl,--out-implib=${LIB_NAME_OUT},--export-all-symbols
+ifeq ($(OSNAME),windows)
+dbg-shared:	LDFLAGS += -shared -Wl,--out-implib=${LIB_NAME_OUT_DBG},--enable-auto-image-base
+stldbg-shared:	LDFLAGS += -shared -Wl,--out-implib=${LIB_NAME_OUT_STLDBG},--enable-auto-image-base
+release-shared:	LDFLAGS += -shared -Wl,--out-implib=${LIB_NAME_OUT},--enable-auto-image-base
 dbg-static:	LDFLAGS += -static ${LDSEARCH}
 stldbg-static:	LDFLAGS += -static ${LDSEARCH}
 release-static:	LDFLAGS += -static ${LDSEARCH}
@@ -197,9 +205,9 @@ ifeq ($(OSNAME),darwin)
 CURRENT_VERSION := ${MAJOR}.${MINOR}.${PATCH}
 COMPATIBILITY_VERSION := $(CURRENT_VERSION)
 
-dbg-shared:	LDFLAGS += -dynamiclib -compatibility_version $(COMPATIBILITY_VERSION) -current_version $(CURRENT_VERSION) -install_name $(SO_NAME_DBGxx) -Wl ${LDSEARCH}
-stldbg-shared:	LDFLAGS += -dynamiclib -compatibility_version $(COMPATIBILITY_VERSION) -current_version $(CURRENT_VERSION) -install_name $(SO_NAME_STLDBGxx) -Wl ${LDSEARCH}
-release-shared:	LDFLAGS += -dynamiclib -compatibility_version $(COMPATIBILITY_VERSION) -current_version $(CURRENT_VERSION) -install_name $(SO_NAMExx) -Wl ${LDSEARCH}
+dbg-shared:	LDFLAGS += -dynamic -dynamiclib -compatibility_version $(COMPATIBILITY_VERSION) -current_version $(CURRENT_VERSION) -install_name $(SO_NAME_DBGxx) ${LDSEARCH} ${NOSTDLIB}
+stldbg-shared:	LDFLAGS += -dynamic -dynamiclib -compatibility_version $(COMPATIBILITY_VERSION) -current_version $(CURRENT_VERSION) -install_name $(SO_NAME_STLDBGxx) ${LDSEARCH} ${NOSTDLIB}
+release-shared:	LDFLAGS += -dynamic -dynamiclib -compatibility_version $(COMPATIBILITY_VERSION) -current_version $(CURRENT_VERSION) -install_name $(SO_NAMExx) ${LDSEARCH} ${NOSTDLIB}
 dbg-static:	LDFLAGS += -staticlib ${LDSEARCH}
 stldbg-static:	LDFLAGS += -staticlib ${LDSEARCH}
 release-static:	LDFLAGS += -staticlib ${LDSEARCH}
