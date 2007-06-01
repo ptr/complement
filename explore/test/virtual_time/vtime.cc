@@ -207,84 +207,19 @@ vtime_type operator -( const vtime_type& l, const vtime_type& r )
 
 vtime_type operator +( const vtime_type& l, const vtime_type& r )
 {
-  if ( r.empty() ) {
-    return l;
+  vtime_type tmp( l.begin(), l.end() );
+
+  for ( i = r.begin(); i != r.end(); ++i ) {
+    tmp[i->first] += i->second;
   }
 
-  if ( l.empty() ) {
-    return r;
-  }
-
-  vtime_type vt;
-  vtime_type::const_iterator i = l.begin();
-  vtime_type::const_iterator j = r.begin();
-
-  while ( i != l.end() && j != r.end() ) {
-    while ( i != l.end() && i->first < j->first ) {
-      vt.push_back( make_pair( i->first, i->second ) );
-      ++i;
-    }
-  
-    while ( i != l.end() && j != r.end() && i->first == j->first ) {
-      vt.push_back( make_pair( i->first, i->second + j->second ) );
-      ++i;
-      ++j;
-    }
-    if ( i != l.end() ) {
-      while ( j != r.end() && j->first < i->first ) {
-	vt.push_back( make_pair( j->first, j->second ) );
-	++j;
-      }
-    }
-  }
-
-  while ( i != l.end() ) {
-    vt.push_back( make_pair( i->first, i->second ) );
-    ++i;
-  }
-  while ( j != r.end() ) {
-    vt.push_back( make_pair( j->first, j->second ) );
-    ++j;
-  }
-
-  return vt;
+  return tmp;
 }
 
 vtime_type& operator +=( vtime_type& l, const vtime_type& r )
 {
-  if ( r.empty() ) {
-    return l;
-  }
-
-  if ( l.empty() ) {
-    l = r;
-    return l;
-  }
-
-  vtime_type::iterator i = l.begin();
-  vtime_type::const_iterator j = r.begin();
-
-  while ( i != l.end() && j != r.end() ) {
-    while ( i != l.end() && i->first < j->first ) {
-      ++i;
-    }
-  
-    while ( i != l.end() && j != r.end() && i->first == j->first ) {
-      i->second += j->second;
-      ++i;
-      ++j;
-    }
-
-    while ( i != l.end() && j != r.end() && j->first < i->first ) {
-      l.insert( i, make_pair( j->first, j->second ) );
-      ++i;
-      ++j;
-    }
-  }
-
-  while ( j != r.end() ) {
-    l.push_back( make_pair( j->first, j->second ) );
-    ++j;
+  for ( i = r.begin(); i != r.end(); ++i ) {
+    l[i->first] += i->second;
   }
 
   return l;
@@ -293,57 +228,23 @@ vtime_type& operator +=( vtime_type& l, const vtime_type& r )
 // template <>
 vtime_type max( const vtime_type& l, const vtime_type& r )
 {
-  if ( l.empty() ) {
-    return r;
-  }
+  vtime_type tmp( l.begin(), l.end() );
 
-  if ( r.empty() ) {
-    return l;
-  }
-
-  // here l and r non-empty
-
-  vtime_type vt;
-  vtime_type::const_iterator i = l.begin();
-  vtime_type::const_iterator j = r.begin();
-
-  while ( i != l.end() && j != r.end() ) {
-    while ( i != l.end() && i->first < j->first ) {
-      vt.push_back( make_pair( i->first, i->second ) );
-      ++i;
-    }
-
-    while ( i != l.end() && j != r.end() && i->first == j->first ) {
-      vt.push_back( make_pair( i->first, std::max( i->second, j->second ) ) );
-      ++i;
-      ++j;
+  for ( i = r.begin(); i != r.end(); ++i ) {
+    pair<vtime_type::iterator,bool> p = tmp.insert(i->first);
+    if ( p->second == false ) {
+      *p->first = i->second;
+    } else {
+      *p->first = max( *p->first->second, i->second );
     }
   }
-  while ( i != l.end() ) {
-    vt.push_back( make_pair( i->first, i->second ) );
-    ++i;
-  }
-  while ( j != r.end() ) {
-    vt.push_back( make_pair( j->first, j->second ) );
-    ++j;
-  }
-
-  return vt;
+  return tmp;
 }
 
 vtime& vtime::operator +=( const vtime_proc_type& t )
 {
-  vtime_type::iterator i = vt.begin();
+  vt[t.first] += t.second;
 
-  for ( ; i != vt.end(); ++i ) {
-    if ( i->first > t.first ) {
-      break;
-    } else if ( i->first == t.first ) {
-      i->second += t.second;
-      return *this;
-    }
-  }
-  vt.insert( i, t );
   return *this;
 }
 
