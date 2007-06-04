@@ -35,12 +35,13 @@ void vtime::unpack( std::istream& s )
   uint8_t n;
   __unpack( s, n );
   while ( n-- > 0 ) {
-    vtime_proc_type v;
+    oid_type oid;
+    vtime_unit_type v;
 
-    __unpack( s, v.first );
-    __unpack( s, v.second );
+    __unpack( s, oid );
+    __unpack( s, v );
 
-    vt.push_back( v );
+    vt[oid] = v;
   }
 }
 
@@ -50,12 +51,13 @@ void vtime::net_unpack( std::istream& s )
   uint8_t n;
   __net_unpack( s, n );
   while ( n-- > 0 ) {
-    vtime_proc_type v;
+    oid_type oid;
+    vtime_unit_type v;
 
-    __net_unpack( s, v.first );
-    __net_unpack( s, v.second );
+    __net_unpack( s, oid );
+    __net_unpack( s, v );
 
-    vt.push_back( v );
+    vt[oid] = v;
   }
 }
 
@@ -83,9 +85,9 @@ void gvtime::unpack( std::istream& s )
   uint8_t n;
   __unpack( s, n );
   while ( n-- > 0 ) {
-    gvt.push_back( vtime_group_type() );
-    __unpack( s, gvt.back().first );
-    gvt.back().second.unpack( s );
+    group_type gid;
+    __unpack( s, gid );
+    gvt[gid].unpack( s );
   }
 }
 
@@ -95,9 +97,9 @@ void gvtime::net_unpack( std::istream& s )
   uint8_t n;
   __net_unpack( s, n );
   while ( n-- > 0 ) {
-    gvt.push_back( vtime_group_type() );
-    __net_unpack( s, gvt.back().first );
-    gvt.back().second.net_unpack( s );
+    group_type gid;
+    __net_unpack( s, gid );
+    gvt[gid].net_unpack( s );
   }
 }
 
@@ -168,48 +170,31 @@ bool operator <=( const vtime_type& l, const vtime_type& r )
 
 vtime_type operator -( const vtime_type& l, const vtime_type& r )
 {
-  if ( r.empty() ) {
-    return l;
+  vtime_type tmp( r.begin(), r.end() );
+
+  for ( vtime_type::iterator i = tmp.begin(); i != tmp.end(); ++i ) {
+    vtime_type::const_iterator p = l.find(i->first);
+    if ( p == l.end() || p->second < i->second ) {
+      throw range_error( "vtime different: right value grater then left" );
+    }
+    i->second = p->second - i->second;
   }
 
-  vtime_type vt;
-  vtime_type::const_iterator i = l.begin();
-  vtime_type::const_iterator j = r.begin();
-
-  while ( i != l.end() && j != r.end() ) {
-    while ( i != l.end() && i->first < j->first ) {
-      vt.push_back( make_pair( i->first, i->second ) );
-      ++i;
-    }
-  
-    while ( i != l.end() && j != r.end() && i->first == j->first ) {
-      if ( i->second < j->second ) {
-        throw range_error( "vtime different: right value grater then left" );
-      } else if ( i->second > j->second ) {
-	vt.push_back( make_pair( i->first, i->second - j->second ) );
-      }
-      ++i;
-      ++j;
+  for ( vtime_type::const_iterator i = l.begin(); i != l.end(); ++i ) {
+    vtime_type::iterator p = tmp.find(i->first);
+    if ( p == tmp.end() ) {
+      tmp[i->first] = i->second;
     }
   }
 
-  if ( i == l.end() && j != r.end() ) {
-    throw range_error( "vtime different: right value grater then left" );
-  }
-
-  while ( i != l.end() ) {
-    vt.push_back( make_pair( i->first, i->second ) );
-    ++i;
-  }
-
-  return vt;
+  return tmp;
 }
 
 vtime_type operator +( const vtime_type& l, const vtime_type& r )
 {
   vtime_type tmp( l.begin(), l.end() );
 
-  for ( i = r.begin(); i != r.end(); ++i ) {
+  for ( vtime_type::const_iterator i = r.begin(); i != r.end(); ++i ) {
     tmp[i->first] += i->second;
   }
 
@@ -218,7 +203,7 @@ vtime_type operator +( const vtime_type& l, const vtime_type& r )
 
 vtime_type& operator +=( vtime_type& l, const vtime_type& r )
 {
-  for ( i = r.begin(); i != r.end(); ++i ) {
+  for ( vtime_type::const_iterator i = r.begin(); i != r.end(); ++i ) {
     l[i->first] += i->second;
   }
 
@@ -230,43 +215,30 @@ vtime_type max( const vtime_type& l, const vtime_type& r )
 {
   vtime_type tmp( l.begin(), l.end() );
 
-  for ( i = r.begin(); i != r.end(); ++i ) {
-    pair<vtime_type::iterator,bool> p = tmp.insert(i->first);
-    if ( p->second == false ) {
-      *p->first = i->second;
-    } else {
-      *p->first = max( *p->first->second, i->second );
-    }
+  for ( vtime_type::const_iterator i = r.begin(); i != r.end(); ++i ) {
+    tmp[i->first] = std::max( tmp[i->first], i->second );
   }
   return tmp;
 }
 
-vtime& vtime::operator +=( const vtime_proc_type& t )
+vtime& vtime::operator +=( const vtime_type::value_type& t )
 {
   vt[t.first] += t.second;
 
   return *this;
 }
 
-gvtime_type& operator +=( gvtime_type& gvt, const vtime_group_type& t )
+gvtime_type& operator +=( gvtime_type& gvt, gvtime_type::value_type& t )
 {
-  gvtime_type::iterator i = gvt.begin();
+  gvt[t.first] += t.second;
 
-  for ( ; i != gvt.end(); ++i ) {
-    if ( i->first > t.first ) {
-      break;
-    } else if ( i->first == t.first ) {
-      i->second += t.second;
-      return gvt;
-    }
-  }
-  gvt.insert( i, t );
   return gvt;
 }
 
-gvtime& gvtime::operator +=( const vtime_group_type& t )
+gvtime& gvtime::operator +=( const gvtime_type::value_type& t )
 {
-  gvt += t;
+  gvt[t.first] += t.second;
+
   return *this;  
 }
 
@@ -311,41 +283,7 @@ void Proc::mess( const stem::Event_base<VTmess>& ev )
 
 bool Proc::order_correct( const stem::Event_base<VTmess>& ev )
 {
-  gvtime_type::const_iterator gr = ev.value().gvt.gvt.begin();
-  gvtime_type::const_iterator ge = ev.value().gvt.gvt.end();
-
-  bool fine = false;
-
-  group_type mgrp = ev.value().grp;
-
-  for ( ; gr != ge; ++gr ) { // over all groups
-    if ( gr->first == mgrp ) {
-      if ( comp( lvt, mgrp, ev.src() ) + 1 != comp( ev.value().gvt.gvt, mgrp, ev.src() ) ) {
-	return false;
-      }
-      for ( gvtime_type::const_iterator i = lvt.begin(); i != lvt.end(); ++i ) {
-	if ( mgrp == i->first ) {
-	  for ( vtime_type::const_iterator j =   ) {
-	  }
-	}
-      }
-    } else {
-      for ( gvtime_type::const_iterator i = lvt.begin(); i != lvt.end(); ++i ) {
-	if ( gr->first == i->first ) {
-	  vtime vt_tmp = i->second + gr->second;
-	  for ( gvtime_type::const_iterator j = vt.begin(); j != vt.end(); ++j ) {
-	    if ( i->first == j->first ) {
-	      if ( !(vt_tmp <= j->second) ) {
-		return false;
-	      }
-	    }
-	  }
-	}
-      }
-    }
-  }
-
-  return fine;
+  return false;
 }
 
 DEFINE_RESPONSE_TABLE( Proc )
@@ -356,7 +294,7 @@ END_RESPONSE_TABLE
 
 namespace std {
 
-ostream& operator <<( ostream& o, const vt::vtime_proc_type& v )
+ostream& operator <<( ostream& o, const vt::vtime_type::value_type& v )
 {
   return o << "(" << v.first << "," << v.second << ")\n";
 }
@@ -370,7 +308,7 @@ ostream& operator <<( ostream& o, const vt::vtime_type& v )
   return o << "]\n";
 }
 
-ostream& operator <<( ostream& o, const vt::vtime_group_type& v )
+ostream& operator <<( ostream& o, const vt::gvtime_type::value_type& v )
 {
   o << v.first << ": " << v.second.vt;
 }

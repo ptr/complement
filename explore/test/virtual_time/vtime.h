@@ -51,13 +51,10 @@ struct vtime :
     { }
 
   vtime& operator =( const vtime& _vt )
-    {
-      vt.clear();
-      std::copy( _vt.vt.begin(), _vt.vt.end(), std::back_insert_iterator<vtime_type>(vt) );
-    }
+    { vt = _vt.vt; }
 
-  bool operator ==( const vtime& r ) const
-    { return vt == r.vt; }
+  // bool operator ==( const vtime& r ) const
+  //   { return vt == r.vt; }
 
   bool operator <=( const vtime& r ) const
     { return vt <= r.vt; }
@@ -79,17 +76,20 @@ struct vtime :
     return *this;
   }
   
-  vtime& operator +=( const vtime_proc_type& );
+  vtime& operator +=( const vtime_type::value_type& );
+
+  vtime_type::data_type& operator[]( const vtime_type::key_type k )
+  { return vt[k]; }
     
   vtime_type vt;
 };
 
 // typedef std::pair<group_type, vtime> vtime_group_type;
 // typedef std::list<vtime_group_type> gvtime_type;
-typedef std::hash_map<group_type, vtime_type> gvtime_type;
+typedef std::hash_map<group_type, vtime> gvtime_type;
 
 vtime_unit_type comp( const gvtime_type&, group_type, oid_type );
-gvtime_type& operator +=( gvtime_type&, const vtime_group_type& );
+gvtime_type& operator +=( gvtime_type&, const gvtime_type::value_type& );
 
 struct gvtime :
     public stem::__pack_base
@@ -106,12 +106,9 @@ struct gvtime :
     { }
 
   gvtime& operator =( const gvtime& _gvt )
-    {
-      gvt.clear();
-      std::copy( _gvt.gvt.begin(), _gvt.gvt.end(), std::back_insert_iterator<gvtime_type>(gvt) );
-    }
+    { gvt = _gvt.gvt; }
 
-  gvtime& operator +=( const vtime_group_type& );
+  gvtime& operator +=( const gvtime_type::value_type& );
 
   gvtime_type gvt;
 };
@@ -174,9 +171,9 @@ class Proc :
 
 namespace std {
 
-ostream& operator <<( ostream&, const vt::vtime_proc_type& );
+ostream& operator <<( ostream&, const vt::vtime_type::value_type& );
 ostream& operator <<( ostream&, const vt::vtime_type& );
-ostream& operator <<( ostream&, const vt::vtime_group_type& );
+ostream& operator <<( ostream&, const vt::gvtime_type::value_type& );
 ostream& operator <<( ostream&, const vt::gvtime_type& );
 
 } // namespace std
