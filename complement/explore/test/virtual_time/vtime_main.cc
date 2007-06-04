@@ -24,18 +24,18 @@ int main()
   
   mess.dest( 101 );
 
-  vtime_group_type gvt;
+  // gvtime_type::value_type gvt;
 
-  gvt.first = 0; // group
-  gvt.second += make_pair( 100, 1 );
+  // gvt.first = 0; // group
+  // gvt.second += make_pair( 100, 1 );
 
   mess.value().mess = "Hello!";
   mess.value().grp = 0;
-  mess.value().gvt += gvt;
+  mess.value().gvt.gvt[0][100] = 1;
 
   m1.Send( mess );
 
-  mess.value().gvt += gvt;
+  mess.value().gvt.gvt[0][100] += 1;
 
   mess.value().mess = "How are you?";
   m1.Send( mess );
