@@ -88,7 +88,6 @@ struct vtime :
 // typedef std::list<vtime_group_type> gvtime_type;
 typedef std::hash_map<group_type, vtime> gvtime_type;
 
-vtime_unit_type comp( const gvtime_type&, group_type, oid_type );
 gvtime_type& operator +=( gvtime_type&, const gvtime_type::value_type& );
 
 struct gvtime :
@@ -109,6 +108,9 @@ struct gvtime :
     { gvt = _gvt.gvt; }
 
   gvtime& operator +=( const gvtime_type::value_type& );
+
+  gvtime_type::data_type& operator[]( const gvtime_type::key_type k )
+    { return gvt[k]; }
 
   gvtime_type gvt;
 };
@@ -144,23 +146,21 @@ class Proc :
         stem::EventHandler( id )
       { }
 
+    void add_group( group_type g )
+      { groups.push_back( g ); }
+
     void mess( const stem::Event_base<VTmess>& );
+
+    typedef std::list<group_type> groups_container_type;
 
   private:
 
-  bool order_correct( const stem::Event_base<VTmess>& );
+    bool order_correct( const stem::Event_base<VTmess>& );
 
-    enum vtgroup {
-      first_group,
-      second_group,
-      n_groups
-    };
+    gvtime lvt;
+    gvtime vt;
+    groups_container_type groups;
 
-    // vtime_type vt[n_groups];
-    gvtime_type lvt;
-    gvtime_type vt;
-    // vtime_type last_vt[n_groups];
-    // gvtime_type last_vt;
 
     DECLARE_RESPONSE_TABLE( Proc, stem::EventHandler );
 };
