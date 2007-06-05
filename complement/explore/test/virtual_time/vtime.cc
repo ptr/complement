@@ -242,48 +242,49 @@ gvtime& gvtime::operator +=( const gvtime_type::value_type& t )
   return *this;  
 }
 
-vtime_unit_type comp( const gvtime_type& gvt, group_type g, oid_type p )
-{
-  gvtime_type::const_iterator k = gvt.begin();
-  for ( ; k != gvt.end(); ++k ) {
-    if ( k->first == g ) {
-      for ( vtime_type::const_iterator i = k->second.vt.begin(); i != k->second.vt.end(); ++i ) {
-	if ( i->first == p ) {
-	  return i->second; // found (p_i, t) in g_k
-	} else if ( i->first > p ) {
-	  return 0; // pair sorted, so no pair required (p_i, t) expected more
-	}
-      }
-      return 0; // no pair (p_i, * )
-    } else if ( k->first > g ) { // groups sorted, so no required group expected more
-      return 0;
-    }
-  }
-
-  return 0;
-}
-
-
 void Proc::mess( const stem::Event_base<VTmess>& ev )
 {
-  cout << ev.value().mess << endl;
+  cout << self_id() << " " << ev.value().mess << endl;
 
   cout << ev.value().gvt.gvt << endl;
 
   cout << order_correct( ev ) << endl;
 
-  if ( order_correct( ev ) ) {
-    gvtime_type::const_iterator gr = ev.value().gvt.gvt.begin();
-    gvtime_type::const_iterator ge = ev.value().gvt.gvt.end();
-    for ( ; gr != ge; ++gr ) { // over all groups
-      // vt[gr->first] = max( vt[gr->first], vt[gr->first] + gr->second.vt );
-    }
-  }
+  // if ( order_correct( ev ) ) {
+  // 
+  // }
 }
 
 bool Proc::order_correct( const stem::Event_base<VTmess>& ev )
 {
-  return false;
+  // 1.
+
+  gvtime gvt( ev.value().gvt );
+
+  if ( vt.gvt[ev.value().grp][ev.src()] + 1 != gvt[ev.value().grp][ev.src()] ) {
+    return false;
+  }
+
+  vtime xvt = lvt[ev.value().grp] + gvt[ev.value().grp];
+  xvt[ev.src()] = 0;
+
+  if ( !(xvt <= vt[ev.value().grp]) ) {
+    return false;
+  }
+
+  // change: iteration through all groups of this object (not the same as below)
+  for ( groups_container_type::const_iterator l = groups.begin(); l != groups.end(); ++l ) {
+    if ( *l != ev.value().grp ) {
+      xvt = lvt[*l] + gvt[*l];
+      if ( !(xvt <= vt[*l]) ) {
+	return false;
+      }
+    }
+  }
+
+  // lvt += gvt; 
+
+  return true;
 }
 
 DEFINE_RESPONSE_TABLE( Proc )
