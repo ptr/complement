@@ -84,11 +84,16 @@ struct vtime :
   vtime_type vt;
 };
 
+
+vtime max( const vtime& l, const vtime& r );
+
 // typedef std::pair<group_type, vtime> vtime_group_type;
 // typedef std::list<vtime_group_type> gvtime_type;
 typedef std::hash_map<group_type, vtime> gvtime_type;
 
 gvtime_type& operator +=( gvtime_type&, const gvtime_type::value_type& );
+gvtime_type& operator +=( gvtime_type&, const gvtime_type& );
+gvtime_type operator -( const gvtime_type& l, const gvtime_type& r );
 
 struct gvtime :
     public stem::__pack_base
@@ -108,6 +113,7 @@ struct gvtime :
     { gvt = _gvt.gvt; }
 
   gvtime& operator +=( const gvtime_type::value_type& );
+  gvtime& operator +=( const gvtime& );
 
   gvtime_type::data_type& operator[]( const gvtime_type::key_type k )
     { return gvt[k]; }
@@ -149,6 +155,11 @@ class Proc :
     void add_group( group_type g )
       { groups.push_back( g ); }
 
+    void add_group_member( group_type g, oid_type p )
+      { vt[g][p]; }
+
+    void SendVC( group_type, const std::string& mess );
+
     void mess( const stem::Event_base<VTmess>& );
 
     typedef std::list<group_type> groups_container_type;
@@ -157,7 +168,9 @@ class Proc :
 
     bool order_correct( const stem::Event_base<VTmess>& );
 
-    gvtime lvt;
+    typedef std::hash_map<oid_type, gvtime_type> delta_vtime_type;
+
+    delta_vtime_type lvt;
     gvtime vt;
     groups_container_type groups;
 
@@ -173,6 +186,7 @@ namespace std {
 
 ostream& operator <<( ostream&, const vt::vtime_type::value_type& );
 ostream& operator <<( ostream&, const vt::vtime_type& );
+ostream& operator <<( ostream&, const vt::vtime& );
 ostream& operator <<( ostream&, const vt::gvtime_type::value_type& );
 ostream& operator <<( ostream&, const vt::gvtime_type& );
 
