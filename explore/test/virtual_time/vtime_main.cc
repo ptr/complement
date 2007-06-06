@@ -24,31 +24,33 @@ int main()
   m2.add_group( 0 );
   r1.add_group( 0 );
 
+  m1.add_group_member( 0, m2.self_id() );
+  m1.add_group_member( 0, r1.self_id() );
+
+  r1.add_group_member( 0, m1.self_id() );
+  r1.add_group_member( 0, m2.self_id() );
+
+  m2.add_group_member( 0, m1.self_id() );
+  m2.add_group_member( 0, r1.self_id() );
+
   m1.add_group( 1 );
   m2.add_group( 1 );
   r2.add_group( 1 );
 
-  stem::Event_base<VTmess> mess( MESS );
-  
-  mess.dest( m2.self_id() );
+  m1.add_group_member( 1, m2.self_id() );
+  m1.add_group_member( 1, r2.self_id() );
 
-  mess.value().mess = "Hello!";
-  mess.value().grp = 0;
-  mess.value().gvt.gvt[0][m1.self_id()] = 1;
+  r2.add_group_member( 1, m1.self_id() );
+  r2.add_group_member( 1, m2.self_id() );
 
-  m1.Send( mess );
+  m2.add_group_member( 1, m1.self_id() );
+  m2.add_group_member( 1, r2.self_id() );
 
-  mess.dest( r1.self_id() );
+  r1.SendVC( 0, "Hello!" );
 
-  m1.Send( mess );
-
-  // mess.value().gvt.gvt[0][m1.self_id()] += 1;
-
-  // mess.value().mess = "How are you?";
-  // m1.Send( mess );
+  m1.SendVC( 0, "How are you?" );
 
   cnd.wait();
 
   return 0;
 }
-
