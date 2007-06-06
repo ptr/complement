@@ -8,6 +8,7 @@
 */
 
 #include <sstream>
+#include <iostream>
 
 using namespace std;
 
@@ -22,5 +23,8 @@ ostringstream string_output;
 
 int main(int argc, char* argv[])
 {
+
+  cerr << "Hello!" << endl;
+
         return(0);
 }
