@@ -1,8 +1,8 @@
 #!/bin/sh
 
-# Time-stamp: <06/11/10 15:47:21 ptr>
+# Time-stamp: <07/06/08 23:24:03 ptr>
 
-configmak=Makefiles/config.mak
+configmak=Makefiles/gmake/config.mak
 
 # rm -f ${configmak}
 
