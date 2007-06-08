@@ -1,6 +1,6 @@
-# -*- makefile -*- Time-stamp: <07/03/08 21:59:26 ptr>
+# -*- makefile -*- Time-stamp: <07/06/08 23:35:09 ptr>
 #
-# Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+# Copyright (c) 1997-1999, 2002, 2003, 2005-2007
 # Petr Ovtchenkov
 #
 # Portion Copyright (c) 1999-2001
@@ -33,9 +33,9 @@ $(foreach prg,$(PRGNAMES),$(eval $(call prog_prog,$(prg))))
 
 LDFLAGS += ${LDSEARCH}
 
-include ${RULESBASE}/${USE_MAKE}/app/${COMPILER_NAME}.mak
-include ${RULESBASE}/${USE_MAKE}/app/rules.mak
-include ${RULESBASE}/${USE_MAKE}/app/rules-install.mak
+include ${RULESBASE}/gmake/app/${COMPILER_NAME}.mak
+include ${RULESBASE}/gmake/app/rules.mak
+include ${RULESBASE}/gmake/app/rules-install.mak
 
 define prog_clean
 clean::

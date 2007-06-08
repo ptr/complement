@@ -1,3 +1,12 @@
+2007-06-08  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* clean.mak, extern.mak, config.mak: move to gmake catalog
+
+	* top.mak: move some files in gmake catalog; replace USE_MAKE
+	by gmake;
+
+	* gmake/app/top.mak, gmake/lib/top.mak: replace USE_MAKE by gmake.
+
 2007-05-31  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/app/gcc.mak, gmake/targets.mak, gmake/windows/rules-so.mak:
