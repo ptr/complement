@@ -1,3 +1,8 @@
+2007-06-29  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* _EventHandler.cc: call destructor, don't free memory here;
+	acquire lock (missed lock).
+
 2007-03-12  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* EvManager.h, EvManager.cc: trace-related locks, flags and
