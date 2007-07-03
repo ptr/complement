@@ -28,7 +28,7 @@
     <h2 class="lheader">Anonymous read-only access</h2>
 
     <p>
-      Complement's use Subversion CMS. Repository based  on SourceForge.
+      Complement's CMS is Subversion. Repository based  on SourceForge.
       Anonymous read-only commit:
     </p>
 <pre class="ddisplay">
