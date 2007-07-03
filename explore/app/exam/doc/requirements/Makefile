@@ -1,9 +1,9 @@
-PDFNAMES = UseCaseSpec
+PDFNAMES = ExamUseCaseSpec
 
-UseCaseSpec_SRC_TEX = UseCaseSpec.tex
-UseCaseSpec_SRC_FIG = p1.fig p2.fig p3.fig p4.fig p5.fig debug-focus.fig
+ExamUseCaseSpec_SRC_TEX = ExamUseCaseSpec.tex
+ExamUseCaseSpec_SRC_FIG = p1.fig p2.fig p3.fig p4.fig p5.fig debug-focus.fig
 
-all:	UseCaseSpec.pdf
+all:	$(addsuffix .pdf,$(PDFNAMES))
 
 OUTDIR = .out
 
@@ -59,6 +59,4 @@ if [ ! -d ${OUTDIR} ]; then \
   mkdir -p ${OUTDIR}; \
 fi
 endef
-
-.PHONY:	dirs
 
