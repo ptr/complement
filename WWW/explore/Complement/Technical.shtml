@@ -20,7 +20,7 @@
 <div class="main">
     <!-- <h2 class="lheader">Technology</h2> -->
     <h2 class="lheader">Build system</h2>
-    Build system, that used for this set of projects.
+    <a href="MakeStart.shtml">Build system,</a> that used for this set of projects.
     <h2 class="lheader">Multi-threading programming and IPC</h2>
     Tools that introduce higher abstraction layer under native system capabilities
     for multi-threading and IPC.
@@ -28,10 +28,13 @@
     Abstraction layer that make utilisatoin of C++ iostream interfaces to work with
     tcp sockets, as on server as on client side.
     <h2 class="lheader">EDA tools</h2>
-    Abstraction layer that allow propagate EDA (events-driven architecture) design
+    Abstraction layer that propagate EDA (events-driven architecture) design
     directly into C++ programming.
     <h2 class="lheader">STL implementations</h2>
-    Compare STL implementations and related programming techniques.
+    <a href="compare.pdf">Compare STL implementations and related programming techniques.</a>
+    <h2 class="lheader">Unit test tools</h2>
+    ``Exam'' is a new project. It should provide unit test tool for concurrent and asyncronous
+     system. <a href="ExamUseCaseSpec.pdf">Here initial project documentation.</a>
 </div>
 <!--#include file="foot.shtml" -->
 <!-- Created: Mon Oct  7 16:33:17 MSD 2002 -->
