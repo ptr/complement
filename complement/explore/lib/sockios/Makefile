@@ -1,10 +1,9 @@
 # -*- Makefile -*- Time-stamp: <07/01/23 14:59:53 ptr>
 
 SRCROOT := ../..
-COMPILER_NAME := gcc
 
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
 INCLUDES += -I$(SRCROOT)/include
 

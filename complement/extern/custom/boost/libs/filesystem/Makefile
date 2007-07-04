@@ -6,7 +6,7 @@ POST_INSTALL = ln -sf ${SO_NAME} $(INSTALL_LIB_DIR)/libboost_filesystem.so
 POST_INSTALL_DBG = ln -sf ${SO_NAME_DBG} $(INSTALL_LIB_DIR_DBG)/libboost_filesystem.so
 
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
 INCLUDES += -I${BOOST_INCLUDE_DIR}
 

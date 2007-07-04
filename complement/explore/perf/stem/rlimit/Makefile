@@ -4,7 +4,7 @@ SRCROOT := ../../..
 COMPILER_NAME := gcc
 
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
 INCLUDES += -I${CoMT_INCLUDE_DIR}
 LDSEARCH += -L${CoMT_LIB_DIR}

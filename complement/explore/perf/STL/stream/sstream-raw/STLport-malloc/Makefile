@@ -8,7 +8,7 @@ ALL_TAGS := release-shared
 STLPORT_LIB_DIR := ../../../build/lib/malloc
 
 include ../Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
 DEFS += -D_STLP_USE_MALLOC
 

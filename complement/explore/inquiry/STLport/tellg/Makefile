@@ -7,7 +7,7 @@ COMPILER_NAME := gcc
 #STLPORT_DIR := /export/home/ptr/STLport.lab/cvs.stlport.com/STLport-R451_dev
 STLPORT_DIR := /export/home/ptr/STLport.lab/STLport
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
 
 INCLUDES += -I$(SRCROOT)/include -I$(STLPORT_INCLUDE_DIR)

@@ -8,7 +8,7 @@ STLDBG_SUFFIX :=
 INSTALL_TAGS :=
 
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 LIBSTEM_DIR = ${CoMT_DIR}/lib/stem
 
 INCLUDES += -I$(SRCROOT)/include -I$(BOOST_INCLUDE_DIR)

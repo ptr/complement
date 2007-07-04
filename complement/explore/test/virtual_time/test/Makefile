@@ -6,7 +6,7 @@ COMPILER_NAME := gcc
 # CoMT_DIR := ../../external/complement/explore
 
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
 # DEFS += -DUNIT_TEST
 INCLUDES += -I${CoMT_INCLUDE_DIR} -I${BOOST_INCLUDE_DIR} -I..

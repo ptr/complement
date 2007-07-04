@@ -2,7 +2,7 @@
 
 SRCROOT := ../../../
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
 LDLIBS += -lrt -lnsl -lfl
 
