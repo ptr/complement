@@ -7,7 +7,7 @@ WITHOUT_STLPORT := 1
 
 #STLPORT_DIR := /export/home/ptr/STLport.lab/cvs.stlport.com/STLport
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
 
 #DEFS += -D_STLP_LEAKS_PEDANTIC

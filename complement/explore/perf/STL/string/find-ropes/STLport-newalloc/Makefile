@@ -7,7 +7,7 @@ ALL_TAGS := release-shared
 
 
 include ../Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
 DEFS += -D_STLP_USE_NEWALLOC
 

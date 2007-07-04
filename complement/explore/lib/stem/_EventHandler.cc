@@ -38,7 +38,7 @@ void EventHandler::Init::__at_fork_prepare()
 void EventHandler::Init::__at_fork_child()
 {
   if ( *_rcount != 0 ) {
-    EventHandler::_mgr->~EventHandler();
+    EventHandler::_mgr->~EvManager();
     EventHandler::_mgr = new( EventHandler::_mgr ) EvManager();
   }
 }
@@ -52,7 +52,7 @@ void EventHandler::Init::_guard( int direction )
 {
   static xmt::MutexRS _init_lock;
 
-  LockerRS lk(_init_lock);
+  xmt::LockerRS lk(_init_lock);
   static int _count = 0;
 
   if ( direction ) {

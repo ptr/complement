@@ -17,7 +17,7 @@ COMPILER_NAME := gcc
 
 STLPORT_INCLUDE_DIR = ${STLPORT_DIR}/stlport
 include ../Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
 ifeq ($(OSNAME),linux)
 DEFS += -D_STLP_REAL_LOCALE_IMPLEMENTED -D_GNU_SOURCE -D_STLP_LEAKS_PEDANTIC

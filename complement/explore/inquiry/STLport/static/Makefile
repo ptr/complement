@@ -5,4 +5,4 @@ COMPILER_NAME := gcc
 
 #STLPORT_DIR := /export/home/ptr/STLport.lab/STLport-Makefiles
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak

@@ -9,7 +9,7 @@ ALL_TAGS := release-shared
 WITHOUT_STLPORT := 1
 
 include ../Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
 INCLUDES += -I${CoMT_INCLUDE_DIR}
 

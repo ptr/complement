@@ -5,7 +5,7 @@ SRCROOT := ../../..
 COMPILER_NAME := gcc
 
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
 DEFS += -D_GNU_SOURCE
 

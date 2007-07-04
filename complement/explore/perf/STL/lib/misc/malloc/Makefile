@@ -6,7 +6,7 @@ INSTALL_LIB_DIR     := ../../../build/lib/malloc
 ALL_TAGS := install-release-shared
 
 include ../Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
 INCLUDES += -I$(SRCROOT)/include
 DEFS += -D_STLP_USE_MALLOC

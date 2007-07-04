@@ -7,5 +7,5 @@ COMPILER_NAME := gcc
 ALL_TAGS := release-shared dbg-shared
 
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
