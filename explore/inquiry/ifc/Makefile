@@ -4,7 +4,7 @@ SRCROOT := ../..
 COMPILER_NAME := gcc
 
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
 release-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR}
 stldbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_STLDBG}

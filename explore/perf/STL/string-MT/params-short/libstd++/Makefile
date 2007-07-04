@@ -10,4 +10,4 @@ ALL_TAGS := release-shared
 USE_STDLIB := yes
 
 include ../Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak

@@ -8,7 +8,7 @@ EXTRA_POST_DBG := dl-dbg
 EXTRA_POST_STLDBG := dl-stldbg
 
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
 INCLUDES += -I$(SRCROOT)/include -I$(BOOST_INCLUDE_DIR)
 

@@ -6,7 +6,7 @@ COMPILER_NAME := gcc
 # MYSQL_LIB := /usr/lib/lib
 
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
 INCLUDES += -I$(SRCROOT)/include
 

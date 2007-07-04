@@ -8,4 +8,4 @@ ALL_TAGS := release-shared
 STLPORT_LIB_DIR := ../../../build/lib
 
 include ../Makefile2.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak

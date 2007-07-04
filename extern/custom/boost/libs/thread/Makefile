@@ -4,6 +4,6 @@ SRCROOT := ../../../../../explore
 COMPILER_NAME := gcc
 
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
 INCLUDES += -I${BOOST_INCLUDE_DIR}

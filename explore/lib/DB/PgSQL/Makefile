@@ -1,12 +1,12 @@
 # -*- Makefile -*- Time-stamp: <03/09/25 12:02:31 ptr>
 
 SRCROOT := ../../..
-COMPILER_NAME := gcc
+
 PG_INCLUDE := /opt/pgsql/include
 PG_LIB := /opt/pgsql/lib
 
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
 INCLUDES += -I$(SRCROOT)/include -I${PG_INCLUDE}
 
