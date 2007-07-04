@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/05/24 10:24:22 ptr>
+// -*- C++ -*- Time-stamp: <07/06/27 01:04:38 ptr>
 
 #include "vtime.h"
 
@@ -105,6 +105,8 @@ void gvtime::net_unpack( std::istream& s )
 
 void VTmess::pack( std::ostream& s ) const
 {
+  __pack( s, code );
+  __pack( s, src );
   gvt.pack( s );
   __pack( s, grp );
   __pack( s, mess );
@@ -112,6 +114,8 @@ void VTmess::pack( std::ostream& s ) const
 
 void VTmess::net_pack( std::ostream& s ) const
 {
+  __net_pack( s, code );
+  __net_pack( s, src );
   gvt.net_pack( s );
   __net_pack( s, grp );
   __net_pack( s, mess );
@@ -119,6 +123,8 @@ void VTmess::net_pack( std::ostream& s ) const
 
 void VTmess::unpack( std::istream& s )
 {
+  __unpack( s, code );
+  __unpack( s, src );
   gvt.unpack( s );
   __unpack( s, grp );
   __unpack( s, mess );
@@ -126,6 +132,8 @@ void VTmess::unpack( std::istream& s )
 
 void VTmess::net_unpack( std::istream& s )
 {
+  __net_unpack( s, code );
+  __net_unpack( s, src );
   gvt.net_unpack( s );
   __net_unpack( s, grp );
   __net_unpack( s, mess );
@@ -275,6 +283,159 @@ gvtime& gvtime::operator +=( const gvtime& t )
   }
 
   return *this;
+}
+
+bool vtime_obj_rec::deliver( const VTmess& m )
+{
+  // cout << self_id() << " " << ev.value().mess << endl;
+
+  // cout << ev.value().gvt.gvt << endl;
+
+  if ( order_correct( m ) ) {
+    cout << "Order correct" << endl;
+    lvt[m.src] += m.gvt.gvt;
+    lvt[m.src][m.grp][m.src] = vt.gvt[m.grp][m.src] + 1;
+    vt.gvt[m.grp] = vt::max( vt.gvt[m.grp], lvt[m.src][m.grp] );
+    cout << vt.gvt << endl;
+    return true;
+  }
+
+  cout << "Order not correct" << endl;
+  return false;
+}
+
+bool vtime_obj_rec::order_correct( const VTmess& m )
+{
+  gvtime gvt( m.gvt );
+
+  if ( vt.gvt[m.grp][m.src] + 1 != gvt[m.grp][m.src] ) {
+    cerr << "1" << endl;
+    cerr << vt.gvt[m.grp][m.src] << "\n"
+         << gvt[m.grp][m.src]
+         << endl;
+    return false;
+  }
+
+  vtime xvt = lvt[m.src][m.grp] + gvt[m.grp];
+  xvt[m.src] = 0;
+
+  if ( !(xvt <= vt[m.grp]) ) {
+    cerr << "2" << endl;
+    cerr << xvt << "\n\n"
+         << vt[m.grp] << endl;
+    return false;
+  }
+
+  for ( groups_container_type::const_iterator l = groups.begin(); l != groups.end(); ++l ) {
+    if ( *l != m.grp ) {
+      xvt = lvt[m.src][*l] + gvt[*l];
+      if ( !(xvt <= vt[*l]) ) {
+        cerr << "3" << endl;
+        cerr << "group " << *l << xvt << "\n\n"
+             << vt[*l] << endl;
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+void VTDispatcher::VTDispatch( const VTmess& m )
+{
+  gid_map_type::const_iterator g = grmap.find( m.grp );
+  if ( g != grmap.end() ) {
+    for ( std::list<oid_type>::const_iterator o = g->second.begin(); o != g->second.end(); ++o ) {
+      vt_map_type::iterator i = vtmap.find( *o );
+      if ( i != vtmap.end() ) {
+        if ( i->second.deliver( m ) ) {
+          stem::Event ev( m.code );
+          ev.dest(i->first);
+          ev.value() = m.mess;
+          Send( ev );
+        }
+      }
+    }
+  }
+}
+
+DEFINE_RESPONSE_TABLE( VTDispatcher )
+  EV_T_( ST_NULL, MESS, VTDispatch, VTmess )
+END_RESPONSE_TABLE
+
+char *Init_buf[128];
+VTDispatch *VTHandler::_vtdsp = 0;
+static int *_rcount = 0;
+
+void VTHandler::Init::__at_fork_prepare()
+{
+}
+
+void VTHandler::Init::__at_fork_child()
+{
+  if ( *_rcount != 0 ) {
+    VTHandler::_vtdsp->~VTDispatch();
+    VTHandler::_vtdsp = new( VTHandler::_vtdsp ) VTDispatcher();
+  }
+}
+
+void VTHandler::Init::__at_fork_parent()
+{
+}
+
+void VTHandler::Init::_guard( int direction )
+{
+  static xmt::MutexRS _init_lock;
+  static int _count = 0;
+
+  if ( direction ) {
+    if ( _count++ == 0 ) {
+#ifdef _PTHREADS
+      _rcount = &_count;
+      pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child );
+#endif
+      VTHandler::_vtdsp = new VTDispatcher();
+    }
+  } else {
+    --_count;
+    if ( _count == 0 ) {
+      delete VTHandler::_vtdsp;
+      VTHandler::_vtdsp = 0;
+    }
+  }
+}
+
+VTHandler::Init::Init()
+{ _guard( 1 ); }
+
+VTHandler::Init::~Init()
+{ _guard( 0 ); }
+
+void VTHandler::VTSend( const stem::Event& ev )
+{
+}
+
+VTHandler::VTHandler() :
+   EventHandler()
+{
+  new( Init_buf ) Init();
+}
+
+VTHandler::VTHandler( const char *info ) :
+   EventHandler( info )
+{
+  new( Init_buf ) Init();
+}
+
+VTHandler::VTHandler( stem::addr_type id, const char *info ) :
+   EventHandler( id, info )
+{
+  new( Init_buf ) Init();
+}
+
+VTHandler::~VTHandler()
+{
+  ((Init *)Init_buf)->~Init();
 }
 
 void Proc::mess( const stem::Event_base<VTmess>& ev )

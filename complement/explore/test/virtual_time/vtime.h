@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/05/18 00:26:00 ptr>
+// -*- C++ -*- Time-stamp: <07/06/27 00:59:45 ptr>
 
 #ifndef __vtime_h
 #define __vtime_h
@@ -129,16 +129,105 @@ struct VTmess :
     void unpack( std::istream& s );
     void net_unpack( std::istream& s );
 
-  VTmess()
-    { }
-  VTmess( const VTmess& _gvt ) :
-    gvt( _gvt.gvt ),
-    mess( _gvt.mess )
-    { }
+    VTmess()
+      { }
+    VTmess( const VTmess& _gvt ) :
+        gvt( _gvt.gvt ),
+        mess( _gvt.mess )
+      { }
 
-  gvtime gvt;
-  group_type grp;
-  std::string mess;
+    stem::code_type code;
+    oid_type src;    
+    gvtime gvt;
+    group_type grp;
+    std::string mess;
+};
+
+class vtime_obj_rec
+{
+  public:
+
+    typedef std::list<group_type> groups_container_type;
+    typedef std::hash_map<oid_type, gvtime_type> delta_vtime_type;
+
+    void add_group( group_type g )
+      { groups.push_back( g ); }
+
+    void add_group_member( group_type g, oid_type p )
+      { vt[g][p]; }
+
+    bool deliver( const VTmess& ev );
+
+    stem::addr_type addr; // stem address of object
+    delta_vtime_type lvt; // last seen VT of neighbours
+    gvtime vt;            // VT of object
+    groups_container_type groups; // member of groups
+    // delay pool should be here
+
+  private:
+    bool order_correct( const VTmess& );
+};
+
+class VTDispatcher :
+        public stem::EventHandler
+{
+  public:
+    VTDispatcher()
+      { }
+
+    VTDispatcher( stem::addr_type id ) :
+        stem::EventHandler( id )
+      { }
+
+    void VTDispatch( const VTmess& );
+
+    void VTSend( const Event& e );
+
+  private:
+    typedef std::hash_map<oid_type, vtime_obj_rec> vt_map_type;
+    typedef std::hash_map<group_type, std::list<oid_type> > gid_map_type;
+    // oid_type map_gid( group_type );
+    // gid_type -> (oid_type, oid_type, ...)
+
+    // in our case we can use gid = hi bits | oid
+    
+    vt_map_type vtmap;
+    gid_map_type grmap;
+
+    DECLARE_RESPONSE_TABLE( VTDispatcher, stem::EventHandler );
+};
+
+class VTHandler :
+        public stem::EventHandler
+{
+  public:
+    class Init
+    {
+      public:
+        Init();
+        ~Init();
+      private:
+        static void _guard( int );
+        static void __at_fork_prepare();
+        static void __at_fork_child();
+        static void __at_fork_parent();
+    };
+
+  public:
+    VTHandler();
+    explicit VTHandler( const char *info );
+    explicit VTHandler( stem::addr_type id, const char *info = 0 );
+    virtual ~VTHandler();
+
+    void VTSend( const Event& e );
+
+    template <class D>
+    void VTSend( const stem::Event_base<D>& e )
+      { VTHandler::VTSend( stem::Event_convert<D>()( e ) ); }
+
+
+  private:
+    static class VTDispatcher *_vtdsp;
 };
 
 
