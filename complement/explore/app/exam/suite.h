@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/06 09:58:06 ptr>
+// -*- C++ -*- Time-stamp: <07/07/08 23:40:05 ptr>
 
 #ifndef __suite_h
 #define __suite_h
@@ -18,15 +18,6 @@ namespace exam {
 
 namespace detail {
 
-/*
-struct invoker
-{
-    template <typename F>
-    void invoke( F& f )
-      { f(); }
-};
-*/
-
 struct call_impl
 {
     virtual ~call_impl()
@@ -44,10 +35,47 @@ class call_impl_t :
       { }
 
     virtual void invoke()
-      { /* invoker().invoke( _f ); */ _f(); }
+      { _f(); }
 
   private:
     F _f;
+};
+
+class dummy
+{
+  public:
+    virtual void f()
+      { }
+  private:
+    virtual ~dummy()
+      { }
+};
+
+template <class TC>
+class method_invoker
+{
+  public:
+    typedef void (TC::*mf_type)();
+
+    explicit method_invoker( TC& instance, mf_type f ) :
+        _inst(instance),
+        _func(f)
+      { }
+
+    method_invoker( const method_invoker<TC>& m ) :
+        _inst( m._inst ),
+        _func( m._func )
+      { }
+
+    void operator()()
+      { (_inst.*_func)(); }
+
+  private:
+    method_invoker& operator =( const method_invoker<TC>& )
+      { return *this; }
+
+    TC& _inst;
+    mf_type _func;
 };
 
 class call
@@ -57,34 +85,17 @@ class call
       { }
 
     template <class F>
-    call( F f ) :
-        _f( new call_impl_t<F>(f) )
-      { }
+    call( F f )
+      { new (&_buf[0]) call_impl_t<F>(f); }
 
     void operator()()
-      { _f->invoke(); }
+      { reinterpret_cast<call_impl *>(&_buf[0])->invoke(); }
 
   private:
-    call_impl *_f;
+    // call_impl *_f;
+    char _buf[((sizeof(call_impl_t<method_invoker<dummy> >)+64) / 64) << 6];
 };
 
-template <class TC>
-class method_invoker
-{
-  public:
-    typedef void (TC::*mf_type)();
-    method_invoker( TC& instance, mf_type f ) :
-        _inst(instance),
-        _func(f)
-      { }
-
-    void operator()()
-      { _inst.*_func(); }
-
-  private:
-    TC& _inst;
-    mf_type _func;
-};
 
 class test_case
 {
@@ -131,11 +142,27 @@ class test_suite
     typedef vertex_t test_case_type;
 
     test_suite();
+    ~test_suite();
 
     test_case_type add( func_type );
     test_case_type add( func_type, test_case_type );
 
-    void girdle( int start );
+    template <class TC>
+    test_case_type add( void (TC::*)(), TC& );
+
+    template <class TC>
+    test_case_type add( void (TC::*)(), TC&, test_case_type );
+
+    void girdle();
+    void girdle( test_case_type start );
+
+    enum {
+      trace = 1
+    };
+
+    static int flags();
+    static bool is_trace();
+    static void report( const char *, int, bool, const char * );
 
   private:
     graph_t g;
@@ -143,12 +170,45 @@ class test_suite
     vertex_color_map_t color;
     vertex_testcase_map_t testcase;
 
-    std::map<vertex_t,detail::test_case *> _test;
+    typedef std::map<vertex_t,detail::test_case *> test_case_map_type;
+    test_case_map_type _test;
+
+    static int _flags;
+    static void (*_report)( const char *, int, bool, const char * );
 };
+
+template <class TC>
+test_suite::test_case_type test_suite::add( void (TC::*f)(), TC& instance )
+{
+  vertex_t v = boost::add_vertex( boost::white_color, g);
+  boost::add_edge( root, v, g );
+  _test[v] = detail::make_test_case( f, instance );
+
+  return v;
+}
+
+template <class TC>
+test_suite::test_case_type test_suite::add( void (TC::*f)(), TC& instance, test_suite::test_case_type depends )
+{
+  vertex_t v = boost::add_vertex( boost::white_color, g);
+  boost::add_edge( depends, v, g );
+  _test[v] = detail::make_test_case( f, instance );
+
+  return v;
+}
 
 typedef test_suite::test_case_type test_case_type;
 
 } // namespace exam
+
+#ifdef FIT_EXAM
+#  define EXAM_CHECK(C) if ( !(C) ) { exam::test_suite::report( __FILE__, __LINE__, false, #C ); } else if ( exam::test_suite::is_trace() ) { exam::test_suite::report( __FILE__, __LINE__, true, #C ); }
+#  define EXAM_MESSAGE(M)
+#else
+#  define EXAM_CHECK(C)
+#  define EXAM_MESSAGE(M)
+#endif
+
 
 #endif // __suite_h
 
