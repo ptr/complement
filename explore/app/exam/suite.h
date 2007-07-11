@@ -7,6 +7,7 @@
 #include <sstream>
 #include <map>
 #include <boost/graph/adjacency_list.hpp>
+#include <string>
 
 enum vertex_testcase_t { vertex_testcase };
 
@@ -141,17 +142,26 @@ class test_suite
     typedef int (*func_type)();
     typedef vertex_t test_case_type;
 
-    test_suite();
+    test_suite( const std::string& name );
+    test_suite( const char *name );
     ~test_suite();
 
-    test_case_type add( func_type );
-    test_case_type add( func_type, test_case_type );
+    test_case_type add( func_type, const std::string& name );
+    test_case_type add( func_type, const std::string& name, test_case_type );
 
     template <class TC>
-    test_case_type add( int (TC::*)(), TC& );
+    test_case_type add( int (TC::*)(), TC&, const std::string& name );
 
     template <class TC>
-    test_case_type add( int (TC::*)(), TC&, test_case_type );
+    test_case_type add( int (TC::*)(), TC&, const std::string& name, test_case_type );
+
+    struct stat
+    {
+       int total;
+       int passed;
+       int failed;
+       int skipped;
+    };
 
     void girdle();
     void girdle( test_case_type start );
@@ -160,7 +170,8 @@ class test_suite
     void check_test_case( vertex_t u, vertex_t v );
 
     enum {
-      trace = 1
+      trace = 1,
+      trace_suite = 2
     };
 
     static int flags();
@@ -170,7 +181,8 @@ class test_suite
   private:
     enum {
       fail = 1,
-      skip = 2
+      skip = 2,
+      init = 1024
     };
 
     graph_t g;
@@ -182,33 +194,41 @@ class test_suite
     {
         detail::test_case *tc;
         int state;
+        std::string name;
     };
 
     typedef std::map<vertex_t,test_case_collect> test_case_map_type;
     test_case_map_type _test;
+    test_suite::stat _stat;
+    std::string _suite_name;
 
     static int _flags;
     static void (*_report)( const char *, int, bool, const char * );
+    static int _root_func();
 };
 
 template <class TC>
-test_suite::test_case_type test_suite::add( int (TC::*f)(), TC& instance )
+test_suite::test_case_type test_suite::add( int (TC::*f)(), TC& instance, const std::string& name )
 {
   vertex_t v = boost::add_vertex( boost::white_color, g);
   boost::add_edge( root, v, g );
   _test[v].tc = detail::make_test_case( f, instance );
   _test[v].state = 0;
+  _test[v].name = name;
+  ++_stat.total;
 
   return v;
 }
 
 template <class TC>
-test_suite::test_case_type test_suite::add( int (TC::*f)(), TC& instance, test_suite::test_case_type depends )
+test_suite::test_case_type test_suite::add( int (TC::*f)(), TC& instance, const std::string& name, test_suite::test_case_type depends )
 {
   vertex_t v = boost::add_vertex( boost::white_color, g);
   boost::add_edge( depends, v, g );
   _test[v].tc = detail::make_test_case( f, instance );
   _test[v].state = 0;
+  _test[v].name = name;
+  ++_stat.total;
 
   return v;
 }
