@@ -2,18 +2,22 @@
 
 #include "suite.h"
 
-void func()
+int func()
 {
   EXAM_CHECK(false);
+
+  return 0;
 }
 
 class test_x
 {
   public:
 
-    void f()
+    int f()
       {
         EXAM_CHECK(false);
+
+        return 0;
       }
 };
 
