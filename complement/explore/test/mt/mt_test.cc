@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/03/12 20:39:47 ptr>
+// -*- C++ -*- Time-stamp: <07/07/11 22:08:56 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -37,7 +37,7 @@ namespace fs = boost::filesystem;
  */
 void mt_test::barrier()
 {
-  xmt::Barrier b( 1 );
+  xmt::barrier b( 1 );
 
   b.wait();
 }
@@ -78,7 +78,7 @@ xmt::Thread::ret_code thread2_entry_call( void *p )
   xmt::Thread::ret_code rt;
   rt.iword = 0;
 
-  xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
+  xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
 
   return rt;
@@ -86,7 +86,7 @@ xmt::Thread::ret_code thread2_entry_call( void *p )
 
 void mt_test::barrier2()
 {
-  xmt::Barrier b;
+  xmt::barrier b;
 
   xmt::Thread t1( thread2_entry_call, &b );
   xmt::Thread t2( thread2_entry_call, &b );
@@ -105,7 +105,7 @@ xmt::Thread::ret_code thread3_entry_call( void *p )
   xmt::Thread::ret_code rt;
   rt.iword = 0;
 
-  xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
+  xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
   BOOST_CHECK( xmt::Thread::yield() == 0 );
 
@@ -114,7 +114,7 @@ xmt::Thread::ret_code thread3_entry_call( void *p )
 
 void mt_test::yield()
 {
-  xmt::Barrier b;
+  xmt::barrier b;
 
   xmt::Thread t1( thread2_entry_call, &b );
   xmt::Thread t2( thread3_entry_call, &b );
@@ -131,11 +131,11 @@ void mt_test::yield()
  * Correct order checked by values of x.
  */
 
-static xmt::Mutex m1;
+static xmt::mutex m1;
 
 xmt::Thread::ret_code thr1( void *p )
 {
-  xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
+  xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
 
   m1.lock();
@@ -156,7 +156,7 @@ xmt::Thread::ret_code thr1( void *p )
 
 xmt::Thread::ret_code thr2( void *p )
 {
-  xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
+  xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
   for ( int i = 0; i < 128; ++i ) {
     xmt::Thread::yield();
@@ -176,7 +176,7 @@ xmt::Thread::ret_code thr2( void *p )
 void mt_test::mutex_test()
 {
   x = 0;
-  xmt::Barrier b;
+  xmt::barrier b;
 
   xmt::Thread t1( thr1, &b );
   xmt::Thread t2( thr2, &b );
@@ -198,11 +198,11 @@ void mt_test::mutex_test()
  */
 
 #ifdef __FIT_PTHREAD_SPINLOCK
-static xmt::Spinlock sl1;
+static xmt::spinlock sl1;
 
 xmt::Thread::ret_code thr1s( void *p )
 {
-  xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
+  xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
 
   sl1.lock();
@@ -223,7 +223,7 @@ xmt::Thread::ret_code thr1s( void *p )
 
 xmt::Thread::ret_code thr2s( void *p )
 {
-  xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
+  xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
   for ( int i = 0; i < 128; ++i ) {
     xmt::Thread::yield();
@@ -246,7 +246,7 @@ void mt_test::spinlock_test()
 {
 #ifdef __FIT_PTHREAD_SPINLOCK
   x = 0;
-  xmt::Barrier b;
+  xmt::barrier b;
 
   xmt::Thread t1( thr1s, &b );
   xmt::Thread t2( thr2s, &b );
@@ -287,7 +287,7 @@ void mt_test::spinlock_test()
  * 
  */
 
-xmt::__Mutex<true,false> m2;
+xmt::__mutex<true,false> m2;
 
 void recursive()
 {
@@ -302,7 +302,7 @@ void recursive()
 
 xmt::Thread::ret_code thr1r( void *p )
 {
-  xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
+  xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
 
   m2.lock();
@@ -326,7 +326,7 @@ xmt::Thread::ret_code thr1r( void *p )
 
 xmt::Thread::ret_code thr2r( void *p )
 {
-  xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
+  xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
 
   for ( int i = 0; i < 128; ++i ) {
@@ -352,7 +352,7 @@ xmt::Thread::ret_code thr2r( void *p )
 void mt_test::recursive_mutex_test()
 {
   x = 0;
-  xmt::Barrier b;
+  xmt::barrier b;
 
   xmt::Thread t1( thr1r, &b );
   xmt::Thread t2( thr2r, &b );
@@ -383,7 +383,7 @@ void mt_test::fork()
   //   cerr << "Error on shmat" << endl;
   // }
 
-  xmt::__Condition<true>& fcnd = *new( buf ) xmt::__Condition<true>();
+  xmt::__condition<true>& fcnd = *new( buf ) xmt::__condition<true>();
   fcnd.set( false );
 
   try {
@@ -414,7 +414,7 @@ void mt_test::fork()
   catch ( ... ) {
   }
 
-  (&fcnd)->~__Condition<true>();
+  (&fcnd)->~__condition<true>();
 
   shmdt( buf );
   shmctl( id, IPC_RMID, &ds );
@@ -440,7 +440,7 @@ void mt_test::pid()
   //   cerr << "Error on shmat" << endl;
   // }
 
-  xmt::__Condition<true>& fcnd = *new( buf ) xmt::__Condition<true>();
+  xmt::__condition<true>& fcnd = *new( buf ) xmt::__condition<true>();
   fcnd.set( false );
   pid_t my_pid = xmt::getpid();
 
@@ -451,7 +451,7 @@ void mt_test::pid()
 
       // Child code 
       BOOST_CHECK( my_pid == xmt::getppid() );
-      *reinterpret_cast<pid_t *>(static_cast<char *>(buf) + sizeof(xmt::__Condition<true>)) = xmt::getpid();
+      *reinterpret_cast<pid_t *>(static_cast<char *>(buf) + sizeof(xmt::__condition<true>)) = xmt::getpid();
 
       fcnd.set( true );
 
@@ -467,7 +467,7 @@ void mt_test::pid()
 
       fcnd.try_wait();
 
-      BOOST_CHECK( *reinterpret_cast<pid_t *>(static_cast<char *>(buf) + sizeof(xmt::__Condition<true>)) == child.pid() );
+      BOOST_CHECK( *reinterpret_cast<pid_t *>(static_cast<char *>(buf) + sizeof(xmt::__condition<true>)) == child.pid() );
 
       int stat;
       BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
@@ -478,7 +478,7 @@ void mt_test::pid()
   catch ( ... ) {
   }
 
-  (&fcnd)->~__Condition<true>();
+  (&fcnd)->~__condition<true>();
 
   shmdt( buf );
   shmctl( id, IPC_RMID, &ds );
@@ -643,7 +643,7 @@ void mt_test::fork_shm()
     seg.allocate( fname, 1024, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
     xmt::allocator_shm<char,0> shm;
 
-    xmt::__Condition<true>& fcnd = *new( shm.allocate( sizeof(xmt::__Condition<true>) ) ) xmt::__Condition<true>();
+    xmt::__condition<true>& fcnd = *new( shm.allocate( sizeof(xmt::__condition<true>) ) ) xmt::__condition<true>();
     fcnd.set( false );
     try {
       xmt::fork();
@@ -674,8 +674,8 @@ void mt_test::fork_shm()
     catch ( ... ) {
     }
 
-    (&fcnd)->~__Condition<true>();
-    shm.deallocate( reinterpret_cast<char *>(&fcnd), sizeof(xmt::__Condition<true>) );
+    (&fcnd)->~__condition<true>();
+    shm.deallocate( reinterpret_cast<char *>(&fcnd), sizeof(xmt::__condition<true>) );
     seg.deallocate();
     fs::remove( fname );
   }
@@ -699,9 +699,9 @@ void mt_test::shm_named_obj()
     seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
     xmt::shm_name_mgr<0>& nm = seg.name_mgr();
 
-    xmt::allocator_shm<xmt::__Condition<true>,0> shm;
+    xmt::allocator_shm<xmt::__condition<true>,0> shm;
 
-    xmt::__Condition<true>& fcnd = *new ( shm.allocate( 1 ) ) xmt::__Condition<true>();
+    xmt::__condition<true>& fcnd = *new ( shm.allocate( 1 ) ) xmt::__condition<true>();
     nm.named( fcnd, test_Condition_Object );
     fcnd.set( false );
 
@@ -722,7 +722,7 @@ void mt_test::shm_named_obj()
         }
         
         xmt::shm_name_mgr<0>& nm_ch = seg_ch.name_mgr();
-        xmt::__Condition<true>& fcnd_ch = nm_ch.named<xmt::__Condition<true> >( test_Condition_Object );
+        xmt::__condition<true>& fcnd_ch = nm_ch.named<xmt::__condition<true> >( test_Condition_Object );
         fcnd_ch.set( true );
       }
       catch ( const xmt::shm_bad_alloc& err ) {
@@ -754,7 +754,7 @@ void mt_test::shm_named_obj()
       BOOST_CHECK_MESSAGE( false, "Fail in fork" );
     }
     
-    (&fcnd)->~__Condition<true>();
+    (&fcnd)->~__condition<true>();
     shm.deallocate( &fcnd, 1 );
     seg.deallocate();
     fs::remove( fname );
@@ -794,9 +794,9 @@ void mt_test::shm_named_obj_more()
   try {
     xmt::shm_name_mgr<1>& nm = seg1.name_mgr();
 
-    xmt::allocator_shm<xmt::__Condition<true>,1> shm;
+    xmt::allocator_shm<xmt::__condition<true>,1> shm;
 
-    xmt::__Condition<true>& fcnd = *new ( shm.allocate( 1 ) ) xmt::__Condition<true>();
+    xmt::__condition<true>& fcnd = *new ( shm.allocate( 1 ) ) xmt::__condition<true>();
     nm.named( fcnd, ObjName );
     fcnd.set( false );
 
@@ -805,10 +805,10 @@ void mt_test::shm_named_obj_more()
 
       try {
         xmt::shm_name_mgr<1>& nm_ch = seg1.name_mgr();
-        xmt::allocator_shm<xmt::__Condition<true>,1> shm_ch;
-        xmt::__Condition<true>& fcnd_ch = nm_ch.named<xmt::__Condition<true> >( ObjName );
+        xmt::allocator_shm<xmt::__condition<true>,1> shm_ch;
+        xmt::__condition<true>& fcnd_ch = nm_ch.named<xmt::__condition<true> >( ObjName );
         fcnd_ch.set( true );
-        nm_ch.release<xmt::__Condition<true> >( ObjName );
+        nm_ch.release<xmt::__condition<true> >( ObjName );
       }
       catch ( const std::invalid_argument& err ) {
         BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
@@ -820,9 +820,9 @@ void mt_test::shm_named_obj_more()
       int stat;
       BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
     }
-    nm.release<xmt::__Condition<true> >( ObjName ); // fcnd should be destroyed here
+    nm.release<xmt::__condition<true> >( ObjName ); // fcnd should be destroyed here
 
-    xmt::__Condition<true>& fcnd1 = *new ( shm.allocate( 1 ) ) xmt::__Condition<true>();
+    xmt::__condition<true>& fcnd1 = *new ( shm.allocate( 1 ) ) xmt::__condition<true>();
     nm.named( fcnd1, ObjName ); // ObjName should be free here
     fcnd1.set( false );
 
@@ -831,10 +831,10 @@ void mt_test::shm_named_obj_more()
 
       try {
         xmt::shm_name_mgr<1>& nm_ch = seg1.name_mgr();
-        xmt::allocator_shm<xmt::__Condition<true>,1> shm_ch;
-        xmt::__Condition<true>& fcnd_ch = nm_ch.named<xmt::__Condition<true> >( ObjName );
+        xmt::allocator_shm<xmt::__condition<true>,1> shm_ch;
+        xmt::__condition<true>& fcnd_ch = nm_ch.named<xmt::__condition<true> >( ObjName );
         fcnd_ch.set( true );
-        nm_ch.release<xmt::__Condition<true> >( ObjName );
+        nm_ch.release<xmt::__condition<true> >( ObjName );
       }
       catch ( const std::invalid_argument& err ) {
         BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
@@ -847,10 +847,10 @@ void mt_test::shm_named_obj_more()
       int stat;
       BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
     }
-    nm.release<xmt::__Condition<true> >( ObjName ); // fcnd should be destroyed here
+    nm.release<xmt::__condition<true> >( ObjName ); // fcnd should be destroyed here
 
-    xmt::allocator_shm<xmt::__Barrier<true>,1> shm_b;
-    xmt::__Barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__Barrier<true>();
+    xmt::allocator_shm<xmt::__barrier<true>,1> shm_b;
+    xmt::__barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__barrier<true>();
 
     nm.named( b, ObjName ); // ObjName should be free here
     
@@ -859,10 +859,10 @@ void mt_test::shm_named_obj_more()
 
       try {
         xmt::shm_name_mgr<1>& nm_ch = seg1.name_mgr();
-        xmt::allocator_shm<xmt::__Barrier<true>,1> shm_ch;
-        xmt::__Barrier<true>& b_ch = nm_ch.named<xmt::__Barrier<true> >( ObjName );
+        xmt::allocator_shm<xmt::__barrier<true>,1> shm_ch;
+        xmt::__barrier<true>& b_ch = nm_ch.named<xmt::__barrier<true> >( ObjName );
         b_ch.wait();
-        nm_ch.release<xmt::__Barrier<true> >( ObjName );
+        nm_ch.release<xmt::__barrier<true> >( ObjName );
       }
       catch ( const std::invalid_argument& err ) {
         BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
@@ -875,7 +875,7 @@ void mt_test::shm_named_obj_more()
       int stat;
       BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
     }
-    nm.release<xmt::__Barrier<true> >( ObjName ); // barrier should be destroyed here
+    nm.release<xmt::__barrier<true> >( ObjName ); // barrier should be destroyed here
   }
   catch ( xmt::shm_bad_alloc& err ) {
     BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
@@ -895,7 +895,7 @@ void mt_test::shm_named_obj_more()
 
 static int my_thr_cnt = 0;
 static int my_thr_scnt = 0;
-static xmt::Mutex lock;
+static xmt::mutex lock;
 
 xmt::Thread::ret_code thread_mgr_entry_call( void * )
 {

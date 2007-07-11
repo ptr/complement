@@ -27,8 +27,8 @@ using namespace xmt;
 using namespace std;
 
 static const char *fname = "myfile";
-static Mutex m;
-static Mutex b;
+static mutex m;
+static mutex b;
 static int cnt = 0;
 
 static Thread::ret_code thread_func( void * )

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/01/29 17:48:29 ptr>
+// -*- C++ -*- Time-stamp: <07/07/11 21:34:07 ptr>
 
 /*
  * Copyright (c) 2004, 2006
@@ -28,7 +28,7 @@ using namespace xmt;
   Suspicious processing with FreeBSD and OpenBSD servers.
 
  */
-static Condition cnd_close;
+static condition cnd_close;
 
 class Srv // 
 {
@@ -67,7 +67,7 @@ typedef sockmgr_stream_MP_SELECT<Srv> srv_type;
 #endif
 
 static srv_type *srv_p;
-Condition cnd;
+condition cnd;
 
 Thread::ret_code server_proc( void * )
 {

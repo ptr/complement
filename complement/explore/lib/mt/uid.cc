@@ -36,9 +36,9 @@ char __uid_init::_host_id_str[48];
 
 __uid_init::__uid_init()
 {
-  static Mutex _lk;
+  static mutex _lk;
 
-  Locker lock( _lk );
+  scoped_lock lock( _lk );
   ifstream f( "/proc/sys/kernel/random/boot_id" );
 
   string tmp;

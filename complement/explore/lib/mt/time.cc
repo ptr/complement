@@ -14,7 +14,7 @@
 #include <sys/time.h>
 
 #ifdef _WIN32
-xmt::Mutex _l;
+xmt::mutex _l;
 #endif
 
 std::string calendar_time( time_t t )

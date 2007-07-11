@@ -1,3 +1,18 @@
+2007-07-12  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* libsockios: Version 1.12.0
+
+2007-07-11  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: Condition replaced by condition.
+
+2007-06-29  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.cc, sockios_test.cc: replace Locker by scoped_lock.
+
+	* sockmgr.h, sockstream, _sockmgr.cc, _sockstream.cc: all
+	Mutex replaced by mutex
+
 2007-02-12  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* sockmgr.h, _sockmgr.cc: use Init technique to initialize

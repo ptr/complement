@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/03/12 20:09:11 ptr>
+// -*- C++ -*- Time-stamp: <07/07/11 22:37:57 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2007
@@ -56,34 +56,16 @@
 
 #ifdef _REENTRANT
 
-# define MT_REENTRANT(point,nm) xmt::Locker nm(point)
-# define MT_REENTRANT_RS(point,nm) xmt::LockerRS nm(point)
-# define MT_REENTRANT_SDS(point,nm) xmt::LockerSDS nm(point) // obsolete, use MT_REENTRANT_RS
+# define MT_REENTRANT(point,nm) xmt::scoped_lock nm(point)
 # define MT_LOCK(point)         point.lock()
 # define MT_UNLOCK(point)       point.unlock()
-# ifdef __FIT_RWLOCK
-#  define MT_REENTRANT_RD(point,nm) xmt::LockerRd nm(point)
-#  define MT_REENTRANT_WR(point,nm) xmt::LockerWr nm(point)
-#  define MT_LOCK_RD(point)      point.rdlock()
-#  define MT_LOCK_WR(point)      point.wrlock()
-# else // !__FIT_RWLOCK
-#  define MT_REENTRANT_RD(point,nm) ((void)0)
-#  define MT_REENTRANT_WR(point,nm) ((void)0)
-#  define MT_LOCK_RD(point) ((void)0)
-#  define MT_LOCK_WR(point) ((void)0)
-# endif // __FIT_RWLOCK
 
 #else // !_REENTRANT
 
 # define MT_REENTRANT(point,nm) ((void)0)
 # define MT_REENTRANT_RS(point,nm) ((void)0)
-# define MT_REENTRANT_SDS(point,nm) ((void)0) // obsolete, use MT_REENTRANT_RS
 # define MT_LOCK(point)         ((void)0)
 # define MT_UNLOCK(point)       ((void)0)
-# define MT_REENTRANT_RD(point,nm) ((void)0)
-# define MT_REENTRANT_WR(point,nm) ((void)0)
-# define MT_LOCK_RD(point) ((void)0)
-# define MT_LOCK_WR(point) ((void)0)
 
 #endif // _REENTRANT
 
@@ -120,6 +102,32 @@ typedef void siginfo_handler_type( int, siginfo_t *, void * );
 } // extern "C"
 
 namespace xmt {
+
+
+// Exceptions
+
+// class thread_exit;
+// class thread_cancel: public thread_exit;
+// class thread_error: public exception;
+
+class lock_error :
+        public std::exception
+{
+  private:
+    int r_;
+
+  public:
+
+    explicit lock_error( int r ) :
+        r_( r )
+      { }
+
+    virtual char const *what() throw()
+      { return "std::lock_error"; }
+
+    int error() const
+      { return r_; }
+};
 
 namespace detail {
 
@@ -174,7 +182,7 @@ class fork_in_parent :
 #endif // !_WIN32
 
 
-template <bool SCOPE> class __Condition;
+template <bool SCOPE> class __condition;
 
 // if parameter SCOPE (process scope) true, PTHREAD_PROCESS_SHARED will
 // be used; otherwise PTHREAD_PROCESS_PRIVATE.
@@ -256,7 +264,7 @@ class __mutex_base
 
 #ifndef __FIT_WIN32THREADS
   private:
-    friend class __Condition<SCOPE>;
+    friend class __condition<SCOPE>;
 #endif
 };
 
@@ -288,23 +296,23 @@ class __spinlock_base
 
 #endif // __FIT_PTHREAD_SPINLOCK
 
-// Portable Mutex implementation. If the parameter RECURSIVE_SAFE
-// is true, Mutex will be recursive safe (detect deadlock).
+// Portable mutex implementation. If the parameter RECURSIVE_SAFE
+// is true, mutex will be recursive safe (detect deadlock).
 // If RECURSIVE_SAFE is false, implementation may not to be
 // recursive-safe.
-// The SCOPE parameter designate Mutex scope---shared between
+// The SCOPE parameter designate mutex scope---shared between
 // processes (true), or only inside threads of one process (false).
 // Note, that not all OS support interprocess mutex scope
 // (for example, Windows and Linux).
 template <bool RECURSIVE_SAFE, bool SCOPE>
-class __Mutex :
+class __mutex :
     public __mutex_base<RECURSIVE_SAFE,SCOPE>
 {
   public:
-    __Mutex()
+    __mutex()
       { }
 
-    ~__Mutex()
+    ~__mutex()
       { }
 
     void lock()
@@ -321,7 +329,7 @@ class __Mutex :
       }
 
 #if !defined( WIN32 ) || (defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0400)
-    int trylock()
+    int try_lock()
       {
 #ifdef _PTHREADS
         return pthread_mutex_trylock( &this->_M_lock );
@@ -352,29 +360,29 @@ class __Mutex :
       }
 
   private:
-    __Mutex( const __Mutex& )
+    __mutex( const __mutex& )
       { }
 
 #ifndef __FIT_WIN32THREADS
   private:
-    friend class __Condition<SCOPE>;
+    friend class __condition<SCOPE>;
 #endif
 };
 
 #ifdef __FIT_PTHREAD_SPINLOCK
 // Spinlock-based locks (IEEE Std. 1003.1j-2000)
 
-template <bool RS, bool SCOPE> class __Spinlock;
+template <bool RS, bool SCOPE> class __spinlock;
 
 template <bool SCOPE>
-class __Spinlock<false,SCOPE> :
+class __spinlock<false,SCOPE> :
     public __spinlock_base<SCOPE>
 {
   public:
-    __Spinlock()
+    __spinlock()
       { }
 
-    ~__Spinlock()
+    ~__spinlock()
       { }
 
     void lock()
@@ -384,7 +392,7 @@ class __Spinlock<false,SCOPE> :
 # endif
       }
 
-    int trylock()
+    int try_lock()
       {
 # ifdef _PTHREADS
         return pthread_spin_trylock( &this->_M_lock );
@@ -400,17 +408,22 @@ class __Spinlock<false,SCOPE> :
         pthread_spin_unlock( &this->_M_lock );
 # endif
       }
+
+  private:
+    __spinlock( const __spinlock& )
+      { }
+
 };
 
 template <bool SCOPE>
-class __Spinlock<true,SCOPE> : //  Recursive safe
+class __spinlock<true,SCOPE> : //  Recursive safe
     public __spinlock_base<SCOPE>
 {
   public:
-    __Spinlock()
+    __spinlock()
       { }
 
-    ~__Spinlock()
+    ~__spinlock()
       { }
 
     void lock()
@@ -434,7 +447,7 @@ class __Spinlock<true,SCOPE> : //  Recursive safe
 # endif // !_NOTHREADS
       }
 
-    int trylock()
+    int try_lock()
       {
 # ifdef _NOTHREADS
         return 0;
@@ -485,6 +498,10 @@ class __Spinlock<true,SCOPE> : //  Recursive safe
 # ifdef __FIT_UITHREADS
     thread_t  _id;
 # endif
+
+  private:
+    __spinlock( const __spinlock& )
+      { }
 };
 #endif // __FIT_PTHREAD_SPINLOCK
 
@@ -505,11 +522,11 @@ class __Spinlock<true,SCOPE> : //  Recursive safe
 // __mutex_base above).
 
 template <bool SCOPE>
-class __Mutex<true,SCOPE> : // Recursive Safe
+class __mutex<true,SCOPE> : // Recursive Safe
     public __mutex_base<true,SCOPE>
 {
   public:
-    __Mutex() :
+    __mutex() :
         _count( 0 ),
 # ifdef __FIT_UITHREADS
         _id( __STATIC_CAST(thread_t,-1) )
@@ -519,7 +536,7 @@ class __Mutex<true,SCOPE> : // Recursive Safe
 # endif
       { }
 
-    ~__Mutex()
+    ~__mutex()
       { }
 
     void lock()
@@ -549,11 +566,11 @@ class __Mutex<true,SCOPE> : // Recursive Safe
     // Equivalent to lock(), except that if the mutex object referenced
     // by mutex is currently locked the call return immediately.
     // If mutex is currently owned by the calling thread, the mutex lock count
-    // incremented by one and the trylock() function immediately return success
+    // incremented by one and the try_lock() function immediately return success
     // (value 0). Otherwise, if mutex is currently owned by another thread,
     // return error (non-zero).
 
-    int trylock()
+    int try_lock()
       {
 # ifdef _NOTHREADS
         return 0;
@@ -602,7 +619,7 @@ class __Mutex<true,SCOPE> : // Recursive Safe
       }
 
   private:
-    __Mutex( const __Mutex& )
+    __mutex( const __mutex& )
       { }
 
   protected:
@@ -623,10 +640,10 @@ class __Mutex<true,SCOPE> : // Recursive Safe
 // Read-write mutex: IEEE Std 1003.1, 2001, 2004 Editions
 
 template <bool SCOPE>
-class __mutex_rw_base
+class __rw_mutex_base
 {
   public:
-    __mutex_rw_base()
+    __rw_mutex_base()
       {
 #ifdef _PTHREADS
         if ( SCOPE ) {
@@ -659,7 +676,7 @@ class __mutex_rw_base
 #endif
       }
 
-    ~__mutex_rw_base()
+    ~__rw_mutex_base()
       {
 #ifdef _PTHREADS
         pthread_rwlock_destroy( &_M_lock );
@@ -675,7 +692,7 @@ class __mutex_rw_base
       }
 
   private:
-    __mutex_rw_base( const __mutex_rw_base& )
+    __rw_mutex_base( const __rw_mutex_base& )
       { }
 
   protected:
@@ -693,14 +710,14 @@ class __mutex_rw_base
 };
 
 template <bool SCOPE>
-class __MutexRW :
-    public __mutex_rw_base<SCOPE>
+class __rw_mutex :
+    public __rw_mutex_base<SCOPE>
 {
   public:
-    __MutexRW()
+    __rw_mutex()
       { }
 
-    ~__MutexRW()
+    ~__rw_mutex()
       { }
 
     void rdlock()
@@ -718,7 +735,7 @@ class __MutexRW :
 #endif
       }
 
-    void wrlock()
+    void lock()
       {
 #ifdef _PTHREADS
         pthread_rwlock_wrlock( &this->_M_lock );
@@ -734,7 +751,7 @@ class __MutexRW :
       }
 
 #if !defined( WIN32 ) || (defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0400)
-    int tryrdlock()
+    int try_rdlock()
       {
 #ifdef _PTHREADS
         return pthread_rwlock_tryrdlock( &this->_M_lock );
@@ -753,7 +770,7 @@ class __MutexRW :
 #endif
       }
 
-    int trywrlock()
+    int try_lock()
       {
 #ifdef _PTHREADS
         return pthread_rwlock_trywrlock( &this->_M_lock );
@@ -790,96 +807,124 @@ class __MutexRW :
       }
 
   private:
-    __MutexRW( const __MutexRW& )
+    __rw_mutex( const __rw_mutex& )
       { }
 };
 
 #endif // __FIT_RWLOCK
 
 template <class M>
-class __Locker
+class basic_lock
 {
   public:
-    __Locker( const M& point ) :
-      m( point )
-      { const_cast<M&>(m).lock(); }
-    ~__Locker()
-      { const_cast<M&>(m).unlock(); }
+    basic_lock( const M& point, bool initially_locked = true ) :
+        m( point ),
+        lk( false )
+      { if ( initially_locked ) lock(); }
+    ~basic_lock()
+      { if ( lk ) const_cast<M&>(m).unlock(); }
+
+    void lock()
+      {
+        if ( lk ) {
+          throw lock_error( 0 );
+        }
+        const_cast<M&>(m).lock();
+        lk = true;
+      }
+
+    void unlock()
+      {
+        if ( !lk ) {
+          throw lock_error( 0 );
+        }
+        lk = false;
+        const_cast<M&>(m).unlock();
+      }
 
   private:
-    __Locker( const __Locker& )
+    basic_lock( const basic_lock& )
       { }
+    basic_lock& operator =( const basic_lock& )
+      { return *this; }
+
     const M& m;
+    bool lk;
 };
 
 #ifdef __FIT_RWLOCK
-template <bool SCOPE>
-class __LockerRd
+template <class M>
+class basic_read_lock
 {
   public:
-    __LockerRd( const __MutexRW<SCOPE>& point ) :
-      m( point )
-      { const_cast<__MutexRW<SCOPE>&>(m).rdlock(); }
-    ~__LockerRd()
-      { const_cast<__MutexRW<SCOPE>&>(m).unlock(); }
+    basic_read_lock( const M& point, bool initially_locked = true ) :
+        m( point ),
+        lk( false )
+      { if ( initially_locked ) lock(); }
+    ~basic_read_lock()
+      { if ( lk ) const_cast<M&>(m).unlock(); }
+
+    void lock()
+      {
+        if ( lk ) {
+          throw lock_error( 0 );
+        }
+        const_cast<M&>(m).rdlock();
+        lk = true;
+      }
+
+    void unlock()
+      {
+        if ( !lk ) {
+          throw lock_error( 0 );
+        }
+        lk = false;
+        const_cast<M&>(m).unlock();
+      }
 
   private:
-    __LockerRd( const __LockerRd& )
+    basic_read_lock( const basic_read_lock& )
       { }
-    const __MutexRW<SCOPE>& m;
-};
+    basic_read_lock& operator =( const basic_read_lock& )
+      { return *this; }
 
-template <bool SCOPE>
-class __LockerWr
-{
-  public:
-    __LockerWr( const __MutexRW<SCOPE>& point ) :
-      m( point )
-      { const_cast<__MutexRW<SCOPE>&>(m).wrlock(); }
-    ~__LockerWr()
-      { const_cast<__MutexRW<SCOPE>&>(m).unlock(); }
-
-  private:
-    __LockerWr( const __LockerWr& )
-      { }
-    const __MutexRW<SCOPE>& m;
+    const M& m;
+    bool lk;
 };
 #endif // __FIT_RWLOCK
 
-typedef __Mutex<false,false>  Mutex;
-typedef __Mutex<true,false>   MutexRS;
-typedef __Mutex<true,false>   MutexSDS; // obsolete, use instead MutexRS
+typedef __mutex<false,false>  mutex;
+typedef __mutex<true,false>   recursive_mutex;
 #ifdef __FIT_RWLOCK
-typedef __MutexRW<false>      MutexRW;
+typedef __rw_mutex<false>     rw_mutex;
 #endif // __FIT_RWLOCK
 #ifdef __FIT_PTHREAD_SPINLOCK
-typedef __Spinlock<false,false> Spinlock;
-typedef __Spinlock<true,false>  SpinlockRS;
+typedef __spinlock<false,false> spinlock;
+typedef __spinlock<true,false>  recursive_spinlock;
 #endif // __FIT_RWLOCK
 
-typedef __Locker<Mutex>       Locker;
-typedef __Locker<MutexRS>     LockerRS;
-typedef __Locker<MutexRS>     LockerSDS; // obsolete, use instead LockerRS
+typedef basic_lock<mutex>           scoped_lock;
+typedef basic_lock<recursive_mutex> recursive_scoped_lock;
 #ifdef __FIT_RWLOCK
-typedef __LockerRd<false>     LockerRd;
-typedef __LockerWr<false>     LockerWr;
+typedef basic_read_lock<__rw_mutex<false> >  rd_scoped_lock;
+typedef basic_lock<__rw_mutex<false> >       wr_scoped_lock;
 #endif // __FIT_RWLOCK
 #ifdef __FIT_PTHREAD_SPINLOCK
-typedef __Locker<Spinlock>    LockerSpin;
-typedef __Locker<SpinlockRS>  LockerSpinRS;
+typedef basic_lock<spinlock>            spin_scoped_lock;
+typedef basic_lock<recursive_spinlock>  recursive_spin_scoped_lock;
 #endif // __FIT_RWLOCK
 
-class LockerExt
+class native_scoped_lock
 {
   public:
 #ifdef _PTHREADS
-    explicit LockerExt( const pthread_mutex_t& m ) :
+    explicit native_scoped_lock( const pthread_mutex_t& m ) :
 #endif
 #ifdef __FIT_UITHREADS
-    explicit LockerExt( const mutex_t& m ) :
+    explicit native_scoped_lock( const mutex_t& m ) :
 #endif
 #ifdef __FIT_WIN32THREADS
-    explicit LockerExt( const CRITICAL_SECTION& m ) :
+    explicit native_scoped_lock( const CRITICAL_SECTION& m ) :
 #endif
         _M_lock( m )
       {
@@ -894,7 +939,7 @@ class LockerExt
 #endif
       }
 
-    ~LockerExt()
+    ~native_scoped_lock()
       {
 #ifdef _PTHREADS
         pthread_mutex_unlock( const_cast<pthread_mutex_t *>(&_M_lock) );
@@ -908,7 +953,7 @@ class LockerExt
       }
 
   private:
-    LockerExt( const LockerExt& m ) :
+    native_scoped_lock( const native_scoped_lock& m ) :
         _M_lock( m._M_lock )
       { }
 #ifdef _PTHREADS
@@ -923,10 +968,10 @@ class LockerExt
 };
 
 template <bool SCOPE>
-class __Condition
+class __condition
 {
   public:
-    __Condition() :
+    __condition() :
         _val( true )
       {
 #ifdef __FIT_WIN32THREADS
@@ -948,7 +993,7 @@ class __Condition
 #endif
       }
 
-    ~__Condition()
+    ~__condition()
       {
 #ifdef __FIT_WIN32THREADS
         CloseHandle( _cond );
@@ -963,7 +1008,7 @@ class __Condition
 
     bool set( bool __v, bool _broadcast = false )
       {
-        __Locker<__Mutex<false,SCOPE> > _x1( _lock );
+        basic_lock<__mutex<false,SCOPE> > _x1( _lock );
 
         bool tmp = _val;
         _val = __v;
@@ -1000,15 +1045,11 @@ class __Condition
 
     int try_wait()
       {
-#if defined(__FIT_WIN32THREADS)
-        _lock.lock();
-#endif
-#if defined(__FIT_UITHREADS) || defined(_PTHREADS)
-        __Locker<__Mutex<false,SCOPE> > _x1( _lock );
-#endif
+        basic_lock<__mutex<false,SCOPE> > _x1( _lock );
+
         if ( _val == false ) {
 #ifdef __FIT_WIN32THREADS
-          _lock.unlock();
+          _x1.unlock();
           if ( WaitForSingleObject( _cond, -1 ) == WAIT_FAILED ) {
             return -1;
           }
@@ -1028,27 +1069,24 @@ class __Condition
           return ret;
 #endif
         }
-#if defined(__FIT_WIN32THREADS)
-        _lock.unlock();
-#endif
+
         return 0;
       }
 
     int wait()
       {
-#ifdef __FIT_WIN32THREADS
-        MT_LOCK( _lock );
+        basic_lock<__mutex<false,SCOPE> > lk( _lock );
         _val = false;
+
+#ifdef __FIT_WIN32THREADS
         ResetEvent( _cond );
-        MT_UNLOCK( _lock );
+        lk.unlock();
         if ( WaitForSingleObject( _cond, -1 ) == WAIT_FAILED ) {
           return -1;
         }
         return 0;
 #endif
 #if defined(_PTHREADS) || defined(__FIT_UITHREADS)
-        __Locker<__Mutex<false,SCOPE> > lk( _lock );
-        _val = false;
         int ret;
         while ( !_val ) {
           ret =
@@ -1085,7 +1123,7 @@ class __Condition
 
     int signal( bool _broadcast = false )
       {
-        __Locker<__Mutex<false,SCOPE> > _x1( _lock );
+        basic_lock<__mutex<false,SCOPE> > _x1( _lock );
 
         _val = true;
 #ifdef __FIT_WIN32THREADS
@@ -1112,21 +1150,21 @@ class __Condition
 #ifdef __FIT_UITHREADS
     cond_t _cond;
 #endif
-    __Mutex<false,SCOPE> _lock;
+    __mutex<false,SCOPE> _lock;
     bool _val;
 
   private:
-    __Condition( const __Condition& )
+    __condition( const __condition& )
       { }
 };
 
-typedef __Condition<false> Condition;
+typedef __condition<false> condition;
 
 template <bool SCOPE>
-class __Semaphore
+class __semaphore
 {
   public:
-    __Semaphore( int cnt = 1 )
+    __semaphore( int cnt = 1 )
       {
 #ifdef __FIT_WIN32THREADS
         _sem = CreateSemaphore( NULL, cnt, INT_MAX, 0 ); // check!
@@ -1140,7 +1178,7 @@ class __Semaphore
 #endif
       }
 
-    ~__Semaphore()
+    ~__semaphore()
       {
 #ifdef __FIT_WIN32THREADS
         CloseHandle( _sem );
@@ -1232,14 +1270,14 @@ class __Semaphore
     sem_t _sem;
 #endif
   private:
-    __Semaphore( const __Semaphore& )
+    __semaphore( const __semaphore& )
       { }
 };
 
-typedef __Semaphore<false> Semaphore;
+typedef __semaphore<false> semaphore;
 
 template <bool SCOPE>
-int __Semaphore<SCOPE>::wait_time( const ::timespec *abstime ) // wait for time t, or signal
+int __semaphore<SCOPE>::wait_time( const ::timespec *abstime ) // wait for time t, or signal
 {
 #ifdef __FIT_WIN32THREADS
   time_t ct = time( 0 );
@@ -1265,7 +1303,7 @@ int __Semaphore<SCOPE>::wait_time( const ::timespec *abstime ) // wait for time 
 }
 
 template <bool SCOPE>
-int __Semaphore<SCOPE>::wait_delay( const ::timespec *interval ) // wait, timeout is delay t, or signal
+int __semaphore<SCOPE>::wait_delay( const ::timespec *interval ) // wait, timeout is delay t, or signal
 {
 #ifdef __FIT_WIN32THREADS
   unsigned ms = interval->tv_sec * 1000 + interval->tv_nsec / 1000000;
@@ -1291,10 +1329,10 @@ int __Semaphore<SCOPE>::wait_delay( const ::timespec *interval ) // wait, timeou
 }
 
 template <bool SCOPE>
-class __Barrier
+class __barrier
 {
   public:
-    __Barrier( unsigned cnt = 2 )
+    __barrier( unsigned cnt = 2 )
       {
 #ifdef _PTHREADS
         pthread_barrierattr_t attr;
@@ -1305,7 +1343,7 @@ class __Barrier
 #endif
       }
 
-    ~__Barrier()
+    ~__barrier()
       {
 #ifdef _PTHREADS
         pthread_barrier_destroy( &_barr );
@@ -1325,7 +1363,7 @@ class __Barrier
 #endif
 };
 
-typedef __Barrier<false> Barrier;
+typedef __barrier<false> barrier;
 
 __FIT_DECLSPEC void fork() throw( fork_in_parent, std::runtime_error );
 __FIT_DECLSPEC void become_daemon() throw( fork_in_parent, std::runtime_error );
@@ -1471,7 +1509,7 @@ class Thread
     static alloc_type alloc;
     static int _idx; // user words index
     static int _self_idx; // user words index, that word point to self
-    static Mutex _idx_lock;
+    static mutex _idx_lock;
     static thread_key_type& _mt_key;
     size_t uw_alloc_size;
 
@@ -1481,7 +1519,7 @@ class Thread
 # ifndef __hpux
     // sorry, POSIX threads don't have suspend/resume calls, so it should
     // be simulated via cond_wait
-    __Condition<false> _suspend;
+    __condition<false> _suspend;
 # endif
 #endif
 #ifdef __FIT_WIN32THREADS
@@ -1492,7 +1530,7 @@ class Thread
     size_t _param_sz;
     unsigned _flags;
     size_t _stack_sz; // stack size, if not 0
-    // Mutex _llock;
+    // mutex _llock;
     friend class Init;
     // extern "C", wrap for thread_create
 #ifdef __unix
@@ -1504,13 +1542,13 @@ class Thread
 };
 
 template <bool SCOPE>
-int __Condition<SCOPE>::try_wait_time( const ::timespec *abstime )
+int __condition<SCOPE>::try_wait_time( const ::timespec *abstime )
 {
 #if defined(__FIT_WIN32THREADS)
   MT_LOCK( _lock );
 #endif
 #if defined(__FIT_UITHREADS) || defined(_PTHREADS)
-  MT_REENTRANT( _lock, _x1 );
+  scoped_lock _x1( _lock );
 #endif
   if ( _val == false ) {
 #ifdef __FIT_WIN32THREADS
@@ -1560,13 +1598,13 @@ int __Condition<SCOPE>::try_wait_time( const ::timespec *abstime )
 }
 
 template <bool SCOPE>
-int __Condition<SCOPE>::try_wait_delay( const ::timespec *interval )
+int __condition<SCOPE>::try_wait_delay( const ::timespec *interval )
 {
 #if defined(__FIT_WIN32THREADS)
   MT_LOCK( _lock );
 #endif
 #if defined(__FIT_UITHREADS) || defined(_PTHREADS)
-  MT_REENTRANT( _lock, _x1 );
+  scoped_lock _x1( _lock );
 #endif
   if ( _val == false ) {
 #ifdef WIN32
@@ -1622,7 +1660,7 @@ int __Condition<SCOPE>::try_wait_delay( const ::timespec *interval )
 }
 
 template <bool SCOPE>
-int __Condition<SCOPE>::wait_time( const ::timespec *abstime )
+int __condition<SCOPE>::wait_time( const ::timespec *abstime )
 {
 #ifdef __FIT_WIN32THREADS
   MT_LOCK( _lock );
@@ -1642,7 +1680,7 @@ int __Condition<SCOPE>::wait_time( const ::timespec *abstime )
   return 0;
 #endif
 #ifdef _PTHREADS
-  MT_REENTRANT( _lock, _x1 ); // ??
+  scoped_lock _x1( _lock ); // ??
   _val = false;
   int ret = pthread_cond_timedwait( &_cond, &_lock._M_lock, abstime );
   if ( ret == ETIMEDOUT ) {
@@ -1651,7 +1689,7 @@ int __Condition<SCOPE>::wait_time( const ::timespec *abstime )
   return ret;
 #endif // _PTHREADS
 #ifdef __FIT_UITHREADS
-  MT_REENTRANT( _lock, _x1 );
+  scoped_lock _x1( _lock );
   _val = false;
   int ret;
   while ( !_val ) {
@@ -1672,7 +1710,7 @@ int __Condition<SCOPE>::wait_time( const ::timespec *abstime )
 }
 
 template <bool SCOPE>
-int __Condition<SCOPE>::wait_delay( const ::timespec *interval )
+int __condition<SCOPE>::wait_delay( const ::timespec *interval )
 {
 #ifdef __FIT_WIN32THREADS
   MT_LOCK( _lock );

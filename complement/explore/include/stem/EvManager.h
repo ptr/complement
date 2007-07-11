@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/03/12 17:18:41 ptr>
+// -*- C++ -*- Time-stamp: <07/07/11 21:17:27 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -123,31 +123,31 @@ class EvManager
 
     bool is_avail( addr_type id ) const
       {
-        MT_REENTRANT( _lock_heap, _x1 );
+        xmt::scoped_lock lk( _lock_heap );
         return unsafe_is_avail(id);
       }
 
     const std::string who_is( addr_type id ) const
       {
-        MT_REENTRANT( _lock_iheap, _x1 );
+        xmt::scoped_lock lk( _lock_iheap );
         return unsafe_who_is( id );
       }
 
     const std::string annotate( addr_type id ) const
       {
-        MT_REENTRANT( _lock_iheap, _x1 );
+        xmt::scoped_lock lk( _lock_iheap );
         return unsafe_annotate( id );
       }
 
     void change_announce( addr_type id, const std::string& info )
       {
-        MT_REENTRANT( _lock_iheap, _x1 );
+        xmt::scoped_lock lk( _lock_iheap );
         unsafe_change_announce( id, info );
       }
 
     void change_announce( addr_type id, const char *info )
       {
-        MT_REENTRANT( _lock_iheap, _x1 );
+        xmt::scoped_lock lk( _lock_iheap );
         unsafe_change_announce( id, info );
       }
 
@@ -155,7 +155,7 @@ class EvManager
 
     void push( const Event& e )
       {
-        MT_REENTRANT( _lock_queue, _x1 );
+        xmt::scoped_lock lk( _lock_queue );
         in_ev_queue.push_back( e );
         _cnd_queue.set( true );
       }
@@ -246,17 +246,17 @@ class EvManager
     bool _dispatch_stop;
 
     xmt::Thread _ev_queue_thr;
-    xmt::Spinlock _ev_queue_dispatch_guard;
+    xmt::spinlock _ev_queue_dispatch_guard;
 
-    xmt::Mutex _lock_heap;
-    xmt::Mutex _lock_iheap;
-    xmt::Mutex _lock_xheap;
+    xmt::mutex _lock_heap;
+    xmt::mutex _lock_iheap;
+    xmt::mutex _lock_xheap;
 
-    xmt::Mutex _lock_queue;
-    xmt::Condition _cnd_queue;
+    xmt::mutex _lock_queue;
+    xmt::condition _cnd_queue;
 
     static std::string inv_key_str;
-    xmt::Mutex _lock_tr;
+    xmt::mutex _lock_tr;
     unsigned _trflags;
     std::ostream *_trs;
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/16 00:28:34 ptr>
+// -*- C++ -*- Time-stamp: <07/07/11 21:21:38 ptr>
 
 /*
  * Copyright (c) 2003, 2006
@@ -33,7 +33,7 @@ static Thread *th_two = 0;
 
 static int v = 0;
 
-static Condition cnd;
+static condition cnd;
 
 extern "C" {
   static void handler( int );

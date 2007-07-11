@@ -46,7 +46,7 @@ class ThreadMgr
 
   protected:
     _Sequence _M_c;
-    Mutex     _lock;
+    mutex     _lock;
 };
 
 } // namespace xmt

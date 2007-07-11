@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/03/12 21:20:54 ptr>
+// -*- C++ -*- Time-stamp: <07/07/12 00:48:50 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006
@@ -295,8 +295,8 @@ void stem_test::echo()
 
 const char fname[] = "/tmp/stem_test.shm";
 xmt::shm_alloc<0> seg;
-xmt::allocator_shm<xmt::__Condition<true>,0> shm_cnd;
-xmt::allocator_shm<xmt::__Barrier<true>,0>   shm_b;
+xmt::allocator_shm<xmt::__condition<true>,0> shm_cnd;
+xmt::allocator_shm<xmt::__barrier<true>,0>   shm_b;
 
 void stem_test::shm_init()
 {
@@ -316,7 +316,7 @@ void stem_test::shm_finit()
 
 void stem_test::echo_net()
 {
-  xmt::__Condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
+  xmt::__condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
   fcnd.set( false );
 
   try {
@@ -369,7 +369,7 @@ void stem_test::echo_net()
     }
   }
 
-  (&fcnd)->~__Condition<true>();
+  (&fcnd)->~__condition<true>();
   shm_cnd.deallocate( &fcnd, 1 );
 
   // cerr << "Fine\n";
@@ -380,8 +380,8 @@ void stem_test::echo_net()
 void stem_test::net_echo()
 {
   try {
-    xmt::__Barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__Barrier<true>();
-    xmt::__Condition<true>& c = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
+    xmt::__barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__barrier<true>();
+    xmt::__condition<true>& c = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
 
     c.set( false );
 
@@ -439,9 +439,9 @@ void stem_test::net_echo()
       BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
     }
 
-    (&c)->~__Condition<true>();
+    (&c)->~__condition<true>();
     shm_cnd.deallocate( &c, 1 );
-    (&b)->~__Barrier<true>();
+    (&b)->~__barrier<true>();
     shm_b.deallocate( &b, 1 );
   }
   catch (  xmt::shm_bad_alloc& err ) {
@@ -477,13 +477,13 @@ void stem_test::peer()
 
   pid_t fpid;
 
-  xmt::__Condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
+  xmt::__condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
   fcnd.set( false );
 
-  xmt::__Condition<true>& pcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
+  xmt::__condition<true>& pcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
   pcnd.set( false );
 
-  xmt::__Condition<true>& scnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
+  xmt::__condition<true>& scnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
   scnd.set( false );
 
   try {
@@ -653,17 +653,17 @@ void stem_test::peer()
     srv.wait();
   }
 
-  (&fcnd)->~__Condition<true>();
+  (&fcnd)->~__condition<true>();
   shm_cnd.deallocate( &fcnd, 1 );
-  (&pcnd)->~__Condition<true>();
+  (&pcnd)->~__condition<true>();
   shm_cnd.deallocate( &pcnd, 1 );
-  (&scnd)->~__Condition<true>();
+  (&scnd)->~__condition<true>();
   shm_cnd.deallocate( &scnd, 1 );
 }
 
 void stem_test::boring_manager()
 {
-  xmt::__Condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
+  xmt::__condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
   fcnd.set( false );
 
   try {
@@ -707,7 +707,7 @@ void stem_test::boring_manager()
     srv.wait();
   }
 
-  (&fcnd)->~__Condition<true>();
+  (&fcnd)->~__condition<true>();
   shm_cnd.deallocate( &fcnd, 1 );
 }
 

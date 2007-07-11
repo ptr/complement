@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/26 17:18:51 ptr>
+// -*- C++ -*- Time-stamp: <07/07/11 22:33:49 ptr>
 
 /*
  *
@@ -26,8 +26,8 @@ using namespace std;
 
 const char fname[] = "/tmp/sockios_test.shm";
 xmt::shm_alloc<0> seg;
-xmt::allocator_shm<xmt::__Condition<true>,0> shm_cnd;
-xmt::allocator_shm<xmt::__Barrier<true>,0> shm_b;
+xmt::allocator_shm<xmt::__condition<true>,0> shm_cnd;
+xmt::allocator_shm<xmt::__barrier<true>,0> shm_b;
 
 sockios_test::sockios_test()
 {
@@ -59,10 +59,10 @@ class Cnt
 {
   public:
     Cnt( sockstream& )
-      { xmt::Locker lk(lock); ++cnt; ++visits; }
+      { xmt::scoped_lock lk(lock); ++cnt; ++visits; }
 
     ~Cnt()
-      { xmt::Locker lk(lock); --cnt; }
+      { xmt::scoped_lock lk(lock); --cnt; }
 
     void connect( sockstream& )
       { }
@@ -71,14 +71,14 @@ class Cnt
       { }
 
     static int get_visits()
-      { xmt::Locker lk(lock); return visits; }
+      { xmt::scoped_lock lk(lock); return visits; }
 
-    static xmt::Mutex lock;
+    static xmt::mutex lock;
     static int cnt;
     static int visits;
 };
 
-xmt::Mutex Cnt::lock;
+xmt::mutex Cnt::lock;
 int Cnt::cnt = 0;
 int Cnt::visits = 0;
 
@@ -200,7 +200,7 @@ xmt::Thread::ret_code client_thr( void *p )
 
   fill( buf, buf + 1024, 0 );
 
-  xmt::Barrier& b = *reinterpret_cast<xmt::Barrier *>(p);
+  xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
 
   while( true ) {
@@ -228,10 +228,10 @@ void sigpipe_handler( int sig, siginfo_t *si, void * )
 void sockios_test::sigpipe()
 {
   try {
-    xmt::__Condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
+    xmt::__condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
     fcnd.set( false );
 
-    xmt::__Condition<true>& tcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
+    xmt::__condition<true>& tcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
     tcnd.set( false );
 
     try {
@@ -245,7 +245,7 @@ void sockios_test::sigpipe()
          * so I don't care about safe termination.
          */
         const int b_count = 10;
-        xmt::Barrier b( b_count );
+        xmt::barrier b( b_count );
         xmt::Thread *th1 = new xmt::Thread( client_thr, &b );
 
         for ( int i = 0; i < (b_count - 1); ++i ) {
@@ -284,9 +284,9 @@ void sockios_test::sigpipe()
       }
     }
 
-    (&tcnd)->~__Condition<true>();
+    (&tcnd)->~__condition<true>();
     shm_cnd.deallocate( &tcnd, 1 );
-    (&fcnd)->~__Condition<true>();
+    (&fcnd)->~__condition<true>();
     shm_cnd.deallocate( &fcnd, 1 );
   }
   catch ( xmt::shm_bad_alloc& err ) {
@@ -304,7 +304,7 @@ class long_msg_processor //
     void connect( std::sockstream& );
     void close();
 
-    static xmt::__Condition<true> *cnd;
+    static xmt::__condition<true> *cnd;
 };
 
 long_msg_processor::long_msg_processor( std::sockstream& )
@@ -329,15 +329,15 @@ void long_msg_processor::close()
   cnd->set( true );
 }
 
-xmt::__Condition<true> *long_msg_processor::cnd;
+xmt::__condition<true> *long_msg_processor::cnd;
 
 void sockios_test::long_msg()
 {
   try {
-    xmt::__Condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
+    xmt::__condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
     fcnd.set( false );
 
-    xmt::__Condition<true>& srv_cnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
+    xmt::__condition<true>& srv_cnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
     srv_cnd.set( false );
 
     long_msg_processor::cnd = &srv_cnd;
@@ -380,10 +380,10 @@ macro=\"yesterday\"/></FILTERS></REQUEST></RWRequest>";
       
     }
 
-    (&fcnd)->~__Condition<true>();
+    (&fcnd)->~__condition<true>();
     shm_cnd.deallocate( &fcnd, 1 );
 
-    (&srv_cnd)->~__Condition<true>();
+    (&srv_cnd)->~__condition<true>();
     shm_cnd.deallocate( &srv_cnd, 1 );
   }
   catch ( xmt::shm_bad_alloc& err ) {
@@ -432,11 +432,11 @@ class ConnectionProcessor5 // dummy variant
     void connect( std::sockstream& );
     void close();
 
-    static xmt::__Barrier<true> *b;
+    static xmt::__barrier<true> *b;
 };
 
 
-xmt::__Barrier<true> *ConnectionProcessor5::b = 0;
+xmt::__barrier<true> *ConnectionProcessor5::b = 0;
 
 ConnectionProcessor5::ConnectionProcessor5( std::sockstream& s )
 {
@@ -469,7 +469,7 @@ void ConnectionProcessor5::close()
 xmt::Thread::ret_code thread_entry( void *par )
 {
   xmt::Thread::ret_code rt;
-  xmt::Condition& cnd = *reinterpret_cast<xmt::Condition *>(par);
+  xmt::condition& cnd = *reinterpret_cast<xmt::condition *>(par);
 
   // sem.wait(); // wait server for listen us
   sockstream sock( "localhost", ::port );
@@ -489,8 +489,8 @@ xmt::Thread::ret_code thread_entry( void *par )
 void sockios_test::read0()
 {
   try {
-    xmt::__Condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__Condition<true>();
-    xmt::__Barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__Barrier<true>();
+    xmt::__condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
+    xmt::__barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__barrier<true>();
     ConnectionProcessor5::b = &b;
     // nm.named( fcnd, 1 );
     fcnd.set( false );
@@ -499,7 +499,7 @@ void sockios_test::read0()
       xmt::fork();                      // <---- key line
       fcnd.try_wait(); // wait server for listen us
 
-      xmt::Condition cnd;
+      xmt::condition cnd;
       cnd.set( false );
 
       xmt::Thread thr( thread_entry, &cnd );
@@ -530,9 +530,9 @@ void sockios_test::read0()
       srv.wait();
     }
 
-    (&b)->~__Barrier<true>();
+    (&b)->~__barrier<true>();
     shm_b.deallocate( &b, 1 );
-    (&fcnd)->~__Condition<true>();
+    (&fcnd)->~__condition<true>();
     shm_cnd.deallocate( &fcnd, 1 );
   }
   catch ( xmt::shm_bad_alloc& err ) {
@@ -550,10 +550,10 @@ class ConnectionProcessor6 // dummy variant
     void connect( std::sockstream& );
     void close();
 
-    static xmt::Condition cnd;
+    static xmt::condition cnd;
 };
 
-xmt::Condition ConnectionProcessor6::cnd;
+xmt::condition ConnectionProcessor6::cnd;
 
 ConnectionProcessor6::ConnectionProcessor6( std::sockstream& s )
 {
@@ -633,10 +633,10 @@ class LongBlockReader // dummy variant
     void connect( std::sockstream& );
     void close();
 
-    static xmt::Condition cnd;
+    static xmt::condition cnd;
 };
 
-xmt::Condition LongBlockReader::cnd;
+xmt::condition LongBlockReader::cnd;
 
 LongBlockReader::LongBlockReader( std::sockstream& s )
 {
