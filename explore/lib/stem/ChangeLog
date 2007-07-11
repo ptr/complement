@@ -1,4 +1,21 @@
+2007-07-12  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* libstem: library version 4.6.0
+
+2007-07-11  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* EvManager.h, Cron.h: Condition replaced by condition.
+
 2007-06-29  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* NetTransport.cc, EvManager.cc: replace Locker by scoped_lock.
+
+	* EvManager.cc, _EventHandler.cc, EventHandler.h, EvManager.h, Cron.h:
+	all Mutex replaced by mutex
+
+	* EventHandler.h, _EventHandler.cc: mutexRS renamed to recursive_mutex;
+	LockerRS renamed to recursive_scoped_lock; obsolete LockerSDS
+	replaced by recursive_scoped_lock;
 
 	* _EventHandler.cc: call destructor, don't free memory here;
 	acquire lock (missed lock).

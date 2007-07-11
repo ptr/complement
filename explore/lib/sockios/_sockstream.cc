@@ -66,7 +66,7 @@ namespace std {
 static int __glob_init_cnt = 0;
 static int __glob_init_wsock2 = 0;
 
-static xmt::Mutex _SI_lock;
+static xmt::mutex _SI_lock;
 
 enum {
   WINDOWS_NT_4,

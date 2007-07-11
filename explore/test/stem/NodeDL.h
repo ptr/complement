@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/29 22:50:51 ptr>
+// -*- C++ -*- Time-stamp: <07/07/11 21:47:58 ptr>
 
 /*
  *
@@ -30,7 +30,7 @@ class NodeDL :
     int v;
 
   private:
-    xmt::Condition cnd;
+    xmt::condition cnd;
 
     DECLARE_RESPONSE_TABLE( NodeDL, stem::EventHandler );
 };
@@ -51,7 +51,7 @@ class NewNodeDL :
     int v;
 
   private:
-    xmt::Condition cnd;
+    xmt::condition cnd;
 
     DECLARE_RESPONSE_TABLE( NewNodeDL, stem::EventHandler );
 };

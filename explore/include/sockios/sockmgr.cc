@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/01 19:50:14 ptr>
+// -*- C++ -*- Time-stamp: <07/07/11 21:14:42 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
@@ -29,7 +29,7 @@ namespace std {
 template <class Connect>
 void sockmgr_stream_MP<Connect>::_open( sock_base::stype t )
 {
-  MT_REENTRANT( _fd_lck, _1 );
+  xmt::scoped_lock lk(_fd_lck);
   if ( is_open_unsafe() ) {
     if ( t == sock_base::sock_stream ) {
       _accept = &_Self_type::accept_tcp;
@@ -100,7 +100,7 @@ bool sockmgr_stream_MP<Connect>::_shift_fd()
     //   cerr << __FILE__ << ":" << __LINE__ << endl;
     // }
     if ( j->revents != 0 ) {
-      xmt::Locker _l( _c_lock );
+      xmt::scoped_lock _l( _c_lock );
       // We should distinguish closed socket from income message
       typename container_type::iterator i = 
         find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp, j->fd ) );
@@ -204,7 +204,7 @@ bool sockmgr_stream_MP<Connect>::accept_tcp()
     }
 
     if ( _pfd[0].revents != 0 ) {
-      MT_REENTRANT( _fd_lck, _1 );
+      xmt::scoped_lock lk(_fd_lck);
       if ( !is_open_unsafe() ) { // may be already closed
         return false;
       }
@@ -217,14 +217,14 @@ bool sockmgr_stream_MP<Connect>::accept_tcp()
       }
 
       try {
-        xmt::Locker _l( _c_lock );
+        xmt::scoped_lock _l( _c_lock );
         _M_c.push_back( _Connect() );
         _M_c.back().open( _sd, addr.any );
         _Connect *cl_new = &_M_c.back();
         if ( cl_new->s.rdbuf()->in_avail() > 0 ) {
           // this is the case when user read from sockstream
           // in ctor above; push processing of this stream
-          MT_REENTRANT( _dlock, _1 );
+          xmt::scoped_lock lk(_dlock);
           _conn_pool.push_back( --_M_c.end() );
           _pool_cnd.set( true );
           _observer_cnd.set( true );
@@ -404,7 +404,7 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
           if ( stream.is_open() && stream.good() ) {
             if ( stream.rdbuf()->in_avail() > 0 ) {
               // socket has buffered data, push it back to queue
-              MT_REENTRANT( me->_dlock, _1 );
+              xmt::scoped_lock lk(me->_dlock);
               me->_conn_pool.push_back( c );
               me->_observer_cnd.set( true );
               me->_pool_cnd.set( true );
@@ -418,7 +418,7 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
             me->_conn_pool.erase( std::remove( me->_conn_pool.begin(), me->_conn_pool.end(), c ), me->_conn_pool.end() );
             me->_dlock.unlock();
 
-            xmt::Locker _l( me->_c_lock );
+            xmt::scoped_lock _l( me->_c_lock );
             me->_M_c.erase( c );
           }
         }
@@ -428,7 +428,7 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
 
       for ( idle_count = 0; idle_count < 2; ++idle_count ) {
         { 
-          MT_REENTRANT( me->_dlock, _1 );
+          xmt::scoped_lock lk(me->_dlock);
           if ( !me->_follow ) {
             break;
           }
@@ -481,7 +481,7 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::observer( void *p )
       // std::swap( pool_size[0], pool_size[1] );
       std::rotate( pool_size, pool_size, pool_size + 3 );
       {
-        MT_REENTRANT( me->_dlock, _1 );
+        xmt::scoped_lock lk(me->_dlock);
         pool_size[2] = static_cast<int>(me->_conn_pool.size());
         tpop = me->_tpop;
       }
@@ -535,7 +535,7 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::observer( void *p )
 template <class Connect>
 void sockmgr_stream_MP_SELECT<Connect>::_open( sock_base::stype t )
 {
-  MT_REENTRANT( _fd_lck, _1 );
+  xmt::scoped_lock lk(_fd_lck);
   if ( is_open_unsafe() ) {
     if ( t == sock_base::sock_stream ) {
       _accept = &_Self_type::accept_tcp;
@@ -655,11 +655,11 @@ __FIT_TYPENAME sockmgr_stream_MP_SELECT<Connect>::_Connect *sockmgr_stream_MP_SE
     FD_ZERO( &_pfde );
 
     // *** Set all listen sockets here...
-    MT_LOCK( _fd_lck );
+    _fd_lck.lock();
     FD_SET( fd_unsafe(), &_pfdr );
     FD_SET( fd_unsafe(), &_pfde );
     _fdmax = fd_unsafe();
-    MT_UNLOCK( _fd_lck );
+    _fd_lck.unlock();
     for ( typename container_type::iterator i = _M_c.begin(); i != _M_c.end(); ++i ) {
       if ( (*i)->s->is_open() ) {
         FD_SET( (*i)->s->rdbuf()->fd(), &_pfdr );
@@ -677,7 +677,7 @@ __FIT_TYPENAME sockmgr_stream_MP_SELECT<Connect>::_Connect *sockmgr_stream_MP_SE
       return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
     }
 
-    MT_REENTRANT( _fd_lck, _1 );
+    xmt::scoped_lock lk(_fd_lck);
     if ( !is_open_unsafe() || FD_ISSET( fd_unsafe(), &_pfde ) ) { // may be already closed
       return 0;
     }

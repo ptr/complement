@@ -51,7 +51,7 @@ void basic_sockmgr::Init::__at_fork_parent()
 
 void basic_sockmgr::Init::_guard( int direction )
 {
-  static xmt::Mutex _init_lock;
+  static xmt::mutex _init_lock;
   static int _count = 0;
 
   if ( direction ) {

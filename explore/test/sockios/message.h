@@ -37,7 +37,7 @@ extern std::string message_rsp2;
 
 extern int port;
 
-extern xmt::Mutex pr_lock;
+extern xmt::mutex pr_lock;
 
 #define OUT_MSG(msg) pr_lock.lock(); cerr << msg << endl; pr_lock.unlock()
 

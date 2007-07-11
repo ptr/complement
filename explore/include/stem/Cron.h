@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <06/12/15 03:20:55 ptr>
+// -*- C++ -*- Time-stamp: <07/07/11 21:20:12 ptr>
 
 /*
- * Copyright (c) 1998, 2002, 2003, 2005
+ * Copyright (c) 1998, 2002, 2003, 2005, 2007
  * Petr Ovtchenkov
  * 
  * Copyright (c) 1999-2001
@@ -18,9 +18,7 @@
 #include <config/feature.h>
 #endif
 
-#ifndef __IOSFWD__
 #include <iosfwd>
-#endif
 
 #ifndef __stem_EventHandler_h
 #include <stem/EventHandler.h>
@@ -157,7 +155,7 @@ class Cron :
     static xmt::Thread::ret_code _loop( void * );
 
     xmt::Thread _thr;
-    xmt::Condition cond;
+    xmt::condition cond;
 
     typedef __CronEntry value_type;
     typedef std::priority_queue<value_type,
@@ -165,7 +163,7 @@ class Cron :
       std::greater<value_type> > container_type;
 
     container_type _M_c;
-    xmt::Mutex _M_l;
+    xmt::mutex _M_l;
 
   private:
     DECLARE_RESPONSE_TABLE( Cron, EventHandler );

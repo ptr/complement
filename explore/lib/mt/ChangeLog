@@ -1,3 +1,35 @@
+2007-07-12  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* libxmt: version 1.11.0
+
+2007-07-11  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xmt.h, shm.h: Condition replaced by condition;
+
+	* xmt.h, shm.h: Barrier replaced by barrier, Semaphore by semaphore.
+
+2007-06-29  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xmt.h, xmt.cc, uid.cc, thr_mgr.cc: replace Locker by scoped_lock.
+
+	* shm.h, xmt.h, xmt.cc, thr_mgr.h, uid.cc, time.cc: all Mutex replaced by mutex;
+
+	* xmt.h: mutexRS renamed to recursive_mutex; LockerRS renamed to
+	recursive_scoped_lock; obsolete LockerSDS removed;
+
+	* xmt.h: LockerRd renamed to rd_scoped_lock, LockerWr to wr_scoped_lock,
+	__mutex_rw_base to __rw_mutex_base, mutexRW to rw_mutex;
+
+	* xmt.h: Spinlock was renamed to spinlock, LockerExt to native_scoped_lock.
+
+2007-06-14  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xmt.h, xmt.cc, shm.h: step to interface like boost or
+	http://www.open-std.org/jtc1/sc22/WG21/docs/papers/2007/n2178.html;
+	Locker* changed to basic_lock or basic_read_lock, internal lock flag
+	added, lock/unlock methods added to basic_*_lock and exception
+	lock_error added too.
+
 2007-03-12  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* xmt.h, xmt.cc: code for Novell NetWare removed.

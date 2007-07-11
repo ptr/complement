@@ -542,7 +542,7 @@ class EventHandler
     // See comment near EventHandler::EventHandler() implementation
     // HistoryContainer& theHistory;
     HistoryContainer theHistory;
-    xmt::MutexRS _theHistory_lock;
+    xmt::recursive_mutex _theHistory_lock;
 
   public:
 
@@ -705,7 +705,7 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
        { theEventsTable.Out( out ); }                                     \
     virtual bool DispatchTrace( const stem::Event& __e, std::ostream& __s )\
        {                                                                  \
-         MT_REENTRANT_SDS( this->_theHistory_lock, _x1 );                 \
+         xmt::recursive_scoped_lock lk( this->_theHistory_lock );         \
          return theEventsTable.DispatchTrace( theHistory.begin(),         \
                                               theHistory.end(), __e, __s ); } \
     virtual const std::type_info& classtype() const                       \
@@ -718,12 +718,12 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
   protected:					                          \
     virtual bool Dispatch( const stem::Event& __e )                        \
        {                                                                  \
-         MT_REENTRANT_SDS( this->_theHistory_lock, _x1 );                 \
+         xmt::recursive_scoped_lock lk( this->_theHistory_lock );         \
          return theEventsTable.Dispatch( this, theHistory.begin(),        \
                                          theHistory.end(), __e ); }       \
     virtual bool DispatchStub( const stem::Event& __e )                    \
        {                                                                  \
-         MT_REENTRANT_SDS( this->_theHistory_lock, _x1 );                  \
+         xmt::recursive_scoped_lock lk( this->_theHistory_lock );         \
          return theEventsTable.DispatchStub( this, theHistory.begin(),    \
                                              theHistory.end(), __e ); }   \
     static __FIT_DECLSPEC evtable_type theEventsTable;                     \

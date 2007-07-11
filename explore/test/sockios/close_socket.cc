@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/08/04 12:03:39 ptr>
+// -*- C++ -*- Time-stamp: <07/07/11 21:34:53 ptr>
 
 /*
  *
@@ -41,7 +41,7 @@ using namespace xmt;
  */
 
 extern int port;
-extern xmt::Mutex pr_lock;
+extern xmt::mutex pr_lock;
 
 class ConnectionProcessor3 // dummy variant
 {
@@ -64,7 +64,7 @@ ConnectionProcessor3::ConnectionProcessor3( std::sockstream& s )
   // with Input line prompt
 }
 
-Condition cnd2;
+condition cnd2;
 
 void ConnectionProcessor3::connect( std::sockstream& s )
 {
@@ -103,7 +103,7 @@ void ConnectionProcessor3::close()
   pr_lock.unlock();
 }
 
-Condition cnd1;
+condition cnd1;
 // Condition cnd2;
 std::sockstream *psock = 0;
 

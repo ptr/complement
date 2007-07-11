@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/10 20:35:08 ptr>
+// -*- C++ -*- Time-stamp: <07/07/11 21:35:39 ptr>
 
 /*
  *
@@ -41,9 +41,9 @@ using namespace xmt;
  */
 
 extern int port;
-extern xmt::Mutex pr_lock;
+extern xmt::mutex pr_lock;
 
-static Condition cnd;
+static condition cnd;
 
 class ConnectionProcessor4 // dummy variant
 {

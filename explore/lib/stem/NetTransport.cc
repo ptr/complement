@@ -362,7 +362,7 @@ xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
     while ( me.pop( ev, dst, src ) ) {
 #ifdef __FIT_STEM_TRACE
       try {
-        xmt::Locker lk(manager()->_lock_tr);
+        xmt::scoped_lock lk(manager()->_lock_tr);
         if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracenet) ) {
           *manager()->_trs << "Pid/ppid: " << xmt::getpid() << "/" << xmt::getppid() << "\n";
           manager()->dump( *manager()->_trs ) << endl;
@@ -375,7 +375,7 @@ xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
       if ( xdst == badaddr ) {
 #ifdef __FIT_STEM_TRACE
         try {
-          xmt::Locker lk(manager()->_lock_tr);
+          xmt::scoped_lock lk(manager()->_lock_tr);
           if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracefault)) ) {
             *manager()->_trs << __FILE__ << ":" << __LINE__
                              << " ("
@@ -398,7 +398,7 @@ xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
       }
 #ifdef __FIT_STEM_TRACE
       try {
-        xmt::Locker lk(manager()->_lock_tr);
+        xmt::scoped_lock lk(manager()->_lock_tr);
         if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
           *manager()->_trs << __FILE__ << ":" << __LINE__ << endl;
         }
