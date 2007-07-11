@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/10/11 00:56:13 ptr>
+// -*- C++ -*- Time-stamp: <07/07/11 21:45:09 ptr>
 
 /*
  * Copyright (c) 2006
@@ -28,7 +28,7 @@ class StEMecho :
     void echo( const stem::Event& );
     void regme( const stem::Event& );
 
-    xmt::Condition cnd;
+    xmt::condition cnd;
 
   private:
     DECLARE_RESPONSE_TABLE( StEMecho, stem::EventHandler );
@@ -50,7 +50,7 @@ class EchoClient :
     const std::string mess;
 
   private:
-    xmt::Condition cnd;
+    xmt::condition cnd;
 
     DECLARE_RESPONSE_TABLE( EchoClient, stem::EventHandler );
 };
@@ -72,7 +72,7 @@ class PeerClient :
     const std::string mess;
 
   private:
-    xmt::Condition cnd;
+    xmt::condition cnd;
 
     DECLARE_RESPONSE_TABLE( PeerClient, stem::EventHandler );
 };

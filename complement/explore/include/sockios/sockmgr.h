@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/12 14:50:57 ptr>
+// -*- C++ -*- Time-stamp: <07/07/11 20:57:31 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
@@ -85,19 +85,19 @@ class basic_sockmgr :
 
   public:
     bool is_open() const
-      { MT_REENTRANT( _fd_lck, _1 ); return is_open_unsafe(); }
+      { xmt::scoped_lock lk(_fd_lck); return is_open_unsafe(); }
     bool good() const
       { return _state == ios_base::goodbit; }
 
     sock_base::socket_type fd() const
-      { MT_REENTRANT( _fd_lck, _1 ); return fd_unsafe(); }
+      { xmt::scoped_lock lk(_fd_lck); return fd_unsafe(); }
 
     __FIT_DECLSPEC
     void shutdown( sock_base::shutdownflg dir );
     void setoptions( sock_base::so_t optname, bool on_off = true,
                      int __v = 0 )
       {
-        MT_REENTRANT( _fd_lck, _1 );
+        xmt::scoped_lock lk(_fd_lck);
         setoptions_unsafe( optname, on_off, __v );
       }
 
@@ -113,8 +113,8 @@ class basic_sockmgr :
     friend class Init;
 
   protected:
-    xmt::Mutex _fd_lck;
-    xmt::Condition _loop_cnd;
+    xmt::mutex _fd_lck;
+    xmt::condition _loop_cnd;
 };
 
 class ConnectionProcessorTemplate_MP // As reference
@@ -288,19 +288,19 @@ class sockmgr_stream_MP :
     _Sequence _M_c;
     _Compare  _M_comp;
     pfd_equal _pfdcomp;
-    xmt::Mutex _c_lock;
+    xmt::mutex _c_lock;
 
     _fd_sequence _pfd;
     int _cfd; // sock_base::socket_type
     _connect_pool_sequence _conn_pool;
-    xmt::Condition _pool_cnd;
-    xmt::Mutex _dlock;
+    xmt::condition _pool_cnd;
+    xmt::mutex _dlock;
     timespec _tpop;
 
-    xmt::Mutex _flock;
+    xmt::mutex _flock;
     bool _follow;
 
-    xmt::Condition _observer_cnd;
+    xmt::condition _observer_cnd;
     timespec _busylimit; // start new thread to process incoming
                          // requests, if processing thread busy
                          // more then _busylimit
@@ -419,7 +419,7 @@ class sockmgr_stream_MP_SELECT :
     _Sequence _M_c;
     _Compare  _M_comp;
     in_buf_avail _M_av;
-    xmt::Mutex _c_lock;
+    xmt::mutex _c_lock;
 
     fd_set _pfdr;
     fd_set _pfde;

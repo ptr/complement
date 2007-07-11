@@ -72,7 +72,7 @@ __FIT_DECLSPEC EvManager::~EvManager()
 
 bool EvManager::not_finished()
 {
-  xmt::LockerSpin _lk( _ev_queue_dispatch_guard );
+  xmt::spin_scoped_lock _lk( _ev_queue_dispatch_guard );
   return !_dispatch_stop;
 }
 
@@ -81,7 +81,7 @@ xmt::Thread::ret_code EvManager::_Dispatch( void *p )
   EvManager& me = *reinterpret_cast<EvManager *>(p);
   xmt::Thread::ret_code rt;
   rt.iword = 0;
-  xmt::Mutex& lq = me._lock_queue;
+  xmt::mutex& lq = me._lock_queue;
   queue_type& in_ev_queue = me.in_ev_queue;
   queue_type& out_ev_queue = me.out_ev_queue;
 
@@ -111,19 +111,19 @@ addr_type EvManager::Subscribe( EventHandler *object, const std::string& info )
 {
   addr_type id;
   {
-    Locker lk( _lock_heap );
+    scoped_lock lk( _lock_heap );
     id = create_unique();
     heap[id] = object;
   }
   {
-    Locker lk( _lock_xheap );
+    scoped_lock lk( _lock_xheap );
     gaddr_type& gaddr = _ex_heap[id];
     gaddr.hid = xmt::hostid();
     gaddr.pid = xmt::getpid();
     gaddr.addr = id;
   }
   
-  Locker lk( _lock_iheap );
+  scoped_lock lk( _lock_iheap );
   iheap[id] = info;
 
   return id;
@@ -142,21 +142,21 @@ addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
   if ( (id & extbit) ) {
     return badaddr;
   } else {
-    Locker _x1( _lock_heap );
+    scoped_lock _x1( _lock_heap );
     if ( unsafe_is_avail( id ) ) {
       return badaddr;
     }
     heap[id] = object;
   }
   {
-    Locker lk( _lock_xheap );
+    scoped_lock lk( _lock_xheap );
     gaddr_type& gaddr = _ex_heap[id];
     gaddr.hid = xmt::hostid();
     gaddr.pid = xmt::getpid();
     gaddr.addr = id;
   }
 
-  Locker _x1( _lock_iheap );
+  scoped_lock _x1( _lock_iheap );
   iheap[id] = info;
 
   return id;
@@ -176,14 +176,14 @@ addr_type EvManager::SubscribeRemote( const detail::transport& tr,
 {
   addr_type id;
   {
-    Locker _x1( _lock_xheap );
+    scoped_lock _x1( _lock_xheap );
     id = create_unique_x();
     _ex_heap[id] = addr;
     _tr_heap.insert( make_pair( addr, make_pair( id, tr ) ) );
     _ch_heap.insert( make_pair( tr.link, addr ) );
   }
   {
-    Locker _x1( _lock_iheap );
+    scoped_lock _x1( _lock_iheap );
     iheap[id] = info;
   }
 
@@ -205,13 +205,13 @@ addr_type EvManager::SubscribeRemote( const gaddr_type& addr,
   addr_type id;
   if ( addr.hid == xmt::hostid() && addr.pid == xmt::getpid() ) { // local
     if ( addr.addr & extbit ) { // may be transit object
-      Locker lk( _lock_xheap );
+      scoped_lock lk( _lock_xheap );
       pair<uuid_tr_heap_type::const_iterator,uuid_tr_heap_type::const_iterator> range = _tr_heap.equal_range( addr );
       if ( range.first != range.second ) { // transport present
         return min_element( range.first, range.second, tr_compare )->second.first;
       }
     } else { // may be local object
-      Locker lk( _lock_heap );
+      scoped_lock lk( _lock_heap );
       local_heap_type::const_iterator i = heap.find( addr.addr );
       if ( i != heap.end() ) {
         return i->first;
@@ -219,7 +219,7 @@ addr_type EvManager::SubscribeRemote( const gaddr_type& addr,
     }
     return badaddr; // don't know what I can made
   } else { // foreign object
-    Locker lk( _lock_xheap );
+    scoped_lock lk( _lock_xheap );
     pair<uuid_tr_heap_type::const_iterator,uuid_tr_heap_type::const_iterator> tr_range = _tr_heap.equal_range( addr );
     if ( tr_range.first != tr_range.second ) { // transport present
       return min_element( tr_range.first, tr_range.second, tr_compare )->second.first;
@@ -239,7 +239,7 @@ addr_type EvManager::SubscribeRemote( const gaddr_type& addr,
     _ex_heap[id] = addr;
   }
   {
-    Locker lk( _lock_iheap );
+    scoped_lock lk( _lock_iheap );
     iheap[id] = info;
   }
   return id;
@@ -256,7 +256,7 @@ __FIT_DECLSPEC
 bool EvManager::Unsubscribe( addr_type id )
 {
   if ( (id & extbit) ) {
-    Locker _x1( _lock_xheap );
+    scoped_lock _x1( _lock_xheap );
     gaddr_type& addr = _ex_heap[id];
       
     pair<uuid_tr_heap_type::iterator,uuid_tr_heap_type::iterator> range = _tr_heap.equal_range( addr );
@@ -277,12 +277,12 @@ bool EvManager::Unsubscribe( addr_type id )
     }
     _ex_heap.erase( id );
   } else {
-    Locker _x1( _lock_heap );
+    scoped_lock _x1( _lock_heap );
     heap.erase( id );
 
     // Notify remotes?
   }
-  Locker _x1( _lock_iheap );
+  scoped_lock _x1( _lock_iheap );
   iheap.erase( id );
 
   return true;
@@ -294,7 +294,7 @@ addr_type EvManager::reflect( const gaddr_type& addr ) const
   if ( addr.hid == xmt::hostid() && addr.pid == xmt::getpid() ) {
     // this host, this process
     if ( (addr.addr & extbit) == 0 ) { // looks like local object
-      Locker _x1( _lock_heap );
+      scoped_lock _x1( _lock_heap );
       local_heap_type::const_iterator l = heap.find( addr.addr );
       if ( l != heap.end() ) {
         return addr.addr; // l->first
@@ -307,7 +307,7 @@ addr_type EvManager::reflect( const gaddr_type& addr ) const
     // peer don't know host ids, used as access to 'standard' services and initial
     // communication
     if ( (addr.addr & extbit) == 0 && addr.addr <= _low ) {
-      Locker _x1( _lock_heap );
+      scoped_lock _x1( _lock_heap );
       local_heap_type::const_iterator l = heap.find( addr.addr );
       if ( l != heap.end() ) {
         return addr.addr; // l->first
@@ -318,7 +318,7 @@ addr_type EvManager::reflect( const gaddr_type& addr ) const
   }
 #endif
 
-  Locker _x1( _lock_xheap );
+  scoped_lock _x1( _lock_xheap );
   pair<uuid_tr_heap_type::const_iterator,uuid_tr_heap_type::const_iterator> range = _tr_heap.equal_range( addr );
   if ( range.first != range.second ) { // transport present
     return min_element( range.first, range.second, tr_compare )->second.first;
@@ -329,7 +329,7 @@ addr_type EvManager::reflect( const gaddr_type& addr ) const
 __FIT_DECLSPEC
 gaddr_type EvManager::reflect( addr_type addr ) const
 {
-  Locker lk( _lock_xheap );
+  scoped_lock lk( _lock_xheap );
   ext_uuid_heap_type::const_iterator i = _ex_heap.find( addr );
   if ( i != _ex_heap.end() ) {
     return i->second;
@@ -340,45 +340,45 @@ gaddr_type EvManager::reflect( addr_type addr ) const
 __FIT_DECLSPEC
 void EvManager::Remove( void *channel )
 {
-  Locker _x1( _lock_xheap );
-  Locker _x2( _lock_iheap );
+  scoped_lock _x1( _lock_xheap );
+  scoped_lock _x2( _lock_iheap );
   unsafe_Remove( channel );
 }
 
 void EvManager::settrf( unsigned f )
 {
-  Locker _x1( _lock_tr );
+  scoped_lock _x1( _lock_tr );
   _trflags |= f;
 }
 
 void EvManager::unsettrf( unsigned f )
 {
-  Locker _x1( _lock_tr );
+  scoped_lock _x1( _lock_tr );
   _trflags &= (0xffffffff & ~f);
 }
 
 void EvManager::resettrf( unsigned f )
 {
-  Locker _x1( _lock_tr );
+  scoped_lock _x1( _lock_tr );
   _trflags = f;
 }
 
 void EvManager::cleantrf()
 {
-  Locker _x1( _lock_tr );
+  scoped_lock _x1( _lock_tr );
   _trflags = 0;
 }
 
 unsigned EvManager::trflags() const
 {
-  Locker _x1( _lock_tr );
+  scoped_lock _x1( _lock_tr );
 
   return _trflags;
 }
 
 void EvManager::settrs( std::ostream *s )
 {
-  Locker _x1( _lock_tr );
+  scoped_lock _x1( _lock_tr );
   _trs = s;
 }
 
@@ -407,7 +407,7 @@ void EvManager::unsafe_Remove( void *channel )
 
 __FIT_DECLSPEC const detail::transport& EvManager::transport( addr_type id ) const
 {
-  Locker _x1( _lock_xheap );
+  scoped_lock _x1( _lock_xheap );
   if ( (id & extbit) != 0 ) {
     ext_uuid_heap_type::const_iterator i = _ex_heap.find( id );
     if ( i == _ex_heap.end() ) {
@@ -470,7 +470,7 @@ void EvManager::Send( const Event& e )
           if ( !reinterpret_cast<NetTransport_base *>(link)->push( e, gaddr_dst, gaddr_src) ) {
 #ifdef __FIT_STEM_TRACE
             try {
-              Locker lk(_lock_tr);
+              scoped_lock lk(_lock_tr);
               if ( _trs != 0 && _trs->good() && (_trflags & tracenet) ) {
                 *_trs << "Remove net channel " << link << endl;
               }
@@ -493,7 +493,7 @@ void EvManager::Send( const Event& e )
     catch ( std::logic_error& err ) {
 // #ifdef __FIT_STEM_TRACE
       try {
-        Locker lk(_lock_tr);
+        scoped_lock lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
           *_trs << err.what() << " "
                 << __FILE__ << ":" << __LINE__ << endl;
@@ -507,7 +507,7 @@ void EvManager::Send( const Event& e )
     catch ( std::runtime_error& err ) {
 // #ifdef __FIT_STEM_TRACE
       try {
-        Locker lk(_lock_tr);
+        scoped_lock lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
           *_trs << err.what() << " "
                 << __FILE__ << ":" << __LINE__ << endl;
@@ -521,7 +521,7 @@ void EvManager::Send( const Event& e )
     catch ( ... ) {
 // #ifdef __FIT_STEM_TRACE
       try {
-        Locker lk(_lock_tr);
+        scoped_lock lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
           *_trs << "Unknown, uncatched exception: "
                 << __FILE__ << ":" << __LINE__ << endl;
@@ -545,7 +545,7 @@ void EvManager::Send( const Event& e )
       try {
 #ifdef __FIT_STEM_TRACE
         try {
-          Locker lk(_lock_tr);
+          scoped_lock lk(_lock_tr);
           if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
             *_trs << object->classtype().name()
                   << " (" << object << ")\n";
@@ -560,7 +560,7 @@ void EvManager::Send( const Event& e )
       }
       catch ( std::logic_error& err ) {
         try {
-          Locker lk(_lock_tr);
+          scoped_lock lk(_lock_tr);
           if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
             *_trs << err.what() << "\n"
                   << object->classtype().name() << " (" << object << ")\n";
@@ -573,7 +573,7 @@ void EvManager::Send( const Event& e )
       }
       catch ( ... ) {
         try {
-          Locker lk(_lock_tr);
+          scoped_lock lk(_lock_tr);
           if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
             *_trs << "Unknown, uncatched exception during process:\n"
                   << object->classtype().name() << " (" << object << ")\n";
@@ -588,7 +588,7 @@ void EvManager::Send( const Event& e )
     catch ( std::logic_error& err ) {
 // #ifdef __FIT_STEM_TRACE
       try {
-        Locker lk(_lock_tr);
+        scoped_lock lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
           *_trs << err.what() << "\n"
                 << __FILE__ << ":" << __LINE__ << endl;
@@ -602,7 +602,7 @@ void EvManager::Send( const Event& e )
     catch ( std::runtime_error& err ) {
 // #ifdef __FIT_STEM_TRACE
       try {
-        Locker lk(_lock_tr);
+        scoped_lock lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
           *_trs << err.what() << " "
                 << __FILE__ << ":" << __LINE__ << endl;
@@ -616,7 +616,7 @@ void EvManager::Send( const Event& e )
     catch ( ... ) {
 // #ifdef __FIT_STEM_TRACE
       try {
-        Locker lk(_lock_tr);
+        scoped_lock lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
           *_trs << "Unknown, uncatched exception: "
                 << __FILE__ << ":" << __LINE__ << endl;
@@ -690,7 +690,7 @@ __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
 
   s << hex << showbase;
   {
-    Locker lk( _lock_heap );
+    scoped_lock lk( _lock_heap );
 
     for ( local_heap_type::const_iterator i = heap.begin(); i != heap.end(); ++i ) {
       s << i->first << "\t=> " << i->second << "\n";
@@ -699,7 +699,7 @@ __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
 
   s << "\nInfo map:\n";
   {
-    Locker lk( _lock_iheap );
+    scoped_lock lk( _lock_iheap );
 
     for ( info_heap_type::const_iterator i = iheap.begin(); i != iheap.end(); ++i ) {
       s << i->first << "\t=> '" << i->second << "'\n";
@@ -707,7 +707,7 @@ __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
   }
 
   {
-    Locker lk( _lock_xheap );
+    scoped_lock lk( _lock_xheap );
 
     s << "\nExternal address map:\n";
     for ( ext_uuid_heap_type::const_iterator i = _ex_heap.begin(); i != _ex_heap.end(); ++i ) {

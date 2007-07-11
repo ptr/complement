@@ -121,7 +121,7 @@ __FIT_DECLSPEC void ThreadMgr::join()
 __FIT_DECLSPEC
 void ThreadMgr::launch( Thread::entrance_type entrance, const void *p, size_t psz, unsigned flags, size_t stack_sz )
 {
-  Locker lk( _lock );
+  scoped_lock lk( _lock );
   _M_c.erase( remove_if( _M_c.begin(), _M_c.end(), rm_if_bad_thread() ), _M_c.end() );
   // Thread *t = new Thread( entrance, p, psz, flags, stack_sz );
   // cerr << (void *)t << " created\n";
@@ -132,13 +132,13 @@ void ThreadMgr::launch( Thread::entrance_type entrance, const void *p, size_t ps
 __FIT_DECLSPEC
 void ThreadMgr::garbage_collector()
 {
-  Locker lk( _lock );
+  scoped_lock lk( _lock );
   _M_c.erase( remove_if( _M_c.begin(), _M_c.end(), rm_if_bad_thread() ), _M_c.end() );
 }
 
 ThreadMgr::container_type::size_type ThreadMgr::size() const
 {
-  Locker lk( _lock );
+  scoped_lock lk( _lock );
   // ThreadMgr::container_type::size_type sz = count_if( _M_c.begin(), _M_c.end(), good_thread() );
   // cerr << "Sz: " << sz << endl;
   
@@ -148,7 +148,7 @@ ThreadMgr::container_type::size_type ThreadMgr::size() const
 __FIT_DECLSPEC void ThreadMgr::signal( int sig )
 {
   // cerr << "Signal!" << endl;
-  Locker lk( _lock );
+  scoped_lock lk( _lock );
   for_each( _M_c.begin(), _M_c.end(), bind2nd( thread_signal(), sig ) );
 }
 

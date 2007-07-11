@@ -50,9 +50,9 @@ void EventHandler::Init::__at_fork_parent()
 
 void EventHandler::Init::_guard( int direction )
 {
-  static xmt::MutexRS _init_lock;
+  static xmt::recursive_mutex _init_lock;
 
-  xmt::LockerRS lk(_init_lock);
+  xmt::recursive_scoped_lock lk(_init_lock);
   static int _count = 0;
 
   if ( direction ) {
@@ -124,21 +124,21 @@ __FIT_DECLSPEC
 void EventHandler::PushState( state_type state )
 {
   RemoveState( state );
-  MT_REENTRANT_SDS( _theHistory_lock, _x1 );
+  xmt::recursive_scoped_lock lk( _theHistory_lock );
   theHistory.push_front( state );
 }
 
 __FIT_DECLSPEC
 state_type EventHandler::State() const
 {
-  MT_REENTRANT_SDS( _theHistory_lock, _x1 );
+  xmt::recursive_scoped_lock lk( _theHistory_lock );
   return theHistory.front();
 }
 
 __FIT_DECLSPEC
 void EventHandler::PushTState( state_type state )
 {
-  MT_REENTRANT_SDS( _theHistory_lock, _x1 );
+  xmt::recursive_scoped_lock lk( _theHistory_lock );
   theHistory.push_front( ST_TERMINAL );
   theHistory.push_front( state );
 }
@@ -146,7 +146,7 @@ void EventHandler::PushTState( state_type state )
 __FIT_DECLSPEC
 void EventHandler::PopState()
 {
-  MT_REENTRANT_SDS( _theHistory_lock, _x1 );
+  xmt::recursive_scoped_lock lk( _theHistory_lock );
   theHistory.pop_front();
   while ( theHistory.front() == ST_TERMINAL ) {
     theHistory.pop_front();
@@ -156,7 +156,7 @@ void EventHandler::PopState()
 __FIT_DECLSPEC
 void EventHandler::PopState( state_type state )
 {
-  MT_REENTRANT_SDS( _theHistory_lock, _x1 );
+  xmt::recursive_scoped_lock lk( _theHistory_lock );
   h_iterator hst_i = __find( state );
   if ( hst_i != theHistory.end() && *hst_i != ST_TERMINAL ) {
     theHistory.erase( theHistory.begin(), ++hst_i );
@@ -166,7 +166,7 @@ void EventHandler::PopState( state_type state )
 __FIT_DECLSPEC
 void EventHandler::RemoveState( state_type state )
 {
-  MT_REENTRANT_SDS( _theHistory_lock, _x1 );
+  xmt::recursive_scoped_lock lk( _theHistory_lock );
   h_iterator hst_i = __find( state );
   if ( hst_i != theHistory.end() && *hst_i != ST_TERMINAL ) {
     theHistory.erase( hst_i );
@@ -176,7 +176,7 @@ void EventHandler::RemoveState( state_type state )
 __FIT_DECLSPEC
 bool EventHandler::isState( state_type state ) const
 {
-  MT_REENTRANT_SDS( _theHistory_lock, _x1 );
+  xmt::recursive_scoped_lock lk( _theHistory_lock );
   const HistoryContainer& hst = theHistory;
   const_h_iterator hst_i = __find( state );
   if ( hst_i != hst.end() && *hst_i != ST_TERMINAL ) {
@@ -251,7 +251,7 @@ EventHandler::~EventHandler()
 __FIT_DECLSPEC
 void EventHandler::TraceStack( ostream& out ) const
 {
-  MT_REENTRANT_RS( _theHistory_lock, _x1 );
+  xmt::recursive_scoped_lock lk( _theHistory_lock );
   const HistoryContainer& hst = theHistory;
   HistoryContainer::const_iterator hst_i = hst.begin();
   while ( hst_i != hst.end() ) {

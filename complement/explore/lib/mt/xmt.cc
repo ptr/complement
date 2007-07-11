@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/03/12 20:14:35 ptr>
+// -*- C++ -*- Time-stamp: <07/06/14 10:10:54 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2007
@@ -88,7 +88,7 @@ void *_uw_save = 0;
 # endif
 
 #ifdef _PTHREADS
-xmt::Mutex _F_lock;
+xmt::mutex _F_lock;
 #  define _F_locklock  xmt::detail::_F_lock.lock();
 #  define _F_lockunlock xmt::detail::_F_lock.unlock();
 #endif
@@ -220,7 +220,7 @@ Thread::Init::~Init()
 Thread::alloc_type Thread::alloc;
 int Thread::_idx = 0;
 int Thread::_self_idx = 0;
-Mutex Thread::_idx_lock;
+mutex Thread::_idx_lock;
 
 #ifdef __FIT_WIN32THREADS
 const Thread::thread_id_type Thread::bad_thread_id = INVALID_HANDLE_VALUE;
@@ -926,7 +926,7 @@ void Thread::terminate()
 
 int Thread::xalloc()
 {
-  Locker _l( _idx_lock );
+  scoped_lock _l( _idx_lock );
   return _idx++;
 }
 

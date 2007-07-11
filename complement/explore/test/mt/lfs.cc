@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/15 10:44:27 ptr>
+// -*- C++ -*- Time-stamp: <07/07/11 21:22:41 ptr>
 
 /*
  * Copyright (c) 2004, 2006
@@ -27,10 +27,10 @@ using namespace xmt;
 using namespace std;
 
 static const char *fname = "myfile";
-static Mutex m;
-static Mutex b;
+static mutex m;
+static mutex b;
 static int cnt = 0;
-static Condition cnd;
+static condition cnd;
 
 static Thread::ret_code thread_func( void * )
 {

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 19:33:11 ptr>
+// -*- C++ -*- Time-stamp: <07/07/11 21:47:37 ptr>
 
 /*
  * Copyright (c) 2006
@@ -36,7 +36,7 @@ class Naming :
     nsrecords_type::container_type lst;
 
   private:
-    xmt::Condition cnd;
+    xmt::condition cnd;
 
     DECLARE_RESPONSE_TABLE( Naming, stem::EventHandler );
 };

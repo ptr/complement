@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/09/29 22:53:43 ptr>
+// -*- C++ -*- Time-stamp: <07/07/11 21:47:25 ptr>
 
 /*
  *
@@ -31,7 +31,7 @@ class Node :
     int v;
 
   private:
-    xmt::Condition cnd;
+    xmt::condition cnd;
 
     DECLARE_RESPONSE_TABLE( Node, stem::EventHandler );
 };
@@ -52,7 +52,7 @@ class NewNode :
     int v;
 
   private:
-    xmt::Condition cnd;
+    xmt::condition cnd;
 
     DECLARE_RESPONSE_TABLE( NewNode, stem::EventHandler );
 };
