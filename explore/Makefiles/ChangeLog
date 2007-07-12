@@ -1,3 +1,8 @@
+2007-07-12  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/gcc.mak, gmake/top.mak: add include option for boost's
+	headers, if BOOST_DIR defined.
+
 2007-06-08  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* clean.mak, extern.mak, config.mak: move to gmake catalog

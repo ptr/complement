@@ -1,4 +1,4 @@
-# Time-stamp: <07/06/08 23:23:03 ptr>
+# Time-stamp: <07/07/12 10:55:41 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005-2007
 # Petr Ovtchenkov
@@ -81,12 +81,12 @@ endif
 include ${RULESBASE}/gmake/$(BUILD_OSNAME)/sys.mak
 # target OS-specific definitions, like ar, etc.
 include ${RULESBASE}/gmake/$(OSNAME)/targetsys.mak
+# Extern projects for everyday usage and settings for ones
+include ${RULESBASE}/gmake/extern.mak
 # compiler, compiler options
 include ${RULESBASE}/gmake/$(COMPILER_NAME).mak
 # rules to make dirs for targets
 include ${RULESBASE}/gmake/targetdirs.mak
-# Extern projects for everyday usage and settings for ones
-include ${RULESBASE}/gmake/extern.mak
 
 # os-specific local rules (or other project-specific definitions)
 -include specific.mak

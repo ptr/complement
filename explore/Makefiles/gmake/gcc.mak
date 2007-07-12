@@ -1,4 +1,4 @@
-# Time-stamp: <07/05/31 01:25:52 ptr>
+# Time-stamp: <07/07/12 10:51:42 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
 # Petr Ovtchenkov
@@ -64,6 +64,10 @@ ifdef WITHOUT_STLPORT
 INCLUDES =
 else
 INCLUDES = -I${STLPORT_INCLUDE_DIR}
+endif
+
+ifdef BOOST_INCLUDE_DIR
+INCLUDES += -I${BOOST_INCLUDE_DIR}
 endif
 
 OUTPUT_OPTION = -o $@
