@@ -1,3 +1,11 @@
+2007-07-17  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* suite.h, suite.cc: added multiple dependencies;
+	
+	* ut/exam_test_suite.cc, ut/exam_test_suite.h, ut/dummy_test.cc:
+	test for multiple dependencies; discover problem with multiple
+	dependencies.
+
 2007-07-16  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* converted from prototype in app/exam;

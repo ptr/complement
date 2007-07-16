@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/15 16:33:03 ptr>
+// -*- C++ -*- Time-stamp: <07/07/17 00:36:02 ptr>
 
 #include <exam/suite.h>
 #include <boost/graph/breadth_first_search.hpp>
@@ -51,7 +51,10 @@ struct skip_recorder :
       { 
         // typename graph_traits<Graph>::vertex_descriptor u = boost::source( e, g );
         // typename graph_traits<Graph>::vertex_descriptor v = boost::target( e, g );
+        // boost::out_edges( v, g );
+        // for () {
         _suite.check_test_case( boost::source( e, g ), boost::target( e, g ) );
+        // }
       }
 
     test_suite& _suite;
