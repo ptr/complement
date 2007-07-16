@@ -1,6 +1,6 @@
 // -*- C++ -*- Time-stamp: <07/07/15 16:33:03 ptr>
 
-#include "suite.h"
+#include <exam/suite.h>
 #include <boost/graph/breadth_first_search.hpp>
 #include <stack>
 
