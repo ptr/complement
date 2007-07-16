@@ -5,7 +5,7 @@
 
 #define FIT_EXAM
 
-#include "suite.h"
+#include <exam/suite.h>
 #include <string>
 #include <sstream>
 
