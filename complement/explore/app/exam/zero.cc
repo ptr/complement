@@ -1,49 +1,14 @@
-#define FIT_EXAM
+// -*- C++ -*- Time-stamp: <07/07/16 16:33:17 ptr>
 
-#include "suite.h"
+#include "exam_test_suite.h"
 
-int func()
+int main( int, char ** )
 {
-  EXAM_CHECK(false);
+  // exam::test_suite t( "exam self test" );
+  // t.add( exam_self_test, "exam self test suite" );
+  //
+  // return t.girdle();
 
-  return 0;
-}
-
-int func2()
-{
-  EXAM_CHECK(true);
-
-  return 0;
-}
-
-class test_x
-{
-  public:
-
-    int f()
-      {
-        EXAM_CHECK(false);
-
-        return 0;
-      }
-};
-
-
-int main( int argc, char **argv )
-{
-  exam::test_suite t( "exam level 0" );
-
-  test_x tx;
-
-  t.add( func, "simple function" );
-  t.add( &test_x::f, tx, "member function" );
-
-  t.add( func, "simple function, depends",
-         t.add( &test_x::f, tx, "member function, depends",
-                t.add( func2, "simple good function" ) ) );
-
-  t.girdle();
-
-  return 0;
+  return exam_self_test(0);
 }
 
