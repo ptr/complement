@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/15 16:33:17 ptr>
+// -*- C++ -*- Time-stamp: <07/07/16 23:07:02 ptr>
 
 #ifndef __suite_h
 #define __suite_h
@@ -178,11 +178,17 @@ class test_suite
     test_case_type add( func_type, const std::string& name );
     test_case_type add( func_type, const std::string& name, test_case_type );
 
+    template <class InputIter>
+    test_case_type add( func_type, const std::string& name, InputIter, InputIter );
+
     template <class TC>
     test_case_type add( int (TC::*)( test_suite *, int ), TC&, const std::string& name );
 
     template <class TC>
     test_case_type add( int (TC::*)( test_suite *, int ), TC&, const std::string& name, test_case_type );
+
+    template <class TC, class InputIter>
+    test_case_type add( int (TC::*)( test_suite *, int ), TC&, const std::string& name, InputIter, InputIter );
 
     int girdle( test_case_type start );
     int girdle()
@@ -242,11 +248,41 @@ test_suite::test_case_type test_suite::add( int (TC::*f)( test_suite *, int ), T
   return v;
 }
 
+template <class InputIter>
+test_suite::test_case_type test_suite::add( test_suite::func_type f, const std::string& name, InputIter first, InputIter last )
+{
+  vertex_t v = boost::add_vertex( boost::white_color, g);
+  while ( first != last ) {
+    boost::add_edge( *first++, v, g );
+  }
+  _test[v].tc = detail::make_test_case( detail::call( f ) );
+  _test[v].state = 0;
+  _test[v].name = name;
+  // ++_stat.total;
+
+  return v;
+}
+
 template <class TC>
 test_suite::test_case_type test_suite::add( int (TC::*f)( test_suite *, int ), TC& instance, const std::string& name, test_suite::test_case_type depends )
 {
   vertex_t v = boost::add_vertex( boost::white_color, g);
   boost::add_edge( depends, v, g );
+  _test[v].tc = detail::make_test_case( f, instance );
+  _test[v].state = 0;
+  _test[v].name = name;
+  // ++_stat.total;
+
+  return v;
+}
+
+template <class TC, class InputIter>
+test_suite::test_case_type test_suite::add( int (TC::*f)( test_suite *, int ), TC& instance, const std::string& name, InputIter first, InputIter last )
+{
+  vertex_t v = boost::add_vertex( boost::white_color, g);
+  while ( first != last ) {
+    boost::add_edge( *first++, v, g );
+  }
   _test[v].tc = detail::make_test_case( f, instance );
   _test[v].state = 0;
   _test[v].name = name;

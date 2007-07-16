@@ -34,3 +34,17 @@ int EXAM_IMPL(func_good)
 
   return EXAM_RESULT;
 }
+
+int EXAM_IMPL(func_good2)
+{
+  EXAM_CHECK(true);
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(func_good3)
+{
+  EXAM_CHECK(true);
+
+  return EXAM_RESULT;
+}

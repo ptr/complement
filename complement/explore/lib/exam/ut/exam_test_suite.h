@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/16 16:33:17 ptr>
+// -*- C++ -*- Time-stamp: <07/07/16 23:40:09 ptr>
 
 #ifndef __exam_test_suite_h
 #define __exam_test_suite_h
@@ -22,6 +22,8 @@ class exam_basic_test
      int EXAM_DECL(dep);
      int EXAM_DECL(trace);
      int EXAM_DECL(dep_test_suite);
+     int EXAM_DECL(multiple_dep);
+     int EXAM_DECL(multiple_dep_complex);
 
   private:
      std::stringstream buff;
@@ -35,6 +37,8 @@ class exam_basic_test
      static const std::string r5;
      static const std::string r6;
      static const std::string r7;
+     static const std::string r8;
+     static const std::string r9;
 };
 
 int EXAM_DECL(exam_self_test);
