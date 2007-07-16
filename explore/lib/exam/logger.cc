@@ -1,6 +1,6 @@
 // -*- C++ -*- Time-stamp: <07/07/13 10:53:32 ptr>
 
-#include "logger.h"
+#include <exam/logger.h>
 #include <iostream>
 
 namespace exam {

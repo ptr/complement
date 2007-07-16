@@ -1,4 +1,4 @@
-#include "suite.h"
+#include <exam/suite.h>
 
 int EXAM_IMPL(func)
 {
