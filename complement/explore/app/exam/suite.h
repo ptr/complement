@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/11 11:02:41 ptr>
+// -*- C++ -*- Time-stamp: <07/07/15 16:33:17 ptr>
 
 #ifndef __suite_h
 #define __suite_h
@@ -8,6 +8,9 @@
 #include <map>
 #include <boost/graph/adjacency_list.hpp>
 #include <string>
+#include <exception>
+
+#include "logger.h"
 
 enum vertex_testcase_t { vertex_testcase };
 
@@ -17,13 +20,16 @@ namespace boost {
 
 namespace exam {
 
+class test_suite;
+
 namespace detail {
 
 struct call_impl
 {
     virtual ~call_impl()
       { }
-    virtual int invoke() = 0;
+    // virtual int invoke() = 0;
+    virtual int invoke( test_suite *, int = 0 ) = 0;
 };
 
 template <typename F>
@@ -35,8 +41,12 @@ class call_impl_t :
         _f( f )
       { }
 
-    virtual int invoke()
-      { return _f(); }
+    // virtual int invoke()
+    //  { return _f(); }
+
+    virtual int invoke( test_suite *s, int count = 0 )
+      { return _f( s, count ); }
+
 
   private:
     F _f;
@@ -45,8 +55,12 @@ class call_impl_t :
 class dummy
 {
   public:
-    virtual int f()
-      { }
+    // virtual int f()
+    //   { return 0; }
+
+    virtual int f( test_suite *, int count = 0 )
+      { return count; }
+
   private:
     virtual ~dummy()
       { }
@@ -56,7 +70,8 @@ template <class TC>
 class method_invoker
 {
   public:
-    typedef int (TC::*mf_type)();
+    // typedef int (TC::*mf_type_a)();
+    typedef int (TC::*mf_type)( test_suite *, int );
 
     explicit method_invoker( TC& instance, mf_type f ) :
         _inst(instance),
@@ -68,8 +83,11 @@ class method_invoker
         _func( m._func )
       { }
 
-    int operator()()
-      { return (_inst.*_func)(); }
+    // int operator()()
+    //   { return (_inst.*_func)(); }
+
+    int operator()( test_suite *ts, int count = 0 )
+      { return (_inst.*_func)( ts, count ); }
 
   private:
     method_invoker& operator =( const method_invoker<TC>& )
@@ -89,8 +107,11 @@ class call
     call( F f )
       { new (&_buf[0]) call_impl_t<F>(f); }
 
-    int operator()()
-      { return reinterpret_cast<call_impl *>(&_buf[0])->invoke(); }
+    // int operator()()
+    //   { return reinterpret_cast<call_impl *>(&_buf[0])->invoke(); }
+
+    int operator()( test_suite *ts, int count = 0 )
+      { return reinterpret_cast<call_impl *>(&_buf[0])->invoke( ts, count ); }
 
   private:
     // call_impl *_f;
@@ -105,8 +126,11 @@ class test_case
         _tc( f )
       { }
 
-    int operator ()()
-      { return _tc(); }
+    // int operator ()()
+    //   { return _tc(); }
+
+    int operator ()( test_suite *ts, int count = 0 )
+      { return _tc( ts, count ); }
 
   private:
     call _tc;
@@ -118,12 +142,17 @@ inline test_case *make_test_case( const call& f )
 }
 
 template <class TC>
-inline test_case *make_test_case( int (TC::*f)(), TC& instance )
+inline test_case *make_test_case( int (TC::*f)( test_suite *, int ), TC& instance )
 {
   return new test_case( method_invoker<TC>(instance, f) );
 }
 
 } // namespace detail
+
+class init_exception :
+  public std::exception
+{
+};
 
 class test_suite
 {
@@ -139,7 +168,7 @@ class test_suite
     typedef boost::property_map<graph_t,vertex_testcase_t>::type vertex_testcase_map_t;
 
   public:
-    typedef int (*func_type)();
+    typedef int (*func_type)( test_suite *, int );
     typedef vertex_t test_case_type;
 
     test_suite( const std::string& name );
@@ -150,45 +179,38 @@ class test_suite
     test_case_type add( func_type, const std::string& name, test_case_type );
 
     template <class TC>
-    test_case_type add( int (TC::*)(), TC&, const std::string& name );
+    test_case_type add( int (TC::*)( test_suite *, int ), TC&, const std::string& name );
 
     template <class TC>
-    test_case_type add( int (TC::*)(), TC&, const std::string& name, test_case_type );
+    test_case_type add( int (TC::*)( test_suite *, int ), TC&, const std::string& name, test_case_type );
 
-    struct stat
-    {
-       int total;
-       int passed;
-       int failed;
-       int skipped;
-    };
-
-    void girdle();
-    void girdle( test_case_type start );
+    int girdle( test_case_type start );
+    int girdle()
+      { return girdle( root ); }
+    int run( test_suite *, int count = 0 );
 
     void run_test_case( vertex_t v );
     void check_test_case( vertex_t u, vertex_t v );
+    void clean_test_case_state( vertex_t v );
 
-    enum {
-      trace = 1,
-      trace_suite = 2
-    };
-
-    static int flags();
-    static bool is_trace();
-    static void report( const char *, int, bool, const char * );
+    int flags();
+    int flags( int );
+    bool is_trace();
+    void report( const char *, int, bool, const char * );
+    base_logger *set_global_logger( base_logger * );
+    base_logger *set_logger( base_logger * );
 
   private:
     enum {
+      pass = 0,
       fail = 1,
-      skip = 2,
-      init = 1024
+      skip = 2
     };
 
     graph_t g;
     vertex_t root;
-    vertex_color_map_t color;
     vertex_testcase_map_t testcase;
+    base_logger *local_logger;
 
     struct test_case_collect
     {
@@ -199,36 +221,36 @@ class test_suite
 
     typedef std::map<vertex_t,test_case_collect> test_case_map_type;
     test_case_map_type _test;
-    test_suite::stat _stat;
+    base_logger::stat _stat;
     std::string _suite_name;
 
-    static int _flags;
-    static void (*_report)( const char *, int, bool, const char * );
-    static int _root_func();
+    static int _root_func( test_suite *, int = 0 );
+
+    static base_logger *logger;
 };
 
 template <class TC>
-test_suite::test_case_type test_suite::add( int (TC::*f)(), TC& instance, const std::string& name )
+test_suite::test_case_type test_suite::add( int (TC::*f)( test_suite *, int ), TC& instance, const std::string& name )
 {
   vertex_t v = boost::add_vertex( boost::white_color, g);
   boost::add_edge( root, v, g );
   _test[v].tc = detail::make_test_case( f, instance );
   _test[v].state = 0;
   _test[v].name = name;
-  ++_stat.total;
+  // ++_stat.total;
 
   return v;
 }
 
 template <class TC>
-test_suite::test_case_type test_suite::add( int (TC::*f)(), TC& instance, const std::string& name, test_suite::test_case_type depends )
+test_suite::test_case_type test_suite::add( int (TC::*f)( test_suite *, int ), TC& instance, const std::string& name, test_suite::test_case_type depends )
 {
   vertex_t v = boost::add_vertex( boost::white_color, g);
   boost::add_edge( depends, v, g );
   _test[v].tc = detail::make_test_case( f, instance );
   _test[v].state = 0;
   _test[v].name = name;
-  ++_stat.total;
+  // ++_stat.total;
 
   return v;
 }
@@ -238,11 +260,23 @@ typedef test_suite::test_case_type test_case_type;
 } // namespace exam
 
 #ifdef FIT_EXAM
-#  define EXAM_CHECK(C) if ( !(C) ) { exam::test_suite::report( __FILE__, __LINE__, false, #C );  return 1; } else if ( exam::test_suite::is_trace() ) { exam::test_suite::report( __FILE__, __LINE__, true, #C ); }
-#  define EXAM_MESSAGE(M)
+#  define EXAM_IMPL(F) F( exam::test_suite *__exam_ts, int __exam_counter )
+#  define EXAM_DECL(F) F( exam::test_suite *, int = 0 )
+#  define EXAM_RESULT __exam_counter
+#  define EXAM_CHECK(C) if ( !(C) ) { __exam_ts->report( __FILE__, __LINE__, false, #C );  __exam_counter |= 1; } else __exam_ts->report( __FILE__, __LINE__, true, #C )
+#  define EXAM_MESSAGE(M) __exam_ts->report( __FILE__, __LINE__, true, M )
+#  define EXAM_REQUIRE(C) if ( !(C) ) { __exam_ts->report( __FILE__, __LINE__, false, #C );  return 1; } else __exam_ts->report( __FILE__, __LINE__, true, #C )
+#  define EXAM_FAIL(M) __exam_ts->report( __FILE__, __LINE__, false, M ); return 1
+#  define EXAM_ERROR(M) __exam_ts->report( __FILE__, __LINE__, false, M ); __exam_counter |= 1
 #else
+#  define EXAM_IMPL(F) F( exam::test_suite *, int )
+#  define EXAM_DECL(F) F( exam::test_suite *, int = 0 )
+#  define EXAM_RESULT 0
 #  define EXAM_CHECK(C)
 #  define EXAM_MESSAGE(M)
+#  define EXAM_REQUIRE(C)
+#  define EXAM_FAIL(M)
+#  define EXAM_ERROR(M)
 #endif
 
 
