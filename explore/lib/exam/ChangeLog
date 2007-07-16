@@ -1,0 +1,31 @@
+2007-07-16  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* converted from prototype in app/exam;
+
+	* logger.h, logger.cc: logger---interface and trivial_logger;
+
+	* suite.h, suite.cc: test_suite framework;
+
+	* ut/exam_test_suite.h, ut/exam_test_suite.cc: test suite for self;
+
+	* ut/dummy_test.cc: dummy test suite for self-test;
+
+	* ut/exam_self_test.cc, ut/Makefile, ut/Makefile.inc: self test program;
+
+	* Makefile, Makefile.inc, libexam: version 0.1.0
+
+2007-07-02  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* start prototyping.
+
+2007-05-18  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* exam's use-case views documented in SVN
+
+2007-03-09  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* exam's use-case views.
+
+2006-11-15  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* exam's idea.
