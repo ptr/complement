@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/11 11:10:45 ptr>
+// -*- C++ -*- Time-stamp: <07/07/15 16:33:03 ptr>
 
 #include "suite.h"
 #include <boost/graph/breadth_first_search.hpp>
@@ -61,39 +61,59 @@ template <class Tag>
 skip_recorder<Tag> record_skip(test_suite& ts, Tag)
 { return skip_recorder<Tag>(ts); }
 
+template <class Tag>
+struct white_recorder :
+        public base_visitor<white_recorder<Tag> >
+{
+    typedef Tag event_filter;
+
+    white_recorder(test_suite& ts) :
+        _suite(ts)
+      { }
+
+    template <class Vertex, class Graph>
+    void operator()(Vertex v, const Graph& g)
+      {
+        // std::cerr << "On vertex " << v << std::endl;
+        // boost::put( boost::vertex_color, g, v, white_color );
+        _suite.clean_test_case_state( v );
+      }
+
+    test_suite& _suite;
+};
+
+template <class Tag>
+white_recorder<Tag> record_white(test_suite& ts, Tag)
+{ return white_recorder<Tag>(ts); }
+
+
 } // namespace detail
 
-int test_suite::_root_func()
+int EXAM_IMPL(test_suite::_root_func)
 {
-  return test_suite::init;
+  throw init_exception();
+
+  return -1;
 }
 
 test_suite::test_suite( const string& name ) :
    root( add_vertex( white_color, g ) ),
-   _suite_name( name )
+   _suite_name( name ),
+   local_logger( logger )
 {
-  color = get( vertex_color, g );
   testcase = get( vertex_testcase, g );
   _test[root].tc = detail::make_test_case( detail::call( _root_func ) );
   _test[root].state = 0;
-  _stat.total = 0;
-  _stat.passed = 0;
-  _stat.failed = 0;
-  _stat.skipped = 0;
 }
 
 test_suite::test_suite( const char *name ) :
    root( add_vertex( white_color, g ) ),
-   _suite_name( name )
+   _suite_name( name ),
+   local_logger( logger )
 {
-  color = get( vertex_color, g );
   testcase = get( vertex_testcase, g );
   _test[root].tc = detail::make_test_case( detail::call( _root_func ) );
   _test[root].state = 0;
-  _stat.total = 0;
-  _stat.passed = 0;
-  _stat.failed = 0;
-  _stat.skipped = 0;
 }
 
 test_suite::~test_suite()
@@ -103,48 +123,33 @@ test_suite::~test_suite()
   }
 }
 
-void test_suite::girdle()
+int test_suite::girdle( test_suite::test_case_type start )
 {
   stack<vertex_t> buffer;
-  cerr << "== Begin test suite\n";
-  breadth_first_visit( g, root, buffer,
-                       make_bfs_visitor(
-                         make_pair( record_vertexes(*this,on_discover_vertex()),
-                                    record_skip(*this,on_examine_edge()) ) ),
-                       color );
-  cerr << "==  End test suite\n";
-  if ( _stat.failed != 0 ) {
-    cerr << "*** FAIL ";
-  } else {
-    cerr << "*** PASS ";
-  }
-  cerr << _suite_name
-       << " (+" << _stat.passed
-       <<   "-" << _stat.failed
-       <<   "~" << _stat.skipped << "/" << _stat.total << ") ***" << endl;
-}
+  vertex_color_map_t color = get( vertex_color, g );
 
-void test_suite::girdle( test_suite::test_case_type start )
-{
-  stack<vertex_t> buffer;
-  cerr << "== Begin test suite\n";
-  breadth_first_visit( g, start, buffer,
-                       make_bfs_visitor(
-                         make_pair( record_vertexes(*this,on_discover_vertex()),
-                                    record_skip(*this,on_examine_edge()) ) ),
-                       color );
-  cerr << "==  End test suite\n";
-  if ( _stat.failed != 0 ) {
-    cerr << "*** FAIL ";
-  } else {
-    cerr << "*** PASS ";
-  }
-  cerr << _suite_name
-       << " (+" << _stat.passed
-       <<   "-" << _stat.failed
-       <<   "~" << _stat.skipped << "/" << _stat.total << ") ***" << endl;
-}
+  // detail::white_recorder<on_initialize_vertex> vis( *this );
+  // 
+  // vertex_iterator_t i, i_end;
 
+  // for ( tie(i, i_end) = vertices(g); i != i_end; ++i ) {
+  //   // vis.initialize_vertex( *i, g );
+  //   put( color, *i, white_color );
+  // }
+
+  _stat = base_logger::stat();
+  local_logger->begin_ts();
+  breadth_first_search( g, start, buffer,
+                        make_bfs_visitor(
+                          make_pair( record_white(*this,on_initialize_vertex()),
+                            make_pair( record_vertexes(*this,on_discover_vertex()),
+                                       record_skip(*this,on_examine_edge()) ) ) ),
+                        color );
+  local_logger->end_ts();
+  local_logger->result( _stat, _suite_name );
+
+  return _stat.failed;
+}
 
 test_suite::test_case_type test_suite::add( test_suite::func_type f, const string& name )
 {
@@ -153,7 +158,7 @@ test_suite::test_case_type test_suite::add( test_suite::func_type f, const strin
   _test[v].tc = detail::make_test_case( detail::call( f ) );
   _test[v].state = 0;
   _test[v].name = name;
-  ++_stat.total;
+  // ++_stat.total;
 
   return v;
 }
@@ -165,69 +170,77 @@ test_suite::test_case_type test_suite::add( test_suite::func_type f, const strin
   _test[v].tc = detail::make_test_case( detail::call( f ) );
   _test[v].state = 0;
   _test[v].name = name;
-  ++_stat.total;
+  // ++_stat.total;
 
   return v;
 }
 
 int test_suite::flags()
 {
-  return _flags;
+  return local_logger->flags();
 }
 
 bool test_suite::is_trace()
 {
-  return (_flags & trace) != 0;
+  return local_logger->is_trace();
 }
 
-void _report0( const char *file, int line, bool cnd, const char *expr )
+int test_suite::flags( int f )
 {
-  std::cerr << file << ":" << line << ": " << (cnd ? "pass" : "fail" ) << ": " << expr
-            << std::endl;
+  return local_logger->flags( f );
 }
 
-void _report1( const char *file, int line, bool cnd, const char *expr )
+trivial_logger __trivial_logger_inst( cerr );
+
+base_logger *test_suite::logger = &__trivial_logger_inst;
+
+base_logger *test_suite::set_global_logger( base_logger *new_logger )
 {
-  printf( "%s:%d: %s: %s\n", file, line, (cnd ? "pass" : "fail"), expr );
+  base_logger *tmp = logger;
+  logger = new_logger;
+  if ( tmp == local_logger ) { // if local_logger was identical to logger, switch it too
+    local_logger = logger;
+  }
+  return tmp;
 }
 
-void _report2( const char *file, int line, bool cnd, const char *expr )
+base_logger *test_suite::set_logger( base_logger *new_logger )
 {
-  fprintf( stderr, "%s:%d: %s: %s\n", file, line, (cnd ? "pass" : "fail"), expr );
+  base_logger *tmp = local_logger;
+  local_logger = new_logger;
+  return tmp;
 }
-
-int test_suite::_flags = 0;
-void (*test_suite::_report)( const char *, int, bool, const char * ) = _report0;
 
 void test_suite::report( const char *file, int line, bool cnd, const char *expr )
 {
-  (*test_suite::_report)( file, line, cnd, expr );
+  local_logger->report( file, line, cnd, expr );
 }
 
 void test_suite::run_test_case( test_suite::vertex_t v )
 {
   try {
+    ++_stat.total;
     if ( _test[v].state == 0 ) {
-      int res = (*_test[v].tc)();
-      if ( (res & init) != 0 ) {
-        // do nothing
-      } else if ( res == 0 ) {
+      if ( (*_test[v].tc)( this, 0 ) == 0 ) {
         ++_stat.passed;
-        cerr << "  PASS " << _test[v].name << "\n";
+        local_logger->tc( base_logger::pass, _test[v].name );
       } else {
         _test[v].state = fail;
         ++_stat.failed;
-        cerr << "  FAIL " << _test[v].name << "\n";
+        local_logger->tc( base_logger::fail, _test[v].name );
       }
     } else {
       ++_stat.skipped;
-      cerr << "  SKIP " << _test[v].name << "\n";
+      local_logger->tc( base_logger::skip, _test[v].name );
     }
+  }
+  catch ( init_exception& ) {
+    --_stat.total;
   }
   catch ( ... ) {
     ++_stat.failed;
     _test[v].state = fail;
-    cerr << "  FAIL " << _test[v].name << "\n";
+    local_logger->tc( base_logger::fail, _test[v].name );
   }
 }
 
@@ -237,5 +250,16 @@ void test_suite::check_test_case( test_suite::vertex_t u, test_suite::vertex_t v
     _test[v].state = skip;
   }
 }
+
+void test_suite::clean_test_case_state( vertex_t v )
+{
+  _test[v].state = 0;
+}
+
+int test_suite::run( test_suite *, int )
+{
+  return girdle( root );
+}
+
 
 } // namespace exam
