@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/16 23:07:02 ptr>
+// -*- C++ -*- Time-stamp: <07/07/17 09:47:24 ptr>
 
 #ifndef __suite_h
 #define __suite_h
@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 #include <map>
+#include <stack>
 #include <boost/graph/adjacency_list.hpp>
 #include <string>
 #include <exception>
@@ -205,6 +206,9 @@ class test_suite
     void report( const char *, int, bool, const char * );
     base_logger *set_global_logger( base_logger * );
     base_logger *set_logger( base_logger * );
+    void set_fail();
+
+    static test_suite& top();
 
   private:
     enum {
@@ -226,6 +230,7 @@ class test_suite
     };
 
     typedef std::map<vertex_t,test_case_collect> test_case_map_type;
+    int _last_state;
     test_case_map_type _test;
     base_logger::stat _stat;
     std::string _suite_name;
@@ -233,6 +238,8 @@ class test_suite
     static int _root_func( test_suite *, int = 0 );
 
     static base_logger *logger;
+
+    static std::stack<test_suite *> _stack;
 };
 
 template <class TC>
@@ -300,19 +307,25 @@ typedef test_suite::test_case_type test_case_type;
 #  define EXAM_DECL(F) F( exam::test_suite *, int = 0 )
 #  define EXAM_RESULT __exam_counter
 #  define EXAM_CHECK(C) if ( !(C) ) { __exam_ts->report( __FILE__, __LINE__, false, #C );  __exam_counter |= 1; } else __exam_ts->report( __FILE__, __LINE__, true, #C )
+#  define EXAM_CHECK_ASYNC(C) if ( !(C) ) { exam::test_suite::top().report( __FILE__, __LINE__, false, #C );  exam::test_suite::top().set_fail(); } else exam::test_suite::top().report( __FILE__, __LINE__, true, #C )
 #  define EXAM_MESSAGE(M) __exam_ts->report( __FILE__, __LINE__, true, M )
+#  define EXAM_MESSAGE_ASYNC(M) exam::test_suite::top().report( __FILE__, __LINE__, true, M )
 #  define EXAM_REQUIRE(C) if ( !(C) ) { __exam_ts->report( __FILE__, __LINE__, false, #C );  return 1; } else __exam_ts->report( __FILE__, __LINE__, true, #C )
 #  define EXAM_FAIL(M) __exam_ts->report( __FILE__, __LINE__, false, M ); return 1
 #  define EXAM_ERROR(M) __exam_ts->report( __FILE__, __LINE__, false, M ); __exam_counter |= 1
+#  define EXAM_ERROR_ASYNC(M) exam::test_suite::top().report( __FILE__, __LINE__, false, M ); exam::test_suite::top().set_fail()
 #else
 #  define EXAM_IMPL(F) F( exam::test_suite *, int )
 #  define EXAM_DECL(F) F( exam::test_suite *, int = 0 )
 #  define EXAM_RESULT 0
 #  define EXAM_CHECK(C)
+#  define EXAM_CHECK_ASYNC(C)
 #  define EXAM_MESSAGE(M)
+#  define EXAM_MESSAGE_ASYNC(M)
 #  define EXAM_REQUIRE(C)
 #  define EXAM_FAIL(M)
 #  define EXAM_ERROR(M)
+#  define EXAM_ERROR_ASYNC(M)
 #endif
 
 

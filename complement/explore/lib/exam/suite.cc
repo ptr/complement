@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/17 00:36:02 ptr>
+// -*- C++ -*- Time-stamp: <07/07/17 10:03:02 ptr>
 
 #include <exam/suite.h>
 #include <boost/graph/breadth_first_search.hpp>
@@ -101,26 +101,33 @@ int EXAM_IMPL(test_suite::_root_func)
 
 test_suite::test_suite( const string& name ) :
    root( add_vertex( white_color, g ) ),
+   _last_state( 0 ),
    _suite_name( name ),
    local_logger( logger )
 {
   testcase = get( vertex_testcase, g );
   _test[root].tc = detail::make_test_case( detail::call( _root_func ) );
   _test[root].state = 0;
+
+  _stack.push( this );
 }
 
 test_suite::test_suite( const char *name ) :
    root( add_vertex( white_color, g ) ),
+   _last_state( 0 ),
    _suite_name( name ),
    local_logger( logger )
 {
   testcase = get( vertex_testcase, g );
   _test[root].tc = detail::make_test_case( detail::call( _root_func ) );
   _test[root].state = 0;
+
+  _stack.push( this );
 }
 
 test_suite::~test_suite()
 {
+  _stack.pop();
   for ( test_case_map_type::iterator i = _test.begin(); i != _test.end(); ++i ) {
     delete i->second.tc;
   }
@@ -193,9 +200,24 @@ int test_suite::flags( int f )
   return local_logger->flags( f );
 }
 
+void test_suite::set_fail()
+{
+  _last_state = fail;
+}
+
 trivial_logger __trivial_logger_inst( cerr );
 
 base_logger *test_suite::logger = &__trivial_logger_inst;
+stack<test_suite *> test_suite::_stack;
+
+test_suite& test_suite::top()
+{
+  if ( _stack.empty() ) {
+    throw runtime_error( "stack of test suites empty" );
+  }
+
+  return *_stack.top();
+}
 
 base_logger *test_suite::set_global_logger( base_logger *new_logger )
 {
@@ -225,8 +247,15 @@ void test_suite::run_test_case( test_suite::vertex_t v )
     ++_stat.total;
     if ( _test[v].state == 0 ) {
       if ( (*_test[v].tc)( this, 0 ) == 0 ) {
-        ++_stat.passed;
-        local_logger->tc( base_logger::pass, _test[v].name );
+        if ( _last_state == 0 ) {
+          ++_stat.passed;
+          local_logger->tc( base_logger::pass, _test[v].name );
+        } else {
+          _test[v].state = fail;
+          ++_stat.failed;
+          local_logger->tc( base_logger::fail, _test[v].name );
+          _last_state = 0;
+        }
       } else {
         _test[v].state = fail;
         ++_stat.failed;
