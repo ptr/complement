@@ -35,31 +35,32 @@ int EXAM_IMPL(mt_test_suite)
   // t.add( signal_2_test, "signal_2_test" );
   t.add( signal_3_test, "signal_3_test" );
 
-  exam::test_suite::test_case_type tc[5];
+  exam::test_suite::test_case_type tc[3];
 
   tc[0] = t.add( &mt_test::barrier, test, "mt_test::barrier" );
   tc[1] = t.add( &mt_test::join_test, test, "mt_test::join_test" );
   tc[2] = t.add( &mt_test::yield, test, "mt_test::yield",
                  t.add( &mt_test::barrier2, test, "mt_test::barrier2",
-                        tc, tc+2 ) );
-  tc[3] = t.add( &mt_test::mutex_test, test, "mt_test::mutex_test", tc[2] );
+                        tc, tc + 2 ) );
+  t.add( &mt_test::recursive_mutex_test, test, "mt_test::recursive_mutex_test",
+         t.add( &mt_test::mutex_test, test, "mt_test::mutex_test", tc[2] ) );
 
 #ifdef __FIT_PTHREAD_SPINLOCK
   t.add( &mt_test::spinlock_test, test, "mt_test::spinlock_test", tc[2] );
 #endif
-  t.add( &mt_test::recursive_mutex_test, test, "mt_test::recursive_mutex_test", tc[3] );
   t.add( &mt_test::pid, test, "mt_test::pid",
          t.add( &mt_test::fork, test, "mt_test::fork" ) );
-  tc[4] = t.add( &mt_test::shm_alloc, test, "mt_test::shm_alloc",
-                 t.add( &mt_test::shm_segment, test, "mt_test::shm_segment" ) );
-  t.add( &mt_test::shm_named_obj, test, "mt_test::shm_named_obj",
-         t.add( &mt_test::fork_shm, test, "mt_test::fork_shm", tc[4] ) );
-  t.add( &mt_test::shm_named_obj_more, test, "mt_test::shm_named_obj_more" );
 
-  t.add( &mt_test::thr_mgr, test, "mt_test::thr_mgr" );
+  t.add( &mt_test::thr_mgr, test, "mt_test::thr_mgr", tc[1] );
 
-  t.add( &mt_test::shm_finit, test, "mt_test::shm_finit",
-         t.add( &mt_test::shm_init, test, "mt_test::shm_init", tc[4] ) );
+  shm_test shmtest;
+
+  t.add( &shm_test::shm_named_obj_more, shmtest, "mt_test::shm_named_obj_more",
+         t.add( &shm_test::shm_named_obj, shmtest, "mt_test::shm_named_obj",
+                t.add( &shm_test::fork_shm, shmtest, "mt_test::fork_shm",
+                       t.add( &shm_test::shm_alloc, shmtest, "mt_test::shm_alloc",
+                              t.add( &shm_test::shm_segment, shmtest, "mt_test::shm_segment" ) ) ) )
+ );
 
   // add( barrier_tc, 0, 2 );
   // add( join_tc );

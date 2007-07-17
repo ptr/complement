@@ -14,6 +14,7 @@
 #define FIT_EXAM
 
 #include <exam/suite.h>
+#include <mt/shm.h>
 
 class mt_test
 {
@@ -28,20 +29,29 @@ class mt_test
 
     int EXAM_DECL(fork);
     int EXAM_DECL(pid);
-    int EXAM_DECL(shm_segment);
-    int EXAM_DECL(shm_alloc);
-    int EXAM_DECL(fork_shm);
-    int EXAM_DECL(shm_named_obj);
     int EXAM_DECL(thr_mgr);
-
-    int EXAM_DECL(shm_init);
-    int EXAM_DECL(shm_finit);
-
-    int EXAM_DECL(shm_named_obj_more);
 
   private:
     // static xmt::Thread::ret_code thread_entry_call( void * );
     // static int x;
+};
+
+class shm_test
+{
+  public:
+    shm_test();
+    ~shm_test();
+
+    int EXAM_DECL(shm_segment);
+    int EXAM_DECL(shm_alloc);
+    int EXAM_DECL(fork_shm);
+    int EXAM_DECL(shm_named_obj);
+
+    int EXAM_DECL(shm_named_obj_more);
+
+  private:
+    xmt::shm_alloc<1> seg1;
+    static const char fname1[];
 };
 
 #endif // __MT_TEST_H
