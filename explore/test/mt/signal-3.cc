@@ -1,16 +1,14 @@
-// -*- C++ -*- Time-stamp: <07/07/11 21:22:05 ptr>
+// -*- C++ -*- Time-stamp: <07/07/17 09:50:35 ptr>
 
 /*
- * Copyright (c) 2003, 2006
+ * Copyright (c) 2003, 2006, 2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
  *
  */
 
-#include <boost/test/unit_test.hpp>
-
-using namespace boost::unit_test_framework;
+#include <exam/suite.h>
 
 #include <mt/xmt.h>
 
@@ -45,7 +43,7 @@ extern "C" {
 
   void handler( int )
   {
-    BOOST_CHECK( v == 1 );
+    EXAM_CHECK_ASYNC( v == 1 );
     v = 4;
     /*
      Note: you have very restricted list of system calls that you can use here
@@ -63,7 +61,7 @@ extern "C" {
 
 Thread::ret_code thread_one( void * )
 {
-  BOOST_CHECK( v == 1 );
+  EXAM_CHECK_ASYNC( v == 1 );
 
   cnd.try_wait();
 
@@ -86,11 +84,11 @@ Thread::ret_code thread_two( void * )
 
   t.join();
 
-  BOOST_CHECK( v == 1 ); // signal was blocked!
+  EXAM_CHECK_ASYNC( v == 1 ); // signal was blocked!
 
   xmt::unblock_signal( SIGINT ); // unblock signal
 
-  BOOST_CHECK( v == 4 );
+  EXAM_CHECK_ASYNC( v == 4 );
 
   Thread::ret_code rt;
   rt.iword = 0;
@@ -98,7 +96,7 @@ Thread::ret_code thread_two( void * )
   return rt;
 }
 
-void signal_3_test()
+int EXAM_IMPL(signal_3_test)
 {
   cnd.set( false );
 
@@ -110,5 +108,7 @@ void signal_3_test()
 
   t.join();
 
-  BOOST_CHECK( v == 4 );
+  EXAM_CHECK( v == 4 );
+
+  return EXAM_RESULT;
 }

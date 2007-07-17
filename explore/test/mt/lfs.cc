@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/07/11 21:22:41 ptr>
+// -*- C++ -*- Time-stamp: <07/07/16 21:33:58 ptr>
 
 /*
- * Copyright (c) 2004, 2006
+ * Copyright (c) 2004, 2006, 2007
  * Petr Ovtchenkov
  *
  * Copyright (c) 2004
@@ -11,7 +11,8 @@
  *
  */
 
-#include <boost/test/unit_test.hpp>
+#include <exam/suite.h>
+
 #include "mt/lfstream.h"
 #include <mt/xmt.h>
 
@@ -20,8 +21,6 @@
 #include <errno.h>
 
 #include <iostream>
-
-using namespace boost::unit_test_framework;
 
 using namespace xmt;
 using namespace std;
@@ -236,7 +235,7 @@ static Thread::ret_code thread_func_manip_r( void * )
   return rt;
 }
 
-void lfs_test()
+int EXAM_IMPL(lfs_test)
 {
   unlink( fname );
   cnd.set( false );
@@ -268,4 +267,6 @@ void lfs_test()
 
   unlink( fname );
 #endif
+
+  return EXAM_RESULT;
 }

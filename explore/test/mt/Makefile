@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <06/08/04 10:54:19 ptr>
+# -*- Makefile -*- Time-stamp: <07/07/17 10:01:41 ptr>
 
 SRCROOT := ../..
 COMPILER_NAME := gcc
@@ -18,13 +18,14 @@ INCLUDES += -I$(SRCROOT)/include -I$(BOOST_INCLUDE_DIR)
 # endif
 
 LIBMT_DIR = ${CoMT_DIR}/lib/mt
-LIBUTF_DIR = ${CoMT_DIR}/../extern/custom/boost/libs/test/unit_test_framework
+# LIBUTF_DIR = ${CoMT_DIR}/../extern/custom/boost/libs/test/unit_test_framework
+LIBEXAM_DIR = ${CoMT_DIR}/lib/exam
 LIBFS_DIR = ${CoMT_DIR}/../extern/custom/boost/libs/filesystem
 
 ifeq ($(OSNAME),linux)
-release-shared:	LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR} -L${LIBUTF_DIR}/${OUTPUT_DIR} -L${LIBFS_DIR}/${OUTPUT_DIR} -Wl,--rpath=${LIBMT_DIR}/${OUTPUT_DIR}:${LIBUTF_DIR}/${OUTPUT_DIR}:${LIBFS_DIR}/${OUTPUT_DIR}:${STLPORT_LIB_DIR}
-stldbg-shared:	LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBUTF_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBFS_DIR}/${OUTPUT_DIR_STLDBG} -Wl,--rpath=${LIBMT_DIR}/${OUTPUT_DIR_STLDBG}:${LIBUTF_DIR}/${OUTPUT_DIR_STLDBG}:${LIBFS_DIR}/${OUTPUT_DIR_STLDBG}:${STLPORT_LIB_DIR}
-dbg-shared:	LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR_DBG} -L${LIBUTF_DIR}/${OUTPUT_DIR_DBG} -L${LIBFS_DIR}/${OUTPUT_DIR_DBG} -Wl,--rpath=${LIBMT_DIR}/${OUTPUT_DIR_DBG}:${LIBUTF_DIR}/${OUTPUT_DIR_DBG}:${LIBFS_DIR}/${OUTPUT_DIR_DBG}:${STLPORT_LIB_DIR}
+release-shared:	LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR} -L${LIBEXAM_DIR}/${OUTPUT_DIR} -L${LIBFS_DIR}/${OUTPUT_DIR} -Wl,--rpath=${LIBMT_DIR}/${OUTPUT_DIR}:${LIBEXAM_DIR}/${OUTPUT_DIR}:${LIBFS_DIR}/${OUTPUT_DIR}:${STLPORT_LIB_DIR}
+stldbg-shared:	LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBEXAM_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBFS_DIR}/${OUTPUT_DIR_STLDBG} -Wl,--rpath=${LIBMT_DIR}/${OUTPUT_DIR_STLDBG}:${LIBEXAM_DIR}/${OUTPUT_DIR_STLDBG}:${LIBFS_DIR}/${OUTPUT_DIR_STLDBG}:${STLPORT_LIB_DIR}
+dbg-shared:	LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR_DBG} -L${LIBEXAM_DIR}/${OUTPUT_DIR_DBG} -L${LIBFS_DIR}/${OUTPUT_DIR_DBG} -Wl,--rpath=${LIBMT_DIR}/${OUTPUT_DIR_DBG}:${LIBEXAM_DIR}/${OUTPUT_DIR_DBG}:${LIBFS_DIR}/${OUTPUT_DIR_DBG}:${STLPORT_LIB_DIR}
 endif
 
 ifeq ($(OSNAME),openbsd)
@@ -33,9 +34,9 @@ stldbg-shared:	LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR_STLDBG} -Wl,-R${LIBMT_DIR
 dbg-shared:	LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR_DBG} -Wl,-R${LIBMT_DIR}/${OUTPUT_DIR_DBG}:${STLPORT_LIB_DIR}
 endif
 
-release-shared : LDLIBS = -lxmt -lboost_test_utf -lboost_fs
-stldbg-shared  : LDLIBS = -lxmtstlg -lboost_test_utfstlg -lboost_fsstlg
-dbg-shared     : LDLIBS = -lxmtg -lboost_test_utfg -lboost_fsg
+release-shared : LDLIBS = -lxmt -lexam -lboost_fs
+stldbg-shared  : LDLIBS = -lxmtstlg -lexamstlg -lboost_fsstlg
+dbg-shared     : LDLIBS = -lxmtg -lexamg -lboost_fsg
 
 ifeq ($(OSNAME),freebsd)
 release-shared : LDLIBS += -lthr
