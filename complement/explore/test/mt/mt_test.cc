@@ -39,7 +39,7 @@ int EXAM_IMPL(mt_test::barrier)
 }
 
 /* ******************************************************
- * Start thread, join it.
+ * Start thread, join it. Check return value.
  */
 
 static int x = 0;
@@ -49,7 +49,7 @@ xmt::Thread::ret_code thread_entry_call( void * )
   x = 1;
 
   xmt::Thread::ret_code rt;
-  rt.iword = 0;
+  rt.iword = 2;
 
   return rt;
 }
@@ -60,7 +60,7 @@ int EXAM_IMPL(mt_test::join_test)
 
   xmt::Thread t( thread_entry_call );
 
-  t.join();
+  EXAM_CHECK( t.join().iword == 2 );
 
   EXAM_CHECK( x == 1 );
 
@@ -74,7 +74,7 @@ int EXAM_IMPL(mt_test::join_test)
 xmt::Thread::ret_code thread2_entry_call( void *p )
 {
   xmt::Thread::ret_code rt;
-  rt.iword = 0;
+  rt.iword = 1;
 
   xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
@@ -89,8 +89,9 @@ int EXAM_IMPL(mt_test::barrier2)
   xmt::Thread t1( thread2_entry_call, &b );
   xmt::Thread t2( thread2_entry_call, &b );
 
-  t2.join();
-  t1.join();
+  EXAM_CHECK( (t2.join().iword + t1.join().iword) == 2 );
+
+  return EXAM_RESULT;
 }
 
 /* ******************************************************
@@ -112,11 +113,15 @@ xmt::Thread::ret_code thread3_entry_call( void *p )
 
 int EXAM_IMPL(mt_test::yield)
 {
-  xmt::barrier b;
+  {
+    xmt::barrier b;
 
-  xmt::Thread t1( thread2_entry_call, &b );
-  xmt::Thread t2( thread3_entry_call, &b );
-  // .join()'s are in Thread's destructors
+    xmt::Thread t1( thread2_entry_call, &b );
+    xmt::Thread t2( thread3_entry_call, &b );
+    // .join()'s are in Thread's destructors
+  }
+
+  return EXAM_RESULT;
 }
 
 /* ******************************************************
@@ -455,7 +460,7 @@ int EXAM_IMPL(mt_test::pid)
     try {
 
       // Child code 
-      EXAM_CHECK( my_pid == xmt::getppid() );
+      EXAM_CHECK_ASYNC( my_pid == xmt::getppid() );
       *reinterpret_cast<pid_t *>(static_cast<char *>(buf) + sizeof(xmt::__condition<true>)) = xmt::getpid();
 
       fcnd.set( true );
@@ -493,7 +498,7 @@ int EXAM_IMPL(mt_test::pid)
 
 /* ****************************************************** */
 
-int EXAM_IMPL(mt_test::shm_segment)
+int EXAM_IMPL(shm_test::shm_segment)
 {
   const char fname[] = "/tmp/mt_test.shm";
   try {
@@ -565,7 +570,7 @@ int EXAM_IMPL(mt_test::shm_segment)
 
 /* ****************************************************** */
 
-int EXAM_IMPL(mt_test::shm_alloc)
+int EXAM_IMPL(shm_test::shm_alloc)
 {
   const char fname[] = "/tmp/mt_test.shm";
   try {
@@ -645,7 +650,7 @@ int EXAM_IMPL(mt_test::shm_alloc)
  * This test is similar  mt_test::fork() above, but instead plain shm_*
  * functions it use allocator based on shared memory segment
  */
-int EXAM_IMPL(mt_test::fork_shm)
+int EXAM_IMPL(shm_test::fork_shm)
 {
   const char fname[] = "/tmp/mt_test.shm";
   try {
@@ -693,12 +698,14 @@ int EXAM_IMPL(mt_test::fork_shm)
   catch (  xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
   }
+
+  return EXAM_RESULT;
 }
 
 /* ******************************************************
  * Test: how to take named object in shared memory segment
  */
-int EXAM_IMPL(mt_test::shm_named_obj)
+int EXAM_IMPL(shm_test::shm_named_obj)
 {
   const char fname[] = "/tmp/mt_test.shm";
   enum {
@@ -737,13 +744,13 @@ int EXAM_IMPL(mt_test::shm_named_obj)
         fcnd_ch.set( true );
       }
       catch ( const xmt::shm_bad_alloc& err ) {
-        EXAM_ERROR( err.what() );
+        EXAM_ERROR_ASYNC( err.what() );
       }
       catch ( const std::invalid_argument& err ) {
-        EXAM_ERROR( err.what() );
+        EXAM_ERROR_ASYNC( err.what() );
       }
       catch ( ... ) {
-        EXAM_ERROR( "Fail in child" );
+        EXAM_ERROR_ASYNC( "Fail in child" );
       }
 
       exit( 0 );
@@ -779,29 +786,30 @@ int EXAM_IMPL(mt_test::shm_named_obj)
 
 /* ******************************************************
  */
-static const char fname1[] = "/tmp/mt_test.shm.1";
-xmt::shm_alloc<1> seg1;
+const char shm_test::fname1[] = "/tmp/mt_test.shm.1";
 
-int EXAM_IMPL(mt_test::shm_init)
+shm_test::shm_test()
 {
-  seg1.allocate( fname1, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
-  return EXAM_RESULT;
+  try {
+    seg1.allocate( fname1, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR_ASYNC( err.what() );
+  }
 }
 
 /* ******************************************************
  */
-int EXAM_IMPL(mt_test::shm_finit)
+shm_test::~shm_test()
 {
   seg1.deallocate();
   fs::remove( fname1 );
-
-  return EXAM_RESULT;
 }
 
 /* ******************************************************
  */
 
-int EXAM_IMPL(mt_test::shm_named_obj_more)
+int EXAM_IMPL(shm_test::shm_named_obj_more)
 {
   enum {
     ObjName = 1
@@ -827,7 +835,7 @@ int EXAM_IMPL(mt_test::shm_named_obj_more)
         nm_ch.release<xmt::__condition<true> >( ObjName );
       }
       catch ( const std::invalid_argument& err ) {
-        EXAM_ERROR( err.what() );
+        EXAM_ERROR_ASYNC( err.what() );
       }
       exit( 0 );
     }
@@ -853,7 +861,7 @@ int EXAM_IMPL(mt_test::shm_named_obj_more)
         nm_ch.release<xmt::__condition<true> >( ObjName );
       }
       catch ( const std::invalid_argument& err ) {
-        EXAM_ERROR( err.what() );
+        EXAM_ERROR_ASYNC( err.what() );
       }
       
       exit( 0 );
@@ -881,7 +889,7 @@ int EXAM_IMPL(mt_test::shm_named_obj_more)
         nm_ch.release<xmt::__barrier<true> >( ObjName );
       }
       catch ( const std::invalid_argument& err ) {
-        EXAM_ERROR( err.what() );
+        EXAM_ERROR_ASYNC( err.what() );
       }
     
       exit( 0 );      
