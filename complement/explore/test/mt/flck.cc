@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <06/12/15 10:43:07 ptr>
+// -*- C++ -*- Time-stamp: <07/07/16 21:34:09 ptr>
 
 /*
- * Copyright (c) 2004, 2006
+ * Copyright (c) 2004, 2006, 2007
  * Petr Ovtchenkov
  *
  * Copyright (c) 2004
@@ -11,7 +11,8 @@
  *
  */
 
-#include <boost/test/unit_test.hpp>
+#include <exam/suite.h>
+
 #include "mt/flck.h"
 #include <mt/xmt.h>
 
@@ -20,8 +21,6 @@
 #include <errno.h>
 
 #include <iostream>
-
-using namespace boost::unit_test_framework;
 
 using namespace xmt;
 using namespace std;
@@ -207,7 +206,7 @@ static Thread::ret_code thread_func_r( void * )
   return rt;
 }
 
-void flock_test()
+int EXAM_IMPL(flock_test)
 {
   unlink( fname );
   Thread t1( thread_func );
@@ -220,4 +219,6 @@ void flock_test()
   t3.join();
   t4.join();
   unlink( fname );
+
+  return EXAM_RESULT;
 }

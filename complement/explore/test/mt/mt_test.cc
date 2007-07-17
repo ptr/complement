@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/11 22:08:56 ptr>
+// -*- C++ -*- Time-stamp: <07/07/17 09:58:22 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -7,8 +7,6 @@
  * Licensed under the Academic Free License Version 3.0
  *
  */
-
-#include <boost/test/unit_test.hpp>
 
 #include "mt_test.h"
 
@@ -27,15 +25,13 @@
 #include <iostream>
 
 using namespace std;
-
-using namespace boost::unit_test_framework;
 namespace fs = boost::filesystem;
 
 /* ******************************************************
  * Degenerate case: check that one thread pass throw
  * own barrier.
  */
-void mt_test::barrier()
+int EXAM_IMPL(mt_test::barrier)
 {
   xmt::barrier b( 1 );
 
@@ -58,15 +54,17 @@ xmt::Thread::ret_code thread_entry_call( void * )
   return rt;
 }
 
-void mt_test::join_test()
+int EXAM_IMPL(mt_test::join_test)
 {
-  BOOST_CHECK( x == 0 );
+  EXAM_CHECK( x == 0 );
 
   xmt::Thread t( thread_entry_call );
 
   t.join();
 
-  BOOST_CHECK( x == 1 );
+  EXAM_CHECK( x == 1 );
+
+  return EXAM_RESULT;
 }
 
 /* ******************************************************
@@ -84,7 +82,7 @@ xmt::Thread::ret_code thread2_entry_call( void *p )
   return rt;
 }
 
-void mt_test::barrier2()
+int EXAM_IMPL(mt_test::barrier2)
 {
   xmt::barrier b;
 
@@ -107,12 +105,12 @@ xmt::Thread::ret_code thread3_entry_call( void *p )
 
   xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
-  BOOST_CHECK( xmt::Thread::yield() == 0 );
+  EXAM_CHECK_ASYNC( xmt::Thread::yield() == 0 );
 
   return rt;
 }
 
-void mt_test::yield()
+int EXAM_IMPL(mt_test::yield)
 {
   xmt::barrier b;
 
@@ -139,11 +137,11 @@ xmt::Thread::ret_code thr1( void *p )
   b.wait();
 
   m1.lock();
-  BOOST_CHECK( x == 0 );
+  EXAM_CHECK_ASYNC( x == 0 );
 
   xmt::Thread::yield();
 
-  BOOST_CHECK( x == 0 );
+  EXAM_CHECK_ASYNC( x == 0 );
   x = 1;
 
   m1.unlock();
@@ -163,7 +161,7 @@ xmt::Thread::ret_code thr2( void *p )
   }
 
   m1.lock();
-  BOOST_CHECK( x == 1 );
+  EXAM_CHECK_ASYNC( x == 1 );
   x = 2;
   m1.unlock();
 
@@ -173,7 +171,7 @@ xmt::Thread::ret_code thr2( void *p )
   return rt;
 }
 
-void mt_test::mutex_test()
+int EXAM_IMPL(mt_test::mutex_test)
 {
   x = 0;
   xmt::barrier b;
@@ -184,7 +182,9 @@ void mt_test::mutex_test()
   t1.join();
   t2.join();
 
-  BOOST_CHECK( x == 2 );
+  EXAM_CHECK( x == 2 );
+
+  return EXAM_RESULT;
 }
 
 /* ******************************************************
@@ -206,11 +206,11 @@ xmt::Thread::ret_code thr1s( void *p )
   b.wait();
 
   sl1.lock();
-  BOOST_CHECK( x == 0 );
+  EXAM_CHECK_ASYNC( x == 0 );
 
   xmt::Thread::yield();
 
-  BOOST_CHECK( x == 0 );
+  EXAM_CHECK_ASYNC( x == 0 );
   x = 1;
 
   sl1.unlock();
@@ -230,7 +230,7 @@ xmt::Thread::ret_code thr2s( void *p )
   }
 
   sl1.lock();
-  BOOST_CHECK( x == 1 );
+  EXAM_CHECK_ASYNC( x == 1 );
   x = 2;
   sl1.unlock();
 
@@ -242,7 +242,7 @@ xmt::Thread::ret_code thr2s( void *p )
 
 #endif
 
-void mt_test::spinlock_test()
+int EXAM_IMPL(mt_test::spinlock_test)
 {
 #ifdef __FIT_PTHREAD_SPINLOCK
   x = 0;
@@ -254,8 +254,9 @@ void mt_test::spinlock_test()
   t1.join();
   t2.join();
 
-  BOOST_CHECK( x == 2 );
+  EXAM_CHECK( x == 2 );
 #endif
+  return EXAM_RESULT;
 }
 
 /* ****************************************************** */
@@ -295,7 +296,7 @@ void recursive()
 
   x = 2;
   xmt::Thread::yield();
-  BOOST_CHECK( x == 2 );
+  EXAM_CHECK_ASYNC( x == 2 );
 
   m2.unlock();
 }
@@ -307,12 +308,12 @@ xmt::Thread::ret_code thr1r( void *p )
 
   m2.lock();
 
-  BOOST_CHECK( x == 0 );
+  EXAM_CHECK_ASYNC( x == 0 );
   x = 1;
   xmt::Thread::yield();
-  BOOST_CHECK( x == 1 );
+  EXAM_CHECK_ASYNC( x == 1 );
   recursive();
-  BOOST_CHECK( x == 2 );
+  EXAM_CHECK_ASYNC( x == 2 );
   x = 3;
 
   m2.unlock();
@@ -335,10 +336,10 @@ xmt::Thread::ret_code thr2r( void *p )
 
   m2.lock();
 
-  BOOST_CHECK( x == 3 );
+  EXAM_CHECK_ASYNC( x == 3 );
   xmt::Thread::yield();
   recursive();  
-  BOOST_CHECK( x == 2 );
+  EXAM_CHECK_ASYNC( x == 2 );
 
   m2.unlock();
 
@@ -349,7 +350,7 @@ xmt::Thread::ret_code thr2r( void *p )
   return rt;
 }
 
-void mt_test::recursive_mutex_test()
+int EXAM_IMPL(mt_test::recursive_mutex_test)
 {
   x = 0;
   xmt::barrier b;
@@ -360,25 +361,27 @@ void mt_test::recursive_mutex_test()
   t1.join();
   t2.join();
 
-  BOOST_CHECK( x == 2 );
+  EXAM_CHECK( x == 2 );
+
+  return EXAM_RESULT;
 }
 
 /* ****************************************************** */
 
-void mt_test::fork()
+int EXAM_IMPL(mt_test::fork)
 {
   shmid_ds ds;
   int id = shmget( 5000, 1024, IPC_CREAT | IPC_EXCL | 0600 );
-  BOOST_REQUIRE( id != -1 );
+  EXAM_REQUIRE( id != -1 );
   // if ( id == -1 ) {
   //   cerr << "Error on shmget" << endl;
   // }
-  BOOST_REQUIRE( shmctl( id, IPC_STAT, &ds ) != -1 );
+  EXAM_REQUIRE( shmctl( id, IPC_STAT, &ds ) != -1 );
   // if ( shmctl( id, IPC_STAT, &ds ) == -1 ) {
   //   cerr << "Error on shmctl" << endl;
   // }
   void *buf = shmat( id, 0, 0 );
-  BOOST_REQUIRE( buf != reinterpret_cast<void *>(-1) );
+  EXAM_REQUIRE( buf != reinterpret_cast<void *>(-1) );
   // if ( buf == reinterpret_cast<void *>(-1) ) {
   //   cerr << "Error on shmat" << endl;
   // }
@@ -401,12 +404,12 @@ void mt_test::fork()
   }
   catch ( xmt::fork_in_parent& child ) {
     try {
-      BOOST_CHECK( child.pid() > 0 );
+      EXAM_CHECK( child.pid() > 0 );
 
       fcnd.set( true );
 
       int stat;
-      BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
     }
     catch ( ... ) {
     }
@@ -418,24 +421,26 @@ void mt_test::fork()
 
   shmdt( buf );
   shmctl( id, IPC_RMID, &ds );
+
+  return EXAM_RESULT;
 }
 
 /* ****************************************************** */
 
-void mt_test::pid()
+int EXAM_IMPL(mt_test::pid)
 {
   shmid_ds ds;
   int id = shmget( 5000, 1024, IPC_CREAT | IPC_EXCL | 0600 );
-  BOOST_REQUIRE( id != -1 );
+  EXAM_REQUIRE( id != -1 );
   // if ( id == -1 ) {
   //   cerr << "Error on shmget" << endl;
   // }
-  BOOST_REQUIRE( shmctl( id, IPC_STAT, &ds ) != -1 );
+  EXAM_REQUIRE( shmctl( id, IPC_STAT, &ds ) != -1 );
   // if ( shmctl( id, IPC_STAT, &ds ) == -1 ) {
   //   cerr << "Error on shmctl" << endl;
   // }
   void *buf = shmat( id, 0, 0 );
-  BOOST_REQUIRE( buf != reinterpret_cast<void *>(-1) );
+  EXAM_REQUIRE( buf != reinterpret_cast<void *>(-1) );
   // if ( buf == reinterpret_cast<void *>(-1) ) {
   //   cerr << "Error on shmat" << endl;
   // }
@@ -450,7 +455,7 @@ void mt_test::pid()
     try {
 
       // Child code 
-      BOOST_CHECK( my_pid == xmt::getppid() );
+      EXAM_CHECK( my_pid == xmt::getppid() );
       *reinterpret_cast<pid_t *>(static_cast<char *>(buf) + sizeof(xmt::__condition<true>)) = xmt::getpid();
 
       fcnd.set( true );
@@ -463,14 +468,14 @@ void mt_test::pid()
   }
   catch ( xmt::fork_in_parent& child ) {
     try {
-      BOOST_CHECK( child.pid() > 0 );
+      EXAM_CHECK( child.pid() > 0 );
 
       fcnd.try_wait();
 
-      BOOST_CHECK( *reinterpret_cast<pid_t *>(static_cast<char *>(buf) + sizeof(xmt::__condition<true>)) == child.pid() );
+      EXAM_CHECK( *reinterpret_cast<pid_t *>(static_cast<char *>(buf) + sizeof(xmt::__condition<true>)) == child.pid() );
 
       int stat;
-      BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
     }
     catch ( ... ) {
     }
@@ -482,38 +487,40 @@ void mt_test::pid()
 
   shmdt( buf );
   shmctl( id, IPC_RMID, &ds );
+
+  return EXAM_RESULT;
 }
 
 /* ****************************************************** */
 
-void mt_test::shm_segment()
+int EXAM_IMPL(mt_test::shm_segment)
 {
   const char fname[] = "/tmp/mt_test.shm";
   try {
     xmt::detail::__shm_alloc<0> seg( 5000, 1024, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-    BOOST_CHECK( seg.address() != reinterpret_cast<void *>(-1) );
+    EXAM_CHECK( seg.address() != reinterpret_cast<void *>(-1) );
     seg.deallocate();
-    BOOST_CHECK( seg.address() == reinterpret_cast<void *>(-1) );
+    EXAM_CHECK( seg.address() == reinterpret_cast<void *>(-1) );
 
-    BOOST_REQUIRE( !fs::exists( fname ) );
+    EXAM_REQUIRE( !fs::exists( fname ) );
 
     seg.allocate( fname, 1024, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
-    BOOST_CHECK( seg.address() != reinterpret_cast<void *>(-1) );
+    EXAM_CHECK( seg.address() != reinterpret_cast<void *>(-1) );
     seg.deallocate();
-    BOOST_CHECK( seg.address() == reinterpret_cast<void *>(-1) );
-    BOOST_CHECK( fs::exists( fname ) ); // well, now I don't remove ref file, because shm segment may be created with another way
+    EXAM_CHECK( seg.address() == reinterpret_cast<void *>(-1) );
+    EXAM_CHECK( fs::exists( fname ) ); // well, now I don't remove ref file, because shm segment may be created with another way
 
     // not exclusive, should pass
     seg.allocate( fname, 1024, xmt::shm_base::create, 0660 );
-    BOOST_CHECK( seg.address() != reinterpret_cast<void *>(-1) );
+    EXAM_CHECK( seg.address() != reinterpret_cast<void *>(-1) );
     try {
       // This instance has segment in usage, should throw
       seg.allocate( fname, 1024, 0, 0660 );
-      BOOST_CHECK( false );
+      EXAM_CHECK( false );
     }
     catch ( xmt::shm_bad_alloc& err ) {
-      BOOST_CHECK( true ); // Ok
+      EXAM_CHECK( true ); // Ok
     }
 
     /*
@@ -533,30 +540,32 @@ void mt_test::shm_segment()
     */
 
     seg.deallocate();
-    BOOST_CHECK( seg.address() == reinterpret_cast<void *>(-1) );
+    EXAM_CHECK( seg.address() == reinterpret_cast<void *>(-1) );
 
     // ----
     try {
       // exclusive, should throw
       seg.allocate( fname, 1024, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
-      BOOST_CHECK( false ); // Fail, should throw
+      EXAM_CHECK( false ); // Fail, should throw
     }
     catch ( xmt::shm_bad_alloc& err ) {
-      BOOST_CHECK( true ); // Ok
+      EXAM_CHECK( true ); // Ok
     }
-    BOOST_CHECK( fs::exists( fname ) );
+    EXAM_CHECK( fs::exists( fname ) );
     // ----
 
     fs::remove( fname );
   }
   catch ( xmt::shm_bad_alloc& err ) {
-    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+    EXAM_ERROR( err.what() );
   }
+
+  return EXAM_RESULT;
 }
 
 /* ****************************************************** */
 
-void mt_test::shm_alloc()
+int EXAM_IMPL(mt_test::shm_alloc)
 {
   const char fname[] = "/tmp/mt_test.shm";
   try {
@@ -569,64 +578,66 @@ void mt_test::shm_alloc()
       size_t sz = shmall.max_size();
       // two blocks
       char *ch1 = shmall.allocate( 3500 );
-      BOOST_CHECK( ch1 != 0 );
+      EXAM_CHECK( ch1 != 0 );
       char *ch2 = shmall.allocate( 3500 );
-      BOOST_CHECK( ch2 != 0 );
+      EXAM_CHECK( ch2 != 0 );
       try {
         // try to allocate third block, not enough room
         char *ch3 = shmall.allocate( 8 * 1024 - 7000 );
-        BOOST_CHECK( false );
+        EXAM_CHECK( false );
       }
       catch ( xmt::shm_bad_alloc& err ) {
-        BOOST_CHECK( true );
+        EXAM_CHECK( true );
       }
       // free first blocks
       shmall.deallocate( ch1, 3500 );
       ch1 = shmall.allocate( 3500 );
       // allocate [first] block again
-      BOOST_CHECK( ch1 != 0 );
+      EXAM_CHECK( ch1 != 0 );
       // free second block
       shmall.deallocate( ch2, 3500 );
       // allocate [second] block again
       ch2 = shmall.allocate( 3500 );
-      BOOST_CHECK( ch2 != 0 );
+      EXAM_CHECK( ch2 != 0 );
       // free both blocks
       shmall.deallocate( ch1, 3500 );
       shmall.deallocate( ch2, 3500 );
       // allocate big block, enough for initial memory chunk
       ch1 = shmall.allocate( 7000 );
-      BOOST_CHECK( ch1 != 0 );
+      EXAM_CHECK( ch1 != 0 );
       // free it
       shmall.deallocate( ch1, 7000 );
       // allocate block of maximum size
       ch1 = shmall.allocate( sz );
-      BOOST_CHECK( ch1 != 0 );
+      EXAM_CHECK( ch1 != 0 );
       // free it
       shmall.deallocate( ch1, sz );
       // allocate block, enough for initial memory chunk
       ch1 = shmall.allocate( 7000 );
-      BOOST_CHECK( ch1 != 0 );
+      EXAM_CHECK( ch1 != 0 );
       // free it
       shmall.deallocate( ch1, 7000 );
       ch1 = shmall.allocate( 3000 );
-      BOOST_CHECK( ch1 != 0 );
+      EXAM_CHECK( ch1 != 0 );
       ch2 = shmall.allocate( 400 );
-      BOOST_CHECK( ch2 != 0 );
+      EXAM_CHECK( ch2 != 0 );
       char *ch3 = shmall.allocate( 3500 );
-      BOOST_CHECK( ch3 != 0 );
+      EXAM_CHECK( ch3 != 0 );
       shmall.deallocate( ch1, 3000 );
       shmall.deallocate( ch2, 400 );
       shmall.deallocate( ch3, 3500 );
       ch1 = shmall.allocate( sz );
-      BOOST_CHECK( ch1 != 0 );
+      EXAM_CHECK( ch1 != 0 );
       shmall.deallocate( ch1, sz );
     }
     seg.deallocate();
     fs::remove( fname );
   }
   catch ( xmt::shm_bad_alloc& err ) {
-    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+    EXAM_ERROR( err.what() );
   }
+
+  return EXAM_RESULT;
 }
 
 
@@ -634,7 +645,7 @@ void mt_test::shm_alloc()
  * This test is similar  mt_test::fork() above, but instead plain shm_*
  * functions it use allocator based on shared memory segment
  */
-void mt_test::fork_shm()
+int EXAM_IMPL(mt_test::fork_shm)
 {
   const char fname[] = "/tmp/mt_test.shm";
   try {
@@ -661,12 +672,12 @@ void mt_test::fork_shm()
     }
     catch ( xmt::fork_in_parent& child ) {
       try {
-        BOOST_CHECK( child.pid() > 0 );
+        EXAM_CHECK( child.pid() > 0 );
 
         fcnd.set( true );
 
         int stat;
-        BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+        EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
       }
       catch ( ... ) {
       }
@@ -680,14 +691,14 @@ void mt_test::fork_shm()
     fs::remove( fname );
   }
   catch (  xmt::shm_bad_alloc& err ) {
-    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+    EXAM_ERROR( err.what() );
   }
 }
 
 /* ******************************************************
  * Test: how to take named object in shared memory segment
  */
-void mt_test::shm_named_obj()
+int EXAM_IMPL(mt_test::shm_named_obj)
 {
   const char fname[] = "/tmp/mt_test.shm";
   enum {
@@ -726,32 +737,32 @@ void mt_test::shm_named_obj()
         fcnd_ch.set( true );
       }
       catch ( const xmt::shm_bad_alloc& err ) {
-        BOOST_CHECK_MESSAGE( false, "Fail in child: " << err.what() );
+        EXAM_ERROR( err.what() );
       }
       catch ( const std::invalid_argument& err ) {
-        BOOST_CHECK_MESSAGE( false, "Fail in child: " << err.what() );
+        EXAM_ERROR( err.what() );
       }
       catch ( ... ) {
-        BOOST_CHECK_MESSAGE( false, "Fail in child" );
+        EXAM_ERROR( "Fail in child" );
       }
 
       exit( 0 );
     }
     catch ( xmt::fork_in_parent& child ) {
       try {
-        BOOST_CHECK( child.pid() > 0 );
+        EXAM_CHECK( child.pid() > 0 );
 
         fcnd.try_wait();
 
         int stat;
-        BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+        EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
       }
       catch ( ... ) {
-        BOOST_CHECK_MESSAGE( false, "Fail in parent" );
+        EXAM_ERROR( "Fail in parent" );
       }
     }
     catch ( ... ) {
-      BOOST_CHECK_MESSAGE( false, "Fail in fork" );
+      EXAM_ERROR( "Fail in fork" );
     }
     
     (&fcnd)->~__condition<true>();
@@ -760,8 +771,10 @@ void mt_test::shm_named_obj()
     fs::remove( fname );
   }
   catch ( xmt::shm_bad_alloc& err ) {
-    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+    EXAM_ERROR( err.what() );
   }
+
+  return EXAM_RESULT;
 }
 
 /* ******************************************************
@@ -769,23 +782,26 @@ void mt_test::shm_named_obj()
 static const char fname1[] = "/tmp/mt_test.shm.1";
 xmt::shm_alloc<1> seg1;
 
-void mt_test::shm_init()
+int EXAM_IMPL(mt_test::shm_init)
 {
   seg1.allocate( fname1, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+  return EXAM_RESULT;
 }
 
 /* ******************************************************
  */
-void mt_test::shm_finit()
+int EXAM_IMPL(mt_test::shm_finit)
 {
   seg1.deallocate();
   fs::remove( fname1 );
+
+  return EXAM_RESULT;
 }
 
 /* ******************************************************
  */
 
-void mt_test::shm_named_obj_more()
+int EXAM_IMPL(mt_test::shm_named_obj_more)
 {
   enum {
     ObjName = 1
@@ -811,14 +827,14 @@ void mt_test::shm_named_obj_more()
         nm_ch.release<xmt::__condition<true> >( ObjName );
       }
       catch ( const std::invalid_argument& err ) {
-        BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+        EXAM_ERROR( err.what() );
       }
       exit( 0 );
     }
     catch ( xmt::fork_in_parent& child ) {
       fcnd.try_wait();
       int stat;
-      BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
     }
     nm.release<xmt::__condition<true> >( ObjName ); // fcnd should be destroyed here
 
@@ -837,7 +853,7 @@ void mt_test::shm_named_obj_more()
         nm_ch.release<xmt::__condition<true> >( ObjName );
       }
       catch ( const std::invalid_argument& err ) {
-        BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+        EXAM_ERROR( err.what() );
       }
       
       exit( 0 );
@@ -845,7 +861,7 @@ void mt_test::shm_named_obj_more()
     catch ( xmt::fork_in_parent& child ) {
       fcnd1.try_wait();
       int stat;
-      BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
     }
     nm.release<xmt::__condition<true> >( ObjName ); // fcnd should be destroyed here
 
@@ -865,7 +881,7 @@ void mt_test::shm_named_obj_more()
         nm_ch.release<xmt::__barrier<true> >( ObjName );
       }
       catch ( const std::invalid_argument& err ) {
-        BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+        EXAM_ERROR( err.what() );
       }
     
       exit( 0 );      
@@ -873,16 +889,18 @@ void mt_test::shm_named_obj_more()
     catch ( xmt::fork_in_parent& child ) {
       b.wait();
       int stat;
-      BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
     }
     nm.release<xmt::__barrier<true> >( ObjName ); // barrier should be destroyed here
   }
   catch ( xmt::shm_bad_alloc& err ) {
-    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+    EXAM_ERROR( err.what() );
   }
   catch ( const std::invalid_argument& err ) {
-    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+    EXAM_ERROR( err.what() );
   }
+
+  return EXAM_RESULT;
 }
 
 /* ******************************************************
@@ -914,7 +932,7 @@ xmt::Thread::ret_code thread_mgr_entry_call( void * )
   return rt;
 }
 
-void mt_test::thr_mgr()
+int EXAM_IMPL(mt_test::thr_mgr)
 {
   xmt::ThreadMgr mgr;
 
@@ -925,7 +943,9 @@ void mt_test::thr_mgr()
   // cerr << "Join!\n";
   mgr.join();
 
-  BOOST_CHECK( my_thr_scnt == 200 );
-  BOOST_CHECK( my_thr_cnt == 0 );
-  BOOST_CHECK( mgr.size() == 0 );
+  EXAM_CHECK( my_thr_scnt == 200 );
+  EXAM_CHECK( my_thr_cnt == 0 );
+  EXAM_CHECK( mgr.size() == 0 );
+
+  return EXAM_RESULT;
 }

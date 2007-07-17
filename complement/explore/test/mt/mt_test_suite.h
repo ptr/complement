@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <06/12/14 10:42:18 ptr>
+// -*- C++ -*- Time-stamp: <07/07/16 22:08:39 ptr>
 
 /*
- * Copyright (c) 2006
+ * Copyright (c) 2006, 2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -11,12 +11,8 @@
 #ifndef __MT_TEST_SUITE_H
 #define __MT_TEST_SUITE_H
 
-#include <boost/test/unit_test.hpp>
+#include <exam/suite.h>
 
-struct mt_test_suite :
-    public boost::unit_test_framework::test_suite
-{
-    mt_test_suite();
-};
+int EXAM_DECL(mt_test_suite);
 
 #endif // __MT_TEST_SUITE_H
