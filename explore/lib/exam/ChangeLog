@@ -1,5 +1,9 @@
 2007-07-17  Petr Ovtchenkov  <ptr@island.corbina.net>
 
+	* suite.h, suite.cc: was introduced stack of test suites, functions
+	for asynchronous checks; add macros for asynchronous checkes
+	[in case when point can't be unambiguously associated with some test case];
+	
 	* suite.h, suite.cc: added multiple dependencies;
 	
 	* ut/exam_test_suite.cc, ut/exam_test_suite.h, ut/dummy_test.cc:
