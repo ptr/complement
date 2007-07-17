@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/19 13:43:38 ptr>
+// -*- C++ -*- Time-stamp: <07/07/17 10:20:08 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -13,73 +13,76 @@
 
 #include <config/feature.h>
 
-using namespace boost::unit_test_framework;
+int EXAM_DECL(timespec_diff);
+int EXAM_DECL(signal_1_test);
+// int EXAM_DECL(signal_2_test);
+int EXAM_DECL(signal_3_test);
 
-mt_test_suite::mt_test_suite() :
-    test_suite( "mt test suite" )
+// flock requre revision, commented now.
+// int EXAM_DECL( flock_test );
+// int EXAM_DECL( lfs_test );
+
+int EXAM_IMPL(mt_test_suite)
 {
-  boost::shared_ptr<mt_test> instance( new mt_test() );
+  exam::test_suite t( "libxmt test" );
+  mt_test test;
 
-  test_case *barrier_tc = BOOST_CLASS_TEST_CASE( &mt_test::barrier, instance );
-  test_case *join_tc = BOOST_CLASS_TEST_CASE( &mt_test::join_test, instance );
-  test_case *barrier2_tc = BOOST_CLASS_TEST_CASE( &mt_test::barrier2, instance );
-  test_case *yield_tc = BOOST_CLASS_TEST_CASE( &mt_test::yield, instance );
-  test_case *mutex_test_tc = BOOST_CLASS_TEST_CASE( &mt_test::mutex_test, instance );
+  t.add( timespec_diff, "timespec_diff" );
+  t.add( signal_1_test, "signal_1_test" );
+  // You can't throw exception from signal handler
+  // (stack saved/restored, that confuse stack unwind);
+  // by this reason next test is commented:
+  // t.add( signal_2_test, "signal_2_test" );
+  t.add( signal_3_test, "signal_3_test" );
+
+  exam::test_suite::test_case_type tc[5];
+
+  tc[0] = t.add( &mt_test::barrier, test, "mt_test::barrier" );
+  tc[1] = t.add( &mt_test::join_test, test, "mt_test::join_test" );
+  tc[2] = t.add( &mt_test::yield, test, "mt_test::yield",
+                 t.add( &mt_test::barrier2, test, "mt_test::barrier2",
+                        tc, tc+2 ) );
+  tc[3] = t.add( &mt_test::mutex_test, test, "mt_test::mutex_test", tc[2] );
+
 #ifdef __FIT_PTHREAD_SPINLOCK
-  test_case *spinlock_test_tc = BOOST_CLASS_TEST_CASE( &mt_test::spinlock_test, instance );
+  t.add( &mt_test::spinlock_test, test, "mt_test::spinlock_test", tc[2] );
 #endif
-  test_case *recursive_mutex_test_tc = BOOST_CLASS_TEST_CASE( &mt_test::recursive_mutex_test, instance );
-  test_case *fork_tc = BOOST_CLASS_TEST_CASE( &mt_test::fork, instance );
-  test_case *pid_tc = BOOST_CLASS_TEST_CASE( &mt_test::pid, instance );
-  test_case *shm_segment_tc = BOOST_CLASS_TEST_CASE( &mt_test::shm_segment, instance );
-  test_case *shm_alloc_tc = BOOST_CLASS_TEST_CASE( &mt_test::shm_alloc, instance );
-  test_case *fork_shm_tc = BOOST_CLASS_TEST_CASE( &mt_test::fork_shm, instance );
-  test_case *shm_nm_obj_tc = BOOST_CLASS_TEST_CASE( &mt_test::shm_named_obj, instance );
-  test_case *shm_nm_obj_more_tc = BOOST_CLASS_TEST_CASE( &mt_test::shm_named_obj_more, instance );
+  t.add( &mt_test::recursive_mutex_test, test, "mt_test::recursive_mutex_test", tc[3] );
+  t.add( &mt_test::pid, test, "mt_test::pid",
+         t.add( &mt_test::fork, test, "mt_test::fork" ) );
+  tc[4] = t.add( &mt_test::shm_alloc, test, "mt_test::shm_alloc",
+                 t.add( &mt_test::shm_segment, test, "mt_test::shm_segment" ) );
+  t.add( &mt_test::shm_named_obj, test, "mt_test::shm_named_obj",
+         t.add( &mt_test::fork_shm, test, "mt_test::fork_shm", tc[4] ) );
+  t.add( &mt_test::shm_named_obj_more, test, "mt_test::shm_named_obj_more" );
 
-  test_case *thr_mgr_tc = BOOST_CLASS_TEST_CASE( &mt_test::thr_mgr, instance );
+  t.add( &mt_test::thr_mgr, test, "mt_test::thr_mgr" );
 
-  test_case *shm_init_tc = BOOST_CLASS_TEST_CASE( &mt_test::shm_init, instance );
-  test_case *shm_finit_tc = BOOST_CLASS_TEST_CASE( &mt_test::shm_finit, instance );
+  t.add( &mt_test::shm_finit, test, "mt_test::shm_finit",
+         t.add( &mt_test::shm_init, test, "mt_test::shm_init", tc[4] ) );
 
-  barrier2_tc->depends_on( barrier_tc );
-  barrier2_tc->depends_on( join_tc );
-  yield_tc->depends_on( barrier2_tc );
-  mutex_test_tc->depends_on( yield_tc );
+  // add( barrier_tc, 0, 2 );
+  // add( join_tc );
+  // add( barrier2_tc, 0, 3 );
+  // add( yield_tc, 0, 3 );
+  // add( mutex_test_tc, 0, 3 );
 #ifdef __FIT_PTHREAD_SPINLOCK
-  spinlock_test_tc->depends_on( yield_tc );
+  // add( spinlock_test_tc, 0, 3 );
 #endif
-  recursive_mutex_test_tc->depends_on( mutex_test_tc );
+  // add( recursive_mutex_test_tc, 0, 3 );
 
-  pid_tc->depends_on( fork_tc );
-  shm_alloc_tc->depends_on( shm_segment_tc );
-  fork_shm_tc->depends_on( shm_alloc_tc );
-  shm_nm_obj_tc->depends_on( fork_shm_tc );
+  // add( fork_tc );
+  // add( pid_tc );
+  // add( shm_segment_tc );
+  // add( shm_alloc_tc );
+  // add( fork_shm_tc, 0, 5 );
+  // add( shm_nm_obj_tc, 0, 5 );
 
-  shm_init_tc->depends_on( shm_alloc_tc );
-  shm_nm_obj_more_tc->depends_on( shm_init_tc );
-  shm_finit_tc->depends_on( shm_init_tc );
+  // add( thr_mgr_tc );
 
-  add( barrier_tc, 0, 2 );
-  add( join_tc );
-  add( barrier2_tc, 0, 3 );
-  add( yield_tc, 0, 3 );
-  add( mutex_test_tc, 0, 3 );
-#ifdef __FIT_PTHREAD_SPINLOCK
-  add( spinlock_test_tc, 0, 3 );
-#endif
-  add( recursive_mutex_test_tc, 0, 3 );
+  // add( shm_init_tc );
+  // add( shm_nm_obj_more_tc );
+  // add( shm_finit_tc );
 
-  add( fork_tc );
-  add( pid_tc );
-  add( shm_segment_tc );
-  add( shm_alloc_tc );
-  add( fork_shm_tc, 0, 5 );
-  add( shm_nm_obj_tc, 0, 5 );
-
-  add( thr_mgr_tc );
-
-  add( shm_init_tc );
-  add( shm_nm_obj_more_tc );
-  add( shm_finit_tc );
+  return t.girdle();
 };

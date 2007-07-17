@@ -1,36 +1,18 @@
-// -*- C++ -*- Time-stamp: <04/05/06 18:38:06 ptr>
+// -*- C++ -*- Time-stamp: <07/07/16 21:38:13 ptr>
 
 /*
- * Copyright (c) 2004
+ * Copyright (c) 2004, 2007
  * Petr Ovtchenkov
  *
- * Licensed under the Academic Free License Version 2.0
+ * Licensed under the Academic Free License Version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
-
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id$"
-#  else
-#ident "@(#)$Id$"
-#  endif
-#endif
 
 #include <mt/xmt.h>
 
-#include <boost/test/unit_test.hpp>
+#include <exam/suite.h>
 
-using namespace boost::unit_test_framework;
-
-void timespec_diff()
+int EXAM_IMPL(timespec_diff)
 {
   timespec t1;
   t1.tv_sec = 1083852875;
@@ -42,14 +24,14 @@ void timespec_diff()
 
   timespec t3 = t1 - t2;
 
-  BOOST_CHECK( t3.tv_sec == 3 );
-  BOOST_CHECK( t3.tv_nsec == 651251000 );
+  EXAM_CHECK( t3.tv_sec == 3 );
+  EXAM_CHECK( t3.tv_nsec == 651251000 );
 
   t3 = t1;
   t3 -= t2;
 
-  BOOST_CHECK( t3.tv_sec == 3 );
-  BOOST_CHECK( t3.tv_nsec == 651251000 );
+  EXAM_CHECK( t3.tv_sec == 3 );
+  EXAM_CHECK( t3.tv_nsec == 651251000 );
 
   t1.tv_sec = 1;
   t1.tv_nsec = 1;
@@ -59,12 +41,14 @@ void timespec_diff()
 
   t3 = t1 - t2;
 
-  BOOST_CHECK( t3.tv_sec == 1 );
-  BOOST_CHECK( t3.tv_nsec == 0 );
+  EXAM_CHECK( t3.tv_sec == 1 );
+  EXAM_CHECK( t3.tv_nsec == 0 );
 
   t3 = t1;
   t3 -= t2;
   
-  BOOST_CHECK( t3.tv_sec == 1 );
-  BOOST_CHECK( t3.tv_nsec == 0 );
+  EXAM_CHECK( t3.tv_sec == 1 );
+  EXAM_CHECK( t3.tv_nsec == 0 );
+
+  return EXAM_RESULT;
 }

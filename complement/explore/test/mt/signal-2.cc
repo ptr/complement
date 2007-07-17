@@ -1,16 +1,14 @@
-// -*- C++ -*- Time-stamp: <06/12/15 10:41:46 ptr>
+// -*- C++ -*- Time-stamp: <07/07/16 21:34:49 ptr>
 
 /*
- * Copyright (c) 2003, 2006
+ * Copyright (c) 2003, 2006, 2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
  *
  */
 
-#include <boost/test/unit_test.hpp>
-
-using namespace boost::unit_test_framework;
+#include <exam/suite.h>
 
 #include <mt/xmt.h>
 
@@ -116,11 +114,13 @@ Thread::ret_code thread_two( void * )
   return rt;
 }
 
-void signal_2_test()
+int EXAM_IMPL(signal_2_test)
 {
   Thread t( thread_two );
 
   t.join();
 
-  BOOST_CHECK( v == 5 );
+  EXAM_CHECK( v == 5 );
+
+  return EXAM_RESULT;
 }
