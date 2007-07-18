@@ -8,6 +8,7 @@ include ${SRCROOT}/Makefiles/gmake/top.mak
 
 
 INCLUDES += -I$(SRCROOT)/include -I$(BOOST_INCLUDE_DIR)
+DEFS += -D__FIT_EXAM
 
 # temporary, before dums fix strings:
 # DEFS += -D_STLP_DONT_USE_TEMPLATE_EXPRESSION
