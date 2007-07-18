@@ -1,14 +1,14 @@
-// -*- C++ -*- Time-stamp: <07/07/11 21:34:07 ptr>
+// -*- C++ -*- Time-stamp: <07/07/18 08:46:23 ptr>
 
 /*
- * Copyright (c) 2004, 2006
+ * Copyright (c) 2004, 2006, 2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
  *
  */
 
-#include <boost/test/test_tools.hpp>
+#include <exam/suite.h>
 
 #include <string>
 #include <sockios/sockstream>
@@ -93,18 +93,14 @@ Thread::ret_code client_proc( void * )
 
   cnd.try_wait();
 
-  pr_lock.lock();
-  BOOST_MESSAGE( "Client start" );
-  pr_lock.unlock();
+  EXAM_MESSAGE_ASYNC( "Client start" );
   std::sockstream sock( "localhost", ::port );
 
   string buf;
 
   getline( sock, buf );
 
-  pr_lock.lock();
-  BOOST_CHECK( buf == "hello" );
-  pr_lock.unlock();
+  EXAM_CHECK_ASYNC( buf == "hello" );
 
   // xmt::delay( xmt::timespec( 5, 0 ) );
 
@@ -120,20 +116,16 @@ Thread::ret_code client_proc( void * )
   char a;
   sock.read( &a, 1 );
 
-  pr_lock.lock();
-  BOOST_CHECK( !sock.good() );
-  pr_lock.unlock();
+  EXAM_CHECK_ASYNC( !sock.good() );
 
   srv_p->close();
 
-  pr_lock.lock();
-  BOOST_MESSAGE( "Client end" );
-  pr_lock.unlock();
+  EXAM_MESSAGE_ASYNC( "Client end" );
 
   return rt;
 }
 
-void srv_close_connection_test()
+int EXAM_IMPL(srv_close_connection_test)
 {
   Thread srv( server_proc );
   cnd_close.set( false );
@@ -141,4 +133,6 @@ void srv_close_connection_test()
 
   client.join();
   srv.join();
+
+  return EXAM_RESULT;
 }
