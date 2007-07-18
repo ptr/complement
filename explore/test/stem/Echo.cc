@@ -1,7 +1,7 @@
 // -*- C++ -*- Time-stamp: <06/11/29 13:02:34 ptr>
 
 /*
- * Copyright (c) 2006
+ * Copyright (c) 2006, 2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -13,9 +13,7 @@
 #include <stem/NetTransport.h>
 #include <stem/EvManager.h>
 
-#include <boost/test/unit_test.hpp>
-
-using namespace boost::unit_test_framework;
+#include <exam/suite.h>
 
 using namespace stem;
 
@@ -83,7 +81,7 @@ EchoClient::~EchoClient()
 
 void EchoClient::handler1( const stem::Event& ev )
 {
-  BOOST_CHECK( ev.value() == mess );
+  EXAM_CHECK_ASYNC( ev.value() == mess );
   cnd.set(true);
 }
 
@@ -131,7 +129,7 @@ PeerClient::~PeerClient()
 
 void PeerClient::handler1( const stem::Event& ev )
 {
-  BOOST_CHECK( ev.value() == mess );
+  EXAM_CHECK( ev.value() == mess );
 
   cnd.set(true);
 }

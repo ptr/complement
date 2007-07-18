@@ -2,16 +2,12 @@
 
 /*
  *
- * Copyright (c) 2002, 2003, 2006
+ * Copyright (c) 2002, 2003, 2006, 2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
  *
  */
-
-// #include <boost/test/unit_test.hpp>
-
-// using namespace boost::unit_test_framework;
 
 #include "../NodeDL.h"
 
@@ -33,15 +29,12 @@ NodeDL::NodeDL( stem::addr_type id ) :
 
 NodeDL::~NodeDL()
 {
-  // cnd.wait();
 }
 
 void NodeDL::handler1( const stem::Event& )
 {
-  // std::cerr << "I am here 1\n";
   v = 1;
   cnd.set(true);
-  // std::cerr << "I am here 2\n";
 }
 
 void NodeDL::wait()
@@ -71,15 +64,12 @@ NewNodeDL::NewNodeDL( stem::addr_type id ) :
 
 NewNodeDL::~NewNodeDL()
 {
-  // cnd.wait();
 }
 
 void NewNodeDL::handler1( const stem::Event& )
 {
-  // std::cerr << "I am here 1\n";
   v = 1;
   cnd.set(true);
-  // std::cerr << "I am here 2\n";
 }
 
 void NewNodeDL::wait()

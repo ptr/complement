@@ -2,7 +2,7 @@
 
 /*
  *
- * Copyright (c) 2002, 2003, 2006
+ * Copyright (c) 2002, 2003, 2006, 2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
