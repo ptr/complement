@@ -71,17 +71,21 @@ condition cnd;
 
 Thread::ret_code server_proc( void * )
 {
+  Thread::ret_code rt;
+  rt.iword = 0;
+
   cnd.set( false );
   srv_type srv( port ); // start server
 
   ::srv_p = &srv;
 
+  if ( !srv.is_open() || !srv.good() ) {
+    ++rt.iword;
+  }
+
   cnd.set( true );
 
   srv.wait();
-
-  Thread::ret_code rt;
-  rt.iword = 0;
 
   return rt;
 }
@@ -99,6 +103,10 @@ Thread::ret_code client_proc( void * )
   string buf;
 
   getline( sock, buf );
+
+  if ( !sock.is_open() || !sock.good() ) {
+    ++rt.iword;
+  }
 
   EXAM_CHECK_ASYNC( buf == "hello" );
 
@@ -131,8 +139,8 @@ int EXAM_IMPL(srv_close_connection_test)
   cnd_close.set( false );
   Thread client( client_proc );
 
-  client.join();
-  srv.join();
+  EXAM_CHECK( client.join().iword == 0 );
+  EXAM_CHECK( srv.join().iword == 0 );
 
   return EXAM_RESULT;
 }
