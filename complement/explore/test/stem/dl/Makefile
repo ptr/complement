@@ -11,7 +11,7 @@ include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
 LIBSTEM_DIR = ${CoMT_DIR}/lib/stem
 
-INCLUDES += -I$(SRCROOT)/include -I$(BOOST_INCLUDE_DIR)
+INCLUDES += -I$(SRCROOT)/include
 
 #LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR}
 release-shared:	LDSEARCH += -L${LIBSTEM_DIR}/${OUTPUT_DIR}

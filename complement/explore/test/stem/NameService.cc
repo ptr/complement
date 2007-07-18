@@ -1,16 +1,12 @@
 // -*- C++ -*- Time-stamp: <06/11/29 10:50:21 ptr>
 
 /*
- * Copyright (c) 2006
+ * Copyright (c) 2006, 2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
  *
  */
-
-#include <boost/test/unit_test.hpp>
-
-using namespace boost::unit_test_framework;
 
 #include <iostream>
 #include <functional>

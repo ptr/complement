@@ -1,16 +1,14 @@
 // -*- C++ -*- Time-stamp: <07/07/12 00:48:50 ptr>
 
 /*
- * Copyright (c) 2002, 2003, 2006
+ * Copyright (c) 2002, 2003, 2006, 2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
  *
  */
 
-#include <boost/test/unit_test.hpp>
-
-using namespace boost::unit_test_framework;
+#include <exam/suite.h>
 
 #include <iostream>
 #include <mt/xmt.h>
@@ -42,29 +40,35 @@ using namespace __gnu_cxx;
 
 using namespace std;
 
-struct stem_test
+class stem_test
 {
+  public:
+    stem_test();
+    ~stem_test();
+
     void shm_init();
     void shm_finit();
 
-    void basic1();
-    void basic2();
-    void basic1new();
-    void basic2new();
-    void dl();
-    void ns();
+    int EXAM_DECL(basic1);
+    int EXAM_DECL(basic2);
+    int EXAM_DECL(basic1new);
+    int EXAM_DECL(basic2new);
+    int EXAM_DECL(dl);
+    int EXAM_DECL(ns);
 
-    void echo();
-    void echo_net();
-    void net_echo();
-    void peer();
-    void boring_manager();
+    int EXAM_DECL(echo);
+    int EXAM_DECL(echo_net);
+    int EXAM_DECL(net_echo);
+    int EXAM_DECL(peer);
+    int EXAM_DECL(boring_manager);
 
     static xmt::Thread::ret_code thr1( void * );
     static xmt::Thread::ret_code thr1new( void * );
+
+  private:
 };
 
-void stem_test::basic1()
+int EXAM_IMPL(stem_test::basic1)
 {
   Node node( 2000 );
 
@@ -74,20 +78,24 @@ void stem_test::basic1()
   node.Send( ev );
 
   node.wait();
-  BOOST_CHECK_EQUAL( node.v, 1 );
+  EXAM_CHECK( node.v == 1 );
+
+  return EXAM_RESULT;
 }
 
-void stem_test::basic2()
+int EXAM_IMPL(stem_test::basic2)
 {
   Node node( 2000 );
   
   xmt::Thread t1( thr1 );
 
-  t1.join();
+  EXAM_CHECK( t1.join().iword == 0 );
 
   node.wait();
 
-  BOOST_CHECK_EQUAL( node.v, 1 );
+  EXAM_CHECK( node.v == 1 );
+
+  return EXAM_RESULT;
 }
 
 xmt::Thread::ret_code stem_test::thr1( void * )
@@ -105,7 +113,7 @@ xmt::Thread::ret_code stem_test::thr1( void * )
   return rt;
 }
 
-void stem_test::basic1new()
+int EXAM_IMPL(stem_test::basic1new)
 {
   NewNode *node = new NewNode( 2000 );
 
@@ -116,11 +124,13 @@ void stem_test::basic1new()
 
   node->wait();
 
-  BOOST_CHECK_EQUAL( node->v, 1 );
+  EXAM_CHECK( node->v == 1 );
   delete node;
+
+  return EXAM_RESULT;
 }
 
-void stem_test::basic2new()
+int EXAM_IMPL(stem_test::basic2new)
 {
   NewNode *node = new NewNode( 2000 );
   
@@ -129,8 +139,10 @@ void stem_test::basic2new()
   t1.join();
 
   node->wait();
-  BOOST_CHECK_EQUAL( node->v, 1 );
+  EXAM_CHECK( node->v == 1 );
   delete node;
+
+  return EXAM_RESULT;
 }
 
 xmt::Thread::ret_code stem_test::thr1new( void * )
@@ -150,24 +162,24 @@ xmt::Thread::ret_code stem_test::thr1new( void * )
   return rt;
 }
 
-void stem_test::dl()
+int EXAM_IMPL(stem_test::dl)
 {
   void *lh = dlopen( "libloadable_stem.so", RTLD_LAZY ); // Path was passed via -Wl,--rpath=
 
-  BOOST_REQUIRE( lh != NULL );
+  EXAM_REQUIRE( lh != NULL );
   void *(*f)(unsigned);
   void (*g)(void *);
   void (*w)(void *);
   int (*v)(void *);
 
   *(void **)(&f) = dlsym( lh, "create_NewNodeDL" );
-  BOOST_REQUIRE( f != NULL );
+  EXAM_REQUIRE( f != NULL );
   *(void **)(&g) = dlsym( lh, "destroy_NewNodeDL" );
-  BOOST_REQUIRE( g != NULL );
+  EXAM_REQUIRE( g != NULL );
   *(void **)(&w) = dlsym( lh, "wait_NewNodeDL" );
-  BOOST_REQUIRE( w != NULL );
+  EXAM_REQUIRE( w != NULL );
   *(void **)(&v) = dlsym( lh, "v_NewNodeDL" );
-  BOOST_REQUIRE( v != NULL );
+  EXAM_REQUIRE( v != NULL );
 
   NewNodeDL *node = reinterpret_cast<NewNodeDL *>( f( 2002 )  );
   stem::Event ev( NODE_EV2 );
@@ -175,13 +187,15 @@ void stem_test::dl()
   node->Send( ev );
 
   w( reinterpret_cast<void *>(node) );
-  BOOST_CHECK_EQUAL( v(reinterpret_cast<void *>(node)), 1 );
+  EXAM_CHECK( v(reinterpret_cast<void *>(node)) == 1 );
 
   g( reinterpret_cast<void *>(node) );
   dlclose( lh );
+
+  return EXAM_RESULT;
 }
 
-void stem_test::ns()
+int EXAM_IMPL(stem_test::ns)
 {
   Node node( 2003, "Node" );
   Naming nm;
@@ -195,11 +209,11 @@ void stem_test::ns()
   // this is sample of all inline find:
   Naming::nsrecords_type::const_iterator i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "ns" ) ), select2nd<pair<stem::gaddr_type,string> >() ) );
 
-  BOOST_CHECK( i != nm.lst.end() );
-  BOOST_CHECK( i->second == "ns" );
-  BOOST_CHECK( i->first.hid == xmt::hostid() );
-  BOOST_CHECK( i->first.pid == getpid() );
-  BOOST_CHECK( i->first.addr == stem::ns_addr );
+  EXAM_CHECK( i != nm.lst.end() );
+  EXAM_CHECK( i->second == "ns" );
+  EXAM_CHECK( i->first.hid == xmt::hostid() );
+  EXAM_CHECK( i->first.pid == getpid() );
+  EXAM_CHECK( i->first.addr == stem::ns_addr );
 
   // well, but for few seaches declare and reuse functors:
   equal_to<string> eq;
@@ -210,20 +224,20 @@ void stem_test::ns()
 
   i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eq, string( "Node" ) ), second ) );
 
-  BOOST_CHECK( i != nm.lst.end() );
-  BOOST_CHECK( i->second == "Node" );
-  BOOST_CHECK( i->first.addr == 2003 );
+  EXAM_CHECK( i != nm.lst.end() );
+  EXAM_CHECK( i->second == "Node" );
+  EXAM_CHECK( i->first.addr == 2003 );
 
   i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eqa, nm.self_glid() ), first ) );
 
-  BOOST_CHECK( i != nm.lst.end() );
-  BOOST_CHECK( i->first == nm.self_glid() );
-  BOOST_CHECK( i->second.length() == 0 );
+  EXAM_CHECK( i != nm.lst.end() );
+  EXAM_CHECK( i->first == nm.self_glid() );
+  EXAM_CHECK( i->second.length() == 0 );
 
   nm.lst.clear();
   nm.reset();
 
-  BOOST_CHECK( nm.lst.empty() );
+  EXAM_CHECK( nm.lst.empty() );
 
   stem::Event evname( EV_STEM_GET_NS_NAME );
   evname.dest( stem::ns_addr );
@@ -234,32 +248,34 @@ void stem_test::ns()
 
   i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eq, string( "ns" ) ), second ) );
 
-  BOOST_CHECK( i == nm.lst.end() );
+  EXAM_CHECK( i == nm.lst.end() );
 
   i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eq, string( "Node" ) ), second ) );
 
-  BOOST_CHECK( i != nm.lst.end() );
-  BOOST_CHECK( i->second == "Node" );
-  BOOST_CHECK( i->first.addr == 2003 );
+  EXAM_CHECK( i != nm.lst.end() );
+  EXAM_CHECK( i->second == "Node" );
+  EXAM_CHECK( i->first.addr == 2003 );
 
   i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eqa, nm.self_glid() ), first ) );
 
-  BOOST_CHECK( i == nm.lst.end() );
+  EXAM_CHECK( i == nm.lst.end() );
 
   nm.lst.clear();
   nm.reset();
 
-  BOOST_CHECK( nm.lst.empty() );
+  EXAM_CHECK( nm.lst.empty() );
 
   evname.value() = "No-such-name";
   nm.Send( evname );
 
   nm.wait();
 
-  BOOST_CHECK( nm.lst.empty() );
+  EXAM_CHECK( nm.lst.empty() );
+
+  return EXAM_RESULT;
 }
 
-void stem_test::echo()
+int EXAM_IMPL(stem_test::echo)
 {
   try {
     sockmgr_stream_MP<stem::NetTransport> srv( 6995 );
@@ -269,8 +285,8 @@ void stem_test::echo()
 
     stem::addr_type zero = mgr.open( "localhost", 6995 );
 
-    BOOST_CHECK( zero != stem::badaddr );
-    BOOST_CHECK( zero == 0 ); // NetTransportMgr should detect local delivery
+    EXAM_CHECK( zero != stem::badaddr );
+    EXAM_CHECK( zero == 0 ); // NetTransportMgr should detect local delivery
 
     EchoClient node;
     
@@ -291,6 +307,8 @@ void stem_test::echo()
   }
   catch ( ... ) {
   }
+
+  return EXAM_RESULT;
 }
 
 const char fname[] = "/tmp/stem_test.shm";
@@ -298,23 +316,23 @@ xmt::shm_alloc<0> seg;
 xmt::allocator_shm<xmt::__condition<true>,0> shm_cnd;
 xmt::allocator_shm<xmt::__barrier<true>,0>   shm_b;
 
-void stem_test::shm_init()
+stem_test::stem_test()
 {
   try {
     seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
   }
   catch ( const xmt::shm_bad_alloc& err ) {
-    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+    EXAM_ERROR_ASYNC( err.what() );
   }
 }
 
-void stem_test::shm_finit()
+stem_test::~stem_test()
 {
   seg.deallocate();
   unlink( fname );
 }
 
-void stem_test::echo_net()
+int EXAM_IMPL(stem_test::echo_net)
 {
   xmt::__condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
   fcnd.set( false );
@@ -329,8 +347,8 @@ void stem_test::echo_net()
 
       stem::addr_type zero = mgr.open( "localhost", 6995 );
 
-      BOOST_CHECK( zero != stem::badaddr );
-      BOOST_CHECK( zero != 0 ); // NetTransportMgr should detect external delivery
+      EXAM_CHECK_ASYNC( zero != stem::badaddr );
+      EXAM_CHECK_ASYNC( zero != 0 ); // NetTransportMgr should detect external delivery
 
       EchoClient node;
     
@@ -360,7 +378,7 @@ void stem_test::echo_net()
       fcnd.set( true );
 
       int stat;
-      BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
 
       srv.close();
       srv.wait();
@@ -373,11 +391,13 @@ void stem_test::echo_net()
   shm_cnd.deallocate( &fcnd, 1 );
 
   // cerr << "Fine\n";
+
+  return EXAM_RESULT;
 }
 
 // same as echo_net(), but server in child process
 
-void stem_test::net_echo()
+int EXAM_IMPL(stem_test::net_echo)
 {
   try {
     xmt::__barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__barrier<true>();
@@ -396,7 +416,7 @@ void stem_test::net_echo()
         // echo.manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch );
         // echo.manager()->settrs( &std::cerr );
 
-        BOOST_REQUIRE( srv.good() );
+        EXAM_CHECK_ASYNC( srv.good() );
         c.set( true ); // ok, server listen
 
         b.wait(); // server may go away
@@ -418,8 +438,8 @@ void stem_test::net_echo()
 
       stem::addr_type zero = mgr.open( "localhost", 6995 );
 
-      BOOST_REQUIRE( mgr.good() );
-      BOOST_REQUIRE( zero != stem::badaddr );
+      EXAM_REQUIRE( mgr.good() );
+      EXAM_REQUIRE( zero != stem::badaddr );
 
       EchoClient node;
       stem::Event ev( NODE_EV_ECHO );
@@ -436,7 +456,7 @@ void stem_test::net_echo()
       b.wait(); // server may go away
 
       int stat;
-      BOOST_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
     }
 
     (&c)->~__condition<true>();
@@ -445,8 +465,10 @@ void stem_test::net_echo()
     shm_b.deallocate( &b, 1 );
   }
   catch (  xmt::shm_bad_alloc& err ) {
-    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+    EXAM_ERROR( err.what() );
   }
+
+  return EXAM_RESULT;
 }
 
 extern "C" {
@@ -456,7 +478,7 @@ static void dummy_signal_handler( int )
 
 }
 
-void stem_test::peer()
+int EXAM_IMPL(stem_test::peer)
 {
   /*
    * Scheme:
@@ -515,9 +537,9 @@ void stem_test::peer()
       stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
       // It done like it should on client side
 
-      BOOST_CHECK( zero != stem::badaddr );
-      BOOST_CHECK( zero != 0 );
-      BOOST_CHECK( zero & stem::extbit ); // "external" address
+      EXAM_CHECK_ASYNC( zero != stem::badaddr );
+      EXAM_CHECK_ASYNC( zero != 0 );
+      EXAM_CHECK_ASYNC( zero & stem::extbit ); // "external" address
 
       stem::Event ev( NODE_EV_REGME );
       ev.dest( zero );
@@ -527,13 +549,13 @@ void stem_test::peer()
 
       stem::gaddr_type ga( c1.manager()->reflect( zero ) );
 
-      BOOST_CHECK( ga.addr == 0 );
-      BOOST_CHECK( ga.pid != -1 );
+      EXAM_CHECK_ASYNC( ga.addr == 0 );
+      EXAM_CHECK_ASYNC( ga.pid != -1 );
 
       ga.addr = stem::ns_addr; // this will be global address of ns of the same process
                                // as zero
 
-      BOOST_CHECK( c1.manager()->reflect( ga ) != stem::badaddr );
+      EXAM_CHECK_ASYNC( c1.manager()->reflect( ga ) != stem::badaddr );
 
       stem::Event evname( EV_STEM_GET_NS_NAME );
       evname.dest( c1.manager()->reflect( ga ) );
@@ -551,8 +573,8 @@ void stem_test::peer()
         i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "c2@here" ) ), select2nd<pair<stem::gaddr_type,string> >() ) );
       } while ( i == nm.lst.end() );
 
-      BOOST_CHECK( i != nm.lst.end() );
-      BOOST_CHECK( i->second == "c2@here" );
+      EXAM_CHECK_ASYNC( i != nm.lst.end() );
+      EXAM_CHECK_ASYNC( i->second == "c2@here" );
 
       stem::addr_type pa = c1.manager()->reflect( i->first );
       if ( pa == stem::badaddr ) { // unknown yet
@@ -563,7 +585,7 @@ void stem_test::peer()
         }
       }
 
-      BOOST_CHECK( pa != stem::badaddr );
+      EXAM_CHECK_ASYNC( pa != stem::badaddr );
 
       if ( pa != stem::badaddr ) {
         stem::Event pe( NODE_EV_ECHO );
@@ -615,9 +637,9 @@ void stem_test::peer()
       stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
       // It done like it should on client side
 
-      BOOST_CHECK( zero != stem::badaddr );
-      BOOST_CHECK( zero != 0 );
-      BOOST_CHECK( zero & stem::extbit ); // "external" address
+      EXAM_CHECK_ASYNC( zero != stem::badaddr );
+      EXAM_CHECK_ASYNC( zero != 0 );
+      EXAM_CHECK_ASYNC( zero & stem::extbit ); // "external" address
 
       stem::Event ev( NODE_EV_REGME );
       ev.dest( zero );
@@ -659,9 +681,11 @@ void stem_test::peer()
   shm_cnd.deallocate( &pcnd, 1 );
   (&scnd)->~__condition<true>();
   shm_cnd.deallocate( &scnd, 1 );
+
+  return EXAM_RESULT;
 }
 
-void stem_test::boring_manager()
+int EXAM_IMPL(stem_test::boring_manager)
 {
   xmt::__condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
   fcnd.set( false );
@@ -709,81 +733,43 @@ void stem_test::boring_manager()
 
   (&fcnd)->~__condition<true>();
   shm_cnd.deallocate( &fcnd, 1 );
+
+  return EXAM_RESULT;
 }
 
 // -----------------
 
 // -----------------
 
-struct stem_test_suite :
-    public test_suite
+int EXAM_DECL(stem_test_suite);
+
+int EXAM_IMPL(stem_test_suite)
 {
-    stem_test_suite();
-};
+  exam::test_suite::test_case_type tc[4];
 
+  exam::test_suite t( "libsteam test suite" );
+  stem_test test;
 
-stem_test_suite::stem_test_suite() :
-    test_suite( "StEM test suite" )
-{
-  boost::shared_ptr<stem_test> instance( new stem_test() );
+  tc[1] = t.add( &stem_test::basic2, test, "basic2",
+                 tc[0] = t.add( &stem_test::basic1, test, "basic1" ) );
 
-  test_case *basic1_tc = BOOST_CLASS_TEST_CASE( &stem_test::basic1, instance );
-  test_case *basic2_tc = BOOST_CLASS_TEST_CASE( &stem_test::basic2, instance );
-  test_case *basic1n_tc = BOOST_CLASS_TEST_CASE( &stem_test::basic1new, instance );
-  test_case *basic2n_tc = BOOST_CLASS_TEST_CASE( &stem_test::basic2new, instance );
-  test_case *dl_tc = BOOST_CLASS_TEST_CASE( &stem_test::dl, instance );
-  test_case *ns_tc = BOOST_CLASS_TEST_CASE( &stem_test::ns, instance );
-  test_case *echo_tc = BOOST_CLASS_TEST_CASE( &stem_test::echo, instance );
-  test_case *shm_init_tc = BOOST_CLASS_TEST_CASE( &stem_test::shm_init, instance );
-  test_case *echo_net_tc = BOOST_CLASS_TEST_CASE( &stem_test::echo_net, instance );
-  test_case *net_echo_tc = BOOST_CLASS_TEST_CASE( &stem_test::net_echo, instance );
-  test_case *peer_tc = BOOST_CLASS_TEST_CASE( &stem_test::peer, instance );
-  test_case *boring_manager_tc = BOOST_CLASS_TEST_CASE( &stem_test::boring_manager, instance );
-  test_case *shm_finit_tc = BOOST_CLASS_TEST_CASE( &stem_test::shm_finit, instance );
+  tc[2] = t.add( &stem_test::basic1new, test, "basic1new", tc[0] );  
 
-  basic2_tc->depends_on( basic1_tc );
-  basic1n_tc->depends_on( basic1_tc );
-  basic2n_tc->depends_on( basic2_tc );
-  basic2n_tc->depends_on( basic1n_tc );
-  dl_tc->depends_on( basic2n_tc );
-  ns_tc->depends_on( basic1_tc );
+  t.add( &stem_test::dl, test, "dl",
+         t.add( &stem_test::basic2new, test, "basic2new", tc + 1, tc + 3 ) );
+  t.add( &stem_test::ns, test, "ns", tc[0] );
 
-  echo_tc->depends_on( basic2_tc );
-  echo_net_tc->depends_on( shm_init_tc );
-  echo_net_tc->depends_on( echo_tc );
-  net_echo_tc->depends_on( shm_init_tc );
-  net_echo_tc->depends_on( echo_net_tc );
-  peer_tc->depends_on( echo_tc );
-  peer_tc->depends_on( shm_init_tc );
-  boring_manager_tc->depends_on( peer_tc );
-  boring_manager_tc->depends_on( shm_init_tc );
-  shm_finit_tc->depends_on( shm_init_tc );
+  t.add( &stem_test::net_echo, test, "net echo",
+         t.add( &stem_test::echo_net, test, "echo_net",
+                tc[3] = t.add( &stem_test::echo, test, "echo", tc[1] ) ) );
 
-  add( basic1_tc );
-  add( basic2_tc );
-  add( basic1n_tc );
-  add( basic2n_tc );
-  add( dl_tc );
-  add( ns_tc );
+  t.add( &stem_test::boring_manager, test, "boring_manager",
+         t.add( &stem_test::peer, test, "peer", tc[3] ) );
 
-  add( echo_tc );
-  add( shm_init_tc );
-  add( echo_net_tc );
-  add( net_echo_tc );
-  add( peer_tc );
-  add( boring_manager_tc );
-  add( shm_finit_tc );
+  return t.girdle();
 }
 
-test_suite *init_unit_test_suite( int argc, char **argv )
+int main( int, char ** )
 {
-  // test_suite *ts = BOOST_TEST_SUITE( "libstem test" );
-
-  // ts->add( new stem_test_suite() );
-
-  // ts->add( BOOST_TEST_CASE( &send_test ) );
-  // ts->add( BOOST_TEST_CASE( &send2_test ) );
-
-  // return ts;
-  return new stem_test_suite();
+  return stem_test_suite(0);
 }
