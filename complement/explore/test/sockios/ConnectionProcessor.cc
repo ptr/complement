@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/18 10:17:29 ptr>
+// -*- C++ -*- Time-stamp: <07/07/18 23:10:22 ptr>
 
 /*
  *
@@ -17,7 +17,10 @@
 
 #include <sockios/sockmgr.h>
 
+#include <mt/xmt.h>
+
 using namespace std;
+using namespace xmt;
 
 ConnectionProcessor::ConnectionProcessor( std::sockstream& s )
 {
@@ -334,3 +337,237 @@ int EXAM_IMPL(trivial_sockios_test::shared_socket)
   return EXAM_RESULT;
 }
 
+/* ******************
+ *
+ * Check correct processing of case when server close connection.
+ * Suspicious processing with FreeBSD and OpenBSD servers.
+ *
+ */
+static condition cnd_close;
+
+class Srv // 
+{
+  public:
+    Srv( std::sockstream& );
+
+    void connect( std::sockstream& );
+    void close();
+};
+
+Srv::Srv( std::sockstream& s )
+{
+  s << "hello" << endl;
+
+  // xmt::delay( xmt::timespec( 1, 0 ) );
+
+  s.close();
+  // ::shutdown( s.rdbuf()->fd(), 2 );
+  cnd_close.set( true );
+}
+
+void Srv::connect( std::sockstream& )
+{
+}
+
+void Srv::close()
+{
+}
+
+#ifndef __FIT_NO_POLL
+typedef sockmgr_stream_MP<Srv> srv_type;
+#elif defined(__FIT_NO_SELECT)
+typedef sockmgr_stream_MP_SELECT<Srv> srv_type;
+#else
+# error Either poll or select should be present!
+#endif
+
+static srv_type *srv_p;
+condition cnd;
+
+Thread::ret_code server_proc( void * )
+{
+  Thread::ret_code rt;
+  rt.iword = 0;
+
+  cnd.set( false );
+  srv_type srv( port ); // start server
+
+  ::srv_p = &srv;
+
+  if ( !srv.is_open() || !srv.good() ) {
+    ++rt.iword;
+  }
+
+  cnd.set( true );
+
+  srv.wait();
+
+  return rt;
+}
+
+Thread::ret_code client_proc( void * )
+{
+  Thread::ret_code rt;
+  rt.iword = 0;
+
+  cnd.try_wait();
+
+  EXAM_MESSAGE_ASYNC( "Client start" );
+  std::sockstream sock( "localhost", ::port );
+
+  string buf;
+
+  getline( sock, buf );
+
+  if ( !sock.is_open() || !sock.good() ) {
+    ++rt.iword;
+  }
+
+  EXAM_CHECK_ASYNC( buf == "hello" );
+
+  // xmt::delay( xmt::timespec( 5, 0 ) );
+
+  // sock << 'a' << endl;
+
+  /*
+    read required here, due to we can see FIN packet only on read,
+    and no other solution! (another solution is nonblock sockets or
+    aio, but this is another story)
+  */
+  cnd_close.try_wait();
+
+  char a;
+  sock.read( &a, 1 );
+
+  EXAM_CHECK_ASYNC( !sock.good() );
+
+  srv_p->close();
+
+  EXAM_MESSAGE_ASYNC( "Client end" );
+
+  return rt;
+}
+
+int EXAM_IMPL(trivial_sockios_test::srv_close_connection)
+{
+  Thread srv( server_proc );
+  cnd_close.set( false );
+  Thread client( client_proc );
+
+  EXAM_CHECK( client.join().iword == 0 );
+  EXAM_CHECK( srv.join().iword == 0 );
+
+  return EXAM_RESULT;
+}
+
+/*
+ * Server listen tcp socket; client connect to server and try to read
+ * what server write to socket; server don't write anything, but we
+ * try to close connection (close socket on client's side, but from
+ * differrent thread from reading socket).
+ * I suspect that closing socket on client side don't lead to break down
+ * through read call.
+ */
+
+class ConnectionProcessor3 // dummy variant
+{
+  public:
+    ConnectionProcessor3( std::sockstream& );
+
+    void connect( std::sockstream& );
+    void close();
+};
+
+ConnectionProcessor3::ConnectionProcessor3( std::sockstream& s )
+{
+  EXAM_MESSAGE_ASYNC( "Server seen connection" );
+
+  EXAM_CHECK_ASYNC( s.good() );
+  connect( s );
+  // cerr << "Server see connection\n"; // Be silent, avoid interference
+  // with Input line prompt
+}
+
+void ConnectionProcessor3::connect( std::sockstream& s )
+{
+  EXAM_MESSAGE_ASYNC( "Server start connection processing" );
+
+  EXAM_CHECK_ASYNC( s.good() );
+
+  // string msg;
+
+  // getline( s, msg );
+  char c = '1';
+  s.write( &c, 1 );
+  s.flush();
+  // cnd2.set( true );
+  // EXAM_CHECK_EQUAL( msg, ::message );
+  EXAM_CHECK_ASYNC( s.good() );
+
+  // s << ::message_rsp << endl; // server's response
+
+  // BOOST_REQUIRE( s.good() );
+  EXAM_MESSAGE_ASYNC( "Server stop connection processing" );
+
+  return;
+}
+
+void ConnectionProcessor3::close()
+{
+  EXAM_MESSAGE_ASYNC( "Server: client close connection" );
+}
+
+std::sockstream *psock = 0;
+
+Thread::ret_code thread_entry_call( void * )
+{
+  Thread::ret_code rt;
+  rt.iword = 0;
+
+  cnd.set( true );
+
+  EXAM_MESSAGE_ASYNC( "Client start" );
+
+  EXAM_CHECK_ASYNC( psock->good() );
+
+  char c = '0';
+  psock->read( &c, 1 );
+  EXAM_CHECK_ASYNC( c == '1' );
+  cnd_close.set( true );
+  psock->read( &c, 1 );
+
+  return rt;
+}
+
+int EXAM_IMPL(trivial_sockios_test::client_close_socket)
+{
+#ifndef __FIT_NO_POLL
+  sockmgr_stream_MP<ConnectionProcessor3> srv( port ); // start server
+
+  cnd.set( false );
+  cnd_close.set( false );
+
+  // open client's socket _before_ thread launch to demonstrate problem with
+  // socket close (close socket's descriptor in one thread don't lead to real
+  // shutdown events if socket in use in another thread)
+  psock = new std::sockstream( "localhost", ::port );
+  xmt::Thread thr( thread_entry_call );
+  cnd.try_wait();
+  // close socket; you may expect that sock.read break down, but this
+  // will not happens: this thread has one copy of (psock) file descriptor,
+  // thread_entry_call has another; we close only one
+  cnd_close.try_wait();
+  // but call shutdown is what you want here:
+  psock->rdbuf()->shutdown( sock_base::stop_in | sock_base::stop_out );
+  psock->close();
+  thr.join();
+  delete psock;
+
+  srv.close(); // close server, so we don't wait server termination on next line
+  srv.wait(); // Wait for server stop to serve clients connections
+#else
+  EXAM_ERROR( "select-based sockmgr not implemented on this platform" );
+#endif
+
+  return EXAM_RESULT;
+}
