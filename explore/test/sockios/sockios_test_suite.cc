@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/18 10:23:40 ptr>
+// -*- C++ -*- Time-stamp: <07/07/19 00:19:19 ptr>
 
 /*
  *
@@ -25,11 +25,8 @@
 
 #include "ConnectionProcessor.h"
 
-#include "client-wc.h"
-
 using namespace std;
 
-int EXAM_DECL(test_client_close_socket);
 int EXAM_DECL(test_more_bytes_in_socket);
 int EXAM_DECL(test_more_bytes_in_socket2);
 
@@ -65,9 +62,9 @@ int EXAM_IMPL(sockios_test_suite)
 
   t.add( &trivial_sockios_test::listen_iface, trivial_test, "trivial_sockios_test::listen_iface", tc[0] );
 
-  t.add( srv_close_connection_test, "srv_close_connection_test" );
+  t.add( &trivial_sockios_test::srv_close_connection, trivial_test, "trivial_sockios_test::srv_close_connection", tc[0] );
   t.add( &trivial_sockios_test::shared_socket, trivial_test, "trivial_sockios_test::shared_socket", tc[0] );
-  t.add( test_client_close_socket, "test_client_close_socket" );
+  t.add( &trivial_sockios_test::client_close_socket, trivial_test, "trivial_sockios_test::client_close_socket", tc[0] );
   t.add( test_more_bytes_in_socket, "test_more_bytes_in_socket" ); // timeout 5
   t.add( test_more_bytes_in_socket2, "test_more_bytes_in_socket2" ); // timeout 5
 
