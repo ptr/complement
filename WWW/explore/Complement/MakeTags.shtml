@@ -19,6 +19,8 @@
 </div>
 <div class="main">
     <h2 class="lheader">Build tags</h2>
+    <p>This make tags inspired by <a href="http://www.gnu.org/software/make/manual/html_node/Standard-Targets.html#Standard-Targets">GNU make Standard Targets document</a>.
+    </p>
     <dl>
     <dt>all</dt>
     <dd>Deafult tag; build release-shared, dbg-shared, stlport-debug (if applicable) tags</dd>
