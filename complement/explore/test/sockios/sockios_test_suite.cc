@@ -29,82 +29,6 @@
 
 using namespace std;
 
-int generator_1()
-{
-  static int i = 0;
-
-  return i++;
-}
-
-int EXAM_IMPL(test_shared_socket)
-{
-#ifndef __FIT_NO_POLL
-  sockmgr_stream_MP<ConnectionProcessor2> srv( port ); // start server
-
-  {
-    EXAM_MESSAGE( "Client start" );
-    std::sockstream sock( "localhost", ::port );
-    string srv_line;
-
-    sock << ::message << endl;
-
-    EXAM_CHECK( sock.good() );
-
-    // sock.clear();
-    getline( sock, srv_line );
-
-    EXAM_CHECK( sock.good() );
-
-    EXAM_CHECK( srv_line == ::message_rsp );
-
-    EXAM_MESSAGE( "Client close connection (client's end of life)" );
-
-    {
-      std::sockstream sock2;
-      sock2.attach( sock.rdbuf()->fd() );
-
-      sock2 << ::message1 << endl;
-
-      EXAM_CHECK( sock.good() );
-      EXAM_CHECK( sock2.good() );
-
-      srv_line.clear();
-      getline( sock2, srv_line );
-
-      EXAM_CHECK( sock.good() );
-      EXAM_CHECK( sock2.good() );
-
-      EXAM_CHECK( srv_line == ::message_rsp1 );
-
-      EXAM_MESSAGE( "Subclient close connection (subclient's end of life)" );
-    }
-
-    sock << ::message2 << endl;
-
-    EXAM_CHECK( sock.good() );
-
-    // sock.clear();
-    srv_line.clear();
-    getline( sock, srv_line );
-
-    EXAM_CHECK( sock.good() );
-
-    EXAM_CHECK( srv_line == ::message_rsp2 );
-
-    EXAM_MESSAGE( "Client close connection (client's end of life)" );
-
-    // sock.close(); // no needs, that will done in sock destructor
-  }
-
-  srv.close(); // close server, so we don't wait server termination on next line
-  srv.wait(); // Wait for server stop to serve clients connections
-#else
-  EXAM_ERROR( "select-based sockmgr not implemented on this platform" );
-#endif
-
-  return EXAM_RESULT;
-}
-
 int EXAM_DECL(test_client_close_socket);
 int EXAM_DECL(test_more_bytes_in_socket);
 int EXAM_DECL(test_more_bytes_in_socket2);
@@ -139,10 +63,10 @@ int EXAM_IMPL(sockios_test_suite)
 
   // Old tests
 
-  t.add( &trivial_sockios_test::listen_iface, trivial_test, "listen_iface", tc[0] );
+  t.add( &trivial_sockios_test::listen_iface, trivial_test, "trivial_sockios_test::listen_iface", tc[0] );
 
   t.add( srv_close_connection_test, "srv_close_connection_test" );
-  t.add( test_shared_socket, "test_shared_socket" );
+  t.add( &trivial_sockios_test::shared_socket, trivial_test, "trivial_sockios_test::shared_socket", tc[0] );
   t.add( test_client_close_socket, "test_client_close_socket" );
   t.add( test_more_bytes_in_socket, "test_more_bytes_in_socket" ); // timeout 5
   t.add( test_more_bytes_in_socket2, "test_more_bytes_in_socket2" ); // timeout 5

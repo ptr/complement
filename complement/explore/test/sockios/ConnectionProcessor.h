@@ -40,6 +40,7 @@ class trivial_sockios_test
 
     int EXAM_DECL(simple);
     int EXAM_DECL(listen_iface);
+    int EXAM_DECL(shared_socket);
 
   private:
     in_addr hostaddr;
