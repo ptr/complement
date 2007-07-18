@@ -29,47 +29,6 @@
 
 using namespace std;
 
-int EXAM_IMPL(test_client_server_poll_local_ack)
-{
-#ifndef __FIT_NO_POLL
-  try {
-    // server listen localhost (127.0.0.1), but not listen ext interface:
-    sockmgr_stream_MP<ConnectionProcessor> srv( 0x7f000001, port ); // start server
-
-    {
-      EXAM_MESSAGE( "Client start" );
-
-      std::sockstream sock( "127.0.0.1", ::port );
-      string srv_line;
-
-      sock << ::message << endl;
-
-      EXAM_CHECK( sock.good() );
-
-      // sock.clear();
-      getline( sock, srv_line );
-
-      EXAM_CHECK( sock.good() );
-
-      EXAM_CHECK( srv_line == ::message_rsp );
-
-      EXAM_MESSAGE( "Client close connection (client's end of life)" );
-      // sock.close(); // no needs, that will done in sock destructor
-    }
-    
-    srv.close(); // close server, so we don't wait server termination on next line
-    srv.wait(); // Wait for server stop to serve clients connections
-  }
-  catch ( std::domain_error& err ) {
-    EXAM_ERROR( "host not found by name" );
-  }
-#else
-  EXAM_ERROR( "poll-based sockmgr not implemented on this platform" );
-#endif
-
-  return EXAM_RESULT;
-}
-
 int generator_1()
 {
   static int i = 0;
@@ -210,7 +169,6 @@ int EXAM_IMPL(sockios_test_suite)
 
   t.add( &trivial_sockios_test::listen_iface, trivial_test, "listen_iface", tc[0] );
 
-  t.add( test_client_server_poll_local_ack, "test_client_server_poll_local_ack" );
   t.add( test_mass_processing_poll, "test_mass_processing_poll" );
   t.add( srv_close_connection_test, "srv_close_connection_test" );
   t.add( test_shared_socket, "test_shared_socket" );
