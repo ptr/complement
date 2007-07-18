@@ -2,18 +2,12 @@
 
 /*
  *
- * Copyright (c) 2002, 2003, 2006
+ * Copyright (c) 2002, 2003, 2006, 2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
  *
  */
-
-#include <boost/test/unit_test.hpp>
-
-using namespace boost::unit_test_framework;
-
-#include <iostream>
 
 #include "Node.h"
 

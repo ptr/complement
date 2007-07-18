@@ -1,7 +1,7 @@
 // -*- C++ -*- Time-stamp: <07/07/11 21:47:37 ptr>
 
 /*
- * Copyright (c) 2006
+ * Copyright (c) 2006, 2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
