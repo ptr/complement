@@ -36,7 +36,15 @@ class ConnectionProcessor //
 class trivial_sockios_test
 {
   public:
+    trivial_sockios_test();
+
     int EXAM_DECL(simple);
+    int EXAM_DECL(listen_iface);
+
+  private:
+    in_addr hostaddr;
+    // sockaddr hostaddr;
+    in_addr localaddr;
 };
 
 class ConnectionProcessor2 // 
