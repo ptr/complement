@@ -11,6 +11,7 @@ include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
 
 INCLUDES += -I$(SRCROOT)/include
+DEFS += -D__FIT_EXAM
 
 LIBMT_DIR = ${CoMT_DIR}/lib/mt
 LIBSOCK_DIR = ${CoMT_DIR}/lib/sockios
