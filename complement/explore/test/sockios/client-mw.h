@@ -20,12 +20,14 @@
 #ifndef __ClientMassWrite_h
 #define __ClientMassWrite_h
 
+#include <exam/suite.h>
+
 // Clients simulator
 
 class ClientMassWrite
 {
   public:
-    static void client_proc();
+    static int EXAM_DECL(client_proc);
 };
 
 #endif // __ClientMassWrite_h

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/11 22:33:49 ptr>
+// -*- C++ -*- Time-stamp: <07/07/18 09:22:46 ptr>
 
 /*
  *
@@ -12,7 +12,7 @@
 #include "sockios_test.h"
 #include "message.h"
 
-#include <boost/test/unit_test.hpp>
+#include <exam/suite.h>
 
 #include <sockios/sockstream>
 #include <sockios/sockmgr.h>
@@ -21,36 +21,23 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-using namespace boost::unit_test_framework;
 using namespace std;
 
-const char fname[] = "/tmp/sockios_test.shm";
-xmt::shm_alloc<0> seg;
-xmt::allocator_shm<xmt::__condition<true>,0> shm_cnd;
-xmt::allocator_shm<xmt::__barrier<true>,0> shm_b;
-
-sockios_test::sockios_test()
+sockios_test::sockios_test() :
+    fname( "/tmp/sockios_test.shm" )
 {
+  try {
+    seg.allocate( fname.c_str(), 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
+  }
+  catch ( const xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR_ASYNC( err.what() );
+  }
 }
 
 sockios_test::~sockios_test()
 {
-}
-
-void sockios_test::init()
-{
-  try {
-    seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
-  }
-  catch ( const xmt::shm_bad_alloc& err ) {
-    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
-  }
-}
-
-void sockios_test::finit()
-{
   seg.deallocate();
-  unlink( fname );
+  unlink( fname.c_str() );
 }
 
 /* ************************************************************ */
@@ -82,7 +69,7 @@ xmt::mutex Cnt::lock;
 int Cnt::cnt = 0;
 int Cnt::visits = 0;
 
-void sockios_test::ctor_dtor()
+int EXAM_IMPL(sockios_test::ctor_dtor)
 {
   // Check, that number of ctors of Cnt is the same as number of called dtors
   // i.e. all created Cnt was released.
@@ -92,18 +79,18 @@ void sockios_test::ctor_dtor()
     {
       sockstream s1( "localhost", port );
 
-      BOOST_CHECK( s1.good() );
-      BOOST_CHECK( s1.is_open() );
+      EXAM_CHECK( s1.good() );
+      EXAM_CHECK( s1.is_open() );
 
       s1 << "1234" << endl;
 
-      BOOST_CHECK( s1.good() );
-      BOOST_CHECK( s1.is_open() );
+      EXAM_CHECK( s1.good() );
+      EXAM_CHECK( s1.is_open() );
       while ( Cnt::get_visits() == 0 ) {
         xmt::Thread::yield();
       }
       Cnt::lock.lock();
-      BOOST_CHECK( Cnt::cnt == 1 );
+      EXAM_CHECK( Cnt::cnt == 1 );
       Cnt::lock.unlock();
     }
 
@@ -111,13 +98,13 @@ void sockios_test::ctor_dtor()
     srv.wait();
 
     Cnt::lock.lock();
-    BOOST_CHECK( Cnt::cnt == 0 );
+    EXAM_CHECK( Cnt::cnt == 0 );
     Cnt::visits = 0;
     Cnt::lock.unlock();
   }
 
   Cnt::lock.lock();
-  BOOST_CHECK( Cnt::cnt == 0 );
+  EXAM_CHECK( Cnt::cnt == 0 );
   Cnt::lock.unlock();
 
   {
@@ -127,23 +114,23 @@ void sockios_test::ctor_dtor()
       sockstream s1( "localhost", port );
       sockstream s2( "localhost", port );
 
-      BOOST_CHECK( s1.good() );
-      BOOST_CHECK( s1.is_open() );
-      BOOST_CHECK( s2.good() );
-      BOOST_CHECK( s2.is_open() );
+      EXAM_CHECK( s1.good() );
+      EXAM_CHECK( s1.is_open() );
+      EXAM_CHECK( s2.good() );
+      EXAM_CHECK( s2.is_open() );
 
       s1 << "1234" << endl;
       s2 << "1234" << endl;
 
-      BOOST_CHECK( s1.good() );
-      BOOST_CHECK( s1.is_open() );
-      BOOST_CHECK( s2.good() );
-      BOOST_CHECK( s2.is_open() );
+      EXAM_CHECK( s1.good() );
+      EXAM_CHECK( s1.is_open() );
+      EXAM_CHECK( s2.good() );
+      EXAM_CHECK( s2.is_open() );
       while ( Cnt::get_visits() < 2 ) {
         xmt::Thread::yield();
       }
       Cnt::lock.lock();
-      BOOST_CHECK( Cnt::cnt == 2 );
+      EXAM_CHECK( Cnt::cnt == 2 );
       Cnt::lock.unlock();
     }
 
@@ -151,13 +138,15 @@ void sockios_test::ctor_dtor()
     srv.wait();
 
     Cnt::lock.lock();
-    BOOST_CHECK( Cnt::cnt == 0 );
+    EXAM_CHECK( Cnt::cnt == 0 );
     Cnt::lock.unlock();
   }
 
   Cnt::lock.lock();
-  BOOST_CHECK( Cnt::cnt == 0 );
+  EXAM_CHECK( Cnt::cnt == 0 );
   Cnt::lock.unlock();
+
+  return EXAM_RESULT;
 }
 
 /* ************************************************************ */
@@ -225,7 +214,7 @@ void sigpipe_handler( int sig, siginfo_t *si, void * )
 #endif
 }
  
-void sockios_test::sigpipe()
+int EXAM_IMPL(sockios_test::sigpipe)
 {
   try {
     xmt::__condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
@@ -290,8 +279,10 @@ void sockios_test::sigpipe()
     shm_cnd.deallocate( &fcnd, 1 );
   }
   catch ( xmt::shm_bad_alloc& err ) {
-    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+    EXAM_ERROR( err.what() );
   }
+
+  return EXAM_RESULT;
 }
 
 /* ************************************************************ */
@@ -331,7 +322,7 @@ void long_msg_processor::close()
 
 xmt::__condition<true> *long_msg_processor::cnd;
 
-void sockios_test::long_msg()
+int EXAM_IMPL(sockios_test::long_msg)
 {
   try {
     xmt::__condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
@@ -387,8 +378,10 @@ macro=\"yesterday\"/></FILTERS></REQUEST></RWRequest>";
     shm_cnd.deallocate( &srv_cnd, 1 );
   }
   catch ( xmt::shm_bad_alloc& err ) {
-    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+    EXAM_ERROR( err.what() );
   }
+
+  return EXAM_RESULT;
 }
 
 /* ************************************************************
@@ -441,9 +434,9 @@ xmt::__barrier<true> *ConnectionProcessor5::b = 0;
 ConnectionProcessor5::ConnectionProcessor5( std::sockstream& s )
 {
   // pr_lock.lock();
-  // BOOST_MESSAGE( "Server seen connection" );
+  // EXAM_MESSAGE( "Server seen connection" );
 
-  BOOST_REQUIRE( s.good() );
+  EXAM_CHECK_ASYNC( s.good() );
   // pr_lock.unlock();
   
   // cerr << "ConnectionProcessor5::ConnectionProcessor5\n";
@@ -462,7 +455,7 @@ void ConnectionProcessor5::connect( std::sockstream& s )
 void ConnectionProcessor5::close()
 {
   // pr_lock.lock();
-  // BOOST_MESSAGE( "Server: client close connection" );
+  // EXAM_MESSAGE( "Server: client close connection" );
   // pr_lock.unlock();
 }
 
@@ -478,15 +471,15 @@ xmt::Thread::ret_code thread_entry( void *par )
   cnd.set( true );
   // Note: due to this is another process then main, boost can report
   // about errors here, but don't count error it in summary, if it occur!
-  BOOST_CHECK( sock.read( (char *)&buff, sizeof(int) ).good() ); // <---- key line
-  BOOST_CHECK( buff == 1 );
+  EXAM_CHECK_ASYNC( sock.read( (char *)&buff, sizeof(int) ).good() ); // <---- key line
+  EXAM_CHECK_ASYNC( buff == 1 );
   // cerr << "Read pass" << endl;
   
   rt.iword = 0;
   return rt;
 }
 
-void sockios_test::read0()
+int EXAM_IMPL(sockios_test::read0)
 {
   try {
     xmt::__condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
@@ -536,7 +529,7 @@ void sockios_test::read0()
     shm_cnd.deallocate( &fcnd, 1 );
   }
   catch ( xmt::shm_bad_alloc& err ) {
-    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+    EXAM_ERROR( err.what() );
   }
 }
 
@@ -558,9 +551,9 @@ xmt::condition ConnectionProcessor6::cnd;
 ConnectionProcessor6::ConnectionProcessor6( std::sockstream& s )
 {
   // pr_lock.lock();
-  // BOOST_MESSAGE( "Server seen connection" );
+  // EXAM_MESSAGE( "Server seen connection" );
 
-  BOOST_REQUIRE( s.good() );
+  EXAM_CHECK_ASYNC( s.good() );
   // pr_lock.unlock();
 
   cnd.set( true );
@@ -573,16 +566,16 @@ void ConnectionProcessor6::connect( std::sockstream& s )
 void ConnectionProcessor6::close()
 {
   // pr_lock.lock();
-  // BOOST_MESSAGE( "Server: client close connection" );
+  // EXAM_MESSAGE( "Server: client close connection" );
   // pr_lock.unlock();
 }
 
-void sockios_test::read0_srv()
+int EXAM_IMPL(sockios_test::read0_srv)
 {
   try {
     sockmgr_stream_MP<ConnectionProcessor6> srv( ::port );
 
-    BOOST_CHECK( srv.good() );
+    EXAM_CHECK( srv.good() );
     ConnectionProcessor6::cnd.set( false );
 
     {
@@ -591,7 +584,7 @@ void sockios_test::read0_srv()
 
       s << "1" << endl;
 
-      BOOST_CHECK( s.good() );
+      EXAM_CHECK( s.good() );
 
       ConnectionProcessor6::cnd.try_wait();
     }
@@ -600,7 +593,7 @@ void sockios_test::read0_srv()
 
     system( "echo > /dev/null" );  // <------ key line
 
-    BOOST_CHECK( srv.good() );
+    EXAM_CHECK( srv.good() );
 
     {
       // ... as after system call.
@@ -608,19 +601,21 @@ void sockios_test::read0_srv()
 
       s << "1" << endl;
 
-      BOOST_CHECK( s.good() );
+      EXAM_CHECK( s.good() );
 
       ConnectionProcessor6::cnd.try_wait();
     }
 
-    BOOST_CHECK( srv.good() ); // server must correctly process interrupt during system call
+    EXAM_CHECK( srv.good() ); // server must correctly process interrupt during system call
 
     srv.close();
     srv.wait();
   }
   catch ( xmt::shm_bad_alloc& err ) {
-    BOOST_CHECK_MESSAGE( false, "error report: " << err.what() );
+    EXAM_ERROR( err.what() );
   }
+
+  return EXAM_RESULT;
 }
 
 /* ************************************************************ */
@@ -640,7 +635,7 @@ xmt::condition LongBlockReader::cnd;
 
 LongBlockReader::LongBlockReader( std::sockstream& s )
 {
-  BOOST_REQUIRE( s.good() );
+  EXAM_CHECK_ASYNC( s.good() );
 }
 
 void LongBlockReader::connect( std::sockstream& s )
@@ -657,23 +652,23 @@ void LongBlockReader::connect( std::sockstream& s )
 void LongBlockReader::close()
 {
   // pr_lock.lock();
-  // BOOST_MESSAGE( "Server: client close connection" );
+  // EXAM_MESSAGE( "Server: client close connection" );
   // pr_lock.unlock();
 }
 
-void sockios_test::long_block_read()
+int EXAM_IMPL(sockios_test::long_block_read)
 {
   LongBlockReader::cnd.set( false );
 
   sockmgr_stream_MP<LongBlockReader> srv( ::port );
   
-  BOOST_REQUIRE( srv.good() );
+  EXAM_REQUIRE( srv.good() );
 
   sockstream s;
 
   s.open( "localhost", ::port );
 
-  BOOST_REQUIRE( s.good() );
+  EXAM_REQUIRE( s.good() );
 
   char buf[1024];
 
@@ -682,7 +677,7 @@ void sockios_test::long_block_read()
   }
   s.flush();
 
-  BOOST_CHECK( s.good() );
+  EXAM_CHECK( s.good() );
 
   s.close();
   LongBlockReader::cnd.try_wait();

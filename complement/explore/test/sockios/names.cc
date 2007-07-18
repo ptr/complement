@@ -11,7 +11,7 @@
 
 #include "sockios_test.h"
 
-#include <boost/test/unit_test.hpp>
+#include <exam/suite.h>
 
 #include <sockios/sockstream>
 #include <sockios/sockmgr.h>
@@ -20,69 +20,74 @@
 
 #include <arpa/inet.h>
 
-using namespace boost::unit_test_framework;
 using namespace std;
 
 /* ************************************************************ */
 
-void names_sockios_test::hostname_test()
+int EXAM_IMPL(names_sockios_test::hostname_test)
 {
   unsigned long local = htonl( 0x7f000001 ); // 127.0.0.1
 
 #ifdef _LITTLE_ENDIAN
-  BOOST_CHECK_EQUAL( local, 0x0100007f );
+  EXAM_CHECK( local == 0x0100007f );
 #endif
 
 #ifdef _BIG_ENDIAN
-  BOOST_CHECK_EQUAL( local, 0x7f000001 );
+  EXAM_CHECK( local == 0x7f000001 );
 #endif
 
-  BOOST_CHECK_EQUAL( std::hostname( local ), "localhost [127.0.0.1]" );
+  EXAM_CHECK( std::hostname( local ) == "localhost [127.0.0.1]" );
 
 #ifdef __unix
   char buff[1024];
 
   gethostname( buff, 1024 );
 
-  BOOST_CHECK_EQUAL( std::hostname(), buff );
+  EXAM_CHECK( std::hostname() == buff );
 #endif
+
+  return EXAM_RESULT;
 }
 
 /* ************************************************************ */
 
-void names_sockios_test::service_test()
+int EXAM_IMPL(names_sockios_test::service_test)
 {
 #ifdef __unix
-  BOOST_CHECK( std::service( "ftp", "tcp" ) == 21 );
-  BOOST_CHECK( std::service( 7, "udp" ) == "echo" );
+  EXAM_CHECK( std::service( "ftp", "tcp" ) == 21 );
+  EXAM_CHECK( std::service( 7, "udp" ) == "echo" );
 #else
   BOOST_ERROR( "requests for service (/etc/services) not implemented on this platform" );
 #endif
+
+  return EXAM_RESULT;
 }
 
 /* ************************************************************ */
 
-void names_sockios_test::hostaddr_test1()
+int EXAM_IMPL(names_sockios_test::hostaddr_test1)
 {
 #ifdef __unix
   in_addr addr = std::findhost( "localhost" );
 
 # ifdef _LITTLE_ENDIAN
-  BOOST_CHECK_EQUAL( addr.s_addr, 0x0100007f );
+  EXAM_CHECK( addr.s_addr == 0x0100007f );
 # endif
 
 # ifdef _BIG_ENDIAN
-  BOOST_CHECK_EQUAL( addr.s_addr, 0x7f000001 );
+  EXAM_CHECK( addr.s_addr == 0x7f000001 );
 # endif
   
 #else
-  BOOST_ERROR( "Not implemented" );
+  EXAM_ERROR( "Not implemented" );
 #endif
+
+  return EXAM_RESULT;
 }
 
 /* ************************************************************ */
 
-void names_sockios_test::hostaddr_test2()
+int EXAM_IMPL(names_sockios_test::hostaddr_test2)
 {
 #ifdef __unix
   list<in_addr> haddrs;
@@ -97,16 +102,18 @@ void names_sockios_test::hostaddr_test2()
     }
   }
   
-  BOOST_CHECK( localhost_found == true );
+  EXAM_CHECK( localhost_found == true );
   
 #else
-  BOOST_ERROR( "Not implemented" );
+  EXAM_ERROR( "Not implemented" );
 #endif
+
+  return EXAM_RESULT;
 }
 
 /* ************************************************************ */
 
-void names_sockios_test::hostaddr_test3()
+int EXAM_IMPL(names_sockios_test::hostaddr_test3)
 {
 #ifdef __unix
   list<sockaddr> haddrs;
@@ -132,9 +139,11 @@ void names_sockios_test::hostaddr_test3()
     }
   }
   
-  BOOST_CHECK( localhost_found == true );
+  EXAM_CHECK( localhost_found == true );
   
 #else
-  BOOST_ERROR( "Not implemented" );
+  EXAM_ERROR( "Not implemented" );
 #endif
+
+  return EXAM_RESULT;
 }

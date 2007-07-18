@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <07/02/26 15:09:26 ptr>
+// -*- C++ -*- Time-stamp: <07/07/18 08:52:26 ptr>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005, 2006, 2007
+ * Copyright (c) 2002, 2003, 2005-2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -12,34 +12,41 @@
 #ifndef __sockios_test_h
 #define __sockios_test_h
 
+#include <exam/suite.h>
+#include <mt/shm.h>
+
 struct names_sockios_test
 {
-    void hostname_test();
-    void service_test();
+    int EXAM_DECL(hostname_test);
+    int EXAM_DECL(service_test);
 
-    void hostaddr_test1();
-    void hostaddr_test2();
-    void hostaddr_test3();
+    int EXAM_DECL(hostaddr_test1);
+    int EXAM_DECL(hostaddr_test2);
+    int EXAM_DECL(hostaddr_test3);
 };
 
-struct sockios_test
+class sockios_test
 {
+  public:
     sockios_test();
     ~sockios_test();
 
-    void init();
-    void finit();
+    int EXAM_DECL(ctor_dtor);
 
-    void ctor_dtor();
+    int EXAM_DECL(long_msg);
 
-    void long_msg();
+    int EXAM_DECL(sigpipe);
+    int EXAM_DECL(read0);
+    int EXAM_DECL(read0_srv);
+    int EXAM_DECL(long_block_read);
 
-    void sigpipe();
-    void read0();
-    void read0_srv();
-    void long_block_read();
+    int EXAM_DECL(srv2_fork);
 
-    void srv2_fork();
+  private:
+    const std::string fname;
+    xmt::shm_alloc<0> seg;
+    xmt::allocator_shm<xmt::__condition<true>,0> shm_cnd;
+    xmt::allocator_shm<xmt::__barrier<true>,0> shm_b;
 };
 
 #endif // __sockios_test_h

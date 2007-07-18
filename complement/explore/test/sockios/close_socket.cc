@@ -17,9 +17,7 @@
  * in supporting documentation.
  */
 
-#include <boost/test/unit_test.hpp>
-
-using namespace boost::unit_test_framework;
+#include <exam/suite.h>
 
 #include <iostream>
 #include <list>
@@ -41,7 +39,6 @@ using namespace xmt;
  */
 
 extern int port;
-extern xmt::mutex pr_lock;
 
 class ConnectionProcessor3 // dummy variant
 {
@@ -54,11 +51,9 @@ class ConnectionProcessor3 // dummy variant
 
 ConnectionProcessor3::ConnectionProcessor3( std::sockstream& s )
 {
-  pr_lock.lock();
-  BOOST_MESSAGE( "Server seen connection" );
+  EXAM_MESSAGE_ASYNC( "Server seen connection" );
 
-  BOOST_REQUIRE( s.good() );
-  pr_lock.unlock();
+  EXAM_CHECK_ASYNC( s.good() );
   connect( s );
   // cerr << "Server see connection\n"; // Be silent, avoid interference
   // with Input line prompt
@@ -68,11 +63,9 @@ condition cnd2;
 
 void ConnectionProcessor3::connect( std::sockstream& s )
 {
-  pr_lock.lock();
-  BOOST_MESSAGE( "Server start connection processing" );
+  EXAM_MESSAGE_ASYNC( "Server start connection processing" );
 
-  BOOST_REQUIRE( s.good() );
-  pr_lock.unlock();
+  EXAM_CHECK_ASYNC( s.good() );
 
   // string msg;
 
@@ -81,26 +74,20 @@ void ConnectionProcessor3::connect( std::sockstream& s )
   s.write( &c, 1 );
   s.flush();
   // cnd2.set( true );
-  pr_lock.lock();
-  // BOOST_CHECK_EQUAL( msg, ::message );
-  BOOST_REQUIRE( s.good() );
-  pr_lock.unlock();
+  // EXAM_CHECK_EQUAL( msg, ::message );
+  EXAM_CHECK_ASYNC( s.good() );
 
   // s << ::message_rsp << endl; // server's response
 
-  pr_lock.lock();
   // BOOST_REQUIRE( s.good() );
-  BOOST_MESSAGE( "Server stop connection processing" );
-  pr_lock.unlock();
+  EXAM_MESSAGE_ASYNC( "Server stop connection processing" );
 
   return;
 }
 
 void ConnectionProcessor3::close()
 {
-  pr_lock.lock();
-  BOOST_MESSAGE( "Server: client close connection" );
-  pr_lock.unlock();
+  EXAM_MESSAGE_ASYNC( "Server: client close connection" );
 }
 
 condition cnd1;
@@ -114,22 +101,20 @@ Thread::ret_code thread_entry_call( void * )
 
   cnd1.set( true );
 
-  pr_lock.lock();
-  BOOST_MESSAGE( "Client start" );
-  pr_lock.unlock();
+  EXAM_MESSAGE_ASYNC( "Client start" );
 
-  BOOST_REQUIRE( psock->good() );
+  EXAM_CHECK_ASYNC( psock->good() );
 
   char c = '0';
   psock->read( &c, 1 );
-  BOOST_CHECK( c == '1' );
+  EXAM_CHECK_ASYNC( c == '1' );
   cnd2.set( true );
   psock->read( &c, 1 );
 
   return rt;
 }
 
-void test_client_close_socket()
+int EXAM_IMPL(test_client_close_socket)
 {
 #ifndef __FIT_NO_POLL
   sockmgr_stream_MP<ConnectionProcessor3> srv( port ); // start server
@@ -156,6 +141,8 @@ void test_client_close_socket()
   srv.close(); // close server, so we don't wait server termination on next line
   srv.wait(); // Wait for server stop to serve clients connections
 #else
-  BOOST_ERROR( "select-based sockmgr not implemented on this platform" );
+  EXAM_ERROR( "select-based sockmgr not implemented on this platform" );
 #endif
+
+  return EXAM_RESULT;
 }
