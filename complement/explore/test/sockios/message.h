@@ -37,10 +37,6 @@ extern std::string message_rsp2;
 
 extern int port;
 
-extern xmt::mutex pr_lock;
-
-#define OUT_MSG(msg) pr_lock.lock(); cerr << msg << endl; pr_lock.unlock()
-
 namespace test_area {
 
 extern int bin_buff1_size;

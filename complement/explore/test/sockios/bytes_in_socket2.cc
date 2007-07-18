@@ -2,16 +2,14 @@
 
 /*
  *
- * Copyright (c) 2006
+ * Copyright (c) 2006, 2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
  *
  */
 
-#include <boost/test/unit_test.hpp>
-
-using namespace boost::unit_test_framework;
+#include <exam/suite.h>
 
 #include <iostream>
 #include <list>
@@ -32,7 +30,6 @@ using namespace xmt;
  */
 
 extern int port;
-extern xmt::mutex pr_lock;
 
 static condition cnd;
 
@@ -47,11 +44,9 @@ class ConnectionProcessor7 // dummy variant
 
 ConnectionProcessor7::ConnectionProcessor7( std::sockstream& s )
 {
-  pr_lock.lock();
-  BOOST_MESSAGE( "Server seen connection" );
+  EXAM_MESSAGE_ASYNC( "Server seen connection" );
 
-  BOOST_REQUIRE( s.good() );
-  pr_lock.unlock();
+  EXAM_CHECK_ASYNC( s.good() );
 
   // connect( s );
   // cerr << "Server see connection\n"; // Be silent, avoid interference
@@ -59,48 +54,38 @@ ConnectionProcessor7::ConnectionProcessor7( std::sockstream& s )
   char c = '1';
   s.read( &c, 1 );
 
-  pr_lock.lock();
-  BOOST_REQUIRE( s.good() );
-  pr_lock.unlock();
+  EXAM_CHECK_ASYNC( s.good() );
 
-  BOOST_CHECK( c == '0' );
+  EXAM_CHECK_ASYNC( c == '0' );
 }
 
 void ConnectionProcessor7::connect( std::sockstream& s )
 {
-  pr_lock.lock();
-  BOOST_MESSAGE( "Server start connection processing" );
+  EXAM_MESSAGE_ASYNC( "Server start connection processing" );
 
-  BOOST_REQUIRE( s.good() );
-  pr_lock.unlock();
+  EXAM_CHECK_ASYNC( s.good() );
 
   char c = '1';
   s.read( &c, 1 );
 
-  pr_lock.lock();
-  BOOST_REQUIRE( s.good() );
-  pr_lock.unlock();
+  EXAM_CHECK_ASYNC( s.good() );
 
   cnd.set( true );
 
-  BOOST_CHECK( c == '3' );
+  EXAM_CHECK_ASYNC( c == '3' );
 
-  pr_lock.lock();
   // BOOST_REQUIRE( s.good() );
-  BOOST_MESSAGE( "Server stop connection processing" );
-  pr_lock.unlock();
+  EXAM_MESSAGE_ASYNC( "Server stop connection processing" );
 
   return;
 }
 
 void ConnectionProcessor7::close()
 {
-  pr_lock.lock();
-  BOOST_MESSAGE( "Server: client close connection" );
-  pr_lock.unlock();
+  EXAM_MESSAGE_ASYNC( "Server: client close connection" );
 }
 
-void test_more_bytes_in_socket2()
+int EXAM_IMPL(test_more_bytes_in_socket2)
 {
 // #ifndef __FIT_NO_POLL
   cnd.set( false );
@@ -118,4 +103,6 @@ void test_more_bytes_in_socket2()
 // #else
 //   BOOST_ERROR( "select-based sockmgr not implemented on this platform" );
 // #endif
+
+  return EXAM_RESULT;
 }

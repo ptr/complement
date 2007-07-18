@@ -1,3 +1,7 @@
+2007-07-17  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* test/mt: boost unit test framework was replaced by exam.
+
 2007-07-12  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* libxmt: version 1.11.0

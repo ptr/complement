@@ -1,3 +1,7 @@
+2007-07-18  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* test/sockios:	boost unit test framework replaced by exam.
+
 2007-07-12  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* libsockios: Version 1.12.0

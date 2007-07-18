@@ -1,95 +1,113 @@
-// -*- C++ -*- Time-stamp: <06/07/08 00:13:31 ptr>
+// -*- C++ -*- Time-stamp: <07/07/18 10:17:29 ptr>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005
+ * Copyright (c) 2002, 2003, 2005, 2007
  * Petr Ovtchenkov
  *
- * Licensed under the Academic Free License Version 2.1
+ * Licensed under the Academic Free License version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
-#include <boost/test/test_tools.hpp>
+#include <exam/suite.h>
 
 #include "ConnectionProcessor.h"
 #include <string>
 #include "message.h"
 
+#include <sockios/sockmgr.h>
+
 using namespace std;
 
 ConnectionProcessor::ConnectionProcessor( std::sockstream& s )
 {
-  pr_lock.lock();
-  BOOST_MESSAGE( "Server seen connection" );
+  EXAM_MESSAGE_ASYNC( "Server seen connection" );
 
-  BOOST_REQUIRE( s.good() );
-  pr_lock.unlock();
+  EXAM_CHECK_ASYNC( s.good() );
   // cerr << "Server see connection\n"; // Be silent, avoid interference
   // with Input line prompt
 }
 
 void ConnectionProcessor::connect( std::sockstream& s )
 {
-  pr_lock.lock();
-  BOOST_MESSAGE( "Server start connection processing" );
+  EXAM_MESSAGE_ASYNC( "Server start connection processing" );
 
-  BOOST_REQUIRE( s.good() );
-  pr_lock.unlock();
+  EXAM_CHECK_ASYNC( s.good() );
 
   string msg;
 
   getline( s, msg );
 
-  pr_lock.lock();
-  BOOST_CHECK_EQUAL( msg, ::message );
-  BOOST_REQUIRE( s.good() );
-  pr_lock.unlock();
+  EXAM_CHECK_ASYNC( msg == ::message );
+  EXAM_CHECK_ASYNC( s.good() );
 
   s << ::message_rsp << endl; // server's response
 
-  pr_lock.lock();
-  BOOST_REQUIRE( s.good() );
-  BOOST_MESSAGE( "Server stop connection processing" );
-  pr_lock.unlock();
+  EXAM_CHECK_ASYNC( s.good() );
+  EXAM_MESSAGE_ASYNC( "Server stop connection processing" );
 
   return;
 }
 
 void ConnectionProcessor::close()
 {
-  pr_lock.lock();
-  BOOST_MESSAGE( "Server: client close connection" );
-  pr_lock.unlock();
+  EXAM_MESSAGE_ASYNC( "Server: client close connection" );
 }
 
+// ******************
+
+int EXAM_IMPL(trivial_sockios_test::simple)
+{
+#ifndef __FIT_NO_POLL
+
+  std::sockmgr_stream_MP<ConnectionProcessor> srv( port ); // start server
+
+  {
+    EXAM_MESSAGE( "Client start" );
+    std::sockstream sock( "localhost", ::port );
+    string srv_line;
+
+    sock << ::message << endl;
+
+    EXAM_CHECK( sock.good() );
+
+    // sock.clear();
+    getline( sock, srv_line );
+
+    EXAM_CHECK( sock.good() );
+
+    EXAM_CHECK( srv_line == ::message_rsp );
+
+    EXAM_MESSAGE( "Client close connection (client's end of life)" );
+    // sock.close(); // no needs, that will done in sock destructor
+  }
+
+  srv.close(); // close server, so we don't wait server termination on next line
+  srv.wait(); // Wait for server stop to serve clients connections
+#else
+  EXAM_ERROR( "poll-based sockmgr not implemented on this platform" );
+#endif
+
+  return EXAM_RESULT;
+}
+
+// ******************
 
 ConnectionProcessor2::ConnectionProcessor2( std::sockstream& s ) :
     count( 0 )
 {
-  pr_lock.lock();
-  BOOST_MESSAGE( "Server seen connection" );
+  EXAM_MESSAGE_ASYNC( "Server seen connection" );
 
-  BOOST_REQUIRE( s.good() );
-  pr_lock.unlock();
+  EXAM_CHECK_ASYNC( s.good() );
   // cerr << "Server see connection\n"; // Be silent, avoid interference
   // with Input line prompt
 }
 
 void ConnectionProcessor2::connect( std::sockstream& s )
 {
-  pr_lock.lock();
-  BOOST_MESSAGE( "Server start connection processing" );
+  EXAM_MESSAGE_ASYNC( "Server start connection processing" );
 
-  BOOST_REQUIRE( s.good() );
-  pr_lock.unlock();
+  EXAM_CHECK_ASYNC( s.good() );
 
   string msg;
 
@@ -97,46 +115,34 @@ void ConnectionProcessor2::connect( std::sockstream& s )
 
   switch ( count ) {
     case 0:
-      pr_lock.lock();
-      BOOST_CHECK_EQUAL( msg, ::message );
-      BOOST_REQUIRE( s.good() );
-      pr_lock.unlock();
+      EXAM_CHECK_ASYNC( msg == ::message );
+      EXAM_CHECK_ASYNC( s.good() );
 
       s << ::message_rsp << endl; // server's response
 
-      pr_lock.lock();
-      BOOST_REQUIRE( s.good() );
-      BOOST_MESSAGE( "Server stop connection processing" );
-      pr_lock.unlock();
+      EXAM_CHECK_ASYNC( s.good() );
+      EXAM_MESSAGE_ASYNC( "Server stop connection processing" );
       break;
     case 1:
-      pr_lock.lock();
-      BOOST_CHECK_EQUAL( msg, ::message1 );
-      BOOST_REQUIRE( s.good() );
-      pr_lock.unlock();
+      EXAM_CHECK_ASYNC( msg == ::message1 );
+      EXAM_CHECK_ASYNC( s.good() );
 
       s << ::message_rsp1 << endl; // server's response
 
-      pr_lock.lock();
-      BOOST_REQUIRE( s.good() );
-      BOOST_MESSAGE( "Server stop connection processing" );
-      pr_lock.unlock();
+      EXAM_CHECK_ASYNC( s.good() );
+      EXAM_MESSAGE_ASYNC( "Server stop connection processing" );
       break;
     case 2:
-      pr_lock.lock();
-      BOOST_CHECK_EQUAL( msg, ::message2 );
-      BOOST_REQUIRE( s.good() );
-      pr_lock.unlock();
+      EXAM_CHECK_ASYNC( msg == ::message2 );
+      EXAM_CHECK_ASYNC( s.good() );
 
       s << ::message_rsp2 << endl; // server's response
 
-      pr_lock.lock();
-      BOOST_REQUIRE( s.good() );
-      BOOST_MESSAGE( "Server stop connection processing" );
-      pr_lock.unlock();
+      EXAM_CHECK_ASYNC( s.good() );
+      EXAM_MESSAGE_ASYNC( "Server stop connection processing" );
       break;
     default:
-      BOOST_ERROR( "Unexpected connection! count not 0, 1, 2!" );
+      EXAM_ERROR_ASYNC( "Unexpected connection! count not 0, 1, 2!" );
       break;
   }
 
@@ -147,7 +153,5 @@ void ConnectionProcessor2::connect( std::sockstream& s )
 
 void ConnectionProcessor2::close()
 {
-  pr_lock.lock();
-  BOOST_MESSAGE( "Server: client close connection" );
-  pr_lock.unlock();
+  EXAM_MESSAGE_ASYNC( "Server: client close connection" );
 }

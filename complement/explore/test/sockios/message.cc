@@ -33,8 +33,6 @@ std::string message_rsp2( "I will waiting you!" );
 
 int port = 2048;
 
-xmt::mutex pr_lock;
-
 namespace test_area {
 
 int bin_buff1_size = 0;
