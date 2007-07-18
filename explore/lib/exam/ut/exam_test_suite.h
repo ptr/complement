@@ -3,8 +3,6 @@
 #ifndef __exam_test_suite_h
 #define __exam_test_suite_h
 
-#define FIT_EXAM
-
 #include <exam/suite.h>
 #include <string>
 #include <sstream>

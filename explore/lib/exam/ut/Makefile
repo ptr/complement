@@ -7,5 +7,6 @@ include ${SRCROOT}/Makefiles/gmake/top.mak
 
 # INCLUDES += -I${BOOST_DIR}
 INCLUDES += -I${CoMT_INCLUDE_DIR}
+DEFS += -D__FIT_EXAM
 
 LDFLAGS += -Wl,-rpath=${STLPORT_LIB_DIR}
