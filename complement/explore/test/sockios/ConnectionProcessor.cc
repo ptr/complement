@@ -261,3 +261,76 @@ void ConnectionProcessor2::close()
 {
   EXAM_MESSAGE_ASYNC( "Server: client close connection" );
 }
+
+int EXAM_IMPL(trivial_sockios_test::shared_socket)
+{
+#ifndef __FIT_NO_POLL
+  sockmgr_stream_MP<ConnectionProcessor2> srv( port ); // start server
+
+  EXAM_CHECK( srv.is_open() );
+  EXAM_CHECK( srv.good() );
+
+  {
+    EXAM_MESSAGE( "Client start" );
+    std::sockstream sock( "localhost", ::port );
+    string srv_line;
+
+    sock << ::message << endl;
+
+    EXAM_CHECK( sock.good() );
+
+    // sock.clear();
+    getline( sock, srv_line );
+
+    EXAM_CHECK( sock.good() );
+
+    EXAM_CHECK( srv_line == ::message_rsp );
+
+    EXAM_MESSAGE( "Client close connection (client's end of life)" );
+
+    {
+      std::sockstream sock2;
+      sock2.attach( sock.rdbuf()->fd() );
+
+      sock2 << ::message1 << endl;
+
+      EXAM_CHECK( sock.good() );
+      EXAM_CHECK( sock2.good() );
+
+      srv_line.clear();
+      getline( sock2, srv_line );
+
+      EXAM_CHECK( sock.good() );
+      EXAM_CHECK( sock2.good() );
+
+      EXAM_CHECK( srv_line == ::message_rsp1 );
+
+      EXAM_MESSAGE( "Subclient close connection (subclient's end of life)" );
+    }
+
+    sock << ::message2 << endl;
+
+    EXAM_CHECK( sock.good() );
+
+    // sock.clear();
+    srv_line.clear();
+    getline( sock, srv_line );
+
+    EXAM_CHECK( sock.good() );
+
+    EXAM_CHECK( srv_line == ::message_rsp2 );
+
+    EXAM_MESSAGE( "Client close connection (client's end of life)" );
+
+    // sock.close(); // no needs, that will done in sock destructor
+  }
+
+  srv.close(); // close server, so we don't wait server termination on next line
+  srv.wait(); // Wait for server stop to serve clients connections
+#else
+  EXAM_ERROR( "select-based sockmgr not implemented on this platform" );
+#endif
+
+  return EXAM_RESULT;
+}
+
