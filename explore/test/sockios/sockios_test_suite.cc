@@ -36,34 +36,6 @@ int generator_1()
   return i++;
 }
 
-#include "client-mw.h"
-
-int EXAM_IMPL(test_mass_processing_poll)
-{
-#ifndef __FIT_NO_POLL
-  using namespace test_area;
-
-  EXAM_REQUIRE( bin_buff1_size == 0 ); // test integrity of test suite
-  EXAM_REQUIRE( bin_buff1 == 0 ); // test integrity of test suite
-
-  bin_buff1_size = 48;
-  bin_buff1 = new char [bin_buff1_size];
-  EXAM_REQUIRE( bin_buff1 != 0 );
-  generate_n( bin_buff1, bin_buff1_size, generator_1 );
-
-  ni1 = 10;
-  ni2 = 5;
-
-  delete bin_buff1;
-  bin_buff1 = 0;
-  bin_buff1_size = 0;
-#else
-  EXAM_ERROR( "poll-based sockmgr not implemented on this platform" );
-#endif
-
-  return EXAM_RESULT;
-}
-
 int EXAM_IMPL(test_shared_socket)
 {
 #ifndef __FIT_NO_POLL
@@ -169,7 +141,6 @@ int EXAM_IMPL(sockios_test_suite)
 
   t.add( &trivial_sockios_test::listen_iface, trivial_test, "listen_iface", tc[0] );
 
-  t.add( test_mass_processing_poll, "test_mass_processing_poll" );
   t.add( srv_close_connection_test, "srv_close_connection_test" );
   t.add( test_shared_socket, "test_shared_socket" );
   t.add( test_client_close_socket, "test_client_close_socket" );
