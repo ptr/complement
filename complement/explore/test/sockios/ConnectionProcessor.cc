@@ -116,6 +116,22 @@ int EXAM_IMPL(trivial_sockios_test::simple)
     // sock.close(); // no needs, that will done in sock destructor
   }
 
+  {
+    std::sockstream sock( "127.0.0.1", ::port );
+    string srv_line;
+
+    sock << ::message << endl;
+
+    EXAM_CHECK( sock.good() );
+
+    // sock.clear();
+    getline( sock, srv_line );
+
+    EXAM_CHECK( sock.good() );
+
+    EXAM_CHECK( srv_line == ::message_rsp );
+  }
+
   srv.close(); // close server, so we don't wait server termination on next line
   srv.wait(); // Wait for server stop to serve clients connections
 #else
