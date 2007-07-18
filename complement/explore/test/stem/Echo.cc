@@ -129,7 +129,7 @@ PeerClient::~PeerClient()
 
 void PeerClient::handler1( const stem::Event& ev )
 {
-  EXAM_CHECK( ev.value() == mess );
+  EXAM_CHECK_ASYNC( ev.value() == mess );
 
   cnd.set(true);
 }
