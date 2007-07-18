@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/18 10:08:07 ptr>
+// -*- C++ -*- Time-stamp: <07/07/19 00:16:00 ptr>
 
 /*
  *
@@ -41,6 +41,9 @@ class trivial_sockios_test
     int EXAM_DECL(simple);
     int EXAM_DECL(listen_iface);
     int EXAM_DECL(shared_socket);
+
+    int EXAM_DECL(srv_close_connection);
+    int EXAM_DECL(client_close_socket);
 
   private:
     in_addr hostaddr;
