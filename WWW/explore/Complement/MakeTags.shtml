@@ -63,9 +63,9 @@
     <dt>install-strip</dt>
     <dd></dd>
     <dt>TAGS</dt>
-    <dd></dd>
+    <dd>generate TAGS index file (useful for emacses)</dd>
     <dt>tags</dt>
-    <dd></dd>
+    <dd>generate tags index file (useful for vi and his friends)</dd>
     <dt>dist</dt>
     <dd></dd>
     <dt>check</dt>
