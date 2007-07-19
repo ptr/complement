@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/12 00:48:50 ptr>
+// -*- C++ -*- Time-stamp: <07/07/20 00:21:37 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006, 2007
@@ -25,6 +25,8 @@
 #include <dlfcn.h>
 
 #include "Echo.h"
+#include "Convert.h"
+
 #include <stem/NetTransport.h>
 #include <stem/EvManager.h>
 #include <sockios/sockmgr.h>
@@ -46,9 +48,6 @@ class stem_test
     stem_test();
     ~stem_test();
 
-    void shm_init();
-    void shm_finit();
-
     int EXAM_DECL(basic1);
     int EXAM_DECL(basic2);
     int EXAM_DECL(basic1new);
@@ -61,6 +60,7 @@ class stem_test
     int EXAM_DECL(net_echo);
     int EXAM_DECL(peer);
     int EXAM_DECL(boring_manager);
+    int EXAM_DECL(convert);
 
     static xmt::Thread::ret_code thr1( void * );
     static xmt::Thread::ret_code thr1new( void * );
@@ -737,6 +737,64 @@ int EXAM_IMPL(stem_test::boring_manager)
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(stem_test::convert)
+{
+  Convert conv;
+  mess m;
+
+  m.super_id = 2;
+  m.message = "hello";
+
+  stem::Event_base<mess> ev( CONV_EV0 );
+
+  ev.dest( conv.self_id() );
+  ev.value() = m;
+
+  conv.Send( ev );
+
+  conv.wait();
+
+  EXAM_CHECK( conv.v == -1 );
+
+  stem::Event_base<mess> ev1( CONV_EV1 );
+
+  ev1.dest( conv.self_id() );
+  ev1.value() = m;
+
+  conv.Send( ev1 );
+
+  conv.wait();
+
+  EXAM_CHECK( conv.v == 1 );
+
+  stem::Event_base<mess> ev2( CONV_EV2 );
+
+  ev2.dest( conv.self_id() );
+  ev2.value() = m;
+
+  conv.Send( ev2 );
+
+  conv.wait();
+
+  EXAM_CHECK( conv.v == 2 );
+  EXAM_CHECK( conv.m2 == "hello" );
+
+  stem::Event_base<mess> ev3( CONV_EV3 );
+
+  ev3.dest( conv.self_id() );
+  ev3.value().super_id = 3;
+  ev3.value().message = ", wold!";
+
+  conv.Send( ev3 );
+
+  conv.wait();
+
+  EXAM_CHECK( conv.v == 3 );
+  EXAM_CHECK( conv.m3 == ", wold!" );
+
+  return EXAM_RESULT;
+}
+
 // -----------------
 
 // -----------------
@@ -765,6 +823,8 @@ int EXAM_IMPL(stem_test_suite)
 
   t.add( &stem_test::boring_manager, test, "boring_manager",
          t.add( &stem_test::peer, test, "peer", tc[3] ) );
+
+  t.add( &stem_test::convert, test, "convert", tc[0] );
 
   return t.girdle();
 }

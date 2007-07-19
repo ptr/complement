@@ -1,7 +1,8 @@
-# -*- makefile -*- Time-stamp: <06/10/10 15:22:33 ptr>
+# -*- makefile -*- Time-stamp: <07/07/20 00:14:24 ptr>
 
 PRGNAME = stem_ut
 SRC_CC = unit_test.cc \
          Node.cc \
          NameService.cc \
-         Echo.cc
+         Echo.cc \
+         Convert.cc
