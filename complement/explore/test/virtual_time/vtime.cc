@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/06/27 01:04:38 ptr>
+// -*- C++ -*- Time-stamp: <07/07/19 23:11:01 ptr>
 
 #include "vtime.h"
 
@@ -230,7 +230,7 @@ vtime& vtime::operator +=( const vtime_type::value_type& t )
   return *this;
 }
 
-gvtime_type& operator +=( gvtime_type& gvt, gvtime_type::value_type& t )
+gvtime_type& operator +=( gvtime_type& gvt, const gvtime_type::value_type& t )
 {
   gvt[t.first] += t.second;
 
@@ -364,7 +364,7 @@ DEFINE_RESPONSE_TABLE( VTDispatcher )
 END_RESPONSE_TABLE
 
 char *Init_buf[128];
-VTDispatch *VTHandler::_vtdsp = 0;
+VTDispatcher *VTHandler::_vtdsp = 0;
 static int *_rcount = 0;
 
 void VTHandler::Init::__at_fork_prepare()
@@ -374,7 +374,7 @@ void VTHandler::Init::__at_fork_prepare()
 void VTHandler::Init::__at_fork_child()
 {
   if ( *_rcount != 0 ) {
-    VTHandler::_vtdsp->~VTDispatch();
+    VTHandler::_vtdsp->~VTDispatcher();
     VTHandler::_vtdsp = new( VTHandler::_vtdsp ) VTDispatcher();
   }
 }
@@ -385,7 +385,7 @@ void VTHandler::Init::__at_fork_parent()
 
 void VTHandler::Init::_guard( int direction )
 {
-  static xmt::MutexRS _init_lock;
+  static xmt::recursive_mutex _init_lock;
   static int _count = 0;
 
   if ( direction ) {

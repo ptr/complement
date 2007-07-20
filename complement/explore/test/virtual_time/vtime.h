@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/06/27 00:59:45 ptr>
+// -*- C++ -*- Time-stamp: <07/07/20 09:29:00 ptr>
 
 #ifndef __vtime_h
 #define __vtime_h
@@ -27,6 +27,8 @@ typedef std::hash_map<oid_type, vtime_unit_type> vtime_type;
 // typedef std::list<vtime_proc_type> vtime_type;
 
 bool operator <=( const vtime_type& l, const vtime_type& r );
+inline bool operator >=( const vtime_type& l, const vtime_type& r )
+  { return r <= l; }
 vtime_type operator -( const vtime_type& l, const vtime_type& r );
 vtime_type operator +( const vtime_type& l, const vtime_type& r );
 vtime_type& operator +=( vtime_type& l, const vtime_type& r );
@@ -58,6 +60,8 @@ struct vtime :
 
   bool operator <=( const vtime& r ) const
     { return vt <= r.vt; }
+  bool operator >=( const vtime& r ) const
+    { return vt >= r.vt; }
 
   vtime operator -( const vtime& r ) const
     { return vtime( vt - r.vt ); }
@@ -129,10 +133,18 @@ struct VTmess :
     void unpack( std::istream& s );
     void net_unpack( std::istream& s );
 
-    VTmess()
+    VTmess() :
+        code(0),
+        src(0),
+        gvt(),
+        grp(0),
+        mess()
       { }
     VTmess( const VTmess& _gvt ) :
+        code( _gvt.code ),
+        src( _gvt.src ),
         gvt( _gvt.gvt ),
+        grp( _gvt.grp ),
         mess( _gvt.mess )
       { }
 
@@ -181,7 +193,7 @@ class VTDispatcher :
 
     void VTDispatch( const VTmess& );
 
-    void VTSend( const Event& e );
+    void VTSend( const stem::Event& e );
 
   private:
     typedef std::hash_map<oid_type, vtime_obj_rec> vt_map_type;
@@ -219,7 +231,7 @@ class VTHandler :
     explicit VTHandler( stem::addr_type id, const char *info = 0 );
     virtual ~VTHandler();
 
-    void VTSend( const Event& e );
+    void VTSend( const stem::Event& e );
 
     template <class D>
     void VTSend( const stem::Event_base<D>& e )

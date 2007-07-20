@@ -1,6 +1,6 @@
-// -*- C++ -*- Time-stamp: <07/03/07 16:38:24 ptr>
+// -*- C++ -*- Time-stamp: <07/07/20 09:26:15 ptr>
 
-#include <boost/test/unit_test.hpp>
+#include <exam/suite.h>
 
 #include <boost/lexical_cast.hpp>
 
@@ -9,236 +9,461 @@
 
 #include <vtime.h>
 
-using namespace boost::unit_test_framework;
 using namespace vt;
 using namespace std;
 
 struct vtime_operations
 {
-  void vt_compare();
-  void vt_add();
-  void vt_diff();
-  void vt_max();
+  int EXAM_DECL(vt_compare);
+  int EXAM_DECL(vt_add);
+  int EXAM_DECL(vt_diff);
+  int EXAM_DECL(vt_max);
+
+  int EXAM_DECL(gvt_add);
+
+  int EXAM_DECL(VTMess_core);
 };
 
-void vtime_operations::vt_compare()
+int EXAM_IMPL(vtime_operations::vt_compare)
 {
   vtime_type vt1;
   vtime_type vt2;
 
-  vt1.push_back( make_pair( 1, 1 ) );
-  vt1.push_back( make_pair( 2, 1 ) );
+  vt1[1] = 1;
+  vt1[2] = 1;
 
-  vt2.push_back( make_pair( 1, 1 ) );
-  vt2.push_back( make_pair( 2, 1 ) );
+  vt2[1] = 1;
+  vt2[2] = 1;
 
-  BOOST_CHECK( vt1 == vt2 );
-  BOOST_CHECK( vt1 <= vt2 );
-  BOOST_CHECK( vt2 <= vt1 );
+  EXAM_CHECK( vt1 <= vt2 );
+  EXAM_CHECK( vt2 <= vt1 );
+  EXAM_CHECK( vt1 >= vt2 );
+  EXAM_CHECK( vt2 >= vt1 );
 
-  vt2.push_back( make_pair( 3, 1 ) );
+  vt2[3] = 1;
 
-  BOOST_CHECK( !(vt1 == vt2) );
-  BOOST_CHECK( vt1 <= vt2 );
-  BOOST_CHECK( !(vt2 <= vt1) );
+  EXAM_CHECK( vt1 <= vt2 );
+  EXAM_CHECK( !(vt2 <= vt1) );
+  EXAM_CHECK( vt2 >= vt1 );
 
   vt1.clear();
   vt2.clear();
 
-  vt1.push_back( make_pair( 1, 1 ) );
+  vt1[1] = 1;
 
-  vt2.push_back( make_pair( 1, 1 ) );
-  vt2.push_back( make_pair( 3, 1 ) );
+  vt2[1] = 1;
+  vt2[3] = 1;
 
-  BOOST_CHECK( !(vt1 == vt2) );
-  BOOST_CHECK( vt1 <= vt2 );
-  BOOST_CHECK( !(vt2 <= vt1) );
+  EXAM_CHECK( vt1 <= vt2 );
+  EXAM_CHECK( !(vt2 <= vt1) );
   
-  vt1.push_back( make_pair( 2, 1 ) );
+  vt1[2] = 1;
 
-  BOOST_CHECK( !(vt1 <= vt2) );
-  BOOST_CHECK( !(vt2 <= vt1) );
+  EXAM_CHECK( !(vt1 <= vt2) );
+  EXAM_CHECK( !(vt2 <= vt1) );
 }
 
-void vtime_operations::vt_add()
+int EXAM_IMPL(vtime_operations::vt_add)
 {
   vtime_type vt1;
   vtime_type vt2;
   vtime_type vt3;
   vtime_type vt4;
 
-  vt1.push_back( make_pair( 1, 1 ) );
-  vt1.push_back( make_pair( 2, 1 ) );
+  vt1[1] = 1;
+  vt1[2] = 1;
 
   vt3 = vt1 + vt2;
 
-  BOOST_CHECK( vt1 == vt3 );
+  EXAM_CHECK( vt1 <= vt3 );
+  EXAM_CHECK( vt3 <= vt1 );
 
-  vt2.push_back( make_pair( 2, 1 ) );
+  vt2[2] = 1;
 
   vt3 = vt1 + vt2;
 
-  vt4.push_back( make_pair( 1, 1 ) );
-  vt4.push_back( make_pair( 2, 2 ) );
+  vt4[1] = 1;
+  vt4[2] = 2;
 
-  BOOST_CHECK( vt3 == vt4 );
+  EXAM_CHECK( vt3 <= vt4 );
+  EXAM_CHECK( vt4 <= vt3 );
 
   vt4.clear();
 
-  vt2.push_back( make_pair( 3, 1 ) );
+  vt2[3] = 1;
 
   vt3 = vt1 + vt2;
 
-  vt4.push_back( make_pair( 1, 1 ) );
-  vt4.push_back( make_pair( 2, 2 ) );
-  vt4.push_back( make_pair( 3, 1 ) );
+  vt4[1] = 1;
+  vt4[2] = 2;
+  vt4[3] = 1;
 
-  BOOST_CHECK( vt3 == vt4 );
+  EXAM_CHECK( vt3 <= vt4 );
+  EXAM_CHECK( vt4 <= vt3 );
+
+  return EXAM_RESULT;
 }
 
-void vtime_operations::vt_diff()
+int EXAM_IMPL(vtime_operations::vt_diff)
 {
   vtime_type vt1;
   vtime_type vt2;
   vtime_type vt3;
   vtime_type vt4;
 
-  vt1.push_back( make_pair( 1, 1 ) );
-  vt1.push_back( make_pair( 2, 1 ) );
+  vt1[1] = 1;
+  vt1[2] = 1;
 
   vt3 = vt1 - vt2;
 
-  BOOST_CHECK( vt1 == vt3 );
+  EXAM_CHECK( vt1 <= vt3 );
+  EXAM_CHECK( vt3 <= vt1 );
 
-  vt2.push_back( make_pair( 1, 1 ) );
+  vt2[1] = 1;
 
   vt3 = vt1 - vt2;
 
-  vt4.push_back( make_pair( 2, 1 ) );
+  vt4[2] = 1;
 
-  BOOST_CHECK( vt3 == vt4 );
+  EXAM_CHECK( vt3 <= vt4 );
+  EXAM_CHECK( vt4 <= vt3 );
 
-  vt2.push_back( make_pair( 2, 1 ) );
+  vt2[2] = 1;
 
   vt4.clear();
 
   vt3 = vt1 - vt2;
 
-  BOOST_CHECK( vt3 == vt4 );
+  EXAM_CHECK( vt3 <= vt4 );
+  EXAM_CHECK( vt4 <= vt3 );
 
   vt2.clear();
 
-  vt2.push_back( make_pair( 3, 1 ) );
+  vt2[3] = 1;
   
   try {
     vt3 = vt1 - vt2;
-    BOOST_CHECK( false );
+    EXAM_ERROR( "Virtual Times are incomparable" );
   }
   catch ( const std::range_error& err ) {
-    BOOST_CHECK( true );
+    EXAM_CHECK( true );
   }
 
   vt2.clear();
 
-  vt2.push_back( make_pair( 2, 2 ) );
+  vt2[2] = 2;
 
   try {
     vt3 = vt1 - vt2;
-    BOOST_CHECK( false );
+    EXAM_ERROR( "Virtual Times are incomparable" );
   }
   catch ( const std::range_error& err ) {
-    BOOST_CHECK( true );
-  }  
+    EXAM_CHECK( true );
+  }
+
+  return EXAM_RESULT;
 }
 
-void vtime_operations::vt_max()
+int EXAM_IMPL(vtime_operations::vt_max)
 {
   vtime_type vt1;
   vtime_type vt2;
   vtime_type vt3;
   vtime_type vt4;
 
-  vt1.push_back( make_pair( 1, 1 ) );
-  vt1.push_back( make_pair( 2, 1 ) );
+  vt1[1] = 1;
+  vt1[2] = 1;
 
   vt3 = vt::max( vt1, vt2 );
 
-  BOOST_CHECK( vt3 == vt1 );
+  EXAM_CHECK( vt3 <= vt1 );
+  EXAM_CHECK( vt1 <= vt3 );
 
-  vt2.push_back( make_pair( 1, 1 ) );
+  vt2[1] = 1;
   
   vt3 = vt::max( vt1, vt2 );
 
-  BOOST_CHECK( vt3 == vt1 );
+  EXAM_CHECK( vt3 <= vt1 );
+  EXAM_CHECK( vt1 <= vt3 );
 
-  vt2.push_back( make_pair( 2, 1 ) );
-
-  vt3 = vt::max( vt1, vt2 );
-
-  BOOST_CHECK( vt3 == vt1 );
-
-  vt2.push_back( make_pair( 3, 1 ) );
+  vt2[2] = 1;
 
   vt3 = vt::max( vt1, vt2 );
 
-  vt4.push_back( make_pair( 1, 1 ) );
-  vt4.push_back( make_pair( 2, 1 ) );
-  vt4.push_back( make_pair( 3, 1 ) );
+  EXAM_CHECK( vt3 <= vt1 );
+  EXAM_CHECK( vt1 <= vt3 );
+
+  vt2[3] = 1;
+
+  vt3 = vt::max( vt1, vt2 );
+
+  vt4[1] = 1;
+  vt4[2] = 1;
+  vt4[3] = 1;
  
-  BOOST_CHECK( vt3 == vt4 );
+  EXAM_CHECK( vt3 <= vt4 );
+  EXAM_CHECK( vt4 <= vt3 );
 
   vt2.clear();
 
-  vt2.push_back( make_pair( 1, 1 ) );
-  vt2.push_back( make_pair( 2, 2 ) );
+  vt2[1] = 1;
+  vt2[2] = 2;
 
   vt4.clear();
 
   vt3 = vt::max( vt1, vt2 );
 
-  vt4.push_back( make_pair( 1, 1 ) );
-  vt4.push_back( make_pair( 2, 2 ) );
+  vt4[1] = 1;
+  vt4[2] = 2;
 
-  BOOST_CHECK( vt3 == vt4 );
+  EXAM_CHECK( vt3 <= vt4 );
+  EXAM_CHECK( vt4 <= vt3 );
 
-  vt2.push_back( make_pair( 3, 4 ) );
+  vt2[3] = 4;
 
   vt3 = vt::max( vt1, vt2 );
 
-  vt4.push_back( make_pair( 3, 4 ) );
+  vt4[3] = 4;
 
-  BOOST_CHECK( vt3 == vt4 );
+  EXAM_CHECK( vt3 <= vt4 );
+  EXAM_CHECK( vt4 <= vt3 );
+
+  return EXAM_RESULT;
 }
 
-struct vtime_test_suite :
-    public boost::unit_test_framework::test_suite
+int EXAM_IMPL(vtime_operations::gvt_add)
 {
-    vtime_test_suite();
+  {
+    gvtime_type gvt1;
+    gvtime_type gvt2;
+
+    vtime_type vt1;
+    vtime_type vt2;
+
+    vt1[1] = 1;
+    vt1[2] = 1;
+
+    vt2[1] = 1;
+    vt2[2] = 1;
+
+    gvt1[0] = vt1;
+    gvt2[0] = vt2;
+
+    gvt1 += gvt2;
+
+    EXAM_CHECK( gvt1[0][1] == 2 );
+    EXAM_CHECK( gvt1[0][2] == 2 );
+    EXAM_CHECK( gvt1[0][0] == 0 );
+    EXAM_CHECK( gvt1[1][1] == 0 );
+    EXAM_CHECK( gvt1[1][2] == 0 );
+  }
+  {
+    gvtime_type gvt1;
+    gvtime_type gvt2;
+
+    vtime_type vt1;
+    vtime_type vt2;
+
+    vt1[1] = 1;
+    vt1[2] = 1;
+
+    vt2[1] = 1;
+    vt2[2] = 1;
+
+    gvt1[0] = vt1;
+    gvt2[1] = vt2;
+
+    gvt1 += gvt2;
+
+    EXAM_CHECK( gvt1[0][1] == 1 );
+    EXAM_CHECK( gvt1[0][2] == 1 );
+    EXAM_CHECK( gvt1[0][0] == 0 );
+    EXAM_CHECK( gvt1[1][1] == 1 );
+    EXAM_CHECK( gvt1[1][2] == 1 );
+  }
+  {
+    gvtime_type gvt1;
+
+    vtime_type vt1;
+    vtime_type vt2;
+
+    vt1[1] = 1;
+    vt1[2] = 1;
+
+    vt2[1] = 1;
+    vt2[2] = 1;
+
+    gvt1[0] = vt1;
+
+    gvt1 += make_pair( 1, vt2 );
+
+    EXAM_CHECK( gvt1[0][1] == 1 );
+    EXAM_CHECK( gvt1[0][2] == 1 );
+    EXAM_CHECK( gvt1[0][0] == 0 );
+    EXAM_CHECK( gvt1[1][1] == 1 );
+    EXAM_CHECK( gvt1[1][2] == 1 );
+  }
+}
+
+class VTM_handler :
+    public stem::EventHandler
+{
+  public:
+    VTM_handler();
+    VTM_handler( stem::addr_type id );
+    VTM_handler( stem::addr_type id, const char *info );
+    ~VTM_handler();
+
+    void handlerE( const stem::Event_base<VTmess>& );
+    void handlerV( const VTmess& );
+
+    void wait();
+
+    stem::code_type code;
+    oid_type src;    
+    gvtime gvt;
+    group_type grp;
+    std::string mess;
+
+  private:
+    xmt::condition cnd;
+
+    DECLARE_RESPONSE_TABLE( VTM_handler, stem::EventHandler );
 };
 
-vtime_test_suite::vtime_test_suite() :
-    test_suite( "vtime test suite" )
+#define VT_MESS  0x1201
+
+VTM_handler::VTM_handler() :
+    EventHandler()
 {
-  boost::shared_ptr<vtime_operations> vt_op_instance( new vtime_operations() );
-
-  test_case *vt_compare_tc = BOOST_CLASS_TEST_CASE( &vtime_operations::vt_compare, vt_op_instance );
-  test_case *vt_add_tc = BOOST_CLASS_TEST_CASE( &vtime_operations::vt_add, vt_op_instance );
-  test_case *vt_diff_tc = BOOST_CLASS_TEST_CASE( &vtime_operations::vt_diff, vt_op_instance );
-  test_case *vt_max_tc = BOOST_CLASS_TEST_CASE( &vtime_operations::vt_max, vt_op_instance );
-
-  // long_msg_tc->depends_on( init_tc );
-
-  add( vt_compare_tc );
-  add( vt_add_tc );
-  add( vt_diff_tc );
-  add( vt_max_tc );
-  // add( service_tc );
+  cnd.set( false );
 }
 
-test_suite *init_unit_test_suite( int argc, char **argv )
+VTM_handler::VTM_handler( stem::addr_type id ) :
+    EventHandler( id )
 {
-  test_suite *ts = BOOST_TEST_SUITE( "vtime test" );
-  ts->add( new vtime_test_suite() );
+  cnd.set( false );
+}
 
-  return ts;
+VTM_handler::VTM_handler( stem::addr_type id, const char *info ) :
+    EventHandler( id, info )
+{
+  cnd.set( false );
+}
+
+VTM_handler::~VTM_handler()
+{
+  // cnd.wait();
+}
+
+void VTM_handler::handlerE( const stem::Event_base<VTmess>& ev )
+{
+  code = ev.value().code;
+  src = ev.value().src;
+  gvt = ev.value().gvt;
+  grp = ev.value().grp;
+  mess = ev.value().mess;
+
+  PushState( 1 );
+  cnd.set( true );
+}
+
+void VTM_handler::handlerV( const VTmess& m )
+{
+  code = m.code;
+  src = m.src;
+  gvt = m.gvt;
+  grp = m.grp;
+  mess = m.mess;
+
+  PopState();
+  cnd.set( true );
+}
+
+void VTM_handler::wait()
+{
+  cnd.try_wait();
+
+  cnd.set( false );
+}
+
+DEFINE_RESPONSE_TABLE( VTM_handler )
+  EV_Event_base_T_( ST_NULL, VT_MESS, handlerE, VTmess )
+  EV_T_( 1, VT_MESS, handlerV, VTmess )
+END_RESPONSE_TABLE
+
+int EXAM_IMPL(vtime_operations::VTMess_core)
+{
+  VTM_handler h;
+
+  stem::Event_base<VTmess> ev( VT_MESS );
+
+  ev.dest( h.self_id() );
+  ev.value().code = 2;
+  ev.value().src = 3;
+  ev.value().gvt[0][0] = 1;
+  ev.value().gvt[0][1] = 2;
+  ev.value().gvt[1][0] = 3;
+  ev.value().gvt[1][1] = 4;
+  ev.value().grp = 7;
+  ev.value().mess = "data";
+
+  h.Send( ev );
+
+  h.wait();
+
+  EXAM_CHECK( h.code == 2 );
+  EXAM_CHECK( h.src == 3 );
+  EXAM_CHECK( h.gvt[0][0] == 1 );
+  EXAM_CHECK( h.gvt[0][1] == 2 );
+  EXAM_CHECK( h.gvt[1][0] == 3 );
+  EXAM_CHECK( h.gvt[1][1] == 4 );
+  EXAM_CHECK( h.grp == 7 );
+  EXAM_CHECK( h.mess == "data" );
+
+  ev.value().code = 3;
+  ev.value().mess = "more data";
+
+  h.Send( ev );
+
+  h.wait();
+
+  EXAM_CHECK( h.code == 3 );
+  EXAM_CHECK( h.src == 3 );
+  EXAM_CHECK( h.gvt[0][0] == 1 );
+  EXAM_CHECK( h.gvt[0][1] == 2 );
+  EXAM_CHECK( h.gvt[1][0] == 3 );
+  EXAM_CHECK( h.gvt[1][1] == 4 );
+  EXAM_CHECK( h.grp == 7 );
+  EXAM_CHECK( h.mess == "more data" );
+
+  return EXAM_RESULT;
+}
+
+
+int EXAM_DECL(vtime_test_suite);
+
+int EXAM_IMPL(vtime_test_suite)
+{
+  exam::test_suite::test_case_type tc[2];
+
+  exam::test_suite t( "virtual time operations" );
+
+  vtime_operations vt_oper;
+
+  t.add( &vtime_operations::vt_max, vt_oper, "Max",
+         tc[1] = t.add( &vtime_operations::vt_add, vt_oper, "Additions",
+                        tc[0] = t.add( &vtime_operations::vt_compare, vt_oper, "Compare" ) ) );
+  t.add( &vtime_operations::vt_diff, vt_oper, "Differences", tc[0] );
+
+  t.add( &vtime_operations::VTMess_core, vt_oper, "VTmess core transfer", 
+         t.add( &vtime_operations::gvt_add, vt_oper, "Group VT add", tc[1] ) );
+
+  return t.girdle();
+}
+
+int main( int, char ** )
+{
+
+  return vtime_test_suite(0);
 }
