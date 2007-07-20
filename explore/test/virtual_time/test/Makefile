@@ -10,12 +10,13 @@ include ${SRCROOT}/Makefiles/gmake/top.mak
 
 # DEFS += -DUNIT_TEST
 INCLUDES += -I${CoMT_INCLUDE_DIR} -I${BOOST_INCLUDE_DIR} -I..
+DEFS += -D__FIT_EXAM
 
-LDFLAGS += -L${INSTALL_LIB_DIR} -Wl,-rpath=${INSTALL_LIB_DIR}
+LDFLAGS += -L${INSTALL_LIB_DIR} -Wl,-rpath=${INSTALL_LIB_DIR}:${STLPORT_LIB_DIR}
 
-release-shared: PROJECT_LIBS = -lxmt -lsockios -lstem -lboost_regex -lboost_test_utf -lboost_fs
-dbg-shared:     PROJECT_LIBS = -lxmtg -lsockiosg -lstemg -lboost_regexg -lboost_test_utfg -lboost_fsg
-stldbg-shared:  PROJECT_LIBS = -lxmtstlg -lsockiosstlg -lstemstlg -lboost_regexstlg -lboost_test_utfstlg -lboost_fsstlg
+release-shared: PROJECT_LIBS = -lxmt -lsockios -lstem -lboost_regex -lexam -lboost_fs
+dbg-shared:     PROJECT_LIBS = -lxmtg -lsockiosg -lstemg -lboost_regexg -lexamg -lboost_fsg
+stldbg-shared:  PROJECT_LIBS = -lxmtstlg -lsockiosstlg -lstemstlg -lboost_regexstlg -lexamstlg -lboost_fsstlg
 
 LDLIBS = ${PROJECT_LIBS}
 
