@@ -1,11 +1,10 @@
-# -*- Makefile -*- Time-stamp: <07/07/05 09:31:15 ptr>
+# -*- Makefile -*- Time-stamp: <07/07/21 09:01:38 ptr>
 
 SRCROOT := ../../..
 
 include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
 
-# INCLUDES += -I${BOOST_DIR}
 INCLUDES += -I${CoMT_INCLUDE_DIR}
 DEFS += -D__FIT_EXAM
 

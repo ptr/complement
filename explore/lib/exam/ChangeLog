@@ -1,3 +1,11 @@
+2007-07-21  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* suite.h, suite.cc: boost graph removed;
+
+	* ut/exam_test_suite.cc: problem with multiple dependencies resolved.
+
+	* libexam: version 0.2.0
+
 2007-07-17  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* suite.h, suite.cc: was introduced stack of test suites, functions
