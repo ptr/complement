@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/17 09:47:24 ptr>
+// -*- C++ -*- Time-stamp: <07/07/21 09:06:00 ptr>
 
 #ifndef __suite_h
 #define __suite_h
@@ -7,18 +7,15 @@
 #include <sstream>
 #include <map>
 #include <stack>
-#include <boost/graph/adjacency_list.hpp>
 #include <string>
 #include <exception>
+#include <stdexcept>
+#include <list>
+#include <vector>
+#include <algorithm>
 
 #include <mt/xmt.h>
 #include <exam/logger.h>
-
-enum vertex_testcase_t { vertex_testcase };
-
-namespace boost {
-  BOOST_INSTALL_PROPERTY( vertex, testcase );
-} // namespace boost
 
 namespace exam {
 
@@ -159,15 +156,7 @@ class init_exception :
 class test_suite
 {
   private:
-    typedef boost::property<vertex_testcase_t,int> TestCaseProperty;
-    typedef boost::property<boost::vertex_color_t, boost::default_color_type, TestCaseProperty> VColorProperty;
-
-    typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, VColorProperty > graph_t;
-    typedef boost::graph_traits<graph_t>::vertex_iterator vertex_iterator_t;
-
-    typedef boost::graph_traits<graph_t>::vertex_descriptor vertex_t;
-    typedef boost::property_map<graph_t,boost::vertex_color_t>::type vertex_color_map_t;
-    typedef boost::property_map<graph_t,vertex_testcase_t>::type vertex_testcase_map_t;
+    typedef unsigned vertex_t;
 
   public:
     typedef int (*func_type)( test_suite *, int );
@@ -194,12 +183,8 @@ class test_suite
 
     int girdle( test_case_type start );
     int girdle()
-      { return girdle( root ); }
+      { return girdle( 0 ); }
     int run( test_suite *, int count = 0 );
-
-    void run_test_case( vertex_t v );
-    void check_test_case( vertex_t u, vertex_t v );
-    void clean_test_case_state( vertex_t v );
 
     int flags();
     int flags( int );
@@ -216,9 +201,6 @@ class test_suite
       skip = 2
     };
 
-    graph_t g;
-    vertex_t root;
-    vertex_testcase_map_t testcase;
     base_logger *local_logger;
     xmt::mutex _lock_ll;
 
@@ -229,11 +211,19 @@ class test_suite
         std::string name;
     };
 
+    typedef std::pair<vertex_t,vertex_t> edge_t;
+    typedef std::pair<vertex_t,unsigned> weight_t;
     typedef std::map<vertex_t,test_case_collect> test_case_map_type;
+    vertex_t _count;
+    std::list<edge_t> _edges;
+    std::vector<weight_t> _vertices;
     int _last_state;
     test_case_map_type _test;
     base_logger::stat _stat;
     std::string _suite_name;
+
+    void run_test_case( vertex_t v );
+    static bool vertices_compare( weight_t, weight_t );
 
     static int _root_func( test_suite *, int = 0 );
 
@@ -247,8 +237,9 @@ class test_suite
 template <class TC>
 test_suite::test_case_type test_suite::add( int (TC::*f)( test_suite *, int ), TC& instance, const std::string& name )
 {
-  vertex_t v = boost::add_vertex( boost::white_color, g);
-  boost::add_edge( root, v, g );
+  vertex_t v = ++_count;
+  _edges.push_back( std::make_pair( 0, v ) );
+  _vertices.push_back( std::make_pair( v, 1 ) );
   _test[v].tc = detail::make_test_case( f, instance );
   _test[v].state = 0;
   _test[v].name = name;
@@ -260,10 +251,16 @@ test_suite::test_case_type test_suite::add( int (TC::*f)( test_suite *, int ), T
 template <class InputIter>
 test_suite::test_case_type test_suite::add( test_suite::func_type f, const std::string& name, InputIter first, InputIter last )
 {
-  vertex_t v = boost::add_vertex( boost::white_color, g);
+  vertex_t v = ++_count;
+  unsigned weight = 1;
   while ( first != last ) {
-    boost::add_edge( *first++, v, g );
+    if ( *first >= _count ) {
+      throw std::logic_error( "bad test dependency" );
+    }
+    weight += _vertices[*first].second;
+    _edges.push_back( std::make_pair( *first++, v ) );
   }
+  _vertices.push_back( std::make_pair( v, weight ) );
   _test[v].tc = detail::make_test_case( detail::call( f ) );
   _test[v].state = 0;
   _test[v].name = name;
@@ -275,8 +272,12 @@ test_suite::test_case_type test_suite::add( test_suite::func_type f, const std::
 template <class TC>
 test_suite::test_case_type test_suite::add( int (TC::*f)( test_suite *, int ), TC& instance, const std::string& name, test_suite::test_case_type depends )
 {
-  vertex_t v = boost::add_vertex( boost::white_color, g);
-  boost::add_edge( depends, v, g );
+  vertex_t v = ++_count;
+  if ( depends >= _count ) {
+    throw std::logic_error( "bad test dependency" );
+  }
+  _edges.push_back( std::make_pair( depends, v ) );
+  _vertices.push_back( std::make_pair( v, _vertices[depends].second + 1 ) );
   _test[v].tc = detail::make_test_case( f, instance );
   _test[v].state = 0;
   _test[v].name = name;
@@ -288,10 +289,16 @@ test_suite::test_case_type test_suite::add( int (TC::*f)( test_suite *, int ), T
 template <class TC, class InputIter>
 test_suite::test_case_type test_suite::add( int (TC::*f)( test_suite *, int ), TC& instance, const std::string& name, InputIter first, InputIter last )
 {
-  vertex_t v = boost::add_vertex( boost::white_color, g);
+  vertex_t v = ++_count;
+  unsigned weight = 1;
   while ( first != last ) {
-    boost::add_edge( *first++, v, g );
+    if ( *first >= _count ) {
+      throw std::logic_error( "bad test dependency" );
+    }
+    weight += _vertices[*first].second;
+    _edges.push_back( std::make_pair( *first++, v ) );
   }
+  _vertices.push_back( std::make_pair( v, weight ) );
   _test[v].tc = detail::make_test_case( f, instance );
   _test[v].state = 0;
   _test[v].name = name;

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/17 00:38:11 ptr>
+// -*- C++ -*- Time-stamp: <07/07/21 09:01:26 ptr>
 
 #include "exam_test_suite.h"
 
@@ -220,15 +220,15 @@ int EXAM_IMPL(exam_basic_test::multiple_dep_complex)
   tcx[1] = t.add( func_good2, "function 2 good", tc, tc + 2 );
   t.add( func_good3, "function 3 good", tcx, tcx + 2 ); //  <-- problem
 
-  logger.flags( exam::base_logger::verbose );
+  // logger.flags( exam::base_logger::verbose );
   t.girdle();
-  logger.flags( 0 );
+  // logger.flags( 0 );
 
-  // EXAM_REQUIRE( buff.str() == r9 );
+  EXAM_REQUIRE( buff.str() == r9 );
 
-  std::cerr << "%%%\n";
-  std::cerr << buff.str() << std::endl;
-  std::cerr << "%%%\n";
+  // std::cerr << "%%%\n";
+  // std::cerr << buff.str() << std::endl;
+  // std::cerr << "%%%\n";
 
   return EXAM_RESULT;
 }
@@ -266,16 +266,16 @@ dummy_test.cc:25: pass: true\n\
 dummy_test.cc:16: fail: false\n\
 dummy_test.cc:17: pass: true\n\
   FAIL member function fail\n\
-  SKIP function fail\n\
 dummy_test.cc:33: pass: true\n\
+  SKIP function fail\n\
 *** FAIL exam self test, fail function (+2-1~1/4) ***\n";
 
 const std::string exam_basic_test::r6 = "\
   PASS member function good\n\
 dummy_test.cc:16: fail: false\n\
   FAIL member function fail\n\
-  SKIP function fail\n\
   PASS function good\n\
+  SKIP function fail\n\
 *** FAIL exam self test, fail function (+2-1~1/4) ***\n";
 
 const std::string exam_basic_test::r7 = "\
@@ -299,6 +299,7 @@ dummy_test.cc:5: fail: false\n\
   FAIL function fail\n\
 dummy_test.cc:16: fail: false\n\
   FAIL member function fail\n\
+  SKIP function 3 good\n\
 *** FAIL exam self test, fail function (+3-2~1/6) ***\n";
 
 int EXAM_IMPL(exam_self_test)
@@ -312,7 +313,7 @@ int EXAM_IMPL(exam_self_test)
   t.add( &exam_basic_test::trace, exam_basic, "trace flags test", d );
   t.add( &exam_basic_test::dep_test_suite, exam_basic, "test suites grouping", d );
   exam::test_suite::test_case_type d2 = t.add( &exam_basic_test::multiple_dep, exam_basic, "multiple dependencies", d );
-  // t.add( &exam_basic_test::multiple_dep_complex, exam_basic, "complex multiple dependencies", d2 );
+  t.add( &exam_basic_test::multiple_dep_complex, exam_basic, "complex multiple dependencies", d2 );
 
   return t.girdle();
 }

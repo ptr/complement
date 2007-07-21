@@ -1,11 +1,12 @@
-// -*- C++ -*- Time-stamp: <07/07/17 10:03:02 ptr>
+// -*- C++ -*- Time-stamp: <07/07/21 09:13:17 ptr>
 
 #include <exam/suite.h>
-#include <boost/graph/breadth_first_search.hpp>
 #include <stack>
 
 #include <cstdio>
 #include <iostream>
+#include <algorithm>
+#include <functional>
 
 namespace exam {
 
@@ -14,84 +15,6 @@ using namespace boost;
 using namespace detail;
 using namespace xmt;
 
-namespace detail {
-
-template <class Tag>
-struct vertex_recorder :
-        public base_visitor<vertex_recorder<Tag> >
-{
-    typedef Tag event_filter;
-
-    vertex_recorder(test_suite& ts) :
-        _suite(ts)
-      { }
-
-    template <class Vertex, class Graph>
-    void operator()(Vertex v, const Graph& g)
-      { _suite.run_test_case( v ); }
-
-    test_suite& _suite;
-};
-
-template <class Tag>
-vertex_recorder<Tag> record_vertexes(test_suite& ts, Tag)
-{ return vertex_recorder<Tag>(ts); }
-
-template <class Tag>
-struct skip_recorder :
-        public base_visitor<skip_recorder<Tag> >
-{
-    typedef Tag event_filter;
-
-    skip_recorder(test_suite& ts) :
-        _suite(ts)
-      { }
-
-    template <class Edge, class Graph>
-    void operator()(Edge e, const Graph& g)
-      { 
-        // typename graph_traits<Graph>::vertex_descriptor u = boost::source( e, g );
-        // typename graph_traits<Graph>::vertex_descriptor v = boost::target( e, g );
-        // boost::out_edges( v, g );
-        // for () {
-        _suite.check_test_case( boost::source( e, g ), boost::target( e, g ) );
-        // }
-      }
-
-    test_suite& _suite;
-};
-
-template <class Tag>
-skip_recorder<Tag> record_skip(test_suite& ts, Tag)
-{ return skip_recorder<Tag>(ts); }
-
-template <class Tag>
-struct white_recorder :
-        public base_visitor<white_recorder<Tag> >
-{
-    typedef Tag event_filter;
-
-    white_recorder(test_suite& ts) :
-        _suite(ts)
-      { }
-
-    template <class Vertex, class Graph>
-    void operator()(Vertex v, const Graph& g)
-      {
-        // std::cerr << "On vertex " << v << std::endl;
-        // boost::put( boost::vertex_color, g, v, white_color );
-        _suite.clean_test_case_state( v );
-      }
-
-    test_suite& _suite;
-};
-
-template <class Tag>
-white_recorder<Tag> record_white(test_suite& ts, Tag)
-{ return white_recorder<Tag>(ts); }
-
-
-} // namespace detail
 
 int EXAM_IMPL(test_suite::_root_func)
 {
@@ -101,28 +24,28 @@ int EXAM_IMPL(test_suite::_root_func)
 }
 
 test_suite::test_suite( const string& name ) :
-   root( add_vertex( white_color, g ) ),
-   _last_state( 0 ),
-   _suite_name( name ),
-   local_logger( logger )
+    _count(0),
+    _last_state( 0 ),
+    _suite_name( name ),
+    local_logger( logger )
 {
-  testcase = get( vertex_testcase, g );
-  _test[root].tc = detail::make_test_case( detail::call( _root_func ) );
-  _test[root].state = 0;
+  _vertices.push_back( std::make_pair( 0, 0 ) );
+  _test[0].tc = detail::make_test_case( detail::call( _root_func ) );
+  _test[0].state = 0;
 
   scoped_lock lk( _lock_stack );
   _stack.push( this );
 }
 
 test_suite::test_suite( const char *name ) :
-   root( add_vertex( white_color, g ) ),
-   _last_state( 0 ),
-   _suite_name( name ),
-   local_logger( logger )
+    _count(0),
+    _last_state( 0 ),
+    _suite_name( name ),
+    local_logger( logger )
 {
-  testcase = get( vertex_testcase, g );
-  _test[root].tc = detail::make_test_case( detail::call( _root_func ) );
-  _test[root].state = 0;
+  _vertices.push_back( std::make_pair( 0, 0 ) );
+  _test[0].tc = detail::make_test_case( detail::call( _root_func ) );
+  _test[0].state = 0;
 
   scoped_lock lk( _lock_stack );
   _stack.push( this );
@@ -139,28 +62,38 @@ test_suite::~test_suite()
   }
 }
 
+bool test_suite::vertices_compare( test_suite::weight_t l, test_suite::weight_t r )
+{
+  return l.second < r.second;
+}
+
 int test_suite::girdle( test_suite::test_case_type start )
 {
-  stack<vertex_t> buffer;
-  vertex_color_map_t color = get( vertex_color, g );
+  if ( start > _count ) {
+    throw std::logic_error( "bad start point" );
+  }
 
-  // detail::white_recorder<on_initialize_vertex> vis( *this );
-  // 
-  // vertex_iterator_t i, i_end;
+  sort( _vertices.begin(), _vertices.end(), vertices_compare );
 
-  // for ( tie(i, i_end) = vertices(g); i != i_end; ++i ) {
-  //   // vis.initialize_vertex( *i, g );
-  //   put( color, *i, white_color );
-  // }
+  vector<weight_t>::iterator from;
 
   _stat = base_logger::stat();
+  for( vector<weight_t>::iterator i = _vertices.begin(); i != _vertices.end(); ++i ) {
+    if ( i->first == start ) {
+      from = i;
+    }
+    _test[i->first].state = 0;
+  }
   local_logger->begin_ts();
-  breadth_first_search( g, start, buffer,
-                        make_bfs_visitor(
-                          make_pair( record_white(*this,on_initialize_vertex()),
-                            make_pair( record_vertexes(*this,on_discover_vertex()),
-                                       record_skip(*this,on_examine_edge()) ) ) ),
-                        color );
+  for( vector<weight_t>::iterator i = from; i != _vertices.end(); ++i ) {
+    for( std::list<edge_t>::const_iterator j = _edges.begin(); j != _edges.end(); ++j ) {
+      if ( j->second == i->first && _test[j->first].state != 0 ) {
+        _test[j->second].state = skip;
+      }
+    }
+    run_test_case( i->first );
+  }
+  
   local_logger->end_ts();
   local_logger->result( _stat, _suite_name );
 
@@ -169,8 +102,9 @@ int test_suite::girdle( test_suite::test_case_type start )
 
 test_suite::test_case_type test_suite::add( test_suite::func_type f, const string& name )
 {
-  vertex_t v = add_vertex( white_color, g);
-  add_edge( root, v, g );
+  vertex_t v = ++_count;
+  _edges.push_back( std::make_pair( 0, v ) );
+  _vertices.push_back( std::make_pair( v, 1 ) );
   _test[v].tc = detail::make_test_case( detail::call( f ) );
   _test[v].state = 0;
   _test[v].name = name;
@@ -181,8 +115,12 @@ test_suite::test_case_type test_suite::add( test_suite::func_type f, const strin
 
 test_suite::test_case_type test_suite::add( test_suite::func_type f, const string& name, test_suite::test_case_type depends )
 {
-  vertex_t v = add_vertex( white_color, g);
-  add_edge( depends, v, g );
+  vertex_t v = ++_count;
+  if ( depends >= _count ) {
+    throw std::logic_error( "bad test dependency" );
+  }
+  _edges.push_back( std::make_pair( depends, v ) );
+  _vertices.push_back( std::make_pair( v, _vertices[depends].second + 1 ) );
   _test[v].tc = detail::make_test_case( detail::call( f ) );
   _test[v].state = 0;
   _test[v].name = name;
@@ -300,21 +238,9 @@ void test_suite::run_test_case( test_suite::vertex_t v )
   }
 }
 
-void test_suite::check_test_case( test_suite::vertex_t u, test_suite::vertex_t v )
-{
-  if ( _test[u].state != 0 ) {
-    _test[v].state = skip;
-  }
-}
-
-void test_suite::clean_test_case_state( vertex_t v )
-{
-  _test[v].state = 0;
-}
-
 int test_suite::run( test_suite *, int )
 {
-  return girdle( root );
+  return girdle( 0 );
 }
 
 
