@@ -89,7 +89,8 @@ int EXAM_IMPL(mt_test::barrier2)
   xmt::Thread t1( thread2_entry_call, &b );
   xmt::Thread t2( thread2_entry_call, &b );
 
-  EXAM_CHECK( (t2.join().iword + t1.join().iword) == 2 );
+  EXAM_CHECK( t2.join().iword == 1 );
+  EXAM_CHECK( t1.join().iword == 1 );
 
   return EXAM_RESULT;
 }
