@@ -11,7 +11,6 @@
 namespace exam {
 
 using namespace std;
-using namespace boost;
 using namespace detail;
 using namespace xmt;
 
