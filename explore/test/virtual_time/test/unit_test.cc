@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/20 09:26:15 ptr>
+// -*- C++ -*- Time-stamp: <07/07/23 23:46:02 ptr>
 
 #include <exam/suite.h>
 
@@ -22,6 +22,8 @@ struct vtime_operations
   int EXAM_DECL(gvt_add);
 
   int EXAM_DECL(VTMess_core);
+
+  int EXAM_DECL(vt_object);
 };
 
 int EXAM_IMPL(vtime_operations::vt_compare)
@@ -303,6 +305,8 @@ int EXAM_IMPL(vtime_operations::gvt_add)
     EXAM_CHECK( gvt1[1][1] == 1 );
     EXAM_CHECK( gvt1[1][2] == 1 );
   }
+
+  return EXAM_RESULT;
 }
 
 class VTM_handler :
@@ -440,12 +444,94 @@ int EXAM_IMPL(vtime_operations::VTMess_core)
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(vtime_operations::vt_object)
+{
+  vtime_obj_rec ob;
+
+  const group_type gr0 = 0;
+  const group_type gr1 = 0;
+  const oid_type obj0 = 0;
+  const oid_type obj1 = 1;
+  const oid_type obj2 = 2;
+
+  ob.add_group( gr0 );
+  ob.add_group_member( gr0, obj0 );
+  ob.add_group_member( gr0, obj1 );
+  ob.add_group_member( gr0, obj2 );
+
+  // gvtime gvt;
+  // gvt[gr0][obj1] = 1;
+
+  VTmess mess;
+  VTmess mess_bad;
+
+  mess_bad.code = mess.code = 1;
+  mess_bad.src =  mess.src = obj1;
+  mess_bad.gvt[gr0][obj1] = mess.gvt[gr0][obj1] = 1;
+  mess_bad.grp = mess.grp = gr0;
+  mess_bad.mess = mess.mess = "data";
+
+  EXAM_CHECK( ob.deliver(mess) ); // ack
+
+  ++mess.gvt[gr0][obj1];
+
+  EXAM_CHECK( ob.deliver(mess) ); // ack
+
+  ++mess.gvt[gr0][obj1];
+
+  try {
+    EXAM_CHECK( !ob.deliver(mess_bad) ); // nac: too old (out of order)
+    EXAM_ERROR( "exception expected" );
+  }
+  catch ( const out_of_range& ) {
+  }
+
+  mess_bad.gvt[gr0][obj1] = mess.gvt[gr0][obj1] + 1;
+
+  EXAM_CHECK( !ob.deliver(mess_bad) ); // nac: too new (out of order)
+
+  EXAM_CHECK( ob.deliver(mess) ); // ack
+
+  mess_bad.gvt[gr0][obj1] = ++mess.gvt[gr0][obj1];
+
+  // ----
+
+  VTmess mess2;
+
+  mess2.code = 1;
+  mess2.src = obj2;
+  mess2.gvt[gr0][obj2] = 1;
+  mess2.grp = gr0;
+  mess2.mess = "data";
+
+  mess_bad.gvt[gr0][obj2] = 1;
+
+  EXAM_CHECK( !ob.deliver(mess_bad) ); // nac: obj0 don't seen mess from obj2, but obj1 seen mess from obj2
+
+  EXAM_CHECK( ob.deliver(mess2) ); // ack: obj0 see first mess from obj2
+
+  ++mess2.gvt[gr0][obj2];
+
+  EXAM_CHECK( ob.deliver(mess_bad) ); // ack: now obj0 and obj1 sync dependency from obj2
+
+  mess_bad.gvt[gr0][obj1] = ++mess.gvt[gr0][obj1];
+  mess.gvt[gr0][obj2] = 1;
+
+  // ----
+
+  ob.add_group( gr0 );
+  ob.add_group_member( gr1, obj0 );
+  ob.add_group_member( gr1, obj1 );
+  ob.add_group_member( gr1, obj2 );
+
+  return EXAM_RESULT;
+}
 
 int EXAM_DECL(vtime_test_suite);
 
 int EXAM_IMPL(vtime_test_suite)
 {
-  exam::test_suite::test_case_type tc[2];
+  exam::test_suite::test_case_type tc[3];
 
   exam::test_suite t( "virtual time operations" );
 
@@ -457,7 +543,9 @@ int EXAM_IMPL(vtime_test_suite)
   t.add( &vtime_operations::vt_diff, vt_oper, "Differences", tc[0] );
 
   t.add( &vtime_operations::VTMess_core, vt_oper, "VTmess core transfer", 
-         t.add( &vtime_operations::gvt_add, vt_oper, "Group VT add", tc[1] ) );
+         tc[2] = t.add( &vtime_operations::gvt_add, vt_oper, "Group VT add", tc[1] ) );
+
+  t.add( &vtime_operations::vt_object, vt_oper, "VT order", tc[2] );
 
   return t.girdle();
 }

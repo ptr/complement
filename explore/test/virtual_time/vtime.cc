@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/19 23:11:01 ptr>
+// -*- C++ -*- Time-stamp: <07/07/23 20:32:22 ptr>
 
 #include "vtime.h"
 
@@ -212,6 +212,15 @@ vtime_type max( const vtime_type& l, const vtime_type& r )
   return tmp;
 }
 
+vtime_type& sup( vtime_type& l, const vtime_type& r )
+{
+  for ( vtime_type::const_iterator i = r.begin(); i != r.end(); ++i ) {
+    l[i->first] = std::max( l[i->first], i->second );
+  }
+  return l;
+}
+
+
 // template <>
 vtime max( const vtime& l, const vtime& r )
 {
@@ -221,6 +230,14 @@ vtime max( const vtime& l, const vtime& r )
     tmp[i->first] = std::max( tmp[i->first], i->second );
   }
   return tmp;
+}
+
+vtime& sup( vtime& l, const vtime& r )
+{
+  for ( vtime_type::const_iterator i = r.vt.begin(); i != r.vt.end(); ++i ) {
+    l[i->first] = std::max( l[i->first], i->second );
+  }
+  return l;
 }
 
 vtime& vtime::operator +=( const vtime_type::value_type& t )
@@ -292,27 +309,32 @@ bool vtime_obj_rec::deliver( const VTmess& m )
   // cout << ev.value().gvt.gvt << endl;
 
   if ( order_correct( m ) ) {
-    cout << "Order correct" << endl;
     lvt[m.src] += m.gvt.gvt;
     lvt[m.src][m.grp][m.src] = vt.gvt[m.grp][m.src] + 1;
-    vt.gvt[m.grp] = vt::max( vt.gvt[m.grp], lvt[m.src][m.grp] );
-    cout << vt.gvt << endl;
+    sup( vt.gvt[m.grp], lvt[m.src][m.grp] );
+    // cout << vt.gvt << endl;
     return true;
   }
 
-  cout << "Order not correct" << endl;
   return false;
 }
 
 bool vtime_obj_rec::order_correct( const VTmess& m )
 {
+  if ( groups.find( m.grp ) == groups.end() ) {
+    throw domain_error( "VT object not member of group" );
+  }
+
   gvtime gvt( m.gvt );
 
   if ( vt.gvt[m.grp][m.src] + 1 != gvt[m.grp][m.src] ) {
-    cerr << "1" << endl;
-    cerr << vt.gvt[m.grp][m.src] << "\n"
-         << gvt[m.grp][m.src]
-         << endl;
+    // cerr << "1" << endl;
+    // cerr << vt.gvt[m.grp][m.src] << "\n"
+    //      << gvt[m.grp][m.src]
+    //      << endl;
+    if (  vt.gvt[m.grp][m.src] + 1 > gvt[m.grp][m.src] ) {
+      throw out_of_range( "duplicate or wrong VT message" );
+    }
     return false;
   }
 
