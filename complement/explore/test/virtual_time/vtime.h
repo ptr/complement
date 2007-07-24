@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/20 09:29:00 ptr>
+// -*- C++ -*- Time-stamp: <07/07/23 21:33:09 ptr>
 
 #ifndef __vtime_h
 #define __vtime_h
@@ -7,6 +7,7 @@
 #include <list>
 #include <vector>
 #include <hash_map>
+#include <hash_set>
 #include <iterator>
 
 #include <istream>
@@ -34,6 +35,7 @@ vtime_type operator +( const vtime_type& l, const vtime_type& r );
 vtime_type& operator +=( vtime_type& l, const vtime_type& r );
 
 vtime_type max( const vtime_type& l, const vtime_type& r );
+vtime_type& sup( vtime_type& l, const vtime_type& r );
 
 struct vtime :
     public stem::__pack_base
@@ -90,6 +92,7 @@ struct vtime :
 
 
 vtime max( const vtime& l, const vtime& r );
+vtime& sup( vtime& l, const vtime& r );
 
 // typedef std::pair<group_type, vtime> vtime_group_type;
 // typedef std::list<vtime_group_type> gvtime_type;
@@ -159,11 +162,11 @@ class vtime_obj_rec
 {
   public:
 
-    typedef std::list<group_type> groups_container_type;
+    typedef std::hash_set<group_type> groups_container_type;
     typedef std::hash_map<oid_type, gvtime_type> delta_vtime_type;
 
     void add_group( group_type g )
-      { groups.push_back( g ); }
+      { groups.insert(g); }
 
     void add_group_member( group_type g, oid_type p )
       { vt[g][p]; }
