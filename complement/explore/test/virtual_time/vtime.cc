@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/23 20:32:22 ptr>
+// -*- C++ -*- Time-stamp: <07/07/25 10:22:27 ptr>
 
 #include "vtime.h"
 
@@ -319,6 +319,23 @@ bool vtime_obj_rec::deliver( const VTmess& m )
   return false;
 }
 
+bool vtime_obj_rec::deliver_delayed( const VTmess& m )
+{
+  // cout << self_id() << " " << ev.value().mess << endl;
+
+  // cout << ev.value().gvt.gvt << endl;
+
+  if ( order_correct_delayed( m ) ) {
+    lvt[m.src] += m.gvt.gvt;
+    lvt[m.src][m.grp][m.src] = vt.gvt[m.grp][m.src] + 1;
+    sup( vt.gvt[m.grp], lvt[m.src][m.grp] );
+    // cout << vt.gvt << endl;
+    return true;
+  }
+
+  return false;
+}
+
 bool vtime_obj_rec::order_correct( const VTmess& m )
 {
   if ( groups.find( m.grp ) == groups.end() ) {
@@ -327,62 +344,115 @@ bool vtime_obj_rec::order_correct( const VTmess& m )
 
   gvtime gvt( m.gvt );
 
-  if ( vt.gvt[m.grp][m.src] + 1 != gvt[m.grp][m.src] ) {
+  if ( (vt.gvt[m.grp][m.src] + 1) != gvt[m.grp][m.src] ) {
     // cerr << "1" << endl;
     // cerr << vt.gvt[m.grp][m.src] << "\n"
     //      << gvt[m.grp][m.src]
     //      << endl;
-    if (  vt.gvt[m.grp][m.src] + 1 > gvt[m.grp][m.src] ) {
+    if ( (vt.gvt[m.grp][m.src] + 1) > gvt[m.grp][m.src] ) {
       throw out_of_range( "duplicate or wrong VT message" );
     }
     return false;
   }
 
   vtime xvt = lvt[m.src][m.grp] + gvt[m.grp];
-  xvt[m.src] = 0;
+  xvt[m.src] = 0; // force exclude message originator, it checked above
 
   if ( !(xvt <= vt[m.grp]) ) {
-    cerr << "2" << endl;
-    cerr << xvt << "\n\n"
-         << vt[m.grp] << endl;
+    // cerr << "2" << endl;
+    // cerr << xvt << "\n\n" << vt[m.grp] << endl;
     return false;
   }
 
+  // check side casuality (via groups other then message's group)
   for ( groups_container_type::const_iterator l = groups.begin(); l != groups.end(); ++l ) {
-    if ( *l != m.grp ) {
-      xvt = lvt[m.src][*l] + gvt[*l];
-      if ( !(xvt <= vt[*l]) ) {
-        cerr << "3" << endl;
-        cerr << "group " << *l << xvt << "\n\n"
-             << vt[*l] << endl;
-        return false;
-      }
+    if ( (*l != m.grp) && !((lvt[m.src][*l] + gvt[*l]) <= vt[*l]) ) {
+      // cerr << "3" << endl;
+      // cerr << "group " << *l << xvt << "\n\n" << vt[*l] << endl;
+      return false;
     }
   }
 
   return true;
 }
 
-void VTDispatcher::VTDispatch( const VTmess& m )
+bool vtime_obj_rec::order_correct_delayed( const VTmess& m )
 {
-  gid_map_type::const_iterator g = grmap.find( m.grp );
-  if ( g != grmap.end() ) {
-    for ( std::list<oid_type>::const_iterator o = g->second.begin(); o != g->second.end(); ++o ) {
-      vt_map_type::iterator i = vtmap.find( *o );
-      if ( i != vtmap.end() ) {
-        if ( i->second.deliver( m ) ) {
-          stem::Event ev( m.code );
-          ev.dest(i->first);
-          ev.value() = m.mess;
-          Send( ev );
-        }
+  gvtime gvt( m.gvt );
+
+  if ( (vt.gvt[m.grp][m.src] + 1) != gvt[m.grp][m.src] ) {
+    return false;
+  }
+
+  vtime xvt = lvt[m.src][m.grp] + gvt[m.grp];
+  xvt[m.src] = 0; // force exclude message originator, it checked above
+
+  if ( !(xvt <= vt[m.grp]) ) {
+    return false;
+  }
+
+  // check side casuality (via groups other then message's group)
+  for ( groups_container_type::const_iterator l = groups.begin(); l != groups.end(); ++l ) {
+    if ( (*l != m.grp) && !((lvt[m.src][*l] + gvt[*l]) <= vt[*l]) ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void VTDispatcher::VTDispatch( const stem::Event_base<VTmess>& m )
+{
+  pair<gid_map_type::const_iterator,gid_map_type::const_iterator> range = grmap.equal_range( m.value().grp );
+
+  for ( gid_map_type::const_iterator o = range.first; o != range.second; ++o ) {
+    vt_map_type::iterator i = vtmap.find( o->second );
+    if ( i != vtmap.end() || i->first == m.src() ) { // not for nobody and not for self
+      continue;
+    }
+    try {
+      if ( i->second.deliver( m.value() ) ) {
+        stem::Event ev( m.value().code );
+        ev.dest(i->first);
+        ev.src(m.src());
+        ev.value() = m.value().mess;
+        Forward( ev );
+        bool more;
+        do {
+          more = false;
+          for ( vtime_obj_rec::dpool_t::iterator j = i->second.dpool.begin(); j != i->second.dpool.end(); ) {
+            if ( i->second.deliver_delayed( j->second->value() ) ) {
+              stem::Event evd( j->second->value().code );
+              evd.dest(i->first);
+              ev.src(m.src());
+              evd.value() = j->second->value().mess;
+              Forward( evd );
+              delete j->second;
+              i->second.dpool.erase( j++ );
+              more = true;
+            } else {
+              ++j;
+            }
+          }
+        } while ( more );
+      } else {
+        i->second.dpool.push_back( make_pair( 0, new Event_base<VTmess>(m) ) ); // 0 should be timestamp
       }
+    }
+    catch ( const out_of_range& ) {
+    }
+    catch ( const domain_error& ) {
     }
   }
 }
 
+void VTDispatcher::VTSend( const stem::Event& e )
+{
+}
+
 DEFINE_RESPONSE_TABLE( VTDispatcher )
-  EV_T_( ST_NULL, MESS, VTDispatch, VTmess )
+  // EV_T_( ST_NULL, MESS, VTDispatch, VTmess )
+  EV_Event_base_T_( ST_NULL, MESS, VTDispatch, VTmess )
 END_RESPONSE_TABLE
 
 char *Init_buf[128];
