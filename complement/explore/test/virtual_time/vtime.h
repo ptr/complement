@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/23 21:33:09 ptr>
+// -*- C++ -*- Time-stamp: <07/07/25 09:07:25 ptr>
 
 #ifndef __vtime_h
 #define __vtime_h
@@ -168,19 +168,25 @@ class vtime_obj_rec
     void add_group( group_type g )
       { groups.insert(g); }
 
-    void add_group_member( group_type g, oid_type p )
-      { vt[g][p]; }
+    // void add_group_member( group_type g, oid_type p )
+    //   { vt[g][p]; }
 
     bool deliver( const VTmess& ev );
+    bool deliver_delayed( const VTmess& ev );
 
     stem::addr_type addr; // stem address of object
     delta_vtime_type lvt; // last seen VT of neighbours
     gvtime vt;            // VT of object
     groups_container_type groups; // member of groups
     // delay pool should be here
+    typedef std::pair<int,stem::Event_base<VTmess>*> delay_item_t;
+    typedef std::list<delay_item_t> dpool_t;
+
+    dpool_t dpool;
 
   private:
     bool order_correct( const VTmess& );
+    bool order_correct_delayed( const VTmess& );
 };
 
 class VTDispatcher :
@@ -194,13 +200,13 @@ class VTDispatcher :
         stem::EventHandler( id )
       { }
 
-    void VTDispatch( const VTmess& );
+    void VTDispatch( const stem::Event_base<VTmess>& );
 
     void VTSend( const stem::Event& e );
 
   private:
     typedef std::hash_map<oid_type, vtime_obj_rec> vt_map_type;
-    typedef std::hash_map<group_type, std::list<oid_type> > gid_map_type;
+    typedef std::hash_multimap<group_type, oid_type> gid_map_type;
     // oid_type map_gid( group_type );
     // gid_type -> (oid_type, oid_type, ...)
 
