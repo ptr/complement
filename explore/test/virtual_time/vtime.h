@@ -164,6 +164,7 @@ class vtime_obj_rec
 
     typedef std::hash_set<group_type> groups_container_type;
     typedef std::hash_map<oid_type, gvtime_type> delta_vtime_type;
+    typedef std::hash_map<group_type, gvtime_type> snd_delta_vtime_t;
 
     void add_group( group_type g )
       { groups.insert(g); }
@@ -174,10 +175,15 @@ class vtime_obj_rec
     bool deliver( const VTmess& ev );
     bool deliver_delayed( const VTmess& ev );
 
-    stem::addr_type addr; // stem address of object
-    delta_vtime_type lvt; // last seen VT of neighbours
-    gvtime vt;            // VT of object
+    stem::addr_type addr;  // stem address of object
+    delta_vtime_type lvt;  // last recieve VT from neighbours
+    snd_delta_vtime_t svt; // last send VT to neighbours
+    gvtime vt;             // VT of object
+
+  private:
     groups_container_type groups; // member of groups
+
+  public:
     // delay pool should be here
     typedef std::pair<int,stem::Event_base<VTmess>*> delay_item_t;
     typedef std::list<delay_item_t> dpool_t;
@@ -202,7 +208,8 @@ class VTDispatcher :
 
     void VTDispatch( const stem::Event_base<VTmess>& );
 
-    void VTSend( const stem::Event& e );
+    void VTSend( const stem::Event& e, group_type );
+    void Subscribe( stem::addr_type, oid_type, group_type );
 
   private:
     typedef std::hash_map<oid_type, vtime_obj_rec> vt_map_type;
@@ -211,6 +218,8 @@ class VTDispatcher :
     // gid_type -> (oid_type, oid_type, ...)
 
     // in our case we can use gid = hi bits | oid
+
+    void VTDispatch_( const stem::Event_base<VTmess>&, const std::pair<gid_map_type::const_iterator,gid_map_type::const_iterator>& );
     
     vt_map_type vtmap;
     gid_map_type grmap;

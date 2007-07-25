@@ -24,6 +24,8 @@ struct vtime_operations
   int EXAM_DECL(VTMess_core);
 
   int EXAM_DECL(vt_object);
+
+  int EXAM_DECL(VTDispatch);
 };
 
 int EXAM_IMPL(vtime_operations::vt_compare)
@@ -622,6 +624,95 @@ int EXAM_IMPL(vtime_operations::vt_object)
 
   return EXAM_RESULT;
 }
+
+
+class Dummy :
+    public stem::EventHandler
+{
+  public:
+    Dummy();
+    Dummy( stem::addr_type id );
+    Dummy( stem::addr_type id, const char *info );
+    ~Dummy();
+
+    void handler( const stem::Event& );
+
+    void wait();
+    std::string msg;
+
+  private:
+    xmt::condition cnd;
+
+    DECLARE_RESPONSE_TABLE( Dummy, stem::EventHandler );
+};
+
+#define VT_MESS2  0x1202
+
+Dummy::Dummy() :
+    EventHandler()
+{
+  cnd.set( false );
+}
+
+Dummy::Dummy( stem::addr_type id ) :
+    EventHandler( id )
+{
+  cnd.set( false );
+}
+
+Dummy::Dummy( stem::addr_type id, const char *info ) :
+    EventHandler( id, info )
+{
+  cnd.set( false );
+}
+
+Dummy::~Dummy()
+{
+  // cnd.wait();
+}
+
+void Dummy::handler( const stem::Event& ev )
+{
+  msg = ev.value();
+
+  cnd.set( true );
+}
+
+void Dummy::wait()
+{
+  cnd.try_wait();
+
+  cnd.set( false );
+}
+
+DEFINE_RESPONSE_TABLE( Dummy )
+  EV_EDS( ST_NULL, VT_MESS2, handler )
+END_RESPONSE_TABLE
+
+int EXAM_IMPL(vtime_operations::VTDispatch)
+{
+  vt::VTDispatcher dsp;
+  Dummy dummy1;
+  Dummy dummy2;
+
+  dsp.Subscribe( dummy1.self_id(), 1, 0 );
+  dsp.Subscribe( dummy2.self_id(), 2, 0 );
+
+  stem::Event ev( VT_MESS2 );
+  ev.src( dummy1.self_id() );
+
+  ev.value() = "hello";
+
+  dsp.VTSend( ev, 0 );
+
+  dummy2.wait();
+
+  EXAM_CHECK( dummy2.msg == "hello" );
+  EXAM_CHECK( dummy1.msg == "" );
+
+  return EXAM_RESULT;
+}
+
 
 int EXAM_DECL(vtime_test_suite);
 
