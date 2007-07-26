@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/25 10:22:27 ptr>
+// -*- C++ -*- Time-stamp: <07/07/25 23:38:25 ptr>
 
 #include "vtime.h"
 
@@ -201,6 +201,7 @@ vtime_type& operator +=( vtime_type& l, const vtime_type& r )
   return l;
 }
 
+#if 0
 // template <>
 vtime_type max( const vtime_type& l, const vtime_type& r )
 {
@@ -211,6 +212,7 @@ vtime_type max( const vtime_type& l, const vtime_type& r )
   }
   return tmp;
 }
+#endif
 
 vtime_type& sup( vtime_type& l, const vtime_type& r )
 {
@@ -221,6 +223,7 @@ vtime_type& sup( vtime_type& l, const vtime_type& r )
 }
 
 
+#if 0
 // template <>
 vtime max( const vtime& l, const vtime& r )
 {
@@ -231,6 +234,7 @@ vtime max( const vtime& l, const vtime& r )
   }
   return tmp;
 }
+#endif
 
 vtime& sup( vtime& l, const vtime& r )
 {
@@ -302,12 +306,10 @@ gvtime& gvtime::operator +=( const gvtime& t )
   return *this;
 }
 
+namespace detail {
+
 bool vtime_obj_rec::deliver( const VTmess& m )
 {
-  // cout << self_id() << " " << ev.value().mess << endl;
-
-  // cout << ev.value().gvt.gvt << endl;
-
   if ( order_correct( m ) ) {
     lvt[m.src] += m.gvt.gvt;
     lvt[m.src][m.grp][m.src] = vt.gvt[m.grp][m.src] + 1;
@@ -321,10 +323,6 @@ bool vtime_obj_rec::deliver( const VTmess& m )
 
 bool vtime_obj_rec::deliver_delayed( const VTmess& m )
 {
-  // cout << self_id() << " " << ev.value().mess << endl;
-
-  // cout << ev.value().gvt.gvt << endl;
-
   if ( order_correct_delayed( m ) ) {
     lvt[m.src] += m.gvt.gvt;
     lvt[m.src][m.grp][m.src] = vt.gvt[m.grp][m.src] + 1;
@@ -401,6 +399,8 @@ bool vtime_obj_rec::order_correct_delayed( const VTmess& m )
   return true;
 }
 
+} // namespace detail
+
 void VTDispatcher::VTDispatch( const stem::Event_base<VTmess>& m )
 {
   VTDispatch_( m, grmap.equal_range( m.value().grp ) );
@@ -408,6 +408,8 @@ void VTDispatcher::VTDispatch( const stem::Event_base<VTmess>& m )
 
 void VTDispatcher::VTDispatch_( const stem::Event_base<VTmess>& m, const std::pair<gid_map_type::const_iterator,gid_map_type::const_iterator>& range )
 {
+  typedef detail::vtime_obj_rec::dpool_t dpool_t;
+
   for ( gid_map_type::const_iterator o = range.first; o != range.second; ++o ) {
     vt_map_type::iterator i = vtmap.find( o->second );
     if ( i == vtmap.end() || i->second.addr == m.src() ) { // not for nobody and not for self
@@ -425,7 +427,7 @@ void VTDispatcher::VTDispatch_( const stem::Event_base<VTmess>& m, const std::pa
         bool more;
         do {
           more = false;
-          for ( vtime_obj_rec::dpool_t::iterator j = i->second.dpool.begin(); j != i->second.dpool.end(); ) {
+          for ( dpool_t::iterator j = i->second.dpool.begin(); j != i->second.dpool.end(); ) {
             if ( i->second.deliver_delayed( j->second->value() ) ) {
               stem::Event evd( j->second->value().code );
               evd.dest(i->second.addr);
@@ -473,12 +475,12 @@ void VTDispatcher::VTSend( const stem::Event& e, group_type grp )
     }
   }
 
-  // Error: not group member?
+  throw domain_error( "VT object not member of group" ); // Error: not group member
 }
 
 void VTDispatcher::Subscribe( stem::addr_type addr, oid_type oid, group_type grp )
 {
-  vtime_obj_rec& r = vtmap[oid];
+  detail::vtime_obj_rec& r = vtmap[oid];
   r.addr = addr;
   r.add_group( grp );
 
@@ -486,7 +488,6 @@ void VTDispatcher::Subscribe( stem::addr_type addr, oid_type oid, group_type grp
 }
 
 DEFINE_RESPONSE_TABLE( VTDispatcher )
-  // EV_T_( ST_NULL, MESS, VTDispatch, VTmess )
   EV_Event_base_T_( ST_NULL, MESS, VTDispatch, VTmess )
 END_RESPONSE_TABLE
 
@@ -564,93 +565,6 @@ VTHandler::~VTHandler()
 {
   ((Init *)Init_buf)->~Init();
 }
-
-void Proc::mess( const stem::Event_base<VTmess>& ev )
-{
-  cout << self_id() << " " << ev.value().mess << endl;
-
-  // cout << ev.value().gvt.gvt << endl;
-
-  if ( order_correct( ev ) ) {
-    cout << "Order correct" << endl; 
-    lvt[ev.src()] += ev.value().gvt.gvt;
-    lvt[ev.src()][ev.value().grp][ev.src()] = vt.gvt[ev.value().grp][ev.src()] + 1;
-    vt.gvt[ev.value().grp] = vt::max( vt.gvt[ev.value().grp], lvt[ev.src()][ev.value().grp] );
-    cout << vt.gvt << endl;
-  } else {
-    cout << "Order not correct" << endl; 
-  }
-}
-
-bool Proc::order_correct( const stem::Event_base<VTmess>& ev )
-{
-  gvtime gvt( ev.value().gvt );
-
-  if ( vt.gvt[ev.value().grp][ev.src()] + 1 != gvt[ev.value().grp][ev.src()] ) {
-    cerr << "1" << endl;
-    cerr << vt.gvt[ev.value().grp][ev.src()] << "\n"
-	 << gvt[ev.value().grp][ev.src()]
-	 << endl;
-    return false;
-  }
-
-  vtime xvt = lvt[ev.src()][ev.value().grp] + gvt[ev.value().grp];
-  xvt[ev.src()] = 0;
-
-  if ( !(xvt <= vt[ev.value().grp]) ) {
-    cerr << "2" << endl;
-    cerr << xvt << "\n\n"
-	 << vt[ev.value().grp] << endl;
-    return false;
-  }
-
-  for ( groups_container_type::const_iterator l = groups.begin(); l != groups.end(); ++l ) {
-    if ( *l != ev.value().grp ) {
-      xvt = lvt[ev.src()][*l] + gvt[*l];
-      if ( !(xvt <= vt[*l]) ) {
-	cerr << "3" << endl;
-	cerr << "group " << *l << xvt << "\n\n"
-	     << vt[*l] << endl;
-	return false;
-      }
-    }
-  }
-
-  return true;
-}
-
-void Proc::SendVC( group_type g, const std::string& mess )
-{
-  try {
-    stem::Event_base<VTmess> m( MESS );
-    m.value().mess = mess;
-    m.value().grp = g;
-
-    vtime_type& gr = vt[g].vt;
-
-    gr[self_id()] += 1;
-
-    for ( vtime_type::const_iterator p = gr.begin(); p != gr.end(); ++p ) {
-      if ( p->first != self_id() ) {
-	m.dest( p->first );
-
-	m.value().gvt.gvt = vt.gvt - lvt[p->first];
-	m.value().gvt.gvt[g][self_id()] = gr[self_id()];
-
-	lvt[p->first] = vt.gvt;
-
-	Send(m);
-      }
-    }
-  }
-  catch ( const range_error& err ) {
-    cerr << err.what() << endl;
-  }
-}
-
-DEFINE_RESPONSE_TABLE( Proc )
-  EV_Event_base_T_( ST_NULL, MESS, mess, VTmess )
-END_RESPONSE_TABLE
 
 } // namespace vt
 

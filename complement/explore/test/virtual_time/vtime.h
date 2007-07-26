@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/25 09:07:25 ptr>
+// -*- C++ -*- Time-stamp: <07/07/25 23:30:52 ptr>
 
 #ifndef __vtime_h
 #define __vtime_h
@@ -24,9 +24,6 @@ typedef unsigned vtime_unit_type;
 typedef uint32_t group_type;
 typedef std::hash_map<oid_type, vtime_unit_type> vtime_type;
 
-// typedef std::pair<oid_type, vtime_unit_type> vtime_proc_type;
-// typedef std::list<vtime_proc_type> vtime_type;
-
 bool operator <=( const vtime_type& l, const vtime_type& r );
 inline bool operator >=( const vtime_type& l, const vtime_type& r )
   { return r <= l; }
@@ -34,7 +31,7 @@ vtime_type operator -( const vtime_type& l, const vtime_type& r );
 vtime_type operator +( const vtime_type& l, const vtime_type& r );
 vtime_type& operator +=( vtime_type& l, const vtime_type& r );
 
-vtime_type max( const vtime_type& l, const vtime_type& r );
+// vt::vtime_type max( const vt::vtime_type& l, const vt::vtime_type& r );
 vtime_type& sup( vtime_type& l, const vtime_type& r );
 
 struct vtime :
@@ -91,7 +88,7 @@ struct vtime :
 };
 
 
-vtime max( const vtime& l, const vtime& r );
+// vtime max( const vtime& l, const vtime& r );
 vtime& sup( vtime& l, const vtime& r );
 
 // typedef std::pair<group_type, vtime> vtime_group_type;
@@ -158,6 +155,8 @@ struct VTmess :
     std::string mess;
 };
 
+namespace detail {
+
 class vtime_obj_rec
 {
   public:
@@ -195,6 +194,8 @@ class vtime_obj_rec
     bool order_correct_delayed( const VTmess& );
 };
 
+} // namespace detail
+
 class VTDispatcher :
         public stem::EventHandler
 {
@@ -211,8 +212,9 @@ class VTDispatcher :
     void VTSend( const stem::Event& e, group_type );
     void Subscribe( stem::addr_type, oid_type, group_type );
 
-  private:
-    typedef std::hash_map<oid_type, vtime_obj_rec> vt_map_type;
+  private:    
+
+    typedef std::hash_map<oid_type, detail::vtime_obj_rec> vt_map_type;
     typedef std::hash_multimap<group_type, oid_type> gid_map_type;
     // oid_type map_gid( group_type );
     // gid_type -> (oid_type, oid_type, ...)
@@ -258,43 +260,6 @@ class VTHandler :
 
   private:
     static class VTDispatcher *_vtdsp;
-};
-
-
-class Proc :
-  public stem::EventHandler
-{
-  public:
-    Proc()
-      { }
-    Proc( stem::addr_type id ) :
-        stem::EventHandler( id )
-      { }
-
-    void add_group( group_type g )
-      { groups.push_back( g ); }
-
-    void add_group_member( group_type g, oid_type p )
-      { vt[g][p]; }
-
-    void SendVC( group_type, const std::string& mess );
-
-    void mess( const stem::Event_base<VTmess>& );
-
-    typedef std::list<group_type> groups_container_type;
-
-  private:
-
-    bool order_correct( const stem::Event_base<VTmess>& );
-
-    typedef std::hash_map<oid_type, gvtime_type> delta_vtime_type;
-
-    delta_vtime_type lvt;
-    gvtime vt;
-    groups_container_type groups;
-
-
-    DECLARE_RESPONSE_TABLE( Proc, stem::EventHandler );
 };
 
 #define MESS 0x300
