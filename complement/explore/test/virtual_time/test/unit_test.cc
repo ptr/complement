@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/25 22:14:50 ptr>
+// -*- C++ -*- Time-stamp: <07/07/26 09:41:24 ptr>
 
 #include "vt_operations.h"
 
@@ -20,8 +20,9 @@ int EXAM_IMPL(vtime_test_suite)
   t.add( &vtime_operations::VTMess_core, vt_oper, "VTmess core transfer", 
          tc[2] = t.add( &vtime_operations::gvt_add, vt_oper, "Group VT add", tc[1] ) );
 
-  t.add( &vtime_operations::VTDispatch, vt_oper, "VTDispatch",
-         t.add( &vtime_operations::vt_object, vt_oper, "VT order", tc[2] ) );
+  t.add( &vtime_operations::VTDispatch2, vt_oper, "VTDispatch2",
+         t.add( &vtime_operations::VTDispatch1, vt_oper, "VTDispatch1",
+                t.add( &vtime_operations::vt_object, vt_oper, "VT order", tc[2] ) ) );
 
   return t.girdle();
 }
