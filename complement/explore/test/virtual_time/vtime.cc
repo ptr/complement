@@ -399,6 +399,12 @@ bool vtime_obj_rec::order_correct_delayed( const VTmess& m )
   return true;
 }
 
+void vtime_obj_rec::delta( gvtime& vtstamp, oid_type from, oid_type to, group_type grp )
+{
+  vtstamp.gvt = vt.gvt - svt[to]; // delta
+  vtstamp[grp][from] = vt.gvt[grp][from]; // my counter, as is, not delta
+}
+
 } // namespace detail
 
 void VTDispatcher::VTDispatch( const stem::Event_base<VTmess>& m )
@@ -408,14 +414,14 @@ void VTDispatcher::VTDispatch( const stem::Event_base<VTmess>& m )
 
   for ( ; range.first != range.second; ++range.first ) {
     vt_map_type::iterator i = vtmap.find( range.first->second );
-    if ( i == vtmap.end() || i->second.addr == m.src() ) { // not for nobody and not for self
+    if ( i == vtmap.end() || i->second.stem_addr() == m.src() ) { // not for nobody and not for self
       continue;
     }
     try {
       // check local or remote? i->second.addr
       // if remote, forward it to foreign VTDispatcher?
       // looks, like local source shouldn't be here?
-      check_and_send( i, m );
+      check_and_send( i->second, m );
     }
     catch ( const out_of_range& ) {
     }
@@ -424,28 +430,30 @@ void VTDispatcher::VTDispatch( const stem::Event_base<VTmess>& m )
   }
 }
 
-void VTDispatcher::check_and_send( const vt_map_type::iterator& i, const stem::Event_base<VTmess>& m )
+void VTDispatcher::check_and_send( detail::vtime_obj_rec& vt, const stem::Event_base<VTmess>& m )
 {
   typedef detail::vtime_obj_rec::dpool_t dpool_t;
 
-  if ( i->second.deliver( m.value() ) ) {
+  // detail::vtime_obj_rec& vt = i->second;
+
+  if ( vt.deliver( m.value() ) ) {
     stem::Event ev( m.value().code );
-    ev.dest(i->second.addr);
+    ev.dest(vt.stem_addr());
     ev.src(m.src());
     ev.value() = m.value().mess;
     Forward( ev );
     bool more;
     do {
       more = false;
-      for ( dpool_t::iterator j = i->second.dpool.begin(); j != i->second.dpool.end(); ) {
-        if ( i->second.deliver_delayed( j->second->value() ) ) {
+      for ( dpool_t::iterator j = vt.dpool.begin(); j != vt.dpool.end(); ) {
+        if ( vt.deliver_delayed( j->second->value() ) ) {
           stem::Event evd( j->second->value().code );
-          evd.dest(i->second.addr);
+          evd.dest(vt.stem_addr());
           ev.src(m.src());
           evd.value() = j->second->value().mess;
           Forward( evd );
           delete j->second;
-          i->second.dpool.erase( j++ );
+          vt.dpool.erase( j++ );
           more = true;
         } else {
           ++j;
@@ -453,7 +461,7 @@ void VTDispatcher::check_and_send( const vt_map_type::iterator& i, const stem::E
       }
     } while ( more );
   } else {
-    i->second.dpool.push_back( make_pair( 0, new Event_base<VTmess>(m) ) ); // 0 should be timestamp
+    vt.dpool.push_back( make_pair( 0, new Event_base<VTmess>(m) ) ); // 0 should be timestamp
   }
 }
 
@@ -464,9 +472,11 @@ void VTDispatcher::VTSend( const stem::Event& e, group_type grp )
 
   for ( gid_map_type::const_iterator o = range.first; o != range.second; ++o ) {
     vt_map_type::iterator i = vtmap.find( o->second );
-    if ( i != vtmap.end() && i->second.addr == e.src() ) { // for self
+    if ( i != vtmap.end() && i->second.stem_addr() == e.src() ) { // for self
+      detail::vtime_obj_rec& vt = i->second;
+      const oid_type& from = o->second;
       stem::Event_base<VTmess> m( MESS );
-      m.value().src = o->second; // oid
+      m.value().src = from; // oid
       m.value().code = e.code();
       m.value().mess = e.value();
       m.value().grp = grp;
@@ -476,22 +486,21 @@ void VTDispatcher::VTSend( const stem::Event& e, group_type grp )
       // This is like VTDispatch, but VT stamp in every message different,
       // in accordance with individual knowlage about object's VT.
 
-      ++i->second.vt.gvt[grp][o->second]; // my counter
+      vt.next( from, grp ); // my counter
 
       for ( gid_map_type::const_iterator g = range.first; g != range.second; ++g ) {
         vt_map_type::iterator k = vtmap.find( g->second );
-        if ( k == vtmap.end() || k->second.addr == m.src() ) { // not for nobody and not for self
+        if ( k == vtmap.end() || k->second.stem_addr() == m.src() ) { // not for nobody and not for self
           continue;
         }
         try {
-          m.value().gvt.gvt = i->second.vt.gvt - i->second.svt[g->second]; // delta
-          m.value().gvt[grp][o->second] = i->second.vt.gvt[grp][o->second]; // my counter, as is, not delta
+          vt.delta( m.value().gvt, from, g->second, grp );
 
           // check local or remote? i->second.addr
           // if remote, forward it to foreign VTDispatcher?
-          check_and_send( k, m );
+          check_and_send( k->second, m );
 
-          i->second.svt[g->second] = i->second.vt.gvt; // store last send VT to obj
+          vt.base_advance(g->second); // store last send VT to obj
         }
         catch ( const out_of_range& ) {
         }
@@ -508,10 +517,7 @@ void VTDispatcher::VTSend( const stem::Event& e, group_type grp )
 
 void VTDispatcher::Subscribe( stem::addr_type addr, oid_type oid, group_type grp )
 {
-  detail::vtime_obj_rec& r = vtmap[oid];
-  r.addr = addr;
-  r.add_group( grp );
-
+  vtmap[oid].add( addr, grp );
   grmap.insert( make_pair(grp,oid) );
 }
 

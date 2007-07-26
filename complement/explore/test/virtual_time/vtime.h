@@ -82,9 +82,12 @@ struct vtime :
   vtime& operator +=( const vtime_type::value_type& );
 
   vtime_type::data_type& operator[]( const vtime_type::key_type k )
-  { return vt[k]; }
+    { return vt[k]; }
+  const vtime_type::data_type& operator[]( const vtime_type::key_type k ) const
+    { return vt[k]; }
+
     
-  vtime_type vt;
+  mutable vtime_type vt;
 };
 
 
@@ -121,8 +124,10 @@ struct gvtime :
 
   gvtime_type::data_type& operator[]( const gvtime_type::key_type k )
     { return gvt[k]; }
+  const gvtime_type::data_type& operator[]( const gvtime_type::key_type k ) const
+    { return gvt[k]; }
 
-  gvtime_type gvt;
+  mutable gvtime_type gvt;
 };
 
 struct VTmess :
@@ -160,26 +165,37 @@ namespace detail {
 class vtime_obj_rec
 {
   public:
-
-    typedef std::hash_set<group_type> groups_container_type;
-    typedef std::hash_map<oid_type, gvtime_type> delta_vtime_type;
-    typedef std::hash_map<oid_type, gvtime_type> snd_delta_vtime_t;
-
     void add_group( group_type g )
       { groups.insert(g); }
+    void add( stem::addr_type a, group_type g )
+      { addr = a; groups.insert(g); }
 
-    // void add_group_member( group_type g, oid_type p )
-    //   { vt[g][p]; }
+    stem::addr_type stem_addr() const
+      { return addr; }
 
     bool deliver( const VTmess& ev );
     bool deliver_delayed( const VTmess& ev );
+    void next( oid_type from, group_type grp )
+      { ++vt.gvt[grp][from]; /* increment my VT counter */ }
+    void delta( gvtime& vtstamp, oid_type from, oid_type to, group_type grp );
+    void base_advance( oid_type to )
+      { svt[to] = vt.gvt; /* store last sent VT to obj */ }
+
+#ifdef __FIT_EXAM
+    const gvtime_type::data_type& operator[]( const gvtime_type::key_type k ) const
+      { return vt[k]; }
+#endif
+
+  private:
+    typedef std::hash_set<group_type> groups_container_type;
+    typedef std::hash_map<oid_type, gvtime_type> delta_vtime_type;
+    typedef std::hash_map<oid_type, gvtime_type> snd_delta_vtime_t;
 
     stem::addr_type addr;  // stem address of object
     delta_vtime_type lvt;  // last recieve VT from neighbours
     snd_delta_vtime_t svt; // last send VT to neighbours
     gvtime vt;             // VT of object
 
-  private:
     groups_container_type groups; // member of groups
 
   public:
@@ -221,7 +237,7 @@ class VTDispatcher :
 
     // in our case we can use gid = hi bits | oid
 
-    void check_and_send( const vt_map_type::iterator&, const stem::Event_base<VTmess>& );
+    void check_and_send( detail::vtime_obj_rec&, const stem::Event_base<VTmess>& );
     
     vt_map_type vtmap;
     gid_map_type grmap;
