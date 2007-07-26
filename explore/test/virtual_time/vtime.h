@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/25 23:30:52 ptr>
+// -*- C++ -*- Time-stamp: <07/07/26 09:34:53 ptr>
 
 #ifndef __vtime_h
 #define __vtime_h
@@ -163,7 +163,7 @@ class vtime_obj_rec
 
     typedef std::hash_set<group_type> groups_container_type;
     typedef std::hash_map<oid_type, gvtime_type> delta_vtime_type;
-    typedef std::hash_map<group_type, gvtime_type> snd_delta_vtime_t;
+    typedef std::hash_map<oid_type, gvtime_type> snd_delta_vtime_t;
 
     void add_group( group_type g )
       { groups.insert(g); }
@@ -221,7 +221,7 @@ class VTDispatcher :
 
     // in our case we can use gid = hi bits | oid
 
-    void VTDispatch_( const stem::Event_base<VTmess>&, const std::pair<gid_map_type::const_iterator,gid_map_type::const_iterator>& );
+    void check_and_send( const vt_map_type::iterator&, const stem::Event_base<VTmess>& );
     
     vt_map_type vtmap;
     gid_map_type grmap;
