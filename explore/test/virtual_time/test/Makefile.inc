@@ -3,6 +3,10 @@
 PRGNAME = ut_vtime
 
 SRC_CC = ../vtime.cc \
-         unit_test.cc
+         unit_test.cc \
+         vt_operations.cc \
+         VTmess_core.cc \
+         vt_object.cc \
+         vt_dispatch.cc
 
 
