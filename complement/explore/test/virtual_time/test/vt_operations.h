@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/25 22:01:43 ptr>
+// -*- C++ -*- Time-stamp: <07/07/26 09:40:39 ptr>
 
 #ifndef __vt_operations_h
 #define __vt_operations_h
@@ -18,7 +18,8 @@ struct vtime_operations
 
   int EXAM_DECL(vt_object);
 
-  int EXAM_DECL(VTDispatch);
+  int EXAM_DECL(VTDispatch1);
+  int EXAM_DECL(VTDispatch2);
 };
 
 #endif // __vt_operations_h

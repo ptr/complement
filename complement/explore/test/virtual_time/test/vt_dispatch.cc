@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/25 23:12:24 ptr>
+// -*- C++ -*- Time-stamp: <07/07/26 09:53:24 ptr>
 
 #include "vt_operations.h"
 
@@ -73,7 +73,31 @@ DEFINE_RESPONSE_TABLE( Dummy )
   EV_EDS( ST_NULL, VT_MESS2, handler )
 END_RESPONSE_TABLE
 
-int EXAM_IMPL(vtime_operations::VTDispatch)
+int EXAM_IMPL(vtime_operations::VTDispatch1)
+{
+  vt::VTDispatcher dsp;
+  Dummy dummy1;
+  Dummy dummy2;
+
+  dsp.Subscribe( dummy1.self_id(), 1, 0 );
+  dsp.Subscribe( dummy2.self_id(), 2, 0 );
+
+  stem::Event ev( VT_MESS2 );
+  ev.src( dummy1.self_id() );
+
+  ev.value() = "hello";
+
+  dsp.VTSend( ev, 0 );
+
+  dummy2.wait();
+
+  EXAM_CHECK( dummy2.msg == "hello" );
+  EXAM_CHECK( dummy1.msg == "" );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(vtime_operations::VTDispatch2)
 {
   vt::VTDispatcher dsp;
   Dummy dummy1;
