@@ -6,7 +6,7 @@ COMPILER_NAME := gcc
 include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
 
-INCLUDES += -I$(SRCROOT)/include -I$(BOOST_INCLUDE_DIR)
+INCLUDES += -I$(SRCROOT)/include
 
 LIBMT_DIR = ${CoMT_DIR}/lib/mt
 LIBSOCK_DIR = ${CoMT_DIR}/lib/sockios
@@ -15,8 +15,35 @@ LIBSTEM_DIR = ${CoMT_DIR}/lib/stem
 LDSEARCH += -L${CoMT_LIB_DIR} -Wl,--rpath=${CoMT_LIB_DIR}
 
 release-shared : LDLIBS = -lxmt -lsockios -lstem 
+ifndef WITHOUT_STLPORT
 stldbg-shared  : LDLIBS = -lxmtstlg -lsockiosstlg -lstemstlg
+endif
 dbg-shared     : LDLIBS = -lxmtg -lsockiosg -lstemg
+
+check:	all-shared
+	$(MAKE) -C test
+	(cd test; ${OUTPUT_DIR}/ut_vtime) || exit 1
+	(cd test; ${OUTPUT_DIR_DBG}/ut_vtime) || exit 1
+ifndef WITHOUT_STLPORT
+	(cd test; ${OUTPUT_DIR_STLDBG}/ut_vt) || exit 1
+endif
+
+check-release-shared:	release-shared
+	$(MAKE) -C test release-shared
+	(cd test; ${OUTPUT_DIR}/ut_vtime) || exit 1
+
+check-dbg-shared:	dbg-shared
+	$(MAKE) -C test dbg-shared
+	(cd test; ${OUTPUT_DIR_DBG}/ut_vtime) || exit 1
+
+ifndef WITHOUT_STLPORT
+check-stldbg-shared:	stldbg-shared
+	$(MAKE) -C test stldbg-shared
+	(cd test; ${OUTPUT_DIR_STLDBG}/ut_vtime) || exit 1
+endif
+
+depend::
+	$(MAKE) -C test depend
 
 # dbg-shared:	DEFS += -DDEBUG
 
