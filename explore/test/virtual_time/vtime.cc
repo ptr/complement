@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/26 10:28:55 ptr>
+// -*- C++ -*- Time-stamp: <07/07/27 09:49:24 ptr>
 
 #include "vtime.h"
 
@@ -15,7 +15,7 @@ void vtime::pack( std::ostream& s ) const
 {
   __pack( s, static_cast<uint8_t>(vt.size()) );
   for ( vtime_type::const_iterator i = vt.begin(); i != vt.end(); ++i ) {
-    __pack( s, i->first );
+    i->first.pack( s ); // __pack( s, i->first );
     __pack( s, i->second );
   }
 }
@@ -24,7 +24,7 @@ void vtime::net_pack( std::ostream& s ) const
 {
   __net_pack( s, static_cast<uint8_t>(vt.size()) );
   for ( vtime_type::const_iterator i = vt.begin(); i != vt.end(); ++i ) {
-    __net_pack( s, i->first );
+    i->first.net_pack( s ); // __net_pack( s, i->first );
     __net_pack( s, i->second );
   }
 }
@@ -38,7 +38,7 @@ void vtime::unpack( std::istream& s )
     oid_type oid;
     vtime_unit_type v;
 
-    __unpack( s, oid );
+    oid.unpack( s ); // __unpack( s, oid );
     __unpack( s, v );
 
     vt[oid] = v;
@@ -54,7 +54,7 @@ void vtime::net_unpack( std::istream& s )
     oid_type oid;
     vtime_unit_type v;
 
-    __net_unpack( s, oid );
+    oid.net_unpack( s ); // __net_unpack( s, oid );
     __net_unpack( s, v );
 
     vt[oid] = v;
@@ -106,7 +106,7 @@ void gvtime::net_unpack( std::istream& s )
 void VTmess::pack( std::ostream& s ) const
 {
   __pack( s, code );
-  __pack( s, src );
+  src.pack( s ); // __pack( s, src );
   gvt.pack( s );
   __pack( s, grp );
   __pack( s, mess );
@@ -115,7 +115,7 @@ void VTmess::pack( std::ostream& s ) const
 void VTmess::net_pack( std::ostream& s ) const
 {
   __net_pack( s, code );
-  __net_pack( s, src );
+  src.net_pack( s ); // __net_pack( s, src );
   gvt.net_pack( s );
   __net_pack( s, grp );
   __net_pack( s, mess );
@@ -124,7 +124,7 @@ void VTmess::net_pack( std::ostream& s ) const
 void VTmess::unpack( std::istream& s )
 {
   __unpack( s, code );
-  __unpack( s, src );
+  src.unpack( s ); // __unpack( s, src );
   gvt.unpack( s );
   __unpack( s, grp );
   __unpack( s, mess );
@@ -133,7 +133,7 @@ void VTmess::unpack( std::istream& s )
 void VTmess::net_unpack( std::istream& s )
 {
   __net_unpack( s, code );
-  __net_unpack( s, src );
+  src.net_unpack( s ); // __net_unpack( s, src );
   gvt.net_unpack( s );
   __net_unpack( s, grp );
   __net_unpack( s, mess );

@@ -78,9 +78,11 @@ int EXAM_IMPL(vtime_operations::VTDispatch1)
   vt::VTDispatcher dsp;
   Dummy dummy1;
   Dummy dummy2;
+  oid_type t1; t1.addr = 1;
+  oid_type t2; t2.addr = 2;
 
-  dsp.Subscribe( dummy1.self_id(), 1, 0 );
-  dsp.Subscribe( dummy2.self_id(), 2, 0 );
+  dsp.Subscribe( dummy1.self_id(), t1, 0 );
+  dsp.Subscribe( dummy2.self_id(), t2, 0 );
 
   stem::Event ev( VT_MESS2 );
   ev.src( dummy1.self_id() );
@@ -103,10 +105,13 @@ int EXAM_IMPL(vtime_operations::VTDispatch2)
   Dummy dummy1;
   Dummy dummy2;
   Dummy dummy3;
+  oid_type t1; t1.addr = 1;
+  oid_type t2; t2.addr = 2;
+  oid_type t3; t3.addr = 3;
 
-  dsp.Subscribe( dummy1.self_id(), 1, 0 );
-  dsp.Subscribe( dummy2.self_id(), 2, 0 );
-  dsp.Subscribe( dummy3.self_id(), 3, 0 );
+  dsp.Subscribe( dummy1.self_id(), t1, 0 );
+  dsp.Subscribe( dummy2.self_id(), t2, 0 );
+  dsp.Subscribe( dummy3.self_id(), t3, 0 );
 
   stem::Event ev( VT_MESS2 );
   ev.src( dummy1.self_id() );
