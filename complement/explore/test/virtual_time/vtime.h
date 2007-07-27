@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/26 09:34:53 ptr>
+// -*- C++ -*- Time-stamp: <07/07/27 09:53:24 ptr>
 
 #ifndef __vtime_h
 #define __vtime_h
@@ -19,8 +19,25 @@
 
 namespace vt {
 
-typedef stem::addr_type oid_type;
-typedef unsigned vtime_unit_type;
+// typedef stem::addr_type oid_type;
+typedef stem::gaddr_type oid_type;
+
+} // namespace vt
+
+namespace std {
+
+template <>
+struct hash<vt::oid_type>
+{
+    size_t operator()(const vt::oid_type& __x) const
+      { return __x.addr; }
+};
+
+} // namespace std
+
+namespace vt {
+
+typedef uint32_t vtime_unit_type;
 typedef uint32_t group_type;
 typedef std::hash_map<oid_type, vtime_unit_type> vtime_type;
 
@@ -81,9 +98,9 @@ struct vtime :
   
   vtime& operator +=( const vtime_type::value_type& );
 
-  vtime_type::data_type& operator[]( const vtime_type::key_type k )
+  vtime_type::data_type& operator[]( const vtime_type::key_type& k )
     { return vt[k]; }
-  const vtime_type::data_type& operator[]( const vtime_type::key_type k ) const
+  const vtime_type::data_type& operator[]( const vtime_type::key_type& k ) const
     { return vt[k]; }
 
     
@@ -140,7 +157,7 @@ struct VTmess :
 
     VTmess() :
         code(0),
-        src(0),
+        src(),
         gvt(),
         grp(0),
         mess()

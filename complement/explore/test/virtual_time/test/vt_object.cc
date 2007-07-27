@@ -17,9 +17,9 @@ int EXAM_IMPL(vtime_operations::vt_object)
   const group_type gr0 = 0;
   const group_type gr1 = 1;
   const group_type gr2 = 2;
-  const oid_type obj0 = 0;
-  const oid_type obj1 = 1;
-  const oid_type obj2 = 2;
+  oid_type obj0; obj0.addr = 0;
+  oid_type obj1; obj1.addr = 1;
+  oid_type obj2; obj2.addr = 2;
 
   ob.add_group( gr0 );
   // ob.add_group_member( gr0, obj0 );
