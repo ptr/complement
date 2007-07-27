@@ -219,8 +219,16 @@ class VTDispatcher :
     VTDispatcher()
       { }
 
+    VTDispatcher( const char *info ) :
+        stem::EventHandler( info )
+      { }
+
     VTDispatcher( stem::addr_type id ) :
         stem::EventHandler( id )
+      { }
+
+    VTDispatcher( stem::addr_type id, const char *info ) :
+        stem::EventHandler( id, info )
       { }
 
     void VTDispatch( const stem::Event_base<VTmess>& );
@@ -229,13 +237,8 @@ class VTDispatcher :
     void Subscribe( stem::addr_type, oid_type, group_type );
 
   private:    
-
     typedef std::hash_map<oid_type, detail::vtime_obj_rec> vt_map_type;
     typedef std::hash_multimap<group_type, oid_type> gid_map_type;
-    // oid_type map_gid( group_type );
-    // gid_type -> (oid_type, oid_type, ...)
-
-    // in our case we can use gid = hi bits | oid
 
     void check_and_send( detail::vtime_obj_rec&, const stem::Event_base<VTmess>& );
     
@@ -248,7 +251,7 @@ class VTDispatcher :
 class VTHandler :
         public stem::EventHandler
 {
-  public:
+  private:
     class Init
     {
       public:
