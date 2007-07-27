@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/30 20:11:30 ptr>
+// -*- C++ -*- Time-stamp: <07/07/27 09:41:46 ptr>
 
 /*
  *
@@ -651,6 +651,12 @@ class Event_base<void> :
 };
 
 } // namespace stem
+
+namespace std {
+
+ostream& operator <<( ostream& o, const stem::gaddr_type& g );
+
+} // namespace std
 
 namespace EDS = stem;
 
