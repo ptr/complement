@@ -1,3 +1,11 @@
+2007-07-27  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Event.h, EvManager.cc, EvPack.cc: operator of format output
+	of gaddr_type is public now and situated in the EvPack.cc,
+	declared in the Event.h in namespace std.
+
+	* libstem: library version 4.6.1
+
 2007-07-18  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* test/stem: boost unit test framework replaced by exam.

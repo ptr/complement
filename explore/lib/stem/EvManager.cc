@@ -42,8 +42,6 @@ const addr_type endextaddr = 0xbfffffff;
 
 std::string EvManager::inv_key_str( "invalid key" );
 
-std::ostream& operator <<( std::ostream& s, const gaddr_type& ga );
-
 __FIT_DECLSPEC EvManager::EvManager() :
     _low( beglocaddr ),
     _high( endlocaddr ),
@@ -653,6 +651,7 @@ addr_type EvManager::create_unique_x()
 }
 
 
+#if 0
 std::ostream& operator <<( ostream& s, const gaddr_type& ga )
 {
   ios_base::fmtflags f = s.flags( 0 );
@@ -682,6 +681,7 @@ std::ostream& operator <<( ostream& s, const gaddr_type& ga )
 
   return s;
 }
+#endif
 
 __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
 {

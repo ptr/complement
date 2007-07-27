@@ -15,9 +15,29 @@
 #include "stem/Event.h"
 #include <iterator>
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <algorithm>
 #include <stdint.h>
+
+namespace std {
+
+ostream& operator <<( ostream& o, const stem::gaddr_type& g )
+{
+  ios_base::fmtflags f = o.flags( 0 );
+
+  o << hex << setfill( '0' ) 
+    << setw(8) << g.hid.u.l[0]
+    << setw(8) << g.hid.u.l[1]
+    << '-' << dec << g.pid << '-'
+    << hex << setfill( '0' ) << setw(8) << g.addr;
+
+  o.flags( f );
+
+  return o;
+}
+
+} // namespace std
 
 namespace stem {
 
