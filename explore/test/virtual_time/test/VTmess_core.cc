@@ -97,9 +97,9 @@ END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::VTMess_core)
 {
-  oid_type t0; t0.addr = 0;
-  oid_type t1; t1.addr = 1;
-  oid_type t3; t3.addr = 3;
+  const oid_type t0(0);
+  const oid_type t1(1);
+  const oid_type t3(3);
 
   VTM_handler h;
 

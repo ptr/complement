@@ -12,10 +12,10 @@ using namespace std;
 
 int EXAM_IMPL(vtime_operations::vt_compare)
 {
-  oid_type t0;
-  oid_type t1; t1.addr = 1;
-  oid_type t2; t2.addr = 2;
-  oid_type t3; t3.addr = 3;
+  const oid_type t0(0);
+  const oid_type t1(1);
+  const oid_type t2(2);
+  const oid_type t3(3);
 
   vtime_type vt1;
   vtime_type vt2;
@@ -56,10 +56,9 @@ int EXAM_IMPL(vtime_operations::vt_compare)
 
 int EXAM_IMPL(vtime_operations::vt_add)
 {
-  oid_type t0;
-  oid_type t1; t1.addr = 1;
-  oid_type t2; t2.addr = 2;
-  oid_type t3; t3.addr = 3;
+  const oid_type t1(1);
+  const oid_type t2(2);
+  const oid_type t3(3);
 
   vtime_type vt1;
   vtime_type vt2;
@@ -102,10 +101,9 @@ int EXAM_IMPL(vtime_operations::vt_add)
 
 int EXAM_IMPL(vtime_operations::vt_diff)
 {
-  oid_type t0;
-  oid_type t1; t1.addr = 1;
-  oid_type t2; t2.addr = 2;
-  oid_type t3; t3.addr = 3;
+  const oid_type t1(1);
+  const oid_type t2(2);
+  const oid_type t3(3);
 
   vtime_type vt1;
   vtime_type vt2;
@@ -167,10 +165,9 @@ int EXAM_IMPL(vtime_operations::vt_diff)
 
 int EXAM_IMPL(vtime_operations::vt_max)
 {
-  oid_type t0;
-  oid_type t1; t1.addr = 1;
-  oid_type t2; t2.addr = 2;
-  oid_type t3; t3.addr = 3;
+  const oid_type t1(1);
+  const oid_type t2(2);
+  const oid_type t3(3);
 
   vtime_type vt1;
   vtime_type vt2;
@@ -245,9 +242,9 @@ int EXAM_IMPL(vtime_operations::vt_max)
 
 int EXAM_IMPL(vtime_operations::gvt_add)
 {
-  oid_type t0;
-  oid_type t1; t1.addr = 1;
-  oid_type t2; t2.addr = 2;
+  const oid_type t0(0);
+  const oid_type t1(1);
+  const oid_type t2(2);
 
   {
     gvtime_type gvt1;
