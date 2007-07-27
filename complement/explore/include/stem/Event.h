@@ -28,6 +28,7 @@
 
 #include <stem/EvPack.h>
 #include <mt/uid.h>
+#include <mt/xmt.h>
 
 #ifndef STLPORT
 #include <bits/cpp_type_traits.h>
@@ -102,9 +103,21 @@ struct gaddr_type :
         addr( badaddr )
       { }
 
-    gaddr_type( const xmt::uuid_type& _hid, pid_t _pid, stem::addr_type _addr ) :
+    explicit gaddr_type( const xmt::uuid_type& _hid, pid_t _pid, stem::addr_type _addr ) :
         hid( _hid ),
         pid( _pid ),
+        addr( _addr )
+      { }
+
+    explicit gaddr_type( pid_t _pid, stem::addr_type _addr ) :
+        hid( xmt::hostid() ),
+        pid( _pid ),
+        addr( _addr )
+      { }
+
+    explicit gaddr_type( stem::addr_type _addr ) :
+        hid( xmt::hostid() ),
+        pid( xmt::getpid() ),
         addr( _addr )
       { }
 
