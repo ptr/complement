@@ -78,8 +78,8 @@ int EXAM_IMPL(vtime_operations::VTDispatch1)
   vt::VTDispatcher dsp;
   Dummy dummy1;
   Dummy dummy2;
-  oid_type t1; t1.addr = 1;
-  oid_type t2; t2.addr = 2;
+  const oid_type t1(1);
+  const oid_type t2(2);
 
   dsp.Subscribe( dummy1.self_id(), t1, 0 );
   dsp.Subscribe( dummy2.self_id(), t2, 0 );
@@ -105,9 +105,9 @@ int EXAM_IMPL(vtime_operations::VTDispatch2)
   Dummy dummy1;
   Dummy dummy2;
   Dummy dummy3;
-  oid_type t1; t1.addr = 1;
-  oid_type t2; t2.addr = 2;
-  oid_type t3; t3.addr = 3;
+  const oid_type t1(1);
+  const oid_type t2(2);
+  const oid_type t3(3);
 
   dsp.Subscribe( dummy1.self_id(), t1, 0 );
   dsp.Subscribe( dummy2.self_id(), t2, 0 );
