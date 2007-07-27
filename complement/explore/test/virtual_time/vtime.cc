@@ -467,6 +467,10 @@ void VTDispatcher::check_and_send( detail::vtime_obj_rec& vt, const stem::Event_
 
 void VTDispatcher::VTSend( const stem::Event& e, group_type grp )
 {
+  // This method not called from Dispatch, but work on the same level and in the same
+  // scope, so this lock (from stem::EventHandler) required here:
+  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
+
   const pair<gid_map_type::const_iterator,gid_map_type::const_iterator> range =
     grmap.equal_range( grp );
 
@@ -535,10 +539,11 @@ void VTHandler::Init::__at_fork_prepare()
 
 void VTHandler::Init::__at_fork_child()
 {
-  if ( *_rcount != 0 ) {
-    VTHandler::_vtdsp->~VTDispatcher();
-    VTHandler::_vtdsp = new( VTHandler::_vtdsp ) VTDispatcher();
-  }
+  // VTDispatcher not start threads (at least yet), so following not required:
+  // if ( *_rcount != 0 ) {
+  //   VTHandler::_vtdsp->~VTDispatcher();
+  //   VTHandler::_vtdsp = new( VTHandler::_vtdsp ) VTDispatcher();
+  // }
 }
 
 void VTHandler::Init::__at_fork_parent()
@@ -548,6 +553,8 @@ void VTHandler::Init::__at_fork_parent()
 void VTHandler::Init::_guard( int direction )
 {
   static xmt::recursive_mutex _init_lock;
+
+  xmt::recursive_scoped_lock lk(_init_lock);
   static int _count = 0;
 
   if ( direction ) {
@@ -556,7 +563,7 @@ void VTHandler::Init::_guard( int direction )
       _rcount = &_count;
       pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child );
 #endif
-      VTHandler::_vtdsp = new VTDispatcher();
+      VTHandler::_vtdsp = new VTDispatcher( 2, "vtd" );
     }
   } else {
     --_count;
@@ -575,12 +582,16 @@ VTHandler::Init::~Init()
 
 void VTHandler::VTSend( const stem::Event& ev )
 {
+  ev.src( self_id() );
+  // _vtdsp->VTSend( ev, grp );
 }
 
 VTHandler::VTHandler() :
    EventHandler()
 {
   new( Init_buf ) Init();
+
+  // _vtdsp->Subscribe( self_id(), ... , ... );
 }
 
 VTHandler::VTHandler( const char *info ) :
