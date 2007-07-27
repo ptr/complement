@@ -97,17 +97,21 @@ END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::VTMess_core)
 {
+  oid_type t0; t0.addr = 0;
+  oid_type t1; t1.addr = 1;
+  oid_type t3; t3.addr = 3;
+
   VTM_handler h;
 
   stem::Event_base<VTmess> ev( VT_MESS );
 
   ev.dest( h.self_id() );
   ev.value().code = 2;
-  ev.value().src = 3;
-  ev.value().gvt[0][0] = 1;
-  ev.value().gvt[0][1] = 2;
-  ev.value().gvt[1][0] = 3;
-  ev.value().gvt[1][1] = 4;
+  ev.value().src = t3;
+  ev.value().gvt[0][t0] = 1;
+  ev.value().gvt[0][t1] = 2;
+  ev.value().gvt[1][t0] = 3;
+  ev.value().gvt[1][t1] = 4;
   ev.value().grp = 7;
   ev.value().mess = "data";
 
@@ -116,11 +120,11 @@ int EXAM_IMPL(vtime_operations::VTMess_core)
   h.wait();
 
   EXAM_CHECK( h.code == 2 );
-  EXAM_CHECK( h.src == 3 );
-  EXAM_CHECK( h.gvt[0][0] == 1 );
-  EXAM_CHECK( h.gvt[0][1] == 2 );
-  EXAM_CHECK( h.gvt[1][0] == 3 );
-  EXAM_CHECK( h.gvt[1][1] == 4 );
+  EXAM_CHECK( h.src == t3 );
+  EXAM_CHECK( h.gvt[0][t0] == 1 );
+  EXAM_CHECK( h.gvt[0][t1] == 2 );
+  EXAM_CHECK( h.gvt[1][t0] == 3 );
+  EXAM_CHECK( h.gvt[1][t1] == 4 );
   EXAM_CHECK( h.grp == 7 );
   EXAM_CHECK( h.mess == "data" );
 
@@ -132,11 +136,11 @@ int EXAM_IMPL(vtime_operations::VTMess_core)
   h.wait();
 
   EXAM_CHECK( h.code == 3 );
-  EXAM_CHECK( h.src == 3 );
-  EXAM_CHECK( h.gvt[0][0] == 1 );
-  EXAM_CHECK( h.gvt[0][1] == 2 );
-  EXAM_CHECK( h.gvt[1][0] == 3 );
-  EXAM_CHECK( h.gvt[1][1] == 4 );
+  EXAM_CHECK( h.src == t3 );
+  EXAM_CHECK( h.gvt[0][t0] == 1 );
+  EXAM_CHECK( h.gvt[0][t1] == 2 );
+  EXAM_CHECK( h.gvt[1][t0] == 3 );
+  EXAM_CHECK( h.gvt[1][t1] == 4 );
   EXAM_CHECK( h.grp == 7 );
   EXAM_CHECK( h.mess == "more data" );
 
