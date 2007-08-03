@@ -11,7 +11,9 @@ check:	all-shared
 	$(MAKE) -C ./ut
 	(cd ./ut; ${OUTPUT_DIR}/exam_self_test) || exit 1
 	(cd ./ut; ${OUTPUT_DIR_DBG}/exam_self_test) || exit 1
+ifndef WITHOUT_STLPORT
 	(cd ./ut; ${OUTPUT_DIR_STLDBG}/exam_self_test) || exit 1
+endif
 
 check-release-shared:	release-shared
 	$(MAKE) -C ./ut release-shared
@@ -29,3 +31,6 @@ endif
 
 depend::
 	$(MAKE) -C ./ut depend
+
+clean::
+	$(MAKE) -C ./ut clean
