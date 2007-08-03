@@ -63,6 +63,18 @@ __SPEC_1(C,const T,B);      \
 __SPEC_1(C,volatile T,B);   \
 __SPEC_1(C,const volatile T,B)
 
+#define  __SPEC_2(C,T,B)              \
+template <class _Tp1, class _Tp2>     \
+struct C<T> :                         \
+    public integral_constant<bool, B> \
+{ }
+
+#define __SPEC_FULL2(C,T,B) \
+__SPEC_2(C,T,B);            \
+__SPEC_2(C,const T,B);      \
+__SPEC_2(C,volatile T,B);   \
+__SPEC_2(C,const volatile T,B)
+
 template <class _Tp>
 struct is_void :
         public false_type
@@ -100,8 +112,32 @@ __SPEC_FULL(is_floating_point,long double,true);
 
 template <class _Tp>
 struct is_arithmetic :
-    public integral_constant<bool, (is_integral<_Tp>::value
-                                    || is_floating_point<_Tp>::value)>
+    public integral_constant<bool, (is_integral<_Tp>::value || is_floating_point<_Tp>::value)>
+{ };
+
+template <class _Tp>
+struct is_fundamental :
+    public integral_constant<bool, (is_arithmetic<_Tp>::value || is_void<_Tp>::value)>
+{ };
+
+template <class _Tp>
+struct is_compound :
+    public integral_constant<bool, !is_fundamental<_Tp>::value>
+{ };
+
+template <class _Tp>
+struct is_array :
+    public false_type
+{ };
+
+template <class _Tp, std::size_t _Sz>
+struct is_array<_Tp[_Sz]> :
+    public true_type
+{ };
+
+template <class _Tp>
+struct is_array<_Tp[]> :
+    public true_type
 { };
 
 template <class _Tp>
@@ -112,11 +148,65 @@ struct is_pointer :
 __SPEC_FULL1(is_pointer,_Tp *,true);
 
 template <class _Tp>
+struct is_reference :
+    public false_type
+{ };
+
+template <class _Tp>
+struct is_reference<_Tp&> :
+    public true_type
+{ };
+
+template <class _Tp>
+struct is_function :
+    public integral_constant<bool, !(/* __in_array<_Tp>::__value
+                                     || __is_union_or_class<_Tp>::value
+                                     || */ is_reference<_Tp>::value
+                                     || is_void<_Tp>::value)>
+{ };
+
+template <class _Tp>
+struct is_member_object_pointer :
+    public false_type
+{ };
+
+_SPEC_FULL2(is_member_object_pointer, _Tp1 _Tp2::*,!is_function<_Tp1>::value);
+
+template <class _Tp>
+struct is_member_function_pointer :
+    public false_type
+{ };
+
+_SPEC_FULL2(is_member_function_pointer, _Tp1 _Tp2::*,is_function<_Tp1>::value);
+
+template <class _Tp>
+struct is_member_pointer :
+    public integral_constant<bool, (is_member_object_pointer<_Tp>::value || is_member_function_pointer<_Tp>::value)>
+{ };
+
+template <class _Tp>
+struct is_enum :
+    public integral_constant<bool, !(is_fundamental<_Tp>::value
+                                     || is_array<_Tp>::value
+                                     || is_pointer<_Tp>::value
+                                     || is_reference<_Tp>::value
+                                     || is_member_pointer<_Tp>::value
+                                     || is_function<_Tp>::value
+                                     /* || __is_union_or_class<_Tp>::value */) >
+{ };
+
+template <class _Tp>
+struct is_object :
+    public integral_constant<bool, !(is_function<_Tp>::value /* || is_reference<_Tp>::value
+                                     || is_void<_Tp>::value */ )>
+{ };
+
+template <class _Tp>
 struct is_scalar :
     public integral_constant<bool, (is_arithmetic<_Tp>::value
-                                    /* || is_enum<_Tp>::value */
+                                    || is_enum<_Tp>::value
                                     || is_pointer<_Tp>::value
-                                    /* || is_member_pointer<_Tp>::value */ )>
+                                    || is_member_pointer<_Tp>::value)>
 { };
 
 template <class _Tp>
@@ -138,15 +228,99 @@ struct remove_all_extents<_Tp[]>
 };
 
 template <class _Tp>
+struct is_const :
+    public false_type
+{ };
+
+template <class _Tp>
+struct is_const<_Tp const> :
+    public true_type
+{ };
+
+template <class _Tp>
+struct is_volatile :
+    public false_type
+{ };
+
+template <class _Tp>
+struct is_volatile<_Tp volatile> :
+    public true_type
+{ };
+
+template <class _Tp>
 struct is_pod :
     public integral_constant<bool, (is_void<_Tp>::value
                                     || is_scalar<typename remove_all_extents<_Tp>::type>::value)>
 { };
 
+template <class _Tp>
+struct has_trivial_constructor :
+    public integral_constant<bool, is_pod<_Tp>::value>
+{ };
+
+template <class _Tp>
+struct has_trivial_copy :
+    public integral_constant<bool, is_pod<_Tp>::value>
+{ };
+
+template <class _Tp>
+struct has_trivial_assign :
+    public integral_constant<bool, is_pod<_Tp>::value>
+{ };
+
+template <class _Tp>
+struct has_trivial_destructor :
+    public integral_constant<bool, is_pod<_Tp>::value>
+{ };
+
+template <class _Tp>
+struct has_nothrow_constructor :
+    public integral_constant<bool, is_pod<_Tp>::value>
+{ };
+
+template <class _Tp>
+struct has_nothrow_copy :
+    public integral_constant<bool, is_pod<_Tp>::value>
+{ };
+
+template <class _Tp>
+struct has_nothrow_assign :
+    public integral_constant<bool, is_pod<_Tp>::value>
+{ };
+
+template <class _Tp>
+struct has_virtual_destructor :
+    public false_type
+{ };
+
+template <class _Tp>
+struct is_signed :
+    public false_type
+{ };
+
+__SPEC_FULL(is_signed,signed char,true);
+__SPEC_FULL(is_signed,short,true);
+__SPEC_FULL(is_signed,int,true);
+__SPEC_FULL(is_signed,long,true);
+__SPEC_FULL(is_signed,long long,true);
+
+template <class _Tp>
+struct is_unsigned :
+    public false_type
+{ };
+
+__SPEC_FULL(is_unsigned,unsigned char,true);
+__SPEC_FULL(is_unsigned,unsigned short,true);
+__SPEC_FULL(is_unsigned,unsigned int,true);
+__SPEC_FULL(is_unsigned,unsigned long,true);
+__SPEC_FULL(is_unsigned,unsigned long long,true);
+
 #undef __SPEC_FULL
 #undef __SPEC_
 #undef __SPEC_FULL1
 #undef __SPEC_1
+#undef __SPEC_FULL2
+#undef __SPEC_2
 
 } // namespace tr1
 
