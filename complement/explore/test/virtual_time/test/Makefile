@@ -14,9 +14,9 @@ DEFS += -D__FIT_EXAM
 
 LDFLAGS += -L${INSTALL_LIB_DIR} -Wl,-rpath=${INSTALL_LIB_DIR}:${STLPORT_LIB_DIR}
 
-release-shared: PROJECT_LIBS = -lxmt -lsockios -lstem -lboost_regex -lexam -lboost_fs
-dbg-shared:     PROJECT_LIBS = -lxmtg -lsockiosg -lstemg -lboost_regexg -lexamg -lboost_fsg
-stldbg-shared:  PROJECT_LIBS = -lxmtstlg -lsockiosstlg -lstemstlg -lboost_regexstlg -lexamstlg -lboost_fsstlg
+release-shared: PROJECT_LIBS = -lxmt -lsockios -lstem -lexam
+dbg-shared:     PROJECT_LIBS = -lxmtg -lsockiosg -lstemg -lexamg
+stldbg-shared:  PROJECT_LIBS = -lxmtstlg -lsockiosstlg -lstemstlg -lexamstlg
 
 LDLIBS = ${PROJECT_LIBS}
 
