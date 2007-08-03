@@ -6,7 +6,9 @@
 	* Event.h, EvManager.cc, EvPack.cc: use TR1 type_traits technique;
 	add tricks to compile without STLport;
 
-	* EventHandler.h: remove STLport's macro.
+	* EventHandler.h: remove STLport's macro;
+
+	* ../../test/stem: moved to ut.
 
 2007-07-27  Petr Ovtchenkov  <ptr@island.corbina.net>
 
