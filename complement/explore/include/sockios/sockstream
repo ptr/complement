@@ -386,11 +386,15 @@ class basic_sockbuf :
       
     basic_sockbuf() :
         _fd( -1 ),
-#ifndef STLPORT
+#if !defined(STLPORT) && defined(__GNUC__)
+#if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4))) // hmm, 3.3.6 
+        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) ),
+#else  // 4.1.1
         _mode( _S_in | _S_out ),
-#else
+#endif // __GNUC__
+#else  // STLPORT
         _mode( 0 ),
-#endif
+#endif // STLPORT
         _bbuf(0), _ebuf(0), _allocated( true )
       // , _doclose( true )
       {
@@ -406,11 +410,15 @@ class basic_sockbuf :
                    sock_base::protocol prot = sock_base::inet,
                    const timespec *timeout = 0 ) :
         _fd( -1 ),
-#ifndef STLPORT
+#if !defined(STLPORT) && defined(__GNUC__)
+#if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)))
+        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) ),
+#else  // 4.1.1
         _mode( _S_in | _S_out ),
-#else
+#endif // __GNUC__
+#else  // STLPORT
         _mode( 0 ),
-#endif
+#endif // STLPORT
         _bbuf(0), _ebuf(0), _allocated( true )
       // , _doclose( true )
       {
@@ -421,11 +429,15 @@ class basic_sockbuf :
                    sock_base::protocol prot = sock_base::inet,
                    const timespec *timeout = 0 ) :
         _fd( -1 ),
-#ifndef STLPORT
+#if !defined(STLPORT) && defined(__GNUC__)
+#if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)))
+        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) ),
+#else  // 4.1.1
         _mode( _S_in | _S_out ),
-#else
+#endif // __GNUC__
+#else  // STLPORT
         _mode( 0 ),
-#endif
+#endif // STLPORT
         _bbuf(0), _ebuf(0), _allocated( true )
       // , _doclose( true )
       {
