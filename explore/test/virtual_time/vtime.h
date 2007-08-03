@@ -292,6 +292,7 @@ class VTHandler :
 
     void VTSend( const stem::Event& e );
     virtual void VTNewMember( const stem::Event& e );
+    virtual void VTOutMember( const stem::Event& e );
 
     template <class D>
     void VTSend( const stem::Event_base<D>& e )
@@ -306,6 +307,7 @@ class VTHandler :
 
 #define MESS 0x300
 #define VTS_NEW_MEMBER 0x301
+#define VTS_OUT_MEMBER 0x302
 
 } // namespace vt
 

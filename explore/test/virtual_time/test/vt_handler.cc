@@ -21,10 +21,12 @@ class VTDummy :
 
     void handler( const stem::Event& );
     void VTNewMember( const stem::Event& );
+    void VTOutMember( const stem::Event& );
 
     void wait();
     std::string msg;
     int count;
+    int ocount;
 
   private:
     xmt::condition cnd;
@@ -36,21 +38,24 @@ class VTDummy :
 
 VTDummy::VTDummy() :
     VTHandler(),
-    count(0)
+    count(0),
+    ocount(0)
 {
   cnd.set( false );
 }
 
 VTDummy::VTDummy( stem::addr_type id ) :
     VTHandler( id ),
-    count(0)
+    count(0),
+    ocount(0)
 {
   cnd.set( false );
 }
 
 VTDummy::VTDummy( stem::addr_type id, const char *info ) :
     VTHandler( id, info ),
-    count(0)
+    count(0),
+    ocount(0)
 {
   cnd.set( false );
 }
@@ -71,6 +76,12 @@ void VTDummy::VTNewMember( const stem::Event& ev )
 {
   // cerr << "Hello" << endl;
   ++count;
+}
+
+void VTDummy::VTOutMember( const stem::Event& ev )
+{
+  // cerr << "Hello" << endl;
+  ++ocount;
 }
 
 void VTDummy::wait()
@@ -171,6 +182,9 @@ int EXAM_IMPL(vtime_operations::VTSubscription)
   dummy2.wait();
   EXAM_CHECK( dummy2.msg == "yet more" );
   EXAM_CHECK( dummy1.msg == "" );
+
+  EXAM_CHECK( dummy1.ocount == 1 );
+  EXAM_CHECK( dummy2.ocount == 1 );
 
   return EXAM_RESULT;
 }
