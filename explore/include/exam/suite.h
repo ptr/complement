@@ -60,7 +60,6 @@ class dummy
     virtual int f( test_suite *, int count = 0 )
       { return count; }
 
-  private:
     virtual ~dummy()
       { }
 };
