@@ -1,7 +1,5 @@
-# -*- makefile -*- Time-stamp: <02/07/14 14:03:13 ptr>
+# -*- makefile -*- Time-stamp: <07/08/03 22:54:01 ptr>
 
 PRGNAME = exam_self_test
 SRC_CC = exam_self_test.cc \
-         exam_test_suite.cc \
-         ../suite.cc \
-         ../logger.cc
+         exam_test_suite.cc

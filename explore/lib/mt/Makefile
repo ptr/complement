@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <07/01/23 15:00:11 ptr>
+# -*- Makefile -*- Time-stamp: <07/08/03 23:56:04 ptr>
 
 SRCROOT := ../..
 
@@ -8,24 +8,26 @@ include ${SRCROOT}/Makefiles/gmake/top.mak
 INCLUDES += -I$(SRCROOT)/include
 
 check:	all-shared
-	$(MAKE) -C ../../test/mt
-	(cd ../../test/mt; ${OUTPUT_DIR}/mt_ut) || exit 1
-	(cd ../../test/mt; ${OUTPUT_DIR_DBG}/mt_ut) || exit 1
-	(cd ../../test/mt; ${OUTPUT_DIR_STLDBG}/mt_ut) || exit 1
+	$(MAKE) -C ut all-shared
+	(cd ut; ${OUTPUT_DIR}/mt_ut) || exit 1
+	(cd ut; ${OUTPUT_DIR_DBG}/mt_ut) || exit 1
+ifndef WITHOUT_STLPORT
+	(cd ut; ${OUTPUT_DIR_STLDBG}/mt_ut) || exit 1
+endif
 
 check-release-shared:	release-shared
-	$(MAKE) -C ../../test/mt release-shared
-	(cd ../../test/mt; ${OUTPUT_DIR}/mt_ut) || exit 1
+	$(MAKE) -C ut release-shared
+	(cd ut; ${OUTPUT_DIR}/mt_ut) || exit 1
 
 check-dbg-shared:	dbg-shared
-	$(MAKE) -C ../../test/mt dbg-shared
-	(cd ../../test/mt; ${OUTPUT_DIR_DBG}/mt_ut) || exit 1
+	$(MAKE) -C ut dbg-shared
+	(cd ut; ${OUTPUT_DIR_DBG}/mt_ut) || exit 1
 
 ifndef WITHOUT_STLPORT
 check-stldbg-shared:	stldbg-shared
-	$(MAKE) -C ../../test/mt stldbg-shared
-	(cd ../../test/mt; ${OUTPUT_DIR_STLDBG}/mt_ut) || exit 1
+	$(MAKE) -C ut stldbg-shared
+	(cd ut; ${OUTPUT_DIR_STLDBG}/mt_ut) || exit 1
 endif
 
-depend::
-	$(MAKE) -C ../../test/mt depend
+depend clean distclean mostlyclean maintainer-clean::
+	${MAKE} -C ut $@
