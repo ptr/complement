@@ -1,3 +1,13 @@
+2007-08-03  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* test/mt/Makefile: let's try don't include boost's -I if macro
+	not defined---mysterious behaviour otherwise happens;
+
+	* xmt.h: add typedefs shared_mutex, shared_recursive_mutex;
+	
+	* shm.h: change ipc_sharable on is_ipc_sharable, use TR1 type_traits
+	technique; add tricks to compile without STLport.
+
 2007-07-17  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* test/mt: boost unit test framework was replaced by exam.

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/11 22:38:41 ptr>
+// -*- C++ -*- Time-stamp: <07/08/03 09:47:53 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -21,7 +21,7 @@
 #include <stdexcept>
 #include <algorithm>
 
-#include <stl/type_traits.h>
+#include <misc/type_traits.h>
 
 #include <mt/xmt.h>
 
@@ -64,40 +64,44 @@ class shm_bad_alloc :
 };
 
 template <class T>
-struct ipc_sharable
-{
-  typedef typename std::__type_traits<T>::is_POD_type is_ipc_sharable;
-};
+struct is_ipc_sharable :
+    public std::tr1::false_type
+{ };
 
-template <>
-struct ipc_sharable<xmt::__condition<true> >
-{
-  typedef std::__true_type is_ipc_sharable;
-};
+#define  __SPEC_(C,T,B)               \
+template <>                           \
+struct C<T > :                        \
+    public std::tr1::integral_constant<bool, B> \
+{ }
 
-template <>
-struct ipc_sharable<xmt::__semaphore<true> >
-{
-  typedef std::__true_type is_ipc_sharable;
-};
+#define __SPEC_FULL(C,T,B) \
+__SPEC_(C,T,B);            \
+__SPEC_(C,volatile T,B);
 
-template <>
-struct ipc_sharable<xmt::__barrier<true> >
-{
-  typedef std::__true_type is_ipc_sharable;
-};
+__SPEC_FULL(is_ipc_sharable,bool,true);
+__SPEC_FULL(is_ipc_sharable,char,true);
+__SPEC_FULL(is_ipc_sharable,signed char,true);
+__SPEC_FULL(is_ipc_sharable,unsigned char,true);
+__SPEC_FULL(is_ipc_sharable,wchar_t,true);
+__SPEC_FULL(is_ipc_sharable,short,true);
+__SPEC_FULL(is_ipc_sharable,unsigned short,true);
+__SPEC_FULL(is_ipc_sharable,int,true);
+__SPEC_FULL(is_ipc_sharable,unsigned int,true);
+__SPEC_FULL(is_ipc_sharable,long,true);
+__SPEC_FULL(is_ipc_sharable,unsigned long,true);
+__SPEC_FULL(is_ipc_sharable,long long,true);
+__SPEC_FULL(is_ipc_sharable,unsigned long long,true);
+__SPEC_FULL(is_ipc_sharable,float,true);
+__SPEC_FULL(is_ipc_sharable,double,true);
+__SPEC_FULL(is_ipc_sharable,long double,true);
+__SPEC_FULL(is_ipc_sharable,xmt::__condition<true>,true);
+__SPEC_FULL(is_ipc_sharable,xmt::__semaphore<true>,true);
+__SPEC_FULL(is_ipc_sharable,xmt::__barrier<true>,true);
+__SPEC_FULL(is_ipc_sharable,xmt::shared_mutex,true);
+__SPEC_FULL(is_ipc_sharable,xmt::shared_recursive_mutex,true);
 
-template <>
-struct ipc_sharable<xmt::__mutex<false,true> >
-{
-  typedef std::__true_type is_ipc_sharable;
-};
-
-template <>
-struct ipc_sharable<xmt::__mutex<true,true> >
-{
-  typedef std::__true_type is_ipc_sharable;
-};
+#undef __SPEC_FULL
+#undef __SPEC_
 
 template <int _Inst> class shm_alloc;
 
@@ -633,7 +637,7 @@ class __allocator_shm
 };
 
 template <>
-class __allocator_shm<std::__false_type>
+class __allocator_shm<std::tr1::false_type>
 {
   private:
     __allocator_shm()
@@ -641,19 +645,35 @@ class __allocator_shm<std::__false_type>
 };
 
 template <>
-class __allocator_shm<std::__true_type>
+class __allocator_shm<std::tr1::true_type>
 {
   public:
     __allocator_shm()
       { }
 };
 
+#ifndef STLPORT
+
+template <class _Tp, class TRD >
+inline void __destroy_aux(_Tp *p, const TRD& /* has_trivial_destructor */)
+{ }
+
+template <class _Tp>
+inline void __destroy_aux(_Tp *p, const std::tr1::false_type& /* has_trivial_destructor */)
+{ p->~_Tp(); }
+
+template <class _Tp>
+inline void __destroy_aux(_Tp *p, const std::tr1::true_type& /* has_trivial_destructor */)
+{ }
+
+#endif // !STLPORT
+
 } // namespace detail
 
 template <class _Tp, int _Inst>
 class allocator_shm :
     public shm_alloc<_Inst>,
-    private detail::__allocator_shm<typename ipc_sharable<_Tp>::is_ipc_sharable>
+    private detail::__allocator_shm<typename is_ipc_sharable<_Tp>::type>
 {
   public:
     typedef shm_alloc<_Inst> chunk_type;
@@ -723,10 +743,22 @@ class allocator_shm :
       { return chunk_type::max_size() / sizeof(value_type); }
 
     void construct(pointer __p, const_reference __val)
-      { _STLP_STD::_Copy_Construct(__p, __val); }
+      {
+#ifdef STLPORT
+        _STLP_STD::_Copy_Construct(__p, __val);
+#else
+        new (__p) _Tp(__val);
+#endif
+      }
 
     void destroy(pointer __p)
-      { _STLP_STD::_Destroy(__p); }
+      {
+#ifdef STLPORT
+        _STLP_STD::_Destroy(__p);
+#else
+        detail::__destroy_aux(__p,std::tr1::has_trivial_destructor<value_type>::value);
+#endif
+      }
 
 };
 
