@@ -7,7 +7,10 @@ include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
 
 
-INCLUDES += -I$(SRCROOT)/include -I$(BOOST_INCLUDE_DIR)
+INCLUDES += -I$(SRCROOT)/include
+ifdef BOOST_DIR
+INCLUDES += -I$(BOOST_INCLUDE_DIR)
+endif
 DEFS += -D__FIT_EXAM
 
 # temporary, before dums fix strings:

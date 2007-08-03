@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <07/01/23 14:58:35 ptr>
+# -*- Makefile -*- Time-stamp: <07/08/03 09:12:25 ptr>
 
 SRCROOT := ../..
 
@@ -9,9 +9,9 @@ INCLUDES += -I$(SRCROOT)/include
 
 dbg-shared:	DEFS += -D__FIT_STEM_TRACE=1
 
-ifdef WITHOUT_STLPORT
-INCLUDES += -I${BOOST_INCLUDE_DIR}
-else
+ifndef WITHOUT_STLPORT
+# INCLUDES += -I${BOOST_INCLUDE_DIR}
+# else
 stldbg-shared:	DEFS += -D__FIT_STEM_TRACE=1
 endif
 
