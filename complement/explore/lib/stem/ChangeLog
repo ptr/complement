@@ -1,3 +1,13 @@
+2007-08-03  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Makefile: let's try don't include boost's -I if macro
+	not defined---mysterious behaviour otherwise happens;
+
+	* Event.h, EvManager.cc, EvPack.cc: use TR1 type_traits technique;
+	add tricks to compile without STLport;
+
+	* EventHandler.h: remove STLport's macro.
+
 2007-07-27  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* Event.h, EvManager.cc, EvPack.cc: operator of format output

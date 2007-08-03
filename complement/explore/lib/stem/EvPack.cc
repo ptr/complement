@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/24 17:19:05 ptr>
+// -*- C++ -*- Time-stamp: <07/08/03 09:22:05 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -24,9 +24,9 @@ namespace std {
 
 ostream& operator <<( ostream& o, const stem::gaddr_type& g )
 {
-  ios_base::fmtflags f = o.flags( 0 );
+  ios_base::fmtflags f = o.flags( ios_base::hex );
 
-  o << hex << setfill( '0' ) 
+  o << setfill( '0' ) 
     << setw(8) << g.hid.u.l[0]
     << setw(8) << g.hid.u.l[1]
     << '-' << dec << g.pid << '-'
