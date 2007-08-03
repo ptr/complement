@@ -59,9 +59,9 @@ struct C<T> :                         \
 
 #define __SPEC_FULL1(C,T,B) \
 __SPEC_1(C,T,B);            \
-__SPEC_1(C,const T,B);      \
-__SPEC_1(C,volatile T,B);   \
-__SPEC_1(C,const volatile T,B)
+__SPEC_1(C,T const,B);      \
+__SPEC_1(C,T volatile,B);   \
+__SPEC_1(C,T const volatile,B)
 
 #define  __SPEC_2(C,T,B)              \
 template <class _Tp1, class _Tp2>     \
@@ -71,9 +71,9 @@ struct C<T> :                         \
 
 #define __SPEC_FULL2(C,T,B) \
 __SPEC_2(C,T,B);            \
-__SPEC_2(C,const T,B);      \
-__SPEC_2(C,volatile T,B);   \
-__SPEC_2(C,const volatile T,B)
+__SPEC_2(C,T const,B);      \
+__SPEC_2(C,T volatile,B);   \
+__SPEC_2(C,T const volatile,B)
 
 template <class _Tp>
 struct is_void :
@@ -170,14 +170,54 @@ struct is_member_object_pointer :
     public false_type
 { };
 
-_SPEC_FULL2(is_member_object_pointer, _Tp1 _Tp2::*,!is_function<_Tp1>::value);
+// _SPEC_FULL2(is_member_object_pointer, _Tp1 _Tp2::*,!is_function<_Tp1>::value);
+
+template <class _Tp1, class _Tp2>
+struct is_member_object_pointer<_Tp1 _Tp2::*> :
+    public integral_constant<bool, !is_function<_Tp1>::value>
+{ };
+
+template <class _Tp1, class _Tp2>
+struct is_member_object_pointer<_Tp1 _Tp2::* const> :
+    public integral_constant<bool, !is_function<_Tp1>::value>
+{ };
+
+template <class _Tp1, class _Tp2>
+struct is_member_object_pointer<_Tp1 _Tp2::* volatile> :
+    public integral_constant<bool, !is_function<_Tp1>::value>
+{ };
+
+template <class _Tp1, class _Tp2>
+struct is_member_object_pointer<_Tp1 _Tp2::* const volatile> :
+    public integral_constant<bool, !is_function<_Tp1>::value>
+{ };
 
 template <class _Tp>
 struct is_member_function_pointer :
     public false_type
 { };
 
-_SPEC_FULL2(is_member_function_pointer, _Tp1 _Tp2::*,is_function<_Tp1>::value);
+// _SPEC_FULL2(is_member_function_pointer,_Tp1 _Tp2::*,is_function<_Tp1>::value);
+
+template <class _Tp1, class _Tp2>
+struct is_member_function_pointer<_Tp1 _Tp2::*> :                         
+    public integral_constant<bool, is_function<_Tp1>::value> 
+{ };
+
+template <class _Tp1, class _Tp2>
+struct is_member_function_pointer<_Tp1 _Tp2::* const> :
+    public integral_constant<bool, is_function<_Tp1>::value>
+{ };
+
+template <class _Tp1, class _Tp2>
+struct is_member_function_pointer<_Tp1 _Tp2::* volatile> :
+    public integral_constant<bool, is_function<_Tp1>::value>
+{ };
+
+template <class _Tp1, class _Tp2>
+struct is_member_function_pointer<_Tp1 _Tp2::* const volatile> :
+    public integral_constant<bool, is_function<_Tp1>::value>
+{ };
 
 template <class _Tp>
 struct is_member_pointer :
