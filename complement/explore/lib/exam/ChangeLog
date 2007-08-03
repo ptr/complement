@@ -1,3 +1,7 @@
+2007-08-03  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* suite.h: remove private keyword for dummy, to make gcc 3.3.6 happy.
+
 2007-07-21  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* suite.h, suite.cc: boost graph removed;
