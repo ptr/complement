@@ -6,7 +6,9 @@
 	* xmt.h: add typedefs shared_mutex, shared_recursive_mutex;
 	
 	* shm.h: change ipc_sharable on is_ipc_sharable, use TR1 type_traits
-	technique; add tricks to compile without STLport.
+	technique; add tricks to compile without STLport;
+
+	* ut: moved from ../../test/mt to ut.
 
 2007-07-17  Petr Ovtchenkov  <ptr@island.corbina.net>
 

@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <07/07/16 15:00:11 ptr>
+# -*- Makefile -*- Time-stamp: <07/08/03 23:56:16 ptr>
 
 SRCROOT := ../..
 
@@ -29,8 +29,5 @@ check-stldbg-shared:	stldbg-shared
 	(cd ./ut; ${OUTPUT_DIR_STLDBG}/exam_self_test) || exit 1
 endif
 
-depend::
-	$(MAKE) -C ./ut depend
-
-clean::
-	$(MAKE) -C ./ut clean
+depend clean distclean mostlyclean maintainer-clean::
+	${MAKE} -C ut $@
