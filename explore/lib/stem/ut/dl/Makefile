@@ -1,7 +1,6 @@
-# -*- Makefile -*- Time-stamp: <07/02/07 12:13:04 ptr>
+# -*- Makefile -*- Time-stamp: <07/08/03 23:59:51 ptr>
 
-SRCROOT := ../../..
-COMPILER_NAME := gcc
+SRCROOT := ../../../..
 
 DBG_SUFFIX :=
 STLDBG_SUFFIX :=
@@ -15,14 +14,19 @@ INCLUDES += -I$(SRCROOT)/include
 
 #LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR}
 release-shared:	LDSEARCH += -L${LIBSTEM_DIR}/${OUTPUT_DIR}
-stldbg-shared:	LDSEARCH += -L${LIBSTEM_DIR}/${OUTPUT_DIR_STLDBG}
 dbg-shared:	LDSEARCH += -L${LIBSTEM_DIR}/${OUTPUT_DIR_DBG}
+ifndef WITHOUT_STLPORT
+stldbg-shared:	LDSEARCH += -L${LIBSTEM_DIR}/${OUTPUT_DIR_STLDBG}
+endif
 
 #release-shared : LDLIBS = -lxmt -lsockios -lstem -lboost_test_utf
 release-shared:	LDLIBS = -lstem
 #stldbg-shared  : LDLIBS = -lxmtstlg -lsockiosstlg -lstemstlg -lboost_test_utfstlg
-stldbg-shared:	LDLIBS = -lstemstlg
 #dbg-shared     : LDLIBS = -lxmtg -lsockiosg -lstemg -lboost_test_utfg
 dbg-shared:	LDLIBS = -lstemg
+
+ifndef WITHOUT_STLPORT
+stldbg-shared:	LDLIBS = -lstemstlg
+endif
 
 #LDFLAGS += -Wl,-rpath=${STLPORT_LIB_DIR}:${CoMT_LIB_DIR}
