@@ -38,7 +38,7 @@ struct hash<vt::oid_type>
 namespace vt {
 
 typedef uint32_t vtime_unit_type;
-typedef uint32_t group_type;
+typedef stem::addr_type group_type; // required, used in VTSend
 typedef std::hash_map<oid_type, vtime_unit_type> vtime_type;
 
 bool operator <=( const vtime_type& l, const vtime_type& r );
@@ -186,6 +186,8 @@ class vtime_obj_rec
       { groups.insert(g); }
     void add( stem::addr_type a, group_type g )
       { addr = a; groups.insert(g); }
+    bool rm_group( group_type );
+    void rm_member( oid_type );
 
     stem::addr_type stem_addr() const
       { return addr; }
@@ -252,6 +254,7 @@ class VTDispatcher :
 
     void VTSend( const stem::Event& e, group_type );
     void Subscribe( stem::addr_type, oid_type, group_type );
+    void Unsubscribe( oid_type, group_type );
 
   private:    
     typedef std::hash_map<oid_type, detail::vtime_obj_rec> vt_map_type;
@@ -288,6 +291,7 @@ class VTHandler :
     virtual ~VTHandler();
 
     void VTSend( const stem::Event& e );
+    virtual void VTNewMember( const stem::Event& e );
 
     template <class D>
     void VTSend( const stem::Event_base<D>& e )
@@ -296,9 +300,12 @@ class VTHandler :
 
   private:
     static class VTDispatcher *_vtdsp;
+
+    DECLARE_RESPONSE_TABLE( VTHandler, stem::EventHandler );
 };
 
 #define MESS 0x300
+#define VTS_NEW_MEMBER 0x301
 
 } // namespace vt
 

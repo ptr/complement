@@ -405,6 +405,65 @@ void vtime_obj_rec::delta( gvtime& vtstamp, oid_type from, oid_type to, group_ty
   vtstamp[grp][from] = vt.gvt[grp][from]; // my counter, as is, not delta
 }
 
+bool vtime_obj_rec::rm_group( group_type g )
+{
+  // strike out group g from my groups list
+  groups_container_type::iterator i = groups.find( g );
+  if ( i == groups.end() ) {
+    throw domain_error( "VT object not member of group" );
+  }
+  groups.erase( i );
+
+  // remove my VT component for group g
+  gvtime_type::iterator j = vt.gvt.find( g );
+
+  if ( j != vt.gvt.end() ) {
+    vt.gvt.erase( j );
+  }
+
+  // remove sended VT components for group g
+  for ( snd_delta_vtime_t::iterator k = svt.begin(); k != svt.end(); ++k ) {
+    gvtime_type::iterator l = k->second.find( g );
+    if ( l != k->second.end() ) {
+      k->second.erase( l );
+    }
+  }
+
+  // remove recieved VT components for group g
+  for ( delta_vtime_type::iterator k = lvt.begin(); k != lvt.end(); ++k ) {
+    gvtime_type::iterator l = k->second.find( g );
+    if ( l != k->second.end() ) {
+      k->second.erase( l );
+    }
+  }
+
+  // remove messages for group g that wait in delay pool
+  for ( dpool_t::iterator p = dpool.begin(); p != dpool.end(); ) {
+    if ( p->second->value().grp == g ) {
+      dpool.erase( p++ );
+    } else {
+      ++p;
+    }
+  }
+
+  return groups.empty() ? true : false;
+}
+
+void vtime_obj_rec::rm_member( oid_type oid )
+{
+  delta_vtime_type::iterator i = lvt.find( oid );
+
+  if ( i != lvt.end() ) {
+    lvt.erase( i );
+  }
+
+  snd_delta_vtime_t::iterator j = svt.find( oid );
+
+  if ( j != lvt.end() ) {
+    svt.erase( j );
+  }
+}
+
 } // namespace detail
 
 void VTDispatcher::VTDispatch( const stem::Event_base<VTmess>& m )
@@ -521,8 +580,48 @@ void VTDispatcher::VTSend( const stem::Event& e, group_type grp )
 
 void VTDispatcher::Subscribe( stem::addr_type addr, oid_type oid, group_type grp )
 {
+  // See comment on top of VTSend above
+  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
+
+  pair<gid_map_type::const_iterator,gid_map_type::const_iterator> range =
+    grmap.equal_range( grp );
+
+  for ( ; range.first != range.second; ++range.first ) {
+    vt_map_type::iterator i = vtmap.find( range.first->second );
+    if ( i != vtmap.end() ) {
+      stem::Event ev( VTS_NEW_MEMBER );
+      ev.dest( i->second.stem_addr() );
+      ev.src( addr );
+      Forward( ev );
+    }
+  }
+
   vtmap[oid].add( addr, grp );
   grmap.insert( make_pair(grp,oid) );
+}
+
+void VTDispatcher::Unsubscribe( oid_type oid, group_type grp )
+{
+  // See comment on top of VTSend above
+  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
+
+  pair<gid_map_type::iterator,gid_map_type::iterator> range =
+    grmap.equal_range( grp );
+
+  while ( range.first != range.second ) {
+    if ( range.first->second == oid ) {
+      grmap.erase( range.first++ );
+    } else {
+      ++range.first;
+    }
+  }
+
+  vt_map_type::iterator i = vtmap.find( oid );
+  if ( i != vtmap.end() ) {
+    if ( i->second.rm_group( grp ) ) { // no groups more
+      vtmap.erase( i );
+    }
+  }
 }
 
 DEFINE_RESPONSE_TABLE( VTDispatcher )
@@ -583,7 +682,7 @@ VTHandler::Init::~Init()
 void VTHandler::VTSend( const stem::Event& ev )
 {
   ev.src( self_id() );
-  // _vtdsp->VTSend( ev, grp );
+  _vtdsp->VTSend( ev, ev.dest() ); // throw domain_error, if not group member
 }
 
 VTHandler::VTHandler() :
@@ -591,25 +690,39 @@ VTHandler::VTHandler() :
 {
   new( Init_buf ) Init();
 
-  // _vtdsp->Subscribe( self_id(), ... , ... );
+  _vtdsp->Subscribe( self_id(), oid_type( self_id() ), /* grp */ 0 );
 }
 
 VTHandler::VTHandler( const char *info ) :
    EventHandler( info )
 {
   new( Init_buf ) Init();
+
+  _vtdsp->Subscribe( self_id(), oid_type( self_id() ), /* grp */ 0 );
 }
 
 VTHandler::VTHandler( stem::addr_type id, const char *info ) :
    EventHandler( id, info )
 {
   new( Init_buf ) Init();
+
+  _vtdsp->Subscribe( id, oid_type( id ), /* grp */ 0 );
 }
 
 VTHandler::~VTHandler()
 {
+  _vtdsp->Unsubscribe( oid_type( self_id() ), /* grp */ 0 );
+
   ((Init *)Init_buf)->~Init();
 }
+
+void VTHandler::VTNewMember( const stem::Event& )
+{
+}
+
+DEFINE_RESPONSE_TABLE( VTHandler )
+  EV_EDS( ST_NULL, VTS_NEW_MEMBER, VTNewMember )
+END_RESPONSE_TABLE
 
 } // namespace vt
 

@@ -20,6 +20,11 @@ struct vtime_operations
 
   int EXAM_DECL(VTDispatch1);
   int EXAM_DECL(VTDispatch2);
+
+  int EXAM_DECL(VTHandler1);
+  int EXAM_DECL(VTHandler2);
+
+  int EXAM_DECL(VTSubscription);
 };
 
 #endif // __vt_operations_h
