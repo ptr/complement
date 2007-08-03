@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/03/12 18:53:45 ptr>
+// -*- C++ -*- Time-stamp: <07/08/03 09:20:31 ptr>
 
 /*
  *
@@ -685,10 +685,10 @@ std::ostream& operator <<( ostream& s, const gaddr_type& ga )
 
 __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
 {
-  ios_base::fmtflags f = s.flags( 0 );
+  ios_base::fmtflags f = s.flags( ios_base::hex | ios_base::showbase );
   s << "Local map:\n";
 
-  s << hex << showbase;
+  // s << hex << showbase;
   {
     scoped_lock lk( _lock_heap );
 

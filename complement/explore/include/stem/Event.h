@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <07/07/27 09:41:46 ptr>
+// -*- C++ -*- Time-stamp: <07/08/03 08:19:34 ptr>
 
 /*
  *
- * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
+ * Copyright (c) 1995-1999, 2002, 2003, 2005-2007
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -26,52 +26,10 @@
 #include <sstream>
 #include <stdint.h>
 
+#include <misc/type_traits.h>
 #include <stem/EvPack.h>
 #include <mt/uid.h>
 #include <mt/xmt.h>
-
-#ifndef STLPORT
-#include <bits/cpp_type_traits.h>
-
-// libstdc++ v3, timestamp 20050519 (3.4.4) has __type_traits,
-// libstdc++ v3, timestamp 20060306 (3.4.6) has __type_traits,
-// while libstdc++ v3, 20050921 (4.0.2) not; use boost's staff instead
-# if !defined(__GLIBCXX__) || (defined(__GNUC__) && (__GNUC__ > 3))
-#include <boost/type_traits.hpp>
-
-//bool to type
-template <int _Is>
-struct __bool2type
-{ typedef __true_type _Ret; };
-
-template <>
-struct __bool2type<1> { typedef __true_type _Ret; };
-
-template <>
-struct __bool2type<0> { typedef __false_type _Ret; };
-
-template <class _Tp>
-struct __type_traits {
-  enum { trivial_constructor = ::boost::has_trivial_constructor<_Tp>::value };
-  typedef typename __bool2type<trivial_constructor>::_Ret has_trivial_default_constructor;
-
-  enum { trivial_copy = ::boost::has_trivial_copy<_Tp>::value };
-  typedef typename __bool2type<trivial_copy>::_Ret has_trivial_copy_constructor;
-
-  enum { trivial_assign = ::boost::has_trivial_assign<_Tp>::value };
-  typedef typename __bool2type<trivial_assign>::_Ret has_trivial_assignment_operator;
-
-  enum { trivial_destructor = ::boost::has_trivial_destructor<_Tp>::value };
-  typedef typename __bool2type<trivial_destructor>::_Ret has_trivial_destructor;
-
-  enum { pod = ::boost::is_pod<_Tp>::value };
-  typedef typename __bool2type<pod>::_Ret is_POD_type;
-};
-# else
-#  include <bits/type_traits.h>
-# endif // __GLIBCXX__
-
-#endif
 
 namespace stem {
 
@@ -83,16 +41,6 @@ extern const addr_type extbit;
 extern const addr_type default_addr;
 extern const addr_type ns_addr;
 extern const code_type badcode;
-
-#ifdef STLPORT
-using std::__true_type;
-using std::__false_type;
-using std::__type_traits;
-#else
-using ::__true_type;
-using ::__false_type;
-using ::__type_traits;
-#endif
 
 struct gaddr_type :
         public __pack_base
@@ -220,8 +168,8 @@ class __Event_Base
 // Forward declarations
 
 template <class D, class POD > class __Event_base_aux;
-template <class D> class __Event_base_aux<D,__true_type>;
-template <class D> class __Event_base_aux<D,__false_type>;
+template <class D> class __Event_base_aux<D,std::tr1::true_type>;
+template <class D> class __Event_base_aux<D,std::tr1::false_type>;
 
 template <class D> class Event_base;
 
@@ -267,7 +215,7 @@ class __Event_base_aux :
 };
 
 template <class D>
-class __Event_base_aux<D,__true_type> :
+class __Event_base_aux<D,std::tr1::true_type> :
         public __Event_Base
 {
   public:
@@ -318,7 +266,7 @@ class __Event_base_aux<D,__true_type> :
 };
 
 template <class D>
-class __Event_base_aux<D,__false_type> :
+class __Event_base_aux<D,std::tr1::false_type> :
         public __Event_Base
 {
   public:
@@ -369,7 +317,7 @@ class __Event_base_aux<D,__false_type> :
 };
 
 template <>
-class __Event_base_aux<std::string,__false_type> :
+class __Event_base_aux<std::string,std::tr1::false_type> :
         public __Event_Base
 {
   public:
@@ -420,7 +368,7 @@ class __Event_base_aux<std::string,__false_type> :
 };
 
 template <>
-class __Event_base_aux<void,__true_type> :
+class __Event_base_aux<void,std::tr1::true_type> :
         public __Event_Base
 {
   public:
@@ -456,26 +404,26 @@ class __Event_base_aux<void,__true_type> :
 
 template <class D>
 class Event_base :
-    public __Event_base_aux<D,typename __type_traits<D>::is_POD_type>
+    public __Event_base_aux<D,typename std::tr1::is_pod<D>::type>
 {
   private:
-    typedef __Event_base_aux<D,typename __type_traits<D>::is_POD_type> _Base;
+    typedef __Event_base_aux<D,typename std::tr1::is_pod<D>::type> _Base;
 
   public:
     Event_base() :
-        __Event_base_aux<D,typename __type_traits<D>::is_POD_type>()
+        __Event_base_aux<D,typename std::tr1::is_pod<D>::type>()
       { }
 
     explicit Event_base( code_type c ) :
-        __Event_base_aux<D,typename __type_traits<D>::is_POD_type>( c )
+        __Event_base_aux<D,typename std::tr1::is_pod<D>::type>( c )
       { }
 
     Event_base( code_type c, const D& d ) :
-        __Event_base_aux<D,typename __type_traits<D>::is_POD_type>( c, d )
+        __Event_base_aux<D,typename std::tr1::is_pod<D>::type>( c, d )
       { }
 
     Event_base( const Event_base& e ) :
-        __Event_base_aux<D,typename __type_traits<D>::is_POD_type>( e, e._data )
+        __Event_base_aux<D,typename std::tr1::is_pod<D>::type>( e, e._data )
       { }
 
     void net_pack( Event& s ) const;
@@ -487,26 +435,26 @@ class Event_base :
 
 template <>
 class Event_base<std::string> :
-    public __Event_base_aux<std::string,__false_type>
+    public __Event_base_aux<std::string,std::tr1::false_type>
 {
   private:
-    typedef __Event_base_aux<std::string,__false_type> _Base;
+    typedef __Event_base_aux<std::string,std::tr1::false_type> _Base;
 
   public:
     Event_base() :
-        __Event_base_aux<std::string,__false_type>()
+        __Event_base_aux<std::string,std::tr1::false_type>()
       { }
 
     explicit Event_base( code_type c ) :
-        __Event_base_aux<std::string,__false_type>( c )
+        __Event_base_aux<std::string,std::tr1::false_type>( c )
       { }
 
     Event_base( code_type c, const std::string& d ) :
-        __Event_base_aux<std::string,__false_type>( c, d )
+        __Event_base_aux<std::string,std::tr1::false_type>( c, d )
       { }
 
     Event_base( const Event_base& e ) :
-        __Event_base_aux<std::string,__false_type>( e, e._data )
+        __Event_base_aux<std::string,std::tr1::false_type>( e, e._data )
       { }
 
     void net_pack( Event& s ) const
@@ -549,7 +497,6 @@ class Event_base<std::string> :
 template <class D>
 void Event_base<D>::net_pack( Event& s ) const
 {
-  // std::cerr << "**1\n";
   s.code( _Base::_code );
   s.dest( _Base::_dst );
   s.src( _Base::_src );
@@ -568,7 +515,6 @@ void Event_base<D>::net_unpack( const Event& s )
   _Base::_flags = s.flags() & ~(__Event_Base::conv | __Event_Base::expand);
   std::istringstream ss( s.value() );
   _Base::net_unpack( ss );
-  // std::cerr << "**2 " << std::hex << _Base::flags() << std::dec << std::endl;
 }
 
 template <class D>
@@ -582,7 +528,6 @@ void Event_base<D>::pack( Event& s ) const
   std::ostringstream ss;
   _Base::pack( ss );
   s.value() = ss.str();
-  // std::cerr << "**3 " << std::hex << s.flags() << std::dec << std::endl;
 }
 
 template <class D>
@@ -595,28 +540,27 @@ void Event_base<D>::unpack( const Event& s )
   // _Base::unsetf( __Event_Base::expand );
   std::istringstream ss( s.value() );
   _Base::unpack( ss );
-  // std::cerr << "**4 " << std::hex << _Base::flags() << std::dec << std::endl;
 }
 
 template <>
 class Event_base<void> :
-    public __Event_base_aux<void,__true_type>
+    public __Event_base_aux<void,std::tr1::true_type>
 {
   private:
-    typedef __Event_base_aux<void,__true_type> _Base;
+    typedef __Event_base_aux<void,std::tr1::true_type> _Base;
 
   public:
 
     Event_base() :
-        __Event_base_aux<void,__true_type>()
+        __Event_base_aux<void,std::tr1::true_type>()
       { }
 
     explicit Event_base( code_type c ) :
-        __Event_base_aux<void,__true_type>( c )
+        __Event_base_aux<void,std::tr1::true_type>( c )
       { }
 
     __FIT_EXPLICIT Event_base( const Event_base& e ) :
-        __Event_base_aux<void,__true_type>( e )
+        __Event_base_aux<void,std::tr1::true_type>( e )
       { }
 
     void net_pack( Event& s ) const

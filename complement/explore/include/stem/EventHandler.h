@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/08 17:24:21 ptr>
+// -*- C++ -*- Time-stamp: <07/08/03 09:01:32 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -509,7 +509,7 @@ typedef std::list<state_type> HistoryContainer;
 typedef HistoryContainer::iterator h_iterator;
 typedef HistoryContainer::const_iterator const_h_iterator;
 
-_STLP_TEMPLATE_NULL
+template <>
 class __EvHandler<EventHandler,h_iterator >
 {
   public:
@@ -669,7 +669,7 @@ void __EvTableLoader( EventHandler::table_type *table, Handler * )
   }
 }
 
-_STLP_TEMPLATE_NULL
+template <>
 inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
                                            EventHandler * )
 { }
