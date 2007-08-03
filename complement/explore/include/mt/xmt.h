@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/11 22:37:57 ptr>
+// -*- C++ -*- Time-stamp: <07/08/03 09:47:08 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2007
@@ -895,6 +895,8 @@ class basic_read_lock
 
 typedef __mutex<false,false>  mutex;
 typedef __mutex<true,false>   recursive_mutex;
+typedef __mutex<false,true>   shared_mutex;
+typedef __mutex<true,true>    shared_recursive_mutex;
 #ifdef __FIT_RWLOCK
 typedef __rw_mutex<false>     rw_mutex;
 #endif // __FIT_RWLOCK
