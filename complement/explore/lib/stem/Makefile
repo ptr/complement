@@ -10,8 +10,6 @@ INCLUDES += -I$(SRCROOT)/include
 dbg-shared:	DEFS += -D__FIT_STEM_TRACE=1
 
 ifndef WITHOUT_STLPORT
-# INCLUDES += -I${BOOST_INCLUDE_DIR}
-# else
 stldbg-shared:	DEFS += -D__FIT_STEM_TRACE=1
 endif
 
@@ -19,7 +17,9 @@ check:	all-shared
 	$(MAKE) -C ../../test/stem
 	(cd ../../test/stem; ${OUTPUT_DIR}/stem_ut) || exit 1
 	(cd ../../test/stem; ${OUTPUT_DIR_DBG}/stem_ut) || exit 1
+ifndef WITHOUT_STLPORT
 	(cd ../../test/stem; ${OUTPUT_DIR_STLDBG}/stem_ut) || exit 1
+endif
 
 check-release-shared:	release-shared
 	$(MAKE) -C ../../test/stem release-shared
