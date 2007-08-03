@@ -805,7 +805,7 @@ int EXAM_IMPL(stem_test_suite)
 {
   exam::test_suite::test_case_type tc[4];
 
-  exam::test_suite t( "libsteam test suite" );
+  exam::test_suite t( "libstem test suite" );
   stem_test test;
 
   tc[1] = t.add( &stem_test::basic2, test, "basic2",
