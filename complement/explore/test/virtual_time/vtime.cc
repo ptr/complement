@@ -608,15 +608,22 @@ void VTDispatcher::Unsubscribe( oid_type oid, group_type grp )
   pair<gid_map_type::iterator,gid_map_type::iterator> range =
     grmap.equal_range( grp );
 
+  vt_map_type::iterator i = vtmap.find( oid );
   while ( range.first != range.second ) {
     if ( range.first->second == oid ) {
       grmap.erase( range.first++ );
     } else {
+      vt_map_type::iterator j = vtmap.find( range.first->second );
+      if ( j != vtmap.end() ) {
+        stem::Event ev( VTS_OUT_MEMBER );
+        ev.dest( j->second.stem_addr() );
+        ev.src( i != vtmap.end() ? i->second.stem_addr() : self_id() );
+        Forward( ev );
+      }
       ++range.first;
     }
   }
 
-  vt_map_type::iterator i = vtmap.find( oid );
   if ( i != vtmap.end() ) {
     if ( i->second.rm_group( grp ) ) { // no groups more
       vtmap.erase( i );
@@ -720,8 +727,13 @@ void VTHandler::VTNewMember( const stem::Event& )
 {
 }
 
+void VTHandler::VTOutMember( const stem::Event& )
+{
+}
+
 DEFINE_RESPONSE_TABLE( VTHandler )
   EV_EDS( ST_NULL, VTS_NEW_MEMBER, VTNewMember )
+  EV_EDS( ST_NULL, VTS_OUT_MEMBER, VTOutMember )
 END_RESPONSE_TABLE
 
 } // namespace vt

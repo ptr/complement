@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <07/01/23 14:59:53 ptr>
+# -*- Makefile -*- Time-stamp: <07/08/03 23:06:18 ptr>
 
 SRCROOT := ../..
 
@@ -8,24 +8,29 @@ include ${SRCROOT}/Makefiles/gmake/top.mak
 INCLUDES += -I$(SRCROOT)/include
 
 check:	all-shared
-	$(MAKE) -C ../../test/sockios
-	(cd ../../test/sockios; ${OUTPUT_DIR}/sockios_ut) || exit 1
-	(cd ../../test/sockios; ${OUTPUT_DIR_DBG}/sockios_ut) || exit 1
-	(cd ../../test/sockios; ${OUTPUT_DIR_STLDBG}/sockios_ut) || exit 1
+	$(MAKE) -C ut
+	(cd ut; ${OUTPUT_DIR}/sockios_ut) || exit 1
+	(cd ut; ${OUTPUT_DIR_DBG}/sockios_ut) || exit 1
+ifndef WITHOUT_STLPORT
+	(cd ut; ${OUTPUT_DIR_STLDBG}/sockios_ut) || exit 1
+endif
 
 check-release-shared:	release-shared
-	$(MAKE) -C ../../test/sockios release-shared
-	(cd ../../test/sockios; ${OUTPUT_DIR}/sockios_ut) || exit 1
+	$(MAKE) -C ut release-shared
+	(cd ut; ${OUTPUT_DIR}/sockios_ut) || exit 1
 
 check-dbg-shared:	dbg-shared
-	$(MAKE) -C ../../test/sockios dbg-shared
-	(cd ../../test/sockios; ${OUTPUT_DIR_DBG}/sockios_ut) || exit 1
+	$(MAKE) -C ut dbg-shared
+	(cd ut; ${OUTPUT_DIR_DBG}/sockios_ut) || exit 1
 
 ifndef WITHOUT_STLPORT
 check-stldbg-shared:	stldbg-shared
-	$(MAKE) -C ../../test/sockios stldbg-shared
-	(cd ../../test/sockios; ${OUTPUT_DIR_STLDBG}/sockios_ut) || exit 1
+	$(MAKE) -C ut stldbg-shared
+	(cd ut; ${OUTPUT_DIR_STLDBG}/sockios_ut) || exit 1
 endif
 
 depend::
-	$(MAKE) -C ../../test/sockios depend
+	$(MAKE) -C ut depend
+
+clean::
+	$(MAKE) -C ut clean

@@ -1,7 +1,9 @@
 2007-08-03  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* include/sockios/sockstream: workaround for file openmode
-	for libstdc++ shipped with gcc 3.3.6.
+	for libstdc++ shipped with gcc 3.3.6;
+
+	* ../../test/sockios: moved to ut.
 
 2007-07-18  Petr Ovtchenkov  <ptr@island.corbina.net>
 

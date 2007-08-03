@@ -1,6 +1,6 @@
-# -*- Makefile -*- Time-stamp: <07/07/18 08:44:04 ptr>
+# -*- Makefile -*- Time-stamp: <07/08/03 23:06:43 ptr>
 
-SRCROOT := ../..
+SRCROOT := ../../..
 
 include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
