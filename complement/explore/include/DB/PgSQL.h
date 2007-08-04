@@ -72,7 +72,7 @@ class DataBase :
 
     DBconn *_conn;
     xmt::Thread thr;
-    xmt::Condition con_cond;
+    xmt::condition con_cond;
 
     friend class Cursor;
 };
