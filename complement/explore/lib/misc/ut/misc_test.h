@@ -18,7 +18,8 @@
 class misc_test
 {
   public:
-    int EXAM_DECL(type_traits);
+    int EXAM_DECL(type_traits_internals);
+    int EXAM_DECL(type_traits_is_empty);
 };
 
 #endif // __MISC_TEST_H
