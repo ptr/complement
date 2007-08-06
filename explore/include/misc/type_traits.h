@@ -399,7 +399,7 @@ struct is_pod :
 
 template<typename _Tp>
 struct is_empty
-    : public integral_constant<bool, (detail::__is_union_or_class<_Tp>::__value
+    : public integral_constant<bool, (detail::__is_union_or_class<_Tp>::value
                                       && (sizeof(detail::__empty<_Tp>) == sizeof(_Tp)))>
 { };
 
