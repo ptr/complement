@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/17 09:58:22 ptr>
+// -*- C++ -*- Time-stamp: <07/08/06 10:03:33 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -36,6 +36,8 @@ int EXAM_IMPL(mt_test::barrier)
   xmt::barrier b( 1 );
 
   b.wait();
+
+  return EXAM_RESULT;
 }
 
 /* ******************************************************
