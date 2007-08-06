@@ -20,7 +20,8 @@ int EXAM_IMPL(misc_test_suite)
 
   exam::test_suite::test_case_type tc[3];
 
-  tc[0] = t.add( &misc_test::type_traits, test, "misc_test::type_traits" );
+  t.add( &misc_test::type_traits_is_empty, test, "misc_test::type_traits_is_empty",
+    t.add( &misc_test::type_traits_internals, test, "misc_test::type_traits_internals" ) );
 
   return t.girdle();
 };

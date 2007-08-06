@@ -11,7 +11,6 @@
 #include "misc_test.h"
 
 #include <misc/type_traits.h>
-#include <iostream>
 
 using namespace std;
 
@@ -41,12 +40,12 @@ int f()
 }
 
 template <class T>
-static bool q( T v )
+bool q( T v )
 {
   return std::tr1::detail::__instance<T>::__value;
 }
 
-int EXAM_IMPL(misc_test::type_traits)
+int EXAM_IMPL(misc_test::type_traits_internals)
 {
   EXAM_CHECK( std::tr1::detail::__instance<int []>::__value == true );
   EXAM_CHECK( std::tr1::detail::__instance<int *>::__value == true );
@@ -60,3 +59,52 @@ int EXAM_IMPL(misc_test::type_traits)
 
   return EXAM_RESULT;
 }
+
+class empty
+{
+};
+
+class not_empty1
+{
+  private:
+    int k;
+};
+
+class not_empty2
+{
+  private:
+    int f() const
+      { return 0; }
+};
+
+class not_empty3
+{
+  private:
+    virtual int f() const
+      { return 0; }
+};
+
+class not_empty4 :
+    public not_empty2
+{
+};
+
+class not_empty5 :
+    public not_empty3
+{
+};
+
+int EXAM_IMPL(misc_test::type_traits_is_empty)
+{
+  EXAM_CHECK( std::tr1::is_empty<empty>::value == true );
+  EXAM_CHECK( std::tr1::is_empty<not_empty1>::value == false );
+  // EXAM_CHECK( std::tr1::is_empty<not_empty2>::value == false );
+  EXAM_CHECK( std::tr1::is_empty<not_empty3>::value == false );
+  EXAM_CHECK( std::tr1::is_empty<int>::value == false );
+  // EXAM_CHECK( std::tr1::is_empty<int (&)()>::value == false );
+  // EXAM_CHECK( std::tr1::is_empty<not_empty4>::value == false );
+  EXAM_CHECK( std::tr1::is_empty<not_empty5>::value == false );
+
+  return EXAM_RESULT;
+}
+
