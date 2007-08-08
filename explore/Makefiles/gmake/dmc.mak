@@ -19,7 +19,6 @@ endif
 
 CXX := dmc
 CC := dmc
-RC := rcc
 
 DEFS ?=
 OPT ?=
@@ -64,7 +63,7 @@ CPPFLAGS = $(DEFS) $(OPT) $(INCLUDES)
 
 CDEPFLAGS = -E -M
 CCDEPFLAGS = -E -M
-RCFLAGS = -32 -I${STLPORT_INCLUDE_DIR} -DCOMP=dmc
+RCFLAGS = --include-dir=${STLPORT_INCLUDE_DIR} -DCOMP=dmc
 
 release-shared : RCFLAGS += -DBUILD=r -DBUILD_INFOS="-o"
 dbg-shared : RCFLAGS += -DBUILD=g -DBUILD_INFOS="-gl -D_DEBUG"

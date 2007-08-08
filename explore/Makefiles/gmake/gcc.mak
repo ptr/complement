@@ -43,7 +43,6 @@ ifneq ("$(shell ${CXX} -v 2>&1 | grep Apple)", "")
 GCC_APPLE_CC := 1
 endif
 else
-ifneq ($(OSNAME), windows)
 CXX_VERSION := $(shell ${CXX} --version | grep GCC | awk '{ print $$3; }')
 
 ifeq ($(CXX_VERSION),)
@@ -54,7 +53,6 @@ endif
 CXX_VERSION_MAJOR := $(shell echo ${CXX_VERSION} | awk 'BEGIN { FS = "."; } { print $$1; }')
 CXX_VERSION_MINOR := $(shell echo ${CXX_VERSION} | awk 'BEGIN { FS = "."; } { print $$2; }')
 CXX_VERSION_PATCH := $(shell echo ${CXX_VERSION} | awk 'BEGIN { FS = "."; } { print $$3; }')
-endif
 endif
 
 DEFS ?=
