@@ -1,3 +1,13 @@
+2007-08-08  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/app/rules.mak: use special link string for Digital Mars
+	and Borland compilers, due to special pass of options and files
+	to linker for this OE;
+
+	* gmake/gcc.mak, gmake/dmc.mak: use STLport's experience;
+
+	* gmake/lib/gcc.mak: gcc 3.3 also may have bad libsupc++.
+
 2007-07-12  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/gcc.mak, gmake/top.mak: add include option for boost's
