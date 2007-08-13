@@ -220,6 +220,10 @@ class vtime_obj_rec
     bool rm_group( group_type );
     void rm_member( const oid_type& );
 
+    template <typename BackInsertIterator>
+    void groups_list( BackInsertIterator bi ) const
+      { std::copy( groups.begin(), groups.end(), bi ); }
+
     stem::addr_type stem_addr() const
       { return addr; }
 
@@ -307,6 +311,7 @@ class VTDispatcher :
     void VTSend( const stem::Event& e, group_type );
     void Subscribe( stem::addr_type, oid_type, group_type );
     void Unsubscribe( oid_type, group_type );
+    void Unsubscribe( oid_type );
     void get_gvtime( group_type, stem::addr_type, gvtime_type& );
     void set_gvtime( group_type, stem::addr_type, const gvtime_type& );
 
@@ -357,6 +362,8 @@ class VTHandler :
     virtual ~VTHandler();
 
     void VTSend( const stem::Event& e );
+    void JoinGroup( group_type grp )
+      { _vtdsp->Subscribe( self_id(), oid_type( self_id() ), grp ); }
     virtual void VSNewMember( const stem::Event_base<VSsync_rq>& e );
     virtual void VSOutMember( const stem::Event_base<VSsync_rq>& e );
     virtual void VSsync_time( const stem::Event_base<VSsync>& );

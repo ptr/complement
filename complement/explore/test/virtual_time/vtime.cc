@@ -847,6 +847,52 @@ void VTDispatcher::Unsubscribe( oid_type oid, group_type grp )
   }
 }
 
+void VTDispatcher::Unsubscribe( oid_type oid )
+{
+  // See comment on top of VTSend above
+  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
+
+  vt_map_type::iterator i = vtmap.find( oid );
+  if ( i != vtmap.end() ) {
+    list<group_type> grp_list;
+    i->second.groups_list( back_inserter( grp_list ) );
+    for ( list<group_type>::const_iterator grp = grp_list.begin(); grp != grp_list.end(); ++grp ) {
+
+      pair<gid_map_type::iterator,gid_map_type::iterator> range =
+        grmap.equal_range( *grp );
+
+      while ( range.first != range.second ) {
+        if ( range.first->second == oid ) {
+          grmap.erase( range.first++ );
+        } else {
+          vt_map_type::iterator j = vtmap.find( range.first->second );
+          if ( j != vtmap.end() ) {
+            stem::Event_base<VSsync_rq> ev( VS_OUT_MEMBER );
+            ev.dest( j->second.stem_addr() );
+            ev.src( i != vtmap.end() ? i->second.stem_addr() : self_id() );
+            ev.value().grp = *grp;
+#ifdef __FIT_VS_TRACE
+            try {
+              scoped_lock lk(_lock_tr);
+              if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
+                *_trs << "VS_OUT_MEMBER " << ev.src() << " -> " << ev.dest() << endl;
+              }
+            }
+            catch ( ... ) {
+            }
+#endif // __FIT_VS_TRACE
+
+            Forward( ev );
+          }
+          ++range.first;
+        }
+      }
+      i->second.rm_group( *grp );
+    }
+    vtmap.erase( i );
+  }
+}
+
 void VTDispatcher::get_gvtime( group_type grp, stem::addr_type addr, gvtime_type& gvt )
 {
   // See comment on top of VTSend above
@@ -979,7 +1025,7 @@ VTHandler::VTHandler() :
 {
   new( Init_buf ) Init();
 
-  _vtdsp->Subscribe( self_id(), oid_type( self_id() ), /* grp */ 0 );
+  // _vtdsp->Subscribe( self_id(), oid_type( self_id() ), /* grp */ 0 );
 }
 
 VTHandler::VTHandler( const char *info ) :
@@ -987,7 +1033,7 @@ VTHandler::VTHandler( const char *info ) :
 {
   new( Init_buf ) Init();
 
-  _vtdsp->Subscribe( self_id(), oid_type( self_id() ), /* grp */ 0 );
+  // _vtdsp->Subscribe( self_id(), oid_type( self_id() ), /* grp */ 0 );
 }
 
 VTHandler::VTHandler( stem::addr_type id, const char *info ) :
@@ -995,12 +1041,12 @@ VTHandler::VTHandler( stem::addr_type id, const char *info ) :
 {
   new( Init_buf ) Init();
 
-  _vtdsp->Subscribe( id, oid_type( id ), /* grp */ 0 );
+  // _vtdsp->Subscribe( id, oid_type( id ), /* grp */ 0 );
 }
 
 VTHandler::~VTHandler()
 {
-  _vtdsp->Unsubscribe( oid_type( self_id() ), /* grp */ 0 );
+  _vtdsp->Unsubscribe( oid_type( self_id() ) );
 
   ((Init *)Init_buf)->~Init();
 }
