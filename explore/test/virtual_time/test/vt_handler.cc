@@ -55,6 +55,8 @@ VTDummy::VTDummy() :
 {
   cnd.set( false );
   gr.set( false );
+
+  JoinGroup( 0 );
 }
 
 VTDummy::VTDummy( stem::addr_type id ) :
@@ -64,6 +66,8 @@ VTDummy::VTDummy( stem::addr_type id ) :
 {
   cnd.set( false );
   gr.set( false );
+
+  JoinGroup( 0 );
 }
 
 VTDummy::VTDummy( stem::addr_type id, const char *info ) :
@@ -73,6 +77,8 @@ VTDummy::VTDummy( stem::addr_type id, const char *info ) :
 {
   cnd.set( false );
   gr.set( false );
+
+  JoinGroup( 0 );
 }
 
 VTDummy::~VTDummy()
