@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/26 09:53:24 ptr>
+// -*- C++ -*- Time-stamp: <07/08/11 23:21:59 ptr>
 
 #include "vt_operations.h"
 
@@ -6,6 +6,8 @@
 
 #include <iostream>
 #include <vtime.h>
+
+#include <stem/EvManager.h>
 
 using namespace vt;
 using namespace std;
@@ -20,21 +22,31 @@ class VTDummy :
     ~VTDummy();
 
     void handler( const stem::Event& );
-    void VTNewMember( const stem::Event& );
-    void VTOutMember( const stem::Event& );
+    void VSNewMember( const stem::Event_base<VSsync_rq>& );
+    void VSOutMember( const stem::Event_base<VSsync_rq>& );
+
+    void greeting();
 
     void wait();
     std::string msg;
     int count;
     int ocount;
 
+    void wait_greeting()
+      {
+        gr.try_wait();
+        gr.set( false );
+      }
+
   private:
     xmt::condition cnd;
+    xmt::condition gr;
 
     DECLARE_RESPONSE_TABLE( VTDummy, vt::VTHandler );
 };
 
-#define VT_MESS3  0x1203
+#define VS_DUMMY_MESS     0x1203
+#define VS_DUMMY_GREETING 0x1204
 
 VTDummy::VTDummy() :
     VTHandler(),
@@ -42,6 +54,7 @@ VTDummy::VTDummy() :
     ocount(0)
 {
   cnd.set( false );
+  gr.set( false );
 }
 
 VTDummy::VTDummy( stem::addr_type id ) :
@@ -50,6 +63,7 @@ VTDummy::VTDummy( stem::addr_type id ) :
     ocount(0)
 {
   cnd.set( false );
+  gr.set( false );
 }
 
 VTDummy::VTDummy( stem::addr_type id, const char *info ) :
@@ -58,6 +72,7 @@ VTDummy::VTDummy( stem::addr_type id, const char *info ) :
     ocount(0)
 {
   cnd.set( false );
+  gr.set( false );
 }
 
 VTDummy::~VTDummy()
@@ -72,13 +87,20 @@ void VTDummy::handler( const stem::Event& ev )
   cnd.set( true );
 }
 
-void VTDummy::VTNewMember( const stem::Event& ev )
+void VTDummy::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
 {
-  // cerr << "Hello" << endl;
+  // cerr << "Hello " << ev.src() << endl;
   ++count;
+
+  // VTNewMember_data( ev, "" );
+  VTHandler::VSNewMember( ev );
+
+  stem::EventVoid gr_ev( VS_DUMMY_GREETING );
+  gr_ev.dest( ev.src() );
+  Send( gr_ev );
 }
 
-void VTDummy::VTOutMember( const stem::Event& ev )
+void VTDummy::VSOutMember( const stem::Event_base<VSsync_rq>& ev )
 {
   // cerr << "Hello" << endl;
   ++ocount;
@@ -91,8 +113,14 @@ void VTDummy::wait()
   cnd.set( false );
 }
 
+void VTDummy::greeting()
+{
+  gr.set( true );
+}
+
 DEFINE_RESPONSE_TABLE( VTDummy )
-  EV_EDS( ST_NULL, VT_MESS3, handler )
+  EV_EDS( ST_NULL, VS_DUMMY_MESS, handler )
+  EV_VOID( ST_NULL, VS_DUMMY_GREETING, greeting )
 END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::VTHandler1)
@@ -100,7 +128,7 @@ int EXAM_IMPL(vtime_operations::VTHandler1)
   VTDummy dummy1;
   VTDummy dummy2;
 
-  stem::Event ev( VT_MESS3 );
+  stem::Event ev( VS_DUMMY_MESS );
   ev.dest( 0 ); // group
   ev.value() = "hello";
 
@@ -120,7 +148,7 @@ int EXAM_IMPL(vtime_operations::VTHandler2)
   VTDummy dummy2;
   VTDummy dummy3;
 
-  stem::Event ev( VT_MESS3 );
+  stem::Event ev( VS_DUMMY_MESS );
   ev.dest( 0 ); // group
   ev.value() = "hello";
 
@@ -152,7 +180,7 @@ int EXAM_IMPL(vtime_operations::VTSubscription)
   VTDummy dummy1;
   VTDummy dummy2;
 
-  stem::Event ev( VT_MESS3 );
+  stem::Event ev( VS_DUMMY_MESS );
   ev.dest( 0 ); // group
   ev.value() = "hello";
 
@@ -171,7 +199,7 @@ int EXAM_IMPL(vtime_operations::VTSubscription)
     // dummy3.wait();
 
     // EXAM_CHECK( dummy3.msg == "hi" );
-    EXAM_CHECK( dummy3.msg == "" ); // dummy3 don't see, due to VTS
+    // EXAM_CHECK( dummy3.msg == "" ); // dummy3 don't see, due to VTS
     EXAM_CHECK( dummy2.msg == "hi" );
     EXAM_CHECK( dummy1.msg == "" );
   }
@@ -189,3 +217,135 @@ int EXAM_IMPL(vtime_operations::VTSubscription)
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(vtime_operations::VTEntryIntoGroup)
+{
+  VTDummy dummy1;
+
+  stem::Event ev( VS_DUMMY_MESS );
+  ev.dest( 0 ); // group
+  ev.value() = "hello";
+
+  {
+    // dummy1.manager()->settrf( /* stem::EvManager::tracenet | */ stem::EvManager::tracedispatch );
+    // dummy1.manager()->settrs( &std::cerr );
+
+    VTDummy dummy3;
+
+    dummy3.wait_greeting();
+
+    ev.value() = "hi";
+    dummy1.VTSend( ev );
+
+    dummy3.wait();
+
+    EXAM_CHECK( dummy3.msg == "hi" );
+    EXAM_CHECK( dummy1.msg == "" );
+  }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(vtime_operations::VTEntryIntoGroup2)
+{
+  VTDummy dummy1;
+  VTDummy dummy2;
+
+  stem::Event ev( VS_DUMMY_MESS );
+  ev.dest( 0 ); // group
+  ev.value() = "hello";
+
+  dummy1.VTSend( ev );
+
+  dummy2.wait();
+  EXAM_CHECK( dummy2.msg == "hello" );
+
+  {
+    // cerr << (void *)&dummy1 << " dummy1\n"
+    //      << (void *)&dummy2 << " dummy2\n";
+    // dummy1.manager()->settrf( /* stem::EvManager::tracenet | */ stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+    // dummy1.manager()->settrs( &std::cerr );
+
+    // dummy1.vtdispatcher()->settrf( VTDispatcher::tracedispatch | VTDispatcher::tracefault | VTDispatcher::tracedelayed | VTDispatcher::tracegroup );
+    // dummy1.vtdispatcher()->settrs( &std::cerr );
+
+    VTDummy dummy3;
+
+    dummy3.wait_greeting();
+
+    ev.value() = "hi";
+    ev.dest( 0 ); // group
+    dummy1.VTSend( ev );
+
+    dummy2.wait();
+    dummy3.wait();
+
+    EXAM_CHECK( dummy2.msg == "hi" );
+    EXAM_CHECK( dummy3.msg == "hi" );
+    EXAM_CHECK( dummy1.msg == "" );
+  }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(vtime_operations::VTEntryIntoGroup3)
+{
+  VTDummy dummy1;
+
+  stem::Event ev( VS_DUMMY_MESS );
+
+  {
+    VTDummy dummy2;
+
+    dummy2.wait_greeting();
+
+    ev.value() = "hello";
+    ev.dest( 0 ); // group
+    dummy1.VTSend( ev );
+
+    dummy2.wait();
+    EXAM_CHECK( dummy2.msg == "hello" );
+    EXAM_CHECK( dummy1.msg == "" );
+  }
+
+  {
+    VTDummy dummy3;
+
+    dummy3.wait_greeting();
+
+    ev.value() = "hi";
+    ev.dest( 0 ); // group
+    dummy1.VTSend( ev );
+
+    dummy3.wait();
+
+    EXAM_CHECK( dummy3.msg == "hi" );
+    EXAM_CHECK( dummy1.msg == "" );
+  }
+
+  {
+    VTDummy dummy2;
+    VTDummy dummy3;
+
+    dummy2.wait_greeting();
+    dummy3.wait_greeting();
+
+    ev.value() = "more";
+    ev.dest( 0 ); // group
+    dummy1.VTSend( ev );
+
+    dummy2.wait();
+    dummy3.wait();
+
+    EXAM_CHECK( dummy2.msg == "more" );
+    EXAM_CHECK( dummy3.msg == "more" );
+    EXAM_CHECK( dummy1.msg == "" );
+
+    dummy2.VTSend( ev );
+
+    dummy1.wait();
+  }
+
+  EXAM_CHECK( dummy1.msg == "more" );
+
+  return EXAM_RESULT;
+}
