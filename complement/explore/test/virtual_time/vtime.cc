@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/27 09:49:24 ptr>
+// -*- C++ -*- Time-stamp: <07/08/11 01:10:59 ptr>
 
 #include "vtime.h"
 
@@ -103,40 +103,80 @@ void gvtime::net_unpack( std::istream& s )
   }
 }
 
+void VSsync_rq::pack( std::ostream& s ) const
+{
+  __pack( s, grp );
+  __pack( s, mess );
+}
+
+void VSsync_rq::net_pack( std::ostream& s ) const
+{
+  __net_pack( s, grp );
+  __net_pack( s, mess );
+}
+
+void VSsync_rq::unpack( std::istream& s )
+{
+  __unpack( s, grp );
+  __unpack( s, mess );
+}
+
+void VSsync_rq::net_unpack( std::istream& s )
+{
+  __net_unpack( s, grp );
+  __net_unpack( s, mess );
+}
+
+void VSsync::pack( std::ostream& s ) const
+{
+  gvt.pack( s );
+  VSsync_rq::pack( s );
+}
+
+void VSsync::net_pack( std::ostream& s ) const
+{
+  gvt.net_pack( s );
+  VSsync_rq::net_pack( s );
+}
+
+void VSsync::unpack( std::istream& s )
+{
+  gvt.unpack( s );
+  VSsync_rq::unpack( s );
+}
+
+void VSsync::net_unpack( std::istream& s )
+{
+  gvt.net_unpack( s );
+  VSsync_rq::net_unpack( s );
+}
+
 void VTmess::pack( std::ostream& s ) const
 {
   __pack( s, code );
   src.pack( s ); // __pack( s, src );
-  gvt.pack( s );
-  __pack( s, grp );
-  __pack( s, mess );
+  VSsync::pack( s );
 }
 
 void VTmess::net_pack( std::ostream& s ) const
 {
   __net_pack( s, code );
   src.net_pack( s ); // __net_pack( s, src );
-  gvt.net_pack( s );
-  __net_pack( s, grp );
-  __net_pack( s, mess );
+  VSsync::net_pack( s );
 }
 
 void VTmess::unpack( std::istream& s )
 {
   __unpack( s, code );
   src.unpack( s ); // __unpack( s, src );
-  gvt.unpack( s );
-  __unpack( s, grp );
-  __unpack( s, mess );
+  VSsync::unpack( s );
 }
 
 void VTmess::net_unpack( std::istream& s )
 {
   __net_unpack( s, code );
   src.net_unpack( s ); // __net_unpack( s, src );
-  gvt.net_unpack( s );
-  __net_unpack( s, grp );
-  __net_unpack( s, mess );
+  VSsync::net_unpack( s );
 }
 
 bool operator <=( const vtime_type& l, const vtime_type& r )
@@ -314,7 +354,6 @@ bool vtime_obj_rec::deliver( const VTmess& m )
     lvt[m.src] += m.gvt.gvt;
     lvt[m.src][m.grp][m.src] = vt.gvt[m.grp][m.src] + 1;
     sup( vt.gvt[m.grp], lvt[m.src][m.grp] );
-    // cout << vt.gvt << endl;
     return true;
   }
 
@@ -327,7 +366,6 @@ bool vtime_obj_rec::deliver_delayed( const VTmess& m )
     lvt[m.src] += m.gvt.gvt;
     lvt[m.src][m.grp][m.src] = vt.gvt[m.grp][m.src] + 1;
     sup( vt.gvt[m.grp], lvt[m.src][m.grp] );
-    // cout << vt.gvt << endl;
     return true;
   }
 
@@ -343,10 +381,6 @@ bool vtime_obj_rec::order_correct( const VTmess& m )
   gvtime gvt( m.gvt );
 
   if ( (vt.gvt[m.grp][m.src] + 1) != gvt[m.grp][m.src] ) {
-    // cerr << "1" << endl;
-    // cerr << vt.gvt[m.grp][m.src] << "\n"
-    //      << gvt[m.grp][m.src]
-    //      << endl;
     if ( (vt.gvt[m.grp][m.src] + 1) > gvt[m.grp][m.src] ) {
       throw out_of_range( "duplicate or wrong VT message" );
     }
@@ -357,21 +391,49 @@ bool vtime_obj_rec::order_correct( const VTmess& m )
   xvt[m.src] = 0; // force exclude message originator, it checked above
 
   if ( !(xvt <= vt[m.grp]) ) {
-    // cerr << "2" << endl;
-    // cerr << xvt << "\n\n" << vt[m.grp] << endl;
     return false;
   }
 
   // check side casuality (via groups other then message's group)
   for ( groups_container_type::const_iterator l = groups.begin(); l != groups.end(); ++l ) {
     if ( (*l != m.grp) && !((lvt[m.src][*l] + gvt[*l]) <= vt[*l]) ) {
-      // cerr << "3" << endl;
-      // cerr << "group " << *l << xvt << "\n\n" << vt[*l] << endl;
       return false;
     }
   }
 
   return true;
+}
+
+ostream& vtime_obj_rec::trace_deliver( const VTmess& m, ostream& o )
+{
+  if ( groups.find( m.grp ) == groups.end() ) {
+    return o << "VT object not member of group";
+  }
+
+  gvtime gvt( m.gvt );
+
+  if ( (vt.gvt[m.grp][m.src] + 1) != gvt[m.grp][m.src] ) {
+    if ( (vt.gvt[m.grp][m.src] + 1) > gvt[m.grp][m.src] ) {
+      return o << "duplicate or wrong VT message, " << vt.gvt << " vs " << gvt;
+    }
+    return o << "counter violation, " << vt.gvt << " vs " << gvt;
+  }
+
+  vtime xvt = lvt[m.src][m.grp] + gvt[m.grp];
+  xvt[m.src] = 0; // force exclude message originator, it checked above
+
+  if ( !(xvt <= vt[m.grp]) ) {
+    return o << "casuality violation, " << xvt << " vs " << vt[m.grp];
+  }
+
+  // check side casuality (via groups other then message's group)
+  for ( groups_container_type::const_iterator l = groups.begin(); l != groups.end(); ++l ) {
+    if ( (*l != m.grp) && !((lvt[m.src][*l] + gvt[*l]) <= vt[*l]) ) {
+      return o << "side casuality violation, " << (lvt[m.src][*l] + gvt[*l]) << " vs " << vt[*l];
+    }
+  }
+
+  return o << "should be delivered";
 }
 
 bool vtime_obj_rec::order_correct_delayed( const VTmess& m )
@@ -399,7 +461,7 @@ bool vtime_obj_rec::order_correct_delayed( const VTmess& m )
   return true;
 }
 
-void vtime_obj_rec::delta( gvtime& vtstamp, oid_type from, oid_type to, group_type grp )
+void vtime_obj_rec::delta( gvtime& vtstamp, const oid_type& from, const oid_type& to, group_type grp )
 {
   vtstamp.gvt = vt.gvt - svt[to]; // delta
   vtstamp[grp][from] = vt.gvt[grp][from]; // my counter, as is, not delta
@@ -449,7 +511,7 @@ bool vtime_obj_rec::rm_group( group_type g )
   return groups.empty() ? true : false;
 }
 
-void vtime_obj_rec::rm_member( oid_type oid )
+void vtime_obj_rec::rm_member( const oid_type& oid )
 {
   delta_vtime_type::iterator i = lvt.find( oid );
 
@@ -464,7 +526,58 @@ void vtime_obj_rec::rm_member( oid_type oid )
   }
 }
 
+void vtime_obj_rec::sync( group_type g, const oid_type& oid, const gvtime_type& gvt )
+{
+  lvt[oid] = gvt;
+  gvtime_type::const_iterator i = gvt.find( g );
+  if ( i != gvt.end() ) {
+    sup( vt.gvt[g], i->second.vt );
+    // vtime_type::const_iterator j = i->second.vt.find( oid );
+    // if ( j != i->second.vt.end() ) {
+    //   vt.gvt[g][oid] = j->second;
+    //   cerr << "**** " << gvt << endl;
+    // }
+  }
+}
+
 } // namespace detail
+
+void VTDispatcher::settrf( unsigned f )
+{
+  scoped_lock _x1( _lock_tr );
+  _trflags |= f;
+}
+
+void VTDispatcher::unsettrf( unsigned f )
+{
+  scoped_lock _x1( _lock_tr );
+  _trflags &= (0xffffffff & ~f);
+}
+
+void VTDispatcher::resettrf( unsigned f )
+{
+  scoped_lock _x1( _lock_tr );
+  _trflags = f;
+}
+
+void VTDispatcher::cleantrf()
+{
+  scoped_lock _x1( _lock_tr );
+  _trflags = 0;
+}
+
+unsigned VTDispatcher::trflags() const
+{
+  scoped_lock _x1( _lock_tr );
+
+  return _trflags;
+}
+
+void VTDispatcher::settrs( std::ostream *s )
+{
+  scoped_lock _x1( _lock_tr );
+  _trs = s;
+}
 
 void VTDispatcher::VTDispatch( const stem::Event_base<VTmess>& m )
 {
@@ -482,46 +595,108 @@ void VTDispatcher::VTDispatch( const stem::Event_base<VTmess>& m )
       // looks, like local source shouldn't be here?
       check_and_send( i->second, m );
     }
-    catch ( const out_of_range& ) {
+    catch ( const out_of_range& err ) {
+      try {
+        scoped_lock lk(_lock_tr);
+        if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+          *_trs << err.what() << " "
+                << __FILE__ << ":" << __LINE__ << endl;
+        }
+      }
+      catch ( ... ) {
+      }
     }
-    catch ( const domain_error& ) {
+    catch ( const domain_error& err ) {
+      try {
+        scoped_lock lk(_lock_tr);
+        if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+          *_trs << err.what() << " "
+                << __FILE__ << ":" << __LINE__ << endl;
+        }
+      }
+      catch ( ... ) {
+      }
     }
   }
 }
 
 void VTDispatcher::check_and_send( detail::vtime_obj_rec& vt, const stem::Event_base<VTmess>& m )
 {
-  typedef detail::vtime_obj_rec::dpool_t dpool_t;
-
-  // detail::vtime_obj_rec& vt = i->second;
-
   if ( vt.deliver( m.value() ) ) {
     stem::Event ev( m.value().code );
     ev.dest(vt.stem_addr());
     ev.src(m.src());
     ev.value() = m.value().mess;
-    Forward( ev );
-    bool more;
-    do {
-      more = false;
-      for ( dpool_t::iterator j = vt.dpool.begin(); j != vt.dpool.end(); ) {
-        if ( vt.deliver_delayed( j->second->value() ) ) {
-          stem::Event evd( j->second->value().code );
-          evd.dest(vt.stem_addr());
-          ev.src(m.src());
-          evd.value() = j->second->value().mess;
-          Forward( evd );
-          delete j->second;
-          vt.dpool.erase( j++ );
-          more = true;
-        } else {
-          ++j;
-        }
+#ifdef __FIT_VS_TRACE
+    try {
+      scoped_lock lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
+        *_trs << "Deliver " << m.value() << endl;
       }
-    } while ( more );
+    }
+    catch ( ... ) {
+    }
+#endif // __FIT_VS_TRACE
+    Forward( ev );
+    check_and_send_delayed( vt );
   } else {
+#ifdef __FIT_VS_TRACE
+    try {
+      scoped_lock lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & tracedelayed) ) {
+        *_trs << "Delayed " << m.value() << endl;
+      }
+    }
+    catch ( ... ) {
+    }
+#endif // __FIT_VS_TRACE
     vt.dpool.push_back( make_pair( 0, new Event_base<VTmess>(m) ) ); // 0 should be timestamp
   }
+}
+
+void VTDispatcher::check_and_send_delayed( detail::vtime_obj_rec& vt )
+{
+  typedef detail::vtime_obj_rec::dpool_t dpool_t;
+  bool more;
+  do {
+    more = false;
+    for ( dpool_t::iterator j = vt.dpool.begin(); j != vt.dpool.end(); ) {
+      if ( vt.deliver_delayed( j->second->value() ) ) {
+        stem::Event evd( j->second->value().code );
+        evd.dest(vt.stem_addr());
+        evd.src(j->second->src());
+        evd.value() = j->second->value().mess;
+#ifdef __FIT_VS_TRACE
+        try {
+          scoped_lock lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
+            *_trs << "Deliver delayed " << j->second->value() << endl;
+          }
+        }
+        catch ( ... ) {
+        }
+#endif // __FIT_VS_TRACE
+        Forward( evd );
+        delete j->second;
+        vt.dpool.erase( j++ );
+        more = true;
+      } else {
+#ifdef __FIT_VS_TRACE
+        try {
+          scoped_lock lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
+            *_trs << "Remain delayed " << j->second->value()
+                  << "\nReason: ";
+            vt.trace_deliver( j->second->value(), *_trs ) << endl;
+          }
+        }
+        catch ( ... ) {
+        }
+#endif // __FIT_VS_TRACE
+        ++j;
+      }
+    }
+  } while ( more );
 }
 
 void VTDispatcher::VTSend( const stem::Event& e, group_type grp )
@@ -538,7 +713,7 @@ void VTDispatcher::VTSend( const stem::Event& e, group_type grp )
     if ( i != vtmap.end() && i->second.stem_addr() == e.src() ) { // for self
       detail::vtime_obj_rec& vt = i->second;
       const oid_type& from = o->second;
-      stem::Event_base<VTmess> m( MESS );
+      stem::Event_base<VTmess> m( VS_MESS );
       m.value().src = from; // oid
       m.value().code = e.code();
       m.value().mess = e.value();
@@ -565,9 +740,27 @@ void VTDispatcher::VTSend( const stem::Event& e, group_type grp )
 
           vt.base_advance(g->second); // store last send VT to obj
         }
-        catch ( const out_of_range& ) {
+        catch ( const out_of_range& err ) {
+          try {
+            scoped_lock lk(_lock_tr);
+            if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+              *_trs << err.what() << " "
+                    << __FILE__ << ":" << __LINE__ << endl;
+            }
+          }
+          catch ( ... ) {
+          }
         }
-        catch ( const domain_error& ) {
+        catch ( const domain_error& err ) {
+          try {
+            scoped_lock lk(_lock_tr);
+            if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+              *_trs << err.what() << " "
+                    << __FILE__ << ":" << __LINE__ << endl;
+            }
+          }
+          catch ( ... ) {
+          }
         }
       }
 
@@ -589,9 +782,20 @@ void VTDispatcher::Subscribe( stem::addr_type addr, oid_type oid, group_type grp
   for ( ; range.first != range.second; ++range.first ) {
     vt_map_type::iterator i = vtmap.find( range.first->second );
     if ( i != vtmap.end() ) {
-      stem::Event ev( VTS_NEW_MEMBER );
+      stem::Event_base<VSsync_rq> ev( VS_NEW_MEMBER );
       ev.dest( i->second.stem_addr() );
       ev.src( addr );
+      ev.value().grp = grp;
+#ifdef __FIT_VS_TRACE
+      try {
+        scoped_lock lk(_lock_tr);
+        if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
+          *_trs << "VS_NEW_MEMBER " << ev.src() << " -> " << ev.dest() << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+#endif // __FIT_VS_TRACE
       Forward( ev );
     }
   }
@@ -615,9 +819,21 @@ void VTDispatcher::Unsubscribe( oid_type oid, group_type grp )
     } else {
       vt_map_type::iterator j = vtmap.find( range.first->second );
       if ( j != vtmap.end() ) {
-        stem::Event ev( VTS_OUT_MEMBER );
+        stem::Event_base<VSsync_rq> ev( VS_OUT_MEMBER );
         ev.dest( j->second.stem_addr() );
         ev.src( i != vtmap.end() ? i->second.stem_addr() : self_id() );
+        ev.value().grp = grp;
+#ifdef __FIT_VS_TRACE
+        try {
+          scoped_lock lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
+            *_trs << "VS_OUT_MEMBER " << ev.src() << " -> " << ev.dest() << endl;
+          }
+        }
+        catch ( ... ) {
+        }
+#endif // __FIT_VS_TRACE
+
         Forward( ev );
       }
       ++range.first;
@@ -631,8 +847,74 @@ void VTDispatcher::Unsubscribe( oid_type oid, group_type grp )
   }
 }
 
+void VTDispatcher::get_gvtime( group_type grp, stem::addr_type addr, gvtime_type& gvt )
+{
+  // See comment on top of VTSend above
+  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
+
+  pair<gid_map_type::iterator,gid_map_type::iterator> range =
+    grmap.equal_range( grp );
+  for ( ; range.first != range.second; ++range.first ) {
+    vt_map_type::iterator i = vtmap.find( range.first->second );
+    if ( i != vtmap.end() && i->second.stem_addr() == addr ) {
+      i->second.get_gvt( gvt );
+      return;
+    }
+  }
+
+  try {
+    scoped_lock lk(_lock_tr);
+    if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+      *_trs << "VT object not member of group" << " " << __FILE__ << ":" << __LINE__ << endl;
+    }
+  }
+  catch ( ... ) {
+  }
+
+  throw domain_error( "VT object not member of group" ); // Error: not group member
+}
+
+void VTDispatcher::set_gvtime( group_type grp, stem::addr_type addr, const gvtime_type& gvt )
+{
+  // See comment on top of VTSend above
+  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
+
+  pair<gid_map_type::iterator,gid_map_type::iterator> range =
+    grmap.equal_range( grp );
+  for ( ; range.first != range.second; ++range.first ) {
+    vt_map_type::iterator i = vtmap.find( range.first->second );
+    if ( i != vtmap.end() && i->second.stem_addr() == addr ) {
+#ifdef __FIT_VS_TRACE
+      try {
+        scoped_lock lk(_lock_tr);
+        if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
+          *_trs << "Set gvt G" << grp << " " << i->first
+                << " (" << addr << ") " << gvt << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+#endif // __FIT_VS_TRACE
+      i->second.sync( grp, i->first, gvt );
+      check_and_send_delayed( i->second );
+      return;
+    }
+  }
+
+  try {
+    scoped_lock lk(_lock_tr);
+    if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+      *_trs << "VT object not member of group" << " " << __FILE__ << ":" << __LINE__ << endl;
+    }
+  }
+  catch ( ... ) {
+  }
+
+  throw domain_error( "VT object not member of group" ); // Error: not group member
+}
+
 DEFINE_RESPONSE_TABLE( VTDispatcher )
-  EV_Event_base_T_( ST_NULL, MESS, VTDispatch, VTmess )
+  EV_Event_base_T_( ST_NULL, VS_MESS, VTDispatch, VTmess )
 END_RESPONSE_TABLE
 
 char *Init_buf[128];
@@ -723,17 +1005,45 @@ VTHandler::~VTHandler()
   ((Init *)Init_buf)->~Init();
 }
 
-void VTHandler::VTNewMember( const stem::Event& )
+void VTHandler::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
+{
+  stem::Event_base<VSsync> out_ev( VS_SYNC_TIME );
+  out_ev.dest( ev.src() );
+  out_ev.value().grp = ev.value().grp;
+  get_gvtime( ev.value().grp, out_ev.value().gvt.gvt );
+
+  Send( out_ev );
+}
+
+void VTHandler::VSNewMember_data( const stem::Event_base<VSsync_rq>& ev, const string& data )
+{
+  stem::Event_base<VSsync> out_ev( VS_SYNC_TIME );
+  out_ev.dest( ev.src() );
+  out_ev.value().grp = ev.value().grp;
+  get_gvtime( ev.value().grp, out_ev.value().gvt.gvt );
+  out_ev.value().mess = data;
+
+  Send( out_ev );
+}
+
+void VTHandler::VSOutMember( const stem::Event_base<VSsync_rq>& )
 {
 }
 
-void VTHandler::VTOutMember( const stem::Event& )
+void VTHandler::VSsync_time( const stem::Event_base<VSsync>& ev )
 {
+  try {
+    // sync data from ev.value().mess
+    _vtdsp->set_gvtime( ev.value().grp, self_id(), ev.value().gvt.gvt );
+  }
+  catch ( const domain_error&  ) {
+  }
 }
 
 DEFINE_RESPONSE_TABLE( VTHandler )
-  EV_EDS( ST_NULL, VTS_NEW_MEMBER, VTNewMember )
-  EV_EDS( ST_NULL, VTS_OUT_MEMBER, VTOutMember )
+  EV_Event_base_T_( ST_NULL, VS_NEW_MEMBER, VSNewMember, VSsync_rq )
+  EV_Event_base_T_( ST_NULL, VS_OUT_MEMBER, VSOutMember, VSsync_rq )
+  EV_Event_base_T_( ST_NULL, VS_SYNC_TIME, VSsync_time, VSsync )
 END_RESPONSE_TABLE
 
 } // namespace vt
@@ -742,16 +1052,18 @@ namespace std {
 
 ostream& operator <<( ostream& o, const vt::vtime_type::value_type& v )
 {
-  return o << "(" << v.first << "," << v.second << ")\n";
+  return o << "(" << v.first << "," << v.second << ")";
 }
 
 ostream& operator <<( ostream& o, const vt::vtime_type& v )
 {
-  o << "[\n";
   for ( vt::vtime_type::const_iterator i = v.begin(); i != v.end(); ++i ) {
-    o << "  " << *i;
+    if ( i != v.begin() ) {
+      o << ", ";
+    }
+    o << *i;
   }
-  return o << " ]\n";
+  return o;
 }
 
 ostream& operator <<( ostream& o, const vt::vtime& v )
@@ -759,16 +1071,37 @@ ostream& operator <<( ostream& o, const vt::vtime& v )
 
 ostream& operator <<( ostream& o, const vt::gvtime_type::value_type& v )
 {
-  o << "group " << v.first << ": " << v.second.vt;
+  o << v.first << ": " << v.second.vt;
 }
 
 ostream& operator <<( ostream& o, const vt::gvtime_type& v )
 {
   o << "{\n";
   for ( vt::gvtime_type::const_iterator i = v.begin(); i != v.end(); ++i ) {
-    o << " " << *i;
+    o << "\t" << *i << "\n";
   }
   return o << "}\n";
+}
+
+ostream& operator <<( ostream& o, const vt::gvtime& v )
+{
+  return o << v.gvt;
+}
+
+ostream& operator <<( ostream& o, const vt::VSsync& m )
+{
+  // ios_base::fmtflags f = o.flags( ios_base::hex );
+  o << "G" << m.grp << " " << m.gvt;
+  
+  return o;
+}
+
+ostream& operator <<( ostream& o, const vt::VTmess& m )
+{
+  ios_base::fmtflags f = o.flags( ios_base::hex | ios_base::showbase );
+  o << "C" << m.code << dec << " " << m.src << " " << static_cast<const vt::VSsync&>(m);
+  o.flags( f );
+  return o;
 }
 
 } // namespace std

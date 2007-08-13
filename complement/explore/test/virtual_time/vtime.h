@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/27 09:53:24 ptr>
+// -*- C++ -*- Time-stamp: <07/08/11 01:05:47 ptr>
 
 #ifndef __vtime_h
 #define __vtime_h
@@ -147,8 +147,47 @@ struct gvtime :
   mutable gvtime_type gvt;
 };
 
-struct VTmess :
+struct VSsync_rq :
     public stem::__pack_base
+{
+    void pack( std::ostream& s ) const;
+    void net_pack( std::ostream& s ) const;
+    void unpack( std::istream& s );
+    void net_unpack( std::istream& s );
+
+    VSsync_rq() :
+        grp(0),
+        mess()
+      { }
+    VSsync_rq( const VSsync_rq& _gvt ) :
+        grp( _gvt.grp ),
+        mess( _gvt.mess )
+      { }
+
+    group_type grp;
+    std::string mess;
+};
+
+struct VSsync :
+    public VSsync_rq
+{
+    void pack( std::ostream& s ) const;
+    void net_pack( std::ostream& s ) const;
+    void unpack( std::istream& s );
+    void net_unpack( std::istream& s );
+
+    VSsync()
+      { }
+    VSsync( const VSsync& _gvt ) :
+        VSsync_rq( _gvt ),
+        gvt( _gvt.gvt )
+      { }
+
+    gvtime gvt;
+};
+
+struct VTmess :
+    public VSsync
 {
     void pack( std::ostream& s ) const;
     void net_pack( std::ostream& s ) const;
@@ -157,24 +196,16 @@ struct VTmess :
 
     VTmess() :
         code(0),
-        src(),
-        gvt(),
-        grp(0),
-        mess()
+        src()
       { }
     VTmess( const VTmess& _gvt ) :
+        VSsync( _gvt ),
         code( _gvt.code ),
-        src( _gvt.src ),
-        gvt( _gvt.gvt ),
-        grp( _gvt.grp ),
-        mess( _gvt.mess )
+        src( _gvt.src )
       { }
 
     stem::code_type code;
     oid_type src;    
-    gvtime gvt;
-    group_type grp;
-    std::string mess;
 };
 
 namespace detail {
@@ -187,18 +218,22 @@ class vtime_obj_rec
     void add( stem::addr_type a, group_type g )
       { addr = a; groups.insert(g); }
     bool rm_group( group_type );
-    void rm_member( oid_type );
+    void rm_member( const oid_type& );
 
     stem::addr_type stem_addr() const
       { return addr; }
 
     bool deliver( const VTmess& ev );
     bool deliver_delayed( const VTmess& ev );
-    void next( oid_type from, group_type grp )
+    std::ostream& trace_deliver( const VTmess& m, std::ostream& o );
+    void next( const oid_type& from, group_type grp )
       { ++vt.gvt[grp][from]; /* increment my VT counter */ }
-    void delta( gvtime& vtstamp, oid_type from, oid_type to, group_type grp );
-    void base_advance( oid_type to )
+    void delta( gvtime& vtstamp, const oid_type& from, const oid_type& to, group_type grp );
+    void base_advance( const oid_type& to )
       { svt[to] = vt.gvt; /* store last sent VT to obj */ }
+    void get_gvt( gvtime_type& gvt ) const
+      { gvt = vt.gvt; }
+    void sync( group_type, const oid_type&, const gvtime_type& );
 
 #ifdef __FIT_EXAM
     const gvtime_type::data_type& operator[]( const gvtime_type::key_type k ) const
@@ -235,19 +270,36 @@ class VTDispatcher :
         public stem::EventHandler
 {
   public:
-    VTDispatcher()
+    enum traceflags {
+      notrace = 0,
+      tracenet = 1,
+      tracedispatch = 2,
+      tracefault = 4,
+      tracedelayed = 8,
+      tracegroup = 0x10
+    };
+
+    VTDispatcher() :
+        _trflags( notrace ),
+        _trs( 0 )
       { }
 
     VTDispatcher( const char *info ) :
-        stem::EventHandler( info )
+        stem::EventHandler( info ),
+        _trflags( notrace ),
+        _trs( 0 )
       { }
 
     VTDispatcher( stem::addr_type id ) :
-        stem::EventHandler( id )
+        stem::EventHandler( id ),
+        _trflags( notrace ),
+        _trs( 0 )
       { }
 
     VTDispatcher( stem::addr_type id, const char *info ) :
-        stem::EventHandler( id, info )
+        stem::EventHandler( id, info ),
+        _trflags( notrace ),
+        _trs( 0 )
       { }
 
     void VTDispatch( const stem::Event_base<VTmess>& );
@@ -255,15 +307,29 @@ class VTDispatcher :
     void VTSend( const stem::Event& e, group_type );
     void Subscribe( stem::addr_type, oid_type, group_type );
     void Unsubscribe( oid_type, group_type );
+    void get_gvtime( group_type, stem::addr_type, gvtime_type& );
+    void set_gvtime( group_type, stem::addr_type, const gvtime_type& );
+
+    void settrf( unsigned f );
+    void unsettrf( unsigned f );
+    void resettrf( unsigned f );
+    void cleantrf();
+    unsigned trflags() const;
+    void settrs( std::ostream * );
 
   private:    
     typedef std::hash_map<oid_type, detail::vtime_obj_rec> vt_map_type;
     typedef std::hash_multimap<group_type, oid_type> gid_map_type;
 
     void check_and_send( detail::vtime_obj_rec&, const stem::Event_base<VTmess>& );
+    void check_and_send_delayed( detail::vtime_obj_rec& );
     
     vt_map_type vtmap;
     gid_map_type grmap;
+
+    xmt::mutex _lock_tr;
+    unsigned _trflags;
+    std::ostream *_trs;
 
     DECLARE_RESPONSE_TABLE( VTDispatcher, stem::EventHandler );
 };
@@ -291,13 +357,23 @@ class VTHandler :
     virtual ~VTHandler();
 
     void VTSend( const stem::Event& e );
-    virtual void VTNewMember( const stem::Event& e );
-    virtual void VTOutMember( const stem::Event& e );
+    virtual void VSNewMember( const stem::Event_base<VSsync_rq>& e );
+    virtual void VSOutMember( const stem::Event_base<VSsync_rq>& e );
+    virtual void VSsync_time( const stem::Event_base<VSsync>& );
+
 
     template <class D>
     void VTSend( const stem::Event_base<D>& e )
       { VTHandler::VTSend( stem::Event_convert<D>()( e ) ); }
 
+    static VTDispatcher *vtdispatcher()
+      { return _vtdsp; }
+
+  protected:
+    void VSNewMember_data( const stem::Event_base<VSsync_rq>&, const std::string& data );
+
+    void get_gvtime( group_type g, gvtime_type& gvt )
+      { _vtdsp->get_gvtime( g, self_id(), gvt ); }
 
   private:
     static class VTDispatcher *_vtdsp;
@@ -305,9 +381,10 @@ class VTHandler :
     DECLARE_RESPONSE_TABLE( VTHandler, stem::EventHandler );
 };
 
-#define MESS 0x300
-#define VTS_NEW_MEMBER 0x301
-#define VTS_OUT_MEMBER 0x302
+#define VS_MESS       0x300
+#define VS_NEW_MEMBER 0x301
+#define VS_OUT_MEMBER 0x302
+#define VS_SYNC_TIME  0x303
 
 } // namespace vt
 
@@ -318,6 +395,9 @@ ostream& operator <<( ostream&, const vt::vtime_type& );
 ostream& operator <<( ostream&, const vt::vtime& );
 ostream& operator <<( ostream&, const vt::gvtime_type::value_type& );
 ostream& operator <<( ostream&, const vt::gvtime_type& );
+ostream& operator <<( ostream&, const vt::gvtime& );
+ostream& operator <<( ostream& o, const vt::VSsync& );
+ostream& operator <<( ostream& o, const vt::VTmess& );
 
 } // namespace std
 

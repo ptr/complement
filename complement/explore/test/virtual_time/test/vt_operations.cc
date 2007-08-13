@@ -52,6 +52,8 @@ int EXAM_IMPL(vtime_operations::vt_compare)
 
   EXAM_CHECK( !(vt1 <= vt2) );
   EXAM_CHECK( !(vt2 <= vt1) );
+
+  return EXAM_RESULT;
 }
 
 int EXAM_IMPL(vtime_operations::vt_add)
