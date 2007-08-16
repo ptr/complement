@@ -1,7 +1,7 @@
 // -*- C++ -*- Time-stamp: <07/02/01 18:35:14 ptr>
 
 /*
- * Copyright (c) 2002, 2006
+ * Copyright (c) 2002, 2006, 2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -81,9 +81,32 @@ bool operator !=( const ::timespec& a, const ::timespec& b );
 
 namespace xmt {
 
+// delay execution at least on time interval t
+__FIT_DECLSPEC void delay( const ::timespec& interval, ::timespec& remain );
+__FIT_DECLSPEC void delay( const ::timespec& interval );
+inline void delay( const ::timespec *interval, ::timespec *remain )
+{ delay( *interval, *remain ); }
+inline void delay( const ::timespec *interval )
+{ delay( *interval ); }
+// sleep at least up to time t
+__FIT_DECLSPEC void sleep( const ::timespec& abstime, ::timespec& real_time );
+__FIT_DECLSPEC void sleep( const ::timespec& abstime );
+inline void sleep( const ::timespec *abstime, ::timespec *real_time )
+{ sleep( *abstime, *real_time ); }
+inline void sleep( const ::timespec *abstime )
+{ sleep( *abstime ); }
+// get precise time
+__FIT_DECLSPEC void gettime( ::timespec& t );
+inline void gettime( ::timespec *t )
+{ gettime( *t ); }
+
 struct timespec :
         public ::timespec
 {
+    enum timeref {
+      now
+    };
+
     timespec()
       { tv_sec = 0; tv_nsec = 0; }
 
@@ -98,6 +121,15 @@ struct timespec :
 
     timespec( const ::timespec& t )
       { tv_sec = t.tv_sec; tv_nsec = t.tv_nsec; }
+
+    timespec( timeref r )
+      {
+        switch ( r ) {
+          case now:
+            gettime( *this );
+            break;
+        }
+      }
 
     timespec& operator =( const timespec& t )
       { tv_sec = t.tv_sec; tv_nsec = t.tv_nsec; return *this; }
@@ -123,25 +155,6 @@ struct timespec :
     operator double() const
       { return tv_nsec == 0 ? static_cast<double>(tv_sec) : tv_sec + 1.0e-9 * tv_nsec; }
 };
-
-// delay execution at least on time interval t
-__FIT_DECLSPEC void delay( const ::timespec& interval, ::timespec& remain );
-__FIT_DECLSPEC void delay( const ::timespec& interval );
-inline void delay( const ::timespec *interval, ::timespec *remain )
-{ delay( *interval, *remain ); }
-inline void delay( const ::timespec *interval )
-{ delay( *interval ); }
-// sleep at least up to time t
-__FIT_DECLSPEC void sleep( const ::timespec& abstime, ::timespec& real_time );
-__FIT_DECLSPEC void sleep( const ::timespec& abstime );
-inline void sleep( const ::timespec *abstime, ::timespec *real_time )
-{ sleep( *abstime, *real_time ); }
-inline void sleep( const ::timespec *abstime )
-{ sleep( *abstime ); }
-// get precise time
-__FIT_DECLSPEC void gettime( ::timespec& t );
-inline void gettime( ::timespec *t )
-{ gettime( *t ); }
 
 } // namespace xmt
 
