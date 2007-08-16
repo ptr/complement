@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <stdint.h>
+#include <stem/EvManager.h>
 
 namespace vt {
 
@@ -650,7 +651,7 @@ void VTDispatcher::check_and_send( detail::vtime_obj_rec& vt, const stem::Event_
     catch ( ... ) {
     }
 #endif // __FIT_VS_TRACE
-    vt.dpool.push_back( make_pair( 0, new Event_base<VTmess>(m) ) ); // 0 should be timestamp
+    vt.dpool.push_back( make_pair( xmt::timespec(xmt::timespec::now), new Event_base<VTmess>(m) ) ); // 0 should be timestamp
   }
 }
 
@@ -736,9 +737,24 @@ void VTDispatcher::VTSend( const stem::Event& e, group_type grp )
 
           // check local or remote? i->second.addr
           // if remote, forward it to foreign VTDispatcher?
-          check_and_send( k->second, m );
-
-          vt.base_advance(g->second); // store last send VT to obj
+          try {
+            /* const transport tr = */ manager()->transport( k->second.stem_addr() );
+            gaddr_type ga = manager()->reflect( k->second.stem_addr() );
+            if ( ga != gaddr_type() ) {
+              ga.addr = 2; // vtd
+              addr_type a = manager()->reflect( ga );
+              if ( a == badaddr ) {
+                a = manager()->SubscribeRemote( ga, "vtd" );
+              }
+              m.dest( a );
+              Forward( m );
+              vt.base_advance(g->second); // store last send VT to obj
+            }
+          }
+          catch ( const range_error& ) {
+            check_and_send( k->second, m );
+            vt.base_advance(g->second); // store last send VT to obj
+          }
         }
         catch ( const out_of_range& err ) {
           try {
