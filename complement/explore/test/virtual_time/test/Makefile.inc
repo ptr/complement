@@ -8,4 +8,5 @@ SRC_CC = ../vtime.cc \
          VTmess_core.cc \
          vt_object.cc \
          vt_dispatch.cc \
-         vt_handler.cc
+         vt_handler.cc \
+         vt_remote
