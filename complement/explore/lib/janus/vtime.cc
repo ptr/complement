@@ -1,6 +1,6 @@
 // -*- C++ -*- Time-stamp: <07/08/11 01:10:59 ptr>
 
-#include "vtime.h"
+#include <janus/vtime.h>
 
 #include <iostream>
 #include <stdint.h>
