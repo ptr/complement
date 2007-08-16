@@ -17,6 +17,8 @@
 #include <stem/Event.h>
 #include <stem/EventHandler.h>
 
+#include <mt/time.h>
+
 namespace vt {
 
 // typedef stem::addr_type oid_type;
@@ -258,7 +260,7 @@ class vtime_obj_rec
 
   public:
     // delay pool should be here
-    typedef std::pair<int,stem::Event_base<VTmess>*> delay_item_t;
+    typedef std::pair<xmt::timespec,stem::Event_base<VTmess>*> delay_item_t;
     typedef std::list<delay_item_t> dpool_t;
 
     dpool_t dpool;
