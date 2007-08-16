@@ -5,7 +5,7 @@
 // #include <boost/lexical_cast.hpp>
 
 #include <iostream>
-#include <vtime.h>
+#include <janus/vtime.h>
 
 #include <stem/EvManager.h>
 #include <stem/NetTransport.h>
@@ -157,7 +157,7 @@ int EXAM_IMPL(vtime_operations::remote)
 
       addr_type zero = mgr.open( "localhost", 6980 );
 
-      EXAM_ASYNC_CHECK( mgr.good() );
+      EXAM_CHECK_ASYNC( mgr.good() );
 
       YaRemote obj2;
 
