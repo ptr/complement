@@ -1,3 +1,10 @@
+2007-08-17  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/app/gcc.mak, gmake/lib/gcc.mak: use ${CXXFLAGS} when
+	detect position of files and libraries; this useful for
+	multilib gcc configuration, when something like -m32 select
+	libraries family.
+
 2007-08-08  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/app/rules.mak: use special link string for Digital Mars
