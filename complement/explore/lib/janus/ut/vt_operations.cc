@@ -1,13 +1,11 @@
-// -*- C++ -*- Time-stamp: <07/07/27 10:42:55 ptr>
+// -*- C++ -*- Time-stamp: <07/08/17 10:06:23 ptr>
 
 #include "vt_operations.h"
-
-// #include <boost/lexical_cast.hpp>
 
 #include <iostream>
 #include <janus/vtime.h>
 
-using namespace vt;
+using namespace janus;
 using namespace std;
 
 int EXAM_IMPL(vtime_operations::vt_compare)
@@ -180,7 +178,7 @@ int EXAM_IMPL(vtime_operations::vt_max)
   vt1[t2] = 1;
 
   vt3 = vt1;
-  vt::sup( vt3, vt2 );
+  janus::sup( vt3, vt2 );
 
   EXAM_CHECK( vt3 <= vt1 );
   EXAM_CHECK( vt1 <= vt3 );
@@ -188,7 +186,7 @@ int EXAM_IMPL(vtime_operations::vt_max)
   vt2[t1] = 1;
   
   vt3 = vt1;
-  vt::sup( vt3, vt2 );
+  janus::sup( vt3, vt2 );
 
   EXAM_CHECK( vt3 <= vt1 );
   EXAM_CHECK( vt1 <= vt3 );
@@ -196,7 +194,7 @@ int EXAM_IMPL(vtime_operations::vt_max)
   vt2[t2] = 1;
 
   vt3 = vt1;
-  vt::sup( vt3, vt2 );
+  janus::sup( vt3, vt2 );
 
   EXAM_CHECK( vt3 <= vt1 );
   EXAM_CHECK( vt1 <= vt3 );
@@ -204,7 +202,7 @@ int EXAM_IMPL(vtime_operations::vt_max)
   vt2[t3] = 1;
 
   vt3 = vt1;
-  vt::sup( vt3, vt2 );
+  janus::sup( vt3, vt2 );
 
   vt4[t1] = 1;
   vt4[t2] = 1;
@@ -221,7 +219,7 @@ int EXAM_IMPL(vtime_operations::vt_max)
   vt4.clear();
 
   vt3 = vt1;
-  vt::sup( vt3, vt2 );
+  janus::sup( vt3, vt2 );
 
   vt4[t1] = 1;
   vt4[t2] = 2;
@@ -232,7 +230,7 @@ int EXAM_IMPL(vtime_operations::vt_max)
   vt2[t3] = 4;
 
   vt3 = vt1;
-  vt::sup( vt3, vt2 );
+  janus::sup( vt3, vt2 );
 
   vt4[t3] = 4;
 

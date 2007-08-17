@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/11 01:05:47 ptr>
+// -*- C++ -*- Time-stamp: <07/08/17 10:38:35 ptr>
 
 #ifndef __vtime_h
 #define __vtime_h
@@ -19,25 +19,25 @@
 
 #include <mt/time.h>
 
-namespace vt {
+namespace janus {
 
 // typedef stem::addr_type oid_type;
 typedef stem::gaddr_type oid_type;
 
-} // namespace vt
+} // namespace janus
 
 namespace std {
 
 template <>
-struct hash<vt::oid_type>
+struct hash<janus::oid_type>
 {
-    size_t operator()(const vt::oid_type& __x) const
+    size_t operator()(const janus::oid_type& __x) const
       { return __x.addr; }
 };
 
 } // namespace std
 
-namespace vt {
+namespace janus {
 
 typedef uint32_t vtime_unit_type;
 typedef stem::addr_type group_type; // required, used in VTSend
@@ -188,7 +188,7 @@ struct VSsync :
     gvtime gvt;
 };
 
-struct VTmess :
+struct VSmess :
     public VSsync
 {
     void pack( std::ostream& s ) const;
@@ -196,11 +196,11 @@ struct VTmess :
     void unpack( std::istream& s );
     void net_unpack( std::istream& s );
 
-    VTmess() :
+    VSmess() :
         code(0),
         src()
       { }
-    VTmess( const VTmess& _gvt ) :
+    VSmess( const VSmess& _gvt ) :
         VSsync( _gvt ),
         code( _gvt.code ),
         src( _gvt.src )
@@ -229,9 +229,9 @@ class vtime_obj_rec
     stem::addr_type stem_addr() const
       { return addr; }
 
-    bool deliver( const VTmess& ev );
-    bool deliver_delayed( const VTmess& ev );
-    std::ostream& trace_deliver( const VTmess& m, std::ostream& o );
+    bool deliver( const VSmess& ev );
+    bool deliver_delayed( const VSmess& ev );
+    std::ostream& trace_deliver( const VSmess& m, std::ostream& o );
     void next( const oid_type& from, group_type grp )
       { ++vt.gvt[grp][from]; /* increment my VT counter */ }
     void delta( gvtime& vtstamp, const oid_type& from, const oid_type& to, group_type grp );
@@ -260,19 +260,19 @@ class vtime_obj_rec
 
   public:
     // delay pool should be here
-    typedef std::pair<xmt::timespec,stem::Event_base<VTmess>*> delay_item_t;
+    typedef std::pair<xmt::timespec,stem::Event_base<VSmess>*> delay_item_t;
     typedef std::list<delay_item_t> dpool_t;
 
     dpool_t dpool;
 
   private:
-    bool order_correct( const VTmess& );
-    bool order_correct_delayed( const VTmess& );
+    bool order_correct( const VSmess& );
+    bool order_correct_delayed( const VSmess& );
 };
 
 } // namespace detail
 
-class VTDispatcher :
+class Janus :
         public stem::EventHandler
 {
   public:
@@ -285,32 +285,32 @@ class VTDispatcher :
       tracegroup = 0x10
     };
 
-    VTDispatcher() :
+    Janus() :
         _trflags( notrace ),
         _trs( 0 )
       { }
 
-    VTDispatcher( const char *info ) :
+    Janus( const char *info ) :
         stem::EventHandler( info ),
         _trflags( notrace ),
         _trs( 0 )
       { }
 
-    VTDispatcher( stem::addr_type id ) :
+    Janus( stem::addr_type id ) :
         stem::EventHandler( id ),
         _trflags( notrace ),
         _trs( 0 )
       { }
 
-    VTDispatcher( stem::addr_type id, const char *info ) :
+    Janus( stem::addr_type id, const char *info ) :
         stem::EventHandler( id, info ),
         _trflags( notrace ),
         _trs( 0 )
       { }
 
-    void VTDispatch( const stem::Event_base<VTmess>& );
+    void JaDispatch( const stem::Event_base<VSmess>& );
 
-    void VTSend( const stem::Event& e, group_type );
+    void JaSend( const stem::Event& e, group_type );
     void Subscribe( stem::addr_type, oid_type, group_type );
     void Unsubscribe( oid_type, group_type );
     void Unsubscribe( oid_type );
@@ -328,7 +328,7 @@ class VTDispatcher :
     typedef std::hash_map<oid_type, detail::vtime_obj_rec> vt_map_type;
     typedef std::hash_multimap<group_type, oid_type> gid_map_type;
 
-    void check_and_send( detail::vtime_obj_rec&, const stem::Event_base<VTmess>& );
+    void check_and_send( detail::vtime_obj_rec&, const stem::Event_base<VSmess>& );
     void check_and_send_delayed( detail::vtime_obj_rec& );
     
     vt_map_type vtmap;
@@ -338,7 +338,7 @@ class VTDispatcher :
     unsigned _trflags;
     std::ostream *_trs;
 
-    DECLARE_RESPONSE_TABLE( VTDispatcher, stem::EventHandler );
+    DECLARE_RESPONSE_TABLE( Janus, stem::EventHandler );
 };
 
 class VTHandler :
@@ -363,7 +363,7 @@ class VTHandler :
     explicit VTHandler( stem::addr_type id, const char *info = 0 );
     virtual ~VTHandler();
 
-    void VTSend( const stem::Event& e );
+    void JaSend( const stem::Event& e );
     void JoinGroup( group_type grp )
       { _vtdsp->Subscribe( self_id(), oid_type( self_id() ), grp ); }
     virtual void VSNewMember( const stem::Event_base<VSsync_rq>& e );
@@ -371,11 +371,11 @@ class VTHandler :
     virtual void VSsync_time( const stem::Event_base<VSsync>& );
 
 
-    template <class D>
-    void VTSend( const stem::Event_base<D>& e )
-      { VTHandler::VTSend( stem::Event_convert<D>()( e ) ); }
+    // template <class D>
+    // void JaSend( const stem::Event_base<D>& e )
+    //   { VTHandler::JaSend( stem::Event_convert<D>()( e ) ); }
 
-    static VTDispatcher *vtdispatcher()
+    static Janus *vtdispatcher()
       { return _vtdsp; }
 
   protected:
@@ -385,7 +385,7 @@ class VTHandler :
       { _vtdsp->get_gvtime( g, self_id(), gvt ); }
 
   private:
-    static class VTDispatcher *_vtdsp;
+    static class Janus *_vtdsp;
 
     DECLARE_RESPONSE_TABLE( VTHandler, stem::EventHandler );
 };
@@ -395,18 +395,18 @@ class VTHandler :
 #define VS_OUT_MEMBER 0x302
 #define VS_SYNC_TIME  0x303
 
-} // namespace vt
+} // namespace janus
 
 namespace std {
 
-ostream& operator <<( ostream&, const vt::vtime_type::value_type& );
-ostream& operator <<( ostream&, const vt::vtime_type& );
-ostream& operator <<( ostream&, const vt::vtime& );
-ostream& operator <<( ostream&, const vt::gvtime_type::value_type& );
-ostream& operator <<( ostream&, const vt::gvtime_type& );
-ostream& operator <<( ostream&, const vt::gvtime& );
-ostream& operator <<( ostream& o, const vt::VSsync& );
-ostream& operator <<( ostream& o, const vt::VTmess& );
+ostream& operator <<( ostream&, const janus::vtime_type::value_type& );
+ostream& operator <<( ostream&, const janus::vtime_type& );
+ostream& operator <<( ostream&, const janus::vtime& );
+ostream& operator <<( ostream&, const janus::gvtime_type::value_type& );
+ostream& operator <<( ostream&, const janus::gvtime_type& );
+ostream& operator <<( ostream&, const janus::gvtime& );
+ostream& operator <<( ostream& o, const janus::VSsync& );
+ostream& operator <<( ostream& o, const janus::VSmess& );
 
 } // namespace std
 
