@@ -20,7 +20,7 @@
 // libstdc++ v3, timestamp 20050519 (3.4.4) has __type_traits,
 // libstdc++ v3, timestamp 20060306 (3.4.6) has __type_traits,
 // while libstdc++ v3, 20050921 (4.0.2) not; use libstdc++ instead
-# if 1 /* !defined(__GLIBCXX__) || (defined(__GNUC__) && (__GNUC__ < 4)) */
+# if defined(STLPORT) || (defined(__GNUC__) && (__GNUC__ < 4)) /* !defined(__GLIBCXX__) || (defined(__GNUC__) && (__GNUC__ < 4)) */
 
 namespace std {
 
@@ -49,11 +49,18 @@ struct __instance :
     static __t2 __test(...);
     
   public:
-    static const bool __value; // = sizeof(__test<_Tp>(0)) == 1;
+#if defined(__GNUC__) && (__GNUC__ < 4)
+    static const bool __value;
+#else
+    static const bool __value = sizeof(__test<_Tp>(0)) == 1;
+#endif
+
 };
 
+#if defined(__GNUC__) && (__GNUC__ < 4)
 template <class _Tp>
 const bool __instance<_Tp>::__value = sizeof(__instance<_Tp>::__test<_Tp>(0)) == 1;
+#endif
 
 template <class T>
 struct __uoc_aux : // union or class
@@ -67,11 +74,17 @@ struct __uoc_aux : // union or class
     static __t2 __test(...);
     
   public:
-    static const bool __value; // = sizeof(__test<T>(0)) == 1;
+#if defined(__GNUC__) && (__GNUC__ < 4)
+    static const bool __value;
+#else
+    static const bool __value = sizeof(__test<T>(0)) == 1;
+#endif
 };
 
+#if defined(__GNUC__) && (__GNUC__ < 4)
 template <class T>
 const bool __uoc_aux<T>::__value = sizeof(__uoc_aux<T>::__test<T>(0)) == 1;
+#endif
 
 template <class T>
 class __empty
@@ -624,7 +637,7 @@ struct add_pointer
 
 } // namespace std
 
-# else // __GLIBCXX__ && (__GNUC__ >= 4)
+# else // __GLIBCXX__ && (__GNUC__ >= 4) && !STLPORT
 #  include <tr1/type_traits>
 # endif
 
