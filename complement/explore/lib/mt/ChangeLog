@@ -374,7 +374,7 @@
 2003-01-07  Petr Ovtchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
 	* xmt.h, xmt.cc: add delay function (sleep for interval
-        of time); fix wrong time conversion for Win in sleep.
+	of time); fix wrong time conversion for Win in sleep.
 
 2002-09-25  Petr Ovtchenkov  <ptr@Island.Br.UrbanNet.Ru>
 
