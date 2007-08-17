@@ -141,7 +141,7 @@ struct vtime :
   vtime& operator +=( const vtime_type::value_type& );
 
 #ifdef __USE_STD_TR1
-  typedef vtime_type::value_type data_type;
+  typedef vtime_unit_type data_type;
 #else
   typedef vtime_type::data_type data_type;
 #endif
@@ -196,7 +196,7 @@ struct gvtime :
   gvtime& operator +=( const gvtime& );
 
 #ifdef __USE_STD_TR1
-  typedef gvtime_type::value_type data_type;
+  typedef vtime data_type;
 #else
   typedef gvtime_type::data_type data_type;
 #endif
@@ -303,7 +303,7 @@ class vtime_obj_rec
 
 #ifdef __FIT_EXAM
 #ifdef __USE_STD_TR1
-    typedef gvtime_type::value_type data_type;
+    typedef vtime data_type;
 #else
     typedef gvtime_type::data_type data_type;
 #endif
