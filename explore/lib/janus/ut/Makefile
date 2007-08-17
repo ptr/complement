@@ -9,10 +9,15 @@ include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
 
 # DEFS += -DUNIT_TEST
-INCLUDES += -I${CoMT_INCLUDE_DIR} -I${BOOST_INCLUDE_DIR} -I..
+INCLUDES += -I${CoMT_INCLUDE_DIR} -I..
 DEFS += -D__FIT_EXAM
 
-LDFLAGS += -L${INSTALL_LIB_DIR} -Wl,-rpath=${INSTALL_LIB_DIR}:${STLPORT_LIB_DIR}
+LDFLAGS += -L${INSTALL_LIB_DIR}
+ifdef WITHOUT_STLPORT
+LDFLAGS += -Wl,-rpath=${INSTALL_LIB_DIR}
+else
+LDFLAGS += -Wl,-rpath=${INSTALL_LIB_DIR}:${STLPORT_LIB_DIR}
+endif
 
 release-shared: PROJECT_LIBS = -lxmt -lsockios -lstem -lexam
 dbg-shared:     PROJECT_LIBS = -lxmtg -lsockiosg -lstemg -lexamg
