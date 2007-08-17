@@ -41,14 +41,18 @@ typedef stem::gaddr_type oid_type;
 
 } // namespace janus
 
-#if defined(__USE_STLPORT_HASH) || defined(__USE_STLPORT_TR1)
+#if defined(__USE_STLPORT_HASH) || defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
 #  define __HASH_NAMESPACE std
 #endif
-#if defined(__USE_STD_HASH) || defined(__USE_STD_TR1)
+#if defined(__USE_STD_HASH)
 #  define __HASH_NAMESPACE __gnu_cxx
 #endif
 
 namespace __HASH_NAMESPACE {
+
+#ifdef __USE_STD_TR1
+namespace tr1 {
+#endif
 
 template <>
 struct hash<janus::oid_type>
@@ -56,6 +60,10 @@ struct hash<janus::oid_type>
     size_t operator()(const janus::oid_type& __x) const
       { return __x.addr; }
 };
+
+#ifdef __USE_STD_TR1
+}
+#endif
 
 } // namespace __HASH_NAMESPACE
 
@@ -132,9 +140,15 @@ struct vtime :
   
   vtime& operator +=( const vtime_type::value_type& );
 
-  vtime_type::data_type& operator[]( const vtime_type::key_type& k )
+#ifdef __USE_STD_TR1
+  typedef vtime_type::value_type data_type;
+#else
+  typedef vtime_type::data_type data_type;
+#endif
+
+  data_type& operator[]( const vtime_type::key_type& k )
     { return vt[k]; }
-  const vtime_type::data_type& operator[]( const vtime_type::key_type& k ) const
+  const data_type& operator[]( const vtime_type::key_type& k ) const
     { return vt[k]; }
 
     
@@ -181,9 +195,15 @@ struct gvtime :
   gvtime& operator +=( const gvtime_type::value_type& );
   gvtime& operator +=( const gvtime& );
 
-  gvtime_type::data_type& operator[]( const gvtime_type::key_type k )
+#ifdef __USE_STD_TR1
+  typedef gvtime_type::value_type data_type;
+#else
+  typedef gvtime_type::data_type data_type;
+#endif
+
+  data_type& operator[]( const gvtime_type::key_type k )
     { return gvt[k]; }
-  const gvtime_type::data_type& operator[]( const gvtime_type::key_type k ) const
+  const data_type& operator[]( const gvtime_type::key_type k ) const
     { return gvt[k]; }
 
   mutable gvtime_type gvt;
@@ -282,7 +302,13 @@ class vtime_obj_rec
     void sync( group_type, const oid_type&, const gvtime_type& );
 
 #ifdef __FIT_EXAM
-    const gvtime_type::data_type& operator[]( const gvtime_type::key_type k ) const
+#ifdef __USE_STD_TR1
+    typedef gvtime_type::value_type data_type;
+#else
+    typedef gvtime_type::data_type data_type;
+#endif
+
+    const data_type& operator[]( const gvtime_type::key_type k ) const
       { return vt[k]; }
 #endif
 
