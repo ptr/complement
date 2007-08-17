@@ -1,13 +1,11 @@
-// -*- C++ -*- Time-stamp: <07/07/26 09:53:24 ptr>
+// -*- C++ -*- Time-stamp: <07/08/17 10:39:45 ptr>
 
 #include "vt_operations.h"
-
-// #include <boost/lexical_cast.hpp>
 
 #include <iostream>
 #include <janus/vtime.h>
 
-using namespace vt;
+using namespace janus;
 using namespace std;
 
 class Dummy :
@@ -75,7 +73,7 @@ END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::VTDispatch1)
 {
-  vt::VTDispatcher dsp;
+  janus::Janus dsp;
   Dummy dummy1;
   Dummy dummy2;
   const oid_type t1(1);
@@ -89,7 +87,7 @@ int EXAM_IMPL(vtime_operations::VTDispatch1)
 
   ev.value() = "hello";
 
-  dsp.VTSend( ev, 0 );
+  dsp.JaSend( ev, 0 );
 
   dummy2.wait();
 
@@ -101,7 +99,7 @@ int EXAM_IMPL(vtime_operations::VTDispatch1)
 
 int EXAM_IMPL(vtime_operations::VTDispatch2)
 {
-  vt::VTDispatcher dsp;
+  janus::Janus dsp;
   Dummy dummy1;
   Dummy dummy2;
   Dummy dummy3;
@@ -118,7 +116,7 @@ int EXAM_IMPL(vtime_operations::VTDispatch2)
 
   ev.value() = "hello";
 
-  dsp.VTSend( ev, 0 );
+  dsp.JaSend( ev, 0 );
 
   dummy2.wait();
   dummy3.wait();

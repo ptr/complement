@@ -1,13 +1,11 @@
-// -*- C++ -*- Time-stamp: <07/07/25 22:09:32 ptr>
+// -*- C++ -*- Time-stamp: <07/08/17 10:21:34 ptr>
 
 #include "vt_operations.h"
-
-// #include <boost/lexical_cast.hpp>
 
 #include <iostream>
 #include <janus/vtime.h>
 
-using namespace vt;
+using namespace janus;
 using namespace std;
 
 int EXAM_IMPL(vtime_operations::vt_object)
@@ -29,8 +27,8 @@ int EXAM_IMPL(vtime_operations::vt_object)
   // gvtime gvt;
   // gvt[gr0][obj1] = 1;
 
-  VTmess mess;
-  VTmess mess_bad;
+  VSmess mess;
+  VSmess mess_bad;
 
   mess_bad.code = mess.code = 1;
   mess_bad.src =  mess.src = obj1;
@@ -90,7 +88,7 @@ int EXAM_IMPL(vtime_operations::vt_object)
 
   // ----
 
-  VTmess mess2;
+  VSmess mess2;
 
   mess2.code = 1;
   mess2.src = obj2;
@@ -158,7 +156,7 @@ int EXAM_IMPL(vtime_operations::vt_object)
   // cerr << ob.vt[gr0] << endl;
   // cerr << "===========\n";
 
-  VTmess mess3;
+  VSmess mess3;
 
   mess3.code = 1;
   mess3.src = obj2;

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/11 01:10:59 ptr>
+// -*- C++ -*- Time-stamp: <07/08/17 10:39:02 ptr>
 
 #include <janus/vtime.h>
 
@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <stem/EvManager.h>
 
-namespace vt {
+namespace janus {
 
 using namespace std;
 using namespace xmt;
@@ -152,28 +152,28 @@ void VSsync::net_unpack( std::istream& s )
   VSsync_rq::net_unpack( s );
 }
 
-void VTmess::pack( std::ostream& s ) const
+void VSmess::pack( std::ostream& s ) const
 {
   __pack( s, code );
   src.pack( s ); // __pack( s, src );
   VSsync::pack( s );
 }
 
-void VTmess::net_pack( std::ostream& s ) const
+void VSmess::net_pack( std::ostream& s ) const
 {
   __net_pack( s, code );
   src.net_pack( s ); // __net_pack( s, src );
   VSsync::net_pack( s );
 }
 
-void VTmess::unpack( std::istream& s )
+void VSmess::unpack( std::istream& s )
 {
   __unpack( s, code );
   src.unpack( s ); // __unpack( s, src );
   VSsync::unpack( s );
 }
 
-void VTmess::net_unpack( std::istream& s )
+void VSmess::net_unpack( std::istream& s )
 {
   __net_unpack( s, code );
   src.net_unpack( s ); // __net_unpack( s, src );
@@ -349,7 +349,7 @@ gvtime& gvtime::operator +=( const gvtime& t )
 
 namespace detail {
 
-bool vtime_obj_rec::deliver( const VTmess& m )
+bool vtime_obj_rec::deliver( const VSmess& m )
 {
   if ( order_correct( m ) ) {
     lvt[m.src] += m.gvt.gvt;
@@ -361,7 +361,7 @@ bool vtime_obj_rec::deliver( const VTmess& m )
   return false;
 }
 
-bool vtime_obj_rec::deliver_delayed( const VTmess& m )
+bool vtime_obj_rec::deliver_delayed( const VSmess& m )
 {
   if ( order_correct_delayed( m ) ) {
     lvt[m.src] += m.gvt.gvt;
@@ -373,17 +373,17 @@ bool vtime_obj_rec::deliver_delayed( const VTmess& m )
   return false;
 }
 
-bool vtime_obj_rec::order_correct( const VTmess& m )
+bool vtime_obj_rec::order_correct( const VSmess& m )
 {
   if ( groups.find( m.grp ) == groups.end() ) {
-    throw domain_error( "VT object not member of group" );
+    throw domain_error( "virtual synchrony object not member of group" );
   }
 
   gvtime gvt( m.gvt );
 
   if ( (vt.gvt[m.grp][m.src] + 1) != gvt[m.grp][m.src] ) {
     if ( (vt.gvt[m.grp][m.src] + 1) > gvt[m.grp][m.src] ) {
-      throw out_of_range( "duplicate or wrong VT message" );
+      throw out_of_range( "duplicate or wrong virtual synchrony message" );
     }
     return false;
   }
@@ -405,10 +405,10 @@ bool vtime_obj_rec::order_correct( const VTmess& m )
   return true;
 }
 
-ostream& vtime_obj_rec::trace_deliver( const VTmess& m, ostream& o )
+ostream& vtime_obj_rec::trace_deliver( const VSmess& m, ostream& o )
 {
   if ( groups.find( m.grp ) == groups.end() ) {
-    return o << "VT object not member of group";
+    return o << "virtual synchrony object not member of group";
   }
 
   gvtime gvt( m.gvt );
@@ -437,7 +437,7 @@ ostream& vtime_obj_rec::trace_deliver( const VTmess& m, ostream& o )
   return o << "should be delivered";
 }
 
-bool vtime_obj_rec::order_correct_delayed( const VTmess& m )
+bool vtime_obj_rec::order_correct_delayed( const VSmess& m )
 {
   gvtime gvt( m.gvt );
 
@@ -473,7 +473,7 @@ bool vtime_obj_rec::rm_group( group_type g )
   // strike out group g from my groups list
   groups_container_type::iterator i = groups.find( g );
   if ( i == groups.end() ) {
-    throw domain_error( "VT object not member of group" );
+    throw domain_error( "virtual synchrony object not member of group" );
   }
   groups.erase( i );
 
@@ -543,44 +543,44 @@ void vtime_obj_rec::sync( group_type g, const oid_type& oid, const gvtime_type& 
 
 } // namespace detail
 
-void VTDispatcher::settrf( unsigned f )
+void Janus::settrf( unsigned f )
 {
   scoped_lock _x1( _lock_tr );
   _trflags |= f;
 }
 
-void VTDispatcher::unsettrf( unsigned f )
+void Janus::unsettrf( unsigned f )
 {
   scoped_lock _x1( _lock_tr );
   _trflags &= (0xffffffff & ~f);
 }
 
-void VTDispatcher::resettrf( unsigned f )
+void Janus::resettrf( unsigned f )
 {
   scoped_lock _x1( _lock_tr );
   _trflags = f;
 }
 
-void VTDispatcher::cleantrf()
+void Janus::cleantrf()
 {
   scoped_lock _x1( _lock_tr );
   _trflags = 0;
 }
 
-unsigned VTDispatcher::trflags() const
+unsigned Janus::trflags() const
 {
   scoped_lock _x1( _lock_tr );
 
   return _trflags;
 }
 
-void VTDispatcher::settrs( std::ostream *s )
+void Janus::settrs( std::ostream *s )
 {
   scoped_lock _x1( _lock_tr );
   _trs = s;
 }
 
-void VTDispatcher::VTDispatch( const stem::Event_base<VTmess>& m )
+void Janus::JaDispatch( const stem::Event_base<VSmess>& m )
 {
   pair<gid_map_type::const_iterator,gid_map_type::const_iterator> range =
     grmap.equal_range( m.value().grp );
@@ -621,7 +621,7 @@ void VTDispatcher::VTDispatch( const stem::Event_base<VTmess>& m )
   }
 }
 
-void VTDispatcher::check_and_send( detail::vtime_obj_rec& vt, const stem::Event_base<VTmess>& m )
+void Janus::check_and_send( detail::vtime_obj_rec& vt, const stem::Event_base<VSmess>& m )
 {
   if ( vt.deliver( m.value() ) ) {
     stem::Event ev( m.value().code );
@@ -651,11 +651,11 @@ void VTDispatcher::check_and_send( detail::vtime_obj_rec& vt, const stem::Event_
     catch ( ... ) {
     }
 #endif // __FIT_VS_TRACE
-    vt.dpool.push_back( make_pair( xmt::timespec(xmt::timespec::now), new Event_base<VTmess>(m) ) ); // 0 should be timestamp
+    vt.dpool.push_back( make_pair( xmt::timespec(xmt::timespec::now), new Event_base<VSmess>(m) ) ); // 0 should be timestamp
   }
 }
 
-void VTDispatcher::check_and_send_delayed( detail::vtime_obj_rec& vt )
+void Janus::check_and_send_delayed( detail::vtime_obj_rec& vt )
 {
   typedef detail::vtime_obj_rec::dpool_t dpool_t;
   bool more;
@@ -700,7 +700,7 @@ void VTDispatcher::check_and_send_delayed( detail::vtime_obj_rec& vt )
   } while ( more );
 }
 
-void VTDispatcher::VTSend( const stem::Event& e, group_type grp )
+void Janus::JaSend( const stem::Event& e, group_type grp )
 {
   // This method not called from Dispatch, but work on the same level and in the same
   // scope, so this lock (from stem::EventHandler) required here:
@@ -714,7 +714,7 @@ void VTDispatcher::VTSend( const stem::Event& e, group_type grp )
     if ( i != vtmap.end() && i->second.stem_addr() == e.src() ) { // for self
       detail::vtime_obj_rec& vt = i->second;
       const oid_type& from = o->second;
-      stem::Event_base<VTmess> m( VS_MESS );
+      stem::Event_base<VSmess> m( VS_MESS );
       m.value().src = from; // oid
       m.value().code = e.code();
       m.value().mess = e.value();
@@ -787,7 +787,7 @@ void VTDispatcher::VTSend( const stem::Event& e, group_type grp )
   throw domain_error( "VT object not member of group" ); // Error: not group member
 }
 
-void VTDispatcher::Subscribe( stem::addr_type addr, oid_type oid, group_type grp )
+void Janus::Subscribe( stem::addr_type addr, oid_type oid, group_type grp )
 {
   // See comment on top of VTSend above
   xmt::recursive_scoped_lock lk( this->_theHistory_lock );
@@ -820,7 +820,7 @@ void VTDispatcher::Subscribe( stem::addr_type addr, oid_type oid, group_type grp
   grmap.insert( make_pair(grp,oid) );
 }
 
-void VTDispatcher::Unsubscribe( oid_type oid, group_type grp )
+void Janus::Unsubscribe( oid_type oid, group_type grp )
 {
   // See comment on top of VTSend above
   xmt::recursive_scoped_lock lk( this->_theHistory_lock );
@@ -863,9 +863,9 @@ void VTDispatcher::Unsubscribe( oid_type oid, group_type grp )
   }
 }
 
-void VTDispatcher::Unsubscribe( oid_type oid )
+void Janus::Unsubscribe( oid_type oid )
 {
-  // See comment on top of VTSend above
+  // See comment on top of JaSend above
   xmt::recursive_scoped_lock lk( this->_theHistory_lock );
 
   vt_map_type::iterator i = vtmap.find( oid );
@@ -909,9 +909,9 @@ void VTDispatcher::Unsubscribe( oid_type oid )
   }
 }
 
-void VTDispatcher::get_gvtime( group_type grp, stem::addr_type addr, gvtime_type& gvt )
+void Janus::get_gvtime( group_type grp, stem::addr_type addr, gvtime_type& gvt )
 {
-  // See comment on top of VTSend above
+  // See comment on top of JaSend above
   xmt::recursive_scoped_lock lk( this->_theHistory_lock );
 
   pair<gid_map_type::iterator,gid_map_type::iterator> range =
@@ -927,18 +927,18 @@ void VTDispatcher::get_gvtime( group_type grp, stem::addr_type addr, gvtime_type
   try {
     scoped_lock lk(_lock_tr);
     if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-      *_trs << "VT object not member of group" << " " << __FILE__ << ":" << __LINE__ << endl;
+      *_trs << "virtual synchrony object not member of group" << " " << __FILE__ << ":" << __LINE__ << endl;
     }
   }
   catch ( ... ) {
   }
 
-  throw domain_error( "VT object not member of group" ); // Error: not group member
+  throw domain_error( "virtual synchrony object not member of group" ); // Error: not group member
 }
 
-void VTDispatcher::set_gvtime( group_type grp, stem::addr_type addr, const gvtime_type& gvt )
+void Janus::set_gvtime( group_type grp, stem::addr_type addr, const gvtime_type& gvt )
 {
-  // See comment on top of VTSend above
+  // See comment on top of JaSend above
   xmt::recursive_scoped_lock lk( this->_theHistory_lock );
 
   pair<gid_map_type::iterator,gid_map_type::iterator> range =
@@ -966,21 +966,21 @@ void VTDispatcher::set_gvtime( group_type grp, stem::addr_type addr, const gvtim
   try {
     scoped_lock lk(_lock_tr);
     if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-      *_trs << "VT object not member of group" << " " << __FILE__ << ":" << __LINE__ << endl;
+      *_trs << "virtual synchrony object not member of group" << " " << __FILE__ << ":" << __LINE__ << endl;
     }
   }
   catch ( ... ) {
   }
 
-  throw domain_error( "VT object not member of group" ); // Error: not group member
+  throw domain_error( "virtual synchrony object not member of group" ); // Error: not group member
 }
 
-DEFINE_RESPONSE_TABLE( VTDispatcher )
-  EV_Event_base_T_( ST_NULL, VS_MESS, VTDispatch, VTmess )
+DEFINE_RESPONSE_TABLE( Janus )
+  EV_Event_base_T_( ST_NULL, VS_MESS, JaDispatch, VSmess )
 END_RESPONSE_TABLE
 
 char *Init_buf[128];
-VTDispatcher *VTHandler::_vtdsp = 0;
+Janus *VTHandler::_vtdsp = 0;
 static int *_rcount = 0;
 
 void VTHandler::Init::__at_fork_prepare()
@@ -1013,7 +1013,7 @@ void VTHandler::Init::_guard( int direction )
       _rcount = &_count;
       pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child );
 #endif
-      VTHandler::_vtdsp = new VTDispatcher( 2, "vtd" );
+      VTHandler::_vtdsp = new Janus( 2, "vtd" );
     }
   } else {
     --_count;
@@ -1030,10 +1030,10 @@ VTHandler::Init::Init()
 VTHandler::Init::~Init()
 { _guard( 0 ); }
 
-void VTHandler::VTSend( const stem::Event& ev )
+void VTHandler::JaSend( const stem::Event& ev )
 {
   ev.src( self_id() );
-  _vtdsp->VTSend( ev, ev.dest() ); // throw domain_error, if not group member
+  _vtdsp->JaSend( ev, ev.dest() ); // throw domain_error, if not group member
 }
 
 VTHandler::VTHandler() :
@@ -1112,14 +1112,14 @@ END_RESPONSE_TABLE
 
 namespace std {
 
-ostream& operator <<( ostream& o, const vt::vtime_type::value_type& v )
+ostream& operator <<( ostream& o, const janus::vtime_type::value_type& v )
 {
   return o << "(" << v.first << "," << v.second << ")";
 }
 
-ostream& operator <<( ostream& o, const vt::vtime_type& v )
+ostream& operator <<( ostream& o, const janus::vtime_type& v )
 {
-  for ( vt::vtime_type::const_iterator i = v.begin(); i != v.end(); ++i ) {
+  for ( janus::vtime_type::const_iterator i = v.begin(); i != v.end(); ++i ) {
     if ( i != v.begin() ) {
       o << ", ";
     }
@@ -1128,29 +1128,29 @@ ostream& operator <<( ostream& o, const vt::vtime_type& v )
   return o;
 }
 
-ostream& operator <<( ostream& o, const vt::vtime& v )
+ostream& operator <<( ostream& o, const janus::vtime& v )
 { return o << v.vt; }
 
-ostream& operator <<( ostream& o, const vt::gvtime_type::value_type& v )
+ostream& operator <<( ostream& o, const janus::gvtime_type::value_type& v )
 {
   o << v.first << ": " << v.second.vt;
 }
 
-ostream& operator <<( ostream& o, const vt::gvtime_type& v )
+ostream& operator <<( ostream& o, const janus::gvtime_type& v )
 {
   o << "{\n";
-  for ( vt::gvtime_type::const_iterator i = v.begin(); i != v.end(); ++i ) {
+  for ( janus::gvtime_type::const_iterator i = v.begin(); i != v.end(); ++i ) {
     o << "\t" << *i << "\n";
   }
   return o << "}\n";
 }
 
-ostream& operator <<( ostream& o, const vt::gvtime& v )
+ostream& operator <<( ostream& o, const janus::gvtime& v )
 {
   return o << v.gvt;
 }
 
-ostream& operator <<( ostream& o, const vt::VSsync& m )
+ostream& operator <<( ostream& o, const janus::VSsync& m )
 {
   // ios_base::fmtflags f = o.flags( ios_base::hex );
   o << "G" << m.grp << " " << m.gvt;
@@ -1158,13 +1158,13 @@ ostream& operator <<( ostream& o, const vt::VSsync& m )
   return o;
 }
 
-ostream& operator <<( ostream& o, const vt::VTmess& m )
+ostream& operator <<( ostream& o, const janus::VSmess& m )
 {
   ios_base::fmtflags f = o.flags( ios_base::hex | ios_base::showbase );
-  o << "C" << m.code << dec << " " << m.src << " " << static_cast<const vt::VSsync&>(m);
+  o << "C" << m.code << dec << " " << m.src << " " << static_cast<const janus::VSsync&>(m);
   o.flags( f );
   return o;
 }
 
-} // namespace std
+} // namespace janus
 

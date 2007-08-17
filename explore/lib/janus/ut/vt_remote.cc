@@ -1,8 +1,6 @@
-// -*- C++ -*- Time-stamp: <07/08/16 10:45:48 ptr>
+// -*- C++ -*- Time-stamp: <07/08/17 10:07:52 ptr>
 
 #include "vt_operations.h"
-
-// #include <boost/lexical_cast.hpp>
 
 #include <iostream>
 #include <janus/vtime.h>
@@ -18,10 +16,10 @@
 using namespace std;
 using namespace stem;
 using namespace xmt;
-using namespace vt;
+using namespace janus;
 
 class YaRemote :
-    public vt::VTHandler
+    public janus::VTHandler
 {
   public:
     YaRemote();
@@ -50,7 +48,7 @@ class YaRemote :
     xmt::condition cnd;
     xmt::condition gr;
 
-    DECLARE_RESPONSE_TABLE( YaRemote, vt::VTHandler );
+    DECLARE_RESPONSE_TABLE( YaRemote, janus::VTHandler );
 };
 
 #define VS_DUMMY_MESS     0x1203
