@@ -41,7 +41,14 @@ typedef stem::gaddr_type oid_type;
 
 } // namespace janus
 
-namespace std {
+#if defined(__USE_STLPORT_HASH) || defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+#  define __HASH_NAMESPACE std
+#endif
+#ifdef __USE_STD_HASH
+#  define __HASH_NAMESPACE __gnu_cxx
+#endif
+
+namespace __HASH_NAMESPACE {
 
 template <>
 struct hash<janus::oid_type>
@@ -50,7 +57,9 @@ struct hash<janus::oid_type>
       { return __x.addr; }
 };
 
-} // namespace std
+} // namespace __HASH_NAMESPACE
+
+#undef __HASH_NAMESPACE
 
 namespace janus {
 
@@ -447,6 +456,19 @@ class VTHandler :
 #define VS_NEW_MEMBER 0x301
 #define VS_OUT_MEMBER 0x302
 #define VS_SYNC_TIME  0x303
+
+#ifdef __USE_STLPORT_HASH
+#  undef __USE_STLPORT_HASH
+#endif
+#ifdef __USE_STD_HASH
+#  undef __USE_STD_HASH
+#endif
+#ifdef __USE_STLPORT_TR1
+#  undef __USE_STLPORT_TR1
+#endif
+#ifdef __USE_STD_TR1
+#  undef __USE_STD_TR1
+#endif
 
 } // namespace janus
 
