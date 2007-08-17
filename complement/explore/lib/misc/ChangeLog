@@ -1,3 +1,8 @@
+2007-08-17  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* type_traits.h: made code acceptable for gcc 3.3 [remove
+	inline initialization of statics in template].
+
 2007-08-03  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* type_traits.h: select appropriate TR1 type_traits implementation

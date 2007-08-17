@@ -49,8 +49,11 @@ struct __instance :
     static __t2 __test(...);
     
   public:
-    static const bool __value = sizeof(__test<_Tp>(0)) == 1;
+    static const bool __value; // = sizeof(__test<_Tp>(0)) == 1;
 };
+
+template <class _Tp>
+const bool __instance<_Tp>::__value = sizeof(__instance<_Tp>::__test<_Tp>(0)) == 1;
 
 template <class T>
 struct __uoc_aux : // union or class
@@ -64,8 +67,11 @@ struct __uoc_aux : // union or class
     static __t2 __test(...);
     
   public:
-    static const bool __value = sizeof(__test<T>(0)) == 1;
+    static const bool __value; // = sizeof(__test<T>(0)) == 1;
 };
+
+template <class T>
+const bool __uoc_aux<T>::__value = sizeof(__uoc_aux<T>::__test<T>(0)) == 1;
 
 template <class T>
 class __empty
