@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/17 10:38:35 ptr>
+// -*- C++ -*- Time-stamp: <07/08/17 21:54:39 ptr>
 
 #ifndef __vtime_h
 #define __vtime_h
@@ -140,15 +140,9 @@ struct vtime :
   
   vtime& operator +=( const vtime_type::value_type& );
 
-#ifdef __USE_STD_TR1
-  typedef vtime_unit_type data_type;
-#else
-  typedef vtime_type::data_type data_type;
-#endif
-
-  data_type& operator[]( const vtime_type::key_type& k )
+  vtime_type::mapped_type& operator[]( const vtime_type::key_type& k )
     { return vt[k]; }
-  const data_type& operator[]( const vtime_type::key_type& k ) const
+  const vtime_type::mapped_type& operator[]( const vtime_type::key_type& k ) const
     { return vt[k]; }
 
     
@@ -195,15 +189,9 @@ struct gvtime :
   gvtime& operator +=( const gvtime_type::value_type& );
   gvtime& operator +=( const gvtime& );
 
-#ifdef __USE_STD_TR1
-  typedef vtime data_type;
-#else
-  typedef gvtime_type::data_type data_type;
-#endif
-
-  data_type& operator[]( const gvtime_type::key_type k )
+  gvtime_type::mapped_type& operator[]( const gvtime_type::key_type k )
     { return gvt[k]; }
-  const data_type& operator[]( const gvtime_type::key_type k ) const
+  const gvtime_type::mapped_type& operator[]( const gvtime_type::key_type k ) const
     { return gvt[k]; }
 
   mutable gvtime_type gvt;
@@ -302,13 +290,7 @@ class vtime_obj_rec
     void sync( group_type, const oid_type&, const gvtime_type& );
 
 #ifdef __FIT_EXAM
-#ifdef __USE_STD_TR1
-    typedef vtime data_type;
-#else
-    typedef gvtime_type::data_type data_type;
-#endif
-
-    const data_type& operator[]( const gvtime_type::key_type k ) const
+    const gvtime_type::mapped_type& operator[]( const gvtime_type::key_type k ) const
       { return vt[k]; }
 #endif
 
