@@ -1,11 +1,11 @@
-// -*- C++ -*- Time-stamp: <07/07/25 22:06:40 ptr>
+// -*- C++ -*- Time-stamp: <07/08/17 10:20:54 ptr>
 
 #include "vt_operations.h"
 
 #include <iostream>
 #include <janus/vtime.h>
 
-using namespace vt;
+using namespace janus;
 using namespace std;
 
 class VTM_handler :
@@ -17,8 +17,8 @@ class VTM_handler :
     VTM_handler( stem::addr_type id, const char *info );
     ~VTM_handler();
 
-    void handlerE( const stem::Event_base<VTmess>& );
-    void handlerV( const VTmess& );
+    void handlerE( const stem::Event_base<VSmess>& );
+    void handlerV( const VSmess& );
 
     void wait();
 
@@ -59,7 +59,7 @@ VTM_handler::~VTM_handler()
   // cnd.wait();
 }
 
-void VTM_handler::handlerE( const stem::Event_base<VTmess>& ev )
+void VTM_handler::handlerE( const stem::Event_base<VSmess>& ev )
 {
   code = ev.value().code;
   src = ev.value().src;
@@ -71,7 +71,7 @@ void VTM_handler::handlerE( const stem::Event_base<VTmess>& ev )
   cnd.set( true );
 }
 
-void VTM_handler::handlerV( const VTmess& m )
+void VTM_handler::handlerV( const VSmess& m )
 {
   code = m.code;
   src = m.src;
@@ -91,8 +91,8 @@ void VTM_handler::wait()
 }
 
 DEFINE_RESPONSE_TABLE( VTM_handler )
-  EV_Event_base_T_( ST_NULL, VT_MESS, handlerE, VTmess )
-  EV_T_( 1, VT_MESS, handlerV, VTmess )
+  EV_Event_base_T_( ST_NULL, VT_MESS, handlerE, VSmess )
+  EV_T_( 1, VT_MESS, handlerV, VSmess )
 END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::VTMess_core)
@@ -103,7 +103,7 @@ int EXAM_IMPL(vtime_operations::VTMess_core)
 
   VTM_handler h;
 
-  stem::Event_base<VTmess> ev( VT_MESS );
+  stem::Event_base<VSmess> ev( VT_MESS );
 
   ev.dest( h.self_id() );
   ev.value().code = 2;

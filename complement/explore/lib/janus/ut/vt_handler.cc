@@ -1,19 +1,17 @@
-// -*- C++ -*- Time-stamp: <07/08/11 23:21:59 ptr>
+// -*- C++ -*- Time-stamp: <07/08/17 10:41:22 ptr>
 
 #include "vt_operations.h"
-
-// #include <boost/lexical_cast.hpp>
 
 #include <iostream>
 #include <janus/vtime.h>
 
 #include <stem/EvManager.h>
 
-using namespace vt;
+using namespace janus;
 using namespace std;
 
 class VTDummy :
-    public vt::VTHandler
+    public janus::VTHandler
 {
   public:
     VTDummy();
@@ -42,7 +40,7 @@ class VTDummy :
     xmt::condition cnd;
     xmt::condition gr;
 
-    DECLARE_RESPONSE_TABLE( VTDummy, vt::VTHandler );
+    DECLARE_RESPONSE_TABLE( VTDummy, janus::VTHandler );
 };
 
 #define VS_DUMMY_MESS     0x1203
@@ -138,7 +136,7 @@ int EXAM_IMPL(vtime_operations::VTHandler1)
   ev.dest( 0 ); // group
   ev.value() = "hello";
 
-  dummy1.VTSend( ev );
+  dummy1.JaSend( ev );
 
   dummy2.wait();
 
@@ -158,7 +156,7 @@ int EXAM_IMPL(vtime_operations::VTHandler2)
   ev.dest( 0 ); // group
   ev.value() = "hello";
 
-  dummy1.VTSend( ev );
+  dummy1.JaSend( ev );
 
   dummy2.wait();
   dummy3.wait();
@@ -172,7 +170,7 @@ int EXAM_IMPL(vtime_operations::VTHandler2)
 
   ev.dest( 100 ); // not this group member
   try {
-    dummy1.VTSend( ev );
+    dummy1.JaSend( ev );
     EXAM_ERROR( "exception expected" );
   }
   catch ( std::domain_error& ) {
@@ -190,7 +188,7 @@ int EXAM_IMPL(vtime_operations::VTSubscription)
   ev.dest( 0 ); // group
   ev.value() = "hello";
 
-  dummy1.VTSend( ev );
+  dummy1.JaSend( ev );
 
   dummy2.wait();
   EXAM_CHECK( dummy2.msg == "hello" );
@@ -199,7 +197,7 @@ int EXAM_IMPL(vtime_operations::VTSubscription)
     VTDummy dummy3;
 
     ev.value() = "hi";
-    dummy1.VTSend( ev );
+    dummy1.JaSend( ev );
 
     dummy2.wait();
     // dummy3.wait();
@@ -211,7 +209,7 @@ int EXAM_IMPL(vtime_operations::VTSubscription)
   }
 
   ev.value() = "yet more";
-  dummy1.VTSend( ev );
+  dummy1.JaSend( ev );
 
   dummy2.wait();
   EXAM_CHECK( dummy2.msg == "yet more" );
@@ -240,7 +238,7 @@ int EXAM_IMPL(vtime_operations::VTEntryIntoGroup)
     dummy3.wait_greeting();
 
     ev.value() = "hi";
-    dummy1.VTSend( ev );
+    dummy1.JaSend( ev );
 
     dummy3.wait();
 
@@ -260,7 +258,7 @@ int EXAM_IMPL(vtime_operations::VTEntryIntoGroup2)
   ev.dest( 0 ); // group
   ev.value() = "hello";
 
-  dummy1.VTSend( ev );
+  dummy1.JaSend( ev );
 
   dummy2.wait();
   EXAM_CHECK( dummy2.msg == "hello" );
@@ -280,7 +278,7 @@ int EXAM_IMPL(vtime_operations::VTEntryIntoGroup2)
 
     ev.value() = "hi";
     ev.dest( 0 ); // group
-    dummy1.VTSend( ev );
+    dummy1.JaSend( ev );
 
     dummy2.wait();
     dummy3.wait();
@@ -306,7 +304,7 @@ int EXAM_IMPL(vtime_operations::VTEntryIntoGroup3)
 
     ev.value() = "hello";
     ev.dest( 0 ); // group
-    dummy1.VTSend( ev );
+    dummy1.JaSend( ev );
 
     dummy2.wait();
     EXAM_CHECK( dummy2.msg == "hello" );
@@ -320,7 +318,7 @@ int EXAM_IMPL(vtime_operations::VTEntryIntoGroup3)
 
     ev.value() = "hi";
     ev.dest( 0 ); // group
-    dummy1.VTSend( ev );
+    dummy1.JaSend( ev );
 
     dummy3.wait();
 
@@ -337,7 +335,7 @@ int EXAM_IMPL(vtime_operations::VTEntryIntoGroup3)
 
     ev.value() = "more";
     ev.dest( 0 ); // group
-    dummy1.VTSend( ev );
+    dummy1.JaSend( ev );
 
     dummy2.wait();
     dummy3.wait();
@@ -346,7 +344,7 @@ int EXAM_IMPL(vtime_operations::VTEntryIntoGroup3)
     EXAM_CHECK( dummy3.msg == "more" );
     EXAM_CHECK( dummy1.msg == "" );
 
-    dummy2.VTSend( ev );
+    dummy2.JaSend( ev );
 
     dummy1.wait();
   }
