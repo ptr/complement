@@ -24,12 +24,7 @@
 #    define __USE_STD_TR1
 #  endif
 #endif
-
-#include <unordered_map>
-#include <unordered_set>
-
 #include <iterator>
-
 #include <istream>
 #include <ostream>
 #include <stdexcept>
