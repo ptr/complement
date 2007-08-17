@@ -1,0 +1,91 @@
+2007-08-17  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* vtime.cc, vtime.h: namespace vt moved to janus; VTDispatcher
+	renamed to Janus; VTmess renamed to VSmess.
+	
+2007-08-16  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Repository: step to interprocess virtual synchrony;
+	experiments with virtual synchrony ready for library
+	[janus subproject] and moved from tests to lib/janus.
+	
+2007-08-13  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Repository: entrance into group looks fine.
+
+2007-08-03  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* vtime.h, vtime.cc: subscribe/unsubscribe operations for VTHandler;
+
+	* test/Makefile, test/Makefile.inc, test/vt_handler.cc: test for above;
+
+	* test/vt_operations.h: ditto.
+
+2007-07-27  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* vtime.h, vtime.cc: add lock to VTSend in VTDispatcher;
+	replace oid_type from POD to stem::gaddr_type.
+
+	* test/VTmess_core.cc, test/vt_dispatch.cc: idem;
+
+	* test/vt_object.cc, test/vt_operations.cc: idem;
+
+	* test/VTmess_core.cc, test/vt_dispatch.cc: add constructors
+	with reasonable defaults for gaddr_type;
+
+	* test/vt_object.cc, test/vt_operations.cc: idem.
+
+2007-07-26  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* test/Makefile.inc, test/unit_test.cc:	split unit tests;
+
+	* test/VTmess_core.cc, vt_dispatch.cc, vt_object.cc: ditto;
+
+	* test/vt_operations.cc, vt_operations.h: ditto;
+
+	* vtime.h, vtime.cc: looks like VTDispatcher work;
+
+	* test/unit_test.cc, test/vt_dispatch.cc, test/vt_operations.h:
+	check dispatch in group of two first, then in group of three: this
+	has difference from algo point of view;
+
+	* vtime.h, vtime.cc, test/vt_object.cc: hide implementation details.
+
+2007-07-26  Petr Ovtchenkov  <yeti@yandex-team.ru>
+
+	* vtime.h, vtime.cc: store VT stamp for sended events per-object,
+	not per-group (to allow individual repeats, restore and gossip
+	in the future);
+
+2007-07-25  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* test/unit_test.cc: more information checked within unit test;
+
+	* vtime.h, vtime.cc: evolution of VTDispatch; VTDispatcher development.
+
+2007-07-24  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* test/unit_test.cc: test for delivery VT message established;
+
+2007-07-24  Petr Ovtchenkov  <yeti@yandex-team.ru>
+	
+	* vtime.h, vtime.cc: throw exception, if message has no chance
+	to be delivered.
+
+2007-07-20  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* test/Makefile, test/unit_test.cc: unit test based on exam;
+	
+2007-07-20  Petr Ovtchenkov  <yeti@yandex-team.ru>
+
+	* vtime.h, vtime.cc: fix VTmess copy constructor; add operation >=.
+
+2007-06-06  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Repository: first working.
+
+2007-05-16  Petr Ovtchenkov  <yeti@yandex-team.ru>
+
+	* Repository: start of Virtual Time (Virtual Synchrony) exploration,
+	on base of infrastructure and tools of 'complement' project.
+
