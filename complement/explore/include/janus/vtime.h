@@ -6,8 +6,28 @@
 #include <algorithm>
 #include <list>
 #include <vector>
-#include <hash_map>
-#include <hash_set>
+#ifdef STLPORT
+#  include <unordered_map>
+#  include <unordered_set>
+// #  include <hash_map>
+// #  include <hash_set>
+// #  define __USE_STLPORT_HASH
+#  define __USE_STLPORT_TR1
+#else
+#  if defined(__GNUC__) && (__GNUC__ < 4)
+#    include <ext/hash_map>
+#    include <ext/hash_set>
+#    define __USE_STD_HASH
+#  else
+#    include <tr1/unordered_map>
+#    include <tr1/unordered_set>
+#    define __USE_STD_TR1
+#  endif
+#endif
+
+#include <unordered_map>
+#include <unordered_set>
+
 #include <iterator>
 
 #include <istream>
@@ -41,7 +61,15 @@ namespace janus {
 
 typedef uint32_t vtime_unit_type;
 typedef stem::addr_type group_type; // required, used in VTSend
+#ifdef __USE_STLPORT_HASH
 typedef std::hash_map<oid_type, vtime_unit_type> vtime_type;
+#endif
+#ifdef __USE_STD_HASH
+typedef __gnu_cxx::hash_map<oid_type, vtime_unit_type> vtime_type;
+#endif
+#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+typedef std::tr1::unordered_map<oid_type, vtime_unit_type> vtime_type;
+#endif
 
 bool operator <=( const vtime_type& l, const vtime_type& r );
 inline bool operator >=( const vtime_type& l, const vtime_type& r )
@@ -115,7 +143,15 @@ vtime& sup( vtime& l, const vtime& r );
 
 // typedef std::pair<group_type, vtime> vtime_group_type;
 // typedef std::list<vtime_group_type> gvtime_type;
+#ifdef __USE_STLPORT_HASH
 typedef std::hash_map<group_type, vtime> gvtime_type;
+#endif
+#ifdef __USE_STD_HASH
+typedef __gnu_cxx::hash_map<group_type, vtime> gvtime_type;
+#endif
+#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+typedef std::tr1::unordered_map<group_type, vtime> gvtime_type;
+#endif
 
 gvtime_type& operator +=( gvtime_type&, const gvtime_type::value_type& );
 gvtime_type& operator +=( gvtime_type&, const gvtime_type& );
@@ -247,9 +283,21 @@ class vtime_obj_rec
 #endif
 
   private:
+#ifdef __USE_STLPORT_HASH
     typedef std::hash_set<group_type> groups_container_type;
     typedef std::hash_map<oid_type, gvtime_type> delta_vtime_type;
     typedef std::hash_map<oid_type, gvtime_type> snd_delta_vtime_t;
+#endif
+#ifdef __USE_STD_HASH
+    typedef __gnu_cxx::hash_set<group_type> groups_container_type;
+    typedef __gnu_cxx::hash_map<oid_type, gvtime_type> delta_vtime_type;
+    typedef __gnu_cxx::hash_map<oid_type, gvtime_type> snd_delta_vtime_t;
+#endif
+#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+    typedef std::tr1::unordered_set<group_type> groups_container_type;
+    typedef std::tr1::unordered_map<oid_type, gvtime_type> delta_vtime_type;
+    typedef std::tr1::unordered_map<oid_type, gvtime_type> snd_delta_vtime_t;
+#endif
 
     stem::addr_type addr;  // stem address of object
     delta_vtime_type lvt;  // last recieve VT from neighbours
@@ -324,9 +372,19 @@ class Janus :
     unsigned trflags() const;
     void settrs( std::ostream * );
 
-  private:    
+  private:
+#ifdef __USE_STLPORT_HASH
     typedef std::hash_map<oid_type, detail::vtime_obj_rec> vt_map_type;
     typedef std::hash_multimap<group_type, oid_type> gid_map_type;
+#endif
+#ifdef __USE_STD_HASH
+    typedef __gnu_cxx::hash_map<oid_type, detail::vtime_obj_rec> vt_map_type;
+    typedef __gnu_cxx::hash_multimap<group_type, oid_type> gid_map_type;
+#endif
+#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+    typedef std::tr1::unordered_map<oid_type, detail::vtime_obj_rec> vt_map_type;
+    typedef std::tr1::unordered_multimap<group_type, oid_type> gid_map_type;
+#endif
 
     void check_and_send( detail::vtime_obj_rec&, const stem::Event_base<VSmess>& );
     void check_and_send_delayed( detail::vtime_obj_rec& );

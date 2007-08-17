@@ -1,3 +1,8 @@
+2007-08-17  Petr Ovtchenkov  <yeti@yandex-team.ru>
+
+	* vtime.h: use available variant of hash_map/hash_set or
+	unordered_map/unordered_set.
+
 2007-08-17  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* vtime.cc, vtime.h: namespace vt moved to janus; VTDispatcher
