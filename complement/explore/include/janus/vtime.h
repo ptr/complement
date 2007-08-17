@@ -41,10 +41,10 @@ typedef stem::gaddr_type oid_type;
 
 } // namespace janus
 
-#if defined(__USE_STLPORT_HASH) || defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+#if defined(__USE_STLPORT_HASH) || defined(__USE_STLPORT_TR1)
 #  define __HASH_NAMESPACE std
 #endif
-#ifdef __USE_STD_HASH
+#if defined(__USE_STD_HASH) || defined(__USE_STD_TR1)
 #  define __HASH_NAMESPACE __gnu_cxx
 #endif
 
