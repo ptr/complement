@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/03 08:19:34 ptr>
+// -*- C++ -*- Time-stamp: <07/08/17 22:15:41 ptr>
 
 /*
  *
@@ -40,6 +40,7 @@ extern const addr_type badaddr;
 extern const addr_type extbit;
 extern const addr_type default_addr;
 extern const addr_type ns_addr;
+extern const addr_type janus_addr;
 extern const code_type badcode;
 
 struct gaddr_type :

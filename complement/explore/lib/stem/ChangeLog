@@ -1,3 +1,8 @@
+2007-08-17  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Event.h, EvManager.cc: add fixed address for janus
+	[virtual synchrony dispatcher, janus subproject].
+
 2007-08-03  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* Makefile: let's try don't include boost's -I if macro
