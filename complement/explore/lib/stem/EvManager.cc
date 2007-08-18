@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <07/08/03 09:20:31 ptr>
+// -*- C++ -*- Time-stamp: <07/08/17 22:22:13 ptr>
 
 /*
  *
- * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
+ * Copyright (c) 1995-1999, 2002, 2003, 2005-2007
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -29,11 +29,12 @@ namespace stem {
 using namespace std;
 using namespace xmt;
 
-const addr_type badaddr    = 0xffffffff;
-const code_type badcode    = static_cast<code_type>(-1);
-const addr_type extbit     = 0x80000000;
+const addr_type badaddr      = 0xffffffff;
+const code_type badcode      = 0xffffffff;
+const addr_type extbit       = 0x80000000;
 const addr_type default_addr = 0x00000000;
-const addr_type ns_addr    = 0x00000001;
+const addr_type ns_addr      = 0x00000001;
+const addr_type janus_addr   = 0x00000002;
 
 const addr_type beglocaddr = 0x00000100;
 const addr_type endlocaddr = 0x3fffffff;

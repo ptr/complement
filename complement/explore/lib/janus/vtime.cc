@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/17 10:39:02 ptr>
+// -*- C++ -*- Time-stamp: <07/08/17 22:28:55 ptr>
 
 #include <janus/vtime.h>
 
@@ -1013,7 +1013,7 @@ void VTHandler::Init::_guard( int direction )
       _rcount = &_count;
       pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child );
 #endif
-      VTHandler::_vtdsp = new Janus( 2, "vtd" );
+      VTHandler::_vtdsp = new Janus( janus_addr, "janus" );
     }
   } else {
     --_count;
@@ -1040,24 +1040,18 @@ VTHandler::VTHandler() :
    EventHandler()
 {
   new( Init_buf ) Init();
-
-  // _vtdsp->Subscribe( self_id(), oid_type( self_id() ), /* grp */ 0 );
 }
 
 VTHandler::VTHandler( const char *info ) :
    EventHandler( info )
 {
   new( Init_buf ) Init();
-
-  // _vtdsp->Subscribe( self_id(), oid_type( self_id() ), /* grp */ 0 );
 }
 
 VTHandler::VTHandler( stem::addr_type id, const char *info ) :
    EventHandler( id, info )
 {
   new( Init_buf ) Init();
-
-  // _vtdsp->Subscribe( id, oid_type( id ), /* grp */ 0 );
 }
 
 VTHandler::~VTHandler()
