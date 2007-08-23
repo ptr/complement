@@ -102,6 +102,10 @@ class basic_sockmgr :
       }
 
   private:
+    basic_sockmgr( const basic_sockmgr& );
+    basic_sockmgr& operator =( const basic_sockmgr& );
+
+  private:
     sock_base::socket_type _fd;    // master socket
     unsigned long _mode;  // open mode
     unsigned long _state; // state flags
@@ -190,6 +194,11 @@ class sockmgr_stream_MP :
     ~sockmgr_stream_MP()
       { loop_id.join(); }
 
+  private:
+    sockmgr_stream_MP( const sockmgr_stream_MP<Connect>& );
+    sockmgr_stream_MP<Connect>& operator =( const sockmgr_stream_MP<Connect>& );
+
+  public:
     void open( const in_addr& addr, int port, sock_base::stype t = sock_base::sock_stream );
     void open( unsigned long addr, int port, sock_base::stype t = sock_base::sock_stream );
     void open( int port, sock_base::stype t = sock_base::sock_stream );
@@ -315,7 +324,7 @@ class sockmgr_stream_MP :
     bool _shift_fd();
     static void _close_by_signal( int );
     bool _is_follow() const
-      { MT_REENTRANT( _flock, _1 ); return _follow; }
+      { xmt::scoped_lock lk( _flock ); bool tmp = _follow; return tmp; }
 };
 
 #endif // !__FIT_NO_POLL
