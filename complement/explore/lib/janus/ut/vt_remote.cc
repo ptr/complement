@@ -103,7 +103,7 @@ void YaRemote::handler( const stem::Event& ev )
 
 void YaRemote::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
 {
-  cerr << "Hello " << xmt::getpid() << endl;
+  // cerr << "Hello " << xmt::getpid() << endl;
   ++count;
 
   // VTNewMember_data( ev, "" );
@@ -116,7 +116,7 @@ void YaRemote::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
 
 void YaRemote::VSOutMember( const stem::Event_base<VSsync_rq>& ev )
 {
-  // cerr << "Hello" << endl;
+  cerr << "VSOutMember" << endl;
   ++ocount;
 }
 
@@ -141,8 +141,6 @@ END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::remote)
 {
-  cerr << "============\n";
-
   const char fname[] = "/tmp/yanus_test.shm";
   xmt::shm_alloc<0> seg;
   xmt::allocator_shm<xmt::__condition<true>,0> shm_cnd;
@@ -163,29 +161,35 @@ int EXAM_IMPL(vtime_operations::remote)
         // obj1.manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch );
         // obj1.manager()->settrs( &std::cerr );
 
-        obj1.vtdispatcher()->settrf( janus::Janus::tracenet | janus::Janus::tracedispatch | janus::Janus::tracefault | janus::Janus::tracedelayed | janus::Janus::tracegroup );
-        obj1.vtdispatcher()->settrs( &std::cerr );
+        // obj1.vtdispatcher()->settrf( janus::Janus::tracenet | janus::Janus::tracedispatch | janus::Janus::tracefault | janus::Janus::tracedelayed | janus::Janus::tracegroup );
+        // obj1.vtdispatcher()->settrs( &std::cerr );
 
         EXAM_CHECK_ASYNC( obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) == 1 );
 
         obj1.vtdispatcher()->connect( "localhost", 6980 );
 
-        cerr << obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) << endl;
+        // cerr << obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) << endl;
 
-#if 1
         while ( obj1.vtdispatcher()->vs_known_processes() < 2 ) {
           xmt::Thread::yield();
           xmt::delay( xmt::timespec( 0, 1000000 ) );
         }
-#else
+
+        /* ******************************************************************************
+           This variant is wrong, because of group_size don't guarantee that information
+           in the object is relevant (i.e. VSsync happens); for example, in case below
+           group_size already 2, but no janus string stored yet.
+
         while ( obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) < 2 ) {
           xmt::Thread::yield();
           xmt::delay( xmt::timespec( 0, 1000000 ) );
         }
-#endif
+         * ****************************************************************************** */
+
+        // cerr << obj1.vtdispatcher()->vs_known_processes() << endl;
 
         EXAM_CHECK_ASYNC( obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) == 2 );
-        cerr << obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) << endl;
+        // cerr << obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) << endl;
 
         obj1.JoinGroup( janus::vs_base::first_user_group );
 
@@ -194,6 +198,7 @@ int EXAM_IMPL(vtime_operations::remote)
         EXAM_CHECK_ASYNC( obj1.vtdispatcher()->group_size(janus::vs_base::first_user_group) == 2 );
 
         // cerr << "* " << obj1.vtdispatcher()->group_size(janus::vs_base::first_user_group) << endl;
+        obj1.wait();
       }
 
       exit(0);
@@ -214,16 +219,21 @@ int EXAM_IMPL(vtime_operations::remote)
       //   xmt::delay( xmt::timespec( 0, 1000000 ) );
       // }
 
-      // stem::Event ev( VS_DUMMY_MESS );
-      // ev.dest( janus::vs_base::first_user_group ); // group
-      // ev.value() = "hello";
+      obj1.wait_greeting();
 
-      // obj1.JaSend( ev );
+      stem::Event ev( VS_DUMMY_MESS );
+      ev.dest( janus::vs_base::first_user_group );
+      ev.value() = "hello";
 
-      // obj1.wait_greeting();
+      obj1.JaSend( ev );
 
       int stat;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+
+      // cerr << obj1.vtdispatcher()->group_size(janus::vs_base::first_user_group) << endl;
+      // cerr << obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) << endl;
+      // cerr << obj1.vtdispatcher()->vs_known_processes() << endl;
+      // cerr << obj1.vtdispatcher()->group_size(janus::vs_base::first_user_group) << endl;
     }
 
     (&b)->~__barrier<true>();
