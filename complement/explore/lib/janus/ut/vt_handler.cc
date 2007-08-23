@@ -54,7 +54,7 @@ VTDummy::VTDummy() :
   cnd.set( false );
   gr.set( false );
 
-  JoinGroup( 0 );
+  JoinGroup( first_user_group );
 }
 
 VTDummy::VTDummy( stem::addr_type id ) :
@@ -65,7 +65,7 @@ VTDummy::VTDummy( stem::addr_type id ) :
   cnd.set( false );
   gr.set( false );
 
-  JoinGroup( 0 );
+  JoinGroup( first_user_group );
 }
 
 VTDummy::VTDummy( stem::addr_type id, const char *info ) :
@@ -76,7 +76,7 @@ VTDummy::VTDummy( stem::addr_type id, const char *info ) :
   cnd.set( false );
   gr.set( false );
 
-  JoinGroup( 0 );
+  JoinGroup( first_user_group );
 }
 
 VTDummy::~VTDummy()
@@ -133,7 +133,7 @@ int EXAM_IMPL(vtime_operations::VTHandler1)
   VTDummy dummy2;
 
   stem::Event ev( VS_DUMMY_MESS );
-  ev.dest( 0 ); // group
+  ev.dest( janus::vs_base::first_user_group ); // group
   ev.value() = "hello";
 
   dummy1.JaSend( ev );
@@ -153,7 +153,7 @@ int EXAM_IMPL(vtime_operations::VTHandler2)
   VTDummy dummy3;
 
   stem::Event ev( VS_DUMMY_MESS );
-  ev.dest( 0 ); // group
+  ev.dest( janus::vs_base::first_user_group ); // group
   ev.value() = "hello";
 
   dummy1.JaSend( ev );
@@ -168,7 +168,7 @@ int EXAM_IMPL(vtime_operations::VTHandler2)
   EXAM_CHECK( dummy1.count == 2 );
   EXAM_CHECK( dummy1.msg == "" );
 
-  ev.dest( 100 ); // not this group member
+  ev.dest( janus::vs_base::first_user_group + 100 ); // not this group member
   try {
     dummy1.JaSend( ev );
     EXAM_ERROR( "exception expected" );
@@ -185,7 +185,7 @@ int EXAM_IMPL(vtime_operations::VTSubscription)
   VTDummy dummy2;
 
   stem::Event ev( VS_DUMMY_MESS );
-  ev.dest( 0 ); // group
+  ev.dest( janus::vs_base::first_user_group ); // group
   ev.value() = "hello";
 
   dummy1.JaSend( ev );
@@ -226,7 +226,7 @@ int EXAM_IMPL(vtime_operations::VTEntryIntoGroup)
   VTDummy dummy1;
 
   stem::Event ev( VS_DUMMY_MESS );
-  ev.dest( 0 ); // group
+  ev.dest( janus::vs_base::first_user_group ); // group
   ev.value() = "hello";
 
   {
@@ -255,7 +255,7 @@ int EXAM_IMPL(vtime_operations::VTEntryIntoGroup2)
   VTDummy dummy2;
 
   stem::Event ev( VS_DUMMY_MESS );
-  ev.dest( 0 ); // group
+  ev.dest( janus::vs_base::first_user_group ); // group
   ev.value() = "hello";
 
   dummy1.JaSend( ev );
@@ -277,7 +277,7 @@ int EXAM_IMPL(vtime_operations::VTEntryIntoGroup2)
     dummy3.wait_greeting();
 
     ev.value() = "hi";
-    ev.dest( 0 ); // group
+    ev.dest( janus::vs_base::first_user_group ); // group
     dummy1.JaSend( ev );
 
     dummy2.wait();
@@ -303,7 +303,7 @@ int EXAM_IMPL(vtime_operations::VTEntryIntoGroup3)
     dummy2.wait_greeting();
 
     ev.value() = "hello";
-    ev.dest( 0 ); // group
+    ev.dest( janus::vs_base::first_user_group ); // group
     dummy1.JaSend( ev );
 
     dummy2.wait();
@@ -317,7 +317,7 @@ int EXAM_IMPL(vtime_operations::VTEntryIntoGroup3)
     dummy3.wait_greeting();
 
     ev.value() = "hi";
-    ev.dest( 0 ); // group
+    ev.dest( janus::vs_base::first_user_group ); // group
     dummy1.JaSend( ev );
 
     dummy3.wait();
@@ -334,7 +334,7 @@ int EXAM_IMPL(vtime_operations::VTEntryIntoGroup3)
     dummy3.wait_greeting();
 
     ev.value() = "more";
-    ev.dest( 0 ); // group
+    ev.dest( janus::vs_base::first_user_group ); // group
     dummy1.JaSend( ev );
 
     dummy2.wait();

@@ -112,7 +112,7 @@ int EXAM_IMPL(vtime_operations::VTMess_core)
   ev.value().gvt[0][t1] = 2;
   ev.value().gvt[1][t0] = 3;
   ev.value().gvt[1][t1] = 4;
-  ev.value().grp = 7;
+  ev.value().grp = janus::vs_base::first_user_group + 7;
   ev.value().mess = "data";
 
   h.Send( ev );
@@ -125,7 +125,7 @@ int EXAM_IMPL(vtime_operations::VTMess_core)
   EXAM_CHECK( h.gvt[0][t1] == 2 );
   EXAM_CHECK( h.gvt[1][t0] == 3 );
   EXAM_CHECK( h.gvt[1][t1] == 4 );
-  EXAM_CHECK( h.grp == 7 );
+  EXAM_CHECK( h.grp == (janus::vs_base::first_user_group + 7) );
   EXAM_CHECK( h.mess == "data" );
 
   ev.value().code = 3;
@@ -141,7 +141,7 @@ int EXAM_IMPL(vtime_operations::VTMess_core)
   EXAM_CHECK( h.gvt[0][t1] == 2 );
   EXAM_CHECK( h.gvt[1][t0] == 3 );
   EXAM_CHECK( h.gvt[1][t1] == 4 );
-  EXAM_CHECK( h.grp == 7 );
+  EXAM_CHECK( h.grp == (janus::vs_base::first_user_group + 7) );
   EXAM_CHECK( h.mess == "more data" );
 
   return EXAM_RESULT;
