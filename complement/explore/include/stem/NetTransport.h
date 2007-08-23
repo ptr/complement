@@ -99,6 +99,10 @@ class NetTransportMgr :
     int join()
       { return _thr.join().iword; }
 
+  private:
+    NetTransportMgr( const NetTransportMgr& );
+    NetTransportMgr& operator =( const NetTransportMgr& );
+
   protected:
     static xmt::Thread::ret_code _loop( void * );
     xmt::Thread _thr;
