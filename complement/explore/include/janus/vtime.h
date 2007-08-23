@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/17 21:54:39 ptr>
+// -*- C++ -*- Time-stamp: <07/08/23 10:16:54 ptr>
 
 #ifndef __vtime_h
 #define __vtime_h
@@ -332,87 +332,19 @@ class vtime_obj_rec
 
 } // namespace detail
 
-class Janus :
-        public stem::EventHandler
+struct vs_base
 {
-  public:
-    enum traceflags {
-      notrace = 0,
-      tracenet = 1,
-      tracedispatch = 2,
-      tracefault = 4,
-      tracedelayed = 8,
-      tracegroup = 0x10
-    };
-
-    Janus() :
-        _trflags( notrace ),
-        _trs( 0 )
-      { }
-
-    Janus( const char *info ) :
-        stem::EventHandler( info ),
-        _trflags( notrace ),
-        _trs( 0 )
-      { }
-
-    Janus( stem::addr_type id ) :
-        stem::EventHandler( id ),
-        _trflags( notrace ),
-        _trs( 0 )
-      { }
-
-    Janus( stem::addr_type id, const char *info ) :
-        stem::EventHandler( id, info ),
-        _trflags( notrace ),
-        _trs( 0 )
-      { }
-
-    void JaDispatch( const stem::Event_base<VSmess>& );
-
-    void JaSend( const stem::Event& e, group_type );
-    void Subscribe( stem::addr_type, oid_type, group_type );
-    void Unsubscribe( oid_type, group_type );
-    void Unsubscribe( oid_type );
-    void get_gvtime( group_type, stem::addr_type, gvtime_type& );
-    void set_gvtime( group_type, stem::addr_type, const gvtime_type& );
-
-    void settrf( unsigned f );
-    void unsettrf( unsigned f );
-    void resettrf( unsigned f );
-    void cleantrf();
-    unsigned trflags() const;
-    void settrs( std::ostream * );
-
-  private:
-#ifdef __USE_STLPORT_HASH
-    typedef std::hash_map<oid_type, detail::vtime_obj_rec> vt_map_type;
-    typedef std::hash_multimap<group_type, oid_type> gid_map_type;
-#endif
-#ifdef __USE_STD_HASH
-    typedef __gnu_cxx::hash_map<oid_type, detail::vtime_obj_rec> vt_map_type;
-    typedef __gnu_cxx::hash_multimap<group_type, oid_type> gid_map_type;
-#endif
-#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::tr1::unordered_map<oid_type, detail::vtime_obj_rec> vt_map_type;
-    typedef std::tr1::unordered_multimap<group_type, oid_type> gid_map_type;
-#endif
-
-    void check_and_send( detail::vtime_obj_rec&, const stem::Event_base<VSmess>& );
-    void check_and_send_delayed( detail::vtime_obj_rec& );
-    
-    vt_map_type vtmap;
-    gid_map_type grmap;
-
-    xmt::mutex _lock_tr;
-    unsigned _trflags;
-    std::ostream *_trs;
-
-    DECLARE_RESPONSE_TABLE( Janus, stem::EventHandler );
+  enum {
+    vshosts_group = 0,
+    first_user_group = 10
+  };
 };
 
+class Janus;
+
 class VTHandler :
-        public stem::EventHandler
+        public stem::EventHandler,
+        public vs_base
 {
   private:
     class Init
@@ -434,8 +366,8 @@ class VTHandler :
     virtual ~VTHandler();
 
     void JaSend( const stem::Event& e );
-    void JoinGroup( group_type grp )
-      { _vtdsp->Subscribe( self_id(), oid_type( self_id() ), grp ); }
+    void JoinGroup( group_type grp );
+
     virtual void VSNewMember( const stem::Event_base<VSsync_rq>& e );
     virtual void VSOutMember( const stem::Event_base<VSsync_rq>& e );
     virtual void VSsync_time( const stem::Event_base<VSsync>& );
@@ -451,19 +383,21 @@ class VTHandler :
   protected:
     void VSNewMember_data( const stem::Event_base<VSsync_rq>&, const std::string& data );
 
-    void get_gvtime( group_type g, gvtime_type& gvt )
-      { _vtdsp->get_gvtime( g, self_id(), gvt ); }
+    void get_gvtime( group_type g, gvtime_type& gvt );
 
   private:
-    static class Janus *_vtdsp;
+    static Janus *_vtdsp;
+    friend class Janus;
 
     DECLARE_RESPONSE_TABLE( VTHandler, stem::EventHandler );
 };
 
-#define VS_MESS       0x300
-#define VS_NEW_MEMBER 0x301
-#define VS_OUT_MEMBER 0x302
-#define VS_SYNC_TIME  0x303
+#define VS_MESS               0x300
+#define VS_NEW_MEMBER         0x301
+#define VS_OUT_MEMBER         0x302
+#define VS_SYNC_TIME          0x303
+#define VS_NEW_REMOTE_MEMBER  0x304
+#define VS_NEW_MEMBER_RV      0x305
 
 #ifdef __USE_STLPORT_HASH
 #  undef __USE_STLPORT_HASH

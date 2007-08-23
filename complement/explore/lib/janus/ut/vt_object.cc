@@ -12,9 +12,9 @@ int EXAM_IMPL(vtime_operations::vt_object)
 {
   detail::vtime_obj_rec ob;
 
-  const group_type gr0 = 0;
-  const group_type gr1 = 1;
-  const group_type gr2 = 2;
+  const group_type gr0 = janus::vs_base::first_user_group + 0;
+  const group_type gr1 = janus::vs_base::first_user_group + 1;
+  const group_type gr2 = janus::vs_base::first_user_group + 2;
   const oid_type obj0(0);
   const oid_type obj1(1);
   const oid_type obj2(2);

@@ -1,3 +1,26 @@
+2007-08-23  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* janus.h, janus.cc: Janus code moved from vtime.h, vtime.cc;
+
+	* vtime.h, vtime.cc: Janus code moved to janus.h, janus.cc;
+
+	* ut/vt_object.cc, ut/vt_handler.cc, ut/VTmess_core.cc: idem;
+
+	* ut/vt_dispatch.cc: idem;
+
+	* Makefile.inc: idem;
+
+	* libjanus: version 0.3.0;
+
+	* vshostmgr.h, vshostmgr.cc: object for management virtual syncrony
+	processes;
+
+	* vshostmgr.h, vshostmgr.cc, janus.h, janus.cc, vtime.h, vtime.cc:
+	procedure of entry into group with remote virtual synchrony objects;
+	
+	* ut/vt_remote.cc: test for interprocess virtual synchrony,
+	entry into group.
+
 2007-08-17  Petr Ovtchenkov  <yeti@yandex-team.ru>
 
 	* vtime.h: use available variant of hash_map/hash_set or
