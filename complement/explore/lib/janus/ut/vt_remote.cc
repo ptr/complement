@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/23 12:43:15 ptr>
+// -*- C++ -*- Time-stamp: <07/08/23 21:31:56 ptr>
 
 #include "vt_operations.h"
 
@@ -129,9 +129,7 @@ void YaRemote::wait()
 
 void YaRemote::greeting()
 {
-  if ( count > 0 ) {
-    gr.set( true );
-  }
+  gr.set( true );
 }
 
 DEFINE_RESPONSE_TABLE( YaRemote )
@@ -175,16 +173,17 @@ int EXAM_IMPL(vtime_operations::remote)
           xmt::delay( xmt::timespec( 0, 1000000 ) );
         }
 
-        /* ******************************************************************************
-           This variant is wrong, because of group_size don't guarantee that information
-           in the object is relevant (i.e. VSsync happens); for example, in case below
-           group_size already 2, but no janus string stored yet.
+        /*******************************************************************\
+         * This variant is wrong, because of group_size don't guarantee
+         * that information in the object is relevant (i.e. VSsync happens);
+         * for example, in case below group_size already 2, but no janus string
+         * stored yet.
 
         while ( obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) < 2 ) {
           xmt::Thread::yield();
           xmt::delay( xmt::timespec( 0, 1000000 ) );
         }
-         * ****************************************************************************** */
+        \********************************************************************/
 
         // cerr << obj1.vtdispatcher()->vs_known_processes() << endl;
 
@@ -196,7 +195,7 @@ int EXAM_IMPL(vtime_operations::remote)
         obj1.wait_greeting();
 
         EXAM_CHECK_ASYNC( obj1.vtdispatcher()->group_size(janus::vs_base::first_user_group) == 2 );
-
+        EXAM_CHECK_ASYNC( obj1.count == 1  );
         // cerr << "* " << obj1.vtdispatcher()->group_size(janus::vs_base::first_user_group) << endl;
         obj1.wait();
       }
@@ -226,6 +225,8 @@ int EXAM_IMPL(vtime_operations::remote)
       ev.value() = "hello";
 
       obj1.JaSend( ev );
+
+      EXAM_CHECK( obj1.count == 1  );
 
       int stat;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
