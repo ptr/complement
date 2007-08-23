@@ -1,3 +1,10 @@
+2007-08-23  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h: explicitly inhibit copy of basic_sockmgr and
+	sockmgr_stream_MP.
+
+	* libsockios: Version 1.12.1.
+
 2007-08-03  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* include/sockios/sockstream: workaround for file openmode
