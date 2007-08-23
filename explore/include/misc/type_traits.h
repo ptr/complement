@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/06 10:30:28 ptr>
+// -*- C++ -*- Time-stamp: <07/08/21 10:42:14 ptr>
 
 /*
  * Copyright (c) 2007
@@ -49,7 +49,7 @@ struct __instance :
     static __t2 __test(...);
     
   public:
-#if defined(__GNUC__) && (__GNUC__ < 4)
+#ifdef __FIT_NO_INLINE_TEMPLATE_STATIC_INITIALISATION
     static const bool __value;
 #else
     static const bool __value = sizeof(__test<_Tp>(0)) == 1;
@@ -57,7 +57,7 @@ struct __instance :
 
 };
 
-#if defined(__GNUC__) && (__GNUC__ < 4)
+#ifdef __FIT_NO_INLINE_TEMPLATE_STATIC_INITIALISATION
 template <class _Tp>
 const bool __instance<_Tp>::__value = sizeof(__instance<_Tp>::__test<_Tp>(0)) == 1;
 #endif
@@ -74,14 +74,14 @@ struct __uoc_aux : // union or class
     static __t2 __test(...);
     
   public:
-#if defined(__GNUC__) && (__GNUC__ < 4)
+#ifdef __FIT_NO_INLINE_TEMPLATE_STATIC_INITIALISATION
     static const bool __value;
 #else
     static const bool __value = sizeof(__test<T>(0)) == 1;
 #endif
 };
 
-#if defined(__GNUC__) && (__GNUC__ < 4)
+#ifdef __FIT_NO_INLINE_TEMPLATE_STATIC_INITIALISATION
 template <class T>
 const bool __uoc_aux<T>::__value = sizeof(__uoc_aux<T>::__test<T>(0)) == 1;
 #endif
