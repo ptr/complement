@@ -1,9 +1,11 @@
-// -*- C++ -*- Time-stamp: <07/08/17 10:39:45 ptr>
+// -*- C++ -*- Time-stamp: <07/08/21 11:09:27 ptr>
 
 #include "vt_operations.h"
 
 #include <iostream>
+
 #include <janus/vtime.h>
+#include <janus/janus.h>
 
 using namespace janus;
 using namespace std;
@@ -79,15 +81,15 @@ int EXAM_IMPL(vtime_operations::VTDispatch1)
   const oid_type t1(1);
   const oid_type t2(2);
 
-  dsp.Subscribe( dummy1.self_id(), t1, 0 );
-  dsp.Subscribe( dummy2.self_id(), t2, 0 );
+  dsp.Subscribe( dummy1.self_id(), t1, janus::vs_base::first_user_group );
+  dsp.Subscribe( dummy2.self_id(), t2, janus::vs_base::first_user_group );
 
   stem::Event ev( VT_MESS2 );
   ev.src( dummy1.self_id() );
 
   ev.value() = "hello";
 
-  dsp.JaSend( ev, 0 );
+  dsp.JaSend( ev, janus::vs_base::first_user_group );
 
   dummy2.wait();
 
@@ -107,16 +109,16 @@ int EXAM_IMPL(vtime_operations::VTDispatch2)
   const oid_type t2(2);
   const oid_type t3(3);
 
-  dsp.Subscribe( dummy1.self_id(), t1, 0 );
-  dsp.Subscribe( dummy2.self_id(), t2, 0 );
-  dsp.Subscribe( dummy3.self_id(), t3, 0 );
+  dsp.Subscribe( dummy1.self_id(), t1, janus::vs_base::first_user_group );
+  dsp.Subscribe( dummy2.self_id(), t2, janus::vs_base::first_user_group );
+  dsp.Subscribe( dummy3.self_id(), t3, janus::vs_base::first_user_group );
 
   stem::Event ev( VT_MESS2 );
   ev.src( dummy1.self_id() );
 
   ev.value() = "hello";
 
-  dsp.JaSend( ev, 0 );
+  dsp.JaSend( ev, janus::vs_base::first_user_group );
 
   dummy2.wait();
   dummy3.wait();

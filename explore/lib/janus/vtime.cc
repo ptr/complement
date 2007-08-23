@@ -1,10 +1,10 @@
-// -*- C++ -*- Time-stamp: <07/08/17 22:28:55 ptr>
+// -*- C++ -*- Time-stamp: <07/08/23 08:47:46 ptr>
 
 #include <janus/vtime.h>
+#include <janus/janus.h>
+#include <janus/vshostmgr.h>
 
-#include <iostream>
 #include <stdint.h>
-#include <stem/EvManager.h>
 
 namespace janus {
 
@@ -543,441 +543,6 @@ void vtime_obj_rec::sync( group_type g, const oid_type& oid, const gvtime_type& 
 
 } // namespace detail
 
-void Janus::settrf( unsigned f )
-{
-  scoped_lock _x1( _lock_tr );
-  _trflags |= f;
-}
-
-void Janus::unsettrf( unsigned f )
-{
-  scoped_lock _x1( _lock_tr );
-  _trflags &= (0xffffffff & ~f);
-}
-
-void Janus::resettrf( unsigned f )
-{
-  scoped_lock _x1( _lock_tr );
-  _trflags = f;
-}
-
-void Janus::cleantrf()
-{
-  scoped_lock _x1( _lock_tr );
-  _trflags = 0;
-}
-
-unsigned Janus::trflags() const
-{
-  scoped_lock _x1( _lock_tr );
-
-  return _trflags;
-}
-
-void Janus::settrs( std::ostream *s )
-{
-  scoped_lock _x1( _lock_tr );
-  _trs = s;
-}
-
-void Janus::JaDispatch( const stem::Event_base<VSmess>& m )
-{
-  pair<gid_map_type::const_iterator,gid_map_type::const_iterator> range =
-    grmap.equal_range( m.value().grp );
-
-  for ( ; range.first != range.second; ++range.first ) {
-    vt_map_type::iterator i = vtmap.find( range.first->second );
-    if ( i == vtmap.end() || i->second.stem_addr() == m.src() ) { // not for nobody and not for self
-      continue;
-    }
-    try {
-      // check local or remote? i->second.addr
-      // if remote, forward it to foreign VTDispatcher?
-      // looks, like local source shouldn't be here?
-      check_and_send( i->second, m );
-    }
-    catch ( const out_of_range& err ) {
-      try {
-        scoped_lock lk(_lock_tr);
-        if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-          *_trs << err.what() << " "
-                << __FILE__ << ":" << __LINE__ << endl;
-        }
-      }
-      catch ( ... ) {
-      }
-    }
-    catch ( const domain_error& err ) {
-      try {
-        scoped_lock lk(_lock_tr);
-        if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-          *_trs << err.what() << " "
-                << __FILE__ << ":" << __LINE__ << endl;
-        }
-      }
-      catch ( ... ) {
-      }
-    }
-  }
-}
-
-void Janus::check_and_send( detail::vtime_obj_rec& vt, const stem::Event_base<VSmess>& m )
-{
-  if ( vt.deliver( m.value() ) ) {
-    stem::Event ev( m.value().code );
-    ev.dest(vt.stem_addr());
-    ev.src(m.src());
-    ev.value() = m.value().mess;
-#ifdef __FIT_VS_TRACE
-    try {
-      scoped_lock lk(_lock_tr);
-      if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
-        *_trs << "Deliver " << m.value() << endl;
-      }
-    }
-    catch ( ... ) {
-    }
-#endif // __FIT_VS_TRACE
-    Forward( ev );
-    check_and_send_delayed( vt );
-  } else {
-#ifdef __FIT_VS_TRACE
-    try {
-      scoped_lock lk(_lock_tr);
-      if ( _trs != 0 && _trs->good() && (_trflags & tracedelayed) ) {
-        *_trs << "Delayed " << m.value() << endl;
-      }
-    }
-    catch ( ... ) {
-    }
-#endif // __FIT_VS_TRACE
-    vt.dpool.push_back( make_pair( xmt::timespec(xmt::timespec::now), new Event_base<VSmess>(m) ) ); // 0 should be timestamp
-  }
-}
-
-void Janus::check_and_send_delayed( detail::vtime_obj_rec& vt )
-{
-  typedef detail::vtime_obj_rec::dpool_t dpool_t;
-  bool more;
-  do {
-    more = false;
-    for ( dpool_t::iterator j = vt.dpool.begin(); j != vt.dpool.end(); ) {
-      if ( vt.deliver_delayed( j->second->value() ) ) {
-        stem::Event evd( j->second->value().code );
-        evd.dest(vt.stem_addr());
-        evd.src(j->second->src());
-        evd.value() = j->second->value().mess;
-#ifdef __FIT_VS_TRACE
-        try {
-          scoped_lock lk(_lock_tr);
-          if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
-            *_trs << "Deliver delayed " << j->second->value() << endl;
-          }
-        }
-        catch ( ... ) {
-        }
-#endif // __FIT_VS_TRACE
-        Forward( evd );
-        delete j->second;
-        vt.dpool.erase( j++ );
-        more = true;
-      } else {
-#ifdef __FIT_VS_TRACE
-        try {
-          scoped_lock lk(_lock_tr);
-          if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
-            *_trs << "Remain delayed " << j->second->value()
-                  << "\nReason: ";
-            vt.trace_deliver( j->second->value(), *_trs ) << endl;
-          }
-        }
-        catch ( ... ) {
-        }
-#endif // __FIT_VS_TRACE
-        ++j;
-      }
-    }
-  } while ( more );
-}
-
-void Janus::JaSend( const stem::Event& e, group_type grp )
-{
-  // This method not called from Dispatch, but work on the same level and in the same
-  // scope, so this lock (from stem::EventHandler) required here:
-  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
-
-  const pair<gid_map_type::const_iterator,gid_map_type::const_iterator> range =
-    grmap.equal_range( grp );
-
-  for ( gid_map_type::const_iterator o = range.first; o != range.second; ++o ) {
-    vt_map_type::iterator i = vtmap.find( o->second );
-    if ( i != vtmap.end() && i->second.stem_addr() == e.src() ) { // for self
-      detail::vtime_obj_rec& vt = i->second;
-      const oid_type& from = o->second;
-      stem::Event_base<VSmess> m( VS_MESS );
-      m.value().src = from; // oid
-      m.value().code = e.code();
-      m.value().mess = e.value();
-      m.value().grp = grp;
-      // m.dest( ??? ); // local VT dispatcher?
-      m.src( e.src() );
-
-      // This is like VTDispatch, but VT stamp in every message different,
-      // in accordance with individual knowlage about object's VT.
-
-      vt.next( from, grp ); // my counter
-
-      for ( gid_map_type::const_iterator g = range.first; g != range.second; ++g ) {
-        vt_map_type::iterator k = vtmap.find( g->second );
-        if ( k == vtmap.end() || k->second.stem_addr() == m.src() ) { // not for nobody and not for self
-          continue;
-        }
-        try {
-          vt.delta( m.value().gvt, from, g->second, grp );
-
-          // check local or remote? i->second.addr
-          // if remote, forward it to foreign VTDispatcher?
-          try {
-            /* const transport tr = */ manager()->transport( k->second.stem_addr() );
-            gaddr_type ga = manager()->reflect( k->second.stem_addr() );
-            if ( ga != gaddr_type() ) {
-              ga.addr = 2; // vtd
-              addr_type a = manager()->reflect( ga );
-              if ( a == badaddr ) {
-                a = manager()->SubscribeRemote( ga, "vtd" );
-              }
-              m.dest( a );
-              Forward( m );
-              vt.base_advance(g->second); // store last send VT to obj
-            }
-          }
-          catch ( const range_error& ) {
-            check_and_send( k->second, m );
-            vt.base_advance(g->second); // store last send VT to obj
-          }
-        }
-        catch ( const out_of_range& err ) {
-          try {
-            scoped_lock lk(_lock_tr);
-            if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-              *_trs << err.what() << " "
-                    << __FILE__ << ":" << __LINE__ << endl;
-            }
-          }
-          catch ( ... ) {
-          }
-        }
-        catch ( const domain_error& err ) {
-          try {
-            scoped_lock lk(_lock_tr);
-            if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-              *_trs << err.what() << " "
-                    << __FILE__ << ":" << __LINE__ << endl;
-            }
-          }
-          catch ( ... ) {
-          }
-        }
-      }
-
-      return;
-    }
-  }
-
-  throw domain_error( "VT object not member of group" ); // Error: not group member
-}
-
-void Janus::Subscribe( stem::addr_type addr, oid_type oid, group_type grp )
-{
-  // See comment on top of VTSend above
-  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
-
-  pair<gid_map_type::const_iterator,gid_map_type::const_iterator> range =
-    grmap.equal_range( grp );
-
-  for ( ; range.first != range.second; ++range.first ) {
-    vt_map_type::iterator i = vtmap.find( range.first->second );
-    if ( i != vtmap.end() ) {
-      stem::Event_base<VSsync_rq> ev( VS_NEW_MEMBER );
-      ev.dest( i->second.stem_addr() );
-      ev.src( addr );
-      ev.value().grp = grp;
-#ifdef __FIT_VS_TRACE
-      try {
-        scoped_lock lk(_lock_tr);
-        if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
-          *_trs << "VS_NEW_MEMBER " << ev.src() << " -> " << ev.dest() << endl;
-        }
-      }
-      catch ( ... ) {
-      }
-#endif // __FIT_VS_TRACE
-      Forward( ev );
-    }
-  }
-
-  vtmap[oid].add( addr, grp );
-  grmap.insert( make_pair(grp,oid) );
-}
-
-void Janus::Unsubscribe( oid_type oid, group_type grp )
-{
-  // See comment on top of VTSend above
-  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
-
-  pair<gid_map_type::iterator,gid_map_type::iterator> range =
-    grmap.equal_range( grp );
-
-  vt_map_type::iterator i = vtmap.find( oid );
-  while ( range.first != range.second ) {
-    if ( range.first->second == oid ) {
-      grmap.erase( range.first++ );
-    } else {
-      vt_map_type::iterator j = vtmap.find( range.first->second );
-      if ( j != vtmap.end() ) {
-        stem::Event_base<VSsync_rq> ev( VS_OUT_MEMBER );
-        ev.dest( j->second.stem_addr() );
-        ev.src( i != vtmap.end() ? i->second.stem_addr() : self_id() );
-        ev.value().grp = grp;
-#ifdef __FIT_VS_TRACE
-        try {
-          scoped_lock lk(_lock_tr);
-          if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
-            *_trs << "VS_OUT_MEMBER " << ev.src() << " -> " << ev.dest() << endl;
-          }
-        }
-        catch ( ... ) {
-        }
-#endif // __FIT_VS_TRACE
-
-        Forward( ev );
-      }
-      ++range.first;
-    }
-  }
-
-  if ( i != vtmap.end() ) {
-    if ( i->second.rm_group( grp ) ) { // no groups more
-      vtmap.erase( i );
-    }
-  }
-}
-
-void Janus::Unsubscribe( oid_type oid )
-{
-  // See comment on top of JaSend above
-  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
-
-  vt_map_type::iterator i = vtmap.find( oid );
-  if ( i != vtmap.end() ) {
-    list<group_type> grp_list;
-    i->second.groups_list( back_inserter( grp_list ) );
-    for ( list<group_type>::const_iterator grp = grp_list.begin(); grp != grp_list.end(); ++grp ) {
-
-      pair<gid_map_type::iterator,gid_map_type::iterator> range =
-        grmap.equal_range( *grp );
-
-      while ( range.first != range.second ) {
-        if ( range.first->second == oid ) {
-          grmap.erase( range.first++ );
-        } else {
-          vt_map_type::iterator j = vtmap.find( range.first->second );
-          if ( j != vtmap.end() ) {
-            stem::Event_base<VSsync_rq> ev( VS_OUT_MEMBER );
-            ev.dest( j->second.stem_addr() );
-            ev.src( i != vtmap.end() ? i->second.stem_addr() : self_id() );
-            ev.value().grp = *grp;
-#ifdef __FIT_VS_TRACE
-            try {
-              scoped_lock lk(_lock_tr);
-              if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
-                *_trs << "VS_OUT_MEMBER " << ev.src() << " -> " << ev.dest() << endl;
-              }
-            }
-            catch ( ... ) {
-            }
-#endif // __FIT_VS_TRACE
-
-            Forward( ev );
-          }
-          ++range.first;
-        }
-      }
-      i->second.rm_group( *grp );
-    }
-    vtmap.erase( i );
-  }
-}
-
-void Janus::get_gvtime( group_type grp, stem::addr_type addr, gvtime_type& gvt )
-{
-  // See comment on top of JaSend above
-  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
-
-  pair<gid_map_type::iterator,gid_map_type::iterator> range =
-    grmap.equal_range( grp );
-  for ( ; range.first != range.second; ++range.first ) {
-    vt_map_type::iterator i = vtmap.find( range.first->second );
-    if ( i != vtmap.end() && i->second.stem_addr() == addr ) {
-      i->second.get_gvt( gvt );
-      return;
-    }
-  }
-
-  try {
-    scoped_lock lk(_lock_tr);
-    if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-      *_trs << "virtual synchrony object not member of group" << " " << __FILE__ << ":" << __LINE__ << endl;
-    }
-  }
-  catch ( ... ) {
-  }
-
-  throw domain_error( "virtual synchrony object not member of group" ); // Error: not group member
-}
-
-void Janus::set_gvtime( group_type grp, stem::addr_type addr, const gvtime_type& gvt )
-{
-  // See comment on top of JaSend above
-  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
-
-  pair<gid_map_type::iterator,gid_map_type::iterator> range =
-    grmap.equal_range( grp );
-  for ( ; range.first != range.second; ++range.first ) {
-    vt_map_type::iterator i = vtmap.find( range.first->second );
-    if ( i != vtmap.end() && i->second.stem_addr() == addr ) {
-#ifdef __FIT_VS_TRACE
-      try {
-        scoped_lock lk(_lock_tr);
-        if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
-          *_trs << "Set gvt G" << grp << " " << i->first
-                << " (" << addr << ") " << gvt << endl;
-        }
-      }
-      catch ( ... ) {
-      }
-#endif // __FIT_VS_TRACE
-      i->second.sync( grp, i->first, gvt );
-      check_and_send_delayed( i->second );
-      return;
-    }
-  }
-
-  try {
-    scoped_lock lk(_lock_tr);
-    if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-      *_trs << "virtual synchrony object not member of group" << " " << __FILE__ << ":" << __LINE__ << endl;
-    }
-  }
-  catch ( ... ) {
-  }
-
-  throw domain_error( "virtual synchrony object not member of group" ); // Error: not group member
-}
-
-DEFINE_RESPONSE_TABLE( Janus )
-  EV_Event_base_T_( ST_NULL, VS_MESS, JaDispatch, VSmess )
-END_RESPONSE_TABLE
 
 char *Init_buf[128];
 Janus *VTHandler::_vtdsp = 0;
@@ -989,11 +554,10 @@ void VTHandler::Init::__at_fork_prepare()
 
 void VTHandler::Init::__at_fork_child()
 {
-  // VTDispatcher not start threads (at least yet), so following not required:
-  // if ( *_rcount != 0 ) {
-  //   VTHandler::_vtdsp->~VTDispatcher();
-  //   VTHandler::_vtdsp = new( VTHandler::_vtdsp ) VTDispatcher();
-  // }
+  if ( *_rcount != 0 ) {
+    delete VTHandler::_vtdsp->_hostmgr;
+    VTHandler::_vtdsp->_hostmgr = new VSHostMgr( "vshostmgr" );
+  }
 }
 
 void VTHandler::Init::__at_fork_parent()
@@ -1014,10 +578,11 @@ void VTHandler::Init::_guard( int direction )
       pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child );
 #endif
       VTHandler::_vtdsp = new Janus( janus_addr, "janus" );
+      VTHandler::_vtdsp->_hostmgr = new VSHostMgr( "vshostmgr" );
     }
   } else {
     --_count;
-    if ( _count == 0 ) {
+    if ( _count == 1 ) { // 0+1 due to _hostmgr
       delete VTHandler::_vtdsp;
       VTHandler::_vtdsp = 0;
     }
@@ -1061,6 +626,12 @@ VTHandler::~VTHandler()
   ((Init *)Init_buf)->~Init();
 }
 
+void VTHandler::JoinGroup( group_type grp )
+{
+  _vtdsp->Subscribe( self_id(), oid_type( self_id() ), grp );
+}
+
+
 void VTHandler::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
 {
   stem::Event_base<VSsync> out_ev( VS_SYNC_TIME );
@@ -1069,6 +640,19 @@ void VTHandler::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
   get_gvtime( ev.value().grp, out_ev.value().gvt.gvt );
 
   Send( out_ev );
+
+#ifdef __FIT_VS_TRACE
+  try {
+    scoped_lock lk(_vtdsp->_lock_tr);
+    if ( _vtdsp->_trs != 0 && _vtdsp->_trs->good() && (_vtdsp->_trflags & Janus::tracegroup) ) {
+      *_vtdsp->_trs << " -> VS_SYNC_TIME G" << ev.value().grp << " "
+                    << hex << showbase
+                    << self_id() << " -> " << out_ev.dest() << dec << endl;
+    }
+  }
+  catch ( ... ) {
+  }
+#endif // __FIT_VS_TRACE
 }
 
 void VTHandler::VSNewMember_data( const stem::Event_base<VSsync_rq>& ev, const string& data )
@@ -1080,16 +664,58 @@ void VTHandler::VSNewMember_data( const stem::Event_base<VSsync_rq>& ev, const s
   out_ev.value().mess = data;
 
   Send( out_ev );
+
+#ifdef __FIT_VS_TRACE
+  try {
+    scoped_lock lk(_vtdsp->_lock_tr);
+    if ( _vtdsp->_trs != 0 && _vtdsp->_trs->good() && (_vtdsp->_trflags & Janus::tracegroup) ) {
+      *_vtdsp->_trs << " -> VS_SYNC_TIME (data) G" << ev.value().grp << " "
+                    << hex << showbase
+                    << self_id() << " -> " << out_ev.dest() << dec << endl;
+    }
+  }
+  catch ( ... ) {
+  }
+#endif // __FIT_VS_TRACE
 }
 
-void VTHandler::VSOutMember( const stem::Event_base<VSsync_rq>& )
+void VTHandler::get_gvtime( group_type g, gvtime_type& gvt )
 {
+  _vtdsp->get_gvtime( g, self_id(), gvt );
+}
+
+void VTHandler::VSOutMember( const stem::Event_base<VSsync_rq>& ev )
+{
+#ifdef __FIT_VS_TRACE
+  try {
+    scoped_lock lk(_vtdsp->_lock_tr);
+    if ( _vtdsp->_trs != 0 && _vtdsp->_trs->good() && (_vtdsp->_trflags & Janus::tracegroup) ) {
+      *_vtdsp->_trs << "<-  VS_OUT_MEMBER G" << ev.value().grp
+                    << hex << showbase
+                    << ev.src() << " -> " << ev.dest() << dec << endl;
+    }
+  }
+  catch ( ... ) {
+  }
+#endif // __FIT_VS_TRACE
 }
 
 void VTHandler::VSsync_time( const stem::Event_base<VSsync>& ev )
 {
   try {
     // sync data from ev.value().mess
+#ifdef __FIT_VS_TRACE
+    try {
+      scoped_lock lk(_vtdsp->_lock_tr);
+      if ( _vtdsp->_trs != 0 && _vtdsp->_trs->good() && (_vtdsp->_trflags & Janus::tracegroup) ) {
+        *_vtdsp->_trs << "<-  VS_SYNC_TIME G" << ev.value().grp << " "
+                      << hex << showbase
+                      << ev.src() << " -> " << ev.dest() << dec << endl;
+      }
+    }
+    catch ( ... ) {
+    }
+#endif // __FIT_VS_TRACE
     _vtdsp->set_gvtime( ev.value().grp, self_id(), ev.value().gvt.gvt );
   }
   catch ( const domain_error&  ) {

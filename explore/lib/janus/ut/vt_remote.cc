@@ -1,30 +1,41 @@
-// -*- C++ -*- Time-stamp: <07/08/17 10:07:52 ptr>
+// -*- C++ -*- Time-stamp: <07/08/23 12:43:15 ptr>
 
 #include "vt_operations.h"
 
 #include <iostream>
 #include <janus/vtime.h>
+#include <janus/janus.h>
+#include <janus/vshostmgr.h>
 
 #include <stem/EvManager.h>
 #include <stem/NetTransport.h>
+#include <stem/Event.h>
+#include <stem/EvPack.h>
 #include <sockios/sockmgr.h>
 #include <sys/wait.h>
 
 #include <mt/xmt.h>
 #include <mt/shm.h>
+#include <mt/time.h>
+
+#include <list>
+#include <sstream>
 
 using namespace std;
 using namespace stem;
 using namespace xmt;
 using namespace janus;
 
+#define VS_DUMMY_MESS     0x1203
+#define VS_DUMMY_GREETING 0x1204
+
 class YaRemote :
     public janus::VTHandler
 {
   public:
     YaRemote();
-    YaRemote( stem::addr_type id );
-    YaRemote( stem::addr_type id, const char *info );
+    YaRemote( stem::addr_type id, const char *info = 0 );
+    YaRemote( const char *info );
     ~YaRemote();
 
     void handler( const stem::Event& );
@@ -51,9 +62,6 @@ class YaRemote :
     DECLARE_RESPONSE_TABLE( YaRemote, janus::VTHandler );
 };
 
-#define VS_DUMMY_MESS     0x1203
-#define VS_DUMMY_GREETING 0x1204
-
 YaRemote::YaRemote() :
     VTHandler(),
     count(0),
@@ -61,19 +69,6 @@ YaRemote::YaRemote() :
 {
   cnd.set( false );
   gr.set( false );
-
-  JoinGroup( 0 );
-}
-
-YaRemote::YaRemote( stem::addr_type id ) :
-    VTHandler( id ),
-    count(0),
-    ocount(0)
-{
-  cnd.set( false );
-  gr.set( false );
-
-  JoinGroup( 0 );
 }
 
 YaRemote::YaRemote( stem::addr_type id, const char *info ) :
@@ -83,8 +78,15 @@ YaRemote::YaRemote( stem::addr_type id, const char *info ) :
 {
   cnd.set( false );
   gr.set( false );
+}
 
-  JoinGroup( 0 );
+YaRemote::YaRemote( const char *info ) :
+    VTHandler( info ),
+    count(0),
+    ocount(0)
+{
+  cnd.set( false );
+  gr.set( false );
 }
 
 YaRemote::~YaRemote()
@@ -101,7 +103,7 @@ void YaRemote::handler( const stem::Event& ev )
 
 void YaRemote::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
 {
-  // cerr << "Hello " << ev.src() << endl;
+  cerr << "Hello " << xmt::getpid() << endl;
   ++count;
 
   // VTNewMember_data( ev, "" );
@@ -127,7 +129,9 @@ void YaRemote::wait()
 
 void YaRemote::greeting()
 {
-  gr.set( true );
+  if ( count > 0 ) {
+    gr.set( true );
+  }
 }
 
 DEFINE_RESPONSE_TABLE( YaRemote )
@@ -137,6 +141,8 @@ END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::remote)
 {
+  cerr << "============\n";
+
   const char fname[] = "/tmp/yanus_test.shm";
   xmt::shm_alloc<0> seg;
   xmt::allocator_shm<xmt::__condition<true>,0> shm_cnd;
@@ -151,30 +157,73 @@ int EXAM_IMPL(vtime_operations::remote)
 
       b.wait();
 
-      NetTransportMgr mgr;
+      {
+        YaRemote obj1( "obj client" );
 
-      addr_type zero = mgr.open( "localhost", 6980 );
+        // obj1.manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch );
+        // obj1.manager()->settrs( &std::cerr );
 
-      EXAM_CHECK_ASYNC( mgr.good() );
+        obj1.vtdispatcher()->settrf( janus::Janus::tracenet | janus::Janus::tracedispatch | janus::Janus::tracefault | janus::Janus::tracedelayed | janus::Janus::tracegroup );
+        obj1.vtdispatcher()->settrs( &std::cerr );
 
-      YaRemote obj2;
+        EXAM_CHECK_ASYNC( obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) == 1 );
+
+        obj1.vtdispatcher()->connect( "localhost", 6980 );
+
+        cerr << obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) << endl;
+
+#if 1
+        while ( obj1.vtdispatcher()->vs_known_processes() < 2 ) {
+          xmt::Thread::yield();
+          xmt::delay( xmt::timespec( 0, 1000000 ) );
+        }
+#else
+        while ( obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) < 2 ) {
+          xmt::Thread::yield();
+          xmt::delay( xmt::timespec( 0, 1000000 ) );
+        }
+#endif
+
+        EXAM_CHECK_ASYNC( obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) == 2 );
+        cerr << obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) << endl;
+
+        obj1.JoinGroup( janus::vs_base::first_user_group );
+
+        obj1.wait_greeting();
+
+        EXAM_CHECK_ASYNC( obj1.vtdispatcher()->group_size(janus::vs_base::first_user_group) == 2 );
+
+        // cerr << "* " << obj1.vtdispatcher()->group_size(janus::vs_base::first_user_group) << endl;
+      }
 
       exit(0);
     }
     catch ( xmt::fork_in_parent& child ) {
-      sockmgr_stream_MP<NetTransport> srv( 6980 );
+      YaRemote obj1( "obj srv" );
 
-      EXAM_REQUIRE( srv.good() );
+      // obj1.vtdispatcher()->settrf( janus::Janus::tracenet | janus::Janus::tracedispatch | janus::Janus::tracefault | janus::Janus::tracedelayed | janus::Janus::tracegroup );
+      // obj1.vtdispatcher()->settrs( &std::cerr );
+
+      obj1.vtdispatcher()->serve( 6980 );
+
+      obj1.JoinGroup( janus::vs_base::first_user_group );
 
       b.wait();
 
-      YaRemote obj1;
+      // while ( obj1.vtdispatcher()->vs_known_processes() < 2 ) {
+      //   xmt::delay( xmt::timespec( 0, 1000000 ) );
+      // }
+
+      // stem::Event ev( VS_DUMMY_MESS );
+      // ev.dest( janus::vs_base::first_user_group ); // group
+      // ev.value() = "hello";
+
+      // obj1.JaSend( ev );
+
+      // obj1.wait_greeting();
 
       int stat;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
-
-      srv.close();
-      srv.wait();
     }
 
     (&b)->~__barrier<true>();
