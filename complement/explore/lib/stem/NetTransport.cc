@@ -2,7 +2,7 @@
 
 /*
  *
- * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -115,7 +115,17 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
   }
 
   if ( buf[0] != EDS_MAGIC ) {
-    cerr << "EDS Magic fail" << endl;
+    try {
+      xmt::scoped_lock lk(manager()->_lock_tr);
+      if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
+        *manager()->_trs << __FILE__ << ":" << __LINE__ << " StEM Magic fail ("
+                         << net->rdbuf()->inet_addr() << ":" << net->rdbuf()->port() << ")"
+                         << endl;
+      }
+    }
+    catch ( ... ) {
+    }
+
     NetTransport_base::close();
     return false;
   }
@@ -131,14 +141,33 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
   uint32_t sz = from_net( buf[18] );
 
   if ( sz >= EDS_MSG_LIMIT ) {
-    cerr << "EDS Message size too big: " << sz << endl;
+    try {
+      xmt::scoped_lock lk(manager()->_lock_tr);
+      if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
+        *manager()->_trs << __FILE__ << ":" << __LINE__ << " StEM Message size too big: " << sz
+                         << " (" << net->rdbuf()->inet_addr() << ":" << net->rdbuf()->port()
+                         << ")" << endl;
+      }
+    }
+    catch ( ... ) {
+    }
     NetTransport_base::close();
     return false;
   }
 
   adler32_type adler = adler32( (unsigned char *)buf, sizeof(uint32_t) * 19 );
   if ( adler != from_net( buf[19] ) ) {
-    cerr << "EDS Adler-32 fail" << endl;
+    try {
+      xmt::scoped_lock lk(manager()->_lock_tr);
+      if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
+        *manager()->_trs << __FILE__ << ":" << __LINE__ << " StEM Adler-32 fail"
+                         << " (" << net->rdbuf()->inet_addr() << ":" << net->rdbuf()->port()
+                         << ")" << endl;
+      }
+    }
+    catch ( ... ) {
+    }
+
     NetTransport_base::close();
     return false;
   }
@@ -169,7 +198,6 @@ bool NetTransport_base::push( const Event& _rs, const gaddr_type& dst, const gad
   dst._xnet_pack( reinterpret_cast<char *>(buf + 2) );
   src._xnet_pack( reinterpret_cast<char *>(buf + 9) );
 
-  // MT_IO_REENTRANT_W( *net )
   MT_IO_LOCK_W( *net )
 
   buf[16] = to_net( ++_count );
@@ -237,10 +265,31 @@ NetTransport::NetTransport( std::sockstream& s ) :
     }
   }
   catch ( runtime_error& err ) {
+    try {
+      xmt::scoped_lock lk(manager()->_lock_tr);
+      if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
+        *manager()->_trs << __FILE__ << ":" << __LINE__ << " " << err.what()
+                         << " (" << s.rdbuf()->inet_addr() << ":" << s.rdbuf()->port()
+                         << ")" << endl;
+      }
+    }
+    catch ( ... ) {
+    }
+
     s.close();
-    cerr << err.what() << endl;
   }
   catch ( ... ) {
+    try {
+      xmt::scoped_lock lk(manager()->_lock_tr);
+      if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
+        *manager()->_trs << __FILE__ << ":" << __LINE__ << " unknown exception"
+                         << " (" << s.rdbuf()->inet_addr() << ":" << s.rdbuf()->port()
+                         << ")" << endl;
+      }
+    }
+    catch ( ... ) {
+    }
+
     s.close();
   }
 }
@@ -269,9 +318,29 @@ void NetTransport::connect( sockstream& s )
     }
   }
   catch ( ios_base::failure& ex ) {
-    cerr << ex.what() << endl;
+    try {
+      xmt::scoped_lock lk(manager()->_lock_tr);
+      if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
+        *manager()->_trs << __FILE__ << ":" << __LINE__ << " " << ex.what()
+                         << " (" << s.rdbuf()->inet_addr() << ":" << s.rdbuf()->port()
+                         << ")" << endl;
+      }
+    }
+    catch ( ... ) {
+    }
   }
   catch ( ... ) {
+    try {
+      xmt::scoped_lock lk(manager()->_lock_tr);
+      if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
+        *manager()->_trs << __FILE__ << ":" << __LINE__ << " unknown exception"
+                         << " (" << s.rdbuf()->inet_addr() << ":" << s.rdbuf()->port()
+                         << ")" << endl;
+      }
+    }
+    catch ( ... ) {
+    }
+
     s.close();
   }
 }
@@ -332,10 +401,28 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
     }
   }
   catch ( runtime_error& err ) {
-    cerr << err.what() << endl;
+    try {
+      xmt::scoped_lock lk(manager()->_lock_tr);
+      if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
+        *manager()->_trs << __FILE__ << ":" << __LINE__ << " " << err.what()
+                         << " (" << _channel.rdbuf()->inet_addr() << ":" << _channel.rdbuf()->port()
+                         << ")" << endl;
+      }
+    }
+    catch ( ... ) {
+    }
   }
   catch ( ... ) {
-    // cerr << __FILE__ << ":" << __LINE__ << endl;
+    try {
+      xmt::scoped_lock lk(manager()->_lock_tr);
+      if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
+        *manager()->_trs << __FILE__ << ":" << __LINE__ << " unknown exception"
+                         << " (" << _channel.rdbuf()->inet_addr() << ":" << _channel.rdbuf()->port()
+                         << ")" << endl;
+      }
+    }
+    catch ( ... ) {
+    }
   }
   return badaddr;
 }
@@ -344,6 +431,7 @@ __FIT_DECLSPEC
 void NetTransportMgr::close()
 {
   _channel.rdbuf()->shutdown( sock_base::stop_in | sock_base::stop_out );
+  // _channel.rdbuf()->shutdown( sock_base::stop_in );
   NetTransport_base::close();
   // _channel.close();
   join();

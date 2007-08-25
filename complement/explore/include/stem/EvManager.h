@@ -262,6 +262,8 @@ class EvManager
 
     friend class Names;
     friend class NetTransportMgr;
+    friend class NetTransport_base;
+    friend class NetTransport;
 };
 
 } // namespace stem
