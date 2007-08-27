@@ -7,7 +7,8 @@
 #include <janus/vtime.h>
 #include <janus/janus.h>
 
-using namespace janus;
+namespace janus {
+
 using namespace std;
 
 class Dummy :
@@ -129,3 +130,6 @@ int EXAM_IMPL(vtime_operations::VTDispatch2)
 
   return EXAM_RESULT;
 }
+
+} // namespace janus
+

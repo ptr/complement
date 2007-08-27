@@ -5,6 +5,8 @@
 
 #include <exam/suite.h>
 
+namespace janus {
+
 struct vtime_operations
 {
   int EXAM_DECL(vt_compare);
@@ -30,6 +32,9 @@ struct vtime_operations
   int EXAM_DECL(VTEntryIntoGroup3);
 
   int EXAM_DECL(remote);
+  int EXAM_DECL(mgroups);
 };
+
+} // namespace janus
 
 #endif // __vt_operations_h

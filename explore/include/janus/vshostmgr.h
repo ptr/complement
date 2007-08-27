@@ -37,8 +37,14 @@ class VSHostMgr :
 {
   private:
     // typedef std::list<stem::gaddr_type> vshost_container_t;
-#ifdef __USE_STLPORT_TR1
+#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
     typedef std::tr1::unordered_set<stem::gaddr_type> vshost_container_t;
+#endif
+#ifdef __USE_STD_HASH
+    typedef __gnu_cxx::hash_set<stem::gaddr_type> vshost_container_t;
+#endif
+#ifdef __USE_STLPORT_HASH
+    typedef std::hash_set<stem::gaddr_type> vshost_container_t;
 #endif
 
   public:
@@ -64,7 +70,7 @@ class VSHostMgr :
          return tmp;
        }
 
-    void Subscribe( stem::addr_type, oid_type, group_type );
+    void Subscribe( stem::addr_type, group_type );
 
   private:
     typedef std::list<stem::NetTransportMgr *> nmgr_container_t;
@@ -73,6 +79,28 @@ class VSHostMgr :
     vshost_container_t vshost;
     nmgr_container_t _clients;
     srv_container_t  _servers;
+
+    class Finalizer :
+        public stem::EventHandler
+    {
+      public:
+        Finalizer( const char *info ) :
+          EventHandler( info )
+          { cnd.set( false ); }
+
+        void wait()
+          { cnd.try_wait(); }
+
+      private:
+        void final()
+          { cnd.set( true ); }
+
+        xmt::condition cnd;
+
+        DECLARE_RESPONSE_TABLE( Finalizer, stem::EventHandler );
+    };
+
+    Finalizer finalizer;
 
     // DECLARE_RESPONSE_TABLE( VSHostMgr, janus::VTHandler );
 };

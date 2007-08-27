@@ -7,7 +7,8 @@
 
 #include <stem/EvManager.h>
 
-using namespace janus;
+namespace janus {
+
 using namespace std;
 
 class VTDummy :
@@ -353,3 +354,5 @@ int EXAM_IMPL(vtime_operations::VTEntryIntoGroup3)
 
   return EXAM_RESULT;
 }
+
+} // namespace janus

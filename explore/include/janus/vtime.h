@@ -367,6 +367,7 @@ class VTHandler :
 
     void JaSend( const stem::Event& e );
     void JoinGroup( group_type grp );
+    void LeaveGroup( group_type grp );
 
     virtual void VSNewMember( const stem::Event_base<VSsync_rq>& e );
     virtual void VSOutMember( const stem::Event_base<VSsync_rq>& e );
@@ -381,6 +382,7 @@ class VTHandler :
       { return _vtdsp; }
 
   protected:
+    void Unsubscribe();
     void VSNewMember_data( const stem::Event_base<VSsync_rq>&, const std::string& data );
 
     void get_gvtime( group_type g, gvtime_type& gvt );
@@ -398,6 +400,7 @@ class VTHandler :
 #define VS_SYNC_TIME          0x303
 #define VS_NEW_REMOTE_MEMBER  0x304
 #define VS_NEW_MEMBER_RV      0x305
+#define VS_HOST_MGR_FINAL     0x306
 
 #ifdef __USE_STLPORT_HASH
 #  undef __USE_STLPORT_HASH
