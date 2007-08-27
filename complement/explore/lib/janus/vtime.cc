@@ -621,9 +621,14 @@ VTHandler::VTHandler( stem::addr_type id, const char *info ) :
 
 VTHandler::~VTHandler()
 {
-  _vtdsp->Unsubscribe( oid_type( self_id() ) );
+  Unsubscribe();
 
   ((Init *)Init_buf)->~Init();
+}
+
+void VTHandler::Unsubscribe()
+{
+  _vtdsp->Unsubscribe( oid_type( self_id() ) );
 }
 
 void VTHandler::JoinGroup( group_type grp )
@@ -631,6 +636,10 @@ void VTHandler::JoinGroup( group_type grp )
   _vtdsp->Subscribe( self_id(), oid_type( self_id() ), grp );
 }
 
+void VTHandler::LeaveGroup( group_type grp )
+{
+  _vtdsp->Unsubscribe( oid_type( self_id() ), grp );
+}
 
 void VTHandler::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
 {

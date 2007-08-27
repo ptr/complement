@@ -5,7 +5,8 @@
 #include <iostream>
 #include <janus/vtime.h>
 
-using namespace janus;
+namespace janus {
+
 using namespace std;
 
 class VTM_handler :
@@ -146,3 +147,6 @@ int EXAM_IMPL(vtime_operations::VTMess_core)
 
   return EXAM_RESULT;
 }
+
+} // namespace janus
+

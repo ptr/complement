@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/23 11:24:18 ptr>
+// -*- C++ -*- Time-stamp: <07/08/26 12:56:20 ptr>
 
 #include <janus/vshostmgr.h>
 
@@ -25,21 +25,24 @@ using namespace xmt;
 using namespace janus;
 
 VSHostMgr::VSHostMgr() :
-    VTHandler()
+    VTHandler(),
+    finalizer( "vshostmgr aux" )
 {
   vshost.insert( gaddr_type( stem::janus_addr ) );
   JoinGroup( vshosts_group );
 }
 
 VSHostMgr::VSHostMgr( stem::addr_type id, const char *info ) :
-    VTHandler( id, info )
+    VTHandler( id, info ),
+    finalizer( "vshostmgr aux" )
 {
   vshost.insert( gaddr_type( stem::janus_addr ) );
   JoinGroup( vshosts_group );
 }
 
 VSHostMgr::VSHostMgr( const char *info ) :
-    VTHandler( info )
+    VTHandler( info ),
+    finalizer( "vshostmgr aux" )
 {
   // vtdispatcher()->settrf( janus::Janus::tracenet | janus::Janus::tracedispatch | janus::Janus::tracefault | janus::Janus::tracedelayed | janus::Janus::tracegroup );
 
@@ -49,17 +52,37 @@ VSHostMgr::VSHostMgr( const char *info ) :
 
 VSHostMgr::~VSHostMgr()
 {
-  while ( !_clients.empty() ) {
-    _clients.front()->close();
-    _clients.front()->join();
-    delete _clients.front();
-    _clients.pop_front();
-  }
-  while ( !_servers.empty() ) {
-    _servers.front()->close();
-    _servers.front()->wait();
-    delete _servers.front();
-    _servers.pop_front();
+  if ( !_clients.empty() || !_servers.empty() ) {
+    VTHandler::Unsubscribe(); // before channels closed!
+
+    stem::EventVoid ev( VS_HOST_MGR_FINAL );
+
+    ev.dest( finalizer.self_id() );
+    Send( ev );
+
+    finalizer.wait();
+
+    // give the chance to deliver VS_OUT_MEMBER message to remotes...
+    // Do you know better solution, because this one is ugly?
+    for ( int i = 0; i < 5; ++i ) {
+      xmt::Thread::yield();
+      xmt::delay( xmt::timespec( 0, 100000 ) );
+    }
+
+    // shutdown clients...
+    while ( !_clients.empty() ) {
+      _clients.front()->close();
+      _clients.front()->join();
+      delete _clients.front();
+      _clients.pop_front();
+    }
+    // ... and servers
+    while ( !_servers.empty() ) {
+      _servers.front()->close();
+      _servers.front()->wait();
+      delete _servers.front();
+      _servers.pop_front();
+    }
   }
 }
 
@@ -180,7 +203,7 @@ void VSHostMgr::serve( int port )
 #endif // __FIT_VS_TRACE
 }
 
-void VSHostMgr::Subscribe( stem::addr_type addr, oid_type oid, group_type grp )
+void VSHostMgr::Subscribe( stem::addr_type addr, group_type grp )
 {
   try {
     manager()->transport( addr );
@@ -199,7 +222,7 @@ void VSHostMgr::Subscribe( stem::addr_type addr, oid_type oid, group_type grp )
 #ifdef __FIT_VS_TRACE
         try {
           scoped_lock lk(vtdispatcher()->_lock_tr);
-          if ( vtdispatcher()->_trs != 0 && vtdispatcher()->_trs->good() && (vtdispatcher()->_trflags & Janus::tracenet) ) {
+          if ( vtdispatcher()->_trs != 0 && vtdispatcher()->_trs->good() && (vtdispatcher()->_trflags & Janus::tracegroup) ) {
             *vtdispatcher()->_trs << " -> VS_NEW_REMOTE_MEMBER G" << grp << " "
                                   << hex << showbase
                                   << ev.src() << " -> " << ev.dest() << dec << endl;
@@ -217,6 +240,10 @@ void VSHostMgr::Subscribe( stem::addr_type addr, oid_type oid, group_type grp )
 //   EV_Event_base_T_( ST_NULL, VS_NEW_REMOTE_MEMBER, VSNewRemoteMemberDirect, VSsync_rq )
 //   EV_Event_base_T_( ST_NULL, VS_NEW_MEMBER_RV, VSNewRemoteMemberRevert, VSsync_rq )
 // END_RESPONSE_TABLE
+
+DEFINE_RESPONSE_TABLE( VSHostMgr::Finalizer )
+  EV_VOID( ST_NULL, VS_HOST_MGR_FINAL, final )
+END_RESPONSE_TABLE
 
 
 } // namespace janus
