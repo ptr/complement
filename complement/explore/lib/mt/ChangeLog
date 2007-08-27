@@ -1,3 +1,7 @@
+2007-08-27  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* shm.h: use namespace std for max.
+
 2007-08-03  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* test/mt/Makefile: let's try don't include boost's -I if macro
