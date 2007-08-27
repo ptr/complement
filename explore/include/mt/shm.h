@@ -536,7 +536,7 @@ class shm_alloc
 template <int _Inst>
 void shm_alloc<_Inst>::deallocate( pointer p, size_type n )
 {
-  n = max( n + (__align - n % __align) % __align, sizeof(_fheader) );
+  n = std::max( n + (__align - n % __align) % __align, sizeof(_fheader) );
   _master *m = reinterpret_cast<_master *>( _seg.address() );
   if ( m != reinterpret_cast<_master *>(-1) && (reinterpret_cast<char *>(p) - reinterpret_cast<char *>(_seg.address())) < (_seg.max_size() + sizeof(_master) + sizeof(_aheader) ) ) {
     xmt::basic_lock<xmt::__mutex<false,true> > lk( m->_lock );
@@ -597,7 +597,7 @@ void shm_alloc<_Inst>::deallocate( pointer p, size_type n )
 template <int _Inst>
 void *shm_alloc<_Inst>::_traverse( size_type *_prev, size_type n )
 {
-  n = max( n + (__align - n % __align) % __align, sizeof(_fheader) );
+  n = std::max( n + (__align - n % __align) % __align, sizeof(_fheader) );
   for ( _fheader *h = reinterpret_cast<_fheader *>(reinterpret_cast<char *>(_seg.address()) + *_prev); *_prev != 0;
         _prev = &h->_next, h = reinterpret_cast<_fheader *>(reinterpret_cast<char *>(_seg.address()) + *_prev)) {
     if ( h->_sz >= (n + sizeof( _fheader )) ) { // reduce this free block, write new free header
