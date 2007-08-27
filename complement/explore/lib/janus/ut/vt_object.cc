@@ -5,7 +5,8 @@
 #include <iostream>
 #include <janus/vtime.h>
 
-using namespace janus;
+namespace janus {
+
 using namespace std;
 
 int EXAM_IMPL(vtime_operations::vt_object)
@@ -186,3 +187,5 @@ int EXAM_IMPL(vtime_operations::vt_object)
 
   return EXAM_RESULT;
 }
+
+} // namespace janus

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/23 12:36:32 ptr>
+// -*- C++ -*- Time-stamp: <07/08/25 01:40:20 ptr>
 
 #ifndef __janus_h
 #define __janus_h
@@ -41,14 +41,17 @@ class Janus :
 #ifdef __USE_STLPORT_HASH
     typedef std::hash_map<oid_type, detail::vtime_obj_rec> vt_map_type;
     typedef std::hash_multimap<group_type, oid_type> gid_map_type;
+    typedef std::hash_set<stem::addr_type> addr_cache_t;
 #endif
 #ifdef __USE_STD_HASH
     typedef __gnu_cxx::hash_map<oid_type, detail::vtime_obj_rec> vt_map_type;
     typedef __gnu_cxx::hash_multimap<group_type, oid_type> gid_map_type;
+    typedef __gnu_cxx::hash_set<stem::addr_type> addr_cache_t;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
     typedef std::tr1::unordered_map<oid_type, detail::vtime_obj_rec> vt_map_type;
     typedef std::tr1::unordered_multimap<group_type, oid_type> gid_map_type;
+    typedef std::tr1::unordered_set<stem::addr_type> addr_cache_t;
 #endif
 
   public:
@@ -92,18 +95,7 @@ class Janus :
 
     ~Janus();
 
-    void JaDispatch( const stem::Event_base<VSmess>& );
-
-    void VSNewMember( const stem::Event_base<VSsync_rq>& e );
-    void VSNewRemoteMemberDirect( const stem::Event_base<VSsync_rq>& e );
-    void VSNewRemoteMemberRevert( const stem::Event_base<VSsync_rq>& e );
-
     void JaSend( const stem::Event& e, group_type );
-    void Subscribe( stem::addr_type, oid_type, group_type );
-    void Unsubscribe( oid_type, group_type );
-    void Unsubscribe( oid_type );
-    void get_gvtime( group_type, stem::addr_type, gvtime_type& );
-    void set_gvtime( group_type, stem::addr_type, const gvtime_type& );
 
     void settrf( unsigned f );
     void unsettrf( unsigned f );
@@ -119,6 +111,12 @@ class Janus :
     difference_type group_size( group_type ) const;
 
   private:
+    void Subscribe( stem::addr_type, const oid_type&, group_type );
+    void Unsubscribe( const oid_type&, group_type );
+    void Unsubscribe( const oid_type& );
+
+    void get_gvtime( group_type, stem::addr_type, gvtime_type& );
+    void set_gvtime( group_type, stem::addr_type, const gvtime_type& );
     void check_and_send( detail::vtime_obj_rec&, const stem::Event_base<VSmess>& );
     void check_and_send_delayed( detail::vtime_obj_rec& );
     
@@ -137,7 +135,17 @@ class Janus :
     friend class VTHandler;
     friend class VSHostMgr;
 
+#ifdef __FIT_EXAM
+    friend class vtime_operations;
+#endif
+
   private:
+
+    void JaDispatch( const stem::Event_base<VSmess>& );
+    void VSNewMember( const stem::Event_base<VSsync_rq>& e );
+    void VSNewRemoteMemberDirect( const stem::Event_base<VSsync_rq>& e );
+    void VSNewRemoteMemberRevert( const stem::Event_base<VSsync_rq>& e );
+    void VSOutMember( const stem::Event_base<VSsync_rq>& e );
 
     DECLARE_RESPONSE_TABLE( Janus, stem::EventHandler );
 };
