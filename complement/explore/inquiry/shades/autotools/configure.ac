@@ -1,22 +1,25 @@
-# -*- Autoconf -*- 
-# Process this file with autoconf to produce a configure script. 
-dnl Process this file with autoconf to produce a configure script
-AC_INIT([Test Autotools],[1],[nobody@nothing.com],[cxxtest])
-AC_PREREQ(2.60a)
-AC_CONFIG_AUX_DIR(ext)
-AM_INIT_AUTOMAKE
-AC_COPYRIGHT(All portions of this software are copylefted (c))
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
 
-# AC_LANG([C++])
+AC_PREREQ(2.61)
+AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
+AC_CONFIG_SRCDIR([main.cc])
+AC_CONFIG_HEADER([config.h])
+AM_INIT_AUTOMAKE
+
+# Checks for programs.
 AC_PROG_CXX
-AC_PROG_RANLIB
-AC_LIBTOOL_DLOPEN
-AC_PROG_LIBTOOL
- 
-AC_CONFIG_SRCDIR([main.cc]) 
-AC_CONFIG_HEADER([config.h]) 
-AC_CONFIG_FILES([Makefile]) 
- 
-ACX_PTHREAD 
- 
-AC_OUTPUT 
+AC_PROG_CC
+
+# Checks for libraries.
+# FIXME: Replace `main' with a function in `-lstlport':
+# AC_CHECK_LIB([stlport], [main])
+
+# Checks for header files.
+
+# Checks for typedefs, structures, and compiler characteristics.
+
+# Checks for library functions.
+
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
