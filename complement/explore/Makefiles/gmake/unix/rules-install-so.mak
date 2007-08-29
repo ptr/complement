@@ -79,7 +79,7 @@ endif
 endif
 
 
-PHONY += install install-strip $(INSTALL_TAGS) $(INSTALL_STRIP_TAGS)
+PHONY += install install-strip install-headers $(INSTALL_TAGS) $(INSTALL_STRIP_TAGS)
 
 install:	$(INSTALL_TAGS)
 
@@ -139,3 +139,34 @@ ifndef WITHOUT_STLPORT
 install-stldbg-shared:	stldbg-shared $(INSTALL_LIB_DIR_STLDBG) $(INSTALL_LIB_DIR_STLDBG)/${SO_NAME_STLDBGxxx}
 	${POST_INSTALL_STLDBG}
 endif
+
+define do_install_headers
+if [ ! -d $(INSTALL_HDR_DIR) ]; then \
+  echo $(INSTALL_D) $(INSTALL_HDR_DIR); \
+fi; \
+for dd in $(HEADERS_BASE); do \
+  d=`dirname $$dd`; \
+  h=`basename $$dd`; \
+  f=`cd $$d; find $$h \( -type d \( -wholename "*/.svn" -o -prune \) \) -print`; \
+  for ddd in $$f; do \
+    if [ ! -d $(INSTALL_HDR_DIR)/$$ddd ]; then \
+      echo $(INSTALL_D) $(INSTALL_HDR_DIR)/$$ddd; \
+    fi; \
+  done; \
+  f=`find $$dd \( -type f \( \! \( -wholename "*/.svn/*" -o -name "*~" -o -name "*.bak" \) \) \) -print`; \
+  for ff in $$f; do \
+    h=`echo $$ff | sed -e "s|$$d|$(INSTALL_HDR_DIR)|"`; \
+    echo $(INSTALL_F) $$ff $$h; \
+  done; \
+done; \
+for f in $(HEADERS); do \
+  h=`basename $$f`; \
+  echo $(INSTALL_F) $$f $(INSTALL_HDR_DIR)/$$h; \
+done
+endef
+
+# _HEADERS_FROM = $(shell for dd in $(HEADERS_BASE); do find $$dd \( -type f \( \! \( -wholename "*/.svn/*" -o -name "*~" -o -name "*.bak" \) \) \) -print ; done )
+# _HEADERS_TO = $(foreach d,$(HEADERS_BASE),$(patsubst $(d)/%,$(BASE_INSTALL_DIR)include/%,$(_HEADERS_FROM)))
+
+install-headers:
+	@$(do_install_headers)
