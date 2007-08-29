@@ -1,10 +1,10 @@
 #!/bin/sh
 
-# Time-stamp: <07/06/08 23:24:03 ptr>
+# Time-stamp: <07/08/29 11:36:31 ptr>
 
-configmak=Makefiles/gmake/config.mak
+base=`dirname $0`
 
-# rm -f ${configmak}
+configmak=$base/Makefiles/gmake/config.mak
 
 # echo "# STLPORT_DIR := /export/home/windows/guest/STLlab/STLport" >> ${configmak}
 # echo "# MSVC_DIR := c:/Program Files/Microsoft Visual Studio/VC98" >> ${configmak}
@@ -25,8 +25,15 @@ Usage:
 
 Available options:
 
+  --prefix=<dir>        base install path (/usr/local/)
+  --bindir=<dir>        install path for executables (PREFIX/bin)
+  --libdir=<dir>        install path for libraries (PREFIX/lib)
+  --includedir=<dir>    install path for headers (PREFIX/include)
+
   --target=<target>     target platform (cross-compiling)
+
   --help                print this help message and exit
+
   --with-stlport=<dir>  use STLport in catalog <dir>
   --without-stlport     compile without STLport (default)
   --with-boost=<dir>    use boost headers in catalog <dir>
@@ -68,6 +75,9 @@ default_settings () {
   if [ "$compiler_family_set" = "" ]; then
     write_option gcc COMPILER_NAME
   fi
+  # if [ "$prefix_set" = "" ]; then
+  #   write_option "/usr/local" BASE_INSTALL_DIR
+  # fi
 }
 
 case $# in
@@ -167,6 +177,19 @@ do
           ;;
       esac
       compiler_family_set=y
+      ;;
+    --prefix=*)
+      write_option "$option" BASE_INSTALL_DIR
+      # prefix_set=y
+      ;;
+    --bindir=*)
+      write_option "$option" INSTALL_BIN_DIR
+      ;;
+    --libdir=*)
+      write_option "$option" INSTALL_LIB_DIR
+      ;;
+    --includedir=*)
+      write_option "$option" INSTALL_HDR_DIR
       ;;
   esac
 done

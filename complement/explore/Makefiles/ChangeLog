@@ -1,3 +1,16 @@
+2007-08-29  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/targetdirs.mak: default installation path is /usr/local
+	now; BASE_INSTALL_*_DIR now free from TARGET_NAME prefix,
+	TARGET_NAME prefix appear in INSTALL_*_DIR* as prefix for lib,
+	bin, etc.;
+
+	* gmake/linux/sys.mak: add INSTALL_D for directory creation during
+	installation and INSTALL_F for installing plain file, like header;
+
+	* gmake/unix/rules-install-so.mak: installation of headers,
+	dummy yet.
+
 2007-08-17  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/app/gcc.mak, gmake/lib/gcc.mak: use ${CXXFLAGS} when
