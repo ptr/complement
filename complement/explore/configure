@@ -59,6 +59,14 @@ Available options:
   --enable-static       build static
   --disable-shared      don't build shared 
 
+Environment variables:
+
+  \$CXX                 C++ compiler name (use --target= for cross-compilation)
+  \$CC                  C compiler name (use --target= for cross-compilation)
+  \$CXXFLAGS            pass extra options to C++ compiler
+
+  Options has preference over environment variables.
+
 EOF
 }
 
@@ -195,13 +203,12 @@ do
 done
 
 if [ "$CXX" != "" ]; then
-  if [ "$target_set" != "" ]; then
-    echo "For cross-compilation with gcc use --target option only"
-  else
-    write_option "$CXX" _FORCE_CXX
-  fi
   if [ "$cxx_set" != "" ]; then
     echo "Both --with-cxx and \$CXX set, using the first"
+  elif [ "$target_set" = "" ]; then
+    write_option "$CXX" _FORCE_CXX
+  else
+    echo "For cross-compilation with gcc use --target option only"
   fi
   if [ "$CC" = "" ] && [ "$cc_set" = "" ]; then
     echo "\$CXX set, but I don't see \$CC!"
@@ -211,6 +218,8 @@ fi
 if [ "$CC" != "" ]; then
   if [ "$cxx_set" != "" ]; then
     echo "Both --with-cc and \$CC set, using the first"
+  else
+    write_option "$CC" _FORCE_CC
   fi
 fi
 
