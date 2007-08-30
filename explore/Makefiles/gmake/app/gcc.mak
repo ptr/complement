@@ -96,8 +96,24 @@ _LGCC_S := -lgcc
 else
 # otherwise, exceptions support is in libgcc_s.so
 _LGCC_EH :=
+ifneq ($(OSNAME),darwin)
 _LGCC_S := -lgcc_s
+else
+ifdef GCC_APPLE_CC
+ifeq ($(MACOSX_TEN_FIVE),true)
+_LGCC_S := -lgcc_s.10.5
+else
+_LGCC_S := -lgcc_s.10.4
 endif
+else
+_LGCC_S := -lgcc_s
+# end of GCC_APPLE_CC
+endif
+# end of Darwin
+endif
+# end of !USE_STATIC_LIBGCC
+endif
+# end of present libgcc_eh.a
 endif
 
 # ifeq ($(CXX_VERSION_MAJOR),3)
@@ -129,9 +145,28 @@ END_OBJ := $(shell for o in crtend.o crtn.o; do ${CXX} ${CXXFLAGS} -print-file-n
 STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lpthread -lc -lm
 endif
 ifeq ($(OSNAME),darwin)
-START_OBJ := -lcrt1.o -lcrt2.o
+# sometimes crt3.o will required: it has __cxa_at_exit, but the same defined in libc.dyn
+# at least in Mac OS X 10.4.10 (8R2218)
+ifeq ($(CXX_VERSION_MAJOR),3)
+# i.e. gcc 3.3
+START_OBJ := $(shell for o in crt1.o crt2.o; do ${CXX} ${CXXFLAGS} -print-file-name=$$o; done)
+else
+ifndef USE_STATIC_LIBGCC
+# MacOS X, shared-libgcc
+ifeq ($(MACOSX_TEN_FIVE),true)
+# MacOS X >= 10.5
+START_OBJ := -lcrt1.o
+else
+# MacOS X < 10.5
+START_OBJ := -lcrt1.o
+endif
+else
+# MacOS X, not shared-libgcc
+START_OBJ := -lcrt1.o
+endif
+endif
 END_OBJ :=
-STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lc -lm -lsupc++
+STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lpthread -lc -lm -lsupc++ ${_LGCC_EH}
 #LDFLAGS += -dynamic
 endif
 LDFLAGS += -nostdlib
