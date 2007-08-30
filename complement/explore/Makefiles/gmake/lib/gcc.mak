@@ -106,8 +106,32 @@ _LGCC_S := -lgcc
 else
 # otherwise, exceptions support is in libgcc_s.so
 _LGCC_EH :=
+ifneq ($(OSNAME),darwin)
 _LGCC_S := -lgcc_s
+else
+ifeq ($(MACOSX_TEN_FIVE),true)
+_LGCC_S := -lgcc_s.10.5
+else
+_LGCC_S := -lgcc_s.10.4
 endif
+# end of Darwin
+endif
+# end of !USE_STATIC_LIBGCC
+endif
+# end of present libgcc_eh.a
+endif
+
+_LSUPCPP := $(shell ${CXX} ${CXXFLAGS} -print-file-name=libsupc++.a)
+ifeq (${OSNAME},darwin)
+ifdef GCC_APPLE_CC
+_LSUPCPP := $(shell lipo ${_LSUPCPP} -thin ${M_ARCH} -output $(PRE_OUTPUT_DIR)/libsupc++.a && echo $(PRE_OUTPUT_DIR)/libsupc++.a)
+endif
+endif
+ifneq (${_LSUPCPP},libsupc++.a)
+_LSUPCPP_OBJ     := $(shell $(AR) t ${_LSUPCPP})
+_LSUPCPP_AUX_OBJ := $(addprefix $(AUX_DIR)/,${_LSUPCPP_OBJ})
+_LSUPCPP_TSMP    := .supc++
+_LSUPCPP_AUX_TSMP:= $(AUX_DIR)/$(_LSUPCPP_TSMP)
 endif
 
 # ifeq ($(CXX_VERSION_MAJOR),3)
@@ -142,10 +166,22 @@ END_OBJ := $(shell for o in crtend.o crtn.o; do ${CXX} ${CXXFLAGS} -print-file-n
 STDLIBS := ${STLPORT_LIB} ${_LGCC_S} -lpthread -lc -lm -lrt
 endif
 ifeq ($(OSNAME),darwin)
+ifndef USE_STATIC_LIBGCC
+# MacOS X, shared-libgcc
+ifeq ($(MACOSX_TEN_FIVE),true)
+# MacOS X >= 10.5
 START_OBJ :=
+else
+# MacOS X < 10.5
+START_OBJ :=
+endif
+else
+# MacOS X, not shared-libgcc
+START_OBJ :=
+endif
 END_OBJ :=
 ifdef GCC_APPLE_CC
-STDLIBS := ${STLPORT_LIB} -lgcc -lc -lm
+STDLIBS := ${STLPORT_LIB} ${_LGCC_S} -lc -lm
 else
 LDFLAGS += -single_module
 STDLIBS := ${STLPORT_LIB} ${_LGCC_S} -lc -lm
