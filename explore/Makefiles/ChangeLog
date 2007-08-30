@@ -1,3 +1,13 @@
+2007-08-30  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/sysid.mak, gmake/app/gcc.mak, gmake/lib/gcc.mak:
+	MacOS X 10.4 with gcc;
+
+	* gmake/gcc.mak: use STLport's experience for MinGW;
+
+	* gmake/targetdirs.mak, gmake/lib/clean.mak: $(AUX_DIR) for things
+	like archive repack;
+
 2007-08-29  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/targetdirs.mak: default installation path is /usr/local

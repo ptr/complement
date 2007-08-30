@@ -1,6 +1,6 @@
 # -*- makefile -*- Time-stamp: <07/05/30 23:55:47 ptr>
 #
-# Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+# Copyright (c) 1997-1999, 2002, 2003, 2005-2007
 # Petr Ovtchenkov
 #
 # Portion Copyright (c) 1999-2001
@@ -85,7 +85,7 @@ endif
 
 distclean::
 	@-rm -f $(DEPENDS_COLLECTION)
-	@-rmdir -p ${OUTPUT_DIR} ${OUTPUT_DIR_DBG} ${OUTPUT_DIR_STLDBG} 2>/dev/null
+	@-rmdir -p $(AUX_DIR) ${OUTPUT_DIR} ${OUTPUT_DIR_DBG} ${OUTPUT_DIR_STLDBG} 2>/dev/null
 
 uninstall::
 ifdef LIBNAME
