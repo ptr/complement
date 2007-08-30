@@ -1,6 +1,6 @@
 # Time-stamp: <06/11/03 18:47:05 ptr>
 #
-# Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+# Copyright (c) 1997-1999, 2002, 2003, 2005-2007
 # Petr Ovtchenkov
 #
 # Portion Copyright (c) 1999-2001
@@ -25,6 +25,9 @@ endif
 
 # file to store generated dependencies for make:
 DEPENDS_COLLECTION     := $(PRE_OUTPUT_DIR)/.make.depend
+
+# catalog for auxilary files, if any
+AUX_DIR                := $(PRE_OUTPUT_DIR)/.auxdir
 
 # I use the same catalog, as for shared:
 OUTPUT_DIR_A           := $(OUTPUT_DIR)
@@ -74,7 +77,7 @@ INSTALL_LIB_DIRS := $(sort $(INSTALL_LIB_DIRS))
 INSTALL_BIN_DIRS := $(sort $(INSTALL_BIN_DIRS))
 INSTALL_DIRS := $(sort $(INSTALL_LIB_DIRS) $(INSTALL_BIN_DIRS))
 
-PHONY += $(OUTPUT_DIRS) $(INSTALL_DIRS)
+PHONY += $(OUTPUT_DIRS) $(INSTALL_DIRS) $(AUX_DIR)
 
 define createdirs
 @for d in $@ ; do \
@@ -93,3 +96,5 @@ $(OUTPUT_DIRS):
 $(INSTALL_DIRS):
 	$(createdirs)
 
+$(AUX_DIR):
+	$(createdirs)
