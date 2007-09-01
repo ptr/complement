@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/11 20:57:31 ptr>
+// -*- C++ -*- Time-stamp: <07/08/31 09:55:36 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
@@ -239,8 +239,8 @@ class sockmgr_stream_MP :
         ~_Connect()
           { if ( _proc ) { s.close(); _proc->close(); } delete _proc; }
 
-        void open( sock_base::socket_type st, const sockaddr& addr )
-          { s.open( st, addr ); _proc = new Connect( s ); }
+        void open( sock_base::socket_type st, const sockaddr& addr, sock_base::stype t = sock_base::sock_stream )
+          { s.open( st, addr, t ); _proc = new Connect( s ); }
 
         sockstream s;
         Connect *_proc;
@@ -260,6 +260,13 @@ class sockmgr_stream_MP :
     {
         bool operator()(const _Connect& __x, int __y) const
           { return __x.s.rdbuf()->fd() == __y; }
+    };
+
+    struct iaddr_equal :
+        public std::binary_function<_Connect,sockaddr,bool> 
+    {
+        bool operator()(const _Connect& __x, const sockaddr& __y) const
+          { return memcmp( &(__x.s.rdbuf()->inet_sockaddr()), reinterpret_cast<const sockaddr_in *>(&__y), sizeof(sockaddr_in) ) == 0; }
     };
 
     struct pfd_equal :
@@ -287,6 +294,7 @@ class sockmgr_stream_MP :
   protected:
     typedef sockmgr_stream_MP<Connect> _Self_type;
     typedef fd_equal _Compare;
+    typedef iaddr_equal _Compare_inet;
     typedef typename _Sequence::value_type      value_type;
     typedef typename _Sequence::size_type       size_type;
     typedef          _Sequence                  container_type;
@@ -296,6 +304,7 @@ class sockmgr_stream_MP :
 
     _Sequence _M_c;
     _Compare  _M_comp;
+    _Compare_inet  _M_comp_inet;
     pfd_equal _pfdcomp;
     xmt::mutex _c_lock;
 

@@ -6,6 +6,9 @@
 	* sockstream.cc: clean; replace sleep by yield in recvfrom,
 	but function not really in use now;
 
+	* sockmgr.h: add search by sockaddr_in in connections container;
+	this useful for non-streamed connections, like UDP.
+
 2007-08-23  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* sockmgr.h: explicitly inhibit copy of basic_sockmgr and
