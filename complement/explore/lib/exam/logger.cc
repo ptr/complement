@@ -1,4 +1,11 @@
-// -*- C++ -*- Time-stamp: <07/07/13 10:53:32 ptr>
+// -*- C++ -*- Time-stamp: <07/09/01 09:09:27 ptr>
+
+/*
+ * Copyright (c) 2007
+ * Petr Ovtchenkov
+ *
+ * Licensed under the Academic Free License Version 3.0
+ */
 
 #include <exam/logger.h>
 #include <iostream>

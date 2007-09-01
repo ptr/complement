@@ -1,4 +1,11 @@
-// -*- C++ -*- Time-stamp: <07/07/21 09:01:26 ptr>
+// -*- C++ -*- Time-stamp: <07/09/01 09:10:55 ptr>
+
+/*
+ * Copyright (c) 2007
+ * Petr Ovtchenkov
+ *
+ * Licensed under the Academic Free License Version 3.0
+ */
 
 #include "exam_test_suite.h"
 
