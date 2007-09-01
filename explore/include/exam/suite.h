@@ -1,4 +1,11 @@
-// -*- C++ -*- Time-stamp: <07/07/21 09:06:00 ptr>
+// -*- C++ -*- Time-stamp: <07/09/01 09:07:43 ptr>
+
+/*
+ * Copyright (c) 2007
+ * Petr Ovtchenkov
+ *
+ * Licensed under the Academic Free License Version 3.0
+ */
 
 #ifndef __suite_h
 #define __suite_h
