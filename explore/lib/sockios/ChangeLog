@@ -1,3 +1,11 @@
+2007-09-01  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockstream: clean; add inet_sockaddr() method, that return
+	sockaddr_in in whole;
+
+	* sockstream.cc: clean; replace sleep by yield in recvfrom,
+	but function not really in use now;
+
 2007-08-23  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* sockmgr.h: explicitly inhibit copy of basic_sockmgr and

@@ -1,22 +1,14 @@
-// -*- C++ -*- Time-stamp: <06/07/11 12:28:37 ptr>
+// -*- C++ -*- Time-stamp: <07/08/31 09:49:58 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 2.1
+ * Licensed under the Academic Free License version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #ifndef __SOCKSTREAM__
@@ -494,6 +486,14 @@ class basic_sockbuf :
       { return /* is_open() && */ _address.any.sa_family == AF_INET ?
           _address.inet.sin_addr.s_addr : 0; }
 
+    const sockaddr_in& inet_sockaddr() const throw( std::domain_error )
+      {
+        if ( _address.any.sa_family != AF_INET ) {
+          throw domain_error( "socket not belongs to inet type" );
+        }
+        return /* is_open() && */ _address.inet;
+      }
+
    sock_base::stype stype() const
       { return _type; }
 
@@ -613,7 +613,6 @@ class basic_sockbuf :
 
   private:
     typedef basic_sockbuf<charT,traits,_Alloc> _Self_type;
-    // int __rdsync();
     int (basic_sockbuf<charT,traits,_Alloc>::*_xwrite)( const void *, size_t );
     int (basic_sockbuf<charT,traits,_Alloc>::*_xread)( void *, size_t );
     int write( const void *buf, size_t n )
@@ -651,7 +650,7 @@ class basic_sockbuf :
     void __hostname();
 
     sock_base::socket_type _fd;
-    union {
+    union sockaddr_t {
         sockaddr_in inet;
         sockaddr    any;
     } _address;
@@ -660,9 +659,6 @@ class basic_sockbuf :
     int                 _errno;
     sock_base::stype    _type;
     // bool                _doclose;
-    // if open, and connected, other side hostname,
-    // otherwise undefined:
-    // string              _hostname; 
 };
 
 template <class charT, class traits, class _Alloc>
