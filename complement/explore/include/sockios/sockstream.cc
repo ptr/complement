@@ -1,22 +1,14 @@
 // -*- C++ -*- Time-stamp: <06/08/21 23:58:48 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 2.1
+ * Licensed under the Academic Free License version 3.0
  *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
  */
 
 #ifdef __unix
@@ -106,7 +98,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
       throw std::invalid_argument( "protocol not implemented" );
     }
     if ( _bbuf == 0 )
-      _M_allocate_block( 0xb00 ); // max 1460 (dec) [0x5b4] --- single segment
+      _M_allocate_block( type == sock_base::sock_stream ? 0xb00 : 0xffff ); // max 1460 (dec) [0x5b4] --- single segment
     if ( _bbuf == 0 ) {
       throw std::length_error( "can't allocate block" );
     }
@@ -114,21 +106,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
     setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
     setg( this->epptr(), this->epptr(), this->epptr() );
 
-    // _STLP_ASSERT( this->pbase() != 0 );
-    // _STLP_ASSERT( this->pptr() != 0 );
-    // _STLP_ASSERT( this->epptr() != 0 );
-    // _STLP_ASSERT( this->eback() != 0 );
-    // _STLP_ASSERT( this->gptr() != 0 );
-    // _STLP_ASSERT( this->egptr() != 0 );
-    // _STLP_ASSERT( _bbuf != 0 );
-    // _STLP_ASSERT( _ebuf != 0 );
-
     _errno = 0; // if any
-    // __hostname();
-
-//	in_port_t ppp = 0x5000;
-//	cerr << hex << _address.inet.sin_port << " " << ppp << endl;
-//	cerr << hex << _address.inet.sin_addr.s_addr << endl;
   }
   catch ( std::domain_error& ) {
 #ifdef WIN32
@@ -234,7 +212,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
       throw std::invalid_argument( "protocol not implemented" );
     }
     if ( _bbuf == 0 )
-      _M_allocate_block( 0xb00 ); // max 1460 (dec) [0x5b4] --- single segment
+      _M_allocate_block( type == sock_base::sock_stream ? 0xb00 : 0xffff ); // max 1460 (dec) [0x5b4] --- single segment
     if ( _bbuf == 0 ) {
       throw std::length_error( "can't allocate block" );
     }
@@ -242,21 +220,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
     setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
     setg( this->epptr(), this->epptr(), this->epptr() );
 
-    // _STLP_ASSERT( this->pbase() != 0 );
-    // _STLP_ASSERT( this->pptr() != 0 );
-    // _STLP_ASSERT( this->epptr() != 0 );
-    // _STLP_ASSERT( this->eback() != 0 );
-    // _STLP_ASSERT( this->gptr() != 0 );
-    // _STLP_ASSERT( this->egptr() != 0 );
-    // _STLP_ASSERT( _bbuf != 0 );
-    // _STLP_ASSERT( _ebuf != 0 );
-
     _errno = 0; // if any
-    // __hostname();
-
-//	in_port_t ppp = 0x5000;
-//	cerr << hex << _address.inet.sin_port << " " << ppp << endl;
-//	cerr << hex << _address.inet.sin_addr.s_addr << endl;
   }
   catch ( std::domain_error& ) {
 #ifdef WIN32
@@ -357,7 +321,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s,
   }
 
   if ( _bbuf == 0 ) {
-    _M_allocate_block( 0xb00 );
+    _M_allocate_block( t == sock_base::sock_stream ? 0xb00 : 0xffff );
   }
 
   if ( _bbuf == 0 ) {
@@ -373,27 +337,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s,
   setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
   setg( this->epptr(), this->epptr(), this->epptr() );
 
-  // _STLP_ASSERT( this->pbase() != 0 );
-  // _STLP_ASSERT( this->pptr() != 0 );
-  // _STLP_ASSERT( this->epptr() != 0 );
-  // _STLP_ASSERT( this->eback() != 0 );
-  // _STLP_ASSERT( this->gptr() != 0 );
-  // _STLP_ASSERT( this->egptr() != 0 );
-  // _STLP_ASSERT( _bbuf != 0 );
-  // _STLP_ASSERT( _ebuf != 0 );
-
   _errno = 0; // if any
-  // __hostname();
-//	in_port_t ppp = 0x5000;
-//	cerr << hex << _address.inet.sin_port << " " << ppp << endl;
-//	cerr << hex << _address.inet.sin_addr.s_addr << endl;
-
-//	sockaddr_in xxx;
-//	int len = sizeof( xxx );
-
-//	getpeername( fd(), (sockaddr *)&xxx, &len );
-//	cerr << hex << xxx.sin_port << endl;
-//	cerr << hex << xxx.sin_addr.s_addr << endl;
 
   return this;
 }
@@ -546,16 +490,6 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
   long count = this->pptr() - this->pbase();
 
   if ( count ) {
-    // _STLP_ASSERT( this->pbase() != 0 );
-
-    // Never do this: read and and write in basic_sockbuf are independent,
-    // so reading here lead to lost message if reading and writing occur
-    // simultaneously from different threads
-
-//    if ( __rdsync() != 0 ) { // I should read something, if other side write
-//      return traits::eof();  // otherwise I can't write without pipe broken
-//    }
-
     if ( (this->*_xwrite)( this->pbase(), sizeof(charT) * count ) != count * sizeof(charT) )
       return traits::eof();
   }
@@ -575,12 +509,6 @@ xsputn( const char_type *s, streamsize n )
   if ( !is_open() || s == 0 || n == 0 ) {
     return 0;
   }
-
-  // _STLP_ASSERT( this->pbase() != 0 );
-  // _STLP_ASSERT( this->pptr() != 0 );
-  // _STLP_ASSERT( this->epptr() != 0 );
-  // _STLP_ASSERT( _bbuf != 0 );
-  // _STLP_ASSERT( _ebuf != 0 );
 
   if ( this->epptr() - this->pptr() > n ) {
     traits::copy( this->pptr(), s, n );
@@ -605,51 +533,6 @@ xsputn( const char_type *s, streamsize n )
   return n;
 }
 
-#if 0 // No needs: the sockets are essential bi-direction entities
-template<class charT, class traits, class _Alloc>
-int basic_sockbuf<charT, traits, _Alloc>::__rdsync()
-{
-#ifdef WIN32
-  unsigned long nlen = 0;
-  int nmsg = ioctlsocket( fd(), FIONREAD, &nlen );
-#else
-  long nlen = 0;
-  int nmsg = ioctl( fd(), I_NREAD, &nlen ); // shouldn't work, as I understand...
-#endif
-  if ( nmsg > 0 && nlen > 0 ) {
-    // _STLP_ASSERT( _bbuf != 0 );
-    // _STLP_ASSERT( _ebuf != 0 );
-    // _STLP_ASSERT( this->gptr() != 0 );
-    // _STLP_ASSERT( this->egptr() != 0 );
-
-    bool shift_req = this->gptr() == this->eback() ? false : (_ebuf - this->gptr()) > nlen ? false : true;
-    if ( shift_req ) {
-      // _STLP_ASSERT( this->gptr() > this->eback() );
-      // _STLP_ASSERT( this->gptr() <= this->egptr() );
-      traits::move( this->eback(), this->gptr(), this->egptr() - this->gptr() );
-      setg( this->eback(), this->eback(), this->eback() + (this->egptr() - this->gptr()) );
-    }
-    if ( this->gptr() == _ebuf ) { // I should read something, if other side write
-      return -1;             // otherwise I can't write without pipe broken
-    }
-    long offset = (this->*_xread)( this->egptr(), sizeof(char_type) * (_ebuf - this->egptr()) );
-    if ( offset < 0 ) // allow message of zero length
-      return -1;
-    offset /= sizeof(charT);
-    setg( this->eback(), this->gptr(), this->egptr() + offset );
-  }
-
-  return 0;
-}
-#endif // 0
-
-#if defined(__HP_aCC) && (__HP_aCC == 1)
-  union basic_sockbuf_sockaddr {
-      sockaddr_in inet;
-      sockaddr    any;
-  };
-#endif
-
 template<class charT, class traits, class _Alloc>
 int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
 {
@@ -659,20 +542,9 @@ int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
   socklen_t sz = sizeof( sockaddr_in );
 #endif
 
-#if defined(__HP_aCC) && (__HP_aCC == 1)
-  basic_sockbuf_sockaddr addr;
-#else
-  union {
-      sockaddr_in inet;
-      sockaddr    any;
-  } addr;
-#endif
+  sockaddr_t addr;
+
 #ifdef __FIT_POLL
-  timespec t;
-
-  t.tv_sec = 0;
-  t.tv_nsec = 10000;
-
   pollfd pfd;
   pfd.fd = _fd;
   pfd.events = POLLIN;
@@ -704,23 +576,14 @@ int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
       return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
     }
 #endif // __FIT_POLL
-    if ( port() == addr.inet.sin_port && inet_addr() == addr.inet.sin_addr.s_addr ) {
-//    if ( memcmp( (void *)&_address.any, (const void *)&addr, sizeof(sockaddr) ) == 0 ) {
+    if ( memcmp( &_address.inet, &addr.inet, sizeof(sockaddr_in) ) == 0 ) {
 #ifdef WIN32
       return ::recvfrom( _fd, (char *)buf, n, 0, &_address.any, &sz );
 #else
       return ::recvfrom( _fd, buf, n, 0, &_address.any, &sz );
 #endif
     }
-#ifdef __unix
-//    cerr << "Sleeping in sockstream: "
-//         << port() << "/" << addr.inet.sin_port << ", "
-//         << inet_addr() << "/" << addr.inet.sin_addr.s_addr << endl;
-    nanosleep( &t, 0 );
-#endif
-#ifdef WIN32
-    Sleep( t );
-#endif
+    xmt::Thread::yield();
   } while ( true );
 
   return 0; // never
