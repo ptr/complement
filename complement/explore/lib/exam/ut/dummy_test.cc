@@ -1,3 +1,12 @@
+// -*- C++ -*- Time-stamp: <07/09/01 09:10:32 ptr>
+
+/*
+ * Copyright (c) 2007
+ * Petr Ovtchenkov
+ *
+ * Licensed under the Academic Free License Version 3.0
+ */
+
 #include <exam/suite.h>
 
 int EXAM_IMPL(func)

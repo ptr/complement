@@ -1,4 +1,11 @@
-// -*- C++ -*- Time-stamp: <07/07/21 09:13:17 ptr>
+// -*- C++ -*- Time-stamp: <07/09/01 09:09:43 ptr>
+
+/*
+ * Copyright (c) 2007
+ * Petr Ovtchenkov
+ *
+ * Licensed under the Academic Free License Version 3.0
+ */
 
 #include <exam/suite.h>
 #include <stack>
