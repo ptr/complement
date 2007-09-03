@@ -48,11 +48,14 @@ int EXAM_IMPL(exam_basic_test::function)
 
   t.girdle();
 
-  EXAM_REQUIRE( buff.str() == r1 );
-
   // std::cerr << "%%%\n";
   // std::cerr << buff.str() << std::endl;
   // std::cerr << "%%%\n";
+  // std::cerr << "^^^\n";
+  // std::cerr << r1 << std::endl;
+  // std::cerr << "^^^\n";
+
+  EXAM_REQUIRE( buff.str() == r1 );
 
   return EXAM_RESULT;
 }
@@ -244,21 +247,21 @@ const std::string exam_basic_test::r0 = "\
 *** PASS exam self test, good function (+2-0~0/2) ***\n";
 
 const std::string exam_basic_test::r1 = "\
-dummy_test.cc:5: fail: false\n\
+dummy_test.cc:14: fail: false\n\
   FAIL function\n\
-dummy_test.cc:16: fail: false\n\
+dummy_test.cc:25: fail: false\n\
   FAIL member function\n\
 *** FAIL exam self test, fail function (+0-2~0/2) ***\n";
 
 const std::string exam_basic_test::r2 = "\
-dummy_test.cc:16: fail: false\n\
+dummy_test.cc:25: fail: false\n\
   FAIL member function fail\n\
   SKIP function fail\n\
 *** FAIL exam self test, fail function (+2-1~1/4) ***\n";
 
 const std::string exam_basic_test::r3 = "\
 == Begin test suite\n\
-dummy_test.cc:16: fail: false\n\
+dummy_test.cc:25: fail: false\n\
   FAIL member function fail\n\
   SKIP function fail\n\
 ==  End test suite\n\
@@ -268,18 +271,18 @@ const std::string exam_basic_test::r4 = "\
 *** FAIL exam self test, fail function (+2-1~1/4) ***\n";
 
 const std::string exam_basic_test::r5 = "\
-dummy_test.cc:24: pass: true\n\
-dummy_test.cc:25: pass: true\n\
-dummy_test.cc:16: fail: false\n\
-dummy_test.cc:17: pass: true\n\
-  FAIL member function fail\n\
 dummy_test.cc:33: pass: true\n\
+dummy_test.cc:34: pass: true\n\
+dummy_test.cc:25: fail: false\n\
+dummy_test.cc:26: pass: true\n\
+  FAIL member function fail\n\
+dummy_test.cc:42: pass: true\n\
   SKIP function fail\n\
 *** FAIL exam self test, fail function (+2-1~1/4) ***\n";
 
 const std::string exam_basic_test::r6 = "\
   PASS member function good\n\
-dummy_test.cc:16: fail: false\n\
+dummy_test.cc:25: fail: false\n\
   FAIL member function fail\n\
   PASS function good\n\
   SKIP function fail\n\
@@ -287,7 +290,7 @@ dummy_test.cc:16: fail: false\n\
 
 const std::string exam_basic_test::r7 = "\
 *** PASS exam self test, test suite master (+2-0~0/2) ***\n\
-dummy_test.cc:16: fail: false\n\
+dummy_test.cc:25: fail: false\n\
   FAIL member function fail\n\
   SKIP function fail\n\
 *** FAIL exam self test, test suite slave (+2-1~1/4) ***\n\
@@ -295,16 +298,16 @@ dummy_test.cc:16: fail: false\n\
 *** FAIL exam self test, test suites dependency (+1-1~0/2) ***\n";
 
 const std::string exam_basic_test::r8 = "\
-dummy_test.cc:5: fail: false\n\
+dummy_test.cc:14: fail: false\n\
   FAIL function fail\n\
-dummy_test.cc:16: fail: false\n\
+dummy_test.cc:25: fail: false\n\
   FAIL member function fail\n\
 *** FAIL exam self test, fail function (+3-2~0/5) ***\n";
 
 const std::string exam_basic_test::r9 = "\
-dummy_test.cc:5: fail: false\n\
+dummy_test.cc:14: fail: false\n\
   FAIL function fail\n\
-dummy_test.cc:16: fail: false\n\
+dummy_test.cc:25: fail: false\n\
   FAIL member function fail\n\
   SKIP function 3 good\n\
 *** FAIL exam self test, fail function (+3-2~1/6) ***\n";
