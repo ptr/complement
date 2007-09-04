@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/09/01 09:07:43 ptr>
+// -*- C++ -*- Time-stamp: <07/09/04 11:08:48 ptr>
 
 /*
  * Copyright (c) 2007
@@ -168,8 +168,8 @@ class test_suite
     typedef int (*func_type)( test_suite *, int );
     typedef vertex_t test_case_type;
 
-    test_suite( const std::string& name );
-    test_suite( const char *name );
+    test_suite( const std::string& name, unsigned n = 1 );
+    test_suite( const char *name, unsigned n = 1 );
     ~test_suite();
 
     test_case_type add( func_type, const std::string& name );
@@ -227,8 +227,9 @@ class test_suite
     test_case_map_type _test;
     base_logger::stat _stat;
     std::string _suite_name;
+    unsigned _iterations;
 
-    void run_test_case( vertex_t v );
+    void run_test_case( vertex_t v, unsigned n = 1 );
     static bool vertices_compare( weight_t, weight_t );
 
     static int _root_func( test_suite *, int = 0 );

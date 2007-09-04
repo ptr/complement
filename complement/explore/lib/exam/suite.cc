@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/09/01 09:09:43 ptr>
+// -*- C++ -*- Time-stamp: <07/09/04 11:10:58 ptr>
 
 /*
  * Copyright (c) 2007
@@ -29,11 +29,12 @@ int EXAM_IMPL(test_suite::_root_func)
   return -1;
 }
 
-test_suite::test_suite( const string& name ) :
+test_suite::test_suite( const string& name, unsigned n ) :
     _count(0),
     _last_state( 0 ),
     _suite_name( name ),
-    local_logger( logger )
+    local_logger( logger ),
+    _iterations( n )
 {
   _vertices.push_back( std::make_pair( 0, 0 ) );
   _test[0].tc = detail::make_test_case( detail::call( _root_func ) );
@@ -43,11 +44,12 @@ test_suite::test_suite( const string& name ) :
   _stack.push( this );
 }
 
-test_suite::test_suite( const char *name ) :
+test_suite::test_suite( const char *name, unsigned n ) :
     _count(0),
     _last_state( 0 ),
     _suite_name( name ),
-    local_logger( logger )
+    local_logger( logger ),
+    _iterations( n )
 {
   _vertices.push_back( std::make_pair( 0, 0 ) );
   _test[0].tc = detail::make_test_case( detail::call( _root_func ) );
@@ -97,7 +99,7 @@ int test_suite::girdle( test_suite::test_case_type start )
         _test[j->second].state = skip;
       }
     }
-    run_test_case( i->first );
+    run_test_case( i->first, _iterations );
   }
   
   local_logger->end_ts();
@@ -203,12 +205,22 @@ void test_suite::report_async( const char *file, int line, bool cnd, const char 
   _stack.top()->report( file, line, cnd, expr );
 }
 
-void test_suite::run_test_case( test_suite::vertex_t v )
+void test_suite::run_test_case( test_suite::vertex_t v, unsigned n )
 {
   try {
     ++_stat.total;
     if ( _test[v].state == 0 ) {
-      if ( (*_test[v].tc)( this, 0 ) == 0 ) {
+      int res = 0;
+      while ( (res == 0) && (n-- > 0) ) {
+        _lock_ll.lock();
+        local_logger->tc_pre();
+        _lock_ll.unlock();
+        res = (*_test[v].tc)( this, 0 );
+        _lock_ll.lock();
+        local_logger->tc_post();
+        _lock_ll.unlock();
+      }
+      if ( res == 0 ) {
         if ( _last_state == 0 ) {
           ++_stat.passed;
           scoped_lock lk( _lock_ll );
@@ -234,12 +246,16 @@ void test_suite::run_test_case( test_suite::vertex_t v )
     }
   }
   catch ( init_exception& ) {
+    _lock_ll.lock();
+    local_logger->tc_break();
+    _lock_ll.unlock();
     --_stat.total;
   }
   catch ( ... ) {
     ++_stat.failed;
     _test[v].state = fail;
     scoped_lock lk( _lock_ll );
+    local_logger->tc_break();
     local_logger->tc( base_logger::fail, _test[v].name );
   }
 }
