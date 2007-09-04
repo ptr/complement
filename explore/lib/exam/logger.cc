@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/09/01 09:09:27 ptr>
+// -*- C++ -*- Time-stamp: <07/09/04 10:47:22 ptr>
 
 /*
  * Copyright (c) 2007
@@ -113,6 +113,53 @@ void trivial_logger::tc( base_logger::tc_result r, const std::string& name )
   } else {
     fprintf( f, "%s%s\n", rs, name.c_str() );
   }
+}
+
+void trivial_time_logger::tc_pre()
+{
+  tst.push_back( xmt::timespec( xmt::timespec::now ) );
+}
+
+void trivial_time_logger::tc_post()
+{
+  tst.back() = xmt::timespec( xmt::timespec::now ) - tst.back();
+}
+
+void trivial_time_logger::tc_break()
+{
+  tst.pop_back();
+}
+
+void trivial_time_logger::tc( base_logger::tc_result r, const std::string& name )
+{
+  if ( r == pass ) {
+    // here tst.size() > 0, if test case not throw excepion 
+    time_container_t::const_iterator a = tst.begin();
+    if ( a != tst.end() ) {
+      unsigned n = 1;
+      double sum(*a);
+      double sum_sq = sum * sum;
+      ++a;
+      for ( ; a != tst.end(); ++a ) {
+        double v(*a);
+        sum += v;
+        sum_sq += v * v;
+        // mean = ((n + 1) * mean + static_cast<double>(*a)) / (n + 2);
+        ++n;
+      }
+      sum_sq -= sum * sum / n;
+      sum_sq = max( 0.0, sum_sq ); // clear epsilon (round error)
+      sum_sq /= n * n; // dispersion
+      sum /= n;        // mean
+      if ( s != 0 ) {
+        *s << "  " << sum << " " << sum_sq << " " << name << endl;
+      } else {
+        fprintf( f, "  %f %f %s\n", sum, sum_sq, name.c_str() );
+      }
+    }
+  }
+  tst.clear();
+  trivial_logger::tc( r, name );
 }
 
 } //namespace exam

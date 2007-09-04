@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/09/01 09:10:55 ptr>
+// -*- C++ -*- Time-stamp: <07/09/04 11:11:41 ptr>
 
 /*
  * Copyright (c) 2007
@@ -8,6 +8,7 @@
  */
 
 #include "exam_test_suite.h"
+#include <iostream>
 
 #include "dummy_test.cc"
 
@@ -243,6 +244,40 @@ int EXAM_IMPL(exam_basic_test::multiple_dep_complex)
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(exam_basic_test::perf)
+{
+  buff.str( "" );
+  buff.clear();
+  
+  exam::test_suite t( "exam self test, time profile", 20 );
+  t.set_logger( &tlogger );
+
+  t.add( loop, "timer" );
+
+  t.girdle();
+
+  double mean = -1.0;
+  double disp = -1.0;
+  std::string nm;
+
+  buff >> mean >> disp; // >> nm;
+
+  EXAM_CHECK( mean >= 0.0 );
+  EXAM_CHECK( disp >= 0.0 );
+
+  std::getline( buff, nm );
+
+  EXAM_CHECK( nm == " timer" );
+
+  std::getline( buff, nm );
+
+  EXAM_CHECK( nm == "*** PASS exam self test, time profile (+1-0~0/1) ***" );
+  
+  // std::cerr << buff.str() << std::endl; 
+
+  return EXAM_RESULT;
+}
+
 const std::string exam_basic_test::r0 = "\
 *** PASS exam self test, good function (+2-0~0/2) ***\n";
 
@@ -324,6 +359,8 @@ int EXAM_IMPL(exam_self_test)
   t.add( &exam_basic_test::dep_test_suite, exam_basic, "test suites grouping", d );
   exam::test_suite::test_case_type d2 = t.add( &exam_basic_test::multiple_dep, exam_basic, "multiple dependencies", d );
   t.add( &exam_basic_test::multiple_dep_complex, exam_basic, "complex multiple dependencies", d2 );
+
+  t.add( &exam_basic_test::perf, exam_basic, "performance timer test", d0 );
 
   return t.girdle();
 }

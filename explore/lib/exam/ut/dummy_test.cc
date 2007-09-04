@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/09/01 09:10:32 ptr>
+// -*- C++ -*- Time-stamp: <07/09/03 22:22:09 ptr>
 
 /*
  * Copyright (c) 2007
@@ -57,3 +57,14 @@ int EXAM_IMPL(func_good3)
 
   return EXAM_RESULT;
 }
+
+int EXAM_IMPL(loop)
+{
+  int j = 0;
+  for ( int i = 0; i < 100000; ++i ) {
+    j += 2;
+  }
+
+  return EXAM_RESULT;
+}
+
