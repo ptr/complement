@@ -1,3 +1,18 @@
+2007-09-04  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* logger.h, logger.cc: added trivial_time_logger for performance
+	measure; added methods tc_pre, tc_post and tc_break for run before
+	test case, after test case, or after exception within test case;
+
+	* suite.h, suite.cc: add iterations number for each test-case;
+	this test suite -wide parameter, because mainly intended for
+	performance measure [statistic] and not useful for problem
+	detection and tracking;
+	
+	* ut/exam_test_suite.cc, ut/dummy_test.cc: test;
+
+	* libexam: version 0.3.0.
+
 2007-08-03  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* suite.h: remove private keyword for dummy, to make gcc 3.3.6 happy.

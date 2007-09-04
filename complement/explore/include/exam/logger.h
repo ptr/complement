@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/09/01 09:08:25 ptr>
+// -*- C++ -*- Time-stamp: <07/09/04 10:38:27 ptr>
 
 /*
  * Copyright (c) 2007
@@ -13,6 +13,8 @@
 #include <string>
 #include <cstdio>
 #include <ostream>
+#include <mt/time.h>
+#include <list>
 
 namespace exam {
 
@@ -64,6 +66,9 @@ class base_logger
     virtual void begin_ts() = 0;
     virtual void end_ts() = 0;
     virtual void result( const base_logger::stat&, const std::string& suite_name ) = 0;
+    virtual void tc_pre() = 0;
+    virtual void tc_post() = 0;
+    virtual void tc_break() = 0;
     virtual void tc( tc_result, const std::string& ) = 0;
 
   protected:
@@ -89,11 +94,39 @@ class trivial_logger :
     virtual void begin_ts();
     virtual void end_ts();
     virtual void result( const base_logger::stat&, const std::string& );
+    virtual void tc_pre()
+      { }
+    virtual void tc_post()
+      { }
+    virtual void tc_break()
+      { }
+    virtual void tc( base_logger::tc_result, const std::string& );
+
+  protected:
+    std::ostream *s;
+    FILE *f;
+};
+
+class trivial_time_logger :
+    public trivial_logger
+{
+  public:
+    explicit trivial_time_logger( std::ostream& str ) :
+         trivial_logger( str )
+      { }
+
+    explicit trivial_time_logger( FILE *fs ) :
+         trivial_logger( fs )
+      { }
+
+    virtual void tc_pre();
+    virtual void tc_post();
+    virtual void tc_break();
     virtual void tc( base_logger::tc_result, const std::string& );
 
   private:
-    std::ostream *s;
-    FILE *f;
+    typedef std::list<xmt::timespec> time_container_t;
+    time_container_t tst;
 };
 
 } // namespace exam
