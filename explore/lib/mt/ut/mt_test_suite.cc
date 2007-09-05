@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/17 10:20:08 ptr>
+// -*- C++ -*- Time-stamp: <07/09/05 00:29:06 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -61,29 +61,6 @@ int EXAM_IMPL(mt_test_suite)
                        t.add( &shm_test::shm_alloc, shmtest, "mt_test::shm_alloc",
                               t.add( &shm_test::shm_segment, shmtest, "mt_test::shm_segment" ) ) ) )
  );
-
-  // add( barrier_tc, 0, 2 );
-  // add( join_tc );
-  // add( barrier2_tc, 0, 3 );
-  // add( yield_tc, 0, 3 );
-  // add( mutex_test_tc, 0, 3 );
-#ifdef __FIT_PTHREAD_SPINLOCK
-  // add( spinlock_test_tc, 0, 3 );
-#endif
-  // add( recursive_mutex_test_tc, 0, 3 );
-
-  // add( fork_tc );
-  // add( pid_tc );
-  // add( shm_segment_tc );
-  // add( shm_alloc_tc );
-  // add( fork_shm_tc, 0, 5 );
-  // add( shm_nm_obj_tc, 0, 5 );
-
-  // add( thr_mgr_tc );
-
-  // add( shm_init_tc );
-  // add( shm_nm_obj_more_tc );
-  // add( shm_finit_tc );
 
   return t.girdle();
 };

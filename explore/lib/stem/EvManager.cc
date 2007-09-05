@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/17 22:22:13 ptr>
+// -*- C++ -*- Time-stamp: <07/09/05 01:04:58 ptr>
 
 /*
  *
@@ -75,11 +75,9 @@ bool EvManager::not_finished()
   return !_dispatch_stop;
 }
 
-xmt::Thread::ret_code EvManager::_Dispatch( void *p )
+xmt::Thread::ret_t EvManager::_Dispatch( void *p )
 {
   EvManager& me = *reinterpret_cast<EvManager *>(p);
-  xmt::Thread::ret_code rt;
-  rt.iword = 0;
   xmt::mutex& lq = me._lock_queue;
   queue_type& in_ev_queue = me.in_ev_queue;
   queue_type& out_ev_queue = me.out_ev_queue;
@@ -102,7 +100,7 @@ xmt::Thread::ret_code EvManager::_Dispatch( void *p )
     }
   }
 
-  return rt;
+  return 0;
 }
 
 __FIT_DECLSPEC

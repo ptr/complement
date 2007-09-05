@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/03/12 17:25:23 ptr>
+// -*- C++ -*- Time-stamp: <07/09/05 01:06:19 ptr>
 
 /*
  *
@@ -437,12 +437,10 @@ void NetTransportMgr::close()
   join();
 }
 
-xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
+xmt::Thread::ret_t NetTransportMgr::_loop( void *p )
 {
   NetTransportMgr& me = *reinterpret_cast<NetTransportMgr *>(p);
   Event ev;
-  xmt::Thread::ret_code rt;
-  rt.iword = 0;
   gaddr_type dst;
   gaddr_type src;
 
@@ -501,10 +499,10 @@ xmt::Thread::ret_code NetTransportMgr::_loop( void *p )
   catch ( ... ) {
     me.NetTransport_base::close();
     // throw;
-    rt.iword = -1;
+    return reinterpret_cast<xmt::Thread::ret_t>(-1);
   }
 
-  return rt;
+  return 0;
 }
 
 __FIT_DECLSPEC

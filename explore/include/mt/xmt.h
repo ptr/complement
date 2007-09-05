@@ -1377,13 +1377,14 @@ __FIT_DECLSPEC int signal_handler( int sig, siginfo_handler_type );
 class Thread
 {
   public:
-    union ret_code
-    {
-        void *pword;
-        long  iword;
-    };
+#ifdef _PTHREADS
+    typedef void * ret_t;
+#endif
+#ifdef __FIT_WIN32THREADS
+    typedef long ret_t;
+#endif
 
-    typedef ret_code (*entrance_type)( void * );
+    typedef ret_t (*entrance_type)( void * );
 #ifdef __FIT_WIN32THREADS
     typedef unsigned long thread_key_type;
     typedef HANDLE thread_id_type;
@@ -1444,7 +1445,7 @@ class Thread
     __FIT_DECLSPEC
     void launch( entrance_type entrance, const void *p = 0, size_t psz = 0, size_t stack_sz = 0 );
 
-    __FIT_DECLSPEC ret_code join();
+    __FIT_DECLSPEC ret_t join();
     __FIT_DECLSPEC int suspend();
     __FIT_DECLSPEC int resume();
     __FIT_DECLSPEC int kill( int sig );

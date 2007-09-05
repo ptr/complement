@@ -1,3 +1,17 @@
+2007-09-05  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xmt.h, xmt.cc: looks like non-POD return from thread is unstable,
+	and should be avoided; replace union rec_code by void * or long,
+	depends upon operation environment;
+
+	* ut/signal-1.cc, ut/signal-2.cc, ut/signal-3.cc: ditto;
+
+	* ut/flck.cc, ut/mt_test.cc, ut/mt_test.h: ditto;
+
+	* ut/lfs.cc, ut/mt_test_suite.cc: ditto;
+
+	* libxmt: version 1.12.0
+
 2007-08-27  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* shm.h: use namespace std for max.

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/16 21:33:58 ptr>
+// -*- C++ -*- Time-stamp: <07/09/05 00:01:28 ptr>
 
 /*
  * Copyright (c) 2004, 2006, 2007
@@ -31,11 +31,8 @@ static mutex b;
 static int cnt = 0;
 static condition cnd;
 
-static Thread::ret_code thread_func( void * )
+static Thread::ret_t thread_func( void * )
 {
-  Thread::ret_code rt;
-  rt.iword = 0;
-
   try {
     for ( int count = 0; count < 10; ++count ) {
       olfstream s( fname, ios_base::out | ios_base::app );
@@ -75,17 +72,14 @@ static Thread::ret_code thread_func( void * )
   }
   catch ( ... ) {
     BOOST_REQUIRE( false );
-    rt.iword = -1;
+    return reinterpret_cast<Thread::ret_t>(-1);
   }
 
-  return rt;
+  return 0;
 }
 
-static Thread::ret_code thread_func_r( void * )
+static Thread::ret_t thread_func_r( void * )
 {
-  Thread::ret_code rt;
-  rt.iword = 0;
-
   try {
     string buf;
     int ln = 0;
@@ -141,17 +135,14 @@ static Thread::ret_code thread_func_r( void * )
     b.lock();
     BOOST_REQUIRE( false );
     b.unlock();
-    rt.iword = -1;
+    return reinterpret_cast<Thread::ret_t>(-1);
   }
 
-  return rt;
+  return 0;
 }
 
-static Thread::ret_code thread_func_manip( void * )
+static Thread::ret_t thread_func_manip( void * )
 {
-  Thread::ret_code rt;
-  rt.iword = 0;
-
   for ( int count = 0; count < 10; ++count ) {
     olfstream s( fname, ios_base::out | ios_base::app );
 
@@ -183,14 +174,11 @@ static Thread::ret_code thread_func_manip( void * )
     s.close();
   }
 
-  return rt;
+  return 0;
 }
 
-static Thread::ret_code thread_func_manip_r( void * )
+static Thread::ret_t thread_func_manip_r( void * )
 {
-  Thread::ret_code rt;
-  rt.iword = 0;
-
   string buf;
 
   cnd.try_wait();
@@ -232,7 +220,7 @@ static Thread::ret_code thread_func_manip_r( void * )
     s.close();
   }
 
-  return rt;
+  return 0;
 }
 
 int EXAM_IMPL(lfs_test)
