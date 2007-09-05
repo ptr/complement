@@ -397,28 +397,26 @@ void Thread::launch( entrance_type entrance, const void *p, size_t psz, size_t s
 }
 
 __FIT_DECLSPEC
-Thread::ret_code Thread::join()
+Thread::ret_t Thread::join()
 {
-  ret_code rt;
+  ret_t rt = 0;
 
 #ifdef __FIT_WIN32THREADS
-  rt.iword = 0;
   if ( !_not_run() ) {
     WaitForSingleObject( _id, -1 );
-    GetExitCodeThread( _id, &rt.iword );
+    GetExitCodeThread( _id, &rt );
     CloseHandle( _id );
     // Locker lk( _llock );
     _id = bad_thread_id;
   }
 #endif // __FIT_WIN32THREADS
 #if defined(__FIT_UITHREADS) || defined(_PTHREADS)
-  rt.pword = 0;
   if ( is_join_req() ) {
 #  ifdef _PTHREADS
-    pthread_join( _rip_id, &rt.pword );
+    pthread_join( _rip_id, &rt );
 #  endif
 #  ifdef __FIT_UITHREADS
-    thr_join( _rip_id, 0, &rt.pword );
+    thr_join( _rip_id, 0, &rt );
 #  endif
     // Locker lk( _llock );
     _rip_id = bad_thread_id;
@@ -509,14 +507,10 @@ __FIT_DECLSPEC
 void Thread::_exit( int code )
 {
 #ifdef _PTHREADS
-  ret_code v;
-  v.iword = code;
-  pthread_exit( v.pword );
+  pthread_exit( reinterpret_cast<ret_t>(code) );
 #endif
 #ifdef __FIT_UITHREADS
-  ret_code v;
-  v.iword = code;
-  thr_exit( v.pword );
+  thr_exit( reinterpret_cast<ret_t>(code) );
 #endif
 #ifdef __FIT_WIN32THREADS
   ExitThread( code );
@@ -786,7 +780,7 @@ void *Thread::_call( void *p )
   // of me->_entrance!!!
   void *_param     = me->_param;
   size_t _param_sz = me->_param_sz;
-  ret_code ret;
+  ret_t ret = 0;
 
 //#ifdef _PTHREADS
 //#  ifndef __hpux
@@ -846,7 +840,7 @@ void *Thread::_call( void *p )
 #ifndef _WIN32
     cerr << e.what() << endl;
 #endif
-    ret.iword = -1;
+    ret = reinterpret_cast<ret_t>(-1);
   }
   catch ( int sig ) {
     if ( (me->_flags & (daemon | detached)) != 0 ) { // otherwise join expected
@@ -866,7 +860,7 @@ void *Thread::_call( void *p )
 #ifndef _WIN32
     cerr << "\n--- Thread: signal " << sig /* (_sig_ ? _sig_ : "unknown") */ << " detected ---" << endl;
 #endif
-    ret.iword = sig;
+    ret = reinterpret_cast<ret_t>(sig);
   }
   catch ( ... ) {
     if ( (me->_flags & (daemon | detached)) != 0 ) { // otherwise join expected
@@ -884,7 +878,7 @@ void *Thread::_call( void *p )
 #ifndef _WIN32
     cerr << "\n--- Thread: unknown exception occur ---" << endl;
 #endif
-    ret.iword = -1;
+    ret = reinterpret_cast<ret_t>(-1);
   }
 
   try {
@@ -895,14 +889,14 @@ void *Thread::_call( void *p )
     }
   }
   catch ( ... ) {
-    ret.iword = -1;
+    ret = reinterpret_cast<ret_t>(-1);
   }
 
 #if defined( __SUNPRO_CC ) && defined( __i386 )
-  Thread::_exit( ret.iword );
+  Thread::_exit( ret );
 #endif
 
-  return ret.pword;
+  return ret;
 }
 #ifdef _WIN32
 #pragma warning( default : 4101 )

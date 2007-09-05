@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/17 09:50:35 ptr>
+// -*- C++ -*- Time-stamp: <07/09/05 00:05:31 ptr>
 
 /*
  * Copyright (c) 2003, 2006, 2007
@@ -28,8 +28,8 @@ using namespace xmt;
  *
  */
 
-static Thread::ret_code thread_one( void * );
-static Thread::ret_code thread_two( void * );
+static Thread::ret_t thread_one( void * );
+static Thread::ret_t thread_two( void * );
 
 static Thread *th_one = 0;
 static Thread *th_two = 0;
@@ -59,7 +59,7 @@ extern "C" {
   }
 }
 
-Thread::ret_code thread_one( void * )
+Thread::ret_t thread_one( void * )
 {
   EXAM_CHECK_ASYNC( v == 1 );
 
@@ -67,13 +67,10 @@ Thread::ret_code thread_one( void * )
 
   th_two->kill( SIGINT ); // send signal SIGINT to self
 
-  Thread::ret_code rt;
-  rt.iword = 0;
-
-  return rt;
+  return 0;
 }
 
-Thread::ret_code thread_two( void * )
+Thread::ret_t thread_two( void * )
 {
   xmt::signal_handler( SIGINT, handler );
   xmt::block_signal( SIGINT ); // block signal
@@ -90,10 +87,7 @@ Thread::ret_code thread_two( void * )
 
   EXAM_CHECK_ASYNC( v == 4 );
 
-  Thread::ret_code rt;
-  rt.iword = 0;
-
-  return rt;
+  return 0;
 }
 
 int EXAM_IMPL(signal_3_test)

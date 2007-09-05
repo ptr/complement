@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/16 21:34:09 ptr>
+// -*- C++ -*- Time-stamp: <07/09/05 00:00:06 ptr>
 
 /*
  * Copyright (c) 2004, 2006, 2007
@@ -30,11 +30,8 @@ static mutex m;
 static mutex b;
 static int cnt = 0;
 
-static Thread::ret_code thread_func( void * )
+static Thread::ret_t thread_func( void * )
 {
-  Thread::ret_code rt;
-  rt.iword = 0;
-
   try {
     for ( int count = 0; count < 10; ++count ) {
       int fd = open( fname, O_RDWR | O_CREAT | O_APPEND, 00666 );
@@ -83,17 +80,14 @@ static Thread::ret_code thread_func( void * )
     b.lock();
     BOOST_MESSAGE( "* The error returned: " << check << ", errno " << errno );
     b.unlock();
-    rt.iword = -1;
+    return reinterpret_cast<Thread::ret_t>(-1);
   }
 
-  return rt;
+  return 0;
 }
 
-static Thread::ret_code thread_func_r( void * )
+static Thread::ret_t thread_func_r( void * )
 {
-  Thread::ret_code rt;
-  rt.iword = 0;
-
   char buf[64];
   // buf[14] = 0;
   int ln = 0;
@@ -200,10 +194,10 @@ static Thread::ret_code thread_func_r( void * )
     b.lock();
     BOOST_MESSAGE( "* The error returned: " << check << ", errno " << errno << ' ' << buf );
     b.unlock();
-    rt.iword = -1;
+    return reinterpret_cast<Thread::ret_t>(-1);
   }
 
-  return rt;
+  return 0;
 }
 
 int EXAM_IMPL(flock_test)

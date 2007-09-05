@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/06 10:03:33 ptr>
+// -*- C++ -*- Time-stamp: <07/09/05 00:31:04 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -46,14 +46,11 @@ int EXAM_IMPL(mt_test::barrier)
 
 static int x = 0;
 
-xmt::Thread::ret_code thread_entry_call( void * )
+xmt::Thread::ret_t thread_entry_call( void * )
 {
   x = 1;
 
-  xmt::Thread::ret_code rt;
-  rt.iword = 2;
-
-  return rt;
+  return reinterpret_cast<xmt::Thread::ret_t>(2);
 }
 
 int EXAM_IMPL(mt_test::join_test)
@@ -62,7 +59,7 @@ int EXAM_IMPL(mt_test::join_test)
 
   xmt::Thread t( thread_entry_call );
 
-  EXAM_CHECK( t.join().iword == 2 );
+  EXAM_CHECK( reinterpret_cast<int>(t.join()) == 2 );
 
   EXAM_CHECK( x == 1 );
 
@@ -73,15 +70,12 @@ int EXAM_IMPL(mt_test::join_test)
  * Start two threads, align ones on barrier, join.
  */
 
-xmt::Thread::ret_code thread2_entry_call( void *p )
+xmt::Thread::ret_t thread2_entry_call( void *p )
 {
-  xmt::Thread::ret_code rt;
-  rt.iword = 1;
-
   xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
 
-  return rt;
+  return reinterpret_cast<xmt::Thread::ret_t>(1);
 }
 
 int EXAM_IMPL(mt_test::barrier2)
@@ -91,8 +85,9 @@ int EXAM_IMPL(mt_test::barrier2)
   xmt::Thread t1( thread2_entry_call, &b );
   xmt::Thread t2( thread2_entry_call, &b );
 
-  EXAM_CHECK( t2.join().iword == 1 );
-  EXAM_CHECK( t1.join().iword == 1 );
+  EXAM_CHECK( reinterpret_cast<int>(t2.join()) == 1 );
+  // std::cerr << t2.join() << std::endl;
+  EXAM_CHECK( reinterpret_cast<int>(t1.join()) == 1 );
 
   return EXAM_RESULT;
 }
@@ -102,16 +97,13 @@ int EXAM_IMPL(mt_test::barrier2)
  * relinquish control to other; join (within Thread dtors)
  */
 
-xmt::Thread::ret_code thread3_entry_call( void *p )
+xmt::Thread::ret_t thread3_entry_call( void *p )
 {
-  xmt::Thread::ret_code rt;
-  rt.iword = 0;
-
   xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
   EXAM_CHECK_ASYNC( xmt::Thread::yield() == 0 );
 
-  return rt;
+  return 0;
 }
 
 int EXAM_IMPL(mt_test::yield)
@@ -139,7 +131,7 @@ int EXAM_IMPL(mt_test::yield)
 
 static xmt::mutex m1;
 
-xmt::Thread::ret_code thr1( void *p )
+xmt::Thread::ret_t thr1( void *p )
 {
   xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
@@ -154,13 +146,10 @@ xmt::Thread::ret_code thr1( void *p )
 
   m1.unlock();
 
-  xmt::Thread::ret_code rt;
-  rt.iword = 0;
-
-  return rt;
+  return 0;
 }
 
-xmt::Thread::ret_code thr2( void *p )
+xmt::Thread::ret_t thr2( void *p )
 {
   xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
@@ -173,10 +162,7 @@ xmt::Thread::ret_code thr2( void *p )
   x = 2;
   m1.unlock();
 
-  xmt::Thread::ret_code rt;
-  rt.iword = 0;
-
-  return rt;
+  return 0;
 }
 
 int EXAM_IMPL(mt_test::mutex_test)
@@ -208,7 +194,7 @@ int EXAM_IMPL(mt_test::mutex_test)
 #ifdef __FIT_PTHREAD_SPINLOCK
 static xmt::spinlock sl1;
 
-xmt::Thread::ret_code thr1s( void *p )
+xmt::Thread::ret_t thr1s( void *p )
 {
   xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
@@ -223,13 +209,10 @@ xmt::Thread::ret_code thr1s( void *p )
 
   sl1.unlock();
 
-  xmt::Thread::ret_code rt;
-  rt.iword = 0;
-
-  return rt;
+  return 0;
 }
 
-xmt::Thread::ret_code thr2s( void *p )
+xmt::Thread::ret_t thr2s( void *p )
 {
   xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
@@ -242,10 +225,7 @@ xmt::Thread::ret_code thr2s( void *p )
   x = 2;
   sl1.unlock();
 
-  xmt::Thread::ret_code rt;
-  rt.iword = 0;
-
-  return rt;
+  return 0;
 }
 
 #endif
@@ -309,7 +289,7 @@ void recursive()
   m2.unlock();
 }
 
-xmt::Thread::ret_code thr1r( void *p )
+xmt::Thread::ret_t thr1r( void *p )
 {
   xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
@@ -326,14 +306,10 @@ xmt::Thread::ret_code thr1r( void *p )
 
   m2.unlock();
 
-  xmt::Thread::ret_code rt;
-
-  rt.iword = 0;
-
-  return rt;
+  return 0;
 }
 
-xmt::Thread::ret_code thr2r( void *p )
+xmt::Thread::ret_t thr2r( void *p )
 {
   xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
@@ -351,11 +327,7 @@ xmt::Thread::ret_code thr2r( void *p )
 
   m2.unlock();
 
-  xmt::Thread::ret_code rt;
-
-  rt.iword = 0;
-
-  return rt;
+  return 0;
 }
 
 int EXAM_IMPL(mt_test::recursive_mutex_test)
@@ -926,21 +898,18 @@ static int my_thr_cnt = 0;
 static int my_thr_scnt = 0;
 static xmt::mutex lock;
 
-xmt::Thread::ret_code thread_mgr_entry_call( void * )
+xmt::Thread::ret_t thread_mgr_entry_call( void * )
 {
   lock.lock();
   ++my_thr_cnt;
   ++my_thr_scnt;
   lock.unlock();
 
-  xmt::Thread::ret_code rt;
-  rt.iword = 0;
-
   lock.lock();
   --my_thr_cnt;
   lock.unlock();
 
-  return rt;
+  return 0;
 }
 
 int EXAM_IMPL(mt_test::thr_mgr)

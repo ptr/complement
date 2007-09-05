@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/16 21:01:43 ptr>
+// -*- C++ -*- Time-stamp: <07/09/05 00:02:19 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -32,7 +32,7 @@ class mt_test
     int EXAM_DECL(thr_mgr);
 
   private:
-    // static xmt::Thread::ret_code thread_entry_call( void * );
+    // static xmt::Thread::ret_t thread_entry_call( void * );
     // static int x;
 };
 

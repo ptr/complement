@@ -1,3 +1,11 @@
+2007-09-05  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: looks like non-POD return from thread is
+	unstable, and should be avoided; replace union rec_code by void *
+	or long, depends upon operation environment;
+
+	* ut/ConnectionProcessor.cc, ut/sockios_test.cc: ditto.
+
 2007-09-01  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* sockstream: clean; add inet_sockaddr() method, that return
