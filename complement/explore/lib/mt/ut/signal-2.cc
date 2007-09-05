@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/16 21:34:49 ptr>
+// -*- C++ -*- Time-stamp: <07/09/05 00:04:38 ptr>
 
 /*
  * Copyright (c) 2003, 2006, 2007
@@ -17,8 +17,8 @@
 using namespace std;
 using namespace xmt;
 
-static Thread::ret_code thread_one( void * );
-static Thread::ret_code thread_two( void * );
+static Thread::ret_t thread_one( void * );
+static Thread::ret_t thread_two( void * );
 
 static Thread *th_one = 0;
 static Thread *th_two = 0;
@@ -40,11 +40,8 @@ extern "C" {
   }
 }
 
-Thread::ret_code thread_one( void * )
+Thread::ret_t thread_one( void * )
 {
-  Thread::ret_code rt;
-  rt.iword = 0;
-
   try {
     xmt::unblock_signal( SIGINT ); // we wait this signal
     // I set own handler, that throw signal:
@@ -77,10 +74,10 @@ Thread::ret_code thread_one( void * )
     v = 5;
   }
 
-  return rt;
+  return 0;
 }
 
-Thread::ret_code thread_two( void * )
+Thread::ret_t thread_two( void * )
 {
   try {
     // pm.lock();
@@ -108,10 +105,7 @@ Thread::ret_code thread_two( void * )
     // v = 5;
   }
 
-  Thread::ret_code rt;
-  rt.iword = 0;
-
-  return rt;
+  return 0;
 }
 
 int EXAM_IMPL(signal_2_test)

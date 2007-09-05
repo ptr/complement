@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/11 21:14:42 ptr>
+// -*- C++ -*- Time-stamp: <07/09/05 00:54:04 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
@@ -258,14 +258,71 @@ bool sockmgr_stream_MP<Connect>::accept_tcp()
 template <class Connect>
 bool sockmgr_stream_MP<Connect>::accept_udp()
 {
-#if 0
   if ( !is_open() ) {
     return false;
   }
 
-  socklen_t sz = sizeof( sockaddr_in );
   _xsockaddr addr;
+  socklen_t sz = sizeof( sockaddr_in );
+  bool _in_buf;
 
+  do {
+    _in_buf = false;
+    _pfd[0].revents = 0;
+    _pfd[1].revents = 0;
+    while ( poll( &_pfd[0], /* _pfd.size() */ 1, -1 ) < 0 ) { // wait infinite
+      if ( errno == EINTR ) { // may be interrupted, check and ignore
+        errno = 0;
+        continue;
+      }
+      return false; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
+    }
+
+    // New connction open before data read from opened sockets.
+    // This policy may be worth to revise.
+
+    if ( (_pfd[0].revents & POLLERR) != 0 /* || (_pfd[1].revents & POLLERR) != 0 */ ) {
+      return false; // return 0 only for binded socket, or control socket
+    }
+
+    if ( _pfd[0].revents != 0 ) {
+      xmt::scoped_lock lk(_fd_lck);
+      if ( !is_open_unsafe() ) { // may be already closed
+        return false;
+      }
+      // poll found event on binded socket
+      // get address of caller only
+      char buff[65535];
+      ::recvfrom( fd(), buff, 65535, MSG_PEEK, &addr.any, &sz );
+      try {
+        xmt::scoped_lock _l( _c_lock );
+        // if addr.any pesent in _M_c 
+        typename container_type::iterator i =
+          find_if( _M_c.begin(), _M_c.end(), bind2nd( _M_comp_inet, addr.any ) );
+        if ( i == _M_c.end() ) {
+          _M_c.push_back( _Connect() );
+          _M_c.back().open( fd(), addr.any, sock_base::sock_dgram );
+          _Connect *cl_new = &_M_c.back();
+        }
+        // 
+        // ...
+        // 
+      }
+      catch ( ... ) {
+      }
+    }
+#if 0
+    if ( _pfd[1].revents != 0 ) { // fd come back for poll
+      pollfd rfd;
+      ::read( _pfd[1].fd, reinterpret_cast<char *>(&rfd.fd), sizeof(sock_base::socket_type) );
+      rfd.events = POLLIN;
+      rfd.revents = 0;
+      _pfd.push_back( rfd );
+    }
+#endif
+  } while ( /* !_shift_fd() && */ !_in_buf );
+
+#if 0
   if ( poll( &_pfd[0], 1, -1 ) < 0 ) { // wait infinite
     return false; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
   }
@@ -316,14 +373,12 @@ void sockmgr_stream_MP<Connect>::_close_by_signal( int )
 }
 
 template <class Connect>
-xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
+xmt::Thread::ret_t sockmgr_stream_MP<Connect>::loop( void *p )
 {
   _Self_type *me = static_cast<_Self_type *>(p);
   me->loop_id.pword( _idx ) = me; // push pointer to self for signal processing
-  xmt::Thread::ret_code rtc;
-  xmt::Thread::ret_code rtc_observer;
-  rtc.iword = 0;
-  rtc_observer.iword = 0;
+  xmt::Thread::ret_t rtc = 0;
+  xmt::Thread::ret_t rtc_observer = 0;
 
   xmt::Thread thr_observer;
 
@@ -336,8 +391,8 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
       if ( thr_observer.bad() ) {
         if ( thr_observer.is_join_req() ) {
           rtc_observer = thr_observer.join();
-          if ( rtc_observer.iword != 0 ) {
-            rtc.iword = -2; // there was connect_processor that was killed
+          if ( rtc_observer != 0 ) {
+            rtc = reinterpret_cast<xmt::Thread::ret_t>(-2); // there was connect_processor that was killed
           }
         }
         thr_observer.launch( observer, me, 0, PTHREAD_STACK_MIN * 2 );
@@ -345,7 +400,7 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
     }
   }
   catch ( ... ) {
-    rtc.iword = -1;
+    rtc = reinterpret_cast<xmt::Thread::ret_t>(-1);
   }
 
   xmt::block_signal( SIGINT );
@@ -367,19 +422,18 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::loop( void *p )
   rtc_observer = thr_observer.join();
 
   me->_M_c.clear(); // FIN still may not come yet; force close
-  if ( rtc_observer.iword != 0 && rtc.iword == 0 ) {
-    rtc.iword = -2; // there was connect_processor that was killed
+  if ( rtc_observer != 0 && rtc == 0 ) {
+    rtc = reinterpret_cast<xmt::Thread::ret_t>(-2); // there was connect_processor that was killed
   }
 
   return rtc;
 }
 
 template <class Connect>
-xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
+xmt::Thread::ret_t sockmgr_stream_MP<Connect>::connect_processor( void *p )
 {
   _Self_type *me = static_cast<_Self_type *>(p);
-  xmt::Thread::ret_code rtc;
-  rtc.iword = 0;
+  xmt::Thread::ret_t rtc = 0;
 
   try {
     timespec idle( me->_idle );
@@ -449,18 +503,17 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::connect_processor( void *p )
     } while ( me->_is_follow() && idle_count < 2 );
   }
   catch ( ... ) {
-    rtc.iword = -1;
+    rtc = reinterpret_cast<xmt::Thread::ret_t>(-1);
   }
 
   return rtc;
 }
 
 template <class Connect>
-xmt::Thread::ret_code sockmgr_stream_MP<Connect>::observer( void *p )
+xmt::Thread::ret_t sockmgr_stream_MP<Connect>::observer( void *p )
 {
   _Self_type *me = static_cast<_Self_type *>(p);
-  xmt::Thread::ret_code rtc;
-  rtc.iword = 0;
+  xmt::Thread::ret_t rtc = 0;
   int pool_size[3];
   // size_t thr_pool_size[3];
   timespec tpop;
@@ -518,11 +571,11 @@ xmt::Thread::ret_code sockmgr_stream_MP<Connect>::observer( void *p )
     }
     if ( mgr.size() > 0 ) {
       mgr.signal( SIGTERM );
-      rtc.iword = -1;
+      rtc = reinterpret_cast<xmt::Thread::ret_t>(-1);
     }
   }
   catch ( ... ) {
-    rtc.iword = -1;
+    rtc = reinterpret_cast<xmt::Thread::ret_t>(-1);
   }
 
   return rtc;
@@ -802,13 +855,10 @@ void sockmgr_stream_MP_SELECT<Connect>::_close_by_signal( int )
 }
 
 template <class Connect>
-xmt::Thread::ret_code sockmgr_stream_MP_SELECT<Connect>::loop( void *p )
+xmt::Thread::ret_t sockmgr_stream_MP_SELECT<Connect>::loop( void *p )
 {
   _Self_type *me = static_cast<_Self_type *>(p);
   me->loop_id.pword( _idx ) = me; // push pointer to self for signal processing
-
-  xmt::Thread::ret_code rtc;
-  rtc.iword = 0;
 
   try {
     _Connect *s;
@@ -843,8 +893,8 @@ xmt::Thread::ret_code sockmgr_stream_MP_SELECT<Connect>::loop( void *p )
     }
     me->close();
     me->_c_lock.unlock();
-    rtc.iword = -1;
-    return rtc;
+
+    return reinterpret_cast<xmt::Thread::ret_t>(-1);
     // throw;
   }
 
@@ -863,7 +913,7 @@ xmt::Thread::ret_code sockmgr_stream_MP_SELECT<Connect>::loop( void *p )
   me->close();
   me->_c_lock.unlock();
 
-  return rtc;
+  return 0;
 }
 
 #endif // !__FIT_NO_SELECT

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/18 09:22:46 ptr>
+// -*- C++ -*- Time-stamp: <07/09/05 00:44:02 ptr>
 
 /*
  *
@@ -177,12 +177,8 @@ void loader::close()
 {
 }
 
-xmt::Thread::ret_code client_thr( void *p )
+xmt::Thread::ret_t client_thr( void *p )
 {
-  xmt::Thread::ret_code ret;
-
-  ret.iword = 0;
-
   sockstream s( "localhost", port );
 
   char buf[1024];
@@ -200,7 +196,7 @@ xmt::Thread::ret_code client_thr( void *p )
     xmt::Thread::yield();
   }
 
-  return ret;
+  return 0;
 }
 
 void sigpipe_handler( int sig, siginfo_t *si, void * )
@@ -459,9 +455,8 @@ void ConnectionProcessor5::close()
   // pr_lock.unlock();
 }
 
-xmt::Thread::ret_code thread_entry( void *par )
+xmt::Thread::ret_t thread_entry( void *par )
 {
-  xmt::Thread::ret_code rt;
   xmt::condition& cnd = *reinterpret_cast<xmt::condition *>(par);
 
   // sem.wait(); // wait server for listen us
@@ -475,8 +470,7 @@ xmt::Thread::ret_code thread_entry( void *par )
   EXAM_CHECK_ASYNC( buff == 1 );
   // cerr << "Read pass" << endl;
   
-  rt.iword = 0;
-  return rt;
+  return 0;
 }
 
 int EXAM_IMPL(sockios_test::read0)
@@ -531,6 +525,8 @@ int EXAM_IMPL(sockios_test::read0)
   catch ( xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
   }
+
+  return EXAM_RESULT;
 }
 
 /* ************************************************************ */

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/20 00:21:37 ptr>
+// -*- C++ -*- Time-stamp: <07/09/05 01:08:18 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006, 2007
@@ -62,8 +62,8 @@ class stem_test
     int EXAM_DECL(boring_manager);
     int EXAM_DECL(convert);
 
-    static xmt::Thread::ret_code thr1( void * );
-    static xmt::Thread::ret_code thr1new( void * );
+    static xmt::Thread::ret_t thr1( void * );
+    static xmt::Thread::ret_t thr1new( void * );
 
   private:
 };
@@ -89,7 +89,7 @@ int EXAM_IMPL(stem_test::basic2)
   
   xmt::Thread t1( thr1 );
 
-  EXAM_CHECK( t1.join().iword == 0 );
+  EXAM_CHECK( t1.join() == 0 );
 
   node.wait();
 
@@ -98,11 +98,8 @@ int EXAM_IMPL(stem_test::basic2)
   return EXAM_RESULT;
 }
 
-xmt::Thread::ret_code stem_test::thr1( void * )
+xmt::Thread::ret_t stem_test::thr1( void * )
 {
-  xmt::Thread::ret_code rt;
-  rt.iword = 0;
-
   Node node( 2001 );
 
   EDS::Event ev( NODE_EV1 );
@@ -110,7 +107,7 @@ xmt::Thread::ret_code stem_test::thr1( void * )
   ev.dest( 2000 );
   node.Send( ev );
 
-  return rt;
+  return 0;
 }
 
 int EXAM_IMPL(stem_test::basic1new)
@@ -145,11 +142,8 @@ int EXAM_IMPL(stem_test::basic2new)
   return EXAM_RESULT;
 }
 
-xmt::Thread::ret_code stem_test::thr1new( void * )
+xmt::Thread::ret_t stem_test::thr1new( void * )
 {
-  xmt::Thread::ret_code rt;
-  rt.iword = 0;
-
   NewNode *node = new NewNode( 2001 );
 
   EDS::Event ev( NODE_EV1 );
@@ -159,7 +153,7 @@ xmt::Thread::ret_code stem_test::thr1new( void * )
 
   delete node;
 
-  return rt;
+  return 0;
 }
 
 int EXAM_IMPL(stem_test::dl)

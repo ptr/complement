@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/12/13 13:22:52 ptr>
+// -*- C++ -*- Time-stamp: <07/09/05 01:10:17 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -97,14 +97,14 @@ class NetTransportMgr :
     virtual __FIT_DECLSPEC void close();
 
     int join()
-      { return _thr.join().iword; }
+      { return reinterpret_cast<int>(_thr.join()); }
 
   private:
     NetTransportMgr( const NetTransportMgr& );
     NetTransportMgr& operator =( const NetTransportMgr& );
 
   protected:
-    static xmt::Thread::ret_code _loop( void * );
+    static xmt::Thread::ret_t _loop( void * );
     xmt::Thread _thr;
     std::sockstream _channel;
 };

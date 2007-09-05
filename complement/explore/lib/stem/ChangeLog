@@ -1,3 +1,11 @@
+2007-09-05  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Cron.h, NetTransport.h, EvManager.h: looks like non-POD return
+	from thread is unstable, and should be avoided; replace union
+	rec_code by void * or long, depends upon operation environment;
+
+	* Cron.cc, NetTransport.cc, EvManager.cc, ut/unit_test.cc: idem.
+
 2007-08-25  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* EvManager.h, NetTransport.cc: use ostream and trace flags

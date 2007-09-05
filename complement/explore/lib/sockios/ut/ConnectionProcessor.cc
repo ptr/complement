@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/18 23:10:22 ptr>
+// -*- C++ -*- Time-stamp: <07/09/05 00:39:10 ptr>
 
 /*
  *
@@ -384,10 +384,9 @@ typedef sockmgr_stream_MP_SELECT<Srv> srv_type;
 static srv_type *srv_p;
 condition cnd;
 
-Thread::ret_code server_proc( void * )
+Thread::ret_t server_proc( void * )
 {
-  Thread::ret_code rt;
-  rt.iword = 0;
+  unsigned rt = 0;
 
   cnd.set( false );
   srv_type srv( port ); // start server
@@ -395,20 +394,19 @@ Thread::ret_code server_proc( void * )
   ::srv_p = &srv;
 
   if ( !srv.is_open() || !srv.good() ) {
-    ++rt.iword;
+    ++rt;
   }
 
   cnd.set( true );
 
   srv.wait();
 
-  return rt;
+  return reinterpret_cast<Thread::ret_t>(rt);
 }
 
-Thread::ret_code client_proc( void * )
+Thread::ret_t client_proc( void * )
 {
-  Thread::ret_code rt;
-  rt.iword = 0;
+  unsigned rt = 0;
 
   cnd.try_wait();
 
@@ -420,7 +418,7 @@ Thread::ret_code client_proc( void * )
   getline( sock, buf );
 
   if ( !sock.is_open() || !sock.good() ) {
-    ++rt.iword;
+    ++rt;
   }
 
   EXAM_CHECK_ASYNC( buf == "hello" );
@@ -445,7 +443,7 @@ Thread::ret_code client_proc( void * )
 
   EXAM_MESSAGE_ASYNC( "Client end" );
 
-  return rt;
+  return reinterpret_cast<Thread::ret_t>(rt);
 }
 
 int EXAM_IMPL(trivial_sockios_test::srv_close_connection)
@@ -454,8 +452,8 @@ int EXAM_IMPL(trivial_sockios_test::srv_close_connection)
   cnd_close.set( false );
   Thread client( client_proc );
 
-  EXAM_CHECK( client.join().iword == 0 );
-  EXAM_CHECK( srv.join().iword == 0 );
+  EXAM_CHECK( client.join() == 0 );
+  EXAM_CHECK( srv.join() == 0 );
 
   return EXAM_RESULT;
 }
@@ -519,11 +517,8 @@ void ConnectionProcessor3::close()
 
 std::sockstream *psock = 0;
 
-Thread::ret_code thread_entry_call( void * )
+Thread::ret_t thread_entry_call( void * )
 {
-  Thread::ret_code rt;
-  rt.iword = 0;
-
   cnd.set( true );
 
   EXAM_MESSAGE_ASYNC( "Client start" );
@@ -536,7 +531,7 @@ Thread::ret_code thread_entry_call( void * )
   cnd_close.set( true );
   psock->read( &c, 1 );
 
-  return rt;
+  return 0;
 }
 
 int EXAM_IMPL(trivial_sockios_test::client_close_socket)

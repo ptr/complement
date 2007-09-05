@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/31 09:55:36 ptr>
+// -*- C++ -*- Time-stamp: <07/09/05 00:45:19 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
@@ -251,9 +251,9 @@ class sockmgr_stream_MP :
     typedef std::deque<typename _Sequence::iterator> _connect_pool_sequence;
 
     void _open( sock_base::stype t = sock_base::sock_stream );
-    static xmt::Thread::ret_code loop( void * );
-    static xmt::Thread::ret_code connect_processor( void * );
-    static xmt::Thread::ret_code observer( void * );
+    static xmt::Thread::ret_t loop( void * );
+    static xmt::Thread::ret_t connect_processor( void * );
+    static xmt::Thread::ret_t observer( void * );
 
     struct fd_equal :
         public std::binary_function<_Connect,int,bool> 
@@ -391,7 +391,7 @@ class sockmgr_stream_MP_SELECT :
 
   protected:
     void _open( sock_base::stype t = sock_base::sock_stream );
-    static xmt::Thread::ret_code loop( void * );
+    static xmt::Thread::ret_t loop( void * );
 
     struct _Connect {
         sockstream *s;
