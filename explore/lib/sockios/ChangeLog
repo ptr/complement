@@ -1,3 +1,8 @@
+2007-09-06  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: allow any name of functions for 'connect'
+	and 'close' procedures in template parametric class Connect.
+
 2007-09-05  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* sockmgr.h, sockmgr.cc: looks like non-POD return from thread is

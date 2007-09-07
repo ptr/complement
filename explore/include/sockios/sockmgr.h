@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/09/05 00:45:19 ptr>
+// -*- C++ -*- Time-stamp: <07/09/06 21:23:52 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
@@ -135,7 +135,7 @@ class ConnectionProcessorTemplate_MP // As reference
 
 #ifndef __FIT_NO_POLL
 
-template <class Connect>
+template <class Connect, void (Connect::*C)( std::sockstream& ) = &Connect::connect, void (Connect::*T)() = &Connect::close >
 class sockmgr_stream_MP :
     public basic_sockmgr
 {
@@ -195,8 +195,8 @@ class sockmgr_stream_MP :
       { loop_id.join(); }
 
   private:
-    sockmgr_stream_MP( const sockmgr_stream_MP<Connect>& );
-    sockmgr_stream_MP<Connect>& operator =( const sockmgr_stream_MP<Connect>& );
+    sockmgr_stream_MP( const sockmgr_stream_MP<Connect,C,T>& );
+    sockmgr_stream_MP<Connect,C,T>& operator =( const sockmgr_stream_MP<Connect,C,T>& );
 
   public:
     void open( const in_addr& addr, int port, sock_base::stype t = sock_base::sock_stream );
@@ -237,7 +237,7 @@ class sockmgr_stream_MP :
           { }
 
         ~_Connect()
-          { if ( _proc ) { s.close(); _proc->close(); } delete _proc; }
+          { if ( _proc ) { s.close(); (_proc->*T)(); } delete _proc; }
 
         void open( sock_base::socket_type st, const sockaddr& addr, sock_base::stype t = sock_base::sock_stream )
           { s.open( st, addr, t ); _proc = new Connect( s ); }
@@ -276,7 +276,7 @@ class sockmgr_stream_MP :
           { return __x.fd == __y; }
     };
     
-    typedef bool (sockmgr_stream_MP<Connect>::*accept_type)();
+    typedef bool (sockmgr_stream_MP<Connect,C,T>::*accept_type)();
 
 #if 0
     accept_type _accept;
@@ -292,7 +292,7 @@ class sockmgr_stream_MP :
     xmt::Thread loop_id;
 
   protected:
-    typedef sockmgr_stream_MP<Connect> _Self_type;
+    typedef sockmgr_stream_MP<Connect,C,T> _Self_type;
     typedef fd_equal _Compare;
     typedef iaddr_equal _Compare_inet;
     typedef typename _Sequence::value_type      value_type;
