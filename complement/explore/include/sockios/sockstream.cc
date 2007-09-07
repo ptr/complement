@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/08/21 23:58:48 ptr>
+// -*- C++ -*- Time-stamp: <07/09/06 23:48:33 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
@@ -13,10 +13,6 @@
 
 #ifdef __unix
 extern "C" int nanosleep(const struct timespec *, struct timespec *);
-#endif
-
-#if !defined(__sun) && !defined(_WIN32) // i.e. __linux and __hpux
-#include <sys/poll.h> // pollfd
 #endif
 
 #if defined(__unix) && !defined(__UCLIBC__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__)
@@ -103,6 +99,15 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
       throw std::length_error( "can't allocate block" );
     }
 
+#ifdef __FIT_NONBLOCK_SOCKETS
+    if ( fcntl( _fd, F_SETFL, fcntl( _fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
+      throw std::runtime_error( "can't establish nonblock mode" );
+    }
+#endif
+#ifdef __FIT_POLL
+    pfd.fd = _fd;
+    pfd.events = POLLIN | POLLHUP | POLLRDNORM;
+#endif
     setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
     setg( this->epptr(), this->epptr(), this->epptr() );
 
@@ -217,6 +222,15 @@ basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
       throw std::length_error( "can't allocate block" );
     }
 
+#ifdef __FIT_NONBLOCK_SOCKETS
+    if ( fcntl( _fd, F_SETFL, fcntl( _fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
+      throw std::runtime_error( "can't establish nonblock mode" );
+    }
+#endif
+#ifdef __FIT_POLL
+    pfd.fd = _fd;
+    pfd.events = POLLIN | POLLHUP | POLLRDNORM;
+#endif
     setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
     setg( this->epptr(), this->epptr(), this->epptr() );
 
@@ -334,6 +348,15 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s,
     return 0;
   }
 
+#ifdef __FIT_NONBLOCK_SOCKETS
+  if ( fcntl( _fd, F_SETFL, fcntl( _fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
+    throw std::runtime_error( "can't establish nonblock mode" );
+  }
+#endif
+#ifdef __FIT_POLL
+  pfd.fd = _fd;
+  pfd.events = POLLIN | POLLHUP | POLLRDNORM;
+#endif
   setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
   setg( this->epptr(), this->epptr(), this->epptr() );
 
@@ -424,8 +447,8 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
   if ( this->gptr() < this->egptr() )
     return traits::to_int_type(*this->gptr());
 
-#ifdef __FIT_SELECT
-  fd_set pfd;
+#ifndef __FIT_NONBLOCK_SOCKETS
+#  ifdef __FIT_SELECT
   FD_ZERO( &pfd );
   FD_SET( fd(), &pfd );
 
@@ -436,16 +459,10 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
     }
     return traits::eof();
   }
-#endif // __FIT_SELECT
-#ifdef __FIT_POLL
-  pollfd pfd;
-  pfd.fd = fd();
-  pfd.events = POLLIN | POLLHUP | POLLRDNORM;
+#  endif // __FIT_SELECT
+#  ifdef __FIT_POLL
   pfd.revents = 0;
 
-  if ( !is_open() /* || (_state != ios_base::goodbit) */ ) {
-    return traits::eof();
-  }
   while ( poll( &pfd, 1, _timeout ) <= 0 ) { // wait infinite
     if ( errno == EINTR ) { // may be interrupted, check and ignore
       errno = 0;
@@ -457,17 +474,52 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
     // _state |= ios_base::failbit;
     return traits::eof();
   }
-#endif // __FIT_POLL
-
-  // _STLP_ASSERT( this->eback() != 0 );
-  // _STLP_ASSERT( _ebuf != 0 );
-
+#  endif // __FIT_POLL
+#endif // !__FIT_NONBLOCK_SOCKETS
   long offset = (this->*_xread)( this->eback(), sizeof(char_type) * (_ebuf - this->eback()) );
-  // don't allow message of zero length:
-  // in conjunction with POLLIN in revent of poll above this designate that
-  // we receive FIN packet.
-  if ( offset <= 0 )
+#ifdef __FIT_NONBLOCK_SOCKETS
+  if ( offset < 0 && errno == EAGAIN ) {
+    errno = 0;
+#  ifdef __FIT_SELECT
+    FD_ZERO( &pfd );
+    FD_SET( fd(), &pfd );
+
+    while ( select( fd() + 1, &pfd, 0, 0, _timeout_ref ) <= 0 ) {
+      if ( errno == EINTR ) {  // may be interrupted, check and ignore
+        errno = 0;
+        continue;
+      }
+      return traits::eof();
+    }
+#  endif // __FIT_SELECT
+#  ifdef __FIT_POLL
+    pfd.revents = 0;
+
+    while ( poll( &pfd, 1, _timeout ) <= 0 ) { // wait infinite
+      if ( errno == EINTR ) { // may be interrupted, check and ignore
+        errno = 0;
+        continue;
+      }
+      return traits::eof();
+    }
+    if ( (pfd.revents & POLLERR) != 0 ) {
+      // _state |= ios_base::failbit;
+      return traits::eof();
+    }
+#  endif // __FIT_POLL
+    offset = (this->*_xread)( this->eback(), sizeof(char_type) * (_ebuf - this->eback()) );
+  }
+#endif // __FIT_NONBLOCK_SOCKETS
+  // Without  __FIT_NONBLOCK_SOCKETS:
+  //   don't allow message of zero length:
+  //   in conjunction with POLLIN in revent of poll above this designate that
+  //   we receive FIN packet.
+  // With __FIT_NONBLOCK_SOCKETS:
+  //   0 is eof, < 0 --- second read also return < 0, but shouldn't
+  if ( offset <= 0 ) {
     return traits::eof();
+  }
+
   offset /= sizeof(charT);
         
   setg( this->eback(), this->eback(), this->eback() + offset );
@@ -490,8 +542,52 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
   long count = this->pptr() - this->pbase();
 
   if ( count ) {
-    if ( (this->*_xwrite)( this->pbase(), sizeof(charT) * count ) != count * sizeof(charT) )
+    count *= sizeof(charT);
+#ifndef __FIT_NONBLOCK_SOCKETS
+    if ( (this->*_xwrite)( this->pbase(), count ) != count ) {
       return traits::eof();
+    }
+#else
+    long offset = (this->*_xwrite)( this->pbase(), count );
+    if ( offset < 0 ) {
+      if ( errno == EAGAIN ) {
+        pollfd wpfd;
+        wpfd.fd = _fd;
+        wpfd.events = POLLOUT | POLLHUP | POLLWRNORM;
+        wpfd.revents = 0;
+        while ( poll( &wpfd, 1, _timeout ) <= 0 ) { // wait infinite
+          if ( errno == EINTR ) { // may be interrupted, check and ignore
+            errno = 0;
+            continue;
+          }
+          return traits::eof();
+        }
+        if ( (wpfd.revents & POLLERR) != 0 ) {
+          return traits::eof();
+        }
+        offset = (this->*_xwrite)( this->pbase(), count );
+        if ( offset < 0 ) {
+          return traits::eof();
+        }
+      } else {
+        return traits::eof();
+      }
+    }
+    if ( offset < count ) {
+      // MUST BE: (offset % sizeof(char_traits)) == 0 !
+      offset /= sizeof(char_traits);
+      count /= sizeof(char_traits);
+      traits::move( this->pbase(), this->pbase() + offset, count - offset );
+      // std::copy_backword( this->pbase() + offset, this->pbase() + count, this->pbase() );
+      setp( this->pbase(), this->epptr() ); // require: set pptr
+      this->pbump( count - offset );
+      if( !traits::eq_int_type(c,traits::eof()) ) {
+        sputc( traits::to_char_type(c) );
+      }
+
+      return traits::not_eof(c);
+    }
+#endif
   }
 
   setp( this->pbase(), this->epptr() ); // require: set pptr
@@ -500,6 +596,59 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
   }
 
   return traits::not_eof(c);
+}
+
+template<class charT, class traits, class _Alloc>
+int basic_sockbuf<charT, traits, _Alloc>::sync()
+{
+  if ( !is_open() ) {
+    return -1;
+  }
+
+  long count = this->pptr() - this->pbase();
+  if ( count ) {
+    // _STLP_ASSERT( this->pbase() != 0 );
+    count *= sizeof(charT);
+#ifndef __FIT_NONBLOCK_SOCKETS
+    if ( (this->*_xwrite)( this->pbase(), count ) != count ) {
+      return -1;
+    }
+#else
+    long start = 0;
+    while ( count > 0 ) {
+      long offset = (this->*_xwrite)( this->pbase() + start, count );
+      if ( offset < 0 ) {
+        if ( errno == EAGAIN ) {
+          pollfd wpfd;
+          wpfd.fd = _fd;
+          wpfd.events = POLLOUT | POLLHUP | POLLWRNORM;
+          wpfd.revents = 0;
+          while ( poll( &wpfd, 1, _timeout ) <= 0 ) { // wait infinite
+            if ( errno == EINTR ) { // may be interrupted, check and ignore
+              errno = 0;
+              continue;
+            }
+            return -1;
+          }
+          if ( (wpfd.revents & POLLERR) != 0 ) {
+            return -1;
+          }
+          offset = (this->*_xwrite)( this->pbase() + start, count );
+          if ( offset < 0 ) {
+            return -1;
+          }
+        } else {
+          return -1;
+        }
+      }
+      count -= offset;
+      start += offset;
+    }
+#endif
+    setp( this->pbase(), this->epptr() ); // require: set pptr
+  }
+
+  return 0;
 }
 
 template<class charT, class traits, class _Alloc>
