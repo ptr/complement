@@ -1,3 +1,7 @@
+2007-09-07  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockstream, sockstream.cc: prepare for __FIT_NONBLOCK_SOCKETS.
+
 2007-09-06  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* sockmgr.h, sockmgr.cc: allow any name of functions for 'connect'

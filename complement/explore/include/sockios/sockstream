@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/31 09:49:58 ptr>
+// -*- C++ -*- Time-stamp: <07/09/06 23:42:19 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
@@ -16,6 +16,10 @@
 
 #ifndef __config_feature_h
 #include <config/feature.h>
+#endif
+
+#if !defined(__sun) && !defined(_WIN32) // i.e. __linux and __hpux
+#include <sys/poll.h> // pollfd
 #endif
 
 #ifndef __XMT_H
@@ -538,23 +542,7 @@ class basic_sockbuf :
         return this;
       }
 
-    virtual int sync()
-      {
-        if ( !is_open() ) {
-          return -1;
-        }
-
-        long count = this->pptr() - this->pbase();
-        if ( count ) {
-          // _STLP_ASSERT( this->pbase() != 0 );
-          if ( (this->*_xwrite)( this->pbase(), sizeof(charT) * count ) != count * sizeof(charT) )
-            return -1;
-          setp( this->pbase(), this->epptr() ); // require: set pptr
-        }
-
-        return 0;
-      }
-
+    virtual int sync();
     virtual streamsize xsputn(const char_type *s, streamsize n);
 
   public:
@@ -565,9 +553,11 @@ class basic_sockbuf :
     charT* _ebuf;
     bool _allocated; // true, if _bbuf should be deallocated
 #ifdef __FIT_POLL
+    pollfd pfd;
     int  _timeout; // milliseconds
 #endif
 #ifdef __FIT_SELECT
+    fd_set pfd;
     struct timeval _timeout;
     struct timeval *_timeout_ref;
 #endif
