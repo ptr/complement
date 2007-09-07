@@ -82,7 +82,7 @@
  * has poll (HP-UX 10.xx, old Linuxes may not).
  * We can use either poll or select.
  */
-#ifndef __FIT_NO_POLL
+#if !defined(__FIT_NO_POLL) /* && !defined(__FIT_EPOLL) */
 # define __FIT_POLL   /* use poll system call */
 #endif
 
