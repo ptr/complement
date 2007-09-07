@@ -29,17 +29,17 @@ ifndef WITHOUT_STLPORT
 endif
 
 check-release-shared:	release-shared
-	$(MAKE) -C test release-shared
-	(cd test; ${OUTPUT_DIR}/ut_vtime) || exit 1
+	$(MAKE) -C ut release-shared
+	(cd ut; ${OUTPUT_DIR}/ut_vtime) || exit 1
 
 check-dbg-shared:	dbg-shared
-	$(MAKE) -C test dbg-shared
-	(cd test; ${OUTPUT_DIR_DBG}/ut_vtime) || exit 1
+	$(MAKE) -C ut dbg-shared
+	(cd ut; ${OUTPUT_DIR_DBG}/ut_vtime) || exit 1
 
 ifndef WITHOUT_STLPORT
 check-stldbg-shared:	stldbg-shared
-	$(MAKE) -C test stldbg-shared
-	(cd test; ${OUTPUT_DIR_STLDBG}/ut_vtime) || exit 1
+	$(MAKE) -C ut stldbg-shared
+	(cd ut; ${OUTPUT_DIR_STLDBG}/ut_vtime) || exit 1
 endif
 
 depend::
