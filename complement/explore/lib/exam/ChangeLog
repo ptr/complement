@@ -1,3 +1,10 @@
+2007-09-07  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* suite.h: added macro EXAM_CHECK_ASYNC_F, EXAM_ERROR_ASYNC_F
+	that useful to set passed value to non-zero; useful for non-zero
+	exit status after fork or thread [may be checked in parent process
+	or thread].
+
 2007-09-04  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* logger.h, logger.cc: added trivial_time_logger for performance
