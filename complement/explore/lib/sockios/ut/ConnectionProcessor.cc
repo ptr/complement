@@ -393,9 +393,7 @@ Thread::ret_t server_proc( void * )
 
   ::srv_p = &srv;
 
-  if ( !srv.is_open() || !srv.good() ) {
-    ++rt;
-  }
+  EXAM_CHECK_ASYNC_F( srv.is_open() && srv.good(), rt );
 
   cnd.set( true );
 
@@ -417,11 +415,9 @@ Thread::ret_t client_proc( void * )
 
   getline( sock, buf );
 
-  if ( !sock.is_open() || !sock.good() ) {
-    ++rt;
-  }
+  EXAM_CHECK_ASYNC_F( sock.is_open() && sock.good(), rt );
 
-  EXAM_CHECK_ASYNC( buf == "hello" );
+  EXAM_CHECK_ASYNC_F( buf == "hello", rt );
 
   // xmt::delay( xmt::timespec( 5, 0 ) );
 
@@ -437,7 +433,7 @@ Thread::ret_t client_proc( void * )
   char a;
   sock.read( &a, 1 );
 
-  EXAM_CHECK_ASYNC( !sock.good() );
+  EXAM_CHECK_ASYNC_F( !sock.good(), rt );
 
   srv_p->close();
 
@@ -519,19 +515,20 @@ std::sockstream *psock = 0;
 
 Thread::ret_t thread_entry_call( void * )
 {
+  int eflag = 0;
   cnd.set( true );
 
   EXAM_MESSAGE_ASYNC( "Client start" );
 
-  EXAM_CHECK_ASYNC( psock->good() );
+  EXAM_CHECK_ASYNC_F( psock->good(), eflag );
 
   char c = '0';
   psock->read( &c, 1 );
-  EXAM_CHECK_ASYNC( c == '1' );
+  EXAM_CHECK_ASYNC_F( c == '1', eflag );
   cnd_close.set( true );
   psock->read( &c, 1 );
 
-  return 0;
+  return reinterpret_cast<xmt::Thread::ret_t>(eflag);
 }
 
 int EXAM_IMPL(trivial_sockios_test::client_close_socket)
@@ -555,7 +552,7 @@ int EXAM_IMPL(trivial_sockios_test::client_close_socket)
   // but call shutdown is what you want here:
   psock->rdbuf()->shutdown( sock_base::stop_in | sock_base::stop_out );
   psock->close();
-  thr.join();
+  EXAM_CHECK( thr.join() == 0 );
   delete psock;
 
   srv.close(); // close server, so we don't wait server termination on next line
