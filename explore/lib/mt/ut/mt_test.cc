@@ -99,11 +99,12 @@ int EXAM_IMPL(mt_test::barrier2)
 
 xmt::Thread::ret_t thread3_entry_call( void *p )
 {
+  int flag = 0;
   xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
-  EXAM_CHECK_ASYNC( xmt::Thread::yield() == 0 );
+  EXAM_CHECK_ASYNC_F( xmt::Thread::yield() == 0, flag );
 
-  return 0;
+  return reinterpret_cast<xmt::Thread::ret_t>(flag);
 }
 
 int EXAM_IMPL(mt_test::yield)
@@ -133,24 +134,27 @@ static xmt::mutex m1;
 
 xmt::Thread::ret_t thr1( void *p )
 {
+  int flag = 0;
+
   xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
 
   m1.lock();
-  EXAM_CHECK_ASYNC( x == 0 );
+  EXAM_CHECK_ASYNC_F( x == 0, flag );
 
   xmt::Thread::yield();
 
-  EXAM_CHECK_ASYNC( x == 0 );
+  EXAM_CHECK_ASYNC_F( x == 0, flag );
   x = 1;
 
   m1.unlock();
 
-  return 0;
+  return reinterpret_cast<xmt::Thread::ret_t>(flag);
 }
 
 xmt::Thread::ret_t thr2( void *p )
 {
+  int flag = 0;
   xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
   for ( int i = 0; i < 128; ++i ) {
@@ -158,11 +162,11 @@ xmt::Thread::ret_t thr2( void *p )
   }
 
   m1.lock();
-  EXAM_CHECK_ASYNC( x == 1 );
+  EXAM_CHECK_ASYNC_F( x == 1, flag );
   x = 2;
   m1.unlock();
 
-  return 0;
+  return reinterpret_cast<xmt::Thread::ret_t>(flag);
 }
 
 int EXAM_IMPL(mt_test::mutex_test)
@@ -173,8 +177,8 @@ int EXAM_IMPL(mt_test::mutex_test)
   xmt::Thread t1( thr1, &b );
   xmt::Thread t2( thr2, &b );
 
-  t1.join();
-  t2.join();
+  EXAM_CHECK( t1.join() == 0 );
+  EXAM_CHECK( t2.join() == 0 );
 
   EXAM_CHECK( x == 2 );
 
@@ -196,24 +200,26 @@ static xmt::spinlock sl1;
 
 xmt::Thread::ret_t thr1s( void *p )
 {
+  int flag = 0;
   xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
 
   sl1.lock();
-  EXAM_CHECK_ASYNC( x == 0 );
+  EXAM_CHECK_ASYNC_F( x == 0, flag );
 
   xmt::Thread::yield();
 
-  EXAM_CHECK_ASYNC( x == 0 );
+  EXAM_CHECK_ASYNC_F( x == 0, flag );
   x = 1;
 
   sl1.unlock();
 
-  return 0;
+  return reinterpret_cast<xmt::Thread::ret_t>(flag);
 }
 
 xmt::Thread::ret_t thr2s( void *p )
 {
+  int flag = 0;
   xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
   for ( int i = 0; i < 128; ++i ) {
@@ -221,11 +227,11 @@ xmt::Thread::ret_t thr2s( void *p )
   }
 
   sl1.lock();
-  EXAM_CHECK_ASYNC( x == 1 );
+  EXAM_CHECK_ASYNC_F( x == 1, flag );
   x = 2;
   sl1.unlock();
 
-  return 0;
+  return reinterpret_cast<xmt::Thread::ret_t>(flag);
 }
 
 #endif
@@ -239,8 +245,8 @@ int EXAM_IMPL(mt_test::spinlock_test)
   xmt::Thread t1( thr1s, &b );
   xmt::Thread t2( thr2s, &b );
 
-  t1.join();
-  t2.join();
+  EXAM_CHECK( t1.join() == 0 );
+  EXAM_CHECK( t2.join() == 0 );
 
   EXAM_CHECK( x == 2 );
 #endif
@@ -291,26 +297,28 @@ void recursive()
 
 xmt::Thread::ret_t thr1r( void *p )
 {
+  int flag = 0;
   xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
 
   m2.lock();
 
-  EXAM_CHECK_ASYNC( x == 0 );
+  EXAM_CHECK_ASYNC_F( x == 0, flag );
   x = 1;
   xmt::Thread::yield();
-  EXAM_CHECK_ASYNC( x == 1 );
+  EXAM_CHECK_ASYNC_F( x == 1, flag );
   recursive();
-  EXAM_CHECK_ASYNC( x == 2 );
+  EXAM_CHECK_ASYNC_F( x == 2, flag );
   x = 3;
 
   m2.unlock();
 
-  return 0;
+  return reinterpret_cast<xmt::Thread::ret_t>(flag);
 }
 
 xmt::Thread::ret_t thr2r( void *p )
 {
+  int flag = 0;
   xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
   b.wait();
 
@@ -320,14 +328,14 @@ xmt::Thread::ret_t thr2r( void *p )
 
   m2.lock();
 
-  EXAM_CHECK_ASYNC( x == 3 );
+  EXAM_CHECK_ASYNC_F( x == 3, flag );
   xmt::Thread::yield();
   recursive();  
-  EXAM_CHECK_ASYNC( x == 2 );
+  EXAM_CHECK_ASYNC_F( x == 2, flag );
 
   m2.unlock();
 
-  return 0;
+  return reinterpret_cast<xmt::Thread::ret_t>(flag);
 }
 
 int EXAM_IMPL(mt_test::recursive_mutex_test)
@@ -338,8 +346,8 @@ int EXAM_IMPL(mt_test::recursive_mutex_test)
   xmt::Thread t1( thr1r, &b );
   xmt::Thread t2( thr2r, &b );
 
-  t1.join();
-  t2.join();
+  EXAM_CHECK( t1.join() == 0 );
+  EXAM_CHECK( t2.join() == 0 );
 
   EXAM_CHECK( x == 2 );
 
@@ -388,8 +396,13 @@ int EXAM_IMPL(mt_test::fork)
 
       fcnd.set( true );
 
-      int stat;
+      int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
     }
     catch ( ... ) {
     }
@@ -432,10 +445,12 @@ int EXAM_IMPL(mt_test::pid)
   try {
     xmt::fork();
 
+    int flag = 0;
+
     try {
 
       // Child code 
-      EXAM_CHECK_ASYNC( my_pid == xmt::getppid() );
+      EXAM_CHECK_ASYNC_F( my_pid == xmt::getppid(), flag );
       *reinterpret_cast<pid_t *>(static_cast<char *>(buf) + sizeof(xmt::__condition<true>)) = xmt::getpid();
 
       fcnd.set( true );
@@ -444,7 +459,7 @@ int EXAM_IMPL(mt_test::pid)
     catch ( ... ) {
     }
 
-    exit( 0 );
+    exit( flag );
   }
   catch ( xmt::fork_in_parent& child ) {
     try {
@@ -454,8 +469,13 @@ int EXAM_IMPL(mt_test::pid)
 
       EXAM_CHECK( *reinterpret_cast<pid_t *>(static_cast<char *>(buf) + sizeof(xmt::__condition<true>)) == child.pid() );
 
-      int stat;
+      int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
     }
     catch ( ... ) {
     }
@@ -656,8 +676,13 @@ int EXAM_IMPL(shm_test::fork_shm)
 
         fcnd.set( true );
 
-        int stat;
+        int stat = -1;
         EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+        if ( WIFEXITED(stat) ) {
+          EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+        } else {
+          EXAM_ERROR( "child interrupted" );
+        }
       }
       catch ( ... ) {
       }
@@ -701,6 +726,8 @@ int EXAM_IMPL(shm_test::shm_named_obj)
     try {
       xmt::fork();
 
+      int eflag = 0;
+
       try {
 
         // Child code 
@@ -719,16 +746,16 @@ int EXAM_IMPL(shm_test::shm_named_obj)
         fcnd_ch.set( true );
       }
       catch ( const xmt::shm_bad_alloc& err ) {
-        EXAM_ERROR_ASYNC( err.what() );
+        EXAM_ERROR_ASYNC_F( err.what(), eflag );
       }
       catch ( const std::invalid_argument& err ) {
-        EXAM_ERROR_ASYNC( err.what() );
+        EXAM_ERROR_ASYNC_F( err.what(), eflag );
       }
       catch ( ... ) {
-        EXAM_ERROR_ASYNC( "Fail in child" );
+        EXAM_ERROR_ASYNC_F( "Fail in child", eflag );
       }
 
-      exit( 0 );
+      exit( eflag );
     }
     catch ( xmt::fork_in_parent& child ) {
       try {
@@ -736,8 +763,13 @@ int EXAM_IMPL(shm_test::shm_named_obj)
 
         fcnd.try_wait();
 
-        int stat;
+        int stat = -1;
         EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+        if ( WIFEXITED(stat) ) {
+          EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+        } else {
+          EXAM_ERROR( "child interrupted" );
+        }
       }
       catch ( ... ) {
         EXAM_ERROR( "Fail in parent" );
@@ -802,6 +834,8 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
     try {
       xmt::fork();
 
+      int eflag = 0;
+
       try {
         xmt::shm_name_mgr<1>& nm_ch = seg1.name_mgr();
         xmt::allocator_shm<xmt::__condition<true>,1> shm_ch;
@@ -810,14 +844,19 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
         nm_ch.release<xmt::__condition<true> >( ObjName );
       }
       catch ( const std::invalid_argument& err ) {
-        EXAM_ERROR_ASYNC( err.what() );
+        EXAM_ERROR_ASYNC_F( err.what(), eflag );
       }
-      exit( 0 );
+      exit( eflag );
     }
     catch ( xmt::fork_in_parent& child ) {
       fcnd.try_wait();
-      int stat;
+      int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
     }
     nm.release<xmt::__condition<true> >( ObjName ); // fcnd should be destroyed here
 
@@ -828,6 +867,8 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
     try {
       xmt::fork();
 
+      int eflag = 0;
+
       try {
         xmt::shm_name_mgr<1>& nm_ch = seg1.name_mgr();
         xmt::allocator_shm<xmt::__condition<true>,1> shm_ch;
@@ -836,15 +877,20 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
         nm_ch.release<xmt::__condition<true> >( ObjName );
       }
       catch ( const std::invalid_argument& err ) {
-        EXAM_ERROR_ASYNC( err.what() );
+        EXAM_ERROR_ASYNC_F( err.what(), eflag );
       }
       
-      exit( 0 );
+      exit( eflag );
     }
     catch ( xmt::fork_in_parent& child ) {
       fcnd1.try_wait();
-      int stat;
+      int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
     }
     nm.release<xmt::__condition<true> >( ObjName ); // fcnd should be destroyed here
 
@@ -856,6 +902,7 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
     try {
       xmt::fork();
 
+      int eflag = 0;
       try {
         xmt::shm_name_mgr<1>& nm_ch = seg1.name_mgr();
         xmt::allocator_shm<xmt::__barrier<true>,1> shm_ch;
@@ -864,15 +911,20 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
         nm_ch.release<xmt::__barrier<true> >( ObjName );
       }
       catch ( const std::invalid_argument& err ) {
-        EXAM_ERROR_ASYNC( err.what() );
+        EXAM_ERROR_ASYNC_F( err.what(), eflag );
       }
     
-      exit( 0 );      
+      exit( eflag );
     }
     catch ( xmt::fork_in_parent& child ) {
       b.wait();
-      int stat;
+      int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
     }
     nm.release<xmt::__barrier<true> >( ObjName ); // barrier should be destroyed here
   }
