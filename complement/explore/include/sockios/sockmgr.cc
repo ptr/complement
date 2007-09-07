@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/09/05 00:54:04 ptr>
+// -*- C++ -*- Time-stamp: <07/09/06 21:32:15 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
@@ -26,8 +26,8 @@ namespace std {
 
 #ifndef __FIT_NO_POLL
 
-template <class Connect>
-void sockmgr_stream_MP<Connect>::_open( sock_base::stype t )
+template <class Connect, void (Connect::*C)( std::sockstream& ), void (Connect::*T)() >
+void sockmgr_stream_MP<Connect,C,T>::_open( sock_base::stype t )
 {
   xmt::scoped_lock lk(_fd_lck);
   if ( is_open_unsafe() ) {
@@ -68,29 +68,29 @@ void sockmgr_stream_MP<Connect>::_open( sock_base::stype t )
   }
 }
 
-template <class Connect>
-void sockmgr_stream_MP<Connect>::open( const in_addr& addr, int port, sock_base::stype t )
+template <class Connect, void (Connect::*C)( std::sockstream& ), void (Connect::*T)() >
+void sockmgr_stream_MP<Connect,C,T>::open( const in_addr& addr, int port, sock_base::stype t )
 {
   basic_sockmgr::open( addr, port, t, sock_base::inet );
-  sockmgr_stream_MP<Connect>::_open( t );
+  sockmgr_stream_MP<Connect,C,T>::_open( t );
 }
 
-template <class Connect>
-void sockmgr_stream_MP<Connect>::open( unsigned long addr, int port, sock_base::stype t )
+template <class Connect, void (Connect::*C)( std::sockstream& ), void (Connect::*T)() >
+void sockmgr_stream_MP<Connect,C,T>::open( unsigned long addr, int port, sock_base::stype t )
 {
   basic_sockmgr::open( addr, port, t, sock_base::inet );
-  sockmgr_stream_MP<Connect>::_open( t );
+  sockmgr_stream_MP<Connect,C,T>::_open( t );
 }
 
-template <class Connect>
-void sockmgr_stream_MP<Connect>::open( int port, sock_base::stype t )
+template <class Connect, void (Connect::*C)( std::sockstream& ), void (Connect::*T)() >
+void sockmgr_stream_MP<Connect,C,T>::open( int port, sock_base::stype t )
 {
   basic_sockmgr::open( port, t, sock_base::inet );
-  sockmgr_stream_MP<Connect>::_open( t );
+  sockmgr_stream_MP<Connect,C,T>::_open( t );
 }
 
-template <class Connect>
-bool sockmgr_stream_MP<Connect>::_shift_fd()
+template <class Connect, void (Connect::*C)( std::sockstream& ), void (Connect::*T)() >
+bool sockmgr_stream_MP<Connect,C,T>::_shift_fd()
 {
   bool ret = false;
   typename iterator_traits<typename _fd_sequence::iterator>::difference_type d;
@@ -173,8 +173,8 @@ bool sockmgr_stream_MP<Connect>::_shift_fd()
   return ret;
 }
 
-template <class Connect>
-bool sockmgr_stream_MP<Connect>::accept_tcp()
+template <class Connect, void (Connect::*C)( std::sockstream& ), void (Connect::*T)() >
+bool sockmgr_stream_MP<Connect,C,T>::accept_tcp()
 {
   if ( !is_open() ) {
     return false;
@@ -255,8 +255,8 @@ bool sockmgr_stream_MP<Connect>::accept_tcp()
   return true; // something was pushed in connection queue (by _shift_fd)
 }
 
-template <class Connect>
-bool sockmgr_stream_MP<Connect>::accept_udp()
+template <class Connect, void (Connect::*C)( std::sockstream& ), void (Connect::*T)() >
+bool sockmgr_stream_MP<Connect,C,T>::accept_udp()
 {
   if ( !is_open() ) {
     return false;
@@ -359,8 +359,8 @@ bool sockmgr_stream_MP<Connect>::accept_udp()
   return true /* cl */;
 }
 
-template <class Connect>
-void sockmgr_stream_MP<Connect>::_close_by_signal( int )
+template <class Connect, void (Connect::*C)( std::sockstream& ), void (Connect::*T)() >
+void sockmgr_stream_MP<Connect,C,T>::_close_by_signal( int )
 {
 #ifdef _PTHREADS
   void *_uw_save = *((void **)pthread_getspecific( xmt::Thread::mtkey() ) + _idx );
@@ -372,8 +372,8 @@ void sockmgr_stream_MP<Connect>::_close_by_signal( int )
 #endif
 }
 
-template <class Connect>
-xmt::Thread::ret_t sockmgr_stream_MP<Connect>::loop( void *p )
+template <class Connect, void (Connect::*C)( std::sockstream& ), void (Connect::*T)() >
+xmt::Thread::ret_t sockmgr_stream_MP<Connect,C,T>::loop( void *p )
 {
   _Self_type *me = static_cast<_Self_type *>(p);
   me->loop_id.pword( _idx ) = me; // push pointer to self for signal processing
@@ -429,8 +429,8 @@ xmt::Thread::ret_t sockmgr_stream_MP<Connect>::loop( void *p )
   return rtc;
 }
 
-template <class Connect>
-xmt::Thread::ret_t sockmgr_stream_MP<Connect>::connect_processor( void *p )
+template <class Connect, void (Connect::*C)( std::sockstream& ), void (Connect::*T)() >
+xmt::Thread::ret_t sockmgr_stream_MP<Connect,C,T>::connect_processor( void *p )
 {
   _Self_type *me = static_cast<_Self_type *>(p);
   xmt::Thread::ret_t rtc = 0;
@@ -454,7 +454,7 @@ xmt::Thread::ret_t sockmgr_stream_MP<Connect>::connect_processor( void *p )
       if (_non_empty  ) {
         sockstream& stream = c->s;
         if ( stream.is_open() ) {
-          c->_proc->connect( stream );
+          (c->_proc->*C)( stream );
           if ( stream.is_open() && stream.good() ) {
             if ( stream.rdbuf()->in_avail() > 0 ) {
               // socket has buffered data, push it back to queue
@@ -509,8 +509,8 @@ xmt::Thread::ret_t sockmgr_stream_MP<Connect>::connect_processor( void *p )
   return rtc;
 }
 
-template <class Connect>
-xmt::Thread::ret_t sockmgr_stream_MP<Connect>::observer( void *p )
+template <class Connect, void (Connect::*C)( std::sockstream& ), void (Connect::*T)() >
+xmt::Thread::ret_t sockmgr_stream_MP<Connect,C,T>::observer( void *p )
 {
   _Self_type *me = static_cast<_Self_type *>(p);
   xmt::Thread::ret_t rtc = 0;
