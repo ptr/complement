@@ -68,7 +68,7 @@ class DataBase :
     virtual std::string IS_NOT_NULL() const;
 
   private:
-    static xmt::Thread::ret_code conn_proc( void * );
+    static xmt::Thread::ret_t conn_proc( void * );
 
     DBconn *_conn;
     xmt::Thread thr;
