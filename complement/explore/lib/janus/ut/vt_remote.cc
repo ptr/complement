@@ -198,6 +198,8 @@ int EXAM_IMPL(vtime_operations::remote)
     try {
       xmt::fork();
 
+      long res_flag = 0;
+
       b.wait();
 
       {
@@ -212,7 +214,7 @@ int EXAM_IMPL(vtime_operations::remote)
           // obj1.vtdispatcher()->settrf( janus::Janus::tracenet | janus::Janus::tracedispatch | janus::Janus::tracefault | janus::Janus::tracedelayed | janus::Janus::tracegroup );
           // obj1.vtdispatcher()->settrs( &std::cerr );
 
-          EXAM_CHECK_ASYNC( obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) == 1 );
+          EXAM_CHECK_ASYNC_F( obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) == 1, res_flag );
 
           obj1.vtdispatcher()->connect( "localhost", 6980 );
 
@@ -237,15 +239,15 @@ int EXAM_IMPL(vtime_operations::remote)
 
           // cerr << obj1.vtdispatcher()->vs_known_processes() << endl;
 
-          EXAM_CHECK_ASYNC( obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) == 2 );
+          EXAM_CHECK_ASYNC_F( obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) == 2, res_flag );
           // cerr << obj1.vtdispatcher()->group_size(janus::vs_base::vshosts_group) << endl;
 
           obj1.JoinGroup( janus::vs_base::first_user_group );
 
           obj1.wait_greeting();
 
-          EXAM_CHECK_ASYNC( obj1.vtdispatcher()->group_size(janus::vs_base::first_user_group) == 2 );
-          EXAM_CHECK_ASYNC( obj1.count == 1 );
+          EXAM_CHECK_ASYNC_F( obj1.vtdispatcher()->group_size(janus::vs_base::first_user_group) == 2, res_flag );
+          EXAM_CHECK_ASYNC_F( obj1.count == 1, res_flag );
           // cerr << "* " << obj1.vtdispatcher()->group_size(janus::vs_base::first_user_group) << endl;
           obj1.wait();
 
@@ -254,10 +256,10 @@ int EXAM_IMPL(vtime_operations::remote)
         }
         // obj1 here away, but in another process (remote) still exist object in
         // first_user_group, that's why 1 here:
-        EXAM_CHECK_ASYNC( obj0.vtdispatcher()->group_size(janus::vs_base::first_user_group) == 1);
+        EXAM_CHECK_ASYNC_F( obj0.vtdispatcher()->group_size(janus::vs_base::first_user_group) == 1, res_flag );
       }
 
-      exit(0);
+      exit( res_flag );
     }
     catch ( xmt::fork_in_parent& child ) {
       YaRemote obj1( "obj srv" );
@@ -289,8 +291,13 @@ int EXAM_IMPL(vtime_operations::remote)
       // obj1.manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch );
       // obj1.manager()->settrs( &std::cerr );
 
-      int stat;
+      int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
 
       EXAM_CHECK( obj1.vtdispatcher()->group_size(janus::vs_base::first_user_group) == 1 );
 
@@ -325,6 +332,8 @@ int EXAM_IMPL(vtime_operations::mgroups)
     try {
       xmt::fork();
 
+      long res_flag = 0;
+
       b.wait();
 
       {
@@ -346,9 +355,9 @@ int EXAM_IMPL(vtime_operations::mgroups)
           obj1.wait_greeting();
           obj1.wait_greeting2();
 
-          EXAM_CHECK_ASYNC( obj1.vtdispatcher()->group_size(janus::vs_base::first_user_group) == 2 );
-          EXAM_CHECK_ASYNC( obj1.vtdispatcher()->group_size(janus::vs_base::first_user_group + 1) == 2 );
-          EXAM_CHECK_ASYNC( obj1.count == 2 );
+          EXAM_CHECK_ASYNC_F( obj1.vtdispatcher()->group_size(janus::vs_base::first_user_group) == 2, res_flag );
+          EXAM_CHECK_ASYNC_F( obj1.vtdispatcher()->group_size(janus::vs_base::first_user_group + 1) == 2, res_flag );
+          EXAM_CHECK_ASYNC_F( obj1.count == 2, res_flag );
 
           stem::Event ev( VS_DUMMY_MESS2 );
           ev.dest( janus::vs_base::first_user_group + 1 );
@@ -362,11 +371,11 @@ int EXAM_IMPL(vtime_operations::mgroups)
           // obj1.manager()->settrs( &std::cerr );
         }
 
-        EXAM_CHECK_ASYNC( obj0.vtdispatcher()->group_size(janus::vs_base::first_user_group) == 1);
-        EXAM_CHECK_ASYNC( obj0.vtdispatcher()->group_size(janus::vs_base::first_user_group + 1) == 1);
+        EXAM_CHECK_ASYNC_F( obj0.vtdispatcher()->group_size(janus::vs_base::first_user_group) == 1, res_flag );
+        EXAM_CHECK_ASYNC_F( obj0.vtdispatcher()->group_size(janus::vs_base::first_user_group + 1) == 1, res_flag );
       }
 
-      exit(0);
+      exit( res_flag );
     }
     catch ( xmt::fork_in_parent& child ) {
       YaRemote obj1( "obj srv" );
@@ -393,8 +402,13 @@ int EXAM_IMPL(vtime_operations::mgroups)
 
       obj1.wait2();
 
-      int stat;
+      int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
 
       EXAM_CHECK( obj1.vtdispatcher()->group_size(janus::vs_base::first_user_group) == 1 );
       EXAM_CHECK( obj1.vtdispatcher()->group_size(janus::vs_base::first_user_group + 1) == 1 );
