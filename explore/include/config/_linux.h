@@ -71,11 +71,9 @@
 /*
  * use algorithms that based on non-block sockets technique
  */
-
 /*
 #define __FIT_NONBLOCK_SOCKETS
 */
-
 /*
  * use epoll syscall instead of poll
  */
