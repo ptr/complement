@@ -77,11 +77,9 @@ DataBase::~DataBase()
   //}
 }
 
-xmt::Thread::ret_code DataBase::conn_proc( void *p )
+xmt::Thread::ret_t DataBase::conn_proc( void *p )
 {
   DataBase *me = reinterpret_cast<DataBase *>(p);
-  xmt::Thread::ret_code ret;
-  ret.iword = 0;
   me->_conn = PQsetdbLogin( me->_dbhost.length() > 0 ? me->_dbhost.c_str() : 0,
                             0 /* _dbport */,
                             me->_dbopt.length() > 0 ? me->_dbopt.c_str() : 0,
@@ -100,7 +98,7 @@ xmt::Thread::ret_code DataBase::conn_proc( void *p )
   }
   me->con_cond.set( true );
 
-  return ret;
+  return 0;
 }
 
 void DataBase::reconnect()
