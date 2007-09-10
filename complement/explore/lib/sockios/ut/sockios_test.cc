@@ -241,9 +241,9 @@ int EXAM_IMPL(sockios_test::sigpipe)
 
         tcnd.set( true );
 
-        th1->join();
+        th1->join(); // Will be interrupted!
 
-        exit( 0 );
+        exit( 0 ); // will be killed!
       }
       catch ( ... ) {
       }
@@ -259,8 +259,14 @@ int EXAM_IMPL(sockios_test::sigpipe)
 
         kill( child.pid(), SIGTERM );
 
-        int stat;
-        waitpid( child.pid(), &stat, 0 );
+        int stat = -1;
+        EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+        if ( WIFEXITED(stat) ) {
+          // EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+          EXAM_ERROR( "child should be interrupted" );
+        } else {
+          EXAM_MESSAGE( "child interrupted" );
+        }
 
         srv.close();
         srv.wait();
@@ -332,10 +338,13 @@ int EXAM_IMPL(sockios_test::long_msg)
     try {
       xmt::fork();
 
+      long res_flag = 0;
       fcnd.try_wait();
 
       {
         sockstream s( "localhost", port );
+
+        EXAM_CHECK_ASYNC_F( s.is_open() && s.good(), res_flag );
 
         s << "POST /test.php HTTP/1.1\r\n"
           << "xmlrequest=<?xml version=\"1.0\"?>\
@@ -353,14 +362,23 @@ ref=\"network_gross_cost_ecpm\"/><COLUMN \
 ref=\"network_gross_profit_ecpm\"/></COLUMNS><FILTERS><FILTER ref=\"time\" \
 macro=\"yesterday\"/></FILTERS></REQUEST></RWRequest>";
         s.flush();
+        EXAM_CHECK_ASYNC_F( s.good(), res_flag );
       }     
-      exit( 0 );
+      exit( res_flag );
     }
     catch ( xmt::fork_in_parent& child ) {
       sockmgr_stream_MP<long_msg_processor> srv( port );
       fcnd.set( true );
 
       srv_cnd.try_wait();
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
 
       srv.close();
       srv.wait();
@@ -464,13 +482,15 @@ xmt::Thread::ret_t thread_entry( void *par )
   int buff = 0;
   // cerr << "thread_entry" << endl;
   cnd.set( true );
+
+  int r = 0;
   // Note: due to this is another process then main, boost can report
   // about errors here, but don't count error it in summary, if it occur!
-  EXAM_CHECK_ASYNC( sock.read( (char *)&buff, sizeof(int) ).good() ); // <---- key line
-  EXAM_CHECK_ASYNC( buff == 1 );
+  EXAM_CHECK_ASYNC_F( sock.read( (char *)&buff, sizeof(int) ).good(), r ); // <---- key line
+  EXAM_CHECK_ASYNC_F( buff == 1, r );
   // cerr << "Read pass" << endl;
   
-  return 0;
+  return reinterpret_cast<xmt::Thread::ret_t>(r);
 }
 
 int EXAM_IMPL(sockios_test::read0)
@@ -501,9 +521,8 @@ int EXAM_IMPL(sockios_test::read0)
 
       b.wait();
 
-      thr.join();
       // cerr << "exit child" << endl;
-      exit( 0 );
+      exit( reinterpret_cast<int>(thr.join()) );
     }
     catch ( xmt::fork_in_parent& child ) {
       // cerr << "** 3" << endl;
@@ -511,8 +530,14 @@ int EXAM_IMPL(sockios_test::read0)
 
       fcnd.set( true );
 
-      int stat;
-      waitpid( child.pid(), &stat, 0 );
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+
       srv.close();
       srv.wait();
     }
