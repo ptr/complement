@@ -334,6 +334,8 @@ int EXAM_IMPL(stem_test::echo_net)
   try {
     xmt::fork();
 
+    int eflag = 0;
+
     try {
       stem::NetTransportMgr mgr;
 
@@ -341,8 +343,8 @@ int EXAM_IMPL(stem_test::echo_net)
 
       stem::addr_type zero = mgr.open( "localhost", 6995 );
 
-      EXAM_CHECK_ASYNC( zero != stem::badaddr );
-      EXAM_CHECK_ASYNC( zero != 0 ); // NetTransportMgr should detect external delivery
+      EXAM_CHECK_ASYNC_F( zero != stem::badaddr, eflag );
+      EXAM_CHECK_ASYNC_F( zero != 0, eflag ); // NetTransportMgr should detect external delivery
 
       EchoClient node;
     
@@ -361,7 +363,7 @@ int EXAM_IMPL(stem_test::echo_net)
     catch ( ... ) {
     }
 
-    exit( 0 );
+    exit( eflag );
   }
   catch ( xmt::fork_in_parent& child ) {
     try {
@@ -371,8 +373,13 @@ int EXAM_IMPL(stem_test::echo_net)
 
       fcnd.set( true );
 
-      int stat;
+      int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
 
       srv.close();
       srv.wait();
@@ -402,6 +409,7 @@ int EXAM_IMPL(stem_test::net_echo)
     try {
       xmt::fork();
 
+      int eflag = 0;
       // server part
       {
         std::sockmgr_stream_MP<stem::NetTransport> srv( 6995 );
@@ -410,7 +418,7 @@ int EXAM_IMPL(stem_test::net_echo)
         // echo.manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch );
         // echo.manager()->settrs( &std::cerr );
 
-        EXAM_CHECK_ASYNC( srv.good() );
+        EXAM_CHECK_ASYNC_F( srv.good(), eflag );
         c.set( true ); // ok, server listen
 
         b.wait(); // server may go away
@@ -419,7 +427,7 @@ int EXAM_IMPL(stem_test::net_echo)
         srv.wait();
       }
 
-      exit( 0 );
+      exit( eflag );
     }
     catch ( xmt::fork_in_parent& child ) {
       // client part
@@ -449,8 +457,13 @@ int EXAM_IMPL(stem_test::net_echo)
 
       b.wait(); // server may go away
 
-      int stat;
+      int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
     }
 
     (&c)->~__condition<true>();
@@ -520,6 +533,8 @@ int EXAM_IMPL(stem_test::peer)
     sigaction( SIGALRM, &action, &old_action );
 #endif
 
+    int eflag = 0;
+
     try {
       stem::NetTransportMgr mgr;
 
@@ -531,9 +546,9 @@ int EXAM_IMPL(stem_test::peer)
       stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
       // It done like it should on client side
 
-      EXAM_CHECK_ASYNC( zero != stem::badaddr );
-      EXAM_CHECK_ASYNC( zero != 0 );
-      EXAM_CHECK_ASYNC( zero & stem::extbit ); // "external" address
+      EXAM_CHECK_ASYNC_F( zero != stem::badaddr, eflag );
+      EXAM_CHECK_ASYNC_F( zero != 0, eflag );
+      EXAM_CHECK_ASYNC_F( zero & stem::extbit, eflag ); // "external" address
 
       stem::Event ev( NODE_EV_REGME );
       ev.dest( zero );
@@ -543,13 +558,13 @@ int EXAM_IMPL(stem_test::peer)
 
       stem::gaddr_type ga( c1.manager()->reflect( zero ) );
 
-      EXAM_CHECK_ASYNC( ga.addr == 0 );
-      EXAM_CHECK_ASYNC( ga.pid != -1 );
+      EXAM_CHECK_ASYNC_F( ga.addr == 0, eflag );
+      EXAM_CHECK_ASYNC_F( ga.pid != -1, eflag );
 
       ga.addr = stem::ns_addr; // this will be global address of ns of the same process
                                // as zero
 
-      EXAM_CHECK_ASYNC( c1.manager()->reflect( ga ) != stem::badaddr );
+      EXAM_CHECK_ASYNC_F( c1.manager()->reflect( ga ) != stem::badaddr, eflag );
 
       stem::Event evname( EV_STEM_GET_NS_NAME );
       evname.dest( c1.manager()->reflect( ga ) );
@@ -567,8 +582,8 @@ int EXAM_IMPL(stem_test::peer)
         i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "c2@here" ) ), select2nd<pair<stem::gaddr_type,string> >() ) );
       } while ( i == nm.lst.end() );
 
-      EXAM_CHECK_ASYNC( i != nm.lst.end() );
-      EXAM_CHECK_ASYNC( i->second == "c2@here" );
+      EXAM_CHECK_ASYNC_F( i != nm.lst.end(), eflag );
+      EXAM_CHECK_ASYNC_F( i->second == "c2@here", eflag );
 
       stem::addr_type pa = c1.manager()->reflect( i->first );
       if ( pa == stem::badaddr ) { // unknown yet
@@ -579,7 +594,7 @@ int EXAM_IMPL(stem_test::peer)
         }
       }
 
-      EXAM_CHECK_ASYNC( pa != stem::badaddr );
+      EXAM_CHECK_ASYNC_F( pa != stem::badaddr, eflag );
 
       if ( pa != stem::badaddr ) {
         stem::Event pe( NODE_EV_ECHO );
@@ -595,9 +610,10 @@ int EXAM_IMPL(stem_test::peer)
       mgr.join();
     }
     catch ( ... ) {
+      eflag = 2;
     }
 
-    exit( 0 );
+    exit( eflag );
   }
   catch ( xmt::fork_in_parent& child ) {
     fpid = child.pid();
@@ -622,6 +638,8 @@ int EXAM_IMPL(stem_test::peer)
     sigaction( SIGALRM, &action, &old_action );
 #endif
 
+    int eflag = 0;
+
     try {
       stem::NetTransportMgr mgr;
                                    //                                          ^
@@ -631,9 +649,9 @@ int EXAM_IMPL(stem_test::peer)
       stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
       // It done like it should on client side
 
-      EXAM_CHECK_ASYNC( zero != stem::badaddr );
-      EXAM_CHECK_ASYNC( zero != 0 );
-      EXAM_CHECK_ASYNC( zero & stem::extbit ); // "external" address
+      EXAM_CHECK_ASYNC_F( zero != stem::badaddr, eflag );
+      EXAM_CHECK_ASYNC_F( zero != 0, eflag );
+      EXAM_CHECK_ASYNC_F( zero & stem::extbit, eflag ); // "external" address
 
       stem::Event ev( NODE_EV_REGME );
       ev.dest( zero );
@@ -651,9 +669,10 @@ int EXAM_IMPL(stem_test::peer)
       mgr.join();
     }
     catch ( ... ) {
+      eflag = 2;
     }
 
-    exit( 0 );
+    exit( eflag );
   }
   catch ( xmt::fork_in_parent& child ) {
     sockmgr_stream_MP<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
@@ -661,9 +680,20 @@ int EXAM_IMPL(stem_test::peer)
 
     fcnd.set( true, true );
 
-    int stat;
-    waitpid( child.pid(), &stat, 0 );
-    waitpid( fpid, &stat, 0 );
+    int stat = -1;
+    EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+    if ( WIFEXITED(stat) ) {
+      EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+    } else {
+      EXAM_ERROR( "child interrupted" );
+    }
+    stat = -1;
+    EXAM_CHECK( waitpid( fpid, &stat, 0 ) == fpid );
+    if ( WIFEXITED(stat) ) {
+      EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+    } else {
+      EXAM_ERROR( "child interrupted" );
+    }
 
     srv.close();
     srv.wait();
@@ -687,6 +717,9 @@ int EXAM_IMPL(stem_test::boring_manager)
   try {
     // Client
     xmt::fork();
+
+    int eflag = 0;
+
     try {
       fcnd.try_wait();
 
@@ -699,6 +732,7 @@ int EXAM_IMPL(stem_test::boring_manager)
         for ( int j = 1; j < n; ++j ) {
           mgr[j] = new stem::NetTransportMgr;
           stem::addr_type a = mgr[j]->open( "localhost", 6995 );
+          EXAM_CHECK_ASYNC_F( a != stem::badaddr, eflag );
           mgr[j]->close();
           mgr[j]->join();
           delete mgr[j];
@@ -709,8 +743,9 @@ int EXAM_IMPL(stem_test::boring_manager)
       }
     }
     catch ( ... ) {
+      eflag = 2;
     }
-    exit( 0 );
+    exit( eflag );
   }
   catch ( xmt::fork_in_parent& child ) {
     sockmgr_stream_MP<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
@@ -718,8 +753,13 @@ int EXAM_IMPL(stem_test::boring_manager)
 
     fcnd.set( true, true );
 
-    int stat;
-    waitpid( child.pid(), &stat, 0 );
+    int stat = -1;
+    EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+    if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+    } else {
+      EXAM_ERROR( "child interrupted" );
+    }
 
     srv.close();
     srv.wait();
