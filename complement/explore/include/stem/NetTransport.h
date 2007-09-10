@@ -78,6 +78,9 @@ class NetTransport :
 
     __FIT_DECLSPEC
     void connect( std::sockstream& );
+
+    virtual void close()
+       { NetTransport_base::close(); } 
 };
 
 class NetTransportMgr :
