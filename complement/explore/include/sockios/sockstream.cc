@@ -19,6 +19,9 @@ extern "C" int nanosleep(const struct timespec *, struct timespec *);
 # include <stropts.h> // for ioctl() call
 #endif
 
+#ifdef __FIT_NONBLOCK_SOCKETS
+#  include <fcntl.h>
+#endif
 
 #ifdef STLPORT
 _STLP_BEGIN_NAMESPACE
@@ -575,8 +578,8 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
     }
     if ( offset < count ) {
       // MUST BE: (offset % sizeof(char_traits)) == 0 !
-      offset /= sizeof(char_traits);
-      count /= sizeof(char_traits);
+      offset /= sizeof(charT);
+      count /= sizeof(charT);
       traits::move( this->pbase(), this->pbase() + offset, count - offset );
       // std::copy_backword( this->pbase() + offset, this->pbase() + count, this->pbase() );
       setp( this->pbase(), this->epptr() ); // require: set pptr
