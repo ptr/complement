@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/09/06 21:32:15 ptr>
+// -*- C++ -*- Time-stamp: <07/09/13 23:10:08 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
@@ -433,11 +433,9 @@ template <class Connect, void (Connect::*C)( std::sockstream& ), void (Connect::
 xmt::Thread::ret_t sockmgr_stream_MP<Connect,C,T>::connect_processor( void *p )
 {
   _Self_type *me = static_cast<_Self_type *>(p);
-  xmt::Thread::ret_t rtc = 0;
 
   try {
     timespec idle( me->_idle );
-    int idle_count = 0;
 
     me->_dlock.lock();
     typename _Sequence::iterator c;
@@ -451,7 +449,7 @@ xmt::Thread::ret_t sockmgr_stream_MP<Connect,C,T>::connect_processor( void *p )
     me->_dlock.unlock();
 
     do {
-      if (_non_empty  ) {
+      if ( _non_empty  ) {
         sockstream& stream = c->s;
         if ( stream.is_open() ) {
           (c->_proc->*C)( stream );
@@ -462,7 +460,14 @@ xmt::Thread::ret_t sockmgr_stream_MP<Connect,C,T>::connect_processor( void *p )
               me->_conn_pool.push_back( c );
               me->_observer_cnd.set( true );
               me->_pool_cnd.set( true );
+              if ( !me->_follow ) {
+                break;
+              }
+              c = me->_conn_pool.front();
+              me->_conn_pool.pop_front();
+              xmt::gettime( &me->_tpop );
               // xmt::Thread::gettime( &me->_tpush );
+              continue;
             } else { // no buffered data, return socket to poll
               sock_base::socket_type rfd = stream.rdbuf()->fd();
               ::write( me->_cfd, reinterpret_cast<const char *>(&rfd), sizeof(sock_base::socket_type) );
@@ -480,33 +485,34 @@ xmt::Thread::ret_t sockmgr_stream_MP<Connect,C,T>::connect_processor( void *p )
 
       _non_empty = false;
 
-      for ( idle_count = 0; idle_count < 2; ++idle_count ) {
-        { 
-          xmt::scoped_lock lk(me->_dlock);
-          if ( !me->_follow ) {
-            break;
-          }
-          if ( me->_conn_pool.size() != 0 ) {
-            c = me->_conn_pool.front();
-            me->_conn_pool.pop_front();
-            _non_empty = true;
-            xmt::gettime( &me->_tpop );
-            break;
-          }
+      if ( me->_pool_cnd.try_wait_delay( &idle ) == 0 ) {
+        xmt::scoped_lock lk(me->_dlock);
+        if ( !me->_follow ) {
+          return 0;
+        }
+        if ( me->_conn_pool.size() != 0 ) {
+          c = me->_conn_pool.front();
+          me->_conn_pool.pop_front();
+          _non_empty = true;
+          xmt::gettime( &me->_tpop );
+        } else {
           me->_pool_cnd.set( false );
           me->_observer_cnd.set( false );
+          return 0;
         }
-        if ( me->_pool_cnd.try_wait_delay( &idle ) != 0 ) {
-          idle_count = 2;
-        }
+      } else {
+        xmt::scoped_lock lk(me->_dlock);
+        me->_pool_cnd.set( false );
+        me->_observer_cnd.set( false );
+        return 0;
       }
-    } while ( me->_is_follow() && idle_count < 2 );
+    } while ( me->_is_follow() );
   }
   catch ( ... ) {
-    rtc = reinterpret_cast<xmt::Thread::ret_t>(-1);
+    return reinterpret_cast<xmt::Thread::ret_t>(-1);
   }
 
-  return rtc;
+  return 0;
 }
 
 template <class Connect, void (Connect::*C)( std::sockstream& ), void (Connect::*T)() >
