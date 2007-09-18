@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/03 09:47:08 ptr>
+// -*- C++ -*- Time-stamp: <07/09/15 10:03:40 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2007
@@ -144,12 +144,12 @@ extern std::string _notrecursive;
 // extern __FIT_DECLSPEC void signal_throw( int sig ) throw( int );
 // extern __FIT_DECLSPEC void signal_thread_exit( int sig );
 
-#ifdef __unix
-extern "C"  void *_xcall( void * ); // forward declaration
-#endif
-#ifdef WIN32
-extern "C" unsigned long __stdcall _xcall( void *p ); // forward declaration
-#endif
+// #ifdef __unix
+// extern "C"  void *_xcall( void * ); // forward declaration
+// #endif
+// #ifdef WIN32
+// extern "C" unsigned long __stdcall _xcall( void *p ); // forward declaration
+// #endif
 
 #ifndef WIN32
 // using std::size_t;
@@ -1463,7 +1463,7 @@ class Thread
     bool bad() const
       { /* Locker lk( _llock ); */ return (_id == bad_thread_id); }
     bool is_join_req() const // if true, you can (and should) use join()
-      { /* Locker lk( _llock ); */ return (_rip_id != bad_thread_id) && ((_flags & (daemon | detached)) == 0); }
+      { scoped_lock lk( _rip_id_lock ); return (_rip_id != bad_thread_id) && ((_flags & (daemon | detached)) == 0); }
 
     __FIT_DECLSPEC bool is_self();
 
@@ -1494,7 +1494,11 @@ class Thread
     bool _not_run() const
       { /* Locker lk( _llock ); */ return _id == bad_thread_id; }
     void _create( const void *p, size_t psz ) throw( std::runtime_error);
+
     static void *_call( void *p );
+#ifdef WIN32
+    statuc unsigned long __stdcall _call( void *p );
+#endif
 
     static void unexpected();
     static void terminate();
@@ -1518,6 +1522,7 @@ class Thread
 
     thread_id_type _id;
     thread_id_type _rip_id;
+    mutex _rip_id_lock;
 #ifdef _PTHREADS
 # ifndef __hpux
     // sorry, POSIX threads don't have suspend/resume calls, so it should
@@ -1536,12 +1541,12 @@ class Thread
     // mutex _llock;
     friend class Init;
     // extern "C", wrap for thread_create
-#ifdef __unix
-    friend void *_xcall( void * );
-#endif
-#ifdef __FIT_WIN32THREADS
-    friend unsigned long __stdcall _xcall( void *p );
-#endif
+// #ifdef __unix
+//     friend void *_xcall( void * );
+// #endif
+// #ifdef __FIT_WIN32THREADS
+//     friend unsigned long __stdcall _xcall( void *p );
+// #endif
 };
 
 template <bool SCOPE>
