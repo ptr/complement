@@ -8,6 +8,10 @@
 
 	* libxmt: version 1.13.0
 
+	* ut/mt_test.cc: test require sync with main thread, otherwise join may
+	happens BEFORE thread call indeed (!!!) and _rip_id will be bad_thread_id
+	and not joined (hmm, really bug of pthread_create in glibc 2.3.6?).
+
 2007-09-05  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* xmt.h, xmt.cc: looks like non-POD return from thread is unstable,
