@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/09/05 00:31:04 ptr>
+// -*- C++ -*- Time-stamp: <07/09/14 22:10:35 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -46,9 +46,14 @@ int EXAM_IMPL(mt_test::barrier)
 
 static int x = 0;
 
-xmt::Thread::ret_t thread_entry_call( void * )
+xmt::Thread::ret_t thread_entry_call( void *p )
 {
+  xmt::barrier& b = *reinterpret_cast<xmt::barrier *>(p);
+  b.wait();
+
   x = 1;
+
+  // cerr << "XXX" << endl;
 
   return reinterpret_cast<xmt::Thread::ret_t>(2);
 }
@@ -57,9 +62,18 @@ int EXAM_IMPL(mt_test::join_test)
 {
   EXAM_CHECK( x == 0 );
 
-  xmt::Thread t( thread_entry_call );
+  xmt::barrier b;
 
-  EXAM_CHECK( reinterpret_cast<int>(t.join()) == 2 );
+  xmt::Thread t( thread_entry_call, &b );
+
+  // cerr << t.good() << " " << t.is_join_req() << endl;
+
+  // void *r = t.join();
+
+  // cerr << r << endl;
+  b.wait();
+
+  EXAM_CHECK( reinterpret_cast<int>( t.join() ) == 2 );
 
   EXAM_CHECK( x == 1 );
 
@@ -83,10 +97,12 @@ int EXAM_IMPL(mt_test::barrier2)
   xmt::barrier b;
 
   xmt::Thread t1( thread2_entry_call, &b );
-  xmt::Thread t2( thread2_entry_call, &b );
+  // xmt::Thread t2( thread2_entry_call, &b );
 
-  EXAM_CHECK( reinterpret_cast<int>(t2.join()) == 1 );
+  // EXAM_CHECK( reinterpret_cast<int>(t2.join()) == 1 );
   // std::cerr << t2.join() << std::endl;
+  b.wait();
+
   EXAM_CHECK( reinterpret_cast<int>(t1.join()) == 1 );
 
   return EXAM_RESULT;
@@ -112,9 +128,10 @@ int EXAM_IMPL(mt_test::yield)
   {
     xmt::barrier b;
 
-    xmt::Thread t1( thread2_entry_call, &b );
+    // xmt::Thread t1( thread2_entry_call, &b );
     xmt::Thread t2( thread3_entry_call, &b );
     // .join()'s are in Thread's destructors
+    b.wait();
   }
 
   return EXAM_RESULT;
