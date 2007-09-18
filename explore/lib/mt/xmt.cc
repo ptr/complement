@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/06/14 10:10:54 ptr>
+// -*- C++ -*- Time-stamp: <07/09/15 10:16:39 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2007
@@ -419,6 +419,7 @@ Thread::ret_t Thread::join()
     thr_join( _rip_id, 0, &rt );
 #  endif
     // Locker lk( _llock );
+    scoped_lock lk( _rip_id_lock );
     _rip_id = bad_thread_id;
   }
 #endif // __FIT_UITHREADS || PTHREADS
@@ -544,7 +545,7 @@ void Thread::signal_exit( int sig )
 
   // follow part of _call
   if ( (me->_flags & (daemon | detached)) != 0 ) { // otherwise join expected
-    // Locker lk( me->_llock ); // !!!!??? in the signal handler?
+    // scoped_lock lk( _rip_id_lock ); // !!!!??? in the signal handler?
     me->_rip_id = me->_id = bad_thread_id;
   } else {
     me->_id = bad_thread_id;
@@ -718,21 +719,23 @@ void Thread::_create( const void *p, size_t psz ) throw(std::runtime_error)
     // pthread_attr_setinheritsched( &attr, PTHREAD_EXPLICIT_SCHED );
     // pthread_attr_setschedpolicy(&attr,SCHED_OTHER);
   }
-  err = pthread_create( &_id, _flags != 0 || _stack_sz != 0 ? &attr : 0, _xcall, this );
+  scoped_lock lk( _rip_id_lock );
+  err = pthread_create( &_id, _flags != 0 || _stack_sz != 0 ? &attr : 0, _call, this );
   if ( err != 0 ) {
     _rip_id = _id = bad_thread_id;
   } else {
     _rip_id = _id;
   }
+  lk.unlock();
   if ( _flags != 0 || _stack_sz != 0 ) {
     pthread_attr_destroy( &attr );
   }
 #endif
 #ifdef __FIT_UITHREADS
-  err = thr_create( 0, 0, _xcall, this, _flags, &_id );
+  err = thr_create( 0, 0, _call, this, _flags, &_id );
 #endif
 #ifdef __FIT_WIN32THREADS
-   _rip_id = _id = CreateThread( 0, 0, _xcall, this, (_flags & suspended), &_thr_id );
+   _rip_id = _id = CreateThread( 0, 0, _call, this, (_flags & suspended), &_thr_id );
   err = GetLastError();
 #endif
 
@@ -750,28 +753,12 @@ void Thread::_create( const void *p, size_t psz ) throw(std::runtime_error)
 #pragma warning( disable : 4101 )
 #endif
 
-extern "C" {
 #ifdef __unix
-  void *_xcall( void *p )
-  {
-    return Thread::_call( p );
-  }
+void *Thread::_call( void *p )
 #endif
 #ifdef WIN32
-  unsigned long __stdcall _xcall( void *p )
-  {
-    return (unsigned long)Thread::_call( p );
-  }
+unsigned long __stdcall Thread::_call( void *p )
 #endif
-#ifdef __FIT_NETWARE
-  void _xcall( void *p )
-  {
-    Thread::_call( p );
-  }
-#endif
-} // extern "C"
-
-void *Thread::_call( void *p )
 {
   Thread *me = static_cast<Thread *>(p);
 
@@ -816,6 +803,7 @@ void *Thread::_call( void *p )
 #ifdef __FIT_WIN32THREADS
       CloseHandle( me->_id );
 #endif
+      scoped_lock lk( me->_rip_id_lock );
       me->_id = bad_thread_id;
       me->_rip_id = bad_thread_id;
     } else {
@@ -830,6 +818,7 @@ void *Thread::_call( void *p )
 #ifdef __FIT_WIN32THREADS
       CloseHandle( me->_id );
 #endif
+      scoped_lock lk( me->_rip_id_lock );
       me->_id = bad_thread_id;
       me->_rip_id = bad_thread_id;
     } else {
@@ -848,6 +837,7 @@ void *Thread::_call( void *p )
 #ifdef __FIT_WIN32THREADS
       CloseHandle( me->_id );
 #endif
+      scoped_lock lk( me->_rip_id_lock );
       me->_id = bad_thread_id;
       me->_rip_id = bad_thread_id;
     } else {
@@ -868,6 +858,7 @@ void *Thread::_call( void *p )
 #ifdef __FIT_WIN32THREADS
       CloseHandle( me->_id );
 #endif
+      scoped_lock lk( me->_rip_id_lock );
       me->_id = bad_thread_id;
       me->_rip_id = bad_thread_id;
     } else {

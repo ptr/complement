@@ -1,3 +1,13 @@
+2007-09-18  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* xmt.h, xmt.cc: removed intermediate _xcall, use direct call of _call
+	as thread function;
+
+	* xmt.h, xmt.cc: add locker for _rip_id---it may be changed from different
+	threads in case of fast termination of thread;
+
+	* libxmt: version 1.13.0
+
 2007-09-05  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* xmt.h, xmt.cc: looks like non-POD return from thread is unstable,
