@@ -14,6 +14,8 @@
 
 #include <exam/suite.h>
 
-int EXAM_DECL(sockios_perf_suite);
+int EXAM_DECL(sockios_perf_suite_b);
+int EXAM_DECL(sockios_perf_suite_c);
+int EXAM_DECL(sockios_perf_suite_d);
 
 #endif // __sockios_perf_suite_h
