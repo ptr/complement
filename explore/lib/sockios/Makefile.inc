@@ -1,9 +1,9 @@
-# -*- Makefile -*- Time-stamp: <07/07/12 00:53:38 ptr>
+# -*- Makefile -*- Time-stamp: <07/09/24 22:52:43 ptr>
 
 LIBNAME = sockios
 MAJOR = 1
-MINOR = 12
-PATCH = 1
+MINOR = 13
+PATCH = 0
 SRC_CC = _sockstream.cc _sockmgr.cc
 SRC_C = freebsd/getaddrinfo.c \
         freebsd/ns_parse.c \

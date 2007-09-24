@@ -1,3 +1,13 @@
+2007-09-24  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockios/sockmgr.h, sockios/sockmgr.cc: rename loop_id to loop_thr,
+	for correct interpretation; clean main loop of connection_processor;
+
+	* ut/sockios_test.cc: initialize buffer; reduce number of iterations
+	for test;
+	
+	* libsockios: Version 1.13.0.
+
 2007-09-07  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* sockstream, sockstream.cc: prepare for __FIT_NONBLOCK_SOCKETS.

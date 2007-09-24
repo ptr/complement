@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/09/13 23:10:08 ptr>
+// -*- C++ -*- Time-stamp: <07/09/19 11:43:21 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
@@ -63,7 +63,7 @@ void sockmgr_stream_MP<Connect,C,T>::_open( sock_base::stype t )
     }
     
     _loop_cnd.set( false );
-    loop_id.launch( loop, this, 0, PTHREAD_STACK_MIN * 2 );
+    loop_thr.launch( loop, this, 0, PTHREAD_STACK_MIN * 2 );
     _loop_cnd.try_wait();
   }
 }
@@ -376,7 +376,7 @@ template <class Connect, void (Connect::*C)( std::sockstream& ), void (Connect::
 xmt::Thread::ret_t sockmgr_stream_MP<Connect,C,T>::loop( void *p )
 {
   _Self_type *me = static_cast<_Self_type *>(p);
-  me->loop_id.pword( _idx ) = me; // push pointer to self for signal processing
+  me->loop_thr.pword( _idx ) = me; // push pointer to self for signal processing
   xmt::Thread::ret_t rtc = 0;
   xmt::Thread::ret_t rtc_observer = 0;
 
@@ -387,7 +387,7 @@ xmt::Thread::ret_t sockmgr_stream_MP<Connect,C,T>::loop( void *p )
 
     me->_follow = true;
 
-    while ( (me->*me->_accept)() ) {
+    while ( (me->*me->_accept)() /* && me->_is_follow() */ ) {
       if ( thr_observer.bad() ) {
         if ( thr_observer.is_join_req() ) {
           rtc_observer = thr_observer.join();
@@ -421,6 +421,7 @@ xmt::Thread::ret_t sockmgr_stream_MP<Connect,C,T>::loop( void *p )
   // me->_c_lock.unlock();
   rtc_observer = thr_observer.join();
 
+  xmt::scoped_lock _l( me->_c_lock );
   me->_M_c.clear(); // FIN still may not come yet; force close
   if ( rtc_observer != 0 && rtc == 0 ) {
     rtc = reinterpret_cast<xmt::Thread::ret_t>(-2); // there was connect_processor that was killed
@@ -436,75 +437,74 @@ xmt::Thread::ret_t sockmgr_stream_MP<Connect,C,T>::connect_processor( void *p )
 
   try {
     timespec idle( me->_idle );
-
-    me->_dlock.lock();
     typename _Sequence::iterator c;
-    bool _non_empty = false;
-    if ( me->_conn_pool.size() != 0 ) {
-      c = me->_conn_pool.front();
-      me->_conn_pool.pop_front();
-      _non_empty = true;
-      xmt::gettime( &me->_tpop );
-    }
-    me->_dlock.unlock();
 
-    do {
-      if ( _non_empty  ) {
-        sockstream& stream = c->s;
-        if ( stream.is_open() ) {
-          (c->_proc->*C)( stream );
-          if ( stream.is_open() && stream.good() ) {
-            if ( stream.rdbuf()->in_avail() > 0 ) {
-              // socket has buffered data, push it back to queue
-              xmt::scoped_lock lk(me->_dlock);
-              me->_conn_pool.push_back( c );
-              me->_observer_cnd.set( true );
-              me->_pool_cnd.set( true );
-              if ( !me->_follow ) {
-                break;
-              }
-              c = me->_conn_pool.front();
-              me->_conn_pool.pop_front();
-              xmt::gettime( &me->_tpop );
-              // xmt::Thread::gettime( &me->_tpush );
-              continue;
-            } else { // no buffered data, return socket to poll
-              sock_base::socket_type rfd = stream.rdbuf()->fd();
-              ::write( me->_cfd, reinterpret_cast<const char *>(&rfd), sizeof(sock_base::socket_type) );
-            }
-          } else {
-            me->_dlock.lock();
-            me->_conn_pool.erase( std::remove( me->_conn_pool.begin(), me->_conn_pool.end(), c ), me->_conn_pool.end() );
-            me->_dlock.unlock();
-
-            xmt::scoped_lock _l( me->_c_lock );
-            me->_M_c.erase( c );
-          }
-        }
-      }
-
-      _non_empty = false;
-
-      if ( me->_pool_cnd.try_wait_delay( &idle ) == 0 ) {
-        xmt::scoped_lock lk(me->_dlock);
-        if ( !me->_follow ) {
-          return 0;
-        }
-        if ( me->_conn_pool.size() != 0 ) {
-          c = me->_conn_pool.front();
-          me->_conn_pool.pop_front();
-          _non_empty = true;
-          xmt::gettime( &me->_tpop );
-        } else {
-          me->_pool_cnd.set( false );
-          me->_observer_cnd.set( false );
-          return 0;
-        }
-      } else {
-        xmt::scoped_lock lk(me->_dlock);
+    {
+      xmt::scoped_lock lk(me->_dlock);
+      if ( me->_conn_pool.empty() ) {
         me->_pool_cnd.set( false );
         me->_observer_cnd.set( false );
         return 0;
+      }
+      c = me->_conn_pool.front();
+      me->_conn_pool.pop_front();
+      xmt::gettime( &me->_tpop );
+    }
+
+    do {
+      sockstream& stream = c->s;
+      if ( stream.is_open() ) {
+        (c->_proc->*C)( stream );
+        if ( stream.is_open() && stream.good() ) {
+          if ( stream.rdbuf()->in_avail() > 0 ) {
+            // socket has buffered data, push it back to queue
+            xmt::scoped_lock lk(me->_dlock);
+            me->_conn_pool.push_back( c );
+            me->_observer_cnd.set( true );
+            me->_pool_cnd.set( true );
+            if ( !me->_follow ) {
+              break;
+            }
+            c = me->_conn_pool.front();
+            me->_conn_pool.pop_front();
+            xmt::gettime( &me->_tpop );
+            // xmt::Thread::gettime( &me->_tpush );
+            continue;
+          } else { // no buffered data, return socket to poll
+            sock_base::socket_type rfd = stream.rdbuf()->fd();
+            ::write( me->_cfd, reinterpret_cast<const char *>(&rfd), sizeof(sock_base::socket_type) );
+          }
+        } else {
+          me->_dlock.lock();
+          me->_conn_pool.erase( std::remove( me->_conn_pool.begin(), me->_conn_pool.end(), c ), me->_conn_pool.end() );
+          me->_dlock.unlock();
+
+          xmt::scoped_lock _l( me->_c_lock );
+          me->_M_c.erase( c );
+        }
+      }
+
+      {
+        xmt::scoped_lock lk(me->_dlock);
+        if ( me->_conn_pool.empty() ) {
+          lk.unlock();
+          if ( me->_pool_cnd.try_wait_delay( &idle ) != 0 ) {
+            lk.lock();
+            me->_pool_cnd.set( false );
+            me->_observer_cnd.set( false );
+            return 0;
+          }
+          if ( !me->_is_follow() ) { // before _conn_pool.front()
+            return 0;
+          }
+          lk.lock();
+          if ( me->_conn_pool.empty() ) {
+            return 0;
+          }
+        }
+        c = me->_conn_pool.front();
+        me->_conn_pool.pop_front();
+        xmt::gettime( &me->_tpop );
       }
     } while ( me->_is_follow() );
   }
@@ -610,7 +610,7 @@ void sockmgr_stream_MP_SELECT<Connect>::_open( sock_base::stype t )
     FD_SET( fd_unsafe(), &_pfde );
     _fdmax = fd_unsafe();
     
-    loop_id.launch( loop, this, 0, PTHREAD_STACK_MIN * 2 );
+    loop_thr.launch( loop, this, 0, PTHREAD_STACK_MIN * 2 );
   }
 }
 

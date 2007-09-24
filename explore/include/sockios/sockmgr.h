@@ -192,7 +192,7 @@ class sockmgr_stream_MP :
       }
 
     ~sockmgr_stream_MP()
-      { loop_id.join(); }
+      { loop_thr.join(); }
 
   private:
     sockmgr_stream_MP( const sockmgr_stream_MP<Connect,C,T>& );
@@ -207,7 +207,7 @@ class sockmgr_stream_MP :
       { basic_sockmgr::close(); }
 
     void wait()
-      {	loop_id.join(); }
+      {	loop_thr.join(); }
 
     void detach( sockstream& ) // remove sockstream from polling in manager
       { }
@@ -237,7 +237,7 @@ class sockmgr_stream_MP :
           { }
 
         ~_Connect()
-          { if ( _proc ) { s.close(); (_proc->*T)(); } delete _proc; }
+          { if ( _proc ) { s.close(); (_proc->*T)(); delete _proc; _proc = 0; } }
 
         void open( sock_base::socket_type st, const sockaddr& addr, sock_base::stype t = sock_base::sock_stream )
           { s.open( st, addr, t ); _proc = new Connect( s ); }
@@ -289,7 +289,7 @@ class sockmgr_stream_MP :
     bool accept_udp();
 
   private:
-    xmt::Thread loop_id;
+    xmt::Thread loop_thr;
 
   protected:
     typedef sockmgr_stream_MP<Connect,C,T> _Self_type;
