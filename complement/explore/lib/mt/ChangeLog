@@ -1,3 +1,21 @@
+2007-09-24  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* callstack.h, callstack.cc: print call stack to ostream, initial
+	implementation;
+
+	* xmt.h, xmt.cc: store call stack when thread created; useful for
+	debugging;
+
+	* config/feature.h: macro to force store call stack when thread
+	created; recompilation required when changed;
+
+	* Makefile: bfd library required for call stack printing;
+
+	* ut/mt_test.cc, ut/mt_test.h, ut/mt_test_suite.cc: initial test for
+	call stack output.
+
+	* libxmt: version 1.14.0
+
 2007-09-18  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* xmt.h, xmt.cc: removed intermediate _xcall, use direct call of _call

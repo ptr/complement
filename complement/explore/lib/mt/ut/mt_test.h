@@ -19,6 +19,7 @@
 class mt_test
 {
   public:
+    int EXAM_DECL(callstack);
     int EXAM_DECL(barrier);
     int EXAM_DECL(join_test);
     int EXAM_DECL(barrier2);

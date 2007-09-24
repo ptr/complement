@@ -13,6 +13,7 @@
 #include <mt/xmt.h>
 #include <mt/shm.h>
 #include <mt/thr_mgr.h>
+#include <mt/callstack.h>
 
 #include <sys/shm.h>
 #include <sys/wait.h>
@@ -26,6 +27,13 @@
 
 using namespace std;
 namespace fs = boost::filesystem;
+
+int EXAM_IMPL(mt_test::callstack)
+{
+  xmt::callstack( cerr );
+
+  return EXAM_RESULT;
+}
 
 /* ******************************************************
  * Degenerate case: check that one thread pass throw

@@ -8,6 +8,8 @@ include ${SRCROOT}/Makefiles/gmake/top.mak
 INCLUDES += -I$(SRCROOT)/include
 HEADERS_BASE = $(SRCROOT)/include/mt $(SRCROOT)/include/config $(SRCROOT)/include/misc
 
+LDLIBS += -ldl -lbfd
+
 check:	all-shared
 	$(MAKE) -C ut all-shared
 	(cd ut; ${OUTPUT_DIR}/mt_ut) || exit 1
