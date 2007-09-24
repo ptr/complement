@@ -20,6 +20,7 @@
 #include <fcntl.h>
 
 #include <mt/xmt.h>
+#include <mt/callstack.h>
 
 #include <cstring>
 #ifndef _WIN32
@@ -359,7 +360,13 @@ Thread::~Thread()
   if ( (_flags & (daemon | detached)) != 0 ) { // not joinable
     // Locker lk( _llock );
     if ( _id != bad_thread_id ) { // still run?
-      cerr << "Crash on daemon thread exit expected, threas id " << _id << endl;
+      cerr << "Suspected crash of daemon thread, threas id " << _id << endl;
+#ifdef __FIT_CREATE_THREAD_STACK_INFO
+      cerr << "Stack when thread was created:\n" << _stack_on_create << endl;
+#endif
+      std::stringstream s;
+      callstack( s );
+      cerr << "Current stack is:\n" << s.str() << endl;
     }
   }
 
@@ -701,6 +708,15 @@ void Thread::_create( const void *p, size_t psz ) throw(std::runtime_error)
   _param_sz = psz;
 
   int err = 0;
+#ifdef __FIT_CREATE_THREAD_STACK_INFO
+  // _stack_on_create
+  {
+    std::stringstream s;
+    callstack( s );
+    _stack_on_create = s.str();
+  }
+#endif
+
 #ifdef _PTHREADS
   pthread_attr_t attr;
   if ( _flags != 0 || _stack_sz != 0 ) {

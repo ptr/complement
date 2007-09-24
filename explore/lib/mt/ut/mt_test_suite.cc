@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/09/05 00:29:06 ptr>
+// -*- C++ -*- Time-stamp: <07/09/21 22:41:08 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -27,6 +27,7 @@ int EXAM_IMPL(mt_test_suite)
   exam::test_suite t( "libxmt test" );
   mt_test test;
 
+#if 0
   t.add( timespec_diff, "timespec_diff" );
   t.add( signal_1_test, "signal_1_test" );
   // You can't throw exception from signal handler
@@ -34,8 +35,11 @@ int EXAM_IMPL(mt_test_suite)
   // by this reason next test is commented:
   // t.add( signal_2_test, "signal_2_test" );
   t.add( signal_3_test, "signal_3_test" );
+#endif
 
   exam::test_suite::test_case_type tc[3];
+
+  // t.add( &mt_test::callstack, test, "callstack" );
 
   tc[0] = t.add( &mt_test::barrier, test, "mt_test::barrier" );
   tc[1] = t.add( &mt_test::join_test, test, "mt_test::join_test" );

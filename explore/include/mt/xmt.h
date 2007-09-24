@@ -1538,7 +1538,9 @@ class Thread
     size_t _param_sz;
     unsigned _flags;
     size_t _stack_sz; // stack size, if not 0
-    // mutex _llock;
+#ifdef __FIT_CREATE_THREAD_STACK_INFO
+    std::string _stack_on_create;
+#endif
     friend class Init;
     // extern "C", wrap for thread_create
 // #ifdef __unix
