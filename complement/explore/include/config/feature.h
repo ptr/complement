@@ -112,4 +112,11 @@
 #  define __FIT_TYPENAME_ARG 
 #endif /* __FIT_NEED_TYPENAME_IN_ARGS_BUG */
 
+/*
+ Store information about stack before create thread in xmt::Thread;
+ useful for debugging.
+*/
+
+#define __FIT_CREATE_THREAD_STACK_INFO
+
 #endif /* __config_feature_h */
