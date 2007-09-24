@@ -27,4 +27,6 @@
 #  define __FIT_NO_INLINE_TEMPLATE_STATIC_INITIALISATION
 #endif
 
+#define __FIT_CPP_DEMANGLE
+
 #endif /* __config__gcc_h */
