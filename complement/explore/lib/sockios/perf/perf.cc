@@ -13,5 +13,11 @@
 
 int main( int, char ** )
 {
-  return sockios_perf_suite(0);
+  int flag = 0;
+
+  flag += sockios_perf_suite_b(0);
+  flag += sockios_perf_suite_c(0);
+  flag += sockios_perf_suite_d(0);
+
+  return flag;
 }
