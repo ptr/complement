@@ -664,7 +664,7 @@ void LongBlockReader::connect( std::sockstream& s )
   char buf[1024];
   int count = 0;
 
-  for ( int i = 0; i < 1024 * 1024; ++i ) {
+  for ( int i = 0; i < 128 * 1024; ++i ) {
     s.read( buf, 1024 );
   }
   cnd.set( true );
@@ -693,7 +693,9 @@ int EXAM_IMPL(sockios_test::long_block_read)
 
   char buf[1024];
 
-  for ( int i = 0; i < 1024 * 1024; ++i ) {
+  fill( buf, buf + 1024, ' ' );
+
+  for ( int i = 0; i < 128 * 1024; ++i ) {
     s.write( buf, 1024 );
   }
   s.flush();
