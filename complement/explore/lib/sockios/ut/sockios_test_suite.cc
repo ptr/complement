@@ -36,6 +36,8 @@ int EXAM_IMPL(sockios_test_suite)
 
   exam::test_suite t( "libsockios test" );
 
+  // t.flags( t.flags() | exam::base_logger::trace );
+
   trivial_sockios_test trivial_test;
 
   tc[0] = t.add( &trivial_sockios_test::simple, trivial_test, "trivial_sockios_test::simple" );
