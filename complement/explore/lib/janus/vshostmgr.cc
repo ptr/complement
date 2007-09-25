@@ -48,6 +48,30 @@ VSHostMgr::VSHostMgr( const char *info ) :
 
   vshost.insert( gaddr_type( stem::janus_addr ) );
   JoinGroup( vshosts_group );
+
+  bool is_connected = false;
+
+  xmt::scoped_lock lk( _wknh_lock );
+  for ( vs_wellknown_hosts_container_t::const_iterator i = _wknhosts.begin(); i != _wknhosts.end(); ++i ) {
+    string s( *i );
+    string::size_type p = s.find( ':' );
+    if ( p != string::npos ) {
+      s.replace( p, 1, 1, ' ' );
+      stringstream ss( s );
+      int port = 0;
+      ss >> s >> port;
+      if ( !ss.fail() ) {
+        if ( connect( s.c_str(), port ) != 0 ) {
+          continue;
+        }
+        is_connected = true;
+        break;
+      }
+    }
+  }
+  if ( !is_connected && _srvport != 0 ) {
+    serve( _srvport );
+  }
 }
 
 VSHostMgr::~VSHostMgr()
@@ -141,11 +165,18 @@ void VSHostMgr::VSsync_time( const stem::Event_base<VSsync>& ev )
   VTHandler::VSsync_time(ev);
 }
 
-void VSHostMgr::connect( const char *host, int port )
+int VSHostMgr::connect( const char *host, int port )
 {
-  _clients.push_back( new NetTransportMgr() );
+  NetTransportMgr *mgr = new NetTransportMgr();
 
-  addr_type zero = _clients.back()->open( host, port );
+  addr_type zero = mgr->open( host, port );
+
+  if ( zero == stem::badaddr ) {
+    delete mgr;
+    return -1;
+  }
+
+  _clients.push_back( mgr );
 
   gaddr_type ga = manager()->reflect( zero );
   if ( ga != gaddr_type() ) {
@@ -171,6 +202,7 @@ void VSHostMgr::connect( const char *host, int port )
     catch ( ... ) {
     }
 #endif // __FIT_VS_TRACE
+    return 0;
   }
 #ifdef __FIT_VS_TRACE
   else {
@@ -184,27 +216,40 @@ void VSHostMgr::connect( const char *host, int port )
     }
   }
 #endif // __FIT_VS_TRACE
+
+  delete _clients.back();
+  _clients.pop_back();
+  return -2;
 }
 
-void VSHostMgr::serve( int port )
+int VSHostMgr::serve( int port )
 {
-  _servers.push_back( new sockmgr_stream_MP<NetTransport>( port ) );
+  sockmgr_stream_MP<NetTransport> *mgr = new sockmgr_stream_MP<NetTransport>( port );
+ 
 #ifdef __FIT_VS_TRACE
   try {
     scoped_lock lk(vtdispatcher()->_lock_tr);
     if ( vtdispatcher()->_trs != 0 && vtdispatcher()->_trs->good() && (vtdispatcher()->_trflags & Janus::tracenet) ) {
       *vtdispatcher()->_trs << "serve " << port
-                            << (_servers.back()->good() ? " ok" : " fail" )
-                            << endl;
+                            << (mgr->good() ? " ok" : " fail" ) << endl;
     }
   }
   catch ( ... ) {
   }
 #endif // __FIT_VS_TRACE
+  if ( !mgr->good() ) {
+    delete mgr;
+    return -2;
+  }
+  _servers.push_back( mgr );
+  return 0;
 }
 
 void VSHostMgr::Subscribe( stem::addr_type addr, group_type grp )
 {
+  if ( vshost.empty() ) {
+    return;
+  }
   try {
     manager()->transport( addr );
   }
@@ -226,14 +271,54 @@ void VSHostMgr::Subscribe( stem::addr_type addr, group_type grp )
             *vtdispatcher()->_trs << " -> VS_NEW_REMOTE_MEMBER G" << grp << " "
                                   << hex << showbase
                                   << ev.src() << " -> " << ev.dest() << dec << endl;
-      }
-    }
-    catch ( ... ) {
-    }
+          }
+        }
+        catch ( ... ) {
+        }
 #endif // __FIT_VS_TRACE
       }
     }
   }
+}
+
+xmt::mutex VSHostMgr::_wknh_lock;
+VSHostMgr::vs_wellknown_hosts_container_t VSHostMgr::_wknhosts;
+int VSHostMgr::_srvport = 0;
+
+void VSHostMgr::add_wellknown( const char *nm )
+{
+  xmt::scoped_lock lk( _wknh_lock );
+  _wknhosts.insert( string(nm) );
+}
+
+void VSHostMgr::add_wellknown( const std::string& nm )
+{
+  xmt::scoped_lock lk( _wknh_lock );
+  _wknhosts.insert( nm );
+}
+
+void VSHostMgr::rm_wellknown( const char *nm )
+{
+  xmt::scoped_lock lk( _wknh_lock );
+  vs_wellknown_hosts_container_t::iterator i = _wknhosts.find( string(nm) );
+  if ( i != _wknhosts.end() ) {
+    _wknhosts.erase( i );
+  }
+}
+
+void VSHostMgr::rm_wellknown( const std::string& nm )
+{
+  xmt::scoped_lock lk( _wknh_lock );
+  vs_wellknown_hosts_container_t::iterator i = _wknhosts.find( nm );
+  if ( i != _wknhosts.end() ) {
+    _wknhosts.erase( i );
+  }
+}
+
+void VSHostMgr::add_srvport( int p )
+{
+  xmt::scoped_lock lk( _wknh_lock );
+  _srvport = p;
 }
 
 // DEFINE_RESPONSE_TABLE( VSHostMgr )

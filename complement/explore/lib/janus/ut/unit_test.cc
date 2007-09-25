@@ -8,7 +8,7 @@ int EXAM_IMPL(vtime_test_suite)
 {
   using namespace janus;
 
-  exam::test_suite::test_case_type tc[3];
+  exam::test_suite::test_case_type tc[4];
 
   exam::test_suite t( "virtual time operations" );
 
@@ -23,7 +23,7 @@ int EXAM_IMPL(vtime_test_suite)
          tc[2] = t.add( &vtime_operations::gvt_add, vt_oper, "Group VT add", tc[1] ) );
 
   t.add( &vtime_operations::mgroups, vt_oper, "mgroups",
-    t.add( &vtime_operations::remote, vt_oper, "remote",
+    tc[3] = t.add( &vtime_operations::remote, vt_oper, "remote",
       t.add( &vtime_operations::VTEntryIntoGroup3, vt_oper, "VTEntryIntoGroup3",
         t.add( &vtime_operations::VTEntryIntoGroup2, vt_oper, "VTEntryIntoGroup2",
           t.add( &vtime_operations::VTEntryIntoGroup, vt_oper, "VTEntryIntoGroup",
@@ -33,6 +33,8 @@ int EXAM_IMPL(vtime_test_suite)
                   t.add( &vtime_operations::VTDispatch2, vt_oper, "VTDispatch2",
                     t.add( &vtime_operations::VTDispatch1, vt_oper, "VTDispatch1",
                       t.add( &vtime_operations::vt_object, vt_oper, "VT order", tc[2] )))))))))) );
+
+  t.add( &vtime_operations::wellknownhost, vt_oper, "well-known host", tc[3] );
 
   return t.girdle();
 }
