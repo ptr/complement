@@ -8,7 +8,10 @@
 
 	* lib/janus/ut/vt_operations.h, lib/janus/ut/vt_remote.cc: ditto;
 
-	* libjanus: version 0.4.0.
+	* libjanus: version 0.4.0;
+
+	* lib/janus/samples/point1: trial configuration for virtual
+	synchrony net, initial implementation;
 
 2007-08-27  Petr Ovtchenkov  <ptr@island.corbina.net>
 
