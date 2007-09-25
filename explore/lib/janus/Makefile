@@ -21,11 +21,11 @@ endif
 dbg-shared     : LDLIBS = -lxmtg -lsockiosg -lstemg
 
 check:	all-shared
-	$(MAKE) -C test
-	(cd test; ${OUTPUT_DIR}/ut_vtime) || exit 1
-	(cd test; ${OUTPUT_DIR_DBG}/ut_vtime) || exit 1
+	$(MAKE) -C ut
+	(cd ut; ${OUTPUT_DIR}/ut_vtime) || exit 1
+	(cd ut; ${OUTPUT_DIR_DBG}/ut_vtime) || exit 1
 ifndef WITHOUT_STLPORT
-	(cd test; ${OUTPUT_DIR_STLDBG}/ut_vt) || exit 1
+	(cd ut; ${OUTPUT_DIR_STLDBG}/ut_vt) || exit 1
 endif
 
 check-release-shared:	release-shared
@@ -43,7 +43,7 @@ check-stldbg-shared:	stldbg-shared
 endif
 
 depend::
-	$(MAKE) -C test depend
+	$(MAKE) -C ut depend
 
 # dbg-shared:	DEFS += -DDEBUG
 

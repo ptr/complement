@@ -33,6 +33,7 @@ struct vtime_operations
 
   int EXAM_DECL(remote);
   int EXAM_DECL(mgroups);
+  int EXAM_DECL(wellknownhost);
 };
 
 } // namespace janus

@@ -1,3 +1,15 @@
+2007-09-25  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* vshostmgr.h, vshostmgr.cc: try to connect to well-known hosts
+	and/or become a server to establish virtual synchrony net;
+
+	* ut/unit_test.cc: test for well-known hosts [nodes of virtual
+	synchrony net];
+
+	* lib/janus/ut/vt_operations.h, lib/janus/ut/vt_remote.cc: ditto;
+
+	* libjanus: version 0.4.0.
+
 2007-08-27  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* janus.h, janus.cc: hide methods, intended for internal

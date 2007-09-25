@@ -39,12 +39,15 @@ class VSHostMgr :
     // typedef std::list<stem::gaddr_type> vshost_container_t;
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
     typedef std::tr1::unordered_set<stem::gaddr_type> vshost_container_t;
+    typedef std::tr1::unordered_set<std::string> vs_wellknown_hosts_container_t;
 #endif
 #ifdef __USE_STD_HASH
     typedef __gnu_cxx::hash_set<stem::gaddr_type> vshost_container_t;
+    typedef __gnu_cxx::hash_set<std::string> vs_wellknown_hosts_container_t;
 #endif
 #ifdef __USE_STLPORT_HASH
     typedef std::hash_set<stem::gaddr_type> vshost_container_t;
+    typedef std::hash_set<std::string> vs_wellknown_hosts_container_t;
 #endif
 
   public:
@@ -60,8 +63,14 @@ class VSHostMgr :
     void VSOutMember( const stem::Event_base<VSsync_rq>& );
     void VSsync_time( const stem::Event_base<VSsync>& ev );
 
-    void connect( const char *, int );
-    void serve( int );
+    static void add_wellknown( const char *nm );
+    static void add_wellknown( const std::string& nm );
+    static void rm_wellknown( const char *nm );
+    static void rm_wellknown( const std::string& nm );
+    static void add_srvport( int );
+
+    int connect( const char *, int );
+    int serve( int );
 
     size_type vs_known_processes() const
        {
@@ -101,6 +110,10 @@ class VSHostMgr :
     };
 
     Finalizer finalizer;
+
+    static xmt::mutex _wknh_lock;
+    static vs_wellknown_hosts_container_t _wknhosts;
+    static int _srvport;
 
     // DECLARE_RESPONSE_TABLE( VSHostMgr, janus::VTHandler );
 };
