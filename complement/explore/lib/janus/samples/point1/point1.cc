@@ -7,10 +7,12 @@
 #include <mt/xmt.h>
 
 #include <iostream>
+#include <string>
 
 using namespace janus;
 using namespace std;
 using namespace xmt;
+using namespace stem;
 
 #define VS_LINE 0x1300
 
@@ -63,7 +65,7 @@ void YaSample::VSOutMember( const stem::Event_base<VSsync_rq>& )
 
 void YaSample::vs_line( const stem::Event& ev )
 {
-  cerr << "Line here" << endl;
+  cerr << "Line here: '" << ev.value() << "'" << endl;
 }
 
 DEFINE_RESPONSE_TABLE( YaSample )
@@ -77,11 +79,26 @@ int main()
 
   YaSample sample;
 
-  condition cnd;
+  sample.JoinGroup( janus::vs_base::first_user_group );
 
-  cnd.set( false );
+  Event ev( VS_LINE );
+  ev.dest( janus::vs_base::first_user_group );
 
-  cnd.wait();  
+  string line;
+
+  while ( cin.good() ) {
+    cin >> line;
+    if ( !cin.fail() ) {
+      ev.value() = line;
+      sample.JaSend( ev );
+    }
+  }
+
+  // condition cnd;
+
+  // cnd.set( false );
+
+  // cnd.wait();  
 
   return 0;
 }
