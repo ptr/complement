@@ -188,7 +188,6 @@ int VSHostMgr::connect( const char *host, int port )
     stem::Event_base<VSsync_rq> ev( VS_NEW_MEMBER );
     ev.dest( a );
     ev.value().grp = vshosts_group; // special group
-    Send( ev );
 #ifdef __FIT_VS_TRACE
     try {
       scoped_lock lk(vtdispatcher()->_lock_tr);
@@ -202,6 +201,7 @@ int VSHostMgr::connect( const char *host, int port )
     catch ( ... ) {
     }
 #endif // __FIT_VS_TRACE
+    Send( ev );
     return 0;
   }
 #ifdef __FIT_VS_TRACE
@@ -263,7 +263,6 @@ void VSHostMgr::Subscribe( stem::addr_type addr, group_type grp )
       if ( ga != *i ) {
         ev.dest( manager()->reflect( *i ) );
         ev.value().grp = grp;
-        Forward( ev );
 #ifdef __FIT_VS_TRACE
         try {
           scoped_lock lk(vtdispatcher()->_lock_tr);
@@ -276,6 +275,7 @@ void VSHostMgr::Subscribe( stem::addr_type addr, group_type grp )
         catch ( ... ) {
         }
 #endif // __FIT_VS_TRACE
+        Forward( ev );
       }
     }
   }

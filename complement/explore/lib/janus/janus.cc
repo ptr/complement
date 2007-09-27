@@ -276,7 +276,6 @@ void Janus::Subscribe( stem::addr_type addr, const oid_type& oid, group_type grp
       ev.dest( i->second.stem_addr() );
       ev.src( addr );
       ev.value().grp = grp;
-      Forward( ev );
 #ifdef __FIT_VS_TRACE
       try {
         scoped_lock lk(_lock_tr);
@@ -289,6 +288,7 @@ void Janus::Subscribe( stem::addr_type addr, const oid_type& oid, group_type grp
       catch ( ... ) {
       }
 #endif // __FIT_VS_TRACE
+      Forward( ev );
     }
   }
 
@@ -341,7 +341,6 @@ void Janus::Unsubscribe( const oid_type& oid, group_type grp )
         ev.dest( addr );
         ev.src( i != vtmap.end() ? i->second.stem_addr() : self_id() );
         ev.value().grp = grp;
-        Forward( ev );
 #ifdef __FIT_VS_TRACE
         try {
           scoped_lock lk(_lock_tr);
@@ -354,6 +353,7 @@ void Janus::Unsubscribe( const oid_type& oid, group_type grp )
         catch ( ... ) {
         }
 #endif // __FIT_VS_TRACE
+        Forward( ev );
       }
       ++range.first;
     }
@@ -414,7 +414,6 @@ void Janus::Unsubscribe( const oid_type& oid )
             ev.dest( addr );
             ev.src( i != vtmap.end() ? i->second.stem_addr() : self_id() );
             ev.value().grp = *grp;
-            Forward( ev );
 #ifdef __FIT_VS_TRACE
             try {
               scoped_lock lk(_lock_tr);
@@ -427,6 +426,7 @@ void Janus::Unsubscribe( const oid_type& oid )
             catch ( ... ) {
             }
 #endif // __FIT_VS_TRACE
+            Forward( ev );
           }
           ++range.first;
         }
@@ -510,7 +510,6 @@ void Janus::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
 {
   if ( ev.value().grp == vshosts_group ) {
     ev.dest( _hostmgr->self_id() );
-    Forward( ev );
 #ifdef __FIT_VS_TRACE
     try {
       scoped_lock lk(_lock_tr);
@@ -523,6 +522,7 @@ void Janus::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
     catch ( ... ) {
     }
 #endif // __FIT_VS_TRACE
+    Forward( ev );
 
     gaddr_type ga = manager()->reflect( ev.src() );
     addr_type janus_addr = badaddr;
@@ -536,7 +536,6 @@ void Janus::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
     stem::Event_base<VSsync_rq> evr( VS_NEW_MEMBER_RV );
     evr.dest( janus_addr );
     evr.value().grp = vshosts_group;
-    Send( evr );
 #ifdef __FIT_VS_TRACE
     try {
       scoped_lock lk(_lock_tr);
@@ -549,8 +548,22 @@ void Janus::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
     catch ( ... ) {
     }
 #endif // __FIT_VS_TRACE
-
+    Send( evr );
   }
+#ifdef __FIT_VS_TRACE
+    else {
+    try {
+      scoped_lock lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
+        *_trs << "Unexpected VS_NEW_MEMBER on Janus: G" << ev.value().grp << " "
+              << hex << showbase
+              << ev.src() << " -> " << ev.dest() << dec << endl;
+      }
+    }
+    catch ( ... ) {
+    }
+  }
+#endif // __FIT_VS_TRACE
 }
 
 void Janus::VSNewRemoteMemberDirect( const stem::Event_base<VSsync_rq>& ev )
@@ -576,7 +589,6 @@ void Janus::VSNewRemoteMemberDirect( const stem::Event_base<VSsync_rq>& ev )
           evs.dest( i->second.stem_addr() );
           evs.src( addr );
           evs.value().grp = grp;
-          Forward( evs );
 #ifdef __FIT_VS_TRACE
           try {
             scoped_lock lk(_lock_tr);
@@ -589,11 +601,11 @@ void Janus::VSNewRemoteMemberDirect( const stem::Event_base<VSsync_rq>& ev )
           catch ( ... ) {
           }
 #endif // __FIT_VS_TRACE
+          Forward( evs );
           stem::Event_base<VSsync_rq> evr( VS_NEW_MEMBER_RV );
           evr.dest( janus_addr );
           evr.src( i->second.stem_addr() );
           evr.value().grp = grp;
-          Forward( evr );
 #ifdef __FIT_VS_TRACE
           try {
             scoped_lock lk(_lock_tr);
@@ -606,6 +618,7 @@ void Janus::VSNewRemoteMemberDirect( const stem::Event_base<VSsync_rq>& ev )
           catch ( ... ) {
           }
 #endif // __FIT_VS_TRACE
+          Forward( evr );
         }
       }
 
@@ -632,7 +645,6 @@ void Janus::VSNewRemoteMemberRevert( const stem::Event_base<VSsync_rq>& ev )
           evs.dest( i->second.stem_addr() );
           evs.src( addr );
           evs.value().grp = grp;
-          Forward( evs );
 #ifdef __FIT_VS_TRACE
           try {
             scoped_lock lk(_lock_tr);
@@ -645,6 +657,7 @@ void Janus::VSNewRemoteMemberRevert( const stem::Event_base<VSsync_rq>& ev )
           catch ( ... ) {
           }
 #endif // __FIT_VS_TRACE
+          Forward( evs );
         }
       }
 
@@ -698,7 +711,6 @@ void Janus::VSOutMember( const stem::Event_base<VSsync_rq>& ev )
         // send only to local addresses
         if ( (addr & stem::extbit) == 0 ) {
           ev.dest( addr );
-          Forward( ev );
 #ifdef __FIT_VS_TRACE
           try {
             scoped_lock lk(_lock_tr);
@@ -711,6 +723,7 @@ void Janus::VSOutMember( const stem::Event_base<VSsync_rq>& ev )
           catch ( ... ) {
           }
 #endif // __FIT_VS_TRACE
+          Forward( ev );
         }
       }
       ++range.first;
