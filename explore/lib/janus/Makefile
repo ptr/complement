@@ -20,6 +20,12 @@ stldbg-shared  : LDLIBS = -lxmtstlg -lsockiosstlg -lstemstlg
 endif
 dbg-shared     : LDLIBS = -lxmtg -lsockiosg -lstemg
 
+dbg-shared:	DEFS += -D__FIT_VS_TRACE
+
+ifndef WITHOUT_STLPORT
+stldbg-shared:	DEFS += -D__FIT_VS_TRACE
+endif
+
 check:	all-shared
 	$(MAKE) -C ut
 	(cd ut; ${OUTPUT_DIR}/ut_vtime) || exit 1
