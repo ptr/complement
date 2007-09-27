@@ -4,6 +4,8 @@
 #include <janus/janus.h>
 #include <janus/vshostmgr.h>
 
+#include <stem/EvManager.h>
+
 #include <mt/xmt.h>
 
 #include <iostream>
@@ -56,11 +58,13 @@ YaSample::~YaSample()
 void YaSample::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
 {
   // VTNewMember_data( ev, "" );
+  cerr << "new member" << endl;
   VTHandler::VSNewMember( ev );
 }
 
 void YaSample::VSOutMember( const stem::Event_base<VSsync_rq>& )
 {
+  cerr << "member out" << endl;
 }
 
 void YaSample::vs_line( const stem::Event& ev )
@@ -78,6 +82,13 @@ int main()
   VSHostMgr::add_wellknown( "island.corbina.net:6700" );
 
   YaSample sample;
+
+  sample.manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+  sample.manager()->settrs( &std::cerr );
+
+  sample.vtdispatcher()->settrf( janus::Janus::tracenet | janus::Janus::tracedispatch | janus::Janus::tracefault | janus::Janus::tracedelayed | janus::Janus::tracegroup );
+  sample.vtdispatcher()->settrs( &std::cerr );
+
 
   sample.JoinGroup( janus::vs_base::first_user_group );
 
