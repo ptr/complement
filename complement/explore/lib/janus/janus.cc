@@ -318,6 +318,16 @@ void Janus::Subscribe( stem::addr_type addr, const oid_type& oid, group_type grp
   // cerr << "**** " << grp << " " << xmt::getpid() << endl;
 
   if ( /* (grp != vshosts_group) && */ (_hostmgr != 0) ) {
+#ifdef __FIT_VS_TRACE
+    try {
+      scoped_lock lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
+        *_trs << " ????? " << __FILE__ << ":" << __LINE__ << endl;
+      }
+    }
+    catch ( ... ) {
+    }
+#endif // __FIT_VS_TRACE
     _hostmgr->Subscribe( addr, grp );
   }
 }
