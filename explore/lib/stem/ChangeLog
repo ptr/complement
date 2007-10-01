@@ -5,6 +5,9 @@
 
 	* NetTransport.cc: add more trace to NetTransport_base;
 
+	* NetTransport.cc: bogus libstdc++ use std::IosFlags for
+	ios_base::flags( flags );
+
 	* libstem: library version 4.6.4
 
 2007-09-05  Petr Ovtchenkov  <ptr@island.corbina.net>

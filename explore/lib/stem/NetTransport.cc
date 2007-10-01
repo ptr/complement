@@ -186,7 +186,11 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
       int flags = manager()->_trs->flags();
       *manager()->_trs << "\tMessage from remote " << hex << showbase << _rs.code() << " "
                        << src << " -> " << dst << endl;
+#ifdef STLPORT
       manager()->_trs->flags( flags );
+#else
+      manager()->_trs->flags( static_cast<std::_Ios_Fmtflags>(flags) );
+#endif
     }
   }
   catch ( ... ) {
@@ -207,7 +211,11 @@ bool NetTransport_base::push( const Event& _rs, const gaddr_type& dst, const gad
       int flags = manager()->_trs->flags();
       *manager()->_trs << "\tMessage to remote " << hex << showbase << _rs.code() << " "
                        << src << " -> " << dst << endl;
+#ifdef STLPORT
       manager()->_trs->flags( flags );
+#else
+      manager()->_trs->flags( static_cast<std::_Ios_Fmtflags>(flags) );
+#endif
     }
   }
   catch ( ... ) {
