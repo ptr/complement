@@ -647,9 +647,6 @@ void VTHandler::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
   out_ev.dest( ev.src() );
   out_ev.value().grp = ev.value().grp;
   get_gvtime( ev.value().grp, out_ev.value().gvt.gvt );
-
-  Send( out_ev );
-
 #ifdef __FIT_VS_TRACE
   try {
     scoped_lock lk(_vtdsp->_lock_tr);
@@ -662,6 +659,7 @@ void VTHandler::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
   catch ( ... ) {
   }
 #endif // __FIT_VS_TRACE
+  Send( out_ev );
 }
 
 void VTHandler::VSNewMember_data( const stem::Event_base<VSsync_rq>& ev, const string& data )

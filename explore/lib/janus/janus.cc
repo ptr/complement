@@ -269,6 +269,26 @@ void Janus::Subscribe( stem::addr_type addr, const oid_type& oid, group_type grp
   pair<gid_map_type::const_iterator,gid_map_type::const_iterator> range =
     grmap.equal_range( grp );
 
+#ifdef __FIT_VS_TRACE
+  try {
+    scoped_lock lk(_lock_tr);
+    if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
+      int f = _trs->flags();
+      *_trs << " VS subscribe G" << grp << " "
+            << hex << showbase
+            << addr << " " << oid << dec << ", group size before "
+            << distance( range.first, range.second ) << endl;
+#ifdef STLPORT
+      _trs->flags( f );
+#else
+      _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+    }
+  }
+  catch ( ... ) {
+  }
+#endif // __FIT_VS_TRACE
+
   for ( ; range.first != range.second; ++range.first ) {
     vt_map_type::iterator i = vtmap.find( range.first->second );
     if ( i != vtmap.end() ) {
@@ -669,6 +689,23 @@ void Janus::VSNewRemoteMemberRevert( const stem::Event_base<VSsync_rq>& ev )
   } else {
     const addr_type addr = ev.src();
     const gaddr_type oid = manager()->reflect( ev.src() ); // ???? oid == gaddr
+
+#ifdef __FIT_VS_TRACE
+    try {
+      scoped_lock lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
+        int f = _trs->flags();
+        *_trs << " VS see node " << hex << showbase << oid << endl;
+#ifdef STLPORT
+        _trs->flags( f );
+#else
+        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+      }
+    }
+    catch ( ... ) {
+    }
+#endif // __FIT_VS_TRACE
 
     vtmap[oid].add( addr, vshosts_group );
     grmap.insert( make_pair(static_cast<group_type>(vshosts_group),oid) );
