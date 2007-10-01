@@ -159,6 +159,16 @@ void VSHostMgr::VSsync_time( const stem::Event_base<VSsync>& ev )
   while ( sz-- > 0 ) {
     ga.net_unpack( s );
     // vshost.push_back( ga );
+#ifdef __FIT_VS_TRACE
+    try {
+      scoped_lock lk(vtdispatcher()->_lock_tr);
+      if ( vtdispatcher()->_trs != 0 && vtdispatcher()->_trs->good() && (vtdispatcher()->_trflags & Janus::tracenet) ) {
+        *vtdispatcher()->_trs << "VS see node " << ga << endl;
+      }
+    }
+    catch ( ... ) {
+    }
+#endif // __FIT_VS_TRACE
     vshost.insert( ga );
   }
 
