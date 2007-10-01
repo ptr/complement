@@ -1,3 +1,9 @@
+2007-10-01  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* janus.cc, vshostmgr.cc: more trace prints;
+
+	* vtime.cc: trace before Send call.
+
 2007-09-27  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* vshostmgr.cc, janus.cc, vtime.cc: print trace info before
