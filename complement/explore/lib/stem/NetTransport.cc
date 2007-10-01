@@ -303,8 +303,33 @@ void NetTransport::connect( sockstream& s )
     gaddr_type src;
 
     if ( pop( ev, dst, src ) ) {
+#ifdef __FIT_STEM_TRACE
+      try {
+        xmt::scoped_lock lk(manager()->_lock_tr);
+        if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracenet) ) {
+          *manager()->_trs << "Pid/ppid: " << xmt::getpid() << "/" << xmt::getppid() << "\n";
+          manager()->dump( *manager()->_trs ) << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+#endif // __FIT_STEM_TRACE
       addr_type xdst = manager()->reflect( dst );
       if ( xdst == badaddr ) {
+#ifdef __FIT_STEM_TRACE
+        try {
+          xmt::scoped_lock lk(manager()->_lock_tr);
+          if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracefault)) ) {
+            *manager()->_trs << __FILE__ << ":" << __LINE__
+                             << " ("
+                             << xmt::getpid() << "/" << xmt::getppid() << ") "
+                             << "Unknown destination\n";
+            manager()->dump( *manager()->_trs ) << endl;
+          }
+        }
+        catch ( ... ) {
+        }
+#endif // __FIT_STEM_TRACE
         return;
       }
       ev.dest( xdst );
@@ -314,6 +339,16 @@ void NetTransport::connect( sockstream& s )
       } else {
         ev.src( xsrc );
       }
+#ifdef __FIT_STEM_TRACE
+      try {
+        xmt::scoped_lock lk(manager()->_lock_tr);
+        if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
+          *manager()->_trs << __FILE__ << ":" << __LINE__ << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+#endif // __FIT_STEM_TRACE
       manager()->push( ev );
     }
   }
@@ -505,6 +540,7 @@ xmt::Thread::ret_t NetTransportMgr::_loop( void *p )
   return 0;
 }
 
+#if 0
 __FIT_DECLSPEC
 void NetTransportMP::connect( sockstream& s )
 {
@@ -514,8 +550,35 @@ void NetTransportMP::connect( sockstream& s )
 
   try {
     if ( pop( ev, dst, src ) ) {
+#ifdef __FIT_STEM_TRACE
+      try {
+        xmt::scoped_lock lk(manager()->_lock_tr);
+        if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & E
+vManager::tracenet) ) {
+          *manager()->_trs << "Pid/ppid: " << xmt::getpid() << "/" << xmt::getppid() <<
+"\n";
+          manager()->dump( *manager()->_trs ) << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+#endif // __FIT_STEM_TRACE
       addr_type xdst = manager()->reflect( dst );
       if ( xdst == badaddr ) {
+#ifdef __FIT_STEM_TRACE
+        try {
+          xmt::scoped_lock lk(manager()->_lock_tr);
+          if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracefault)) ) {
+            *manager()->_trs << __FILE__ << ":" << __LINE__
+                             << " ("
+                             << xmt::getpid() << "/" << xmt::getppid() << ") "
+                             << "Unknown destination\n";
+            manager()->dump( *manager()->_trs ) << endl;
+          }
+        }
+        catch ( ... ) {
+        }
+#endif // __FIT_STEM_TRACE
         return;
       }
       ev.dest( xdst );
@@ -526,6 +589,16 @@ void NetTransportMP::connect( sockstream& s )
       } else {
         ev.src( xsrc );
       }
+#ifdef __FIT_STEM_TRACE
+      try {
+        xmt::scoped_lock lk(manager()->_lock_tr);
+        if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
+          *manager()->_trs << __FILE__ << ":" << __LINE__ << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+#endif // __FIT_STEM_TRACE
       manager()->push( ev );
     }
     if ( !s.good() ) {
@@ -537,5 +610,7 @@ void NetTransportMP::connect( sockstream& s )
     net = 0;
   }
 }
+
+#endif
 
 } // namespace stem

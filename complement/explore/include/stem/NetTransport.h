@@ -112,6 +112,7 @@ class NetTransportMgr :
     std::sockstream _channel;
 };
 
+#if 0
 class NetTransportMP :
     public NetTransport_base
 {
@@ -123,6 +124,7 @@ class NetTransportMP :
     __FIT_DECLSPEC
     void connect( std::sockstream& );
 };
+#endif
 
 } // namespace stem
 
