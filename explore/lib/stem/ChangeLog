@@ -3,6 +3,8 @@
 	* NetTransport.h, NetTransport.cc: comment NetTransportMP,
 	looks it useless; add trace for NetTransport [server part];
 
+	* NetTransport.cc: add more trace to NetTransport_base;
+
 	* libstem: library version 4.6.4
 
 2007-09-05  Petr Ovtchenkov  <ptr@island.corbina.net>

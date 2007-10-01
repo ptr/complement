@@ -179,6 +179,19 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
   while ( sz-- > 0 ) {
     str += (char)net->get();
   }
+#ifdef __FIT_STEM_TRACE
+  try {
+    xmt::scoped_lock lk(manager()->_lock_tr);
+    if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
+      int flags = manager()->_trs->flags();
+      *manager()->_trs << "\tMessage from remote " << hex << showbase << _rs.code() << " "
+                       << src << " -> " << dst << endl;
+      manager()->_trs->flags( flags );
+    }
+  }
+  catch ( ... ) {
+  }
+#endif // __FIT_STEM_TRACE
 
   return net->good();
 }
@@ -187,6 +200,20 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
 __FIT_DECLSPEC
 bool NetTransport_base::push( const Event& _rs, const gaddr_type& dst, const gaddr_type& src )
 {
+#ifdef __FIT_STEM_TRACE
+  try {
+    xmt::scoped_lock lk(manager()->_lock_tr);
+    if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
+      int flags = manager()->_trs->flags();
+      *manager()->_trs << "\tMessage to remote " << hex << showbase << _rs.code() << " "
+                       << src << " -> " << dst << endl;
+      manager()->_trs->flags( flags );
+    }
+  }
+  catch ( ... ) {
+  }
+#endif // __FIT_STEM_TRACE
+
   if ( !net->good() ) {
     return false;
   }
