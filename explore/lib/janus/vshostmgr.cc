@@ -120,6 +120,16 @@ void VSHostMgr::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
     ga.addr = stem::janus_addr;
   }
 
+#ifdef __FIT_VS_TRACE
+  try {
+    scoped_lock lk(vtdispatcher()->_lock_tr);
+    if ( vtdispatcher()->_trs != 0 && vtdispatcher()->_trs->good() && (vtdispatcher()->_trflags & Janus::tracenet) ) {
+      *vtdispatcher()->_trs << "VSHostMgr sync (add) " << ga << endl;
+    }
+  }
+  catch ( ... ) {
+  }
+#endif // __FIT_VS_TRACE
   vshost.insert( ga ); // address of remote Janus
 
   stem::__pack_base::__net_pack( s, static_cast<uint32_t>(vshost.size()) );
@@ -163,7 +173,7 @@ void VSHostMgr::VSsync_time( const stem::Event_base<VSsync>& ev )
     try {
       scoped_lock lk(vtdispatcher()->_lock_tr);
       if ( vtdispatcher()->_trs != 0 && vtdispatcher()->_trs->good() && (vtdispatcher()->_trflags & Janus::tracenet) ) {
-        *vtdispatcher()->_trs << "VS see node " << ga << endl;
+        *vtdispatcher()->_trs << "VSHostMgr sync " << ga << endl;
       }
     }
     catch ( ... ) {
