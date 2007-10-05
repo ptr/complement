@@ -179,21 +179,24 @@ END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::remote)
 {
-  const char fname[] = "/tmp/yanus_test.shm";
-  xmt::shm_alloc<0> seg;
-  xmt::allocator_shm<xmt::__condition<true>,0> shm_cnd;
-  xmt::allocator_shm<xmt::__barrier<true>,0>   shm_b;
+  if ( b2 == 0 ) {
+    throw exam::skip_exception();
+  }
+  // const char fname[] = "/tmp/yanus_test.shm";
+  // xmt::shm_alloc<0> seg;
+  // xmt::allocator_shm<xmt::__condition<true>,0> shm_cnd;
+  // xmt::allocator_shm<xmt::__barrier<true>,0>   shm_b;
 
   try {
-    seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
-    xmt::__barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__barrier<true>();
+    // seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
+    // xmt::__barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__barrier<true>();
 
     try {
       xmt::fork();
 
       long res_flag = 0;
 
-      b.wait();
+      b2->wait();
 
       {
         VTHandler obj0; // this need to keep VSHostMgr after YaRemote exit
@@ -264,7 +267,7 @@ int EXAM_IMPL(vtime_operations::remote)
 
       obj1.JoinGroup( janus::vs_base::first_user_group );
 
-      b.wait();
+      b2->wait();
 
       // while ( obj1.vtdispatcher()->vs_known_processes() < 2 ) {
       //   xmt::delay( xmt::timespec( 0, 1000000 ) );
@@ -299,36 +302,39 @@ int EXAM_IMPL(vtime_operations::remote)
       EXAM_CHECK( obj1.ocount == 1 );
     }
 
-    (&b)->~__barrier<true>();
-    shm_b.deallocate( &b, 1 );
+    // (&b)->~__barrier<true>();
+    // shm_b.deallocate( &b, 1 );
   }
   catch ( const xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
   }
 
-  seg.deallocate();
-  unlink( fname );
+  // seg.deallocate();
+  // unlink( fname );
 
   return EXAM_RESULT;
 }
 
 int EXAM_IMPL(vtime_operations::mgroups)
 {
-  const char fname[] = "/tmp/yanus_test.shm";
-  xmt::shm_alloc<0> seg;
-  xmt::allocator_shm<xmt::__condition<true>,0> shm_cnd;
-  xmt::allocator_shm<xmt::__barrier<true>,0>   shm_b;
+  if ( b2 == 0 ) {
+    throw exam::skip_exception();
+  }
+  // const char fname[] = "/tmp/yanus_test.shm";
+  // xmt::shm_alloc<0> seg;
+  // xmt::allocator_shm<xmt::__condition<true>,0> shm_cnd;
+  // xmt::allocator_shm<xmt::__barrier<true>,0>   shm_b;
 
   try {
-    seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
-    xmt::__barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__barrier<true>();
+    // seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
+    // xmt::__barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__barrier<true>();
 
     try {
       xmt::fork();
 
       long res_flag = 0;
 
-      b.wait();
+      b2->wait();
 
       {
         VTHandler obj0; // this need to keep VSHostMgr after YaRemote exit
@@ -379,7 +385,7 @@ int EXAM_IMPL(vtime_operations::mgroups)
       obj1.JoinGroup( janus::vs_base::first_user_group );
       obj1.JoinGroup( janus::vs_base::first_user_group + 1);
 
-      b.wait();
+      b2->wait();
 
       obj1.wait_greeting();
       obj1.wait_greeting2();
@@ -414,29 +420,33 @@ int EXAM_IMPL(vtime_operations::mgroups)
       cerr << obj1.ocount << endl;
     }
 
-    (&b)->~__barrier<true>();
-    shm_b.deallocate( &b, 1 );
+    // (&b)->~__barrier<true>();
+    // shm_b.deallocate( &b, 1 );
   }
   catch ( const xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
   }
 
-  seg.deallocate();
-  unlink( fname );
+  // seg.deallocate();
+  // unlink( fname );
 
   return EXAM_RESULT;
 }
 
 int EXAM_IMPL(vtime_operations::wellknownhost)
 {
-  const char fname[] = "/tmp/yanus_test.shm";
-  xmt::shm_alloc<0> seg;
-  xmt::allocator_shm<xmt::__condition<true>,0> shm_cnd;
-  xmt::allocator_shm<xmt::__barrier<true>,0>   shm_b;
+  if ( b2 == 0 ) {
+    throw exam::skip_exception();
+  }
+
+  // const char fname[] = "/tmp/yanus_test.shm";
+  // xmt::shm_alloc<0> seg;
+  // xmt::allocator_shm<xmt::__condition<true>,0> shm_cnd;
+  // xmt::allocator_shm<xmt::__barrier<true>,0>   shm_b;
 
   try {
-    seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
-    xmt::__barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__barrier<true>();
+    // seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
+    // xmt::__barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__barrier<true>();
 
     VSHostMgr::add_wellknown( "localhost:6980" );
     VSHostMgr::add_srvport( 6980 );
@@ -446,7 +456,7 @@ int EXAM_IMPL(vtime_operations::wellknownhost)
 
       long res_flag = 0;
 
-      b.wait();
+      b2->wait();
 
       {
         YaRemote obj1( "obj client" );
@@ -468,7 +478,7 @@ int EXAM_IMPL(vtime_operations::wellknownhost)
 
       obj1.JoinGroup( janus::vs_base::first_user_group );
 
-      b.wait();
+      b2->wait();
 
       // while ( obj1.vtdispatcher()->vs_known_processes() < 2 ) {
       //   xmt::delay( xmt::timespec( 0, 1000000 ) );
@@ -502,15 +512,15 @@ int EXAM_IMPL(vtime_operations::wellknownhost)
       // cerr << obj1.vtdispatcher()->vs_known_processes() << endl;
     }
 
-    (&b)->~__barrier<true>();
-    shm_b.deallocate( &b, 1 );
+    // (&b)->~__barrier<true>();
+    // shm_b.deallocate( &b, 1 );
   }
   catch ( const xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
   }
 
-  seg.deallocate();
-  unlink( fname );
+  // seg.deallocate();
+  // unlink( fname );
 
   return EXAM_RESULT;
 }

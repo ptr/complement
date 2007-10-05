@@ -245,6 +245,14 @@ void test_suite::run_test_case( test_suite::vertex_t v, unsigned n )
       local_logger->tc( base_logger::skip, _test[v].name );
     }
   }
+  catch ( skip_exception& ) {
+    _lock_ll.lock();
+    local_logger->tc_break();
+    _lock_ll.unlock();
+    ++_stat.skipped;
+    scoped_lock lk( _lock_ll );
+    local_logger->tc( base_logger::skip, _test[v].name );
+  }
   catch ( init_exception& ) {
     _lock_ll.lock();
     local_logger->tc_break();

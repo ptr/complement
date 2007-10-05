@@ -159,6 +159,11 @@ class init_exception :
 {
 };
 
+class skip_exception :
+  public std::exception
+{
+};
+
 class test_suite
 {
   private:

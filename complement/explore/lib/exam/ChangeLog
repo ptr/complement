@@ -1,3 +1,10 @@
+2007-10-05  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* suite.h, suite.cc: test may throw skip_exception to signal
+	that it skipped.
+
+	* libexam: version 0.4.0.
+
 2007-09-07  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* suite.h: added macro EXAM_CHECK_ASYNC_F, EXAM_ERROR_ASYNC_F
