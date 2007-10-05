@@ -2,10 +2,7 @@
 
 PRGNAME = ut_vtime
 
-SRC_CC = ../vtime.cc \
-         ../janus.cc \
-         ../vshostmgr.cc \
-         unit_test.cc \
+SRC_CC = unit_test.cc \
          vt_operations.cc \
          VTmess_core.cc \
          vt_object.cc \
