@@ -727,10 +727,55 @@ void VTHandler::VSsync_time( const stem::Event_base<VSsync>& ev )
   }
 }
 
+void VTHandler::VSMergeRemoteGroup( const stem::Event_base<VSsync_rq>& e )
+{
+  stem::Event_base<VSsync> out_ev( VS_SYNC_GROUP_TIME );
+  out_ev.dest( e.src() );
+  out_ev.value().grp = e.value().grp;
+  get_gvtime( e.value().grp, out_ev.value().gvt.gvt );
+#ifdef __FIT_VS_TRACE
+  try {
+    scoped_lock lk(_vtdsp->_lock_tr);
+    if ( _vtdsp->_trs != 0 && _vtdsp->_trs->good() && (_vtdsp->_trflags & Janus::tracegroup) ) {
+      *_vtdsp->_trs << " -> VS_SYNC_GROUP_TIME G" << e.value().grp << " "
+                    << hex << showbase
+                    << self_id() << " -> " << out_ev.dest() << dec << endl;
+    }
+  }
+  catch ( ... ) {
+  }
+#endif // __FIT_VS_TRACE
+  Send( out_ev );
+}
+
+void VTHandler::VSMergeRemoteGroup_data( const stem::Event_base<VSsync_rq>& e, const string& data )
+{
+  stem::Event_base<VSsync> out_ev( VS_SYNC_GROUP_TIME );
+  out_ev.dest( e.src() );
+  out_ev.value().grp = e.value().grp;
+  get_gvtime( e.value().grp, out_ev.value().gvt.gvt );
+  out_ev.value().mess = data;
+#ifdef __FIT_VS_TRACE
+  try {
+    scoped_lock lk(_vtdsp->_lock_tr);
+    if ( _vtdsp->_trs != 0 && _vtdsp->_trs->good() && (_vtdsp->_trflags & Janus::tracegroup) ) {
+      *_vtdsp->_trs << " -> VS_SYNC_GROUP_TIME (data) G" << e.value().grp << " "
+                    << hex << showbase
+                    << self_id() << " -> " << out_ev.dest() << dec << endl;
+    }
+  }
+  catch ( ... ) {
+  }
+#endif // __FIT_VS_TRACE
+  Send( out_ev );
+}
+
+
 DEFINE_RESPONSE_TABLE( VTHandler )
   EV_Event_base_T_( ST_NULL, VS_NEW_MEMBER, VSNewMember, VSsync_rq )
   EV_Event_base_T_( ST_NULL, VS_OUT_MEMBER, VSOutMember, VSsync_rq )
   EV_Event_base_T_( ST_NULL, VS_SYNC_TIME, VSsync_time, VSsync )
+  EV_Event_base_T_( ST_NULL, VS_MERGE_GROUP, VSMergeRemoteGroup, VSsync_rq )
 END_RESPONSE_TABLE
 
 } // namespace vt

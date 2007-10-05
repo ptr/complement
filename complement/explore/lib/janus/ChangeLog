@@ -1,3 +1,14 @@
+2007-10-05  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* janus.h, janus.cc, vtime.h, vtime.cc: cover use-case
+	with syncronization of same group in different VS nodes
+	during connection [VS_MERGE_GROUP, VS_SYNC_GROUP_TIME];
+	Janus::VSRemoteMemberRevert hasn't send VS_NEW_MEMBER;
+
+	* vt_remote.cc: fix test.
+
+	* libjanus: version 0.5.0;
+
 2007-10-01  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* janus.cc, vshostmgr.cc: more trace prints;

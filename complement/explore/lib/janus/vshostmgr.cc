@@ -222,6 +222,8 @@ int VSHostMgr::connect( const char *host, int port )
     }
 #endif // __FIT_VS_TRACE
     Send( ev );
+
+    // conn_cnd.try_wait_delay( timeout );
     return 0;
   }
 #ifdef __FIT_VS_TRACE
