@@ -9,6 +9,29 @@ namespace janus {
 
 using namespace std;
 
+vtime_operations::vtime_operations() :
+   fname( "/tmp/yanus_test.shm" )
+{
+  try {
+    seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
+    b2 = new ( shm_b.allocate( 1 ) ) xmt::__barrier<true>();
+  }
+  catch ( const xmt::shm_bad_alloc& err ) {
+    b2 = 0;
+    // err.what();
+  }
+}
+
+vtime_operations::~vtime_operations()
+{
+  if ( b2 ) {
+    b2->~__barrier<true>();
+    shm_b.deallocate( b2, 1 );
+  }
+  seg.deallocate();
+  unlink( fname );
+}
+
 int EXAM_IMPL(vtime_operations::vt_compare)
 {
   const oid_type t0(0);
