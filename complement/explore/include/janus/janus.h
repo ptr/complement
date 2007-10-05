@@ -42,16 +42,19 @@ class Janus :
     typedef std::hash_map<oid_type, detail::vtime_obj_rec> vt_map_type;
     typedef std::hash_multimap<group_type, oid_type> gid_map_type;
     typedef std::hash_set<stem::addr_type> addr_cache_t;
+    typedef std::hash_set<group_type> group_cache_t;
 #endif
 #ifdef __USE_STD_HASH
     typedef __gnu_cxx::hash_map<oid_type, detail::vtime_obj_rec> vt_map_type;
     typedef __gnu_cxx::hash_multimap<group_type, oid_type> gid_map_type;
     typedef __gnu_cxx::hash_set<stem::addr_type> addr_cache_t;
+    typedef __gnu_cxx::hash_set<group_type> group_cache_t;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
     typedef std::tr1::unordered_map<oid_type, detail::vtime_obj_rec> vt_map_type;
     typedef std::tr1::unordered_multimap<group_type, oid_type> gid_map_type;
     typedef std::tr1::unordered_set<stem::addr_type> addr_cache_t;
+    typedef std::tr1::unordered_set<group_type> group_cache_t;
 #endif
 
   public:
@@ -104,8 +107,8 @@ class Janus :
     unsigned trflags() const;
     void settrs( std::ostream * );
 
-    void connect( const char *, int );
-    void serve( int );
+    int connect( const char *, int );
+    int serve( int );
     size_t vs_known_processes() const;
 
     difference_type group_size( group_type ) const;
@@ -146,6 +149,9 @@ class Janus :
     void VSNewRemoteMemberDirect( const stem::Event_base<VSsync_rq>& e );
     void VSNewRemoteMemberRevert( const stem::Event_base<VSsync_rq>& e );
     void VSOutMember( const stem::Event_base<VSsync_rq>& e );
+
+    void VSMergeRemoteGroup( const stem::Event_base<VSsync_rq>& e );
+    void VSsync_group_time( const stem::Event_base<VSsync>& ev );
 
     DECLARE_RESPONSE_TABLE( Janus, stem::EventHandler );
 };

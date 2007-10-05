@@ -2,6 +2,6 @@
 
 LIBNAME = janus
 MAJOR = 0
-MINOR = 4
+MINOR = 5
 PATCH = 0
 SRC_CC = vtime.cc janus.cc vshostmgr.cc
