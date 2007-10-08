@@ -30,8 +30,10 @@ class YaSample :
   private:
     void vs_line( const stem::Event& );
 
-    void VSNewMember( const stem::Event_base<VSsync_rq>& );
-    void VSOutMember( const stem::Event_base<VSsync_rq>& );
+    virtual void VSNewMember( const stem::Event_base<VSsync_rq>& );
+    virtual void VSOutMember( const stem::Event_base<VSsync_rq>& );
+    virtual void VSsync_time( const stem::Event_base<VSsync>& );
+
 
     DECLARE_RESPONSE_TABLE( YaSample, janus::VTHandler );
 };
@@ -65,6 +67,12 @@ void YaSample::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
 void YaSample::VSOutMember( const stem::Event_base<VSsync_rq>& )
 {
   cerr << "member out" << endl;
+}
+
+void YaSample::VSsync_time( const stem::Event_base<VSsync>& ev )
+{
+  cout << "VSsync_time" << endl;
+  VTHandler::VSsync_time( ev );
 }
 
 void YaSample::vs_line( const stem::Event& ev )
