@@ -752,7 +752,7 @@ void Janus::VSNewRemoteMemberRevert( const stem::Event_base<VSsync_rq>& ev )
     for ( gid_map_type::const_iterator i = grmap.begin(); i != grmap.end(); ++i ) {
       // for all groups, except vshosts_group,
       // and only once for earch group
-      if ( (i->first != vshosts_group) && (gcache.find( i->first) != gcache.end()) ) {
+      if ( (i->first != vshosts_group) && (gcache.find( i->first ) == gcache.end()) ) {
         e.value().grp = i->first;
         Send( e );
         gcache.insert( i->first );
