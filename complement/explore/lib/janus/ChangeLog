@@ -1,3 +1,11 @@
+2007-10-09  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* janus.h, janus.cc, vtime.h: send notification about
+	group members as response to VS_MERGE_GROUP event
+	[via VS_OLD_MEMBER_RV];
+
+	* libjanus: version 0.6.0.
+
 2007-10-05  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* janus.h, janus.cc, vtime.h, vtime.cc: cover use-case

@@ -108,8 +108,14 @@ int main()
   while ( cin.good() ) {
     cin >> line;
     if ( !cin.fail() ) {
+      cerr << "local: " << line << endl;
       ev.value() = line;
-      sample.JaSend( ev );
+      try {
+        sample.JaSend( ev );
+      }
+      catch ( std::domain_error& err ) {
+        cerr << err.what() << endl;
+      }
     }
   }
 

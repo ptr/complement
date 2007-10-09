@@ -886,17 +886,30 @@ void Janus::VSMergeRemoteGroup( const stem::Event_base<VSsync_rq>& e )
     // gvtime_type gvt;
     // gvtime_type gvt_last;
     // stem::addr_type addr = stem::badaddr;
+    stem::Event_base<VSsync_rq> e_rv( VS_OLD_MEMBER_RV );
+    e_rv.dest( e.src() );
+    e_rv.value().grp = grp;
+
+    bool sync = false;
+
     for ( ; range.first != range.second; ++range.first ) {
       vt_map_type::iterator i = vtmap.find( range.first->second );
-      if ( i != vtmap.end() && ((i->second.stem_addr() & stem::extbit) == 0 )) {
-        // i->second.get_gvt( gvt );
-        // if ( gvt_last < gvt ) {
-        //   swap( gvt_last, gvt );
-        //   addr = i->second.stem_addr();
-        // }
-        e.dest( i->second.stem_addr() );
-        Forward( e );
-        return;
+      if ( i != vtmap.end() ) {
+        if ( (i->second.stem_addr() & stem::extbit) == 0 ) {
+          e_rv.src( i->second.stem_addr() );
+          Forward( e_rv );
+          if ( !sync ) {
+            // i->second.get_gvt( gvt );
+            // if ( gvt_last < gvt ) {
+            //   swap( gvt_last, gvt );
+            //   addr = i->second.stem_addr();
+            // }
+            e.dest( i->second.stem_addr() );
+            Forward( e );
+            // return;
+            sync = true;
+          }
+        }
       }
     }
     // e.dest( addr );
@@ -907,12 +920,14 @@ void Janus::VSMergeRemoteGroup( const stem::Event_base<VSsync_rq>& e )
 void Janus::VSsync_group_time( const stem::Event_base<VSsync>& ev )
 {
   const group_type grp = ev.value().grp;
+  const addr_type addr = ev.src();
 #ifdef __FIT_VS_TRACE
   try {
     scoped_lock lk(_lock_tr);
     if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
       int f = _trs->flags();
-      *_trs << " VS sync remote group time G" << grp << endl;
+      *_trs << " VS sync group time from " << hex << showbase << addr
+            << dec << " G" << grp << endl;
 #ifdef STLPORT
       _trs->flags( f );
 #else
@@ -924,11 +939,17 @@ void Janus::VSsync_group_time( const stem::Event_base<VSsync>& ev )
   }
 #endif // __FIT_VS_TRACE
 
+  // const gaddr_type oid = manager()->reflect( addr ); // ???? oid == gaddr
+
+  // add remote memer of group grp
+  // vtmap[oid].add( addr, grp );
+  // grmap.insert( make_pair(grp,oid) );
+
   // find all local group members and forward data as VS_SYNC_TIME
   pair<gid_map_type::const_iterator,gid_map_type::const_iterator> range = grmap.equal_range( grp );
   stem::Event_base<VSsync> e( VS_SYNC_TIME );
-  e.src( ev.src() );
-  e.value().grp = ev.value().grp;
+  e.src( addr );
+  e.value().grp = grp;
   e.value().gvt.gvt = ev.value().gvt.gvt;
   e.value().mess = ev.value().mess;
 
@@ -941,11 +962,41 @@ void Janus::VSsync_group_time( const stem::Event_base<VSsync>& ev )
   }
 }
 
+void Janus::VSOldRemoteMemberRevert( const stem::Event_base<VSsync_rq>& ev )
+{
+  const group_type grp = ev.value().grp;
+  const addr_type addr = ev.src();
+  const gaddr_type oid = manager()->reflect( addr ); // ???? oid == gaddr
+#ifdef __FIT_VS_TRACE
+  try {
+    scoped_lock lk(_lock_tr);
+    if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
+      int f = _trs->flags();
+      *_trs << " VS remote " << hex << showbase << addr
+            << " (" << oid << ") "
+            << dec << " G" << grp << endl;
+#ifdef STLPORT
+      _trs->flags( f );
+#else
+      _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+    }
+  }
+  catch ( ... ) {
+  }
+#endif // __FIT_VS_TRACE
+  // add remote memer of group grp
+  vtmap[oid].add( addr, grp );
+  grmap.insert( make_pair(grp,oid) );
+}
+
+
 DEFINE_RESPONSE_TABLE( Janus )
   EV_Event_base_T_( ST_NULL, VS_MESS, JaDispatch, VSmess )
   EV_Event_base_T_( ST_NULL, VS_NEW_MEMBER, VSNewMember, VSsync_rq )
   EV_Event_base_T_( ST_NULL, VS_NEW_REMOTE_MEMBER, VSNewRemoteMemberDirect, VSsync_rq )
   EV_Event_base_T_( ST_NULL, VS_NEW_MEMBER_RV, VSNewRemoteMemberRevert, VSsync_rq )
+  EV_Event_base_T_( ST_NULL, VS_OLD_MEMBER_RV, VSOldRemoteMemberRevert, VSsync_rq )
   EV_Event_base_T_( ST_NULL, VS_OUT_MEMBER, VSOutMember, VSsync_rq )
   EV_Event_base_T_( ST_NULL, VS_MERGE_GROUP, VSMergeRemoteGroup, VSsync_rq )
   EV_Event_base_T_( ST_NULL, VS_SYNC_GROUP_TIME, VSsync_group_time, VSsync )
