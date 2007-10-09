@@ -148,6 +148,7 @@ class Janus :
     void VSNewMember( const stem::Event_base<VSsync_rq>& e );
     void VSNewRemoteMemberDirect( const stem::Event_base<VSsync_rq>& e );
     void VSNewRemoteMemberRevert( const stem::Event_base<VSsync_rq>& e );
+    void VSOldRemoteMemberRevert( const stem::Event_base<VSsync_rq>& e );
     void VSOutMember( const stem::Event_base<VSsync_rq>& e );
 
     void VSMergeRemoteGroup( const stem::Event_base<VSsync_rq>& e );
