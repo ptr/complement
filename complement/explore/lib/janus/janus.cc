@@ -204,13 +204,10 @@ void Janus::JaSend( const stem::Event& e, group_type grp )
       vt.next( from, grp ); // my counter
 
       for ( gid_map_type::const_iterator g = range.first; g != range.second; ++g ) {
-        cerr << "A1\n";
         vt_map_type::iterator k = vtmap.find( g->second );
         if ( k == vtmap.end() || k->second.stem_addr() == m.src() ) { // not for nobody and not for self
-          cerr << "A2\n";
           continue;
         }
-        cerr << "A3\n";
         try {
           vt.delta( m.value().gvt, from, g->second, grp );
 
@@ -897,19 +894,20 @@ void Janus::VSMergeRemoteGroup( const stem::Event_base<VSsync_rq>& e )
     for ( ; range.first != range.second; ++range.first ) {
       vt_map_type::iterator i = vtmap.find( range.first->second );
       if ( i != vtmap.end() ) {
-        if ( (i->second.stem_addr() & stem::extbit) == 0 ) {
-          e_rv.src( i->second.stem_addr() );
-          Forward( e_rv );
+        stem::addr_type vs_addr = i->second.stem_addr();
+        if ( (vs_addr & stem::extbit) == 0 ) {
+          e_rv.src( vs_addr );
+          Forward( e_rv ); // inform remote janus about group member
           if ( !sync ) {
             // i->second.get_gvt( gvt );
             // if ( gvt_last < gvt ) {
             //   swap( gvt_last, gvt );
             //   addr = i->second.stem_addr();
             // }
-            e.dest( i->second.stem_addr() );
-            Forward( e );
+            e.dest( vs_addr );
+            Forward( e ); // request local VS Handler about request VS_MERGE_GROUP
             // return;
-            sync = true;
+            sync = true; // only one object informed, no need more
           }
         }
       }
