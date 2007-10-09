@@ -91,11 +91,11 @@ int main()
 
   YaSample sample;
 
-  sample.manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
-  sample.manager()->settrs( &std::cerr );
+  // sample.manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+  // sample.manager()->settrs( &std::cerr );
 
-  sample.vtdispatcher()->settrf( janus::Janus::tracenet | janus::Janus::tracedispatch | janus::Janus::tracefault | janus::Janus::tracedelayed | janus::Janus::tracegroup );
-  sample.vtdispatcher()->settrs( &std::cerr );
+  // sample.vtdispatcher()->settrf( janus::Janus::tracenet | janus::Janus::tracedispatch | janus::Janus::tracefault | janus::Janus::tracedelayed | janus::Janus::tracegroup );
+  // sample.vtdispatcher()->settrs( &std::cerr );
 
 
   sample.JoinGroup( janus::vs_base::first_user_group );
@@ -106,7 +106,7 @@ int main()
   string line;
 
   while ( cin.good() ) {
-    cin >> line;
+    getline( cin, line );
     if ( !cin.fail() ) {
       cerr << "local: " << line << endl;
       ev.value() = line;
