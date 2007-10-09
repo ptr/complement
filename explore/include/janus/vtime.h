@@ -402,9 +402,10 @@ class VTHandler :
 #define VS_SYNC_TIME          0x303
 #define VS_NEW_REMOTE_MEMBER  0x304
 #define VS_NEW_MEMBER_RV      0x305
-#define VS_HOST_MGR_FINAL     0x306
-#define VS_MERGE_GROUP        0x307
-#define VS_SYNC_GROUP_TIME    0x308
+#define VS_OLD_MEMBER_RV      0x306
+#define VS_HOST_MGR_FINAL     0x307
+#define VS_MERGE_GROUP        0x308
+#define VS_SYNC_GROUP_TIME    0x309
 
 #ifdef __USE_STLPORT_HASH
 #  undef __USE_STLPORT_HASH
