@@ -472,15 +472,26 @@ bool __EvHandler<T, InputIterator>::DispatchTrace( InputIterator first,
   }
   stem::code_type code = event.code();
   __AnyPMFentry *entry;
+  int f = out.flags();
   while ( first != last ) {
     if ( table.get( code, *first, entry ) ) {
-      out << "\tMessage 0x" << std::hex << code << std::dec << " catcher "
+      out << "\tMessage " << std::hex << std::showbase << code << std::dec << " catcher "
           << entry->pmf_name << " (state " << *first << ")";
+#ifdef STLPORT
+      out.flags( f );
+#else
+      out.flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
       return true;
     }
     ++first;
   }
-  out << "\tCatcher not found for message 0x" << std::hex << code << std::dec;
+  out << "\tCatcher not found for message " << std::hex << std::showbase << code;
+#ifdef STLPORT
+  out.flags( f );
+#else
+  out.flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
   return false;
 }
 
@@ -492,10 +503,11 @@ void __EvHandler<T, InputIterator>::Out( std::ostream& out ) const
   }
   __AnyPMFentry *entry;
   typename table_type::const_iterator1 i1 = table.begin();
+  int f = out.flags();
   while ( i1 != table.end() ) {
     stem::code_type key1 = table.key1st(*i1);
     typename table_type::const_iterator2 i2 = table.begin( i1 );
-    out << "\tMessage: " << std::hex << key1 << std::dec << std::endl;
+    out << "\tMessage: " << std::hex << std::showbase << key1 << std::dec << std::endl;
     while ( i2 != table.end( i1 ) ) {
       state_type key2 = table.key2nd(*i2++);
       table.get( key1, key2, entry );
@@ -503,6 +515,11 @@ void __EvHandler<T, InputIterator>::Out( std::ostream& out ) const
     }
     ++i1;
   }
+#ifdef STLPORT
+  out.flags( f );
+#else
+  out.flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
 }
 
 typedef std::list<state_type> HistoryContainer;
