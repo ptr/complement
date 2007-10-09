@@ -204,10 +204,13 @@ void Janus::JaSend( const stem::Event& e, group_type grp )
       vt.next( from, grp ); // my counter
 
       for ( gid_map_type::const_iterator g = range.first; g != range.second; ++g ) {
+        cerr << "A1\n";
         vt_map_type::iterator k = vtmap.find( g->second );
         if ( k == vtmap.end() || k->second.stem_addr() == m.src() ) { // not for nobody and not for self
+          cerr << "A2\n";
           continue;
         }
+        cerr << "A3\n";
         try {
           vt.delta( m.value().gvt, from, g->second, grp );
 
@@ -868,8 +871,7 @@ void Janus::VSMergeRemoteGroup( const stem::Event_base<VSsync_rq>& e )
 #endif // __FIT_VS_TRACE
   pair<gid_map_type::const_iterator,gid_map_type::const_iterator> range = grmap.equal_range( grp );
   if ( range.first != range.second ) { // we have local? member within this group
-    // const addr_type addr = e.src();
-    // expected that addr correspond to remote Janus
+    const addr_type addr = e.src();  // expected that addr correspond to remote Janus
 
     // gaddr_type ga = manager()->reflect( addr );
     // addr_type janus_addr = badaddr;
@@ -887,7 +889,7 @@ void Janus::VSMergeRemoteGroup( const stem::Event_base<VSsync_rq>& e )
     // gvtime_type gvt_last;
     // stem::addr_type addr = stem::badaddr;
     stem::Event_base<VSsync_rq> e_rv( VS_OLD_MEMBER_RV );
-    e_rv.dest( e.src() );
+    e_rv.dest( /* janus_addr */ addr );
     e_rv.value().grp = grp;
 
     bool sync = false;
@@ -953,11 +955,31 @@ void Janus::VSsync_group_time( const stem::Event_base<VSsync>& ev )
   e.value().gvt.gvt = ev.value().gvt.gvt;
   e.value().mess = ev.value().mess;
 
+  // (stem) address of remote janus:
+  gaddr_type ga = manager()->reflect( addr );
+  addr_type janus_addr = badaddr;
+  if ( ga != gaddr_type() ) {
+    ga.addr = stem::janus_addr;
+    janus_addr = manager()->reflect( ga );
+    if ( janus_addr == badaddr ) {
+      janus_addr = manager()->SubscribeRemote( ga, "janus" );
+    }
+  }
+
+  stem::Event_base<VSsync_rq> e_rv( VS_OLD_MEMBER_RV );
+  e_rv.dest( janus_addr );
+  e_rv.value().grp = grp;
+
   for ( ; range.first != range.second; ++range.first ) {
     vt_map_type::iterator i = vtmap.find( range.first->second );
-    if ( i != vtmap.end() && ((i->second.stem_addr() & stem::extbit) == 0 )) {
-      e.dest( i->second.stem_addr() );
-      Forward( e );
+    if ( i != vtmap.end() ) {
+      stem::addr_type vs_addr = i->second.stem_addr();
+      if ( (vs_addr & stem::extbit) == 0 ) {
+        e.dest( vs_addr );
+        Forward( e ); // forward VS time from remote as VS_SYNC_TIME
+        e_rv.src( vs_addr );
+        Forward( e_rv ); // inform remote janus about local group member
+      }
     }
   }
 }
