@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/17 22:15:41 ptr>
+// -*- C++ -*- Time-stamp: <07/10/15 22:41:17 ptr>
 
 /*
  *
@@ -30,6 +30,25 @@
 #include <stem/EvPack.h>
 #include <mt/uid.h>
 #include <mt/xmt.h>
+
+#ifdef STLPORT
+#  include <unordered_map>
+#  include <unordered_set>
+// #  include <hash_map>
+// #  include <hash_set>
+// #  define __USE_STLPORT_HASH
+#  define __USE_STLPORT_TR1
+#else
+#  if defined(__GNUC__) && (__GNUC__ < 4)
+#    include <ext/hash_map>
+#    include <ext/hash_set>
+#    define __USE_STD_HASH
+#  else
+#    include <tr1/unordered_map>
+#    include <tr1/unordered_set>
+#    define __USE_STD_TR1
+#  endif
+#endif
 
 namespace stem {
 
@@ -77,7 +96,10 @@ struct gaddr_type :
       { }
 
     xmt::uuid_type  hid;
-    int64_t         pid; // pid_t defined as int, so it may be int64_t
+    // int64_t         pid; // pid_t defined as int, so it may be int64_t
+    // most systems has max(pid) < 2^15, 64-bit Linuxes max(pid) < 4 *1024 *1024
+    // but some other unixes may has larger numbers... check it
+    uint32_t         pid;
     stem::addr_type addr;
 
     __FIT_DECLSPEC virtual void pack( std::ostream& ) const;
@@ -618,4 +640,45 @@ ostream& operator <<( ostream& o, const stem::gaddr_type& g );
 
 namespace EDS = stem;
 
+#if defined(__USE_STLPORT_HASH) || defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+#  define __HASH_NAMESPACE std
 #endif
+#if defined(__USE_STD_HASH)
+#  define __HASH_NAMESPACE __gnu_cxx
+#endif
+
+namespace __HASH_NAMESPACE {
+
+#ifdef __USE_STD_TR1
+namespace tr1 {
+#endif
+
+template <>
+struct hash<stem::gaddr_type>
+{
+    size_t operator()(const stem::gaddr_type& __x) const
+      { return __x.addr | (__x.pid << 23); }
+};
+
+#ifdef __USE_STD_TR1
+}
+#endif
+
+} // namespace __HASH_NAMESPACE
+
+#undef __HASH_NAMESPACE
+
+#ifdef __USE_STLPORT_HASH
+#  undef __USE_STLPORT_HASH
+#endif
+#ifdef __USE_STD_HASH
+#  undef __USE_STD_HASH
+#endif
+#ifdef __USE_STLPORT_TR1
+#  undef __USE_STLPORT_TR1
+#endif
+#ifdef __USE_STD_TR1
+#  undef __USE_STD_TR1
+#endif
+
+#endif // __stem_Event_h

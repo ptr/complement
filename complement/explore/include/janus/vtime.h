@@ -6,6 +6,16 @@
 #include <algorithm>
 #include <list>
 #include <vector>
+#include <iterator>
+#include <istream>
+#include <ostream>
+#include <stdexcept>
+
+#include <stem/Event.h>
+#include <stem/EventHandler.h>
+
+#include <mt/time.h>
+
 #ifdef STLPORT
 #  include <unordered_map>
 #  include <unordered_set>
@@ -24,15 +34,7 @@
 #    define __USE_STD_TR1
 #  endif
 #endif
-#include <iterator>
-#include <istream>
-#include <ostream>
-#include <stdexcept>
 
-#include <stem/Event.h>
-#include <stem/EventHandler.h>
-
-#include <mt/time.h>
 
 namespace janus {
 
@@ -41,6 +43,7 @@ typedef stem::gaddr_type oid_type;
 
 } // namespace janus
 
+#if 0
 #if defined(__USE_STLPORT_HASH) || defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
 #  define __HASH_NAMESPACE std
 #endif
@@ -68,6 +71,7 @@ struct hash<janus::oid_type>
 } // namespace __HASH_NAMESPACE
 
 #undef __HASH_NAMESPACE
+#endif
 
 namespace janus {
 
