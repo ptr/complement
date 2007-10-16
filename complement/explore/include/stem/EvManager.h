@@ -21,7 +21,7 @@
 #include <stdint.h>
 
 #include <string>
-#include <map>
+// #include <map>
 #include <deque>
 
 #include <mt/xmt.h>
@@ -30,6 +30,25 @@
 #include <stem/Event.h>
 #include <stem/EventHandler.h>
 #include <ostream>
+
+#ifdef STLPORT
+#  include <unordered_map>
+#  include <unordered_set>
+// #  include <hash_map>
+// #  include <hash_set>
+// #  define __USE_STLPORT_HASH
+#  define __USE_STLPORT_TR1
+#else
+#  if defined(__GNUC__) && (__GNUC__ < 4)
+#    include <ext/hash_map>
+#    include <ext/hash_set>
+#    define __USE_STD_HASH
+#  else
+#    include <tr1/unordered_map>
+#    include <tr1/unordered_set>
+#    define __USE_STD_TR1
+#  endif
+#endif
 
 namespace stem {
 
@@ -76,6 +95,35 @@ inline bool operator <( const transport& l, const transport& r )
 class EvManager
 {
   private:
+#ifdef __USE_STLPORT_HASH
+    typedef std::hash_map<addr_type,EventHandler *> local_heap_type;
+    typedef std::hash_map<addr_type,std::string>    info_heap_type;
+
+    typedef std::hash_map<addr_type,gaddr_type> ext_uuid_heap_type;
+
+    typedef std::hash_multimap<gaddr_type,std::pair<addr_type,detail::transport> > uuid_tr_heap_type;
+    typedef std::hash_multimap<detail::transport_entry,gaddr_type> tr_uuid_heap_type;
+#endif
+#ifdef __USE_STD_HASH
+    typedef __gnu_cxx::hash_map<addr_type,EventHandler *> local_heap_type;
+    typedef __gnu_cxx::hash_map<addr_type,std::string>    info_heap_type;
+
+    typedef __gnu_cxx::hash_map<addr_type,gaddr_type> ext_uuid_heap_type;
+
+    typedef __gnu_cxx::hash_multimap<gaddr_type,std::pair<addr_type,detail::transport> > uuid_tr_heap_type;
+    typedef __gnu_cxx::hash_multimap<detail::transport_entry,gaddr_type> tr_uuid_heap_type;
+#endif
+#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+    typedef std::tr1::unordered_map<addr_type,EventHandler *> local_heap_type;
+    typedef std::tr1::unordered_map<addr_type,std::string>    info_heap_type;
+
+    typedef std::tr1::unordered_map<addr_type,gaddr_type> ext_uuid_heap_type;
+
+    typedef std::tr1::unordered_multimap<gaddr_type,std::pair<addr_type,detail::transport> > uuid_tr_heap_type;
+    typedef std::tr1::unordered_multimap<detail::transport_entry,gaddr_type> tr_uuid_heap_type;
+#endif
+
+#if 0
     typedef std::map<addr_type,EventHandler *> local_heap_type;
     typedef std::map<addr_type,std::string>    info_heap_type;
 
@@ -83,6 +131,7 @@ class EvManager
 
     typedef std::multimap<gaddr_type,std::pair<addr_type,detail::transport> > uuid_tr_heap_type;
     typedef std::multimap<detail::transport_entry,gaddr_type> tr_uuid_heap_type;
+#endif
 
     static bool tr_compare( const std::pair<gaddr_type,std::pair<addr_type,detail::transport> >& l, const std::pair<gaddr_type,std::pair<addr_type,detail::transport> >& r )
       { return l.second.second < r.second.second; }
@@ -267,5 +316,18 @@ class EvManager
 };
 
 } // namespace stem
+
+#ifdef __USE_STLPORT_HASH
+#  undef __USE_STLPORT_HASH
+#endif
+#ifdef __USE_STD_HASH
+#  undef __USE_STD_HASH
+#endif
+#ifdef __USE_STLPORT_TR1
+#  undef __USE_STLPORT_TR1
+#endif
+#ifdef __USE_STD_TR1
+#  undef __USE_STD_TR1
+#endif
 
 #endif // __stem_EvManager_h

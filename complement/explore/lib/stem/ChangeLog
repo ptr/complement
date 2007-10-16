@@ -1,3 +1,16 @@
+2007-10-16  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Event.h, EvManager.h: use hash instead of map, this save
+	~10 bytes per stem object;
+
+	* Event.h, EvPack.cc: in gaddr_type structure use 32-bit
+	integer for pid,  most systems has max(pid) < 2^15, 64-bit
+	Linuxes max(pid) < 4*1024*1024, but some other unixes may
+	has larger numbers... check it; this save ~24 bytes per
+	stem object;
+
+	* libstem: library version 4.7.0
+
 2007-10-09  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* EventHandler.h: preserve and restore format flags during
