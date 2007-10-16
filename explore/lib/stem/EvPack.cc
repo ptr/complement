@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/03 09:22:05 ptr>
+// -*- C++ -*- Time-stamp: <07/10/15 22:35:41 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
@@ -143,7 +143,7 @@ __FIT_DECLSPEC void gaddr_type::net_unpack( std::istream& s )
 
 __FIT_DECLSPEC void gaddr_type::_xnet_pack( char *buf ) const
 {
-  uint64_t _pid = to_net( pid );
+  /* uint64_t */ uint32_t _pid = to_net( pid );
   addr_type _addr = to_net( addr );
 
   // copy( (char *)hid.u.b, (char *)hid.u.b + 16, buf );
