@@ -1,3 +1,11 @@
+2007-10-24  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* config/feature.h, config/_linux.h: allow build without BFD;
+
+	* callstack.cc: suggest dummy call, if no BFD available;
+
+	* libxmt: version 1.14.1
+
 2007-09-24  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* callstack.h, callstack.cc: print call stack to ostream, initial
