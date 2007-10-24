@@ -67,7 +67,7 @@ struct gaddr_type :
 {
     gaddr_type() :
         hid(),
-        pid( -1 ),
+        pid( 0xffffffff ),
         addr( badaddr )
       { }
 
@@ -663,6 +663,15 @@ struct hash<stem::gaddr_type>
 #ifdef __USE_STD_TR1
 }
 #endif
+
+#if defined(__GNUC__) && (__GNUC__ < 4)
+template<>
+struct hash<void *>
+{
+   size_t operator()(const void *__x) const
+     { return static_cast<size_t>(x); }
+};
+#endif // __GNUC__ < 4
 
 } // namespace __HASH_NAMESPACE
 
