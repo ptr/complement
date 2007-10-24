@@ -669,7 +669,7 @@ template<>
 struct hash<void *>
 {
    size_t operator()(const void *__x) const
-     { return static_cast<size_t>(x); }
+     { return reinterpret_cast<size_t>(__x); }
 };
 #endif // __GNUC__ < 4
 
