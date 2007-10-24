@@ -114,9 +114,27 @@
 
 /*
  Store information about stack before create thread in xmt::Thread;
- useful for debugging.
+ useful for debugging. Real implementation require BFD.
 */
 
+/*
 #define __FIT_CREATE_THREAD_STACK_INFO
+*/
+
+/*
+ Don't use bfd, even if it available on platform; printing stack
+ impossible without BFD (Binary File Descriptor).
+*/
+
+#define __FIT_DISABLE_BFD
+
+#if 0
+#ifdef __FIT_DISABLE_BFD
+/* Without BFD we can't take info about stack */
+#  ifdef __FIT_CREATE_THREAD_STACK_INFO
+#    undef __FIT_CREATE_THREAD_STACK_INFO
+#  endif
+#endif
+#endif
 
 #endif /* __config_feature_h */

@@ -28,6 +28,23 @@
 // #include <stdlib.h>
 // #include <stdio.h>
 
+#ifndef __FIT_PRESENT_BFD
+
+#include <mt/callstack.h>
+
+namespace xmt {
+
+using namespace std;
+
+void callstack( std::ostream& s )
+{
+  s << "Sorry, compiled without BFD\n";
+}
+
+} // namespace xmt
+
+#else // __FIT_PRESENT_BFD
+
 #include <bfd.h>
 #include <signal.h>
 #include <ucontext.h>
@@ -302,3 +319,4 @@ void callstack( std::ostream& s )
 
 } // namespace xmt
 
+#endif // __FIT_PRESENT_BFD
