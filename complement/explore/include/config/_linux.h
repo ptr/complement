@@ -82,4 +82,12 @@
 #define __FIT_EPOLL
 */
 
+/*
+ * Normally, in Linux present BFD mechanism
+ */
+
+#ifndef __FIT_DISABLE_BFD
+#  define __FIT_PRESENT_BFD
+#endif
+
 #endif /* __config__linux_h */
