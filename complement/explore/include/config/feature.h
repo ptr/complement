@@ -128,9 +128,12 @@
 
 #define __FIT_DISABLE_BFD
 
-#if 0
 #ifdef __FIT_DISABLE_BFD
+#  ifdef __FIT_PRESENT_BFD
+#    undef __FIT_PRESENT_BFD
+#  endif
 /* Without BFD we can't take info about stack */
+#if 0
 #  ifdef __FIT_CREATE_THREAD_STACK_INFO
 #    undef __FIT_CREATE_THREAD_STACK_INFO
 #  endif
