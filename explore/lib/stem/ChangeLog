@@ -1,3 +1,11 @@
+2007-10-24  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Event.h: initialize pid by unsigned;
+
+	* Event.h: __gnu_cxx::hash<void*> for gcc 3.3.6;
+
+	* * libstem: library version 4.7.1
+
 2007-10-16  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* Event.h, EvManager.h: use hash instead of map, this save
