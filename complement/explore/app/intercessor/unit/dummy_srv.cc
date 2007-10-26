@@ -10,7 +10,7 @@
 #include <iostream>
 #include <boost/regex.hpp>
 
-#include <boost/test/unit_test.hpp>
+#include <exam/suite.h>
 
 #include "http.h"
 
@@ -30,7 +30,7 @@ void DummyHttpSrv::connect( std::sockstream& s )
 {
   // cerr << "DummyHttpSrv::connect " << pthread_self() << endl;
 
-  BOOST_CHECK( s.good() );
+  EXAM_CHECK_ASYNC( s.good() );
 
   http::request rq;
 
@@ -45,7 +45,7 @@ void DummyHttpSrv::connect( std::sockstream& s )
 
     (s << http::body( true ) << rs).flush();
 
-    BOOST_CHECK( s.good() );
+    EXAM_CHECK_ASYNC( s.good() );
 
   } else if ( rq.head().value() == http::command::POST ) {
     http::response rs;
@@ -54,7 +54,7 @@ void DummyHttpSrv::connect( std::sockstream& s )
 
     (s << http::body( true ) << rs).flush();
     
-    BOOST_CHECK( s.good() );
+    EXAM_CHECK_ASYNC( s.good() );
   }
 }
 
@@ -73,7 +73,7 @@ DummyHttpSrvNeg::DummyHttpSrvNeg( std::sockstream& )
 
 void DummyHttpSrvNeg::connect( std::sockstream& s )
 {
-  BOOST_CHECK( s.good() );
+  EXAM_CHECK_ASYNC( s.good() );
 
   http::request rq;
 
@@ -88,7 +88,7 @@ void DummyHttpSrvNeg::connect( std::sockstream& s )
 
     (s << http::body( true ) << rs).flush();
 
-    BOOST_CHECK( s.good() );
+    EXAM_CHECK_ASYNC( s.good() );
   } else if ( rq.head().value() == http::command::POST ) {
     http::response rs;
     rs.head().code( 410 );
@@ -96,7 +96,7 @@ void DummyHttpSrvNeg::connect( std::sockstream& s )
 
     (s << http::body( true ) << rs).flush();
     
-    BOOST_CHECK( s.good() );
+    EXAM_CHECK_ASYNC( s.good() );
   }
 }
 
