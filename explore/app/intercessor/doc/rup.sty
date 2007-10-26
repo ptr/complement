@@ -1,0 +1,150 @@
+% -*- LaTeX -*-
+% $Id: rup.sty,v 1.1 2002/11/04 10:53:08 ptr Exp $
+
+\makeatletter
+
+\NeedsTeXFormat{LaTeX2e}[1995/12/01]
+\ProvidesClass{rup}[2002/10/24 v0.1 RUP document class]
+
+\newcommand\version[1]{\gdef\@version{#1}}
+\gdef\@version{1{.}0}
+\newcommand\project[1]{\gdef\@project{#1}}
+\gdef\@project{Project Name}
+\newcommand\RevHistory[1]{\gdef\@revhistory{#1}}
+\gdef\@revhistory{dd/mmmm/yyyy & x.x & & \cr \hline}
+
+% \setlength\parsep{5\p@ \@plus \p@}
+% \setlength\parsep{5em}
+% \parindent 0em
+\setlength\parskip{5pt plus 1pt minus 1pt}
+\setlength\parindent{0pt}
+% \setlength\parsep{1em}
+
+\if@titlepage
+  \renewcommand\maketitle{\begin{titlepage}%
+      \let\footnotesize\small
+      \let\footnoterule\relax
+      \let \footnote \thanks
+      \null\vfil
+      \vskip 60\p@
+      \begin{flushright}%
+        {\LARGE \@title \par}%
+        \vskip 3em%
+        {\large
+          \lineskip .75em%
+          \begin{tabular}[t]{c}%
+            \@author
+          \end{tabular}\par%
+        }%
+        \vskip 1.5em%
+        {\large \@date \par}%       % Set date in \large size.
+      \end{flushright}\par
+      \@thanks
+    \vfil\null
+    \end{titlepage}%
+    \setcounter{footnote}{0}%
+    \global\let\thanks\relax
+    \global\let\maketitle\relax
+    \global\let\@thanks\@empty
+    \global\let\@author\@empty
+    \global\let\@date\@empty
+    \global\let\@title\@empty
+    \global\let\title\relax
+    \global\let\author\relax
+    \global\let\date\relax
+    \global\let\and\relax
+  }
+\else
+  \renewcommand\maketitle{\par
+    \begingroup
+      \renewcommand\thefootnote{\@fnsymbol\c@footnote}%
+      \def\@makefnmark{\rlap{\@textsuperscript{\normalfont\@thefnmark}}}%
+      \long\def\@makefntext##1{\parindent 1em\noindent
+            \hb@xt@1.8em{%
+                \hss\@textsuperscript{\normalfont\@thefnmark}}##1}%
+      \if@twocolumn
+        \ifnum \col@number=\@ne
+          \@maketitle
+        \else
+          \twocolumn[\@maketitle]%
+        \fi
+      \else
+        \newpage
+        \global\@topnum\z@   % Prevents figures from going at top of page.
+        \@maketitle
+      \fi
+      \thispagestyle{plain}\@thanks
+    \endgroup
+    \setcounter{footnote}{0}%
+    \global\let\thanks\relax
+    \global\let\maketitle\relax
+    \global\let\@maketitle\relax
+    \global\let\@thanks\@empty
+    \global\let\@author\@empty
+    \global\let\@date\@empty
+    \global\let\@title\@empty
+    \global\let\title\relax
+    \global\let\author\relax
+    \global\let\date\relax
+    \global\let\and\relax
+  }
+  \def\@maketitle{%
+    \newpage
+    \null
+    % \raggedleft{\includegraphics{rm_logo.pdf}}
+    % \vskip 2em%
+    \begin{flushright}%
+      \let \footnote \thanks
+      {\LARGE \@project \par}
+      \vskip 1.5em%
+      {\LARGE \@title \par}%
+      \vskip 1.5em%
+      {\Large Version \@version \par}
+      \vskip 4em%
+      {\large Revision History
+        \vskip 1em%
+        \lineskip 0.5em%
+        {\small\fontfamily{cmss}\selectfont
+         \begin{tabular}{|c|c|p{1.5in}|p{1.2in}|}
+           \hline
+            Date & Version & Description & Author \\
+           \hline
+           \@revhistory
+           % <dd/mmm/yy> & <x.x> &  & \\
+           % \hline
+         \end{tabular}
+        }
+%        \begin{tabular}[t]{c}%
+%          \@author
+%        \end{tabular}\par
+      }%
+%      \vskip 1em%
+%      {\large \@date}%
+    \end{flushright}%
+    \par
+    \vskip 1.5em%
+  }
+\fi
+
+\renewenvironment{thebibliography}[1]
+     {\list{\@biblabel{\@arabic\c@enumiv}}%
+           {\settowidth\labelwidth{\@biblabel{#1}}%
+            \leftmargin\labelwidth
+            \advance\leftmargin\labelsep
+            \@openbib@code
+            \usecounter{enumiv}%
+            \let\p@enumiv\@empty
+            \renewcommand\theenumiv{\@arabic\c@enumiv}}%
+      \sloppy
+      \clubpenalty4000
+      \@clubpenalty \clubpenalty
+      \widowpenalty4000%
+      \sfcode`\.\@m}
+     {\def\@noitemerr
+       {\@latex@warning{Empty `thebibliography' environment}}%
+      \endlist}
+
+\makeatother
+
+\RequirePackage{vmargin}
+\setmarginsrb{1in}{1in}{1in}{1in}{30pt}{36pt}{40pt}{36pt}
