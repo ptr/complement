@@ -1,0 +1,50 @@
+This is intercessor, request proxy from php to reportware.
+
+Options:
+  -h [ --help ]             print help message
+  -p [ --port=] arg (=8080) listen port (default 8080)
+  -s [ --save ] arg         store uploaded stream to files in this catalog (default none)
+  -t [ --timeout=] arg (=3) timeout for response from ReportWare Server, seconds (default 3)
+  -d [ --daemon ]           become daemon
+
+Compilation (on fresh commit):
+
+./configure
+make
+
+The results will be in build/bin and build/lib
+For installation you will need following files:
+
+build/bin:
+intercessor*
+
+build/lib: following command give you names of required files
+
+ldd build/bin/intercessor | grep /build/lib/ | awk '{ v = system( "readlink " $3); b = system( "basename " $3 ); }'
+
+If you developer, and and use 'svn update', following make tags may be useful for you:
+make check --- Build and run all possible unit tests for libraries and applications
+               related to 'intercessor' application.
+
+make depend  --- calculate build dependencies
+
+make clean --- Delete object files, intermediate depenedency files
+               that are created by building the program. However,
+	       don't delete the files that record the configuration.
+	       Also preserve dependencies file, tags files and resulting
+	       program or library.
+
+make distclean --- Same as 'clean' plus delete resulting program(s) or
+               libraie(s) files, dependencies file and directories that
+	       used for compilation and linking (directories should be
+	       empty at this stage). `make distclean' should leave only
+	       the files that were in the distribution.
+
+
+Projects, that was used in 'intercessor':
+  - Boost (http://www.boost.org) [program_options, regex, filesystem, test]
+  - STLport (http://stlport.sourceforge.net)
+  - Complement (http://complement.sourceforge.net) [xmt, sockios, StEM, Makefiles]
+
+Architecture desicions and more complete documentation you can found in
+doc/IntercessorSoftwareArchitecture.pdf
