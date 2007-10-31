@@ -178,6 +178,35 @@ class header
 std::ostream& operator <<( std::ostream& s, const header& h );
 std::istream& operator >>( std::istream& s, header& h );
 
+class cookie
+{
+  public:
+
+    cookie()
+      { }
+
+    cookie( const header& );
+
+    const std::string& key() const
+      { return _val.first; }
+
+    const std::string& value() const
+      { return _val.second; }
+
+    void key( const std::string& k )
+      { _val.first = k; }
+
+    // template <>
+    void value( const std::string& v )
+      { _val.second = v; }
+
+  private:
+    std::pair<std::string,std::string> _val;
+    std::string _domain;
+    std::string _path;
+    std::string _expires;
+};
+
 class base_response
 {
   public:
@@ -397,6 +426,8 @@ typename std::istream& operator >>( typename std::istream& s, message_start<R>& 
         if ( skws ) {
           s.setf( std::ios_base::skipws );
         }
+      } else { // server not HTTP 1.1-compliant (RFC2616, 4.4)
+        copy( std::istreambuf_iterator<char>(s.rdbuf()), std::istreambuf_iterator<char>(), back_inserter(r._body) );
       }
     }
   }
