@@ -9,7 +9,7 @@
  *
  */
 
-#include "intercessor_test_suite.h"
+#include "http_test_suite.h"
 
 int main( int, char ** )
 {
