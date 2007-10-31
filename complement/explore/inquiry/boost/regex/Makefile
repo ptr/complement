@@ -1,5 +1,4 @@
 # -*- Makefile -*- Time-stamp: <03/11/21 08:02:55 ptr>
-# $Id$
 
 SRCROOT := ../../..
 COMPILER_NAME := gcc
@@ -7,41 +6,24 @@ COMPILER_NAME := gcc
 include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
 
-
-INCLUDES += -I$(SRCROOT)/include -I$(STLPORT_INCLUDE_DIR) -I$(BOOST_INCLUDE_DIR)
+# INCLUDES += -I$(SRCROOT)/include -I$(STLPORT_INCLUDE_DIR) -I$(BOOST_INCLUDE_DIR)
 
 # temporary, before dums fix strings:
 # DEFS += -D_STLP_DONT_USE_TEMPLATE_EXPRESSION
 
+LIBBOOST_RE_DIR = ${CoMT_DIR}/../extern/custom/boost/libs/regex
+# LIBUTF_DIR = ${CoMT_DIR}/../extern/custom/boost/libs/test/unit_test_framework
+
 ifeq ($(OSNAME),linux)
-release-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR} -Wl,--rpath=${CoMT_LIB_DIR}:${STLPORT_LIB_DIR}
-stldbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_STLDBG} -Wl,--rpath=${CoMT_LIB_DIR_STLDBG}
-dbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_DBG} -Wl,--rpath=${CoMT_LIB_DIR_DBG}
+release-shared: LDSEARCH += -L${LIBBOOST_RE_DIR}/${OUTPUT_DIR} -Wl,--rpath=${LIBBOOST_RE_DIR}/${OUTPUT_DIR}:${STLPORT_LIB_DIR}
+ifndef WITHOUT_STLPORT
+stldbg-shared:  LDSEARCH += -L${LIBBOOST_RE_DIR}/${OUTPUT_DIR_STLDBG} -Wl,--rpath=${LIBBOOST_RE_DIR}/${OUTPUT_DIR_STLDBG}:${STLPORT_LIB_DIR}
+endif
+dbg-shared:     LDSEARCH += -L${LIBBOOST_RE_DIR}/${OUTPUT_DIR_DBG} -Wl,--rpath=${LIBBOOST_RE_DIR}/${OUTPUT_DIR_DBG}:${STLPORT_LIB_DIR}
 endif
 
-ifeq ($(OSNAME),openbsd)
-release-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR} -Wl,-R${CoMT_LIB_DIR}
-stldbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_STLDBG} -Wl,-R${CoMT_LIB_DIR_STLDBG}
-dbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_DBG} -Wl,-R${CoMT_LIB_DIR_DBG}
+release-shared : LDLIBS = -lboost_regex
+ifndef WITHOUT_STLPORT
+stldbg-shared  : LDLIBS = -lboost_regexstlg
 endif
-
-release-shared : LDLIBS = -lboost_regex_gcc -lstlport_gcc
-stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug -lboost_regex_gcc_stl-g
-dbg-shared     : LDLIBS = -lboost_regex_gcc-g -lstlport_gcc_debug
-
-ifeq ($(OSNAME),freebsd)
-release-shared : LDLIBS += -lthr
-stldbg-shared  : LDLIBS += -lthr
-dbg-shared     : LDLIBS += -lthr
-endif
-
-ifeq ($(OSNAME),sunos)
-release-shared : LDLIBS += -lrt
-stldbg-shared  : LDLIBS += -lrt
-dbg-shared     : LDLIBS += -lrt
-endif
-
-ifeq ($(OSNAME),openbsd)
-release-shared:	LDLIBS = -Wl,-Bstatic -lstlport_gcc -Wl,-Bdynamic -lxmt_gcc -lboost_test_utf_gcc -Wl,-Bstatic -lstlport_gcc -Wl,-Bdynamic
-endif
-
+dbg-shared     : LDLIBS = -lboost_regexg
