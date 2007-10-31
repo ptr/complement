@@ -2,7 +2,7 @@
 
 /*
  *
- * Copyright (c) 2007
+ * Copyright (c) 2002, 2003, 2005-2007
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -14,6 +14,6 @@
 
 #include <exam/suite.h>
 
-int EXAM_DECL(intercessor_test_suite);
+int EXAM_DECL(http_test_suite);
 
 #endif // __intercessor_test_suite_h

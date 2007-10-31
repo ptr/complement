@@ -31,7 +31,7 @@ dbg-shared:     LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR_DBG} -L${LIBEXAM_DIR}/${
 endif
 
 
-INCLUDES += -I${CoMT_INCLUDE_DIR} -I${BOOST_INCLUDE_DIR} -I..
+INCLUDES += -I${CoMT_INCLUDE_DIR} -I${BOOST_INCLUDE_DIR}
 
 release-shared: PROJECT_LIBS = -lxmt -lsockios -lNet -lstem -lboost_regex -lboost_fs -lexam
 dbg-shared:	PROJECT_LIBS = -lxmtg -lsockiosg -lNetg -lstemg -lboost_regexg -lboost_fsg -lexamg

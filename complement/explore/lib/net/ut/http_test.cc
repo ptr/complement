@@ -5,10 +5,10 @@
  * Copyright (c) 2007
  * Petr Ovtchenkov
  *
+ * Licensed under the Academic Free License version 3.0
+ *
  */
 
-// #include <boost/filesystem/operations.hpp>
-// #include <boost/filesystem/path.hpp>
 #include "http_test.h"
 #include <boost/lexical_cast.hpp>
 
@@ -16,20 +16,10 @@
 #include <iostream>
 
 #include <sstream>
-// #include <fstream>
 #include <iterator>
 #include <unistd.h>
 
-#include "http.h"
-// #include "intercessor.h"
-// #include "server.h"
-
-// #include "dummy_srv.h"
-// #include <sockios/sockmgr.h>
-// #include <mt/lfstream.h>
-
-// boost::filesystem::path dir( boost::filesystem::initial_path() );
-// unsigned rq_timeout = 3;
+#include <net/http.h>
 
 using namespace std;
 using namespace http;

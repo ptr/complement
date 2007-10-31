@@ -5,6 +5,8 @@
  * Copyright (c) 2007
  * Petr Ovtchenkov
  *
+ * Licensed under the Academic Free License version 3.0
+ *
  */
 
 #include <boost/filesystem/operations.hpp>
@@ -20,7 +22,7 @@
 #include <iterator>
 #include <unistd.h>
 
-#include "http.h"
+#include <net/http.h>
 #include "intercessor.h"
 #include "server.h"
 

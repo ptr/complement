@@ -2,29 +2,12 @@
 
 /*
  *
- * Copyright (c) 1997-1999, 2002
+ * Copyright (c) 1997-1999, 2002, 2007
  * Petr Ovtchenkov
  *
- * Licensed under the Academic Free License Version 1.0
- *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
+ * Licensed under the Academic Free License version 3.0
  *
  */
-
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "$Id$"
-#  else
-#pragma ident "$Id$"
-#  endif
-#endif
 
 #include <config/feature.h>
 
@@ -34,9 +17,9 @@
 #include <iomanip>
 #include <iostream>
 
-using namespace std;
-
 namespace cgi {
+
+using namespace std;
 
 const char *SERVER_SOFWARE    = "SERVER_SOFWARE";
 const char *SERVER_NAME       = "SERVER_NAME";

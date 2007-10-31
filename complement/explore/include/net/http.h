@@ -1,7 +1,16 @@
 // -*- C++ -*- Time-stamp: <07/03/07 16:11:19 ptr>
 
-#ifndef __http_h
-#define __http_h
+/*
+ *
+ * Copyright (c) 2006-2007
+ * Petr Ovtchenkov
+ *
+ * Licensed under the Academic Free License version 3.0
+ *
+ */
+
+#ifndef __net_http_h
+#define __net_http_h
 
 #include <istream>
 #include <ostream>
@@ -454,4 +463,4 @@ typedef message_start<base_response> response;
 
 } // namespace http
 
-#endif // __http_h
+#endif // __net_http_h
