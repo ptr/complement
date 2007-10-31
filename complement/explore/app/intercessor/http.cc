@@ -1,6 +1,6 @@
 // -*- C++ -*- Time-stamp: <07/03/07 15:17:27 ptr>
 
-#include "http.h"
+#include <net/http.h>
 #include <istream>
 #include <ostream>
 #include <iomanip>
@@ -133,6 +133,36 @@ std::istream& operator >>( std::istream& s, header& h )
     s.setstate( ios_base::failbit );
   }
   return s;
+}
+
+boost::regex cookie_re( "(?:(\\w+)=([^;]*)(?:;\\s+)?)*" );
+
+cookie::cookie( const header& h )
+{
+  if ( h.key() == "Set-Cookie" ) {
+    boost::smatch ma;
+    if ( regex_search( h.value(), ma, cookie_re, boost::match_extra ) ) {
+#ifdef BOOST_REGEX_MATCH_EXTRA
+      for ( int j = 0; j < ma.captures(1).size(); ++j ) {
+        if ( ma.captures(1)[j] == "path" ) {
+          _path = ma.captures(2)[j];
+        } else if ( ma.captures(1)[j] == "expires" ) {
+          _expires = ma.captures(2)[j];
+        } else if ( ma.captures(1)[j] == "Expires" ) {
+          _expires = ma.captures(2)[j];
+        } else if ( ma.captures(1)[j] == "domain" ) {
+          _domain = ma.captures(2)[j];
+        } else if ( ma.captures(1)[j] == "comment" ) {
+        } else if ( ma.captures(1)[j] == "max-age" ) {
+        } else if ( ma.captures(1)[j] == "version" ) {
+        } else {
+          _val.first  = ma.captures(1)[j];
+          _val.second = ma.captures(2)[j];
+        }
+      }
+#endif
+    }
+  }
 }
 
 std::ostream& operator <<( std::ostream& s, const base_response& r )
