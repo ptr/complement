@@ -1,5 +1,14 @@
 // -*- C++ -*- Time-stamp: <07/03/07 15:54:00 ptr>
 
+/*
+ *
+ * Copyright (c) 2006-2007
+ * Petr Ovtchenkov
+ *
+ * Licensed under the Academic Free License version 3.0
+ *
+ */
+
 #include "dummy_srv.h"
 
 #include <sockios/sockmgr.h>
@@ -12,7 +21,7 @@
 
 #include <exam/suite.h>
 
-#include "http.h"
+#include <net/http.h>
 
 namespace test {
 

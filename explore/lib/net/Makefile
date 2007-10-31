@@ -1,39 +1,37 @@
-# -*- Makefile -*- Time-stamp: <02/09/29 19:26:18 ptr>
-# $Id$
+# -*- Makefile -*- Time-stamp: <07/08/03 23:56:04 ptr>
 
-BASEDIR := $(shell xtmp=`pwd`; xtmp=`dirname $$xtmp`; dirname $$xtmp)
-LIBDIR  := $(shell xtmp=`pwd`; dirname $$xtmp)
+SRCROOT := ../..
 
-COMPILER_NAME = gcc
-include $(BASEDIR)/lib/net/Makefile.inc
+include Makefile.inc
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
-all:	all-release all-debug
+INCLUDES += -I$(SRCROOT)/include
+HEADERS_BASE = $(SRCROOT)/include/net $(SRCROOT)/include/config $(SRCROOT)/include/misc
 
-install:	install-dbg-shared install-stldbg-shared install-release-shared
+# LDLIBS += -ldl -lbfd
+# LDLIBS += -ldl
 
-all-shared:	release-shared dbg-shared stldbg-shared
-
-all-debug:	dbg-shared stldbg-shared
-
-all-release:	release-shared
-
-include ${BASEDIR}/Makefiles/lib/Makefile.inc
-
-INCLUDES += -I$(STLPORT_INCLUDE_DIR)
-
-ifeq ($(OS_VER),Linux)
-release-shared:	LDSEARCH = -L${STLPORT_LIB_DIR}
-stldbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR}
-dbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR}
+check:	all-shared
+	$(MAKE) -C ut all-shared
+	(cd ut; ${OUTPUT_DIR}/net_ut) || exit 1
+	(cd ut; ${OUTPUT_DIR_DBG}/net_ut) || exit 1
+ifndef WITHOUT_STLPORT
+	(cd ut; ${OUTPUT_DIR_STLDBG}/net_ut) || exit 1
 endif
 
-ifeq ($(OS_VER),SunOS)
-release-shared : LDLIBS = -lstlport_gcc
-stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug
-dbg-shared     : LDLIBS = -lstlport_gcc
-else
-release-shared : LDLIBS = -lstlport_gcc
-stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug
-dbg-shared     : LDLIBS = -lstlport_gcc
+check-release-shared:	release-shared
+	$(MAKE) -C ut release-shared
+	(cd ut; ${OUTPUT_DIR}/net_ut) || exit 1
+
+check-dbg-shared:	dbg-shared
+	$(MAKE) -C ut dbg-shared
+	(cd ut; ${OUTPUT_DIR_DBG}/net_ut) || exit 1
+
+ifndef WITHOUT_STLPORT
+check-stldbg-shared:	stldbg-shared
+	$(MAKE) -C ut stldbg-shared
+	(cd ut; ${OUTPUT_DIR_STLDBG}/net_ut) || exit 1
 endif
 
+depend clean distclean mostlyclean maintainer-clean::
+	${MAKE} -C ut $@
