@@ -13,5 +13,5 @@
 
 int main( int, char ** )
 {
-  return intercessor_test_suite(0);
+  return http_test_suite(0);
 }

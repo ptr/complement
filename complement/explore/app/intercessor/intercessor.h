@@ -6,7 +6,7 @@
 #include <list>
 #include <deque>
 #include <mt/xmt.h>
-#include "http.h"
+#include <net/http.h>
 #include <stem/Event.h>
 #include <stem/EventHandler.h>
 

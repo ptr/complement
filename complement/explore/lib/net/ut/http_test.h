@@ -5,6 +5,8 @@
  * Copyright (c) 2007
  * Petr Ovtchenkov
  *
+ * Licensed under the Academic Free License version 3.0
+ *
  */
 
 #ifndef __http_test_h
