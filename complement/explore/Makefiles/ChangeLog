@@ -1,3 +1,10 @@
+2007-11-13  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/unix/lib.mak: add macro LIBPREFIX to allow build shared
+	objects with names satisfied plug-in customs;
+
+	* ut/somodule: test for feature above.
+
 2007-08-30  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/sysid.mak, gmake/app/gcc.mak, gmake/lib/gcc.mak:
