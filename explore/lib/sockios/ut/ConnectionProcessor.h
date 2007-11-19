@@ -39,6 +39,7 @@ class trivial_sockios_test
     trivial_sockios_test();
 
     int EXAM_DECL(simple);
+    int EXAM_DECL(simple_udp);
     int EXAM_DECL(listen_iface);
     int EXAM_DECL(shared_socket);
 
