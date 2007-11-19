@@ -1,3 +1,19 @@
+2007-11-19  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: remove out-of-date sockmgr_sream_MP_SELECT;
+
+	* sockmgr.cc: stack size restriction for loop really dangerous;
+
+	* sockmgr.cc: accept_udp come back, but concept changed---no session
+	at all in UDP processing;
+
+	* ut/ConnectionProcessor.h, ut/ConnectionProcessor.cc: test for simple
+	udp connection;
+
+	* ut/sockios_test_suite.cc: ditto;
+
+	* libsockios: Version 1.14.0.
+
 2007-09-24  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* sockios/sockmgr.h, sockios/sockmgr.cc: rename loop_id to loop_thr,

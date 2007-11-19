@@ -146,6 +146,56 @@ int EXAM_IMPL(trivial_sockios_test::simple)
 
 // ******************
 
+int EXAM_IMPL(trivial_sockios_test::simple_udp)
+{
+#ifndef __FIT_NO_POLL
+
+  std::sockmgr_stream_MP<ConnectionProcessor> srv( port, std::sock_base::sock_dgram ); // start server
+  {
+    EXAM_MESSAGE( "Client start" );
+    std::sockstream sock( "localhost", ::port, std::sock_base::sock_dgram );
+    string srv_line;
+
+    sock << ::message << endl;
+
+    EXAM_CHECK( sock.good() );
+
+    // sock.clear();
+    getline( sock, srv_line );
+
+    EXAM_CHECK( sock.good() );
+
+    EXAM_CHECK( srv_line == ::message_rsp );
+
+    EXAM_MESSAGE( "Client close connection (client's end of life)" );
+    // sock.close(); // no needs, that will done in sock destructor
+  }
+
+  {
+    std::sockstream sock( "127.0.0.1", ::port, std::sock_base::sock_dgram );
+    string srv_line;
+
+    sock << ::message << endl;
+
+    EXAM_CHECK( sock.good() );
+
+    // sock.clear();
+    getline( sock, srv_line );
+
+    EXAM_CHECK( sock.good() );
+
+    EXAM_CHECK( srv_line == ::message_rsp );
+  }
+
+  srv.close(); // close server, so we don't wait server termination on next line
+  srv.wait(); // Wait for server stop to serve clients connections
+#else
+  EXAM_ERROR( "poll-based sockmgr not implemented on this platform" );
+#endif
+
+  return EXAM_RESULT;
+}
+
 int EXAM_IMPL(trivial_sockios_test::listen_iface)
 {
 #ifndef __FIT_NO_POLL
