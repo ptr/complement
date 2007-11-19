@@ -90,7 +90,7 @@ class basic_sockmgr :
       { return _state == ios_base::goodbit; }
 
     sock_base::socket_type fd() const
-      { xmt::scoped_lock lk(_fd_lck); return fd_unsafe(); }
+      { xmt::scoped_lock lk(_fd_lck); sock_base::socket_type tmp = fd_unsafe(); return tmp; }
 
     __FIT_DECLSPEC
     void shutdown( sock_base::shutdownflg dir );
@@ -337,117 +337,6 @@ class sockmgr_stream_MP :
 };
 
 #endif // !__FIT_NO_POLL
-
-#ifndef __FIT_NO_SELECT
-
-template <class Connect>
-class sockmgr_stream_MP_SELECT :
-    public basic_sockmgr
-{
-  public:
-    sockmgr_stream_MP_SELECT() :
-	basic_sockmgr(),
-        _fdmax( 0 )
-      {
-      }
-
-    explicit sockmgr_stream_MP_SELECT( const in_addr& addr, int port, sock_base::stype t = sock_base::sock_stream ) :
-	basic_sockmgr(),
-        _fdmax( 0 )
-      {
-        open( addr, port, t );
-      }
-
-    explicit sockmgr_stream_MP_SELECT( unsigned long addr, int port, sock_base::stype t = sock_base::sock_stream ) :
-	basic_sockmgr(),
-        _fdmax( 0 )
-      {
-        open( addr, port, t );
-      }
-
-    explicit sockmgr_stream_MP_SELECT( int port, sock_base::stype t = sock_base::sock_stream ) :
-	basic_sockmgr(),
-        _fdmax( 0 )
-      {
-        open( port, t );
-      }
-
-    ~sockmgr_stream_MP_SELECT()
-      {
-      }
-
-    void open( const in_addr& addr, int port, sock_base::stype t = sock_base::sock_stream );
-    void open( unsigned long addr, int port, sock_base::stype t = sock_base::sock_stream );
-    void open( int port, sock_base::stype t = sock_base::sock_stream );
-
-    virtual void close()
-      { basic_sockmgr::close(); }
-
-    void wait()
-      {	loop_id.join(); }
-
-    void detach( sockstream& ) // remove sockstream from polling in manager
-      { }
-
-  protected:
-    void _open( sock_base::stype t = sock_base::sock_stream );
-    static xmt::Thread::ret_t loop( void * );
-
-    struct _Connect {
-        sockstream *s;
-        Connect *_proc;
-    };
-
-    struct fd_equal :
-        public std::binary_function<_Connect *,int,bool> 
-    {
-        bool operator()(const _Connect *__x, int __y) const
-          { return __x->s->rdbuf()->fd() == __y; }
-    };
-
-    struct in_buf_avail :
-        public std::unary_function<_Connect *,bool> 
-    {
-        bool operator()(const _Connect *__x) const
-          { return __x->s->rdbuf()->in_avail() > 0; }
-    };
-
-    typedef _Connect *(sockmgr_stream_MP_SELECT<Connect>::*accept_type)();
-
-    accept_type _accept;
-    _Connect *accept() // workaround for CC
-      { return (this->*_accept)(); }
-    _Connect *accept_tcp();
-    _Connect *accept_udp();
-
-  private:
-    xmt::Thread     loop_id;
-
-  protected:
-    typedef sockmgr_stream_MP_SELECT<Connect> _Self_type;
-    typedef std::vector<_Connect *> _Sequence;
-    typedef fd_equal _Compare;
-    typedef typename _Sequence::value_type      value_type;
-    typedef typename _Sequence::size_type       size_type;
-    typedef          _Sequence                  container_type;
-
-    typedef typename _Sequence::reference       reference;
-    typedef typename _Sequence::const_reference const_reference;
-
-    _Sequence _M_c;
-    _Compare  _M_comp;
-    in_buf_avail _M_av;
-    xmt::mutex _c_lock;
-
-    fd_set _pfdr;
-    fd_set _pfde;
-    int _fdmax;
-
-  private:
-    _Connect *_shift_fd();
-    static void _close_by_signal( int );
-};
-#endif // !__FIT_NO_SELECT
 
 #ifdef STLPORT
 _STLP_END_NAMESPACE
