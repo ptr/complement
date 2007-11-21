@@ -1,0 +1,141 @@
+// -*- C++ -*- Time-stamp: <07/11/21 11:43:07 ptr>
+
+/*
+ * Based on C++ 0x working draft;
+ *
+ * This is revision 2 of <system_error>:
+ * http://www.open-std.org/jtc1/sc22/WG21/docs/papers/2007/n2303.html
+ * 
+ */
+
+#ifndef __SYSTEM_ERROR
+#define __SYSTEM_ERROR
+
+#include <cerrno>
+#include <locale>
+#include <string>
+#include <stdexcept>
+
+namespace std
+{
+
+struct error_catalog
+{
+    typedef int value_type;
+
+    static const value_type address_family_not_supported =      EAFNOSUPPORT;
+    static const value_type address_in_use =                    EADDRINUSE;
+    static const value_type address_not_available =             EADDRNOTAVAIL;
+    static const value_type already_connected =                 EISCONN;
+    static const value_type argument_list_too_long =            E2BIG;
+    static const value_type argument_out_of_domain =            EDOM;
+    static const value_type bad_address =                       EFAULT;
+    static const value_type bad_file_descriptor =               EBADF;
+    static const value_type bad_message =                       EBADMSG;
+    static const value_type broken_pipe =                       EPIPE;
+    static const value_type connection_aborted =                ECONNABORTED;
+    static const value_type connection_refused =                ECONNREFUSED;
+    static const value_type connection_reset =                  ECONNRESET;
+    static const value_type cross_device_link =                 EXDEV;
+    static const value_type destination_address_required =      EDESTADDRREQ;
+    static const value_type device_or_resource_busy =           EBUSY;
+    static const value_type directory_not_empty =               ENOTEMPTY;
+    static const value_type executable_format_error =           ENOEXEC;
+    static const value_type file_exists =                       EEXIST;
+    static const value_type file_too_large =                    EFBIG;
+    static const value_type filename_too_long =                 ENAMETOOLONG;
+    static const value_type function_not_supported =            ENOSYS;
+    static const value_type host_unreachable =                  EHOSTUNREACH;
+    static const value_type identifier_removed =                EIDRM;
+    static const value_type illegal_byte_sequence =             EILSEQ;
+    static const value_type inappropriate_io_control_operation =ENOTTY;
+    static const value_type interrupted =                       EINTR;
+    static const value_type invalid_argument =                  EINVAL;
+    static const value_type invalid_seek =                      ESPIPE;
+    static const value_type io_error =                          EIO;
+    static const value_type is_a_directory =                    EISDIR;
+    static const value_type message_too_long =                  EMSGSIZE; 
+    static const value_type network_down =                      ENETDOWN;
+    static const value_type network_reset =                     ENETRESET;
+    static const value_type network_unreachable =               ENETUNREACH;
+    static const value_type no_buffer_space =                   ENOBUFS;
+    static const value_type no_child_process =                  ECHILD;
+    static const value_type no_link =                           ENOLINK;
+    static const value_type no_lock_available =                 ENOLCK;
+    static const value_type no_message_available =              ENODATA;
+    static const value_type no_message =                        ENOMSG;
+    static const value_type no_space_on_device =                ENOSPC;
+    static const value_type no_stream_resources =               ENOSR;
+    static const value_type no_such_device_or_address =         ENXIO;
+    static const value_type no_such_device =                    ENODEV;
+    static const value_type no_such_file_or_directory =         ENOENT;
+    static const value_type no_such_process =                   ESRCH;
+    static const value_type not_a_directory =                   ENOTDIR;
+    static const value_type not_a_socket =                      ENOTSOCK;
+    static const value_type not_a_stream =                      ENOSTR;
+    static const value_type not_connected =                     ENOTCONN;
+    static const value_type not_enough_memory =                 ENOMEM;
+    static const value_type not_supported =                     ENOTSUP;
+    static const value_type operation_already_in_progress =     EALREADY; 
+    static const value_type operation_canceled =                ECANCELED;
+    static const value_type operation_in_progress =             EINPROGRESS;
+    static const value_type operation_not_permitted =           EPERM;
+    static const value_type operation_not_supported =           EOPNOTSUPP;
+    static const value_type owner_dead =                        EOWNERDEAD;
+    static const value_type permission_denied =                 EACCES;
+    static const value_type protocol_error =                    EPROTO;
+    static const value_type protocol_not_available =            ENOPROTOOPT; 
+    static const value_type protocol_not_supported =            EPROTONOSUPPORT;
+    static const value_type read_only_file_system =             EROFS;
+    static const value_type resource_deadlock_would_occur =     EDEADLK;
+    static const value_type result_out_of_range =               ERANGE;
+    static const value_type state_not_recoverable =             ENOTRECOVERABLE;
+    static const value_type stream_timeout =                    ETIME;
+    static const value_type text_file_busy =                    ETXTBSY;
+    static const value_type timed_out =                         ETIMEDOUT;
+    static const value_type too_many_files_open_in_system =     ENFILE;
+    static const value_type too_many_files_open =               EMFILE;
+    static const value_type too_many_links =                    EMLINK;
+    static const value_type too_many_synbolic_link_levels =     ELOOP;
+    static const value_type try_again =                         EAGAIN; 
+    static const value_type value_too_large =                   EOVERFLOW;
+    static const value_type wrong_protocol_type =               EPROTOTYPE;
+
+    virtual const value_type last_value() const throw();
+
+    virtual bool is_valid_value(value_type) const throw();
+
+    virtual const char* str(value_type) const throw();
+
+    const locale& getloc() const throw()
+      { return _M_loc; }
+
+    error_catalog(const locale& __loc = locale::classic()) throw() :
+        _M_loc( __loc )
+      { }
+
+    error_catalog(const char* __name) :
+        _M_loc( __name )
+      { }
+
+    virtual ~error_catalog() throw()
+      { }
+
+    bool operator ==(const error_catalog& __other) const throw();
+    bool operator !=(const error_catalog& __other) const throw();
+
+  private:
+    const locale _M_loc;
+};
+
+class system_error :
+        public std::runtime_error
+{
+  public:
+    system_error( const std::string& );
+    system_error( error_catalog::value_type, const error_catalog& );
+};
+
+} // namespace std
+
+#endif // __SYSTEM_ERROR

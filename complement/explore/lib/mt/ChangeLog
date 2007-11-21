@@ -1,3 +1,11 @@
+2007-11-21  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* system_error, system_error.cc: implementation of <system_error>
+	revision 2 from C++ 0x draft, see
+	http://www.open-std.org/jtc1/sc22/WG21/docs/papers/2007/n2303.html
+
+	* libxmt: version 1.14.2
+
 2007-10-24  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* config/feature.h, config/_linux.h: allow build without BFD;
