@@ -338,7 +338,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s,
   }
 
   if ( _bbuf == 0 ) {
-    _M_allocate_block( t == sock_base::sock_stream ? 0xb00 : 0xffff );
+    _M_allocate_block( t == sock_base::sock_stream ? 0xb00 : 0x1ffff );
   }
 
   if ( _bbuf == 0 ) {

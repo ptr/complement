@@ -1,3 +1,10 @@
+2007-11-21  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockstream.cc: UDP require larger buffer, because it should
+	take all message at once [max 65535].
+
+	* libsockios: Version 1.14.1.
+
 2007-11-19  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* sockmgr.h, sockmgr.cc: remove out-of-date sockmgr_sream_MP_SELECT;
