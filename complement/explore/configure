@@ -1,8 +1,8 @@
 #!/bin/sh
 
-# Time-stamp: <07/08/29 11:36:31 ptr>
+# Time-stamp: <07/11/23 15:24:31 ptr>
 
-base=`dirname $0`
+base=`cd \`dirname $0\`; echo $PWD`
 
 configmak=$base/Makefiles/gmake/config.mak
 
