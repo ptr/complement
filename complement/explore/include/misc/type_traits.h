@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/21 10:42:14 ptr>
+// -*- C++ -*- Time-stamp: <07/11/24 00:28:34 ptr>
 
 /*
  * Copyright (c) 2007
@@ -52,14 +52,14 @@ struct __instance :
 #ifdef __FIT_NO_INLINE_TEMPLATE_STATIC_INITIALISATION
     static const bool __value;
 #else
-    static const bool __value = sizeof(__test<_Tp>(0)) == 1;
+    static const bool __value = sizeof(__test<_Tp>(0)) == sizeof(__select_types::__t1);
 #endif
 
 };
 
 #ifdef __FIT_NO_INLINE_TEMPLATE_STATIC_INITIALISATION
 template <class _Tp>
-const bool __instance<_Tp>::__value = sizeof(__instance<_Tp>::__test<_Tp>(0)) == 1;
+const bool __instance<_Tp>::__value = sizeof(__instance<_Tp>::__test<_Tp>(0)) == sizeof(__select_types::__t1);
 #endif
 
 template <class T>
@@ -77,18 +77,49 @@ struct __uoc_aux : // union or class
 #ifdef __FIT_NO_INLINE_TEMPLATE_STATIC_INITIALISATION
     static const bool __value;
 #else
-    static const bool __value = sizeof(__test<T>(0)) == 1;
+    static const bool __value = sizeof(__test<T>(0)) == sizeof(__select_types::__t1);
 #endif
 };
 
 #ifdef __FIT_NO_INLINE_TEMPLATE_STATIC_INITIALISATION
 template <class T>
-const bool __uoc_aux<T>::__value = sizeof(__uoc_aux<T>::__test<T>(0)) == 1;
+const bool __uoc_aux<T>::__value = sizeof(__uoc_aux<T>::__test<T>(0)) == sizeof(__select_types::__t1);
 #endif
 
 template <class T>
 class __empty
 { };
+
+template <class T, bool B>
+class __inheritance_aux
+{};
+
+template <class T>
+class __inheritance_aux<T,true> :
+    public T
+{
+  public:
+    virtual ~__inheritance_aux()
+      { }
+};
+
+#if 0
+template <class T, bool B>
+struct __virtual_aux
+{
+  public:
+#ifdef __FIT_NO_INLINE_TEMPLATE_STATIC_INITIALISATION
+    static const bool __value;
+#else
+    static const bool __value = B ? (sizeof(__inheritance_aux<T,B>) == sizeof(T)) : false;
+#endif
+};
+
+#ifdef __FIT_NO_INLINE_TEMPLATE_STATIC_INITIALISATION
+template <class T, bool B>
+const bool __virtual_aux<T,B>::__value = B ? (sizeof(__inheritance_aux<T,B>) == sizeof(T)) : false;
+#endif
+#endif
 
 } // namespace detail
 
@@ -107,9 +138,21 @@ typedef integral_constant<bool, false>  false_type;
 
 namespace detail {
 
-template<typename _Tp>
+template <typename _Tp>
 struct __is_union_or_class :
     public integral_constant<bool, __uoc_aux<_Tp>::__value>
+{ };
+
+#if 0
+template<typename _Tp>
+struct __is_vtbl : // has virtual table?
+    public integral_constant<bool, __virtual_aux<_Tp,__is_union_or_class<_Tp>::value >::__value>
+{ };
+#endif
+
+template <typename _Tp>
+struct __is_vtbl : // has virtual table?
+    public integral_constant<bool, __is_union_or_class<_Tp>::value ? (sizeof(__inheritance_aux<_Tp,__is_union_or_class<_Tp>::value>) == sizeof(_Tp)) : false >
 { };
 
 } // namespace detail
@@ -120,7 +163,7 @@ struct C<T> :                         \
     public integral_constant<bool, B> \
 { }
 
-#define __SPEC_FULL(C,T,B) \
+#define __CV_SPEC(C,T,B) \
 __SPEC_(C,T,B);            \
 __SPEC_(C,const T,B);      \
 __SPEC_(C,volatile T,B);   \
@@ -132,7 +175,7 @@ struct C<T> :                         \
     public integral_constant<bool, B> \
 { }
 
-#define __SPEC_FULL1(C,T,B) \
+#define __CV_SPEC_1(C,T,B) \
 __SPEC_1(C,T,B);            \
 __SPEC_1(C,T const,B);      \
 __SPEC_1(C,T volatile,B);   \
@@ -144,7 +187,7 @@ struct C<T> :                         \
     public integral_constant<bool, B> \
 { }
 
-#define __SPEC_FULL2(C,T,B) \
+#define __CV_SPEC_2(C,T,B) \
 __SPEC_2(C,T,B);            \
 __SPEC_2(C,T const,B);      \
 __SPEC_2(C,T volatile,B);   \
@@ -154,38 +197,41 @@ __SPEC_2(C,T const volatile,B)
 
 template <class _Tp>
 struct is_void :
-        public false_type
+    public false_type
 { };
 
-__SPEC_FULL(is_void,bool,true);
+template <>
+struct is_void<void> :
+    public true_type
+{ };
 
 template <class _Tp>
 struct is_integral :
     public false_type
 { };
 
-__SPEC_FULL(is_integral,bool,true);
-__SPEC_FULL(is_integral,char,true);
-__SPEC_FULL(is_integral,signed char,true);
-__SPEC_FULL(is_integral,unsigned char,true);
-__SPEC_FULL(is_integral,wchar_t,true);
-__SPEC_FULL(is_integral,short,true);
-__SPEC_FULL(is_integral,unsigned short,true);
-__SPEC_FULL(is_integral,int,true);
-__SPEC_FULL(is_integral,unsigned int,true);
-__SPEC_FULL(is_integral,long,true);
-__SPEC_FULL(is_integral,unsigned long,true);
-__SPEC_FULL(is_integral,long long,true);
-__SPEC_FULL(is_integral,unsigned long long,true);
+__CV_SPEC(is_integral,bool,true);
+__CV_SPEC(is_integral,char,true);
+__CV_SPEC(is_integral,signed char,true);
+__CV_SPEC(is_integral,unsigned char,true);
+__CV_SPEC(is_integral,wchar_t,true);
+__CV_SPEC(is_integral,short,true);
+__CV_SPEC(is_integral,unsigned short,true);
+__CV_SPEC(is_integral,int,true);
+__CV_SPEC(is_integral,unsigned int,true);
+__CV_SPEC(is_integral,long,true);
+__CV_SPEC(is_integral,unsigned long,true);
+__CV_SPEC(is_integral,long long,true);
+__CV_SPEC(is_integral,unsigned long long,true);
 
 template <class _Tp>
 struct is_floating_point :
     public false_type
 { };
 
-__SPEC_FULL(is_floating_point,float,true);
-__SPEC_FULL(is_floating_point,double,true);
-__SPEC_FULL(is_floating_point,long double,true);
+__CV_SPEC(is_floating_point,float,true);
+__CV_SPEC(is_floating_point,double,true);
+__CV_SPEC(is_floating_point,long double,true);
 
 template <class _Tp>
 struct is_array :
@@ -207,7 +253,7 @@ struct is_pointer :
     public false_type
 { };
 
-__SPEC_FULL1(is_pointer,_Tp *,true);
+__CV_SPEC_1(is_pointer,_Tp *,true);
 
 template <class _Tp>
 struct is_reference :
@@ -411,6 +457,18 @@ struct remove_all_extents<_Tp[]>
 // 4.5.3 type properties (continued):
 
 template <class _Tp>
+struct is_trivial :
+    public integral_constant<bool, (is_void<_Tp>::value
+                                    || is_scalar<typename remove_all_extents<_Tp>::type>::value)>
+{ };
+
+template <class _Tp>
+struct is_standard_layout :
+    public integral_constant<bool, (is_void<_Tp>::value
+                                    || is_scalar<typename remove_all_extents<_Tp>::type>::value)>
+{ };
+
+template <class _Tp>
 struct is_pod :
     public integral_constant<bool, (is_void<_Tp>::value
                                     || is_scalar<typename remove_all_extents<_Tp>::type>::value)>
@@ -470,22 +528,22 @@ struct is_signed :
     public false_type
 { };
 
-__SPEC_FULL(is_signed,signed char,true);
-__SPEC_FULL(is_signed,short,true);
-__SPEC_FULL(is_signed,int,true);
-__SPEC_FULL(is_signed,long,true);
-__SPEC_FULL(is_signed,long long,true);
+__CV_SPEC(is_signed,signed char,true);
+__CV_SPEC(is_signed,short,true);
+__CV_SPEC(is_signed,int,true);
+__CV_SPEC(is_signed,long,true);
+__CV_SPEC(is_signed,long long,true);
 
 template <class _Tp>
 struct is_unsigned :
     public false_type
 { };
 
-__SPEC_FULL(is_unsigned,unsigned char,true);
-__SPEC_FULL(is_unsigned,unsigned short,true);
-__SPEC_FULL(is_unsigned,unsigned int,true);
-__SPEC_FULL(is_unsigned,unsigned long,true);
-__SPEC_FULL(is_unsigned,unsigned long long,true);
+__CV_SPEC(is_unsigned,unsigned char,true);
+__CV_SPEC(is_unsigned,unsigned short,true);
+__CV_SPEC(is_unsigned,unsigned int,true);
+__CV_SPEC(is_unsigned,unsigned long,true);
+__CV_SPEC(is_unsigned,unsigned long long,true);
 
 // alignment_of
 // rank
@@ -626,11 +684,11 @@ struct add_pointer
 
 // aligned_storage
 
-#undef __SPEC_FULL
+#undef __CV_SPEC
 #undef __SPEC_
-#undef __SPEC_FULL1
+#undef __CV_SPEC_1
 #undef __SPEC_1
-#undef __SPEC_FULL2
+#undef __CV_SPEC_2
 #undef __SPEC_2
 
 } // namespace tr1
