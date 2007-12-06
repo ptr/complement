@@ -7,6 +7,11 @@ union D {
   double d;
 };
 
+union LD {
+  unsigned char c[16];
+  long double d;
+};
+
 union U {
   unsigned u[2];
   double d;
@@ -17,6 +22,7 @@ int main( int argc, char **argv )
   union D d;
   union ieee754_double ieee754;
   union U u;
+  union LD ld;
   int i;
 
   for ( i = 0; i < 16; ++i ) {
@@ -42,6 +48,16 @@ int main( int argc, char **argv )
 
   for ( i = 0; i < 8; ++i ) {
     printf( "%.2x ", *((unsigned char *)&u.d + i) );
+  }
+  printf( "\n" );
+
+  printf( "%d\n", sizeof(unsigned short) );
+  printf( "%d\n", sizeof(long double) );
+
+  ld.d = 1.0;
+
+  for ( i = 0; i < 16; ++i ) {
+    printf( "%.2x ", ld.c[i] );
   }
   printf( "\n" );
 
