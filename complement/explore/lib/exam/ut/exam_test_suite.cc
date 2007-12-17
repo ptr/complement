@@ -320,6 +320,37 @@ int EXAM_IMPL(exam_basic_test::dry)
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(exam_basic_test::single)
+{
+  buff.str( "" );
+  buff.clear();
+
+  exam::test_suite t( "exam self test, fail function" );
+  t.set_logger( &logger );
+
+  test_x tx;
+
+  exam::test_suite::test_case_type tc[2];
+  exam::test_suite::test_case_type tcx[2];
+
+  tc[0] = t.add( &test_x::f_good, tx, "member function good" );
+  tc[1] = t.add( func_good, "function good" );
+
+  tcx[0] = t.add( func, "function fail", tc, tc + 2 );
+  t.add( &test_x::f, tx, "member function fail", tc, tc + 2 );
+  tcx[1] = t.add( func_good2, "function 2 good", tc, tc + 2 );
+  t.add( func_good3, "function 3 good", tcx, tcx + 2 ); //  <-- problem
+  t.add( &test_x::f_good, tx, "member function good 2" );
+
+  logger.flags( exam::base_logger::verbose );
+  t.single( t.test_by_name( "function 3 good" ) );
+  logger.flags( 0 );
+
+  EXAM_REQUIRE( buff.str() == r11 );
+
+  return EXAM_RESULT;
+}
+
 const std::string exam_basic_test::r0 = "\
 *** PASS exam self test, good function (+2-0~0/2) ***\n";
 
@@ -400,6 +431,10 @@ const std::string exam_basic_test::r10 = "\
                 DRY function 3 good\n\
 *** PASS exam self test, fail function (+0-0~8/8) ***\n";
 
+const std::string exam_basic_test::r11 = "\
+  PASS function 3 good\n\
+*** PASS exam self test, fail function (+1-0~0/1) ***\n";
+
 int EXAM_IMPL(exam_self_test)
 {
   exam::test_suite t( "exam self test" );
@@ -415,6 +450,7 @@ int EXAM_IMPL(exam_self_test)
 
   t.add( &exam_basic_test::perf, exam_basic, "performance timer test", d0 );
   t.add( &exam_basic_test::dry, exam_basic, "complex multiple dependencies, dry run", d2 );
+  t.add( &exam_basic_test::single, exam_basic, "complex multiple dependencies, single test", d2 );
 
   return t.girdle();
 }
