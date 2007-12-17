@@ -278,6 +278,48 @@ int EXAM_IMPL(exam_basic_test::perf)
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(exam_basic_test::dry)
+{
+  buff.str( "" );
+  buff.clear();
+
+  exam::test_suite t( "exam self test, fail function" );
+  t.set_logger( &logger );
+
+  test_x tx;
+
+  exam::test_suite::test_case_type tc[2];
+  exam::test_suite::test_case_type tcx[2];
+
+  tc[0] = t.add( &test_x::f_good, tx, "member function good" );
+  tc[1] = t.add( func_good, "function good" );
+
+  tcx[0] = t.add( func, "function fail", tc, tc + 2 );
+  t.add( &test_x::f, tx, "member function fail", tc, tc + 2 );
+  tcx[1] = t.add( func_good2, "function 2 good", tc, tc + 2 );
+  t.add( func_good3, "function 3 good", tcx, tcx + 2 ); //  <-- problem
+  t.add( &test_x::f_good, tx, "member function good 2" );
+
+  logger.flags( exam::base_logger::verbose );
+  t.dry_girdle();
+  logger.flags( 0 );
+
+  //  std::cerr << "%%%\n";
+  //  std::cerr << buff.str();
+  //  std::cerr << "%%%\n";
+  //  std::cerr << r10 << std::endl;
+  //  std::cerr << "%%%\n";
+  //  int j = 0;
+  //  while ( (j < buff.str().length()) && (buff.str().at(j) == r10[j]) ) {
+  //    ++j;
+  //  }
+  //  std::cerr << buff.str().substr(j) << "; " << j << " " << int(buff.str().at(j)) << " " << int(r10[j]) << std::endl;
+
+  EXAM_REQUIRE( buff.str() == r10 );
+
+  return EXAM_RESULT;
+}
+
 const std::string exam_basic_test::r0 = "\
 *** PASS exam self test, good function (+2-0~0/2) ***\n";
 
@@ -347,6 +389,17 @@ dummy_test.cc:25: fail: false\n\
   SKIP function 3 good\n\
 *** FAIL exam self test, fail function (+3-2~1/6) ***\n";
 
+const std::string exam_basic_test::r10 = "\
+  DRY \n\
+    DRY member function good\n\
+    DRY function good\n\
+    DRY member function good 2\n\
+        DRY function fail\n\
+        DRY member function fail\n\
+        DRY function 2 good\n\
+                DRY function 3 good\n\
+*** PASS exam self test, fail function (+0-0~8/8) ***\n";
+
 int EXAM_IMPL(exam_self_test)
 {
   exam::test_suite t( "exam self test" );
@@ -361,6 +414,7 @@ int EXAM_IMPL(exam_self_test)
   t.add( &exam_basic_test::multiple_dep_complex, exam_basic, "complex multiple dependencies", d2 );
 
   t.add( &exam_basic_test::perf, exam_basic, "performance timer test", d0 );
+  t.add( &exam_basic_test::dry, exam_basic, "complex multiple dependencies, dry run", d2 );
 
   return t.girdle();
 }

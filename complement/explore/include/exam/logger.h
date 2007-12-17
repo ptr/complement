@@ -32,7 +32,8 @@ class base_logger
     enum tc_result {
       pass = 0,
       fail,
-      skip
+      skip,
+      dry
     };
 
     struct stat
@@ -70,6 +71,7 @@ class base_logger
     virtual void tc_post() = 0;
     virtual void tc_break() = 0;
     virtual void tc( tc_result, const std::string& ) = 0;
+    virtual void tc( tc_result, const std::string&, int ) = 0;
 
   protected:
     int _flags;
@@ -101,6 +103,7 @@ class trivial_logger :
     virtual void tc_break()
       { }
     virtual void tc( base_logger::tc_result, const std::string& );
+    virtual void tc( base_logger::tc_result, const std::string&, int );
 
   protected:
     std::ostream *s;
@@ -123,6 +126,7 @@ class trivial_time_logger :
     virtual void tc_post();
     virtual void tc_break();
     virtual void tc( base_logger::tc_result, const std::string& );
+    virtual void tc( base_logger::tc_result, const std::string&, int );
 
   private:
     typedef std::list<xmt::timespec> time_container_t;

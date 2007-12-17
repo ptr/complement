@@ -92,7 +92,7 @@ void trivial_logger::tc( base_logger::tc_result r, const std::string& name )
     return;
   }
 
-  static const char *m[] = { "  PASS ", "  FAIL ", "  SKIP " };
+  static const char *m[] = { "  PASS ", "  FAIL ", "  SKIP ", "  DRY " };
   const char *rs = "";
 
   switch ( r )
@@ -106,6 +106,9 @@ void trivial_logger::tc( base_logger::tc_result r, const std::string& name )
     case skip:
       rs = m[2];
       break;
+    case dry:
+      rs = m[3];
+      break;
   }
 
   if ( s != 0 ) {
@@ -113,6 +116,25 @@ void trivial_logger::tc( base_logger::tc_result r, const std::string& name )
   } else {
     fprintf( f, "%s%s\n", rs, name.c_str() );
   }
+}
+
+void trivial_logger::tc( base_logger::tc_result r, const std::string& name, int indent )
+{
+  if ( ((_flags & silent) != 0) || ((r == pass) && ((_flags & verbose) == 0) )) {
+    return;
+  }
+
+  if ( s != 0 ) {
+    while ( indent-- > 0 ) {
+      *s << "  ";
+    }
+  } else {
+    while ( indent-- > 0 ) {
+      fprintf( f, "  " );
+    }
+  }
+
+  tc( r, name );
 }
 
 void trivial_time_logger::tc_pre()
@@ -160,6 +182,38 @@ void trivial_time_logger::tc( base_logger::tc_result r, const std::string& name 
   }
   tst.clear();
   trivial_logger::tc( r, name );
+}
+
+void trivial_time_logger::tc( base_logger::tc_result r, const std::string& name, int indent )
+{
+  if ( r == pass ) {
+    // here tst.size() > 0, if test case not throw excepion
+    time_container_t::const_iterator a = tst.begin();
+    if ( a != tst.end() ) {
+      unsigned n = 1;
+      double sum(*a);
+      double sum_sq = sum * sum;
+      ++a;
+      for ( ; a != tst.end(); ++a ) {
+        double v(*a);
+        sum += v;
+        sum_sq += v * v;
+        // mean = ((n + 1) * mean + static_cast<double>(*a)) / (n + 2);
+        ++n;
+      }
+      sum_sq -= sum * sum / n;
+      sum_sq = max( 0.0, sum_sq ); // clear epsilon (round error)
+      sum_sq /= n * n; // dispersion
+      sum /= n;        // mean
+      if ( s != 0 ) {
+        *s << "  " << sum << " " << sum_sq << " " << name << endl;
+      } else {
+        fprintf( f, "  %f %f %s\n", sum, sum_sq, name.c_str() );
+      }
+    }
+  }
+  tst.clear();
+  trivial_logger::tc( r, name, indent );
 }
 
 } //namespace exam
