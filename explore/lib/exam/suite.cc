@@ -273,5 +273,83 @@ int test_suite::run( test_suite *, int )
   return girdle( 0 );
 }
 
+void test_suite::dry_run_test_case( test_suite::vertex_t v, unsigned n, int indent )
+{
+  try {
+    ++_stat.total;
+    while ( n-- > 0 ) {
+      _lock_ll.lock();
+      local_logger->tc_pre();
+      _lock_ll.unlock();
+      // res = (*_test[v].tc)( this, 0 );
+      _lock_ll.lock();
+      local_logger->tc_post();
+      _lock_ll.unlock();
+    }
+    ++_stat.skipped;
+    scoped_lock lk( _lock_ll );
+    local_logger->tc( base_logger::dry, _test[v].name, indent );
+  }
+  catch ( skip_exception& ) {
+    _lock_ll.lock();
+    local_logger->tc_break();
+    _lock_ll.unlock();
+    ++_stat.skipped;
+    scoped_lock lk( _lock_ll );
+    local_logger->tc( base_logger::skip, _test[v].name, indent );
+  }
+  catch ( init_exception& ) {
+    _lock_ll.lock();
+    // local_logger->tc_break();
+    local_logger->tc( base_logger::dry, _test[v].name, indent );
+    _lock_ll.unlock();
+    --_stat.total;
+  }
+  catch ( ... ) {
+    ++_stat.failed;
+    _test[v].state = fail;
+    scoped_lock lk( _lock_ll );
+    local_logger->tc_break();
+    local_logger->tc( base_logger::fail, _test[v].name, indent );
+  }
+}
+
+int test_suite::dry_girdle( test_suite::test_case_type start )
+{
+  if ( start > _count ) {
+    throw std::logic_error( "bad start point" );
+  }
+
+  sort( _vertices.begin(), _vertices.end(), vertices_compare );
+
+  vector<weight_t>::iterator from;
+
+  _stat = base_logger::stat();
+  for( vector<weight_t>::iterator i = _vertices.begin(); i != _vertices.end(); ++i ) {
+    if ( i->first == start ) {
+      from = i;
+    }
+    _test[i->first].state = 0;
+  }
+  local_logger->begin_ts();
+  for( vector<weight_t>::iterator i = from; i != _vertices.end(); ++i ) {
+    for( std::list<edge_t>::const_iterator j = _edges.begin(); j != _edges.end(); ++j ) {
+      if ( j->second == i->first && _test[j->first].state != 0 ) {
+        _test[j->second].state = skip;
+      }
+    }
+    dry_run_test_case( i->first, _iterations, i->second );
+  }
+
+  local_logger->end_ts();
+  local_logger->result( _stat, _suite_name );
+
+  return _stat.failed;
+}
+
+int test_suite::dry_run( test_suite *, int )
+{
+  return dry_girdle( 0 );
+}
 
 } // namespace exam

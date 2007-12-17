@@ -1,3 +1,13 @@
+2007-12-17  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* logger.h, logger.cc, suite.h, suite.cc: dry run with
+	indent [dependency] implemented;
+
+	* ut/exam_test_suite.cc, ut/exam_test_suite.h: test for
+	feature above;
+
+	* libexam: version 0.5.0.
+
 2007-10-05  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* suite.h, suite.cc: test may throw skip_exception to signal

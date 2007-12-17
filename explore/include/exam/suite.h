@@ -197,6 +197,11 @@ class test_suite
       { return girdle( 0 ); }
     int run( test_suite *, int count = 0 );
 
+    int dry_girdle( test_case_type start );
+    int dry_girdle()
+      { return dry_girdle( 0 ); }
+    int dry_run( test_suite *, int count = 0 );
+
     int flags();
     int flags( int );
     bool is_trace();
@@ -235,6 +240,7 @@ class test_suite
     unsigned _iterations;
 
     void run_test_case( vertex_t v, unsigned n = 1 );
+    void dry_run_test_case( vertex_t v, unsigned n, int indent );
     static bool vertices_compare( weight_t, weight_t );
 
     static int _root_func( test_suite *, int = 0 );

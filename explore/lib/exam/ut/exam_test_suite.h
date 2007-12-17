@@ -31,6 +31,7 @@ class exam_basic_test
     int EXAM_DECL(multiple_dep);
     int EXAM_DECL(multiple_dep_complex);
     int EXAM_DECL(perf);
+    int EXAM_DECL(dry);
 
   private:
     std::stringstream buff;
@@ -48,6 +49,7 @@ class exam_basic_test
     static const std::string r7;
     static const std::string r8;
     static const std::string r9;
+    static const std::string r10;
 };
 
 int EXAM_DECL(exam_self_test);
