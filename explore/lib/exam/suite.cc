@@ -108,6 +108,31 @@ int test_suite::girdle( test_suite::test_case_type start )
   return _stat.failed;
 }
 
+int test_suite::single( test_suite::test_case_type one )
+{
+  if ( one > _count ) {
+    throw std::logic_error( "bad test case" );
+  }
+  
+  // sort( _vertices.begin(), _vertices.end(), vertices_compare );
+
+  _stat = base_logger::stat();
+  for( vector<weight_t>::iterator i = _vertices.begin(); i != _vertices.end(); ++i ) {
+    if ( i->first == one ) {
+      _test[i->first].state = 0;
+      local_logger->begin_ts();
+      run_test_case( i->first, _iterations );
+      local_logger->end_ts();
+      local_logger->result( _stat, _suite_name );
+      return _stat.failed;
+    }
+  }
+
+  throw std::logic_error( "bad test case" );
+
+  return -1;
+}
+
 test_suite::test_case_type test_suite::add( test_suite::func_type f, const string& name )
 {
   vertex_t v = ++_count;
@@ -203,6 +228,17 @@ void test_suite::report_async( const char *file, int line, bool cnd, const char 
   }
 
   _stack.top()->report( file, line, cnd, expr );
+}
+
+test_suite::test_case_type test_suite::test_by_name( const std::string& nm )
+{
+  for ( test_case_map_type::const_iterator i = _test.begin(); i != _test.end(); ++i ) {
+    if ( i->second.name == nm ) {
+      return i->first;
+    }
+  }
+
+  return ~0;
 }
 
 void test_suite::run_test_case( test_suite::vertex_t v, unsigned n )

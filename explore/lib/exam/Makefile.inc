@@ -2,6 +2,6 @@
 
 LIBNAME = exam
 MAJOR = 0
-MINOR = 5
+MINOR = 6
 PATCH = 0
 SRC_CC = logger.cc suite.cc

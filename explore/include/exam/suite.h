@@ -195,6 +195,7 @@ class test_suite
     int girdle( test_case_type start );
     int girdle()
       { return girdle( 0 ); }
+    int single( test_case_type one );
     int run( test_suite *, int count = 0 );
 
     int dry_girdle( test_case_type start );
@@ -209,6 +210,8 @@ class test_suite
     static void report_async( const char *, int, bool, const char * );
     base_logger *set_global_logger( base_logger * );
     base_logger *set_logger( base_logger * );
+
+    test_case_type test_by_name( const std::string& );
 
   private:
     enum {
