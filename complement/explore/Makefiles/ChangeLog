@@ -1,3 +1,10 @@
+2007-12-21  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/app/rules-install.mak: allow strip application after install
+	with tags install-strip and install-stripe-shared;
+
+	* gmake/linux/sys.mak: use option for strip for install-strip-shared too.
+
 2007-12-12  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/unix/rules-install-so.mak: install-headers usable; it use
