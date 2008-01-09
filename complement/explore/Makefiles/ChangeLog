@@ -1,3 +1,7 @@
+2008-01-08  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/topdoc.mak: base rules for LaTeX and XFig documentation.
+
 2007-12-21  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/app/rules-install.mak: allow strip application after install
