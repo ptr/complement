@@ -1,3 +1,8 @@
+2008-01-11  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/gcc.mak, gmake/CC.mak, gmake/aCC.mak: fix _FORCE_CXX macro
+	reference.
+
 2008-01-08  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/topdoc.mak: base rules for LaTeX and XFig documentation.
