@@ -1,4 +1,4 @@
-# Time-stamp: <08/01/08 15:22:06 ptr>
+# Time-stamp: <08/01/17 09:39:54 ptr>
 #
 # Copyright (c) 2007,2008
 # Petr Ovtchenkov
@@ -63,7 +63,7 @@ endef
 $(foreach fig,$(PDFNAMES),$(eval $(call dep_mp,$(fig))))
 
 define pdf_
-$(1).pdf:	$($(1)_SRC_TEX) $($(1)_MPS) $($(1)_EXTRA)
+$(1).pdf:	$($(1)_SRC_TEX) $($(1)_MPS) $($(1)_MP_MPS) $($(1)_EXTRA)
 	pdflatex $$<
 endef
 
@@ -82,28 +82,28 @@ $$(TMP1):	$$(TMP2)
 endef
 
 define dep_mps
-#TMP1 := $$(basename $$(notdir $(1))).mps
-#$(2) := $($(2)) $${TMP1}
-#ALLMP := $$(ALLMP) $(1)
+$(1)_MP_MPS := $(patsubst %.mp,%.mps,$(notdir ${$(1)_SRC_MP}))
+ALLMP += ${$(1)_SRC_MP}
 endef
 
-#define rule_mps
-#TMP2 := $$(OUTPUT_DIR)/$$(basename $$(notdir $(1))).0
-#$$(TMP2):	$(1)
-#	$$(chdirs)
-#	sed -i -e 's/beginfig(.)/beginfig(0)/' $$<
-#	(cd $${OUTPUT_DIR}; mpost --tex=latex ../`basename $$<`)
-#	rm -f $(1).mpx
-#
-#TMP1 := $$(basename $$(notdir $(1))).mps
-#$$(TMP1):	$$(TMP2)
-#	ln -sf $$< $$@
-#endef
+$(foreach mp,$(PDFNAMES),$(eval $(call dep_mps,$(mp))))
+
+define rule_mps
+TMP2 := $$(OUTPUT_DIR)/$$(basename $$(notdir $(1))).0
+$$(TMP2):	$(1)
+	sed -i -e 's/beginfig(.)/beginfig(0)/' $$<
+	(cd $${OUTPUT_DIR}; mpost --tex=latex ../`basename $$<`)
+	rm -f $(1)x
+
+TMP1 := $$(basename $$(notdir $(1))).mps
+$$(TMP1):	$$(TMP2)
+	ln -sf $$< $$@
+endef
 
 $(foreach pdf,$(PDFNAMES),$(eval $(call pdf_,$(pdf))))
 ALLFIG := $(sort $(ALLFIG))
-# ALLMP := $(sort $(ALLMP))
+ALLMP := $(sort $(ALLMP))
 $(foreach fig,$(ALLFIG),$(eval $(call rule_mp,$(fig))))
-# $(foreach mp,$(ALLMP),$(eval $(call rule_mps,$(mp))))
+$(foreach mp,$(ALLMP),$(eval $(call rule_mps,$(mp))))
 
 .PHONY:	${PHONY}
