@@ -1,20 +1,11 @@
-/* Time-stamp: <03/06/29 19:53:27 ptr> */
+/* Time-stamp: <08/02/20 10:02:49 ptr> */
 
 /*
  *
- * Copyright (c) 2003
+ * Copyright (c) 2003-2008
  * Petr Ovtchenkov
  *
- * Licensed under the Academic Free License Version 2.1
- *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
+ * Licensed under the Academic Free License version 3.0
  *
  */
 
