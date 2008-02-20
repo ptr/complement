@@ -1,8 +1,8 @@
-/* Time-stamp: <07/01/31 23:51:12 ptr> */
+/* Time-stamp: <08/02/20 09:57:38 ptr> */
 
 /*
  *
- * Copyright (c) 2003-2007
+ * Copyright (c) 2003-2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -35,6 +35,7 @@
 #    define __USE_UNIX98
 #  endif
 */
+# define __FIT_PTHREADS
 /* This feature exist at least since glibc 2.2.4 */
 #  define __FIT_XSI_THR  /* Unix 98 or X/Open System Interfaces Extention */
 #  ifdef __USE_XOPEN2K

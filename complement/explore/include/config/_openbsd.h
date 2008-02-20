@@ -1,27 +1,16 @@
-// -*- C++ -*- Time-stamp: <05/09/02 00:46:15 ptr>
+// -*- C++ -*- Time-stamp: <08/02/20 10:01:25 ptr>
 
 /*
  *
- * Copyright (c) 2003
+ * Copyright (c) 2003-2008
  * Petr Ovtchenkov
  *
- * Licensed under the Academic Free License Version 2.1
- *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
+ * Licensed under the Academic Free License version 3.0
  *
  */
 
 #ifndef __config__openbsd_h
 #define __config__openbsd_h
-
-#ident "@(#)$Id$"
 
 #define __FIT__P_PROBLEM // Hide __P from sys/cdefs.h. Workaround for glibc.
 
@@ -34,6 +23,7 @@
 #endif
 
 #if defined(_PTHREADS)
+#  define __FIT_PTHREADS
 #  ifndef __USE_UNIX98
 #    define __USE_UNIX98
 #  endif
