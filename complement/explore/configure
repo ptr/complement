@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Time-stamp: <08/01/17 01:11:57 ptr>
+# Time-stamp: <08/02/26 16:02:32 yeti>
 
 base=`cd \`dirname $0\`; echo $PWD`
 
@@ -12,7 +12,7 @@ configmak=$base/Makefiles/gmake/config.mak
 
 write_option() {
   target=`echo $1 | sed -e 's/^[^=]*=//'`
-  echo $2 := $target >> ${configmak}
+  echo $2 := $3$target >> ${configmak}
 }
 
 write_over_option() {
@@ -84,12 +84,12 @@ default_settings () {
     # write_option "${PWD}/external/STLport" STLPORT_DIR
     write_option "1" WITHOUT_STLPORT
   fi
-  # write_option "${PWD}/build/" BASE_INSTALL_DIR
+  # write_option "${PWD}/build/" BASE_INSTALL_DIR '${DESTDIR}'
   if [ "$compiler_family_set" = "" ]; then
     write_option gcc COMPILER_NAME
   fi
   # if [ "$prefix_set" = "" ]; then
-  #   write_option "/usr/local" BASE_INSTALL_DIR
+  #   write_option "/usr/local" BASE_INSTALL_DIR '${DESTDIR}'
   # fi
 }
 
@@ -192,17 +192,17 @@ do
       compiler_family_set=y
       ;;
     --prefix=*)
-      write_option "$option" BASE_INSTALL_DIR
+      write_option "$option" BASE_INSTALL_DIR '${DESTDIR}'
       # prefix_set=y
       ;;
     --bindir=*)
-      write_option "$option" INSTALL_BIN_DIR
+      write_option "$option" INSTALL_BIN_DIR '${DESTDIR}'
       ;;
     --libdir=*)
-      write_option "$option" INSTALL_LIB_DIR
+      write_option "$option" INSTALL_LIB_DIR '${DESTDIR}'
       ;;
     --includedir=*)
-      write_option "$option" INSTALL_HDR_DIR
+      write_option "$option" INSTALL_HDR_DIR '${DESTDIR}'
       ;;
   esac
 done
