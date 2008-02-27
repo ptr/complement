@@ -1,3 +1,24 @@
+2008-02-26  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* thread, mutex, condition_variable, date_time: implementation
+	of JTC1/SC22/WG21 working draft, see
+	http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2497.html
+
+	* thread.cc, date_time.cc: ditto;
+
+	* system_error, system_error.cc: move static consts to library
+	from header;
+
+	* Makefile.inc: include implementation above into libxmt, bump
+	major revision;
+
+	* libxmt: version 2.0.0;
+
+	* ut/mt_test_wg21.cc, ut/mt_test_wg21.h, ut/mt_test_suite.cc: unit
+	tests for implementation above;
+
+	* ut/Makefile.inc: ditto;
+
 2007-11-21  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* system_error, system_error.cc: implementation of <system_error>

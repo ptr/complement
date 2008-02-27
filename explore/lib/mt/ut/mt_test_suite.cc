@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/09/21 22:41:08 ptr>
+// -*- C++ -*- Time-stamp: <08/02/25 12:17:54 ptr>
 
 /*
- * Copyright (c) 2006, 2007
+ * Copyright (c) 2006-2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -10,6 +10,7 @@
 
 #include "mt_test_suite.h"
 #include "mt_test.h"
+#include "mt_test_wg21.h"
 
 #include <config/feature.h>
 
@@ -65,6 +66,14 @@ int EXAM_IMPL(mt_test_suite)
                        t.add( &shm_test::shm_alloc, shmtest, "mt_test::shm_alloc",
                               t.add( &shm_test::shm_segment, shmtest, "mt_test::shm_segment" ) ) ) )
  );
+
+  mt_test_wg21 test_wg21;
+
+  t.add( &mt_test_wg21::date_time, test_wg21, "mt_test_wg21::date_time" );
+  t.add( &mt_test_wg21::thread_call, test_wg21, "mt_test_wg21::thread_call" );
+  t.add( &mt_test_wg21::mutex_test, test_wg21, "mt_test_wg21::mutex_test" );
+  t.add( &mt_test_wg21::barrier, test_wg21, "mt_test_wg21::barrier" );
+  t.add( &mt_test_wg21::semaphore, test_wg21, "mt_test_wg21::semaphore" );
 
   return t.girdle();
 };
