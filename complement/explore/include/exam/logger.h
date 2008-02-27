@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/09/04 10:38:27 ptr>
+// -*- C++ -*- Time-stamp: <08/02/24 17:09:51 ptr>
 
 /*
- * Copyright (c) 2007
+ * Copyright (c) 2007, 2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -13,7 +13,7 @@
 #include <string>
 #include <cstdio>
 #include <ostream>
-#include <mt/time.h>
+#include <mt/date_time>
 #include <list>
 
 namespace exam {
@@ -129,7 +129,7 @@ class trivial_time_logger :
     virtual void tc( base_logger::tc_result, const std::string&, int );
 
   private:
-    typedef std::list<xmt::timespec> time_container_t;
+    typedef std::list<std::tr2::nanoseconds> time_container_t;
     time_container_t tst;
 };
 
