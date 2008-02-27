@@ -1,3 +1,12 @@
+2008-02-27  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* suite.cc, logger.cc, suite.h, logger.h: use xmt 2.0.0
+	interfaces [JTC1/SC22/WG21 working draft, threads];
+
+	* Makefile.inc: bump minor revision;
+
+	* libexam: version 0.7.0.
+
 2007-12-17  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* logger.h, logger.cc, suite.h, suite.cc: dry run with
