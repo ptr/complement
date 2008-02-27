@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/11/24 00:28:34 ptr>
+// -*- C++ -*- Time-stamp: <07/12/02 19:55:42 ptr>
 
 /*
  * Copyright (c) 2007
@@ -256,6 +256,26 @@ struct is_pointer :
 __CV_SPEC_1(is_pointer,_Tp *,true);
 
 template <class _Tp>
+struct is_lvalue_reference :
+    public false_type
+{ };
+
+template <class _Tp>
+struct is_lvalue_reference<_Tp&> :
+    public true_type
+{ };
+
+template <class _Tp>
+struct is_rvalue_reference :
+    public false_type
+{ };
+
+// template <class _Tp>
+// struct is_rvalue_reference<_Tp&&> :
+//     public true_type
+// { };
+
+template <class _Tp>
 struct is_reference :
     public false_type
 { };
@@ -374,8 +394,11 @@ struct is_class
 
 template <class _Tp>
 struct is_object :
-    public integral_constant<bool, !(is_function<_Tp>::value || is_reference<_Tp>::value
-                                     || is_void<_Tp>::value)>
+    public integral_constant<bool, (is_arithmetic<_Tp>::value ||
+                                    is_array<_Tp>::value ||
+                                    is_pointer<_Tp>::value ||
+                                    is_member_pointer<_Tp>::value ||
+                                    detail::__is_union_or_class<_Tp>::value)>
 { };
 
 template <class _Tp>
