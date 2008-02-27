@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/09/04 11:10:58 ptr>
+// -*- C++ -*- Time-stamp: <08/02/24 19:11:47 ptr>
 
 /*
- * Copyright (c) 2007
+ * Copyright (c) 2007, 2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -19,7 +19,7 @@ namespace exam {
 
 using namespace std;
 using namespace detail;
-using namespace xmt;
+using namespace std::tr2;
 
 
 int EXAM_IMPL(test_suite::_root_func)
@@ -40,7 +40,7 @@ test_suite::test_suite( const string& name, unsigned n ) :
   _test[0].tc = detail::make_test_case( detail::call( _root_func ) );
   _test[0].state = 0;
 
-  scoped_lock lk( _lock_stack );
+  lock_guard<mutex> lk( _lock_stack );
   _stack.push( this );
 }
 
@@ -55,15 +55,16 @@ test_suite::test_suite( const char *name, unsigned n ) :
   _test[0].tc = detail::make_test_case( detail::call( _root_func ) );
   _test[0].state = 0;
 
-  scoped_lock lk( _lock_stack );
+  lock_guard<mutex> lk( _lock_stack );
   _stack.push( this );
 }
 
 test_suite::~test_suite()
 {
-  scoped_lock lk( _lock_stack );
-  _stack.pop();
-  lk.unlock();
+  {
+    lock_guard<mutex> lk( _lock_stack );
+    _stack.pop();
+  }
 
   for ( test_case_map_type::iterator i = _test.begin(); i != _test.end(); ++i ) {
     delete i->second.tc;
@@ -164,21 +165,21 @@ test_suite::test_case_type test_suite::add( test_suite::func_type f, const strin
 
 int test_suite::flags()
 {
-  scoped_lock lk( _lock_ll );
+  lock_guard<mutex> lk( _lock_ll );
   int tmp = local_logger->flags();
   return tmp;
 }
 
 bool test_suite::is_trace()
 {
-  scoped_lock lk( _lock_ll );
+  lock_guard<mutex> lk( _lock_ll );
   bool tmp = local_logger->is_trace();
   return tmp;
 }
 
 int test_suite::flags( int f )
 {
-  scoped_lock lk( _lock_ll );
+  lock_guard<mutex> lk( _lock_ll );
   int tmp = local_logger->flags( f );
   return tmp;
 }
@@ -192,10 +193,10 @@ mutex test_suite::_lock_gl;
 
 base_logger *test_suite::set_global_logger( base_logger *new_logger )
 {
-  scoped_lock glk( _lock_gl );
+  lock_guard<mutex> glk( _lock_gl );
   base_logger *tmp = logger;
   logger = new_logger;
-  scoped_lock lk( _lock_ll );
+  lock_guard<mutex> lk( _lock_ll );
   if ( tmp == local_logger ) { // if local_logger was identical to logger, switch it too
     local_logger = logger;
   }
@@ -204,7 +205,7 @@ base_logger *test_suite::set_global_logger( base_logger *new_logger )
 
 base_logger *test_suite::set_logger( base_logger *new_logger )
 {
-  scoped_lock lk( _lock_ll );
+  lock_guard<mutex> lk( _lock_ll );
   base_logger *tmp = local_logger;
   local_logger = new_logger;
   return tmp;
@@ -215,13 +216,13 @@ void test_suite::report( const char *file, int line, bool cnd, const char *expr 
   if ( !cnd ) {
     _last_state = fail;
   }
-  scoped_lock lk( _lock_ll );
+  lock_guard<mutex> lk( _lock_ll );
   local_logger->report( file, line, cnd, expr );
 }
 
 void test_suite::report_async( const char *file, int line, bool cnd, const char *expr )
 {
-  scoped_lock lk( _lock_stack );
+  lock_guard<mutex> lk( _lock_stack );
 
   if ( _stack.empty() ) {
     throw runtime_error( "stack of test suites empty" );
@@ -259,25 +260,25 @@ void test_suite::run_test_case( test_suite::vertex_t v, unsigned n )
       if ( res == 0 ) {
         if ( _last_state == 0 ) {
           ++_stat.passed;
-          scoped_lock lk( _lock_ll );
+          lock_guard<mutex> lk( _lock_ll );
           local_logger->tc( base_logger::pass, _test[v].name );
         } else {
           _test[v].state = fail;
           ++_stat.failed;
-          scoped_lock lk( _lock_ll );
+          lock_guard<mutex> lk( _lock_ll );
           local_logger->tc( base_logger::fail, _test[v].name );
           _last_state = 0;
         }
       } else {
         _test[v].state = fail;
         ++_stat.failed;
-        scoped_lock lk( _lock_ll );
+        lock_guard<mutex> lk( _lock_ll );
         local_logger->tc( base_logger::fail, _test[v].name );
         _last_state = 0;
       }
     } else {
       ++_stat.skipped;
-      scoped_lock lk( _lock_ll );
+      lock_guard<mutex> lk( _lock_ll );
       local_logger->tc( base_logger::skip, _test[v].name );
     }
   }
@@ -286,7 +287,7 @@ void test_suite::run_test_case( test_suite::vertex_t v, unsigned n )
     local_logger->tc_break();
     _lock_ll.unlock();
     ++_stat.skipped;
-    scoped_lock lk( _lock_ll );
+    lock_guard<mutex> lk( _lock_ll );
     local_logger->tc( base_logger::skip, _test[v].name );
   }
   catch ( init_exception& ) {
@@ -298,7 +299,7 @@ void test_suite::run_test_case( test_suite::vertex_t v, unsigned n )
   catch ( ... ) {
     ++_stat.failed;
     _test[v].state = fail;
-    scoped_lock lk( _lock_ll );
+    lock_guard<mutex> lk( _lock_ll );
     local_logger->tc_break();
     local_logger->tc( base_logger::fail, _test[v].name );
   }
@@ -323,7 +324,7 @@ void test_suite::dry_run_test_case( test_suite::vertex_t v, unsigned n, int inde
       _lock_ll.unlock();
     }
     ++_stat.skipped;
-    scoped_lock lk( _lock_ll );
+    lock_guard<mutex> lk( _lock_ll );
     local_logger->tc( base_logger::dry, _test[v].name, indent );
   }
   catch ( skip_exception& ) {
@@ -331,7 +332,7 @@ void test_suite::dry_run_test_case( test_suite::vertex_t v, unsigned n, int inde
     local_logger->tc_break();
     _lock_ll.unlock();
     ++_stat.skipped;
-    scoped_lock lk( _lock_ll );
+    lock_guard<mutex> lk( _lock_ll );
     local_logger->tc( base_logger::skip, _test[v].name, indent );
   }
   catch ( init_exception& ) {
@@ -344,7 +345,7 @@ void test_suite::dry_run_test_case( test_suite::vertex_t v, unsigned n, int inde
   catch ( ... ) {
     ++_stat.failed;
     _test[v].state = fail;
-    scoped_lock lk( _lock_ll );
+    lock_guard<mutex> lk( _lock_ll );
     local_logger->tc_break();
     local_logger->tc( base_logger::fail, _test[v].name, indent );
   }

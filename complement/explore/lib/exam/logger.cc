@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/09/04 10:47:22 ptr>
+// -*- C++ -*- Time-stamp: <08/02/24 17:19:59 ptr>
 
 /*
- * Copyright (c) 2007
+ * Copyright (c) 2007, 2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -13,6 +13,7 @@
 namespace exam {
 
 using namespace std;
+using namespace std::tr2;
 
 int base_logger::flags() const
 {
@@ -139,12 +140,12 @@ void trivial_logger::tc( base_logger::tc_result r, const std::string& name, int 
 
 void trivial_time_logger::tc_pre()
 {
-  tst.push_back( xmt::timespec( xmt::timespec::now ) );
+  tst.push_back( get_system_time().nanoseconds_since_epoch() );
 }
 
 void trivial_time_logger::tc_post()
 {
-  tst.back() = xmt::timespec( xmt::timespec::now ) - tst.back();
+  tst.back() = get_system_time().nanoseconds_since_epoch() - tst.back();
 }
 
 void trivial_time_logger::tc_break()
@@ -159,11 +160,13 @@ void trivial_time_logger::tc( base_logger::tc_result r, const std::string& name 
     time_container_t::const_iterator a = tst.begin();
     if ( a != tst.end() ) {
       unsigned n = 1;
-      double sum(*a);
+      double sum(a->count());
+      sum *= 1.0e-9;
       double sum_sq = sum * sum;
       ++a;
       for ( ; a != tst.end(); ++a ) {
-        double v(*a);
+        double v(a->count());
+        v *= 1.0e-9;
         sum += v;
         sum_sq += v * v;
         // mean = ((n + 1) * mean + static_cast<double>(*a)) / (n + 2);
@@ -191,11 +194,13 @@ void trivial_time_logger::tc( base_logger::tc_result r, const std::string& name,
     time_container_t::const_iterator a = tst.begin();
     if ( a != tst.end() ) {
       unsigned n = 1;
-      double sum(*a);
+      double sum(a->count());
+      sum *= 1.0e-9;
       double sum_sq = sum * sum;
       ++a;
       for ( ; a != tst.end(); ++a ) {
-        double v(*a);
+        double v(a->count());
+        v *= 1.0e-9;
         sum += v;
         sum_sq += v * v;
         // mean = ((n + 1) * mean + static_cast<double>(*a)) / (n + 2);
