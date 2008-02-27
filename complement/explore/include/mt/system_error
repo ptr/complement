@@ -1,17 +1,20 @@
-// -*- C++ -*- Time-stamp: <07/11/21 11:43:07 ptr>
+// -*- C++ -*- Time-stamp: <08/02/24 13:19:17 ptr>
 
 /*
- * Based on C++ 0x working draft;
+ * Copyright (c) 2007-2008
+ * Petr Ovtchenkov
+ *
+ * Licensed under the Academic Free License version 3.0
+ *
+ * Based on JTC1/SC22/WG21 C++ 0x working draft;
  *
  * This is revision 2 of <system_error>:
  * http://www.open-std.org/jtc1/sc22/WG21/docs/papers/2007/n2303.html
- * 
  */
 
 #ifndef __SYSTEM_ERROR
 #define __SYSTEM_ERROR
 
-#include <cerrno>
 #include <locale>
 #include <string>
 #include <stdexcept>
@@ -23,83 +26,83 @@ struct error_catalog
 {
     typedef int value_type;
 
-    static const value_type address_family_not_supported =      EAFNOSUPPORT;
-    static const value_type address_in_use =                    EADDRINUSE;
-    static const value_type address_not_available =             EADDRNOTAVAIL;
-    static const value_type already_connected =                 EISCONN;
-    static const value_type argument_list_too_long =            E2BIG;
-    static const value_type argument_out_of_domain =            EDOM;
-    static const value_type bad_address =                       EFAULT;
-    static const value_type bad_file_descriptor =               EBADF;
-    static const value_type bad_message =                       EBADMSG;
-    static const value_type broken_pipe =                       EPIPE;
-    static const value_type connection_aborted =                ECONNABORTED;
-    static const value_type connection_refused =                ECONNREFUSED;
-    static const value_type connection_reset =                  ECONNRESET;
-    static const value_type cross_device_link =                 EXDEV;
-    static const value_type destination_address_required =      EDESTADDRREQ;
-    static const value_type device_or_resource_busy =           EBUSY;
-    static const value_type directory_not_empty =               ENOTEMPTY;
-    static const value_type executable_format_error =           ENOEXEC;
-    static const value_type file_exists =                       EEXIST;
-    static const value_type file_too_large =                    EFBIG;
-    static const value_type filename_too_long =                 ENAMETOOLONG;
-    static const value_type function_not_supported =            ENOSYS;
-    static const value_type host_unreachable =                  EHOSTUNREACH;
-    static const value_type identifier_removed =                EIDRM;
-    static const value_type illegal_byte_sequence =             EILSEQ;
-    static const value_type inappropriate_io_control_operation =ENOTTY;
-    static const value_type interrupted =                       EINTR;
-    static const value_type invalid_argument =                  EINVAL;
-    static const value_type invalid_seek =                      ESPIPE;
-    static const value_type io_error =                          EIO;
-    static const value_type is_a_directory =                    EISDIR;
-    static const value_type message_too_long =                  EMSGSIZE; 
-    static const value_type network_down =                      ENETDOWN;
-    static const value_type network_reset =                     ENETRESET;
-    static const value_type network_unreachable =               ENETUNREACH;
-    static const value_type no_buffer_space =                   ENOBUFS;
-    static const value_type no_child_process =                  ECHILD;
-    static const value_type no_link =                           ENOLINK;
-    static const value_type no_lock_available =                 ENOLCK;
-    static const value_type no_message_available =              ENODATA;
-    static const value_type no_message =                        ENOMSG;
-    static const value_type no_space_on_device =                ENOSPC;
-    static const value_type no_stream_resources =               ENOSR;
-    static const value_type no_such_device_or_address =         ENXIO;
-    static const value_type no_such_device =                    ENODEV;
-    static const value_type no_such_file_or_directory =         ENOENT;
-    static const value_type no_such_process =                   ESRCH;
-    static const value_type not_a_directory =                   ENOTDIR;
-    static const value_type not_a_socket =                      ENOTSOCK;
-    static const value_type not_a_stream =                      ENOSTR;
-    static const value_type not_connected =                     ENOTCONN;
-    static const value_type not_enough_memory =                 ENOMEM;
-    static const value_type not_supported =                     ENOTSUP;
-    static const value_type operation_already_in_progress =     EALREADY; 
-    static const value_type operation_canceled =                ECANCELED;
-    static const value_type operation_in_progress =             EINPROGRESS;
-    static const value_type operation_not_permitted =           EPERM;
-    static const value_type operation_not_supported =           EOPNOTSUPP;
-    static const value_type owner_dead =                        EOWNERDEAD;
-    static const value_type permission_denied =                 EACCES;
-    static const value_type protocol_error =                    EPROTO;
-    static const value_type protocol_not_available =            ENOPROTOOPT; 
-    static const value_type protocol_not_supported =            EPROTONOSUPPORT;
-    static const value_type read_only_file_system =             EROFS;
-    static const value_type resource_deadlock_would_occur =     EDEADLK;
-    static const value_type result_out_of_range =               ERANGE;
-    static const value_type state_not_recoverable =             ENOTRECOVERABLE;
-    static const value_type stream_timeout =                    ETIME;
-    static const value_type text_file_busy =                    ETXTBSY;
-    static const value_type timed_out =                         ETIMEDOUT;
-    static const value_type too_many_files_open_in_system =     ENFILE;
-    static const value_type too_many_files_open =               EMFILE;
-    static const value_type too_many_links =                    EMLINK;
-    static const value_type too_many_synbolic_link_levels =     ELOOP;
-    static const value_type try_again =                         EAGAIN; 
-    static const value_type value_too_large =                   EOVERFLOW;
-    static const value_type wrong_protocol_type =               EPROTOTYPE;
+    static const value_type address_family_not_supported;
+    static const value_type address_in_use;
+    static const value_type address_not_available;
+    static const value_type already_connected;
+    static const value_type argument_list_too_long;
+    static const value_type argument_out_of_domain;
+    static const value_type bad_address;
+    static const value_type bad_file_descriptor;
+    static const value_type bad_message;
+    static const value_type broken_pipe;
+    static const value_type connection_aborted;
+    static const value_type connection_refused;
+    static const value_type connection_reset;
+    static const value_type cross_device_link;
+    static const value_type destination_address_required;
+    static const value_type device_or_resource_busy;
+    static const value_type directory_not_empty;
+    static const value_type executable_format_error;
+    static const value_type file_exists;
+    static const value_type file_too_large;
+    static const value_type filename_too_long;
+    static const value_type function_not_supported;
+    static const value_type host_unreachable;
+    static const value_type identifier_removed;
+    static const value_type illegal_byte_sequence;
+    static const value_type inappropriate_io_control_operation;
+    static const value_type interrupted;
+    static const value_type invalid_argument;
+    static const value_type invalid_seek;
+    static const value_type io_error;
+    static const value_type is_a_directory;
+    static const value_type message_too_long;
+    static const value_type network_down;
+    static const value_type network_reset;
+    static const value_type network_unreachable;
+    static const value_type no_buffer_space;
+    static const value_type no_child_process;
+    static const value_type no_link;
+    static const value_type no_lock_available;
+    static const value_type no_message_available;
+    static const value_type no_message;
+    static const value_type no_space_on_device;
+    static const value_type no_stream_resources;
+    static const value_type no_such_device_or_address;
+    static const value_type no_such_device;
+    static const value_type no_such_file_or_directory;
+    static const value_type no_such_process;
+    static const value_type not_a_directory;
+    static const value_type not_a_socket;
+    static const value_type not_a_stream;
+    static const value_type not_connected;
+    static const value_type not_enough_memory;
+    static const value_type not_supported;
+    static const value_type operation_already_in_progress;
+    static const value_type operation_canceled;
+    static const value_type operation_in_progress;
+    static const value_type operation_not_permitted;
+    static const value_type operation_not_supported;
+    static const value_type owner_dead;
+    static const value_type permission_denied;
+    static const value_type protocol_error;
+    static const value_type protocol_not_available;
+    static const value_type protocol_not_supported;
+    static const value_type read_only_file_system;
+    static const value_type resource_deadlock_would_occur;
+    static const value_type result_out_of_range;
+    static const value_type state_not_recoverable;
+    static const value_type stream_timeout;
+    static const value_type text_file_busy;
+    static const value_type timed_out;
+    static const value_type too_many_files_open_in_system;
+    static const value_type too_many_files_open;
+    static const value_type too_many_links;
+    static const value_type too_many_synbolic_link_levels;
+    static const value_type try_again;
+    static const value_type value_too_large;
+    static const value_type wrong_protocol_type;
 
     virtual const value_type last_value() const throw();
 
