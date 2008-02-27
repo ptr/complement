@@ -1,3 +1,14 @@
+2008-02-27  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/lib/gcc.mak: 3.3 is normal compiler, just some
+	builds was wrong---use common scheme for compiler's
+	libraries;
+
+	* gmake/gcc.mak: option for 64-bit HP-UX at IA64;
+
+	* gmake/hp-ux/targetsys.mak: HP use .so for shared libs
+	on intel-based 64-bits HP-UX;
+
 2008-02-26  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/gcc.mak: use more convenient option -dumpversion

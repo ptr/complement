@@ -1,4 +1,4 @@
-# Time-stamp: <08/02/26 13:46:36 yeti>
+# Time-stamp: <08/02/26 13:46:36 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005-2008
 # Petr Ovtchenkov
@@ -133,6 +133,10 @@ stldbg-shared : CXXFLAGS += -dynamic
 endif
 
 ifeq ($(OSNAME),hp-ux)
+ifneq ($(M_ARCH),ia64)
+release-static : OPT += -fno-reorder-blocks
+release-shared : OPT += -fno-reorder-blocks
+endif
 CCFLAGS = -pthread $(OPT)
 CFLAGS = -pthread $(OPT)
 # CXXFLAGS = -pthread -nostdinc++ -fexceptions $(OPT)
