@@ -15,6 +15,7 @@
 #include <mt/mutex>
 #include <mt/condition_variable>
 #include <misc/type_traits.h>
+#include <typeinfo>
 
 #include <iostream>
 
