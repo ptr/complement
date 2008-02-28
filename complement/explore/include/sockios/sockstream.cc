@@ -1,7 +1,7 @@
 // -*- C++ -*- Time-stamp: <07/09/06 23:48:33 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -10,6 +10,8 @@
  * Licensed under the Academic Free License version 3.0
  *
  */
+
+#include <sockios/netinfo.h>
 
 #ifdef __unix
 extern "C" int nanosleep(const struct timespec *, struct timespec *);
