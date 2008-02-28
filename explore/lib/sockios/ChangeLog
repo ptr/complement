@@ -1,3 +1,11 @@
+2008-02-28  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sochstream, _sockstream.cc, netinfo.h, netinfo.cc:
+	move findhost and iface list utilities into separate
+	files;
+
+	* ibsockios: Version 1.14.2.
+
 2007-11-21  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* sockstream.cc: UDP require larger buffer, because it should
