@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/02/25 16:11:00 ptr>
+// -*- C++ -*- Time-stamp: <08/03/02 14:44:16 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2008
@@ -11,8 +11,8 @@
  *
  * Derived from original <mt/xmt.h> of 'complement' project
  * [http://complement.sourceforge.net]
- * to make it close to JTC1/SC22/WG21 working draft
- * [http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2497.html]
+ * to make it close to JTC1/SC22/WG21 C++ 0x working draft
+ * [http://www.open-std.org/Jtc1/sc22/wg21/docs/papers/2008/n2521.pdf]
  */
 
 #ifndef __THREAD_H
