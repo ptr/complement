@@ -1,3 +1,8 @@
+2008-03-06  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* condition_variable: const casts for pthread_cond_* calls;
+	add semaphore.h.
+
 2008-02-26  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* thread, mutex, condition_variable, date_time: implementation

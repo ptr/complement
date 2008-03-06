@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/02/25 13:09:15 ptr>
+// -*- C++ -*- Time-stamp: <08/03/06 13:23:11 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2008
@@ -24,6 +24,10 @@
 
 #include <mt/date_time>
 #include <mt/mutex>
+#ifdef __FIT_PTHREADS
+#  include <semaphore.h>
+#endif
+
 
 namespace std {
 
@@ -97,7 +101,7 @@ class __condition_variable
         lock.lock();
 #endif
 #ifdef __FIT_PTHREADS
-        int ret = pthread_cond_wait( &_cond, &lock.m->_M_lock );
+        int ret = pthread_cond_wait( &_cond, const_cast<pthread_mutex_t *>(&lock.m->_M_lock) );
         if ( ret ) {
           lock.lock();
           // throw system_error
@@ -119,7 +123,7 @@ class __condition_variable
         ::timespec t;
         t.tv_sec = abs_time.seconds_since_epoch();
         t.tv_nsec = static_cast<long>( abs_time.nanoseconds_since_epoch().count() % nanoseconds::ticks_per_second );
-        int ret = pthread_cond_timedwait( &_cond, &lock.m->_M_lock, &t );
+        int ret = pthread_cond_timedwait( &_cond, const_cast<pthread_mutex_t *>(&lock.m->_M_lock), &t );
         if ( ret != 0 ) {
           if ( ret == ETIMEDOUT ) {
             return false;
