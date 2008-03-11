@@ -3,4 +3,4 @@
 PRGNAME = sockios_ut
 SRC_CC = ConnectionProcessor.cc message.cc \
          bytes_in_socket.cc bytes_in_socket2.cc \
-         names.cc sockios_test.cc sockios_test_suite.cc unit_test.cc
+         names.cc sockios_test.cc sockios2_test.cc sockios_test_suite.cc unit_test.cc

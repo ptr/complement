@@ -2,7 +2,7 @@
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005-2007
+ * Copyright (c) 2002, 2003, 2005-2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -11,6 +11,7 @@
 
 #include "sockios_test_suite.h"
 #include "sockios_test.h"
+#include "sockios2_test.h"
 
 #include <exam/suite.h>
 
@@ -36,12 +37,15 @@ int EXAM_IMPL(sockios_test_suite)
 
   exam::test_suite t( "libsockios test" );
 
-  // t.flags( t.flags() | exam::base_logger::trace | exam::base_logger::verbose );
+  t.flags( t.flags() | exam::base_logger::trace | exam::base_logger::verbose );
+
+#if 0
 
   trivial_sockios_test trivial_test;
 
   tc[0] = t.add( &trivial_sockios_test::simple, trivial_test, "trivial_sockios_test::simple" );
   t.add( &trivial_sockios_test::simple_udp, trivial_test, "trivial_sockios_test::simple_udp", tc[0] );
+#endif
 
   names_sockios_test names_test;
 
@@ -51,6 +55,7 @@ int EXAM_IMPL(sockios_test_suite)
   t.add( &names_sockios_test::hostaddr_test2, names_test, "names_sockios_test::hostaddr_test2" );
   t.add( &names_sockios_test::hostaddr_test3, names_test, "names_sockios_test::hostaddr_test3" );
 
+#if 0
   sockios_test test;
 
   t.add( &sockios_test::long_msg, test, "sockios_test::long_msg",
@@ -70,6 +75,13 @@ int EXAM_IMPL(sockios_test_suite)
   t.add( &trivial_sockios_test::client_close_socket, trivial_test, "trivial_sockios_test::client_close_socket", tc[0] );
   t.add( test_more_bytes_in_socket, "test_more_bytes_in_socket" ); // timeout 5
   t.add( test_more_bytes_in_socket2, "test_more_bytes_in_socket2" ); // timeout 5
+
+#endif
+
+  sockios2_test test2;
+
+  t.add( &sockios2_test::ctor_dtor, test2, "sockios2_test::ctor_dtor",
+    t.add( &sockios2_test::srv_core, test2, "sockios2_test::srv_core" ) );
 
   return t.girdle();
 }
