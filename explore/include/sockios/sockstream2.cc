@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/07 01:16:27 ptr>
+// -*- C++ -*- Time-stamp: <08/03/18 09:51:28 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -285,7 +285,7 @@ basic_sockbuf2<charT, traits, _Alloc>::close()
 template<class charT, class traits, class _Alloc>
 void basic_sockbuf2<charT, traits, _Alloc>::shutdown( sock_base2::shutdownflg dir )
 {
-  if ( basic_socket_t::is_open() ) {
+  if ( basic_socket_t::is_open_unsafe() ) {
     if ( (dir & (sock_base2::stop_in | sock_base2::stop_out)) ==
          (sock_base2::stop_in | sock_base2::stop_out) ) {
       ::shutdown( basic_socket_t::_fd, 2 );

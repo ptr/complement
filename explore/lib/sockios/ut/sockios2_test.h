@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/18 08:52:26 ptr>
+// -*- C++ -*- Time-stamp: <08/03/25 06:22:29 ptr>
 
 /*
  *
@@ -22,7 +22,9 @@ class sockios2_test
     ~sockios2_test();
 
     int EXAM_DECL(srv_core);
-    int EXAM_DECL(ctor_dtor);
+    int EXAM_DECL(connect_disconnect);
+    int EXAM_DECL(processor_core);
+    int EXAM_DECL(fork);
 };
 
 #endif // __sockios2_test_h

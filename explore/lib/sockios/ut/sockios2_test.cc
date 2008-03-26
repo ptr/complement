@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/06 23:31:13 ptr>
+// -*- C++ -*- Time-stamp: <08/03/26 11:48:40 ptr>
 
 /*
  *
@@ -14,6 +14,8 @@
 
 #include <sockios/sockstream2>
 #include <mt/mutex>
+#include <sys/wait.h>
+#include <mt/shm.h>
 
 using namespace std;
 using namespace std::tr2;
@@ -27,33 +29,6 @@ sockios2_test::~sockios2_test()
 }
 
 /* ************************************************************ */
-
-class worker
-{
-  public:
-    worker( sockstream& )
-      { lock_guard<mutex> lk(lock); ++cnt; ++visits; }
-
-    ~worker()
-      { lock_guard<mutex> lk(lock); --cnt; }
-
-    void connect( sockstream& )
-      { }
-
-    void close()
-      { }
-
-    static int get_visits()
-      { lock_guard<mutex> lk(lock); return visits; }
-
-    static mutex lock;
-    static int cnt;
-    static int visits;
-};
-
-mutex worker::lock;
-int worker::cnt = 0;
-int worker::visits = 0;
 
 class simple_mgr :
     public sock_basic_processor
@@ -145,7 +120,7 @@ int EXAM_IMPL(sockios2_test::srv_core)
   return EXAM_RESULT;
 }
 
-int EXAM_IMPL(sockios2_test::ctor_dtor)
+int EXAM_IMPL(sockios2_test::connect_disconnect)
 {
   {
     simple_mgr srv( 2008 );
@@ -211,82 +186,261 @@ int EXAM_IMPL(sockios2_test::ctor_dtor)
     }
   }
 
-#if 0
-  // Check, that number of ctors of Cnt is the same as number of called dtors
-  // i.e. all created Cnt was released.
+  return EXAM_RESULT;
+}
+
+class worker
+{
+  public:
+    worker( sockstream2& )
+      { lock_guard<mutex> lk(lock); ++cnt; ++visits; cnd.notify_one(); }
+
+    ~worker()
+      { lock_guard<mutex> lk(lock); --cnt; }
+
+    void connect( sockstream2& s )
+      { lock_guard<mutex> lk(lock); getline( s, line ); ++rd; line_cnd.notify_one(); }
+
+//     void close()
+//      { }
+
+    static int get_visits()
+      { lock_guard<mutex> lk(lock); return visits; }
+
+    static mutex lock;
+    static int cnt;
+    static /* volatile */ int visits;
+    static condition_variable cnd;
+    static string line;
+    static condition_variable line_cnd;
+    static int rd;
+    // static barrier b;
+};
+
+mutex worker::lock;
+int worker::cnt = 0;
+/* volatile */ int worker::visits = 0;
+condition_variable worker::cnd;
+string worker::line;
+condition_variable worker::line_cnd;
+int worker::rd = 0;
+
+// barrier worker::b;
+
+// void stopper( connect_processor<worker>* prss )
+// {
+//   b.wait();
+//   prss->close();
+// }
+
+bool visits_counter1()
+{
+  return worker::visits == 1;
+}
+
+bool visits_counter2()
+{
+  return worker::visits == 2;
+}
+
+bool rd_counter1()
+{
+  return worker::rd == 1;
+}
+
+int EXAM_IMPL(sockios2_test::processor_core)
+{
   {
-    sockmgr_stream_MP<Cnt> srv( port );
+    connect_processor<worker> prss( 2008 );
+
+    EXAM_CHECK( prss.good() );
+    EXAM_CHECK( prss.is_open() );
 
     {
-      sockstream s1( "localhost", port );
+      sockstream2 s( "localhost", 2008 );
 
-      EXAM_CHECK( s1.good() );
-      EXAM_CHECK( s1.is_open() );
+      EXAM_CHECK( s.good() );
+      EXAM_CHECK( s.is_open() );
 
-      s1 << "1234" << endl;
+//      for ( int i = 0; i < 64; ++i ) { // give chance to process it
+//        std::tr2::this_thread::yield();
+//      }
 
-      EXAM_CHECK( s1.good() );
-      EXAM_CHECK( s1.is_open() );
-      while ( Cnt::get_visits() == 0 ) {
-        xmt::Thread::yield();
-      }
-      Cnt::lock.lock();
-      EXAM_CHECK( Cnt::cnt == 1 );
-      Cnt::lock.unlock();
+      unique_lock<mutex> lk( worker::lock );
+
+      worker::cnd.timed_wait( lk, milliseconds( 100 ), visits_counter1 );
+      
+      EXAM_CHECK( worker::visits == 1 );
+      worker::visits = 0;
     }
-
-    srv.close();
-    srv.wait();
-
-    Cnt::lock.lock();
-    EXAM_CHECK( Cnt::cnt == 0 );
-    Cnt::visits = 0;
-    Cnt::lock.unlock();
+  }
+  {
+    lock_guard<mutex> lk( worker::lock );
+    EXAM_CHECK( worker::cnt == 0 );
   }
 
-  Cnt::lock.lock();
-  EXAM_CHECK( Cnt::cnt == 0 );
-  Cnt::lock.unlock();
-
   {
-    sockmgr_stream_MP<Cnt> srv( port );
+    connect_processor<worker> prss( 2008 );
+
+    EXAM_CHECK( prss.good() );
+    EXAM_CHECK( prss.is_open() );
 
     {
-      sockstream s1( "localhost", port );
-      sockstream s2( "localhost", port );
+      sockstream2 s1( "localhost", 2008 );
 
       EXAM_CHECK( s1.good() );
       EXAM_CHECK( s1.is_open() );
+
+      sockstream2 s2( "localhost", 2008 );
+
       EXAM_CHECK( s2.good() );
       EXAM_CHECK( s2.is_open() );
 
-      s1 << "1234" << endl;
-      s2 << "1234" << endl;
+//      for ( int i = 0; i < 1024; ++i ) { // give chance to process it
+//        std::tr2::this_thread::yield();
+//      }
+      unique_lock<mutex> lk( worker::lock );
+
+      worker::cnd.timed_wait( lk, milliseconds( 100 ), visits_counter2 );
+
+      EXAM_CHECK( worker::visits == 2 );
+      worker::visits = 0;
+    }
+  }
+  {
+    lock_guard<mutex> lk( worker::lock );
+    EXAM_CHECK( worker::cnt == 0 );
+  }
+
+
+  // check before sockstream2 was closed
+  {
+    connect_processor<worker> prss( 2008 );
+
+    EXAM_CHECK( prss.good() );
+    EXAM_CHECK( prss.is_open() );
+
+    {
+      sockstream2 s1( "localhost", 2008 );
 
       EXAM_CHECK( s1.good() );
       EXAM_CHECK( s1.is_open() );
-      EXAM_CHECK( s2.good() );
-      EXAM_CHECK( s2.is_open() );
-      while ( Cnt::get_visits() < 2 ) {
-        xmt::Thread::yield();
-      }
-      Cnt::lock.lock();
-      EXAM_CHECK( Cnt::cnt == 2 );
-      Cnt::lock.unlock();
+
+      s1 << "Hello, world!" << endl;
+
+      unique_lock<mutex> lk( worker::lock );
+      worker::cnd.timed_wait( lk, milliseconds( 100 ), rd_counter1 );
+
+      // cerr << worker::line << endl;
+      EXAM_CHECK( worker::line == "Hello, world!" );
+      worker::line = "";
+      worker::rd = 0;
     }
-
-    srv.close();
-    srv.wait();
-
-    Cnt::lock.lock();
-    EXAM_CHECK( Cnt::cnt == 0 );
-    Cnt::lock.unlock();
   }
 
-  Cnt::lock.lock();
-  EXAM_CHECK( Cnt::cnt == 0 );
-  Cnt::lock.unlock();
-#endif
+
+  EXAM_CHECK( worker::line == "" );
+
+  // check after sockstream2 was closed, i.e. ensure, that all data available read before close
+  {
+    connect_processor<worker> prss( 2008 );
+
+    EXAM_CHECK( prss.good() );
+    EXAM_CHECK( prss.is_open() );
+
+    {
+      sockstream2 s1( "localhost", 2008 );
+
+      EXAM_CHECK( s1.good() );
+      EXAM_CHECK( s1.is_open() );
+
+      s1 << "Hello, world!" << endl;
+    }
+
+    unique_lock<mutex> lk( worker::lock );
+    worker::cnd.timed_wait( lk, milliseconds( 100 ), rd_counter1 );
+
+    // cerr << worker::line << endl;
+    EXAM_CHECK( worker::line == "Hello, world!" );
+    worker::line = "";
+    worker::rd = 0;
+  }
+
+  EXAM_CHECK( worker::line == "" );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(sockios2_test::fork)
+{
+  const char fname[] = "/tmp/sockios2_test.shm";
+
+  /* You must work very carefully with sockets, theads and fork: it unsafe in principle
+     and no way to make it safe. Never try to pass _opened_ connection via fork.
+     Here I create sockstream, but without connection (it check that io processing
+     loop in underlying sockmgr finish and restart smoothly in child process).
+   */
+  sockstream2 s;
+
+  // worker::lock.lock();
+  worker::visits = 0;
+  // worker::lock.unlock();
+
+  try {
+    xmt::shm_alloc<0> seg;
+    seg.allocate( fname, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+    xmt::allocator_shm<barrier_ip,0> shm;
+    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+
+    try {
+
+      EXAM_CHECK( worker::visits == 0 );
+
+      this_thread::fork();
+      {
+        connect_processor<worker> prss( 2008 );
+
+        EXAM_CHECK_ASYNC( worker::visits == 0 );
+
+        b.wait(); // -- align here
+
+        EXAM_CHECK_ASYNC( prss.good() );
+        EXAM_CHECK_ASYNC( prss.is_open() );
+
+        unique_lock<mutex> lk( worker::lock );
+        worker::cnd.timed_wait( lk, milliseconds( 100 ), visits_counter1 );
+
+        EXAM_CHECK_ASYNC( worker::visits == 1 );
+      }
+
+      exit( 0 );
+    }
+    catch ( std::tr2::fork_in_parent& child ) {
+      b.wait(); // -- align here
+
+      s.open( "localhost", 2008 );
+
+      EXAM_CHECK( s.good() );
+      EXAM_CHECK( s.is_open() );
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+
+      EXAM_CHECK( worker::visits == 0 );
+    }
+    shm.deallocate( &b );
+    seg.deallocate();
+    unlink( fname );
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
 
   return EXAM_RESULT;
 }

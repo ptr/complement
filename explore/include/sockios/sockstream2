@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/07 01:16:27 ptr>
+// -*- C++ -*- Time-stamp: <08/03/26 09:54:59 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -222,6 +222,7 @@ class basic_socket
         static void __at_fork_child();
         static void __at_fork_parent();
         static int _count;
+        static bool _at_fork;
     };
 
     static char Init_buf[];
@@ -290,6 +291,9 @@ template<class charT, class traits, class _Alloc>
 int basic_socket<charT,traits,_Alloc>::Init::_count = 0;
 
 template<class charT, class traits, class _Alloc>
+bool basic_socket<charT,traits,_Alloc>::Init::_at_fork = false;
+
+template<class charT, class traits, class _Alloc>
 void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
 {
   static std::tr2::mutex _init_lock;
@@ -298,9 +302,14 @@ void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
     std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
     if ( _count++ == 0 ) {
       basic_socket<charT,traits,_Alloc>::mgr = new detail::sockmgr<charT,traits,_Alloc>();
-// #ifdef __FIT__PTHREADS
-//       pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child );
-// #endif
+#ifdef __FIT_PTHREADS
+      if ( !_at_fork ) { // call only once
+        if ( pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child ) ) {
+          // throw system_error;
+        }
+        _at_fork = true;
+      }
+#endif
 //       _sock_processor_base::_idx = std::tr2::this_thread::xalloc();
     }
   } else {
@@ -313,7 +322,8 @@ void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
 
 template<class charT, class traits, class _Alloc>
 void basic_socket<charT,traits,_Alloc>::Init::__at_fork_prepare()
-{ }
+{
+}
 
 template<class charT, class traits, class _Alloc>
 void basic_socket<charT,traits,_Alloc>::Init::__at_fork_child()

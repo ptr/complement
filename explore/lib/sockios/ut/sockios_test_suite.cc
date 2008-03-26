@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/19 00:19:19 ptr>
+// -*- C++ -*- Time-stamp: <08/03/25 07:48:17 ptr>
 
 /*
  *
@@ -80,8 +80,10 @@ int EXAM_IMPL(sockios_test_suite)
 
   sockios2_test test2;
 
-  t.add( &sockios2_test::ctor_dtor, test2, "sockios2_test::ctor_dtor",
-    t.add( &sockios2_test::srv_core, test2, "sockios2_test::srv_core" ) );
+  t.add( &sockios2_test::fork, test2, "sockios2_test::fork",
+    t.add( &sockios2_test::processor_core, test2, "sockios2_test::processor_core",
+      t.add( &sockios2_test::connect_disconnect, test2, "sockios2_test::connect_disconnect",
+        t.add( &sockios2_test::srv_core, test2, "sockios2_test::srv_core" ) ) ) );
 
   return t.girdle();
 }
