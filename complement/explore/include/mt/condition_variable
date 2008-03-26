@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/06 13:23:11 ptr>
+// -*- C++ -*- Time-stamp: <08/03/26 10:18:13 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2008
@@ -768,7 +768,7 @@ class __barrier
 };
 
 typedef __barrier<false> barrier;
-typedef __barrier<false> barrier_ip;
+typedef __barrier<true>  barrier_ip;
 
 } // namespace tr2
 

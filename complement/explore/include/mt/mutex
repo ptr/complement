@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/02 14:43:55 ptr>
+// -*- C++ -*- Time-stamp: <08/03/26 10:20:36 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2008
@@ -831,6 +831,7 @@ typedef __mutex<false,true>   mutex_ip;
 typedef __mutex<true,true>    recursive_mutex_ip;
 #ifdef __FIT_RWLOCK
 typedef __rw_mutex<false>     rw_mutex;
+typedef __rw_mutex<true>      rw_mutex_ip;
 #endif // __FIT_RWLOCK
 #ifdef __FIT_PTHREAD_SPINLOCK
 typedef __spinlock<false,false> spinlock;

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/02/25 13:01:59 ptr>
+// -*- C++ -*- Time-stamp: <08/03/26 01:53:46 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -18,6 +18,10 @@
 #include <typeinfo>
 
 #include <iostream>
+
+#include <sys/wait.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
 int EXAM_IMPL(mt_test_wg21::date_time)
 {
@@ -202,3 +206,111 @@ int EXAM_IMPL(mt_test_wg21::semaphore)
 
   return EXAM_RESULT;
 }
+
+int EXAM_IMPL(mt_test_wg21::fork)
+{
+  // trivial fork
+
+  int v = 3;
+  try {
+    std::tr2::this_thread::fork();
+
+    try {
+
+      // Child code 
+      EXAM_CHECK_ASYNC( v == 3 );
+
+      v = 5;
+    }
+    catch ( ... ) {
+    }
+
+    exit( 0 );
+  }
+  catch ( std::tr2::fork_in_parent& child ) {
+    try {
+      EXAM_CHECK( child.pid() > 0 );
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+      EXAM_CHECK( v == 3 );
+    }
+    catch ( ... ) {
+    }
+  }
+  catch ( ... ) {
+  }
+
+
+  // less trivial fork: check interprocess communication via shared memory
+
+  shmid_ds ds;
+  int id = shmget( 5000, 1024, IPC_CREAT | IPC_EXCL | 0600 );
+  EXAM_REQUIRE( id != -1 );
+  // if ( id == -1 ) {
+  //   cerr << "Error on shmget" << endl;
+  // }
+  EXAM_REQUIRE( shmctl( id, IPC_STAT, &ds ) != -1 );
+  // if ( shmctl( id, IPC_STAT, &ds ) == -1 ) {
+  //   cerr << "Error on shmctl" << endl;
+  // }
+  void *buf = shmat( id, 0, 0 );
+  EXAM_REQUIRE( buf != reinterpret_cast<void *>(-1) );
+  // if ( buf == reinterpret_cast<void *>(-1) ) {
+  //   cerr << "Error on shmat" << endl;
+  // }
+
+  int& x = *new( buf ) int(4);
+
+  EXAM_CHECK( x == 4 );
+
+  try {
+    std::tr2::this_thread::fork();
+
+    try {
+
+      // Child code 
+      EXAM_CHECK_ASYNC( v == 3 );
+
+      v = 5;
+
+      EXAM_CHECK_ASYNC( x == 4 );
+
+      x = 6;
+    }
+    catch ( ... ) {
+    }
+
+    exit( 0 );
+  }
+  catch ( std::tr2::fork_in_parent& child ) {
+    try {
+      EXAM_CHECK( child.pid() > 0 );
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+      EXAM_CHECK( v == 3 );
+      EXAM_CHECK( x == 6 );
+    }
+    catch ( ... ) {
+    }
+  }
+  catch ( ... ) {
+  }
+
+  shmdt( buf );
+  shmctl( id, IPC_RMID, &ds );
+
+  return EXAM_RESULT;
+}
+
