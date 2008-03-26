@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/02/25 12:17:54 ptr>
+// -*- C++ -*- Time-stamp: <08/03/26 10:12:21 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -10,6 +10,7 @@
 
 #include "mt_test_suite.h"
 #include "mt_test.h"
+#include "shm_test.h"
 #include "mt_test_wg21.h"
 
 #include <config/feature.h>
@@ -41,7 +42,6 @@ int EXAM_IMPL(mt_test_suite)
   exam::test_suite::test_case_type tc[3];
 
   // t.add( &mt_test::callstack, test, "callstack" );
-
   tc[0] = t.add( &mt_test::barrier, test, "mt_test::barrier" );
   tc[1] = t.add( &mt_test::join_test, test, "mt_test::join_test" );
   tc[2] = t.add( &mt_test::yield, test, "mt_test::yield",
@@ -74,6 +74,7 @@ int EXAM_IMPL(mt_test_suite)
   t.add( &mt_test_wg21::mutex_test, test_wg21, "mt_test_wg21::mutex_test" );
   t.add( &mt_test_wg21::barrier, test_wg21, "mt_test_wg21::barrier" );
   t.add( &mt_test_wg21::semaphore, test_wg21, "mt_test_wg21::semaphore" );
+  t.add( &mt_test_wg21::fork, test_wg21, "mt_test_wg21::fork" );
 
   return t.girdle();
 };

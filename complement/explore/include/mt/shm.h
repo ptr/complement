@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/08/03 09:47:53 ptr>
+// -*- C++ -*- Time-stamp: <08/03/26 10:37:01 ptr>
 
 /*
- * Copyright (c) 2006, 2007
+ * Copyright (c) 2006-2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -24,6 +24,9 @@
 #include <misc/type_traits.h>
 
 #include <mt/xmt.h>
+
+#include <mt/mutex>
+#include <mt/condition_variable>
 
 namespace xmt {
 
@@ -94,11 +97,21 @@ __SPEC_FULL(is_ipc_sharable,unsigned long long,true);
 __SPEC_FULL(is_ipc_sharable,float,true);
 __SPEC_FULL(is_ipc_sharable,double,true);
 __SPEC_FULL(is_ipc_sharable,long double,true);
+
 __SPEC_FULL(is_ipc_sharable,xmt::__condition<true>,true);
 __SPEC_FULL(is_ipc_sharable,xmt::__semaphore<true>,true);
 __SPEC_FULL(is_ipc_sharable,xmt::__barrier<true>,true);
 __SPEC_FULL(is_ipc_sharable,xmt::shared_mutex,true);
 __SPEC_FULL(is_ipc_sharable,xmt::shared_recursive_mutex,true);
+
+__SPEC_FULL(is_ipc_sharable,std::tr2::condition_variable_ip,true);
+__SPEC_FULL(is_ipc_sharable,std::tr2::condition_variable_any_ip,true);
+__SPEC_FULL(is_ipc_sharable,std::tr2::semaphore_ip,true);
+__SPEC_FULL(is_ipc_sharable,std::tr2::barrier_ip,true);
+__SPEC_FULL(is_ipc_sharable,std::tr2::mutex_ip,true);
+__SPEC_FULL(is_ipc_sharable,std::tr2::recursive_mutex_ip,true);
+__SPEC_FULL(is_ipc_sharable,std::tr2::rw_mutex_ip,true);
+
 
 #undef __SPEC_FULL
 #undef __SPEC_
@@ -307,7 +320,7 @@ class shm_name_mgr
     template <class T>
     void named( const T& obj, int name )
     {
-      xmt::basic_lock<__mutex<false,true> > lk( _lock );
+      std::tr2::lock_guard<std::tr2::mutex_ip> lk( _lock );
       if ( _last == 255 ) {
         throw std::range_error( "too many named objects" );
       }
@@ -332,7 +345,7 @@ class shm_name_mgr
     template <class T>
     T& named( int name )
     {
-      xmt::basic_lock<__mutex<false,true> > lk( _lock );
+      std::tr2::lock_guard<std::tr2::mutex_ip> lk( _lock );
       for ( int i = 0; _nm_table[i].name != -1; ++i ) {
         if ( _nm_table[i].name == name ) {
           ++_nm_table[i].count;
@@ -345,7 +358,7 @@ class shm_name_mgr
     template <class T>
     const T& named( int name ) const
     {
-      xmt::basic_lock<__mutex<false,true> > lk( _lock );
+      std::tr2::lock_guard<std::tr2::mutex_ip> lk( _lock );
       for ( int i = 0; _nm_table[i].name != -1; ++i ) {
         if ( _nm_table[i].name == name ) {
           ++_nm_table[i].count;
@@ -358,7 +371,7 @@ class shm_name_mgr
     template <class T>
     void release( int name )
     {
-      xmt::basic_lock<__mutex<false,true> > lk( _lock );
+      std::tr2::lock_guard<std::tr2::mutex_ip> lk( _lock );
       for ( int i = 0; _nm_table[i].name != -1; ++i ) {
         if ( _nm_table[i].name == name ) {
           if ( --_nm_table[i].count == 0 ) {
@@ -375,7 +388,7 @@ class shm_name_mgr
 
     int count( int name ) const throw()
     {
-      xmt::basic_lock<__mutex<false,true> > lk( _lock );
+      std::tr2::lock_guard<std::tr2::mutex_ip> lk( _lock );
       for ( int i = 0; _nm_table[i].name != -1; ++i ) {
         if ( _nm_table[i].name == name ) {
           return _nm_table[i].count;
@@ -395,7 +408,7 @@ class shm_name_mgr
     shm_name_mgr& operator =( const shm_name_mgr& )
       { return *this; }
 
-    xmt::__mutex<false,true> _lock;
+    std::tr2::mutex_ip _lock;
     struct _name_rec
     {
       int name;
@@ -424,7 +437,7 @@ class shm_alloc
     {
         uint64_t _magic;
         size_type _first;
-        xmt::__mutex<false,true> _lock;
+        std::tr2::mutex_ip _lock;
         size_type _nm;
     };
 
@@ -466,8 +479,9 @@ class shm_alloc
          pointer p = _seg.address();
 
          if ( p != reinterpret_cast<pointer>(-1) && (force || _seg.count() <= 1) ) {
+           using namespace std::tr2;
            _master *m = reinterpret_cast<_master *>( _seg.address() );
-           (&m->_lock)->~__mutex<false,true>();
+           (&m->_lock)->~mutex_ip();
            if ( m->_nm != 0 ) {
              reinterpret_cast<shm_name_mgr<_Inst> *>(reinterpret_cast<char *>(p) + m->_nm)->~shm_name_mgr<_Inst>();
            }
@@ -484,7 +498,7 @@ class shm_alloc
         if ( p != reinterpret_cast<pointer>(-1) ) {
           _master *m = reinterpret_cast<_master *>( p );
           if (  m->_nm == 0 ) {
-            xmt::basic_lock<xmt::__mutex<false,true> > lk( m->_lock );
+            std::tr2::lock_guard<std::tr2::mutex_ip> lk( m->_lock );
             void *nm = _traverse( &m->_first, sizeof(shm_name_mgr<_Inst>) );
             m->_nm = reinterpret_cast<char *>(nm) - reinterpret_cast<char *>(p);
             return *new ( nm ) shm_name_mgr<_Inst>();
@@ -500,7 +514,7 @@ class shm_alloc
       {
         _master *m = reinterpret_cast<_master *>( _seg.address() );
         if ( m != reinterpret_cast<_master *>(-1) ) {
-          xmt::basic_lock<xmt::__mutex<false,true> > lk( m->_lock );
+          std::tr2::lock_guard<std::tr2::mutex_ip> lk( m->_lock );
           return _traverse( &m->_first, n );
         }
 
@@ -516,8 +530,8 @@ class shm_alloc
     static void init( _master& m )
       {
         m._magic = MAGIC;
-        new ( &m._lock ) xmt::__mutex<false,true>();
-        xmt::basic_lock<xmt::__mutex<false,true> > lk( m._lock );
+        new ( &m._lock ) std::tr2::mutex_ip();
+        std::tr2::lock_guard<std::tr2::mutex_ip> lk( m._lock );
         m._first = sizeof( _master );
         m._nm = 0;
         _fheader& h = *new ( reinterpret_cast<char *>(&m) + sizeof(_master) ) _fheader();
@@ -539,7 +553,7 @@ void shm_alloc<_Inst>::deallocate( pointer p, size_type n )
   n = std::max( n + (__align - n % __align) % __align, sizeof(_fheader) );
   _master *m = reinterpret_cast<_master *>( _seg.address() );
   if ( m != reinterpret_cast<_master *>(-1) && (reinterpret_cast<char *>(p) - reinterpret_cast<char *>(_seg.address())) < (_seg.max_size() + sizeof(_master) + sizeof(_aheader) ) ) {
-    xmt::basic_lock<xmt::__mutex<false,true> > lk( m->_lock );
+    std::tr2::lock_guard<std::tr2::mutex_ip> lk( m->_lock );
     _aheader *a = reinterpret_cast<_aheader *>( reinterpret_cast<char *>(p) - sizeof(_aheader) );
     size_type off = reinterpret_cast<char *>(p) - reinterpret_cast<char *>(_seg.address());
     if ( m->_first == 0 ) {

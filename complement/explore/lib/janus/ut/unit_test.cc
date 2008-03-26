@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/16 09:04:40 ptr>
+// -*- C++ -*- Time-stamp: <08/02/25 22:21:57 ptr>
 
 #include "vt_operations.h"
 
@@ -13,6 +13,8 @@ int EXAM_IMPL(vtime_test_suite)
   exam::test_suite t( "virtual time operations" );
 
   janus::vtime_operations vt_oper;
+
+  t.flags( /* exam::base_logger::trace */ exam::base_logger::verbose );
 
   t.add( &vtime_operations::vt_max, vt_oper, "Max",
          tc[1] = t.add( &vtime_operations::vt_add, vt_oper, "Additions",

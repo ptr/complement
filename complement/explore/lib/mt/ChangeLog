@@ -1,3 +1,29 @@
+2008-03-26  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* mutex: add rw_mutex_ip typedef;
+
+	* condition_variable: fix wrong typedef for barrier_ip;
+
+	* thread, thread.cc: __at_fork_* handlers moved into Init;
+	added fork call; on fork down thread's ids to bad id,
+	except thread that call fork; set __at_fork_* handlers
+	only once; lock all threads mutexes before fork and
+	release all ones after---safe fork;
+
+	* shm.h: based on JTC1/SC22/WG21 threads interfaces, but
+	still in xmt namespace for compatibility;
+
+	* note: implementation of threads interfaces are close
+	to JTC1/SC22/WG21 C++ 0x working draft, see
+	http://www.open-std.org/Jtc1/sc22/wg21/docs/papers/2008/n2521.pdf
+
+	* ut/mt_test.cc, ut/mt_test.h, ut/shm_test.h, ut/shm_test.cc:
+	move shared memory test suite into separate file;
+
+	* ut/mt_test_wg21.h, ut/mt_test_wg21.cc: test for fork;
+
+	* libxmt: version 2.0.1.
+
 2008-03-06  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* condition_variable: const casts for pthread_cond_* calls;
