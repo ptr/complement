@@ -24,6 +24,7 @@ class mt_test_wg21
     int EXAM_DECL(mutex_test);
     int EXAM_DECL(barrier);
     int EXAM_DECL(semaphore);
+    int EXAM_DECL(fork);
 
   private:
     // static xmt::Thread::ret_t thread_entry_call( void * );

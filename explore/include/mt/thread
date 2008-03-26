@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/02/25 16:11:00 ptr>
+// -*- C++ -*- Time-stamp: <08/03/26 01:58:08 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2008
@@ -78,6 +78,8 @@ class fork_in_parent :
 };
 #endif // !_WIN32
 
+__FIT_DECLSPEC void fork() throw( fork_in_parent, std::runtime_error );
+
 class thread_base
 {
   public:
@@ -135,6 +137,7 @@ class thread_base
 
         friend class thread_base;
         friend id get_id(void);
+        // friend __FIT_DECLSPEC void fork() throw( fork_in_parent, std::runtime_error );
     };
 
     enum {
@@ -161,6 +164,9 @@ class thread_base
         Init();
         ~Init();
       private:
+        static void __at_fork_prepare();
+        static void __at_fork_parent();
+        static void __at_fork_child();
         static int& _count;
     };
 
@@ -203,6 +209,7 @@ class thread_base
     std::string _stack_on_create;
 #endif
     friend class Init;
+    friend __FIT_DECLSPEC void fork() throw( fork_in_parent, std::runtime_error );
 };
 
 template <unsigned F, size_t S>
@@ -605,10 +612,17 @@ typedef basic_thread<0,0> thread;
 // trick to declare thread_base::id get_id() as friend in thread_base::id
 thread_base::id get_id();
 
+pid_t getpid();
+pid_t getppid();
+
 namespace this_thread
 {
-  // std::thread_base::id get_id();
-  using tr2::get_id;
+using tr2::fork;
+
+__FIT_DECLSPEC void become_daemon() throw( fork_in_parent, std::runtime_error );
+
+// std::thread_base::id get_id();
+using tr2::get_id;
 
 inline void yield()
 {

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/02/25 16:08:25 ptr>
+// -*- C++ -*- Time-stamp: <08/03/26 02:02:03 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2008
@@ -41,16 +41,76 @@
 #include <stdio.h>
 #include <syscall.h>
 
+#ifdef STLPORT
+// #  include <unordered_map>
+#  include <unordered_set>
+// #  include <hash_map>
+// #  include <hash_set>
+// #  define __USE_STLPORT_HASH
+#  define __USE_STLPORT_TR1
+#else
+#  if defined(__GNUC__) && (__GNUC__ < 4)
+// #    include <ext/hash_map>
+#    include <ext/hash_set>
+#    define __USE_STD_HASH
+#  else
+// #    include <tr1/unordered_map>
+#    include <tr1/unordered_set>
+#    define __USE_STD_TR1
+#  endif
+#endif
+
+
 #ifdef WIN32
 # pragma warning( disable : 4290)
 // using namespace std;
 #endif
+
+#if defined(__USE_STLPORT_HASH) || defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+#  define __HASH_NAMESPACE std
+#endif
+#if defined(__USE_STD_HASH)
+#  define __HASH_NAMESPACE __gnu_cxx
+#endif
+
+namespace __HASH_NAMESPACE {
+
+#ifdef __USE_STD_TR1
+namespace tr1 {
+#endif
+
+template <>
+struct hash<std::tr2::thread_base*>
+{
+    size_t operator()(const std::tr2::thread_base* __x) const
+      { return reinterpret_cast<size_t>(__x); }
+};
+
+#ifdef __USE_STD_TR1
+}
+#endif
+
+} // namespace __HASH_NAMESPACE
+
 
 namespace std {
 
 namespace tr2 {
 
 namespace detail {
+
+#ifdef __USE_STLPORT_HASH
+typedef std::hash_set<thread_base*> thread_pool_t;
+#endif
+#ifdef __USE_STD_HASH
+typedef __gnu_cxx::hash_set<thread_base*> thread_pool_t;
+#endif
+#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+typedef std::tr1::unordered_set<thread_base*> thread_pool_t;
+#endif
+
+static mutex thrpool_lock;
+static thread_pool_t thread_pool;
 
 int Init_count = 0;
 
@@ -141,45 +201,6 @@ static _uw_alloc_type *_alloc_uw( int __idx )
   return user_words + __idx + 1;
 }
 
-
-void __at_fork_prepare()
-{
-#ifdef __FIT_PTHREADS
-  if ( Init_count > 0 ) {
-    _uw_save = pthread_getspecific( _mt_key );
-  }
-#endif
-}
-
-void __at_fork_parent()
-{
-}
-
-void __at_fork_child()
-{
-#ifdef __FIT_PTHREADS
-  if ( Init_count > 0 ) {
-     // otherwise we do it in Thread::Init::Init() below
-# if !(defined(__FreeBSD__) || defined(__OpenBSD__))
-    // I am misunderstand this point, Solaris 7 require this (to be restored)
-
-    // pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child );
-
-    // while Linux (and other) inherit this setting from parent process?
-    // At least Linux glibc 2.2.5 try to made lock in recursive
-    // call of pthread_atfork
-# else
-// should be fixed...
-# endif // !(__FreeBSD__ || __OpenBSD__)
-    pthread_key_create( &_mt_key, 0 ); // take new key
-    pthread_setspecific( _mt_key, _uw_save ); // store preserved user words array
-    _uw_save = 0;
-    // Note, that only calling thread inherited when we use POSIX:
-    Init_count = 1; // i.e. only ONE (calling) thread...
-  }
-#endif
-}
-
 } // namespace detail
 } // namespace tr2
 } // namespace std
@@ -196,6 +217,7 @@ adopt_lock_t adopt_lock;
 
 char *Init_buf[32];
 int& thread_base::Init::_count( detail::Init_count ); // trick to avoid friend declarations
+bool _at_fork_set = false;
 
 const std::string msg1( "Can't create thread" );
 const std::string msg2( "Can't fork" );
@@ -213,8 +235,11 @@ thread_base::Init::Init()
   if ( _count++ == 0 ) {
 #ifdef __FIT_PTHREADS
 # if !(defined(__FreeBSD__) || defined(__OpenBSD__))
-    if ( pthread_atfork( detail::__at_fork_prepare, detail::__at_fork_parent, detail::__at_fork_child ) ) {
-      throw std::runtime_error( "Problems with pthread_atfork" );
+    if ( !_at_fork_set ) { // call only once
+      if ( pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child ) ) {
+        throw std::runtime_error( "Problems with pthread_atfork" );
+      }
+      _at_fork_set = true;
     }
 # endif // !(__FreeBSD__ || __OpenBSD__)
     pthread_key_create( &detail::_mt_key, 0 );
@@ -253,6 +278,73 @@ static const thread_base::native_handle_type _bad_thread_id = static_cast<thread
 # endif // !(__FreeBSD__ || __OpenBSD__)
 #endif // __FIT_UITHREADS || _PTHREADS
 
+void thread_base::Init::__at_fork_prepare()
+{
+#ifdef __FIT_PTHREADS
+  detail::_F_lock.lock();
+  detail::thrpool_lock.lock();
+
+  if ( detail::Init_count > 0 ) {
+    detail::_uw_save = pthread_getspecific( detail::_mt_key );
+  }
+
+  for ( detail::thread_pool_t::const_iterator i = detail::thread_pool.begin(); i != detail::thread_pool.end(); ++i ) {
+    if ( (*i)->_id != _bad_thread_id ) {
+      const_cast<thread_base*>(*i)->_id_lock.lock();
+    }
+  }
+
+#endif
+}
+
+void thread_base::Init::__at_fork_parent()
+{
+#ifdef __FIT_PTHREADS
+  for ( detail::thread_pool_t::const_iterator i = detail::thread_pool.begin(); i != detail::thread_pool.end(); ++i ) {
+    if ( (*i)->_id != _bad_thread_id ) {
+      const_cast<thread_base*>(*i)->_id_lock.unlock();
+    }
+  }
+
+  detail::thrpool_lock.unlock();
+  detail::_F_lock.unlock();
+#endif
+}
+
+void thread_base::Init::__at_fork_child()
+{
+#ifdef __FIT_PTHREADS
+  for ( detail::thread_pool_t::const_iterator i = detail::thread_pool.begin(); i != detail::thread_pool.end(); ++i ) {
+    if ( (*i)->_id != _bad_thread_id ) {
+      const_cast<thread_base*>(*i)->_id_lock.unlock();
+    }
+  }
+
+  detail::thrpool_lock.unlock();
+
+  if ( detail::Init_count > 0 ) {
+     // otherwise we do it in Thread::Init::Init() below
+# if !(defined(__FreeBSD__) || defined(__OpenBSD__))
+    // I am misunderstand this point, Solaris 7 require this (to be restored)
+
+    // pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child );
+
+    // while Linux (and other) inherit this setting from parent process?
+    // At least Linux glibc 2.2.5 try to made lock in recursive
+    // call of pthread_atfork
+# else
+// should be fixed...
+# endif // !(__FreeBSD__ || __OpenBSD__)
+    pthread_key_create( &detail::_mt_key, 0 ); // take new key
+    pthread_setspecific( detail::_mt_key, detail::_uw_save ); // store preserved user words array
+    detail::_uw_save = 0;
+    // Note, that only calling thread inherited when we use POSIX:
+    detail::Init_count = 1; // i.e. only ONE (calling) thread...
+  }
+  detail::_F_lock.unlock();
+#endif
+}
+
 thread_base::id::id() :
     _id( _bad_thread_id )
 { }
@@ -262,6 +354,9 @@ thread_base::thread_base() :
     _id( _bad_thread_id )
 {
   new( Init_buf ) Init();
+
+  lock_guard<mutex> lk( detail::thrpool_lock );
+  detail::thread_pool.insert( this );
 }
 
 __FIT_DECLSPEC
@@ -269,6 +364,9 @@ thread_base::~thread_base()
 {
   if ( joinable() ) {
     thread_base::join();
+  } else {
+    lock_guard<mutex> lk( detail::thrpool_lock );
+    detail::thread_pool.erase( this );
   }
 
   ((Init *)Init_buf)->~Init();
@@ -294,6 +392,12 @@ void thread_base::join()
 #endif // __FIT_WIN32THREADS
 #ifdef __FIT_PTHREADS
   pthread_join( _id, 0 );
+
+  {
+    lock_guard<mutex> lk(detail::thrpool_lock);
+    detail::thread_pool.erase( this );
+  }
+
   _id = _bad_thread_id; // lock not required here, only one thread
 #endif // PTHREADS
 }
@@ -306,50 +410,16 @@ void thread_base::detach()
   if ( pthread_detach( _id ) ) {
     // throw system_error;
   }
+  {
+    lock_guard<mutex> lk(detail::thrpool_lock);
+    for ( detail::thread_pool_t::const_iterator i = detail::thread_pool.begin(); i != detail::thread_pool.end(); ++i ) {
+      if ( (*i)->_id == _id ) {
+        detail::thread_pool.erase( i );
+        break;
+      }
+    }
+  }
   _id = _bad_thread_id;
-#endif
-}
-
-void fork() throw( fork_in_parent, std::runtime_error )
-{
-#ifdef __unix
-  // MT_REENTRANT( detail::_F_lock, _1 );
-  fork_in_parent f( ::fork() );
-  if ( f.pid() > 0 ) {
-    throw f;
-  }
-  if ( f.pid() == -1 ) {
-    throw std::runtime_error( msg2 );
-  }
-  detail::_ppid = detail::_pid;
-  detail::_pid = syscall( SYS_getpid );
-#endif
-}
-
-__FIT_DECLSPEC
-void become_daemon() throw( fork_in_parent, std::runtime_error )
-{
-#ifdef __unix
-  try {
-    std::tr2::fork();
-
-    ::chdir( "/var/tmp" ); // for CWD: if not done, process remain with same WD
-                         // and don't allow unmount volume, for example
-    ::setsid();   // become session leader
-    ::close( 0 ); // close stdin
-    ::close( 1 ); // close stdout
-    ::close( 2 ); // close stderr
-    // This is broken in some versions of glibc (Linux):
-    ::open( "/dev/null", O_RDONLY, 0 ); // redirect stdin from /dev/null
-    ::open( "/dev/null", O_WRONLY, 0 ); // redirect stdout to /dev/null
-    ::open( "/dev/null", O_WRONLY, 0 ); // redirect stderr to /dev/null
-  }
-  catch ( fork_in_parent& ) {
-    throw;
-  }
-  catch ( std::runtime_error& ) {
-    throw;
-  }
 #endif
 }
 
@@ -373,8 +443,63 @@ thread_base::id get_id()
 #endif
 }
 
+__FIT_DECLSPEC
+void fork() throw( fork_in_parent, std::runtime_error )
+{
+#ifdef __unix
+  thread_base::id fthr = this_thread::get_id();
+  fork_in_parent f( ::fork() );
+  if ( f.pid() > 0 ) {
+    throw f;
+  }
+  if ( f.pid() == -1 ) {
+    throw std::runtime_error( msg2 );
+  }
+  detail::_ppid = detail::_pid;
+  detail::_pid = syscall( SYS_getpid );
+
+  // lock not required: it in child and only one thread yet
+  for ( detail::thread_pool_t::const_iterator i = detail::thread_pool.begin(); i != detail::thread_pool.end(); ) {
+    if ( (*i)->get_id() != fthr ) {
+      const_cast<thread_base*>(*i)->_id = _bad_thread_id;
+      detail::thread_pool.erase( i++ );
+    } else {
+      ++i;
+    }
+  }
+
+#endif
+}
+
 namespace this_thread
 {
+
+__FIT_DECLSPEC
+void become_daemon() throw( fork_in_parent, std::runtime_error )
+{
+#ifdef __unix
+  try {
+    std::tr2::this_thread::fork();
+
+    ::chdir( "/var/tmp" ); // for CWD: if not done, process remain with same WD
+                         // and don't allow unmount volume, for example
+    ::setsid();   // become session leader
+    ::close( 0 ); // close stdin
+    ::close( 1 ); // close stdout
+    ::close( 2 ); // close stderr
+    // This is broken in some versions of glibc (Linux):
+    ::open( "/dev/null", O_RDONLY, 0 ); // redirect stdin from /dev/null
+    ::open( "/dev/null", O_WRONLY, 0 ); // redirect stdout to /dev/null
+    ::open( "/dev/null", O_WRONLY, 0 ); // redirect stderr to /dev/null
+  }
+  catch ( fork_in_parent& ) {
+    throw;
+  }
+  catch ( std::runtime_error& ) {
+    throw;
+  }
+#endif
+}
 
 #if 0
 std::thread_base::id get_id()
