@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/26 11:48:40 ptr>
+// -*- C++ -*- Time-stamp: <08/03/27 07:22:24 ptr>
 
 /*
  *
@@ -434,6 +434,222 @@ int EXAM_IMPL(sockios2_test::fork)
 
       EXAM_CHECK( worker::visits == 0 );
     }
+    shm.deallocate( &b );
+    seg.deallocate();
+    unlink( fname );
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  return EXAM_RESULT;
+}
+
+class stream_reader
+{
+  public:
+    stream_reader( sockstream2& )
+      { }
+
+    ~stream_reader()
+      { }
+
+    void connect( sockstream2& s )
+      {
+        char buf[1024];
+
+        s.read( buf, 1024 );
+        s.write( buf, 1024 );
+        s.flush();
+      }
+
+    static void load_generator( barrier* b )
+    {
+      sockstream2 s( "localhost", 2008 );
+
+      char buf[1024];
+
+      fill( buf, buf + 1024, 0 );
+
+      b->wait();
+
+      while( true ) {
+        s.write( buf, 1024 );
+        s.flush();
+
+        s.read( buf, 1024 );
+        this_thread::yield();
+      }
+    }
+
+};
+
+int EXAM_IMPL(sockios2_test::srv_sigpipe)
+{
+  const char fname[] = "/tmp/sockios2_test.shm";
+  try {
+    xmt::shm_alloc<0> seg;
+    seg.allocate( fname, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+    xmt::allocator_shm<barrier_ip,0> shm;
+    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+    try {
+      this_thread::fork();
+
+      b.wait();
+      /*
+       * This process will be killed,
+       * so I don't care about safe termination.
+       */
+
+      const int b_count = 10;
+      barrier bb( b_count );
+
+      thread* th1 = new thread( stream_reader::load_generator, &bb );
+
+      for ( int i = 0; i < (b_count - 1); ++i ) {
+        new thread( stream_reader::load_generator, &bb );
+      }
+
+      this_thread::sleep( milliseconds( 100 ) );
+
+      b.wait();
+
+      th1->join(); // Will be interrupted!
+
+      exit( 0 );
+    }
+    catch ( std::tr2::fork_in_parent& child ) {
+      connect_processor<stream_reader> r( 2008 );
+
+      EXAM_CHECK( r.good() );
+      EXAM_CHECK( r.is_open() );
+
+      b.wait();
+      b.wait();
+
+      kill( child.pid(), SIGTERM );
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        // EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+        EXAM_ERROR( "child should be interrupted" );
+      } else {
+        EXAM_MESSAGE( "child interrupted" );
+      }
+
+      EXAM_CHECK( r.good() );
+      EXAM_CHECK( r.is_open() );
+
+    }
+    shm.deallocate( &b );
+    seg.deallocate();
+    unlink( fname );
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  return EXAM_RESULT;
+}
+
+
+class interrupted_writer
+{
+  public:
+    interrupted_writer( sockstream2& s )
+      {
+        EXAM_CHECK_ASYNC( s.good() );
+
+        int n = 1;
+
+        cerr << "align 3\n";
+        bb->wait();  // <-- align 3
+
+        cerr << "align 3 pass\n";
+        s.write( (const char *)&n, sizeof( int ) ).flush();
+        EXAM_CHECK_ASYNC( s.good() );
+      }
+
+    ~interrupted_writer()
+      { cerr << "~~\n"; }
+
+    void connect( sockstream2& s )
+      { }
+
+    static void read_generator( barrier* b )
+    {
+      sockstream2 s( "localhost", 2008 );
+
+      int buff = 0;
+      cerr << "align 2" << endl;
+      b->wait(); // <-- align 2
+      cerr << "align pass" << endl;
+
+      EXAM_CHECK_ASYNC( s.read( (char *)&buff, sizeof(int) ).good() ); // <---- key line
+      EXAM_CHECK_ASYNC( buff == 1 );
+    }
+
+    static barrier_ip* bb;
+};
+
+barrier_ip* interrupted_writer::bb = 0;
+
+int EXAM_IMPL(sockios2_test::read0)
+{
+  const char fname[] = "/tmp/sockios2_test.shm";
+  try {
+    xmt::shm_alloc<0> seg;
+    seg.allocate( fname, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+    xmt::allocator_shm<barrier_ip,0> shm;
+    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+    barrier_ip& bnew = *new ( shm.allocate( 1 ) ) barrier_ip();
+    interrupted_writer::bb = &bnew;
+
+    try {
+      this_thread::fork();
+
+      b.wait();  // <-- align 1
+
+      barrier bb;
+
+      thread t( interrupted_writer::read_generator, &bb );
+
+      bb.wait();  // <-- align 2
+
+      cerr << "system" << endl;
+      system( "echo > /dev/null" );  // <------ key line
+      cerr << "after system" << endl;
+
+      bnew.wait();  // <-- align 3
+      cerr << "after align 3" << endl;
+
+      t.join();
+
+      exit( 0 );
+    }
+    catch ( std::tr2::fork_in_parent& child ) {
+      connect_processor<interrupted_writer> r( 2008 );
+
+      EXAM_CHECK( r.good() );
+      EXAM_CHECK( r.is_open() );
+
+      b.wait();  // <-- align 1
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+
+      EXAM_CHECK( r.good() );
+      EXAM_CHECK( r.is_open() );
+    }
+    shm.deallocate( &bnew );
     shm.deallocate( &b );
     seg.deallocate();
     unlink( fname );

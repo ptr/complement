@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/26 09:54:59 ptr>
+// -*- C++ -*- Time-stamp: <08/03/27 08:52:14 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -316,6 +316,7 @@ void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
     std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
     if ( --_count == 0 ) {
       delete basic_socket<charT,traits,_Alloc>::mgr;
+      basic_socket<charT,traits,_Alloc>::mgr = 0;
     }
   }
 }
@@ -344,7 +345,7 @@ template<class charT, class traits, class _Alloc>
 char basic_socket<charT,traits,_Alloc>::Init_buf[128];
 
 template <class charT, class traits, class _Alloc>
-detail::sockmgr<charT,traits,_Alloc>* basic_socket<charT,traits,_Alloc>::mgr;
+detail::sockmgr<charT,traits,_Alloc>* basic_socket<charT,traits,_Alloc>::mgr = 0;
 
 #ifdef STLPORT
 _STLP_END_NAMESPACE

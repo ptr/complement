@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/26 09:55:19 ptr>
+// -*- C++ -*- Time-stamp: <08/03/27 09:28:41 ptr>
 
 /*
  * Copyright (c) 2008
@@ -483,7 +483,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( typename
     cnd.notify_one();
   } else {
     std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-    worker_pool[&s] = c;
+    worker_pool.insert( std::make_pair( &s, c ) );
   }
 }
 
@@ -768,7 +768,7 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
           // throw system_error
           // std::cerr << "Read pipe\n";
         } else if ( r == 0 ) {
-          // std::cerr << "Read pipe 0\n";
+          std::cerr << "Read pipe 0\n";
           return;
         }
 
@@ -845,6 +845,7 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
           for ( ; ; ) {
             int fd = accept( ev[i].data.fd, &addr, &sz );
             if ( fd < 0 ) {
+              std::cerr << "Accept, listener # " << ev[i].data.fd << ", errno " << errno << std::endl;
               if ( (errno == EINTR) || (errno == ECONNABORTED) /* || (errno == ERESTARTSYS) */ ) {
                 continue;
               }
@@ -870,13 +871,14 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
                 descr[fd] = new_info;
 
                 if ( epoll_ctl( efd, EPOLL_CTL_ADD, fd, &ev_add ) < 0 ) {
-                  // std::cerr << "Accept, add " << fd << ", errno " << errno << std::endl;
+                  std::cerr << "Accept, add " << fd << ", errno " << errno << std::endl;
                   descr.erase( fd );
                   // throw system_error
                 }
+                std::cerr << "adopt_new_t()\n";
                 (*info.p)( *s, typename socks_processor_t::adopt_new_t() );
               } else {
-                // std::cerr << "Accept, delete " << fd << std::endl;
+                std::cerr << "Accept, delete " << fd << std::endl;
                 delete s;
               }
             }
@@ -931,9 +933,11 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
               }
               break;
             }
+            std::cerr << "ptr " <<  (void *)b->egptr() << ", " << errno << std::endl;
             long offset = read( ev[i].data.fd, b->egptr(), sizeof(charT) * (b->_ebuf - b->egptr()) );
+            std::cerr << "offset " << offset << ", " << errno << std::endl;
             if ( offset < 0 ) {
-              if ( errno == EAGAIN ) {
+              if ( (errno == EAGAIN) || (errno == EINTR) ) {
                 errno = 0;
                 epoll_event xev;
                 xev.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
@@ -941,8 +945,19 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
                 epoll_ctl( efd, EPOLL_CTL_MOD, ev[i].data.fd, &xev );
                 break;
               } else {
-                // process error
-                std::cerr << "not listener, other " << ev[i].data.fd << std::hex << ev[i].events << std::dec << errno << std::endl;
+                switch ( errno ) {
+                  // case EINTR:      // read was interrupted
+                    // continue;
+                  //  break;
+                  case EFAULT:     // Bad address
+                  case ECONNRESET: // Connection reset by peer
+                    ev[i].events |= EPOLLRDHUP; // will be processed below
+                    break;
+                  default:
+                    std::cerr << "not listener, other " << ev[i].data.fd << std::hex << ev[i].events << std::dec << " : " << errno << std::endl;
+                    break;
+                }
+                break;
               }
             } else if ( offset > 0 ) {
               offset /= sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
@@ -964,14 +979,16 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
                 (*info.p)( *info.s.s, typename socks_processor_t::adopt_data_t() );
               }
             } else {
-              // std::cerr << "K " << ev[i].data.fd << ", " << errno << std::endl;
+              std::cerr << "K " << ev[i].data.fd << ", " << errno << std::endl;
               // EPOLLRDHUP may be missed in kernel, but offset 0 is the same
               ev[i].events |= EPOLLRDHUP; // will be processed below
               break;
             }
           }
+        } else {
+          std::cerr << "Q\n";
         }
-        if ( ev[i].events & EPOLLRDHUP ) {
+        if ( (ev[i].events & EPOLLRDHUP) || (ev[i].events & EPOLLHUP) || (ev[i].events & EPOLLERR) ) {
           // std::cerr << "Poll EPOLLRDHUP " << ev[i].data.fd << ", " << errno << std::endl;
           if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
             // throw system_error
@@ -992,15 +1009,12 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
           }
           descr.erase( ifd );
         }
-        if ( ev[i].events & EPOLLHUP ) {
-          std::cerr << "Poll HUP" << std::endl;
-        }
-        if ( ev[i].events & EPOLLERR ) {
-          std::cerr << "Poll ERR" << std::endl;
-        }
-        if ( ev[i].events & EPOLLERR ) {
-          std::cerr << "Poll ERR" << std::endl;
-        }
+        // if ( ev[i].events & EPOLLHUP ) {
+        //   std::cerr << "Poll HUP" << std::endl;
+        // }
+        // if ( ev[i].events & EPOLLERR ) {
+        //   std::cerr << "Poll ERR" << std::endl;
+        // }
         if ( ev[i].events & EPOLLPRI ) {
           std::cerr << "Poll PRI" << std::endl;
         }

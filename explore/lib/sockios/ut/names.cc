@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/02/07 10:28:34 ptr>
+// -*- C++ -*- Time-stamp: <08/03/27 11:04:23 ptr>
 
 /*
  *
@@ -13,12 +13,9 @@
 
 #include <exam/suite.h>
 
-#include <sockios/sockstream>
-#include <sockios/sockmgr.h>
+#include <sockios/netinfo.h>
 
 #include <list>
-
-#include <arpa/inet.h>
 
 using namespace std;
 
