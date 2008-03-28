@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/27 08:52:14 ptr>
+// -*- C++ -*- Time-stamp: <08/03/27 17:18:22 yeti>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -315,6 +315,9 @@ void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
   } else {
     std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
     if ( --_count == 0 ) {
+      if ( basic_socket<charT,traits,_Alloc>::mgr == 0 ) {
+        std::cerr << __FILE__ << ":" << __LINE__ << " shit happens\n";
+      }
       delete basic_socket<charT,traits,_Alloc>::mgr;
       basic_socket<charT,traits,_Alloc>::mgr = 0;
     }
@@ -331,6 +334,7 @@ void basic_socket<charT,traits,_Alloc>::Init::__at_fork_child()
 {
   if ( _count != 0 ) {
     // stop mgr
+    _count = 1;
     delete basic_socket<charT,traits,_Alloc>::mgr;
     basic_socket<charT,traits,_Alloc>::mgr = new detail::sockmgr<charT,traits,_Alloc>();
   }

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/27 09:28:41 ptr>
+// -*- C++ -*- Time-stamp: <08/03/27 17:53:40 yeti>
 
 /*
  * Copyright (c) 2008
@@ -294,6 +294,7 @@ class connect_processor :
         static void __at_fork_child();
         static void __at_fork_parent();
         static int _count;
+        static bool _at_fork;
     };
 
     static char Init_buf[];
@@ -312,7 +313,7 @@ class connect_processor :
         ploop( loop, this )
       { new( Init_buf ) Init(); }
 
-    ~connect_processor()
+    virtual ~connect_processor()
       {
         connect_processor::close();
         if ( ploop.joinable() ) {
@@ -338,6 +339,13 @@ class connect_processor :
     void worker();
 
   private:
+    connect_processor( const connect_processor& )
+      { }
+
+    connect_processor& operator =( const connect_processor& )
+      { return *this; }
+
+
     struct processor
     { 
         processor() :
@@ -401,7 +409,7 @@ class connect_processor :
 
     worker_pool_t worker_pool;
     ready_pool_t ready_pool;
-    volatile bool _in_work;
+    bool _in_work;
     std::tr2::mutex wklock;
     std::tr2::mutex rdlock;
     std::tr2::condition_variable cnd;
@@ -416,6 +424,9 @@ template<class Connect, class charT, class traits, class _Alloc, void (Connect::
 int connect_processor<Connect, charT, traits, _Alloc, C>::Init::_count = 0;
 
 template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
+bool connect_processor<Connect, charT, traits, _Alloc, C>::Init::_at_fork = false;
+
+template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::Init::_guard( int direction )
 {
   static std::tr2::mutex _init_lock;
@@ -423,10 +434,14 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::Init::_guard( int dir
   if ( direction ) {
     std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
     if ( _count++ == 0 ) {
-
-// #ifdef __FIT__PTHREADS
-//       pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child );
-// #endif
+#ifdef __FIT_PTHREADS
+      if ( !_at_fork ) { // call only once
+        if ( pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child ) ) {
+          // throw system_error
+        }
+        _at_fork = true;
+      }
+#endif
 //       _sock_processor_base::_idx = std::tr2::this_thread::xalloc();
     }
   } else {
@@ -444,6 +459,8 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::Init::__at_fork_prepa
 template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::Init::__at_fork_child()
 {
+  std::cerr << "SHOULD NEVER HAPPEN!!!!\n";
+
   if ( _count != 0 ) {
 
   }
@@ -633,8 +650,13 @@ class sockmgr
         efd = epoll_create( hint );
         if ( efd < 0 ) {
           // throw system_error( errno )
+          throw std::runtime_error( "epoll_create" );
         }
-        pipe( pipefd ); // check err
+        if ( pipe( pipefd ) < 0 ) { // check err
+          ::close( efd );
+          // throw system_error;
+          throw std::runtime_error( "pipe" );
+        }
         // cfd = pipefd[1];
 
         epoll_event ev_add;
@@ -656,13 +678,13 @@ class sockmgr
           ctl _ctl;
           _ctl.cmd = rqstop;
 
-          write( pipefd[1], &_ctl, sizeof(ctl) );
+          ::write( pipefd[1], &_ctl, sizeof(ctl) );
 
           _worker->join();
         }
-        close( pipefd[1] );
-        close( pipefd[0] );
-        close( efd );
+        ::close( pipefd[1] );
+        ::close( pipefd[0] );
+        ::close( efd );
         delete _worker;
       }
 
@@ -672,7 +694,10 @@ class sockmgr
         _ctl.cmd = listener;
         _ctl.data.ptr = static_cast<void *>(&p);
 
-        write( pipefd[1], &_ctl, sizeof(ctl) );
+        int r = ::write( pipefd[1], &_ctl, sizeof(ctl) );
+        if ( r < 0 || r != sizeof(ctl) ) {
+          throw std::runtime_error( "can't write to pipe" );
+        }
       }
 
 #if 0
@@ -693,7 +718,10 @@ class sockmgr
         _ctl.data.ptr = static_cast<void *>(&s);
 
         errno = 0;
-        int r = write( pipefd[1], &_ctl, sizeof(ctl) );
+        int r = ::write( pipefd[1], &_ctl, sizeof(ctl) );
+        if ( r < 0 || r != sizeof(ctl) ) {
+          throw std::runtime_error( "can't write to pipe" );
+        }
       }
 
     void exit_notify( sockbuf_t* b, int fd )
