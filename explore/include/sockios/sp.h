@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/27 17:53:40 yeti>
+// -*- C++ -*- Time-stamp: <08/04/01 18:40:57 yeti>
 
 /*
  * Copyright (c) 2008
@@ -189,6 +189,7 @@ void _sock_processor_base<charT,traits,_Alloc>::close()
   if ( !basic_socket_t::is_open_unsafe() ) {
     return;
   }
+  basic_socket<charT,traits,_Alloc>::mgr->pop( dynamic_cast<sock_processor_base<charT,traits,_Alloc>&>(*this), basic_socket_t::_fd );
 #ifdef WIN32
   ::closesocket( basic_socket_t::_fd );
 #else
@@ -632,7 +633,8 @@ class sockmgr
         socks_processor_t *p;
     };
 
-    struct ctl {
+    struct ctl
+    {
         int cmd;
         union {
             int fd;
@@ -677,6 +679,7 @@ class sockmgr
         if ( _worker->joinable() ) {
           ctl _ctl;
           _ctl.cmd = rqstop;
+          _ctl.data.ptr = 0;
 
           ::write( pipefd[1], &_ctl, sizeof(ctl) );
 
@@ -722,6 +725,13 @@ class sockmgr
         if ( r < 0 || r != sizeof(ctl) ) {
           throw std::runtime_error( "can't write to pipe" );
         }
+      }
+
+    void pop( socks_processor_t& p, int _fd )
+      {
+        fd_info info = { fd_info::listener, 0, &p };
+        std::tr2::lock_guard<std::tr2::mutex> lk( cll );
+        closed_queue[_fd] = info;
       }
 
     void exit_notify( sockbuf_t* b, int fd )
@@ -904,7 +914,16 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
                   // throw system_error
                 }
                 std::cerr << "adopt_new_t()\n";
-                (*info.p)( *s, typename socks_processor_t::adopt_new_t() );
+                std::tr2::lock_guard<std::tr2::mutex> lk( cll );
+                typename fd_container_type::iterator closed_ifd = closed_queue.begin();
+                for ( ; closed_ifd != closed_queue.end(); ++closed_ifd ) {
+                  if ( closed_ifd->second.p == info.p ) {
+                    break;
+                  }
+                }
+                if ( closed_ifd == closed_queue.end() ) {
+                  (*info.p)( *s, typename socks_processor_t::adopt_new_t() );
+                }
               } else {
                 std::cerr << "Accept, delete " << fd << std::endl;
                 delete s;
@@ -957,7 +976,16 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
               }
               std::cerr << "Z " << ev[i].data.fd << ", " << errno << std::endl;
               if ( info.p != 0 ) {
-                (*info.p)( *info.s.s, typename socks_processor_t::adopt_data_t() );
+                std::tr2::lock_guard<std::tr2::mutex> lk( cll );
+                typename fd_container_type::iterator closed_ifd = closed_queue.begin();
+                for ( ; closed_ifd != closed_queue.end(); ++closed_ifd ) {
+                  if ( closed_ifd->second.p == info.p ) {
+                    break;
+                  }
+                }
+                if ( closed_ifd == closed_queue.end() ) {
+                  (*info.p)( *info.s.s, typename socks_processor_t::adopt_data_t() );
+                }
               }
               break;
             }
@@ -1004,7 +1032,16 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
               b->ucnd.notify_one();
               if ( info.p != 0 ) {
                 // std::cerr << "data here" << std::endl;
-                (*info.p)( *info.s.s, typename socks_processor_t::adopt_data_t() );
+                std::tr2::lock_guard<std::tr2::mutex> lk( cll );
+                typename fd_container_type::iterator closed_ifd = closed_queue.begin();
+                for ( ; closed_ifd != closed_queue.end(); ++closed_ifd ) {
+                  if ( closed_ifd->second.p == info.p ) {
+                    break;
+                  }
+                }
+                if ( closed_ifd == closed_queue.end() ) {
+                  (*info.p)( *info.s.s, typename socks_processor_t::adopt_data_t() );
+                }
               }
             } else {
               std::cerr << "K " << ev[i].data.fd << ", " << errno << std::endl;
@@ -1022,7 +1059,16 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
             // throw system_error
           }
           if ( info.p != 0 ) {
-            (*info.p)( *info.s.s, typename socks_processor_t::adopt_close_t() );
+            std::tr2::lock_guard<std::tr2::mutex> lk( cll );
+            typename fd_container_type::iterator closed_ifd = closed_queue.begin();
+            for ( ; closed_ifd != closed_queue.end(); ++closed_ifd ) {
+              if ( closed_ifd->second.p == info.p ) {
+                break;
+              }
+            }
+            if ( closed_ifd == closed_queue.end() ) {
+              (*info.p)( *info.s.s, typename socks_processor_t::adopt_close_t() );
+            }
           }
           if ( (info.flags & fd_info::owner) != 0 ) {
             delete info.s.s;
