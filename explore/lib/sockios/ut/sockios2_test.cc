@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/27 07:22:24 ptr>
+// -*- C++ -*- Time-stamp: <08/04/02 01:48:59 ptr>
 
 /*
  *
@@ -41,6 +41,9 @@ class simple_mgr :
     simple_mgr( int port, sock_base2::stype t = sock_base2::sock_stream ) :
         sock_basic_processor( port, t )
       { }
+
+    ~simple_mgr()
+      { cerr << "In destructor\n"; }
 
   protected:
     virtual void operator ()( sockstream_t& s, const adopt_new_t& )
@@ -301,7 +304,7 @@ int EXAM_IMPL(sockios2_test::processor_core)
 //      }
       unique_lock<mutex> lk( worker::lock );
 
-      worker::cnd.timed_wait( lk, milliseconds( 100 ), visits_counter2 );
+      worker::cnd.timed_wait( lk, milliseconds( 500 ), visits_counter2 );
 
       EXAM_CHECK( worker::visits == 2 );
       worker::visits = 0;
