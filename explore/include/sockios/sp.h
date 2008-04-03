@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/04/02 22:22:19 yeti>
+// -*- C++ -*- Time-stamp: <08/04/03 01:05:05 ptr>
 
 /*
  * Copyright (c) 2008
@@ -778,39 +778,39 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
 */
 
   try {
-  for ( ; ; ) {
-    int n = epoll_wait( efd, &ev[0], /* n_ret */ 512, -1 );
-    if ( n < 0 ) {
-      if ( errno == EINTR ) {
-        continue;
-      }
-      // throw system_error
-    }
-    // std::cerr << "epoll see " << n << std::endl;
-    for ( int i = 0; i < n; ++i ) {
-      // std::cerr << "epoll i = " << i << std::endl;
-      if ( ev[i].data.fd == pipefd[0] ) {
-        // std::cerr << "on pipe\n";
-        cmd_from_pipe();
-      } else {
-        // std::cerr << "#\n";
-
-        typename fd_container_type::iterator ifd = descr.find( ev[i].data.fd );
-        if ( ifd == descr.end() ) {
-          throw std::logic_error( "file descriptor in epoll, but not in descr[]" );
+    for ( ; ; ) {
+      int n = epoll_wait( efd, &ev[0], /* n_ret */ 512, -1 );
+      if ( n < 0 ) {
+        if ( errno == EINTR ) {
+          continue;
         }
-
-        fd_info& info = ifd->second;
-        if ( info.flags & fd_info::listener ) {
-          // std::cerr << "%\n";
-          process_listener( ev[i], ifd );
+        // throw system_error
+      }
+      // std::cerr << "epoll see " << n << std::endl;
+      for ( int i = 0; i < n; ++i ) {
+        // std::cerr << "epoll i = " << i << std::endl;
+        if ( ev[i].data.fd == pipefd[0] ) {
+          // std::cerr << "on pipe\n";
+          cmd_from_pipe();
         } else {
-          // std::cerr << "not listener\n";
-          process_regular( ev[i], ifd );
+          // std::cerr << "#\n";
+
+          typename fd_container_type::iterator ifd = descr.find( ev[i].data.fd );
+          if ( ifd == descr.end() ) {
+            throw std::logic_error( "file descriptor in epoll, but not in descr[]" );
+          }
+
+          fd_info& info = ifd->second;
+          if ( info.flags & fd_info::listener ) {
+            // std::cerr << "%\n";
+            process_listener( ev[i], ifd );
+          } else {
+            // std::cerr << "not listener\n";
+            process_regular( ev[i], ifd );
+          }
         }
       }
     }
-  }
   }
   catch ( std::exception& e ) {
     std::cerr << e.what() << std::endl;
@@ -828,8 +828,8 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
     // throw system_error
     // std::cerr << "Read pipe\n";
   } else if ( r == 0 ) {
-    std::cerr << "Read pipe 0\n";
-    return;
+    // std::cerr << "Read pipe 0\n";
+    throw runtime_error( "Read pipe return 0" );
   }
 
   switch ( _ctl.cmd ) {
@@ -877,7 +877,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
       break;
     case rqstop:
       // std::cerr << "Stop request\n";
-      return;
+      throw runtime_error( "Stop request (normal flow)" );
       break;
   }
 }
