@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/04/02 01:48:59 ptr>
+// -*- C++ -*- Time-stamp: <08/04/04 01:06:58 ptr>
 
 /*
  *
@@ -271,7 +271,7 @@ int EXAM_IMPL(sockios2_test::processor_core)
 
       unique_lock<mutex> lk( worker::lock );
 
-      worker::cnd.timed_wait( lk, milliseconds( 100 ), visits_counter1 );
+      worker::cnd.timed_wait( lk, milliseconds( 500 ), visits_counter1 );
       
       EXAM_CHECK( worker::visits == 1 );
       worker::visits = 0;
@@ -304,7 +304,7 @@ int EXAM_IMPL(sockios2_test::processor_core)
 //      }
       unique_lock<mutex> lk( worker::lock );
 
-      worker::cnd.timed_wait( lk, milliseconds( 500 ), visits_counter2 );
+      worker::cnd.timed_wait( lk, milliseconds( 1000 ), visits_counter2 );
 
       EXAM_CHECK( worker::visits == 2 );
       worker::visits = 0;

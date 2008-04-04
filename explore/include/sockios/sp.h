@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/04/03 01:05:05 ptr>
+// -*- C++ -*- Time-stamp: <08/04/04 01:02:50 ptr>
 
 /*
  * Copyright (c) 2008
@@ -77,7 +77,11 @@ class sock_processor_base :
       { sock_processor_base::open( port, t, sock_base2::inet ); }
 
     virtual ~sock_processor_base()
-      { sock_processor_base::close(); }
+      {
+        sock_processor_base::close();
+
+        basic_socket<charT,traits,_Alloc>::mgr->final( *this );
+      }
 
     void open( const in_addr& addr, int port, sock_base2::stype type, sock_base2::protocol prot );
 
@@ -722,6 +726,8 @@ class sockmgr
         closed_queue[_fd] = info;
       }
 
+    void final( socks_processor_t& p );
+
     void exit_notify( sockbuf_t* b, int fd )
       {
         fd_info info = { 0, reinterpret_cast<sockstream_t*>(b), 0 };
@@ -759,7 +765,39 @@ class sockmgr
     fd_container_type descr;
     fd_container_type closed_queue;
     std::tr2::mutex cll;
+    std::tr2::mutex dll;
 };
+
+template<class charT, class traits, class _Alloc>
+void sockmgr<charT,traits,_Alloc>::final( sockmgr<charT,traits,_Alloc>::socks_processor_t& p )
+{
+  // lock descr here ... should be
+  std::tr2::lock_guard<std::tr2::mutex> lk_descr( dll );
+
+  for ( typename fd_container_type::iterator ifd = descr.begin(); ifd != descr.end(); ) {
+    if ( (ifd->second.flags & fd_info::owner) && (ifd->second.p == &p) ) {
+      std::cerr << (void*)&p << " " << (void*)ifd->second.s.s << std::endl;
+      p( *ifd->second.s.s, typename socks_processor_t::adopt_close_t() );
+      delete ifd->second.s.s;
+      if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
+        // throw system_error
+      }
+      descr.erase( ifd++ );
+    } else {
+      ++ifd;
+    }
+  }
+
+  std::tr2::lock_guard<std::tr2::mutex> lk( cll );
+
+  // I can't use  closed_queue.erase( p.fd() ) here: fd is -1 already
+  for ( typename fd_container_type::iterator closed_ifd = closed_queue.begin(); closed_ifd != closed_queue.end(); ++closed_ifd ) {
+    if ( closed_ifd->second.p == &p ) {
+      closed_queue.erase( closed_ifd );
+      break;
+    }
+  }
+}
 
 template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::io_worker()
@@ -780,6 +818,7 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
   try {
     for ( ; ; ) {
       int n = epoll_wait( efd, &ev[0], /* n_ret */ 512, -1 );
+
       if ( n < 0 ) {
         if ( errno == EINTR ) {
           continue;
@@ -787,6 +826,9 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
         // throw system_error
       }
       // std::cerr << "epoll see " << n << std::endl;
+
+      std::tr2::lock_guard<std::tr2::mutex> lk( dll );
+
       for ( int i = 0; i < n; ++i ) {
         // std::cerr << "epoll i = " << i << std::endl;
         if ( ev[i].data.fd == pipefd[0] ) {
@@ -934,6 +976,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
       
       try {
         s = new sockstream_t();
+        std::cerr << "sockstream_t: " << (void*)s << std::endl;
         if ( s->rdbuf()->_open_sockmgr( fd, addr ) ) {
           epoll_event ev_add;
           ev_add.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
@@ -1103,6 +1146,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
     if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
       // throw system_error
     }
+    bool need_delete = true;
     if ( info.p != 0 ) {
       std::tr2::lock_guard<std::tr2::mutex> lk( cll );
       typename fd_container_type::iterator closed_ifd = closed_queue.begin();
@@ -1114,11 +1158,13 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
       if ( closed_ifd == closed_queue.end() ) {
         (*info.p)( *info.s.s, typename socks_processor_t::adopt_close_t() );
       } else {
+        need_delete = false; // will be deleted in 'final' method
         std::cerr << "@@@ 4\n" << std::endl;
       }
     }
-    if ( (info.flags & fd_info::owner) != 0 ) {
+    if ( (info.flags & fd_info::owner) != 0 && need_delete ) {
       delete info.s.s;
+      info.s.s = 0;
     } else {
       if ( (info.flags & fd_info::buffer) != 0 ) {
         info.s.b->close();
