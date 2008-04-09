@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/04/04 01:06:58 ptr>
+// -*- C++ -*- Time-stamp: <08/04/09 21:18:52 yeti>
 
 /*
  *
@@ -43,7 +43,7 @@ class simple_mgr :
       { }
 
     ~simple_mgr()
-      { cerr << "In destructor\n"; }
+      { /* cerr << "In destructor\n"; */ }
 
   protected:
     virtual void operator ()( sockstream_t& s, const adopt_new_t& )
@@ -259,6 +259,7 @@ int EXAM_IMPL(sockios2_test::processor_core)
     EXAM_CHECK( prss.good() );
     EXAM_CHECK( prss.is_open() );
 
+    std::cerr << __FILE__ << ":" << __LINE__ << " " << std::tr2::getpid() << std::endl;
     {
       sockstream2 s( "localhost", 2008 );
 
@@ -276,6 +277,7 @@ int EXAM_IMPL(sockios2_test::processor_core)
       EXAM_CHECK( worker::visits == 1 );
       worker::visits = 0;
     }
+    std::cerr << __FILE__ << ":" << __LINE__ << " " << std::tr2::getpid() << std::endl;
   }
   {
     lock_guard<mutex> lk( worker::lock );
@@ -304,7 +306,7 @@ int EXAM_IMPL(sockios2_test::processor_core)
 //      }
       unique_lock<mutex> lk( worker::lock );
 
-      worker::cnd.timed_wait( lk, milliseconds( 1000 ), visits_counter2 );
+      worker::cnd.timed_wait( lk, milliseconds( 500 ), visits_counter2 );
 
       EXAM_CHECK( worker::visits == 2 );
       worker::visits = 0;
@@ -401,6 +403,9 @@ int EXAM_IMPL(sockios2_test::fork)
       EXAM_CHECK( worker::visits == 0 );
 
       this_thread::fork();
+
+      std::cerr << __FILE__ << ":" << __LINE__ << " " << std::tr2::getpid() << std::endl;
+
       {
         connect_processor<worker> prss( 2008 );
 
@@ -416,6 +421,8 @@ int EXAM_IMPL(sockios2_test::fork)
 
         EXAM_CHECK_ASYNC( worker::visits == 1 );
       }
+
+      std::cerr << __FILE__ << ":" << __LINE__ << " " << std::tr2::getpid() << std::endl;
 
       exit( 0 );
     }

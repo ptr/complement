@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/27 17:18:22 yeti>
+// -*- C++ -*- Time-stamp: <08/04/09 13:02:18 yeti>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -25,6 +25,7 @@
 #include <mt/mutex>
 #include <mt/condition_variable>
 #include <mt/date_time>
+#include <mt/thread>
 
 #include <netdb.h>
 #include <netinet/in.h>
@@ -311,6 +312,7 @@ void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
       }
 #endif
 //       _sock_processor_base::_idx = std::tr2::this_thread::xalloc();
+      std::cerr << __FILE__ << ":" << __LINE__ << " new mgr " << std::tr2::getpid() << std::endl;
     }
   } else {
     std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
@@ -318,6 +320,7 @@ void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
       if ( basic_socket<charT,traits,_Alloc>::mgr == 0 ) {
         std::cerr << __FILE__ << ":" << __LINE__ << " shit happens\n";
       }
+      std::cerr << __FILE__ << ":" << __LINE__ << " mgr destroyed " << std::tr2::getpid() << std::endl;
       delete basic_socket<charT,traits,_Alloc>::mgr;
       basic_socket<charT,traits,_Alloc>::mgr = 0;
     }
