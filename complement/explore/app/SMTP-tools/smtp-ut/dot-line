@@ -1,0 +1,28 @@
+# comment
+connect $1 $2
+expected 220
+EHLO $3
+expected 250
+MAIL FROM:<$4>
+expected 250
+RCPT TO:<$4>
+expected 250
+#send $5 $6
+DATA
+expected 354
+>>>A
+Subject: KL smtp relay test
+
+Expected 1 and 2 should be here: 1, 2. More chars.
+.
+You must see this line.
+
+.
+
+And this line too!
+<<<A
+expected 250
+#wait
+QUIT
+expected 221
+disconnect

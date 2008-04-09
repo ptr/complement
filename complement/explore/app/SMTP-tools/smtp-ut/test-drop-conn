@@ -1,0 +1,73 @@
+# --------------
+connect $1 $2
+expected 220
+HELO $3
+expected 250
+QUIT
+expected 221
+disconnect
+# --------------
+# --------------
+connect $1 $2
+expected 220
+EHLO $3
+expected 250
+MAIL FROM:<$4>
+expected 250
+disconnect
+# --------------
+connect $1 $2
+expected 220
+EHLO $3
+expected 250
+disconnect
+# --------------
+connect $1 $2
+expected 220
+EHLO $3
+expected 250
+MAIL FROM:<$4>
+expected 250
+RCPT TO:<$5>
+expected 250
+disconnect
+# --------------
+connect $1 $2
+expected 220
+EHLO $3
+expected 250
+MAIL FROM:<$4>
+expected 250
+RCPT TO:<$5>
+expected 250
+DATA
+expected 354
+>>>A
+Subject: KL smtp relay test
+
+Sample mess
+<<<A
+expected 250
+MAIL FROM:<$4>
+expected 250
+RCPT TO:<$5>
+expected 250
+disconnect
+# --------------
+connect $1 $2
+expected 220
+EHLO $3
+expected 250
+MAIL FROM:<$4>
+expected 250
+RCPT TO:<$5>
+expected 250
+DATA
+expected 354
+>>>A
+Subject: KL smtp relay test
+
+Sample mess
+<<<A
+expected 250
+disconnect
