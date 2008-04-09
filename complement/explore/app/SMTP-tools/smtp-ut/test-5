@@ -1,0 +1,21 @@
+# comment
+connect localhost 10025
+expected 220
+EHLO peak.avp.ru
+expected 250
+MAIL FROM:<ptr@peak.avp.ru>
+expected 250
+RCPT TO:<ptr@peak.avp.ru>
+expected 250
+DATA
+expected 354
+>>>A
+Subject: KL smtp relay test
+X-smtpgw-test: some text here
+
+Expected 1
+<<<A
+expected 250
+QUIT
+expected 221
+disconnect

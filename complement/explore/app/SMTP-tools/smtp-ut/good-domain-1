@@ -1,0 +1,8 @@
+# comment
+connect localhost 10025
+expected 220
+EHLO peak.avp.ru
+expected 250
+QUIT
+expected 221
+disconnect

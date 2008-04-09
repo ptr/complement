@@ -1,0 +1,111 @@
+# --------------
+connect $1 $2
+expected 220
+QUIT
+expected 221
+disconnect
+# --------------
+# --------------
+connect $1 $2
+expected 220
+RSET
+expected 250
+EXPN some@host.com
+expected
+HELP
+expected 250
+NOOP
+expected 250
+VRFY some@host.com
+expected
+HELO $3
+expected 250
+EHLO $3
+expected 250
+RSET
+expected 250
+VRFY some@host.com
+expected
+EXPN some@host.com
+expected
+HELP
+expected 250
+NOOP
+expected 250
+QUIT
+expected 221
+disconnect
+# --------------
+# --------------
+connect $1 $2
+expected 220
+EHLO $3
+expected 250
+MAIL FROM:<$4>
+expected 250
+NOOP
+expected 250
+HELP
+expected 250
+EHLO $3
+expected 250
+MAIL FROM:<$4>
+expected 250
+RSET
+expected 250
+MAIL FROM:<$4>
+expected 250
+QUIT
+expected 221
+disconnect
+# --------------
+# --------------
+connect $1 $2
+expected 220
+EHLO $3
+expected 250
+MAIL FROM:<$4>
+expected 250
+RCPT TO:<$5>
+expected 250
+RSET
+expected 250
+MAIL FROM:<$4>
+expected 250
+RCPT TO:<$5>
+expected 250
+EHLO $3
+expected 250
+MAIL FROM:<$4>
+expected 250
+RCPT TO:<$5>
+expected 250
+QUIT
+expected 221
+disconnect
+# --------------
+# --------------
+connect $1 $2
+expected 220
+EHLO $3
+expected 250
+MAIL FROM:<$4>
+expected 250
+RCPT TO:<$5>
+expected 250
+NOOP
+expected 250
+HELP
+expected 250
+DATA
+expected 354
+>>>A
+Subject: KL smtp relay test
+
+Sample mess
+<<<A
+expected 250
+QUIT
+expected 221
+disconnect
+# --------------
