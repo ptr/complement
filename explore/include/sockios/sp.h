@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/04/09 20:14:14 yeti>
+// -*- C++ -*- Time-stamp: <08/04/11 22:14:39 yeti>
 
 /*
  * Copyright (c) 2008
@@ -100,9 +100,9 @@ class sock_processor_base :
 
     virtual void close();
 
-    virtual void operator ()( sockstream_t& s, const adopt_new_t& ) = 0;
-    virtual void operator ()( sockstream_t& s, const adopt_close_t& ) = 0;
-    virtual void operator ()( sockstream_t& s, const adopt_data_t& ) = 0;
+    virtual void operator ()( int fd, const adopt_new_t& ) = 0;
+    virtual void operator ()( int fd, const adopt_close_t& ) = 0;
+    virtual void operator ()( int fd, const adopt_data_t& ) = 0;
 
   private:
     sock_processor_base( const sock_processor_base& );
@@ -110,6 +110,12 @@ class sock_processor_base :
 
   protected:
     void setoptions_unsafe( sock_base2::so_t optname, bool on_off = true, int __v = 0 );
+    sockstream_t* create_stream( int fd )
+      {
+        typename base_t::sockstream_t* s = new typename base_t::sockstream_t();
+        s->rdbuf()->_open_sockmgr( fd, addr );
+        return s;
+      }
 
   public:
     bool is_open() const
@@ -208,10 +214,9 @@ class connect_processor :
       { if ( ploop.joinable() ) { ploop.join(); } }
 
   private:
-    virtual void operator ()( typename base_t::sockstream_t& s, const typename base_t::adopt_new_t& );
-    virtual void operator ()( typename base_t::sockstream_t& s, const typename base_t::adopt_close_t& );
-    virtual void operator ()( typename base_t::sockstream_t& s, const typename base_t::adopt_data_t& );
-
+    virtual void operator ()( int fd, const typename base_t::adopt_new_t& );
+    virtual void operator ()( int fd, const typename base_t::adopt_close_t& );
+    virtual void operator ()( int fd, const typename base_t::adopt_data_t& );
 
     static void loop( connect_processor* me )
       { me->worker(); }
@@ -251,6 +256,13 @@ class connect_processor :
          { return s == p.s; }
        bool operator ==( const typename sock_processor_base<charT,traits,_Alloc>::sockstream_t* st ) const
          { return const_cast<const typename sock_processor_base<charT,traits,_Alloc>::sockstream_t*>(s) == st; }
+       bool operator ==( int fd ) const
+         {
+           if ( s == 0 ) {
+             return fd == -1;
+           }
+           return s->rdbuf()->fd() == fd;
+         }
 
 /*
        struct equal_to :
@@ -265,13 +277,13 @@ class connect_processor :
     bool pop_ready( processor& );
 
 #ifdef __USE_STLPORT_HASH
-    typedef std::hash_map<typename base_t::sockstream_t*,Connect*> worker_pool_t;
+    typedef std::hash_map<int,processor> worker_pool_t;
 #endif
 #ifdef __USE_STD_HASH
-    typedef __gnu_cxx::hash_map<typename base_t::sockstream_t*,Connect*> worker_pool_t;
+    typedef __gnu_cxx::hash_map<int,processor> worker_pool_t;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::tr1::unordered_map<typename base_t::sockstream_t*,Connect*> worker_pool_t;
+    typedef std::tr1::unordered_map<int,processor> worker_pool_t;
 #endif
     typedef std::deque<processor> ready_pool_t;
 

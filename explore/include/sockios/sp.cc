@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/04/09 20:17:13 yeti>
+// -*- C++ -*- Time-stamp: <08/04/11 21:52:28 yeti>
 
 /*
  * Copyright (c) 2008
@@ -199,9 +199,12 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::close()
 }
 
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
-void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockstream_t& s, const typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::adopt_new_t& )
+void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( int fd, const typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::adopt_new_t& )
 {
-  Connect* c = new Connect( s );
+  typename base_t::sockstream_t* s = base_t::create_stream( fd );
+
+  Connect* c = new Connect( s ); // bad point! I can't read from s in ctor indeed!
+
   if ( s.rdbuf()->in_avail() ) {
     std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
     ready_pool.push_back( processor( c, &s ) );
@@ -213,13 +216,14 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( typename
 }
 
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
-void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockstream_t& s, const typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::adopt_close_t& )
+void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( int fd, const typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::adopt_close_t& )
 {
   {
     std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-    typename worker_pool_t::iterator i = worker_pool.find( &s );
+    typename worker_pool_t::iterator i = worker_pool.find( fd );
     if ( i != worker_pool.end() ) {
-      delete i->second;
+      delete i->second.s;
+      delete i->second.c;
       // std::cerr << "oops\n";
       worker_pool.erase( i );
       return;
@@ -229,7 +233,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( typename
   Connect* c = 0;
   {
     std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
-    typename ready_pool_t::iterator j = std::find( ready_pool.begin(), ready_pool.end(), /* std::bind2nd( typename processor::equal_to(), &s ) */ &s );
+    typename ready_pool_t::iterator j = std::find( ready_pool.begin(), ready_pool.end(), /* std::bind2nd( typename processor::equal_to(), &s ) */ fd );
     if ( j != ready_pool.end() ) {
       // std::cerr << "oops 2\n";
       c = j->c;
@@ -243,22 +247,22 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( typename
 }
 
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
-void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockstream_t& s, const typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::adopt_data_t& )
+void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( int fd, const typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::adopt_data_t& )
 {
-  Connect* c;
+  processor p;
 
   {
     std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-    typename worker_pool_t::const_iterator i = worker_pool.find( &s );
+    typename worker_pool_t::const_iterator i = worker_pool.find( fd );
     if ( i == worker_pool.end() ) {
       return;
     }
-    c = i->second;
+    p = i->second;
     worker_pool.erase( i );
   }
 
   std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
-  ready_pool.push_back( processor( c, &s ) );
+  ready_pool.push_back( p );
   cnd.notify_one();
   // std::cerr << "notify data " << (void *)c << " " << ready_pool.size() << std::endl;
 }
@@ -489,45 +493,35 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
       if ( fcntl( fd, F_SETFL, fcntl( fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
         throw std::runtime_error( "can't establish nonblock mode" );
       }
-      sockstream_t* s;
       
       try {
-        s = new sockstream_t();
-        std::cerr << __FILE__ << ":" << __LINE__ << " new sockstream_t: " << (void*)s << std::endl;
-        if ( s->rdbuf()->_open_sockmgr( fd, addr ) ) {
-          epoll_event ev_add;
-          ev_add.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-          ev_add.data.fd = fd;
-          fd_info new_info = { fd_info::owner, s, info.p };
-          descr[fd] = new_info;
+        std::cerr << __FILE__ << ":" << __LINE__ << " new sockstream_t" << std::endl;
+        (*info.p)( fd, typename socks_processor_t::adopt_new_t() );
 
-          if ( epoll_ctl( efd, EPOLL_CTL_ADD, fd, &ev_add ) < 0 ) {
-            std::cerr << "Accept, add " << fd << ", errno " << errno << std::endl;
-            descr.erase( fd );
-            // throw system_error
-          }
-          std::cerr << __FILE__ << ":" << __LINE__ << " adopt_new_t()\n";
-          bool in_closed = false;
-          {
-            std::tr2::lock_guard<std::tr2::mutex> lk( cll );
-            typename fd_container_type::iterator closed_ifd = closed_queue.begin();
-            for ( ; closed_ifd != closed_queue.end(); ++closed_ifd ) {
-              if ( closed_ifd->second.p == info.p ) {
-                in_closed = true;
-                std::cerr << "@@@ 1\n" << std::endl;
-                break;
-              }
+        epoll_event ev_add;
+        ev_add.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+        ev_add.data.fd = fd;
+        fd_info new_info = { fd_info::owner, s, info.p };
+        descr[fd] = new_info;
+
+        if ( epoll_ctl( efd, EPOLL_CTL_ADD, fd, &ev_add ) < 0 ) {
+          std::cerr << "Accept, add " << fd << ", errno " << errno << std::endl;
+          descr.erase( fd );
+          // throw system_error
+        }
+
+        std::cerr << __FILE__ << ":" << __LINE__ << " adopt_new_t()\n";
+        bool in_closed = false;
+        {
+          std::tr2::lock_guard<std::tr2::mutex> lk( cll );
+          typename fd_container_type::iterator closed_ifd = closed_queue.begin();
+          for ( ; closed_ifd != closed_queue.end(); ++closed_ifd ) {
+            if ( closed_ifd->second.p == info.p ) {
+              in_closed = true;
+              std::cerr << "@@@ 1\n" << std::endl;
+              break;
             }
           }
-          if ( !in_closed ) {
-            std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)s << std::endl;
-            (*info.p)( *s, typename socks_processor_t::adopt_new_t() );
-            std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)s << std::endl;
-          }
-        } else {
-          std::cerr << "Accept, delete " << fd << std::endl;
-          std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)s << std::endl;
-          delete s;
         }
       }
       catch ( const std::bad_alloc& ) {
@@ -535,7 +529,6 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
       }
       catch ( ... ) {
         descr.erase( fd );
-        delete s;
       }
     }
   } else {
