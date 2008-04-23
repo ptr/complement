@@ -1,28 +1,30 @@
-# -*- Makefile -*- Time-stamp: <03/10/07 18:28:29 ptr>
-# $Id: Makefile,v 1.2 2004/06/16 14:29:20 ptr Exp $
+# -*- Makefile -*- Time-stamp: <08/04/23 09:38:04 ptr>
 
-SRCROOT := ../../../../extern/complement
-# SRCROOT := /export/home/ptr/island/workshop/explore
-COMPILER_NAME := gcc
+SRCROOT := ../../..
 
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
+LIBMT_DIR = ${CoMT_DIR}/lib/mt
+LIBSOCKIOS_DIR = ${CoMT_DIR}/lib/sockios
+LIBMISC_DIR = ${CoMT_DIR}/lib/misc
+# LIBUTF_DIR = ${CoMT_DIR}/../extern/custom/boost/libs/test/unit_test_framework
+# LIBEXAM_DIR = ${CoMT_DIR}/lib/exam
+# LIBFS_DIR = ${CoMT_DIR}/../extern/custom/boost/libs/filesystem
 
 DEFS += -D_NO_TEST
 INCLUDES += -I$(SRCROOT)/include -I$(STLPORT_INCLUDE_DIR) -I$(BOOST_INCLUDE_DIR)
 
-release-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR}
-stldbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_STLDBG}
-dbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_DBG}
-
-ifeq ($(OSNAME),sunos)
-release-shared : LDLIBS = -lstlport_gcc -lrt
-stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug -lrt
-dbg-shared     : LDLIBS = -lstlport_gcc -lrt
-else
-release-shared : LDLIBS = -lstlport_gcc -lxmt_gcc -lsockios_gcc -lmisc_gcc
-stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug -lxmt_gcc_stl-g -lsockios_gcc_stl-g -lmisc_gcc_stl-g
-dbg-shared     : LDLIBS = -lstlport_gcc -lxmt_gcc-g -lsockios_gcc-g -lmisc_gcc-g
+release-shared:	LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR} -L${LIBSOCKIOS_DIR}/${OUTPUT_DIR} -L${LIBMISC_DIR}/${OUTPUT_DIR}
+dbg-shared:	LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR_DBG} -L${LIBSOCKIOS_DIR}/${OUTPUT_DIR_DBG} -L${LIBMISC_DIR}/${OUTPUT_DIR_DBG}
+ifndef WITHOUT_STLPORT
+stldbg-shared:	LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSOCKIOS_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBMISC_DIR}/${OUTPUT_DIR_STLDBG}
 endif
+
+release-shared : LDLIBS = -lxmt -lsockios -lmisc
+dbg-shared     : LDLIBS = -lxmtg -lsockiosg -lmiscg
+ifndef WITHOUT_STLPORT
+stldbg-shared  : LDLIBS = -lxmtstlg -lsockiosstlg -lmiscstlg
+endif
+
 
