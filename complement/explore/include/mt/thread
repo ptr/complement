@@ -248,16 +248,15 @@ class basic_thread :
           _stack_on_create = s.str();
         }
 #endif
-        int err = pthread_create( &this->_id, F != 0 || S != 0 ? &attr : 0, &_call<Entry>, this );
+        native_handle_type _id_tmp;
+        int err = pthread_create( (F & detached) != 0 ? &_id_tmp : &this->_id, F != 0 || S != 0 ? &attr : 0, &_call<Entry>, this );
         if ( err != 0 ) {
-          // _id = id(); -- not required, already set
+          // _id = id(); -- not required, already set if required
           delete static_cast<Entry *>(_entry);
           if ( F & detached ) {
             // reset condition (_entry free, ready for delete)
             _entry = 0;
           }
-        } else if ( F & detached ) {
-          _id = id()._id;
         }
         if ( F != 0 || S != 0 ) {
           pthread_attr_destroy( &attr );
@@ -298,17 +297,16 @@ class basic_thread :
           _stack_on_create = s.str();
         }
 #endif
-        int err = pthread_create( &this->_id, F != 0 || S != 0 ? &attr : 0, &_call<Entry,Arg1>, this );
+        native_handle_type _id_tmp;
+        int err = pthread_create( (F & detached) != 0 ? &_id_tmp : &this->_id, F != 0 || S != 0 ? &attr : 0, &_call<Entry,Arg1>, this );
         if ( err != 0 ) {
-          // _id = id(); -- not required, already set
+          // _id = id(); -- not required, already set if required
           delete static_cast<Arg1 *>( static_cast<void **>(_entry)[1] );
           delete static_cast<Entry *>( static_cast<void **>(_entry)[0] );
           delete [] static_cast<void **>(_entry);
           if ( F & detached ) {
             _entry = 0; // reset condition (_entry free, ready for delete)
           }
-        } else if ( F & detached ) {
-          _id = id()._id;
         }
         if ( F != 0 || S != 0 ) {
           pthread_attr_destroy( &attr );
