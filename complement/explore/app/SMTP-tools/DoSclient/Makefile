@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <08/04/23 09:38:04 ptr>
+# -*- Makefile -*- Time-stamp: <08/04/23 09:48:37 ptr>
 
 SRCROOT := ../../..
 
@@ -13,7 +13,7 @@ LIBMISC_DIR = ${CoMT_DIR}/lib/misc
 # LIBFS_DIR = ${CoMT_DIR}/../extern/custom/boost/libs/filesystem
 
 DEFS += -D_NO_TEST
-INCLUDES += -I$(SRCROOT)/include -I$(STLPORT_INCLUDE_DIR) -I$(BOOST_INCLUDE_DIR)
+INCLUDES += -I$(SRCROOT)/include -I$(BOOST_INCLUDE_DIR)
 
 release-shared:	LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR} -L${LIBSOCKIOS_DIR}/${OUTPUT_DIR} -L${LIBMISC_DIR}/${OUTPUT_DIR}
 dbg-shared:	LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR_DBG} -L${LIBSOCKIOS_DIR}/${OUTPUT_DIR_DBG} -L${LIBMISC_DIR}/${OUTPUT_DIR_DBG}

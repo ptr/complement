@@ -1,28 +1,26 @@
 # -*- Makefile -*- Time-stamp: <04/05/06 14:30:08 ptr>
-# $Id: Makefile,v 1.1 2004/06/16 14:24:07 ptr Exp $
 
-#SRCROOT := ../../../../extern/complement
-SRCROOT := ../../../../../../island/workshop/explore
-COMPILER_NAME := gcc
+SRCROOT := ../../../..
 
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
+LIBMT_DIR = ${CoMT_DIR}/lib/mt
+LIBSOCKIOS_DIR = ${CoMT_DIR}/lib/sockios
+LIBMISC_DIR = ${CoMT_DIR}/lib/misc
+LIBBOOSTRE_DIR = ${CoMT_DIR}/../extern/custom/boost/lib/regex
 
 DEFS += -D_NO_TEST
-INCLUDES += -I$(SRCROOT)/include -I$(STLPORT_INCLUDE_DIR) -I$(BOOST_INCLUDE_DIR)
+INCLUDES += -I$(SRCROOT)/include -I$(BOOST_INCLUDE_DIR)
 
-release-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR} -Wl,-rpath=${STLPORT_LIB_DIR}
-stldbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_STLDBG} -Wl,-rpath=${STLPORT_LIB_DIR}
-dbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_DBG} -Wl,-rpath=${STLPORT_LIB_DIR}
-
-ifeq ($(OSNAME),sunos)
-release-shared : LDLIBS = -lstlport_gcc -lrt
-stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug -lrt
-dbg-shared     : LDLIBS = -lstlport_gcc_debug -lrt
-else
-release-shared : LDLIBS = -lstlport_gcc -lxmt_gcc -lsockios_gcc -lmisc_gcc -lboost_regex_gcc
-stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug -lxmt_gcc_stl-g -lsockios_gcc_stl-g -lmisc_gcc_stl-g -lboost_regex_gcc_stl-g
-dbg-shared     : LDLIBS = -lstlport_gcc_debug -lxmt_gcc-g -lsockios_gcc-g -lmisc_gcc-g -lboost_regex_gcc-g
+release-shared:	LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR} -L${LIBSOCKIOS_DIR}/${OUTPUT_DIR} -L${LIBMISC_DIR}/${OUTPUT_DIR} -L$(LIBBOOSTRE_DIR)/${OUTPUT_DIR}
+dbg-shared:	LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR_DBG} -L${LIBSOCKIOS_DIR}/${OUTPUT_DIR_DBG} -L${LIBMISC_DIR}/${OUTPUT_DIR_DBG} -L$(LIBBOOSTRE_DIR)/${OUTPUT_DIR_DBG}
+ifndef WITHOUT_STLPORT
+stldbg-shared:	LDSEARCH += -L${LIBMT_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSOCKIOS_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBMISC_DIR}/${OUTPUT_DIR_STLDBG} -L$(LIBBOOSTRE_DIR)/${OUTPUT_DIR_STLDBG}
 endif
 
+release-shared : LDLIBS += -lxmt -lsockios -lmisc -lboost_regex
+dbg-shared     : LDLIBS += -lxmtg -lsockiosg -lmiscg -lboost_regexg
+ifndef WITHOUT_STLPORT
+stldbg-shared:	LDLIBS += -lxmtstlg -lsockiosstl -lmiscstlg -lboost_regexstlg
+endif

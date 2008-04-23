@@ -1,16 +1,11 @@
 // -*- C++ -*- Time-stamp: <04/06/16 12:51:35 ptr>
 
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id: smtp-batch.cc,v 1.1 2004/06/16 14:24:07 ptr Exp $"
-#  else
-#ident "@(#)$Id: smtp-batch.cc,v 1.1 2004/06/16 14:24:07 ptr Exp $"
-#  endif
-#endif
+#include <mt/thread>
+#include <mt/mutex>
+#include <mt/condition_variable>
 
+#include <mt/date_time>
 
-#include <mt/xmt.h>
-#include <mt/time.h>
 #include <sockios/sockstream>
 #include <misc/args.h>
 
@@ -23,6 +18,7 @@
 
 using namespace std;
 using namespace boost;
+using namespace std::tr2;
 
 struct conn
 {
@@ -68,7 +64,8 @@ enum command_type {
 
 map<command_type,string> CMD;
 sockstream tecol;
-__impl::Condition tecol_ready;
+mutex tecol_ready_lk;
+condition_variable tecol_ready;
 
 void init_map()
 {
@@ -405,14 +402,14 @@ void interpret( istream& is, const Argv& arg )
               send_flag = true;
               {
                 stringstream ss;
-                timespec t;
-                __impl::Thread::gettime( &t );
-                ss << t.tv_sec << "."
+                system_time t = get_system_time();
+                ss << t.seconds_since_epoch() << "."
                    << setiosflags(ios_base::right) << setfill('0') << setw(9)
-                   << t.tv_nsec << "-" << my_host_name;
+                   << (t.nanoseconds_since_epoch() - seconds(t.seconds_since_epoch()) ).count() << "-" << my_host_name;
                 if ( !tecol.is_open() ) {
+                  lock_guard<mutex> lk( tecol_ready_lk );
                   tecol.open( host.c_str(), port );
-                  tecol_ready.set( true );
+                  tecol_ready.notify_one();
                 }//  else if ( host changed or port changed ) {
                 // }
                 tecol << "id=" << ss.str() << " " << "action=out" << endl;
@@ -461,19 +458,17 @@ void interpret( istream& is, const Argv& arg )
               getline( ss, rest );
               if ( !nodelay ) {
                 istringstream str( rest );
-                timespec t;
-                str >> t.tv_sec;
+                int tsec;
+                str >> tsec;
+                seconds sec( tsec );
+                nanoseconds t( sec );
                 if ( !str.fail() ) {
-                  if ( t.tv_sec > 0 ) {
-                    t.tv_nsec = lrand48() % 2000000000;
-                    if ( t.tv_nsec > 1000000000 ) {
-                      --t.tv_sec;
-                      t.tv_nsec -= 1000000000;
-                    }
+                  if ( sec.count() > 0 ) {
+                    t += nanoseconds( (lrand48() % 2000000000) - 1000000000 );
                   } else {
-                    t.tv_nsec = lrand48() % 1000000000;
+                    t += nanoseconds( lrand48() % 1000000000 );
                   }
-                  __impl::Thread::delay( &t );
+                  this_thread::sleep( t );
                 }
               }
               break;
@@ -501,9 +496,10 @@ void interpret( istream& is, const Argv& arg )
   }
 }
 
-int read_tecol( void * )
+void read_tecol()
 {
-  tecol_ready.try_wait();
+  unique_lock<mutex> lk( tecol_ready_lk );
+  tecol_ready.wait( lk );
 
   string s;
 
@@ -513,8 +509,6 @@ int read_tecol( void * )
       cout << s << endl;
     }
   }
-
-  return 0;
 }
 
 int main( int argc, char * const *argv )
@@ -524,7 +518,7 @@ int main( int argc, char * const *argv )
 
   try {
     Argv arg;
-    arg.copyright( "Copyright (C) K     sky Lab, 2003, 2004" );
+    arg.copyright( "Copyright (C) Petr Ovtchenkov 2003, 2004, 2008" );
     arg.brief( "Mail script interpreter" );
     arg.option( "-h", false, "print this help message" );
     arg.option( "-f", string( "" ), "script file, default stdin" );
@@ -547,9 +541,7 @@ int main( int argc, char * const *argv )
     string fname;
     arg.assign( "-f", fname );
 
-    tecol_ready.set( false );
-
-    __impl::Thread t( read_tecol, 0, 0, __impl::Thread::detached );
+    basic_thread<thread_base::detached,0> t( read_tecol );
 
     if ( fname.length() != 0 ) {
       ifstream script( fname.c_str() );
