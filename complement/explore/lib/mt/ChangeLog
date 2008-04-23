@@ -1,5 +1,12 @@
 2008-04-23  Petr Ovtchenkov  <ptr@island.corbina.net>
 
+	* mutex: remove STLport-specific macro STATIC_CAST;
+
+	* date_time.cc: include sys/time.h required for gettimeofday;
+	patch #1938561;
+
+	* libxmt: bump revision to 2.0.2;
+
 	* thread: fix access to thread's _id in case of detached thread;
 	really take thread's id into fake variable and keep _id as
 	bad_thread_id.
