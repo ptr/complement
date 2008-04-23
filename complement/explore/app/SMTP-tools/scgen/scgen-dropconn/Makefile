@@ -1,28 +1,8 @@
-# -*- Makefile -*- Time-stamp: <03/09/08 14:55:56 ptr>
-# $Id: Makefile,v 1.1 2003/10/07 10:50:16 ptr Exp $
+# -*- Makefile -*- Time-stamp: <08/04/23 10:17:12 ptr>
 
-SRCROOT := ../../../../../extern/complement
-COMPILER_NAME := gcc
-
-ALL_TAGS := dbg-shared
+SRCROOT := ../../../..
 
 include Makefile.inc
-include ${SRCROOT}/Makefiles/top.mak
+include ${SRCROOT}/Makefiles/gmake/top.mak
 
-
-INCLUDES += -I$(SRCROOT)/include -I$(STLPORT_INCLUDE_DIR) -I$(BOOST_INCLUDE_DIR) -I..
-
-release-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR}
-stldbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_STLDBG}
-dbg-shared:	LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR_DBG}
-
-ifeq ($(OSNAME),sunos)
-release-shared : LDLIBS = -lstlport_gcc -lrt
-stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug -lrt
-dbg-shared     : LDLIBS = -lstlport_gcc -lrt
-else
-release-shared : LDLIBS = -lstlport_gcc
-stldbg-shared  : LDLIBS = -lstlport_gcc_stldebug
-dbg-shared     : LDLIBS = -lstlport_gcc
-endif
-
+INCLUDES += -I$(SRCROOT)/include -I$(BOOST_INCLUDE_DIR) -I..
