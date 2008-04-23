@@ -1,5 +1,4 @@
 # -*- Makefile -*- Time-stamp: <02/08/01 09:27:30 ptr>
-# $Id$
 
 # I have only one reason while I should use "C++" variant of MD5 instead of "C":
 # names like MD5Init is wide distributed, but some cool programmers use this
@@ -10,7 +9,7 @@
 
 LIBNAME = misc
 MAJOR = 1
-MINOR = 8
-PATCH = 1
-SRC_CC = CyrMoney.cc args.cc dir_utils.cc directory.cc _node.cc arguments.cc
+MINOR = 9
+PATCH = 0
+SRC_CC = CyrMoney.cc args.cc arguments.cc
 SRC_C = md5.c

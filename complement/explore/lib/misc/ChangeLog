@@ -1,3 +1,9 @@
+2008-04-23  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Removed directory utils and node, not used a long time.
+	
+	* libmisc: version 1.9.0.
+
 2007-08-17  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* type_traits.h: made code acceptable for gcc 3.3 [remove
