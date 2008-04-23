@@ -14,6 +14,7 @@
 
 #include <mt/date_time>
 #include <ctime>
+#include <sys/time.h>
 
 namespace std {
 
@@ -81,7 +82,7 @@ system_time get_system_time()
 {
 #if defined(__linux) || defined(__FreeBSD__) || defined(__OpenBSD__)
   timeval tv;
-  gettimeofday( &tv, 0 );
+  ::gettimeofday( &tv, 0 );
   return system_time( tv.tv_sec * nanoseconds::ticks_per_second + tv.tv_usec * 1000LL, system_time::_adopt_t() );
 #elif defined( WIN32 )
   union {
