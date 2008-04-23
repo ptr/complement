@@ -1,22 +1,15 @@
 // -*- C++ -*- Time-stamp: <04/01/21 18:04:57 ptr>
 
-#ifdef __unix
-#  ifdef __HP_aCC
-#pragma VERSIONID "@(#)$Id: doscl.cc,v 1.2 2004/06/16 14:29:20 ptr Exp $"
-#  else
-#ident "@(#)$Id: doscl.cc,v 1.2 2004/06/16 14:29:20 ptr Exp $"
-#  endif
-#endif
-
 #include <iostream>
 #include <string>
 #include <sstream>
 #include <sockios/sockstream>
-#include <mt/xmt.h>
+#include <mt/date_time>
+#include <mt/thread>
 #include <misc/args.h>
 
 using namespace std;
-using namespace __impl;
+using namespace std::tr2;
 
 int command_whole_timeout_test( iostream& s, const string& hello_host, int delay )
 {
@@ -27,11 +20,7 @@ int command_whole_timeout_test( iostream& s, const string& hello_host, int delay
 
   cout << rline << endl;
 
-  timespec t;
-  t.tv_sec = delay;
-  t.tv_nsec = 0;
-
-  Thread::delay( &t );
+  this_thread::sleep( seconds( delay ) );
 
   s << "EHLO " << hello_host << "\r" << endl;
   getline( s, rline );
@@ -57,16 +46,12 @@ int cumulative_command_timeout_test( iostream& s, const string& hello_host, int 
 
   cout << rline << endl;
 
-  timespec t;
-  t.tv_sec = delay;
-  t.tv_nsec = 0;
-
   stringstream sstr;
   sstr << "EHLO " << hello_host << "\r" << endl;
   string greeting( sstr.str() );
 
   for ( string::iterator i = greeting.begin(); i != greeting.end(); ++i ) {
-    Thread::delay( &t );
+    this_thread::sleep( seconds( delay ) );
     s << *i;
     s.flush();
     (cout << *i).flush();
@@ -90,7 +75,7 @@ int main( int argc, char * const *argv )
 {
   try {
     Argv arg;
-    arg.copyright( "Copyright (C) K     sky Lab, 2003" );
+    arg.copyright( "Copyright (C) Petr Ovtchenkov 2003, 2008" );
     arg.brief( "test for SMTP GW project" );
     arg.option( "-h", false, "print this help message" );
     arg.option( "-s", string( "" ), "host with SMTP GW server" );
