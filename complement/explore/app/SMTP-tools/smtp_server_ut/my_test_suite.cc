@@ -10,6 +10,7 @@ int EXAM_IMPL(my_test_suite)
   exam::test_suite t( "my test" );
   my_test test;
 
+  t.add( &my_test::test_gen, test, "my_test::test_gen" );
   t.add( &my_test::thread_call, test, "my_test::thread_call" );
 
   return t.girdle();
