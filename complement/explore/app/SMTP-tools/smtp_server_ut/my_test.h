@@ -13,6 +13,7 @@ class my_test
 {
   public:
     int EXAM_DECL(thread_call);
+    int EXAM_DECL(test_gen);
 };
 
 #endif // __MY_TEST_H
