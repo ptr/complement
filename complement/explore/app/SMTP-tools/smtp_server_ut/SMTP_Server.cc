@@ -1,6 +1,11 @@
+// -*- C++ -*- Time-stamp: <08/04/25 13:13:10 yeti>
+
 #include <iostream>
 #include <string>
+
 #include "SMTP_Server.h"
+
+namespace smtp {
 
 using namespace std;
 
@@ -149,3 +154,5 @@ int ServerWork() {
 	};
 	return 0;
 }
+
+} // namespace smtp
