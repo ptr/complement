@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/04/25 12:51:09 yeti>
+// -*- C++ -*- Time-stamp: <08/04/25 13:14:01 yeti>
 
 #include "my_test.h"
 
@@ -22,6 +22,7 @@
 #include <unistd.h>
 
 using namespace std;
+using namespace smtp;
 
 //possible states
 //        disconnect 
