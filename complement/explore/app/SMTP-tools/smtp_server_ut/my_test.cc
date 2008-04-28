@@ -29,12 +29,12 @@ using namespace smtp;
 //        letter
 
 const string set_state[] = {
-  "quit\n",
+//  "quit\n",
   "",
   "helo mail.ru\n",
   "helo mail.ru\nmail from:sender@mail.ru\n",
   "helo mail.ru\nmail from:sender@mail.ru\nrcpt to:client@mail.ru\n",
-  "helo mail.ru\nmail from:sender@mail.ru\nrcpt to:client@mail.ru\ndata\n"
+//  "helo mail.ru\nmail from:sender@mail.ru\nrcpt to:client@mail.ru\ndata\n"
 };
 
 //possible commands
@@ -68,13 +68,13 @@ const string set_command[] = {
 };
 
 const int set_result[][sizeof(set_command)/sizeof(set_command[0])] = {
-  {999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999},
+//  {999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999},
   // {221, 221, 221, 221, 221, 221, 221, 221, 221, 221, 221, 221},
   {250, 250, 503, 503, 503, 250, 502, 502, 214, 250, 221, 500},
   {503, 503, 250, 503, 503, 250, 502, 502, 214, 250, 221, 500},
   {503, 503, 503, 250, 503, 250, 502, 502, 214, 250, 221, 500},
   {503, 503, 503, 250, 354, 250, 502, 502, 214, 250, 221, 500},
-  {999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999}
+//  {999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999, 999}
 };        
 
 const int buf_size = 1024;
@@ -91,32 +91,48 @@ void server_thread()
   state st = connect;
   command com;
   string param, message, stout;
-
   while ( st != disconnect ) {
     if ( st != letter ) {
-      if ( read( fd2[0], buffer, sizeof(buffer) ) < 1 ) { // <-- error (1)
+      int n = read( fd2[0], buffer, sizeof(buffer) );
+      if ( n < 0 ) {                                      
         cerr << "Reading error\n";
+        break;
+      } else if ( n == 0 ) {
+        break;
       } else {
+        buffer[n] = '\0';
         cerr << ">> " << buffer << endl;
-        string str( buffer );                             // <-- error (1)
-        param.assign( str, com_length, str.size() );
-        str.erase( com_length, str.size() - com_length + 1 );
+        stringstream st_stream;
+        st_stream << buffer << " ";
+        string str;
+        st_stream >> str >> param;
+//        param.assign( str, com_length, str.size() );
+//        str.erase( com_length, str.size() - com_length + 1 );
         com = setCom( str );
         change( st, com, param, stout );
         write( fd1[1], stout.data(), stout.length() );
       }
     } else {
-      read( fd2[0], buffer, sizeof(buffer) );             // <-- error (2)
-      param.assign (buffer, 0, sizeof(buffer) );          // <-- error (2)
-      if ( param != "." ) {
-        message += param + "\n";
-      } else {
-        st = hello;
-        // cout << message;
-        message = "";
+      int n = read( fd2[0], buffer, sizeof(buffer) );             
+      if ( n < 0 ) {                                      
+        cerr << "Reading error\n";
+      } else if ( n == 0 ) {
+        cerr << "Empty string\n";
+     } else {
+        buffer[n] = '\0';
+        param.assign (buffer, 0, sizeof(buffer) );         
+        if ( param != "." ) {
+          message += param + "\n";
+        } else {
+          st = hello;
+          // cout << message;
+          message = "";
+        }
       }
     }
   }
+  close(fd2[0]);
+  close(fd1[1]);
 
   active = false;
   // cerr << "Server's loop may be here" << endl;
@@ -131,7 +147,6 @@ int EXAM_IMPL(my_test::thread_call)
 
   string s;
   string expected;
-
   for ( int i = 0; i <= test_num; ++i ) {
     char r_buffer[buf_size], w_buffer[buf_size];
 
@@ -149,13 +164,20 @@ int EXAM_IMPL(my_test::thread_call)
       getline( in, s ); 
       if ( !s.empty() ) {
         write( fd2[1], s.data(), s.length() );
-        read( fd1[0], r_buffer, sizeof(r_buffer) ); // <-- error (3)
-        cerr << "<< " << r_buffer;                  // <-- error (3)
+        int n = read( fd1[0], r_buffer, sizeof(r_buffer) );
+        if ( n < 0 ) {                                      
+          cerr << "Reading error\n";
+        } else if ( n == 0 ) {
+          cerr << "Empty string\n";
+        } else {
+          r_buffer[n] = '\0';
+          cerr << "<< " << r_buffer;
+        }
       }
     }
-
+    close(fd2[1]);
+    close(fd1[0]);
     in.close();
-
     t.join();
 
     string result(r_buffer);
