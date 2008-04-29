@@ -90,39 +90,57 @@ void server_thread()
   char buffer[buf_size];
   state st = connect;
   command com;
-  string param, message, stout;
   while ( st != disconnect ) {
     if ( st != letter ) {
-      int n = read( fd2[0], buffer, sizeof(buffer) );
-      if ( n < 0 ) {                                      
-        cerr << "Reading error\n";
+      bool full = false;
+      stringstream st_stream;
+      while (!full) {
+        int n = read( fd2[0], buffer, sizeof(buffer) );
+        if ( n < 0 ) {                                      
+          cerr << "Reading error\n";
+          break;
+        } else if ( n == 0 ) {
+          break;
+        } else {
+          buffer[n] = '\0';
+          cerr << ">> " << buffer;
+          st_stream << buffer;
+          full = full || (buffer[n-1] == '\n');
+        }
+      };
+      if (full) { 
+        cerr << st_stream.str();
+        while (st_stream.good()) {
+          string str;
+          string param, stout;
+          st_stream >> str;
+          if (str != "") {
+            getline (st_stream, param);
+            cerr << param;
+//          param.assign( str, com_length, str.size() );
+//          str.erase( com_length, str.size() - com_length + 1 );
+            com = setCom( str );
+            change( st, com, param, stout );
+            write( fd1[1], stout.data(), stout.length() );
+          }
+        }
+      } else {                                    //error appeared while reading a command
         break;
-      } else if ( n == 0 ) {
-        break;
-      } else {
-        buffer[n] = '\0';
-        cerr << ">> " << buffer << endl;
-        stringstream st_stream;
-        st_stream << buffer << " ";
-        string str;
-        st_stream >> str >> param;
-//        param.assign( str, com_length, str.size() );
-//        str.erase( com_length, str.size() - com_length + 1 );
-        com = setCom( str );
-        change( st, com, param, stout );
-        write( fd1[1], stout.data(), stout.length() );
-      }
+      };
     } else {
+      string message, s;
       int n = read( fd2[0], buffer, sizeof(buffer) );             
       if ( n < 0 ) {                                      
         cerr << "Reading error\n";
+        break;
       } else if ( n == 0 ) {
-        cerr << "Empty string\n";
-     } else {
+        cerr << "Empty\n";
+        break;
+      } else {
         buffer[n] = '\0';
-        param.assign (buffer, 0, sizeof(buffer) );         
-        if ( param != "." ) {
-          message += param + "\n";
+        s.assign (buffer, 0, n);         
+        if ( s != "." ) {
+          message += s + "\n";
         } else {
           st = hello;
           // cout << message;
@@ -164,17 +182,24 @@ int EXAM_IMPL(my_test::thread_call)
       getline( in, s ); 
       if ( !s.empty() ) {
         write( fd2[1], s.data(), s.length() );
+        write( fd2[1], "\n", 1 );
         int n = read( fd1[0], r_buffer, sizeof(r_buffer) );
         if ( n < 0 ) {                                      
           cerr << "Reading error\n";
+          break;
         } else if ( n == 0 ) {
           cerr << "Empty string\n";
+          break;
         } else {
           r_buffer[n] = '\0';
           cerr << "<< " << r_buffer;
         }
       }
     }
+
+//    string str ("helo mail.ru\nmail from:sender@mail.ru\nrcpt to:client@mail.ru\nquit\n");
+    write( fd2[1], str.data(), str.length() );
+
     close(fd2[1]);
     close(fd1[0]);
     in.close();
