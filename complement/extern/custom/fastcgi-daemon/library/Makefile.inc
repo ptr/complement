@@ -1,6 +1,6 @@
 # -*- makefile -*- Time-stamp: <08/04/29 11:13:44 yeti>
 
-FASTCGIDAEMON_SRC = /export/hostel/labs/FastCGI/fastcgi-daemon-FCGID-1/library
+FASTCGIDAEMON_SRC = /home/yeti/FCGID-1/library
 LIBNAME = fastcgi-daemon
 MAJOR = 0
 MINOR = 0
