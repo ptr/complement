@@ -1,6 +1,6 @@
 # -*- makefile -*- Time-stamp: <08/04/28 16:11:18 yeti>
 
-LOG4CXX_SRC = /export/hostel/labs/FastCGI/log4cxx-0.9.7/src
+LOG4CXX_SRC = /home/yeti/log4cxx-0.9.7/src
 LIBNAME = log4cxx
 MAJOR = 0
 MINOR = 9

@@ -3,7 +3,7 @@
 SRCROOT := ../../../../explore
 # POST_INSTALL = ln -sf ${SO_NAME} $(INSTALL_LIB_DIR)/libboost_date_time.so
 
-FCGI_SRC = /export/hostel/labs/FastCGI/fcgi-2.4.0
+FCGI_SRC = /home/yeti/fcgi-2.4.0
 
 include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
