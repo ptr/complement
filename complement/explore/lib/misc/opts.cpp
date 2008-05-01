@@ -2,7 +2,8 @@
 #include <string>
 #include <sstream>
 #include <typeinfo>
-#include "opts.h"
+
+#include <misc/opts.h>
 
 using namespace std;
 
@@ -125,7 +126,7 @@ bool Opts::is_set(const string& _longname)
   return false;
 }
 
-void Opts::parse(int ac,char** av)
+void Opts::parse(int ac,const char** av)
 {
   pname = av[0];
 

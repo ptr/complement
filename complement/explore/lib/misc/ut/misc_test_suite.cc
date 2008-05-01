@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/12/02 18:57:27 ptr>
+// -*- C++ -*- Time-stamp: <08/05/01 15:18:28 ptr>
 
 /*
- * Copyright (c) 2007
+ * Copyright (c) 2007, 2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -10,6 +10,7 @@
 
 #include "misc_test_suite.h"
 #include "misc_test.h"
+#include "opts_test.h"
 
 #include <config/feature.h>
 
@@ -53,6 +54,22 @@ int EXAM_IMPL(misc_test_suite)
   // t.add( &misc_test::type_traits_is_standard_layout, test, "is_standard_layout", tc[0] );
   t.add( &misc_test::type_traits_is_pod, test, "is_pod", tc[0] );
   t.add( &misc_test::type_traits_is_empty, test, "is_empty", tc[0] );
+
+
+  // test for options parsing
+
+  opts_test opts;
+
+  t.add( &opts_test::bool_option_long, opts, "simple boolean option, long",
+         t.add( &opts_test::bool_option, opts, "simple boolean option" ) );
+
+  t.add( &opts_test::int_option_long, opts, "option with int parameter, long",
+         t.add( &opts_test::int_option, opts, "option with int parameter" ) );
+
+  t.add( &opts_test::bad_option, opts, "bad option" );
+  t.add( &opts_test::bad_argument, opts, "bad argument" );
+  
+  t.add( &opts_test::user_defined, opts, "user-defined type" );
 
   return t.girdle();
 };

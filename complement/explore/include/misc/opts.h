@@ -1,3 +1,5 @@
+// -*- C++ -*- Time-stamp: <08/05/01 12:02:26 ptr>
+
 #ifndef __OPTS_H__
 #define __OPTS_H__
 
@@ -8,77 +10,103 @@
 #include <typeinfo>
 #include <cctype>
 
-using namespace std;
-
 class Opt
 {
-public:
-  char shortname;
-  string longname;
-  string desc;
-  vector< string > args;
+  public:
+    char shortname;
+    std::string longname;
+    std::string desc;
+    std::vector< std::string > args;
 
-  bool has_arg;
-  bool is_set;
+    bool has_arg;
+    bool is_set;
 };
 
 class Opts
 {
-public:
-// construct
-  Opts(const string& _brief = "",const string& _author = "",const string& _copyright = "") : brief(_brief) , author(_author) , copyright(_copyright) {};
+  public:
+    Opts( const std::string& _brief = "", const std::string& _author = "", const std::string& _copyright = "") :
+        brief(_brief),
+        author(_author),
+        copyright(_copyright)
+      { }
 
-// adding option 
-  void add(char _shortname,const string& _longname = "",const string& _desc = "",bool has_arg = false);
+    // adding option 
+    void add( char _shortname, const std::string& _longname = "", const std::string& _desc = "", bool has_arg = false );
 
-// getting option
-  template <class T>
-  T get(char _shortname,T& dest);
-  template <class T>
-  T get(const string& _longname,T& dest);
+    // getting option
+    template <class T>
+    T get( char _shortname, T& dest );
+
+    template <class T>
+    T get( const std::string& _longname, T& dest );
   
-  bool is_set(char _shortname);
-  bool is_set(const string& _longname);
+    bool is_set( char _shortname );
+    bool is_set( const std::string& _longname );
 
+    // parse
+    void parse(int ac, const char** av);
 
-// parse
-  void parse(int ac,char** av);
+    // stuff
+    void help(std::ostream& out);
+    std::string get_pname() const;
+    std::string get_brief() const;
+    std::string get_author() const;
+    std::string get_copyright() const;
 
-// stuff
-  void help(ostream& out);
-  string get_pname() const;
-  string get_brief() const;
-  string get_author() const;
-  string get_copyright() const;
+    // error handling
+    struct invalid_opt
+    {
+        std::string optname;
 
-// error handling
-  struct invalid_opt { string optname; invalid_opt(const string& _optname) : optname(_optname) {}; };
-  struct missing_arg { string optname; missing_arg(const string& _optname) : optname(_optname) {}; };
-  struct invalid_arg { string optname,argname; invalid_arg(const string& _optname,const string& _argname) : optname(_optname) , argname(_argname) {}; };
+        invalid_opt(const std::string& _optname) :
+            optname(_optname)
+          { }
+    };
+
+    struct missing_arg
+    {
+        std::string optname;
+
+        missing_arg( const std::string& _optname) :
+            optname(_optname)
+          { }
+    };
+
+    struct invalid_arg
+    {
+        std::string optname;
+        std::string argname;
+
+        invalid_arg( const std::string& _optname, const std::string& _argname) :
+            optname(_optname),
+            argname(_argname)
+          { }
+    };
 
   
-  vector< string > args;
-private:
-  // data  
-  vector< Opt > storage;  
+    std::vector< std::string > args;
+  private:
+    // data  
+    std::vector< Opt > storage;  
   
-  string pname;
-  string brief;
-  string author;
-  string copyright;
+    std::string pname;
+    std::string brief;
+    std::string author;
+    std::string copyright;
 
-  bool isterm(const string& s);
-  bool is_opt_name(const string& s);
-  bool is_flag_group(const string& s);
-  bool is_substr(const string& small,const string& big);
-  int get_opt_index(string s);
+    bool isterm( const std::string& s );
+    bool is_opt_name( const std::string& s );
+    bool is_flag_group( const std::string& s );
+    bool is_substr(const std::string& small, const std::string& big );
+    int get_opt_index( std::string s );
 };
 
 template <class T>
-T Opts::get(char _shortname,T& res)
+T Opts::get( char _shortname, T& res )
 {
   int i;
-  for (i = 0;i < storage.size();i++)
+  for (i = 0;i < storage.size();i++) {
     if (storage[i].shortname == _shortname)
     {
       if (storage[i].is_set && storage[i].has_arg)
@@ -86,23 +114,24 @@ T Opts::get(char _shortname,T& res)
         {
           try
           {
-            stringstream ss(storage[i].args[0]);
+            std::stringstream ss(storage[i].args[0]);
             ss >> res;
           }
           catch(...)
           {
-            throw invalid_arg(string("-") + string(1,_shortname),storage[i].args[0]);
+            throw invalid_arg(std::string("-") + std::string(1,_shortname),storage[i].args[0]);
           }
         }
       break;
-    }  
+    }
+  }
   if (i == storage.size())
-    throw invalid_opt(string("-") + string(1,_shortname));
+    throw invalid_opt(std::string("-") + std::string(1,_shortname));
   return res;
 }
 
 template <class T>
-T Opts::get(const string& _longname,T& res)
+T Opts::get(const std::string& _longname,T& res)
 {
   int i;
   for (i = 0;i < storage.size();i++)
@@ -113,7 +142,7 @@ T Opts::get(const string& _longname,T& res)
         {
           try
           {
-            stringstream ss(storage[i].args[0]);
+            std::stringstream ss(storage[i].args[0]);
             ss >> res;
           }
           catch(...)
