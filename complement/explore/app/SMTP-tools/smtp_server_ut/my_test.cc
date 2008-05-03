@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/04/25 15:23:35 yeti>
+// -*- C++ -*- Time-stamp: <08/05/03 09:31:01 ptr>
 
 #include "my_test.h"
 
@@ -13,6 +13,9 @@
 
 #include <iostream>
 #include <fstream>
+#ifndef STLPORT
+#  include <ext/stdio_filebuf.h>
+#endif
 #include <sstream>
 
 #include <unistd.h>
@@ -83,6 +86,9 @@ const int test_num = 0;
 
 static int fd1[2], fd2[2];
 
+typedef list<string> tests_container_type;
+static tests_container_type tests;
+
 bool active;
 
 void server_thread()
@@ -90,6 +96,18 @@ void server_thread()
   char buffer[buf_size];
   state st = connect;
   command com;
+
+#ifdef STLPORT
+  ifstream in( fd2[0] );
+  ofstream out( fd1[1] );
+#elif defined( __GNUC__ )
+  __gnu_cxx::stdio_filebuf _in_buf( fd2[0], std::ios_base::in );
+  basic_istream<char> in( &_in_buf );
+
+  __gnu_cxx::stdio_filebuf _out_buf( fd1[1], std::ios_base::out );
+  basic_istream<char> in( &_out_buf );
+#endif
+
   while ( st != disconnect ) {
     if ( st != letter ) {
       bool full = false;
@@ -157,29 +175,37 @@ void server_thread()
 }
 
 int EXAM_IMPL(my_test::thread_call)
-{
-  pipe (fd1);
-  pipe (fd2);
-  
+{  
   active = false;
 
   string s;
   string expected;
-  for ( int i = 0; i <= test_num; ++i ) {
+
+  for ( tests_container_type::const_iterator i = tests.begin(); i != tests.end(); ++i ) {
+    pipe( fd1 );
+    pipe( fd2 );
+
+#ifdef STLPORT
+    ifstream in( fd1[0] );
+    ofstream out( fd2[1] );
+#elif defined( __GNUC__ )
+    __gnu_cxx::stdio_filebuf _in_buf( fd1[0], std::ios_base::in );
+    basic_istream<char> in( &_in_buf );
+
+    __gnu_cxx::stdio_filebuf _out_buf( fd2[1], std::ios_base::out );
+    basic_istream<char> in( &_out_buf );
+#endif
     char r_buffer[buf_size], w_buffer[buf_size];
 
     std::tr2::basic_thread<0,0> t( server_thread );
     active = true;
 
-    ostringstream st;
-    st << "aux/test_" << i;
+    istringstream in_tst( *i );
 
-    ifstream in( st.str().c_str() );
-
-    getline( in, expected );
+    getline( in_tst, expected );
 
     while ( in.good() ){
-      getline( in, s ); 
+      getline( in_tst, s ); 
       if ( !s.empty() ) {
         write( fd2[1], s.data(), s.length() );
         write( fd2[1], "\n", 1 );
@@ -197,17 +223,17 @@ int EXAM_IMPL(my_test::thread_call)
       }
     }
 
-//    string str ("helo mail.ru\nmail from:sender@mail.ru\nrcpt to:client@mail.ru\nquit\n");
+    string str ("helo mail.ru\nmail from:sender@mail.ru\nrcpt to:client@mail.ru\nquit\n");
     write( fd2[1], str.data(), str.length() );
 
     close(fd2[1]);
     close(fd1[0]);
-    in.close();
+
     t.join();
 
     string result(r_buffer);
     if ( expected.compare(0, 3, result, 0, 3) != 0 ) {
-      cerr << expected << "!=" << result << " at " << i << endl;
+      cerr << expected << "!=" << result << " at " << *i << endl;
     }
         
     EXAM_CHECK( expected.compare(0, 3, result, 0, 3) == 0 );
@@ -237,17 +263,15 @@ int EXAM_IMPL(my_test::thread_call)
 
 int EXAM_IMPL(my_test::test_gen)
 {
-  int num = 1;
+  tests.push_back( string( "221\nhelo ya.ru\nhelp\nquit\n" ) ); // aka test_0
 
   for ( int i = 0; i < sizeof(set_state)/sizeof(set_state[0]); ++i ) {
     for ( int j = 0; j < sizeof(set_command)/sizeof(set_command[0]); ++j ) {
-      ostringstream st;
-      st << "aux/test_" << num++;
+      stringstream os;
 
-      ofstream os( st.str().c_str() );
+      os << set_result[i][j] << "\n" << set_state[i] << set_command[j];
 
-      os << set_result[i][j] << "\n"
-         << set_state[i] << set_command[j];
+      tests.push_back( os.str() );
     }
   }
 
