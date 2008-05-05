@@ -101,14 +101,38 @@ void server_thread()
   ifstream in( fd2[0] );
   ofstream out( fd1[1] );
 #elif defined( __GNUC__ )
-  __gnu_cxx::stdio_filebuf _in_buf( fd2[0], std::ios_base::in );
+  __gnu_cxx::stdio_filebuf<char> _in_buf( fd2[0], std::ios_base::in );
   basic_istream<char> in( &_in_buf );
 
-  __gnu_cxx::stdio_filebuf _out_buf( fd1[1], std::ios_base::out );
-  basic_istream<char> in( &_out_buf );
+  __gnu_cxx::stdio_filebuf<char> _out_buf( fd1[1], std::ios_base::out );
+  basic_ostream<char> out( &_out_buf );
 #endif
 
+
+  string param, message, stout;
   while ( st != disconnect ) {
+    if ( st != letter ) {
+      string str;
+      in >> str;
+      getline(in, param);
+      com = setCom(str);
+      change(st, com, param, stout);
+      write( fd1[1], stout.data(), stout.length() );
+//      out << stout;
+    } else {
+      getline( in, param );
+      if ( param != "." ) {
+        message += param + "\n";
+      } else {
+        st = hello;
+//        out << message;
+        message = "";
+      }
+    }
+  }
+
+
+/*  while ( st != disconnect ) {
     if ( st != letter ) {
       bool full = false;
       stringstream st_stream;
@@ -127,14 +151,12 @@ void server_thread()
         }
       };
       if (full) { 
-        cerr << st_stream.str();
         while (st_stream.good()) {
           string str;
           string param, stout;
           st_stream >> str;
           if (str != "") {
             getline (st_stream, param);
-            cerr << param;
 //          param.assign( str, com_length, str.size() );
 //          str.erase( com_length, str.size() - com_length + 1 );
             com = setCom( str );
@@ -167,9 +189,10 @@ void server_thread()
       }
     }
   }
+*/
+  
   close(fd2[0]);
   close(fd1[1]);
-
   active = false;
   // cerr << "Server's loop may be here" << endl;
 }
@@ -180,7 +203,8 @@ int EXAM_IMPL(my_test::thread_call)
 
   string s;
   string expected;
-
+  string result;
+   
   for ( tests_container_type::const_iterator i = tests.begin(); i != tests.end(); ++i ) {
     pipe( fd1 );
     pipe( fd2 );
@@ -189,11 +213,11 @@ int EXAM_IMPL(my_test::thread_call)
     ifstream in( fd1[0] );
     ofstream out( fd2[1] );
 #elif defined( __GNUC__ )
-    __gnu_cxx::stdio_filebuf _in_buf( fd1[0], std::ios_base::in );
+    __gnu_cxx::stdio_filebuf<char> _in_buf( fd1[0], std::ios_base::in );
     basic_istream<char> in( &_in_buf );
 
-    __gnu_cxx::stdio_filebuf _out_buf( fd2[1], std::ios_base::out );
-    basic_istream<char> in( &_out_buf );
+    __gnu_cxx::stdio_filebuf<char> _out_buf( fd2[1], std::ios_base::out );
+    basic_ostream<char> out( &_out_buf );
 #endif
     char r_buffer[buf_size], w_buffer[buf_size];
 
@@ -204,12 +228,12 @@ int EXAM_IMPL(my_test::thread_call)
 
     getline( in_tst, expected );
 
-    while ( in.good() ){
+    while ( in_tst.good() ){
       getline( in_tst, s ); 
       if ( !s.empty() ) {
         write( fd2[1], s.data(), s.length() );
         write( fd2[1], "\n", 1 );
-        int n = read( fd1[0], r_buffer, sizeof(r_buffer) );
+/*        int n = read( fd1[0], r_buffer, sizeof(r_buffer) );
         if ( n < 0 ) {                                      
           cerr << "Reading error\n";
           break;
@@ -220,24 +244,31 @@ int EXAM_IMPL(my_test::thread_call)
           r_buffer[n] = '\0';
           cerr << "<< " << r_buffer;
         }
+        out << s << "\n";
+*/      cerr << s << "\n";
+//        do {
+          getline (in, result); 
+          cerr << result;
+//        } while (!result.empty());
+//        if (result.empty()) cerr << "Empty";
       }
     }
 
-    string str ("helo mail.ru\nmail from:sender@mail.ru\nrcpt to:client@mail.ru\nquit\n");
-    write( fd2[1], str.data(), str.length() );
+//    string str ("helo mail.ru\nmail from:sender@mail.ru\nrcpt to:client@mail.ru\nquit\n");
+//    write( fd2[1], str.data(), str.length() );
 
     close(fd2[1]);
     close(fd1[0]);
 
     t.join();
 
-    string result(r_buffer);
+//    string result(r_buffer);
     if ( expected.compare(0, 3, result, 0, 3) != 0 ) {
       cerr << expected << "!=" << result << " at " << *i << endl;
     }
         
     EXAM_CHECK( expected.compare(0, 3, result, 0, 3) == 0 );
-        
+  }      
 /*        strcpy (w_buffer, "help");
         write (fd2[1], w_buffer, sizeof(w_buffer));
         read (fd1[0], r_buffer, sizeof(r_buffer));
@@ -250,7 +281,6 @@ int EXAM_IMPL(my_test::thread_call)
     
         cerr << "Client's text may be here" << endl;
 */
-  }
   // EXAM_CHECK( val == 1 );
   // std::tr2::basic_thread<0,0> t2( thread_func_int, 2 );
   // t2.join();
