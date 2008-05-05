@@ -231,8 +231,8 @@ int EXAM_IMPL(my_test::thread_call)
     while ( in_tst.good() ){
       getline( in_tst, s ); 
       if ( !s.empty() ) {
-        write( fd2[1], s.data(), s.length() );
-        write( fd2[1], "\n", 1 );
+        out << s << endl; // write( fd2[1], s.data(), s.length() );
+        // write( fd2[1], "\n", 1 );
 /*        int n = read( fd1[0], r_buffer, sizeof(r_buffer) );
         if ( n < 0 ) {                                      
           cerr << "Reading error\n";
