@@ -126,11 +126,28 @@ bool Opts::is_set(const string& _longname)
   return false;
 }
 
-void Opts::parse(int ac,const char** av)
+int Opts::get_cnt(char _shortname) const
+{
+  for (int i = 0;i < storage.size();i++)
+    if (storage[i].shortname == _shortname)
+      return storage[i].cnt;
+  return 0;
+}
+
+int Opts::get_cnt(const string& _longname) const
+{
+  for (int i = 0;i < storage.size();i++)
+    if (storage[i].longname == _longname)
+      return storage[i].cnt;
+  return 0;
+}
+
+void Opts::parse(int& ac,const char** av)
 {
   pname = av[0];
 
   int i = 1;
+  int j = 1;
   while (i < ac && !isterm(av[i]))
   {
     if (is_opt_name(av[i]))
@@ -152,28 +169,21 @@ void Opts::parse(int ac,const char** av)
         throw invalid_opt(opt);
       else
       {
+        storage[p].is_set = true;
+        storage[p].cnt++;
         if (storage[p].has_arg)
         {
           if (!arg.empty())
-          {
-            storage[p].is_set = true;
             storage[p].args.push_back(arg);
-          }
           else
             if (i + 1 < ac)
-            {
-              storage[p].is_set = true;
               storage[p].args.push_back(av[++i]);
-            }
             else
               throw missing_arg(opt);
         }
         else
-        {
-          storage[p].is_set = true;
-          if (!arg.empty())
+          if (!arg.empty()) //unexpected arg
             throw invalid_arg(opt,arg);
-        }
       }  
     }
     else
@@ -188,18 +198,23 @@ void Opts::parse(int ac,const char** av)
         else
         {
           storage[p].is_set = true;  
+          storage[p].cnt++;
           if (storage[p].has_arg)
             throw missing_arg( "-" + string(1,optgroup[j]) );
         }
       }
     }
     else
-      args.push_back(av[i]);
+    {
+      av[j++] = av[i];
+      //args.push_back(av[i]);
+    }
     i++;
   }
   
   i += (i < ac && isterm(av[i]));
 
   while (i < ac)
-    args.push_back(av[i++]);
+    av[j++] = av[i++]; //args.push_back(av[i++]);
+  ac = j;
 }

@@ -71,5 +71,15 @@ int EXAM_IMPL(misc_test_suite)
   
   t.add( &opts_test::user_defined, opts, "user-defined type" );
 
+  t.add( &opts_test::compound, opts, "compound" );
+
+  t.add( &opts_test::multiple, opts,"multiple"); 
+  
+  t.add( &opts_test::args, opts,"args"); 
+
+  t.add( &opts_test::stop, opts,"stop"); 
+
+  t.add( &opts_test::reduction, opts,"reduction"); 
+
   return t.girdle();
 };
