@@ -30,6 +30,7 @@ class opts_test
     int EXAM_DECL(args);
     int EXAM_DECL(stop);
     int EXAM_DECL(user_defined);
+    int EXAM_DECL(reduction);
 };
 
 #endif // __MISC_TEST_H

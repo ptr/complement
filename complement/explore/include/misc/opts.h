@@ -13,6 +13,7 @@
 class Opt
 {
   public:
+    Opt() { cnt = 0; }
     char shortname;
     std::string longname;
     std::string desc;
@@ -20,6 +21,7 @@ class Opt
 
     bool has_arg;
     bool is_set;
+    int cnt; // number of times this option was encounterd in command line
 };
 
 class Opts
@@ -44,8 +46,11 @@ class Opts
     bool is_set( char _shortname );
     bool is_set( const std::string& _longname );
 
+    int get_cnt( char _shortname ) const;
+    int get_cnt( const std::string& _longname ) const;
+
     // parse
-    void parse(int ac, const char** av);
+    void parse(int& ac, const char** av);
 
     // stuff
     void help(std::ostream& out);
@@ -85,7 +90,7 @@ class Opts
     };
 
   
-    std::vector< std::string > args;
+    //std::vector< std::string > args;
   private:
     // data  
     std::vector< Opt > storage;  

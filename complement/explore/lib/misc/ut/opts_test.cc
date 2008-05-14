@@ -68,7 +68,7 @@ int EXAM_IMPL(opts_test::int_option)
 
   Opts opts;
 
-  opts.add( 'p', "port", "listen tcp port" );
+  opts.add( 'p', "port", "listen tcp port" , true);
 
   try {
     opts.parse( argc, argv );
@@ -93,7 +93,7 @@ int EXAM_IMPL(opts_test::int_option_long)
 
   Opts opts;
 
-  opts.add( 'p', "port", "listen tcp port" );
+  opts.add( 'p', "port", "listen tcp port" , true );
 
   try {
     opts.parse( argc, argv );
@@ -179,6 +179,8 @@ int EXAM_IMPL(opts_test::multiple)
     opts.add( 'v', "verbose", "more trace messages" );
 
     opts.parse( argc, argv );
+
+    EXAM_CHECK( opts.get_cnt('v') == 3 );
   }
 
   {
@@ -190,6 +192,8 @@ int EXAM_IMPL(opts_test::multiple)
     opts.add( 'v', "verbose", "more trace messages" );
 
     opts.parse( argc, argv );
+
+    EXAM_CHECK( opts.get_cnt('v') == 3 );
   }
 
   {
@@ -201,6 +205,8 @@ int EXAM_IMPL(opts_test::multiple)
     opts.add( 'v', "verbose", "more trace messages" );
 
     opts.parse( argc, argv );
+
+    EXAM_CHECK( opts.get_cnt('v') == 3 );
   }
 
   return EXAM_RESULT;
@@ -219,7 +225,10 @@ int EXAM_IMPL(opts_test::compound)
     opts.add( 'c', "c-option", "option c" );
 
     opts.parse( argc, argv );
+
+    EXAM_CHECK(opts.is_set('a') && opts.is_set('b') && opts.is_set('c'));
   }
+
 
   return EXAM_RESULT;
 }
@@ -232,7 +241,7 @@ int EXAM_IMPL(opts_test::args)
 
     Opts opts;
 
-    opts.add( 'f', "config", "configuration file" );
+    opts.add( 'f', "config", "configuration file",true );
 
     opts.parse( argc, argv );
 
@@ -248,7 +257,7 @@ int EXAM_IMPL(opts_test::args)
 
     Opts opts;
 
-    opts.add( 'f', "config", "configuration file" );
+    opts.add( 'f', "config", "configuration file",true );
 
     opts.parse( argc, argv );
 
@@ -264,7 +273,7 @@ int EXAM_IMPL(opts_test::args)
 
     Opts opts;
 
-    opts.add( 'f', "config", "configuration file" );
+    opts.add( 'f', "config", "configuration file",true );
 
     opts.parse( argc, argv );
 
@@ -341,4 +350,24 @@ int EXAM_IMPL(opts_test::user_defined)
   }
 
   return EXAM_RESULT;
+}
+
+int EXAM_IMPL(opts_test::reduction)
+{
+  {
+    const char* argv[] = { "name" , "--num" , "4"};
+    int argc = sizeof( argv ) / sizeof(argv[0]);
+
+    Opts opts;
+
+    opts.add('n',"number_of_processors","number of processors",true );
+
+    opts.parse( argc, argv );
+
+    int n;
+    opts.get('n',n);
+    EXAM_CHECK( n == 4 );
+  }
+
+  return EXAM_RESULT; 
 }
