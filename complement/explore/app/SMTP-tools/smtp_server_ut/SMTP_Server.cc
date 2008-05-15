@@ -9,7 +9,14 @@ namespace smtp {
 
 using namespace std;
 
-command setCom( const string& str )
+session::session ( std::basic_istream<char>& is, std::basic_ostream<char>& os ) :
+  in(is),
+  out(os)
+{
+  st = connect;
+};
+
+command session::setCom( const string& str )
 {
   string Str;
 
@@ -64,8 +71,9 @@ command setCom( const string& str )
   return none;
 }
 
-void change( state& st, const command& com, const string& param, string& stout )
+void session::changeSt( const string& str, const string& param, std::string& stout )
 {
+  com = session::setCom( str );
   switch ( com ) {
     case helo:
       if (st == connect) {
@@ -178,34 +186,35 @@ void change( state& st, const command& com, const string& param, string& stout )
   }
 }
 
-
-int ServerWork()
+int session::checkData ()
 {
-  state st = connect;
-  command com;
-  string param, message, stout;
-
-  while ( st != disconnect ) {
-    if ( st != letter ) {
-      string str;
-      cin >> str;
-      getline(cin, param);
-      com = setCom(str);
-      change(st, com, param, stout);
-      cout << stout;
+  string str, param, stout;
+  if ( st != letter ) {
+    in >> str;
+    if ( str.empty() ) 
+      return -1;
+    getline( in, param );
+    changeSt( str, param, stout );
+    out << stout << endl;
+  } else {
+    getline( in, param );
+    if ( param.empty() ) 
+      return -1;
+    if ( param != "." ) {
+      message += param + "\n";
     } else {
-      getline( cin, param );
-      if ( param != "." ) {
-        message += param + "\n";
-      } else {
-        st = hello;
-        cout << message;
-        message = "";
-      }
+      st = hello;
+//      cerr << message;
+      message = "";
     }
   }
-
   return 0;
+}
+
+
+state session::getState ()
+{
+  return st;
 }
 
 } // namespace smtp
