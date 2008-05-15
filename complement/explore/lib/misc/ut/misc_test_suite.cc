@@ -66,9 +66,12 @@ int EXAM_IMPL(misc_test_suite)
   t.add( &opts_test::int_option_long, opts, "option with int parameter, long",
          t.add( &opts_test::int_option, opts, "option with int parameter" ) );
 
+  t.add( &opts_test::defaults, opts, "defaults" );
+
+ 
   t.add( &opts_test::bad_option, opts, "bad option" );
   t.add( &opts_test::bad_argument, opts, "bad argument" );
-  
+
   t.add( &opts_test::user_defined, opts, "user-defined type" );
 
   t.add( &opts_test::compound, opts, "compound" );
@@ -78,8 +81,11 @@ int EXAM_IMPL(misc_test_suite)
   t.add( &opts_test::args, opts,"args"); 
 
   t.add( &opts_test::stop, opts,"stop"); 
+  
+  // check whether autocomplement works
+  t.add( &opts_test::autocomplement, opts,"autocomplement"); 
 
-  t.add( &opts_test::reduction, opts,"reduction"); 
+  t.add( &opts_test::multiple_args, opts,"multiple_args");
 
   return t.girdle();
 };

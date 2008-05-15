@@ -95,16 +95,16 @@ void Opts::help(ostream& out)
   out << pname  << " [option ...] [optiongoup ...] [end operands ...]" << endl;  
   out << "available options:" << endl;
   for (int i = 0;i < storage.size();i++)
-    out << "-" << storage[i].shortname << "\t[--" << storage[i].longname << "]\t-\t" << storage[i].desc << endl;
+    out << "-" << storage[i].shortname << "\t[--" << storage[i].longname << "] [" << storage[i].v << "]\t-\t" << storage[i].desc << endl;
 }
 
-void Opts::add(char _shortname,const string& _longname,const string& _desc,bool has_arg )
+void Opts::addflag(char _shortname,const string& _longname,const string& _desc)
 {
   Opt opt;
   opt.shortname = _shortname;
   opt.longname = _longname;
   opt.desc = _desc;
-  opt.has_arg = has_arg;
+  opt.has_arg = false;
   opt.is_set = false;
   storage.push_back(opt);
 }

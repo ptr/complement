@@ -23,6 +23,7 @@ class opts_test
     int EXAM_DECL(bool_option_long);
     int EXAM_DECL(int_option);
     int EXAM_DECL(int_option_long);
+    int EXAM_DECL(defaults);
     int EXAM_DECL(bad_option);
     int EXAM_DECL(bad_argument);
     int EXAM_DECL(multiple);
@@ -30,7 +31,8 @@ class opts_test
     int EXAM_DECL(args);
     int EXAM_DECL(stop);
     int EXAM_DECL(user_defined);
-    int EXAM_DECL(reduction);
+    int EXAM_DECL(autocomplement);
+    int EXAM_DECL(multiple_args);
 };
 
 #endif // __MISC_TEST_H
