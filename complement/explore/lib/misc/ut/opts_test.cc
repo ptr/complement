@@ -11,6 +11,8 @@
 #include "opts_test.h"
 
 #include <misc/opts.h>
+#include <set>
+#include <vector>
 
 // #include <iostream>
 
@@ -23,7 +25,7 @@ int EXAM_IMPL(opts_test::bool_option)
 
   Opts opts;
 
-  opts.add( 'h', "help", "print this help message" );
+  opts.addflag( 'h', "help", "print this help message" );
 
   try {
     opts.parse( argc, argv );
@@ -45,7 +47,7 @@ int EXAM_IMPL(opts_test::bool_option_long)
 
   Opts opts;
 
-  opts.add( 'h', "help", "print this help message" );
+  opts.addflag( 'h', "help", "print this help message" );
 
   try {
     opts.parse( argc, argv );
@@ -68,15 +70,13 @@ int EXAM_IMPL(opts_test::int_option)
 
   Opts opts;
 
-  opts.add( 'p', "port", "listen tcp port" , true);
+  opts.add( 'p', 0,"port", "listen tcp port");
 
   try {
     opts.parse( argc, argv );
 
-    int port = 0;
-
     EXAM_CHECK( opts.is_set( 'p' ) );
-    EXAM_CHECK( opts.get( 'p', port ) == 80 );
+    EXAM_CHECK( opts.get<int>( 'p' ) == 80 );
   }
   catch ( const Opts::invalid_opt& e ) {
   }
@@ -93,15 +93,38 @@ int EXAM_IMPL(opts_test::int_option_long)
 
   Opts opts;
 
-  opts.add( 'p', "port", "listen tcp port" , true );
+  opts.add( 'p', 0, "port", "listen tcp port");
 
   try {
     opts.parse( argc, argv );
 
-    int port = 0;
 
     EXAM_CHECK( opts.is_set( 'p' ) );
-    EXAM_CHECK( opts.get( 'p', port ) == 80 );
+    EXAM_CHECK( opts.get<int>( 'p' ) == 80 );
+  }
+  catch ( const Opts::invalid_opt& e ) {
+  }
+  catch ( const Opts::invalid_arg& e ) {
+  }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(opts_test::defaults)
+{
+  const char* argv[] = { "name" };
+  int argc = sizeof( argv ) / sizeof(argv[0]);
+
+  Opts opts;
+
+  opts.add( 'p', 0, "port", "listen tcp port");
+
+  try {
+    opts.parse( argc, argv );
+
+
+    EXAM_CHECK( !opts.is_set( 'p' ) );
+    EXAM_CHECK( opts.get<int>( 'p' ) == 0 );
   }
   catch ( const Opts::invalid_opt& e ) {
   }
@@ -118,7 +141,7 @@ int EXAM_IMPL(opts_test::bad_option)
 
   Opts opts;
 
-  opts.add( 'h', "help", "print this help message" );
+  opts.addflag( 'h', "help", "print this help message" );
 
   bool exception_happens = false;
 
@@ -129,7 +152,6 @@ int EXAM_IMPL(opts_test::bad_option)
   }
   catch ( const Opts::invalid_opt& e ) {
     exception_happens = true;
-    EXAM_CHECK( e.optname == "-v" );
   }
   catch ( const Opts::invalid_arg& e ) {
   }
@@ -150,17 +172,15 @@ int EXAM_IMPL(opts_test::bad_argument)
 
   bool exception_happens = false;
 
-  try {
-    opts.parse( argc, argv );
-
-    EXAM_ERROR( "exception expected" );
+  opts.parse( argc, argv );
+  
+  try
+  {
+    int t = opts.get<int>('p');
   }
-  catch ( const Opts::invalid_opt& e ) {
-  }
-  catch ( const Opts::invalid_arg& e ) {
+  catch(const Opts::invalid_arg& e)
+  {
     exception_happens = true;
-    EXAM_CHECK( e.optname == "--port" );
-    EXAM_CHECK( e.argname == "www" );
   }
 
   EXAM_CHECK( exception_happens );
@@ -176,7 +196,7 @@ int EXAM_IMPL(opts_test::multiple)
 
     Opts opts;
 
-    opts.add( 'v', "verbose", "more trace messages" );
+    opts.addflag( 'v', "verbose", "more trace messages" );
 
     opts.parse( argc, argv );
 
@@ -189,7 +209,7 @@ int EXAM_IMPL(opts_test::multiple)
 
     Opts opts;
 
-    opts.add( 'v', "verbose", "more trace messages" );
+    opts.addflag( 'v', "verbose", "more trace messages" );
 
     opts.parse( argc, argv );
 
@@ -202,7 +222,7 @@ int EXAM_IMPL(opts_test::multiple)
 
     Opts opts;
 
-    opts.add( 'v', "verbose", "more trace messages" );
+    opts.addflag( 'v', "verbose", "more trace messages" );
 
     opts.parse( argc, argv );
 
@@ -220,9 +240,9 @@ int EXAM_IMPL(opts_test::compound)
 
     Opts opts;
 
-    opts.add( 'a', "a-option", "option a" );
-    opts.add( 'b', "b-option", "option b" );
-    opts.add( 'c', "c-option", "option c" );
+    opts.addflag( 'a', "a-option", "option a" );
+    opts.addflag( 'b', "b-option", "option b" );
+    opts.addflag( 'c', "c-option", "option c" );
 
     opts.parse( argc, argv );
 
@@ -241,7 +261,7 @@ int EXAM_IMPL(opts_test::args)
 
     Opts opts;
 
-    opts.add( 'f', "config", "configuration file",true );
+    opts.add( 'f',string("default.conf"), "config", "configuration file");
 
     opts.parse( argc, argv );
 
@@ -257,7 +277,7 @@ int EXAM_IMPL(opts_test::args)
 
     Opts opts;
 
-    opts.add( 'f', "config", "configuration file",true );
+    opts.add( 'f', string("default.conf"), "config", "configuration file" );
 
     opts.parse( argc, argv );
 
@@ -273,7 +293,7 @@ int EXAM_IMPL(opts_test::args)
 
     Opts opts;
 
-    opts.add( 'f', "config", "configuration file",true );
+    opts.add( 'f', string("default.conf"), "config", "configuration file" );
 
     opts.parse( argc, argv );
 
@@ -294,7 +314,7 @@ int EXAM_IMPL(opts_test::stop)
 
     Opts opts;
 
-    opts.add( 'a', "a-option", "option a" );
+    opts.addflag( 'a', "a-option", "option a" );
 
     opts.parse( argc, argv );
 
@@ -338,21 +358,20 @@ int EXAM_IMPL(opts_test::user_defined)
 
     Opts opts;
 
-    opts.add( 's', "start-point", "start point", true );
+    opts.add( 's', point(1,1) ,"start-point", "start point");
 
     opts.parse( argc, argv );
 
-    point p( 1, 1 );
+    point p = opts.get<point>( 's' );
 
-    opts.get( 's', p );
-
-    EXAM_CHECK( (p.x == 1) && (p.y = 2) );
+    EXAM_CHECK( (p.x == 1) && (p.y == 2) );
   }
 
   return EXAM_RESULT;
 }
 
-int EXAM_IMPL(opts_test::reduction)
+// check whether autocomplement works
+int EXAM_IMPL(opts_test::autocomplement)
 {
   {
     const char* argv[] = { "name" , "--num" , "4"};
@@ -360,13 +379,36 @@ int EXAM_IMPL(opts_test::reduction)
 
     Opts opts;
 
-    opts.add('n',"number_of_processors","number of processors",true );
+    opts.add('n',1,"number_of_processors","number of processors" );
 
     opts.parse( argc, argv );
 
-    int n;
-    opts.get('n',n);
-    EXAM_CHECK( n == 4 );
+    EXAM_CHECK( opts.get<int>('n') == 4 );
+  }
+
+  return EXAM_RESULT; 
+}
+
+int EXAM_IMPL(opts_test::multiple_args)
+{
+  {
+    const char* argv[] = { "name" , "-I" , "first","-I","second","-I","third"};
+    int argc = sizeof( argv ) / sizeof(argv[0]);
+
+    Opts opts;
+
+    opts.add('I',"/usr/include","include","include paths" );
+
+    opts.parse( argc, argv );
+
+    vector<string> vs(10);
+  
+    opts.getemall('I',vs.begin());
+    
+    EXAM_CHECK( vs[0] == "/usr/include" );
+    EXAM_CHECK( vs[1] == "first" );
+    EXAM_CHECK( vs[2] == "second" );
+    EXAM_CHECK( vs[3] == "third" );
   }
 
   return EXAM_RESULT; 

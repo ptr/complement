@@ -9,6 +9,8 @@
 #include <sstream>
 #include <typeinfo>
 #include <cctype>
+#include <exception>
+#include <stdexcept>
 
 class Opt
 {
@@ -18,6 +20,7 @@ class Opt
     std::string longname;
     std::string desc;
     std::vector< std::string > args;
+    std::string v;
 
     bool has_arg;
     bool is_set;
@@ -33,16 +36,21 @@ class Opts
         copyright(_copyright)
       { }
 
-    // adding option 
-    void add( char _shortname, const std::string& _longname = "", const std::string& _desc = "", bool has_arg = false );
+    // adding option / flag
+    template <class T>
+    void add( char _shortname,T default_value,const std::string& _longname = "", const std::string& _desc = "" );
+    void addflag( char _shortname,const std::string& _longname = "",const std::string& _desc = "" );
 
     // getting option
     template <class T>
-    T get( char _shortname, T& dest );
+    T get( char _shortname );
 
     template <class T>
-    T get( const std::string& _longname, T& dest );
+    T get( const std::string& _longname );
   
+    template <class BackInsertIterator>
+    void getemall(char _shortname,BackInsertIterator bi);
+
     bool is_set( char _shortname );
     bool is_set( const std::string& _longname );
 
@@ -60,33 +68,32 @@ class Opts
     std::string get_copyright() const;
 
     // error handling
-    struct invalid_opt
+    struct invalid_opt : public std::logic_error
     {
-        std::string optname;
-
         invalid_opt(const std::string& _optname) :
-            optname(_optname)
+            std::logic_error(std::string("invalid opt: ").append(_optname))
           { }
     };
-
-    struct missing_arg
+  
+    struct missing_arg : public std::logic_error
     {
-        std::string optname;
-
         missing_arg( const std::string& _optname) :
-            optname(_optname)
+            std::logic_error(std::string("missing argument for option ").append(_optname))
           { }
     };
 
-    struct invalid_arg
+    struct invalid_arg : public std::logic_error
     {
-        std::string optname;
-        std::string argname;
-
         invalid_arg( const std::string& _optname, const std::string& _argname) :
-            optname(_optname),
-            argname(_argname)
+            std::logic_error(std::string("invalid argument [").append(_argname).append("] for option ").append(_optname))
           { }
+    };
+    
+    struct bad_usage : public std::runtime_error
+    {
+        bad_usage( const std::string& what) :
+          std::runtime_error(what)
+         { }
     };
 
   
@@ -108,58 +115,117 @@ class Opts
 };
 
 template <class T>
-T Opts::get( char _shortname, T& res )
+void Opts::add(char _shortname,T _default_value,const std::string& _longname,const std::string& _desc)
+{
+  addflag(_shortname,_longname,_desc);
+  std::stringstream ss;
+  ss << _default_value;
+  storage[storage.size() - 1].v = ss.str();
+  storage[storage.size() - 1].has_arg = true;
+}
+
+template <class T>
+T Opts::get( char _shortname )
 {
   int i;
-  for (i = 0;i < storage.size();i++) {
+  T res;
+  for (i = 0;i < storage.size();i++)
     if (storage[i].shortname == _shortname)
     {
-      if (storage[i].is_set && storage[i].has_arg)
-        if (!storage[i].args.empty())
-        {
-          try
-          {
-            std::stringstream ss(storage[i].args[0]);
-            ss >> res;
-          }
-          catch(...)
-          {
-            throw invalid_arg(std::string("-") + std::string(1,_shortname),storage[i].args[0]);
-          }
-        }
+      if (!storage[i].has_arg)
+        throw bad_usage("using Opts::get for option without arguments");
+    
+      if (!storage[i].args.empty())
+        storage[i].v = storage[i].args[0];
+
+      try
+      {
+         std::stringstream ss(storage[i].v);
+         ss >> res;
+      }
+      catch(...)
+      {
+         throw invalid_arg(std::string("-") + std::string(1,_shortname),storage[i].v);
+      }
+  
       break;
     }
-  }
+
   if (i == storage.size())
     throw invalid_opt(std::string("-") + std::string(1,_shortname));
   return res;
 }
 
+
+
 template <class T>
-T Opts::get(const std::string& _longname,T& res)
+T Opts::get( const std::string& _longname )
 {
   int i;
+  T res;
   for (i = 0;i < storage.size();i++)
     if (storage[i].longname == _longname)
     {
-      if (storage[i].is_set && storage[i].has_arg)
-        if  (!storage[i].args.empty())
+      if (!storage[i].has_arg)
+        throw bad_usage("using Opts::get for option without arguments");
+    
+      if (!storage[i].args.empty())
+        storage[i].v = storage[i].args[0];
+
+      try
+      {
+         std::stringstream ss(storage[i].v);
+         ss >> res;
+      }
+      catch(...)
+      {
+         throw invalid_arg(std::string("--") + _longname,storage[i].v);
+      }
+  
+      break;
+    }
+
+  if (i == storage.size())
+    throw invalid_opt(std::string("--") + _longname);
+  return res;
+}
+
+template <class BackInsertIterator>
+void Opts::getemall( char _shortname , BackInsertIterator bi)
+{
+  int i;
+  for (i = 0;i < storage.size();i++)
+    if (storage[i].shortname == _shortname)
+    {
+      if (!storage[i].has_arg)
+        throw bad_usage("using Opts::getemall for option without arguments");
+    
+      if (!storage[i].v.empty())
+      {
+        std::stringstream ss(storage[i].v);
+        ss >> *bi++;
+      }
+
+      if (!storage[i].args.empty())
+        for (int j = 0;j < storage[i].args.size();j++)
         {
           try
           {
-            std::stringstream ss(storage[i].args[0]);
-            ss >> res;
+            std::stringstream ss(storage[i].args[j]);
+            ss >> *bi++;
           }
           catch(...)
           {
-            throw invalid_arg(_longname,storage[i].args[0]);
+            throw invalid_arg(std::string("-") + std::string(1,_shortname),storage[i].v);
           }
         }
+     
       break;
-    }  
+    }
+
   if (i == storage.size())
-    throw invalid_opt(_longname);
-  return res;  
+    throw invalid_opt(std::string("-") + std::string(1,_shortname));
 }
+
 
 #endif
