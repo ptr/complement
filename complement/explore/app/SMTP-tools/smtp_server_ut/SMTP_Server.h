@@ -4,6 +4,7 @@
 #define __SMPT_SERVER_H
 
 #include <string>
+#include <iostream>
 
 namespace smtp {
 
@@ -33,11 +34,27 @@ enum command
   none
 };
 
-int ServerWork();
+class session 
+{
+  private:
+    state st;
+    command com;
+    std::string message;
 
-command setCom( const std::string& str );
+    std::basic_istream<char>& in;
+    std::basic_ostream<char>& out;
 
-void change( state& st, const command& com, const std::string& param, std::string& stout );
+    command setCom ( const std::string& str );
+    void changeSt ( const std::string& str, const std::string& param, std::string& stout );
+  public:
+    session ( std::basic_istream<char>& is, std::basic_ostream<char>& os );
+    ~session ()
+      { };
+
+    int checkData ();
+    
+    state getState ();
+};
 
 } // namespace smtp
 

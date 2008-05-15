@@ -80,32 +80,11 @@ void server_thread()
   basic_ostream<char> out( &_out_buf );
 #endif
   
-  state st = connect;
-  command com;
-  string param, message, stout;
+  smtp::session ss (in, out);
 
-  while ( st != disconnect ) {
-    if ( st != letter ) {
-      string str;
-      in >> str;
-      if ( str.empty() ) 
-        break;
-      getline( in, param );
-      com = setCom( str );
-      change( st, com, param, stout );
-      out << stout << endl;
-    } else {
-      getline( in, param );
-      if ( param.empty() ) 
-        break;
-      if ( param != "." ) {
-        message += param + "\n";
-      } else {
-        st = hello;
-//        cerr << message;
-        message = "";
-      }
-    }
+  while ( ss.getState() != disconnect ) {
+    int t = ss.checkData();
+    if ( t < 0 ) break;
   }
   
   close(fd2[0]);
@@ -142,14 +121,14 @@ int EXAM_IMPL(my_test::thread_call)
       getline( in_tst, s ); 
       if ( !s.empty() ) {
         out << s << endl;
-//        cerr << s << endl;
+        cerr << s << endl;
         do {
           getline (in, result); 
-//          cerr << result << endl;
+          cerr << result << endl;
         } while ( result[3] == '-' );
       }
     }
-
+    
     close(fd2[1]);
     close(fd1[0]);
     t.join();
