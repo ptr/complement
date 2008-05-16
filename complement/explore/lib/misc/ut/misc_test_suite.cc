@@ -71,12 +71,17 @@ int EXAM_IMPL(misc_test_suite)
  
   t.add( &opts_test::bad_option, opts, "bad option" );
   t.add( &opts_test::bad_argument, opts, "bad argument" );
+  t.add( &opts_test::unexpected_argument, opts, "unexpected_argument" );
+  t.add( &opts_test::missing_argument, opts, "missing argument" );
+
 
   t.add( &opts_test::user_defined, opts, "user-defined type" );
 
   t.add( &opts_test::compound, opts, "compound" );
 
   t.add( &opts_test::multiple, opts,"multiple"); 
+
+  t.add( &opts_test::multiple_compound, opts,"multiple_compound");
   
   t.add( &opts_test::args, opts,"args"); 
 
@@ -84,6 +89,7 @@ int EXAM_IMPL(misc_test_suite)
   
   // check whether autocomplement works
   t.add( &opts_test::autocomplement, opts,"autocomplement"); 
+  t.add( &opts_test::autocomplement_failure, opts,"autocomplement_failure");
 
   t.add( &opts_test::multiple_args, opts,"multiple_args");
 
