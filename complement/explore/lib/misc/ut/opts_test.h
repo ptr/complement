@@ -26,12 +26,16 @@ class opts_test
     int EXAM_DECL(defaults);
     int EXAM_DECL(bad_option);
     int EXAM_DECL(bad_argument);
+    int EXAM_DECL(unexpected_argument);
+    int EXAM_DECL(missing_argument);
     int EXAM_DECL(multiple);
     int EXAM_DECL(compound);
+    int EXAM_DECL(multiple_compound);
     int EXAM_DECL(args);
     int EXAM_DECL(stop);
     int EXAM_DECL(user_defined);
     int EXAM_DECL(autocomplement);
+    int EXAM_DECL(autocomplement_failure);
     int EXAM_DECL(multiple_args);
 };
 

@@ -168,17 +168,68 @@ int EXAM_IMPL(opts_test::bad_argument)
 
   Opts opts;
 
-  opts.add( 'p', "port", "listen tcp port" );
+  opts.add( 'p', 10, "port", "listen tcp port" );
 
   bool exception_happens = false;
-
-  opts.parse( argc, argv );
   
+  opts.parse( argc, argv );
+
   try
   {
     int t = opts.get<int>('p');
   }
   catch(const Opts::invalid_arg& e)
+  {
+    exception_happens = true;
+  }
+
+  EXAM_CHECK( exception_happens );
+  EXAM_CHECK ( opts.get_default<int>('p') == 10 );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(opts_test::unexpected_argument)
+{
+  const char* argv[] = { "name", "--help=10" };
+  int argc = sizeof( argv ) / sizeof(argv[0]);
+
+  Opts opts;
+
+  opts.addflag('h',"help");
+
+  bool exception_happens = false;
+  
+  try
+  {
+    opts.parse( argc, argv );
+  }
+  catch(const Opts::invalid_arg& e)
+  {
+    exception_happens = true;
+  }
+
+  EXAM_CHECK( exception_happens );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(opts_test::missing_argument)
+{
+  const char* argv[] = { "name", "-n" };
+  int argc = sizeof( argv ) / sizeof(argv[0]);
+
+  Opts opts;
+
+  opts.add('n',10,"num");
+
+  bool exception_happens = false;
+  
+  try
+  {
+    opts.parse( argc, argv );
+  }
+  catch(const Opts::missing_arg& e)
   {
     exception_happens = true;
   }
@@ -232,6 +283,7 @@ int EXAM_IMPL(opts_test::multiple)
   return EXAM_RESULT;
 }
 
+
 int EXAM_IMPL(opts_test::compound)
 {
   {
@@ -252,6 +304,39 @@ int EXAM_IMPL(opts_test::compound)
 
   return EXAM_RESULT;
 }
+
+int EXAM_IMPL(opts_test::multiple_compound)
+{
+  {
+    const char* argv[] = { "name", "-xf","--flag", "-f", "-p=second" ,"--pa","third" };
+    int argc = sizeof( argv ) / sizeof(argv[0]);
+
+    Opts opts;
+
+    opts.addflag( 'x', "x-option", "option x" );
+    opts.addflag( 'f', "flag", "option f" );
+  
+    opts.add('p',"first","path","some path");
+    
+    opts.parse( argc, argv );
+
+    EXAM_CHECK(opts.is_set('x'));
+    EXAM_CHECK(opts.is_set("flag"));
+    EXAM_CHECK(opts.is_set('p'));
+    EXAM_CHECK(opts.get_cnt("flag") == 3 && opts.get_cnt('f') == 3);
+    vector<string> vs(3);
+
+    opts.getemall("path",vs.begin());
+    EXAM_CHECK( vs[0] == "first" );
+    EXAM_CHECK( vs[1] == "second" );
+    EXAM_CHECK( vs[2] == "third" );
+  }
+
+
+  return EXAM_RESULT;
+}
+
+
 
 int EXAM_IMPL(opts_test::args)
 {
@@ -384,6 +469,34 @@ int EXAM_IMPL(opts_test::autocomplement)
     opts.parse( argc, argv );
 
     EXAM_CHECK( opts.get<int>('n') == 4 );
+  }
+
+  return EXAM_RESULT; 
+}
+
+int EXAM_IMPL(opts_test::autocomplement_failure)
+{
+  {
+    const char* argv[] = { "name" , "--proc" , "4"};
+    int argc = sizeof( argv ) / sizeof(argv[0]);
+
+    Opts opts;
+
+    opts.add('p',1,"proc_num","process number" );
+    opts.add('t',string("standart"),"proc_type","process type");
+
+    bool exception_happens = false;
+    
+    try
+    {
+      opts.parse( argc, argv );
+    }
+    catch(const Opts::invalid_opt& e)
+    {
+      exception_happens = true;
+    }
+
+    EXAM_CHECK( exception_happens );
   }
 
   return EXAM_RESULT; 

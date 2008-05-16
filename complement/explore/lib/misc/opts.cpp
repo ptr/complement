@@ -19,7 +19,7 @@ bool Opts::isterm(const string& s)
 
 bool Opts::is_opt_name(const string& s)
 {
-  return (s.size() > 0) && (s[0] == '-') && !is_flag_group(s);
+  return (s.size() > 1) && (s[0] == '-') && !is_flag_group(s);
 }
 
 bool Opts::is_substr(const string& small,const string& big)
@@ -95,7 +95,7 @@ void Opts::help(ostream& out)
   out << pname  << " [option ...] [optiongoup ...] [end operands ...]" << endl;  
   out << "available options:" << endl;
   for (int i = 0;i < storage.size();i++)
-    out << "-" << storage[i].shortname << "\t[--" << storage[i].longname << "] [" << storage[i].v << "]\t-\t" << storage[i].desc << endl;
+    out << "-" << storage[i].shortname << "\t[--" << storage[i].longname << "] [" << storage[i].default_v << "]\t-\t" << storage[i].desc << endl;
 }
 
 void Opts::addflag(char _shortname,const string& _longname,const string& _desc)

@@ -20,7 +20,7 @@ class Opt
     std::string longname;
     std::string desc;
     std::vector< std::string > args;
-    std::string v;
+    std::string default_v;
 
     bool has_arg;
     bool is_set;
@@ -38,7 +38,7 @@ class Opts
 
     // adding option / flag
     template <class T>
-    void add( char _shortname,T default_value,const std::string& _longname = "", const std::string& _desc = "" );
+    void add( char _shortname,T _default_value,const std::string& _longname = "", const std::string& _desc = "" );
     void addflag( char _shortname,const std::string& _longname = "",const std::string& _desc = "" );
 
     // getting option
@@ -47,9 +47,18 @@ class Opts
 
     template <class T>
     T get( const std::string& _longname );
-  
+
+    template <class T>
+    T get_default( char _shorname );
+
+    template <class T>
+    T get_default( const std::string& _longname );
+
     template <class BackInsertIterator>
     void getemall(char _shortname,BackInsertIterator bi);
+
+    template <class BackInsertIterator>
+    void getemall(const std::string& _longname,BackInsertIterator bi);
 
     bool is_set( char _shortname );
     bool is_set( const std::string& _longname );
@@ -67,36 +76,42 @@ class Opts
     std::string get_author() const;
     std::string get_copyright() const;
 
+    struct error : public std::logic_error
+    {
+       error(const std::string& what) :
+         std::logic_error(what)
+        { }
+    };
+
     // error handling
-    struct invalid_opt : public std::logic_error
+    struct invalid_opt : public error
     {
         invalid_opt(const std::string& _optname) :
-            std::logic_error(std::string("invalid opt: ").append(_optname))
+            error(std::string("invalid opt: ").append(_optname))
           { }
     };
   
-    struct missing_arg : public std::logic_error
+    struct missing_arg : public error
     {
         missing_arg( const std::string& _optname) :
-            std::logic_error(std::string("missing argument for option ").append(_optname))
+            error(std::string("missing argument for option ").append(_optname))
           { }
     };
 
-    struct invalid_arg : public std::logic_error
+    struct invalid_arg : public error
     {
         invalid_arg( const std::string& _optname, const std::string& _argname) :
-            std::logic_error(std::string("invalid argument [").append(_argname).append("] for option ").append(_optname))
+            error(std::string("invalid argument [").append(_argname).append("] for option ").append(_optname))
           { }
     };
     
-    struct bad_usage : public std::runtime_error
+    struct bad_usage : public error
     {
         bad_usage( const std::string& what) :
-          std::runtime_error(what)
+          error(what)
          { }
     };
 
-  
     //std::vector< std::string > args;
   private:
     // data  
@@ -120,7 +135,7 @@ void Opts::add(char _shortname,T _default_value,const std::string& _longname,con
   addflag(_shortname,_longname,_desc);
   std::stringstream ss;
   ss << _default_value;
-  storage[storage.size() - 1].v = ss.str();
+  storage[storage.size() - 1].default_v = ss.str();
   storage[storage.size() - 1].has_arg = true;
 }
 
@@ -135,18 +150,16 @@ T Opts::get( char _shortname )
       if (!storage[i].has_arg)
         throw bad_usage("using Opts::get for option without arguments");
     
+      std::stringstream ss;
       if (!storage[i].args.empty())
-        storage[i].v = storage[i].args[0];
+        ss << storage[i].args[0];
+      else
+        ss << storage[i].default_v;
 
-      try
-      {
-         std::stringstream ss(storage[i].v);
-         ss >> res;
-      }
-      catch(...)
-      {
-         throw invalid_arg(std::string("-") + std::string(1,_shortname),storage[i].v);
-      }
+      ss >> res;
+
+      if (ss.fail())
+         throw invalid_arg(std::string("-") + std::string(1,_shortname),storage[i].args[0]);
   
       break;
     }
@@ -156,7 +169,32 @@ T Opts::get( char _shortname )
   return res;
 }
 
+template <class T>
+T Opts::get_default( char _shortname )
+{
+  int i;
+  T res;
+  for (i = 0;i < storage.size();i++)
+    if (storage[i].shortname == _shortname)
+    {
+      if (!storage[i].has_arg)
+        throw bad_usage("using Opts::get for option without arguments");
+    
+      std::stringstream ss;
+      ss << storage[i].default_v;
 
+      ss >> res;
+
+      if (ss.fail())
+         throw invalid_arg(std::string("-") + std::string(1,_shortname),storage[i].default_v);
+  
+      break;
+    }
+
+  if (i == storage.size())
+    throw invalid_opt(std::string("-") + std::string(1,_shortname));
+  return res;
+}
 
 template <class T>
 T Opts::get( const std::string& _longname )
@@ -169,18 +207,42 @@ T Opts::get( const std::string& _longname )
       if (!storage[i].has_arg)
         throw bad_usage("using Opts::get for option without arguments");
     
+      std::stringstream ss;
       if (!storage[i].args.empty())
-        storage[i].v = storage[i].args[0];
+        ss << storage[i].args[0];
+      else
+        ss << storage[i].default_v;
 
-      try
-      {
-         std::stringstream ss(storage[i].v);
-         ss >> res;
-      }
-      catch(...)
-      {
-         throw invalid_arg(std::string("--") + _longname,storage[i].v);
-      }
+      ss >> res;
+  
+      if (ss.fail()) // need to recover stream?
+         throw invalid_arg(std::string("--") + _longname,storage[i].args[0]);
+  
+      break;
+    }
+
+  if (i == storage.size())
+    throw invalid_opt(std::string("--") + _longname);
+  return res;
+}
+
+template <class T>
+T Opts::get_default( const std::string& _longname )
+{
+  int i;
+  T res;
+  for (i = 0;i < storage.size();i++)
+    if (storage[i].longname == _longname)
+    {
+      if (!storage[i].has_arg)
+        throw bad_usage("using Opts::get for option without arguments");
+    
+      std::stringstream ss(storage[i].default_v);
+
+      ss >> res;
+  
+      if (ss.fail()) // need to recover stream?
+         throw invalid_arg(std::string("--") + _longname,storage[i].default_v);
   
       break;
     }
@@ -200,24 +262,28 @@ void Opts::getemall( char _shortname , BackInsertIterator bi)
       if (!storage[i].has_arg)
         throw bad_usage("using Opts::getemall for option without arguments");
     
-      if (!storage[i].v.empty())
+      if (!storage[i].default_v.empty())
       {
-        std::stringstream ss(storage[i].v);
+        std::stringstream ss(storage[i].default_v);
         ss >> *bi++;
       }
 
       if (!storage[i].args.empty())
         for (int j = 0;j < storage[i].args.size();j++)
         {
+
+          std::stringstream ss(storage[i].args[j]);
           try
           {
-            std::stringstream ss(storage[i].args[j]);
             ss >> *bi++;
           }
           catch(...)
           {
-            throw invalid_arg(std::string("-") + std::string(1,_shortname),storage[i].v);
+            throw invalid_arg(std::string("-") + std::string(1,_shortname),storage[i].args[j]);
           }
+          
+          if (ss.fail())
+            throw invalid_arg(std::string("-") + std::string(1,_shortname),storage[i].args[j]);
         }
      
       break;
@@ -227,5 +293,45 @@ void Opts::getemall( char _shortname , BackInsertIterator bi)
     throw invalid_opt(std::string("-") + std::string(1,_shortname));
 }
 
+template <class BackInsertIterator>
+void Opts::getemall( const std::string& _longname , BackInsertIterator bi)
+{
+  int i;
+  for (i = 0;i < storage.size();i++)
+    if (storage[i].longname == _longname)
+    {
+      if (!storage[i].has_arg)
+        throw bad_usage("using Opts::getemall for option without arguments");
+    
+      if (!storage[i].default_v.empty())
+      {
+        std::stringstream ss(storage[i].default_v);
+        ss >> *bi++;
+      }
+
+      if (!storage[i].args.empty())
+        for (int j = 0;j < storage[i].args.size();j++)
+        {
+
+          std::stringstream ss(storage[i].args[j]);
+          try
+          {
+            ss >> *bi++;
+          }
+          catch(...)
+          {
+            throw invalid_arg(std::string("--") + _longname,storage[i].args[j]);
+          }
+          
+          if (ss.fail())
+            throw invalid_arg(std::string("-") + _longname,storage[i].args[j]);
+        }
+     
+      break;
+    }
+
+  if (i == storage.size())
+    throw invalid_opt(std::string("-") + _longname);
+}
 
 #endif
