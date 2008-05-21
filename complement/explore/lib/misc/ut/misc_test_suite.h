@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/07/16 22:08:39 ptr>
+// -*- C++ -*- Time-stamp: <08/05/21 12:31:01 yeti>
 
 /*
- * Copyright (c) 2007
+ * Copyright (c) 2007, 2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -14,5 +14,6 @@
 #include <exam/suite.h>
 
 int EXAM_DECL(misc_test_suite);
+int EXAM_DECL(options_test_suite);
 
 #endif // __MISC_TEST_SUITE_H

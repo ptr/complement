@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/16 22:12:10 ptr>
+// -*- C++ -*- Time-stamp: <08/05/21 12:33:01 yeti>
 
 /*
  * Copyright (c) 2007
@@ -15,5 +15,9 @@
 
 int main( int, char ** )
 {
-  return misc_test_suite(0);
+  int res1 = misc_test_suite(0);
+
+  int res2 = options_test_suite(0);
+
+  return res1 || res2;
 }

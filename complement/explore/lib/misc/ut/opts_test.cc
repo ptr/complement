@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/05/01 15:16:10 ptr>
+// -*- C++ -*- Time-stamp: <08/05/21 12:20:14 yeti>
 
 /*
  * Copyright (c) 2008
@@ -32,7 +32,7 @@ int EXAM_IMPL(opts_test::bool_option)
 
     EXAM_CHECK( opts.is_set( 'h' ) );
   }
-  catch ( const Opts::invalid_opt& e ) {
+  catch ( const Opts::unknown_option& e ) {
   }
   catch ( const Opts::invalid_arg& e ) {
   }
@@ -54,7 +54,7 @@ int EXAM_IMPL(opts_test::bool_option_long)
 
     EXAM_CHECK( opts.is_set( 'h' ) );
   }
-  catch ( const Opts::invalid_opt& e ) {
+  catch ( const Opts::unknown_option& e ) {
   }
   catch ( const Opts::invalid_arg& e ) {
   }
@@ -78,7 +78,7 @@ int EXAM_IMPL(opts_test::int_option)
     EXAM_CHECK( opts.is_set( 'p' ) );
     EXAM_CHECK( opts.get<int>( 'p' ) == 80 );
   }
-  catch ( const Opts::invalid_opt& e ) {
+  catch ( const Opts::unknown_option& e ) {
   }
   catch ( const Opts::invalid_arg& e ) {
   }
@@ -102,7 +102,7 @@ int EXAM_IMPL(opts_test::int_option_long)
     EXAM_CHECK( opts.is_set( 'p' ) );
     EXAM_CHECK( opts.get<int>( 'p' ) == 80 );
   }
-  catch ( const Opts::invalid_opt& e ) {
+  catch ( const Opts::unknown_option& e ) {
   }
   catch ( const Opts::invalid_arg& e ) {
   }
@@ -126,7 +126,7 @@ int EXAM_IMPL(opts_test::defaults)
     EXAM_CHECK( !opts.is_set( 'p' ) );
     EXAM_CHECK( opts.get<int>( 'p' ) == 0 );
   }
-  catch ( const Opts::invalid_opt& e ) {
+  catch ( const Opts::unknown_option& e ) {
   }
   catch ( const Opts::invalid_arg& e ) {
   }
@@ -150,7 +150,7 @@ int EXAM_IMPL(opts_test::bad_option)
 
     EXAM_ERROR( "exception expected" );
   }
-  catch ( const Opts::invalid_opt& e ) {
+  catch ( const Opts::unknown_option& e ) {
     exception_happens = true;
   }
   catch ( const Opts::invalid_arg& e ) {
@@ -491,7 +491,7 @@ int EXAM_IMPL(opts_test::autocomplement_failure)
     {
       opts.parse( argc, argv );
     }
-    catch(const Opts::invalid_opt& e)
+    catch(const Opts::unknown_option& e)
     {
       exception_happens = true;
     }
