@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/05/01 15:18:28 ptr>
+// -*- C++ -*- Time-stamp: <08/05/21 12:30:07 yeti>
 
 /*
  * Copyright (c) 2007, 2008
@@ -16,7 +16,7 @@
 
 int EXAM_IMPL(misc_test_suite)
 {
-  exam::test_suite t( "libmisc? test" );
+  exam::test_suite t( "libmisc type_traits test" );
   misc_test test;
 
   exam::test_suite::test_case_type tc[10];
@@ -55,8 +55,13 @@ int EXAM_IMPL(misc_test_suite)
   t.add( &misc_test::type_traits_is_pod, test, "is_pod", tc[0] );
   t.add( &misc_test::type_traits_is_empty, test, "is_empty", tc[0] );
 
+  return t.girdle();
+}
 
+int EXAM_IMPL(options_test_suite)
+{
   // test for options parsing
+  exam::test_suite t( "libmisc, options test" );
 
   opts_test opts;
 
@@ -94,4 +99,4 @@ int EXAM_IMPL(misc_test_suite)
   t.add( &opts_test::multiple_args, opts,"multiple_args");
 
   return t.girdle();
-};
+}

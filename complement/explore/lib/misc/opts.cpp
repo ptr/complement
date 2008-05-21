@@ -166,7 +166,7 @@ void Opts::parse(int& ac,const char** av)
       int p = get_opt_index(opt);
 
       if (p == storage.size())
-        throw invalid_opt(opt);
+        throw unknown_option(opt);
       else
       {
         storage[p].is_set = true;
@@ -194,7 +194,7 @@ void Opts::parse(int& ac,const char** av)
       {
         int p = get_opt_index(string("-") + optgroup[j]);
         if (p == storage.size())
-          throw invalid_opt( "-" + string(1,optgroup[j]) );
+          throw unknown_option( "-" + string(1,optgroup[j]) );
         else
         {
           storage[p].is_set = true;  
