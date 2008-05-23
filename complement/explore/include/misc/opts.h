@@ -19,8 +19,9 @@ class Opt
     char shortname;
     std::string longname;
     std::string desc;
-    std::vector< std::string > args;
     std::string default_v;
+
+    std::vector< std::string > args;
 
     bool has_arg;
     bool is_set;
@@ -29,6 +30,9 @@ class Opt
 
 class Opts
 {
+  private:
+    typedef std::vector< Opt > options_container_type;
+    options_container_type storage;  
   public:
     Opts( const std::string& _brief = "", const std::string& _author = "", const std::string& _copyright = "") :
         brief(_brief),
@@ -109,12 +113,7 @@ class Opts
           { }
     };
 
-    //std::vector< std::string > args;
   private:
-    // data  
-    typedef std::vector< Opt > options_container_type;
-    options_container_type storage;  
-  
     std::string pname;
     std::string brief;
     std::string author;
@@ -124,7 +123,7 @@ class Opts
     bool is_opt_name( const std::string& s );
     bool is_flag_group( const std::string& s );
     bool is_substr(const std::string& small, const std::string& big );
-    int get_opt_index( std::string s );
+    options_container_type::iterator get_opt_index( std::string s );
 };
 
 template <class T>
@@ -170,26 +169,26 @@ T Opts::get( char _shortname )
 template <class T>
 T Opts::get_default( char _shortname )
 {
-  int i;
+  options_container_type::const_iterator i;
   T res;
-  for (i = 0;i < storage.size();i++)
-    if (storage[i].shortname == _shortname)
+  for (i = storage.begin();i != storage.end();++i)
+    if (i->shortname == _shortname)
     {
-      if (!storage[i].has_arg)
+      if (!i->has_arg)
         throw bad_usage("using Opts::get for option without arguments");
     
       std::stringstream ss;
-      ss << storage[i].default_v;
+      ss << i->default_v;
 
       ss >> res;
 
       if (ss.fail())
-         throw invalid_arg(std::string("-") + std::string(1,_shortname),storage[i].default_v);
+         throw invalid_arg(std::string("-") + std::string(1,_shortname),i->default_v);
   
       break;
     }
 
-  if (i == storage.size())
+  if (i == storage.end())
     throw unknown_option(std::string("-") + std::string(1,_shortname));
   return res;
 }
@@ -197,29 +196,26 @@ T Opts::get_default( char _shortname )
 template <class T>
 T Opts::get( const std::string& _longname )
 {
-  int i;
+  options_container_type::const_iterator i;
   T res;
-  for (i = 0;i < storage.size();i++)
-    if (storage[i].longname == _longname)
+  for (i = storage.begin();i != storage.end();++i)
+    if (i->longname == _longname)
     {
-      if (!storage[i].has_arg)
+      if (!i->has_arg)
         throw bad_usage("using Opts::get for option without arguments");
     
       std::stringstream ss;
-      if (!storage[i].args.empty())
-        ss << storage[i].args[0];
-      else
-        ss << storage[i].default_v;
+      ss << (i->args.empty() ? i->default_v : i->args[0]); 
 
       ss >> res;
   
       if (ss.fail()) // need to recover stream?
-         throw invalid_arg(std::string("--") + _longname,storage[i].args[0]);
+         throw invalid_arg(std::string("--") + _longname,i->args[0]);
   
       break;
     }
 
-  if (i == storage.size())
+  if (i == storage.end())
     throw unknown_option(std::string("--") + _longname);
   return res;
 }
@@ -227,25 +223,25 @@ T Opts::get( const std::string& _longname )
 template <class T>
 T Opts::get_default( const std::string& _longname )
 {
-  int i;
+  options_container_type::const_iterator i;
   T res;
-  for (i = 0;i < storage.size();i++)
-    if (storage[i].longname == _longname)
+  for (i = storage.begin();i != storage.end();++i)
+    if (i->longname == _longname)
     {
-      if (!storage[i].has_arg)
+      if (!i->has_arg)
         throw bad_usage("using Opts::get for option without arguments");
     
-      std::stringstream ss(storage[i].default_v);
+      std::stringstream ss(i->default_v);
 
       ss >> res;
   
       if (ss.fail()) // need to recover stream?
-         throw invalid_arg(std::string("--") + _longname,storage[i].default_v);
+         throw invalid_arg(std::string("--") + _longname,i->default_v);
   
       break;
     }
 
-  if (i == storage.size())
+  if (i == storage.end())
     throw unknown_option(std::string("--") + _longname);
   return res;
 }
@@ -253,82 +249,70 @@ T Opts::get_default( const std::string& _longname )
 template <class BackInsertIterator>
 void Opts::getemall( char _shortname , BackInsertIterator bi)
 {
-  int i;
-  for (i = 0;i < storage.size();i++)
-    if (storage[i].shortname == _shortname)
+  options_container_type::const_iterator i;
+  for (i = storage.begin();i != storage.end();++i)
+    if (i->shortname == _shortname)
     {
-      if (!storage[i].has_arg)
+      if (!i->has_arg)
         throw bad_usage("using Opts::getemall for option without arguments");
     
-      if (!storage[i].default_v.empty())
-      {
-        std::stringstream ss(storage[i].default_v);
-        ss >> *bi++;
-      }
-
-      if (!storage[i].args.empty())
-        for (int j = 0;j < storage[i].args.size();j++)
+      if (!i->args.empty())
+        for (int j = 0;j < i->args.size();j++)
         {
 
-          std::stringstream ss(storage[i].args[j]);
+          std::stringstream ss(i->args[j]);
           try
           {
             ss >> *bi++;
           }
           catch(...)
           {
-            throw invalid_arg(std::string("-") + std::string(1,_shortname),storage[i].args[j]);
+            throw invalid_arg(std::string("-") + std::string(1,_shortname),i->args[j]);
           }
           
           if (ss.fail())
-            throw invalid_arg(std::string("-") + std::string(1,_shortname),storage[i].args[j]);
+            throw invalid_arg(std::string("-") + std::string(1,_shortname),i->args[j]);
         }
      
       break;
     }
 
-  if (i == storage.size())
+  if (i == storage.end())
     throw unknown_option(std::string("-") + std::string(1,_shortname));
 }
 
 template <class BackInsertIterator>
 void Opts::getemall( const std::string& _longname , BackInsertIterator bi)
 {
-  int i;
-  for (i = 0;i < storage.size();i++)
-    if (storage[i].longname == _longname)
+  options_container_type::const_iterator i;
+  for (i = storage.begin();i != storage.end();++i)
+    if (i->longname == _longname)
     {
-      if (!storage[i].has_arg)
+      if (!i->has_arg)
         throw bad_usage("using Opts::getemall for option without arguments");
     
-      if (!storage[i].default_v.empty())
-      {
-        std::stringstream ss(storage[i].default_v);
-        ss >> *bi++;
-      }
-
-      if (!storage[i].args.empty())
-        for (int j = 0;j < storage[i].args.size();j++)
+      if (!i->args.empty())
+        for (int j = 0;j < i->args.size();j++)
         {
 
-          std::stringstream ss(storage[i].args[j]);
+          std::stringstream ss(i->args[j]);
           try
           {
             ss >> *bi++;
           }
           catch(...)
           {
-            throw invalid_arg(std::string("--") + _longname,storage[i].args[j]);
+            throw invalid_arg(std::string("--") + _longname,i->args[j]);
           }
           
           if (ss.fail())
-            throw invalid_arg(std::string("-") + _longname,storage[i].args[j]);
+            throw invalid_arg(std::string("-") + _longname,i->args[j]);
         }
      
       break;
     }
 
-  if (i == storage.size())
+  if (i == storage.end())
     throw unknown_option(std::string("-") + _longname);
 }
 
