@@ -308,7 +308,7 @@ int EXAM_IMPL(opts_test::compound)
 int EXAM_IMPL(opts_test::multiple_compound)
 {
   {
-    const char* argv[] = { "name", "-xf","--flag", "-f", "-p=second" ,"--pa","third" };
+    const char* argv[] = { "name", "-xf","--flag", "-f", "-p=first" ,"--pa","second" };
     int argc = sizeof( argv ) / sizeof(argv[0]);
 
     Opts opts;
@@ -316,7 +316,7 @@ int EXAM_IMPL(opts_test::multiple_compound)
     opts.addflag( 'x', "x-option", "option x" );
     opts.addflag( 'f', "flag", "option f" );
   
-    opts.add('p',"first","path","some path");
+    opts.add('p',"defaultpath","path","some path");
     
     opts.parse( argc, argv );
 
@@ -324,12 +324,11 @@ int EXAM_IMPL(opts_test::multiple_compound)
     EXAM_CHECK(opts.is_set("flag"));
     EXAM_CHECK(opts.is_set('p'));
     EXAM_CHECK(opts.get_cnt("flag") == 3 && opts.get_cnt('f') == 3);
-    vector<string> vs(3);
+    vector<string> vs(2);
 
     opts.getemall("path",vs.begin());
     EXAM_CHECK( vs[0] == "first" );
     EXAM_CHECK( vs[1] == "second" );
-    EXAM_CHECK( vs[2] == "third" );
   }
 
 
@@ -518,10 +517,11 @@ int EXAM_IMPL(opts_test::multiple_args)
   
     opts.getemall('I',vs.begin());
     
-    EXAM_CHECK( vs[0] == "/usr/include" );
-    EXAM_CHECK( vs[1] == "first" );
-    EXAM_CHECK( vs[2] == "second" );
-    EXAM_CHECK( vs[3] == "third" );
+    EXAM_CHECK( opts.get_default<string>("include") == "/usr/include");
+   
+    EXAM_CHECK( vs[0] == "first" );
+    EXAM_CHECK( vs[1] == "second" );
+    EXAM_CHECK( vs[2] == "third" );
   }
 
   return EXAM_RESULT; 
