@@ -65,14 +65,17 @@ int EXAM_IMPL(options_test_suite)
 
   opts_test opts;
 
-  t.add( &opts_test::bool_option_long, opts, "simple boolean option, long",
+  t.add( &opts_test::bool_option_long, opts, "simple boolean option, long" , 
          t.add( &opts_test::bool_option, opts, "simple boolean option" ) );
-
+  
   t.add( &opts_test::int_option_long, opts, "option with int parameter, long",
          t.add( &opts_test::int_option, opts, "option with int parameter" ) );
 
-  t.add( &opts_test::defaults, opts, "defaults" );
+  t.add( &opts_test::add_check_flag , opts , "add_check_flag");
+  t.add( &opts_test::add_get_opt , opts , "add_get_opts"); 
+  t.add( &opts_test::option_position,opts,"option position");
 
+  t.add( &opts_test::defaults, opts, "defaults" );
  
   t.add( &opts_test::bad_option, opts, "bad option" );
   t.add( &opts_test::bad_argument, opts, "bad argument" );
@@ -98,5 +101,7 @@ int EXAM_IMPL(options_test_suite)
 
   t.add( &opts_test::multiple_args, opts,"multiple_args");
 
+  t.add( &opts_test::help, opts, "help");
+  
   return t.girdle();
 }

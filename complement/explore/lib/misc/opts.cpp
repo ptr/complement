@@ -9,9 +9,6 @@
 using namespace std;
 
 string Opts::get_pname() const { return pname; }
-string Opts::get_brief() const { return brief; }
-string Opts::get_author() const { return author; }
-string Opts::get_copyright() const { return copyright; }
 
 bool Opts::isterm(const string& s)
 {
@@ -95,13 +92,15 @@ void Opts::help(ostream& out)
   
   out << "usage: " << endl;
   out << pname  << " [option ...] [optiongoup ...] [end operands ...]" << endl;  
-  out << "available options:" << endl;
+  out << "available options:" << endl << "shortname:" << '\t' << "longname:" << '\t' << "default value" << '\t' << "description" << endl;
   options_container_type::const_iterator i;
   for (i = storage.begin();i != storage.end();++i)
-    out << "-" << i->shortname << "\t[--" << i->longname << "] [" << i->default_v << "]\t-\t" << i->desc << endl;
+  {
+    out << i->shortname << "\t[--" << i->longname << "] [" << i->default_v << "]\t-\t" << i->desc << endl;
+  }
 }
 
-void Opts::addflag(char _shortname,const string& _longname,const string& _desc)
+int Opts::addflag(char _shortname,const string& _longname,const string& _desc)
 {
   Opt opt;
   opt.shortname = _shortname;
@@ -109,44 +108,21 @@ void Opts::addflag(char _shortname,const string& _longname,const string& _desc)
   opt.desc = _desc;
   opt.has_arg = false;
   opt.is_set = false;
+  opt.token = ++free_token;
   storage.push_back(opt);
+  return opt.token;
 }
 
-
-bool Opts::is_set(char _shortname)
+int Opts::addflag(const string& _longname,const string& _desc)
 {
-  options_container_type::const_iterator i;
-  for (i = storage.begin();i != storage.end();++i)
-    if (i->shortname == _shortname)
-      return i->is_set;
-  return false;
-}
-
-bool Opts::is_set(const string& _longname)
-{
-  options_container_type::const_iterator i;
-  for (i = storage.begin();i != storage.end();++i)
-    if (i->longname == _longname)
-      return i->is_set;
-  return false;
-}
-
-int Opts::get_cnt(char _shortname) const
-{
-  options_container_type::const_iterator i;
-  for (i = storage.begin();i != storage.end();++i)
-    if (i->shortname == _shortname)
-      return i->cnt;
-  return 0;
-}
-
-int Opts::get_cnt(const string& _longname) const
-{
-  options_container_type::const_iterator i;
-  for (i = storage.begin();i != storage.end();++i)
-    if (i->longname == _longname)
-      return i->cnt;
-  return 0;
+  Opt opt;
+  opt.longname = _longname;
+  opt.desc = _desc;
+  opt.has_arg = false;
+  opt.is_set = false;
+  opt.token = ++free_token;
+  storage.push_back(opt);
+  return opt.token;
 }
 
 void Opts::parse(int& ac,const char** av)
@@ -155,6 +131,7 @@ void Opts::parse(int& ac,const char** av)
 
   int i = 1;
   int j = 1;
+  int q = 0;
   while (i < ac && !isterm(av[i]))
   {
     if (is_opt_name(av[i]))
@@ -171,11 +148,12 @@ void Opts::parse(int& ac,const char** av)
       }
 
       options_container_type::iterator  p = get_opt_index(opt);
-
+      
       if (p == storage.end())
         throw unknown_option(opt);
       else
       {
+        p->pos.push_back(++q);
         p->is_set = true;
         p->cnt++;
         if (p->has_arg)
@@ -189,8 +167,8 @@ void Opts::parse(int& ac,const char** av)
               throw missing_arg(opt);
         }
         else
-          if (!arg.empty()) //unexpected arg
-            throw invalid_arg(opt,arg);
+          if (!arg.empty()) //unexpected arg (not exactly mismatch)
+            throw arg_typemismatch(opt,arg); 
       }  
     }
     else
@@ -201,11 +179,14 @@ void Opts::parse(int& ac,const char** av)
       {
         options_container_type::iterator p = get_opt_index(string("-") + optgroup[j]);
         if (p == storage.end())
+        {
           throw unknown_option( "-" + string(1,optgroup[j]) );
+        }
         else
         {
           p->is_set = true;  
           p->cnt++;
+          p->pos.push_back(++q);
           if (p->has_arg)
             throw missing_arg( "-" + string(1,optgroup[j]) );
         }
