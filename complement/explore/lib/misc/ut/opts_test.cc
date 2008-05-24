@@ -13,10 +13,13 @@
 #include <misc/opts.h>
 #include <set>
 #include <vector>
+#include <list>
+#include <fstream>
 
 // #include <iostream>
 
 using namespace std;
+
 
 int EXAM_IMPL(opts_test::bool_option)
 {
@@ -34,7 +37,7 @@ int EXAM_IMPL(opts_test::bool_option)
   }
   catch ( const Opts::unknown_option& e ) {
   }
-  catch ( const Opts::invalid_arg& e ) {
+  catch ( const Opts::arg_typemismatch& e ) {
   }
 
   return EXAM_RESULT;
@@ -56,7 +59,7 @@ int EXAM_IMPL(opts_test::bool_option_long)
   }
   catch ( const Opts::unknown_option& e ) {
   }
-  catch ( const Opts::invalid_arg& e ) {
+  catch ( const Opts::arg_typemismatch& e ) {
   }
 
   return EXAM_RESULT;
@@ -80,7 +83,7 @@ int EXAM_IMPL(opts_test::int_option)
   }
   catch ( const Opts::unknown_option& e ) {
   }
-  catch ( const Opts::invalid_arg& e ) {
+  catch ( const Opts::arg_typemismatch& e ) {
   }
 
   return EXAM_RESULT;
@@ -104,7 +107,178 @@ int EXAM_IMPL(opts_test::int_option_long)
   }
   catch ( const Opts::unknown_option& e ) {
   }
-  catch ( const Opts::invalid_arg& e ) {
+  catch ( const Opts::arg_typemismatch& e ) {
+  }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(opts_test::add_check_flag)
+{
+  const char* argv[] = { "name", "-ht" , "--temp"};
+  int argc = sizeof( argv ) / sizeof(argv[0]);
+
+  Opts opts;
+  
+  int f_token = opts.addflag('f');
+  opts.addflag('t',"tag");
+  int foo_token = opts.addflag("foo");
+  opts.addflag("temp","temp desc");
+  int h_token = opts.addflag( 'h', "help", "print this help message" );
+  bool exception_happens = false;
+
+  try {
+    opts.parse( argc, argv );
+
+    EXAM_CHECK( opts.is_set( 'h' ) );
+  }
+  catch ( const Opts::unknown_option& e ) {
+  }
+  catch ( const Opts::arg_typemismatch& e ) {
+  }
+
+  EXAM_CHECK( !opts.is_set("foo") );
+  EXAM_CHECK( !opts.is_set(foo_token) );
+  EXAM_CHECK( opts.is_set('h') );
+  EXAM_CHECK( opts.is_set(h_token) );
+  EXAM_CHECK( opts.is_set("help"));
+  EXAM_CHECK( opts.is_set('t'));
+  EXAM_CHECK( opts.is_set("temp") );
+  EXAM_CHECK( !opts.is_set("unknow option") );
+  EXAM_CHECK( !opts.is_set(42) );
+
+  try
+  {
+    opts.get<int>('f');
+  }
+  catch(const logic_error& e)
+  {
+    exception_happens = true;
+  }
+
+  EXAM_CHECK( exception_happens );
+
+  exception_happens = false;
+  try
+  {
+    opts.get_default<int>("tag");
+  }
+  catch(const logic_error& e)
+  {
+    exception_happens = true;
+  }
+
+  EXAM_CHECK( exception_happens );
+
+  exception_happens = false;
+
+  try
+  {
+    vector< string > vs;
+    opts.getemall(h_token,vs.begin());
+  }
+  catch( const logic_error& e)
+  {
+    exception_happens = true;
+  }
+
+  EXAM_CHECK( exception_happens );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(opts_test::add_get_opt)
+{
+  const char* argv[] = { "name", "-t" , "20" , "--name=torwalds" };
+  int argc = sizeof( argv ) / sizeof(argv[0]);
+
+  Opts opts;
+
+  int t_token = opts.add('t',10);
+  int name_token = opts.add("name","linus");
+  int port_token = opts.add('p',80,"port");
+  int num_token = opts.add("num",100,"number of elements");
+ 
+
+  try {
+    opts.parse( argc, argv );
+  }
+  catch ( const Opts::unknown_option& e ) {
+  }
+  catch ( const Opts::arg_typemismatch& e ) {
+  }
+
+  EXAM_CHECK( opts.is_set('t') );
+  EXAM_CHECK( opts.get_cnt(t_token) == 1 );
+  EXAM_CHECK( opts.get<int>('t') == 20);
+  EXAM_CHECK( opts.get_default<int>(t_token) == 10 );
+  EXAM_CHECK( opts.is_set(name_token) );
+  EXAM_CHECK( opts.get_cnt("name") == 1 );
+  EXAM_CHECK( opts.get<string>(name_token) == "torwalds");
+  EXAM_CHECK( opts.get_default<string>("name") == "linus");
+  EXAM_CHECK( !opts.is_set('p') );
+  EXAM_CHECK( !opts.is_set("num") && opts.get<int>(num_token) == opts.get_default<int>("num") ) ;
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(opts_test::option_position)
+{
+  const char* argv[] = { "name" , "--begin" , "--f1","--f2","--end","--f1","--port=10"};
+  int argc = sizeof( argv ) / sizeof(argv[0]);
+
+  Opts opts;
+
+  opts.add( 'p', 0, "port", "listen tcp port");
+  opts.addflag("begin");
+  int f1_token = opts.addflag("f1");
+  int f2_token = opts.addflag("f2");
+  opts.addflag("end");
+
+  try {
+    opts.parse( argc, argv );
+  
+    EXAM_CHECK(opts.get_cnt('p') == 1);
+    EXAM_CHECK(opts.get_cnt("begin") == 1);
+    EXAM_CHECK(opts.get_cnt(f1_token) == 2);
+    EXAM_CHECK(opts.get_cnt(f2_token) == 1);
+    EXAM_CHECK(opts.get_cnt("end") == 1);
+    EXAM_CHECK(opts.get_cnt("unknown") == 0);
+    EXAM_CHECK(opts.get_cnt('u') == 0);
+    EXAM_CHECK(opts.get_cnt(42) == 0);
+
+    list<int> p_l(opts.get_cnt('p'));
+    vector<int> b_v(opts.get_cnt("begin"));
+    vector<int> f1_v(opts.get_cnt(f1_token));
+    vector<int> f2_v(opts.get_cnt(f2_token));
+    vector<int> e_v(opts.get_cnt("end"));
+    list<int> u_l(opts.get_cnt("unknown"));
+    bool exception_happens = false;
+
+    opts.get_pos('p',p_l.begin());
+    opts.get_pos("begin",b_v.begin());
+    opts.get_pos("f1",f1_v.begin());
+    opts.get_pos(f2_token,f2_v.begin());
+    opts.get_pos("end",e_v.begin());
+
+    try
+    {
+      opts.get_pos("unknown",u_l.begin());
+    }
+    catch(const Opts::unknown_option& e)
+    {
+      exception_happens = true;
+    }
+    
+    EXAM_CHECK( exception_happens );
+    EXAM_CHECK( !b_v.empty() && !e_v.empty() && e_v[0] > b_v[0]);
+    EXAM_CHECK( f1_v.size() == 2 && f1_v[0] == 2 && f1_v[1] == 5);
+    EXAM_CHECK( !p_l.empty() && *p_l.begin() == 6);
+    EXAM_CHECK( u_l.empty() );
+  }
+  catch ( const Opts::unknown_option& e ) {
+  }
+  catch ( const Opts::arg_typemismatch& e ) {
   }
 
   return EXAM_RESULT;
@@ -128,7 +302,7 @@ int EXAM_IMPL(opts_test::defaults)
   }
   catch ( const Opts::unknown_option& e ) {
   }
-  catch ( const Opts::invalid_arg& e ) {
+  catch ( const Opts::arg_typemismatch& e ) {
   }
 
   return EXAM_RESULT;
@@ -153,7 +327,7 @@ int EXAM_IMPL(opts_test::bad_option)
   catch ( const Opts::unknown_option& e ) {
     exception_happens = true;
   }
-  catch ( const Opts::invalid_arg& e ) {
+  catch ( const Opts::arg_typemismatch& e ) {
   }
 
   EXAM_CHECK( exception_happens );
@@ -178,7 +352,7 @@ int EXAM_IMPL(opts_test::bad_argument)
   {
     int t = opts.get<int>('p');
   }
-  catch(const Opts::invalid_arg& e)
+  catch(const Opts::arg_typemismatch& e)
   {
     exception_happens = true;
   }
@@ -204,7 +378,7 @@ int EXAM_IMPL(opts_test::unexpected_argument)
   {
     opts.parse( argc, argv );
   }
-  catch(const Opts::invalid_arg& e)
+  catch(const Opts::arg_typemismatch& e)
   {
     exception_happens = true;
   }
@@ -485,7 +659,7 @@ int EXAM_IMPL(opts_test::autocomplement_failure)
     opts.add('t',string("standart"),"proc_type","process type");
 
     bool exception_happens = false;
-    
+
     try
     {
       opts.parse( argc, argv );
@@ -522,6 +696,36 @@ int EXAM_IMPL(opts_test::multiple_args)
     EXAM_CHECK( vs[0] == "first" );
     EXAM_CHECK( vs[1] == "second" );
     EXAM_CHECK( vs[2] == "third" );
+  }
+
+  return EXAM_RESULT; 
+}
+
+int EXAM_IMPL(opts_test::help)
+{
+  {
+    const char* argv[] = { "name" , "--help" };
+    int argc = sizeof( argv ) / sizeof(argv[0]);
+
+    Opts opts("what utility do","author","copyright");
+
+
+    opts.addflag('h',"help","print this help message");
+    opts.addflag('v',"verbose");
+    opts.addflag("flag","some program flag");
+    opts.add('I',"/usr/include","include","include paths" );
+    opts.add('p',80,"port","listen to tcp port");
+    opts.add('t',"standart");;
+    
+    opts.parse(argc,argv);
+
+    EXAM_CHECK(opts.is_set('h'));
+    EXAM_CHECK( opts.get_pname() == "name" );
+
+    ofstream out("help.out");
+    opts.help(out);
+    cout << "check file help.out" << endl;
+    out.close();
   }
 
   return EXAM_RESULT; 
