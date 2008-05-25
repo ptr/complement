@@ -15,11 +15,9 @@
 #include <vector>
 #include <list>
 #include <fstream>
-
-// #include <iostream>
+ #include <iostream>
 
 using namespace std;
-
 
 int EXAM_IMPL(opts_test::bool_option)
 {
@@ -711,11 +709,11 @@ int EXAM_IMPL(opts_test::help)
 
 
     opts.addflag('h',"help","print this help message");
-    opts.addflag('v',"verbose");
     opts.addflag("flag","some program flag");
+    opts.addflag('v',"version","view program version");
     opts.add('I',"/usr/include","include","include paths" );
     opts.add('p',80,"port","listen to tcp port");
-    opts.add('t',"standart");;
+    opts.add("mode","standart","program mode");
     
     opts.parse(argc,argv);
 
