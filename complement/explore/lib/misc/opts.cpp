@@ -10,10 +10,6 @@ using namespace std;
 
 string Opts::get_pname() const { return pname; }
 
-bool Opts::isterm(const string& s)
-{
-  return (s == "--");
-}
 
 bool Opts::is_opt_name(const string& s)
 {
@@ -81,6 +77,20 @@ Opts::options_container_type::iterator Opts::get_opt_index(string s)
   return storage.end();
 }
 
+ostream& operator<<(ostream& out,const Opt& opt)
+{
+  if (opt.shortname == ' ')
+  {
+    out << "--" << opt.longname << '\t' << (opt.has_arg ? (string("[") + opt.default_v + "]\t") : "" ) << opt.desc;
+  } 
+  else
+  {
+    out << '-' << opt.shortname << '\t' << (!opt.longname.empty() ? (string("[--") + opt.longname +"]\t") : "")  << (opt.has_arg ? string("[") + opt.default_v + ("]\t") : "")  << opt.desc; 
+  }
+  
+  return out;
+}
+
 void Opts::help(ostream& out)
 {
   if (!brief.empty())
@@ -90,13 +100,11 @@ void Opts::help(ostream& out)
   if (!copyright.empty())
     out << copyright << endl;  
   
-  out << "usage: " << endl;
-  out << pname  << " [option ...] [optiongoup ...] [end operands ...]" << endl;  
-  out << "available options:" << endl << "shortname:" << '\t' << "longname:" << '\t' << "default value" << '\t' << "description" << endl;
+  out << "Valid options:" << endl;
   options_container_type::const_iterator i;
   for (i = storage.begin();i != storage.end();++i)
   {
-    out << i->shortname << "\t[--" << i->longname << "] [" << i->default_v << "]\t-\t" << i->desc << endl;
+    out << *i << endl;
   }
 }
 
@@ -107,7 +115,6 @@ int Opts::addflag(char _shortname,const string& _longname,const string& _desc)
   opt.longname = _longname;
   opt.desc = _desc;
   opt.has_arg = false;
-  opt.is_set = false;
   opt.token = ++free_token;
   storage.push_back(opt);
   return opt.token;
@@ -119,7 +126,6 @@ int Opts::addflag(const string& _longname,const string& _desc)
   opt.longname = _longname;
   opt.desc = _desc;
   opt.has_arg = false;
-  opt.is_set = false;
   opt.token = ++free_token;
   storage.push_back(opt);
   return opt.token;
@@ -132,7 +138,7 @@ void Opts::parse(int& ac,const char** av)
   int i = 1;
   int j = 1;
   int q = 0;
-  while (i < ac && !isterm(av[i]))
+  while ( (i < ac) && (string(av[i]) != "--") )
   {
     if (is_opt_name(av[i]))
     {
@@ -154,8 +160,6 @@ void Opts::parse(int& ac,const char** av)
       else
       {
         p->pos.push_back(++q);
-        p->is_set = true;
-        p->cnt++;
         if (p->has_arg)
         {
           if (!arg.empty())
@@ -184,8 +188,6 @@ void Opts::parse(int& ac,const char** av)
         }
         else
         {
-          p->is_set = true;  
-          p->cnt++;
           p->pos.push_back(++q);
           if (p->has_arg)
             throw missing_arg( "-" + string(1,optgroup[j]) );
@@ -197,7 +199,7 @@ void Opts::parse(int& ac,const char** av)
     i++;
   }
   
-  i += (i < ac && isterm(av[i]));
+  i += ( i < ac );
 
   while (i < ac)
     av[j++] = av[i++]; 
