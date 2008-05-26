@@ -1,7 +1,7 @@
 all: server client
 
 server: server.o socket.o
-	gcc -g -o server server.o socket.o -lstdc++
+	gcc -g -o server server.o socket.o -lstdc++ -lpthread 
 server.o: ECHO_server.cc socket.h
 	gcc -g -c ECHO_server.cc -o server.o
 client: client.o socket.o
