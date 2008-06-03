@@ -241,7 +241,8 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( int fd, 
     }
   }
   if ( c != 0 ) {
-    (c->*C)( s );
+//using unknown variable s  
+//    (c->*C)( s );
     delete c;
   }
 }
@@ -501,7 +502,9 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
         epoll_event ev_add;
         ev_add.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
         ev_add.data.fd = fd;
-        fd_info new_info = { fd_info::owner, s, info.p };
+//undeclared s with some flags
+//        fd_info new_info = { fd_info::owner, s, info.p };
+        fd_info new_info = { fd_info::owner, 0, info.p };
         descr[fd] = new_info;
 
         if ( epoll_ctl( efd, EPOLL_CTL_ADD, fd, &ev_add ) < 0 ) {

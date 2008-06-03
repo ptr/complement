@@ -379,7 +379,7 @@ class __spinlock<true,SCOPE> : //  Recursive safe
       {
         if ( --_count == 0 ) {
 #  ifdef __FIT_PTHREADS
-          _id =  __STATIC_CAST(pthread_t,-1);
+          _id =  static_cast<pthread_t>(-1);
           pthread_spin_unlock( &this->_M_lock );
 #  endif
         }
