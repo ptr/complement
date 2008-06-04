@@ -46,11 +46,11 @@ class simple_mgr :
       { /* cerr << "In destructor\n"; */ }
 
   protected:
-    virtual void operator ()( sockstream_t& s, const adopt_new_t& )
+    virtual void operator ()( int, const adopt_new_t& )
       { lock_guard<mutex> lk(lock); b.wait(); ++n_cnt; }
-    virtual void operator ()( sockstream_t& s, const adopt_close_t& )
+    virtual void operator ()( int, const adopt_close_t& )
       { lock_guard<mutex> lk(lock); b.wait(); ++c_cnt; }
-    virtual void operator ()( sockstream_t& s, const adopt_data_t& )
+    virtual void operator ()( int, const adopt_data_t& )
       { lock_guard<mutex> lk(lock); ++d_cnt; }
 
   public:
@@ -80,17 +80,17 @@ class simple_mgr2 :
       { }
 
   protected:
-    virtual void operator ()( sockstream_t& s, const adopt_new_t& )
+    virtual void operator ()( int, const adopt_new_t& )
       { lock_guard<mutex> lk(lock); b.wait(); ++n_cnt; }
-    virtual void operator ()( sockstream_t& s, const adopt_close_t& )
+    virtual void operator ()( int, const adopt_close_t& )
       { lock_guard<mutex> lk(lock); b.wait(); ++c_cnt; }
-    virtual void operator ()( sockstream_t& s, const adopt_data_t& )
+    virtual void operator ()( int, const adopt_data_t& )
       {
         lock_guard<mutex> lk(lock);
         b.wait();
         ++d_cnt;
         string str;
-        getline( s, str );
+        // getline( s, str ); // map fd -> s
         EXAM_CHECK_ASYNC( str == "Hello" );
       }
 

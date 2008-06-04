@@ -502,7 +502,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
         epoll_event ev_add;
         ev_add.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
         ev_add.data.fd = fd;
-//undeclared s with some flags
+//undeclared s
 //        fd_info new_info = { fd_info::owner, s, info.p };
         fd_info new_info = { fd_info::owner, 0, info.p };
         descr[fd] = new_info;
@@ -734,7 +734,7 @@ void sockmgr<charT,traits,_Alloc>::final( sockmgr<charT,traits,_Alloc>::socks_pr
   for ( typename fd_container_type::iterator ifd = descr.begin(); ifd != descr.end(); ) {
     if ( (ifd->second.flags & fd_info::owner) && (ifd->second.p == &p) ) {
       std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)&p << " " << (void*)ifd->second.s.s << std::endl;
-      p( *ifd->second.s.s, typename socks_processor_t::adopt_close_t() );
+      p( /* *ifd->second.s.s */ /* *ifd->second.s.s.rdbuf()->fd() */, typename socks_processor_t::adopt_close_t() );
       std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)&p << " " << (void*)ifd->second.s.s << std::endl;
       delete ifd->second.s.s;
       if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {

@@ -110,13 +110,13 @@ class sock_processor_base :
 
   protected:
     void setoptions_unsafe( sock_base2::so_t optname, bool on_off = true, int __v = 0 );
-/*    sockstream_t* create_stream( int fd )
+    sockstream_t* create_stream( int fd )
       {
-        typename base_t::sockstream_t* s = new typename base_t::sockstream_t();
-        s->rdbuf()->_open_sockmgr( fd, addr );
+        sockstream_t* s = new sockstream_t();
+        // s->rdbuf()->_open_sockmgr( fd, addr );
         return s;
       }
-*/
+
   public:
     bool is_open() const
       { std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck); return basic_socket_t::is_open_unsafe(); }
@@ -193,7 +193,9 @@ class connect_processor :
         // {
         // std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
         for ( typename worker_pool_t::iterator i = worker_pool.begin(); i != worker_pool.end(); ++i ) {
-          delete i->second;
+          // delete i->second;
+          delete i->second.s;
+          delete i->second.c;
         }
         worker_pool.clear();
         // }
