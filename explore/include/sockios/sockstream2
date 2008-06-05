@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/04/09 13:02:18 yeti>
+// -*- C++ -*- Time-stamp: <08/06/05 12:53:21 yeti>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -189,6 +189,9 @@ class socket_write_timeout :
 namespace detail {
 template <class charT, class traits, class _Alloc> class sockmgr;
 } // namespace detail
+
+template <class charT, class traits, class _Alloc>
+class sock_processor_base;
 
 template<class charT, class traits, class _Alloc>
 class basic_socket
@@ -617,6 +620,7 @@ class basic_sockbuf2 :
     std::tr2::condition_variable ucnd;
 
     friend class detail::sockmgr<charT,traits,_Alloc>;
+    friend class sock_processor_base<charT,traits,_Alloc>;
 };
 
 template <class charT, class traits, class _Alloc>
@@ -768,7 +772,7 @@ class basic_sockstream2 :
 
 typedef basic_sockbuf2<char,char_traits<char>,allocator<char> >        sockbuf2;
 // typedef basic_sockbuf2<wchar_t,char_traits<wchar_t>,allocator<wchar_t> >  wsockbuf;
-typedef basic_sockstream2<char,char_traits<char>,allocator<char> >     sockstream2;
+typedef basic_sockstream2<char,std::char_traits<char>,std::allocator<char> >     sockstream2;
 // typedef basic_sockstream<wchar_t,char_traits<wchar_t>,allocator<wchar_t> > wsockstream;
 
 #ifdef STLPORT

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/04/11 22:14:39 yeti>
+// -*- C++ -*- Time-stamp: <08/06/05 12:38:28 yeti>
 
 /*
  * Copyright (c) 2008
@@ -100,7 +100,7 @@ class sock_processor_base :
 
     virtual void close();
 
-    virtual void operator ()( int fd, const adopt_new_t& ) = 0;
+    virtual void operator ()( int fd, const sockaddr& ) = 0;
     virtual void operator ()( int fd, const adopt_close_t& ) = 0;
     virtual void operator ()( int fd, const adopt_data_t& ) = 0;
 
@@ -110,10 +110,10 @@ class sock_processor_base :
 
   protected:
     void setoptions_unsafe( sock_base2::so_t optname, bool on_off = true, int __v = 0 );
-    sockstream_t* create_stream( int fd )
+    sockstream_t* create_stream( int fd, const sockaddr& addr )
       {
         sockstream_t* s = new sockstream_t();
-        // s->rdbuf()->_open_sockmgr( fd, addr );
+        s->rdbuf()->_open_sockmgr( fd, addr );
         return s;
       }
 
@@ -216,7 +216,7 @@ class connect_processor :
       { if ( ploop.joinable() ) { ploop.join(); } }
 
   private:
-    virtual void operator ()( int fd, const typename base_t::adopt_new_t& );
+    virtual void operator ()( int fd, const sockaddr& );
     virtual void operator ()( int fd, const typename base_t::adopt_close_t& );
     virtual void operator ()( int fd, const typename base_t::adopt_data_t& );
 

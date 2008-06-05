@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/04/11 21:52:28 yeti>
+// -*- C++ -*- Time-stamp: <08/06/05 12:55:59 yeti>
 
 /*
  * Copyright (c) 2008
@@ -199,19 +199,19 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::close()
 }
 
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
-void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( int fd, const typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::adopt_new_t& )
+void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( int fd, const sockaddr& addr )
 {
-  typename base_t::sockstream_t* s = base_t::create_stream( fd );
+  typename base_t::sockstream_t* s = base_t::create_stream( fd, addr );
 
-  Connect* c = new Connect( s ); // bad point! I can't read from s in ctor indeed!
+  Connect* c = new Connect( *s ); // bad point! I can't read from s in ctor indeed!
 
-  if ( s.rdbuf()->in_avail() ) {
+  if ( s->rdbuf()->in_avail() ) {
     std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
-    ready_pool.push_back( processor( c, &s ) );
+    ready_pool.push_back( processor( c, s ) );
     cnd.notify_one();
   } else {
     std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-    worker_pool.insert( std::make_pair( &s, c ) );
+    worker_pool.insert( std::make_pair( fd, processor( c, s ) ) );
   }
 }
 
@@ -306,7 +306,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
       ready_pool.push_back( p );
     } else {
       std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-      worker_pool[p.s] = p.c;
+      worker_pool[p.s->rdbuf()->fd()] = p;
     }
     // std::cerr << "worker 3\n";
   }
@@ -497,7 +497,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
       
       try {
         std::cerr << __FILE__ << ":" << __LINE__ << " new sockstream_t" << std::endl;
-        (*info.p)( fd, typename socks_processor_t::adopt_new_t() );
+        (*info.p)( fd, addr );
 
         epoll_event ev_add;
         ev_add.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
@@ -591,7 +591,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
             }
           }
           if ( !is_closed ) {
-            (*info.p)( *info.s.s, typename socks_processor_t::adopt_data_t() );
+            (*info.p)( ev.data.fd, typename socks_processor_t::adopt_data_t() );
           }
         }
         break;
@@ -652,7 +652,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
             }
           }
           if ( !is_closed ) {
-            (*info.p)( *info.s.s, typename socks_processor_t::adopt_data_t() );
+            (*info.p)( ev.data.fd, typename socks_processor_t::adopt_data_t() );
           }
         }
       } else {
@@ -686,13 +686,13 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
       }
       if ( need_delete ) {
         std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)info.s.s << std::endl;
-        (*info.p)( *info.s.s, typename socks_processor_t::adopt_close_t() );
+        (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
         std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)info.s.s << std::endl;
       }
     }
     if ( (info.flags & fd_info::owner) != 0 && need_delete ) {
       std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)info.s.s << std::endl;
-      delete info.s.s;
+      delete info.s.s; // Ahtung!
       info.s.s = 0;
     } else {
       std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)info.s.s << std::endl;
@@ -734,7 +734,7 @@ void sockmgr<charT,traits,_Alloc>::final( sockmgr<charT,traits,_Alloc>::socks_pr
   for ( typename fd_container_type::iterator ifd = descr.begin(); ifd != descr.end(); ) {
     if ( (ifd->second.flags & fd_info::owner) && (ifd->second.p == &p) ) {
       std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)&p << " " << (void*)ifd->second.s.s << std::endl;
-      p( /* *ifd->second.s.s */ /* *ifd->second.s.s.rdbuf()->fd() */, typename socks_processor_t::adopt_close_t() );
+      p( ifd->first, typename socks_processor_t::adopt_close_t() );
       std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)&p << " " << (void*)ifd->second.s.s << std::endl;
       delete ifd->second.s.s;
       if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {

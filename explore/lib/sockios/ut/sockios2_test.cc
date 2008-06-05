@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/04/09 21:18:52 yeti>
+// -*- C++ -*- Time-stamp: <08/06/05 12:37:58 yeti>
 
 /*
  *
@@ -46,7 +46,7 @@ class simple_mgr :
       { /* cerr << "In destructor\n"; */ }
 
   protected:
-    virtual void operator ()( int, const adopt_new_t& )
+    virtual void operator ()( int, const sockaddr& )
       { lock_guard<mutex> lk(lock); b.wait(); ++n_cnt; }
     virtual void operator ()( int, const adopt_close_t& )
       { lock_guard<mutex> lk(lock); b.wait(); ++c_cnt; }
@@ -80,7 +80,7 @@ class simple_mgr2 :
       { }
 
   protected:
-    virtual void operator ()( int, const adopt_new_t& )
+    virtual void operator ()( int, const sockaddr& )
       { lock_guard<mutex> lk(lock); b.wait(); ++n_cnt; }
     virtual void operator ()( int, const adopt_close_t& )
       { lock_guard<mutex> lk(lock); b.wait(); ++c_cnt; }
