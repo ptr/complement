@@ -1,4 +1,4 @@
-# Time-stamp: <07/07/12 10:55:41 ptr>
+# Time-stamp: <08/06/06 17:28:38 yeti>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005-2007
 # Petr Ovtchenkov
@@ -23,6 +23,10 @@ RULESBASE ?= $(SRCROOT)/Makefiles
 ifndef COMPILER_NAME
 # gcc is default compiler, others specify explicitly;
 COMPILER_NAME := gcc
+endif
+
+ifndef LDFLAGS
+LDFLAGS :=
 endif
 
 ifndef ALL_TAGS
@@ -90,6 +94,8 @@ include ${RULESBASE}/gmake/targetdirs.mak
 
 # os-specific local rules (or other project-specific definitions)
 -include specific.mak
+
+LDFLAGS += ${EXTRA_LDFLAGS}
 
 # derive common targets (*.o, *.d),
 # build rules (including output catalogs)

@@ -1,4 +1,4 @@
-# Time-stamp: <08/02/26 13:46:36 ptr>
+# Time-stamp: <08/06/06 17:38:26 yeti>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005-2008
 # Petr Ovtchenkov
@@ -177,6 +177,10 @@ endif
 
 ifdef EXTRA_CXXFLAGS
 CXXFLAGS += ${EXTRA_CXXFLAGS}
+endif
+
+ifdef EXTRA_CFLAGS
+CFLAGS += ${EXTRA_CFLAGS}
 endif
 
 CDEPFLAGS = -E -M

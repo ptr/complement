@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Time-stamp: <08/02/26 16:02:32 yeti>
+# Time-stamp: <08/06/06 17:44:52 yeti>
 
 base=`cd \`dirname $0\`; echo $PWD`
 
@@ -47,6 +47,10 @@ Available options:
   --with-mssdk=<dir>    use MS SDK from this catalog
   --with-extra-cxxflags=<options>
                         pass extra options to C++ compiler
+  --with-extra-cflags=<options>
+                        pass extra options to C compiler
+  --with-extra-ldflags=<options>
+                        pass extra options to linker (via C/C++)
   --use-static-gcc      use static gcc libs instead of shared libgcc_s (useful for gcc compiler,
                         that was builded with --enable-shared [default]; if compiler was builded
                         with --disable-shared, static libraries will be used in any case)
@@ -69,6 +73,8 @@ Environment variables:
   \$CXX                 C++ compiler name (use --target= for cross-compilation)
   \$CC                  C compiler name (use --target= for cross-compilation)
   \$CXXFLAGS            pass extra options to C++ compiler
+  \$CFLAGS              pass extra options to C compiler
+  \$LDFLAGS             pass extra options to linker (via C/C++)
 
   Options has preference over environment variables.
 
@@ -156,6 +162,14 @@ do
       write_option "$option" EXTRA_CXXFLAGS
       cxxflags_set=y
       ;;
+    --with-extra-cflags=*)
+      write_option "$option" EXTRA_CFLAGS
+      cflags_set=y
+      ;;
+    --with-extra-ldflags=*)
+      write_option "$option" EXTRA_LDFLAGS
+      ldflags_set=y
+      ;;
     --use-static-gcc)
       write_option "1" USE_STATIC_LIBGCC
       ;;
@@ -233,6 +247,22 @@ if [ "$CXXFLAGS" != "" ]; then
     write_option "$CXXFLAGS" EXTRA_CXXFLAGS
   else
     echo "Both --with-extra-cxxflags and \$CXXFLAGS set, using the first"
+  fi
+fi
+
+if [ "$CFLAGS" != "" ]; then
+  if [ "$cflags_set" = "" ]; then
+    write_option "$CFLAGS" EXTRA_CFLAGS
+  else
+    echo "Both --with-extra-cflags and \$CFLAGS set, using the first"
+  fi
+fi
+
+if [ "$LDFLAGS" != "" ]; then
+  if [ "$ldflags_set" = "" ]; then
+    write_option "$LDFLAGS" EXTRA_LDFLAGS
+  else
+    echo "Both --with-extra-ldflags and \$LDFLAGS set, using the first"
   fi
 fi
 
