@@ -1,6 +1,6 @@
 # Time-stamp: <07/02/05 12:57:11 ptr>
 #
-# Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+# Copyright (c) 1997-1999, 2002, 2003, 2005, 2006, 2008
 # Petr Ovtchenkov
 #
 # Portion Copyright (c) 1999-2001
@@ -35,9 +35,9 @@ depend::	$(OUTPUT_DIRS) ${_DASH_DEP}
 	@cat -s $(_ALL_DEP) /dev/null > $(DEPENDS_COLLECTION)
 
 TAGS:	$(OUTPUT_DIRS) ${_DASH_DEP}
-	@cat -s $(_ALL_DEP) /dev/null | sed -e 's/^.*://;s/^ *//;s/\\$$//;s/ $$//;s/ /\n/g' | sort | uniq | xargs etags -i -m 
+	@cat -s $(_ALL_DEP) /dev/null | sed -e 's/^.*://;s/^ *//;s/\\$$//;s/ $$//;s/ /\n/g' | sort | uniq | xargs etags -I --declarations
 
 tags:	$(OUTPUT_DIRS) ${_DASH_DEP}
-	@cat -s $(_ALL_DEP) /dev/null | sed -e 's/^.*://;s/^ *//;s/\\$$//;s/ $$//;s/ /\n/g' | sort | uniq | ctags -d --globals --declarations -t -w 
+	@cat -s $(_ALL_DEP) /dev/null | sed -e 's/^.*://;s/^ *//;s/\\$$//;s/ $$//;s/ /\n/g' | sort | uniq | xargs ctags -d --globals --declarations -t -T 
 
 -include $(DEPENDS_COLLECTION)
