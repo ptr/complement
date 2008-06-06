@@ -1,3 +1,9 @@
+2008-06-06  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* uid.h, uid.cc: functions for generating UIDs;
+
+	* libxmt: bump revision to 2.0.3.
+
 2008-04-23  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* mutex: remove STLport-specific macro STATIC_CAST;
