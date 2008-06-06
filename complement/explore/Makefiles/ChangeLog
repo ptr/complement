@@ -3,7 +3,12 @@
 	* gmake/targetdirs.mak: use $(DESTDIR) as in common practice
 	(change root of installation, but don't change run paths);
 
-	* gmake/depend.mak: fix options for ctags/etags.
+	* gmake/depend.mak: fix options for ctags/etags;
+
+	* gmake/gcc.mak, gmake/top.mak, configure: take into account
+	extra CFLAGS and LDFLAGS; configurable via 'configure';
+
+	* gmake/extern.mak: don't assume presence of STLport.
 
 2008-02-27  Petr Ovtchenkov  <ptr@island.corbina.net>
 

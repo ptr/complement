@@ -1,6 +1,6 @@
-# Time-stamp: <07/03/08 22:41:26 ptr>
+# Time-stamp: <08/06/06 17:06:16 yeti>
 #
-# Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+# Copyright (c) 1997-1999, 2002, 2003, 2005, 2006, 2008
 # Petr Ovtchenkov
 #
 # Portion Copyright (c) 1999-2001
@@ -30,8 +30,10 @@ endif
 
 # STLport library
 
+ifndef STLPORT_DIR
 ifndef WITHOUT_STLPORT
-STLPORT_DIR ?= ${HOME}/STLport.lab/STLport
+WITHOUT_STLPORT = 1
+endif
 endif
 
 ifdef STLPORT_DIR
