@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/29 13:38:19 ptr>
+// -*- C++ -*- Time-stamp: <08/06/06 21:23:34 yeti>
 
 /*
  * Copyright (c) 2006
@@ -33,6 +33,16 @@ class __uid_init
 
 uuid_type __uid_init::_host_id;
 char __uid_init::_host_id_str[48];
+
+class __uuid_init
+{
+  public:
+    __uuid_init();
+
+    static ifstream _uuid;
+};
+
+ifstream __uuid_init::_uuid;
 
 __uid_init::__uid_init()
 {
@@ -83,7 +93,20 @@ __uid_init::__uid_init()
     >> reinterpret_cast<unsigned&>(_host_id.u.b[15]);
 }
 
+__uuid_init::__uuid_init()
+{
+  static mutex _lk;
+
+  scoped_lock lock( _lk );
+
+  if ( !_uuid.is_open() ) {
+    _uuid.open( "/proc/sys/kernel/random/uuid" );
+  }
+}
+
 } // namespace detail
+
+using namespace std;
 
 const char *hostid_str()
 {
@@ -95,6 +118,65 @@ const xmt::uuid_type& hostid()
 {
   hostid_str();
   return detail::__uid_init::_host_id;
+}
+
+std::string uid_str()
+{
+  static detail::__uuid_init _uid;
+
+  static mutex _lk;
+
+  scoped_lock lock( _lk );
+
+  std::string tmp;
+
+  getline( _uid._uuid, tmp );
+
+  return tmp;
+}
+
+xmt::uuid_type uid()
+{
+  string tmp = uid_str();
+  uuid_type id;
+
+  stringstream s;
+  s << tmp[0]  << tmp[1]  << ' '  
+    << tmp[2]  << tmp[3]  << ' '
+    << tmp[4]  << tmp[5]  << ' '
+    << tmp[6]  << tmp[7]  << ' ' // -
+    << tmp[9]  << tmp[10] << ' '
+    << tmp[11] << tmp[12] << ' ' // -
+    << tmp[14] << tmp[15] << ' '
+    << tmp[16] << tmp[17] << ' ' // -
+    << tmp[19] << tmp[20] << ' '
+    << tmp[21] << tmp[22] << ' ' // -
+    << tmp[24] << tmp[25] << ' '
+    << tmp[26] << tmp[27] << ' '
+    << tmp[28] << tmp[29] << ' '
+    << tmp[30] << tmp[31] << ' '
+    << tmp[32] << tmp[33] << ' '
+    << tmp[34] << tmp[35];
+    
+  s >> hex
+    >> reinterpret_cast<unsigned&>(id.u.b[0])
+    >> reinterpret_cast<unsigned&>(id.u.b[1])
+    >> reinterpret_cast<unsigned&>(id.u.b[2])
+    >> reinterpret_cast<unsigned&>(id.u.b[3])
+    >> reinterpret_cast<unsigned&>(id.u.b[4])
+    >> reinterpret_cast<unsigned&>(id.u.b[5])
+    >> reinterpret_cast<unsigned&>(id.u.b[6])
+    >> reinterpret_cast<unsigned&>(id.u.b[7])
+    >> reinterpret_cast<unsigned&>(id.u.b[8])
+    >> reinterpret_cast<unsigned&>(id.u.b[9])
+    >> reinterpret_cast<unsigned&>(id.u.b[10])
+    >> reinterpret_cast<unsigned&>(id.u.b[11])
+    >> reinterpret_cast<unsigned&>(id.u.b[12])
+    >> reinterpret_cast<unsigned&>(id.u.b[13])
+    >> reinterpret_cast<unsigned&>(id.u.b[14])
+    >> reinterpret_cast<unsigned&>(id.u.b[15]);
+
+  return id;
 }
 
 } // namespace xmt

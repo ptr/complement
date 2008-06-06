@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/29 13:38:05 ptr>
+// -*- C++ -*- Time-stamp: <08/06/06 21:21:30 yeti>
 
 /*
  * Copyright (c) 2006
@@ -64,6 +64,9 @@ struct uuid_type
 
 const char *hostid_str();
 const xmt::uuid_type& hostid();
+
+std::string uid_str();
+xmt::uuid_type uid();
 
 } // namespace xmt
 
