@@ -1,3 +1,8 @@
+2008-06-07  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* configure: don't duplicate options in config.mak, that
+	has default values in makefiles.
+
 2008-06-06  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/targetdirs.mak: use $(DESTDIR) as in common practice
