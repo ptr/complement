@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/27 00:48:22 ptr>
+// -*- C++ -*- Time-stamp: <08/06/09 20:28:59 yeti>
 
 /*
  *
@@ -19,12 +19,12 @@
 #include <list>
 #include <mt/xmt.h>
 
-#include <sockios/sockstream>
-#include <sockios/sockmgr.h>
+// #include <sockios/sockstream>
+// #include <sockios/sockmgr.h>
 
-#include "message.h"
+// #include "message.h"
 
-#include "ConnectionProcessor.h"
+// #include "ConnectionProcessor.h"
 
 using namespace std;
 

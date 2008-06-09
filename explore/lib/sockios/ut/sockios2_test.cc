@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/05 12:37:58 yeti>
+// -*- C++ -*- Time-stamp: <08/06/09 20:40:57 yeti>
 
 /*
  *
@@ -12,7 +12,7 @@
 #include "sockios2_test.h"
 #include <exam/suite.h>
 
-#include <sockios/sockstream2>
+#include <sockios/sockstream>
 #include <mt/mutex>
 #include <sys/wait.h>
 #include <mt/shm.h>
@@ -38,7 +38,7 @@ class simple_mgr :
         sock_basic_processor()
       { }
 
-    simple_mgr( int port, sock_base2::stype t = sock_base2::sock_stream ) :
+    simple_mgr( int port, sock_base::stype t = sock_base::sock_stream ) :
         sock_basic_processor( port, t )
       { }
 
@@ -75,7 +75,7 @@ class simple_mgr2 :
         sock_basic_processor()
       { }
 
-    simple_mgr2( int port, sock_base2::stype t = sock_base2::sock_stream ) :
+    simple_mgr2( int port, sock_base::stype t = sock_base::sock_stream ) :
         sock_basic_processor( port, t )
       { }
 
@@ -132,7 +132,7 @@ int EXAM_IMPL(sockios2_test::connect_disconnect)
     EXAM_CHECK( srv.good() );
 
     {
-      sockstream2 s( "localhost", 2008 );
+      sockstream s( "localhost", 2008 );
 
       EXAM_CHECK( s.is_open() );
       EXAM_CHECK( s.good() );
@@ -163,7 +163,7 @@ int EXAM_IMPL(sockios2_test::connect_disconnect)
     EXAM_CHECK( srv.is_open() );
     EXAM_CHECK( srv.good() );
     {
-      sockstream2 s( "localhost", 2008 );
+      sockstream s( "localhost", 2008 );
 
       EXAM_CHECK( s.is_open() );
       EXAM_CHECK( s.good() );
@@ -195,13 +195,13 @@ int EXAM_IMPL(sockios2_test::connect_disconnect)
 class worker
 {
   public:
-    worker( sockstream2& )
+    worker( sockstream& )
       { lock_guard<mutex> lk(lock); ++cnt; ++visits; cnd.notify_one(); }
 
     ~worker()
       { lock_guard<mutex> lk(lock); --cnt; }
 
-    void connect( sockstream2& s )
+    void connect( sockstream& s )
       { lock_guard<mutex> lk(lock); getline( s, line ); ++rd; line_cnd.notify_one(); }
 
 //     void close()
@@ -261,7 +261,7 @@ int EXAM_IMPL(sockios2_test::processor_core)
 
     std::cerr << __FILE__ << ":" << __LINE__ << " " << std::tr2::getpid() << std::endl;
     {
-      sockstream2 s( "localhost", 2008 );
+      sockstream s( "localhost", 2008 );
 
       EXAM_CHECK( s.good() );
       EXAM_CHECK( s.is_open() );
@@ -291,12 +291,12 @@ int EXAM_IMPL(sockios2_test::processor_core)
     EXAM_CHECK( prss.is_open() );
 
     {
-      sockstream2 s1( "localhost", 2008 );
+      sockstream s1( "localhost", 2008 );
 
       EXAM_CHECK( s1.good() );
       EXAM_CHECK( s1.is_open() );
 
-      sockstream2 s2( "localhost", 2008 );
+      sockstream s2( "localhost", 2008 );
 
       EXAM_CHECK( s2.good() );
       EXAM_CHECK( s2.is_open() );
@@ -326,7 +326,7 @@ int EXAM_IMPL(sockios2_test::processor_core)
     EXAM_CHECK( prss.is_open() );
 
     {
-      sockstream2 s1( "localhost", 2008 );
+      sockstream s1( "localhost", 2008 );
 
       EXAM_CHECK( s1.good() );
       EXAM_CHECK( s1.is_open() );
@@ -354,7 +354,7 @@ int EXAM_IMPL(sockios2_test::processor_core)
     EXAM_CHECK( prss.is_open() );
 
     {
-      sockstream2 s1( "localhost", 2008 );
+      sockstream s1( "localhost", 2008 );
 
       EXAM_CHECK( s1.good() );
       EXAM_CHECK( s1.is_open() );
@@ -385,7 +385,7 @@ int EXAM_IMPL(sockios2_test::fork)
      Here I create sockstream, but without connection (it check that io processing
      loop in underlying sockmgr finish and restart smoothly in child process).
    */
-  sockstream2 s;
+  sockstream s;
 
   // worker::lock.lock();
   worker::visits = 0;
@@ -458,13 +458,13 @@ int EXAM_IMPL(sockios2_test::fork)
 class stream_reader
 {
   public:
-    stream_reader( sockstream2& )
+    stream_reader( sockstream& )
       { }
 
     ~stream_reader()
       { }
 
-    void connect( sockstream2& s )
+    void connect( sockstream& s )
       {
         char buf[1024];
 
@@ -475,7 +475,7 @@ class stream_reader
 
     static void load_generator( barrier* b )
     {
-      sockstream2 s( "localhost", 2008 );
+      sockstream s( "localhost", 2008 );
 
       char buf[1024];
 
@@ -568,7 +568,7 @@ int EXAM_IMPL(sockios2_test::srv_sigpipe)
 class interrupted_writer
 {
   public:
-    interrupted_writer( sockstream2& s )
+    interrupted_writer( sockstream& s )
       {
         EXAM_CHECK_ASYNC( s.good() );
 
@@ -585,12 +585,12 @@ class interrupted_writer
     ~interrupted_writer()
       { cerr << "~~\n"; }
 
-    void connect( sockstream2& s )
+    void connect( sockstream& s )
       { }
 
     static void read_generator( barrier* b )
     {
-      sockstream2 s( "localhost", 2008 );
+      sockstream s( "localhost", 2008 );
 
       int buff = 0;
       cerr << "align 2" << endl;

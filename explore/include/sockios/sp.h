@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/05 12:38:28 yeti>
+// -*- C++ -*- Time-stamp: <08/06/09 22:17:26 yeti>
 
 /*
  * Copyright (c) 2008
@@ -49,20 +49,20 @@
 
 namespace std {
 
-template <class charT, class traits, class _Alloc> class basic_sockbuf2;
-template <class charT, class traits, class _Alloc> class basic_sockstream2;
+template <class charT, class traits, class _Alloc> class basic_sockbuf;
+template <class charT, class traits, class _Alloc> class basic_sockstream;
 template <class charT, class traits, class _Alloc> class sock_processor_base;
 
 template <class charT, class traits, class _Alloc>
 class sock_processor_base :
-	public sock_base2,
+	public sock_base,
         public basic_socket<charT,traits,_Alloc>
 {
   private:
     typedef basic_socket<charT,traits,_Alloc> basic_socket_t;
 
   public:
-    typedef basic_sockstream2<charT,traits,_Alloc> sockstream_t;
+    typedef basic_sockstream<charT,traits,_Alloc> sockstream_t;
 
     struct adopt_new_t { };
     struct adopt_close_t { };
@@ -73,8 +73,8 @@ class sock_processor_base :
         _state( ios_base::goodbit )
       { }
 
-    explicit sock_processor_base( int port, sock_base2::stype t = sock_base2::sock_stream )
-      { sock_processor_base::open( port, t, sock_base2::inet ); }
+    explicit sock_processor_base( int port, sock_base::stype t = sock_base::sock_stream )
+      { sock_processor_base::open( port, t, sock_base::inet ); }
 
     virtual ~sock_processor_base()
       {
@@ -86,16 +86,16 @@ class sock_processor_base :
         // this lead to virtual fuction call, that is already pure here.
       }
 
-    void open( const in_addr& addr, int port, sock_base2::stype type, sock_base2::protocol prot );
+    void open( const in_addr& addr, int port, sock_base::stype type, sock_base::protocol prot );
 
-    void open( unsigned long addr, int port, sock_base2::stype type, sock_base2::protocol prot )
+    void open( unsigned long addr, int port, sock_base::stype type, sock_base::protocol prot )
       {
         in_addr _addr;
         _addr.s_addr = htonl( addr );
         sock_processor_base::open( _addr, port, type, prot );
       }
 
-    void open( int port, sock_base2::stype type, sock_base2::protocol prot )
+    void open( int port, sock_base::stype type, sock_base::protocol prot )
       { sock_processor_base::open(INADDR_ANY, port, type, prot); }
 
     virtual void close();
@@ -109,11 +109,11 @@ class sock_processor_base :
     sock_processor_base& operator =( const sock_processor_base& ); 
 
   protected:
-    void setoptions_unsafe( sock_base2::so_t optname, bool on_off = true, int __v = 0 );
+    void setoptions_unsafe( sock_base::so_t optname, bool on_off = true, int __v = 0 );
     sockstream_t* create_stream( int fd, const sockaddr& addr )
       {
         sockstream_t* s = new sockstream_t();
-        s->rdbuf()->_open_sockmgr( fd, addr );
+        // s->rdbuf()->_open_sockmgr( fd, addr );
         return s;
       }
 
@@ -123,11 +123,11 @@ class sock_processor_base :
     bool good() const
       { return _state == ios_base::goodbit; }
 
-    sock_base2::socket_type fd() const
-      { std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck); sock_base2::socket_type tmp = basic_socket_t::fd_unsafe(); return tmp; }
+    sock_base::socket_type fd() const
+      { std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck); sock_base::socket_type tmp = basic_socket_t::fd_unsafe(); return tmp; }
 
-    void shutdown( sock_base2::shutdownflg dir );
-    void setoptions( sock_base2::so_t optname, bool on_off = true, int __v = 0 )
+    void shutdown( sock_base::shutdownflg dir );
+    void setoptions( sock_base::so_t optname, bool on_off = true, int __v = 0 )
       {
         std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
         setoptions_unsafe( optname, on_off, __v );
@@ -143,7 +143,7 @@ class sock_processor_base :
 
 typedef sock_processor_base<char,char_traits<char>,allocator<char> > sock_basic_processor;
 
-template <class Connect, class charT = char, class traits = std::char_traits<charT>, class _Alloc = std::allocator<charT>, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& ) = &Connect::connect >
+template <class Connect, class charT = char, class traits = std::char_traits<charT>, class _Alloc = std::allocator<charT>, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& ) = &Connect::connect >
 class connect_processor :
         public sock_processor_base<charT,traits,_Alloc>
 {
@@ -178,7 +178,7 @@ class connect_processor :
       { new( Init_buf ) Init(); }
 
     explicit connect_processor( int port ) :
-        base_t( port, sock_base2::sock_stream ),
+        base_t( port, sock_base::sock_stream ),
         not_empty( *this ),
         _in_work( false ),
         ploop( loop, this )
@@ -314,6 +314,8 @@ class connect_processor :
     friend struct _not_empty;
 };
 
+template <class charT, class traits, class _Alloc> class basic_sockbuf;
+
 namespace detail {
 
 class stop_request :
@@ -325,11 +327,251 @@ class stop_request :
 };
 
 template<class charT, class traits, class _Alloc>
+class basic_sockbuf_aux :
+	public basic_streambuf<charT, traits>,
+        public basic_socket<charT,traits,_Alloc>
+{
+  private:
+    typedef basic_socket<charT,traits,_Alloc> basic_socket_t;
+
+  public:
+    typedef basic_ios<charT, traits>       ios_type;
+    typedef basic_sockbuf_aux<charT, traits, _Alloc> sockbuf_type;
+    typedef typename traits::state_type    state_t;
+    
+  public:
+  /* Inherited from basic_streambuf : */
+    typedef charT                      char_type;
+    typedef typename traits::int_type  int_type;
+    typedef typename traits::pos_type  pos_type;
+    typedef typename traits::off_type  off_type;
+    typedef traits                     traits_type;
+  /*  */
+      
+    basic_sockbuf_aux() :
+        rdready( *this ),
+#if !defined(STLPORT) && defined(__GNUC__)
+#if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4))) // hmm, 3.3.6 
+        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) ),
+#else  // 4.1.1
+        _mode( _S_in | _S_out ),
+#endif // __GNUC__
+#else  // STLPORT
+        _mode( 0 ),
+#endif // STLPORT
+        _bbuf(0),
+        _ebuf(0),
+        _allocated( true )
+      { }
+
+    basic_sockbuf_aux( const char *hostname, int port,
+                       sock_base::stype type = sock_base::sock_stream,
+                       sock_base::protocol prot = sock_base::inet ) :
+        rdready( *this ),
+#if !defined(STLPORT) && defined(__GNUC__)
+#if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)))
+        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) ),
+#else  // 4.1.1
+        _mode( _S_in | _S_out ),
+#endif // __GNUC__
+#else  // STLPORT
+        _mode( 0 ),
+#endif // STLPORT
+        _bbuf(0),
+        _ebuf(0),
+        _allocated( true )
+      { open( hostname, port, type, prot ); }
+
+    basic_sockbuf_aux( const in_addr& addr, int port,
+                       sock_base::stype type = sock_base::sock_stream,
+                       sock_base::protocol prot = sock_base::inet ) :
+        rdready( *this ),
+#if !defined(STLPORT) && defined(__GNUC__)
+#if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)))
+        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) ),
+#else  // 4.1.1
+        _mode( _S_in | _S_out ),
+#endif // __GNUC__
+#else  // STLPORT
+        _mode( 0 ),
+#endif // STLPORT
+        _bbuf(0),
+        _ebuf(0),
+        _allocated( true )
+      { open( addr, type, prot ); }
+
+    virtual ~basic_sockbuf_aux()
+      {
+        close();
+        _M_deallocate_block();
+      }
+
+    sockbuf_type *open( const in_addr& addr, int port,
+                        sock_base::stype type = sock_base::sock_stream,
+                        sock_base::protocol prot = sock_base::inet );
+
+    sockbuf_type *open( sock_base::socket_type s, const sockaddr& addr,
+                        sock_base::stype t = sock_base::sock_stream );
+
+    sockbuf_type *close();
+    void shutdown( sock_base::shutdownflg dir );
+
+    sock_base::stype stype() const
+      { return _type; }
+
+  protected:
+    virtual streamsize showmanyc()
+      { return this->egptr() - this->gptr(); }
+
+    virtual int_type underflow();
+    virtual int_type overflow( int_type c = traits::eof() );
+    virtual int_type pbackfail( int_type c = traits::eof() )
+      {
+        if ( !basic_socket_t::is_open() )
+          return traits::eof();
+
+        if ( this->gptr() <= this->eback() ) {
+          return traits::eof();
+        }
+
+        this->gbump(-1);
+        if ( !traits::eq_int_type(c,traits::eof()) ) {
+          *this->gptr() = traits::to_char_type(c);
+          return c;
+        }
+
+        return traits::not_eof(c);
+      }
+
+    // Buffer managment and positioning:
+    virtual basic_streambuf<charT, traits> *setbuf(char_type *s, streamsize n )
+      {
+        if ( s != 0 && n != 0 ) {
+          _M_deallocate_block();
+          _allocated = false;
+          _bbuf = s;
+          _ebuf = s + n;
+        }
+        return this;
+      }
+
+    virtual int sync();
+    virtual streamsize xsputn(const char_type *s, streamsize n);
+
+  private: // Helper functions
+    charT* _bbuf;
+    charT* _ebuf;
+    bool _allocated; // true, if _bbuf should be deallocated
+
+    // Precondition: 0 < __n <= max_size().
+    charT* _M_allocate( size_t __n ) { return _M_data_allocator.allocate(__n); }
+    void _M_deallocate( charT* __p, size_t __n )
+      { if (__p) _M_data_allocator.deallocate(__p, __n); }
+
+    void _M_allocate_block(size_t __n)
+      {
+        if ( _allocated ) {
+          if ( __n <= max_size() ) {
+            _bbuf = _M_allocate(__n);
+            _ebuf = _bbuf + __n;
+            // _STLP_ASSERT( __n > 0 ? _bbuf != 0 : _bbuf == 0 );
+          } else
+            this->_M_throw_length_error();
+        }
+      }
+
+    void _M_deallocate_block()
+      { if ( _allocated ) _M_deallocate(_bbuf, _ebuf - _bbuf); }
+  
+    size_t max_size() const { return (size_t(-1) / sizeof(charT)) - 1; }
+
+#ifdef STLPORT
+    void _M_throw_length_error() const
+      { _STLP_THROW(length_error("basic_sockbuf")); }
+#else
+    void _M_throw_length_error() const
+      { throw length_error("basic_sockbuf"); }
+#endif
+
+#ifdef STLPORT
+    typedef typename _Alloc_traits<charT, _Alloc>::allocator_type allocator_type;
+#else
+    typedef _Alloc allocator_type;
+#endif
+    /* typedef __allocator<charT, _Alloc> _Alloc_type; */
+
+    /* _Alloc_type */ allocator_type _M_data_allocator;
+
+    class rdready_t
+    {
+       public:
+         rdready_t( sockbuf_type& self ) :
+             b( self )
+           { }
+         bool operator ()() const
+           { return b.showmanyc() != 0; }
+       private:
+         sockbuf_type& b;
+    } rdready;
+
+    sockbuf_type *_open_sockmgr( sock_base::socket_type s, const sockaddr& addr,
+                                 sock_base::stype t = sock_base::sock_stream );
+
+  private:
+    typedef basic_sockbuf_aux<charT,traits,_Alloc> _Self_type;
+    int (basic_sockbuf_aux<charT,traits,_Alloc>::*_xwrite)( const void *, size_t );
+    int (basic_sockbuf_aux<charT,traits,_Alloc>::*_xread)( void *, size_t );
+    int write( const void *buf, size_t n )
+#ifndef WIN32
+      { return ::write( basic_socket_t::_fd, buf, n ); }
+#else
+      { return ::send( basic_socket_t::_fd, (const char *)buf, n, 0 ); }
+#endif
+    int send( const void *buf, size_t n )
+#ifdef WIN32
+      { return ::send( basic_socket_t::_fd, (const char *)buf, n, 0 ); }
+#else
+      { return ::send( basic_socket_t::_fd, buf, n, 0 ); }
+#endif
+    int sendto( const void *buf, size_t n )
+#ifdef WIN32
+      { return ::sendto( basic_socket_t::_fd, (const char *)buf, n, 0, &basic_socket_t::_address.any, sizeof( sockaddr_in ) ); }
+#else
+      { return ::sendto( basic_socket_t::_fd, buf, n, 0, &basic_socket_t::_address.any, sizeof( sockaddr_in ) ); }
+#endif
+
+    int read( void *buf, size_t n )
+#ifdef WIN32
+      { return ::recv( basic_socket_t::_fd, (char *)buf, n, 0  ); }
+#else
+      { return ::read( basic_socket_t::_fd, buf, n ); }
+#endif
+    int recv( void *buf, size_t n )
+#ifdef WIN32
+      { return ::recv( basic_socket_t::_fd, (char *)buf, n, 0  ); }
+#else
+      { return ::recv( basic_socket_t::_fd, buf, n, 0 ); }
+#endif
+    int recvfrom( void *buf, size_t n );
+    void __hostname();
+
+    ios_base::openmode  _mode;
+    sock_base::stype    _type;
+
+    std::tr2::mutex ulck;
+    std::tr2::condition_variable ucnd;
+
+    friend class detail::sockmgr<charT,traits,_Alloc>;
+    friend class sock_processor_base<charT,traits,_Alloc>;
+    friend class basic_sockbuf<charT,traits,_Alloc>;
+};
+
+template<class charT, class traits, class _Alloc>
 class sockmgr
 {
   private:
-    typedef basic_sockstream2<charT,traits,_Alloc> sockstream_t;
-    typedef basic_sockbuf2<charT,traits,_Alloc> sockbuf_t;
+    typedef basic_sockstream<charT,traits,_Alloc> sockstream_t;
+    typedef basic_sockbuf_aux<charT,traits,_Alloc> sockbuf_t;
     typedef sock_processor_base<charT,traits,_Alloc> socks_processor_t;
 
     enum {
@@ -463,7 +705,7 @@ class sockmgr
 
     void exit_notify( sockbuf_t* b, int fd )
       {
-        fd_info info = { 0, reinterpret_cast<sockstream_t*>(b), 0 };
+        fd_info info = { 0, 0, 0 };
         std::tr2::lock_guard<std::tr2::mutex> lk( cll );
 	closed_queue[fd] = info;
         std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)b << " " << std::tr2::getpid() << std::endl;
@@ -520,9 +762,9 @@ namespace tr1 {
 #endif
 
 template <class charT, class traits, class _Alloc>
-struct hash<std::basic_sockstream2<charT, traits, _Alloc>* >
+struct hash<std::basic_sockstream<charT, traits, _Alloc>* >
 {
-    size_t operator()(const std::basic_sockstream2<charT, traits, _Alloc>* __x) const
+    size_t operator()(const std::basic_sockstream<charT, traits, _Alloc>* __x) const
       { return reinterpret_cast<size_t>(__x); }
 };
 

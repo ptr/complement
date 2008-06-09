@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/05 12:55:59 yeti>
+// -*- C++ -*- Time-stamp: <08/06/09 22:13:05 yeti>
 
 /*
  * Copyright (c) 2008
@@ -11,7 +11,7 @@
 namespace std {
 
 template<class charT, class traits, class _Alloc>
-void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int port, sock_base2::stype type, sock_base2::protocol prot )
+void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int port, sock_base::stype type, sock_base::protocol prot )
 {
   std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
   if ( basic_socket_t::is_open_unsafe() ) {
@@ -22,7 +22,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int po
 #ifdef WIN32
   ::WSASetLastError( 0 );
 #endif
-  if ( prot == sock_base2::inet ) {
+  if ( prot == sock_base::inet ) {
     basic_socket_t::_fd = socket( PF_INET, type, 0 );
     if ( basic_socket_t::_fd == -1 ) {
       _state |= ios_base::failbit | ios_base::badbit;
@@ -33,9 +33,9 @@ void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int po
     basic_socket_t::_address.inet.sin_port = htons( port );
     basic_socket_t::_address.inet.sin_addr.s_addr = addr.s_addr;
 
-    if ( type == sock_base2::sock_stream || type == sock_base2::sock_seqpacket ) {
+    if ( type == sock_base::sock_stream || type == sock_base::sock_seqpacket ) {
       // let's try reuse local address
-      setoptions_unsafe( sock_base2::so_reuseaddr, true );
+      setoptions_unsafe( sock_base::so_reuseaddr, true );
     }
 
     if ( ::bind( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof(basic_socket_t::_address) ) == -1 ) {
@@ -49,13 +49,13 @@ void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int po
       return;
     }
 
-    if ( type == sock_base2::sock_stream || type == sock_base2::sock_seqpacket ) {
+    if ( type == sock_base::sock_stream || type == sock_base::sock_seqpacket ) {
       // I am shure, this is socket of type SOCK_STREAM | SOCK_SEQPACKET,
       // so don't check return code from listen
       ::listen( basic_socket_t::_fd, SOMAXCONN );
       basic_socket_t::mgr->push( *this );
     }
-  } else if ( prot == sock_base2::local ) {
+  } else if ( prot == sock_base::local ) {
     return;
   } else {
     return;
@@ -83,27 +83,27 @@ void sock_processor_base<charT,traits,_Alloc>::close()
 }
 
 template<class charT, class traits, class _Alloc>
-void sock_processor_base<charT,traits,_Alloc>::shutdown( sock_base2::shutdownflg dir )
+void sock_processor_base<charT,traits,_Alloc>::shutdown( sock_base::shutdownflg dir )
 {
   std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
   if ( basic_socket_t::is_open_unsafe() ) {
-    if ( (dir & (sock_base2::stop_in | sock_base2::stop_out)) ==
-         (sock_base2::stop_in | sock_base2::stop_out) ) {
+    if ( (dir & (sock_base::stop_in | sock_base::stop_out)) ==
+         (sock_base::stop_in | sock_base::stop_out) ) {
       ::shutdown( basic_socket_t::_fd, 2 );
-    } else if ( dir & sock_base2::stop_in ) {
+    } else if ( dir & sock_base::stop_in ) {
       ::shutdown( basic_socket_t::_fd, 0 );
-    } else if ( dir & sock_base2::stop_out ) {
+    } else if ( dir & sock_base::stop_out ) {
       ::shutdown( basic_socket_t::_fd, 1 );
     }
   }
 }
 
 template<class charT, class traits, class _Alloc>
-void sock_processor_base<charT,traits,_Alloc>::setoptions_unsafe( sock_base2::so_t optname, bool on_off, int __v )
+void sock_processor_base<charT,traits,_Alloc>::setoptions_unsafe( sock_base::so_t optname, bool on_off, int __v )
 {
 #ifdef __unix
   if ( basic_socket_t::is_open_unsafe() ) {
-    if ( optname != sock_base2::so_linger ) {
+    if ( optname != sock_base::so_linger ) {
       int turn = on_off ? 1 : 0;
       if ( setsockopt( basic_socket_t::_fd, SOL_SOCKET, (int)optname, (const void *)&turn,
                        (socklen_t)sizeof(int) ) != 0 ) {
@@ -126,16 +126,16 @@ void sock_processor_base<charT,traits,_Alloc>::setoptions_unsafe( sock_base2::so
 }
 
 
-template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
+template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 int connect_processor<Connect, charT, traits, _Alloc, C>::Init::_count = 0;
 
-template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
+template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 bool connect_processor<Connect, charT, traits, _Alloc, C>::Init::_at_fork = false;
 
-template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
+template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 std::tr2::mutex connect_processor<Connect, charT, traits, _Alloc, C>::Init::_init_lock;
 
-template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
+template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::Init::_guard( int direction )
 {
   if ( direction ) {
@@ -159,11 +159,11 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::Init::_guard( int dir
   }
 }
 
-template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
+template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::Init::__at_fork_prepare()
 { _init_lock.lock(); }
 
-template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
+template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::Init::__at_fork_child()
 {
   _init_lock.unlock();
@@ -175,14 +175,14 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::Init::__at_fork_child
   // _sock_processor_base::_idx =  std::tr2::this_thread::xalloc();
 }
 
-template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
+template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::Init::__at_fork_parent()
 { _init_lock.unlock(); }
 
-template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
+template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 char connect_processor<Connect, charT, traits, _Alloc, C>::Init_buf[128];
 
-template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>                                                             
+template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>                                                             
 void connect_processor<Connect, charT, traits, _Alloc, C>::close()
 {
   base_t::close();
@@ -198,7 +198,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::close()
   cnd.notify_one();
 }
 
-template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
+template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( int fd, const sockaddr& addr )
 {
   typename base_t::sockstream_t* s = base_t::create_stream( fd, addr );
@@ -215,7 +215,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( int fd, 
   }
 }
 
-template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
+template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( int fd, const typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::adopt_close_t& )
 {
   {
@@ -247,7 +247,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( int fd, 
   }
 }
 
-template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
+template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( int fd, const typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::adopt_data_t& )
 {
   processor p;
@@ -268,7 +268,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( int fd, 
   // std::cerr << "notify data " << (void *)c << " " << ready_pool.size() << std::endl;
 }
 
-template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
+template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 bool connect_processor<Connect, charT, traits, _Alloc, C>::pop_ready( processor& p )
 {
   {
@@ -290,7 +290,7 @@ bool connect_processor<Connect, charT, traits, _Alloc, C>::pop_ready( processor&
 }
 
 
-template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream2<charT,traits,_Alloc>& )>
+template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
 {
   _in_work = true;
@@ -313,6 +313,437 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
 }
 
 namespace detail {
+
+template<class charT, class traits, class _Alloc>
+basic_sockbuf_aux<charT, traits, _Alloc> *
+basic_sockbuf_aux<charT, traits, _Alloc>::open( const in_addr& addr, int port,
+                                            sock_base::stype type,
+                                            sock_base::protocol prot )
+{
+  if ( basic_socket_t::is_open() ) {
+    return 0;
+  }
+  try {
+    _mode = ios_base::in | ios_base::out;
+    _type = type;
+#ifdef WIN32
+    WSASetLastError( 0 );
+#endif
+    if ( prot == sock_base::inet ) {
+      basic_socket_t::_fd = socket( PF_INET, type, 0 );
+      if ( basic_socket_t::_fd == -1 ) {
+        throw std::runtime_error( "can't open socket" );
+      }
+      basic_socket_t::_address.inet.sin_family = AF_INET;
+      // htons is a define at least in Linux 2.2.5-15, and it's expantion fail
+      // for gcc 2.95.3
+#if defined(linux) && defined(htons) && defined(__bswap_16)
+      basic_socket_t::_address.inet.sin_port = ((((port) >> 8) & 0xff) | (((port) & 0xff) << 8));
+#else
+      basic_socket_t::_address.inet.sin_port = htons( port );
+#endif // linux && htons
+      basic_socket_t::_address.inet.sin_addr = addr;
+  
+      // Generally, stream sockets may successfully connect() only once
+      if ( connect( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof( basic_socket_t::_address ) ) == -1 ) {
+        throw std::domain_error( "connect fail" );
+      }
+      if ( type == sock_base::sock_stream ) {
+        _xwrite = &_Self_type::write;
+        _xread = &_Self_type::read;
+      } else if ( type == sock_base::sock_dgram ) {
+        _xwrite = &_Self_type::send;
+        _xread = &_Self_type::recv;
+      }
+    } else if ( prot == sock_base::local ) {
+      basic_socket_t::_fd = socket( PF_UNIX, type, 0 );
+      if ( basic_socket_t::_fd == -1 ) {
+        throw std::runtime_error( "can't open socket" );
+      }
+    } else { // other protocols not implemented yet
+      throw std::invalid_argument( "protocol not implemented" );
+    }
+
+    if ( _bbuf == 0 ) {
+      struct ifconf ifc;
+      struct ifreq  ifr;
+      ifc.ifc_len = sizeof(ifreq);
+      ifc.ifc_req = &ifr;
+      int mtu = ((ioctl(basic_socket_t::_fd, SIOCGIFMTU, &ifc) < 0 ? 1500 : ifr.ifr_mtu) - 20 - (type == sock_base::sock_stream ? 20 : 8 )) / sizeof(charT);
+      int qlen = ioctl(basic_socket_t::_fd, SIOCGIFTXQLEN, &ifc) < 0 ? 2 : ifr.ifr_qlen;
+      _M_allocate_block( type == sock_base::sock_stream ? mtu * qlen * 2 : mtu * 2 );
+    }
+
+    if ( _bbuf == 0 ) {
+      throw std::length_error( "can't allocate block" );
+    }
+
+    if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
+      throw std::runtime_error( "can't establish nonblock mode" );
+    }
+    setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
+    setg( this->epptr(), this->epptr(), this->epptr() );
+    basic_socket_t::_notify_close = true;
+    basic_socket_t::mgr->push( *this );
+  }
+  catch ( std::domain_error& ) {
+#ifdef WIN32
+    // _errno = WSAGetLastError();
+    ::closesocket( basic_socket_t::_fd );
+#else
+    ::close( basic_socket_t::_fd );
+#endif
+    basic_socket_t::_fd = -1;
+    return 0;
+  }
+  catch ( std::length_error& ) {
+#ifdef WIN32
+    ::closesocket( basic_socket_t::_fd );
+#else
+    ::close( basic_socket_t::_fd );
+#endif
+    basic_socket_t::_fd = -1;
+    return 0;
+  }
+  catch ( std::runtime_error& ) {
+#ifdef WIN32
+    // _errno = WSAGetLastError();
+#else
+#endif
+    return 0;
+  }
+  catch ( std::invalid_argument& ) {
+    return 0;
+  }
+
+  return this;
+}
+
+template<class charT, class traits, class _Alloc>
+basic_sockbuf_aux<charT, traits, _Alloc> *
+basic_sockbuf_aux<charT, traits, _Alloc>::open( sock_base::socket_type s,
+                                                const sockaddr& addr,
+                                                sock_base::stype t )
+{
+  basic_sockbuf_aux<charT, traits, _Alloc>* ret = _open_sockmgr( s, addr, t );
+  if ( ret != 0 ) {
+    basic_socket_t::_notify_close = true;
+    basic_socket_t::mgr->push( *this );
+  }
+  return ret;
+}
+
+template<class charT, class traits, class _Alloc>
+basic_sockbuf_aux<charT, traits, _Alloc> *
+basic_sockbuf_aux<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
+                                                     const sockaddr& addr,
+                                                     sock_base::stype t )
+{
+  if ( basic_socket_t::is_open() || s == -1 ) {
+    return 0;
+  }
+  basic_socket_t::_fd = s;
+  memcpy( (void *)&basic_socket_t::_address.any, (const void *)&addr, sizeof(sockaddr) );
+  _mode = ios_base::in | ios_base::out;
+  _type = t;
+#ifdef WIN32
+  WSASetLastError( 0 );
+#endif
+  if ( t == sock_base::sock_stream ) {
+    _xwrite = &_Self_type::write;
+    _xread = &_Self_type::read;
+  } else if ( t == sock_base::sock_dgram ) {
+    _xwrite = &_Self_type::sendto;
+    _xread = &_Self_type::recvfrom;
+  } else {
+    basic_socket_t::_fd = -1;
+    return 0; // unsupported type
+  }
+
+  if ( _bbuf == 0 ) {
+    struct ifconf ifc;
+    struct ifreq  ifr;
+    ifc.ifc_len = sizeof(ifreq);
+    ifc.ifc_req = &ifr;
+    int mtu = ((ioctl(basic_socket_t::_fd, SIOCGIFMTU, &ifc) < 0 ? 1500 : ifr.ifr_mtu) - 20 - (t == sock_base::sock_stream ? 20 : 8 )) / sizeof(charT);
+    int qlen = ioctl(basic_socket_t::_fd, SIOCGIFTXQLEN, &ifc) < 0 ? 2 : ifr.ifr_qlen;
+    _M_allocate_block( t == sock_base::sock_stream ? mtu * qlen * 2 : mtu * 2);
+  }
+
+  if ( _bbuf == 0 ) {
+#ifdef WIN32
+    ::closesocket( basic_socket_t::_fd );
+#else
+    ::close( basic_socket_t::_fd );
+#endif
+    basic_socket_t::_fd = -1;
+    return 0;
+  }
+
+  if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
+    throw std::runtime_error( "can't establish nonblock mode" );
+  }
+  setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
+  setg( this->epptr(), this->epptr(), this->epptr() );
+
+  return this;
+}
+
+template<class charT, class traits, class _Alloc>
+basic_sockbuf_aux<charT, traits, _Alloc> *
+basic_sockbuf_aux<charT, traits, _Alloc>::close()
+{
+  if ( !basic_socket_t::is_open() )
+    return 0;
+
+  // if ( _doclose ) {
+#ifdef WIN32
+    ::closesocket( basic_socket_t::_fd );
+#else
+    ::close( basic_socket_t::_fd );
+#endif
+  // }
+
+  // _STLP_ASSERT( _bbuf != 0 );
+  // put area before get area
+  setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
+  setg( this->epptr(), this->epptr(), this->epptr() );
+
+  if ( basic_socket_t::_notify_close ) {
+    basic_socket_t::mgr->exit_notify( this, basic_socket_t::_fd );
+    basic_socket_t::_notify_close = false;
+  }
+
+  basic_socket_t::_fd = -1;
+
+  return this;
+}
+
+template<class charT, class traits, class _Alloc>
+void basic_sockbuf_aux<charT, traits, _Alloc>::shutdown( sock_base::shutdownflg dir )
+{
+  if ( basic_socket_t::is_open_unsafe() ) {
+    if ( (dir & (sock_base::stop_in | sock_base::stop_out)) ==
+         (sock_base::stop_in | sock_base::stop_out) ) {
+      ::shutdown( basic_socket_t::_fd, 2 );
+    } else if ( dir & sock_base::stop_in ) {
+      ::shutdown( basic_socket_t::_fd, 0 );
+    } else if ( dir & sock_base::stop_out ) {
+      ::shutdown( basic_socket_t::_fd, 1 );
+    }
+  }
+}
+
+template<class charT, class traits, class _Alloc>
+__FIT_TYPENAME basic_sockbuf_aux<charT, traits, _Alloc>::int_type
+basic_sockbuf_aux<charT, traits, _Alloc>::underflow()
+{
+  if( !basic_socket_t::is_open() )
+    return traits::eof();
+
+  std::tr2::unique_lock<std::tr2::mutex> lk( ulck );
+
+  if ( this->gptr() < this->egptr() )
+    return traits::to_int_type(*this->gptr());
+
+  if ( this->egptr() == this->gptr() ) { // fullfilled: _ebuf == gptr()
+    setg( this->eback(), this->eback(), this->eback() );
+  }
+
+  // setg( this->eback(), this->eback(), this->eback() + offset );
+  // wait on condition
+  if ( basic_socket_t::_use_rdtimeout ) {
+    ucnd.timed_wait( lk, basic_socket_t::_rdtimeout, rdready );
+  } else {
+    ucnd.wait( lk, rdready );
+  }
+  
+  return traits::to_int_type(*this->gptr());
+}
+
+template<class charT, class traits, class _Alloc>
+__FIT_TYPENAME basic_sockbuf_aux<charT, traits, _Alloc>::int_type
+basic_sockbuf_aux<charT, traits, _Alloc>::overflow( int_type c )
+{
+  if ( !basic_socket_t::is_open() )        
+    return traits::eof();
+
+  if ( !traits::eq_int_type( c, traits::eof() ) && this->pptr() < this->epptr() ) {
+    sputc( traits::to_char_type(c) );
+    return c;
+  }
+
+  long count = this->pptr() - this->pbase();
+
+  if ( count ) {
+    count *= sizeof(charT);
+    long offset = (this->*_xwrite)( this->pbase(), count );
+    if ( offset < 0 ) {
+      if ( errno == EAGAIN ) {
+        pollfd wpfd;
+        wpfd.fd = basic_socket_t::_fd;
+        wpfd.events = POLLOUT | POLLHUP | POLLWRNORM;
+        wpfd.revents = 0;
+        while ( poll( &wpfd, 1, basic_socket_t::_use_wrtimeout ? basic_socket_t::_wrtimeout.count() : -1 ) <= 0 ) { // wait infinite
+          if ( errno == EINTR ) { // may be interrupted, check and ignore
+            errno = 0;
+            continue;
+          }
+          return traits::eof();
+        }
+        if ( (wpfd.revents & POLLERR) != 0 ) {
+          return traits::eof();
+        }
+        offset = (this->*_xwrite)( this->pbase(), count );
+        if ( offset < 0 ) {
+          return traits::eof();
+        }
+      } else {
+        return traits::eof();
+      }
+    }
+    if ( offset < count ) {
+      // MUST BE: (offset % sizeof(char_traits)) == 0 !
+      offset /= sizeof(charT);
+      count /= sizeof(charT);
+      traits::move( this->pbase(), this->pbase() + offset, count - offset );
+      // std::copy_backword( this->pbase() + offset, this->pbase() + count, this->pbase() );
+      setp( this->pbase(), this->epptr() ); // require: set pptr
+      this->pbump( count - offset );
+      if( !traits::eq_int_type(c,traits::eof()) ) {
+        sputc( traits::to_char_type(c) );
+      }
+
+      return traits::not_eof(c);
+    }
+  }
+
+  setp( this->pbase(), this->epptr() ); // require: set pptr
+  if( !traits::eq_int_type(c,traits::eof()) ) {
+    sputc( traits::to_char_type(c) );
+  }
+
+  return traits::not_eof(c);
+}
+
+template<class charT, class traits, class _Alloc>
+int basic_sockbuf_aux<charT, traits, _Alloc>::sync()
+{
+  if ( !basic_socket_t::is_open() ) {
+    return -1;
+  }
+
+  long count = this->pptr() - this->pbase();
+  if ( count ) {
+    // _STLP_ASSERT( this->pbase() != 0 );
+    count *= sizeof(charT);
+    long start = 0;
+    while ( count > 0 ) {
+      long offset = (this->*_xwrite)( this->pbase() + start, count );
+      if ( offset < 0 ) {
+        if ( errno == EAGAIN ) {
+          pollfd wpfd;
+          wpfd.fd = basic_socket_t::_fd;
+          wpfd.events = POLLOUT | POLLHUP | POLLWRNORM;
+          wpfd.revents = 0;
+          while ( poll( &wpfd, 1, basic_socket_t::_use_wrtimeout ? basic_socket_t::_wrtimeout.count() : -1 ) <= 0 ) { // wait infinite
+            if ( errno == EINTR ) { // may be interrupted, check and ignore
+              errno = 0;
+              continue;
+            }
+            return -1;
+          }
+          if ( (wpfd.revents & POLLERR) != 0 ) {
+            return -1;
+          }
+          offset = (this->*_xwrite)( this->pbase() + start, count );
+          if ( offset < 0 ) {
+            return -1;
+          }
+        } else {
+          return -1;
+        }
+      }
+      count -= offset;
+      start += offset;
+    }
+    setp( this->pbase(), this->epptr() ); // require: set pptr
+  }
+
+  return 0;
+}
+
+template<class charT, class traits, class _Alloc>
+streamsize basic_sockbuf_aux<charT, traits, _Alloc>::
+xsputn( const char_type *s, streamsize n )
+{
+  if ( !basic_socket_t::is_open() || s == 0 || n == 0 ) {
+    return 0;
+  }
+
+  if ( this->epptr() - this->pptr() > n ) {
+    traits::copy( this->pptr(), s, n );
+    this->pbump( n );
+  } else {
+    streamsize __n_put = this->epptr() - this->pptr();
+    traits::copy( this->pptr(), s, __n_put );
+    this->pbump( __n_put );
+
+    if ( traits::eq_int_type(overflow(),traits::eof()) )
+      return 0;
+
+    setp( (char_type *)(s + __n_put), (char_type *)(s + n) );
+    this->pbump( n - __n_put );
+
+    if ( traits::eq_int_type(overflow(),traits::eof()) ) {
+      setp( _bbuf, _bbuf + ((_ebuf - _bbuf) >> 1) );
+      return 0;
+    }
+    setp( _bbuf, _bbuf + ((_ebuf - _bbuf) >> 1) );
+  }
+  return n;
+}
+
+template<class charT, class traits, class _Alloc>
+int basic_sockbuf_aux<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
+{
+#if defined(_WIN32) || (defined(__hpux) && !defined(_INCLUDE_POSIX1C_SOURCE))
+  int sz = sizeof( sockaddr_in );
+#else
+  socklen_t sz = sizeof( sockaddr_in );
+#endif
+
+  typename basic_socket_t::sockaddr_t addr;
+
+#ifdef __FIT_POLL
+  pollfd pfd;
+  pfd.fd = basic_socket_t::_fd;
+  pfd.events = POLLIN;
+#endif // __FIT_POLL
+  do {
+#ifdef __FIT_POLL
+    pfd.revents = 0;
+    if ( poll( &pfd, 1, /* _timeout */ -1 ) > 0 ) { // wait infinite
+      // get address of caller only
+      char buff[32];    
+      ::recvfrom( basic_socket_t::_fd, buff, 32, MSG_PEEK, &addr.any, &sz );
+    } else {
+      return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
+    }
+#endif // __FIT_POLL
+    if ( memcmp( &basic_socket_t::_address.inet, &addr.inet, sizeof(sockaddr_in) ) == 0 ) {
+#ifdef WIN32
+      return ::recvfrom( basic_socket_t::_fd, (char *)buf, n, 0, &basic_socket_t::_address.any, &sz );
+#else
+      return ::recvfrom( basic_socket_t::_fd, buf, n, 0, &basic_socket_t::_address.any, &sz );
+#endif
+    }
+    // xmt::Thread::yield();
+  } while ( true );
+
+  return 0; // never
+}
+
 template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::io_worker()
 {
@@ -562,7 +993,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
         return;
       }
     }
-    sockbuf_t* b = (info.flags & fd_info::buffer != 0) ? info.s.b : info.s.s->rdbuf();
+    sockbuf_t* b; // = (info.flags & fd_info::buffer != 0) ? info.s.b : info.s.s->rdbuf();
     errno = 0;
     for ( ; ; ) {
       if ( b->_ebuf == b->egptr() ) {
@@ -673,6 +1104,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
     }
     bool need_delete = true;
     if ( info.p != 0 ) {
+      std::cerr << __FILE__ << ":" << __LINE__ << endl;
       {
         std::tr2::lock_guard<std::tr2::mutex> lk( cll );
         typename fd_container_type::iterator closed_ifd = closed_queue.begin();
