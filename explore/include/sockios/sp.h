@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/09 22:17:26 yeti>
+// -*- C++ -*- Time-stamp: <08/06/10 00:01:15 ptr>
 
 /*
  * Copyright (c) 2008
@@ -596,7 +596,7 @@ class sockmgr
           sockstream_t* s;
           sockbuf_t*    b;
         } s;
-        socks_processor_t *p;
+        socks_processor_t* p;
     };
 
     struct ctl
