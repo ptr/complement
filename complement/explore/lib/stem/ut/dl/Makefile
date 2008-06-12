@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <07/08/03 23:59:51 ptr>
+# -*- Makefile -*- Time-stamp: <08/06/12 15:25:51 ptr>
 
 SRCROOT := ../../../..
 
@@ -12,11 +12,11 @@ LIBSTEM_DIR = ${CoMT_DIR}/lib/stem
 
 INCLUDES += -I$(SRCROOT)/include
 
-#LDSEARCH = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR}
-release-shared:	LDSEARCH += -L${LIBSTEM_DIR}/${OUTPUT_DIR}
-dbg-shared:	LDSEARCH += -L${LIBSTEM_DIR}/${OUTPUT_DIR_DBG}
+#LDFLAGS = -L${STLPORT_LIB_DIR} -L${CoMT_LIB_DIR}
+release-shared:	LDFLAGS += -L${LIBSTEM_DIR}/${OUTPUT_DIR}
+dbg-shared:	LDFLAGS += -L${LIBSTEM_DIR}/${OUTPUT_DIR_DBG}
 ifndef WITHOUT_STLPORT
-stldbg-shared:	LDSEARCH += -L${LIBSTEM_DIR}/${OUTPUT_DIR_STLDBG}
+stldbg-shared:	LDFLAGS += -L${LIBSTEM_DIR}/${OUTPUT_DIR_STLDBG}
 endif
 
 #release-shared : LDLIBS = -lxmt -lsockios -lstem -lboost_test_utf

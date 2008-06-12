@@ -1,6 +1,6 @@
-# Time-stamp: <07/03/08 21:41:21 ptr>
+# Time-stamp: <08/06/12 14:57:58 ptr>
 #
-# Copyright (c) 1997-1999, 2002, 2003, 2005-2007
+# Copyright (c) 1997-1999, 2002, 2003, 2005-2008
 # Petr Ovtchenkov
 #
 # Portion Copyright (c) 1999-2001
