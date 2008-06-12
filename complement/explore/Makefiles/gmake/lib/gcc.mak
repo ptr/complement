@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <08/06/12 14:08:48 ptr>
+# -*- makefile -*- Time-stamp: <08/06/12 15:44:41 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005-2008
 # Petr Ovtchenkov
@@ -73,20 +73,28 @@ endif
 ifndef WITHOUT_STLPORT
 
 ifeq (${STLPORT_LIB_DIR},)
+ifneq ($(OSNAME),windows)
 release-shared:	STLPORT_LIB = -lstlport
 dbg-shared:	STLPORT_LIB = -lstlportg
 stldbg-shared:	STLPORT_LIB = -lstlportstlg
 else
+LIB_VERSION = ${LIBMAJOR}.${LIBMINOR}
+release-shared:	STLPORT_LIB = -lstlport.${LIB_VERSION}
+dbg-shared:	STLPORT_LIB = -lstlportg.${LIB_VERSION}
+stldbg-shared:	STLPORT_LIB = -lstlportstlg.${LIB_VERSION}
+endif
+else
+# STLPORT_LIB_DIR not empty
+ifneq ($(OSNAME),windows)
 release-shared:	STLPORT_LIB = -L${STLPORT_LIB_DIR} -lstlport
 dbg-shared:	STLPORT_LIB = -L${STLPORT_LIB_DIR} -lstlportg
 stldbg-shared:	STLPORT_LIB = -L${STLPORT_LIB_DIR} -lstlportstlg
-endif
-
-ifeq ($(OSNAME),windows)
+else
 LIB_VERSION = ${LIBMAJOR}.${LIBMINOR}
-release-shared : STLPORT_LIB = -lstlport.${LIB_VERSION}
-dbg-shared     : STLPORT_LIB = -lstlportg.${LIB_VERSION}
-stldbg-shared  : STLPORT_LIB = -lstlportstlg.${LIB_VERSION}
+release-shared:	STLPORT_LIB = -L${STLPORT_LIB_DIR} -lstlport.${LIB_VERSION}
+dbg-shared:	STLPORT_LIB = -L${STLPORT_LIB_DIR} -lstlportg.${LIB_VERSION}
+stldbg-shared:	STLPORT_LIB = -L${STLPORT_LIB_DIR} -lstlportstlg.${LIB_VERSION}
+endif
 endif
 
 endif
@@ -126,7 +134,7 @@ endif
 _LSUPCPP := $(shell ${CXX} ${CXXFLAGS} -print-file-name=libsupc++.a)
 ifeq (${OSNAME},darwin)
 ifdef GCC_APPLE_CC
-_LSUPCPP := $(shell lipo ${_LSUPCPP} -thin ${M_ARCH} -output $(PRE_OUTPUT_DIR)/libsupc++.a && echo $(PRE_OUTPUT_DIR)/libsupc++.a)
+_LSUPCPP := $(shell mkdir -p $(PRE_OUTPUT_DIR) && lipo ${_LSUPCPP} -thin ${M_ARCH} -output $(PRE_OUTPUT_DIR)/libsupc++.a && echo $(PRE_OUTPUT_DIR)/libsupc++.a)
 endif
 endif
 ifneq (${_LSUPCPP},libsupc++.a)
