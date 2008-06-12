@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <07/02/07 12:28:46 ptr>
+# -*- Makefile -*- Time-stamp: <08/06/12 15:26:16 ptr>
 
 SRCROOT := ../..
 COMPILER_NAME := gcc
@@ -12,7 +12,7 @@ LIBMT_DIR = ${CoMT_DIR}/lib/mt
 LIBSOCK_DIR = ${CoMT_DIR}/lib/sockios
 LIBSTEM_DIR = ${CoMT_DIR}/lib/stem
 
-LDSEARCH += -L${CoMT_LIB_DIR} -Wl,--rpath=${CoMT_LIB_DIR}
+LDFLAGS += -L${CoMT_LIB_DIR} -Wl,--rpath=${CoMT_LIB_DIR}
 
 release-shared : LDLIBS = -lxmt -lsockios -lstem 
 ifndef WITHOUT_STLPORT
