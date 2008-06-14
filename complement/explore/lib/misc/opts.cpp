@@ -10,7 +10,6 @@ using namespace std;
 
 string Opts::get_pname() const { return pname; }
 
-
 bool Opts::is_opt_name(const string& s)
 {
   return (s.size() > 1) && (s[0] == '-') && !is_flag_group(s);

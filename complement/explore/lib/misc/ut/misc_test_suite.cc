@@ -103,5 +103,7 @@ int EXAM_IMPL(options_test_suite)
 
   t.add( &opts_test::help, opts, "help");
   
+  t.add( &opts_test::long_string, opts, "long string");
+
   return t.girdle();
 }
