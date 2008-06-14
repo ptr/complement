@@ -212,6 +212,7 @@ class test_suite
     base_logger *set_logger( base_logger * );
 
     test_case_type test_by_name( const std::string& );
+    void print_graph( std::ostream& );
 
   private:
     enum {

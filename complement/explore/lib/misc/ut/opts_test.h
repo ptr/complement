@@ -41,6 +41,7 @@ class opts_test
     int EXAM_DECL(autocomplement_failure);
     int EXAM_DECL(multiple_args);
     int EXAM_DECL(help);
+    int EXAM_DECL(long_string);
 };
 
 #endif // __MISC_TEST_H

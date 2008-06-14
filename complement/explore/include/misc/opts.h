@@ -62,9 +62,17 @@ class Opts
   
     template < class T ,class V >
     T get( V field );
+    
+    
+    template < class V >
+    std::string get( V field );
+    
 
     template <class T , class V>
     T get_default( V field );
+
+    template < class V >
+    std::string get_default( V field );
 
     template < class V , class BackInsertIterator>
     void getemall( V field , BackInsertIterator bi);
@@ -161,6 +169,31 @@ int Opts::get_cnt(T field) const
   return ( (i == storage.end()) ? 0 : i->pos.size());
 }
 
+template <class V>
+std::string Opts::get( V field )
+{
+  options_container_type::const_iterator i = find(all(storage),field);
+  std::string res;
+
+  if (i != storage.end())
+  {
+    if ( !i->has_arg )
+    {
+      throw std::logic_error("using Opts::get for option without arguments");
+    }
+
+    res = i->args.empty() ? i->default_v : i->args[0];
+  }
+  else
+  {  
+    std::stringstream ss1;
+    ss1 << field;
+    throw unknown_option( ss1.str() );
+  }
+
+  return res;
+}
+
 template < class T , class V >
 T Opts::get( V field )
 {
@@ -194,6 +227,29 @@ T Opts::get( V field )
   return res;
 }
 
+
+template < class V>
+std::string Opts::get_default( V field )
+{
+  options_container_type::const_iterator i = find(all(storage),field);
+  std::string res;
+
+  if (i != storage.end())
+  {
+    if (!i->has_arg)
+      throw std::logic_error("using Opts::get for option without arguments");
+    
+    res = i->default_v;
+  }
+  else
+  {
+    std::stringstream ss1;
+    ss1 << field;
+    throw unknown_option( ss1.str() );
+  }
+
+  return res;
+}
 
 template <class T , class V>
 T Opts::get_default( V field )

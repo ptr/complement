@@ -389,4 +389,19 @@ int test_suite::dry_run( test_suite *, int )
   return dry_girdle( 0 );
 }
 
+void test_suite::print_graph(ostream& out)
+{
+  out << _suite_name << endl;
+  for (test_case_type i = 1;i <= _count;i++)
+  {
+    out << i << " ( ";
+    for (list<edge_t>::const_iterator j = _edges.begin();j != _edges.end();++j)
+    {
+      if (j->second == i && j->first != 0)
+        out << j->first << ' ';
+    }
+    out << ") " << _test[i].name << endl;
+  }
+}
+
 } // namespace exam
