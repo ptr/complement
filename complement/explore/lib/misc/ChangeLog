@@ -1,3 +1,9 @@
+2008-06-16  Petr Ovtchenkov  <yeti@yandex-team.ru>
+
+	* opts.cc, opts.h: options parser, by Dmitry Osmakov.
+	
+	* libmisc: version 1.9.1.
+
 2008-04-23  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* Removed directory utils and node, not used a long time.

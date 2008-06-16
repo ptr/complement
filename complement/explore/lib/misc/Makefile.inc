@@ -10,6 +10,6 @@
 LIBNAME = misc
 MAJOR = 1
 MINOR = 9
-PATCH = 0
-SRC_CC = CyrMoney.cc args.cc arguments.cc
+PATCH = 1
+SRC_CC = CyrMoney.cc args.cc arguments.cc opts.cc
 SRC_C = md5.c
