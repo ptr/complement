@@ -1,3 +1,8 @@
+2008-06-16  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/subdirs.mak: function to pass tag for make in
+	subdirs.
+
 2008-06-07  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* configure: don't duplicate options in config.mak, that
