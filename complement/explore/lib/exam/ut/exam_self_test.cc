@@ -40,32 +40,43 @@ int main( int argc,const char** argv)
 
   Opts opts;
 
-  opts.addflag('h',"help","print this help message");
-  opts.addflag('l',"list","list all test cases");
-  opts.add('n',0,"num","run tests by number");
+  opts.addflag( 'h', "help", "print this help message" );
+  opts.addflag( 'l', "list", "list all test cases" );
+  opts.add( 'r', 0, "run", "run tests by number" );
+  opts.addflag( 'v', "verbose", "print status of tests within test suite" );
+  opts.addflag( 't', "trace", "trace checks" );
 
-  try
-  {
-    opts.parse(argc,argv);
+  try {
+    opts.parse( argc, argv );
   }
-  catch(...)
-  {
-    cout << "there were errors" << endl;
+  catch (...) {
+    opts.help( cerr );
+    return 1;
   }
 
-  if (opts.is_set('h'))
-    opts.help(cout);
+  if ( opts.is_set( 'h' ) ) {
+    opts.help( cerr );
+    return 0;
+  }
 
-  if (opts.is_set('l'))
-    t.print_graph(cout);
+  if ( opts.is_set( 'l' ) ) {
+    t.print_graph( cerr );
+    return 0;
+  }
 
-  if (opts.is_set('n'))
-  {
-    stringstream ss(opts.get('n'));
+  if ( opts.is_set( 'v' ) ) {
+    t.flags( t.flags() | exam::base_logger::verbose );
+  }
+
+  if ( opts.is_set( 't' ) ) {
+    t.flags( t.flags() | exam::base_logger::trace );
+  }
+
+  if ( opts.is_set( 'r' ) ) {
+    stringstream ss( opts.get( 'r' ) );
     int n;
-    while (ss >> n)
-    {
-      t.single(n);
+    while ( ss >> n ) {
+      t.single( n );
     }
 
     return 0;
