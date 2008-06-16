@@ -11,8 +11,6 @@ DEFS += -D__FIT_EXAM
 LIBEXAM_DIR = ${CoMT_DIR}/lib/exam
 LIBXMT_DIR = ${CoMT_DIR}/lib/mt
 
-LDFLAGS += -Wl,-rpath=${STLPORT_LIB_DIR}
-
 ifeq ($(OSNAME),linux)
 
 release-shared:	LDFLAGS += -L${LIBEXAM_DIR}/${OUTPUT_DIR} -L$(LIBXMT_DIR)/${OUTPUT_DIR} -Wl,--rpath=${LIBEXAM_DIR}/${OUTPUT_DIR}:$(LIBXMT_DIR)/${OUTPUT_DIR}:${STLPORT_LIB_DIR}
