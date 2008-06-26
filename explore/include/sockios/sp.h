@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/15 23:21:50 ptr>
+// -*- C++ -*- Time-stamp: <08/06/17 15:09:45 yeti>
 
 /*
  * Copyright (c) 2008
@@ -87,9 +87,7 @@ class sockmgr
     {
         enum {
           listener = 0x1,
-          level_triggered = 0x2,
-          owner = 0x4,
-          buffer = 0x8
+          level_triggered = 0x2
         };
 
         unsigned flags;

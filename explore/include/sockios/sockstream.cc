@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/11 14:47:58 yeti>
+// -*- C++ -*- Time-stamp: <08/06/17 17:09:02 yeti>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -392,19 +392,26 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
 template<class charT, class traits, class _Alloc>
 int basic_sockbuf<charT, traits, _Alloc>::sync()
 {
+  std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
   if ( !basic_socket_t::is_open() ) {
     return -1;
   }
 
   long count = this->pptr() - this->pbase();
   if ( count ) {
+    std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
     // _STLP_ASSERT( this->pbase() != 0 );
     count *= sizeof(charT);
     long start = 0;
     while ( count > 0 ) {
       long offset = (this->*_xwrite)( this->pbase() + start, count );
+      std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       if ( offset < 0 ) {
-        if ( errno == EAGAIN ) {
+        std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+        if ( errno == EINTR ) {
+          errno = 0;
+          continue;
+        } else if ( errno == EAGAIN ) {
           pollfd wpfd;
           wpfd.fd = basic_socket_t::_fd;
           wpfd.events = POLLOUT | POLLHUP | POLLWRNORM;
@@ -412,6 +419,7 @@ int basic_sockbuf<charT, traits, _Alloc>::sync()
           while ( poll( &wpfd, 1, basic_socket_t::_use_wrtimeout ? basic_socket_t::_wrtimeout.count() : -1 ) <= 0 ) { // wait infinite
             if ( errno == EINTR ) { // may be interrupted, check and ignore
               errno = 0;
+              // reduce timeout?
               continue;
             }
             return -1;
@@ -427,6 +435,7 @@ int basic_sockbuf<charT, traits, _Alloc>::sync()
           return -1;
         }
       }
+      std::cerr << __FILE__ << ":" << __LINE__ << " " << basic_socket_t::_fd << std::endl;
       count -= offset;
       start += offset;
     }

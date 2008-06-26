@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/17 09:17:05 ptr>
+// -*- C++ -*- Time-stamp: <08/06/17 15:44:44 yeti>
 
 /*
  * Copyright (c) 2008
@@ -109,7 +109,9 @@ class sock_processor_base :
     sockstream_t* create_stream( int fd, const sockaddr& addr )
       {
         sockstream_t* s = new sockstream_t();
-        s->rdbuf()->_open_sockmgr( fd, addr );
+        if ( s != 0 ) {
+          s->rdbuf()->_open_sockmgr( fd, addr );
+        }
         return s;
       }
 
@@ -197,7 +199,11 @@ class connect_processor :
 
         {
           std::tr2::lock_guard<std::tr2::mutex> lk2( wklock );
-          cerr << __FILE__ << ":" << __LINE__ << " " << worker_pool.size() << endl; 
+          cerr << __FILE__ << ":" << __LINE__ << " " << worker_pool.size() << endl;
+          for ( typename worker_pool_t::iterator i = worker_pool.begin(); i != worker_pool.end(); ++i ) {
+            delete i->second.c;
+            delete i->second.s;
+          }
         }
 
         ((Init *)Init_buf)->~Init();

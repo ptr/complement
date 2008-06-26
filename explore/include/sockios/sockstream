@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/15 17:11:29 ptr>
+// -*- C++ -*- Time-stamp: <08/06/17 17:09:45 yeti>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -448,8 +448,10 @@ class basic_sockbuf :
 
     virtual ~basic_sockbuf()
       {
+        std::cerr << __FILE__ << ":" << __LINE__ << " " << basic_socket_t::_fd << std::endl;
         close();
         _M_deallocate_block();
+        std::cerr << __FILE__ << ":" << __LINE__ << " " << basic_socket_t::_fd << std::endl;
       }
 
     sockbuf_type *open( const char *hostname, int port,

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/16 20:25:28 yeti>
+// -*- C++ -*- Time-stamp: <08/06/17 14:54:16 yeti>
 
 /*
  * Copyright (c) 2008
@@ -205,16 +205,20 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
 {
   typename base_t::sockstream_t* s = base_t::create_stream( fd, addr );
 
+  if ( s == 0 ) {
+    return 0;
+  }
+
   Connect* c = new Connect( *s ); // bad point! I can't read from s in ctor indeed!
 
-  if ( s->rdbuf()->in_avail() ) {
-    std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
-    ready_pool.push_back( processor( c, s ) );
-    cnd.notify_one();
-  } else {
-    std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-    worker_pool.insert( std::make_pair( fd, processor( c, s ) ) );
-  }
+  // if ( s->rdbuf()->in_avail() ) {
+  //   std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
+  //  ready_pool.push_back( processor( c, s ) );
+  //   cnd.notify_one();
+  // } else {
+  std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
+  worker_pool.insert( std::make_pair( fd, processor( c, s ) ) );
+  // }
 
   return s->rdbuf();
 }
