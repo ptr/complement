@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/15 23:29:23 ptr>
+// -*- C++ -*- Time-stamp: <08/06/16 22:07:54 yeti>
 
 /*
  * Copyright (c) 2008
@@ -174,6 +174,22 @@ class connect_processor :
     virtual ~connect_processor()
       {
         connect_processor::close();
+
+        if ( ploop.joinable() ) {
+          ploop.join();
+        }
+
+        basic_socket<charT,traits,_Alloc>::mgr->final( *this );
+
+        {
+          std::tr2::lock_guard<std::tr2::mutex> lk2( rdlock );
+          cerr << __FILE__ << ":" << __LINE__ << " " << ready_pool.size() << endl; 
+        }
+
+        {
+          std::tr2::lock_guard<std::tr2::mutex> lk2( wklock );
+          cerr << __FILE__ << ":" << __LINE__ << " " << worker_pool.size() << endl; 
+        }
 
         ((Init *)Init_buf)->~Init();
       }

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/16 10:45:56 ptr>
+// -*- C++ -*- Time-stamp: <08/06/16 20:25:28 yeti>
 
 /*
  * Copyright (c) 2008
@@ -197,12 +197,6 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::close()
     ready_pool.push_back( processor() ); // make ready_pool not empty
     // std::cerr << "=== " << ready_pool.size() << std::endl;
     cnd.notify_one();
-  }
-
-  basic_socket<charT,traits,_Alloc>::mgr->final( *this );
-
-  if ( ploop.joinable() ) {
-    ploop.join();
   }
 }
 

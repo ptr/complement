@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/15 21:52:52 ptr>
+// -*- C++ -*- Time-stamp: <08/06/16 20:35:30 yeti>
 
 /*
  *
@@ -393,8 +393,8 @@ int EXAM_IMPL(sockios2_test::processor_core)
     }
   }
 
-
   EXAM_CHECK( worker::line == "" );
+  EXAM_CHECK( worker::rd == 0 );
 
   // check after sockstream2 was closed, i.e. ensure, that all data available read before close
   {
@@ -413,9 +413,9 @@ int EXAM_IMPL(sockios2_test::processor_core)
     }
 
     unique_lock<mutex> lk( worker::lock );
-    worker::cnd.timed_wait( lk, milliseconds( 500 ), rd_counter1 );
+    worker::cnd.timed_wait( lk, milliseconds( 100 ), rd_counter1 );
 
-    // cerr << worker::line << endl;
+    cerr << worker::line << endl;
     EXAM_CHECK( worker::line == "Hello, world!" );
     worker::line = "";
     worker::rd = 0;

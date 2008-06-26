@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/16 11:05:56 ptr>
+// -*- C++ -*- Time-stamp: <08/06/16 20:24:51 yeti>
 
 /*
  * Copyright (c) 2008
@@ -140,6 +140,11 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
 
     if ( ifd->second.p != 0 ) {
       ifd->second.p->close();
+      for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
+        if ( (i->second.p == ifd->second.p) && (i->second.b != 0) ) {
+          i->second.b->shutdown( sock_base::stop_in | sock_base::stop_out );
+        }
+      }
     }
 
     descr.erase( ifd );
@@ -194,6 +199,11 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
 
         if ( ifd->second.p != 0 ) {
           ifd->second.p->close();
+          for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
+            if ( (i->second.p == ifd->second.p) && (i->second.b != 0) ) {
+              i->second.b->shutdown( sock_base::stop_in | sock_base::stop_out );
+            }
+          }
         }
 
         descr.erase( ifd );
@@ -388,6 +398,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
 template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::final( sockmgr<charT,traits,_Alloc>::socks_processor_t& p )
 {
+#if 0
   std::tr2::lock_guard<std::tr2::mutex> lk_descr( dll );
 
   for ( typename fd_container_type::iterator ifd = descr.begin(); ifd != descr.end(); ) {
@@ -403,6 +414,7 @@ void sockmgr<charT,traits,_Alloc>::final( sockmgr<charT,traits,_Alloc>::socks_pr
       ++ifd;
     }
   }
+#endif
 
   std::tr2::lock_guard<std::tr2::mutex> lk( cll );
 
