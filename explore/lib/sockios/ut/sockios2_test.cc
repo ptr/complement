@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/17 09:11:57 ptr>
+// -*- C++ -*- Time-stamp: <08/06/17 13:47:21 yeti>
 
 /*
  *
@@ -68,25 +68,32 @@ class simple_mgr :
 
   protected:
     virtual sock_basic_processor::sockbuf_t* operator ()( sock_base::socket_type, const sockaddr& )
-      { lock_guard<mutex> lk(lock); b.wait(); ++n_cnt; return 0; }
+      { lock_guard<mutex> lk(lock); ++n_cnt; cnd.notify_one(); return 0; }
     virtual void operator ()( sock_base::socket_type, const adopt_close_t& )
-      { lock_guard<mutex> lk(lock); b.wait(); ++c_cnt; }
+      { lock_guard<mutex> lk(lock); ++c_cnt; cnd.notify_one(); }
     virtual void operator ()( sock_base::socket_type )
-      { lock_guard<mutex> lk(lock); ++d_cnt; }
+      { lock_guard<mutex> lk(lock); ++d_cnt; cnd.notify_one(); }
 
   public:
     static mutex lock;
     static int n_cnt;
     static int c_cnt;
     static int d_cnt;
-    static barrier b;
+    static condition_variable cnd;
+
+    static bool n_cnt_check()
+      { return n_cnt == 1; }
+    static bool c_cnt_check()
+      { return c_cnt == 1; }
+    static bool d_cnt_check()
+      { return d_cnt == 1; }
 };
 
 mutex simple_mgr::lock;
 int simple_mgr::n_cnt = 0;
 int simple_mgr::c_cnt = 0;
 int simple_mgr::d_cnt = 0;
-barrier simple_mgr::b;
+condition_variable simple_mgr::cnd;
 
 class simple_mgr2 :
     public sock_basic_processor
@@ -104,8 +111,8 @@ class simple_mgr2 :
     virtual sock_basic_processor::sockbuf_t* operator ()( sock_base::socket_type fd, const sockaddr& addr )
       { 
         lock_guard<mutex> lk(lock);
-        b.wait();
         ++n_cnt;
+        cnd.notify_one();
         sockstream_t* s = sock_basic_processor::create_stream( fd, addr );
 
         cons[fd] = s;
@@ -116,8 +123,8 @@ class simple_mgr2 :
     virtual void operator ()( sock_base::socket_type fd, const adopt_close_t& )
       {
         lock_guard<mutex> lk(lock);
-        b.wait();
         ++c_cnt;
+        cnd.notify_one();
         delete cons[fd];
         cons.erase( fd );
       }
@@ -125,8 +132,8 @@ class simple_mgr2 :
     virtual void operator ()( sock_base::socket_type fd )
       {
         lock_guard<mutex> lk(lock);
-        b.wait();
         ++d_cnt;
+        cnd.notify_one();
         string str;
         getline( *cons[fd], str ); // map fd -> s
         EXAM_CHECK_ASYNC( str == "Hello" );
@@ -137,7 +144,14 @@ class simple_mgr2 :
     static int n_cnt;
     static int c_cnt;
     static int d_cnt;
-    static barrier b;
+    static condition_variable cnd;
+
+    static bool n_cnt_check()
+      { return n_cnt == 1; }
+    static bool c_cnt_check()
+      { return c_cnt == 1; }
+    static bool d_cnt_check()
+      { return d_cnt == 1; }
 
   private:
 
@@ -158,7 +172,7 @@ mutex simple_mgr2::lock;
 int simple_mgr2::n_cnt = 0;
 int simple_mgr2::c_cnt = 0;
 int simple_mgr2::d_cnt = 0;
-barrier simple_mgr2::b;
+condition_variable simple_mgr2::cnd;
 
 
 int EXAM_IMPL(sockios2_test::srv_core)
@@ -190,9 +204,9 @@ int EXAM_IMPL(sockios2_test::connect_disconnect)
       EXAM_CHECK( s.good() );
 
       {
-        simple_mgr::b.wait();
-        lock_guard<mutex> lk(simple_mgr::lock);
-        EXAM_CHECK( simple_mgr::n_cnt == 1 );
+        unique_lock<mutex> lk( simple_mgr::lock );
+
+        EXAM_CHECK( simple_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_mgr::n_cnt_check ) );
       }
       {
         lock_guard<mutex> lk(simple_mgr::lock);
@@ -204,9 +218,10 @@ int EXAM_IMPL(sockios2_test::connect_disconnect)
       }
     }
     
-    simple_mgr::b.wait();
-    lock_guard<mutex> lk(simple_mgr::lock);
-    EXAM_CHECK( simple_mgr::c_cnt == 1 );
+    unique_lock<mutex> lk( simple_mgr::lock );
+
+    EXAM_CHECK( simple_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_mgr::c_cnt_check ) );
+    EXAM_CHECK( simple_mgr::d_cnt == 0 );
   }
 
   {
@@ -221,22 +236,19 @@ int EXAM_IMPL(sockios2_test::connect_disconnect)
       EXAM_CHECK( s.good() );
 
       {
-        simple_mgr2::b.wait();
-        lock_guard<mutex> lk(simple_mgr2::lock);
-        EXAM_CHECK( simple_mgr2::n_cnt == 1 );
+        unique_lock<mutex> lk( simple_mgr2::lock );
+        EXAM_CHECK( simple_mgr2::cnd.timed_wait( lk, milliseconds( 500 ), simple_mgr2::n_cnt_check ) );
       }
       {
         s << "Hello" << endl;
         EXAM_CHECK( s.good() );
-        simple_mgr2::b.wait();
-        lock_guard<mutex> lk(simple_mgr2::lock);
-        EXAM_CHECK( simple_mgr2::d_cnt == 1 );
+        unique_lock<mutex> lk( simple_mgr2::lock );
+        EXAM_CHECK( simple_mgr2::cnd.timed_wait( lk, milliseconds( 500 ), simple_mgr2::d_cnt_check ) );
       }
       s.close();
       {
-        simple_mgr2::b.wait();
-        lock_guard<mutex> lk(simple_mgr2::lock);
-        EXAM_CHECK( simple_mgr2::c_cnt == 1 );
+        unique_lock<mutex> lk( simple_mgr2::lock );
+        EXAM_CHECK( simple_mgr2::cnd.timed_wait( lk, milliseconds( 500 ), simple_mgr2::c_cnt_check ) );
       }
     }
   }
@@ -269,7 +281,15 @@ class worker
     static string line;
     static condition_variable line_cnd;
     static int rd;
-    // static barrier b;
+
+    static bool visits_counter1()
+      { return worker::visits == 1; }
+
+    static bool visits_counter2()
+      { return worker::visits == 2; }
+
+    static bool rd_counter1()
+      { return worker::rd == 1; }
 };
 
 mutex worker::lock;
@@ -287,21 +307,6 @@ int worker::rd = 0;
 //   b.wait();
 //   prss->close();
 // }
-
-bool visits_counter1()
-{
-  return worker::visits == 1;
-}
-
-bool visits_counter2()
-{
-  return worker::visits == 2;
-}
-
-bool rd_counter1()
-{
-  return worker::rd > 0; // == 1;
-}
 
 int EXAM_IMPL(sockios2_test::processor_core)
 {
@@ -323,9 +328,7 @@ int EXAM_IMPL(sockios2_test::processor_core)
 
       unique_lock<mutex> lk( worker::lock );
 
-      worker::cnd.timed_wait( lk, milliseconds( 500 ), visits_counter1 );
-      
-      EXAM_CHECK( worker::visits == 1 );
+      EXAM_CHECK( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter1 ) );      
       worker::visits = 0;
     }
   }
@@ -354,11 +357,10 @@ int EXAM_IMPL(sockios2_test::processor_core)
 //      for ( int i = 0; i < 1024; ++i ) { // give chance to process it
 //        std::tr2::this_thread::yield();
 //      }
+
       unique_lock<mutex> lk( worker::lock );
 
-      worker::cnd.timed_wait( lk, milliseconds( 500 ), visits_counter2 );
-
-      EXAM_CHECK( worker::visits == 2 );
+      EXAM_CHECK( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter2 ) );
       worker::visits = 0;
     }
   }
@@ -368,7 +370,7 @@ int EXAM_IMPL(sockios2_test::processor_core)
   }
 
 
-  // check before sockstream was closed
+  // check income data before sockstream was closed
   {
     connect_processor<worker> prss( 2008 );
 
@@ -384,7 +386,7 @@ int EXAM_IMPL(sockios2_test::processor_core)
       s1 << "Hello, world!" << endl;
 
       unique_lock<mutex> lk( worker::lock );
-      worker::cnd.timed_wait( lk, milliseconds( 100 ), rd_counter1 );
+      EXAM_CHECK( worker::line_cnd.timed_wait( lk, milliseconds( 500 ), worker::rd_counter1 ) );
 
       // cerr << worker::line << endl;
       EXAM_CHECK( worker::line == "Hello, world!" );
@@ -393,10 +395,8 @@ int EXAM_IMPL(sockios2_test::processor_core)
     }
   }
 
-  EXAM_CHECK( worker::line == "" );
-  EXAM_CHECK( worker::rd == 0 );
-
-  // check after sockstream2 was closed, i.e. ensure, that all data available read before close
+  // check after sockstream was closed, i.e. ensure, that all data available
+  // was read before stream was closed
   {
     connect_processor<worker> prss( 2008 );
 
@@ -413,15 +413,13 @@ int EXAM_IMPL(sockios2_test::processor_core)
     }
 
     unique_lock<mutex> lk( worker::lock );
-    worker::cnd.timed_wait( lk, milliseconds( 100 ), rd_counter1 );
+    EXAM_CHECK( worker::line_cnd.timed_wait( lk, milliseconds( 500 ), worker::rd_counter1 ) );
 
-    cerr << worker::line << endl;
+    // cerr << worker::line << endl;
     EXAM_CHECK( worker::line == "Hello, world!" );
     worker::line = "";
     worker::rd = 0;
   }
-
-  EXAM_CHECK( worker::line == "" );
 
   return EXAM_RESULT;
 }
@@ -465,9 +463,7 @@ int EXAM_IMPL(sockios2_test::fork)
         EXAM_CHECK_ASYNC( prss.is_open() );
 
         unique_lock<mutex> lk( worker::lock );
-        worker::cnd.timed_wait( lk, milliseconds( 100 ), visits_counter1 );
-
-        EXAM_CHECK_ASYNC( worker::visits == 1 );
+        EXAM_CHECK_ASYNC( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter1 ) );
       }
 
       exit( 0 );

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/17 10:35:40 ptr>
+// -*- C++ -*- Time-stamp: <08/06/17 13:10:39 yeti>
 
 /*
  * Copyright (c) 2008
@@ -394,7 +394,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
     if ( (info.flags & fd_info::buffer) != 0 ) {
       info.b->close();
     }
-    std::tr2::lock_guard<std::tr2::mutex> lck( cll );
+    // std::tr2::lock_guard<std::tr2::mutex> lck( cll );
     closed_queue.erase( ev.data.fd );
     descr.erase( ifd );
   }
