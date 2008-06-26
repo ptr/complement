@@ -31,8 +31,10 @@ endif
 # STLport library
 
 ifndef STLPORT_DIR
+ifndef STLPORT_INCLUDE_DIR
 ifndef WITHOUT_STLPORT
 WITHOUT_STLPORT = 1
+endif
 endif
 endif
 

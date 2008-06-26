@@ -40,6 +40,7 @@ Available options:
   --help                print this help message and exit
 
   --with-stlport=<dir>  use STLport in catalog <dir>
+  --with-stlport-headers=<dir> use STLport headers in catalog <dir>
   --without-stlport     compile without STLport (default)
   --with-boost=<dir>    use boost headers in catalog <dir>
   --with-system-boost   use boost installed on this system
@@ -82,6 +83,7 @@ EOF
 }
 
 default_settings () {
+  :
   # if [ "$boost_set" = "" ]; then
   #   write_option "${PWD}/external/boost" BOOST_DIR
   # fi
@@ -138,6 +140,10 @@ do
       ;;
     --with-stlport=*)
       write_option "$option" STLPORT_DIR
+      stlport_set=y
+      ;;
+    --with-stlport-headers=*)
+      write_option "$option" STLPORT_INCLUDE_DIR
       stlport_set=y
       ;;
     --without-stlport)

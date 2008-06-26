@@ -1,6 +1,6 @@
-# -*- makefile -*- Time-stamp: <07/03/08 21:35:57 ptr>
+# -*- makefile -*- Time-stamp: <08/06/12 15:03:15 ptr>
 #
-# Copyright (c) 1997-1999, 2002, 2003, 2005-2007
+# Copyright (c) 1997-1999, 2002, 2003, 2005-2008
 # Petr Ovtchenkov
 #
 # Portion Copyright (c) 1999-2001
@@ -9,13 +9,7 @@
 # Licensed under the Academic Free License version 3.0
 #
 
-# Oh, the commented below work for gmake 3.78.1 and above,
-# but phrase without tag not work for it. Since gmake 3.79 
-# tag with assignment fail, but work assignment for all tags
-# (really that more correct).
-
 LDLIBS ?=
-LDSEARCH += /LIBPATH:"$(MSVC_LIB_DIR)"
 
 dbg-shared:	OPT += /MDd
 stldbg-shared:	OPT += /MDd
@@ -30,11 +24,8 @@ dbg-static:	DEFS += /D_LIB
 stldbg-static:	DEFS += /D_LIB
 
 
-dbg-shared:	LDFLAGS += /DLL ${LDSEARCH}
-stldbg-shared:	LDFLAGS += /DLL ${LDSEARCH}
-release-shared:	LDFLAGS += /DLL ${LDSEARCH}
-dbg-static:	LDFLAGS += ${LDSEARCH}
-stldbg-static:	LDFLAGS += ${LDSEARCH}
-release-static:	LDFLAGS += ${LDSEARCH}
+dbg-shared:	LDFLAGS += /DLL
+stldbg-shared:	LDFLAGS += /DLL
+release-shared:	LDFLAGS += /DLL
 
-LDFLAGS += /VERSION:$(MAJOR).$(MINOR)
+LDFLAGS +=  /LIBPATH:"$(MSVC_LIB_DIR)" /VERSION:$(MAJOR).$(MINOR)
