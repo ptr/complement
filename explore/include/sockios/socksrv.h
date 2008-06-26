@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/18 22:25:25 yeti>
+// -*- C++ -*- Time-stamp: <08/06/19 20:14:01 yeti>
 
 /*
  * Copyright (c) 2008
@@ -328,7 +328,6 @@ class connect_processor :
     std::tr2::mutex wklock;
     std::tr2::mutex rdlock;
     std::tr2::condition_variable cnd;
-    std::tr2::mutex inwlock;
     std::tr2::condition_variable cnd_inwk;
     std::tr2::thread ploop;
 

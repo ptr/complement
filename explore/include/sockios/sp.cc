@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/18 22:37:15 yeti>
+// -*- C++ -*- Time-stamp: <08/06/19 21:28:42 yeti>
 
 /*
  * Copyright (c) 2008
@@ -143,8 +143,9 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
       {
         int lfd = check_closed_listener( reinterpret_cast<socks_processor_t*>(_ctl.data.ptr) );
         if ( lfd != -1 ) {
-          descr.erase( -1 );
+          descr.erase( lfd );
         }
+        dump_descr();
       }
       break;
     case rqstop:
@@ -175,9 +176,18 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
     listeners_final.insert(static_cast<void *>(ifd->second.p));
 
     std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-    check_closed_listener( ifd->second.p );
-    
+
+    socks_processor_t* p = ifd->second.p;
+
     descr.erase( ifd );
+
+    int lfd = check_closed_listener( p );
+    
+    if ( lfd != -1 ) {
+      descr.erase( lfd );
+    }
+
+    dump_descr();
 
     return;
   }
@@ -221,13 +231,15 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
 
         std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
 
-        listeners_final.insert(static_cast<void *>(ifd->second.p));
-
-        check_closed_listener( ifd->second.p );
+        socks_processor_t* p = ifd->second.p;
+        listeners_final.insert( static_cast<void *>(p) );
 
         descr.erase( ifd );
 
+        check_closed_listener( p );
+
         std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+        dump_descr();
       } else { // back to listen
         errno = 0;
         epoll_event xev;
@@ -289,10 +301,17 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
     if ( info.p != 0 ) { // ... but controlled by processor
       (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
 
-      check_closed_listener( info.p );
+      socks_processor_t* p = info.p;
+      descr.erase( ifd );
+      int lfd = check_closed_listener( p );
+      if ( lfd != -1 ) {
+        descr.erase( lfd );
+      }
+    } else {
+      descr.erase( ifd );
     }
-    descr.erase( ifd );
     std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+    dump_descr();
     return;
   }
 
@@ -393,13 +412,23 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
       std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
       std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-      check_closed_listener( info.p );
+
+      socks_processor_t* p = info.p;
+
+      closed_queue.erase( ev.data.fd );
+      descr.erase( ifd );
+
+      int lfd = check_closed_listener( p );
+      if ( lfd != -1 ) {
+        descr.erase( lfd );
+      }
     } else {
       std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       b->close();
+      closed_queue.erase( ev.data.fd );
+      descr.erase( ifd );
     }
-    closed_queue.erase( ev.data.fd );
-    descr.erase( ifd );
+    dump_descr();
   }
   // if ( ev.events & EPOLLHUP ) {
   //   std::cerr << "Poll HUP" << std::endl;
@@ -484,6 +513,22 @@ int sockmgr<charT,traits,_Alloc>::check_closed_listener( socks_processor_t* p )
   }
 
   return myfd;
+}
+
+template<class charT, class traits, class _Alloc>
+void sockmgr<charT,traits,_Alloc>::dump_descr()
+{
+  for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
+    std::cerr << i->first
+              << std::hex
+              << i->second.flags
+              << " "
+              << (void*)i->second.b
+              << " "
+              << (void*)i->second.p
+              << std::dec
+              << endl;
+  }
 }
 
 

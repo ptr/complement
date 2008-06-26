@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/18 22:36:24 yeti>
+// -*- C++ -*- Time-stamp: <08/06/19 20:30:48 yeti>
 
 /*
  * Copyright (c) 2008
@@ -211,6 +211,7 @@ class sockmgr
       { return *this; }
 
     int check_closed_listener( socks_processor_t* p );
+    void dump_descr();
 
 #ifdef __USE_STLPORT_HASH
     typedef std::hash_map<sock_base::socket_type,fd_info> fd_container_type;
