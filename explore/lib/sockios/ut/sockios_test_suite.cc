@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/10 00:41:49 ptr>
+// -*- C++ -*- Time-stamp: <08/06/11 21:55:26 yeti>
 
 /*
  *
@@ -80,12 +80,12 @@ int EXAM_IMPL(sockios_test_suite)
 
   sockios2_test test2;
 
-//  t.add( &sockios2_test::read0, test2, "sockios2_test::read0",
-//    t.add( &sockios2_test::srv_sigpipe, test2, "sockios2_test::srv_sigpipe",
-//      t.add( &sockios2_test::fork, test2, "sockios2_test::fork",
-//        t.add( &sockios2_test::processor_core, test2, "sockios2_test::processor_core",
+  t.add( &sockios2_test::read0, test2, "sockios2_test::read0",
+    t.add( &sockios2_test::srv_sigpipe, test2, "sockios2_test::srv_sigpipe",
+      t.add( &sockios2_test::fork, test2, "sockios2_test::fork",
+        t.add( &sockios2_test::processor_core, test2, "sockios2_test::processor_core",
           t.add( &sockios2_test::connect_disconnect, test2, "sockios2_test::connect_disconnect",
-                 t.add( &sockios2_test::srv_core, test2, "sockios2_test::srv_core" ) );// ) ) ) );
+                 t.add( &sockios2_test::srv_core, test2, "sockios2_test::srv_core" ) ) ) ) ) );
 
   return t.girdle();
 }

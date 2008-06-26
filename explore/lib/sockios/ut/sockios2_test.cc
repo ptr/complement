@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/09 23:49:35 ptr>
+// -*- C++ -*- Time-stamp: <08/06/11 21:46:19 yeti>
 
 /*
  *
@@ -16,6 +16,27 @@
 #include <mt/mutex>
 #include <sys/wait.h>
 #include <mt/shm.h>
+
+
+#ifdef STLPORT
+#  include <unordered_map>
+#  include <unordered_set>
+// #  include <hash_map>
+// #  include <hash_set>
+// #  define __USE_STLPORT_HASH
+#  define __USE_STLPORT_TR1
+#else
+#  if defined(__GNUC__) && (__GNUC__ < 4)
+#    include <ext/hash_map>
+#    include <ext/hash_set>
+#    define __USE_STD_HASH
+#  else
+#    include <tr1/unordered_map>
+#    include <tr1/unordered_set>
+#    define __USE_STD_TR1
+#  endif
+#endif
+
 
 using namespace std;
 using namespace std::tr2;
@@ -46,11 +67,11 @@ class simple_mgr :
       { /* cerr << "In destructor\n"; */ }
 
   protected:
-    virtual void operator ()( int, const sockaddr& )
-      { lock_guard<mutex> lk(lock); b.wait(); ++n_cnt; }
-    virtual void operator ()( int, const adopt_close_t& )
+    virtual sock_basic_processor::sockbuf_t* operator ()( sock_base::socket_type, const sockaddr& )
+      { lock_guard<mutex> lk(lock); b.wait(); ++n_cnt; return 0; }
+    virtual void operator ()( sock_base::socket_type, const adopt_close_t& )
       { lock_guard<mutex> lk(lock); b.wait(); ++c_cnt; }
-    virtual void operator ()( int, const adopt_data_t& )
+    virtual void operator ()( sock_base::socket_type )
       { lock_guard<mutex> lk(lock); ++d_cnt; }
 
   public:
@@ -80,17 +101,34 @@ class simple_mgr2 :
       { }
 
   protected:
-    virtual void operator ()( int, const sockaddr& )
-      { lock_guard<mutex> lk(lock); b.wait(); ++n_cnt; }
-    virtual void operator ()( int, const adopt_close_t& )
-      { lock_guard<mutex> lk(lock); b.wait(); ++c_cnt; }
-    virtual void operator ()( int, const adopt_data_t& )
+    virtual sock_basic_processor::sockbuf_t* operator ()( sock_base::socket_type fd, const sockaddr& addr )
+      { 
+        lock_guard<mutex> lk(lock);
+        b.wait();
+        ++n_cnt;
+        sockstream_t* s = sock_basic_processor::create_stream( fd, addr );
+
+        cons[fd] = s;
+
+        return s->rdbuf();
+      }
+
+    virtual void operator ()( sock_base::socket_type fd, const adopt_close_t& )
+      {
+        lock_guard<mutex> lk(lock);
+        b.wait();
+        ++c_cnt;
+        delete cons[fd];
+        cons.erase( fd );
+      }
+
+    virtual void operator ()( sock_base::socket_type fd )
       {
         lock_guard<mutex> lk(lock);
         b.wait();
         ++d_cnt;
         string str;
-        // getline( s, str ); // map fd -> s
+        getline( *cons[fd], str ); // map fd -> s
         EXAM_CHECK_ASYNC( str == "Hello" );
       }
 
@@ -100,6 +138,20 @@ class simple_mgr2 :
     static int c_cnt;
     static int d_cnt;
     static barrier b;
+
+  private:
+
+#ifdef __USE_STLPORT_HASH
+    typedef std::hash_map<sock_base::socket_type,sockstream_t*> fd_container_type;
+#endif
+#ifdef __USE_STD_HASH
+    typedef __gnu_cxx::hash_map<sock_base::socket_type, sockstream_t*> fd_container_type;
+#endif
+#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+    typedef std::tr1::unordered_map<sock_base::socket_type, sockstream_t*> fd_container_type;
+#endif
+
+    fd_container_type cons;
 };
 
 mutex simple_mgr2::lock;
@@ -318,7 +370,7 @@ int EXAM_IMPL(sockios2_test::processor_core)
   }
 
 
-  // check before sockstream2 was closed
+  // check before sockstream was closed
   {
     connect_processor<worker> prss( 2008 );
 
