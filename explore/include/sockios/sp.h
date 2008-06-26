@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/19 20:30:48 yeti>
+// -*- C++ -*- Time-stamp: <08/06/25 11:54:39 ptr>
 
 /*
  * Copyright (c) 2008
@@ -90,6 +90,42 @@ class sockmgr
           listener = 0x1,
           level_triggered = 0x2
         };
+
+        fd_info() :
+            flags(0U),
+            b(0),
+            p(0)
+          { }
+
+        fd_info( unsigned f, sockbuf_t* buf, socks_processor_t* proc ) :
+            flags(f),
+            b(buf),
+            p(proc)
+          { }
+
+        fd_info( sockbuf_t* buf, socks_processor_t* proc ) :
+            flags(0U),
+            b(buf),
+            p(proc)
+          { }
+
+        fd_info( sockbuf_t* buf ) :
+            flags(0U),
+            b(buf),
+            p(0)
+          { }
+
+        fd_info( socks_processor_t* proc ) :
+            flags(listener),
+            b(0),
+            p(proc)
+          { }
+
+        fd_info( const fd_info& info ) :
+            flags( info.flags ),
+            b( info.b ),
+            p( info.p )
+          { }
 
         unsigned flags;
         sockbuf_t*    b;
@@ -195,13 +231,11 @@ class sockmgr
 //        closed_queue[_fd] = info;
       }
 
-    void final( socks_processor_t& p );
-
     void exit_notify( sockbuf_t* b, sock_base::socket_type fd )
       {
-        fd_info info = { 0, 0, 0 };
+        // fd_info info = { 0, 0, 0 };
         std::tr2::lock_guard<std::tr2::mutex> lk( cll );
-	closed_queue[fd] = info;
+	closed_queue[fd] = fd_info();
       }
 
   private:

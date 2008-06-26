@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/19 21:28:42 yeti>
+// -*- C++ -*- Time-stamp: <08/06/25 12:00:59 ptr>
 
 /*
  * Copyright (c) 2008
@@ -117,8 +117,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
           // std::cerr << "xxx " << errno << " " << std::tr2::getpid() << std::endl;
           throw std::runtime_error( "can't establish nonblock mode on listener" );
         }
-        fd_info new_info = { fd_info::listener, 0, static_cast<socks_processor_t*>(_ctl.data.ptr) };
-        descr[ev_add.data.fd] = new_info;
+        descr[ev_add.data.fd] = fd_info( static_cast<socks_processor_t*>(_ctl.data.ptr) );
         if ( epoll_ctl( efd, EPOLL_CTL_ADD, ev_add.data.fd, &ev_add ) < 0 ) {
           descr.erase( ev_add.data.fd );
           // throw system_error
@@ -129,8 +128,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
       ev_add.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
       ev_add.data.fd = static_cast<sockbuf_t*>(_ctl.data.ptr)->fd();
       if ( ev_add.data.fd >= 0 ) {
-        fd_info new_info = { 0, static_cast<sockbuf_t*>(_ctl.data.ptr), 0 };
-        descr[ev_add.data.fd] = new_info;
+        descr[ev_add.data.fd] = fd_info( static_cast<sockbuf_t*>(_ctl.data.ptr) );
         if ( epoll_ctl( efd, EPOLL_CTL_ADD, ev_add.data.fd, &ev_add ) < 0 ) {
           descr.erase( ev_add.data.fd );
           // throw system_error
@@ -159,7 +157,7 @@ template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename sockmgr<charT,traits,_Alloc>::fd_container_type::iterator ifd )
 {
   std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-  if ( ev.events & EPOLLRDHUP ) {
+  if ( ev.events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR) ) {
     if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
       // throw system_error
     }
@@ -193,7 +191,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
   }
 
   if ( (ev.events & EPOLLIN) == 0 ) {
-    std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+    std::cerr << __FILE__ << ":" << __LINE__ << " " << std::hex << ev.events << std::dec << std::endl;
     return; // I don't know what to do this case...
   }
 
@@ -273,8 +271,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
       sockbuf_t* b = (*info.p)( fd, addr );
       std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
 
-      fd_info new_info = { 0, b, info.p };
-      descr[fd] = new_info;
+      descr[fd] = fd_info( b, info.p );
     }
     catch ( const std::bad_alloc& ) {
       // nothing
@@ -451,39 +448,6 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
 }
 
 template<class charT, class traits, class _Alloc>
-void sockmgr<charT,traits,_Alloc>::final( sockmgr<charT,traits,_Alloc>::socks_processor_t& p )
-{
-#if 0
-  std::tr2::lock_guard<std::tr2::mutex> lk_descr( dll );
-
-  for ( typename fd_container_type::iterator ifd = descr.begin(); ifd != descr.end(); ) {
-    if ( (ifd->second.flags & fd_info::owner) && (ifd->second.p == &p) ) {
-      std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)&p << " " << (void*)ifd->second.b << std::endl;
-      p( ifd->first, typename socks_processor_t::adopt_close_t() );
-      std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)&p << " " << (void*)ifd->second.b << std::endl;
-      if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
-        // throw system_error
-      }
-      descr.erase( ifd++ );
-    } else {
-      ++ifd;
-    }
-  }
-
-  std::tr2::lock_guard<std::tr2::mutex> lk( cll );
-
-  // I can't use closed_queue.erase( p.fd() ) here: fd is -1 already
-  for ( typename fd_container_type::iterator closed_ifd = closed_queue.begin(); closed_ifd != closed_queue.end(); ) {
-    if ( closed_ifd->second.p == &p ) {
-      closed_queue.erase( closed_ifd++ );
-    } else {
-      ++closed_ifd;
-    }
-  }
-#endif
-}
-
-template<class charT, class traits, class _Alloc>
 int sockmgr<charT,traits,_Alloc>::check_closed_listener( socks_processor_t* p )
 {
   int myfd = -1;
@@ -519,7 +483,7 @@ template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::dump_descr()
 {
   for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
-    std::cerr << i->first
+    std::cerr << i->first << " "
               << std::hex
               << i->second.flags
               << " "
