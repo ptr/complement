@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/16 22:07:54 yeti>
+// -*- C++ -*- Time-stamp: <08/06/17 09:17:05 ptr>
 
 /*
  * Copyright (c) 2008
@@ -87,9 +87,18 @@ class sock_processor_base :
 
     virtual void close();
 
+#if 0
     virtual sockbuf_t* operator ()( sock_base::socket_type fd, const sockaddr& ) = 0;
     virtual void operator ()( sock_base::socket_type fd, const adopt_close_t& ) = 0;
     virtual void operator ()( sock_base::socket_type fd ) = 0;
+#else
+    virtual sockbuf_t* operator ()( sock_base::socket_type fd, const sockaddr& )
+      { abort(); return 0; }
+    virtual void operator ()( sock_base::socket_type fd, const adopt_close_t& )
+      { abort(); }
+    virtual void operator ()( sock_base::socket_type fd )
+      { abort(); }
+#endif
 
   private:
     sock_processor_base( const sock_processor_base& );

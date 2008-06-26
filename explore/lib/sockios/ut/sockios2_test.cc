@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/16 20:35:30 yeti>
+// -*- C++ -*- Time-stamp: <08/06/17 09:11:57 ptr>
 
 /*
  *
@@ -620,16 +620,16 @@ class interrupted_writer
 
         int n = 1;
 
-        // cerr << "align 3\n";
+        cerr << "align 3\n";
         bb->wait();  // <-- align 3
 
-        // cerr << "align 3 pass\n";
+        cerr << "align 3 pass\n";
         s.write( (const char *)&n, sizeof( int ) ).flush();
         EXAM_CHECK_ASYNC( s.good() );
       }
 
     ~interrupted_writer()
-      { /* cerr << "~~\n"; */ }
+      { cerr << "~~\n"; }
 
     void connect( sockstream& s )
       { }
@@ -639,11 +639,12 @@ class interrupted_writer
       sockstream s( "localhost", 2008 );
 
       int buff = 0;
-      // cerr << "align 2" << endl;
+      cerr << "align 2" << endl;
       b->wait(); // <-- align 2
-      // cerr << "align pass" << endl;
+      cerr << "align 2 pass" << endl;
 
       EXAM_CHECK_ASYNC( s.read( (char *)&buff, sizeof(int) ).good() ); // <---- key line
+      cerr << "read pass" << endl;
       EXAM_CHECK_ASYNC( buff == 1 );
     }
 
@@ -675,12 +676,12 @@ int EXAM_IMPL(sockios2_test::read0)
 
       bb.wait();  // <-- align 2
 
-      // cerr << "system" << endl;
+      cerr << "system" << endl;
       system( "echo > /dev/null" );  // <------ key line
-      // cerr << "after system" << endl;
+      cerr << "after system" << endl;
 
       bnew.wait();  // <-- align 3
-      // cerr << "after align 3" << endl;
+      cerr << "after align 3" << endl;
 
       t.join();
 

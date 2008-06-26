@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/16 20:24:51 yeti>
+// -*- C++ -*- Time-stamp: <08/06/17 10:35:40 ptr>
 
 /*
  * Copyright (c) 2008
@@ -34,6 +34,7 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
 
       if ( n < 0 ) {
         if ( errno == EINTR ) {
+          errno = 0;
           continue;
         }
         // throw system_error
@@ -186,7 +187,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
     int fd = accept( ev.data.fd, &addr, &sz );
     if ( fd < 0 ) {
       // std::cerr << "Accept, listener # " << ev.data.fd << ", errno " << errno << std::endl;
-      // std::cerr << __FILE__ << ":" << __LINE__ << " " << std::tr2::getpid() << std::endl;
+      std::cerr << __FILE__ << ":" << __LINE__ /* << " " << std::tr2::getpid() */ << std::endl;
       if ( (errno == EINTR) || (errno == ECONNABORTED) /* || (errno == ERESTARTSYS) */ ) {
         errno = 0;
         continue;
@@ -194,6 +195,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
       if ( !(errno == EAGAIN /* || errno == EWOULDBLOCK */ ) ) { // EWOULDBLOCK == EAGAIN
         // std::cerr << "Accept, listener " << ev.data.fd << ", errno " << errno << std::endl;
         if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
+          std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
           // throw system_error
         }
 
@@ -216,21 +218,28 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
           closed_queue.erase( closed_ifd );
         }
         // throw system_error ?
+        std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       } else { // back to listen
         errno = 0;
         epoll_event xev;
         xev.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
         xev.data.fd = ev.data.fd;
-        epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev );
+        if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) < 0 ) {
+          std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+        }
       }
+      std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       return;
     }
     if ( fcntl( fd, F_SETFL, fcntl( fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
+      std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       throw std::runtime_error( "can't establish nonblock mode" );
     }
       
     try {
+      std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       sockbuf_t* b = (*info.p)( fd, addr );
+      std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
 
       epoll_event ev_add;
       ev_add.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
@@ -258,7 +267,19 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
 {
   fd_info& info = ifd->second;
 
+  std::tr2::lock_guard<std::tr2::mutex> lck( cll );
+  typename fd_container_type::iterator closed_ifd = closed_queue.find( ev.data.fd );
+  if ( closed_ifd != closed_queue.end() ) {
+    closed_queue.erase( closed_ifd );
+    if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
+      // throw system_error
+    }
+    descr.erase( ifd );
+    return;
+  }
+
   if ( ev.events & EPOLLIN ) {
+#if 0
     if ( (info.flags & fd_info::owner) == 0 ) {
       /*
       marginal case: sockmgr isn't owner (registerd via push(),
@@ -278,10 +299,12 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
         return;
       }
     }
-    sockbuf_t* b = /* (info.flags & fd_info::buffer != 0) ? info.s.b : info.s.s->rdbuf() */ info.b;
+#endif
+
+    sockbuf_t* b = info.b;
     errno = 0;
-    if ( b == 0 ) { // marginal case: sockbuf wasn't created by processor
-      if ( info.p != 0 ) {
+    if ( b == 0 ) { // marginal case: sockbuf wasn't created by processor...
+      if ( info.p != 0 ) { // ... but controlled by processor
         (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
       }
       descr.erase( ifd );
@@ -367,7 +390,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
 
     if ( info.p != 0 ) {
       (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
-    }
+    } /* else */
     if ( (info.flags & fd_info::buffer) != 0 ) {
       info.b->close();
     }
