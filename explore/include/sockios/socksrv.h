@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/17 15:44:44 yeti>
+// -*- C++ -*- Time-stamp: <08/06/18 22:25:25 yeti>
 
 /*
  * Copyright (c) 2008
@@ -86,6 +86,14 @@ class sock_processor_base :
       { sock_processor_base::open(INADDR_ANY, port, type, prot); }
 
     virtual void close();
+#if 0
+    virtual void stop() = 0;
+#else
+    virtual void stop()
+      { /* abort(); */ }
+    // void stop()
+    //   { (this->*_real_stop)(); }
+#endif
 
 #if 0
     virtual sockbuf_t* operator ()( sock_base::socket_type fd, const sockaddr& ) = 0;
@@ -99,7 +107,6 @@ class sock_processor_base :
     virtual void operator ()( sock_base::socket_type fd )
       { abort(); }
 #endif
-
   private:
     sock_processor_base( const sock_processor_base& );
     sock_processor_base& operator =( const sock_processor_base& ); 
@@ -114,6 +121,8 @@ class sock_processor_base :
         }
         return s;
       }
+
+    void (sock_processor_base::*_real_stop)();
 
   public:
     bool is_open() const
@@ -173,14 +182,14 @@ class connect_processor :
          not_empty( *this ),
          _in_work( false ),
          ploop( loop, this )
-      { new( Init_buf ) Init(); }
+      { new( Init_buf ) Init(); /* base_t::_real_stop = &connect_processor::_xstop; */ }
 
     explicit connect_processor( int port ) :
         base_t( port, sock_base::sock_stream ),
         not_empty( *this ),
         _in_work( false ),
         ploop( loop, this )
-      { new( Init_buf ) Init(); }
+      { new( Init_buf ) Init(); /* base_t::_real_stop = &connect_processor::_xstop; */ }
 
     virtual ~connect_processor()
       {
@@ -190,7 +199,22 @@ class connect_processor :
           ploop.join();
         }
 
-        basic_socket<charT,traits,_Alloc>::mgr->final( *this );
+        // basic_socket<charT,traits,_Alloc>::mgr->final( *this );
+
+#if 0
+        {
+          std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
+          std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
+          if ( worker_pool.empty() && ready_pool.empty() ) {
+            break;
+          }
+
+          for ( ; ; ) {
+            
+          }
+        }
+#endif
+
 
         {
           std::tr2::lock_guard<std::tr2::mutex> lk2( rdlock );
@@ -200,16 +224,19 @@ class connect_processor :
         {
           std::tr2::lock_guard<std::tr2::mutex> lk2( wklock );
           cerr << __FILE__ << ":" << __LINE__ << " " << worker_pool.size() << endl;
+#if 0
           for ( typename worker_pool_t::iterator i = worker_pool.begin(); i != worker_pool.end(); ++i ) {
             delete i->second.c;
             delete i->second.s;
           }
+#endif
         }
 
         ((Init *)Init_buf)->~Init();
       }
 
     virtual void close();
+    virtual void stop();
 
     void wait()
       { if ( ploop.joinable() ) { ploop.join(); } }

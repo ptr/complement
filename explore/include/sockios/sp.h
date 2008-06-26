@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/17 15:09:45 yeti>
+// -*- C++ -*- Time-stamp: <08/06/18 22:36:24 yeti>
 
 /*
  * Copyright (c) 2008
@@ -80,7 +80,8 @@ class sockmgr
       listener,
       tcp_buffer,
       rqstop,
-      rqstart
+      rqstart,
+      listener_on_exit
     };
 
     struct fd_info
@@ -180,9 +181,18 @@ class sockmgr
 
     void pop( socks_processor_t& p, sock_base::socket_type _fd )
       {
-        fd_info info = { fd_info::listener, 0, &p };
-        std::tr2::lock_guard<std::tr2::mutex> lk( cll );
-        closed_queue[_fd] = info;
+        ctl _ctl;
+        _ctl.cmd = listener_on_exit;
+        _ctl.data.ptr = reinterpret_cast<void *>(&p);
+
+        int r = ::write( pipefd[1], &_ctl, sizeof(ctl) );
+        if ( r < 0 || r != sizeof(ctl) ) {
+          throw std::runtime_error( "can't write to pipe" );
+        }
+
+//        fd_info info = { fd_info::listener, 0, &p };
+//        std::tr2::lock_guard<std::tr2::mutex> lk( cll );
+//        closed_queue[_fd] = info;
       }
 
     void final( socks_processor_t& p );
@@ -200,15 +210,19 @@ class sockmgr
     sockmgr& operator =( const sockmgr& )
       { return *this; }
 
+    int check_closed_listener( socks_processor_t* p );
 
 #ifdef __USE_STLPORT_HASH
     typedef std::hash_map<sock_base::socket_type,fd_info> fd_container_type;
+    typedef std::hash_set<void *> listener_container_type;
 #endif
 #ifdef __USE_STD_HASH
     typedef __gnu_cxx::hash_map<sock_base::socket_type, fd_info> fd_container_type;
+    typedef __gnu_cxx::hash_set<void *> listener_container_type;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
     typedef std::tr1::unordered_map<sock_base::socket_type, fd_info> fd_container_type;
+    typedef std::tr1::unordered_set<void *> listener_container_type;
 #endif
 
     void io_worker();
@@ -223,6 +237,7 @@ class sockmgr
 
     fd_container_type descr;
     fd_container_type closed_queue;
+    listener_container_type listeners_final;
     std::tr2::mutex cll;
     std::tr2::mutex dll;
 };

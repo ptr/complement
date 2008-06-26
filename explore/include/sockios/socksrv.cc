@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/17 14:54:16 yeti>
+// -*- C++ -*- Time-stamp: <08/06/18 22:25:39 yeti>
 
 /*
  * Copyright (c) 2008
@@ -72,19 +72,23 @@ void sock_processor_base<charT,traits,_Alloc>::close()
   if ( !basic_socket_t::is_open_unsafe() ) {
     return;
   }
-  basic_socket<charT,traits,_Alloc>::mgr->pop( *this, basic_socket_t::_fd );
+  std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+
 #ifdef WIN32
   ::closesocket( basic_socket_t::_fd );
 #else
   ::shutdown( basic_socket_t::_fd, 2 );
   ::close( basic_socket_t::_fd );
 #endif
+  basic_socket<charT,traits,_Alloc>::mgr->pop( *this, basic_socket_t::_fd );
   basic_socket_t::_fd = -1;
 }
 
 template<class charT, class traits, class _Alloc>
 void sock_processor_base<charT,traits,_Alloc>::shutdown( sock_base::shutdownflg dir )
 {
+  std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+
   std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
   if ( basic_socket_t::is_open_unsafe() ) {
     if ( (dir & (sock_base::stop_in | sock_base::stop_out)) ==
@@ -185,8 +189,10 @@ char connect_processor<Connect, charT, traits, _Alloc, C>::Init_buf[128];
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>                                                             
 void connect_processor<Connect, charT, traits, _Alloc, C>::close()
 {
+  std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
   base_t::close();
 
+#if 0
   { 
     std::tr2::lock_guard<std::tr2::mutex> lk(inwlock);
     _in_work = false; // <--- set before cnd.notify_one(); (below in this func)
@@ -198,6 +204,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::close()
     // std::cerr << "=== " << ready_pool.size() << std::endl;
     cnd.notify_one();
   }
+#endif
 }
 
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
@@ -286,9 +293,11 @@ bool connect_processor<Connect, charT, traits, _Alloc, C>::pop_ready( processor&
     p = ready_pool.front(); // it may contain p.c == 0,  p.s == 0, if !in_work()
     ready_pool.pop_front();
     // std::cerr << "pop 1\n";
+#if 0
     if ( p.c == 0 ) { // wake up, but _in_work may be still true here (in processor pipe?),
       return false;   // even I know that _in_work <- false before notification...
     }                 // so, check twice
+#endif
   }
 
   // std::cerr << "pop 2\n";
@@ -317,6 +326,20 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
     }
     // std::cerr << "worker 3\n";
   }
+}
+
+
+template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
+void connect_processor<Connect, charT, traits, _Alloc, C>::stop()
+{
+  std::tr2::lock_guard<std::tr2::mutex> lk(inwlock);
+  _in_work = false; // <--- set before cnd.notify_one(); (below in this func)
+
+  std::tr2::lock_guard<std::tr2::mutex> lk2( rdlock );
+  ready_pool.push_back( processor() ); // make ready_pool not empty
+  // std::cerr << "=== " << ready_pool.size() << std::endl;
+  cnd.notify_one();
+  std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
 }
 
 } // namespace std
