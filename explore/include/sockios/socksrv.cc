@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/24 18:34:58 yeti>
+// -*- C++ -*- Time-stamp: <08/06/25 21:28:07 yeti>
 
 /*
  * Copyright (c) 2008
@@ -66,13 +66,13 @@ void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int po
 }
 
 template<class charT, class traits, class _Alloc>
-void sock_processor_base<charT,traits,_Alloc>::close()
+void sock_processor_base<charT,traits,_Alloc>::_close()
 {
   std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
   if ( !basic_socket_t::is_open_unsafe() ) {
     return;
   }
-  std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+  std::cerr << __FILE__ << ":" << __LINE__ << " " << basic_socket_t::_fd << std::endl;
 
 #ifdef WIN32
   ::closesocket( basic_socket_t::_fd );
@@ -187,10 +187,10 @@ template<class Connect, class charT, class traits, class _Alloc, void (Connect::
 char connect_processor<Connect, charT, traits, _Alloc, C>::Init_buf[128];
 
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>                                                             
-void connect_processor<Connect, charT, traits, _Alloc, C>::close()
+void connect_processor<Connect, charT, traits, _Alloc, C>::_close()
 {
   std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-  base_t::close();
+  base_t::_close();
 
 #if 0
   { 
@@ -218,14 +218,16 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
 
   Connect* c = new Connect( *s ); // bad point! I can't read from s in ctor indeed!
 
-  // if ( s->rdbuf()->in_avail() ) {
-  //   std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
-  //  ready_pool.push_back( processor( c, s ) );
-  //   cnd.notify_one();
-  // } else {
-  std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-  worker_pool.insert( std::make_pair( fd, processor( c, s ) ) );
-  // }
+  if ( s->rdbuf()->in_avail() ) {
+    std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
+    ready_pool.push_back( processor( c, s ) );
+    std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+    cnd.notify_one();
+  } else {
+    std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
+    worker_pool.insert( std::make_pair( fd, processor( c, s ) ) );
+    std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+  }
 
   return s->rdbuf();
 }
@@ -233,10 +235,12 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_base::socket_type fd, const typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::adopt_close_t& )
 {
+  std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
   {
     std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
     typename worker_pool_t::iterator i = worker_pool.find( fd );
     if ( i != worker_pool.end() ) {
+      std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
       delete i->second.c;
       delete i->second.s;
       // std::cerr << "oops\n";
@@ -257,6 +261,10 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_bas
   }
   if ( p.c != 0 ) {
     // (*p.c)( *p.s );
+    std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+
+    (p.c->*C)( *p.s );
+
     delete p.c;
     delete p.s;
   }
@@ -265,6 +273,8 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_bas
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_base::socket_type fd )
 {
+  std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+
   processor p;
 
   {
@@ -331,11 +341,27 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
       std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
     }
   }
+
+  {
+    std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
+    std::cerr << __FILE__ << ":" << __LINE__ << " " << worker_pool.size() << std::endl;
+  }
+
+  {
+    std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
+    std::cerr << __FILE__ << ":" << __LINE__ << " " << ready_pool.size() << std::endl;
+  }
 }
 
 
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::stop()
+{
+  _stop();
+}
+
+template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
+void connect_processor<Connect, charT, traits, _Alloc, C>::_stop()
 {
   std::tr2::lock_guard<std::tr2::mutex> lk2( rdlock );
 
@@ -344,6 +370,8 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::stop()
     ready_pool.push_back( processor() ); // make ready_pool not empty
     std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
     cnd.notify_one();
+  } else {
+    std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
   }
 }
 

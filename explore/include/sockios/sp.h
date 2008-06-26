@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/25 11:54:39 ptr>
+// -*- C++ -*- Time-stamp: <08/06/25 22:10:36 yeti>
 
 /*
  * Copyright (c) 2008
@@ -225,17 +225,36 @@ class sockmgr
         if ( r < 0 || r != sizeof(ctl) ) {
           throw std::runtime_error( "can't write to pipe" );
         }
-
-//        fd_info info = { fd_info::listener, 0, &p };
-//        std::tr2::lock_guard<std::tr2::mutex> lk( cll );
-//        closed_queue[_fd] = info;
       }
 
     void exit_notify( sockbuf_t* b, sock_base::socket_type fd )
       {
         // fd_info info = { 0, 0, 0 };
-        std::tr2::lock_guard<std::tr2::mutex> lk( cll );
-	closed_queue[fd] = fd_info();
+        // std::tr2::lock_guard<std::tr2::mutex> lk( dll );
+
+        try {
+          std::tr2::unique_lock<std::tr2::mutex> lk( dll, std::tr2::try_to_lock );
+
+          if ( b->_notify_close ) {
+            std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+            typename fd_container_type::iterator i = descr.find( fd );
+            if ( i != descr.end() ) {
+              if ( (i->second.b == b) && (i->second.p == 0) ) {
+                std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+                if ( epoll_ctl( efd, EPOLL_CTL_DEL, fd, 0 ) < 0 ) {
+                  std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+                  // throw system_error
+                }
+                std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+                descr.erase( i );
+              }
+            }
+            b->_notify_close = false;
+          }
+        }
+        catch ( const std::tr2::lock_error& ) {
+          std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+        }
       }
 
   private:
@@ -271,9 +290,7 @@ class sockmgr
     const int n_ret;
 
     fd_container_type descr;
-    fd_container_type closed_queue;
     listener_container_type listeners_final;
-    std::tr2::mutex cll;
     std::tr2::mutex dll;
 };
 

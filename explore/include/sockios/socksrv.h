@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/19 20:14:01 yeti>
+// -*- C++ -*- Time-stamp: <08/06/25 21:30:31 yeti>
 
 /*
  * Copyright (c) 2008
@@ -66,7 +66,7 @@ class sock_processor_base :
 
     virtual ~sock_processor_base()
       {
-        sock_processor_base::close();
+        sock_processor_base::_close();
 
         // Never uncomment next line:
         // basic_socket<charT,traits,_Alloc>::mgr->final( *this );
@@ -85,7 +85,8 @@ class sock_processor_base :
     void open( int port, sock_base::stype type, sock_base::protocol prot )
       { sock_processor_base::open(INADDR_ANY, port, type, prot); }
 
-    virtual void close();
+    virtual void close()
+      { _close(); }
 #if 0
     virtual void stop() = 0;
 #else
@@ -122,7 +123,9 @@ class sock_processor_base :
         return s;
       }
 
-    void (sock_processor_base::*_real_stop)();
+    void _close();
+
+    // void (sock_processor_base::*_real_stop)();
 
   public:
     bool is_open() const
@@ -193,7 +196,9 @@ class connect_processor :
 
     virtual ~connect_processor()
       {
-        connect_processor::close();
+        connect_processor::_close();
+
+        // _stop();
 
         if ( ploop.joinable() ) {
           ploop.join();
@@ -235,7 +240,8 @@ class connect_processor :
         ((Init *)Init_buf)->~Init();
       }
 
-    virtual void close();
+    virtual void close()
+      { connect_processor::_close(); }
     virtual void stop();
 
     void wait()
@@ -298,6 +304,8 @@ class connect_processor :
     };
 
     bool pop_ready( processor& );
+    void _close();
+    void _stop();
 
 #ifdef __USE_STLPORT_HASH
     typedef std::hash_map<sock_base::socket_type, processor> worker_pool_t;

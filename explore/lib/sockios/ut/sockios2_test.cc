@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/17 16:35:39 yeti>
+// -*- C++ -*- Time-stamp: <08/06/25 17:59:36 yeti>
 
 /*
  *
@@ -266,7 +266,14 @@ class worker
       { lock_guard<mutex> lk(lock); --cnt; }
 
     void connect( sockstream& s )
-      { lock_guard<mutex> lk(lock); getline( s, line ); ++rd; line_cnd.notify_one(); }
+      {
+        lock_guard<mutex> lk(lock);
+        getline( s, line );
+        cerr << __FILE__ << ":" << __LINE__ << " " << s.good() << " "
+             << s.rdbuf()->in_avail() << endl;
+        ++rd;
+        line_cnd.notify_one();
+      }
 
 //     void close()
 //      { }
@@ -294,7 +301,7 @@ class worker
 
 mutex worker::lock;
 int worker::cnt = 0;
-/* volatile */ int worker::visits = 0;
+int worker::visits = 0;
 condition_variable worker::cnd;
 string worker::line;
 condition_variable worker::line_cnd;
@@ -413,7 +420,7 @@ int EXAM_IMPL(sockios2_test::processor_core)
     }
 
     unique_lock<mutex> lk( worker::lock );
-    EXAM_CHECK( worker::line_cnd.timed_wait( lk, milliseconds( 500 ), worker::rd_counter1 ) );
+    EXAM_CHECK( worker::line_cnd.timed_wait( lk, milliseconds( 50000 ), worker::rd_counter1 ) );
 
     // cerr << worker::line << endl;
     EXAM_CHECK( worker::line == "Hello, world!" );

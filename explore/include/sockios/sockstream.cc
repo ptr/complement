@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/17 17:09:02 yeti>
+// -*- C++ -*- Time-stamp: <08/06/25 18:48:36 yeti>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -272,10 +272,11 @@ basic_sockbuf<charT, traits, _Alloc>::close()
   setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
   setg( this->epptr(), this->epptr(), this->epptr() );
 
-  if ( basic_socket_t::_notify_close ) {
-    basic_socket_t::mgr->exit_notify( this, basic_socket_t::_fd );
-    basic_socket_t::_notify_close = false;
-  }
+  // if ( basic_socket_t::_notify_close ) {
+  std::cerr << __FILE__ << ":" << __LINE__ << " " << basic_socket_t::_fd << std::endl;
+  basic_socket_t::mgr->exit_notify( this, basic_socket_t::_fd );
+  //   basic_socket_t::_notify_close = false;
+  // }
 
   basic_socket_t::_fd = -1;
 
