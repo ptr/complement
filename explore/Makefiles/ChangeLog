@@ -1,3 +1,10 @@
+2008-06-06  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* gmake/targetdirs.mak: use $(DESTDIR) as in common practice
+	(change root of installation, but don't change run paths);
+
+	* gmake/depend.mak: fix options for ctags/etags.
+
 2008-02-27  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/lib/gcc.mak: 3.3 is normal compiler, just some
