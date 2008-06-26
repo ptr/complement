@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/19 21:01:20 yeti>
+// -*- C++ -*- Time-stamp: <08/06/24 18:34:58 yeti>
 
 /*
  * Copyright (c) 2008
@@ -289,10 +289,13 @@ bool connect_processor<Connect, charT, traits, _Alloc, C>::pop_ready( processor&
   std::tr2::unique_lock<std::tr2::mutex> lk( rdlock );
 
   if ( !_in_work && ready_pool.empty() ) {
+    // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
     return false;
   }
 
+  std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
   cnd.wait( lk, not_empty );
+  std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
   p = ready_pool.front(); // it may contain p.c == 0,  p.s == 0, if !in_work()
   ready_pool.pop_front();
 #if 0
@@ -339,6 +342,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::stop()
   _in_work = false; // <--- set before cnd.notify_one(); (below in this func)
   if ( ready_pool.empty() ) {
     ready_pool.push_back( processor() ); // make ready_pool not empty
+    std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
     cnd.notify_one();
   }
 }
