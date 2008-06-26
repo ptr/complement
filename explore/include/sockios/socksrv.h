@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/11 21:40:56 yeti>
+// -*- C++ -*- Time-stamp: <08/06/15 23:29:23 ptr>
 
 /*
  * Copyright (c) 2008
@@ -68,7 +68,6 @@ class sock_processor_base :
       {
         sock_processor_base::close();
 
-        std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)this << " " << std::tr2::getpid() << std::endl;
         // Never uncomment next line:
         // basic_socket<charT,traits,_Alloc>::mgr->final( *this );
         // this lead to virtual fuction call, that is already pure here.
@@ -175,25 +174,6 @@ class connect_processor :
     virtual ~connect_processor()
       {
         connect_processor::close();
-        if ( ploop.joinable() ) {
-          ploop.join();
-        }
-        // {
-        // std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-        for ( typename worker_pool_t::iterator i = worker_pool.begin(); i != worker_pool.end(); ++i ) {
-          // delete i->second;
-          delete i->second.s;
-          delete i->second.c;
-        }
-        worker_pool.clear();
-        // }
-        for ( typename ready_pool_t::iterator j = ready_pool.begin(); j != ready_pool.end(); ++j ) {
-          delete j->c;
-        }
-        ready_pool.clear();
-
-        std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)this << " " << std::tr2::getpid() << std::endl;
-        basic_socket<charT,traits,_Alloc>::mgr->final( *this );
 
         ((Init *)Init_buf)->~Init();
       }

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/11 21:05:35 yeti>
+// -*- C++ -*- Time-stamp: <08/06/15 23:21:50 ptr>
 
 /*
  * Copyright (c) 2008
@@ -185,7 +185,6 @@ class sockmgr
         fd_info info = { fd_info::listener, 0, &p };
         std::tr2::lock_guard<std::tr2::mutex> lk( cll );
         closed_queue[_fd] = info;
-        std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)&p << " " << std::tr2::getpid() << std::endl;
       }
 
     void final( socks_processor_t& p );
@@ -195,7 +194,6 @@ class sockmgr
         fd_info info = { 0, 0, 0 };
         std::tr2::lock_guard<std::tr2::mutex> lk( cll );
 	closed_queue[fd] = info;
-        std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)b << " " << std::tr2::getpid() << std::endl;
       }
 
   private:

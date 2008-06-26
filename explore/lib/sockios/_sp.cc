@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/06 12:09:33 ptr>
+// -*- C++ -*- Time-stamp: <08/06/13 22:59:17 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -17,7 +17,7 @@
 
 #include <config/feature.h>
 #include <cerrno>
-#include <sockios/sockstream2>
+#include <sockios/sockstream>
 
 #ifdef STLPORT
 _STLP_BEGIN_NAMESPACE

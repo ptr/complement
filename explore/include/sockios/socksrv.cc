@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/11 21:41:27 yeti>
+// -*- C++ -*- Time-stamp: <08/06/16 10:45:56 ptr>
 
 /*
  * Copyright (c) 2008
@@ -192,10 +192,18 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::close()
     _in_work = false; // <--- set before cnd.notify_one(); (below in this func)
   }
 
-  std::tr2::lock_guard<std::tr2::mutex> lk2( rdlock );
-  ready_pool.push_back( processor() ); // make ready_pool not empty
-  // std::cerr << "=== " << ready_pool.size() << std::endl;
-  cnd.notify_one();
+  {
+    std::tr2::lock_guard<std::tr2::mutex> lk2( rdlock );
+    ready_pool.push_back( processor() ); // make ready_pool not empty
+    // std::cerr << "=== " << ready_pool.size() << std::endl;
+    cnd.notify_one();
+  }
+
+  basic_socket<charT,traits,_Alloc>::mgr->final( *this );
+
+  if ( ploop.joinable() ) {
+    ploop.join();
+  }
 }
 
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>

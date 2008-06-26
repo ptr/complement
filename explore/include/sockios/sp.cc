@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/11 21:42:37 yeti>
+// -*- C++ -*- Time-stamp: <08/06/16 11:05:56 ptr>
 
 /*
  * Copyright (c) 2008
@@ -134,90 +134,112 @@ template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename sockmgr<charT,traits,_Alloc>::fd_container_type::iterator ifd )
 {
   if ( ev.events & EPOLLRDHUP ) {
-    epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 );
-    // walk through descr and detach every .p ?
+    if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
+      // throw system_error
+    }
+
+    if ( ifd->second.p != 0 ) {
+      ifd->second.p->close();
+    }
+
     descr.erase( ifd );
-    std::cerr << "Remove listener EPOLLRDHUP\n";
-  } else if ( ev.events & EPOLLIN ) {
-    sockaddr addr;
-    socklen_t sz = sizeof( sockaddr_in );
 
-    fd_info info = ifd->second;
+    std::tr2::lock_guard<std::tr2::mutex> lck( cll );
+    typename fd_container_type::iterator closed_ifd = closed_queue.find( ev.data.fd );
+    if ( closed_ifd != closed_queue.end() && closed_ifd->second.p == ifd->second.p ) {
+      // listener in process of close
+      closed_queue.erase( closed_ifd );
+    }
 
-    for ( ; ; ) {
-      int fd = accept( ev.data.fd, &addr, &sz );
-      if ( fd < 0 ) {
-        std::cerr << "Accept, listener # " << ev.data.fd << ", errno " << errno << std::endl;
-        std::cerr << __FILE__ << ":" << __LINE__ << " " << std::tr2::getpid() << std::endl;
-        if ( (errno == EINTR) || (errno == ECONNABORTED) /* || (errno == ERESTARTSYS) */ ) {
-          continue;
-        }
-        if ( !(errno == EAGAIN || errno == EWOULDBLOCK) ) {
-          // std::cerr << "Accept, listener " << ev[i].data.fd << ", errno " << errno << std::endl;
-          // throw system_error ?
-        }
-#if 0
-        {
-          std::tr2::lock_guard<std::tr2::mutex> lck( cll );
-          typename fd_container_type::iterator closed_ifd = closed_queue.find( ev.data.fd );
-          if ( closed_ifd != closed_queue.end() ) {
-            typename fd_container_type::iterator ifd = descr.begin();
-            for ( ; ifd != descr.end(); ) {
-              if ( ifd->second.p == closed_ifd->second.p ) {
-                descr.erase( ifd++ );
-              } else {
-                ++ifd;
-              }
-            }
-            closed_queue.erase( closed_ifd );
-          }
-        }
-#endif
-        break;
+    return;
+  }
+
+  if ( (ev.events & EPOLLIN) == 0 ) {
+    return; // I don't know what to do this case...
+  }
+
+  {
+    std::tr2::lock_guard<std::tr2::mutex> lck( cll );
+    typename fd_container_type::iterator closed_ifd = closed_queue.find( ev.data.fd );
+    if ( closed_ifd != closed_queue.end() && closed_ifd->second.p == ifd->second.p ) {
+      // listener in process of closing, ignore all incoming connects
+      closed_queue.erase( closed_ifd );
+      if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
+        // throw system_error
       }
-      // std::cerr << "listener accept " << fd << std::endl;
-      if ( fcntl( fd, F_SETFL, fcntl( fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
-        throw std::runtime_error( "can't establish nonblock mode" );
+      descr.erase( ifd );
+      return;
+    }      
+  }
+
+  sockaddr addr;
+  socklen_t sz = sizeof( sockaddr_in );
+
+  fd_info info = ifd->second;
+
+  for ( ; ; ) {
+    int fd = accept( ev.data.fd, &addr, &sz );
+    if ( fd < 0 ) {
+      // std::cerr << "Accept, listener # " << ev.data.fd << ", errno " << errno << std::endl;
+      // std::cerr << __FILE__ << ":" << __LINE__ << " " << std::tr2::getpid() << std::endl;
+      if ( (errno == EINTR) || (errno == ECONNABORTED) /* || (errno == ERESTARTSYS) */ ) {
+        errno = 0;
+        continue;
       }
-      
-      try {
-        std::cerr << __FILE__ << ":" << __LINE__ << " new sockstream_t" << std::endl;
-        sockbuf_t* b = (*info.p)( fd, addr );
-
-        epoll_event ev_add;
-        ev_add.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-        ev_add.data.fd = fd;
-        fd_info new_info = { fd_info::owner, b, info.p };
-        descr[fd] = new_info;
-
-        if ( epoll_ctl( efd, EPOLL_CTL_ADD, fd, &ev_add ) < 0 ) {
-          std::cerr << "Accept, add " << fd << ", errno " << errno << std::endl;
-          descr.erase( fd );
+      if ( !(errno == EAGAIN /* || errno == EWOULDBLOCK */ ) ) { // EWOULDBLOCK == EAGAIN
+        // std::cerr << "Accept, listener " << ev.data.fd << ", errno " << errno << std::endl;
+        if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
           // throw system_error
         }
 
-        bool in_closed = false;
-        {
-          std::tr2::lock_guard<std::tr2::mutex> lk( cll );
-          typename fd_container_type::iterator closed_ifd = closed_queue.begin();
-          for ( ; closed_ifd != closed_queue.end(); ++closed_ifd ) {
-            if ( closed_ifd->second.p == info.p ) {
-              in_closed = true;
-              std::cerr << "@@@ 1\n" << std::endl;
-              break;
-            }
-          }
+        if ( ifd->second.p != 0 ) {
+          ifd->second.p->close();
         }
+
+        descr.erase( ifd );
+
+        // check closed_queue, due to ifd->second.p->close(); add record in it
+        std::tr2::lock_guard<std::tr2::mutex> lck( cll );
+        typename fd_container_type::iterator closed_ifd = closed_queue.find( ev.data.fd );
+        if ( closed_ifd != closed_queue.end() && closed_ifd->second.p == ifd->second.p ) {
+          // listener in process of close
+          closed_queue.erase( closed_ifd );
+        }
+        // throw system_error ?
+      } else { // back to listen
+        errno = 0;
+        epoll_event xev;
+        xev.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+        xev.data.fd = ev.data.fd;
+        epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev );
       }
-      catch ( const std::bad_alloc& ) {
-        // nothing
-      }
-      catch ( ... ) {
+      return;
+    }
+    if ( fcntl( fd, F_SETFL, fcntl( fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
+      throw std::runtime_error( "can't establish nonblock mode" );
+    }
+      
+    try {
+      sockbuf_t* b = (*info.p)( fd, addr );
+
+      epoll_event ev_add;
+      ev_add.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+      ev_add.data.fd = fd;
+      fd_info new_info = { fd_info::owner, b, info.p };
+      descr[fd] = new_info;
+
+      if ( epoll_ctl( efd, EPOLL_CTL_ADD, fd, &ev_add ) < 0 ) {
         descr.erase( fd );
+        // throw system_error
       }
     }
-  } else {
-    // std::cerr << "listener: " << std::hex << ev.events << std::dec << std::endl;
+    catch ( const std::bad_alloc& ) {
+      // nothing
+      descr.erase( fd );
+    }
+    catch ( ... ) {
+      descr.erase( fd );
+    }
   }
 }
 
@@ -228,11 +250,13 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
 
   if ( ev.events & EPOLLIN ) {
     if ( (info.flags & fd_info::owner) == 0 ) {
-      // marginal case: me not owner (registerd via push(),
-      // when I owner, I know destroy point),
-      // already closed, but I not see closed event yet;
-      // object may be deleted already, so I can't
-      // call b->egptr() etc. here
+      /*
+      marginal case: sockmgr isn't owner (registerd via push(),
+      when I owner, I know destroy point),
+      already closed, but I don't see closed event yet;
+      object may be deleted already, so I can't
+      call b->egptr() etc. here
+      */
       std::tr2::lock_guard<std::tr2::mutex> lck( cll );
       typename fd_container_type::iterator closed_ifd = closed_queue.find( ev.data.fd );
       if ( closed_ifd != closed_queue.end() ) {
@@ -262,26 +286,12 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
           xev.data.fd = ev.data.fd;
           info.flags |= fd_info::level_triggered;
           if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) < 0 ) {
-            std::cerr << "X " << ev.data.fd << ", " << errno << std::endl;
+            // std::cerr << "X " << ev.data.fd << ", " << errno << std::endl;
           }
         }
-        std::cerr << "Z " << ev.data.fd << ", " << errno << std::endl;
+        // std::cerr << "Z " << ev.data.fd << ", " << errno << std::endl;
         if ( info.p != 0 ) { // or (info.flags & fd_info::owner) != 0
-          bool is_closed = false;
-          {
-            std::tr2::lock_guard<std::tr2::mutex> lk( cll );
-            typename fd_container_type::iterator closed_ifd = closed_queue.begin();
-            for ( ; closed_ifd != closed_queue.end(); ++closed_ifd ) {
-              if ( closed_ifd->second.p == info.p ) {
-                is_closed = true;
-                std::cerr << "@@@ 2\n" << std::endl;
-                break;
-              }
-            }
-          }
-          if ( !is_closed ) {
-            (*info.p)( ev.data.fd );
-          }
+          (*info.p)( ev.data.fd );
         }
         break;
       }
@@ -289,28 +299,29 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
       long offset = read( ev.data.fd, b->egptr(), sizeof(charT) * (b->_ebuf - b->egptr()) );
       // std::cerr << "offset " << offset << ", " << errno << std::endl;
       if ( offset < 0 ) {
-        if ( (errno == EAGAIN) || (errno == EINTR) ) {
-          errno = 0;
-          epoll_event xev;
-          xev.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-          xev.data.fd = ev.data.fd;
-          epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev );
-          break;
-        } else {
-          switch ( errno ) {
-            // case EINTR:      // read was interrupted
-            // continue;
-            //  break;
-            case EFAULT:     // Bad address
-            case ECONNRESET: // Connection reset by peer
-              ev.events |= EPOLLRDHUP; // will be processed below
-              break;
-            default:
-              // std::cerr << "not listener, other " << ev.data.fd << std::hex << ev.events << std::dec << " : " << errno << std::endl;
-              break;
-          }
-          break;
+        switch ( errno ) {
+          case EINTR:      // read was interrupted
+            errno = 0;
+            continue;
+            break;
+          case EFAULT:     // Bad address
+          case ECONNRESET: // Connection reset by peer
+            ev.events |= EPOLLRDHUP; // will be processed below
+            break;
+          case EAGAIN:
+            // case EWOULDBLOCK:
+            {
+              epoll_event xev;
+              xev.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+              xev.data.fd = ev.data.fd;
+              epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev );
+            }
+            break;
+          default:
+            // std::cerr << "not listener, other " << ev.data.fd << std::hex << ev.events << std::dec << " : " << errno << std::endl;
+            break;
         }
+        break;
       } else if ( offset > 0 ) {
         offset /= sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
             
@@ -320,39 +331,22 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
           xev.data.fd = ev.data.fd;
           info.flags &= ~static_cast<unsigned>(fd_info::level_triggered);
           if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) < 0 ) {
-            std::cerr << "Y " << ev.data.fd << ", " << errno << std::endl;
+            // std::cerr << "Y " << ev.data.fd << ", " << errno << std::endl;
           }
         }
         std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
         b->setg( b->eback(), b->gptr(), b->egptr() + offset );
         b->ucnd.notify_one();
         if ( info.p != 0 ) {
-          // std::cerr << "data here" << std::endl;
-          bool is_closed = false;
-          {
-            std::tr2::lock_guard<std::tr2::mutex> lk( cll );
-            typename fd_container_type::iterator closed_ifd = closed_queue.begin();
-            for ( ; closed_ifd != closed_queue.end(); ++closed_ifd ) {
-              if ( closed_ifd->second.p == info.p ) {
-                is_closed = true;
-                std::cerr << "@@@ 3\n" << std::endl;
-                break;
-              }
-            }
-          }
-          if ( !is_closed ) {
-            (*info.p)( ev.data.fd );
-          }
+          (*info.p)( ev.data.fd );
         }
       } else {
-        std::cerr << "K " << ev.data.fd << ", " << errno << std::endl;
+        // std::cerr << "K " << ev.data.fd << ", " << errno << std::endl;
         // EPOLLRDHUP may be missed in kernel, but offset 0 is the same
         ev.events |= EPOLLRDHUP; // will be processed below
         break;
       }
     }
-  } else {
-    std::cerr << "Q\n";
   }
 
   if ( (ev.events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR) ) != 0 ) {
@@ -360,36 +354,15 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
     if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
       // throw system_error
     }
-    bool need_delete = true;
+
     if ( info.p != 0 ) {
-      std::cerr << __FILE__ << ":" << __LINE__ << endl;
-      {
-        std::tr2::lock_guard<std::tr2::mutex> lk( cll );
-        typename fd_container_type::iterator closed_ifd = closed_queue.begin();
-        for ( ; closed_ifd != closed_queue.end(); ++closed_ifd ) {
-          if ( closed_ifd->second.p == info.p ) {
-            need_delete = false; // will be deleted in 'final' method
-            std::cerr << "@@@ 4\n" << std::endl;
-            break;
-          }
-        }
-      }
-      if ( need_delete ) {
-        std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)info.b << std::endl;
-        (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
-        std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)info.b << std::endl;
-      }
+      (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
     }
-    if ( (info.flags & fd_info::owner) != 0 && need_delete ) {
-      std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)info.b << std::endl;
-    } else {
-      std::cerr << __FILE__ << ":" << __LINE__ << " " << (void*)info.b << std::endl;
-      if ( (info.flags & fd_info::buffer) != 0 ) {
-        info.b->close();
-      }
-      std::tr2::lock_guard<std::tr2::mutex> lck( cll );
-      closed_queue.erase( ev.data.fd );
+    if ( (info.flags & fd_info::buffer) != 0 ) {
+      info.b->close();
     }
+    std::tr2::lock_guard<std::tr2::mutex> lck( cll );
+    closed_queue.erase( ev.data.fd );
     descr.erase( ifd );
   }
   // if ( ev.events & EPOLLHUP ) {
@@ -433,11 +406,12 @@ void sockmgr<charT,traits,_Alloc>::final( sockmgr<charT,traits,_Alloc>::socks_pr
 
   std::tr2::lock_guard<std::tr2::mutex> lk( cll );
 
-  // I can't use  closed_queue.erase( p.fd() ) here: fd is -1 already
-  for ( typename fd_container_type::iterator closed_ifd = closed_queue.begin(); closed_ifd != closed_queue.end(); ++closed_ifd ) {
+  // I can't use closed_queue.erase( p.fd() ) here: fd is -1 already
+  for ( typename fd_container_type::iterator closed_ifd = closed_queue.begin(); closed_ifd != closed_queue.end(); ) {
     if ( closed_ifd->second.p == &p ) {
-      closed_queue.erase( closed_ifd );
-      break;
+      closed_queue.erase( closed_ifd++ );
+    } else {
+      ++closed_ifd;
     }
   }
 }

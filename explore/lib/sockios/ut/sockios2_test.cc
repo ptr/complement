@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/11 21:46:19 yeti>
+// -*- C++ -*- Time-stamp: <08/06/15 21:52:52 ptr>
 
 /*
  *
@@ -300,7 +300,7 @@ bool visits_counter2()
 
 bool rd_counter1()
 {
-  return worker::rd == 1;
+  return worker::rd > 0; // == 1;
 }
 
 int EXAM_IMPL(sockios2_test::processor_core)
@@ -311,7 +311,6 @@ int EXAM_IMPL(sockios2_test::processor_core)
     EXAM_CHECK( prss.good() );
     EXAM_CHECK( prss.is_open() );
 
-    std::cerr << __FILE__ << ":" << __LINE__ << " " << std::tr2::getpid() << std::endl;
     {
       sockstream s( "localhost", 2008 );
 
@@ -329,7 +328,6 @@ int EXAM_IMPL(sockios2_test::processor_core)
       EXAM_CHECK( worker::visits == 1 );
       worker::visits = 0;
     }
-    std::cerr << __FILE__ << ":" << __LINE__ << " " << std::tr2::getpid() << std::endl;
   }
   {
     lock_guard<mutex> lk( worker::lock );
@@ -415,7 +413,7 @@ int EXAM_IMPL(sockios2_test::processor_core)
     }
 
     unique_lock<mutex> lk( worker::lock );
-    worker::cnd.timed_wait( lk, milliseconds( 100 ), rd_counter1 );
+    worker::cnd.timed_wait( lk, milliseconds( 500 ), rd_counter1 );
 
     // cerr << worker::line << endl;
     EXAM_CHECK( worker::line == "Hello, world!" );
@@ -456,8 +454,6 @@ int EXAM_IMPL(sockios2_test::fork)
 
       this_thread::fork();
 
-      std::cerr << __FILE__ << ":" << __LINE__ << " " << std::tr2::getpid() << std::endl;
-
       {
         connect_processor<worker> prss( 2008 );
 
@@ -473,8 +469,6 @@ int EXAM_IMPL(sockios2_test::fork)
 
         EXAM_CHECK_ASYNC( worker::visits == 1 );
       }
-
-      std::cerr << __FILE__ << ":" << __LINE__ << " " << std::tr2::getpid() << std::endl;
 
       exit( 0 );
     }
@@ -626,16 +620,16 @@ class interrupted_writer
 
         int n = 1;
 
-        cerr << "align 3\n";
+        // cerr << "align 3\n";
         bb->wait();  // <-- align 3
 
-        cerr << "align 3 pass\n";
+        // cerr << "align 3 pass\n";
         s.write( (const char *)&n, sizeof( int ) ).flush();
         EXAM_CHECK_ASYNC( s.good() );
       }
 
     ~interrupted_writer()
-      { cerr << "~~\n"; }
+      { /* cerr << "~~\n"; */ }
 
     void connect( sockstream& s )
       { }
@@ -645,9 +639,9 @@ class interrupted_writer
       sockstream s( "localhost", 2008 );
 
       int buff = 0;
-      cerr << "align 2" << endl;
+      // cerr << "align 2" << endl;
       b->wait(); // <-- align 2
-      cerr << "align pass" << endl;
+      // cerr << "align pass" << endl;
 
       EXAM_CHECK_ASYNC( s.read( (char *)&buff, sizeof(int) ).good() ); // <---- key line
       EXAM_CHECK_ASYNC( buff == 1 );
@@ -681,12 +675,12 @@ int EXAM_IMPL(sockios2_test::read0)
 
       bb.wait();  // <-- align 2
 
-      cerr << "system" << endl;
+      // cerr << "system" << endl;
       system( "echo > /dev/null" );  // <------ key line
-      cerr << "after system" << endl;
+      // cerr << "after system" << endl;
 
       bnew.wait();  // <-- align 3
-      cerr << "after align 3" << endl;
+      // cerr << "after align 3" << endl;
 
       t.join();
 
