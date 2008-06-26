@@ -451,7 +451,6 @@ class basic_sockbuf :
         std::cerr << __FILE__ << ":" << __LINE__ << " " << basic_socket_t::_fd << std::endl;
         close();
         _M_deallocate_block();
-        std::cerr << __FILE__ << ":" << __LINE__ << " " << basic_socket_t::_fd << std::endl;
       }
 
     sockbuf_type *open( const char *hostname, int port,

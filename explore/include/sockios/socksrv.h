@@ -180,14 +180,14 @@ class connect_processor :
   public:
     connect_processor() :
          not_empty( *this ),
-         _in_work( false ),
+         _in_work( true ),
          ploop( loop, this )
       { new( Init_buf ) Init(); /* base_t::_real_stop = &connect_processor::_xstop; */ }
 
     explicit connect_processor( int port ) :
         base_t( port, sock_base::sock_stream ),
         not_empty( *this ),
-        _in_work( false ),
+        _in_work( true ),
         ploop( loop, this )
       { new( Init_buf ) Init(); /* base_t::_real_stop = &connect_processor::_xstop; */ }
 

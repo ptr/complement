@@ -295,7 +295,6 @@ bool connect_processor<Connect, charT, traits, _Alloc, C>::pop_ready( processor&
   cnd.wait( lk, not_empty );
   p = ready_pool.front(); // it may contain p.c == 0,  p.s == 0, if !in_work()
   ready_pool.pop_front();
-  // std::cerr << "pop 1\n";
 #if 0
   if ( p.c == 0 ) { // wake up, but _in_work may be still true here (in processor pipe?),
     return false;   // even I know that _in_work <- false before notification...
@@ -312,16 +311,12 @@ bool connect_processor<Connect, charT, traits, _Alloc, C>::pop_ready( processor&
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
 {
-  _in_work = true;
-
   processor p;
 
   while ( pop_ready( p ) ) {
-    // std::cerr << "worker 1\n";
     if ( p.c != 0 ) {
       std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       (p.c->*C)( *p.s );
-      // std::cerr << "worker 2\n";
       if ( p.s->rdbuf()->in_avail() ) {
         std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
         ready_pool.push_back( p );
@@ -329,7 +324,6 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
         std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
         worker_pool[p.s->rdbuf()->fd()] = p;
       }
-      // std::cerr << "worker 3\n";
     } else {
       std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
     }
@@ -346,9 +340,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::stop()
   if ( ready_pool.empty() ) {
     ready_pool.push_back( processor() ); // make ready_pool not empty
     cnd.notify_one();
-    std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
   }
-  std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
 }
 
 } // namespace std
