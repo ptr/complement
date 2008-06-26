@@ -1,0 +1,625 @@
+2008-02-28  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sochstream, _sockstream.cc, netinfo.h, netinfo.cc:
+	move findhost and iface list utilities into separate
+	files;
+
+	* ibsockios: Version 1.14.2.
+
+2007-11-21  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockstream.cc: UDP require larger buffer, because it should
+	take all message at once [max 65535].
+
+	* libsockios: Version 1.14.1.
+
+2007-11-19  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: remove out-of-date sockmgr_sream_MP_SELECT;
+
+	* sockmgr.cc: stack size restriction for loop really dangerous;
+
+	* sockmgr.cc: accept_udp come back, but concept changed---no session
+	at all in UDP processing;
+
+	* ut/ConnectionProcessor.h, ut/ConnectionProcessor.cc: test for simple
+	udp connection;
+
+	* ut/sockios_test_suite.cc: ditto;
+
+	* libsockios: Version 1.14.0.
+
+2007-09-24  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockios/sockmgr.h, sockios/sockmgr.cc: rename loop_id to loop_thr,
+	for correct interpretation; clean main loop of connection_processor;
+
+	* ut/sockios_test.cc: initialize buffer; reduce number of iterations
+	for test;
+	
+	* libsockios: Version 1.13.0.
+
+2007-09-07  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockstream, sockstream.cc: prepare for __FIT_NONBLOCK_SOCKETS.
+
+2007-09-06  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: allow any name of functions for 'connect'
+	and 'close' procedures in template parametric class Connect.
+
+2007-09-05  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: looks like non-POD return from thread is
+	unstable, and should be avoided; replace union rec_code by void *
+	or long, depends upon operation environment;
+
+	* ut/ConnectionProcessor.cc, ut/sockios_test.cc: ditto.
+
+2007-09-01  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockstream: clean; add inet_sockaddr() method, that return
+	sockaddr_in in whole;
+
+	* sockstream.cc: clean; replace sleep by yield in recvfrom,
+	but function not really in use now;
+
+	* sockmgr.h: add search by sockaddr_in in connections container;
+	this useful for non-streamed connections, like UDP.
+
+2007-08-23  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h: explicitly inhibit copy of basic_sockmgr and
+	sockmgr_stream_MP.
+
+	* libsockios: Version 1.12.1.
+
+2007-08-03  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* include/sockios/sockstream: workaround for file openmode
+	for libstdc++ shipped with gcc 3.3.6;
+
+	* ../../test/sockios: moved to ut.
+
+2007-07-18  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* test/sockios:	boost unit test framework replaced by exam.
+
+2007-07-12  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* libsockios: Version 1.12.0
+
+2007-07-11  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: Condition replaced by condition.
+
+2007-06-29  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.cc, sockios_test.cc: replace Locker by scoped_lock.
+
+	* sockmgr.h, sockstream, _sockmgr.cc, _sockstream.cc: all
+	Mutex replaced by mutex
+
+2007-02-12  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, _sockmgr.cc: use Init technique to initialize
+	static idx [thread-specific data index]---avoid global
+	mutex initialization [lead to problems after fork?];
+	reinitilize idx after fork;
+
+	* libsockios: Version 1.11.0
+
+2007-02-01  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.cc: clean container with sockstreams,
+	to force 'close' call for all connections during server
+	close process; try to block some signals during close.
+	
+	* libsockios: Version 1.10.3
+
+	* sockmgr.h, sockmgr.cc: start connect_processor threads
+	only from 'observer' thread; threads pool managed only
+	from 'observer' thread; 'observer' thread not in threads
+	pool, it start from 'loop'; 
+	
+	* libsockios: Version 1.10.4
+
+2007-01-31  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: really erase iterators
+	from _conn_pool; remove sockstream from processing,
+	if it was closed during 'connect' processing;
+
+	* libsockios: Version 1.10.2
+
+2006-12-13  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: container now single owner
+	of _Connect objects; call close() and destructor of
+	Connect instance incapsulated into _Connect;
+
+2006-11-29  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.cc: don't delete objects via _conn_pool
+	container content [this is secondary structure,
+	objects will be deleted in the _M_c container];
+	this fix sporadic crashes of server on exit.
+
+	* libsockios: Version 1.10.1
+
+2006-11-27  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: delete connect processors and
+	sockstreams at exit from loop; wait loop thread in sockmgr
+	dtor, it safe even after wait() call, but keep from bogus
+	confuse.
+
+	* libsockios: Version 1.10.0
+
+2006-10-11  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.cc: fix inconsistency with observer_run
+	flag.
+
+2006-10-10  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.cc: user can read from socket immediate
+	in Connect ctor, so check chars in buffer after ctor
+	and push processing queue if available.
+
+2006-09-25  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: introduce configuration parameters
+	for connection processing---limit of threads, time interval
+	to detect 'busy' thread, time interval to observe processing
+	threads, time interval to detect 'idle' thread
+	[ready for termination]. Implemented concurrent
+	connections processing by minimal number of threads with
+	guarantee that blocking in processing of some connections
+	don't lead to stop other connections processing [but
+	within number of limit of processsing threads; the marginal
+	case may be one thread per connect; adjust number
+	of processing threads, if needed]. If number of
+	processing threads unlimited [i.e. too big], too many
+	threads created under heavy load, and resources
+	used ineffective.
+
+2006-09-22  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: use concurrent threads pool;
+	special thread [observer] control threads creation;
+	connection processing thread can detect that no more
+	work and go away.
+	
+2006-09-21  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: revision of sockmgr_stream_MP;
+	pass ready for read sockets to processing thread via
+	FIFO queue; don't listen sockets that in the processing;
+	avoid situation when same connection processed in
+	the different threads in the same time.
+	Note, that udp processing is broken now.
+	
+	* libsockios: Version 1.9.0
+
+2006-09-20  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* libsockios: Version 1.8.1
+
+2006-09-18  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: use vector as container for pollfd structures,
+	instead of raw array; move processed socket to the end of pollfd sequence,
+	to avoid usurp processing by older connections.
+
+2006-08-21  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.cc: the same as 2006-08-18 for poll/select on server side.
+
+2006-08-18  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockstream.cc: poll and select can be interrupted by signal not associated
+	with data on socket [SIGCHLD, for example]; in this case ones return some
+	negative value and set errno to EINTR; following read return 0 too---just
+	like end of connection; I check errno for EINTR, clear it and return
+	to listen on poll/select in this case.
+
+2006-08-04  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: changes in thread entry function.
+
+2006-07-11  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* socksream, sockstream.cc: add constructor from in_addr
+	for basic_sockbuf and sockstreams; generate list of
+	network interfaces in user-defined container.
+
+2006-06-28  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* socksream: use Mutex wrapper from xmt instead
+	of STLport; consider compilation with libstdc++;
+
+	* _sockstream.cc: ditto
+
+	* _sockmgr.cc: ditto
+
+	* sockstream.cc: use socklen_t insted size_t, as
+	in POSIX---useful for platforms where size_t and
+	socklen_t are different types (like amd64).
+	
+	* socksream: idem
+	
+	* libsockios: Version 1.8.0
+
+2006-05-24  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* socksream: explicitly add stdexcept header.
+
+2005-12-22  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockstream: add forward declaration of reentrant
+	workarounds for DNS resolver.
+
+2005-12-21  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockstream, sockstream.cc: remove previous
+	dup socket [see record 2005-12-19]---wrong
+	[dup here leads to problem in implementation of
+	sockmgr].
+	
+	* sockstream, sockstream.cc: add 'attach' functions
+	in basic_sockbuf and basic_sockstream---attach
+	to existent socket with duplication [dup] to do
+	real close only for last close call; near the same
+	effect may be established with _doclose flag
+	[may be useful for platforms without dup call].
+
+	* libsockios: Version 1.7.4
+
+2005-12-20  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc: wait for loop start;
+	use xmt namespace instead of __impl for xmt library.
+
+2005-12-19  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockstream, sockstream.cc: add timeout for
+	poll/select system calls.
+
+	* sockstream.cc: use dup call to duplicate socket
+	descriptor, if open with descriptor.
+
+2005-12-12  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Makefile.inc, freebsd/*: FreeBSD 4.11 has
+	non-reentrant res_*, getaddrinfor, ns_* functions;
+	we can use reentrant ones from FreeBSD 5.3 libc
+	instead.
+	
+	* freebsd/_freebsd_dummy.h: redefinition of functions
+	that will be replaced by reentrant ones
+
+	* _sockstream.cc: use __FIT_GETHOSTBYADDR macro
+	
+	* libsockios: Version 1.7.3
+
+2005-12-07  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockstream: add __FIT_GETHOSTBYADDR for platforms that
+	has no get*by*_r functions
+
+2005-12-01  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockstream: add gethostaddr and gethostaddr2 functions
+	that return list of all addresses for requested host
+	[via back insert iterator]. gethostaddr return objects of
+	type in_addr, while gethostaddr2 return objects of type
+	sockaddr (so it useful for IPv6 too).
+
+	* unit_test.cc: tests for gethostaddr*.
+	
+	* libsockios: Version 1.7.2
+
+2005-08-05  Petr Ovtchenkov  <Petr.Ovchenkov@Kaspersky.COM>
+
+	* sockstream: add function that return name of host,
+	this useful to take primary interface.
+
+	* sockmgr.h, sockmgr.cc, _sockmgr.cc: add 'open' variants
+	that allow to bind on specific IP; as IP this interfaces
+	accept unsigned long [in host byteorder] or
+	in_addr [in network byteorder]; if no IP specified
+	INADDANY will be used.
+
+	* libsockios: Version 1.7.1
+
+2005-08-05  Petr Ovtchenkov  <ptr@island.plnet.ru>
+
+	* libsockios: Update license version, now
+	Academic Free License Version 2.1
+
+2005-03-31  Petr Ovtchenkov  <ptr@island.plnet.ru>
+
+	* sockstream: add class scope to setstate call---it has
+	interference with char *setstate( char * ) in stdlib.h
+	[pseudorandom number generators]
+
+	* sockstream, sockstream.cc: uClibc don't have stropts.h
+
+2005-03-25  Petr Ovtchenkov  <ptr@island.plnet.ru>
+
+	* Makefile: revision of Makefiles---path to stlport lib and
+	-lstlport went to common Makefiles.
+
+2004-11-05  Petr Ovtchenkov <ptr@Island.UrbanNet.Ru>
+
+	* library naming changed.
+
+2003-07-05  Petr Ovtchenkov <ptr@Island.UrbanNet.Ru>
+
+	* libsockios: Version 1.7.0
+
+	* libsockios: Update license version, now
+	Academic Free License Version 1.2
+
+	* libsockios: changes in sockmgr---set locks on change
+	descriptor of listened socket, due to this descriptor used in
+	separate thread, function loop, and changed outside this
+	thread in functions like close; add protected unsafe variants
+	of some	functions; recover version with 'select' call in addition
+	to 'poll' system call; as 'poll' as 'select' variants are
+	accessible in one program, if this calls available in OS.
+	
+2002-09-25  Petr Ovtchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* libsockios: prepare for public on sourceforge.net under
+	the Academic Free License Version 1.0
+
+2002-07-15  Petr Ovtchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* sockmgr.h, sockmgr.cc (Repository): remove sockmgr
+	class, i.e. class with one Connection object per thread.
+	This functionality too reach, and if still need one can be
+	realized in sockmgr_MP clients.
+	
+	* sockstream, _sockstream.cc (Repository): provide
+	portable functions that return service by name and by port.
+
+2002-07-12  Petr Ovtchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* libsockios: Version 1.6.0
+
+2002-07-11  Petr Ovtchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* sockmgr.cc, sockmgr.h (Repository): remove signaling to sockets
+	processing loop; remove signals handlers; call close() method
+	of ConnectionProcessing on close as server as socket.
+	
+	* _sockmgr.cc (Repository): shutdown binded socket before
+	close---otherwise problems with loop thread termination
+	on close.
+
+2002-06-23  Petr Ovtchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* sockmgr.h, sockmgr.cc, _sockmgr.cc (Repository): remove signal
+	throw---seems not work properly; provide handler that make sanity
+	of socket_managerMP<> object by signal TERM---data pass via
+	thread-specific data with Thread iword/pword functions;
+	this still need to fix for solaris threads and Windows.
+
+
+2002-06-15  Petr Ovtchenkov  <ptr@Island.Br.UrbanNet.Ru>
+
+	* _sockstream.cc, sockmgr.cc, sockmgr.h, sockstream, sockstream.cc
+	(Repository): SELECT and POLL differentiation, depends from OS;
+	fix 0 bytes read problem on close socket---no ERR, like normal read, but
+	err will be detected only after attempt to read;
+
+	No search of DNS resolution---optional non-class functions now.
+
+
+2001-07-27  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* libsockios: Version 1.5.1
+	
+	* Makefile.gcc (Repository): provide workaround for
+	bug in GNU make 3.79*---it foget old value of variable when
+	tag-dependent variable use += operator, if includes of makefiles
+	is too deep---near deepth of 3. This influence to libraries building.
+	Add explicit link with other C++ shared libraries---this significantly
+	reduce library size.
+
+2001-06-05  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* Makefile.inc (Message): library version 1.5.0
+	This reflect real major libsockios release.
+
+2001-06-04  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* libsockios:  Work with STLport 4.5 beta 8 (from stlport cvs);
+	remove obsolete in any case dependence from non-STLport iostreams
+	realization (it should not work).
+
+2001-06-01  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* libxmt:
+	The fork and become_daemon now in xmt library.
+
+	* libxmt:
+	New exception class fork_in_parent added in xmt.
+
+	* libsockios:
+	libsockios: version 0.5.0
+	
+2001-04-09  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* libsockios:
+	make workaround for bogus Linux define for htons
+
+2001-03-20  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* libsockios:
+	Satisfy for STLport 4.1 beta 5.
+
+	* libsockios:
+	Increment patch number.
+
+2001-03-01  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* libsockios:
+	Removed fields _state and _open in basic_sockbuf;
+	Socket expected is open if it descriptor (_fd) is not -1;
+	Function setoptions moved from basic_sockbuf in the sockstream
+	and bug in passing options fixed (all options except linger)---we need
+	pass int, bool give an error in result.
+
+	* libsockios:
+	findhost not set error state in _state (no more this field),
+	instead of return true/false.
+
+	* libsockios:
+	Added check for open socket before poll (in underflow) and
+	check for error flag after. But one require NONBLOCK mode and
+	removing poll in case of NONBLOCK for Multiple Connections Single Flow
+	processing policy.
+
+	* libsockios:
+	Removed shutdown function for socket manager---no sense for it here.
+
+	* libsockios:
+	Removed fields _state and _open in sockmgr;
+
+	* libsockios:
+	Incremented patch number (in version presentation) after sockstream
+	modifications.
+
+2001-02-15  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* libsockios:
+	Change version
+
+2001-02-06  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* libsockios:
+	Under hard load I see the same behavior as under HP-UX and Linux.
+	Fix code: remove difference in code between Solaris and non-Solaris
+	for MCSF polisy of socket manager.
+
+2001-01-23  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* libsockios:
+	The same code as for HP-UX: ERR may not come on poll, and socket
+	may be closed before
+
+2001-01-22  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* libsockios:
+	Approach for fix problem with lost info about closed connections
+	on non-Solaris OSes. Should be checked on other OS, including Solaris
+	and non-MP variant.
+
+2000-12-08  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* libsockios:
+	Change STLport version
+
+2000-11-04  Petr Ovtchenkov  <ptr@ParallelGraphics.COM>
+
+	* libsockios:
+	Fixed bug in Multiplexsor variant of Sock manager:
+	data from net, that was readed from net and buffered in sockbuf,
+	not extracted befor next data received (I wait on poll).
+	Now I check is available data in buffer and return this
+	sockstream if yes before calling poll.
+
+2000-09-12  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libsockios:
+	ifdef #ident directive (for vary compilers)
+	Removed wrong 'explicit' declaration:
+  	'explicit' may be used only for converting constructors.
+	this-> for inherited functions (HP's aCC A.03.13 don't understand
+	inheritance and 'using' clause). Created Makefiles for HP's aCC
+	compiler. Workarounds for HP's aCC names resolution.
+	This is release that start working on HP-UX 11.00 (with aCC A.03.13).
+
+2000-06-01  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libsockios:
+	Artifical delays added when WSAStartup and WSAClean, and Mutex lock
+	in Init added. Hopes this help...
+
+2000-05-24  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libsockios:
+	Attempt to put explicit instantiated code in library.
+	Seems fail. Size of lib grow, and size of executable also. No sence.
+
+2000-02-24  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libsockios:
+	DLL export/import/none
+
+2000-02-18  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libsockios:
+	Fix hidden sockets initialization error. Show MessageBox now.
+	
+2000-01-27  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libsockios:
+	Remove DllMain
+	
+2000-01-05  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libsockios:
+	Sockets in diffirent Wins should be initialized by different way (Wins)
+
+1999-09-16  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libsockios:
+	Try workaround Win 95 socket problem
+	
+1999-09-14  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libsockios:
+	Check for WIN version, if winsock not 2.0, allow winsock 1.0
+	for Win 95.
+
+1999-09-03  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libsockios:
+	Remove __DLLEXPORT definition; This work in DLL now.
+	
+1999-05-25  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libsockios:
+	DllMain added; __thr_key moved into _sockstream.cc, where used only
+	
+1999-05-06  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libsockios:
+	trying some thread-specific data...
+
+1999-02-09  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libsockios:
+	make dllexport for sockbase (Win);
+
+	* libsockios:
+	remove constructor/destructor of sockbase for __unix at all.
+
+1999-02-08  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libsockios:
+	Include fixes for Win
+	
+1999-02-04  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libsockios:
+	Socket initialization back here. Counters are per-thread.
+	
+1999-02-03  Petr Ovtchenkov  <ptr@ParaGraph.Ru>
+
+	* libsockios:
+	Initial revision

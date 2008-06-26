@@ -1,0 +1,110 @@
+2008-02-27  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* suite.cc, logger.cc, suite.h, logger.h: use xmt 2.0.0
+	interfaces [JTC1/SC22/WG21 working draft, threads];
+
+	* Makefile.inc: bump minor revision;
+
+	* libexam: version 0.7.0.
+
+2007-12-17  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* logger.h, logger.cc, suite.h, suite.cc: dry run with
+	indent [dependency] implemented;
+
+	* ut/exam_test_suite.cc, ut/exam_test_suite.h: test for
+	feature above;
+
+	* libexam: version 0.5.0;
+
+	* suite.h, suite.cc: find test by name and run single test;
+
+	* ut/exam_test_suite.cc, ut/exam_test_suite.h: test for
+	single test and test by name;
+
+	* libexam: version 0.6.0.
+
+2007-10-05  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* suite.h, suite.cc: test may throw skip_exception to signal
+	that it skipped.
+
+	* libexam: version 0.4.0.
+
+2007-09-07  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* suite.h: added macro EXAM_CHECK_ASYNC_F, EXAM_ERROR_ASYNC_F
+	that useful to set passed value to non-zero; useful for non-zero
+	exit status after fork or thread [may be checked in parent process
+	or thread].
+
+2007-09-04  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* logger.h, logger.cc: added trivial_time_logger for performance
+	measure; added methods tc_pre, tc_post and tc_break for run before
+	test case, after test case, or after exception within test case;
+
+	* suite.h, suite.cc: add iterations number for each test-case;
+	this test suite -wide parameter, because mainly intended for
+	performance measure [statistic] and not useful for problem
+	detection and tracking;
+	
+	* ut/exam_test_suite.cc, ut/dummy_test.cc: test;
+
+	* libexam: version 0.3.0.
+
+2007-08-03  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* suite.h: remove private keyword for dummy, to make gcc 3.3.6 happy.
+
+2007-07-21  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* suite.h, suite.cc: boost graph removed;
+
+	* ut/exam_test_suite.cc: problem with multiple dependencies resolved.
+
+	* libexam: version 0.2.0
+
+2007-07-17  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* suite.h, suite.cc: was introduced stack of test suites, functions
+	for asynchronous checks; add macros for asynchronous checkes
+	[in case when point can't be unambiguously associated with some test case];
+	
+	* suite.h, suite.cc: added multiple dependencies;
+	
+	* ut/exam_test_suite.cc, ut/exam_test_suite.h, ut/dummy_test.cc:
+	test for multiple dependencies; discover problem with multiple
+	dependencies.
+
+2007-07-16  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* converted from prototype in app/exam;
+
+	* logger.h, logger.cc: logger---interface and trivial_logger;
+
+	* suite.h, suite.cc: test_suite framework;
+
+	* ut/exam_test_suite.h, ut/exam_test_suite.cc: test suite for self;
+
+	* ut/dummy_test.cc: dummy test suite for self-test;
+
+	* ut/exam_self_test.cc, ut/Makefile, ut/Makefile.inc: self test program;
+
+	* Makefile, Makefile.inc, libexam: version 0.1.0
+
+2007-07-02  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* start prototyping.
+
+2007-05-18  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* exam's use-case views documented in SVN
+
+2007-03-09  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* exam's use-case views.
+
+2006-11-15  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* exam's idea.

@@ -1,0 +1,71 @@
+# Time-stamp: <01/01/23 13:45:26 ptr>
+# $Id$
+
+# .KEEP_STATE:
+# .PARALLEL:
+.SUFFIXES:
+.SCCS_GET:
+
+.PHONY:	$(OUTPUT_DIR) $(OUTPUT_DIR_DBG) $(OUTPUT_DIR_STLDBG) \
+        $(OUTPUT_DIR_A) $(OUTPUT_DIR_A_DBG) $(OUTPUT_DIR_A_STLDBG) \
+	clear-release-static clear-release-shared \
+        clear-dbg-static clear-dbg-shared \
+        clear-stldbg-static clear-stldbg-shared \
+	dbg-shared release-shared dbg-static release-static \
+	dbg-shared-dep stldbg-shared-dep release-shared-dep \
+        dbg-static-dep stldbg-static-dep release-static-dep \
+	.make.depend
+
+OS_VER := $(shell uname -s | sed -e s/\[\.\ \]/_/g)
+BUILD_SYSTEM := $(shell echo `uname -n` `uname -s` `uname -r` `uname -v` `uname -m` $$USER)
+BUILD_DATE := $(shell date +'%Y/%m/%d %T %Z')
+
+SO = sl
+ARCH = a
+AR = ar
+
+STLPORT_INCLUDES = $(BASEDIR)/include/stlport
+
+# INCLUDES = -I$(BASEDIR)/include/stlport
+INCLUDES = -I$(STLPORT_INCLUDES)
+
+# DEFS = -D__$(OS_VER)
+DEFS ?=
+OPT ?=
+LDFLAGS ?=
+
+CXX = aCC
+CC = gcc
+
+INSTALL = $$HOME/bin/install-sh
+INSTALL_SO = ${INSTALL} -c -m 0755
+INSTALL_A = ${INSTALL} -c -m 0644
+INSTALL_EXE = ${INSTALL} -c -m 0755
+
+OUTPUT_OPTION = -o $@
+CPPFLAGS = $(DEFS) $(INCLUDES)
+
+CFLAGS = -threads -O2 -fpic
+CXXFLAGS = -Aa -z $(OPT)
+CDEPFLAGS = -E -M
+CCDEPFLAGS = -E +Md 
+
+DEFS += -D_REENTRANT
+dbg-shared : OPT += -g 
+dbg-shared-dep : OPT += -g
+stldbg-shared : OPT += -g
+stldbg-shared-dep : OPT += -g
+stldbg-shared : DEFS += -D__STL_DEBUG
+stldbg-shared-dep : DEFS += -D__STL_DEBUG
+
+OPT += +O2 +Onolimit +W495,749
+
+# stldbg-static :     DEFS += -D__STL_DEBUG
+# stldbg-static-dep : DEFS += -D__STL_DEBUG
+
+# dbg-static :        OPT += -g
+# dbg-static-dep :    OPT += -g
+# stldbg-static :     OPT += -g
+# stldbg-static-dep : OPT += -g
+
+-include .make.depend

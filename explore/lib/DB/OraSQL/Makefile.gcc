@@ -1,0 +1,41 @@
+# Time-stamp:,<01/07/19 15:06:09 ptr>
+# $Id$
+
+BASEDIR := $(shell xtmp=`pwd`; \
+               xtmp=`dirname $$xtmp`; xtmp=`dirname $$xtmp`; dirname $$xtmp)
+LIBDIR  := $(shell xtmp=`pwd`; xtmp=`dirname $$xtmp`; dirname $$xtmp)
+
+COMPILER_NAME = gcc
+INSTALL_PRE_LIB_DIR = ${BASEDIR}/package/PGslib/PG/lib
+INSTALL_SC_LIB_DIR = ${BASEDIR}/package/SubClub/PGslibsc/SC/lib
+include ${BASEDIR}/lib/DB/OraSQL/Makefile.inc
+
+all:	all-release all-debug
+
+all-shared:	release-shared dbg-shared stldbg-shared
+
+all-static:	release-static dbg-static stldbg-static
+
+all-debug:	dbg-shared stldbg-shared dbg-static stldbg-static
+
+all-release:	release-shared release-static
+
+# include ${BASEDIR}/Makefile.inc.${COMPILER_NAME}
+include ${BASEDIR}/lib/Makefile.inc.lib
+
+INCLUDES += -I$(BASEDIR)/include
+
+# INCLUDES += -I/usr/local/pgsql/include
+# DEFS += -D__DB_POSTGRES
+ORACLE_HOME = /oracle/app/oracle/product/8.1.6
+INCLUDES += -I$(ORACLE_HOME)/rdbms/demo -I$(ORACLE_HOME)/rdbms/public \
+            -I$(ORACLE_HOME)/network/public
+LDLIBS += -L../Oracle -loracle
+
+#ifeq ($(OS_VER),Linux)
+#dbg     : LDFLAGS += -L$(HOME)/lib
+#release : LDFLAGS += -L$(HOME)/lib
+#endif
+#
+#release : LDLIBS += -lstlport_gcc -lpq
+#dbg     : LDLIBS += -lstlport_gcc_stldebug -lpq
