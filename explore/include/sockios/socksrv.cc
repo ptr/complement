@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/25 21:28:07 yeti>
+// -*- C++ -*- Time-stamp: <08/06/26 09:00:54 ptr>
 
 /*
  * Copyright (c) 2008
@@ -72,7 +72,7 @@ void sock_processor_base<charT,traits,_Alloc>::_close()
   if ( !basic_socket_t::is_open_unsafe() ) {
     return;
   }
-  std::cerr << __FILE__ << ":" << __LINE__ << " " << basic_socket_t::_fd << std::endl;
+  // std::cerr << __FILE__ << ":" << __LINE__ << " " << basic_socket_t::_fd << std::endl;
 
 #ifdef WIN32
   ::closesocket( basic_socket_t::_fd );
@@ -87,7 +87,7 @@ void sock_processor_base<charT,traits,_Alloc>::_close()
 template<class charT, class traits, class _Alloc>
 void sock_processor_base<charT,traits,_Alloc>::shutdown( sock_base::shutdownflg dir )
 {
-  std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+  // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
 
   std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
   if ( basic_socket_t::is_open_unsafe() ) {
@@ -186,27 +186,6 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::Init::__at_fork_paren
 template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 char connect_processor<Connect, charT, traits, _Alloc, C>::Init_buf[128];
 
-template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>                                                             
-void connect_processor<Connect, charT, traits, _Alloc, C>::_close()
-{
-  std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-  base_t::_close();
-
-#if 0
-  { 
-    std::tr2::lock_guard<std::tr2::mutex> lk(inwlock);
-    _in_work = false; // <--- set before cnd.notify_one(); (below in this func)
-  }
-
-  {
-    std::tr2::lock_guard<std::tr2::mutex> lk2( rdlock );
-    ready_pool.push_back( processor() ); // make ready_pool not empty
-    // std::cerr << "=== " << ready_pool.size() << std::endl;
-    cnd.notify_one();
-  }
-#endif
-}
-
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t* connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_base::socket_type fd, const sockaddr& addr )
 {
@@ -221,12 +200,12 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
   if ( s->rdbuf()->in_avail() ) {
     std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
     ready_pool.push_back( processor( c, s ) );
-    std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+    // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
     cnd.notify_one();
   } else {
     std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
     worker_pool.insert( std::make_pair( fd, processor( c, s ) ) );
-    std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+    // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
   }
 
   return s->rdbuf();
@@ -235,15 +214,14 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_base::socket_type fd, const typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::adopt_close_t& )
 {
-  std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+  // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
   {
     std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
     typename worker_pool_t::iterator i = worker_pool.find( fd );
     if ( i != worker_pool.end() ) {
-      std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+      // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
       delete i->second.c;
       delete i->second.s;
-      // std::cerr << "oops\n";
       worker_pool.erase( i );
       return;
     }
@@ -254,15 +232,12 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_bas
     std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
     typename ready_pool_t::iterator j = std::find( ready_pool.begin(), ready_pool.end(), /* std::bind2nd( typename processor::equal_to(), &s ) */ fd );
     if ( j != ready_pool.end() ) {
-      // std::cerr << "oops 2\n";
       p = *j;
       ready_pool.erase( j );
     }
   }
   if ( p.c != 0 ) {
-    // (*p.c)( *p.s );
-    std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
-
+    // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
     (p.c->*C)( *p.s );
 
     delete p.c;
@@ -273,7 +248,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_bas
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_base::socket_type fd )
 {
-  std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+  // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
 
   processor p;
 
@@ -303,16 +278,11 @@ bool connect_processor<Connect, charT, traits, _Alloc, C>::pop_ready( processor&
     return false;
   }
 
-  std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+  // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
   cnd.wait( lk, not_empty );
-  std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+  // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
   p = ready_pool.front(); // it may contain p.c == 0,  p.s == 0, if !in_work()
   ready_pool.pop_front();
-#if 0
-  if ( p.c == 0 ) { // wake up, but _in_work may be still true here (in processor pipe?),
-    return false;   // even I know that _in_work <- false before notification...
-  }                 // so, check twice
-#endif
 
   if ( _in_work ) {
     return true;
@@ -328,7 +298,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
 
   while ( pop_ready( p ) ) {
     if ( p.c != 0 ) {
-      std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+      // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       (p.c->*C)( *p.s );
       if ( p.s->rdbuf()->in_avail() ) {
         std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
@@ -337,27 +307,20 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
         std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
         worker_pool[p.s->rdbuf()->fd()] = p;
       }
-    } else {
-      std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-    }
+    } // else {
+    //  std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+    // }
   }
 
-  {
-    std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-    std::cerr << __FILE__ << ":" << __LINE__ << " " << worker_pool.size() << std::endl;
-  }
+//  {
+//    std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
+//    std::cerr << __FILE__ << ":" << __LINE__ << " " << worker_pool.size() << std::endl;
+//  }
 
-  {
-    std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
-    std::cerr << __FILE__ << ":" << __LINE__ << " " << ready_pool.size() << std::endl;
-  }
-}
-
-
-template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
-void connect_processor<Connect, charT, traits, _Alloc, C>::stop()
-{
-  _stop();
+//  {
+//    std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
+//    std::cerr << __FILE__ << ":" << __LINE__ << " " << ready_pool.size() << std::endl;
+//  }
 }
 
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
@@ -368,11 +331,11 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::_stop()
   _in_work = false; // <--- set before cnd.notify_one(); (below in this func)
   if ( ready_pool.empty() ) {
     ready_pool.push_back( processor() ); // make ready_pool not empty
-    std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+    // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
     cnd.notify_one();
-  } else {
-    std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-  }
+  } // else {
+    // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+  // }
 }
 
 } // namespace std

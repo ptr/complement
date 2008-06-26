@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/25 17:59:36 yeti>
+// -*- C++ -*- Time-stamp: <08/06/26 09:28:53 ptr>
 
 /*
  *
@@ -263,14 +263,14 @@ class worker
       { lock_guard<mutex> lk(lock); ++cnt; ++visits; cnd.notify_one(); }
 
     ~worker()
-      { lock_guard<mutex> lk(lock); --cnt; }
+      { lock_guard<mutex> lk(lock); --cnt; cnd.notify_one(); }
 
     void connect( sockstream& s )
       {
         lock_guard<mutex> lk(lock);
         getline( s, line );
-        cerr << __FILE__ << ":" << __LINE__ << " " << s.good() << " "
-             << s.rdbuf()->in_avail() << endl;
+        // cerr << __FILE__ << ":" << __LINE__ << " " << s.good() << " "
+        //      << s.rdbuf()->in_avail() << endl;
         ++rd;
         line_cnd.notify_one();
       }
@@ -297,6 +297,9 @@ class worker
 
     static bool rd_counter1()
       { return worker::rd == 1; }
+
+    static bool counter0()
+      { return worker::cnt == 0; }
 };
 
 mutex worker::lock;
@@ -338,6 +341,13 @@ int EXAM_IMPL(sockios2_test::processor_core)
       EXAM_CHECK( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter1 ) );      
       worker::visits = 0;
     }
+
+    // for ( int i = 0; i < 64; ++i ) { // give chance for system
+    //   std::tr2::this_thread::yield();
+    // }
+
+    unique_lock<mutex> lksrv( worker::lock );
+    EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
   }
   {
     lock_guard<mutex> lk( worker::lock );
@@ -370,6 +380,12 @@ int EXAM_IMPL(sockios2_test::processor_core)
       EXAM_CHECK( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter2 ) );
       worker::visits = 0;
     }
+
+    // for ( int i = 0; i < 64; ++i ) { // give chance for system
+    //   std::tr2::this_thread::yield();
+    // }
+    unique_lock<mutex> lksrv( worker::lock );
+    EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
   }
   {
     lock_guard<mutex> lk( worker::lock );
@@ -400,6 +416,13 @@ int EXAM_IMPL(sockios2_test::processor_core)
       worker::line = "";
       worker::rd = 0;
     }
+
+    // for ( int i = 0; i < 64; ++i ) { // give chance for system
+    //   std::tr2::this_thread::yield();
+    // }
+
+    unique_lock<mutex> lksrv( worker::lock );
+    EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
   }
 
   // check after sockstream was closed, i.e. ensure, that all data available
@@ -420,12 +443,18 @@ int EXAM_IMPL(sockios2_test::processor_core)
     }
 
     unique_lock<mutex> lk( worker::lock );
-    EXAM_CHECK( worker::line_cnd.timed_wait( lk, milliseconds( 50000 ), worker::rd_counter1 ) );
+    EXAM_CHECK( worker::line_cnd.timed_wait( lk, milliseconds( 500 ), worker::rd_counter1 ) );
 
     // cerr << worker::line << endl;
     EXAM_CHECK( worker::line == "Hello, world!" );
     worker::line = "";
     worker::rd = 0;
+
+    // for ( int i = 0; i < 64; ++i ) { // give chance for system
+    //   std::tr2::this_thread::yield();
+    // }
+    unique_lock<mutex> lksrv( worker::lock );
+    EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
   }
 
   return EXAM_RESULT;
@@ -471,6 +500,13 @@ int EXAM_IMPL(sockios2_test::fork)
 
         unique_lock<mutex> lk( worker::lock );
         EXAM_CHECK_ASYNC( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter1 ) );
+
+        // for ( int i = 0; i < 64; ++i ) { // give chance for system
+        //   std::tr2::this_thread::yield();
+        // }
+
+        unique_lock<mutex> lksrv( worker::lock );
+        EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
       }
 
       exit( 0 );
@@ -601,6 +637,9 @@ int EXAM_IMPL(sockios2_test::srv_sigpipe)
       EXAM_CHECK( r.good() );
       EXAM_CHECK( r.is_open() );
 
+      for ( int i = 0; i < 64; ++i ) { // give chance for system
+        std::tr2::this_thread::yield();
+      }
     }
     shm.deallocate( &b );
     seg.deallocate();
@@ -708,6 +747,10 @@ int EXAM_IMPL(sockios2_test::read0)
 
       EXAM_CHECK( r.good() );
       EXAM_CHECK( r.is_open() );
+
+      for ( int i = 0; i < 64; ++i ) { // give chance for system
+        std::tr2::this_thread::yield();
+      }
     }
     shm.deallocate( &bnew );
     shm.deallocate( &b );

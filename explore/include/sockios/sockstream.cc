@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/25 18:48:36 yeti>
+// -*- C++ -*- Time-stamp: <08/06/26 08:40:03 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -273,7 +273,7 @@ basic_sockbuf<charT, traits, _Alloc>::close()
   setg( this->epptr(), this->epptr(), this->epptr() );
 
   // if ( basic_socket_t::_notify_close ) {
-  std::cerr << __FILE__ << ":" << __LINE__ << " " << basic_socket_t::_fd << std::endl;
+  // std::cerr << __FILE__ << ":" << __LINE__ << " " << basic_socket_t::_fd << std::endl;
   basic_socket_t::mgr->exit_notify( this, basic_socket_t::_fd );
   //   basic_socket_t::_notify_close = false;
   // }
@@ -393,22 +393,22 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
 template<class charT, class traits, class _Alloc>
 int basic_sockbuf<charT, traits, _Alloc>::sync()
 {
-  std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+  // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
   if ( !basic_socket_t::is_open() ) {
     return -1;
   }
 
   long count = this->pptr() - this->pbase();
   if ( count ) {
-    std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+    // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
     // _STLP_ASSERT( this->pbase() != 0 );
     count *= sizeof(charT);
     long start = 0;
     while ( count > 0 ) {
       long offset = (this->*_xwrite)( this->pbase() + start, count );
-      std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+      // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       if ( offset < 0 ) {
-        std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+        // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
         if ( errno == EINTR ) {
           errno = 0;
           continue;
@@ -436,7 +436,7 @@ int basic_sockbuf<charT, traits, _Alloc>::sync()
           return -1;
         }
       }
-      std::cerr << __FILE__ << ":" << __LINE__ << " " << basic_socket_t::_fd << std::endl;
+      // std::cerr << __FILE__ << ":" << __LINE__ << " " << basic_socket_t::_fd << std::endl;
       count -= offset;
       start += offset;
     }

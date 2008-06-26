@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/25 21:30:31 yeti>
+// -*- C++ -*- Time-stamp: <08/06/26 08:59:54 ptr>
 
 /*
  * Copyright (c) 2008
@@ -65,13 +65,7 @@ class sock_processor_base :
       { sock_processor_base::open( port, t, sock_base::inet ); }
 
     virtual ~sock_processor_base()
-      {
-        sock_processor_base::_close();
-
-        // Never uncomment next line:
-        // basic_socket<charT,traits,_Alloc>::mgr->final( *this );
-        // this lead to virtual fuction call, that is already pure here.
-      }
+      { sock_processor_base::_close(); }
 
     void open( const in_addr& addr, int port, sock_base::stype type, sock_base::protocol prot );
 
@@ -87,14 +81,8 @@ class sock_processor_base :
 
     virtual void close()
       { _close(); }
-#if 0
-    virtual void stop() = 0;
-#else
     virtual void stop()
-      { /* abort(); */ }
-    // void stop()
-    //   { (this->*_real_stop)(); }
-#endif
+      { }
 
 #if 0
     virtual sockbuf_t* operator ()( sock_base::socket_type fd, const sockaddr& ) = 0;
@@ -204,45 +192,23 @@ class connect_processor :
           ploop.join();
         }
 
-        // basic_socket<charT,traits,_Alloc>::mgr->final( *this );
+        // {
+        //   std::tr2::lock_guard<std::tr2::mutex> lk2( rdlock );
+        //   cerr << __FILE__ << ":" << __LINE__ << " " << ready_pool.size() << endl; 
+        // }
 
-#if 0
-        {
-          std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-          std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
-          if ( worker_pool.empty() && ready_pool.empty() ) {
-            break;
-          }
-
-          for ( ; ; ) {
-            
-          }
-        }
-#endif
-
-
-        {
-          std::tr2::lock_guard<std::tr2::mutex> lk2( rdlock );
-          cerr << __FILE__ << ":" << __LINE__ << " " << ready_pool.size() << endl; 
-        }
-
-        {
-          std::tr2::lock_guard<std::tr2::mutex> lk2( wklock );
-          cerr << __FILE__ << ":" << __LINE__ << " " << worker_pool.size() << endl;
-#if 0
-          for ( typename worker_pool_t::iterator i = worker_pool.begin(); i != worker_pool.end(); ++i ) {
-            delete i->second.c;
-            delete i->second.s;
-          }
-#endif
-        }
+        // {
+        //   std::tr2::lock_guard<std::tr2::mutex> lk2( wklock );
+        //   cerr << __FILE__ << ":" << __LINE__ << " " << worker_pool.size() << endl;
+        // }
 
         ((Init *)Init_buf)->~Init();
       }
 
     virtual void close()
       { connect_processor::_close(); }
-    virtual void stop();
+    virtual void stop()
+      { connect_processor::_stop(); }
 
     void wait()
       { if ( ploop.joinable() ) { ploop.join(); } }
@@ -304,7 +270,8 @@ class connect_processor :
     };
 
     bool pop_ready( processor& );
-    void _close();
+    void _close()
+      { base_t::_close(); }
     void _stop();
 
 #ifdef __USE_STLPORT_HASH

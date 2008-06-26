@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/25 22:10:36 yeti>
+// -*- C++ -*- Time-stamp: <08/06/26 08:22:27 ptr>
 
 /*
  * Copyright (c) 2008
@@ -229,31 +229,28 @@ class sockmgr
 
     void exit_notify( sockbuf_t* b, sock_base::socket_type fd )
       {
-        // fd_info info = { 0, 0, 0 };
-        // std::tr2::lock_guard<std::tr2::mutex> lk( dll );
-
         try {
-          std::tr2::unique_lock<std::tr2::mutex> lk( dll, std::tr2::try_to_lock );
+          std::tr2::unique_lock<std::tr2::mutex> lk( dll, std::tr2::defer_lock );
 
-          if ( b->_notify_close ) {
-            std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
-            typename fd_container_type::iterator i = descr.find( fd );
-            if ( i != descr.end() ) {
-              if ( (i->second.b == b) && (i->second.p == 0) ) {
-                std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
-                if ( epoll_ctl( efd, EPOLL_CTL_DEL, fd, 0 ) < 0 ) {
-                  std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
-                  // throw system_error
-                }
-                std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
-                descr.erase( i );
+          if ( lk.try_lock() ) {
+            if ( b->_notify_close ) {
+              // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+              typename fd_container_type::iterator i = descr.find( fd );
+              if ( (i != descr.end()) && (i->second.b == b) && (i->second.p == 0) ) {
+                // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+                  if ( epoll_ctl( efd, EPOLL_CTL_DEL, fd, 0 ) < 0 ) {
+                    // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+                    // throw system_error
+                  }
+                  // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+                  descr.erase( i );
               }
+              b->_notify_close = false;
             }
-            b->_notify_close = false;
           }
         }
         catch ( const std::tr2::lock_error& ) {
-          std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+          // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
         }
       }
 
