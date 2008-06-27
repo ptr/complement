@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/09/05 01:08:18 ptr>
+// -*- C++ -*- Time-stamp: <08/06/27 13:14:16 ptr>
 
 /*
- * Copyright (c) 2002, 2003, 2006, 2007
+ * Copyright (c) 2002, 2003, 2006-2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -11,7 +11,8 @@
 #include <exam/suite.h>
 
 #include <iostream>
-#include <mt/xmt.h>
+#include <mt/thread>
+#include <mt/uid.h>
 #include <mt/shm.h>
 
 #include <stem/EventHandler.h>
@@ -29,7 +30,7 @@
 
 #include <stem/NetTransport.h>
 #include <stem/EvManager.h>
-#include <sockios/sockmgr.h>
+#include <sockios/socksrv.h>
 
 #ifndef STLPORT
 #include <ext/functional>
@@ -41,6 +42,7 @@ using namespace __gnu_cxx;
 #include <signal.h>
 
 using namespace std;
+using namespace std::tr2;
 
 class stem_test
 {
@@ -62,8 +64,8 @@ class stem_test
     int EXAM_DECL(boring_manager);
     int EXAM_DECL(convert);
 
-    static xmt::Thread::ret_t thr1( void * );
-    static xmt::Thread::ret_t thr1new( void * );
+    static void thr1();
+    static void thr1new();
 
   private:
 };
@@ -87,9 +89,9 @@ int EXAM_IMPL(stem_test::basic2)
 {
   Node node( 2000 );
   
-  xmt::Thread t1( thr1 );
+  thread t1( thr1 );
 
-  EXAM_CHECK( t1.join() == 0 );
+  t1.join();
 
   node.wait();
 
@@ -98,7 +100,7 @@ int EXAM_IMPL(stem_test::basic2)
   return EXAM_RESULT;
 }
 
-xmt::Thread::ret_t stem_test::thr1( void * )
+void stem_test::thr1()
 {
   Node node( 2001 );
 
@@ -106,8 +108,6 @@ xmt::Thread::ret_t stem_test::thr1( void * )
 
   ev.dest( 2000 );
   node.Send( ev );
-
-  return 0;
 }
 
 int EXAM_IMPL(stem_test::basic1new)
@@ -131,7 +131,7 @@ int EXAM_IMPL(stem_test::basic2new)
 {
   NewNode *node = new NewNode( 2000 );
   
-  xmt::Thread t1( thr1new );
+  thread t1( thr1new );
 
   t1.join();
 
@@ -142,7 +142,7 @@ int EXAM_IMPL(stem_test::basic2new)
   return EXAM_RESULT;
 }
 
-xmt::Thread::ret_t stem_test::thr1new( void * )
+void stem_test::thr1new()
 {
   NewNode *node = new NewNode( 2001 );
 
@@ -152,8 +152,6 @@ xmt::Thread::ret_t stem_test::thr1new( void * )
   node->Send( ev );
 
   delete node;
-
-  return 0;
 }
 
 int EXAM_IMPL(stem_test::dl)
@@ -206,7 +204,7 @@ int EXAM_IMPL(stem_test::ns)
   EXAM_CHECK( i != nm.lst.end() );
   EXAM_CHECK( i->second == "ns" );
   EXAM_CHECK( i->first.hid == xmt::hostid() );
-  EXAM_CHECK( i->first.pid == getpid() );
+  EXAM_CHECK( i->first.pid == std::tr2::getpid() );
   EXAM_CHECK( i->first.addr == stem::ns_addr );
 
   // well, but for few seaches declare and reuse functors:
@@ -272,7 +270,7 @@ int EXAM_IMPL(stem_test::ns)
 int EXAM_IMPL(stem_test::echo)
 {
   try {
-    sockmgr_stream_MP<stem::NetTransport> srv( 6995 );
+    connect_processor<stem::NetTransport> srv( 6995 );
     stem::NetTransportMgr mgr;
 
     StEMecho echo( 0, "echo service"); // <= zero!
@@ -367,7 +365,7 @@ int EXAM_IMPL(stem_test::echo_net)
   }
   catch ( xmt::fork_in_parent& child ) {
     try {
-      sockmgr_stream_MP<stem::NetTransport> srv( 6995 );
+      connect_processor<stem::NetTransport> srv( 6995 );
 
       StEMecho echo( 0, "echo service"); // <= zero!
 
@@ -412,7 +410,7 @@ int EXAM_IMPL(stem_test::net_echo)
       int eflag = 0;
       // server part
       {
-        std::sockmgr_stream_MP<stem::NetTransport> srv( 6995 );
+        connect_processor<stem::NetTransport> srv( 6995 );
         StEMecho echo( 0, "echo service");
 
         // echo.manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch );
@@ -675,7 +673,7 @@ int EXAM_IMPL(stem_test::peer)
     exit( eflag );
   }
   catch ( xmt::fork_in_parent& child ) {
-    sockmgr_stream_MP<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
+    connect_processor<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
     StEMecho echo( 0, "echo service"); // <= zero! 'echo' server, default ('zero' address)
 
     fcnd.set( true, true );
@@ -748,7 +746,7 @@ int EXAM_IMPL(stem_test::boring_manager)
     exit( eflag );
   }
   catch ( xmt::fork_in_parent& child ) {
-    sockmgr_stream_MP<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
+    connect_processor<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
     StEMecho echo( 0, "echo service"); // <= zero! 'echo' server, default ('zero' address)
 
     fcnd.set( true, true );

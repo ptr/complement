@@ -1,10 +1,33 @@
+2008-06-27  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* sockmgr.h, sockmgr.cc, socksrv.h, socksrv.cc:
+	architecture of sockets controls changed;
+	any income events detected by epoll within sockmgr,
+	processed---new stream requested from sock_basic_processor,
+	or read data from wire and fill sockbuf; all sockets
+	are in non-block mode; epoll listen descriptors
+	mainly in edge-triggered mode, but switch to level-triggered
+	when sockbuf full (i.e. in case when data extracted slowly
+	then ones come in); input operations separated from
+	connection processing logic;
+
+	* sockstream, sockstream.cc: idem;
+
+	* ut/sockios2_test.cc: re-written for new interfaces;
+	more clean and correct logic for async interation;
+
+	* ut/sockios_test.cc, ut/sockios_test.h, ut/sockios_test_suite.cc:
+	obsolete; commented, but present for reference;
+
+	* libsockios: Version 2.0.0.
+
 2008-02-28  Petr Ovtchenkov  <ptr@island.corbina.net>
 
-	* sochstream, _sockstream.cc, netinfo.h, netinfo.cc:
+	* sockstream, _sockstream.cc, netinfo.h, netinfo.cc:
 	move findhost and iface list utilities into separate
 	files;
 
-	* ibsockios: Version 1.14.2.
+	* libsockios: Version 1.14.2.
 
 2007-11-21  Petr Ovtchenkov  <ptr@island.corbina.net>
 

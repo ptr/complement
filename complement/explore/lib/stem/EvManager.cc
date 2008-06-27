@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <07/09/05 01:04:58 ptr>
+// -*- C++ -*- Time-stamp: <08/06/27 12:36:14 ptr>
 
 /*
  *
- * Copyright (c) 1995-1999, 2002, 2003, 2005-2007
+ * Copyright (c) 1995-1999, 2002, 2003, 2005-2008
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -27,7 +27,7 @@
 namespace stem {
 
 using namespace std;
-using namespace xmt;
+using namespace std::tr2;
 
 const addr_type badaddr      = 0xffffffff;
 const code_type badcode      = 0xffffffff;
@@ -52,55 +52,53 @@ __FIT_DECLSPEC EvManager::EvManager() :
     _x_id( _x_low ),
     _dispatch_stop( false ),
     _trflags( 0 ),
-    _trs( 0 )
+    _trs( 0 ),
+    _ev_queue_thr( _Dispatch, this )
 {
-// #ifndef __hpux
-  _cnd_queue.set( false );
-  _ev_queue_thr.launch( _Dispatch, this );
-// #endif
+  // _cnd_queue.set( false );
+  // _ev_queue_thr.launch( _Dispatch, this );
 }
 
 __FIT_DECLSPEC EvManager::~EvManager()
 {
-  _ev_queue_dispatch_guard.lock();
-  _dispatch_stop = true;
-  _cnd_queue.set( true );
-  _ev_queue_dispatch_guard.unlock();
+  {
+    lock_guard<spinlock> lk( _ev_queue_dispatch_guard );
+    _dispatch_stop = true;
+    _cnd_queue.notify_one();
+  }
+
   _ev_queue_thr.join();
 }
 
 bool EvManager::not_finished()
 {
-  xmt::spin_scoped_lock _lk( _ev_queue_dispatch_guard );
+  lock_guard<spinlock> lk( _ev_queue_dispatch_guard );
   return !_dispatch_stop;
 }
 
-xmt::Thread::ret_t EvManager::_Dispatch( void *p )
+void EvManager::_Dispatch( EvManager* p )
 {
-  EvManager& me = *reinterpret_cast<EvManager *>(p);
-  xmt::mutex& lq = me._lock_queue;
+  EvManager& me = *p;
+  mutex& lq = me._lock_queue;
   queue_type& in_ev_queue = me.in_ev_queue;
   queue_type& out_ev_queue = me.out_ev_queue;
 
   while ( me.not_finished() ) {
-    lq.lock();
-    in_ev_queue.swap( out_ev_queue );
-    lq.unlock();
+    {
+      unique_lock<mutex> lk( lq );
+      in_ev_queue.swap( out_ev_queue );
+    }
     while ( !out_ev_queue.empty() ) {
       me.Send( out_ev_queue.front() );
       out_ev_queue.pop_front();
     }
-    lq.lock();
-    if ( in_ev_queue.empty() && me.not_finished() ) {
-      me._cnd_queue.set( false );
-      lq.unlock();
-      me._cnd_queue.try_wait();
-    } else {
-      lq.unlock();
+    {
+      unique_lock<mutex> lk( lq );
+      if ( in_ev_queue.empty() && me.not_finished() ) {
+        me._cnd_queue.wait( lk );
+      }
     }
   }
-
-  return 0;
 }
 
 __FIT_DECLSPEC
@@ -108,19 +106,19 @@ addr_type EvManager::Subscribe( EventHandler *object, const std::string& info )
 {
   addr_type id;
   {
-    scoped_lock lk( _lock_heap );
+    lock_guard<mutex> lk( _lock_heap );
     id = create_unique();
     heap[id] = object;
   }
   {
-    scoped_lock lk( _lock_xheap );
+    lock_guard<mutex> lk( _lock_xheap );
     gaddr_type& gaddr = _ex_heap[id];
     gaddr.hid = xmt::hostid();
     gaddr.pid = xmt::getpid();
     gaddr.addr = id;
   }
   
-  scoped_lock lk( _lock_iheap );
+  lock_guard<mutex> lk( _lock_iheap );
   iheap[id] = info;
 
   return id;
@@ -139,21 +137,21 @@ addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
   if ( (id & extbit) ) {
     return badaddr;
   } else {
-    scoped_lock _x1( _lock_heap );
+    lock_guard<mutex> _x1( _lock_heap );
     if ( unsafe_is_avail( id ) ) {
       return badaddr;
     }
     heap[id] = object;
   }
   {
-    scoped_lock lk( _lock_xheap );
+    lock_guard<mutex> lk( _lock_xheap );
     gaddr_type& gaddr = _ex_heap[id];
     gaddr.hid = xmt::hostid();
     gaddr.pid = xmt::getpid();
     gaddr.addr = id;
   }
 
-  scoped_lock _x1( _lock_iheap );
+  lock_guard<mutex> _x1( _lock_iheap );
   iheap[id] = info;
 
   return id;
@@ -173,14 +171,14 @@ addr_type EvManager::SubscribeRemote( const detail::transport& tr,
 {
   addr_type id;
   {
-    scoped_lock _x1( _lock_xheap );
+    lock_guard<mutex> _x1( _lock_xheap );
     id = create_unique_x();
     _ex_heap[id] = addr;
     _tr_heap.insert( make_pair( addr, make_pair( id, tr ) ) );
     _ch_heap.insert( make_pair( tr.link, addr ) );
   }
   {
-    scoped_lock _x1( _lock_iheap );
+    lock_guard<mutex> _x1( _lock_iheap );
     iheap[id] = info;
   }
 
@@ -202,13 +200,13 @@ addr_type EvManager::SubscribeRemote( const gaddr_type& addr,
   addr_type id;
   if ( addr.hid == xmt::hostid() && addr.pid == xmt::getpid() ) { // local
     if ( addr.addr & extbit ) { // may be transit object
-      scoped_lock lk( _lock_xheap );
+      lock_guard<mutex> lk( _lock_xheap );
       pair<uuid_tr_heap_type::const_iterator,uuid_tr_heap_type::const_iterator> range = _tr_heap.equal_range( addr );
       if ( range.first != range.second ) { // transport present
         return min_element( range.first, range.second, tr_compare )->second.first;
       }
     } else { // may be local object
-      scoped_lock lk( _lock_heap );
+      lock_guard<mutex> lk( _lock_heap );
       local_heap_type::const_iterator i = heap.find( addr.addr );
       if ( i != heap.end() ) {
         return i->first;
@@ -216,7 +214,7 @@ addr_type EvManager::SubscribeRemote( const gaddr_type& addr,
     }
     return badaddr; // don't know what I can made
   } else { // foreign object
-    scoped_lock lk( _lock_xheap );
+    lock_guard<mutex> lk( _lock_xheap );
     pair<uuid_tr_heap_type::const_iterator,uuid_tr_heap_type::const_iterator> tr_range = _tr_heap.equal_range( addr );
     if ( tr_range.first != tr_range.second ) { // transport present
       return min_element( tr_range.first, tr_range.second, tr_compare )->second.first;
@@ -236,7 +234,7 @@ addr_type EvManager::SubscribeRemote( const gaddr_type& addr,
     _ex_heap[id] = addr;
   }
   {
-    scoped_lock lk( _lock_iheap );
+    lock_guard<mutex> lk( _lock_iheap );
     iheap[id] = info;
   }
   return id;
@@ -253,7 +251,7 @@ __FIT_DECLSPEC
 bool EvManager::Unsubscribe( addr_type id )
 {
   if ( (id & extbit) ) {
-    scoped_lock _x1( _lock_xheap );
+    lock_guard<mutex> _x1( _lock_xheap );
     gaddr_type& addr = _ex_heap[id];
       
     pair<uuid_tr_heap_type::iterator,uuid_tr_heap_type::iterator> range = _tr_heap.equal_range( addr );
@@ -274,12 +272,12 @@ bool EvManager::Unsubscribe( addr_type id )
     }
     _ex_heap.erase( id );
   } else {
-    scoped_lock _x1( _lock_heap );
+    lock_guard<mutex> _x1( _lock_heap );
     heap.erase( id );
 
     // Notify remotes?
   }
-  scoped_lock _x1( _lock_iheap );
+  lock_guard<mutex> _x1( _lock_iheap );
   iheap.erase( id );
 
   return true;
@@ -291,7 +289,7 @@ addr_type EvManager::reflect( const gaddr_type& addr ) const
   if ( addr.hid == xmt::hostid() && addr.pid == xmt::getpid() ) {
     // this host, this process
     if ( (addr.addr & extbit) == 0 ) { // looks like local object
-      scoped_lock _x1( _lock_heap );
+      lock_guard<mutex> _x1( _lock_heap );
       local_heap_type::const_iterator l = heap.find( addr.addr );
       if ( l != heap.end() ) {
         return addr.addr; // l->first
@@ -315,7 +313,7 @@ addr_type EvManager::reflect( const gaddr_type& addr ) const
   }
 #endif
 
-  scoped_lock _x1( _lock_xheap );
+  lock_guard<mutex> _x1( _lock_xheap );
   pair<uuid_tr_heap_type::const_iterator,uuid_tr_heap_type::const_iterator> range = _tr_heap.equal_range( addr );
   if ( range.first != range.second ) { // transport present
     return min_element( range.first, range.second, tr_compare )->second.first;
@@ -326,7 +324,7 @@ addr_type EvManager::reflect( const gaddr_type& addr ) const
 __FIT_DECLSPEC
 gaddr_type EvManager::reflect( addr_type addr ) const
 {
-  scoped_lock lk( _lock_xheap );
+  lock_guard<mutex> lk( _lock_xheap );
   ext_uuid_heap_type::const_iterator i = _ex_heap.find( addr );
   if ( i != _ex_heap.end() ) {
     return i->second;
@@ -337,45 +335,45 @@ gaddr_type EvManager::reflect( addr_type addr ) const
 __FIT_DECLSPEC
 void EvManager::Remove( void *channel )
 {
-  scoped_lock _x1( _lock_xheap );
-  scoped_lock _x2( _lock_iheap );
+  lock_guard<mutex> _x1( _lock_xheap );
+  lock_guard<mutex> _x2( _lock_iheap );
   unsafe_Remove( channel );
 }
 
 void EvManager::settrf( unsigned f )
 {
-  scoped_lock _x1( _lock_tr );
+  lock_guard<mutex> _x1( _lock_tr );
   _trflags |= f;
 }
 
 void EvManager::unsettrf( unsigned f )
 {
-  scoped_lock _x1( _lock_tr );
+  lock_guard<mutex> _x1( _lock_tr );
   _trflags &= (0xffffffff & ~f);
 }
 
 void EvManager::resettrf( unsigned f )
 {
-  scoped_lock _x1( _lock_tr );
+  lock_guard<mutex> _x1( _lock_tr );
   _trflags = f;
 }
 
 void EvManager::cleantrf()
 {
-  scoped_lock _x1( _lock_tr );
+  lock_guard<mutex> _x1( _lock_tr );
   _trflags = 0;
 }
 
 unsigned EvManager::trflags() const
 {
-  scoped_lock _x1( _lock_tr );
+  lock_guard<mutex> _x1( _lock_tr );
 
   return _trflags;
 }
 
 void EvManager::settrs( std::ostream *s )
 {
-  scoped_lock _x1( _lock_tr );
+  lock_guard<mutex> _x1( _lock_tr );
   _trs = s;
 }
 
@@ -404,7 +402,7 @@ void EvManager::unsafe_Remove( void *channel )
 
 __FIT_DECLSPEC const detail::transport& EvManager::transport( addr_type id ) const
 {
-  scoped_lock _x1( _lock_xheap );
+  lock_guard<mutex> _x1( _lock_xheap );
   if ( (id & extbit) != 0 ) {
     ext_uuid_heap_type::const_iterator i = _ex_heap.find( id );
     if ( i == _ex_heap.end() ) {
@@ -467,7 +465,7 @@ void EvManager::Send( const Event& e )
           if ( !reinterpret_cast<NetTransport_base *>(link)->push( e, gaddr_dst, gaddr_src) ) {
 #ifdef __FIT_STEM_TRACE
             try {
-              scoped_lock lk(_lock_tr);
+              lock_guard<mutex> lk(_lock_tr);
               if ( _trs != 0 && _trs->good() && (_trflags & tracenet) ) {
                 *_trs << "Remove net channel " << link << endl;
               }
@@ -490,7 +488,7 @@ void EvManager::Send( const Event& e )
     catch ( std::logic_error& err ) {
 // #ifdef __FIT_STEM_TRACE
       try {
-        scoped_lock lk(_lock_tr);
+        lock_guard<mutex> lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
           *_trs << err.what() << " "
                 << __FILE__ << ":" << __LINE__ << endl;
@@ -499,12 +497,12 @@ void EvManager::Send( const Event& e )
       catch ( ... ) {
       }
 // #endif // __FIT_STEM_TRACE
-      _lock_xheap.unlock();
+      _lock_xheap.unlock(); // <--- may unlock not locked?
     }
     catch ( std::runtime_error& err ) {
 // #ifdef __FIT_STEM_TRACE
       try {
-        scoped_lock lk(_lock_tr);
+        lock_guard<mutex> lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
           *_trs << err.what() << " "
                 << __FILE__ << ":" << __LINE__ << endl;
@@ -542,7 +540,7 @@ void EvManager::Send( const Event& e )
       try {
 #ifdef __FIT_STEM_TRACE
         try {
-          scoped_lock lk(_lock_tr);
+          lock_guard<mutex> lk(_lock_tr);
           if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
             *_trs << object->classtype().name()
                   << " (" << object << ")\n";
@@ -557,7 +555,7 @@ void EvManager::Send( const Event& e )
       }
       catch ( std::logic_error& err ) {
         try {
-          scoped_lock lk(_lock_tr);
+          lock_guard<mutex> lk(_lock_tr);
           if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
             *_trs << err.what() << "\n"
                   << object->classtype().name() << " (" << object << ")\n";
@@ -570,7 +568,7 @@ void EvManager::Send( const Event& e )
       }
       catch ( ... ) {
         try {
-          scoped_lock lk(_lock_tr);
+          lock_guard<mutex> lk(_lock_tr);
           if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
             *_trs << "Unknown, uncatched exception during process:\n"
                   << object->classtype().name() << " (" << object << ")\n";
@@ -585,7 +583,7 @@ void EvManager::Send( const Event& e )
     catch ( std::logic_error& err ) {
 // #ifdef __FIT_STEM_TRACE
       try {
-        scoped_lock lk(_lock_tr);
+        lock_guard<mutex> lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
           *_trs << err.what() << "\n"
                 << __FILE__ << ":" << __LINE__ << endl;
@@ -599,7 +597,7 @@ void EvManager::Send( const Event& e )
     catch ( std::runtime_error& err ) {
 // #ifdef __FIT_STEM_TRACE
       try {
-        scoped_lock lk(_lock_tr);
+        lock_guard<mutex> lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
           *_trs << err.what() << " "
                 << __FILE__ << ":" << __LINE__ << endl;
@@ -689,7 +687,7 @@ __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
 
   // s << hex << showbase;
   {
-    scoped_lock lk( _lock_heap );
+    lock_guard<mutex> lk( _lock_heap );
 
     for ( local_heap_type::const_iterator i = heap.begin(); i != heap.end(); ++i ) {
       s << i->first << "\t=> " << i->second << "\n";
@@ -698,7 +696,7 @@ __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
 
   s << "\nInfo map:\n";
   {
-    scoped_lock lk( _lock_iheap );
+    lock_guard<mutex> lk( _lock_iheap );
 
     for ( info_heap_type::const_iterator i = iheap.begin(); i != iheap.end(); ++i ) {
       s << i->first << "\t=> '" << i->second << "'\n";
@@ -706,7 +704,7 @@ __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
   }
 
   {
-    scoped_lock lk( _lock_xheap );
+    lock_guard<mutex> lk( _lock_xheap );
 
     s << "\nExternal address map:\n";
     for ( ext_uuid_heap_type::const_iterator i = _ex_heap.begin(); i != _ex_heap.end(); ++i ) {

@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/09/05 01:10:17 ptr>
+// -*- C++ -*- Time-stamp: <08/06/27 12:34:34 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+ * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006, 2008
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -11,8 +11,8 @@
  *
  */
 
-#ifndef __NetTransport_h
-#define __NetTransport_h
+#ifndef __NETTRANSPORT_H
+#define __NETTRANSPORT_H
 
 #ifndef __config_feature_h
 #include <config/feature.h>
@@ -20,7 +20,7 @@
 
 #include <sockios/sockstream>
 
-#include <mt/xmt.h>
+#include <mt/thread>
 
 #include <string>
 #include <sstream>
@@ -48,7 +48,8 @@ class NetTransport_base :
         net( 0 )
       { }
 
-    __FIT_DECLSPEC ~NetTransport_base();
+    ~NetTransport_base()
+      { NetTransport_base::_close(); }
 
     bool fail() const
       { return net == 0 ? false : net->fail(); }
@@ -58,12 +59,14 @@ class NetTransport_base :
       { return net == 0 || net->bad(); }
     bool is_open() const
       { return net != 0 && net->is_open(); }
-    virtual __FIT_DECLSPEC void close();
+    virtual void close()
+      { NetTransport_base::_close(); }
 
     __FIT_DECLSPEC bool push( const Event&, const gaddr_type& dst, const gaddr_type& src );
 
   protected:
     bool pop( Event&, gaddr_type& dst, gaddr_type& src );
+    __FIT_DECLSPEC void _close();
 
     std::sockstream *net;
     uint32_t _count;
@@ -78,9 +81,6 @@ class NetTransport :
 
     __FIT_DECLSPEC
     void connect( std::sockstream& );
-
-    virtual void close()
-       { NetTransport_base::close(); } 
 };
 
 class NetTransportMgr :
@@ -88,27 +88,30 @@ class NetTransportMgr :
 {
   public:
     NetTransportMgr() :
-        NetTransport_base( "stem::NetTransportMgr" )
+        NetTransport_base( "stem::NetTransportMgr" ),
+        _thr( 0 )
       { net = &_channel; }
 
-    __FIT_DECLSPEC
-    ~NetTransportMgr();
+    ~NetTransportMgr()
+      { NetTransportMgr::_close(); delete _thr; }
 
     __FIT_DECLSPEC
     addr_type open( const char *hostname, int port,
                     std::sock_base::stype stype = std::sock_base::sock_stream );
-    virtual __FIT_DECLSPEC void close();
+    virtual __FIT_DECLSPEC void close()
+      { NetTransportMgr::_close(); }
 
-    int join()
-      { return reinterpret_cast<int>(_thr.join()); }
+    void join()
+      { if ( _thr != 0 && _thr->joinable() ) { _thr->join(); } }
 
   private:
     NetTransportMgr( const NetTransportMgr& );
     NetTransportMgr& operator =( const NetTransportMgr& );
 
   protected:
-    static xmt::Thread::ret_t _loop( void * );
-    xmt::Thread _thr;
+    __FIT_DECLSPEC void _close();
+    static void _loop( NetTransportMgr* );
+    std::tr2::thread* _thr;
     std::sockstream _channel;
 };
 
@@ -128,4 +131,4 @@ class NetTransportMP :
 
 } // namespace stem
 
-#endif // __NetTransport_h
+#endif // __NETTRANSPORT_H

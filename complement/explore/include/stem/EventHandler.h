@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/03 09:01:32 ptr>
+// -*- C++ -*- Time-stamp: <08/06/27 12:28:42 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -33,7 +33,7 @@
 #include <ostream>
 #include <typeinfo>
 
-#include <mt/xmt.h>
+#include <mt/mutex>
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4786 )
@@ -559,7 +559,7 @@ class EventHandler
     // See comment near EventHandler::EventHandler() implementation
     // HistoryContainer& theHistory;
     HistoryContainer theHistory;
-    xmt::recursive_mutex _theHistory_lock;
+    std::tr2::recursive_mutex _theHistory_lock;
 
   public:
 
@@ -722,7 +722,7 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
        { theEventsTable.Out( out ); }                                     \
     virtual bool DispatchTrace( const stem::Event& __e, std::ostream& __s )\
        {                                                                  \
-         xmt::recursive_scoped_lock lk( this->_theHistory_lock );         \
+         std::tr2::lock_guard<std::tr2::recursive_mutex> lk( this->_theHistory_lock ); \
          return theEventsTable.DispatchTrace( theHistory.begin(),         \
                                               theHistory.end(), __e, __s ); } \
     virtual const std::type_info& classtype() const                       \
@@ -735,12 +735,12 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
   protected:					                          \
     virtual bool Dispatch( const stem::Event& __e )                        \
        {                                                                  \
-         xmt::recursive_scoped_lock lk( this->_theHistory_lock );         \
+         std::tr2::lock_guard<std::tr2::recursive_mutex> lk( this->_theHistory_lock ); \
          return theEventsTable.Dispatch( this, theHistory.begin(),        \
                                          theHistory.end(), __e ); }       \
     virtual bool DispatchStub( const stem::Event& __e )                    \
        {                                                                  \
-         xmt::recursive_scoped_lock lk( this->_theHistory_lock );         \
+         std::tr2::lock_guard<std::tr2::recursive_mutex> lk( this->_theHistory_lock ); \
          return theEventsTable.DispatchStub( this, theHistory.begin(),    \
                                              theHistory.end(), __e ); }   \
     static __FIT_DECLSPEC evtable_type theEventsTable;                     \
