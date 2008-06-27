@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <07/09/05 01:06:19 ptr>
+// -*- C++ -*- Time-stamp: <08/06/27 01:28:00 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -25,13 +25,15 @@
 #include "stem/EvManager.h"
 #include "crc.h"
 #include "stem/EDSEv.h"
-#include <mt/xmt.h>
+#include <mt/thread>
+#include <mt/mutex>
 
 const uint32_t EDS_MSG_LIMIT = 0x400000; // 4MB
 
 namespace stem {
 
 using namespace std;
+using namespace std::tr2;
 
 #ifdef _BIG_ENDIAN
 static const uint32_t EDS_MAGIC = 0xc2454453U;
@@ -89,12 +91,7 @@ void dump( std::ostream& o, const EDS::Event& e )
   }
 }
 
-__FIT_DECLSPEC NetTransport_base::~NetTransport_base()
-{
-  NetTransport_base::close();
-}
-
-__FIT_DECLSPEC void NetTransport_base::close()
+__FIT_DECLSPEC void NetTransport_base::_close()
 {
   if ( net != 0 ) {
     manager()->Remove( this );
@@ -116,7 +113,7 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
 
   if ( buf[0] != EDS_MAGIC ) {
     try {
-      xmt::scoped_lock lk(manager()->_lock_tr);
+      lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " StEM Magic fail ("
                          << net->rdbuf()->inet_addr() << ":" << net->rdbuf()->port() << ")"
@@ -142,7 +139,7 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
 
   if ( sz >= EDS_MSG_LIMIT ) {
     try {
-      xmt::scoped_lock lk(manager()->_lock_tr);
+      lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " StEM Message size too big: " << sz
                          << " (" << net->rdbuf()->inet_addr() << ":" << net->rdbuf()->port()
@@ -158,7 +155,7 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
   adler32_type adler = adler32( (unsigned char *)buf, sizeof(uint32_t) * 19 );
   if ( adler != from_net( buf[19] ) ) {
     try {
-      xmt::scoped_lock lk(manager()->_lock_tr);
+      lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " StEM Adler-32 fail"
                          << " (" << net->rdbuf()->inet_addr() << ":" << net->rdbuf()->port()
@@ -181,7 +178,7 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
   }
 #ifdef __FIT_STEM_TRACE
   try {
-    xmt::scoped_lock lk(manager()->_lock_tr);
+    lock_guard<mutex> lk(manager()->_lock_tr);
     if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
       int flags = manager()->_trs->flags();
       *manager()->_trs << "\tMessage from remote " << hex << showbase << _rs.code() << " "
@@ -206,7 +203,7 @@ bool NetTransport_base::push( const Event& _rs, const gaddr_type& dst, const gad
 {
 #ifdef __FIT_STEM_TRACE
   try {
-    xmt::scoped_lock lk(manager()->_lock_tr);
+    lock_guard<mutex> lk(manager()->_lock_tr);
     if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
       int flags = manager()->_trs->flags();
       *manager()->_trs << "\tMessage to remote " << hex << showbase << _rs.code() << " "
@@ -301,7 +298,7 @@ NetTransport::NetTransport( std::sockstream& s ) :
   }
   catch ( runtime_error& err ) {
     try {
-      xmt::scoped_lock lk(manager()->_lock_tr);
+      lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " " << err.what()
                          << " (" << s.rdbuf()->inet_addr() << ":" << s.rdbuf()->port()
@@ -315,7 +312,7 @@ NetTransport::NetTransport( std::sockstream& s ) :
   }
   catch ( ... ) {
     try {
-      xmt::scoped_lock lk(manager()->_lock_tr);
+      lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " unknown exception"
                          << " (" << s.rdbuf()->inet_addr() << ":" << s.rdbuf()->port()
@@ -340,7 +337,7 @@ void NetTransport::connect( sockstream& s )
     if ( pop( ev, dst, src ) ) {
 #ifdef __FIT_STEM_TRACE
       try {
-        xmt::scoped_lock lk(manager()->_lock_tr);
+        lock_guard<mutex> lk(manager()->_lock_tr);
         if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracenet) ) {
           *manager()->_trs << "Pid/ppid: " << xmt::getpid() << "/" << xmt::getppid() << "\n";
           manager()->dump( *manager()->_trs ) << endl;
@@ -353,7 +350,7 @@ void NetTransport::connect( sockstream& s )
       if ( xdst == badaddr ) {
 #ifdef __FIT_STEM_TRACE
         try {
-          xmt::scoped_lock lk(manager()->_lock_tr);
+          lock_guard<mutex> lk(manager()->_lock_tr);
           if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracefault)) ) {
             *manager()->_trs << __FILE__ << ":" << __LINE__
                              << " ("
@@ -376,7 +373,7 @@ void NetTransport::connect( sockstream& s )
       }
 #ifdef __FIT_STEM_TRACE
       try {
-        xmt::scoped_lock lk(manager()->_lock_tr);
+        lock_guard<mutex> lk(manager()->_lock_tr);
         if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
           *manager()->_trs << __FILE__ << ":" << __LINE__ << endl;
         }
@@ -389,7 +386,7 @@ void NetTransport::connect( sockstream& s )
   }
   catch ( ios_base::failure& ex ) {
     try {
-      xmt::scoped_lock lk(manager()->_lock_tr);
+      lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " " << ex.what()
                          << " (" << s.rdbuf()->inet_addr() << ":" << s.rdbuf()->port()
@@ -401,7 +398,7 @@ void NetTransport::connect( sockstream& s )
   }
   catch ( ... ) {
     try {
-      xmt::scoped_lock lk(manager()->_lock_tr);
+      lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " unknown exception"
                          << " (" << s.rdbuf()->inet_addr() << ":" << s.rdbuf()->port()
@@ -416,12 +413,6 @@ void NetTransport::connect( sockstream& s )
 }
 
 // connect initiator (client) function
-
-__FIT_DECLSPEC
-NetTransportMgr::~NetTransportMgr()
-{
-  NetTransportMgr::close();
-}
 
 __FIT_DECLSPEC
 addr_type NetTransportMgr::open( const char *hostname, int port,
@@ -466,13 +457,13 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
       } else {
         throw runtime_error( "net error or net handshake error" );
       }
-      _thr.launch( _loop, this, 0, PTHREAD_STACK_MIN * 2 ); // start thread here
+      _thr = new std::tr2::thread( _loop, this );
       return xsrc; // zero_object;
     }
   }
   catch ( runtime_error& err ) {
     try {
-      xmt::scoped_lock lk(manager()->_lock_tr);
+      lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " " << err.what()
                          << " (" << _channel.rdbuf()->inet_addr() << ":" << _channel.rdbuf()->port()
@@ -484,7 +475,7 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
   }
   catch ( ... ) {
     try {
-      xmt::scoped_lock lk(manager()->_lock_tr);
+      lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " unknown exception"
                          << " (" << _channel.rdbuf()->inet_addr() << ":" << _channel.rdbuf()->port()
@@ -498,27 +489,27 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
 }
 
 __FIT_DECLSPEC
-void NetTransportMgr::close()
+void NetTransportMgr::_close()
 {
   _channel.rdbuf()->shutdown( sock_base::stop_in | sock_base::stop_out );
   // _channel.rdbuf()->shutdown( sock_base::stop_in );
-  NetTransport_base::close();
+  NetTransport_base::_close();
   // _channel.close();
   join();
 }
 
-xmt::Thread::ret_t NetTransportMgr::_loop( void *p )
+void NetTransportMgr::_loop( NetTransportMgr* p )
 {
-  NetTransportMgr& me = *reinterpret_cast<NetTransportMgr *>(p);
+  NetTransportMgr& me = *p;
   Event ev;
   gaddr_type dst;
   gaddr_type src;
 
   try {
-    while ( me.pop( ev, dst, src ) ) {
+    while ( p->pop( ev, dst, src ) ) {
 #ifdef __FIT_STEM_TRACE
       try {
-        xmt::scoped_lock lk(manager()->_lock_tr);
+        lock_guard<mutex> lk(manager()->_lock_tr);
         if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracenet) ) {
           *manager()->_trs << "Pid/ppid: " << xmt::getpid() << "/" << xmt::getppid() << "\n";
           manager()->dump( *manager()->_trs ) << endl;
@@ -531,7 +522,7 @@ xmt::Thread::ret_t NetTransportMgr::_loop( void *p )
       if ( xdst == badaddr ) {
 #ifdef __FIT_STEM_TRACE
         try {
-          xmt::scoped_lock lk(manager()->_lock_tr);
+          lock_guard<mutex> lk(manager()->_lock_tr);
           if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracefault)) ) {
             *manager()->_trs << __FILE__ << ":" << __LINE__
                              << " ("
@@ -554,7 +545,7 @@ xmt::Thread::ret_t NetTransportMgr::_loop( void *p )
       }
 #ifdef __FIT_STEM_TRACE
       try {
-        xmt::scoped_lock lk(manager()->_lock_tr);
+        lock_guard<mutex> lk(manager()->_lock_tr);
         if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
           *manager()->_trs << __FILE__ << ":" << __LINE__ << endl;
         }
@@ -564,15 +555,12 @@ xmt::Thread::ret_t NetTransportMgr::_loop( void *p )
 #endif // __FIT_STEM_TRACE
       manager()->push( ev );
     }
-    me.NetTransport_base::close();
+    p->NetTransport_base::close();
   }
   catch ( ... ) {
-    me.NetTransport_base::close();
+    p->NetTransport_base::close();
     // throw;
-    return reinterpret_cast<xmt::Thread::ret_t>(-1);
   }
-
-  return 0;
 }
 
 #if 0
@@ -587,7 +575,7 @@ void NetTransportMP::connect( sockstream& s )
     if ( pop( ev, dst, src ) ) {
 #ifdef __FIT_STEM_TRACE
       try {
-        xmt::scoped_lock lk(manager()->_lock_tr);
+        lock_guard<mutex> lk(manager()->_lock_tr);
         if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & E
 vManager::tracenet) ) {
           *manager()->_trs << "Pid/ppid: " << xmt::getpid() << "/" << xmt::getppid() <<
@@ -602,7 +590,7 @@ vManager::tracenet) ) {
       if ( xdst == badaddr ) {
 #ifdef __FIT_STEM_TRACE
         try {
-          xmt::scoped_lock lk(manager()->_lock_tr);
+          lock_guard<mutex> lk(manager()->_lock_tr);
           if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracefault)) ) {
             *manager()->_trs << __FILE__ << ":" << __LINE__
                              << " ("
@@ -626,7 +614,7 @@ vManager::tracenet) ) {
       }
 #ifdef __FIT_STEM_TRACE
       try {
-        xmt::scoped_lock lk(manager()->_lock_tr);
+        lock_guard<mutex> lk(manager()->_lock_tr);
         if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
           *manager()->_trs << __FILE__ << ":" << __LINE__ << endl;
         }

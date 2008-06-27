@@ -1,10 +1,23 @@
+2008-06-27  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* Cron.h, EvManager.h, EventHandler.h, NetTransport.h:
+	use wg21 draft for threads, based on mt/thread,
+	mt/mutex and mt/condition_variable (see libxmt);
+
+	* Cron.cc, EvManager.cc, NetTransport.cc, _EventHandler.cc:
+	ditto;
+
+	* ut/unit_test.cc: ditto; use libsockios 2.0.0;
+	
+	* libstem: library version 4.8.0
+
 2007-10-24  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* Event.h: initialize pid by unsigned;
 
 	* Event.h: __gnu_cxx::hash<void*> for gcc 3.3.6;
 
-	* * libstem: library version 4.7.1
+	* libstem: library version 4.7.1
 
 2007-10-16  Petr Ovtchenkov  <ptr@island.corbina.net>
 
