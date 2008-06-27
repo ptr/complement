@@ -8,7 +8,11 @@ include ${SRCROOT}/Makefiles/gmake/top.mak
 
 INCLUDES += -I${BOOST_INCLUDE_DIR}
 
-LDFLAGS += -L${INSTALL_LIB_DIR} -Wl,-rpath=${INSTALL_LIB_DIR}:${STLPORT_LIB_DIR}
+release-shared:	LDFLAGS += -L../${OUTPUT_DIR} -Wl,-rpath=../${OUTPUT_DIR}
+dbg-shared:	LDFLAGS += -L../${OUTPUT_DIR_DBG} -Wl,-rpath=../${OUTPUT_DIR_DBG}
+ifndef WITHOUT_STLPORT
+stldbg-shared:	LDFLAGS += -L../${OUTPUT_DIR_STLDBG} -Wl,-rpath=../${OUTPUT_DIR_STLDBG}
+endif
 
 release-shared:	LDLIBS = -lboost_fs
 dbg-shared:	LDLIBS = -lboost_fsg
