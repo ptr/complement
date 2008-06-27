@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/26 09:28:53 ptr>
+// -*- C++ -*- Time-stamp: <08/06/26 21:29:52 ptr>
 
 /*
  *
@@ -442,19 +442,23 @@ int EXAM_IMPL(sockios2_test::processor_core)
       s1 << "Hello, world!" << endl;
     }
 
-    unique_lock<mutex> lk( worker::lock );
-    EXAM_CHECK( worker::line_cnd.timed_wait( lk, milliseconds( 500 ), worker::rd_counter1 ) );
+    {
+      unique_lock<mutex> lk( worker::lock );
+      EXAM_CHECK( worker::line_cnd.timed_wait( lk, milliseconds( 500 ), worker::rd_counter1 ) );
+    }
 
     // cerr << worker::line << endl;
     EXAM_CHECK( worker::line == "Hello, world!" );
     worker::line = "";
     worker::rd = 0;
 
-    // for ( int i = 0; i < 64; ++i ) { // give chance for system
-    //   std::tr2::this_thread::yield();
+    for ( int i = 0; i < 64; ++i ) { // give chance for system
+      std::tr2::this_thread::yield();
+    }
+    // {
+    //   unique_lock<mutex> lksrv( worker::lock );
+    //   EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
     // }
-    unique_lock<mutex> lksrv( worker::lock );
-    EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
   }
 
   return EXAM_RESULT;
@@ -498,15 +502,19 @@ int EXAM_IMPL(sockios2_test::fork)
         EXAM_CHECK_ASYNC( prss.good() );
         EXAM_CHECK_ASYNC( prss.is_open() );
 
-        unique_lock<mutex> lk( worker::lock );
-        EXAM_CHECK_ASYNC( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter1 ) );
+        {
+          unique_lock<mutex> lk( worker::lock );
+          EXAM_CHECK_ASYNC( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter1 ) );
+        }
 
         // for ( int i = 0; i < 64; ++i ) { // give chance for system
         //   std::tr2::this_thread::yield();
         // }
 
-        unique_lock<mutex> lksrv( worker::lock );
-        EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
+        {
+          unique_lock<mutex> lksrv( worker::lock );
+          EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
+        }
       }
 
       exit( 0 );

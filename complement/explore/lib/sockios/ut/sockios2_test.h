@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/26 23:57:59 ptr>
+// -*- C++ -*- Time-stamp: <08/06/27 00:55:32 ptr>
 
 /*
  *
@@ -13,7 +13,6 @@
 #define __sockios2_test_h
 
 #include <exam/suite.h>
-// #include <mt/shm.h>
 
 class sockios2_test
 {

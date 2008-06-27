@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/07/18 08:52:26 ptr>
+// -*- C++ -*- Time-stamp: <08/06/09 20:27:19 yeti>
 
 /*
  *
@@ -25,6 +25,7 @@ struct names_sockios_test
     int EXAM_DECL(hostaddr_test3);
 };
 
+#if 0
 class sockios_test
 {
   public:
@@ -48,5 +49,6 @@ class sockios_test
     xmt::allocator_shm<xmt::__condition<true>,0> shm_cnd;
     xmt::allocator_shm<xmt::__barrier<true>,0> shm_b;
 };
+#endif
 
 #endif // __sockios_test_h
