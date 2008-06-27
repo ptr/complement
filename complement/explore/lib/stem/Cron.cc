@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/09/05 01:04:08 ptr>
+// -*- C++ -*- Time-stamp: <08/06/27 12:52:44 ptr>
 
 /*
- * Copyright (c) 1998, 2002, 2003, 2005, 2006
+ * Copyright (c) 1998, 2002, 2003, 2005, 2006, 2008
  * Petr Ovtchenkov
  * 
  * Copyright (c) 1999-2001
@@ -27,6 +27,9 @@
 #define CRON_ST_SUSPENDED 0x11
 
 namespace stem {
+
+using namespace std;
+using namespace std::tr2;
 
 __FIT_DECLSPEC Cron::Cron() :
     EventHandler()
@@ -67,37 +70,37 @@ void __FIT_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
   en.n = ne.n;
   en.arg = ne.arg;
   if ( en.n == 1 ) {
-    en.period = 0;
+    en.period = nanoseconds(0LL);
   } else {
     en.period = ne.period;
-    if ( en.n == 0 || en.period.tv_nsec >= 1000000000 ||
-         (en.period.tv_sec == 0 && en.period.tv_nsec == 0) ) 
+    if ( en.n == 0 || en.period.count() == 0LL ) {
       return;
+    }
   }
 
-  time_t current;
-  if ( en.start.tv_sec < time( &current ) ) {
-    en.start.tv_sec = current;
+  system_time current = get_system_time();
+  if ( en.start < current ) {
+    en.start = current;
   }
 
   en.expired = en.start;
   en.count = 0;
 
-  MT_REENTRANT( _M_l, _x1 );
+  lock_guard<mutex> _x1( _M_l );
   _M_c.push( en );
   if ( isState( CRON_ST_SUSPENDED ) ) { // alarm if cron loop suspended
     PopState( CRON_ST_SUSPENDED );
-    _thr.resume();
+    cond.notify_one(); // _thr.resume();
   } else if ( _M_c.top() == en ) { // cron has entries, but new entry is on top
-    cond.signal();                 // so, we need wait it
+    cond.notify_one();             // so, we need wait it
   }
 }
 
 // Remove cron entry if recipient address and event code match to request
 void __FIT_DECLSPEC Cron::Remove( const Event_base<CronEntry>& entry )
 {
-  MT_REENTRANT( _M_l, _x1 );
-  cond.signal(); // in any case, remove I something or not
+  lock_guard<mutex> _x1( _M_l );
+  cond.notify_one(); // in any case, remove I something or not
 
   const CronEntry& ne = entry.value();
   std::vector<value_type> tmp;
@@ -121,8 +124,9 @@ void __FIT_DECLSPEC Cron::Remove( const Event_base<CronEntry>& entry )
 // and arg the same
 void __FIT_DECLSPEC Cron::RemoveArg( const Event_base<CronEntry>& entry )
 {
-  MT_REENTRANT( _M_l, _x1 );
-  cond.signal(); // in any case, remove I something or not
+  lock_guard<mutex> _x1( _M_l );
+
+  cond.notify_one(); // in any case, remove I something or not
 
   const CronEntry& ne = entry.value();
   std::vector<value_type> tmp;
@@ -145,21 +149,27 @@ void __FIT_DECLSPEC Cron::RemoveArg( const Event_base<CronEntry>& entry )
 
 void __FIT_DECLSPEC Cron::Start()
 {
-  MT_REENTRANT( _M_l, _x1 );
-  if ( !_M_c.empty() ) { // start only if Cron queue not empty
-    _thr.launch( _loop, this );
+  lock_guard<mutex> _x1( _M_l );
+
+  if ( !_M_c.empty() && _thr != 0 ) { // start only if Cron queue not empty
+    _thr = new thread( _loop, this );
   }
 }
 
 void __FIT_DECLSPEC Cron::Stop()
 {
+  lock_guard<mutex> _x1( _M_l );
+
   RemoveState( CRON_ST_STARTED );
-  cond.signal();
+  cond.notify_one();
   if ( isState( CRON_ST_SUSPENDED ) ) {
     RemoveState( CRON_ST_SUSPENDED );
-    _thr.resume();
+    // _thr.resume();
   }
-  _thr.join();
+  _thr->join();
+
+  delete _thr;
+  _thr = 0;
 }
 
 void __FIT_DECLSPEC Cron::EmptyStart()
@@ -172,7 +182,7 @@ void __FIT_DECLSPEC Cron::EmptyStop()
   // do nothing
 }
 
-xmt::Thread::ret_t Cron::_loop( void *p )
+void Cron::_loop( Cron* p )
 {
   // After creation cron loop (one per every Cron object),
   // this loop should exit in following cases:
@@ -180,27 +190,29 @@ xmt::Thread::ret_t Cron::_loop( void *p )
   //   -) Cron object destroyed
   // If Cron's container empty, this thread suspend, and can be alarmed
   // after Add (Cron entry) event.
-  Cron& me = *reinterpret_cast<Cron *>(p);
+  Cron& me = *p;
 
   me.PushState( CRON_ST_STARTED );
 
-  timespec abstime;
+  system_time abstime;
   while ( me.isState( CRON_ST_STARTED ) ) {
-    MT_LOCK( me._M_l );
+    unique_lock<mutex> lk( me._M_l );
     if ( me._M_c.empty() ) {
       me.PushState( CRON_ST_SUSPENDED );
-      MT_UNLOCK( me._M_l );
-      me._thr.suspend();
+      // me._M_l.unlock();
+      // me._thr.suspend();
+      me.cond.wait( lk );
       continue;
     }
     // At this point _M_c should never be empty!
     abstime = me._M_c.top().expired;
-    MT_UNLOCK( me._M_l );
-    if ( me.cond.wait_time( &abstime ) > 0 ) { // time expired, otherwise signal or error
-      MT_LOCK( me._M_l );
+    // me._M_l.unlock();
+
+    if ( !me.cond.timed_wait( lk, abstime ) ) { // time expired, otherwise signal or error
+      // me._M_l.lock();
 
       if ( me._M_c.empty() ) { // event removed while I wait?
-        MT_UNLOCK( me._M_l );
+        // me._M_l.unlock();
         continue;
       }
       __CronEntry en = me._M_c.top(); // get and eject top cron entry
@@ -212,7 +224,7 @@ xmt::Thread::ret_t Cron::_loop( void *p )
         ev.value() = en.arg;
         me.Send( Event_convert<unsigned>()( ev ) );
       } else { // do nothing, this lead to removing invalid abonent from Cron
-        MT_UNLOCK( me._M_l );
+        // me._M_l.unlock();
         continue;
       }
 
@@ -228,11 +240,9 @@ xmt::Thread::ret_t Cron::_loop( void *p )
       } else if ( (en.count) < (en.n) ) { // This SC5.0 patch 107312-06 bug
         me._M_c.push( en );
       }
-      MT_UNLOCK( me._M_l );
+      // me._M_l.unlock();
     }
   }
-
-  return 0;
 }
 
 
@@ -251,10 +261,8 @@ __FIT_DECLSPEC
 void CronEntry::pack( std::ostream& s ) const
 {
   __pack( s, code );
-  __pack( s, start.tv_sec );
-  __pack( s, start.tv_nsec );
-  __pack( s, period.tv_sec );
-  __pack( s, period.tv_nsec );
+  __pack( s, static_cast<int64_t>( start.nanoseconds_since_epoch().count() ) );
+  __pack( s, static_cast<int64_t>( period.count() ) );
   __pack( s, n );
   __pack( s, arg );
 }
@@ -263,10 +271,8 @@ __FIT_DECLSPEC
 void CronEntry::net_pack( std::ostream& s ) const
 {
   __net_pack( s, code );
-  __net_pack( s, start.tv_sec );
-  __net_pack( s, start.tv_nsec );
-  __net_pack( s, period.tv_sec );
-  __net_pack( s, period.tv_nsec );
+  __net_pack( s, static_cast<int64_t>( start.nanoseconds_since_epoch().count() ) );
+  __net_pack( s, static_cast<int64_t>( period.count() ) );
   __net_pack( s, n );
   __net_pack( s, arg );
 }
@@ -275,10 +281,11 @@ __FIT_DECLSPEC
 void CronEntry::unpack( std::istream& s )
 {
   __unpack( s, code );
-  __unpack( s, start.tv_sec );
-  __unpack( s, start.tv_nsec );
-  __unpack( s, period.tv_sec );
-  __unpack( s, period.tv_nsec );
+  int64_t v;
+  __unpack( s, v );
+  start = std::tr2::system_time( 0, v );
+  __unpack( s, v );
+  period = std::tr2::nanoseconds( v );
   __unpack( s, n );
   __unpack( s, arg );
 }
@@ -287,10 +294,11 @@ __FIT_DECLSPEC
 void CronEntry::net_unpack( std::istream& s )
 {
   __net_unpack( s, code );
-  __net_unpack( s, start.tv_sec );
-  __net_unpack( s, start.tv_nsec );
-  __net_unpack( s, period.tv_sec );
-  __net_unpack( s, period.tv_nsec );
+  int64_t v;
+  __net_unpack( s, v );
+  start = std::tr2::system_time( 0, v );
+  __net_unpack( s, v );
+  period = std::tr2::nanoseconds( v );
   __net_unpack( s, n );
   __net_unpack( s, arg );
 }

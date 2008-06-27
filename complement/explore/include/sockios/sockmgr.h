@@ -1,351 +1,350 @@
-// -*- C++ -*- Time-stamp: <07/09/06 21:23:52 ptr>
+// -*- C++ -*- Time-stamp: <08/06/27 00:50:33 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005-2007
+ * Copyright (c) 2008
  * Petr Ovtchenkov
- *
- * Portion Copyright (c) 1999-2001
- * Parallel Graphics Ltd.
  *
  * Licensed under the Academic Free License Version 3.0
  *
  */
 
-#ifndef __SOCKMGR_H
-#define __SOCKMGR_H
+#ifndef __SOCKIOS_SOCKMGR_H
+#define __SOCKIOS_SOCKMGR_H
 
-#ifndef __config_feature_h
-#include <config/feature.h>
+#include <sys/epoll.h>
+
+#ifndef EPOLLRDHUP
+#  define EPOLLRDHUP 0x2000
 #endif
 
-#ifndef __SOCKSTREAM__
-#include <sockios/sockstream>
-#endif
+#include <fcntl.h>
 
-#include <vector>
-#include <deque>
 #include <cerrno>
+#include <mt/thread>
+#include <mt/mutex>
+#include <mt/condition_variable>
 
-#ifndef __XMT_H
-#include <mt/xmt.h>
-#endif
-
-#ifndef __THR_MGR_H
-#include <mt/thr_mgr.h>
-#endif
-
-#ifdef __unix
-#include <poll.h>
-#endif
+#include <sockios/socksrv.h>
 
 #ifdef STLPORT
-_STLP_BEGIN_NAMESPACE
+#  include <unordered_map>
+#  include <unordered_set>
+// #  include <hash_map>
+// #  include <hash_set>
+// #  define __USE_STLPORT_HASH
+#  define __USE_STLPORT_TR1
 #else
+#  if defined(__GNUC__) && (__GNUC__ < 4)
+#    include <ext/hash_map>
+#    include <ext/hash_set>
+#    define __USE_STD_HASH
+#  else
+#    include <tr1/unordered_map>
+#    include <tr1/unordered_set>
+#    define __USE_STD_TR1
+#  endif
+#endif
+
+#include <sockios/sockstream>
+#include <deque>
+#include <functional>
+
 namespace std {
-#endif
 
-union _xsockaddr {
-    sockaddr_in inet;
-    sockaddr    any;
+template <class charT, class traits, class _Alloc> class basic_sockbuf;
+template <class charT, class traits, class _Alloc> class basic_sockstream;
+template <class charT, class traits, class _Alloc> class sock_processor_base;
+
+
+template <class charT, class traits, class _Alloc> class basic_sockbuf;
+
+namespace detail {
+
+class stop_request :
+        public std::exception
+{
+  public:
+    virtual const char* what() throw()
+      { return "sockmgr receive stop reqest"; }
 };
 
-class basic_sockmgr :
-	public sock_base
+template<class charT, class traits, class _Alloc>
+class sockmgr
 {
   private:
-    class Init
-    {
-      public:
-        Init();
-        ~Init();
-      private:
-        static void _guard( int );
-        static void __at_fork_prepare();
-        static void __at_fork_child();
-        static void __at_fork_parent();
+    typedef basic_sockstream<charT,traits,_Alloc> sockstream_t;
+    typedef basic_sockbuf<charT,traits,_Alloc> sockbuf_t;
+    typedef sock_processor_base<charT,traits,_Alloc> socks_processor_t;
+
+    enum {
+      listener,
+      tcp_buffer,
+      rqstop,
+      rqstart,
+      listener_on_exit
     };
 
-  public:
-    basic_sockmgr();
-    virtual ~basic_sockmgr();
-
-  protected:
-    __FIT_DECLSPEC void open( const in_addr& addr, int port, sock_base::stype type, sock_base::protocol prot );
-    __FIT_DECLSPEC void open( unsigned long addr, int port, sock_base::stype type, sock_base::protocol prot );
-    __FIT_DECLSPEC void open( int port, sock_base::stype type, sock_base::protocol prot );
-
-    virtual __FIT_DECLSPEC void close();
-    bool is_open_unsafe() const
-      { return _fd != -1; }
-    sock_base::socket_type fd_unsafe() const
-      { return _fd; }
-    __FIT_DECLSPEC
-    void setoptions_unsafe( sock_base::so_t optname, bool on_off = true,
-                     int __v = 0 );
-
-  public:
-    bool is_open() const
-      { xmt::scoped_lock lk(_fd_lck); return is_open_unsafe(); }
-    bool good() const
-      { return _state == ios_base::goodbit; }
-
-    sock_base::socket_type fd() const
-      { xmt::scoped_lock lk(_fd_lck); sock_base::socket_type tmp = fd_unsafe(); return tmp; }
-
-    __FIT_DECLSPEC
-    void shutdown( sock_base::shutdownflg dir );
-    void setoptions( sock_base::so_t optname, bool on_off = true,
-                     int __v = 0 )
-      {
-        xmt::scoped_lock lk(_fd_lck);
-        setoptions_unsafe( optname, on_off, __v );
-      }
-
-  private:
-    basic_sockmgr( const basic_sockmgr& );
-    basic_sockmgr& operator =( const basic_sockmgr& );
-
-  private:
-    sock_base::socket_type _fd;    // master socket
-    unsigned long _mode;  // open mode
-    unsigned long _state; // state flags
-    int           _errno; // error state
-    _xsockaddr    _address;
-
-  protected:
-    static int _idx;
-    friend class Init;
-
-  protected:
-    xmt::mutex _fd_lck;
-    xmt::condition _loop_cnd;
-};
-
-class ConnectionProcessorTemplate_MP // As reference
-{
-  public:
-    ConnectionProcessorTemplate_MP( std::sockstream& )
-      { }
-
-    void connect( std::sockstream& )
-      { }
-    void close()
-      { }
-};
-
-#ifndef __FIT_NO_POLL
-
-template <class Connect, void (Connect::*C)( std::sockstream& ) = &Connect::connect, void (Connect::*T)() = &Connect::close >
-class sockmgr_stream_MP :
-    public basic_sockmgr
-{
-  public:
-    sockmgr_stream_MP() :
-	basic_sockmgr(),
-        _thr_limit( 31 )
-      {
-        _busylimit.tv_sec = 0;
-        _busylimit.tv_nsec = 90000000; // i.e 0.09 sec
-        _alarm.tv_sec = 0;
-        _alarm.tv_nsec = 50000000; // i.e 0.05 sec
-        _idle.tv_sec = 10;
-        _idle.tv_nsec = 0; // i.e 10 sec
-      }
-
-    explicit sockmgr_stream_MP( const in_addr& addr, int port, sock_base::stype t = sock_base::sock_stream ) :
-	basic_sockmgr(),
-        _thr_limit( 31 )
-      {
-        open( addr, port, t );
-        _busylimit.tv_sec = 0;
-        _busylimit.tv_nsec = 90000000; // i.e 0.09 sec
-        _alarm.tv_sec = 0;
-        _alarm.tv_nsec = 50000000; // i.e 0.05 sec
-        _idle.tv_sec = 10;
-        _idle.tv_nsec = 0; // i.e 10 sec
-      }
-
-    explicit sockmgr_stream_MP( unsigned long addr, int port, sock_base::stype t = sock_base::sock_stream ) :
-	basic_sockmgr(),
-        _thr_limit( 31 )
-      {
-        open( addr, port, t );
-        _busylimit.tv_sec = 0;
-        _busylimit.tv_nsec = 90000000; // i.e 0.09 sec
-        _alarm.tv_sec = 0;
-        _alarm.tv_nsec = 50000000; // i.e 0.05 sec
-        _idle.tv_sec = 10;
-        _idle.tv_nsec = 0; // i.e 10 sec
-      }
-
-    explicit sockmgr_stream_MP( int port, sock_base::stype t = sock_base::sock_stream ) :
-	basic_sockmgr(),
-        _thr_limit( 31 )
-      {
-        open( port, t );
-        _busylimit.tv_sec = 0;
-        _busylimit.tv_nsec = 50000000; // i.e 0.05 sec
-        _alarm.tv_sec = 0;
-        _alarm.tv_nsec = 50000000; // i.e 0.05 sec
-        _idle.tv_sec = 10;
-        _idle.tv_nsec = 0; // i.e 10 sec
-      }
-
-    ~sockmgr_stream_MP()
-      { loop_thr.join(); }
-
-  private:
-    sockmgr_stream_MP( const sockmgr_stream_MP<Connect,C,T>& );
-    sockmgr_stream_MP<Connect,C,T>& operator =( const sockmgr_stream_MP<Connect,C,T>& );
-
-  public:
-    void open( const in_addr& addr, int port, sock_base::stype t = sock_base::sock_stream );
-    void open( unsigned long addr, int port, sock_base::stype t = sock_base::sock_stream );
-    void open( int port, sock_base::stype t = sock_base::sock_stream );
-
-    virtual void close()
-      { basic_sockmgr::close(); }
-
-    void wait()
-      {	loop_thr.join(); }
-
-    void detach( sockstream& ) // remove sockstream from polling in manager
-      { }
-
-    void setbusytime( const timespec& t )
-      { _busylimit = t; }
-
-    void setobservertime( const timespec& t )
-      { _alarm = t; }
-
-    void setidletime( const timespec& t )
-      { _idle = t; }
-
-    void setthreadlimit( unsigned lim )
-      { _thr_limit = std::max( 3U, lim ) - 1; }
-
-  protected:
-
-    struct _Connect
+    struct fd_info
     {
-        _Connect() :
-            _proc( 0 )
+        enum {
+          listener = 0x1,
+          level_triggered = 0x2
+        };
+
+        fd_info() :
+            flags(0U),
+            b(0),
+            p(0)
           { }
 
-        _Connect( const _Connect& ) :
-            _proc( 0 )
+        fd_info( unsigned f, sockbuf_t* buf, socks_processor_t* proc ) :
+            flags(f),
+            b(buf),
+            p(proc)
           { }
 
-        ~_Connect()
-          { if ( _proc ) { s.close(); (_proc->*T)(); delete _proc; _proc = 0; } }
+        fd_info( sockbuf_t* buf, socks_processor_t* proc ) :
+            flags(0U),
+            b(buf),
+            p(proc)
+          { }
 
-        void open( sock_base::socket_type st, const sockaddr& addr, sock_base::stype t = sock_base::sock_stream )
-          { s.open( st, addr, t ); _proc = new Connect( s ); }
+        fd_info( sockbuf_t* buf ) :
+            flags(0U),
+            b(buf),
+            p(0)
+          { }
 
-        sockstream s;
-        Connect *_proc;
+        fd_info( socks_processor_t* proc ) :
+            flags(listener),
+            b(0),
+            p(proc)
+          { }
+
+        fd_info( const fd_info& info ) :
+            flags( info.flags ),
+            b( info.b ),
+            p( info.p )
+          { }
+
+        unsigned flags;
+        sockbuf_t*    b;
+        socks_processor_t* p;
     };
 
-    typedef std::vector<pollfd> _fd_sequence;
-    typedef std::list<_Connect> _Sequence;
-    typedef std::deque<typename _Sequence::iterator> _connect_pool_sequence;
-
-    void _open( sock_base::stype t = sock_base::sock_stream );
-    static xmt::Thread::ret_t loop( void * );
-    static xmt::Thread::ret_t connect_processor( void * );
-    static xmt::Thread::ret_t observer( void * );
-
-    struct fd_equal :
-        public std::binary_function<_Connect,int,bool> 
+    struct ctl
     {
-        bool operator()(const _Connect& __x, int __y) const
-          { return __x.s.rdbuf()->fd() == __y; }
+        int cmd;
+        union {
+            sock_base::socket_type fd;
+            void *ptr;
+        } data;
     };
 
-    struct iaddr_equal :
-        public std::binary_function<_Connect,sockaddr,bool> 
-    {
-        bool operator()(const _Connect& __x, const sockaddr& __y) const
-          { return memcmp( &(__x.s.rdbuf()->inet_sockaddr()), reinterpret_cast<const sockaddr_in *>(&__y), sizeof(sockaddr_in) ) == 0; }
-    };
+    static void _loop( sockmgr *me )
+      { me->io_worker(); }
 
-    struct pfd_equal :
-        public std::binary_function<typename _fd_sequence::value_type,int,bool>
-    {
-        bool operator()(const typename _fd_sequence::value_type& __x, int __y) const
-          { return __x.fd == __y; }
-    };
-    
-    typedef bool (sockmgr_stream_MP<Connect,C,T>::*accept_type)();
+  public:
+    sockmgr( int hint = 1024, int ret = 512 ) :
+         n_ret( ret )
+      {
+        efd = epoll_create( hint );
+        if ( efd < 0 ) {
+          // throw system_error( errno )
+          throw std::runtime_error( "epoll_create" );
+        }
+        if ( pipe( pipefd ) < 0 ) { // check err
+          ::close( efd );
+          // throw system_error;
+          throw std::runtime_error( "pipe" );
+        }
+        // cfd = pipefd[1];
 
-#if 0
-    accept_type _accept;
-    _Connect *accept() // workaround for CC
-      { return (this->*_accept)(); }
-#else
-    accept_type _accept;
+        epoll_event ev_add;
+        ev_add.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
+        ev_add.data.fd = pipefd[0];
+        epoll_ctl( efd, EPOLL_CTL_ADD, pipefd[0], &ev_add );
+
+        _worker = new std::tr2::thread( _loop, this );
+
+        // ctl _ctl;
+        // _ctl.cmd = rqstart;
+
+        // write( pipefd[1], &_ctl, sizeof(ctl) );
+      }
+
+    ~sockmgr()
+      {
+        if ( _worker->joinable() ) {
+          ctl _ctl;
+          _ctl.cmd = rqstop;
+          _ctl.data.ptr = 0;
+
+          ::write( pipefd[1], &_ctl, sizeof(ctl) );
+
+          _worker->join();
+        }
+        ::close( pipefd[1] );
+        ::close( pipefd[0] );
+        ::close( efd );
+        delete _worker;
+      }
+
+    void push( socks_processor_t& p )
+      {
+        ctl _ctl;
+        _ctl.cmd = listener;
+        _ctl.data.ptr = static_cast<void *>(&p);
+
+        int r = ::write( pipefd[1], &_ctl, sizeof(ctl) );
+        if ( r < 0 || r != sizeof(ctl) ) {
+          throw std::runtime_error( "can't write to pipe" );
+        }
+      }
+
+    void push( sockbuf_t& s )
+      {
+        ctl _ctl;
+        _ctl.cmd = tcp_buffer;
+        _ctl.data.ptr = static_cast<void *>(&s);
+
+        errno = 0;
+        int r = ::write( pipefd[1], &_ctl, sizeof(ctl) );
+        if ( r < 0 || r != sizeof(ctl) ) {
+          throw std::runtime_error( "can't write to pipe" );
+        }
+      }
+
+    void pop( socks_processor_t& p, sock_base::socket_type _fd )
+      {
+        ctl _ctl;
+        _ctl.cmd = listener_on_exit;
+        _ctl.data.ptr = reinterpret_cast<void *>(&p);
+
+        int r = ::write( pipefd[1], &_ctl, sizeof(ctl) );
+        if ( r < 0 || r != sizeof(ctl) ) {
+          throw std::runtime_error( "can't write to pipe" );
+        }
+      }
+
+    void exit_notify( sockbuf_t* b, sock_base::socket_type fd )
+      {
+        try {
+          std::tr2::unique_lock<std::tr2::mutex> lk( dll, std::tr2::defer_lock );
+
+          if ( lk.try_lock() ) {
+            if ( b->_notify_close ) {
+              // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+              typename fd_container_type::iterator i = descr.find( fd );
+              if ( (i != descr.end()) && (i->second.b == b) && (i->second.p == 0) ) {
+                // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+                  if ( epoll_ctl( efd, EPOLL_CTL_DEL, fd, 0 ) < 0 ) {
+                    // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+                    // throw system_error
+                  }
+                  // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+                  descr.erase( i );
+              }
+              b->_notify_close = false;
+            }
+          }
+        }
+        catch ( const std::tr2::lock_error& ) {
+          // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+        }
+      }
+
+  private:
+    sockmgr( const sockmgr& )
+      { }
+    sockmgr& operator =( const sockmgr& )
+      { return *this; }
+
+    int check_closed_listener( socks_processor_t* p );
+    void dump_descr();
+
+#ifdef __USE_STLPORT_HASH
+    typedef std::hash_map<sock_base::socket_type,fd_info> fd_container_type;
+    typedef std::hash_set<void *> listener_container_type;
 #endif
-    bool accept_tcp();
-    bool accept_udp();
+#ifdef __USE_STD_HASH
+    typedef __gnu_cxx::hash_map<sock_base::socket_type, fd_info> fd_container_type;
+    typedef __gnu_cxx::hash_set<void *> listener_container_type;
+#endif
+#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+    typedef std::tr1::unordered_map<sock_base::socket_type, fd_info> fd_container_type;
+    typedef std::tr1::unordered_set<void *> listener_container_type;
+#endif
 
-  private:
-    xmt::Thread loop_thr;
+    void io_worker();
+    void cmd_from_pipe();
+    void process_listener( epoll_event&, typename fd_container_type::iterator );
+    void process_regular( epoll_event&, typename fd_container_type::iterator );
 
-  protected:
-    typedef sockmgr_stream_MP<Connect,C,T> _Self_type;
-    typedef fd_equal _Compare;
-    typedef iaddr_equal _Compare_inet;
-    typedef typename _Sequence::value_type      value_type;
-    typedef typename _Sequence::size_type       size_type;
-    typedef          _Sequence                  container_type;
+    int efd;
+    int pipefd[2];
+    std::tr2::thread *_worker;
+    const int n_ret;
 
-    typedef typename _Sequence::reference       reference;
-    typedef typename _Sequence::const_reference const_reference;
-
-    _Sequence _M_c;
-    _Compare  _M_comp;
-    _Compare_inet  _M_comp_inet;
-    pfd_equal _pfdcomp;
-    xmt::mutex _c_lock;
-
-    _fd_sequence _pfd;
-    int _cfd; // sock_base::socket_type
-    _connect_pool_sequence _conn_pool;
-    xmt::condition _pool_cnd;
-    xmt::mutex _dlock;
-    timespec _tpop;
-
-    xmt::mutex _flock;
-    bool _follow;
-
-    xmt::condition _observer_cnd;
-    timespec _busylimit; // start new thread to process incoming
-                         // requests, if processing thread busy
-                         // more then _busylimit
-    timespec _alarm;     // check and make decision about start
-                         // new thread with _alarm interval
-    timespec _idle;      // do nothing _idle time before thread
-                         // terminate
-
-    unsigned _thr_limit;
-
-  private:
-    bool _shift_fd();
-    static void _close_by_signal( int );
-    bool _is_follow() const
-      { xmt::scoped_lock lk( _flock ); bool tmp = _follow; return tmp; }
+    fd_container_type descr;
+    listener_container_type listeners_final;
+    std::tr2::mutex dll;
 };
 
-#endif // !__FIT_NO_POLL
+} //detail
 
-#ifdef STLPORT
-_STLP_END_NAMESPACE
-#else
-} // namespace std
+} // namesapce std
+
+#if defined(__USE_STLPORT_HASH) || defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+#  define __HASH_NAMESPACE std
+#endif
+#if defined(__USE_STD_HASH)
+#  define __HASH_NAMESPACE __gnu_cxx
 #endif
 
-#ifndef __STL_LINK_TIME_INSTANTIATION
+namespace __HASH_NAMESPACE {
+
+#ifdef __USE_STD_TR1
+namespace tr1 {
+#endif
+
+template <class charT, class traits, class _Alloc>
+struct hash<std::basic_sockstream<charT, traits, _Alloc>* >
+{
+    size_t operator()(const std::basic_sockstream<charT, traits, _Alloc>* __x) const
+      { return reinterpret_cast<size_t>(__x); }
+};
+
+#ifdef __USE_STD_TR1
+}
+#endif
+
+#if defined(__GNUC__) && (__GNUC__ < 4)
+template<>
+struct hash<void *>
+{
+   size_t operator()(const void *__x) const
+     { return reinterpret_cast<size_t>(__x); }
+};
+#endif // __GNUC__ < 4
+
+} // namespace __HASH_NAMESPACE
+
+#undef __HASH_NAMESPACE
+
+#ifdef __USE_STLPORT_HASH
+#  undef __USE_STLPORT_HASH
+#endif
+#ifdef __USE_STD_HASH
+#  undef __USE_STD_HASH
+#endif
+#ifdef __USE_STLPORT_TR1
+#  undef __USE_STLPORT_TR1
+#endif
+#ifdef __USE_STD_TR1
+#  undef __USE_STD_TR1
+#endif
+
 #include <sockios/sockmgr.cc>
-#endif
 
-#endif // __SOCKMGR_H
+#endif /* __SOCKIOS_SOCKMGR_H */

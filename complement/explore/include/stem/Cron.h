@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/09/05 01:08:54 ptr>
+// -*- C++ -*- Time-stamp: <08/06/27 12:40:37 ptr>
 
 /*
- * Copyright (c) 1998, 2002, 2003, 2005, 2007
+ * Copyright (c) 1998, 2002, 2003, 2005, 2007, 2008
  * Petr Ovtchenkov
  * 
  * Copyright (c) 1999-2001
@@ -29,8 +29,9 @@
 #endif
 
 #include <ctime>
-#include <mt/xmt.h>
-#include <mt/time.h>
+#include <mt/mutex>
+#include <mt/thread>
+#include <mt/date_time>
 
 #include <queue>
 
@@ -46,27 +47,25 @@ struct CronEntry :
 
     CronEntry() :
         code( badcode ),
-        n( static_cast<unsigned>(infinite) ),
+        start(), // immediate
+        period(),
+        n( static_cast<uint32_t>(infinite) ),
         arg( 0 )
-      {
-        start = immediate;
-        period = 0;
-      }
+      { }
 
     CronEntry( const CronEntry& x ) :
         code( x.code ),
+        start( x.start ),
+        period( x.period ),
         n( x.n ),
         arg( x.arg )
-      {
-        start = x.start;
-        period = x.period;
-      }
+      { }
 
     code_type code;
     // time_t start;
-    xmt::timespec start;
+    std::tr2::system_time start;
     // time_t end;
-    xmt::timespec period;
+    std::tr2::nanoseconds period;
     uint32_t n;
     uint32_t arg;
 
@@ -79,36 +78,34 @@ struct CronEntry :
 struct __CronEntry
 {
     __CronEntry() :
+        expired(),
         code( badcode ),
         addr( badaddr ),
+        start(),
+        period(),
         n( 0 ),
         count( 0 ),
         arg( 0 )
-      {
-        expired = 0;
-        start = 0;
-        period = 0;
-      }
+      { }
 
     __CronEntry( const __CronEntry& x ) :
+        expired( x.expired ),
         code( x.code ),
         addr( x.addr ),
+        start( x.start ),
+        period( x.period ),
         n( x.n ),
         count( x.count ),
         arg( x.arg )
-      {
-        expired = x.expired;
-        start = x.start;
-        period = x.period;
-      }
+      {  }
 
-    xmt::timespec expired;
+    std::tr2::system_time expired;
 
     code_type code;
     addr_type addr;
 
-    xmt::timespec start;
-    xmt::timespec period;
+    std::tr2::system_time start;
+    std::tr2::nanoseconds period;
 
     unsigned n;
     unsigned count;
@@ -152,10 +149,10 @@ class Cron :
     __FIT_DECLSPEC void EmptyStop();
 
   private:
-    static xmt::Thread::ret_t _loop( void * );
+    static void _loop( Cron* );
 
-    xmt::Thread _thr;
-    xmt::condition cond;
+    std::tr2::thread* _thr;
+    std::tr2::condition_variable cond;
 
     typedef __CronEntry value_type;
     typedef std::priority_queue<value_type,
@@ -163,7 +160,7 @@ class Cron :
       std::greater<value_type> > container_type;
 
     container_type _M_c;
-    xmt::mutex _M_l;
+    std::tr2::mutex _M_l;
 
   private:
     DECLARE_RESPONSE_TABLE( Cron, EventHandler );

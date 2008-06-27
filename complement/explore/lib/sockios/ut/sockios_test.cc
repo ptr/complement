@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/09/05 00:44:02 ptr>
+// -*- C++ -*- Time-stamp: <08/06/09 20:27:48 yeti>
 
 /*
  *
@@ -8,6 +8,8 @@
  * Licensed under the Academic Free License version 3.0
  *
  */
+
+#if 0
 
 #include "sockios_test.h"
 #include "message.h"
@@ -713,3 +715,5 @@ int EXAM_IMPL(sockios_test::long_block_read)
   // catch () {
   // }
 }
+
+#endif

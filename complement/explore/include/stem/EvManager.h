@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/09/05 01:09:05 ptr>
+// -*- C++ -*- Time-stamp: <08/06/27 12:35:36 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -24,7 +24,9 @@
 // #include <map>
 #include <deque>
 
-#include <mt/xmt.h>
+#include <mt/mutex>
+#include <mt/thread>
+#include <mt/condition_variable>
 #include <mt/uid.h>
 
 #include <stem/Event.h>
@@ -172,31 +174,31 @@ class EvManager
 
     bool is_avail( addr_type id ) const
       {
-        xmt::scoped_lock lk( _lock_heap );
+        std::tr2::lock_guard<std::tr2::mutex> lk( _lock_heap );
         return unsafe_is_avail(id);
       }
 
     const std::string who_is( addr_type id ) const
       {
-        xmt::scoped_lock lk( _lock_iheap );
+        std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
         return unsafe_who_is( id );
       }
 
     const std::string annotate( addr_type id ) const
       {
-        xmt::scoped_lock lk( _lock_iheap );
+        std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
         return unsafe_annotate( id );
       }
 
     void change_announce( addr_type id, const std::string& info )
       {
-        xmt::scoped_lock lk( _lock_iheap );
+        std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
         unsafe_change_announce( id, info );
       }
 
     void change_announce( addr_type id, const char *info )
       {
-        xmt::scoped_lock lk( _lock_iheap );
+        std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
         unsafe_change_announce( id, info );
       }
 
@@ -204,9 +206,9 @@ class EvManager
 
     void push( const Event& e )
       {
-        xmt::scoped_lock lk( _lock_queue );
+        std::tr2::lock_guard<std::tr2::mutex> lk( _lock_queue );
         in_ev_queue.push_back( e );
-        _cnd_queue.set( true );
+        _cnd_queue.notify_one();
       }
 
     __FIT_DECLSPEC void Remove( void * );
@@ -288,26 +290,26 @@ class EvManager
     const addr_type _x_high;
     addr_type _x_id;
 
-    static xmt::Thread::ret_t _Dispatch( void * );
+    static void _Dispatch( EvManager* );
 
     bool not_finished();
 
     bool _dispatch_stop;
 
-    xmt::Thread _ev_queue_thr;
-    xmt::spinlock _ev_queue_dispatch_guard;
+    std::tr2::mutex _lock_heap;
+    std::tr2::mutex _lock_iheap;
+    std::tr2::mutex _lock_xheap;
 
-    xmt::mutex _lock_heap;
-    xmt::mutex _lock_iheap;
-    xmt::mutex _lock_xheap;
-
-    xmt::mutex _lock_queue;
-    xmt::condition _cnd_queue;
+    std::tr2::mutex _lock_queue;
+    std::tr2::condition_variable _cnd_queue;
 
     static std::string inv_key_str;
-    xmt::mutex _lock_tr;
+    std::tr2::mutex _lock_tr;
     unsigned _trflags;
     std::ostream *_trs;
+
+    std::tr2::spinlock _ev_queue_dispatch_guard;
+    std::tr2::thread _ev_queue_thr;
 
     friend class Names;
     friend class NetTransportMgr;
