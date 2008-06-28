@@ -1,3 +1,16 @@
+// -*- C++ -*- Time-stamp: <08/06/28 10:25:43 ptr>
+
+/*
+ * Copyright (c) 2008
+ * Dmitry Osmakov
+ *
+ * Copyright (c) 2008
+ * Petr Ovtchenkov
+ *
+ * Licensed under the Academic Free License Version 3.0
+ *
+ */
+
 #include <vector>
 #include <string>
 #include <sstream>
@@ -76,14 +89,11 @@ Opts::options_container_type::iterator Opts::get_opt_index(string s)
   return storage.end();
 }
 
-ostream& operator<<(ostream& out,const Opt& opt)
+ostream& operator <<( ostream& out, const option& opt )
 {
-  if (opt.shortname == ' ')
-  {
+  if ( opt.shortname == 0 ) {
     out << "--" << opt.longname << '\t' << (opt.has_arg ? (string("[") + opt.default_v + "]\t") : "" ) << opt.desc;
-  } 
-  else
-  {
+  } else {
     out << '-' << opt.shortname << '\t' << (!opt.longname.empty() ? (string("[--") + opt.longname +"]\t") : "")  << (opt.has_arg ? string("[") + opt.default_v + ("]\t") : "")  << opt.desc; 
   }
   
@@ -92,12 +102,12 @@ ostream& operator<<(ostream& out,const Opt& opt)
 
 void Opts::help(ostream& out)
 {
-  if (!brief.empty())
-    out << brief << endl;
-  if (!author.empty())
-    out << author << endl;
-  if (!copyright.empty())
-    out << copyright << endl;  
+  if (!_brief.empty())
+    out << _brief << endl;
+  if (!_author.empty())
+    out << _author << endl;
+  if (!_copyright.empty())
+    out << _copyright << endl;  
   
   out << "Valid options:" << endl;
   options_container_type::const_iterator i;
@@ -107,23 +117,20 @@ void Opts::help(ostream& out)
   }
 }
 
-int Opts::addflag(char _shortname,const string& _longname,const string& _desc)
+int Opts::addflag( char _shortname, const string& _longname, const string& _desc )
 {
-  Opt opt;
-  opt.shortname = _shortname;
-  opt.longname = _longname;
-  opt.desc = _desc;
+  option opt( _desc.c_str(), _shortname, _longname.c_str() );
+
   opt.has_arg = false;
   opt.token = ++free_token;
   storage.push_back(opt);
   return opt.token;
 }
 
-int Opts::addflag(const string& _longname,const string& _desc)
+int Opts::addflag( const string& _longname, const string& _desc )
 {
-  Opt opt;
-  opt.longname = _longname;
-  opt.desc = _desc;
+  option opt( _desc.c_str(), _longname.c_str() );
+
   opt.has_arg = false;
   opt.token = ++free_token;
   storage.push_back(opt);

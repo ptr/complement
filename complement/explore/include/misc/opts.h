@@ -1,4 +1,15 @@
-// -*- C++ -*- Time-stamp: <08/05/21 12:17:39 yeti>
+// -*- C++ -*- Time-stamp: <08/06/28 10:26:23 ptr>
+
+/*
+ * Copyright (c) 2008
+ * Dmitry Osmakov
+ *
+ * Copyright (c) 2008
+ * Petr Ovtchenkov
+ *
+ * Licensed under the Academic Free License Version 3.0
+ *
+ */
 
 #ifndef __OPTS_H__
 #define __OPTS_H__
@@ -14,11 +25,36 @@
 
 #define all(c) (c).begin() , (c).end()
 
-class Opt
+class option
 {
   public:
-    Opt() : shortname(' ')
+
+    option( const char* _description, char _short_var, const char* _long_var ) :
+        shortname( _short_var ),
+        longname( _long_var ),
+        desc( _description )
       { }
+
+    option( const char* _description, char _short_var ) :
+        shortname( _short_var ),
+        longname(),
+        desc( _description )
+      { }
+
+    option( const char* _description, const char* _long_var ) :
+        shortname( 0 ),
+        longname( _long_var ),
+        desc( _description )
+      { }
+
+    bool operator ==( const std::string& _longname ) const
+      { return longname == _longname; }
+    bool operator ==( char _shortname ) const
+      { return shortname == _shortname; }
+    bool operator ==( int _token ) const
+      { return token == _token; } 
+
+  private:
     char shortname;
     std::string longname;
     std::string desc;
@@ -29,23 +65,30 @@ class Opt
     std::vector< int > pos;
 
     bool has_arg;
-    bool operator==( const std::string& _longname ) const { return longname == _longname; }
-    bool operator==( char _shortname ) const              { return shortname == _shortname; }
-    bool operator==( int _token ) const                   { return token == _token; } 
-    friend std::ostream& operator<<(std::ostream& t,const Opt& opt);
+
+    friend std::ostream& operator <<( std::ostream& t, const option& opt );
+    friend class Opts;
 };
 
 class Opts
 {
   private:
-    typedef std::vector< Opt > options_container_type;
+    typedef std::vector< option > options_container_type;
     options_container_type storage;  
+
   public:
-    Opts( const std::string& _brief = "", const std::string& _author = "", const std::string& _copyright = "") :
-        brief(_brief),
-        author(_author),
-        copyright(_copyright) 
-      { free_token = 0; }
+    Opts() :
+        free_token(0)
+      { }
+
+    void description( const char* text )
+      { _brief = text; }
+
+    void author( const char* text )
+      { _author = text; }
+
+    void copyright( const char* text )
+      { _copyright = text; }
 
     // adding option / flag (option that doesn't need arguments)
     template <class T>
@@ -118,13 +161,14 @@ class Opts
             std::invalid_argument(std::string("argument [").append(_argname).append("] doesn't match by type for option ").append(_optname))
           { }
     };
-    
-    int free_token;
+
   private:
+    int free_token;
+
     std::string pname;
-    std::string brief;
-    std::string author;
-    std::string copyright;
+    std::string _brief;
+    std::string _author;
+    std::string _copyright;
 
     bool isterm( const std::string& s );
     bool is_opt_name( const std::string& s );
@@ -332,4 +376,4 @@ void Opts::get_pos( V field , BackInsertIterator bi)
   }
 }
 
-#endif
+#endif // __OPTS_H__
