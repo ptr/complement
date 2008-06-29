@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/28 10:25:10 ptr>
+// -*- C++ -*- Time-stamp: <08/06/29 13:18:16 ptr>
 
 /*
  * Copyright (c) 2008
@@ -704,33 +704,54 @@ int EXAM_IMPL(opts_test::multiple_args)
 
 int EXAM_IMPL(opts_test::help)
 {
-  {
-    const char* argv[] = { "name" , "--help" };
-    int argc = sizeof( argv ) / sizeof(argv[0]);
+  const char* argv[] = { "programname" , "--help" };
+  int argc = sizeof( argv ) / sizeof(argv[0]);
 
-    Opts opts;
+  Opts opts;
 
-    opts.description( "what utility do" );
-    opts.author( "author" );
-    opts.copyright( "copyright" );
+  opts.description( "test for printing help message" );
+  opts.usage( "[options] file-from file-to" );
+  opts.author( "B. L. User" );
+  opts.copyright( "Copyright (C) Youyoudine, 2008" );
 
-    opts.addflag('h',"help","print this help message");
-    opts.addflag("flag","some program flag");
-    opts.addflag('v',"version","view program version");
-    opts.add('I',"/usr/include","include","include paths" );
-    opts.add('p',80,"port","listen to tcp port");
-    opts.add("mode","standart","program mode");
+  opts.addflag( 'h', "help", "print this help message" );
+  opts.addflag( "flag", "some program flag" );
+  opts.addflag( 'v', "version", "print version");
+  opts.add( 'I', "/usr/include", "include", "include paths" );
+  opts.add( 'p', 80, "port", "listen to tcp port" );
+  opts.add( "mode", "standard", "program mode");
     
-    opts.parse(argc,argv);
+  opts.parse( argc,argv );
 
-    EXAM_CHECK(opts.is_set('h'));
-    EXAM_CHECK( opts.get_pname() == "name" );
+  EXAM_CHECK( opts.is_set('h') );
+  EXAM_CHECK( opts.get_pname() == "programname" );
 
-    ofstream out("help.out");
-    opts.help(out);
-    cout << "check file help.out" << endl;
-    out.close();
-  }
+  stringstream s;
+
+  opts.help( s );
+
+  const char sample[] =
+"This is programname, test for printing help message\n\
+\n\
+B. L. User\n\
+\n\
+Copyright (C) Youyoudine, 2008\n\
+\n\
+Usage:\n\
+\n\
+programname [options] file-from file-to\n\
+\n\
+Options:\n\
+\n\
+-h, --help\tprint this help message\n\
+--flag\tsome program flag\n\
+-v, --version\tprint version\n\
+-I <val>, --include=<val> [/usr/include]\tinclude paths\n\
+-p <val>, --port=<val> [80]\tlisten to tcp port\n\
+--mode=<val> [standard]\tprogram mode\n\
+\n";
+
+  EXAM_CHECK( s.str() == sample );
 
   return EXAM_RESULT; 
 }
