@@ -1,10 +1,10 @@
-// -*- C++ -*- Time-stamp: <08/06/29 13:52:41 ptr>
+// -*- C++ -*- Time-stamp: <08/06/29 22:16:12 ptr>
 
 /*
  * Copyright (c) 2008
  * Dmitry Osmakov
  *
- * Copyright (c) 2008
+ * Copyright (c) 1997-1998, 2001, 2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -17,11 +17,15 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <list>
 #include <sstream>
 #include <typeinfo>
 #include <cctype>
 #include <exception>
 #include <stdexcept>
+#include <algorithm>
+#include <functional>
+#include <iterator>
 
 class option_base
 {
@@ -31,6 +35,7 @@ class option_base
         shortname( _short_var ),
         longname( _long_var ),
         desc( _description ),
+        token( _count++ ),
         has_arg( false )
       { }
 
@@ -38,6 +43,7 @@ class option_base
         shortname( _short_var ),
         longname(),
         desc( _description ),
+        token( _count++ ),
         has_arg( false )
       { }
 
@@ -45,11 +51,12 @@ class option_base
         shortname( 0 ),
         longname( _long_var ),
         desc( _description ),
+        token( _count++ ),
         has_arg( false )
       { }
 
-    option_base& operator []( const std::string& d )
-      { default_v = d; has_arg = true; }
+    virtual ~option_base()
+      { }
 
     bool operator ==( const std::string& _longname ) const
       { return longname == _longname; }
@@ -58,31 +65,300 @@ class option_base
     bool operator ==( int _token ) const
       { return token == _token; } 
 
-  private:
+    virtual const std::type_info& type() const = 0;
+
+    template <class T>
+    bool assign( T& v ) const
+      {
+        if ( this->type() != typeid(T) ) {
+          throw std::invalid_argument( "types mismatch" );
+        }
+        return _assign( static_cast<void*>(&v) );
+      }
+
+  protected:
+    virtual void read( const char* str ) = 0;
+    virtual void read( const std::string& str ) = 0;
+    virtual bool _assign( void* ) const = 0;
+    virtual std::ostream& _describe( std::ostream& ) const = 0;
+
     char shortname;
     std::string longname;
     std::string desc;
-    std::string default_v;
     int token;
-    
-    std::vector< std::string > args;
-    std::vector< int > pos;
+
+  protected:    
+    std::vector<int> pos;
 
     bool has_arg;
 
-    friend std::ostream& operator <<( std::ostream& t, const option_base& opt );
+    // friend std::ostream& operator <<( std::ostream& t, const option_base& opt );
+    friend class Opts;
+
+  private:
+    static int _count;
+};
+
+namespace detail {
+
+template <class P, class V>
+class deref_equal :
+    public std::binary_function<P,V,bool>
+{
+  public:
+    bool operator()(const P& __x, const V& __y) const
+      { return *__x == __y; }
+};
+
+} // namespace detail
+
+template <class T>
+class option :
+    public option_base
+{
+  public:
+    option( const char* _description, char _short_var, const char* _long_var ) :
+        option_base( _description, _short_var, _long_var )
+      { }
+
+    option( const char* _description, char _short_var ) :
+        option_base( _description, _short_var )
+      { }
+
+    option( const char* _description, const char* _long_var ) :
+        option_base( _description, _long_var )
+      { }
+
+    virtual const std::type_info& type() const
+      { return typeid( T ); }
+
+    option<T>& operator []( const T& val )
+      { args.push_back( val ); has_arg = true; return *this; }
+
+    template <class BackInstertIterator>
+    void get( BackInstertIterator bi ) const
+      { std::copy( args.begin(), args.end(), bi ); }
+
+  protected:
+    virtual std::ostream& _describe( std::ostream& o ) const;
+
+    virtual bool _assign( void* v ) const
+      {
+        if ( args.empty() ) {
+          // throw
+        }
+        *reinterpret_cast<T*>(v) = args.front();
+        
+        return !pos.empty();
+      }
+
+  private:
+    std::list<T> args;
+
+    void read( const char *str ) throw (std::invalid_argument)
+      {
+        std::istringstream s( str );
+        T _v;
+        if ( !(s >> _v).fail() ) {
+          if ( has_arg && args.size() == 1 && pos.size() == 0 ) { // override default value
+            args.front() = _v;
+          } else {
+            args.push_back( _v );
+          }
+        } else {
+          throw std::invalid_argument( str );
+        }
+      }
+
+    void read( const std::string& str ) throw (std::invalid_argument)
+      {
+        std::istringstream s( str );
+        T _v;
+        if ( !(s >> _v).fail() ) {
+          if ( has_arg && args.size() == 1 && pos.size() == 0 ) { // override default value
+            args.front() = _v;
+          } else {
+            args.push_back( _v );
+          }
+        } else {
+          throw std::invalid_argument( str );
+        }
+      }
+
+    friend class Opts;
+};
+
+template <class T>
+std::ostream& option<T>::_describe( std::ostream& out ) const
+{
+  if ( option_base::shortname != 0 ) {
+    out << '-' << option_base::shortname;
+    if ( option_base::has_arg ) {
+      out << " <" << typeid(T).name() << ">";
+    }
+    if ( !option_base::longname.empty() ) {
+      out << ", ";
+    }
+  }
+        
+  if ( !option_base::longname.empty() ) {
+    out << "--" << option_base::longname;
+    if ( option_base::has_arg ) {
+      out << "=<" << typeid(T).name() << ">";
+    }
+  }
+
+  if ( option_base::has_arg ) {
+    out << " [" << args.front() << "]\t";
+  } else {
+    out << '\t';
+  }
+
+  return out << option_base::desc;
+}
+
+template <>
+class option<std::string> :
+    public option_base
+{
+  public:
+    option( const char* _description, char _short_var, const char* _long_var ) :
+        option_base( _description, _short_var, _long_var )
+      { }
+
+    option( const char* _description, char _short_var ) :
+        option_base( _description, _short_var )
+      { }
+
+    option( const char* _description, const char* _long_var ) :
+        option_base( _description, _long_var )
+      { }
+
+    virtual const std::type_info& type() const
+      { return typeid( std::string ); }
+
+    option<std::string>& operator []( const char* val )
+      { args.push_back( std::string(val) ); has_arg = true; return *this; }
+
+    option<std::string>& operator []( const std::string& val )
+      { args.push_back( val ); has_arg = true; return *this; }
+
+    template <class BackInstertIterator>
+    void get( BackInstertIterator bi ) const
+      { std::copy( args.begin(), args.end(), bi ); }
+
+  protected:
+    virtual std::ostream& _describe( std::ostream& o ) const;
+
+    virtual bool _assign( void* v ) const
+      {
+        if ( args.empty() ) {
+          // throw
+        }
+        *reinterpret_cast<std::string*>(v) = args.front();
+        
+        return !pos.empty();
+      }
+
+  private:
+    std::list<std::string> args;
+
+    void read( const char *str )
+      {
+        if ( has_arg && args.size() == 1 && pos.size() == 0 ) { // override default value
+          args.front() = str;
+        } else {
+          args.push_back( std::string( str ) );
+        }
+      }
+
+    void read( const std::string& str )
+      {
+        if ( has_arg && args.size() == 1 && pos.size() == 0 ) { // override default value
+          args.front() = str;
+        } else {
+          args.push_back( str );
+        }
+      }
+
+    friend class Opts;
+};
+
+template <>
+class option<char*> :
+    public option_base
+{
+  public:
+    option( const char* _description, char _short_var, const char* _long_var ) :
+        option_base( _description, _short_var, _long_var )
+      { }
+
+    option( const char* _description, char _short_var ) :
+        option_base( _description, _short_var )
+      { }
+
+    option( const char* _description, const char* _long_var ) :
+        option_base( _description, _long_var )
+      { }
+
+    virtual const std::type_info& type() const
+      { return typeid( std::string ); }
+
+    option<char*>& operator []( const char* val )
+      { args.push_back( std::string(val) ); has_arg = true; return *this; }
+
+    option<char*>& operator []( const std::string& val )
+      { args.push_back( val ); has_arg = true; return *this; }
+
+    template <class BackInstertIterator>
+    void get( BackInstertIterator bi ) const
+      { std::copy( args.begin(), args.end(), bi ); }
+
+  protected:
+    virtual std::ostream& _describe( std::ostream& o ) const;
+
+    virtual bool _assign( void* v ) const
+      {
+        if ( args.empty() ) {
+          // throw
+        }
+        *reinterpret_cast<std::string*>(v) = args.front();
+        
+        return !pos.empty();
+      }
+
+  private:
+    std::list<std::string> args;
+
+    void read( const char *str )
+      {
+        if ( has_arg && args.size() == 1 && pos.size() == 0 ) { // override default value
+          args.front() = str;
+        } else {
+          args.push_back( std::string( str ) );
+        }
+      }
+
+    void read( const std::string& str )
+      {
+        if ( has_arg && args.size() == 1 && pos.size() == 0 ) { // override default value
+          args.front() = str;
+        } else {
+          args.push_back( str );
+        }
+      }
+
     friend class Opts;
 };
 
 class Opts
 {
   private:
-    typedef std::vector< option_base > options_container_type;
-    options_container_type storage;  
+    typedef std::vector< option_base* > options_container_type;
+    options_container_type storage;
 
   public:
-    Opts() :
-        free_token(0)
+    Opts()
       { }
 
     void description( const char* text )
@@ -97,45 +373,50 @@ class Opts
     void copyright( const char* text )
       { _copyright = text; }
 
-    // adding option / flag (option that doesn't need arguments)
-    template <class T>
-    int add( const std::string& _longname,T _default_value,const std::string& _desc = "(no decription)" );
 
     template <class T>
-   int add( char _shortname,T _default_value,const std::string& _longname = "(no longname)", const std::string& _desc = "(no decription)" );
+    Opts& operator << ( const option<T>& o )
+      {
+        storage.push_back( new option<T>( o ) );
+        return *this;
+      }
 
-    int addflag( const std::string& _longname = "(no longname)",const std::string& desc = "(no decription)");
-
-    int addflag( char _shortname,const std::string& _longname = "(no longname)",const std::string& _desc = "(no decription)" );
- 
     // getting option
   
-    template < class T ,class V >
-    T get( V field );
-    
-    
-    template < class V >
-    std::string get( V field );
-    
+    template <class T ,class V>
+    T get( const V& field, const T& );
 
-    template <class T , class V>
-    T get_default( V field );
+    template <class T, class V>
+    T get( const V& field );
 
-    template < class V >
-    std::string get_default( V field );
+    template <class BackInsertIterator>
+    void getemall( char field , BackInsertIterator bi );
+    template <class BackInsertIterator>
+    void getemall( const std::string& field , BackInsertIterator bi );
+    template <class BackInsertIterator>
+    void getemall( int field , BackInsertIterator bi );
 
-    template < class V , class BackInsertIterator>
-    void getemall( V field , BackInsertIterator bi);
+    bool is_set( char field ) const;
+    bool is_set( const char* field ) const
+      { return is_set( std::string(field) ); }
+    bool is_set( const std::string& field ) const;
+    bool is_set( int field ) const;
 
+    int get_cnt( char field ) const;
+    int get_cnt( const char* field ) const
+      { return get_cnt( std::string(field) ); }
+    int get_cnt( const std::string& field ) const;
+    int get_cnt( int field ) const;
 
-    template < class T >
-    bool is_set( T field ) const;
-
-    template < class T >
-    int get_cnt( T field ) const;
-
-    template < class V , class BackInsertIterator >
-    void get_pos( V field , BackInsertIterator bi);
+    template <class BackInsertIterator>
+    void get_pos( char, BackInsertIterator bi);
+    template <class BackInsertIterator>
+    void get_pos( const char* f, BackInsertIterator bi)
+      { get_pos( std::string(f), bi ); }
+    template <class BackInsertIterator>
+    void get_pos( const std::string&, BackInsertIterator bi);
+    template <class BackInsertIterator>
+    void get_pos( int, BackInsertIterator bi);
 
     // parse
     void parse(int& ac, const char** av);
@@ -169,9 +450,10 @@ class Opts
           { }
     };
 
-  private:
-    int free_token;
+    int last_token() const
+      { return storage.empty() ? -1 : storage.back()->token; }
 
+  private:
     std::string pname;
     std::string _brief;
     std::string _usage;
@@ -182,65 +464,39 @@ class Opts
     bool is_opt_name( const std::string& s );
     bool is_flag_group( const std::string& s );
     bool is_substr(const std::string& small, const std::string& big );
-    options_container_type::iterator get_opt_index( std::string s );
+    options_container_type::const_iterator get_opt_index( const std::string& s );
 };
 
-template <class T>
-int Opts::add(char _shortname,T _default_value,const std::string& _longname,const std::string& _desc)
+template < class T , class V >
+T Opts::get( const V& field, const T& )
 {
-  addflag(_shortname,_longname,_desc);
-  std::stringstream ss;
-  ss << _default_value;
-  storage[storage.size() - 1][ss.str()];
-  return storage[storage.size() - 1].token;
-}
-
-template <class T>
-int Opts::add(const std::string& _longname,T _default_value,const std::string& _desc)
-{
-  addflag(_longname,_desc);
-  std::stringstream ss;
-  ss << _default_value;
-  storage[storage.size() - 1][ss.str()];
-  return storage[storage.size() - 1].token;
-}
-
-template <class T>
-bool Opts::is_set(T field) const
-{
-  options_container_type::const_iterator i = std::find( storage.begin(), storage.end(), field );
-  return ( (i == storage.end()) ? false : !i->pos.empty());
-}
-
-template <class T>
-int Opts::get_cnt(T field) const
-{
-  options_container_type::const_iterator i = std::find( storage.begin(), storage.end(), field );
-  return ( (i == storage.end()) ? 0 : i->pos.size());
-}
-
-template <class V>
-std::string Opts::get( V field )
-{
-  options_container_type::const_iterator i = std::find( storage.begin(), storage.end(), field );
+  options_container_type::const_iterator i = 
+    std::find_if( storage.begin(), storage.end(),
+                  std::bind2nd( detail::deref_equal<option_base*,V>(), field ) );
 
   if ( i == storage.end() ) {
     std::stringstream ss1;
     ss1 << field;
-    throw unknown_option( ss1.str() );    
+    throw unknown_option( ss1.str() );
   }
 
-  if ( !i->has_arg ) {
+  if ( !(*i)->has_arg ) {
     throw std::logic_error("using Opts::get for option without arguments");
   }
 
-  return i->args.empty() ? i->default_v : i->args[0];
+  T res;
+
+  (*i)->assign( res );
+
+  return res;
 }
 
 template < class T , class V >
-T Opts::get( V field )
+T Opts::get( const V& field )
 {
-  options_container_type::const_iterator i = std::find(storage.begin(), storage.end() ,field);
+  options_container_type::const_iterator i = 
+    std::find_if( storage.begin(), storage.end(),
+                  std::bind2nd( detail::deref_equal<option_base*,V>(), field ) );
 
   if ( i == storage.end() ) {
     std::stringstream ss1;
@@ -248,73 +504,23 @@ T Opts::get( V field )
     throw unknown_option( ss1.str() );
   }
 
-  if ( !i->has_arg ) {
+  if ( !(*i)->has_arg ) {
     throw std::logic_error("using Opts::get for option without arguments");
   }
 
   T res;
-  std::stringstream ss(i->args.empty() ? i->default_v : i->args[0]);
-  ss >> res;
 
-  if ( ss.fail() ) {
-    std::stringstream ss1;
-    ss1 << field;
-    throw arg_typemismatch(ss1.str(),i->args.empty() ? i->default_v : i->args[0]);
-  }
+  (*i)->assign( res );
 
   return res;
 }
 
-template < class V>
-std::string Opts::get_default( V field )
+template <class BackInsertIterator>
+void Opts::getemall( char field, BackInsertIterator bi )
 {
-  options_container_type::const_iterator i = std::find( storage.begin(), storage.end(), field );
-
-  if ( i == storage.end() ) {
-    std::stringstream ss1;
-    ss1 << field;
-    throw unknown_option( ss1.str() );
-  }
-
-  if ( !i->has_arg ) {
-    throw std::logic_error("using Opts::get for option without arguments");
-  }
-    
-  return i->default_v;
-}
-
-template <class T , class V>
-T Opts::get_default( V field )
-{
-  options_container_type::const_iterator i = std::find( storage.begin(), storage.end(), field );
-
-  if ( i == storage.end() ) {
-    std::stringstream ss1;
-    ss1 << field;
-    throw unknown_option( ss1.str() );
-  }
-
-  if ( !i->has_arg ) {
-    throw std::logic_error("using Opts::get for option without arguments");
-  }
-    
-  T res;
-  std::stringstream ss(i->default_v);
-  ss >> res;
-
-  if ( ss.fail() ) {
-    std::stringstream ss1;
-    ss1 << field;
-    throw arg_typemismatch(ss1.str(),i->default_v);
-  }  
-
-  return res;
-}
-
-template <class V , class BackInsertIterator>
-void Opts::getemall( V field , BackInsertIterator bi)
-{
-  options_container_type::const_iterator i = std::find( storage.begin(), storage.end(), field );
+  options_container_type::const_iterator i = 
+    std::find_if( storage.begin(), storage.end(),
+                  std::bind2nd( detail::deref_equal<option_base*,char>(), field ) );
 
   if ( i == storage.end() ) {
     std::stringstream ss1;
@@ -322,28 +528,23 @@ void Opts::getemall( V field , BackInsertIterator bi)
     throw unknown_option(ss1.str());
   }
 
-  if ( !i->has_arg ) {
+  if ( !(*i)->has_arg ) {
     throw std::logic_error("using Opts::getemall for option without arguments");
   }
-    
-  if ( !i->args.empty() ) {
-    for ( int j = 0; j < i->args.size(); ++j) {
-      std::stringstream ss(i->args[j]);
-      ss >> *bi++;
 
-      if ( ss.fail() ) {
-        std::stringstream ss1;
-        ss1 << field;
-        throw arg_typemismatch(ss1.str(),i->args[j]);
-      }
-    }
-  }
+  typedef typename BackInsertIterator::container_type::value_type real_type;
+
+  option<real_type>* opt = dynamic_cast< option<real_type> * >( *i );
+
+  opt->get( bi );
 }
 
-template <class V , class BackInsertIterator>
-void Opts::get_pos( V field , BackInsertIterator bi)
+template <class BackInsertIterator>
+void Opts::getemall( const std::string& field, BackInsertIterator bi )
 {
-  options_container_type::const_iterator i = std::find( storage.begin(), storage.end(), field );
+  options_container_type::const_iterator i = 
+    std::find_if( storage.begin(), storage.end(),
+                  std::bind2nd( detail::deref_equal<option_base*,std::string>(), field ) );
 
   if ( i == storage.end() ) {
     std::stringstream ss1;
@@ -351,7 +552,87 @@ void Opts::get_pos( V field , BackInsertIterator bi)
     throw unknown_option(ss1.str());
   }
 
-  std::copy( i->pos.begin(), i->pos.end(), bi );
+  if ( !(*i)->has_arg ) {
+    throw std::logic_error("using Opts::getemall for option without arguments");
+  }
+
+  typedef typename BackInsertIterator::container_type::value_type real_type;
+
+  option<real_type>* opt = dynamic_cast< option<real_type> * >( *i );
+
+  opt->get( bi );
+}
+
+template <class BackInsertIterator>
+void Opts::getemall( int field, BackInsertIterator bi )
+{
+  options_container_type::const_iterator i = 
+    std::find_if( storage.begin(), storage.end(),
+                  std::bind2nd( detail::deref_equal<option_base*,int>(), field ) );
+
+  if ( i == storage.end() ) {
+    std::stringstream ss1;
+    ss1 << field;
+    throw unknown_option(ss1.str());
+  }
+
+  if ( !(*i)->has_arg ) {
+    throw std::logic_error("using Opts::getemall for option without arguments");
+  }
+
+  typedef typename BackInsertIterator::container_type::value_type real_type;
+
+  option<real_type>* opt = dynamic_cast< option<real_type> * >( *i );
+
+  opt->get( bi );
+}
+
+template <class BackInsertIterator>
+void Opts::get_pos( char field , BackInsertIterator bi )
+{
+  options_container_type::const_iterator i = 
+    std::find_if( storage.begin(), storage.end(),
+                  std::bind2nd( detail::deref_equal<option_base*,char>(), field ) );
+
+  if ( i == storage.end() ) {
+    std::stringstream ss1;
+    ss1 << field;
+    throw unknown_option(ss1.str());
+  }
+
+  std::copy( (*i)->pos.begin(), (*i)->pos.end(), bi );
+}
+
+template <class BackInsertIterator>
+void Opts::get_pos( const std::string& field, BackInsertIterator bi )
+{
+  options_container_type::const_iterator i = 
+    std::find_if( storage.begin(), storage.end(),
+                  std::bind2nd( detail::deref_equal<option_base*,std::string>(), field ) );
+
+  if ( i == storage.end() ) {
+    std::stringstream ss1;
+    ss1 << field;
+    throw unknown_option(ss1.str());
+  }
+
+  std::copy( (*i)->pos.begin(), (*i)->pos.end(), bi );
+}
+
+template <class BackInsertIterator>
+void Opts::get_pos( int field, BackInsertIterator bi )
+{
+  options_container_type::const_iterator i = 
+    std::find_if( storage.begin(), storage.end(),
+                  std::bind2nd( detail::deref_equal<option_base*,int>(), field ) );
+
+  if ( i == storage.end() ) {
+    std::stringstream ss1;
+    ss1 << field;
+    throw unknown_option(ss1.str());
+  }
+
+  std::copy( (*i)->pos.begin(), (*i)->pos.end(), bi );
 }
 
 #endif // __OPTS_H__
