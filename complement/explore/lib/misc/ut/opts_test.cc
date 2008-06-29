@@ -1,8 +1,11 @@
-// -*- C++ -*- Time-stamp: <08/05/21 12:20:14 yeti>
+// -*- C++ -*- Time-stamp: <08/06/28 10:25:10 ptr>
 
 /*
  * Copyright (c) 2008
  * Petr Ovtchenkov
+ *
+ * Copyright (c) 2008
+ * Dmitry Osmakov
  *
  * Licensed under the Academic Free License Version 3.0
  *
@@ -705,8 +708,11 @@ int EXAM_IMPL(opts_test::help)
     const char* argv[] = { "name" , "--help" };
     int argc = sizeof( argv ) / sizeof(argv[0]);
 
-    Opts opts("what utility do","author","copyright");
+    Opts opts;
 
+    opts.description( "what utility do" );
+    opts.author( "author" );
+    opts.copyright( "copyright" );
 
     opts.addflag('h',"help","print this help message");
     opts.addflag("flag","some program flag");
