@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/28 10:26:23 ptr>
+// -*- C++ -*- Time-stamp: <08/06/29 13:52:41 ptr>
 
 /*
  * Copyright (c) 2008
@@ -23,29 +23,33 @@
 #include <exception>
 #include <stdexcept>
 
-#define all(c) (c).begin() , (c).end()
-
-class option
+class option_base
 {
   public:
 
-    option( const char* _description, char _short_var, const char* _long_var ) :
+    option_base( const char* _description, char _short_var, const char* _long_var ) :
         shortname( _short_var ),
         longname( _long_var ),
-        desc( _description )
+        desc( _description ),
+        has_arg( false )
       { }
 
-    option( const char* _description, char _short_var ) :
+    option_base( const char* _description, char _short_var ) :
         shortname( _short_var ),
         longname(),
-        desc( _description )
+        desc( _description ),
+        has_arg( false )
       { }
 
-    option( const char* _description, const char* _long_var ) :
+    option_base( const char* _description, const char* _long_var ) :
         shortname( 0 ),
         longname( _long_var ),
-        desc( _description )
+        desc( _description ),
+        has_arg( false )
       { }
+
+    option_base& operator []( const std::string& d )
+      { default_v = d; has_arg = true; }
 
     bool operator ==( const std::string& _longname ) const
       { return longname == _longname; }
@@ -66,14 +70,14 @@ class option
 
     bool has_arg;
 
-    friend std::ostream& operator <<( std::ostream& t, const option& opt );
+    friend std::ostream& operator <<( std::ostream& t, const option_base& opt );
     friend class Opts;
 };
 
 class Opts
 {
   private:
-    typedef std::vector< option > options_container_type;
+    typedef std::vector< option_base > options_container_type;
     options_container_type storage;  
 
   public:
@@ -83,6 +87,9 @@ class Opts
 
     void description( const char* text )
       { _brief = text; }
+
+    void usage( const char* text )
+      { _usage = text; }
 
     void author( const char* text )
       { _author = text; }
@@ -167,6 +174,7 @@ class Opts
 
     std::string pname;
     std::string _brief;
+    std::string _usage;
     std::string _author;
     std::string _copyright;
 
@@ -183,8 +191,7 @@ int Opts::add(char _shortname,T _default_value,const std::string& _longname,cons
   addflag(_shortname,_longname,_desc);
   std::stringstream ss;
   ss << _default_value;
-  storage[storage.size() - 1].default_v = ss.str();
-  storage[storage.size() - 1].has_arg = true;
+  storage[storage.size() - 1][ss.str()];
   return storage[storage.size() - 1].token;
 }
 
@@ -194,134 +201,112 @@ int Opts::add(const std::string& _longname,T _default_value,const std::string& _
   addflag(_longname,_desc);
   std::stringstream ss;
   ss << _default_value;
-  storage[storage.size() - 1].default_v = ss.str();
-  storage[storage.size() - 1].has_arg = true;
+  storage[storage.size() - 1][ss.str()];
   return storage[storage.size() - 1].token;
 }
 
 template <class T>
 bool Opts::is_set(T field) const
 {
-  options_container_type::const_iterator i = find(all(storage),field);
+  options_container_type::const_iterator i = std::find( storage.begin(), storage.end(), field );
   return ( (i == storage.end()) ? false : !i->pos.empty());
 }
 
 template <class T>
 int Opts::get_cnt(T field) const
 {
-  options_container_type::const_iterator i = find(all(storage),field);
+  options_container_type::const_iterator i = std::find( storage.begin(), storage.end(), field );
   return ( (i == storage.end()) ? 0 : i->pos.size());
 }
 
 template <class V>
 std::string Opts::get( V field )
 {
-  options_container_type::const_iterator i = find(all(storage),field);
-  std::string res;
+  options_container_type::const_iterator i = std::find( storage.begin(), storage.end(), field );
 
-  if (i != storage.end())
-  {
-    if ( !i->has_arg )
-    {
-      throw std::logic_error("using Opts::get for option without arguments");
-    }
-
-    res = i->args.empty() ? i->default_v : i->args[0];
-  }
-  else
-  {  
+  if ( i == storage.end() ) {
     std::stringstream ss1;
     ss1 << field;
-    throw unknown_option( ss1.str() );
+    throw unknown_option( ss1.str() );    
   }
 
-  return res;
+  if ( !i->has_arg ) {
+    throw std::logic_error("using Opts::get for option without arguments");
+  }
+
+  return i->args.empty() ? i->default_v : i->args[0];
 }
 
 template < class T , class V >
 T Opts::get( V field )
 {
-  options_container_type::const_iterator i = find(all(storage),field);
-  T res;
+  options_container_type::const_iterator i = std::find(storage.begin(), storage.end() ,field);
 
-  if (i != storage.end())
-  {
-    if ( !i->has_arg )
-    {
-      throw std::logic_error("using Opts::get for option without arguments");
-    }
-
-    std::stringstream ss(i->args.empty() ? i->default_v : i->args[0]);
-    ss >> res;
-
-    if (ss.fail())
-    {
-      std::stringstream ss1;
-      ss1 << field;
-      throw arg_typemismatch(ss1.str(),i->args.empty() ? i->default_v : i->args[0]);
-    }
-  }
-  else
-  {  
+  if ( i == storage.end() ) {
     std::stringstream ss1;
     ss1 << field;
     throw unknown_option( ss1.str() );
+  }
+
+  if ( !i->has_arg ) {
+    throw std::logic_error("using Opts::get for option without arguments");
+  }
+
+  T res;
+  std::stringstream ss(i->args.empty() ? i->default_v : i->args[0]);
+  ss >> res;
+
+  if ( ss.fail() ) {
+    std::stringstream ss1;
+    ss1 << field;
+    throw arg_typemismatch(ss1.str(),i->args.empty() ? i->default_v : i->args[0]);
   }
 
   return res;
 }
 
-
 template < class V>
 std::string Opts::get_default( V field )
 {
-  options_container_type::const_iterator i = find(all(storage),field);
-  std::string res;
+  options_container_type::const_iterator i = std::find( storage.begin(), storage.end(), field );
 
-  if (i != storage.end())
-  {
-    if (!i->has_arg)
-      throw std::logic_error("using Opts::get for option without arguments");
-    
-    res = i->default_v;
-  }
-  else
-  {
+  if ( i == storage.end() ) {
     std::stringstream ss1;
     ss1 << field;
     throw unknown_option( ss1.str() );
   }
 
-  return res;
+  if ( !i->has_arg ) {
+    throw std::logic_error("using Opts::get for option without arguments");
+  }
+    
+  return i->default_v;
 }
 
 template <class T , class V>
 T Opts::get_default( V field )
 {
-  options_container_type::const_iterator i = find(all(storage),field);
-  T res;
+  options_container_type::const_iterator i = std::find( storage.begin(), storage.end(), field );
 
-  if (i != storage.end())
-  {
-    if (!i->has_arg)
-      throw std::logic_error("using Opts::get for option without arguments");
-    
-    std::stringstream ss(i->default_v);
-    ss >> res;
-
-    if (ss.fail())
-    {
-      std::stringstream ss1;
-      ss1 << field;
-      throw arg_typemismatch(ss1.str(),i->default_v);
-    }  
-  }
-  else
-  {
+  if ( i == storage.end() ) {
     std::stringstream ss1;
     ss1 << field;
     throw unknown_option( ss1.str() );
   }
+
+  if ( !i->has_arg ) {
+    throw std::logic_error("using Opts::get for option without arguments");
+  }
+    
+  T res;
+  std::stringstream ss(i->default_v);
+  ss >> res;
+
+  if ( ss.fail() ) {
+    std::stringstream ss1;
+    ss1 << field;
+    throw arg_typemismatch(ss1.str(),i->default_v);
+  }  
 
   return res;
 }
@@ -329,51 +314,44 @@ T Opts::get_default( V field )
 template <class V , class BackInsertIterator>
 void Opts::getemall( V field , BackInsertIterator bi)
 {
-  options_container_type::const_iterator i = find(all(storage),field);
-  if (i != storage.end())
-  {
-    if (!i->has_arg)
-      throw std::logic_error("using Opts::getemall for option without arguments");
-    
-    if (!i->args.empty())
-    {
-      for (int j = 0;j < i->args.size();++j)
-      {
-        std::stringstream ss(i->args[j]);
-        ss >> *bi++;
+  options_container_type::const_iterator i = std::find( storage.begin(), storage.end(), field );
 
-        if (ss.fail())
-        {
-          std::stringstream ss1;
-          ss1 << field;
-          throw arg_typemismatch(ss1.str(),i->args[j]);
-        }
-      }
-    }
-  }
-  else
-  {
+  if ( i == storage.end() ) {
     std::stringstream ss1;
     ss1 << field;
     throw unknown_option(ss1.str());
+  }
+
+  if ( !i->has_arg ) {
+    throw std::logic_error("using Opts::getemall for option without arguments");
+  }
+    
+  if ( !i->args.empty() ) {
+    for ( int j = 0; j < i->args.size(); ++j) {
+      std::stringstream ss(i->args[j]);
+      ss >> *bi++;
+
+      if ( ss.fail() ) {
+        std::stringstream ss1;
+        ss1 << field;
+        throw arg_typemismatch(ss1.str(),i->args[j]);
+      }
+    }
   }
 }
 
 template <class V , class BackInsertIterator>
 void Opts::get_pos( V field , BackInsertIterator bi)
 {
-  options_container_type::const_iterator i = find(all(storage),field);
+  options_container_type::const_iterator i = std::find( storage.begin(), storage.end(), field );
 
-  if (i != storage.end())
-  {
-     copy(all(i->pos),bi);
-  }
-  else
-  {
+  if ( i == storage.end() ) {
     std::stringstream ss1;
     ss1 << field;
     throw unknown_option(ss1.str());
   }
+
+  std::copy( i->pos.begin(), i->pos.end(), bi );
 }
 
 #endif // __OPTS_H__
