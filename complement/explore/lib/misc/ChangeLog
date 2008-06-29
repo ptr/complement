@@ -1,3 +1,11 @@
+2008-06-30  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* opts.h, opts.cc: revision of options framework;
+	insert object with type and type check into option;
+	default value passed via [] operator;
+	
+	* libmisc: version 1.10.0.
+
 2008-06-16  Petr Ovtchenkov  <yeti@yandex-team.ru>
 
 	* opts.cc, opts.h: options parser, by Dmitry Osmakov.

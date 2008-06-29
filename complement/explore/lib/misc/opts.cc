@@ -1,10 +1,10 @@
-// -*- C++ -*- Time-stamp: <08/06/29 13:05:13 ptr>
+// -*- C++ -*- Time-stamp: <08/06/29 22:38:24 ptr>
 
 /*
  * Copyright (c) 2008
  * Dmitry Osmakov
  *
- * Copyright (c) 2008
+ * Copyright (c) 1997-1998, 2001, 2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -21,20 +21,104 @@
 
 using namespace std;
 
-ostream& operator <<( ostream& out, const option_base& opt )
+int option_base::_count = 0;
+
+std::ostream& option<string>::_describe( std::ostream& out ) const
 {
-  if ( opt.shortname != 0 ) {
-    out << '-' << opt.shortname << (opt.has_arg ? " <val>" : "" );
-    if ( !opt.longname.empty() ) {
+  if ( option_base::shortname != 0 ) {
+    out << '-' << option_base::shortname << " <string>";
+    if ( !option_base::longname.empty() ) {
       out << ", ";
     }
   }
-
-  if ( !opt.longname.empty() ) {
-    out << "--" << opt.longname << (opt.has_arg ? "=<val>" : "" );
+        
+  if ( !option_base::longname.empty() ) {
+    out << "--" << option_base::longname << "=<string>";
   }
 
-  return out << (opt.has_arg ? (string(" [") + opt.default_v + "]\t") : "\t" ) << opt.desc;
+  if ( option_base::has_arg ) {
+    out << " [" << args.front() << "]\t";
+  } else {
+    out << '\t';
+  }
+
+  return out << option_base::desc;
+}
+
+std::ostream& option<char*>::_describe( std::ostream& out ) const
+{
+  if ( option_base::shortname != 0 ) {
+    out << '-' << option_base::shortname << " <string>";
+    if ( !option_base::longname.empty() ) {
+      out << ", ";
+    }
+  }
+        
+  if ( !option_base::longname.empty() ) {
+    out << "--" << option_base::longname << "=<string>";
+  }
+
+  if ( option_base::has_arg ) {
+    out << " [" << args.front() << "]\t";
+  } else {
+    out << '\t';
+  }
+
+  return out << option_base::desc;
+}
+
+bool Opts::is_set( char field ) const
+{
+  options_container_type::const_iterator i = 
+    std::find_if( storage.begin(), storage.end(),
+                  std::bind2nd( detail::deref_equal<option_base*,char>(), field ) );
+
+  return ( (i == storage.end()) ? false : !(*i)->pos.empty());
+}
+
+bool Opts::is_set( const std::string& field ) const
+{
+  options_container_type::const_iterator i = 
+    std::find_if( storage.begin(), storage.end(),
+                  std::bind2nd( detail::deref_equal<option_base*,std::string>(), field ) );
+
+  return ( (i == storage.end()) ? false : !(*i)->pos.empty());
+}
+
+bool Opts::is_set( int field ) const
+{
+  options_container_type::const_iterator i = 
+    std::find_if( storage.begin(), storage.end(),
+                  std::bind2nd( detail::deref_equal<option_base*,int>(), field ) );
+
+  return ( (i == storage.end()) ? false : !(*i)->pos.empty());
+}
+
+int Opts::get_cnt( char field ) const
+{
+  options_container_type::const_iterator i = 
+    std::find_if( storage.begin(), storage.end(),
+                  std::bind2nd( detail::deref_equal<option_base*,char>(), field ) );
+
+  return ( (i == storage.end()) ? 0 : (*i)->pos.size());
+}
+
+int Opts::get_cnt( const std::string& field ) const
+{
+  options_container_type::const_iterator i = 
+    std::find_if( storage.begin(), storage.end(),
+                  std::bind2nd( detail::deref_equal<option_base*,std::string>(), field ) );
+
+  return ( (i == storage.end()) ? 0 : (*i)->pos.size());
+}
+
+int Opts::get_cnt( int field ) const
+{
+  options_container_type::const_iterator i = 
+    std::find_if( storage.begin(), storage.end(),
+                  std::bind2nd( detail::deref_equal<option_base*,int>(), field ) );
+
+  return ( (i == storage.end()) ? 0 : (*i)->pos.size());
 }
 
 string Opts::get_pname() const { return pname; }
@@ -71,37 +155,38 @@ bool Opts::is_flag_group( const string& s )
 }
 
 // this function assumes that is_opt_name(s) = true;
-Opts::options_container_type::iterator Opts::get_opt_index(string s)
+Opts::options_container_type::const_iterator Opts::get_opt_index( const string& s)
 {
   assert(is_opt_name(s));
-  if (s.size() == 2 && isalnum(s[1]) ) // is short name
-  {  
-    options_container_type::iterator i;
-    for (i = storage.begin();i != storage.end();++i)
-      if (i->shortname == s[1])
+  if (s.size() == 2 && isalnum(s[1]) ) { // is short name
+    options_container_type::const_iterator i = storage.begin();
+    for ( ; i != storage.end(); ++i ) {
+      if ( (*i)->shortname == s[1]) {
         break;
+      }
+    }
     return i;
   }
   
-  if (s.size() > 2 && s[1] == '-')
-  {
-    options_container_type::iterator i;
-    s = s.substr(2);
+  if (s.size() > 2 && s[1] == '-') {
+    options_container_type::const_iterator i;
+    string tmp = s.substr(2);
 
     // exact match
-    for (i = storage.begin();i != storage.end();++i)
-      if (i->longname == s)
+    for ( i = storage.begin(); i != storage.end(); ++i ) {
+      if ( (*i)->longname == tmp ) {
         return i;
+      }
+    }
 
-    vector< options_container_type::iterator > matches;
-    for (i = storage.begin();i != storage.end();++i)
-      if (is_substr(s,i->longname))
+    vector< options_container_type::const_iterator > matches;
+    for ( i = storage.begin();i != storage.end();++i ) {
+      if ( is_substr( tmp, (*i)->longname ) ) {
         matches.push_back(i);
+      }
+    }
 
-    if (matches.size() == 1)
-      return matches[0];
-    else
-      return storage.end();
+    return matches.size() == 1 ? matches[0] : storage.end();
   }
     
   return storage.end();
@@ -129,30 +214,10 @@ void Opts::help( ostream& out )
     out << "\nOptions:\n\n";
 
     for ( options_container_type::const_iterator i = storage.begin(); i != storage.end(); ++i) {
-      out << *i << "\n";
+      (*i)->_describe( out ) << '\n';
     }
   }
   out << endl;
-}
-
-int Opts::addflag( char _shortname, const string& _longname, const string& _desc )
-{
-  option_base opt( _desc.c_str(), _shortname, _longname.c_str() );
-
-  opt.has_arg = false;
-  opt.token = ++free_token;
-  storage.push_back(opt);
-  return opt.token;
-}
-
-int Opts::addflag( const string& _longname, const string& _desc )
-{
-  option_base opt( _desc.c_str(), _longname.c_str() );
-
-  opt.has_arg = false;
-  opt.token = ++free_token;
-  storage.push_back(opt);
-  return opt.token;
 }
 
 void Opts::parse( int& ac, const char** av )
@@ -168,41 +233,41 @@ void Opts::parse( int& ac, const char** av )
       string opt = av[i];
       string arg;
       
-      int k = opt.find( "=" );
+      string::size_type k = opt.find( "=" );
 
       if ( k != string::npos ) {
         arg = opt.substr( k + 1 );
         opt = opt.substr( 0, k );
       }
 
-      options_container_type::iterator p = get_opt_index(opt);
+      options_container_type::const_iterator p = get_opt_index(opt);
       
       if ( p == storage.end() ) {
         throw unknown_option(opt);
       }
 
-      p->pos.push_back(++q);
-      if ( p->has_arg ) {
+      if ( (*p)->has_arg ) {
         if ( !arg.empty() ) {
-          p->args.push_back(arg);
+          (*p)->read(arg);
         } else {
           if ( (i + 1) >= ac ) {
             throw missing_arg(opt);
           }
-          p->args.push_back(av[++i]);
+          (*p)->read( av[++i] );
         }
       } else if ( !arg.empty() ) { //unexpected arg (not exactly mismatch)
         throw arg_typemismatch(opt,arg);
       }
+      (*p)->pos.push_back(++q);
     } else if ( is_flag_group(av[i]) ) {
       string optgroup = av[i];
       for ( int j = 1; j < optgroup.size(); j++ ) {
-        options_container_type::iterator p = get_opt_index(string("-") + optgroup[j]);
+        options_container_type::const_iterator p = get_opt_index(string("-") + optgroup[j]);
         if ( p == storage.end() ) {
           throw unknown_option( "-" + string(1,optgroup[j]) );
         }
-        p->pos.push_back(++q);
-        if ( p->has_arg ) {
+        (*p)->pos.push_back(++q);
+        if ( (*p)->has_arg ) {
           throw missing_arg( "-" + string(1,optgroup[j]) );
         }
       }

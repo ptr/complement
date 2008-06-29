@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/09/01 09:10:26 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 01:27:58 ptr>
 
 /*
- * Copyright (c) 2007
+ * Copyright (c) 2007, 2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -14,15 +14,8 @@
 
 using namespace std;
 
-int main( int argc,const char** argv)
+int main( int argc, const char** argv )
 {
-  // exam::test_suite t( "exam self test" );
-  // t.add( exam_self_test, "exam self test suite" );
-  //
-  // return t.girdle();
-
-  // return exam_self_test(0);
-  
   exam::test_suite t( "exam self test" );
   exam_basic_test exam_basic;
 
@@ -40,11 +33,14 @@ int main( int argc,const char** argv)
 
   Opts opts;
 
-  opts.addflag( 'h', "help", "print this help message" );
-  opts.addflag( 'l', "list", "list all test cases" );
-  opts.add( 'r', 0, "run", "run tests by number" );
-  opts.addflag( 'v', "verbose", "print status of tests within test suite" );
-  opts.addflag( 't', "trace", "trace checks" );
+  opts.description( "test suite for 'exam' framework" );
+  opts.usage( "[options]" );
+
+  opts << option<bool>( "print this help message", 'h', "help" )
+       << option<bool>( "list all test cases", 'l', "list" )
+       << option<string>( "run tests by number", 'r', "run" )["0"]
+       << option<bool>( "print status of tests within test suite", 'v', "verbose" )
+       << option<bool>(  "trace checks", 't', "trace" );
 
   try {
     opts.parse( argc, argv );
@@ -73,7 +69,7 @@ int main( int argc,const char** argv)
   }
 
   if ( opts.is_set( 'r' ) ) {
-    stringstream ss( opts.get( 'r' ) );
+    stringstream ss( opts.get<string>( 'r' ) );
     int n;
     while ( ss >> n ) {
       t.single( n );
@@ -84,4 +80,3 @@ int main( int argc,const char** argv)
 
   return t.girdle();
 }
-
