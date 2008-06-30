@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/29 22:16:12 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 10:00:22 ptr>
 
 /*
  * Copyright (c) 2008
@@ -109,6 +109,9 @@ class deref_equal :
     bool operator()(const P& __x, const V& __y) const
       { return *__x == __y; }
 };
+
+inline void option_base_destroyer( option_base* p )
+{ delete p; }
 
 } // namespace detail
 
@@ -360,6 +363,9 @@ class Opts
   public:
     Opts()
       { }
+
+    ~Opts()
+      { std::for_each( storage.begin(), storage.end(), detail::option_base_destroyer ); }
 
     void description( const char* text )
       { _brief = text; }

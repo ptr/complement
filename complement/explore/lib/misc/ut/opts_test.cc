@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 01:10:34 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 10:08:01 ptr>
 
 /*
  * Copyright (c) 2008
@@ -294,25 +294,62 @@ int EXAM_IMPL(opts_test::option_position)
 
 int EXAM_IMPL(opts_test::defaults)
 {
-  const char* argv[] = { "name" };
-  int argc = sizeof( argv ) / sizeof(argv[0]);
+  {
+    const char* argv[] = { "name" };
+    int argc = sizeof( argv ) / sizeof(argv[0]);
 
-  Opts opts;
+    Opts opts;
 
-  opts << option<int>( "listen tcp port", 'p', "port" )[0];
+    opts << option<int>( "listen tcp port", 'p', "port" )[0];
 
-  try {
-    opts.parse( argc, argv );
+    try {
+      opts.parse( argc, argv );
 
-
-    EXAM_CHECK( !opts.is_set( 'p' ) );
-    EXAM_CHECK( opts.get<int>( 'p' ) == 0 );
+      EXAM_CHECK( !opts.is_set( 'p' ) );
+      EXAM_CHECK( opts.get<int>( 'p' ) == 0 );
+    }
+    catch ( const Opts::unknown_option& e ) {
+    }
+    catch ( const Opts::arg_typemismatch& e ) {
+    }
+    catch ( ... ) {
+    }
   }
-  catch ( const Opts::unknown_option& e ) {
+
+  {
+    const char* argv[] = { "name", "-r", "10" };
+    int argc = sizeof( argv ) / sizeof(argv[0]);
+ 
+    Opts opts;
+
+    opts << option<string>( "run tests by number", 'r', "run" )["0"];
+
+    EXAM_CHECK( opts.is_set( 'r' ) );
+    EXAM_CHECK( opts.get<string>( 'r' ) == "10" );
   }
-  catch ( const Opts::arg_typemismatch& e ) {
+
+  {
+    const char* argv[] = { "name" };
+    int argc = sizeof( argv ) / sizeof(argv[0]);
+ 
+    Opts opts;
+
+    opts << option<string>( "run tests by number", 'r', "run" )["20"];
+
+    EXAM_CHECK( opts.is_set( 'r' ) == false ); // not set
+    EXAM_CHECK( opts.get<string>( 'r' ) == "20" ); // but has default value
   }
-  catch ( ... ) {
+
+  {
+    const char* argv[] = { "name", "-r", "10" };
+    int argc = sizeof( argv ) / sizeof(argv[0]);
+ 
+    Opts opts;
+
+    opts << option<string>( "run tests by number", 'r', "run" );
+
+    EXAM_CHECK( opts.is_set( 'r' ) );
+    EXAM_CHECK( opts.get<string>( 'r' ) == "10" );
   }
 
   return EXAM_RESULT;
