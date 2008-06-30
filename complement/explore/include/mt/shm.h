@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/26 10:37:01 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 13:48:26 yeti>
 
 /*
  * Copyright (c) 2006-2008
@@ -106,6 +106,7 @@ __SPEC_FULL(is_ipc_sharable,xmt::shared_recursive_mutex,true);
 
 __SPEC_FULL(is_ipc_sharable,std::tr2::condition_variable_ip,true);
 __SPEC_FULL(is_ipc_sharable,std::tr2::condition_variable_any_ip,true);
+__SPEC_FULL(is_ipc_sharable,std::tr2::condition_event_ip,true);
 __SPEC_FULL(is_ipc_sharable,std::tr2::semaphore_ip,true);
 __SPEC_FULL(is_ipc_sharable,std::tr2::barrier_ip,true);
 __SPEC_FULL(is_ipc_sharable,std::tr2::mutex_ip,true);
