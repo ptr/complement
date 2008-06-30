@@ -324,6 +324,8 @@ int EXAM_IMPL(opts_test::defaults)
 
     opts << option<string>( "run tests by number", 'r', "run" )["0"];
 
+    opts.parse( argc, argv );
+
     EXAM_CHECK( opts.is_set( 'r' ) );
     EXAM_CHECK( opts.get<string>( 'r' ) == "10" );
   }
@@ -336,6 +338,8 @@ int EXAM_IMPL(opts_test::defaults)
 
     opts << option<string>( "run tests by number", 'r', "run" )["20"];
 
+    opts.parse( argc, argv );
+
     EXAM_CHECK( opts.is_set( 'r' ) == false ); // not set
     EXAM_CHECK( opts.get<string>( 'r' ) == "20" ); // but has default value
   }
@@ -347,6 +351,8 @@ int EXAM_IMPL(opts_test::defaults)
     Opts opts;
 
     opts << option<string>( "run tests by number", 'r', "run" );
+
+    opts.parse( argc, argv );
 
     EXAM_CHECK( opts.is_set( 'r' ) );
     EXAM_CHECK( opts.get<string>( 'r' ) == "10" );

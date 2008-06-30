@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/12/02 18:50:20 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 12:40:05 yeti>
 
 /*
  * Copyright (c) 2007
@@ -50,6 +50,7 @@ class misc_test
     int EXAM_DECL(type_traits_is_trivial);
     int EXAM_DECL(type_traits_is_standard_layout);
     int EXAM_DECL(type_traits_is_pod);
+    int EXAM_DECL(type_traits_is_pod_compiler_supp);
     int EXAM_DECL(type_traits_is_empty);
 };
 
