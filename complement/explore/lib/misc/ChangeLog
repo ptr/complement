@@ -1,5 +1,9 @@
 2008-06-30  Petr Ovtchenkov  <ptr@island.corbina.net>
 
+	* opts.h: free allocated objects;
+
+	* libmisc: version 1.10.1.
+
 	* opts.h, opts.cc: revision of options framework;
 	insert object with type and type check into option;
 	default value passed via [] operator;
