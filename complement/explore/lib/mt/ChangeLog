@@ -1,3 +1,9 @@
+2008-06-30  Petr Ovtchenkov  <yeti@yandex-team.ru>
+
+	* shm.h: condition_event_ip may be used in shared memory;
+	
+	* libxmt: bump revision to 2.0.4.
+
 2008-06-06  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* uid.h, uid.cc: functions for generating UIDs;

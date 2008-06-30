@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/12/02 20:37:29 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 12:39:37 yeti>
 
 /*
  * Copyright (c) 2007
@@ -512,12 +512,22 @@ int EXAM_IMPL(misc_test::type_traits_is_pod)
 {
   EXAM_CHECK( std::tr1::is_pod<const int>::value == true );
   EXAM_CHECK( std::tr1::is_pod<int *>::value == true );
-  EXAM_CHECK( std::tr1::is_pod<NT>::value == true );
-  EXAM_CHECK( std::tr1::is_pod<POD>::value == true );
 
   EXAM_CHECK( std::tr1::is_pod<SL>::value == false );
   EXAM_CHECK( std::tr1::is_pod<N>::value == false );
   EXAM_CHECK( std::tr1::is_pod<T>::value == false );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(misc_test::type_traits_is_pod_compiler_supp)
+{
+#if defined(__GNUC__) && ((__GNUC__ < 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ < 3)) )
+  throw exam::skip_exception();
+#endif
+
+  EXAM_CHECK( std::tr1::is_pod<NT>::value == true );
+  EXAM_CHECK( std::tr1::is_pod<POD>::value == true );
 
   return EXAM_RESULT;
 }
