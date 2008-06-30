@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 01:37:00 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 12:42:03 yeti>
 
 /*
  * Copyright (c) 2007, 2008
@@ -52,7 +52,8 @@ int EXAM_IMPL(misc_test_suite)
   t.add( &misc_test::type_traits_is_volatile, test, "is_volatile", tc[0] );
   // t.add( &misc_test::type_traits_is_trivial, test, "is_trivial", tc[0] );
   // t.add( &misc_test::type_traits_is_standard_layout, test, "is_standard_layout", tc[0] );
-  t.add( &misc_test::type_traits_is_pod, test, "is_pod", tc[0] );
+  tc[4] = t.add( &misc_test::type_traits_is_pod, test, "is_pod", tc[0] );
+  t.add( &misc_test::type_traits_is_pod_compiler_supp, test, "is_pod_compiler_supp", tc[4] );
   t.add( &misc_test::type_traits_is_empty, test, "is_empty", tc[0] );
 
   return t.girdle();
