@@ -842,4 +842,3 @@ int EXAM_IMPL(opts_test::long_string)
 
   return EXAM_RESULT;
 }
-
