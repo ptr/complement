@@ -292,6 +292,7 @@ int EXAM_IMPL(opts_test::option_position)
   return EXAM_RESULT;
 }
 
+
 int EXAM_IMPL(opts_test::defaults)
 {
   {
@@ -324,8 +325,18 @@ int EXAM_IMPL(opts_test::defaults)
 
     opts << option<string>( "run tests by number", 'r', "run" )["0"];
 
-    EXAM_CHECK( opts.is_set( 'r' ) );
-    EXAM_CHECK( opts.get<string>( 'r' ) == "10" );
+    try {
+      opts.parse( argc , argv );
+  
+      EXAM_CHECK( opts.is_set( 'r' ) );
+      EXAM_CHECK( opts.get<string>( 'r' ) == "10" );
+    }
+    catch( const Opts::unknown_option& e) {
+    }
+    catch( const Opts::arg_typemismatch&e ) {
+    }
+    catch( ... ) {
+    }
   }
 
   {
@@ -338,18 +349,6 @@ int EXAM_IMPL(opts_test::defaults)
 
     EXAM_CHECK( opts.is_set( 'r' ) == false ); // not set
     EXAM_CHECK( opts.get<string>( 'r' ) == "20" ); // but has default value
-  }
-
-  {
-    const char* argv[] = { "name", "-r", "10" };
-    int argc = sizeof( argv ) / sizeof(argv[0]);
- 
-    Opts opts;
-
-    opts << option<string>( "run tests by number", 'r', "run" );
-
-    EXAM_CHECK( opts.is_set( 'r' ) );
-    EXAM_CHECK( opts.get<string>( 'r' ) == "10" );
   }
 
   return EXAM_RESULT;

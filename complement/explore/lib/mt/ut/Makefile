@@ -49,7 +49,7 @@ endif
 
 endif
 
-release-shared : LDLIBS = -lxmt -lexam -lboost_fs
+release-shared : LDLIBS = -lxmt -lexam -lboost_filesystem
 dbg-shared     : LDLIBS = -lxmtg -lexamg -lboost_fsg
 ifndef WITHOUT_STLPORT
 stldbg-shared  : LDLIBS = -lxmtstlg -lexamstlg -lboost_fsstlg
