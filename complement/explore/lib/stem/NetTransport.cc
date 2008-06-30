@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/27 01:28:00 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 18:07:37 yeti>
 
 /*
  *
@@ -264,10 +264,15 @@ bool NetTransport_base::push( const Event& _rs, const gaddr_type& dst, const gad
 
 __FIT_DECLSPEC
 NetTransport::NetTransport( std::sockstream& s ) :
-    NetTransport_base( "stem::NetTransport" )
+    NetTransport_base( "stem::NetTransport" ),
+    _handshake( false )
 {
   net = &s;
+}
 
+__FIT_DECLSPEC
+void NetTransport::_do_handshake()
+{
   try {
     Event ev;
     gaddr_type dst;
@@ -295,40 +300,46 @@ NetTransport::NetTransport( std::sockstream& s ) :
     } else {
       throw runtime_error( "net error or net handshake error" );
     }
+    _handshake = true;
   }
   catch ( runtime_error& err ) {
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " " << err.what()
-                         << " (" << s.rdbuf()->inet_addr() << ":" << s.rdbuf()->port()
+                         << " (" << net->rdbuf()->inet_addr() << ":" << net->rdbuf()->port()
                          << ")" << endl;
       }
     }
     catch ( ... ) {
     }
 
-    s.close();
+    net->close();
   }
   catch ( ... ) {
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " unknown exception"
-                         << " (" << s.rdbuf()->inet_addr() << ":" << s.rdbuf()->port()
+                         << " (" << net->rdbuf()->inet_addr() << ":" << net->rdbuf()->port()
                          << ")" << endl;
       }
     }
     catch ( ... ) {
     }
 
-    s.close();
+    net->close();
   }
 }
 
 __FIT_DECLSPEC
 void NetTransport::connect( sockstream& s )
 {
+  if ( !_handshake ) {
+    _do_handshake();
+    return;
+  }
+
   try {
     Event ev;
     gaddr_type dst;
@@ -339,7 +350,7 @@ void NetTransport::connect( sockstream& s )
       try {
         lock_guard<mutex> lk(manager()->_lock_tr);
         if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracenet) ) {
-          *manager()->_trs << "Pid/ppid: " << xmt::getpid() << "/" << xmt::getppid() << "\n";
+          *manager()->_trs << "Pid/ppid: " << std::tr2::getpid() << "/" << std::tr2::getppid() << "\n";
           manager()->dump( *manager()->_trs ) << endl;
         }
       }
@@ -354,7 +365,7 @@ void NetTransport::connect( sockstream& s )
           if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracefault)) ) {
             *manager()->_trs << __FILE__ << ":" << __LINE__
                              << " ("
-                             << xmt::getpid() << "/" << xmt::getppid() << ") "
+                             << std::tr2::getpid() << "/" << std::tr2::getppid() << ") "
                              << "Unknown destination\n";
             manager()->dump( *manager()->_trs ) << endl;
           }
@@ -511,7 +522,7 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
       try {
         lock_guard<mutex> lk(manager()->_lock_tr);
         if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracenet) ) {
-          *manager()->_trs << "Pid/ppid: " << xmt::getpid() << "/" << xmt::getppid() << "\n";
+          *manager()->_trs << "Pid/ppid: " << std::tr2::getpid() << "/" << std::tr2::getppid() << "\n";
           manager()->dump( *manager()->_trs ) << endl;
         }
       }
@@ -526,7 +537,7 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
           if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracefault)) ) {
             *manager()->_trs << __FILE__ << ":" << __LINE__
                              << " ("
-                             << xmt::getpid() << "/" << xmt::getppid() << ") "
+                             << std::tr2::getpid() << "/" << std::tr2::getppid() << ") "
                              << "Unknown destination\n";
             manager()->dump( *manager()->_trs ) << endl;
           }
@@ -578,7 +589,7 @@ void NetTransportMP::connect( sockstream& s )
         lock_guard<mutex> lk(manager()->_lock_tr);
         if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & E
 vManager::tracenet) ) {
-          *manager()->_trs << "Pid/ppid: " << xmt::getpid() << "/" << xmt::getppid() <<
+          *manager()->_trs << "Pid/ppid: " << std::tr2::getpid() << "/" << std::tr2::getppid() <<
 "\n";
           manager()->dump( *manager()->_trs ) << endl;
         }
@@ -594,7 +605,7 @@ vManager::tracenet) ) {
           if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracefault)) ) {
             *manager()->_trs << __FILE__ << ":" << __LINE__
                              << " ("
-                             << xmt::getpid() << "/" << xmt::getppid() << ") "
+                             << std::tr2::getpid() << "/" << std::tr2::getppid() << ") "
                              << "Unknown destination\n";
             manager()->dump( *manager()->_trs ) << endl;
           }

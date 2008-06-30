@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <08/06/12 15:25:10 ptr>
+# -*- Makefile -*- Time-stamp: <08/06/30 11:54:35 yeti>
 
 SRCROOT := ../../..
 
@@ -16,25 +16,26 @@ LIBMT_DIR = ${CoMT_DIR}/lib/mt
 LIBSOCK_DIR = ${CoMT_DIR}/lib/sockios
 LIBSTEM_DIR = ${CoMT_DIR}/lib/stem
 LIBEXAM_DIR = ${CoMT_DIR}/lib/exam
+LIBMISC_DIR = ${CoMT_DIR}/lib/misc
 
 ifeq ($(OSNAME),linux)
 
-release-shared:	LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR} -L${LIBEXAM_DIR}/${OUTPUT_DIR} -L${LIBSOCK_DIR}/${OUTPUT_DIR} -L${LIBSTEM_DIR}/${OUTPUT_DIR} -Wl,--rpath=./dl/${OUTPUT_DIR}:${LIBMT_DIR}/${OUTPUT_DIR}:${LIBEXAM_DIR}/${OUTPUT_DIR}:${LIBSOCK_DIR}/${OUTPUT_DIR}:${LIBSTEM_DIR}/${OUTPUT_DIR}:${STLPORT_LIB_DIR}
+release-shared:	LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR} -L${LIBEXAM_DIR}/${OUTPUT_DIR} -L${LIBSOCK_DIR}/${OUTPUT_DIR} -L${LIBSTEM_DIR}/${OUTPUT_DIR} -L${LIBMISC_DIR}/${OUTPUT_DIR} -Wl,--rpath=./dl/${OUTPUT_DIR}:${LIBMT_DIR}/${OUTPUT_DIR}:${LIBEXAM_DIR}/${OUTPUT_DIR}:${LIBSOCK_DIR}/${OUTPUT_DIR}:${LIBSTEM_DIR}/${OUTPUT_DIR}:${LIBMISC_DIR}/${OUTPUT_DIR}:${STLPORT_LIB_DIR}
+
+dbg-shared:     LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR_DBG} -L${LIBEXAM_DIR}/${OUTPUT_DIR_DBG} -L${LIBSOCK_DIR}/${OUTPUT_DIR_DBG} -L${LIBSTEM_DIR}/${OUTPUT_DIR_DBG} -L${LIBMISC_DIR}/${OUTPUT_DIR_DBG} -Wl,--rpath=./dl/${OUTPUT_DIR_DBG}:${LIBMT_DIR}/${OUTPUT_DIR_DBG}:${LIBEXAM_DIR}/${OUTPUT_DIR_DBG}:${LIBSOCK_DIR}/${OUTPUT_DIR_DBG}:${LIBSTEM_DIR}/${OUTPUT_DIR_DBG}:${LIBMISC_DIR}/${OUTPUT_DIR_DBG}:${STLPORT_LIB_DIR}
 
 ifndef WITHOUT_STLPORT
 
-stldbg-shared:  LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBEXAM_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSOCK_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSTEM_DIR}/${OUTPUT_DIR_STLDBG} -Wl,--rpath=./dl/${OUTPUT_DIR_STLDBG}:${LIBMT_DIR}/${OUTPUT_DIR_STLDBG}:${LIBEXAM_DIR}/${OUTPUT_DIR_STLDBG}:${LIBSOCK_DIR}/${OUTPUT_DIR_STLDBG}:${LIBSTEM_DIR}/${OUTPUT_DIR_STLDBG}:${STLPORT_LIB_DIR}
+stldbg-shared:  LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBEXAM_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSOCK_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSTEM_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBMISC_DIR}/${OUTPUT_DIR_STLDBG} -Wl,--rpath=./dl/${OUTPUT_DIR_STLDBG}:${LIBMT_DIR}/${OUTPUT_DIR_STLDBG}:${LIBEXAM_DIR}/${OUTPUT_DIR_STLDBG}:${LIBSOCK_DIR}/${OUTPUT_DIR_STLDBG}:${LIBSTEM_DIR}/${OUTPUT_DIR_STLDBG}:${LIBMISC_DIR}/${OUTPUT_DIR_STLDBG}:${STLPORT_LIB_DIR}
 
 endif
 
-dbg-shared:     LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR_DBG} -L${LIBEXAM_DIR}/${OUTPUT_DIR_DBG} -L${LIBSOCK_DIR}/${OUTPUT_DIR_DBG} -L${LIBSTEM_DIR}/${OUTPUT_DIR_DBG} -Wl,--rpath=./dl/${OUTPUT_DIR_DBG}:${LIBMT_DIR}/${OUTPUT_DIR_DBG}:${LIBEXAM_DIR}/${OUTPUT_DIR_DBG}:${LIBSOCK_DIR}/${OUTPUT_DIR_DBG}:${LIBSTEM_DIR}/${OUTPUT_DIR_DBG}:${STLPORT_LIB_DIR}
-
 endif
 
-release-shared : LDLIBS = -lxmt -lsockios -lstem -lexam -ldl
-dbg-shared     : LDLIBS = -lxmtg -lsockiosg -lstemg -lexamg -ldl
+release-shared : LDLIBS = -lxmt -lsockios -lstem -lexam -lmisc -ldl
+dbg-shared     : LDLIBS = -lxmtg -lsockiosg -lstemg -lexamg -lmiscg -ldl
 ifndef WITHOUT_STLPORT
-stldbg-shared  : LDLIBS = -lxmtstlg -lsockiosstlg -lstemstlg -lexamstlg -ldl
+stldbg-shared  : LDLIBS = -lxmtstlg -lsockiosstlg -lstemstlg -lexamstlg -lmiscstlg -ldl
 endif
 
 # dbg-shared:	DEFS += -DDEBUG

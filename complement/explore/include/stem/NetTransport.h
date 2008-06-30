@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/27 12:34:34 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 15:29:44 yeti>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006, 2008
@@ -81,6 +81,10 @@ class NetTransport :
 
     __FIT_DECLSPEC
     void connect( std::sockstream& );
+
+  private:
+    void _do_handshake();
+    bool _handshake;
 };
 
 class NetTransportMgr :

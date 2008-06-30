@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <07/07/20 00:03:52 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 19:07:02 yeti>
 
 /*
  *
- * Copyright (c) 2007
+ * Copyright (c) 2007, 2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -12,7 +12,8 @@
 #ifndef __Convert_h
 #define __Convert_h
 
-#include <mt/xmt.h>
+#include <mt/mutex>
+#include <mt/condition_variable>
 
 #include <stem/Event.h>
 #include <stem/EventHandler.h>
@@ -53,15 +54,19 @@ class Convert :
     void handler2( const stem::Event_base<mess>& );
     void handler3( const mess& );
 
-    void wait();
+    bool wait();
 
-    int v;
+    static int v;
 
     std::string m2;
     std::string m3;
 
   private:
-    xmt::condition cnd;
+    static bool v_nz_check()
+      { return v != 0; }
+
+    std::tr2::mutex mtx;
+    std::tr2::condition_variable cnd;
 
     DECLARE_RESPONSE_TABLE( Convert, stem::EventHandler );
 };

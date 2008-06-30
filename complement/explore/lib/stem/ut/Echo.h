@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/07/11 21:45:09 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 13:15:07 yeti>
 
 /*
- * Copyright (c) 2006, 2007
+ * Copyright (c) 2006-2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -12,7 +12,7 @@
 #define __Echo_h
 
 #include <string>
-#include <mt/xmt.h>
+#include <mt/condition_variable>
 #include <stem/EventHandler.h>
 // #include <stem/Names.h>
 // #include <list>
@@ -28,7 +28,7 @@ class StEMecho :
     void echo( const stem::Event& );
     void regme( const stem::Event& );
 
-    xmt::condition cnd;
+    std::tr2::condition_event cnd;
 
   private:
     DECLARE_RESPONSE_TABLE( StEMecho, stem::EventHandler );
@@ -45,12 +45,12 @@ class EchoClient :
 
     void handler1( const stem::Event& );
 
-    void wait();
+    bool wait();
 
     const std::string mess;
 
   private:
-    xmt::condition cnd;
+    std::tr2::condition_event cnd;
 
     DECLARE_RESPONSE_TABLE( EchoClient, stem::EventHandler );
 };
@@ -67,12 +67,12 @@ class PeerClient :
 
     void handler1( const stem::Event& );
 
-    void wait();    
+    bool wait();
 
     const std::string mess;
 
   private:
-    xmt::condition cnd;
+    std::tr2::condition_event cnd;
 
     DECLARE_RESPONSE_TABLE( PeerClient, stem::EventHandler );
 };
