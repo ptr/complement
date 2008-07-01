@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/01 14:59:56 yeti>
+// -*- C++ -*- Time-stamp: <08/07/01 15:28:50 yeti>
 
 /*
  *
@@ -476,7 +476,6 @@ class srv_reader
         char buf[64];
 
         while ( s.read( buf, 4 ).good() ) {
-          cerr << __FILE__ << ":" << __LINE__ << endl;
           continue;
         }
 
