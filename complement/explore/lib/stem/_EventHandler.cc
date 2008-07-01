@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/27 12:32:30 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 18:16:58 yeti>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006, 2008
@@ -19,7 +19,9 @@
 #include "stem/EventHandler.h"
 #include "stem/EvManager.h"
 #include "stem/Names.h"
-#include "mt/mutex"
+#include <mt/mutex>
+#include <mt/thread>
+#include <mt/uid.h>
 
 #include <unistd.h>
 
@@ -265,7 +267,7 @@ void EventHandler::TraceStack( ostream& out ) const
 __FIT_DECLSPEC
 gaddr_type EventHandler::self_glid() const
 {
-  return gaddr_type(xmt::hostid(), xmt::getpid(), _id );
+  return gaddr_type(xmt::hostid(), std::tr2::getpid(), _id );
 }
 
 } // namespace stem

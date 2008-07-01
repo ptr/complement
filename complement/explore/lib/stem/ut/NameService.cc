@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <06/11/29 10:50:21 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 18:47:39 yeti>
 
 /*
- * Copyright (c) 2006, 2007
+ * Copyright (c) 2006-2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -15,44 +15,43 @@
 #include <stem/EDSEv.h>
 #include "NameService.h"
 
+#include <mt/date_time>
+
 using namespace std;
 using namespace stem;
-using namespace xmt;
+using namespace std::tr2;
 
 Naming::Naming() :
     EventHandler()
 {
-  cnd.set( false );
 }
 
 Naming::Naming( stem::addr_type id ) :
     EventHandler( id )
 {
-  cnd.set( false );
 }
 
 Naming::~Naming()
 {
-  // cnd.wait();
 }
 
 void Naming::names_list( const nsrecords_type& nr )
 {
   copy( nr.container.begin(), nr.container.end(), back_insert_iterator<nsrecords_type::container_type>(lst) );
 
-  cnd.set(true);
+  cnd.notify_one();
 }
 
 void Naming::names_name( const nsrecords_type& nr )
 {
   copy( nr.container.begin(), nr.container.end(), back_insert_iterator<nsrecords_type::container_type>(lst) );
 
-  cnd.set(true);
+  cnd.notify_one();
 }
 
-void Naming::wait()
+bool Naming::wait()
 {
-  cnd.try_wait();
+  return cnd.timed_wait( std::tr2::milliseconds( 500 ) );
 }
 
 DEFINE_RESPONSE_TABLE( Naming )

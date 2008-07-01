@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <06/09/29 22:53:34 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 18:36:09 yeti>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2006, 2007
+ * Copyright (c) 2002, 2003, 2006-2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -12,19 +12,18 @@
 #include "../NodeDL.h"
 
 using namespace stem;
+using namespace std::tr2;
 
 NodeDL::NodeDL() :
     EventHandler(),
     v( 0 )
 {
-  cnd.set( false );
 }
 
 NodeDL::NodeDL( stem::addr_type id ) :
     EventHandler( id ),
     v( 0 )
 {
-  cnd.set( false );
 }
 
 NodeDL::~NodeDL()
@@ -33,13 +32,15 @@ NodeDL::~NodeDL()
 
 void NodeDL::handler1( const stem::Event& )
 {
+  lock_guard<mutex> lk( m );
   v = 1;
-  cnd.set(true);
+  cnd.notify_one();
 }
 
-void NodeDL::wait()
+bool NodeDL::wait()
 {
-  cnd.try_wait();
+  unique_lock<mutex> lk( m );
+  return cnd.timed_wait( lk, std::tr2::milliseconds( 500 ) );
 }
 
 DEFINE_RESPONSE_TABLE( NodeDL )
@@ -52,14 +53,12 @@ NewNodeDL::NewNodeDL() :
     EventHandler(),
     v( 0 )
 {
-  cnd.set( false );
 }
 
 NewNodeDL::NewNodeDL( stem::addr_type id ) :
     EventHandler( id ),
     v( 0 )
 {
-  cnd.set( false );
 }
 
 NewNodeDL::~NewNodeDL()
@@ -68,13 +67,15 @@ NewNodeDL::~NewNodeDL()
 
 void NewNodeDL::handler1( const stem::Event& )
 {
+  lock_guard<mutex> lk( m );
   v = 1;
-  cnd.set(true);
+  cnd.notify_one();
 }
 
-void NewNodeDL::wait()
+bool NewNodeDL::wait()
 {
-  cnd.try_wait();
+  unique_lock<mutex> lk( m );
+  return cnd.timed_wait( lk, std::tr2::milliseconds( 500 ) );
 }
 
 DEFINE_RESPONSE_TABLE( NewNodeDL )
@@ -86,9 +87,9 @@ void *create_NewNodeDL( unsigned a )
   return (void *)new NewNodeDL( a );
 }
 
-void wait_NewNodeDL( void *p )
+int wait_NewNodeDL( void *p )
 {
-  reinterpret_cast<NewNodeDL *>( p )->wait();
+  return reinterpret_cast<NewNodeDL *>( p )->wait() ? 1 : 0;
 }
 
 int v_NewNodeDL( void *p )

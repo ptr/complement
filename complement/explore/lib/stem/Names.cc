@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <06/12/04 18:43:56 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 18:11:16 yeti>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+ * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006, 2008
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -26,12 +26,9 @@
 #include <list>
 #include <iostream>
 
-#include <mt/xmt.h>
-
 namespace stem {
 
 using namespace std;
-using namespace xmt;
 
 __FIT_DECLSPEC Names::Names() :
     EventHandler()

@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <07/10/15 22:41:17 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 18:14:16 yeti>
 
 /*
  *
- * Copyright (c) 1995-1999, 2002, 2003, 2005-2007
+ * Copyright (c) 1995-1999, 2002, 2003, 2005-2008
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -29,7 +29,7 @@
 #include <misc/type_traits.h>
 #include <stem/EvPack.h>
 #include <mt/uid.h>
-#include <mt/xmt.h>
+#include <mt/thread>
 
 #ifdef STLPORT
 #  include <unordered_map>
@@ -85,7 +85,7 @@ struct gaddr_type :
 
     explicit gaddr_type( stem::addr_type _addr ) :
         hid( xmt::hostid() ),
-        pid( xmt::getpid() ),
+        pid( std::tr2::getpid() ),
         addr( _addr )
       { }
 

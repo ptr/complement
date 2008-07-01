@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/27 12:36:14 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 18:18:21 yeti>
 
 /*
  *
@@ -20,7 +20,7 @@
 #include "stem/EvManager.h"
 #include "stem/NetTransport.h"
 #include <iomanip>
-#include <mt/xmt.h>
+#include <mt/mutex>
 
 // #include <typeinfo>
 
@@ -114,7 +114,7 @@ addr_type EvManager::Subscribe( EventHandler *object, const std::string& info )
     lock_guard<mutex> lk( _lock_xheap );
     gaddr_type& gaddr = _ex_heap[id];
     gaddr.hid = xmt::hostid();
-    gaddr.pid = xmt::getpid();
+    gaddr.pid = std::tr2::getpid();
     gaddr.addr = id;
   }
   
@@ -147,7 +147,7 @@ addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
     lock_guard<mutex> lk( _lock_xheap );
     gaddr_type& gaddr = _ex_heap[id];
     gaddr.hid = xmt::hostid();
-    gaddr.pid = xmt::getpid();
+    gaddr.pid = std::tr2::getpid();
     gaddr.addr = id;
   }
 
@@ -198,7 +198,7 @@ addr_type EvManager::SubscribeRemote( const gaddr_type& addr,
                                       const std::string& info )
 {
   addr_type id;
-  if ( addr.hid == xmt::hostid() && addr.pid == xmt::getpid() ) { // local
+  if ( addr.hid == xmt::hostid() && addr.pid == std::tr2::getpid() ) { // local
     if ( addr.addr & extbit ) { // may be transit object
       lock_guard<mutex> lk( _lock_xheap );
       pair<uuid_tr_heap_type::const_iterator,uuid_tr_heap_type::const_iterator> range = _tr_heap.equal_range( addr );
@@ -286,7 +286,7 @@ bool EvManager::Unsubscribe( addr_type id )
 __FIT_DECLSPEC
 addr_type EvManager::reflect( const gaddr_type& addr ) const
 {
-  if ( addr.hid == xmt::hostid() && addr.pid == xmt::getpid() ) {
+  if ( addr.hid == xmt::hostid() && addr.pid == std::tr2::getpid() ) {
     // this host, this process
     if ( (addr.addr & extbit) == 0 ) { // looks like local object
       lock_guard<mutex> _x1( _lock_heap );
@@ -432,7 +432,7 @@ void EvManager::Send( const Event& e )
       if ( i == _ex_heap.end() ) { // destination not found
         ostringstream s;
         s << "external address unknown: " << hex << e.dest() << " from "
-          << e.src() << ", pid " << xmt::getpid() << dec;
+          << e.src() << ", pid " << std::tr2::getpid() << dec;
         throw invalid_argument( s.str() );
       }
 
@@ -450,7 +450,7 @@ void EvManager::Send( const Event& e )
       if ( j == _ex_heap.end() ) {
         gaddr_type& _gaddr_src = _ex_heap[e.src()];
         _gaddr_src.hid = xmt::hostid();
-        _gaddr_src.pid = xmt::getpid();
+        _gaddr_src.pid = std::tr2::getpid();
         _gaddr_src.addr = e.src(); // it may be as local as foreign; if e.src()
                                    // is foreign, the object is 'transit object'
         gaddr_src = _gaddr_src;

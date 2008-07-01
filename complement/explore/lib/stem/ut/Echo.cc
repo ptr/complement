@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/29 13:02:34 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 13:16:04 yeti>
 
 /*
  * Copyright (c) 2006, 2007
@@ -14,6 +14,7 @@
 #include <stem/EvManager.h>
 
 #include <exam/suite.h>
+#include <mt/date_time>
 
 using namespace stem;
 
@@ -45,7 +46,8 @@ void StEMecho::regme( const stem::Event& ev )
 {
   // cerr << "Echo\n";
   manager()->change_announce( ev.src(), ev.value() );
-  cnd.set( true );
+
+  cnd.notify_one();
 }
 
 DEFINE_RESPONSE_TABLE( StEMecho )
@@ -57,21 +59,18 @@ EchoClient::EchoClient() :
     EventHandler(),
     mess( "echo string" )
 {
-  cnd.set( false );
 }
 
 EchoClient::EchoClient( stem::addr_type id ) :
     EventHandler( id ),
     mess( "echo string" )
 {
-  cnd.set( false );
 }
 
 EchoClient::EchoClient( stem::addr_type id, const char *info ) :
     EventHandler( id, info ),
     mess( "echo string" )
 {
-  cnd.set( false );
 }
 
 EchoClient::~EchoClient()
@@ -82,12 +81,13 @@ EchoClient::~EchoClient()
 void EchoClient::handler1( const stem::Event& ev )
 {
   EXAM_CHECK_ASYNC( ev.value() == mess );
-  cnd.set(true);
+
+  cnd.notify_one();
 }
 
-void EchoClient::wait()
+bool EchoClient::wait()
 {
-  cnd.try_wait();
+  return cnd.timed_wait( std::tr2::milliseconds( 500 ) );
 }
 
 DEFINE_RESPONSE_TABLE( EchoClient )
@@ -98,28 +98,24 @@ PeerClient::PeerClient() :
     EventHandler(),
     mess( "peer client" )
 {
-  cnd.set( false );
 }
 
 PeerClient::PeerClient( stem::addr_type id ) :
     EventHandler( id ),
     mess( "peer client" )
 {
-  cnd.set( false );
 }
 
 PeerClient::PeerClient( const char *info ) :
     EventHandler( info ),
     mess( info )
 {
-  cnd.set( false );
 }
 
 PeerClient::PeerClient( stem::addr_type id, const char *info ) :
     EventHandler( id, info ),
     mess( info )
 {
-  cnd.set( false );
 }
 
 PeerClient::~PeerClient()
@@ -131,12 +127,12 @@ void PeerClient::handler1( const stem::Event& ev )
 {
   EXAM_CHECK_ASYNC( ev.value() == mess );
 
-  cnd.set(true);
+  cnd.notify_one();
 }
 
-void PeerClient::wait()
+bool PeerClient::wait()
 {
-  cnd.try_wait();
+  return cnd.timed_wait( std::tr2::milliseconds( 500 ) );
 }
 
 DEFINE_RESPONSE_TABLE( PeerClient )

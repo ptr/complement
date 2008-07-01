@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/27 13:14:16 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 19:19:39 yeti>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2008
@@ -40,6 +40,8 @@ using namespace __gnu_cxx;
 #include <sys/wait.h>
 
 #include <signal.h>
+
+#include <misc/opts.h>
 
 using namespace std;
 using namespace std::tr2;
@@ -161,7 +163,7 @@ int EXAM_IMPL(stem_test::dl)
   EXAM_REQUIRE( lh != NULL );
   void *(*f)(unsigned);
   void (*g)(void *);
-  void (*w)(void *);
+  int (*w)(void *);
   int (*v)(void *);
 
   *(void **)(&f) = dlsym( lh, "create_NewNodeDL" );
@@ -178,7 +180,7 @@ int EXAM_IMPL(stem_test::dl)
   ev.dest( 2002 );
   node->Send( ev );
 
-  w( reinterpret_cast<void *>(node) );
+  EXAM_CHECK( w( reinterpret_cast<void *>(node) ) == 1 );
   EXAM_CHECK( v(reinterpret_cast<void *>(node)) == 1 );
 
   g( reinterpret_cast<void *>(node) );
@@ -289,7 +291,7 @@ int EXAM_IMPL(stem_test::echo)
 
     node.Send( ev );
 
-    node.wait();
+    EXAM_CHECK( node.wait() );
     
     mgr.close();
     mgr.join();
@@ -305,8 +307,8 @@ int EXAM_IMPL(stem_test::echo)
 
 const char fname[] = "/tmp/stem_test.shm";
 xmt::shm_alloc<0> seg;
-xmt::allocator_shm<xmt::__condition<true>,0> shm_cnd;
-xmt::allocator_shm<xmt::__barrier<true>,0>   shm_b;
+xmt::allocator_shm<condition_event_ip,0> shm_cnd;
+xmt::allocator_shm<barrier_ip,0>   shm_b;
 
 stem_test::stem_test()
 {
@@ -314,7 +316,16 @@ stem_test::stem_test()
     seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
   }
   catch ( const xmt::shm_bad_alloc& err ) {
-    EXAM_ERROR_ASYNC( err.what() );
+    try {
+      seg.allocate( fname, 4*4096, 0, 0600 );
+    }
+    catch ( const xmt::shm_bad_alloc& err2 ) {
+      string s = err.what();
+      s += "; ";
+      s += err2.what();
+      EXAM_ERROR_ASYNC( s.c_str() );
+    }
+    // EXAM_ERROR_ASYNC( err.what() );
   }
 }
 
@@ -326,18 +337,17 @@ stem_test::~stem_test()
 
 int EXAM_IMPL(stem_test::echo_net)
 {
-  xmt::__condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
-  fcnd.set( false );
+  condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
 
   try {
-    xmt::fork();
+    std::tr2::this_thread::fork();
 
     int eflag = 0;
 
     try {
       stem::NetTransportMgr mgr;
 
-      fcnd.try_wait();
+      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
 
       stem::addr_type zero = mgr.open( "localhost", 6995 );
 
@@ -353,7 +363,7 @@ int EXAM_IMPL(stem_test::echo_net)
 
       node.Send( ev );
 
-      node.wait();
+      EXAM_CHECK_ASYNC_F( node.wait(), eflag );
     
       mgr.close();
       mgr.join();
@@ -363,13 +373,13 @@ int EXAM_IMPL(stem_test::echo_net)
 
     exit( eflag );
   }
-  catch ( xmt::fork_in_parent& child ) {
+  catch ( std::tr2::fork_in_parent& child ) {
     try {
       connect_processor<stem::NetTransport> srv( 6995 );
 
       StEMecho echo( 0, "echo service"); // <= zero!
 
-      fcnd.set( true );
+      fcnd.notify_one();
 
       int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
@@ -386,7 +396,7 @@ int EXAM_IMPL(stem_test::echo_net)
     }
   }
 
-  (&fcnd)->~__condition<true>();
+  (&fcnd)->~condition_event_ip();
   shm_cnd.deallocate( &fcnd, 1 );
 
   // cerr << "Fine\n";
@@ -399,13 +409,11 @@ int EXAM_IMPL(stem_test::echo_net)
 int EXAM_IMPL(stem_test::net_echo)
 {
   try {
-    xmt::__barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__barrier<true>();
-    xmt::__condition<true>& c = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
-
-    c.set( false );
+    barrier_ip& b = *new ( shm_b.allocate( 1 ) ) barrier_ip();
+    condition_event_ip& c = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
 
     try {
-      xmt::fork();
+      std::tr2::this_thread::fork();
 
       int eflag = 0;
       // server part
@@ -417,7 +425,7 @@ int EXAM_IMPL(stem_test::net_echo)
         // echo.manager()->settrs( &std::cerr );
 
         EXAM_CHECK_ASYNC_F( srv.good(), eflag );
-        c.set( true ); // ok, server listen
+        c.notify_one(); // ok, server listen
 
         b.wait(); // server may go away
 
@@ -427,14 +435,14 @@ int EXAM_IMPL(stem_test::net_echo)
 
       exit( eflag );
     }
-    catch ( xmt::fork_in_parent& child ) {
+    catch ( std::tr2::fork_in_parent& child ) {
       // client part
 
       stem::NetTransportMgr mgr;
       // mgr.manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
       // mgr.manager()->settrs( &std::cerr );
 
-      c.try_wait(); // wait server start
+      EXAM_CHECK( c.timed_wait( std::tr2::milliseconds( 800 ) ) ); // wait server start
 
       stem::addr_type zero = mgr.open( "localhost", 6995 );
 
@@ -448,7 +456,7 @@ int EXAM_IMPL(stem_test::net_echo)
       ev.value() = node.mess;
       node.Send( ev );
 
-      node.wait();
+      EXAM_CHECK( node.wait() );
 
       mgr.close();
       mgr.join();
@@ -464,9 +472,9 @@ int EXAM_IMPL(stem_test::net_echo)
       }
     }
 
-    (&c)->~__condition<true>();
+    (&c)->~condition_event_ip();
     shm_cnd.deallocate( &c, 1 );
-    (&b)->~__barrier<true>();
+    (&b)->~barrier_ip();
     shm_b.deallocate( &b, 1 );
   }
   catch (  xmt::shm_bad_alloc& err ) {
@@ -504,18 +512,13 @@ int EXAM_IMPL(stem_test::peer)
 
   pid_t fpid;
 
-  xmt::__condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
-  fcnd.set( false );
-
-  xmt::__condition<true>& pcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
-  pcnd.set( false );
-
-  xmt::__condition<true>& scnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
-  scnd.set( false );
+  condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+  condition_event_ip& pcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+  condition_event_ip& scnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
 
   try {
     // Client 1
-    xmt::fork();
+    std::tr2::this_thread::fork();
 #if 0
     struct sigaction action;
     struct sigaction old_action;
@@ -539,7 +542,7 @@ int EXAM_IMPL(stem_test::peer)
       PeerClient c1( "c1 local" );  // c1 client
       Naming nm;
 
-      fcnd.try_wait();
+      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
 
       stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
       // It done like it should on client side
@@ -568,7 +571,7 @@ int EXAM_IMPL(stem_test::peer)
       evname.dest( c1.manager()->reflect( ga ) );
       evname.value() = "c2@here";
 
-      pcnd.try_wait();
+      EXAM_CHECK_ASYNC_F( pcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
 
       Naming::nsrecords_type::const_iterator i;
 
@@ -602,7 +605,7 @@ int EXAM_IMPL(stem_test::peer)
         c1.Send( pe );
       }
 
-      scnd.try_wait();
+      EXAM_CHECK_ASYNC_F( scnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
 
       mgr.close();
       mgr.join();
@@ -613,13 +616,13 @@ int EXAM_IMPL(stem_test::peer)
 
     exit( eflag );
   }
-  catch ( xmt::fork_in_parent& child ) {
+  catch ( std::tr2::fork_in_parent& child ) {
     fpid = child.pid();
   }
 
   try {
     // Client 2
-    xmt::fork();
+    std::tr2::this_thread::fork();
 
 #if 0
     struct sigaction action;
@@ -643,7 +646,7 @@ int EXAM_IMPL(stem_test::peer)
                                    //                                          ^
       PeerClient c2( "c2 local" ); // <<--- name the same as mess expected ... |
 
-      fcnd.try_wait();
+      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
       stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
       // It done like it should on client side
 
@@ -657,11 +660,11 @@ int EXAM_IMPL(stem_test::peer)
       ev.value() = "c2@here";
       c2.Send( ev ); // 'register' c2 client on 'echo' server
 
-      pcnd.set( true );
+      pcnd.notify_one();
 
       c2.wait();
       // cerr << "Fine!" << endl;
-      scnd.set( true );
+      scnd.notify_one();
 
       mgr.close();
       mgr.join();
@@ -672,11 +675,11 @@ int EXAM_IMPL(stem_test::peer)
 
     exit( eflag );
   }
-  catch ( xmt::fork_in_parent& child ) {
+  catch ( std::tr2::fork_in_parent& child ) {
     connect_processor<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
     StEMecho echo( 0, "echo service"); // <= zero! 'echo' server, default ('zero' address)
 
-    fcnd.set( true, true );
+    fcnd.notify_all();
 
     int stat = -1;
     EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
@@ -697,11 +700,11 @@ int EXAM_IMPL(stem_test::peer)
     srv.wait();
   }
 
-  (&fcnd)->~__condition<true>();
+  (&fcnd)->~condition_event_ip();
   shm_cnd.deallocate( &fcnd, 1 );
-  (&pcnd)->~__condition<true>();
+  (&pcnd)->~condition_event_ip();
   shm_cnd.deallocate( &pcnd, 1 );
-  (&scnd)->~__condition<true>();
+  (&scnd)->~condition_event_ip();
   shm_cnd.deallocate( &scnd, 1 );
 
   return EXAM_RESULT;
@@ -709,17 +712,16 @@ int EXAM_IMPL(stem_test::peer)
 
 int EXAM_IMPL(stem_test::boring_manager)
 {
-  xmt::__condition<true>& fcnd = *new ( shm_cnd.allocate( 1 ) ) xmt::__condition<true>();
-  fcnd.set( false );
+  condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
 
   try {
     // Client
-    xmt::fork();
+    std::tr2::this_thread::fork();
 
     int eflag = 0;
 
     try {
-      fcnd.try_wait();
+      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
 
       for ( int i = 0; i < 10; ++i ) {
         const int n = 10;
@@ -745,11 +747,11 @@ int EXAM_IMPL(stem_test::boring_manager)
     }
     exit( eflag );
   }
-  catch ( xmt::fork_in_parent& child ) {
+  catch ( std::tr2::fork_in_parent& child ) {
     connect_processor<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
     StEMecho echo( 0, "echo service"); // <= zero! 'echo' server, default ('zero' address)
 
-    fcnd.set( true, true );
+    fcnd.notify_all();
 
     int stat = -1;
     EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
@@ -763,7 +765,7 @@ int EXAM_IMPL(stem_test::boring_manager)
     srv.wait();
   }
 
-  (&fcnd)->~__condition<true>();
+  (&fcnd)->~condition_event_ip();
   shm_cnd.deallocate( &fcnd, 1 );
 
   return EXAM_RESULT;
@@ -784,9 +786,10 @@ int EXAM_IMPL(stem_test::convert)
 
   conv.Send( ev );
 
-  conv.wait();
-
+  EXAM_CHECK( conv.wait() );
   EXAM_CHECK( conv.v == -1 );
+
+  conv.v = 0;
 
   stem::Event_base<mess> ev1( CONV_EV1 );
 
@@ -795,9 +798,10 @@ int EXAM_IMPL(stem_test::convert)
 
   conv.Send( ev1 );
 
-  conv.wait();
-
+  EXAM_CHECK( conv.wait() );
   EXAM_CHECK( conv.v == 1 );
+
+  conv.v = 0;
 
   stem::Event_base<mess> ev2( CONV_EV2 );
 
@@ -806,10 +810,12 @@ int EXAM_IMPL(stem_test::convert)
 
   conv.Send( ev2 );
 
-  conv.wait();
+  EXAM_CHECK( conv.wait() );
 
   EXAM_CHECK( conv.v == 2 );
   EXAM_CHECK( conv.m2 == "hello" );
+
+  conv.v = 0;
 
   stem::Event_base<mess> ev3( CONV_EV3 );
 
@@ -819,21 +825,17 @@ int EXAM_IMPL(stem_test::convert)
 
   conv.Send( ev3 );
 
-  conv.wait();
+  EXAM_CHECK( conv.wait() );
 
   EXAM_CHECK( conv.v == 3 );
   EXAM_CHECK( conv.m3 == ", wold!" );
 
+  conv.v = 0;
+
   return EXAM_RESULT;
 }
 
-// -----------------
-
-// -----------------
-
-int EXAM_DECL(stem_test_suite);
-
-int EXAM_IMPL(stem_test_suite)
+int main( int argc, const char** argv )
 {
   exam::test_suite::test_case_type tc[4];
 
@@ -858,10 +860,52 @@ int EXAM_IMPL(stem_test_suite)
 
   t.add( &stem_test::convert, test, "convert", tc[0] );
 
-  return t.girdle();
-}
+  Opts opts;
 
-int main( int, char ** )
-{
-  return stem_test_suite(0);
+  opts.description( "test suite for 'StEM' framework" );
+  opts.usage( "[options]" );
+
+  opts << option<bool>( "print this help message", 'h', "help" )
+       << option<bool>( "list all test cases", 'l', "list" )
+       << option<string>( "run tests by number", 'r', "run" )["0"]
+       << option<bool>( "print status of tests within test suite", 'v', "verbose" )
+       << option<bool>(  "trace checks", 't', "trace" );
+
+  try {
+    opts.parse( argc, argv );
+  }
+  catch (...) {
+    opts.help( cerr );
+    return 1;
+  }
+
+  if ( opts.is_set( 'h' ) ) {
+    opts.help( cerr );
+    return 0;
+  }
+
+  if ( opts.is_set( 'l' ) ) {
+    t.print_graph( cerr );
+    return 0;
+  }
+
+  if ( opts.is_set( 'v' ) ) {
+    t.flags( t.flags() | exam::base_logger::verbose );
+  }
+
+  if ( opts.is_set( 't' ) ) {
+    t.flags( t.flags() | exam::base_logger::trace );
+  }
+
+  if ( opts.is_set( 'r' ) ) {
+    stringstream ss( opts.get<string>( 'r' ) );
+    int n;
+    while ( ss >> n ) {
+      t.single( n );
+    }
+
+    return 0;
+  }
+
+  return t.girdle();
 }

@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <06/09/29 23:23:57 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 18:41:59 yeti>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2006, 2007
+ * Copyright (c) 2002, 2003, 2006-2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -11,47 +11,47 @@
 
 #include "Node.h"
 
+#include <mt/date_time>
+
 using namespace std;
 using namespace stem;
-using namespace xmt;
+using namespace std::tr2;
 
 Node::Node() :
     EventHandler(),
     v( 0 )
 {
-  cnd.set( false );
 }
 
 Node::Node( stem::addr_type id ) :
     EventHandler( id ),
     v( 0 )
 {
-  cnd.set( false );
 }
 
 Node::Node( stem::addr_type id, const char *info ) :
     EventHandler( id, info ),
     v( 0 )
 {
-  cnd.set( false );
 }
 
 Node::~Node()
 {
-  // cnd.wait();
 }
 
 void Node::handler1( const stem::Event& )
 {
+  lock_guard<mutex> lk( m );
   // std::cerr << "I am here 1\n";
   v = 1;
-  cnd.set(true);
+  cnd.notify_one();
   // std::cerr << "I am here 2\n";
 }
 
-void Node::wait()
+bool Node::wait()
 {
-  cnd.try_wait();
+  unique_lock<mutex> lk( m );
+  return cnd.timed_wait( lk, std::tr2::milliseconds( 500 ) );
 }
 
 DEFINE_RESPONSE_TABLE( Node )
@@ -64,32 +64,31 @@ NewNode::NewNode() :
     EventHandler(),
     v( 0 )
 {
-  cnd.set( false );
 }
 
 NewNode::NewNode( stem::addr_type id ) :
     EventHandler( id ),
     v( 0 )
 {
-  cnd.set( false );
 }
 
 NewNode::~NewNode()
 {
-  // cnd.wait();
 }
 
 void NewNode::handler1( const stem::Event& )
 {
+  lock_guard<mutex> lk( m );
   // std::cerr << "I am here 1\n";
   v = 1;
-  cnd.set(true);
+  cnd.notify_one();
   // std::cerr << "I am here 2\n";
 }
 
-void NewNode::wait()
+bool NewNode::wait()
 {
-  cnd.try_wait();
+  unique_lock<mutex> lk( m );
+  return cnd.timed_wait( lk, std::tr2::milliseconds( 500 ) );
 }
 
 DEFINE_RESPONSE_TABLE( NewNode )

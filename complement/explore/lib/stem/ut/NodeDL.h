@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <07/07/11 21:47:58 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 18:35:02 yeti>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2006, 2007
+ * Copyright (c) 2002, 2003, 2006-2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -12,7 +12,8 @@
 #ifndef __NodeDL_h
 #define __NodeDL_h
 
-#include <mt/xmt.h>
+#include <mt/mutex>
+#include <mt/condition_variable>
 #include <stem/EventHandler.h>
 
 class NodeDL :
@@ -25,12 +26,13 @@ class NodeDL :
 
     void handler1( const stem::Event& );
 
-    void wait();
+    bool wait();
 
     int v;
 
   private:
-    xmt::condition cnd;
+    std::tr2::mutex m;
+    std::tr2::condition_variable cnd;
 
     DECLARE_RESPONSE_TABLE( NodeDL, stem::EventHandler );
 };
@@ -46,12 +48,13 @@ class NewNodeDL :
 
     void handler1( const stem::Event& );
 
-    void wait();
+    bool wait();
 
     int v;
 
   private:
-    xmt::condition cnd;
+    std::tr2::mutex m;
+    std::tr2::condition_variable cnd;
 
     DECLARE_RESPONSE_TABLE( NewNodeDL, stem::EventHandler );
 };
@@ -59,7 +62,7 @@ class NewNodeDL :
 #define NODE_EV2 0x901
 
 extern "C" void *create_NewNodeDL( unsigned );
-extern "C" void wait_NewNodeDL( void * );
+extern "C" int wait_NewNodeDL( void * );
 extern "C" int v_NewNodeDL( void * );
 extern "C" void destroy_NewNodeDL( void * );
 
