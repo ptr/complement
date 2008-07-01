@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/26 09:10:47 ptr>
+// -*- C++ -*- Time-stamp: <08/07/01 10:16:39 ptr>
 
 /*
  * Copyright (c) 2008
@@ -374,7 +374,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
             }
             break;
           default:
-            std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+            std::cerr << __FILE__ << ":" << __LINE__ << " " << errno << std::endl;
             break;
         }
         break;
