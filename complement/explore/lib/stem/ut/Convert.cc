@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <07/07/20 00:05:52 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 19:08:00 yeti>
 
 /*
  *
- * Copyright (c) 2007
+ * Copyright (c) 2007, 2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -10,6 +10,9 @@
  */
 
 #include "Convert.h"
+#include <mt/date_time>
+
+using namespace std::tr2;
 
 void mess::pack( std::ostream& s ) const
 {
@@ -35,65 +38,64 @@ void mess::net_unpack( std::istream& s )
   __net_unpack( s, message );
 }
 
+int Convert::v = 0;
+
+
 Convert::Convert() :
-    EventHandler(),
-    v( 0 )
+    EventHandler()
 {
-  cnd.set( false );
 }
 
 Convert::Convert( stem::addr_type id ) :
-    EventHandler( id ),
-    v( 0 )
+    EventHandler( id )
 {
-  cnd.set( false );
 }
 
 Convert::Convert( stem::addr_type id, const char *info ) :
-    EventHandler( id, info ),
-    v( 0 )
+    EventHandler( id, info )
 {
-  cnd.set( false );
 }
 
 Convert::~Convert()
 {
-  // cnd.wait();
 }
 
 void Convert::handler0()
 {
+  lock_guard<mutex> lk( mtx );
   v = -1;
-  cnd.set(true);
+  cnd.notify_one();
 }
 
 void Convert::handler1( const stem::Event& )
 {
+  lock_guard<mutex> lk( mtx );
   v = 1;
-  cnd.set(true);
+  cnd.notify_one();
 }
 
 void Convert::handler2( const stem::Event_base<mess>& ev )
 {
+  lock_guard<mutex> lk( mtx );
   v = ev.value().super_id;
   m2 = ev.value().message;
 
-  cnd.set(true);
+  cnd.notify_one();
 }
 
 void Convert::handler3( const mess& m )
 {
+  lock_guard<mutex> lk( mtx );
   v = m.super_id;
   m3 = m.message;
 
-  cnd.set(true);
+  cnd.notify_one();
 }
 
-void Convert::wait()
+bool Convert::wait()
 {
-  cnd.try_wait();
-
-  cnd.set( false );
+  unique_lock<mutex> lk( mtx );
+  return cnd.timed_wait( lk, std::tr2::milliseconds( 500 ), v_nz_check );
 }
 
 DEFINE_RESPONSE_TABLE( Convert )

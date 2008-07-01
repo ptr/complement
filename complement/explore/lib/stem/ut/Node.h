@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <07/07/11 21:47:25 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 18:54:21 yeti>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2006, 2007
+ * Copyright (c) 2002, 2003, 2006-2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -12,7 +12,8 @@
 #ifndef __Node_h
 #define __Node_h
 
-#include <mt/xmt.h>
+#include <mt/mutex>
+#include <mt/condition_variable>
 #include <stem/EventHandler.h>
 
 class Node :
@@ -26,12 +27,13 @@ class Node :
 
     void handler1( const stem::Event& );
 
-    void wait();
+    bool wait();
 
     int v;
 
   private:
-    xmt::condition cnd;
+    std::tr2::mutex m;
+    std::tr2::condition_variable cnd;
 
     DECLARE_RESPONSE_TABLE( Node, stem::EventHandler );
 };
@@ -47,12 +49,13 @@ class NewNode :
 
     void handler1( const stem::Event& );
 
-    void wait();
+    bool wait();
 
     int v;
 
   private:
-    xmt::condition cnd;
+    std::tr2::mutex m;
+    std::tr2::condition_variable cnd;
 
     DECLARE_RESPONSE_TABLE( NewNode, stem::EventHandler );
 };

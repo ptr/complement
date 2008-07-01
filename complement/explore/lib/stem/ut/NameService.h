@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/07/11 21:47:37 ptr>
+// -*- C++ -*- Time-stamp: <08/06/30 18:45:50 yeti>
 
 /*
- * Copyright (c) 2006, 2007
+ * Copyright (c) 2006-2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -11,7 +11,7 @@
 #ifndef __NameService_h
 #define __NameService_h
 
-#include <mt/xmt.h>
+#include <mt/condition_variable>
 #include <stem/EventHandler.h>
 #include <stem/Names.h>
 #include <list>
@@ -29,14 +29,14 @@ class Naming :
     void names_list( const nsrecords_type& );
     void names_name( const nsrecords_type& );
 
-    void wait();
+    bool wait();
     void reset()
-      { cnd.set( false ); }
+      { cnd.reset(); }
 
     nsrecords_type::container_type lst;
 
   private:
-    xmt::condition cnd;
+    std::tr2::condition_event cnd;
 
     DECLARE_RESPONSE_TABLE( Naming, stem::EventHandler );
 };
