@@ -25,6 +25,7 @@ class mt_test_wg21
     int EXAM_DECL(barrier);
     int EXAM_DECL(semaphore);
     int EXAM_DECL(fork);
+    int EXAM_DECL(uid);
 
   private:
     // static xmt::Thread::ret_t thread_entry_call( void * );

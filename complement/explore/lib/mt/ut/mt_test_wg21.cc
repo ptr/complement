@@ -23,6 +23,10 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
+#include <mt/uid.h>
+
+#include <string>
+
 int EXAM_IMPL(mt_test_wg21::date_time)
 {
   // using namespace std::tr2;
@@ -310,6 +314,21 @@ int EXAM_IMPL(mt_test_wg21::fork)
 
   shmdt( buf );
   shmctl( id, IPC_RMID, &ds );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(mt_test_wg21::uid)
+{
+  std::string u1 = xmt::uid_str();
+
+  EXAM_CHECK( !u1.empty() );
+
+  std::string u2 = xmt::uid_str();
+
+  EXAM_CHECK( !u2.empty() );
+
+  EXAM_CHECK( u1 != u2 );
 
   return EXAM_RESULT;
 }
