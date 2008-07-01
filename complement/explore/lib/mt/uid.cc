@@ -9,7 +9,7 @@
  */
 
 #include <mt/uid.h>
-#include <mt/xmt.h>
+#include <mt/mutex>
 #include <fstream>
 #include <sstream>
 #include <iomanip>
@@ -21,6 +21,7 @@ namespace detail {
 
 using namespace std;
 using namespace xmt;
+using namespace std::tr2;
 
 class __uid_init
 {
@@ -34,21 +35,13 @@ class __uid_init
 uuid_type __uid_init::_host_id;
 char __uid_init::_host_id_str[48];
 
-class __uuid_init
-{
-  public:
-    __uuid_init();
-
-    static ifstream _uuid;
-};
-
-ifstream __uuid_init::_uuid;
+// ifstream _uuid;
 
 __uid_init::__uid_init()
 {
   static mutex _lk;
 
-  scoped_lock lock( _lk );
+  lock_guard<mutex> lock( _lk );
   ifstream f( "/proc/sys/kernel/random/boot_id" );
 
   string tmp;
@@ -93,20 +86,10 @@ __uid_init::__uid_init()
     >> reinterpret_cast<unsigned&>(_host_id.u.b[15]);
 }
 
-__uuid_init::__uuid_init()
-{
-  static mutex _lk;
-
-  scoped_lock lock( _lk );
-
-  if ( !_uuid.is_open() ) {
-    _uuid.open( "/proc/sys/kernel/random/uuid" );
-  }
-}
-
 } // namespace detail
 
 using namespace std;
+using namespace std::tr2;
 
 const char *hostid_str()
 {
@@ -122,15 +105,20 @@ const xmt::uuid_type& hostid()
 
 std::string uid_str()
 {
-  static detail::__uuid_init _uid;
-
   static mutex _lk;
 
-  scoped_lock lock( _lk );
+  lock_guard<mutex> lock( _lk );
+
+  // if ( !detail::_uuid.is_open() ) {
+  //   detail::_uuid.open( "/proc/sys/kernel/random/uuid" );
+  // }
+
+  ifstream _uuid( "/proc/sys/kernel/random/uuid" );
 
   std::string tmp;
 
-  getline( _uid._uuid, tmp );
+  // getline( detail::_uuid, tmp ).clear(); // clear eof bit
+  getline( _uuid, tmp );
 
   return tmp;
 }

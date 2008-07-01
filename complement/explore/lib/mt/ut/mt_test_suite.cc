@@ -75,6 +75,7 @@ int EXAM_IMPL(mt_test_suite)
   t.add( &mt_test_wg21::barrier, test_wg21, "mt_test_wg21::barrier" );
   t.add( &mt_test_wg21::semaphore, test_wg21, "mt_test_wg21::semaphore" );
   t.add( &mt_test_wg21::fork, test_wg21, "mt_test_wg21::fork" );
+  t.add( &mt_test_wg21::uid, test_wg21, "mt_test_wg21::uid" );
 
   return t.girdle();
 };
