@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 18:07:37 yeti>
+// -*- C++ -*- Time-stamp: <08/07/01 16:05:40 yeti>
 
 /*
  *
@@ -104,8 +104,6 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
   const int bsz = 2+(4+2+1)*2+4;
   uint32_t buf[bsz];
   using namespace std;
-
-  MT_IO_REENTRANT( *net )
 
   if ( !net->read( (char *)buf, sizeof(uint32_t) ).good() ) {
     return false;
