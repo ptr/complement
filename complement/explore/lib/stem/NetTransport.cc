@@ -105,8 +105,6 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
   uint32_t buf[bsz];
   using namespace std;
 
-  MT_IO_REENTRANT( *net )
-
   if ( !net->read( (char *)buf, sizeof(uint32_t) ).good() ) {
     return false;
   }

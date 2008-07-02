@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/11 21:55:26 yeti>
+// -*- C++ -*- Time-stamp: <08/07/01 12:57:40 yeti>
 
 /*
  *
@@ -9,7 +9,6 @@
  *
  */
 
-#include "sockios_test_suite.h"
 #include "sockios_test.h"
 #include "sockios2_test.h"
 
@@ -17,7 +16,7 @@
 
 #include <iostream>
 #include <list>
-#include <mt/xmt.h>
+#include <misc/opts.h>
 
 // #include <sockios/sockstream>
 // #include <sockios/sockmgr.h>
@@ -31,13 +30,11 @@ using namespace std;
 int EXAM_DECL(test_more_bytes_in_socket);
 int EXAM_DECL(test_more_bytes_in_socket2);
 
-int EXAM_IMPL(sockios_test_suite)
+int main( int argc, const char** argv )
 {
-  exam::test_suite::test_case_type tc[3];
+  exam::test_suite::test_case_type tc[4];
 
   exam::test_suite t( "libsockios test" );
-
-  t.flags( t.flags() | exam::base_logger::trace | exam::base_logger::verbose );
 
 #if 0
 
@@ -83,9 +80,58 @@ int EXAM_IMPL(sockios_test_suite)
   t.add( &sockios2_test::read0, test2, "sockios2_test::read0",
     t.add( &sockios2_test::srv_sigpipe, test2, "sockios2_test::srv_sigpipe",
       t.add( &sockios2_test::fork, test2, "sockios2_test::fork",
-        t.add( &sockios2_test::processor_core, test2, "sockios2_test::processor_core",
+        tc[3] = t.add( &sockios2_test::processor_core, test2, "sockios2_test::processor_core",
           t.add( &sockios2_test::connect_disconnect, test2, "sockios2_test::connect_disconnect",
                  t.add( &sockios2_test::srv_core, test2, "sockios2_test::srv_core" ) ) ) ) ) );
+
+  t.add( &sockios2_test::disconnect, test2, "sockios2_test::disconnect", tc[3] );
+
+  Opts opts;
+
+  opts.description( "test suite for 'sockios' framework" );
+  opts.usage( "[options]" );
+
+  opts << option<bool>( "print this help message", 'h', "help" )
+       << option<bool>( "list all test cases", 'l', "list" )
+       << option<string>( "run tests by number", 'r', "run" )["0"]
+       << option<bool>( "print status of tests within test suite", 'v', "verbose" )
+       << option<bool>(  "trace checks", 't', "trace" );
+
+  try {
+    opts.parse( argc, argv );
+  }
+  catch (...) {
+    opts.help( cerr );
+    return 1;
+  }
+
+  if ( opts.is_set( 'h' ) ) {
+    opts.help( cerr );
+    return 0;
+  }
+
+  if ( opts.is_set( 'l' ) ) {
+    t.print_graph( cerr );
+    return 0;
+  }
+
+  if ( opts.is_set( 'v' ) ) {
+    t.flags( t.flags() | exam::base_logger::verbose );
+  }
+
+  if ( opts.is_set( 't' ) ) {
+    t.flags( t.flags() | exam::base_logger::trace );
+  }
+
+  if ( opts.is_set( 'r' ) ) {
+    stringstream ss( opts.get<string>( 'r' ) );
+    int n;
+    while ( ss >> n ) {
+      t.single( n );
+    }
+
+    return 0;
+  }
 
   return t.girdle();
 }

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/26 21:29:52 ptr>
+// -*- C++ -*- Time-stamp: <08/07/01 15:28:50 yeti>
 
 /*
  *
@@ -460,6 +460,96 @@ int EXAM_IMPL(sockios2_test::processor_core)
     //   EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
     // }
   }
+
+  return EXAM_RESULT;
+}
+
+class srv_reader
+{
+  public:
+    srv_reader( sockstream& )
+      { }
+    ~srv_reader()
+      { }
+    void connect( sockstream& s )
+      {
+        char buf[64];
+
+        while ( s.read( buf, 4 ).good() ) {
+          continue;
+        }
+
+        cnd.notify_one();
+      }
+
+    static std::tr2::condition_event cnd;
+};
+
+std::tr2::condition_event srv_reader::cnd;
+
+int EXAM_IMPL(sockios2_test::disconnect)
+{
+  const char fname[] = "/tmp/sockios2_test.shm";
+  xmt::shm_alloc<0> seg;
+
+  try {
+    seg.allocate( fname, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+    try {
+      seg.allocate( fname, 4096, 0, 0660 );
+    }
+    catch ( xmt::shm_bad_alloc& err2 ) {
+      EXAM_ERROR( err.what() );
+      return EXAM_RESULT;
+    }
+  }
+
+  xmt::allocator_shm<barrier_ip,0> shm;
+  barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+
+  try {
+    this_thread::fork();
+
+    connect_processor<srv_reader> prss( 2008 );
+
+    EXAM_CHECK_ASYNC( prss.good() );
+
+    b.wait();
+
+    if ( srv_reader::cnd.timed_wait( milliseconds( 800 ) ) ) {
+      exit( 0 );
+    }
+    // srv_reader::cnd.wait();
+
+    exit( 1 );
+  }
+  catch ( std::tr2::fork_in_parent& child ) {
+    b.wait();
+
+    sockstream s( "localhost", 2008 );
+
+    char buf[] = "1234";
+
+    EXAM_CHECK( s.write( buf, 4 ).flush().good() );
+
+    s.rdbuf()->shutdown( sock_base::stop_in | sock_base::stop_out );
+
+    // s.close();
+
+    int stat = -1;
+    EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+    if ( WIFEXITED(stat) ) {
+      EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+    } else {
+      EXAM_ERROR( "child fail" );
+    }
+  }
+
+  shm.deallocate( &b );
+  seg.deallocate();
+  unlink( fname );
 
   return EXAM_RESULT;
 }
