@@ -334,6 +334,18 @@ int EXAM_IMPL(uid_test_wg21::uidstr)
 
   EXAM_CHECK( u1 != u2 );
 
+  for ( int i = 0; i < 100; ++i ) {
+    std::string s = xmt::uid_str();
+
+    EXAM_REQUIRE( s.length() == 36 );
+    EXAM_REQUIRE( s[8] == '-' );
+    EXAM_REQUIRE( s[13] == '-' );
+    EXAM_REQUIRE( s[18] == '-' );
+    EXAM_REQUIRE( s[23] == '-' );
+
+    EXAM_REQUIRE( s.find_first_not_of( "0123456789abcdef-" ) == std::string::npos );
+  }
+
   return EXAM_RESULT;
 }
 
