@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/02 09:27:26 ptr>
+// -*- C++ -*- Time-stamp: <08/07/02 12:59:27 yeti>
 
 /*
  * Copyright (c) 2006-2008
@@ -33,7 +33,9 @@ class mt_test_wg21
 class uid_test_wg21
 {
   public:
+    int EXAM_DECL(uidstr);
     int EXAM_DECL(uid);
+    int EXAM_DECL(hostidstr);
     int EXAM_DECL(hostid);
 };
 
