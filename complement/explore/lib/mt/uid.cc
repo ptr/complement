@@ -15,6 +15,9 @@
 #include <cstring>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdexcept>
+
+#include <iostream>
 
 namespace xmt {
 
@@ -24,67 +27,55 @@ using namespace std;
 using namespace xmt;
 using namespace std::tr2;
 
-class __uid_init
+struct __uid_init
 {
-  public:
     __uid_init();
 
     static uuid_type _host_id;
     char _host_id_str[48]; // 37 really
+    bool fail;
 };
 
 uuid_type __uid_init::_host_id;
 
-struct __uuid_init
-{
-  public:
-    __uuid_init();
-    ~__uuid_init();
-
-    int fd;
-};
-
-__uid_init::__uid_init()
+__uid_init::__uid_init() :
+     fail( false )
 {
   int fd = ::open( "/proc/sys/kernel/random/boot_id", O_RDONLY );
 
-  ::read( fd, _host_id_str, 36 );
-  _host_id_str[36] = '\0';
-  ::close( fd );
+  if ( (fd < 0) || (::read( fd, _host_id_str, 36 ) != 36 )) {
+    if ( fd >= 0 ) {
+      ::close( fd );
+    }
+    fail = true;
+  } else {
+    _host_id_str[36] = '\0';
+    ::close( fd );
 
-  stringstream s;
-  s << _host_id_str[0]  << _host_id_str[1]  << ' '  
-    << _host_id_str[2]  << _host_id_str[3]  << ' '
-    << _host_id_str[4]  << _host_id_str[5]  << ' '
-    << _host_id_str[6]  << _host_id_str[7]  << ' ' // -
-    << _host_id_str[9]  << _host_id_str[10] << ' '
-    << _host_id_str[11] << _host_id_str[12] << ' ' // -
-    << _host_id_str[14] << _host_id_str[15] << ' '
-    << _host_id_str[16] << _host_id_str[17] << ' ' // -
-    << _host_id_str[19] << _host_id_str[20] << ' '
-    << _host_id_str[21] << _host_id_str[22] << ' ' // -
-    << _host_id_str[24] << _host_id_str[25] << ' '
-    << _host_id_str[26] << _host_id_str[27] << ' '
-    << _host_id_str[28] << _host_id_str[29] << ' '
-    << _host_id_str[30] << _host_id_str[31] << ' '
-    << _host_id_str[32] << _host_id_str[33] << ' '
-    << _host_id_str[34] << _host_id_str[35];
+    stringstream s;
+    s << _host_id_str[0]  << _host_id_str[1]  << ' '  
+      << _host_id_str[2]  << _host_id_str[3]  << ' '
+      << _host_id_str[4]  << _host_id_str[5]  << ' '
+      << _host_id_str[6]  << _host_id_str[7]  << ' ' // -
+      << _host_id_str[9]  << _host_id_str[10] << ' '
+      << _host_id_str[11] << _host_id_str[12] << ' ' // -
+      << _host_id_str[14] << _host_id_str[15] << ' '
+      << _host_id_str[16] << _host_id_str[17] << ' ' // -
+      << _host_id_str[19] << _host_id_str[20] << ' '
+      << _host_id_str[21] << _host_id_str[22] << ' ' // -
+      << _host_id_str[24] << _host_id_str[25] << ' '
+      << _host_id_str[26] << _host_id_str[27] << ' '
+      << _host_id_str[28] << _host_id_str[29] << ' '
+      << _host_id_str[30] << _host_id_str[31] << ' '
+      << _host_id_str[32] << _host_id_str[33] << ' '
+      << _host_id_str[34] << _host_id_str[35];
     
-  s >> hex
-    >> _host_id.u.b[0] >> _host_id.u.b[1] >> _host_id.u.b[2] >> _host_id.u.b[3]
-    >> _host_id.u.b[4] >> _host_id.u.b[5] >> _host_id.u.b[6] >> _host_id.u.b[7]
-    >> _host_id.u.b[8] >> _host_id.u.b[9] >> _host_id.u.b[10] >> _host_id.u.b[11]
-    >> _host_id.u.b[12] >> _host_id.u.b[13] >> _host_id.u.b[14] >> _host_id.u.b[15];
-}
-
-__uuid_init::__uuid_init()
-{
-  fd = ::open( "/proc/sys/kernel/random/uuid", O_RDONLY );
-}
-
-__uuid_init::~__uuid_init()
-{
-  ::close( fd );
+    s >> hex
+      >> _host_id.u.b[0] >> _host_id.u.b[1] >> _host_id.u.b[2] >> _host_id.u.b[3]
+      >> _host_id.u.b[4] >> _host_id.u.b[5] >> _host_id.u.b[6] >> _host_id.u.b[7]
+      >> _host_id.u.b[8] >> _host_id.u.b[9] >> _host_id.u.b[10] >> _host_id.u.b[11]
+      >> _host_id.u.b[12] >> _host_id.u.b[13] >> _host_id.u.b[14] >> _host_id.u.b[15];
+  }
 }
 
 } // namespace detail
@@ -92,30 +83,39 @@ __uuid_init::~__uuid_init()
 using namespace std;
 using namespace std::tr2;
 
-const char *hostid_str()
+const char *hostid_str() throw (runtime_error)
 {
   static detail::__uid_init _uid;
+  if ( _uid.fail ) {
+    throw runtime_error( "can't read hostid" );
+  }
   return _uid._host_id_str;
 }
 
-const xmt::uuid_type& hostid()
+const xmt::uuid_type& hostid() throw (runtime_error)
 {
   hostid_str();
   return detail::__uid_init::_host_id;
 }
 
-std::string uid_str()
+std::string uid_str() throw (runtime_error)
 {
-  static detail::__uuid_init __uuid;
+  char buf[37];
 
-  char buf[36];
-
-  ::read( __uuid.fd, buf, 36 );
+  int fd = ::open( "/proc/sys/kernel/random/uuid", O_RDONLY );
+  if ( (fd < 0) || (::read( fd, buf, 37 ) != 37) ) {
+    if ( fd >= 0 ) {
+      ::close( fd );
+    }
+    throw runtime_error( "Can't generate UID" );
+    // return std::string();
+  }
+  ::close( fd );
 
   return std::string( buf, 36 );
 }
 
-xmt::uuid_type uid()
+xmt::uuid_type uid() throw (runtime_error)
 {
   string tmp = uid_str();
   uuid_type id;

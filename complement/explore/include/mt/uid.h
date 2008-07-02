@@ -1,7 +1,7 @@
 // -*- C++ -*- Time-stamp: <08/06/06 21:21:30 yeti>
 
 /*
- * Copyright (c) 2006
+ * Copyright (c) 2006, 2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -18,6 +18,7 @@
 #include <string>
 // #include <algorithm>
 #include <stdint.h>
+#include <stdexcept>
 
 namespace xmt {
 
@@ -62,11 +63,11 @@ struct uuid_type
       }
 };
 
-const char *hostid_str();
-const xmt::uuid_type& hostid();
+const char *hostid_str() throw (std::runtime_error);
+const xmt::uuid_type& hostid() throw (std::runtime_error);
 
-std::string uid_str();
-xmt::uuid_type uid();
+std::string uid_str() throw (std::runtime_error);
+xmt::uuid_type uid() throw (std::runtime_error);
 
 } // namespace xmt
 
