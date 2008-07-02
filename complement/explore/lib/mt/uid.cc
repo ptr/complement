@@ -87,16 +87,6 @@ __uuid_init::~__uuid_init()
   ::close( fd );
 }
 
-__uuid_init::__uuid_init()
-{
-  fd = ::open( "/proc/sys/kernel/random/uuid", O_RDONLY );
-}
-
-__uuid_init::~__uuid_init()
-{
-  ::close( fd );
-}
-
 } // namespace detail
 
 using namespace std;
