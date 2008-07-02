@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/03/26 10:11:58 ptr>
+// -*- C++ -*- Time-stamp: <08/07/02 08:58:02 ptr>
 
 /*
- * Copyright (c) 2006, 2007
+ * Copyright (c) 2006-2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -10,7 +10,7 @@
 
 #include "shm_test.h"
 
-#include <mt/xmt.h>
+#include <mt/condition_variable>
 #include <mt/shm.h>
 
 
@@ -188,27 +188,29 @@ int EXAM_IMPL(shm_test::fork_shm)
     seg.allocate( fname, 1024, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
     xmt::allocator_shm<char,0> shm;
 
-    xmt::__condition<true>& fcnd = *new( shm.allocate( sizeof(xmt::__condition<true>) ) ) xmt::__condition<true>();
-    fcnd.set( false );
+    std::tr2::condition_event_ip& fcnd = *new( shm.allocate( sizeof(std::tr2::condition_event_ip) ) ) std::tr2::condition_event_ip();
+
     try {
       xmt::fork();
 
       try {
 
         // Child code
-        fcnd.try_wait();
+        if ( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ) ) {
+          exit( 0 );
+        }
 
       }
       catch ( ... ) {
       }
 
-      exit( 0 );
+      exit( 1 );
     }
     catch ( xmt::fork_in_parent& child ) {
       try {
         EXAM_CHECK( child.pid() > 0 );
 
-        fcnd.set( true );
+        fcnd.notify_one();
 
         int stat = -1;
         EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
@@ -224,8 +226,8 @@ int EXAM_IMPL(shm_test::fork_shm)
     catch ( ... ) {
     }
 
-    (&fcnd)->~__condition<true>();
-    shm.deallocate( reinterpret_cast<char *>(&fcnd), sizeof(xmt::__condition<true>) );
+    (&fcnd)->~__condition_event<true>();
+    shm.deallocate( reinterpret_cast<char *>(&fcnd), sizeof(std::tr2::condition_event_ip) );
     seg.deallocate();
     fs::remove( fname );
   }
@@ -251,11 +253,10 @@ int EXAM_IMPL(shm_test::shm_named_obj)
     seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
     xmt::shm_name_mgr<0>& nm = seg.name_mgr();
 
-    xmt::allocator_shm<xmt::__condition<true>,0> shm;
+    xmt::allocator_shm<std::tr2::condition_event_ip,0> shm;
 
-    xmt::__condition<true>& fcnd = *new ( shm.allocate( 1 ) ) xmt::__condition<true>();
+    std::tr2::condition_event_ip& fcnd = *new ( shm.allocate( 1 ) ) std::tr2::condition_event_ip();
     nm.named( fcnd, test_Condition_Object );
-    fcnd.set( false );
 
     try {
       xmt::fork();
@@ -276,8 +277,8 @@ int EXAM_IMPL(shm_test::shm_named_obj)
         }
         
         xmt::shm_name_mgr<0>& nm_ch = seg_ch.name_mgr();
-        xmt::__condition<true>& fcnd_ch = nm_ch.named<xmt::__condition<true> >( test_Condition_Object );
-        fcnd_ch.set( true );
+        std::tr2::condition_event_ip& fcnd_ch = nm_ch.named<std::tr2::condition_event_ip>( test_Condition_Object );
+        fcnd_ch.notify_one();
       }
       catch ( const xmt::shm_bad_alloc& err ) {
         EXAM_ERROR_ASYNC_F( err.what(), eflag );
@@ -295,7 +296,7 @@ int EXAM_IMPL(shm_test::shm_named_obj)
       try {
         EXAM_CHECK( child.pid() > 0 );
 
-        fcnd.try_wait();
+        EXAM_CHECK( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ) );
 
         int stat = -1;
         EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
@@ -313,7 +314,7 @@ int EXAM_IMPL(shm_test::shm_named_obj)
       EXAM_ERROR( "Fail in fork" );
     }
     
-    (&fcnd)->~__condition<true>();
+    (&fcnd)->~__condition_event<true>();
     shm.deallocate( &fcnd, 1 );
     seg.deallocate();
     fs::remove( fname );
@@ -359,11 +360,10 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
   try {
     xmt::shm_name_mgr<1>& nm = seg1.name_mgr();
 
-    xmt::allocator_shm<xmt::__condition<true>,1> shm;
+    xmt::allocator_shm<std::tr2::condition_event_ip,1> shm;
 
-    xmt::__condition<true>& fcnd = *new ( shm.allocate( 1 ) ) xmt::__condition<true>();
+    std::tr2::condition_event_ip& fcnd = *new ( shm.allocate( 1 ) ) std::tr2::condition_event_ip();
     nm.named( fcnd, ObjName );
-    fcnd.set( false );
 
     try {
       xmt::fork();
@@ -372,10 +372,10 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
 
       try {
         xmt::shm_name_mgr<1>& nm_ch = seg1.name_mgr();
-        xmt::allocator_shm<xmt::__condition<true>,1> shm_ch;
-        xmt::__condition<true>& fcnd_ch = nm_ch.named<xmt::__condition<true> >( ObjName );
-        fcnd_ch.set( true );
-        nm_ch.release<xmt::__condition<true> >( ObjName );
+        xmt::allocator_shm<std::tr2::condition_event_ip,1> shm_ch;
+        std::tr2::condition_event_ip& fcnd_ch = nm_ch.named<std::tr2::condition_event_ip>( ObjName );
+        fcnd_ch.notify_one();
+        nm_ch.release<std::tr2::condition_event_ip>( ObjName );
       }
       catch ( const std::invalid_argument& err ) {
         EXAM_ERROR_ASYNC_F( err.what(), eflag );
@@ -383,7 +383,7 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
       exit( eflag );
     }
     catch ( xmt::fork_in_parent& child ) {
-      fcnd.try_wait();
+      EXAM_CHECK( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ) );
       int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
       if ( WIFEXITED(stat) ) {
@@ -392,11 +392,10 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
         EXAM_ERROR( "child interrupted" );
       }
     }
-    nm.release<xmt::__condition<true> >( ObjName ); // fcnd should be destroyed here
+    nm.release<std::tr2::condition_event_ip>( ObjName ); // fcnd should be destroyed here
 
-    xmt::__condition<true>& fcnd1 = *new ( shm.allocate( 1 ) ) xmt::__condition<true>();
+    std::tr2::condition_event_ip& fcnd1 = *new ( shm.allocate( 1 ) ) std::tr2::condition_event_ip();
     nm.named( fcnd1, ObjName ); // ObjName should be free here
-    fcnd1.set( false );
 
     try {
       xmt::fork();
@@ -405,10 +404,10 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
 
       try {
         xmt::shm_name_mgr<1>& nm_ch = seg1.name_mgr();
-        xmt::allocator_shm<xmt::__condition<true>,1> shm_ch;
-        xmt::__condition<true>& fcnd_ch = nm_ch.named<xmt::__condition<true> >( ObjName );
-        fcnd_ch.set( true );
-        nm_ch.release<xmt::__condition<true> >( ObjName );
+        xmt::allocator_shm<std::tr2::condition_event_ip,1> shm_ch;
+        std::tr2::condition_event_ip& fcnd_ch = nm_ch.named<std::tr2::condition_event_ip>( ObjName );
+        fcnd_ch.notify_one();
+        nm_ch.release<std::tr2::condition_event_ip>( ObjName );
       }
       catch ( const std::invalid_argument& err ) {
         EXAM_ERROR_ASYNC_F( err.what(), eflag );
@@ -417,7 +416,7 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
       exit( eflag );
     }
     catch ( xmt::fork_in_parent& child ) {
-      fcnd1.try_wait();
+      EXAM_CHECK( fcnd1.timed_wait( std::tr2::milliseconds( 800 ) ) );
       int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
       if ( WIFEXITED(stat) ) {
@@ -426,10 +425,10 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
         EXAM_ERROR( "child interrupted" );
       }
     }
-    nm.release<xmt::__condition<true> >( ObjName ); // fcnd should be destroyed here
+    nm.release<std::tr2::condition_event_ip>( ObjName ); // fcnd should be destroyed here
 
-    xmt::allocator_shm<xmt::__barrier<true>,1> shm_b;
-    xmt::__barrier<true>& b = *new ( shm_b.allocate( 1 ) ) xmt::__barrier<true>();
+    xmt::allocator_shm<std::tr2::barrier_ip,1> shm_b;
+    std::tr2::barrier_ip& b = *new ( shm_b.allocate( 1 ) ) std::tr2::barrier_ip();
 
     nm.named( b, ObjName ); // ObjName should be free here
     
@@ -439,10 +438,10 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
       int eflag = 0;
       try {
         xmt::shm_name_mgr<1>& nm_ch = seg1.name_mgr();
-        xmt::allocator_shm<xmt::__barrier<true>,1> shm_ch;
-        xmt::__barrier<true>& b_ch = nm_ch.named<xmt::__barrier<true> >( ObjName );
+        xmt::allocator_shm<std::tr2::barrier_ip,1> shm_ch;
+        std::tr2::barrier_ip& b_ch = nm_ch.named<std::tr2::barrier_ip>( ObjName );
         b_ch.wait();
-        nm_ch.release<xmt::__barrier<true> >( ObjName );
+        nm_ch.release<std::tr2::barrier_ip>( ObjName );
       }
       catch ( const std::invalid_argument& err ) {
         EXAM_ERROR_ASYNC_F( err.what(), eflag );
@@ -460,7 +459,7 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
         EXAM_ERROR( "child interrupted" );
       }
     }
-    nm.release<xmt::__barrier<true> >( ObjName ); // barrier should be destroyed here
+    nm.release<std::tr2::barrier_ip>( ObjName ); // barrier should be destroyed here
   }
   catch ( xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );

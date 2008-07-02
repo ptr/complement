@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/02/25 12:12:20 ptr>
+// -*- C++ -*- Time-stamp: <08/07/02 09:27:26 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -14,7 +14,6 @@
 #define FIT_EXAM
 
 #include <exam/suite.h>
-// #include <mt/shm.h>
 
 class mt_test_wg21
 {
@@ -25,11 +24,17 @@ class mt_test_wg21
     int EXAM_DECL(barrier);
     int EXAM_DECL(semaphore);
     int EXAM_DECL(fork);
-    int EXAM_DECL(uid);
 
   private:
     // static xmt::Thread::ret_t thread_entry_call( void * );
     // static int x;
+};
+
+class uid_test_wg21
+{
+  public:
+    int EXAM_DECL(uid);
+    int EXAM_DECL(hostid);
 };
 
 #endif // __MT_TEST_WG21_H
