@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/26 08:40:03 ptr>
+// -*- C++ -*- Time-stamp: <08/07/01 13:30:58 yeti>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -307,8 +307,9 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
 
   std::tr2::unique_lock<std::tr2::mutex> lk( ulck );
 
-  if ( this->gptr() < this->egptr() )
+  if ( this->gptr() < this->egptr() ) {
     return traits::to_int_type(*this->gptr());
+  }
 
   if ( this->egptr() == this->gptr() ) { // fullfilled: _ebuf == gptr()
     setg( this->eback(), this->eback(), this->eback() );
@@ -317,12 +318,14 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
   // setg( this->eback(), this->eback(), this->eback() + offset );
   // wait on condition
   if ( basic_socket_t::_use_rdtimeout ) {
-    ucnd.timed_wait( lk, basic_socket_t::_rdtimeout, rdready );
+    if ( !ucnd.timed_wait( lk, basic_socket_t::_rdtimeout, rdready ) ) {
+      return traits::eof();
+    }
   } else {
     ucnd.wait( lk, rdready );
   }
-  
-  return traits::to_int_type(*this->gptr());
+
+  return this->gptr() < this->egptr() ? traits::to_int_type(*this->gptr()) : traits::eof();
 }
 
 template<class charT, class traits, class _Alloc>

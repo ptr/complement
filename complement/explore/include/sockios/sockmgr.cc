@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/01 10:16:39 ptr>
+// -*- C++ -*- Time-stamp: <08/07/01 14:40:03 yeti>
 
 /*
  * Copyright (c) 2008
@@ -407,13 +407,19 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
   }
 
   if ( (ev.events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR) ) != 0 ) {
+
     // std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << std::endl;
-    if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
-      // throw system_error
-      std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << errno << std::endl;
-    }
 
     if ( info.p != 0 ) {
+      if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
+        // throw system_error
+        std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << errno << std::endl;
+      }
+      {
+        std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
+        b->close();
+        b->ucnd.notify_all();
+      }
       // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
       // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
@@ -434,7 +440,9 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
         std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << errno << std::endl;
       }
       descr.erase( ifd );
+      std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
       b->close();
+      b->ucnd.notify_all();
     }
     // dump_descr();
   }
