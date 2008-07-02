@@ -1,5 +1,7 @@
 2008-07-02  Petr Ovtchenkov  <ptr@island.corbina.net>
 
+	* uid.cc: fix wrong type cast;
+
 	* uid.cc: fix generation of uids;
 
 	* mt_test_suite.cc, mt_test_wg21.cc, mt_test_wg21.h: test
