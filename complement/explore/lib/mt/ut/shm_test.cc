@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/02 08:58:02 ptr>
+// -*- C++ -*- Time-stamp: <08/07/02 13:05:03 yeti>
 
 /*
  * Copyright (c) 2006-2008
@@ -336,7 +336,13 @@ shm_test::shm_test()
     seg1.allocate( fname1, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
   }
   catch ( xmt::shm_bad_alloc& err ) {
-    EXAM_ERROR_ASYNC( err.what() );
+    try {
+      seg1.allocate( fname1, 4*4096, 0, 0660 );
+    }
+    catch ( xmt::shm_bad_alloc& err2 ) {
+      EXAM_ERROR_ASYNC( err2.what() );
+      unlink( fname1 );
+    }
   }
 }
 

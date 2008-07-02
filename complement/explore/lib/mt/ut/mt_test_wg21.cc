@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/02 09:21:04 ptr>
+// -*- C++ -*- Time-stamp: <08/07/02 13:00:38 yeti>
 
 /*
  * Copyright (c) 2006-2008
@@ -318,7 +318,7 @@ int EXAM_IMPL(mt_test_wg21::fork)
   return EXAM_RESULT;
 }
 
-int EXAM_IMPL(uid_test_wg21::uid)
+int EXAM_IMPL(uid_test_wg21::uidstr)
 {
   std::string u1 = xmt::uid_str();
 
@@ -337,7 +337,7 @@ int EXAM_IMPL(uid_test_wg21::uid)
   return EXAM_RESULT;
 }
 
-int EXAM_IMPL(uid_test_wg21::hostid)
+int EXAM_IMPL(uid_test_wg21::hostidstr)
 {
   std::string u1 = xmt::hostid_str();
 
@@ -354,3 +354,22 @@ int EXAM_IMPL(uid_test_wg21::hostid)
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(uid_test_wg21::hostid)
+{
+  xmt::uuid_type u1 = xmt::hostid();
+  xmt::uuid_type u2 = xmt::hostid();
+
+  EXAM_CHECK( u1 == u2 );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(uid_test_wg21::uid)
+{
+  xmt::uuid_type u1 = xmt::uid();
+  xmt::uuid_type u2 = xmt::uid();
+
+  EXAM_CHECK( u1 != u2 );
+
+  return EXAM_RESULT;
+}

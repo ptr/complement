@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/02 08:56:16 ptr>
+// -*- C++ -*- Time-stamp: <08/07/02 13:15:01 yeti>
 
 /*
  * Copyright (c) 2006, 2008
@@ -71,22 +71,20 @@ __uid_init::__uid_init()
     << _host_id_str[34] << _host_id_str[35];
     
   s >> hex
-    >> reinterpret_cast<unsigned&>(_host_id.u.b[0])
-    >> reinterpret_cast<unsigned&>(_host_id.u.b[1])
-    >> reinterpret_cast<unsigned&>(_host_id.u.b[2])
-    >> reinterpret_cast<unsigned&>(_host_id.u.b[3])
-    >> reinterpret_cast<unsigned&>(_host_id.u.b[4])
-    >> reinterpret_cast<unsigned&>(_host_id.u.b[5])
-    >> reinterpret_cast<unsigned&>(_host_id.u.b[6])
-    >> reinterpret_cast<unsigned&>(_host_id.u.b[7])
-    >> reinterpret_cast<unsigned&>(_host_id.u.b[8])
-    >> reinterpret_cast<unsigned&>(_host_id.u.b[9])
-    >> reinterpret_cast<unsigned&>(_host_id.u.b[10])
-    >> reinterpret_cast<unsigned&>(_host_id.u.b[11])
-    >> reinterpret_cast<unsigned&>(_host_id.u.b[12])
-    >> reinterpret_cast<unsigned&>(_host_id.u.b[13])
-    >> reinterpret_cast<unsigned&>(_host_id.u.b[14])
-    >> reinterpret_cast<unsigned&>(_host_id.u.b[15]);
+    >> _host_id.u.b[0] >> _host_id.u.b[1] >> _host_id.u.b[2] >> _host_id.u.b[3]
+    >> _host_id.u.b[4] >> _host_id.u.b[5] >> _host_id.u.b[6] >> _host_id.u.b[7]
+    >> _host_id.u.b[8] >> _host_id.u.b[9] >> _host_id.u.b[10] >> _host_id.u.b[11]
+    >> _host_id.u.b[12] >> _host_id.u.b[13] >> _host_id.u.b[14] >> _host_id.u.b[15];
+}
+
+__uuid_init::__uuid_init()
+{
+  fd = ::open( "/proc/sys/kernel/random/uuid", O_RDONLY );
+}
+
+__uuid_init::~__uuid_init()
+{
+  ::close( fd );
 }
 
 __uuid_init::__uuid_init()
@@ -151,22 +149,10 @@ xmt::uuid_type uid()
     << tmp[34] << tmp[35];
     
   s >> hex
-    >> reinterpret_cast<unsigned&>(id.u.b[0])
-    >> reinterpret_cast<unsigned&>(id.u.b[1])
-    >> reinterpret_cast<unsigned&>(id.u.b[2])
-    >> reinterpret_cast<unsigned&>(id.u.b[3])
-    >> reinterpret_cast<unsigned&>(id.u.b[4])
-    >> reinterpret_cast<unsigned&>(id.u.b[5])
-    >> reinterpret_cast<unsigned&>(id.u.b[6])
-    >> reinterpret_cast<unsigned&>(id.u.b[7])
-    >> reinterpret_cast<unsigned&>(id.u.b[8])
-    >> reinterpret_cast<unsigned&>(id.u.b[9])
-    >> reinterpret_cast<unsigned&>(id.u.b[10])
-    >> reinterpret_cast<unsigned&>(id.u.b[11])
-    >> reinterpret_cast<unsigned&>(id.u.b[12])
-    >> reinterpret_cast<unsigned&>(id.u.b[13])
-    >> reinterpret_cast<unsigned&>(id.u.b[14])
-    >> reinterpret_cast<unsigned&>(id.u.b[15]);
+    >> id.u.b[0] >> id.u.b[1] >> id.u.b[2] >> id.u.b[3]
+    >> id.u.b[4] >> id.u.b[5] >> id.u.b[6] >> id.u.b[7]
+    >> id.u.b[8] >> id.u.b[9] >> id.u.b[10] >> id.u.b[11]
+    >> id.u.b[12] >> id.u.b[13] >> id.u.b[14] >> id.u.b[15];
 
   return id;
 }
