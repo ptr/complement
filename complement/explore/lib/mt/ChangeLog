@@ -1,3 +1,14 @@
+2008-07-02  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* uid.cc: fix generation of uids;
+
+	* mt_test_suite.cc, mt_test_wg21.cc, mt_test_wg21.h: test
+	for uids; use options for test suite;
+
+	* shm_test.cc: use WG21-style conditionals;
+
+	* libxmt: bump revision to 2.0.5.
+
 2008-06-30  Petr Ovtchenkov  <yeti@yandex-team.ru>
 
 	* shm.h: condition_event_ip may be used in shared memory;

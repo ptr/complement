@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/26 01:53:46 ptr>
+// -*- C++ -*- Time-stamp: <08/07/02 09:21:04 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -318,17 +318,38 @@ int EXAM_IMPL(mt_test_wg21::fork)
   return EXAM_RESULT;
 }
 
-int EXAM_IMPL(mt_test_wg21::uid)
+int EXAM_IMPL(uid_test_wg21::uid)
 {
   std::string u1 = xmt::uid_str();
 
   EXAM_CHECK( !u1.empty() );
 
+  EXAM_CHECK( u1.length() == 36 );
+
   std::string u2 = xmt::uid_str();
 
   EXAM_CHECK( !u2.empty() );
 
+  EXAM_CHECK( u2.length() == 36 );
+
   EXAM_CHECK( u1 != u2 );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(uid_test_wg21::hostid)
+{
+  std::string u1 = xmt::hostid_str();
+
+  EXAM_CHECK( !u1.empty() );
+
+  EXAM_CHECK( u1.length() == 36 );
+
+  std::string u2 = xmt::hostid_str();
+
+  EXAM_CHECK( !u2.empty() );
+
+  EXAM_CHECK( u1 == u2 );
 
   return EXAM_RESULT;
 }

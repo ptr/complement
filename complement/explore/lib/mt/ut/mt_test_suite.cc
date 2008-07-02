@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/26 10:12:21 ptr>
+// -*- C++ -*- Time-stamp: <08/07/02 09:24:48 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -15,6 +15,9 @@
 
 #include <config/feature.h>
 
+#include <misc/opts.h>
+#include <string>
+
 int EXAM_DECL(timespec_diff);
 int EXAM_DECL(signal_1_test);
 // int EXAM_DECL(signal_2_test);
@@ -24,7 +27,7 @@ int EXAM_DECL(signal_3_test);
 // int EXAM_DECL( flock_test );
 // int EXAM_DECL( lfs_test );
 
-int EXAM_IMPL(mt_test_suite)
+int main( int argc, const char** argv )
 {
   exam::test_suite t( "libxmt test" );
   mt_test test;
@@ -75,7 +78,58 @@ int EXAM_IMPL(mt_test_suite)
   t.add( &mt_test_wg21::barrier, test_wg21, "mt_test_wg21::barrier" );
   t.add( &mt_test_wg21::semaphore, test_wg21, "mt_test_wg21::semaphore" );
   t.add( &mt_test_wg21::fork, test_wg21, "mt_test_wg21::fork" );
-  t.add( &mt_test_wg21::uid, test_wg21, "mt_test_wg21::uid" );
+
+  uid_test_wg21 test_wg21_uid;
+
+  t.add( &uid_test_wg21::uid, test_wg21_uid, "uid_test_wg21::uid" );
+  t.add( &uid_test_wg21::hostid, test_wg21_uid, "uid_test_wg21::hostid" );
+
+  Opts opts;
+
+  opts.description( "test suite for 'sockios' framework" );
+  opts.usage( "[options]" );
+
+  opts << option<bool>( "print this help message", 'h', "help" )
+       << option<bool>( "list all test cases", 'l', "list" )
+       << option<std::string>( "run tests by number", 'r', "run" )["0"]
+       << option<bool>( "print status of tests within test suite", 'v', "verbose" )
+       << option<bool>(  "trace checks", 't', "trace" );
+
+  try {
+    opts.parse( argc, argv );
+  }
+  catch (...) {
+    opts.help( std::cerr );
+    return 1;
+  }
+
+  if ( opts.is_set( 'h' ) ) {
+    opts.help( std::cerr );
+    return 0;
+  }
+
+  if ( opts.is_set( 'l' ) ) {
+    t.print_graph( std::cerr );
+    return 0;
+  }
+
+  if ( opts.is_set( 'v' ) ) {
+    t.flags( t.flags() | exam::base_logger::verbose );
+  }
+
+  if ( opts.is_set( 't' ) ) {
+    t.flags( t.flags() | exam::base_logger::trace );
+  }
+
+  if ( opts.is_set( 'r' ) ) {
+    std::stringstream ss( opts.get<std::string>( 'r' ) );
+    int n;
+    while ( ss >> n ) {
+      t.single( n );
+    }
+
+    return 0;
+  }
 
   return t.girdle();
 };

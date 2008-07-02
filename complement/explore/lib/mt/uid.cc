@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/06/06 21:23:34 yeti>
+// -*- C++ -*- Time-stamp: <08/07/02 08:56:16 ptr>
 
 /*
- * Copyright (c) 2006
+ * Copyright (c) 2006, 2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -10,10 +10,11 @@
 
 #include <mt/uid.h>
 #include <mt/mutex>
-#include <fstream>
 #include <sstream>
 #include <iomanip>
 #include <cstring>
+#include <unistd.h>
+#include <fcntl.h>
 
 namespace xmt {
 
@@ -29,25 +30,27 @@ class __uid_init
     __uid_init();
 
     static uuid_type _host_id;
-    static char _host_id_str[48]; // 37 really
+    char _host_id_str[48]; // 37 really
 };
 
 uuid_type __uid_init::_host_id;
-char __uid_init::_host_id_str[48];
 
-// ifstream _uuid;
+struct __uuid_init
+{
+  public:
+    __uuid_init();
+    ~__uuid_init();
+
+    int fd;
+};
 
 __uid_init::__uid_init()
 {
-  static mutex _lk;
+  int fd = ::open( "/proc/sys/kernel/random/boot_id", O_RDONLY );
 
-  lock_guard<mutex> lock( _lk );
-  ifstream f( "/proc/sys/kernel/random/boot_id" );
-
-  string tmp;
-  getline( f, tmp );
-  strcpy( _host_id_str, tmp.c_str() );
-
+  ::read( fd, _host_id_str, 36 );
+  _host_id_str[36] = '\0';
+  ::close( fd );
 
   stringstream s;
   s << _host_id_str[0]  << _host_id_str[1]  << ' '  
@@ -86,6 +89,16 @@ __uid_init::__uid_init()
     >> reinterpret_cast<unsigned&>(_host_id.u.b[15]);
 }
 
+__uuid_init::__uuid_init()
+{
+  fd = ::open( "/proc/sys/kernel/random/uuid", O_RDONLY );
+}
+
+__uuid_init::~__uuid_init()
+{
+  ::close( fd );
+}
+
 } // namespace detail
 
 using namespace std;
@@ -94,7 +107,7 @@ using namespace std::tr2;
 const char *hostid_str()
 {
   static detail::__uid_init _uid;
-  return detail::__uid_init::_host_id_str;
+  return _uid._host_id_str;
 }
 
 const xmt::uuid_type& hostid()
@@ -105,22 +118,13 @@ const xmt::uuid_type& hostid()
 
 std::string uid_str()
 {
-  static mutex _lk;
+  static detail::__uuid_init __uuid;
 
-  lock_guard<mutex> lock( _lk );
+  char buf[36];
 
-  // if ( !detail::_uuid.is_open() ) {
-  //   detail::_uuid.open( "/proc/sys/kernel/random/uuid" );
-  // }
+  ::read( __uuid.fd, buf, 36 );
 
-  ifstream _uuid( "/proc/sys/kernel/random/uuid" );
-
-  std::string tmp;
-
-  // getline( detail::_uuid, tmp ).clear(); // clear eof bit
-  getline( _uuid, tmp );
-
-  return tmp;
+  return std::string( buf, 36 );
 }
 
 xmt::uuid_type uid()
