@@ -1,3 +1,10 @@
+2008-07-07  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* uid.cc, uid.h: convert uid to string; output uid
+	to ostream;
+
+	* libxmt: bump revision to 2.0.6.
+
 2008-07-02  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* uid.cc: fix wrong type cast;

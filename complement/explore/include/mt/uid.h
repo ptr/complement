@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/06 21:21:30 yeti>
+// -*- C++ -*- Time-stamp: <08/07/07 01:13:55 ptr>
 
 /*
  * Copyright (c) 2006, 2008
@@ -19,6 +19,7 @@
 // #include <algorithm>
 #include <stdint.h>
 #include <stdexcept>
+#include <ostream>
 
 namespace xmt {
 
@@ -61,6 +62,8 @@ struct uuid_type
         // return std::lexicographical_compare( u.i, u.i + 4, uid.u.i, uid.u.i + 4 );
         return u.l[0] < uid.u.l[0] ? true : u.l[0] > uid.u.l[0] ? false : (u.l[1] < uid.u.l[1]);
       }
+
+    operator std::string() const;
 };
 
 const char *hostid_str() throw (std::runtime_error);
@@ -70,5 +73,11 @@ std::string uid_str() throw (std::runtime_error);
 xmt::uuid_type uid() throw (std::runtime_error);
 
 } // namespace xmt
+
+namespace std {
+
+std::ostream& operator <<( std::ostream&, const xmt::uuid_type& );
+
+} // namespace std
 
 #endif // __mt_uid_h
