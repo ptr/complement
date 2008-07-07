@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/02 12:59:27 yeti>
+// -*- C++ -*- Time-stamp: <08/07/07 13:10:54 yeti>
 
 /*
  * Copyright (c) 2006-2008
@@ -37,6 +37,7 @@ class uid_test_wg21
     int EXAM_DECL(uid);
     int EXAM_DECL(hostidstr);
     int EXAM_DECL(hostid);
+    int EXAM_DECL(uidconv);
 };
 
 #endif // __MT_TEST_WG21_H
