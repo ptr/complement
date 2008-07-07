@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/02 13:15:01 yeti>
+// -*- C++ -*- Time-stamp: <08/07/07 04:14:12 ptr>
 
 /*
  * Copyright (c) 2006, 2008
@@ -18,6 +18,26 @@
 #include <stdexcept>
 
 #include <iostream>
+
+namespace std {
+
+std::ostream& operator <<( std::ostream& s, const xmt::uuid_type& uid )
+{
+  std::ios_base::fmtflags f = s.flags( 0 );
+  s << hex << setfill('0')
+    << setw(2) << uid.u.b[0] << setw(2) << uid.u.b[1] << setw(2) << uid.u.b[2] << setw(2) << uid.u.b[3] << '-'
+    << setw(2) << uid.u.b[4] << setw(2) << uid.u.b[5] << '-'
+    << setw(2) << uid.u.b[6] << setw(2) << uid.u.b[7] << '-'
+    << setw(2) << uid.u.b[8] << setw(2) << uid.u.b[9] << '-'
+    << setw(2) << uid.u.b[10] << setw(2) << uid.u.b[11]
+    << setw(2) << uid.u.b[12] << setw(2) << uid.u.b[13]
+    << setw(2) << uid.u.b[14] << setw(2) << uid.u.b[15];
+  s.flags( f );
+
+  return s;
+}
+
+} // namespace std
 
 namespace xmt {
 
@@ -82,6 +102,15 @@ __uid_init::__uid_init() :
 
 using namespace std;
 using namespace std::tr2;
+
+uuid_type::operator string() const
+{
+  ostringstream s;
+
+  s << *this;
+
+  return s.str();
+}
 
 const char *hostid_str() throw (runtime_error)
 {
