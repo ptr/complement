@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 18:18:21 yeti>
+// -*- C++ -*- Time-stamp: <08/07/07 21:01:28 yeti>
 
 /*
  *
@@ -44,6 +44,7 @@ const addr_type endextaddr = 0xbfffffff;
 std::string EvManager::inv_key_str( "invalid key" );
 
 __FIT_DECLSPEC EvManager::EvManager() :
+    not_empty( *this ),
     _low( beglocaddr ),
     _high( endlocaddr ),
     _id( _low ),
@@ -62,7 +63,7 @@ __FIT_DECLSPEC EvManager::EvManager() :
 __FIT_DECLSPEC EvManager::~EvManager()
 {
   {
-    lock_guard<spinlock> lk( _ev_queue_dispatch_guard );
+    lock_guard<mutex> lk( _lock_queue );
     _dispatch_stop = true;
     _cnd_queue.notify_one();
   }
@@ -72,7 +73,7 @@ __FIT_DECLSPEC EvManager::~EvManager()
 
 bool EvManager::not_finished()
 {
-  lock_guard<spinlock> lk( _ev_queue_dispatch_guard );
+  lock_guard<mutex> lk( _lock_queue );
   return !_dispatch_stop;
 }
 
@@ -94,9 +95,7 @@ void EvManager::_Dispatch( EvManager* p )
     }
     {
       unique_lock<mutex> lk( lq );
-      if ( in_ev_queue.empty() && me.not_finished() ) {
-        me._cnd_queue.wait( lk );
-      }
+      me._cnd_queue.wait( lk, me.not_empty );
     }
   }
 }
