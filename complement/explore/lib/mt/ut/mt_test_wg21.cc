@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/02 13:00:38 yeti>
+// -*- C++ -*- Time-stamp: <08/07/07 14:23:07 yeti>
 
 /*
  * Copyright (c) 2006-2008
@@ -18,6 +18,7 @@
 #include <typeinfo>
 
 #include <iostream>
+#include <sstream>
 
 #include <sys/wait.h>
 #include <sys/ipc.h>
@@ -382,6 +383,22 @@ int EXAM_IMPL(uid_test_wg21::uid)
   xmt::uuid_type u2 = xmt::uid();
 
   EXAM_CHECK( u1 != u2 );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(uid_test_wg21::uidconv)
+{
+  xmt::uuid_type u1 = xmt::hostid();
+  std::string u2 = xmt::hostid_str();
+
+  EXAM_CHECK( static_cast<std::string>(u1) == u2 ); // <-- conversion to string
+
+  std::stringstream s;
+
+  s << u1;
+
+  EXAM_CHECK( s.str() == u2 );
 
   return EXAM_RESULT;
 }

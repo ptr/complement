@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/02 13:01:53 yeti>
+// -*- C++ -*- Time-stamp: <08/07/07 13:15:01 yeti>
 
 /*
  * Copyright (c) 2006-2008
@@ -83,8 +83,9 @@ int main( int argc, const char** argv )
 
   t.add( &uid_test_wg21::uid, test_wg21_uid, "uid_test_wg21::uid",
          t.add( &uid_test_wg21::uidstr, test_wg21_uid, "uid_test_wg21::uidstr" ) );
-  t.add( &uid_test_wg21::hostid, test_wg21_uid, "uid_test_wg21::hostid",
-         t.add( &uid_test_wg21::hostidstr, test_wg21_uid, "uid_test_wg21::hostidstr" ) );
+  t.add( &uid_test_wg21::uidconv, test_wg21_uid, "uid_test_wg21::uidconv",
+    t.add( &uid_test_wg21::hostid, test_wg21_uid, "uid_test_wg21::hostid",
+      t.add( &uid_test_wg21::hostidstr, test_wg21_uid, "uid_test_wg21::hostidstr" ) ) );
 
   Opts opts;
 

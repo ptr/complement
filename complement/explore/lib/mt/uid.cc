@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/07 04:14:12 ptr>
+// -*- C++ -*- Time-stamp: <08/07/07 14:19:23 yeti>
 
 /*
  * Copyright (c) 2006, 2008
@@ -25,13 +25,22 @@ std::ostream& operator <<( std::ostream& s, const xmt::uuid_type& uid )
 {
   std::ios_base::fmtflags f = s.flags( 0 );
   s << hex << setfill('0')
-    << setw(2) << uid.u.b[0] << setw(2) << uid.u.b[1] << setw(2) << uid.u.b[2] << setw(2) << uid.u.b[3] << '-'
-    << setw(2) << uid.u.b[4] << setw(2) << uid.u.b[5] << '-'
-    << setw(2) << uid.u.b[6] << setw(2) << uid.u.b[7] << '-'
-    << setw(2) << uid.u.b[8] << setw(2) << uid.u.b[9] << '-'
-    << setw(2) << uid.u.b[10] << setw(2) << uid.u.b[11]
-    << setw(2) << uid.u.b[12] << setw(2) << uid.u.b[13]
-    << setw(2) << uid.u.b[14] << setw(2) << uid.u.b[15];
+    << setw(2) << static_cast<unsigned>(uid.u.b[0])
+    << setw(2) << static_cast<unsigned>(uid.u.b[1])
+    << setw(2) << static_cast<unsigned>(uid.u.b[2])
+    << setw(2) << static_cast<unsigned>(uid.u.b[3]) << '-'
+    << setw(2) << static_cast<unsigned>(uid.u.b[4])
+    << setw(2) << static_cast<unsigned>(uid.u.b[5]) << '-'
+    << setw(2) << static_cast<unsigned>(uid.u.b[6])
+    << setw(2) << static_cast<unsigned>(uid.u.b[7]) << '-'
+    << setw(2) << static_cast<unsigned>(uid.u.b[8])
+    << setw(2) << static_cast<unsigned>(uid.u.b[9]) << '-'
+    << setw(2) << static_cast<unsigned>(uid.u.b[10])
+    << setw(2) << static_cast<unsigned>(uid.u.b[11])
+    << setw(2) << static_cast<unsigned>(uid.u.b[12])
+    << setw(2) << static_cast<unsigned>(uid.u.b[13])
+    << setw(2) << static_cast<unsigned>(uid.u.b[14])
+    << setw(2) << static_cast<unsigned>(uid.u.b[15]);
   s.flags( f );
 
   return s;
@@ -89,12 +98,30 @@ __uid_init::__uid_init() :
       << _host_id_str[30] << _host_id_str[31] << ' '
       << _host_id_str[32] << _host_id_str[33] << ' '
       << _host_id_str[34] << _host_id_str[35];
-    
-    s >> hex
-      >> _host_id.u.b[0] >> _host_id.u.b[1] >> _host_id.u.b[2] >> _host_id.u.b[3]
-      >> _host_id.u.b[4] >> _host_id.u.b[5] >> _host_id.u.b[6] >> _host_id.u.b[7]
-      >> _host_id.u.b[8] >> _host_id.u.b[9] >> _host_id.u.b[10] >> _host_id.u.b[11]
-      >> _host_id.u.b[12] >> _host_id.u.b[13] >> _host_id.u.b[14] >> _host_id.u.b[15];
+
+    s >> hex;
+
+    unsigned v[16];
+
+    s >> v[0] >> v[1] >> v[2]  >> v[3]  >> v[4]  >> v[5]  >> v[6]  >> v[7]
+      >> v[8] >> v[9] >> v[10] >> v[11] >> v[12] >> v[13] >> v[14] >> v[15];
+
+    _host_id.u.b[0] = v[0];
+    _host_id.u.b[1] = v[1];
+    _host_id.u.b[2] = v[2];
+    _host_id.u.b[3] = v[3];
+    _host_id.u.b[4] = v[4];
+    _host_id.u.b[5] = v[5];
+    _host_id.u.b[6] = v[6];
+    _host_id.u.b[7] = v[7];
+    _host_id.u.b[8] = v[8];
+    _host_id.u.b[9] = v[9];
+    _host_id.u.b[10] = v[10];
+    _host_id.u.b[11] = v[11];
+    _host_id.u.b[12] = v[12];
+    _host_id.u.b[13] = v[13];
+    _host_id.u.b[14] = v[14];
+    _host_id.u.b[15] = v[15];
   }
 }
 
@@ -167,11 +194,29 @@ xmt::uuid_type uid() throw (runtime_error)
     << tmp[32] << tmp[33] << ' '
     << tmp[34] << tmp[35];
     
-  s >> hex
-    >> id.u.b[0] >> id.u.b[1] >> id.u.b[2] >> id.u.b[3]
-    >> id.u.b[4] >> id.u.b[5] >> id.u.b[6] >> id.u.b[7]
-    >> id.u.b[8] >> id.u.b[9] >> id.u.b[10] >> id.u.b[11]
-    >> id.u.b[12] >> id.u.b[13] >> id.u.b[14] >> id.u.b[15];
+  s >> hex;
+
+  unsigned v[16];
+
+  s >> v[0] >> v[1] >> v[2]  >> v[3]  >> v[4]  >> v[5]  >> v[6]  >> v[7]
+    >> v[8] >> v[9] >> v[10] >> v[11] >> v[12] >> v[13] >> v[14] >> v[15];
+
+  id.u.b[0] = v[0];
+  id.u.b[1] = v[1];
+  id.u.b[2] = v[2];
+  id.u.b[3] = v[3];
+  id.u.b[4] = v[4];
+  id.u.b[5] = v[5];
+  id.u.b[6] = v[6];
+  id.u.b[7] = v[7];
+  id.u.b[8] = v[8];
+  id.u.b[9] = v[9];
+  id.u.b[10] = v[10];
+  id.u.b[11] = v[11];
+  id.u.b[12] = v[12];
+  id.u.b[13] = v[13];
+  id.u.b[14] = v[14];
+  id.u.b[15] = v[15];
 
   return id;
 }
