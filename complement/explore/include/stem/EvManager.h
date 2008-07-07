@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/27 12:35:36 ptr>
+// -*- C++ -*- Time-stamp: <08/07/07 21:03:34 yeti>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -266,6 +266,19 @@ class EvManager
       }
 
   private:
+    struct _not_empty
+    {
+        _not_empty( EvManager& m ) :
+            me( m )
+          { }
+
+        bool operator()() const
+          { return !me.in_ev_queue.empty() || me._dispatch_stop; }
+
+        EvManager& me;
+    } not_empty;
+
+
     void Send( const Event& e );
     __FIT_DECLSPEC void unsafe_Remove( void * );
 
@@ -308,7 +321,6 @@ class EvManager
     unsigned _trflags;
     std::ostream *_trs;
 
-    std::tr2::spinlock _ev_queue_dispatch_guard;
     std::tr2::thread _ev_queue_thr;
 
     friend class Names;
