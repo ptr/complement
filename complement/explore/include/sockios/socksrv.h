@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/26 08:59:54 ptr>
+// -*- C++ -*- Time-stamp: <08/07/09 01:02:12 ptr>
 
 /*
  * Copyright (c) 2008
@@ -35,6 +35,7 @@
 #include <sockios/sockstream>
 #include <deque>
 #include <functional>
+#include <exception>
 
 namespace std {
 
@@ -223,6 +224,11 @@ class connect_processor :
 
     void worker();
 
+    class finish :
+        public std::exception
+    {
+    };
+
   private:
     connect_processor( const connect_processor& )
       { }
@@ -269,7 +275,7 @@ class connect_processor :
 */
     };
 
-    bool pop_ready( processor& );
+    void pop_ready( processor& );
     void _close()
       { base_t::_close(); }
     void _stop();
@@ -292,7 +298,7 @@ class connect_processor :
         { }
 
       bool operator()() const
-        { return !me.ready_pool.empty(); }
+        { return !me.ready_pool.empty() || !me._in_work; }
 
       connect_processor& me;
     } not_empty;
