@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 18:16:58 yeti>
+// -*- C++ -*- Time-stamp: <08/07/08 13:04:19 yeti>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006, 2008
@@ -136,7 +136,8 @@ __FIT_DECLSPEC
 state_type EventHandler::State() const
 {
   lock_guard<recursive_mutex> lk( _theHistory_lock );
-  return theHistory.front();
+  state_type top = theHistory.front();
+  return top;
 }
 
 __FIT_DECLSPEC
