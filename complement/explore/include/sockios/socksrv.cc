@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/09 10:41:48 ptr>
+// -*- C++ -*- Time-stamp: <08/07/09 11:09:53 ptr>
 
 /*
  * Copyright (c) 2008
@@ -197,7 +197,7 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
 
   Connect* c = new Connect( *s ); // bad point! I can't read from s in ctor indeed!
 
-  if ( s->rdbuf()->in_avail() ) {
+  if ( s->rdbuf()->in_avail() > 0 ) {
     std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
     ready_pool.push_back( processor( c, s ) );
     std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
