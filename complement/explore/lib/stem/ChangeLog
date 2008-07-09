@@ -1,3 +1,9 @@
+2008-07-08  Petr Ovtchenkov  <yeti@yandex-team.ru>
+
+	* _EventHandler.cc: return state via local variable;
+
+	* libstem: library version 4.8.2.
+
 2008-07-07  Petr Ovtchenkov  <yeti@yandex-team.ru>
 
 	* EvManager.h, EvManager.cc: fix dispatch loop finish
