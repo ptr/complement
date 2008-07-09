@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/26 09:00:54 ptr>
+// -*- C++ -*- Time-stamp: <08/07/09 10:41:48 ptr>
 
 /*
  * Copyright (c) 2008
@@ -200,7 +200,7 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
   if ( s->rdbuf()->in_avail() ) {
     std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
     ready_pool.push_back( processor( c, s ) );
-    // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+    std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
     cnd.notify_one();
   } else {
     std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
@@ -265,30 +265,20 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_bas
   std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
   ready_pool.push_back( p );
   cnd.notify_one();
-  // std::cerr << "notify data " << (void *)c << " " << ready_pool.size() << std::endl;
 }
 
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
-bool connect_processor<Connect, charT, traits, _Alloc, C>::pop_ready( processor& p )
+void connect_processor<Connect, charT, traits, _Alloc, C>::pop_ready( processor& p )
 {
   std::tr2::unique_lock<std::tr2::mutex> lk( rdlock );
 
-  if ( !_in_work && ready_pool.empty() ) {
-    // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-    return false;
-  }
-
   // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
   cnd.wait( lk, not_empty );
-  // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-  p = ready_pool.front(); // it may contain p.c == 0,  p.s == 0, if !in_work()
-  ready_pool.pop_front();
-
-  if ( _in_work ) {
-    return true;
+  if ( ready_pool.empty() ) {
+    throw finish();
   }
-
-  return !ready_pool.empty(); // if !_in_work && ready_pool.empty() return false
+  p = ready_pool.front();
+  ready_pool.pop_front();
 }
 
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
@@ -296,26 +286,34 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
 {
   processor p;
 
-  while ( pop_ready( p ) ) {
-    if ( p.c != 0 ) {
+  try {
+    for ( ; ; ) {
+      pop_ready( p );
+      // if ( p.c != 0 ) {
       // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       (p.c->*C)( *p.s );
-      if ( p.s->rdbuf()->in_avail() ) {
+      if ( p.s->rdbuf()->in_avail() > 0 ) {
         std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
         ready_pool.push_back( p );
       } else {
         std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
         worker_pool[p.s->rdbuf()->fd()] = p;
       }
-    } // else {
-    //  std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-    // }
+      // } // else {
+      //  std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+      // }
+    }
+  }
+  catch ( const finish& ) {
+    // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
   }
 
-//  {
-//    std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-//    std::cerr << __FILE__ << ":" << __LINE__ << " " << worker_pool.size() << std::endl;
-//  }
+  {
+    std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
+    if ( !worker_pool.empty() ) {
+      std::cerr << __FILE__ << ":" << __LINE__ << " " << worker_pool.size() << std::endl;
+    }
+  }
 
 //  {
 //    std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
@@ -328,14 +326,8 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::_stop()
 {
   std::tr2::lock_guard<std::tr2::mutex> lk2( rdlock );
 
-  _in_work = false; // <--- set before cnd.notify_one(); (below in this func)
-  if ( ready_pool.empty() ) {
-    ready_pool.push_back( processor() ); // make ready_pool not empty
-    // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-    cnd.notify_one();
-  } // else {
-    // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-  // }
+  _in_work = false;
+  cnd.notify_one();
 }
 
 } // namespace std
