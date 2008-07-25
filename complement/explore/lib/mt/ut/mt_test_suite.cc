@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/07 13:15:01 yeti>
+// -*- C++ -*- Time-stamp: <08/07/25 09:43:40 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -12,6 +12,7 @@
 #include "mt_test.h"
 #include "shm_test.h"
 #include "mt_test_wg21.h"
+#include "sys_err_test.h"
 
 #include <config/feature.h>
 
@@ -30,6 +31,7 @@ int EXAM_DECL(signal_3_test);
 int main( int argc, const char** argv )
 {
   exam::test_suite t( "libxmt test" );
+  sys_err_test sys_err;
   mt_test test;
 
 #if 0
@@ -44,6 +46,7 @@ int main( int argc, const char** argv )
 
   exam::test_suite::test_case_type tc[3];
 
+  t.add( &sys_err_test::file, sys_err, "system error, no such file" );
   // t.add( &mt_test::callstack, test, "callstack" );
   tc[0] = t.add( &mt_test::barrier, test, "mt_test::barrier" );
   tc[1] = t.add( &mt_test::join_test, test, "mt_test::join_test" );

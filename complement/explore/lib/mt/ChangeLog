@@ -1,3 +1,16 @@
+2008-07-25  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* system_error, system_error.cc: basic functionality
+	of system_error and friends, as described in
+	http://www.open-std.org/jtc1/sc22/WG21/docs/papers/2008/n2691.pdf;
+	no locale support; no real difference between system_category
+	and posix_category;
+
+	* mt_test_suite.cc, sys_err_test.h, sys_err_test.cc: basic
+	trivial test for system_error;
+
+	* libxmt: bump revision to 2.0.8.
+
 2008-07-21  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* mutex: avoid usage of error_catalog---interface in
