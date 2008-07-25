@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/12/02 19:55:42 ptr>
+// -*- C++ -*- Time-stamp: <08/07/20 18:17:36 ptr>
 
 /*
- * Copyright (c) 2007
+ * Copyright (c) 2007, 2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -15,7 +15,7 @@
 #include <config/feature.h>
 #endif
 
-#if 1 /* !defined(STLPORT) */ /* || (_STLPORT_VERSION < 50200) */
+#if !defined(STLPORT) || (_STLPORT_VERSION < 0x520)
 
 // libstdc++ v3, timestamp 20050519 (3.4.4) has __type_traits,
 // libstdc++ v3, timestamp 20060306 (3.4.6) has __type_traits,
