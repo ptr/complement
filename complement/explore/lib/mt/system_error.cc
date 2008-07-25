@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/20 19:55:22 ptr>
+// -*- C++ -*- Time-stamp: <08/07/25 10:04:45 ptr>
 
 /*
  * Copyright (c) 2007-2008
@@ -8,8 +8,7 @@
  *
  * Based on JTC1/SC22/WG21 C++ 0x working draft;
  *
- * This is revision 2 of <system_error>:
- * http://www.open-std.org/jtc1/sc22/WG21/docs/papers/2007/n2303.html
+ * http://www.open-std.org/jtc1/sc22/WG21/docs/papers/2008/n2691.pdf
  */
 
 #include "mt/system_error"
@@ -261,7 +260,7 @@ _SysErrInit::_SysErrInit() :
    * An operation that would block was attempted on an object that has
      non-blocking mode selected.  Trying the same operation again will block
      until some external condition makes it possible to read, write, or
-     connect (whatever the operation).  You can use @code{select} to find out
+     connect (whatever the operation).  You can use select to find out
      when the operation will be possible.
  
      Portability Note: In many older Unix systems, this condition
@@ -543,10 +542,10 @@ _SysErrInit::_SysErrInit() :
   _sys_err[EILSEQ] = "Invalid or incomplete multibyte or wide character";
 #endif
 #ifdef EBACKGROUND
-  /* In the GNU system, servers supporting the @code{term} protocol return
+  /* In the GNU system, servers supporting the term protocol return
      this error for certain operations when the caller is not in the
      foreground process group of the terminal.  Users do not usually see this
-     error because functions such as @code{read} and @code{write} translate
+     error because functions such as read and write translate
      it into a SIGTTIN or SIGTTOU signal. */
   _sys_err[EBACKGROUND] = "Inappropriate operation for background process";
 #endif
@@ -824,7 +823,6 @@ class posix_error_category :
   public:
     virtual const char* name() const;
     virtual std::string message( int err ) const;
-
 };
 
 const char* posix_error_category::name() const
@@ -867,6 +865,9 @@ namespace std {
 
 using namespace detail;
 
+error_category::~error_category()
+{ }
+
 error_condition error_category::default_error_condition( int err ) const
 {
   return error_condition( err, *this );
@@ -907,5 +908,171 @@ const error_category& get_system_category()
   return detail::_system_error_category;
 }
 
-} // namespace std
+error_code::error_code() :
+    v( 0 ),
+    c( &detail::_system_error_category )
+{ }
 
+error_code::error_code( int val, const error_category& cat ) :
+    v( val ),
+    c( &cat )
+{ }
+
+void error_code::assign( int val, const error_category& cat )
+{
+  v = val;
+  c = &cat;
+}
+
+void error_code::clear()
+{
+  v = 0;
+  c = &detail::_system_error_category;
+}
+
+namespace posix_error {
+
+error_code make_error_code( posix_errno err )
+{ return error_code( err, detail::_posix_error_category ); }
+
+error_condition make_error_condition( posix_errno err )
+{ return error_condition( err, detail::_posix_error_category ); }
+
+} // namespace posix_error
+
+bool operator <( const error_code& l, const error_code& r )
+{
+  return l.category() == r.category() ? l.value() < r.value() : l.category() < r.category();
+}
+
+error_condition::error_condition() :
+    v( 0 ),
+    c( &detail::_posix_error_category )
+{ }
+
+error_condition::error_condition( int val, const error_category& cat ) :
+    v( val ),
+    c( &cat )
+{ }
+
+void error_condition::assign( int val, const error_category& cat )
+{
+  v = val;
+  c = &cat;
+}
+
+void error_condition::clear()
+{
+  v = 0;
+  c = &detail::_posix_error_category;
+}
+
+bool operator <( const error_condition& l, const error_condition& r )
+{
+  return l.category() == r.category() ? l.value() < r.value() : l.category() < r.category();
+}
+
+bool operator ==( const error_code& l, const error_code& r )
+{ return l.category() == r.category() && l.value() == r.value(); }
+
+bool operator ==( const error_code& l, const error_condition& r )
+{ return l.category().equivalent( l.value(), r ) || r.category().equivalent( l, r.value() ); }
+
+bool operator ==( const error_condition& l, const error_code& r )
+{ return r.category().equivalent( r.value(), l ) || l.category().equivalent( r, l.value() ); }
+
+bool operator ==( const error_condition& l, const error_condition& r )
+{ return l.category() == r.category() && l.value() == r.value(); }
+
+bool operator !=( const error_code& l, const error_code& r )
+{ return !(l == r); }
+
+bool operator !=( const error_code& l, const error_condition& r )
+{ return !(l == r); }
+
+bool operator !=( const error_condition& l, const error_code& r )
+{ return !(l == r); }
+
+bool operator !=( const error_condition& l, const error_condition& r )
+{ return !(l == r); }
+
+system_error::system_error( error_code code, const string& what ) :
+    runtime_error( what ),
+    ecode_( code.value(), code.category() ),
+    _dbuf( 0 )
+{ }
+
+system_error::system_error( error_code code ) :
+    runtime_error( "" ),
+    ecode_( code.value(), code.category() ),
+    _dbuf( 0 )
+{ }
+
+system_error::system_error( int code, const error_category& category,
+                            const string& what ) :
+    runtime_error( what ),
+    ecode_( code, category ),
+    _dbuf( 0 )
+{ }
+
+system_error::system_error( int code, const error_category& category ) :
+    runtime_error( "" ),
+    ecode_( code, category ),
+    _dbuf( 0 )
+{ }
+
+system_error::~system_error() throw()
+{
+  if ( _dbuf ) {
+    free( _dbuf );
+  }
+}
+
+const char* system_error::what() const throw()
+{
+  size_t sz = strlen( runtime_error::what() );
+  size_t sz_add = sz + ecode_.message().length() + (sz > 0 ? 3 : 1); // + ": ", not \0
+
+  if ( sz_add < _bufsize ) {
+    if ( sz > 0 ) {
+      memcpy( _buf, runtime_error::what(), sz );
+      _buf[sz++] = ':';
+      _buf[sz++] = ' ';
+    }
+    memcpy( _buf + sz, ecode_.message().data(), ecode_.message().length() );
+    _buf[sz_add - 1] = 0;
+  } else {
+    _dbuf = static_cast<char *>(malloc( sz_add ));
+    if ( _dbuf != 0 ) {
+      if ( sz > 0 ) {
+        memcpy( _dbuf, runtime_error::what(), sz );
+        _dbuf[sz++] = ':';
+        _dbuf[sz++] = ' ';
+      }
+      memcpy( _dbuf + sz, ecode_.message().data(), ecode_.message().length() );
+      _dbuf[sz_add - 1] = 0;
+      return _dbuf;
+    }
+    if ( sz > 0 ) {
+      strncpy( _buf, runtime_error::what(), _bufsize - 1 );
+    }
+    if ( sz < (_bufsize - 1) ) {
+      if ( sz > 0 ) {
+        _buf[sz++] = ':';
+      }
+      if ( sz < (_bufsize - 1) ) {
+        if ( sz > 0 ) {
+          _buf[sz++] = ' ';
+        }
+        if ( sz < (_bufsize - 1) ) {
+          strncpy( _buf + sz, ecode_.message().data(), _bufsize - sz - 1 );
+        }
+      }
+    }
+    _buf[_bufsize - 1] = 0;
+  }
+
+  return _buf;
+}
+
+} // namespace std

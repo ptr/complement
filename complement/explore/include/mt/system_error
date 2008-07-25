@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/20 19:12:24 ptr>
+// -*- C++ -*- Time-stamp: <08/07/25 08:47:37 ptr>
 
 /*
  * Copyright (c) 2007-2008
@@ -25,6 +25,7 @@
 #endif
 
 #include <cerrno>
+#include <ostream>
 
 namespace std {
 
@@ -413,33 +414,6 @@ const error_category& get_system_category();
 static const error_category& posix_category = get_posix_category();
 static const error_category& native_category = get_system_category();
 
-class error_code
-{
-  public:
-    error_code();
-    error_code( int val, const error_category& );
-    template <class ErrorCodeEnum>
-    error_code( ErrorCodeEnum err, typename std::tr1::enable_if<is_error_code_enum<ErrorCodeEnum>::value,void>::type* = 0 );
-
-    void assign( int val, const error_category& );
-    template <class ErrorCodeEnum>
-    typename std::tr1::enable_if<is_error_code_enum<ErrorCodeEnum>::value, error_code >::type& operator =( ErrorCodeEnum err );
-    void clear();
-
-    int value() const;
-    const error_category& category() const;
-    error_condition default_error_condition() const;
-    string message() const;
-    operator bool() const;
-
-  private:
-    int v;
-    const error_category& c;
-};
-
-bool operator <( const error_code&, const error_code& );
-
-
 class error_condition
 {
   public:
@@ -454,17 +428,56 @@ class error_condition
     typename std::tr1::enable_if<is_error_condition_enum<ErrorConditionEnum>::value, error_code >::type& operator =( ErrorConditionEnum err );
     void clear();
 
-    int value() const;
-    const error_category& category() const;
-    string message() const;
-    operator bool() const;
+    int value() const
+      { return v; }
+    const error_category& category() const
+      { return *c; }
+    string message() const
+      { return c->message( v ); }
+    operator bool() const
+      { return v != 0; }
 
   private:
-    int val_;
-    const error_category& cat_;
+    int v;
+    const error_category* c;
 };
 
 bool operator <( const error_condition&, const error_condition& );
+
+class error_code
+{
+  public:
+    error_code();
+    error_code( int val, const error_category& );
+    template <class ErrorCodeEnum>
+    error_code( ErrorCodeEnum err, typename std::tr1::enable_if<is_error_code_enum<ErrorCodeEnum>::value,void>::type* = 0 );
+
+    void assign( int val, const error_category& );
+    template <class ErrorCodeEnum>
+    typename std::tr1::enable_if<is_error_code_enum<ErrorCodeEnum>::value, error_code >::type& operator =( ErrorCodeEnum err );
+    void clear();
+
+    int value() const
+      { return v; }
+    const error_category& category() const
+      { return *c; }
+    error_condition default_error_condition() const
+      { return c->default_error_condition( v ); }
+    string message() const
+      { return c->message( v ); }
+    operator bool() const
+      { return v != 0; }
+
+  private:
+    int v;
+    const error_category* c;
+};
+
+bool operator <( const error_code&, const error_code& );
+
+template <class charT, class traits>
+basic_ostream<charT,traits>& operator <<( basic_ostream<charT,traits>& os, const error_code& e )
+{ return os << e.category().name() << ':' << e.value(); }
 
 class system_error :
     public runtime_error
@@ -472,11 +485,22 @@ class system_error :
   public:
     system_error( error_code code, const string& what );
     system_error( error_code code );
-    system_error( error_code code, const error_category& category,
+    system_error( int code, const error_category& category,
                   const string& what );
-    system_error( error_code code, const error_category& category );
-    error_code& code() const throw();
+    system_error( int code, const error_category& category );
+    ~system_error() throw();
+
+    const error_code& code() const throw()
+      { return ecode_; }
     const char* what() const throw();
+
+  private:
+    error_code ecode_;
+
+    enum { _bufsize = 256 };
+
+    mutable char _buf[_bufsize];
+    mutable char *_dbuf;
 };
 
 } // namespace std
