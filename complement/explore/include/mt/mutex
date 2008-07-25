@@ -218,7 +218,7 @@ class __mutex :
     void lock()
       {
 #ifdef __FIT_PTHREADS
-        std::error_catalog::value_type e = pthread_mutex_lock( &this->_M_lock );
+        int /* std::error_catalog::value_type */ e = pthread_mutex_lock( &this->_M_lock );
         if ( e ) {
           // throw std::system_error( e, native_catalog );
         }

@@ -1,3 +1,11 @@
+2008-07-21  Petr Ovtchenkov  <ptr@island.corbina.net>
+
+	* mutex: avoid usage of error_catalog---interface in
+	system_error changed.
+
+	* system_error, system_error.cc: follow
+	http://www.open-std.org/jtc1/sc22/WG21/docs/papers/2008/n2691.pdf
+
 2008-07-07  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* uid.cc, uid.h: convert uid to string; output uid
