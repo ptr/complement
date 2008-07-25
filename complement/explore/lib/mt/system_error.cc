@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/02/24 13:36:56 ptr>
+// -*- C++ -*- Time-stamp: <08/07/20 19:55:22 ptr>
 
 /*
  * Copyright (c) 2007-2008
@@ -45,15 +45,14 @@ typedef std::hash_map<error_catalog::value_type,char *> _sys_err_vector_type;
 
 namespace detail {
 
-class _SysErrInit
+struct _SysErrInit
 {
-  public:
-    typedef std::vector<char *> container_type;
+    typedef std::vector<const char *> container_type;
 
     _SysErrInit();
 
     container_type _sys_err;
-    std::error_catalog::value_type _last_value;
+    container_type::size_type _last_value;
 };
 
 _SysErrInit::_SysErrInit() :
@@ -817,358 +816,95 @@ _SysErrInit::_SysErrInit() :
 
 static _SysErrInit _syserr;
 
+static const std::string _unknown( "Code not specified in this category" );
+
+class posix_error_category :
+    public std::error_category
+{
+  public:
+    virtual const char* name() const;
+    virtual std::string message( int err ) const;
+
+};
+
+const char* posix_error_category::name() const
+{
+  return "POSIX";
+}
+
+std::string posix_error_category::message( int err ) const
+{
+  // bad: allocation present, so no memory may happens...
+  return (err >= 0) && (err <= _syserr._last_value) && (_syserr._sys_err[err] != 0) ? std::string( _syserr._sys_err[err] ) : _unknown;
+}
+
+class system_error_category :
+    public std::error_category
+{
+  public:
+    virtual const char* name() const;
+    virtual std::string message( int err ) const;
+
+};
+
+const char* system_error_category::name() const
+{
+  return "system";
+}
+
+std::string system_error_category::message( int err ) const
+{
+  // bad: allocation present, so no memory may happens...
+  return (err >= 0) && (err <= _syserr._last_value) && (_syserr._sys_err[err] != 0) ? std::string( _syserr._sys_err[err] ) : _unknown;
+}
+
+static posix_error_category _posix_error_category;
+static system_error_category _system_error_category;
+
 } // namespace detail
 
 namespace std {
 
 using namespace detail;
 
-#ifdef EAFNOSUPPORT
-const error_catalog::value_type error_catalog::address_family_not_supported =      EAFNOSUPPORT;
-#else
-#endif
-#ifdef EADDRINUSE
-const error_catalog::value_type error_catalog::address_in_use =                    EADDRINUSE;
-#else
-#endif
-#ifdef EADDRNOTAVAIL
-const error_catalog::value_type error_catalog::address_not_available =             EADDRNOTAVAIL;
-#else
-#endif
-#ifdef EISCONN
-const error_catalog::value_type error_catalog::already_connected =                 EISCONN;
-#else
-#endif
-#ifdef E2BIG
-const error_catalog::value_type error_catalog::argument_list_too_long =            E2BIG;
-#else
-#endif
-#ifdef EDOM
-const error_catalog::value_type error_catalog::argument_out_of_domain =            EDOM;
-#else
-#endif
-#ifdef EFAULT
-const error_catalog::value_type error_catalog::bad_address =                       EFAULT;
-#else
-#endif
-#ifdef EBADF
-const error_catalog::value_type error_catalog::bad_file_descriptor =               EBADF;
-#else
-#endif
-#ifdef EBADMSG
-const error_catalog::value_type error_catalog::bad_message =                       EBADMSG;
-#else
-#endif
-#ifdef EPIPE
-const error_catalog::value_type error_catalog::broken_pipe =                       EPIPE;
-#else
-#endif
-#ifdef ECONNABORTED
-const error_catalog::value_type error_catalog::connection_aborted =                ECONNABORTED;
-#else
-#endif
-#ifdef ECONNREFUSED
-const error_catalog::value_type error_catalog::connection_refused =                ECONNREFUSED;
-#else
-#endif
-#ifdef ECONNRESET
-const error_catalog::value_type error_catalog::connection_reset =                  ECONNRESET;
-#else
-#endif
-#ifdef EXDEV
-const error_catalog::value_type error_catalog::cross_device_link =                 EXDEV;
-#else
-#endif
-#ifdef EDESTADDRREQ
-const error_catalog::value_type error_catalog::destination_address_required =      EDESTADDRREQ;
-#else
-#endif
-#ifdef EBUSY
-const error_catalog::value_type error_catalog::device_or_resource_busy =           EBUSY;
-#else
-#endif
-#ifdef ENOTEMPTY
-const error_catalog::value_type error_catalog::directory_not_empty =               ENOTEMPTY;
-#else
-#endif
-#ifdef ENOEXEC
-const error_catalog::value_type error_catalog::executable_format_error =           ENOEXEC;
-#else
-#endif
-#ifdef EEXIST
-const error_catalog::value_type error_catalog::file_exists =                       EEXIST;
-#else
-#endif
-#ifdef EFBIG
-const error_catalog::value_type error_catalog::file_too_large =                    EFBIG;
-#else
-#endif
-#ifdef ENAMETOOLONG
-const error_catalog::value_type error_catalog::filename_too_long =                 ENAMETOOLONG;
-#else
-#endif
-#ifdef ENOSYS
-const error_catalog::value_type error_catalog::function_not_supported =            ENOSYS;
-#else
-#endif
-#ifdef EHOSTUNREACH
-const error_catalog::value_type error_catalog::host_unreachable =                  EHOSTUNREACH;
-#else
-#endif
-#ifdef EIDRM
-const error_catalog::value_type error_catalog::identifier_removed =                EIDRM;
-#else
-#endif
-#ifdef EILSEQ
-const error_catalog::value_type error_catalog::illegal_byte_sequence =             EILSEQ;
-#else
-#endif
-#ifdef ENOTTY
-const error_catalog::value_type error_catalog::inappropriate_io_control_operation =ENOTTY;
-#else
-#endif
-#ifdef EINTR
-const error_catalog::value_type error_catalog::interrupted =                       EINTR;
-#else
-#endif
-#ifdef EINVAL
-const error_catalog::value_type error_catalog::invalid_argument =                  EINVAL;
-#else
-#endif
-#ifdef ESPIPE
-const error_catalog::value_type error_catalog::invalid_seek =                      ESPIPE;
-#else
-#endif
-#ifdef EIO
-const error_catalog::value_type error_catalog::io_error =                          EIO;
-#else
-#endif
-#ifdef EISDIR
-const error_catalog::value_type error_catalog::is_a_directory =                    EISDIR;
-#else
-#endif
-#ifdef EMSGSIZE
-const error_catalog::value_type error_catalog::message_too_long =                  EMSGSIZE; 
-#else
-#endif
-#ifdef ENETDOWN
-const error_catalog::value_type error_catalog::network_down =                      ENETDOWN;
-#else
-#endif
-#ifdef ENETRESET
-const error_catalog::value_type error_catalog::network_reset =                     ENETRESET;
-#else
-#endif
-#ifdef ENETUNREACH
-const error_catalog::value_type error_catalog::network_unreachable =               ENETUNREACH;
-#else
-#endif
-#ifdef ENOBUFS
-const error_catalog::value_type error_catalog::no_buffer_space =                   ENOBUFS;
-#else
-#endif
-#ifdef ECHILD
-const error_catalog::value_type error_catalog::no_child_process =                  ECHILD;
-#else
-#endif
-#ifdef ENOLINK
-const error_catalog::value_type error_catalog::no_link =                           ENOLINK;
-#else
-#endif
-#ifdef ENOLCK
-const error_catalog::value_type error_catalog::no_lock_available =                 ENOLCK;
-#else
-#endif
-#ifdef ENODATA
-const error_catalog::value_type error_catalog::no_message_available =              ENODATA;
-#else
-#endif
-#ifdef ENOMSG
-const error_catalog::value_type error_catalog::no_message =                        ENOMSG;
-#else
-#endif
-#ifdef ENOSPC
-const error_catalog::value_type error_catalog::no_space_on_device =                ENOSPC;
-#else
-#endif
-#ifdef ENOSR
-const error_catalog::value_type error_catalog::no_stream_resources =               ENOSR;
-#else
-#endif
-#ifdef ENXIO
-const error_catalog::value_type error_catalog::no_such_device_or_address =         ENXIO;
-#else
-#endif
-#ifdef ENODEV
-const error_catalog::value_type error_catalog::no_such_device =                    ENODEV;
-#else
-#endif
-#ifdef ENOENT
-const error_catalog::value_type error_catalog::no_such_file_or_directory =         ENOENT;
-#else
-#endif
-#ifdef ESRCH
-const error_catalog::value_type error_catalog::no_such_process =                   ESRCH;
-#else
-#endif
-#ifdef ENOTDIR
-const error_catalog::value_type error_catalog::not_a_directory =                   ENOTDIR;
-#else
-#endif
-#ifdef ENOTSOCK
-const error_catalog::value_type error_catalog::not_a_socket =                      ENOTSOCK;
-#else
-#endif
-#ifdef ENOSTR
-const error_catalog::value_type error_catalog::not_a_stream =                      ENOSTR;
-#else
-#endif
-#ifdef ENOTCONN
-const error_catalog::value_type error_catalog::not_connected =                     ENOTCONN;
-#else
-#endif
-#ifdef ENOMEM
-const error_catalog::value_type error_catalog::not_enough_memory =                 ENOMEM;
-#else
-#endif
-#ifdef ENOTSUP
-const error_catalog::value_type error_catalog::not_supported =                     ENOTSUP;
-#else
-#endif
-#ifdef EALREADY
-const error_catalog::value_type error_catalog::operation_already_in_progress =     EALREADY; 
-#else
-#endif
-#ifdef ECANCELED
-const error_catalog::value_type error_catalog::operation_canceled =                ECANCELED;
-#else
-#endif
-#ifdef EINPROGRESS
-const error_catalog::value_type error_catalog::operation_in_progress =             EINPROGRESS;
-#else
-#endif
-#ifdef EPERM
-const error_catalog::value_type error_catalog::operation_not_permitted =           EPERM;
-#else
-#endif
-#ifdef EOPNOTSUPP
-const error_catalog::value_type error_catalog::operation_not_supported =           EOPNOTSUPP;
-#else
-#endif
-#ifdef EOWNERDEAD
-const error_catalog::value_type error_catalog::owner_dead =                        EOWNERDEAD;
-#else
-#endif
-#ifdef EACCES
-const error_catalog::value_type error_catalog::permission_denied =                 EACCES;
-#else
-#endif
-#ifdef EPROTO
-const error_catalog::value_type error_catalog::protocol_error =                    EPROTO;
-#else
-#endif
-#ifdef ENOPROTOOPT
-const error_catalog::value_type error_catalog::protocol_not_available =            ENOPROTOOPT; 
-#else
-#endif
-#ifdef EPROTONOSUPPORT
-const error_catalog::value_type error_catalog::protocol_not_supported =            EPROTONOSUPPORT;
-#else
-#endif
-#ifdef EROFS
-const error_catalog::value_type error_catalog::read_only_file_system =             EROFS;
-#else
-#endif
-#ifdef EDEADLK
-const error_catalog::value_type error_catalog::resource_deadlock_would_occur =     EDEADLK;
-#else
-#endif
-#ifdef ERANGE
-const error_catalog::value_type error_catalog::result_out_of_range =               ERANGE;
-#else
-#endif
-#ifdef ENOTRECOVERABLE
-const error_catalog::value_type error_catalog::state_not_recoverable =             ENOTRECOVERABLE;
-#else
-#endif
-#ifdef ETIME
-const error_catalog::value_type error_catalog::stream_timeout =                    ETIME;
-#else
-#endif
-#ifdef ETXTBSY
-const error_catalog::value_type error_catalog::text_file_busy =                    ETXTBSY;
-#else
-#endif
-#ifdef ETIMEDOUT
-const error_catalog::value_type error_catalog::timed_out =                         ETIMEDOUT;
-#else
-#endif
-#ifdef ENFILE
-const error_catalog::value_type error_catalog::too_many_files_open_in_system =     ENFILE;
-#else
-#endif
-#ifdef EMFILE
-const error_catalog::value_type error_catalog::too_many_files_open =               EMFILE;
-#else
-#endif
-#ifdef EMLINK
-const error_catalog::value_type error_catalog::too_many_links =                    EMLINK;
-#else
-#endif
-#ifdef ELOOP
-const error_catalog::value_type error_catalog::too_many_synbolic_link_levels =     ELOOP;
-#else
-#endif
-#ifdef EAGAIN
-const error_catalog::value_type error_catalog::try_again =                         EAGAIN; 
-#else
-#endif
-#ifdef EOVERFLOW
-const error_catalog::value_type error_catalog::value_too_large =                   EOVERFLOW;
-#else
-#endif
-#ifdef EPROTOTYPE
-const error_catalog::value_type error_catalog::wrong_protocol_type =               EPROTOTYPE;
-#else
-#endif
-
-const error_catalog::value_type error_catalog::last_value() const throw()
+error_condition error_category::default_error_condition( int err ) const
 {
-  return _syserr._last_value;
+  return error_condition( err, *this );
 }
 
-bool error_catalog::is_valid_value( error_catalog::value_type v ) const throw()
+bool error_category::equivalent( int code, const error_condition& cnd ) const
 {
-  return (v >= 0) && (v <= _syserr._last_value) && (_syserr._sys_err[v] != 0);
+  return default_error_condition( code ) == cnd;
 }
 
-const char* error_catalog::str( error_catalog::value_type v ) const throw()
+bool error_category::equivalent( const error_code& code, int cnd ) const
 {
-  if ( (v < 0) || (v > _syserr._last_value) ) {
-    return 0;
-  }
-
-  return _syserr._sys_err[v];
+  return (*this == code.category()) && (code.value() == cnd);
 }
 
-bool error_catalog::operator ==(const error_catalog& __other) const throw()
+bool error_category::operator ==( const error_category& cat ) const
 {
-  return (_M_loc == __other.getloc()) && (typeid(*this) == typeid(__other));
+  return this == &cat;
 }
 
-bool error_catalog::operator !=(const error_catalog& __other) const throw()
+bool error_category::operator !=( const error_category& cat ) const
 {
-  return (_M_loc != __other.getloc()) || (typeid(*this) != typeid(__other));
+  return this != &cat;
 }
 
-system_error::system_error( const std::string& s ) :
-  std::runtime_error( s )
+bool error_category::operator <( const error_category& cat ) const
 {
+  return this < &cat;
 }
 
-system_error::system_error( error_catalog::value_type _v, const error_catalog& _c ) :
-  std::runtime_error( _c.str( _v ) )
+const error_category& get_posix_category()
 {
+  return detail::_posix_error_category;
+}
+
+const error_category& get_system_category()
+{
+  return detail::_system_error_category;
 }
 
 } // namespace std
