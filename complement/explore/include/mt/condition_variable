@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/26 10:18:13 ptr>
+// -*- C++ -*- Time-stamp: <08/07/30 20:49:38 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2008
@@ -27,7 +27,7 @@
 #ifdef __FIT_PTHREADS
 #  include <semaphore.h>
 #endif
-
+#include <mt/system_error>
 
 namespace std {
 
@@ -104,7 +104,7 @@ class __condition_variable
         int ret = pthread_cond_wait( &_cond, const_cast<pthread_mutex_t *>(&lock.m->_M_lock) );
         if ( ret ) {
           lock.lock();
-          // throw system_error
+          throw std::system_error( ret, std::get_posix_category() );
         }
 #endif
       }
@@ -128,7 +128,7 @@ class __condition_variable
           if ( ret == ETIMEDOUT ) {
             return false;
           }
-          // throw system_error
+          throw std::system_error( ret, std::get_posix_category() );
         }
 #endif
         return true;
@@ -259,7 +259,7 @@ class __condition_variable_any
         int ret = pthread_cond_wait( &_cond, lock.native_handle() );
         if ( ret ) {
           lock.lock();
-          // throw system_error
+          throw std::system_error( ret, std::get_posix_category() );
         }
 #endif
       }
@@ -284,7 +284,7 @@ class __condition_variable_any
           if ( ret == ETIMEDOUT ) {
             return false;
           }
-          // throw system_error
+          throw std::system_error( ret, std::get_posix_category() );
         }
 #endif
 #ifdef __FIT_WIN32THREADS
@@ -424,8 +424,9 @@ class __condition_event
         SetEvent( _cond );
 #endif
 #ifdef __FIT_PTHREADS
-        if ( pthread_cond_signal( &_cond ) ) {
-          // throw system_error
+        int ret = pthread_cond_signal( &_cond );
+        if ( ret ) {
+          throw std::system_error( ret, std::get_posix_category() );
         }
 #endif
       }
@@ -448,8 +449,9 @@ class __condition_event
         }
 #endif
 #ifdef __FIT_PTHREADS
-        if ( pthread_cond_broadcast( &_cond ) ) {
-          // throw system_error
+        int ret = pthread_cond_broadcast( &_cond );
+        if ( ret ) {
+          throw std::system_error( ret, std::get_posix_category() );
         }
 #endif
       }
@@ -478,7 +480,7 @@ class __condition_event
         while ( !_val ) {
           ret = pthread_cond_wait( &_cond, &_lock._M_lock );
           if ( ret ) {
-            // throw system_error
+            throw std::system_error( ret, std::get_posix_category() );
           }
         }
 #endif
@@ -498,7 +500,7 @@ class __condition_event
             if ( ret == ETIMEDOUT ) {
               return _val;
             }
-            // throw system_error
+            throw std::system_error( ret, std::get_posix_category() );
           }
         }
 #endif
@@ -601,9 +603,8 @@ class __semaphore
         }
 #endif
 #ifdef __FIT_PTHREADS
-        int ret = sem_wait( &_sem );
-        if ( ret != 0 ) {
-          // throw system_error
+        if ( sem_wait( &_sem ) ) {
+          throw std::system_error( errno, std::get_posix_category() );
         }
 #endif
       }
@@ -614,12 +615,11 @@ class __semaphore
         return _cnt > 0 ? (--_cnt, this->wait()) : -1;
 #endif
 #ifdef __FIT_PTHREADS
-        int ret = sem_trywait( &_sem );
-        if ( ret != 0 ) {
-          if ( ret == EBUSY ) {
+        if ( sem_trywait( &_sem ) ) {
+          if ( errno == std::posix_error::resource_unavailable_try_again ) {
             return false;
           }
-          // throw system_error
+          throw std::system_error( errno, std::get_posix_category() );
         }
         return true;
 #endif        
@@ -632,12 +632,11 @@ class __semaphore
         t.tv_sec = abs_time.seconds_since_epoch();
         t.tv_nsec = static_cast<long>( abs_time.nanoseconds_since_epoch().count() % nanoseconds::ticks_per_second );
 #  if !(defined(__FreeBSD__) || defined(__OpenBSD__))
-        int ret = sem_timedwait( &_sem, &t );
-        if ( ret != 0 ) {
-          if ( ret == ETIMEDOUT ) {
+        if ( sem_timedwait( &_sem, &t ) ) {
+          if ( errno == std::posix_error::timed_out ) {
             return false;
           }
-          // throw system_error
+          throw std::system_error( errno, std::get_posix_category() );
         }
 #  endif
 #endif
@@ -690,9 +689,8 @@ class __semaphore
         }
 #endif
 #ifdef __FIT_PTHREADS
-        int ret = sem_post( &_sem );
-        if ( ret != 0 ) {
-          // throw system_error
+        if ( sem_post( &_sem ) ) {
+          throw std::system_error( errno, std::get_posix_category() );
         }
 #endif        
       }
@@ -704,9 +702,8 @@ class __semaphore
 #endif
 #ifdef __FIT_PTHREADS
         int v;
-        int e = sem_getvalue( &_sem, &v );
-        if ( e != 0 ) {
-          // throw system_error
+        if ( sem_getvalue( &_sem, &v ) ) {
+          throw std::system_error( errno, std::get_posix_category() );
         }
         
         return v;
@@ -755,8 +752,8 @@ class __barrier
       {
 #ifdef __FIT_PTHREADS
         int ret = pthread_barrier_wait( &_barr );
-        if ( ret != 0 ) {
-          // throw system_error
+        if ( ret != PTHREAD_BARRIER_SERIAL_THREAD && ret != 0 ) {
+          throw std::system_error( ret, std::get_posix_category() );
         }
 #endif
       }

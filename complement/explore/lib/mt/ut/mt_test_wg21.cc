@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/07 14:23:07 yeti>
+// -*- C++ -*- Time-stamp: <08/07/30 20:51:24 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -137,13 +137,18 @@ static std::tr2::barrier bar;
 
 void thread_func3()
 {
-  EXAM_CHECK_ASYNC( val == 0 );
+  try {
+    EXAM_CHECK_ASYNC( val == 0 );
 
-  bar.wait();
+    bar.wait();
 
-  std::tr2::lock_guard<std::tr2::mutex> lock( lk );
+    std::tr2::lock_guard<std::tr2::mutex> lock( lk );
 
-  ++val;
+    ++val;
+  }
+  catch ( std::runtime_error& err ) {
+    EXAM_ERROR_ASYNC( err.what() );
+  }
 }
 
 int EXAM_IMPL(mt_test_wg21::barrier)
