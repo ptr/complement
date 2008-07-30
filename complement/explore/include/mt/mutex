@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/26 10:20:36 ptr>
+// -*- C++ -*- Time-stamp: <08/07/30 19:44:33 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2008
@@ -98,15 +98,17 @@ class __mutex_base
           pthread_mutexattr_init( &att );
 # ifdef __FIT_PSHARED_MUTEX
           if ( SCOPE ) {
-            if ( pthread_mutexattr_setpshared( &att, PTHREAD_PROCESS_SHARED ) != 0 ) {
-              throw std::invalid_argument( detail::_notpshared );
+            int ret = pthread_mutexattr_setpshared( &att, PTHREAD_PROCESS_SHARED );
+            if ( ret != 0 ) {
+              throw std::system_error( ret, std::get_posix_category(), detail::_notpshared );
             }
           }
 # endif // __FIT_PSHARED_MUTEX
 # ifdef __FIT_XSI_THR  // Unix 98 or X/Open System Interfaces Extention
           if ( RECURSIVE_SAFE ) {
-            if ( pthread_mutexattr_settype( &att, PTHREAD_MUTEX_RECURSIVE ) != 0 ) {
-              throw std::invalid_argument( detail::_notrecursive );
+            int ret = pthread_mutexattr_settype( &att, PTHREAD_MUTEX_RECURSIVE );
+            if ( ret != 0 ) {
+              throw std::system_error( ret, std::get_posix_category(), detail::_notrecursive );
             }
           }
 # endif
@@ -218,9 +220,9 @@ class __mutex :
     void lock()
       {
 #ifdef __FIT_PTHREADS
-        int /* std::error_catalog::value_type */ e = pthread_mutex_lock( &this->_M_lock );
+        int e = pthread_mutex_lock( &this->_M_lock );
         if ( e ) {
-          // throw std::system_error( e, native_catalog );
+          throw std::system_error( e, std::get_posix_category() );
         }
 #endif
 #ifdef __FIT_WIN32THREADS
@@ -514,8 +516,9 @@ class __rw_mutex_base
           pthread_rwlockattr_t att;
           pthread_rwlockattr_init( &att );
 # ifdef __FIT_PSHARED_MUTEX
-          if ( pthread_rwlockattr_setpshared( &att, PTHREAD_PROCESS_SHARED ) != 0 ) {
-            throw std::invalid_argument( std::tr2::detail::_notpshared );
+          int ret = pthread_rwlockattr_setpshared( &att, PTHREAD_PROCESS_SHARED );
+          if ( ret != 0 ) {
+            throw std::system_error( ret, std::get_posix_category(), std::tr2::detail::_notpshared );
           }
 # endif // __FIT_PSHARED_MUTEX
           pthread_rwlock_init( &_M_lock, &att );

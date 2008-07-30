@@ -1,5 +1,12 @@
 2008-07-30  Petr Ovtchenkov  <ptr@island.corbina.net>
 
+	* condition_variable: throw system_error when problem detected;
+	fix barrier::wait---PTHREAD_BARRIER_SERIAL_THREAD is also
+	normal return value; fix error processing in semaphore---sem_*
+	functions indicate error via errno, not via return;
+
+	* mutex: throw system_error when problem detected;
+	
 	* uid.cc: use system_error for detailed report about problem;
 
 	* libxmt: bump revision to 2.0.9.
