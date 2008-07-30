@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/07 14:19:23 yeti>
+// -*- C++ -*- Time-stamp: <08/07/30 19:12:12 ptr>
 
 /*
  * Copyright (c) 2006, 2008
@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdexcept>
+#include <mt/system_error>
 
 #include <iostream>
 
@@ -62,21 +63,24 @@ struct __uid_init
 
     static uuid_type _host_id;
     char _host_id_str[48]; // 37 really
-    bool fail;
+    int err;
 };
 
 uuid_type __uid_init::_host_id;
 
+static const char boot_id[] = "/proc/sys/kernel/random/boot_id";
+static const char uu_id[] = "/proc/sys/kernel/random/uuid";
+
 __uid_init::__uid_init() :
-     fail( false )
+     err( 0 )
 {
-  int fd = ::open( "/proc/sys/kernel/random/boot_id", O_RDONLY );
+  int fd = ::open( boot_id, O_RDONLY );
 
   if ( (fd < 0) || (::read( fd, _host_id_str, 36 ) != 36 )) {
+    err = errno;
     if ( fd >= 0 ) {
       ::close( fd );
     }
-    fail = true;
   } else {
     _host_id_str[36] = '\0';
     ::close( fd );
@@ -142,8 +146,8 @@ uuid_type::operator string() const
 const char *hostid_str() throw (runtime_error)
 {
   static detail::__uid_init _uid;
-  if ( _uid.fail ) {
-    throw runtime_error( "can't read hostid" );
+  if ( _uid.err != 0 ) {
+    throw system_error( _uid.err, get_posix_category(), detail::boot_id );
   }
   return _uid._host_id_str;
 }
@@ -158,12 +162,13 @@ std::string uid_str() throw (runtime_error)
 {
   char buf[37];
 
-  int fd = ::open( "/proc/sys/kernel/random/uuid", O_RDONLY );
+  int fd = ::open( detail::uu_id, O_RDONLY );
   if ( (fd < 0) || (::read( fd, buf, 37 ) != 37) ) {
+    system_error se( errno, get_posix_category(), string( "Can't generate UID; " ) + detail::uu_id );
     if ( fd >= 0 ) {
       ::close( fd );
     }
-    throw runtime_error( "Can't generate UID" );
+    throw se;
     // return std::string();
   }
   ::close( fd );
