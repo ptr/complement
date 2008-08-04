@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/30 19:12:12 ptr>
+// -*- C++ -*- Time-stamp: <08/08/04 16:32:11 yeti>
 
 /*
  * Copyright (c) 2006, 2008
@@ -24,7 +24,11 @@ namespace std {
 
 std::ostream& operator <<( std::ostream& s, const xmt::uuid_type& uid )
 {
+#ifdef STLPORT
   std::ios_base::fmtflags f = s.flags( 0 );
+#else // i.e. libstdc++
+  std::ios_base::fmtflags f = s.flags( static_cast<std::ios_base::fmtflags>(0) );
+#endif
   s << hex << setfill('0')
     << setw(2) << static_cast<unsigned>(uid.u.b[0])
     << setw(2) << static_cast<unsigned>(uid.u.b[1])
