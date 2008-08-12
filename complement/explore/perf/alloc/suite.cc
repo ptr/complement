@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/08/12 16:48:21 yeti>
+// -*- C++ -*- Time-stamp: <08/08/12 18:27:28 yeti>
 
 /*
  * Copyright (c) 2008
@@ -25,6 +25,8 @@ int main( int, char ** )
   alloc_test alt;
 
   t.add( &alloc_test::alloc, alt, "malloc" );
+  t.add( &alloc_test::alloc5000, alt, "malloc 5000" );
+  t.add( &alloc_test::alloc_mix, alt, "malloc mix" );
 
   return t.girdle();
 }
