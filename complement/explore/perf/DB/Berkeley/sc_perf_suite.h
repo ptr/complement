@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/08/13 13:26:19 yeti>
+// -*- C++ -*- Time-stamp: <08/08/14 15:44:08 yeti>
 
 /*
  * Copyright (c) 2008
@@ -15,6 +15,7 @@
 class sleepycat_test
 {
   public:
+    int EXAM_DECL(hash_open_cxx);
     int EXAM_DECL(hash_open);
 };
 

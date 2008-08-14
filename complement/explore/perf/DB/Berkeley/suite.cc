@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/08/13 13:26:45 yeti>
+// -*- C++ -*- Time-stamp: <08/08/14 21:20:08 yeti>
 
 /*
  * Copyright (c) 2008
@@ -25,6 +25,7 @@ int main( int, char ** )
   sleepycat_test st;
 
   t.add( &sleepycat_test::hash_open, st, "Open DB with DB_HASH" );
+  t.add( &sleepycat_test::hash_open_cxx, st, "Open DB with DB_HASH, C++ interface" );
 
   return t.girdle();
 }
