@@ -128,13 +128,19 @@ bool Opts::is_opt_name(const string& s)
   return (s.size() > 1) && (s[0] == '-') && !is_flag_group(s);
 }
 
-bool Opts::is_substr(const string& small,const string& big)
+bool Opts::is_substr( const string& small, const string& big ) const
 {
-  if (small.size() > big.size())
+  if ( small.size() > big.size() ) {
     return false;
-  for (int i = 0;i < small.size();i++)
-    if (small[i] != big[i])
+  }
+
+  string::const_iterator i = small.begin();
+  string::const_iterator j = big.begin();
+  for ( ; i != small.end(); ++i, ++j ) {
+    if ( *i != *j ) {
       return false;
+    }
+  }
 
   return true;
 }
@@ -155,9 +161,9 @@ bool Opts::is_flag_group( const string& s )
 }
 
 // this function assumes that is_opt_name(s) = true;
-Opts::options_container_type::const_iterator Opts::get_opt_index( const string& s)
+Opts::options_container_type::const_iterator Opts::get_opt_index( const string& s) const
 {
-  assert(is_opt_name(s));
+  // assert(is_opt_name(s));
   if (s.size() == 2 && isalnum(s[1]) ) { // is short name
     options_container_type::const_iterator i = storage.begin();
     for ( ; i != storage.end(); ++i ) {

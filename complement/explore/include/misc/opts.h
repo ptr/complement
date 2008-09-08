@@ -469,8 +469,8 @@ class Opts
     bool isterm( const std::string& s );
     bool is_opt_name( const std::string& s );
     bool is_flag_group( const std::string& s );
-    bool is_substr(const std::string& small, const std::string& big );
-    options_container_type::const_iterator get_opt_index( const std::string& s );
+    bool is_substr(const std::string& small, const std::string& big ) const;
+    options_container_type::const_iterator get_opt_index( const std::string& s ) const;
 };
 
 template < class T , class V >

@@ -1,7 +1,11 @@
 2008-09-08  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* type_traits.h: add enable_if, conditional and decay;
-	useful when no STLport and gcc before 4.x.
+	useful when no STLport and gcc before 4.x;
+
+	* opts.h, opts.cc: add const to some auxilary functions;
+
+	* libmisc: version 1.10.2.
 
 2008-07-21  Petr Ovtchenkov  <ptr@island.corbina.net>
 
