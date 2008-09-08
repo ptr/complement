@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/30 19:44:33 ptr>
+// -*- C++ -*- Time-stamp: <08/09/08 23:26:16 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2008
@@ -778,7 +778,13 @@ class unique_lock
     unique_lock& operator =( const unique_lock& )
       { return *this; }
 
+#if defined(__GNUC__) && (__GNUC__ < 4)
+  public:
+#endif
     const M* m;
+#if defined(__GNUC__) && (__GNUC__ < 4)
+  private:
+#endif
     bool lk;
     friend class __condition_variable<true>;
     friend class __condition_variable<false>;

@@ -1,7 +1,11 @@
 2008-09-08  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* system_error: use misc/type_traits.h for gcc before 4.x and
-	without STLport.
+	without STLport;
+
+	* mutex: gcc 3.3.6 has a problem with friend templates;
+
+	* libxmt: bump revision to 2.0.10.
 
 2008-07-30  Petr Ovtchenkov  <ptr@island.corbina.net>
 
