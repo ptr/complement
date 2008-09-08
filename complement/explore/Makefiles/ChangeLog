@@ -1,3 +1,8 @@
+2008-09-08  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* gmake/top.mak: corrected check of settings for builds
+	without STLport.
+
 2008-06-16  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* gmake/subdirs.mak: function to pass tag for make in
