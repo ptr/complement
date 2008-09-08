@@ -19,9 +19,12 @@
 #include <stdexcept>
 
 #ifdef STLPORT
-#include <type_traits>
+# include <type_traits>
 #else
-#include <tr1/type_traits>
+# if defined(__GNUC__) && (__GNUC__ < 4)
+#  include <misc/type_traits.h>
+# else
+#  include <tr1/type_traits>
 
 namespace std {
 
@@ -91,6 +94,8 @@ struct conditional<true,_Tp1,_Tp2>
 } // namespace tr1
 
 } // namesapce std
+
+# endif // gcc after 3.x
 
 #endif
 
