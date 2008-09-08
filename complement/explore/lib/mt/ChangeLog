@@ -1,3 +1,8 @@
+2008-09-08  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* system_error: use misc/type_traits.h for gcc before 4.x and
+	without STLport.
+
 2008-07-30  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* condition_variable: throw system_error when problem detected;
