@@ -1,3 +1,8 @@
+2008-09-08  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* type_traits.h: add enable_if, conditional and decay;
+	useful when no STLport and gcc before 4.x.
+
 2008-07-21  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* type_traits.h: fix STLport version; use type_traits

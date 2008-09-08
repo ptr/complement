@@ -707,6 +707,67 @@ struct add_pointer
 
 // aligned_storage
 
+namespace detail {
+
+template <bool,class _U>
+struct _decay_aux2
+{
+    typedef typename remove_cv<_U>::type type;
+};
+
+template <class _U>
+struct _decay_aux2<true,_U>
+{
+    typedef typename add_pointer<_U>::type type;
+};
+
+template <bool, class _U>
+struct _decay_aux1
+{
+    typedef typename _decay_aux2<is_function<_U>::value,_U>::type type;
+};
+
+template <class _U>
+struct _decay_aux1<true,_U>
+{
+    typedef typename remove_extent<_U>::type* type;
+};
+
+} // namespace detail
+
+template <class _Tp>
+class decay
+{
+  private:
+    typedef typename remove_reference<_Tp>::type _U;
+
+  public:
+    typedef typename detail::_decay_aux1<is_array<_U>::value,_U>::type type;
+};
+
+template <bool, class _Tp = void>
+struct enable_if
+{
+};
+
+template <class _Tp>
+struct enable_if<true,_Tp>
+{
+    typedef _Tp type;
+};
+
+template <bool, class _Tp1, class _Tp2>
+struct conditional
+{
+    typedef _Tp2 type;
+};
+
+template <class _Tp1, class _Tp2>
+struct conditional<true,_Tp1,_Tp2>
+{
+    typedef _Tp1 type;
+};
+
 #undef __CV_SPEC
 #undef __SPEC_
 #undef __CV_SPEC_1
