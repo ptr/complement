@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 18:14:16 yeti>
+// -*- C++ -*- Time-stamp: <08/09/08 23:18:05 ptr>
 
 /*
  *
@@ -664,13 +664,16 @@ struct hash<stem::gaddr_type>
 }
 #endif
 
-#if defined(__GNUC__) && (__GNUC__ < 4)
+#if defined(__GNUC__) && (__GNUC__ < 4) && !defined(HASH_VOID_PTR_DEFINED)
 template<>
 struct hash<void *>
 {
    size_t operator()(const void *__x) const
      { return reinterpret_cast<size_t>(__x); }
 };
+
+#define HASH_VOID_PTR_DEFINED
+
 #endif // __GNUC__ < 4
 
 } // namespace __HASH_NAMESPACE
