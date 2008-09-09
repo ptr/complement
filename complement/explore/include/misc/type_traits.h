@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/20 18:17:36 ptr>
+// -*- C++ -*- Time-stamp: <08/09/09 10:22:13 ptr>
 
 /*
  * Copyright (c) 2007, 2008
@@ -6,6 +6,8 @@
  *
  * Licensed under the Academic Free License version 3.0
  *
+ * Should be close to JTC1/SC22/WG21 C++ 0x working draft
+ * [http://www.open-std.org/Jtc1/sc22/wg21/docs/papers/2008/n2723.pdf]
  */
 
 #ifndef __misc_type_traits_h
@@ -193,7 +195,7 @@ __SPEC_2(C,T const,B);      \
 __SPEC_2(C,T volatile,B);   \
 __SPEC_2(C,T const volatile,B)
 
-// [4.5.1] primary type categories:
+// [20.5.4.1] primary type categories:
 
 template <class _Tp>
 struct is_void :
@@ -352,7 +354,9 @@ struct is_member_pointer :
     public integral_constant<bool, (is_member_object_pointer<_Tp>::value || is_member_function_pointer<_Tp>::value)>
 { };
 
-// 4.5.2 composite type categories
+// [20.5.4.2] composite type categories
+
+// is_reference see above
 
 template <class _Tp>
 struct is_arithmetic :
@@ -364,7 +368,7 @@ struct is_fundamental :
     public integral_constant<bool, (is_arithmetic<_Tp>::value || is_void<_Tp>::value)>
 { };
 
-// [4.5.1] primary type categories (continued):
+// [20.5.4.1] primary type categories (continued):
 
 template <class _Tp>
 struct is_enum :
@@ -387,7 +391,7 @@ struct is_class
 
 // is_function (above)
 
-// 4.5.2 composite type categories (continued)
+// [20.5.4.2] composite type categories (continued)
 
 // is_arithmetic (above)
 // is_fundamental (above)
@@ -416,7 +420,7 @@ struct is_compound :
 
 // is_member_pointer
 
-// 4.5.3 type properties:
+// [20.5.4.3] type properties:
 
 template <class _Tp>
 struct is_const :
@@ -439,7 +443,7 @@ struct is_volatile<_Tp volatile> :
 { };
 
 
-// 4.7.3 array modifications:
+// [20.5.6.4] array modifications:
 
 template <class _Tp>
 struct remove_extent
@@ -477,7 +481,7 @@ struct remove_all_extents<_Tp[]>
     typedef typename remove_all_extents<_Tp>::type type;
 };
 
-// 4.5.3 type properties (continued):
+// [20.5.4.3] type properties (continued):
 
 template <class _Tp>
 struct is_trivial :
@@ -507,12 +511,12 @@ struct is_empty
 // is_abstract
 
 template <class _Tp>
-struct has_trivial_constructor :
+struct has_trivial_default_constructor :
     public integral_constant<bool, is_pod<_Tp>::value>
 { };
 
 template <class _Tp>
-struct has_trivial_copy :
+struct has_trivial_copy_constructor :
     public integral_constant<bool, is_pod<_Tp>::value>
 { };
 
@@ -527,12 +531,12 @@ struct has_trivial_destructor :
 { };
 
 template <class _Tp>
-struct has_nothrow_constructor :
+struct has_nothrow_default_constructor :
     public integral_constant<bool, is_pod<_Tp>::value>
 { };
 
 template <class _Tp>
-struct has_nothrow_copy :
+struct has_nothrow_copy_constructor :
     public integral_constant<bool, is_pod<_Tp>::value>
 { };
 
@@ -572,7 +576,7 @@ __CV_SPEC(is_unsigned,unsigned long long,true);
 // rank
 // extent
 
-// 4.6 type relations:
+// [20.5.5] type relations:
 
 template <class _Tp1, class _Tp2>
 struct is_same :
@@ -587,7 +591,7 @@ struct is_same<_Tp, _Tp> :
 // is_base_of
 // is_convertible
 
-// 4.7.1 const-volatile modifications
+// [20.5.6.1] const-volatile modifications
 
 template <class _Tp>
 struct remove_const
@@ -624,7 +628,13 @@ struct add_const
 {
     typedef _Tp const type;
 };
-   
+
+template <class _Tp>
+struct add_const<_Tp const>
+{
+    typedef _Tp const type;
+};
+  
 template <class _Tp>
 struct add_volatile
 {
@@ -632,12 +642,18 @@ struct add_volatile
 };
   
 template <class _Tp>
+struct add_volatile<_Tp volatile>
+{
+    typedef _Tp volatile type;
+};
+
+template <class _Tp>
 struct add_cv
 {
     typedef typename add_const<typename add_volatile<_Tp>::type>::type type;
 };
 
-// 4.7.2 reference modifications:
+// [20.5.6.2] reference modifications:
 
 template <class _Tp>
 struct remove_reference
@@ -651,21 +667,183 @@ struct remove_reference<_Tp&>
     typedef _Tp type;
 };
   
+// template <class _Tp>
+// struct remove_reference<_Tp&&>
+// {
+//     typedef _Tp type;
+// };
+
 template <class _Tp>
-struct add_reference
+struct add_lvalue_reference
 {
     typedef _Tp& type;
 };
 
 template <class _Tp>
-struct add_reference<_Tp&>
+struct add_lvalue_reference<_Tp&>
 {
     typedef _Tp& type;
 };
+ 
+// template <class _Tp>
+// struct add_rvalue_reference
+// {
+//     typedef _Tp&& type;
+// };
 
-// 4.7.3 array modifications (see above)
+// template <class _Tp>
+// struct add_rvalue_reference<_Tp&&>
+// {
+//     typedef _Tp&& type;
+// };
 
-// 4.7.4 pointer modifications:
+// [20.5.6.3] sign modifications
+
+template <class _Tp>
+struct make_signed
+{
+};
+
+template <>
+struct make_signed<char>
+{
+    typedef signed char type;
+};
+
+template <>
+struct make_signed<signed char>
+{
+    typedef signed char type;
+};
+
+template <>
+struct make_signed<unsigned char>
+{
+    typedef signed char type;
+};
+
+template <>
+struct make_signed<short>
+{
+    typedef short type;
+};
+
+template <>
+struct make_signed<unsigned short>
+{
+    typedef short type;
+};
+
+template <>
+struct make_signed<int>
+{
+    typedef int type;
+};
+
+template <>
+struct make_signed<unsigned int>
+{
+    typedef int type;
+};
+
+template <>
+struct make_signed<long>
+{
+    typedef long type;
+};
+
+template <>
+struct make_signed<unsigned long>
+{
+    typedef long type;
+};
+
+template <>
+struct make_signed<long long>
+{
+    typedef long long type;
+};
+
+template <>
+struct make_signed<unsigned long long>
+{
+    typedef long long type;
+};
+
+template <class _Tp>
+struct make_unsigned
+{
+};
+
+template <>
+struct make_unsigned<char>
+{
+    typedef unsigned char type;
+};
+
+template <>
+struct make_unsigned<signed char>
+{
+    typedef unsigned char type;
+};
+
+template <>
+struct make_unsigned<unsigned char>
+{
+    typedef unsigned char type;
+};
+
+template <>
+struct make_unsigned<short>
+{
+    typedef unsigned short type;
+};
+
+template <>
+struct make_unsigned<unsigned short>
+{
+    typedef unsigned short type;
+};
+
+template <>
+struct make_unsigned<int>
+{
+    typedef unsigned int type;
+};
+
+template <>
+struct make_unsigned<unsigned int>
+{
+    typedef unsigned int type;
+};
+
+template <>
+struct make_unsigned<long>
+{
+    typedef unsigned long type;
+};
+
+template <>
+struct make_unsigned<unsigned long>
+{
+    typedef unsigned long type;
+};
+
+template <>
+struct make_unsigned<long long>
+{
+    typedef unsigned long long type;
+};
+
+template <>
+struct make_unsigned<unsigned long long>
+{
+    typedef unsigned long long type;
+};
+
+// [20.5.6.4] array modifications (see above)
+
+// [20.5.6.5] pointer modifications:
 
 template <class _Tp>
 struct remove_pointer
@@ -703,9 +881,10 @@ struct add_pointer
     typedef typename remove_reference<_Tp>::type * type;
 };
 
-// 4.8 other transformations:
+// [20.5.7] other transformations:
 
-// aligned_storage
+// template <std::size_t Len, std::size_t Align> struct aligned_storage;
+// template <std::size_t Len, class... Types> struct aligned_union;
 
 namespace detail {
 
@@ -767,6 +946,8 @@ struct conditional<true,_Tp1,_Tp2>
 {
     typedef _Tp1 type;
 };
+
+// template <class... _Tp> struct common_type;
 
 #undef __CV_SPEC
 #undef __SPEC_
