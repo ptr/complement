@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/01 14:46:29 yeti>
+// -*- C++ -*- Time-stamp: <08/10/01 00:27:31 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -288,7 +288,7 @@ class basic_socket
     bool _use_wrtimeout;
     bool _notify_close;
 
-    static detail::sockmgr<charT,traits,_Alloc>* mgr;
+    static std::detail::sockmgr<charT,traits,_Alloc>* mgr;
     friend class Init;
 };
 
@@ -306,7 +306,7 @@ void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
   if ( direction ) {
     std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
     if ( _count++ == 0 ) {
-      basic_socket<charT,traits,_Alloc>::mgr = new detail::sockmgr<charT,traits,_Alloc>();
+      basic_socket<charT,traits,_Alloc>::mgr = new std::detail::sockmgr<charT,traits,_Alloc>();
 #ifdef __FIT_PTHREADS
       if ( !_at_fork ) { // call only once
         if ( pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child ) ) {
@@ -343,7 +343,7 @@ void basic_socket<charT,traits,_Alloc>::Init::__at_fork_child()
     // stop mgr
     _count = 1;
     delete basic_socket<charT,traits,_Alloc>::mgr;
-    basic_socket<charT,traits,_Alloc>::mgr = new detail::sockmgr<charT,traits,_Alloc>();
+    basic_socket<charT,traits,_Alloc>::mgr = new std::detail::sockmgr<charT,traits,_Alloc>();
   }
   // _sock_processor_base::_idx =  std::tr2::this_thread::xalloc();
 }
@@ -356,7 +356,7 @@ template<class charT, class traits, class _Alloc>
 char basic_socket<charT,traits,_Alloc>::Init_buf[128];
 
 template <class charT, class traits, class _Alloc>
-detail::sockmgr<charT,traits,_Alloc>* basic_socket<charT,traits,_Alloc>::mgr = 0;
+std::detail::sockmgr<charT,traits,_Alloc>* basic_socket<charT,traits,_Alloc>::mgr = 0;
 
 #ifdef STLPORT
 _STLP_END_NAMESPACE
@@ -620,7 +620,7 @@ class basic_sockbuf :
     std::tr2::mutex ulck;
     std::tr2::condition_variable ucnd;
 
-    friend class detail::sockmgr<charT,traits,_Alloc>;
+    friend class std::detail::sockmgr<charT,traits,_Alloc>;
     friend class sock_processor_base<charT,traits,_Alloc>;
 };
 
