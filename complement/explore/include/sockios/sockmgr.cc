@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/01 14:40:03 yeti>
+// -*- C++ -*- Time-stamp: <08/10/07 01:12:40 ptr>
 
 /*
  * Copyright (c) 2008
@@ -48,7 +48,7 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
         } else {
           typename fd_container_type::iterator ifd = descr.find( ev[i].data.fd );
           if ( ifd == descr.end() ) {
-            // std::cerr << __FILE__ << ":" << __LINE__ << " " << ev[i].data.fd << std::endl;
+            std::cerr << __FILE__ << ":" << __LINE__ << " " << ev[i].data.fd << std::endl;
             if ( epoll_ctl( efd, EPOLL_CTL_DEL, ev[i].data.fd, 0 ) < 0 ) {
               // throw system_error
             }
@@ -91,17 +91,23 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
   switch ( _ctl.cmd ) {
     case listener:
       ev_add.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+#if 1
+      ev_add.data.u64 = 0ULL;
+#endif
       ev_add.data.fd = static_cast<socks_processor_t*>(_ctl.data.ptr)->fd();
       if ( ev_add.data.fd >= 0 ) {
         if ( fcntl( ev_add.data.fd, F_SETFL, fcntl( ev_add.data.fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
           // std::cerr << "xxx " << errno << " " << std::tr2::getpid() << std::endl;
+          static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
           throw std::runtime_error( "can't establish nonblock mode on listener" );
         }
         if ( descr.find( ev_add.data.fd ) != descr.end() ) { // reuse?
+          // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
           if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev_add.data.fd, &ev_add ) < 0 ) {
             std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
             // descr.erase( ev_add.data.fd );
             // throw system_error
+            static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
             return;
           }
         } else {
@@ -109,6 +115,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
           if ( epoll_ctl( efd, EPOLL_CTL_ADD, ev_add.data.fd, &ev_add ) < 0 ) {
             std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
             // throw system_error
+            static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
             return;
           }
         }
@@ -117,9 +124,13 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
       break;
     case tcp_buffer:
       ev_add.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+#if 1
+      ev_add.data.u64 = 0ULL;
+#endif
       ev_add.data.fd = static_cast<sockbuf_t*>(_ctl.data.ptr)->fd();
       if ( ev_add.data.fd >= 0 ) {
         if ( descr.find( ev_add.data.fd ) != descr.end() ) { // reuse?
+          // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
           if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev_add.data.fd, &ev_add ) < 0 ) {
             std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
             // descr.erase( ev_add.data.fd );
@@ -129,9 +140,8 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
         } else {
           // std::cerr << __FILE__ << ":" << __LINE__ << " " << ev_add.data.fd << std::endl;
           if ( epoll_ctl( efd, EPOLL_CTL_ADD, ev_add.data.fd, &ev_add ) < 0 ) {
-            std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-            // throw system_error
-            return;
+            // std::cerr << __FILE__ << ":" << __LINE__ << " " << system_error( posix_error::make_error_code( static_cast<posix_error::posix_errno>(errno) ) ).what() << std::endl;
+            return; // already closed?
           }
         }
         descr[ev_add.data.fd] = fd_info( static_cast<sockbuf_t*>(_ctl.data.ptr) );
@@ -147,6 +157,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
         }
         // dump_descr();
       }
+      static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
       break;
     case rqstop:
       // std::cerr << "Stop request\n";
@@ -162,8 +173,9 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
   if ( ev.events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR) ) {
     // std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << std::endl;
     if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
-      // throw system_error
-      std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << errno << std::endl;
+      // std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << system_error( posix_error::make_error_code( static_cast<posix_error::posix_errno>(errno) ) ).what() << std::endl;
+
+      // already closed?
     }
 
     if ( ifd->second.p != 0 ) {
@@ -175,6 +187,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
       }
     }
 
+#if 0 // do it once, after 'listener_on_exit' command via pipe
     listeners_final.insert(static_cast<void *>(ifd->second.p));
 
     // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
@@ -188,6 +201,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
     if ( lfd != -1 ) {
       descr.erase( lfd );
     }
+#endif
 
     // dump_descr();
 
@@ -245,7 +259,11 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
         errno = 0;
         epoll_event xev;
         xev.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+#if 1
+        xev.data.u64 = 0ULL;
+#endif
         xev.data.fd = ev.data.fd;
+        // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
         if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) < 0 ) {
           std::cerr << __FILE__ << ":" << __LINE__ << " " << ev.data.fd << " "
                     << errno << std::endl;
@@ -262,6 +280,9 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
     try {
       epoll_event ev_add;
       ev_add.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+#if 1
+      ev_add.data.u64 = 0ULL;
+#endif
       ev_add.data.fd = fd;
 
       if ( descr.find( fd ) != descr.end() ) { // reuse?
@@ -338,6 +359,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
           xev.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
           xev.data.fd = ev.data.fd;
           info.flags |= fd_info::level_triggered;
+          // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
           if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) < 0 ) {
             std::cerr << __FILE__ << ":" << __LINE__ << " " << ev.data.fd << " " << errno << std::endl;
           }
@@ -367,7 +389,11 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
             {
               epoll_event xev;
               xev.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+#if 1
+              xev.data.u64 = 0ULL;
+#endif
               xev.data.fd = ev.data.fd;
+              // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
               if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) < 0 ) {
                 std::cerr << __FILE__ << ":" << __LINE__ << " " << ev.data.fd << " " << errno << std::endl;
               }
@@ -386,6 +412,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
           xev.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
           xev.data.fd = ev.data.fd;
           info.flags &= ~static_cast<unsigned>(fd_info::level_triggered);
+          // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
           if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) < 0 ) {
             std::cerr << __FILE__ << ":" << __LINE__ << " " << ev.data.fd << " " << errno << std::endl;
           }
@@ -411,6 +438,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
     // std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << std::endl;
 
     if ( info.p != 0 ) {
+      // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
         // throw system_error
         std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << errno << std::endl;
@@ -471,6 +499,7 @@ int sockmgr<charT,traits,_Alloc>::check_closed_listener( socks_processor_t* p )
 {
   int myfd = -1;
 
+  // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
   if ( !listeners_final.empty() ) {
     // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
     if ( listeners_final.find( static_cast<void*>(p) ) != listeners_final.end() ) {
@@ -494,6 +523,7 @@ int sockmgr<charT,traits,_Alloc>::check_closed_listener( socks_processor_t* p )
       // if ( myfd != -1 ) {
       //   std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       p->stop();
+      p->release(); // socks_processor_t* p not under sockmgr control more
         // }
     }
   }
