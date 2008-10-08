@@ -522,18 +522,20 @@ int EXAM_IMPL(sockios2_test::disconnect)
   try {
     this_thread::fork();
 
-    connect_processor<srv_reader> prss( 2008 );
+    int res = 0;
 
-    EXAM_CHECK_ASYNC( prss.good() );
+    {
+      connect_processor<srv_reader> prss( 2008 );
 
-    b.wait();
+      EXAM_CHECK_ASYNC_F( prss.good(), res );
 
-    if ( srv_reader::cnd.timed_wait( milliseconds( 800 ) ) ) {
-      exit( 0 );
+      b.wait();
+
+      EXAM_CHECK_ASYNC_F( srv_reader::cnd.timed_wait( milliseconds( 800 ) ), res );
+      // srv_reader::cnd.wait();
     }
-    // srv_reader::cnd.wait();
 
-    exit( 1 );
+    exit( res );
   }
   catch ( std::tr2::fork_in_parent& child ) {
     b.wait();
@@ -546,7 +548,7 @@ int EXAM_IMPL(sockios2_test::disconnect)
 
     s.rdbuf()->shutdown( sock_base::stop_in | sock_base::stop_out );
 
-    // s.close();
+    // s.close(); // should work with this line commened, but sorry
 
     int stat = -1;
     EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
@@ -592,19 +594,20 @@ int EXAM_IMPL(sockios2_test::fork)
 
       this_thread::fork();
 
+      int res = 0;
       {
         connect_processor<worker> prss( 2008 );
 
-        EXAM_CHECK_ASYNC( worker::visits == 0 );
+        EXAM_CHECK_ASYNC_F( worker::visits == 0, res );
 
         b.wait(); // -- align here
 
-        EXAM_CHECK_ASYNC( prss.good() );
-        EXAM_CHECK_ASYNC( prss.is_open() );
+        EXAM_CHECK_ASYNC_F( prss.good(), res );
+        EXAM_CHECK_ASYNC_F( prss.is_open(), res );
 
         {
           unique_lock<mutex> lk( worker::lock );
-          EXAM_CHECK_ASYNC( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter1 ) );
+          EXAM_CHECK_ASYNC_F( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter1 ) , res );
         }
 
         // for ( int i = 0; i < 64; ++i ) { // give chance for system
@@ -613,11 +616,11 @@ int EXAM_IMPL(sockios2_test::fork)
 
         {
           unique_lock<mutex> lksrv( worker::lock );
-          EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
+          EXAM_CHECK_ASYNC_F( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ), res );
         }
       }
 
-      exit( 0 );
+      exit( res );
     }
     catch ( std::tr2::fork_in_parent& child ) {
       b.wait(); // -- align here
@@ -626,6 +629,8 @@ int EXAM_IMPL(sockios2_test::fork)
 
       EXAM_CHECK( s.good() );
       EXAM_CHECK( s.is_open() );
+
+      s.close();
 
       int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
