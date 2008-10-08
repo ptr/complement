@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/07 00:01:51 ptr>
+// -*- C++ -*- Time-stamp: <08/10/08 22:22:00 yeti>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -481,7 +481,14 @@ class basic_sockbuf :
 
   protected:
     virtual streamsize showmanyc()
-      { return basic_socket_t::_fd != -1 ? this->egptr() - this->gptr() : -1; }
+      {
+        streamsize n = this->egptr() - this->gptr();
+        if ( n > 0 ) {
+          return n;
+        }
+
+        return basic_socket_t::_fd != -1 ? 0 : -1;
+      }
 
     virtual int_type underflow();
     virtual int_type overflow( int_type c = traits::eof() );

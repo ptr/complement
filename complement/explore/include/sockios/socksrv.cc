@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/07 00:00:28 ptr>
+// -*- C++ -*- Time-stamp: <08/10/08 22:35:57 yeti>
 
 /*
  * Copyright (c) 2008
@@ -201,7 +201,7 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
   if ( s->rdbuf()->in_avail() > 0 ) {
     std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
     ready_pool.push_back( processor( c, s ) );
-    std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+    // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
     cnd.notify_one();
   } else {
     std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
@@ -235,6 +235,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_bas
     if ( j != ready_pool.end() ) {
       p = *j;
       ready_pool.erase( j );
+      // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
     }
   }
   if ( p.c != 0 ) {
@@ -296,13 +297,15 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
       if ( p.s->rdbuf()->in_avail() > 0 ) {
         std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
         ready_pool.push_back( p );
-      } else {
+      } else if ( p.s->is_open() ) {
         std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
         worker_pool[p.s->rdbuf()->fd()] = p;
+        // std::cerr << __FILE__ << ":" << __LINE__ << " " << p.s->is_open() << std::endl;
+      } else {
+        // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+        delete p.c;
+        delete p.s;
       }
-      // } // else {
-      //  std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-      // }
     }
   }
   catch ( const finish& ) {
