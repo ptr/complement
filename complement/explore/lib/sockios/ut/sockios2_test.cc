@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/08 22:42:20 yeti>
+// -*- C++ -*- Time-stamp: <08/10/09 01:43:37 ptr>
 
 /*
  *
@@ -440,6 +440,26 @@ int EXAM_IMPL(sockios2_test::processor_core_getline)
   return EXAM_RESULT;
 }
 
+
+/*
+ * If server and client both in the same process (sure?), server can
+ * see signal about close client socket _before_ it receive the rest of data
+ * (tcp stack implemenation dependent?).
+ * So sockios2_test::processor_core_income_data may not fill line
+ * with "Hello, world!".
+ * 
+ * But if server and client situated in different processes, server will see
+ * FYN _after_ it read all data.
+ *
+ * Tests processor_core_income_data and income_data (below) are the same,
+ * except first has client and server in the same process, while second
+ * has server in child process. See commented line:
+ *   // EXAM_CHECK( worker::line == "Hello, world!" ); // <-- may fail
+ * in the first test.
+ *
+ * Good text above. But wrong.
+ */
+
 int EXAM_IMPL(sockios2_test::processor_core_income_data)
 {
   // check after sockstream was closed, i.e. ensure, that all data available
@@ -470,6 +490,88 @@ int EXAM_IMPL(sockios2_test::processor_core_income_data)
   // EXAM_CHECK( worker::line == "Hello, world!" ); // <-- may fail
   worker::line = "";
   worker::rd = 0;
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(sockios2_test::income_data)
+{
+  const char fname[] = "/tmp/sockios2_test.shm";
+
+  // worker::lock.lock();
+  worker::visits = 0;
+  worker::line = "";
+  worker::rd = 0;
+  // worker::lock.unlock();
+
+  try {
+    xmt::shm_alloc<0> seg;
+    seg.allocate( fname, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+    xmt::allocator_shm<barrier_ip,0> shm;
+    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+
+    try {
+
+      EXAM_CHECK( worker::visits == 0 );
+
+      this_thread::fork();
+
+      int res = 0;
+      {
+        connect_processor<worker> prss( 2008 );
+
+        EXAM_CHECK_ASYNC_F( worker::visits == 0, res );
+
+        b.wait(); // -- align here
+
+        EXAM_CHECK_ASYNC_F( prss.good(), res );
+        EXAM_CHECK_ASYNC_F( prss.is_open(), res );
+
+        {
+          unique_lock<mutex> lk( worker::lock );
+          EXAM_CHECK_ASYNC_F( worker::line_cnd.timed_wait( lk, milliseconds( 500 ), worker::rd_counter1 ), res );
+        }
+
+        {
+          unique_lock<mutex> lksrv( worker::lock );
+          EXAM_CHECK_ASYNC_F( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ), res );
+        }
+
+        EXAM_CHECK_ASYNC_F( worker::line == "Hello, world!", res ); // <-- may fail
+      }
+
+      exit( res );
+    }
+    catch ( std::tr2::fork_in_parent& child ) {
+      b.wait(); // -- align here
+
+      {
+        sockstream s1( "localhost", 2008 );
+
+        EXAM_CHECK( s1.good() );
+        EXAM_CHECK( s1.is_open() );
+
+        s1 << "Hello, world!" << endl;
+      }
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+
+      EXAM_CHECK( worker::visits == 0 );
+    }
+    shm.deallocate( &b );
+    seg.deallocate();
+    unlink( fname );
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
 
   return EXAM_RESULT;
 }
@@ -550,7 +652,7 @@ int EXAM_IMPL(sockios2_test::disconnect)
 
     s.rdbuf()->shutdown( sock_base::stop_in | sock_base::stop_out );
 
-    // s.close(); // should work with this line commened, but sorry
+    s.close(); // should work with this line commened, but sorry
 
     int stat = -1;
     EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
@@ -696,7 +798,7 @@ class stream_reader
 
 int EXAM_IMPL(sockios2_test::srv_sigpipe)
 {
-  throw exam::skip_exception();
+  // throw exam::skip_exception();
   
   const char fname[] = "/tmp/sockios2_test.shm";
   try {
@@ -754,9 +856,9 @@ int EXAM_IMPL(sockios2_test::srv_sigpipe)
       EXAM_CHECK( r.good() );
       EXAM_CHECK( r.is_open() );
 
-      for ( int i = 0; i < 64; ++i ) { // give chance for system
-        std::tr2::this_thread::yield();
-      }
+      // for ( int i = 0; i < 64; ++i ) { // give chance for system
+      //   std::tr2::this_thread::yield();
+      // }
     }
     shm.deallocate( &b );
     seg.deallocate();
@@ -779,16 +881,16 @@ class interrupted_writer
 
         int n = 1;
 
-        cerr << "align 3\n";
+        // cerr << "align 3\n";
         bb->wait();  // <-- align 3
 
-        cerr << "align 3 pass\n";
+        // cerr << "align 3 pass\n";
         s.write( (const char *)&n, sizeof( int ) ).flush();
         EXAM_CHECK_ASYNC( s.good() );
       }
 
     ~interrupted_writer()
-      { cerr << "~~\n"; }
+      { /* cerr << "~~\n"; */ }
 
     void connect( sockstream& s )
       { }
@@ -798,12 +900,12 @@ class interrupted_writer
       sockstream s( "localhost", 2008 );
 
       int buff = 0;
-      cerr << "align 2" << endl;
+      // cerr << "align 2" << endl;
       b->wait(); // <-- align 2
-      cerr << "align 2 pass" << endl;
+      // cerr << "align 2 pass" << endl;
 
       EXAM_CHECK_ASYNC( s.read( (char *)&buff, sizeof(int) ).good() ); // <---- key line
-      cerr << "read pass" << endl;
+      // cerr << "read pass" << endl;
       EXAM_CHECK_ASYNC( buff == 1 );
     }
 
@@ -835,12 +937,12 @@ int EXAM_IMPL(sockios2_test::read0)
 
       bb.wait();  // <-- align 2
 
-      cerr << "system" << endl;
+      // cerr << "system" << endl;
       system( "echo > /dev/null" );  // <------ key line
-      cerr << "after system" << endl;
+      // cerr << "after system" << endl;
 
       bnew.wait();  // <-- align 3
-      cerr << "after align 3" << endl;
+      // cerr << "after align 3" << endl;
 
       t.join();
 

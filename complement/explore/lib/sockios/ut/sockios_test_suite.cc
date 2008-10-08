@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/06 13:30:03 ptr>
+// -*- C++ -*- Time-stamp: <08/10/09 00:39:27 ptr>
 
 /*
  *
@@ -32,7 +32,7 @@ int EXAM_DECL(test_more_bytes_in_socket2);
 
 int main( int argc, const char** argv )
 {
-  exam::test_suite::test_case_type tc[4];
+  exam::test_suite::test_case_type tc[5];
 
   exam::test_suite t( "libsockios test" );
 
@@ -79,7 +79,7 @@ int main( int argc, const char** argv )
 
   t.add( &sockios2_test::read0, test2, "sockios2_test::read0",
     t.add( &sockios2_test::srv_sigpipe, test2, "sockios2_test::srv_sigpipe",
-      t.add( &sockios2_test::fork, test2, "sockios2_test::fork",
+      tc[4] = t.add( &sockios2_test::fork, test2, "sockios2_test::fork",
         tc[3] = t.add( &sockios2_test::processor_core_income_data, test2, "all data available after sockstream was closed",
           t.add( &sockios2_test::processor_core_getline, test2, "check income data before sockstream was closed",
             t.add( &sockios2_test::processor_core_two_local, test2, "two local connects to connection processor",
@@ -88,6 +88,7 @@ int main( int argc, const char** argv )
                   t.add( &sockios2_test::srv_core, test2, "sockios2_test::srv_core" ) ) ) ) ) ) ) ) );
 
   t.add( &sockios2_test::disconnect, test2, "sockios2_test::disconnect", tc[3] );
+  t.add( &sockios2_test::income_data, test2, "all data available after sockstream was closed, different processes", tc[4] );
 
   Opts opts;
 
