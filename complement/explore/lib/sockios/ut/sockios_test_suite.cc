@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/09 00:39:27 ptr>
+// -*- C++ -*- Time-stamp: <08/10/10 23:22:23 ptr>
 
 /*
  *
@@ -88,6 +88,7 @@ int main( int argc, const char** argv )
                   t.add( &sockios2_test::srv_core, test2, "sockios2_test::srv_core" ) ) ) ) ) ) ) ) );
 
   t.add( &sockios2_test::disconnect, test2, "sockios2_test::disconnect", tc[3] );
+  t.add( &sockios2_test::disconnect_rawclnt, test2, "disconnect raw client", tc[3] );
   t.add( &sockios2_test::income_data, test2, "all data available after sockstream was closed, different processes", tc[4] );
 
   Opts opts;
