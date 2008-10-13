@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/10 23:22:23 ptr>
+// -*- C++ -*- Time-stamp: <08/10/13 11:28:51 ptr>
 
 /*
  *
@@ -32,6 +32,30 @@ int EXAM_DECL(test_more_bytes_in_socket2);
 
 int main( int argc, const char** argv )
 {
+  Opts opts;
+
+  opts.description( "test suite for 'sockios' framework" );
+  opts.usage( "[options]" );
+
+  opts << option<bool>( "print this help message", 'h', "help" )
+       << option<bool>( "list all test cases", 'l', "list" )
+       << option<string>( "run tests by number", 'r', "run" )["0"]
+       << option<bool>( "print status of tests within test suite", 'v', "verbose" )
+       << option<bool>(  "trace checks", 't', "trace" );
+
+  try {
+    opts.parse( argc, argv );
+  }
+  catch (...) {
+    opts.help( cerr );
+    return 1;
+  }
+
+  if ( opts.is_set( 'h' ) ) {
+    opts.help( cerr );
+    return 0;
+  }
+
   exam::test_suite::test_case_type tc[5];
 
   exam::test_suite t( "libsockios test" );
@@ -87,33 +111,9 @@ int main( int argc, const char** argv )
                 t.add( &sockios2_test::connect_disconnect, test2, "sockios2_test::connect_disconnect",
                   t.add( &sockios2_test::srv_core, test2, "sockios2_test::srv_core" ) ) ) ) ) ) ) ) );
 
-  t.add( &sockios2_test::disconnect, test2, "sockios2_test::disconnect", tc[3] );
-  t.add( &sockios2_test::disconnect_rawclnt, test2, "disconnect raw client", tc[3] );
+  t.add( &sockios2_test::disconnect_rawclnt, test2, "disconnect raw client", 
+    t.add( &sockios2_test::disconnect, test2, "disconnect sockstream", tc[3] ) );
   t.add( &sockios2_test::income_data, test2, "all data available after sockstream was closed, different processes", tc[4] );
-
-  Opts opts;
-
-  opts.description( "test suite for 'sockios' framework" );
-  opts.usage( "[options]" );
-
-  opts << option<bool>( "print this help message", 'h', "help" )
-       << option<bool>( "list all test cases", 'l', "list" )
-       << option<string>( "run tests by number", 'r', "run" )["0"]
-       << option<bool>( "print status of tests within test suite", 'v', "verbose" )
-       << option<bool>(  "trace checks", 't', "trace" );
-
-  try {
-    opts.parse( argc, argv );
-  }
-  catch (...) {
-    opts.help( cerr );
-    return 1;
-  }
-
-  if ( opts.is_set( 'h' ) ) {
-    opts.help( cerr );
-    return 0;
-  }
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( cerr );

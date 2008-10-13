@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/08 22:22:00 yeti>
+// -*- C++ -*- Time-stamp: <08/10/13 11:16:56 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -576,7 +576,7 @@ class basic_sockbuf :
              b( self )
            { }
          bool operator ()() const
-           { return b.showmanyc() > 0; }
+           { return b.showmanyc() != 0; }
        private:
          sockbuf_type& b;
     } rdready;

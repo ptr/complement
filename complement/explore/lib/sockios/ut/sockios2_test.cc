@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/10 23:20:58 ptr>
+// -*- C++ -*- Time-stamp: <08/10/13 11:26:21 ptr>
 
 /*
  *
@@ -685,7 +685,7 @@ int EXAM_IMPL(sockios2_test::disconnect_rawclnt)
 
 int EXAM_IMPL(sockios2_test::disconnect)
 {
-  throw exam::skip_exception();
+  // throw exam::skip_exception();
 
   const char fname[] = "/tmp/sockios2_test.shm";
   xmt::shm_alloc<0> seg;
