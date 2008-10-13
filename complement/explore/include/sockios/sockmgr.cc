@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/07 01:12:40 ptr>
+// -*- C++ -*- Time-stamp: <08/10/08 22:37:33 yeti>
 
 /*
  * Copyright (c) 2008
@@ -331,6 +331,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
       // throw system_error
     }
     if ( info.p != 0 ) { // ... but controlled by processor
+      // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
 
       socks_processor_t* p = info.p;
