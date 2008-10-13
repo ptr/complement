@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/01 00:22:12 ptr>
+// -*- C++ -*- Time-stamp: <08/10/07 01:02:13 ptr>
 
 /*
  * Copyright (c) 2007-2008
@@ -13,6 +13,9 @@
 
 #include "mt/system_error"
 #include <cerrno>
+#include "mt/callstack.h"
+#include <sstream>
+#include <iostream>
 
 #if 0
 #ifdef STLPORT
@@ -996,30 +999,48 @@ bool operator !=( const error_condition& l, const error_code& r )
 bool operator !=( const error_condition& l, const error_condition& r )
 { return !(l == r); }
 
+// char _stack_buf[4096];
+
 system_error::system_error( error_code code, const string& what ) :
     runtime_error( what ),
     ecode_( code.value(), code.category() ),
     _dbuf( 0 )
-{ }
+{
+  // stringstream s;
+  // xmt::callstack( cerr );
+  // strcpy( _stack_buf, s.str().c_str() );
+}
 
 system_error::system_error( error_code code ) :
     runtime_error( "" ),
     ecode_( code.value(), code.category() ),
     _dbuf( 0 )
-{ }
+{
+  // stringstream s;
+  // xmt::callstack( cerr );
+  // strcpy( _stack_buf, s.str().c_str() );
+}
 
 system_error::system_error( int code, const error_category& category,
                             const string& what ) :
     runtime_error( what ),
     ecode_( code, category ),
     _dbuf( 0 )
-{ }
+{
+  // stringstream s;
+  // xmt::callstack( cerr );
+  // strcpy( _stack_buf, s.str().c_str() );
+}
 
 system_error::system_error( int code, const error_category& category ) :
     runtime_error( "" ),
     ecode_( code, category ),
     _dbuf( 0 )
-{ }
+{
+  // stringstream s;
+  // xmt::callstack( cerr );
+  // strcpy( _stack_buf, s.str().c_str() );
+}
 
 system_error::~system_error() throw()
 {
@@ -1033,6 +1054,8 @@ const char* system_error::what() const throw()
   size_t sz = strlen( runtime_error::what() );
   size_t sz_add = sz + ecode_.message().length() + (sz > 0 ? 3 : 1); // + ": ", not \0
 
+  // sz_add += strlen( _stack_buf );
+
   if ( sz_add < _bufsize ) {
     if ( sz > 0 ) {
       memcpy( _buf, runtime_error::what(), sz );
@@ -1040,6 +1063,7 @@ const char* system_error::what() const throw()
       _buf[sz++] = ' ';
     }
     memcpy( _buf + sz, ecode_.message().data(), ecode_.message().length() );
+    // memcpy( _buf + sz + ecode_.message().length() + (sz > 0 ? 3 : 1), _stack_buf, strlen( _stack_buf ) );
     _buf[sz_add - 1] = 0;
   } else {
     _dbuf = static_cast<char *>(malloc( sz_add ));
@@ -1050,6 +1074,7 @@ const char* system_error::what() const throw()
         _dbuf[sz++] = ' ';
       }
       memcpy( _dbuf + sz, ecode_.message().data(), ecode_.message().length() );
+      // memcpy( _dbuf + sz + ecode_.message().length() + (sz > 0 ? 3 : 1), _stack_buf, strlen( _stack_buf ) );
       _dbuf[sz_add - 1] = 0;
       return _dbuf;
     }

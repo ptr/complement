@@ -126,7 +126,7 @@
  impossible without BFD (Binary File Descriptor).
 */
 
-#define __FIT_DISABLE_BFD
+// #define __FIT_DISABLE_BFD
 
 #ifdef __FIT_DISABLE_BFD
 #  ifdef __FIT_PRESENT_BFD
