@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/09 01:43:37 ptr>
+// -*- C++ -*- Time-stamp: <08/10/10 23:20:58 ptr>
 
 /*
  *
@@ -598,6 +598,90 @@ class srv_reader
 };
 
 std::tr2::condition_event srv_reader::cnd;
+
+int EXAM_IMPL(sockios2_test::disconnect_rawclnt)
+{
+  // throw exam::skip_exception();
+
+  const char fname[] = "/tmp/sockios2_test.shm";
+  xmt::shm_alloc<0> seg;
+
+  try {
+    seg.allocate( fname, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+    try {
+      seg.allocate( fname, 4096, 0, 0660 );
+    }
+    catch ( xmt::shm_bad_alloc& err2 ) {
+      EXAM_ERROR( err.what() );
+      return EXAM_RESULT;
+    }
+  }
+
+  xmt::allocator_shm<barrier_ip,0> shm;
+  barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+
+  try {
+    this_thread::fork();
+
+    int res = 0;
+
+    {
+      connect_processor<srv_reader> prss( 2008 );
+
+      EXAM_CHECK_ASYNC_F( prss.good(), res );
+
+      b.wait();
+
+      EXAM_CHECK_ASYNC_F( srv_reader::cnd.timed_wait( milliseconds( 800 ) ), res );
+      // srv_reader::cnd.wait();
+    }
+
+    exit( res );
+  }
+  catch ( std::tr2::fork_in_parent& child ) {
+    b.wait();
+
+    char buf[] = "1234";
+
+    int fd = socket( PF_INET, SOCK_STREAM, 0 );
+
+    EXAM_CHECK( fd != 0 );
+    
+    union sockaddr_t {
+        sockaddr_in inet;
+        sockaddr    any;
+    } address;
+
+    int port = 2008;
+
+    address.inet.sin_family = AF_INET;
+    address.inet.sin_port = ((((port) >> 8) & 0xff) | (((port) & 0xff) << 8));
+    address.inet.sin_addr = std::findhost( "localhost" );
+
+    EXAM_CHECK( connect( fd, &address.any, sizeof( address ) ) != -1 );
+
+    EXAM_CHECK( ::write( fd, buf, 4 ) == 4 );
+
+    ::close( fd );
+
+    int stat = -1;
+    EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+    if ( WIFEXITED(stat) ) {
+      EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+    } else {
+      EXAM_ERROR( "child fail" );
+    }
+  }
+
+  shm.deallocate( &b );
+  seg.deallocate();
+  unlink( fname );
+
+  return EXAM_RESULT;
+}
 
 int EXAM_IMPL(sockios2_test::disconnect)
 {
