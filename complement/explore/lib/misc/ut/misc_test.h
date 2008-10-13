@@ -1,7 +1,7 @@
 // -*- C++ -*- Time-stamp: <08/06/30 12:40:05 yeti>
 
 /*
- * Copyright (c) 2007
+ * Copyright (c) 2007, 2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -52,6 +52,9 @@ class misc_test
     int EXAM_DECL(type_traits_is_pod);
     int EXAM_DECL(type_traits_is_pod_compiler_supp);
     int EXAM_DECL(type_traits_is_empty);
+
+    // aux
+    int EXAM_DECL(type_traits_has_x_ctor);
 };
 
 #endif // __MISC_TEST_H

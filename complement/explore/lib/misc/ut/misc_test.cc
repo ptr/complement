@@ -580,3 +580,44 @@ int EXAM_IMPL(misc_test::type_traits_is_empty)
   return EXAM_RESULT;
 }
 
+struct X
+{
+};
+
+struct Y
+{
+    Y()
+      { }
+    Y( const X& )
+      { }
+};
+
+template <class T>
+struct __ctor_aux : // union or class
+    public std::tr1::detail::__select_types
+{
+  private:
+    template <class _Up>
+    static __t1 __test( int (_Up::*)() );
+
+    template <class>
+    static __t2 __test(...);
+    
+  public:
+#ifdef __FIT_NO_INLINE_TEMPLATE_STATIC_INITIALISATION
+    static const bool __value;
+#else
+    static const bool __value = sizeof(__test<T>(0)) == sizeof(std::tr1::detail::__select_types::__t1);
+#endif
+};
+
+#ifdef __FIT_NO_INLINE_TEMPLATE_STATIC_INITIALISATION
+template <class T>
+const bool __ctor_aux<T>::__value = sizeof(__ctor_aux<T>::__test<T>(0)) == sizeof(std::tr1::detail::__select_types::__t1);
+#endif
+
+int EXAM_IMPL(type_traits_has_x_ctor)
+{
+  return EXAM_RESULT;
+}
+
