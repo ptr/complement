@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/09/08 23:18:28 ptr>
+// -*- C++ -*- Time-stamp: <08/10/07 01:11:58 ptr>
 
 /*
  * Copyright (c) 2008
@@ -48,6 +48,8 @@
 #include <sockios/sockstream>
 #include <deque>
 #include <functional>
+
+// #include <boost/shared_ptr.hpp>
 
 namespace std {
 
@@ -128,7 +130,7 @@ class sockmgr
           { }
 
         unsigned flags;
-        sockbuf_t*    b;
+        sockbuf_t* b;
         socks_processor_t* p;
     };
 
@@ -148,6 +150,7 @@ class sockmgr
     sockmgr( int hint = 1024, int ret = 512 ) :
          n_ret( ret )
       {
+        // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
         efd = epoll_create( hint );
         if ( efd < 0 ) {
           // throw system_error( errno )
@@ -162,10 +165,14 @@ class sockmgr
 
         epoll_event ev_add;
         ev_add.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
+#if 1
+        ev_add.data.u64 = 0ULL;
+#endif
         ev_add.data.fd = pipefd[0];
         epoll_ctl( efd, EPOLL_CTL_ADD, pipefd[0], &ev_add );
 
         _worker = new std::tr2::thread( _loop, this );
+        // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
 
         // ctl _ctl;
         // _ctl.cmd = rqstart;
@@ -192,18 +199,22 @@ class sockmgr
 
     void push( socks_processor_t& p )
       {
+        // std::cerr << __FILE__ << ":" << __LINE__ << " " << p.use_count() << std::endl;
         ctl _ctl;
         _ctl.cmd = listener;
         _ctl.data.ptr = static_cast<void *>(&p);
 
+        p.addref();
         int r = ::write( pipefd[1], &_ctl, sizeof(ctl) );
         if ( r < 0 || r != sizeof(ctl) ) {
+          p.release();
           throw std::runtime_error( "can't write to pipe" );
         }
       }
 
     void push( sockbuf_t& s )
       {
+        // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
         ctl _ctl;
         _ctl.cmd = tcp_buffer;
         _ctl.data.ptr = static_cast<void *>(&s);
@@ -221,14 +232,17 @@ class sockmgr
         _ctl.cmd = listener_on_exit;
         _ctl.data.ptr = reinterpret_cast<void *>(&p);
 
+        p.addref();
         int r = ::write( pipefd[1], &_ctl, sizeof(ctl) );
         if ( r < 0 || r != sizeof(ctl) ) {
+          p.release();
           throw std::runtime_error( "can't write to pipe" );
         }
       }
 
     void exit_notify( sockbuf_t* b, sock_base::socket_type fd )
       {
+        // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
         try {
           std::tr2::unique_lock<std::tr2::mutex> lk( dll, std::tr2::defer_lock );
 

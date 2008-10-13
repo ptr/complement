@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/01 00:27:31 ptr>
+// -*- C++ -*- Time-stamp: <08/10/07 00:01:51 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -306,6 +306,7 @@ void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
   if ( direction ) {
     std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
     if ( _count++ == 0 ) {
+      // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       basic_socket<charT,traits,_Alloc>::mgr = new std::detail::sockmgr<charT,traits,_Alloc>();
 #ifdef __FIT_PTHREADS
       if ( !_at_fork ) { // call only once

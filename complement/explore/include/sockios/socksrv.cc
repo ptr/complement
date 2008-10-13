@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/09 11:09:53 ptr>
+// -*- C++ -*- Time-stamp: <08/10/07 00:00:28 ptr>
 
 /*
  * Copyright (c) 2008
@@ -54,6 +54,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int po
       // so don't check return code from listen
       ::listen( basic_socket_t::_fd, SOMAXCONN );
       basic_socket_t::mgr->push( *this );
+      // std::cerr << __FILE__ << ":" << __LINE__ << " " << count() << std::endl;
     }
   } else if ( prot == sock_base::local ) {
     return;
