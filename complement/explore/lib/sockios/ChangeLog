@@ -1,3 +1,17 @@
+2008-10-13  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* Repository: removing sock_processor from sockmgr tables done
+	only when processing command on pipe ('listener_on_exit') only;
+	sock_processor_base count references and should wait release
+	from sock_mgr (like shared_ptr);
+
+	* basic_sockbuf: functor on read condition should take into account
+	closed socket, along with ready for read bytes;
+
+	* ut: tests for problem above cleaned;
+
+	* libsockios: release 2.1.0.
+
 2008-06-27  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* sockmgr.h, sockmgr.cc, socksrv.h, socksrv.cc:
