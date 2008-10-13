@@ -233,16 +233,16 @@ void callstack( std::ostream& s )
     }
 #endif
 
-    // int res;
+    int res;
 
     // if ( string( "obj/gcc/so_g/mt_ut" ) == dlinfo.dli_fname ) { 
-      if ( /* (res = extract_info( dlinfo.dli_fname, ip, file, line )) != 0 */ false ) {
+      if ( (res = extract_info( dlinfo.dli_fname, ip, file, line )) != 0 /* false */ ) {
         file = "??";
         line = 0;
         // s << "*** " << res << " " << dlinfo.dli_fname << endl;
       } else {
-        file = "??";
-        line = 0;
+        // file = "??";
+        // line = 0;
       }
     // } else {
     //   file = "??";

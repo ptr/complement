@@ -9,7 +9,7 @@ INCLUDES += -I$(SRCROOT)/include
 HEADERS_BASE = $(SRCROOT)/include/mt $(SRCROOT)/include/config $(SRCROOT)/include/misc
 
 # LDLIBS += -ldl -lbfd
-LDLIBS += -ldl
+LDLIBS += -ldl -lbfd
 
 check:	all-shared
 	$(MAKE) -C ut all-shared
