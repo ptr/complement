@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/01 12:21:46 yeti>
+// -*- C++ -*- Time-stamp: <08/10/06 13:28:39 ptr>
 
 /*
  *
@@ -23,7 +23,10 @@ class sockios2_test
     int EXAM_DECL(srv_core);
     int EXAM_DECL(connect_disconnect);
     int EXAM_DECL(disconnect);
-    int EXAM_DECL(processor_core);
+    int EXAM_DECL(processor_core_one_local);
+    int EXAM_DECL(processor_core_two_local);
+    int EXAM_DECL(processor_core_getline);
+    int EXAM_DECL(processor_core_income_data);
     int EXAM_DECL(fork);
     int EXAM_DECL(srv_sigpipe);
     int EXAM_DECL(read0);

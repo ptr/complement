@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/01 15:28:50 yeti>
+// -*- C++ -*- Time-stamp: <08/10/06 13:33:08 ptr>
 
 /*
  *
@@ -318,148 +318,158 @@ int worker::rd = 0;
 //   prss->close();
 // }
 
-int EXAM_IMPL(sockios2_test::processor_core)
+int EXAM_IMPL(sockios2_test::processor_core_one_local)
 {
+  connect_processor<worker> prss( 2008 );
+
+  EXAM_CHECK( prss.good() );
+  EXAM_CHECK( prss.is_open() );
+
   {
-    connect_processor<worker> prss( 2008 );
+    sockstream s( "localhost", 2008 );
 
-    EXAM_CHECK( prss.good() );
-    EXAM_CHECK( prss.is_open() );
-
-    {
-      sockstream s( "localhost", 2008 );
-
-      EXAM_CHECK( s.good() );
-      EXAM_CHECK( s.is_open() );
+    EXAM_CHECK( s.good() );
+    EXAM_CHECK( s.is_open() );
 
 //      for ( int i = 0; i < 64; ++i ) { // give chance to process it
 //        std::tr2::this_thread::yield();
 //      }
 
-      unique_lock<mutex> lk( worker::lock );
+    unique_lock<mutex> lk( worker::lock );
 
-      EXAM_CHECK( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter1 ) );      
-      worker::visits = 0;
-    }
-
-    // for ( int i = 0; i < 64; ++i ) { // give chance for system
-    //   std::tr2::this_thread::yield();
-    // }
-
-    unique_lock<mutex> lksrv( worker::lock );
-    EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
+    // worker's ctor visited once:
+    EXAM_CHECK( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter1 ) );      
+    worker::visits = 0;
   }
+
+  // for ( int i = 0; i < 64; ++i ) { // give chance for system
+  //   std::tr2::this_thread::yield();
+  // }
+
+  unique_lock<mutex> lksrv( worker::lock );
+  // worker's dtor pass, no worker's objects left
+  EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(sockios2_test::processor_core_two_local)
+{
   {
+    // check precondition
     lock_guard<mutex> lk( worker::lock );
     EXAM_CHECK( worker::cnt == 0 );
   }
 
+  connect_processor<worker> prss( 2008 );
+
+  EXAM_CHECK( prss.good() );
+  EXAM_CHECK( prss.is_open() );
+
   {
-    connect_processor<worker> prss( 2008 );
+    sockstream s1( "localhost", 2008 );
 
-    EXAM_CHECK( prss.good() );
-    EXAM_CHECK( prss.is_open() );
+    EXAM_CHECK( s1.good() );
+    EXAM_CHECK( s1.is_open() );
 
-    {
-      sockstream s1( "localhost", 2008 );
+    sockstream s2( "localhost", 2008 );
 
-      EXAM_CHECK( s1.good() );
-      EXAM_CHECK( s1.is_open() );
-
-      sockstream s2( "localhost", 2008 );
-
-      EXAM_CHECK( s2.good() );
-      EXAM_CHECK( s2.is_open() );
+    EXAM_CHECK( s2.good() );
+    EXAM_CHECK( s2.is_open() );
 
 //      for ( int i = 0; i < 1024; ++i ) { // give chance to process it
 //        std::tr2::this_thread::yield();
 //      }
 
-      unique_lock<mutex> lk( worker::lock );
+    unique_lock<mutex> lk( worker::lock );
 
-      EXAM_CHECK( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter2 ) );
-      worker::visits = 0;
-    }
-
-    // for ( int i = 0; i < 64; ++i ) { // give chance for system
-    //   std::tr2::this_thread::yield();
-    // }
-    unique_lock<mutex> lksrv( worker::lock );
-    EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
+    // two worker's ctors visited (two connects)
+    EXAM_CHECK( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter2 ) );
+    worker::visits = 0;
   }
+
+  // for ( int i = 0; i < 64; ++i ) { // give chance for system
+  //   std::tr2::this_thread::yield();
+  // }
+  unique_lock<mutex> lksrv( worker::lock );
+  // both worker's dtors pass, no worker's objects left
+  EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(sockios2_test::processor_core_getline)
+{
   {
+    // check precondition
     lock_guard<mutex> lk( worker::lock );
     EXAM_CHECK( worker::cnt == 0 );
   }
 
-
   // check income data before sockstream was closed
+  connect_processor<worker> prss( 2008 );
+
+  EXAM_CHECK( prss.good() );
+  EXAM_CHECK( prss.is_open() );
+
   {
-    connect_processor<worker> prss( 2008 );
+    sockstream s1( "localhost", 2008 );
 
-    EXAM_CHECK( prss.good() );
-    EXAM_CHECK( prss.is_open() );
+    EXAM_CHECK( s1.good() );
+    EXAM_CHECK( s1.is_open() );
 
-    {
-      sockstream s1( "localhost", 2008 );
+    s1 << "Hello, world!" << endl;
 
-      EXAM_CHECK( s1.good() );
-      EXAM_CHECK( s1.is_open() );
-
-      s1 << "Hello, world!" << endl;
-
-      unique_lock<mutex> lk( worker::lock );
-      EXAM_CHECK( worker::line_cnd.timed_wait( lk, milliseconds( 500 ), worker::rd_counter1 ) );
-
-      // cerr << worker::line << endl;
-      EXAM_CHECK( worker::line == "Hello, world!" );
-      worker::line = "";
-      worker::rd = 0;
-    }
-
-    // for ( int i = 0; i < 64; ++i ) { // give chance for system
-    //   std::tr2::this_thread::yield();
-    // }
-
-    unique_lock<mutex> lksrv( worker::lock );
-    EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
-  }
-
-  // check after sockstream was closed, i.e. ensure, that all data available
-  // was read before stream was closed
-  {
-    connect_processor<worker> prss( 2008 );
-
-    EXAM_CHECK( prss.good() );
-    EXAM_CHECK( prss.is_open() );
-
-    {
-      sockstream s1( "localhost", 2008 );
-
-      EXAM_CHECK( s1.good() );
-      EXAM_CHECK( s1.is_open() );
-
-      s1 << "Hello, world!" << endl;
-    }
-
-    {
-      unique_lock<mutex> lk( worker::lock );
-      EXAM_CHECK( worker::line_cnd.timed_wait( lk, milliseconds( 500 ), worker::rd_counter1 ) );
-    }
+    unique_lock<mutex> lk( worker::lock );
+    EXAM_CHECK( worker::line_cnd.timed_wait( lk, milliseconds( 500 ), worker::rd_counter1 ) );
 
     // cerr << worker::line << endl;
     EXAM_CHECK( worker::line == "Hello, world!" );
     worker::line = "";
     worker::rd = 0;
-
-    for ( int i = 0; i < 64; ++i ) { // give chance for system
-      std::tr2::this_thread::yield();
-    }
-    // {
-    //   unique_lock<mutex> lksrv( worker::lock );
-    //   EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
-    // }
   }
+
+  // for ( int i = 0; i < 64; ++i ) { // give chance for system
+  //   std::tr2::this_thread::yield();
+  // }
+
+  unique_lock<mutex> lksrv( worker::lock );
+  // worker's dtor pass, no worker's objects left
+  EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(sockios2_test::processor_core_income_data)
+{
+  // check after sockstream was closed, i.e. ensure, that all data available
+  connect_processor<worker> prss( 2008 );
+
+  EXAM_CHECK( prss.good() );
+  EXAM_CHECK( prss.is_open() );
+
+  {
+    sockstream s1( "localhost", 2008 );
+
+    EXAM_CHECK( s1.good() );
+    EXAM_CHECK( s1.is_open() );
+
+    s1 << "Hello, world!" << endl;
+  }
+
+  {
+    unique_lock<mutex> lk( worker::lock );
+    EXAM_CHECK( worker::line_cnd.timed_wait( lk, milliseconds( 500 ), worker::rd_counter1 ) );
+  }
+
+  {
+    unique_lock<mutex> lksrv( worker::lock );
+    EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
+  }
+
+  EXAM_CHECK( worker::line == "Hello, world!" );
+  worker::line = "";
+  worker::rd = 0;
 
   return EXAM_RESULT;
 }
