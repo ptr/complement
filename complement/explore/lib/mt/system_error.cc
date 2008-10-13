@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/25 10:04:45 ptr>
+// -*- C++ -*- Time-stamp: <08/10/01 00:22:12 ptr>
 
 /*
  * Copyright (c) 2007-2008
@@ -900,17 +900,17 @@ bool error_category::operator <( const error_category& cat ) const
 
 const error_category& get_posix_category()
 {
-  return detail::_posix_error_category;
+  return ::detail::_posix_error_category;
 }
 
 const error_category& get_system_category()
 {
-  return detail::_system_error_category;
+  return ::detail::_system_error_category;
 }
 
 error_code::error_code() :
     v( 0 ),
-    c( &detail::_system_error_category )
+    c( &::detail::_system_error_category )
 { }
 
 error_code::error_code( int val, const error_category& cat ) :
@@ -927,16 +927,16 @@ void error_code::assign( int val, const error_category& cat )
 void error_code::clear()
 {
   v = 0;
-  c = &detail::_system_error_category;
+  c = &::detail::_system_error_category;
 }
 
 namespace posix_error {
 
 error_code make_error_code( posix_errno err )
-{ return error_code( err, detail::_posix_error_category ); }
+{ return error_code( err, ::detail::_posix_error_category ); }
 
 error_condition make_error_condition( posix_errno err )
-{ return error_condition( err, detail::_posix_error_category ); }
+{ return error_condition( err, ::detail::_posix_error_category ); }
 
 } // namespace posix_error
 
@@ -947,7 +947,7 @@ bool operator <( const error_code& l, const error_code& r )
 
 error_condition::error_condition() :
     v( 0 ),
-    c( &detail::_posix_error_category )
+    c( &::detail::_posix_error_category )
 { }
 
 error_condition::error_condition( int val, const error_category& cat ) :
@@ -964,7 +964,7 @@ void error_condition::assign( int val, const error_category& cat )
 void error_condition::clear()
 {
   v = 0;
-  c = &detail::_posix_error_category;
+  c = &::detail::_posix_error_category;
 }
 
 bool operator <( const error_condition& l, const error_condition& r )
