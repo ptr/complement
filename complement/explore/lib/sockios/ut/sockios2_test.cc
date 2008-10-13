@@ -499,6 +499,8 @@ std::tr2::condition_event srv_reader::cnd;
 
 int EXAM_IMPL(sockios2_test::disconnect)
 {
+  throw exam::skip_exception();
+
   const char fname[] = "/tmp/sockios2_test.shm";
   xmt::shm_alloc<0> seg;
 
@@ -694,6 +696,8 @@ class stream_reader
 
 int EXAM_IMPL(sockios2_test::srv_sigpipe)
 {
+  throw exam::skip_exception();
+  
   const char fname[] = "/tmp/sockios2_test.shm";
   try {
     xmt::shm_alloc<0> seg;
