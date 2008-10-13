@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/09 01:02:12 ptr>
+// -*- C++ -*- Time-stamp: <08/10/06 23:50:22 ptr>
 
 /*
  * Copyright (c) 2008
@@ -37,6 +37,10 @@
 #include <functional>
 #include <exception>
 
+// #include <boost/shared_ptr.hpp>
+
+#include <mt/callstack.h>
+
 namespace std {
 
 template <class charT, class traits, class _Alloc> class basic_sockbuf;
@@ -59,14 +63,50 @@ class sock_processor_base :
 
     sock_processor_base() :
         _mode( ios_base::in | ios_base::out ),
-        _state( ios_base::goodbit )
+        _state( ios_base::goodbit ),
+        _chk( *this ),
+        _rcount( 0 )
       { }
 
-    explicit sock_processor_base( int port, sock_base::stype t = sock_base::sock_stream )
+    explicit sock_processor_base( int port, sock_base::stype t = sock_base::sock_stream ) :
+        _chk( *this ),
+        _rcount( 0 )
       { sock_processor_base::open( port, t, sock_base::inet ); }
 
     virtual ~sock_processor_base()
-      { sock_processor_base::_close(); }
+      {        
+        sock_processor_base::_close();
+
+        std::tr2::unique_lock<std::tr2::mutex> lk(_cnt_lck);
+        // _cnt_cnd.wait( lk, _chk );
+        if ( !_cnt_cnd.timed_wait( lk, std::tr2::seconds(1), _chk ) ) { // <-- debug
+          std::cerr << __FILE__ << ":" << __LINE__ << " " << _rcount << std::endl;
+        }
+      }
+
+    void addref()
+      {
+        std::tr2::lock_guard<std::tr2::mutex> lk(_cnt_lck);
+        ++_rcount;
+      }
+
+    void release()
+      {
+        std::tr2::lock_guard<std::tr2::mutex> lk(_cnt_lck);
+        if ( --_rcount == 0 ) {
+          _cnt_cnd.notify_one();
+        }
+        if ( _rcount < 0 ) { // <-- debug
+          xmt::callstack( std::cerr );
+        }
+      }
+
+    int count()
+      {
+        std::tr2::lock_guard<std::tr2::mutex> lk(_cnt_lck);
+        int tmp = _rcount;
+        return tmp;
+      }
 
     void open( const in_addr& addr, int port, sock_base::stype type, sock_base::protocol prot );
 
@@ -138,6 +178,28 @@ class sock_processor_base :
 
   protected:
     std::tr2::mutex _fd_lck;
+
+    class _cnt_checker
+    {
+      public:
+        _cnt_checker( sock_processor_base<charT,traits,_Alloc>& _p ) :
+            p( _p )
+          { }
+
+      private:
+        sock_processor_base<charT,traits,_Alloc>& p;
+
+      public:
+        bool operator ()() const
+          { return p._rcount == 0; }
+    };
+
+    _cnt_checker _chk;
+    std::tr2::mutex _cnt_lck;
+    std::tr2::condition_variable _cnt_cnd;
+    int _rcount;
+
+    friend class _cnt_checker;
 };
 
 typedef sock_processor_base<char,char_traits<char>,allocator<char> > sock_basic_processor;
