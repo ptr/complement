@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/06 13:28:39 ptr>
+// -*- C++ -*- Time-stamp: <08/10/09 00:36:27 ptr>
 
 /*
  *
@@ -28,6 +28,7 @@ class sockios2_test
     int EXAM_DECL(processor_core_getline);
     int EXAM_DECL(processor_core_income_data);
     int EXAM_DECL(fork);
+    int EXAM_DECL(income_data);
     int EXAM_DECL(srv_sigpipe);
     int EXAM_DECL(read0);
 };
