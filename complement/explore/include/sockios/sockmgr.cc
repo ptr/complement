@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/08 22:37:33 yeti>
+// -*- C++ -*- Time-stamp: <08/10/14 15:45:50 yeti>
 
 /*
  * Copyright (c) 2008
@@ -15,8 +15,9 @@ namespace detail {
 template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::io_worker()
 {
-  epoll_event ev[/*n_ret*/ 512 ];
+  epoll_event ev[ n_ret ];
 
+  memset( ev, 0, n_ret * sizeof(epoll_event) );
 /*
   ctl _xctl;
   int r = read( pipefd[0], &_xctl, sizeof(ctl) );
@@ -30,7 +31,7 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
 
   try {
     for ( ; ; ) {
-      int n = epoll_wait( efd, &ev[0], /* n_ret */ 512, -1 );
+      int n = epoll_wait( efd, &ev[0], n_ret, -1 );
 
       if ( n < 0 ) {
         if ( errno == EINTR ) {
@@ -38,6 +39,7 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
           continue;
         }
         // throw system_error
+        std::cerr << __FILE__ << ":" << __LINE__ << " " << efd << " " << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message() << std::endl;
       }
 
       std::tr2::lock_guard<std::tr2::mutex> lk( dll );
@@ -51,6 +53,7 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
             std::cerr << __FILE__ << ":" << __LINE__ << " " << ev[i].data.fd << std::endl;
             if ( epoll_ctl( efd, EPOLL_CTL_DEL, ev[i].data.fd, 0 ) < 0 ) {
               // throw system_error
+              std::cerr << __FILE__ << ":" << __LINE__ << " " << efd << " " << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message() << std::endl;
             }
             continue;
             // throw std::logic_error( "file descriptor in epoll, but not in descr[]" );
@@ -60,6 +63,7 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
           if ( info.flags & fd_info::listener ) {
             process_listener( ev[i], ifd );
           } else {
+            // std::cerr << (void *)this << " " << (void *)&ev[i] << 
             process_regular( ev[i], ifd );
           }
         }
@@ -174,6 +178,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
     // std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << std::endl;
     if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
       // std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << system_error( posix_error::make_error_code( static_cast<posix_error::posix_errno>(errno) ) ).what() << std::endl;
+      std::cerr << __FILE__ << ":" << __LINE__ << " " << efd << " " << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message() << std::endl;
 
       // already closed?
     }
@@ -182,7 +187,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
       ifd->second.p->close();
       for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
         if ( (i->second.p == ifd->second.p) && (i->second.b != 0) ) {
-          i->second.b->shutdown( sock_base::stop_in | sock_base::stop_out );
+          i->second.b->shutdown( sock_base::stop_in /* | sock_base::stop_out */ );
         }
       }
     }
@@ -239,7 +244,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
           ifd->second.p->close();
           for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
             if ( (i->second.p == ifd->second.p) && (i->second.b != 0) ) {
-              i->second.b->shutdown( sock_base::stop_in | sock_base::stop_out );
+              i->second.b->shutdown( sock_base::stop_in /* | sock_base::stop_out */ );
             }
           }
         }
@@ -415,6 +420,9 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
         if ( info.flags & fd_info::level_triggered ) {
           epoll_event xev;
           xev.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+#if 1
+          xev.data.u64 = 0ULL;
+#endif
           xev.data.fd = ev.data.fd;
           info.flags &= ~static_cast<unsigned>(fd_info::level_triggered);
           // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
@@ -468,7 +476,8 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
         if ( errno == EBADF ) {
           // already closed?
           // std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << errno << std::endl;
-        } else {
+          std::cerr << __FILE__ << ":" << __LINE__ << " " << efd << " " << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message() << std::endl;
+         } else {
         // throw system_error
           std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << errno << std::endl;
         }

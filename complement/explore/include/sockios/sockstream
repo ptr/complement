@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/13 11:16:56 ptr>
+// -*- C++ -*- Time-stamp: <08/10/14 14:30:00 yeti>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -328,6 +328,8 @@ void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
       // std::cerr << __FILE__ << ":" << __LINE__ << " mgr destroyed " << std::tr2::getpid() << std::endl;
       delete basic_socket<charT,traits,_Alloc>::mgr;
       basic_socket<charT,traits,_Alloc>::mgr = 0;
+    } else if ( _count < 0 ) {
+       std::cerr << __FILE__ << ":" << __LINE__ << " shit happens\n";
     }
   }
 }

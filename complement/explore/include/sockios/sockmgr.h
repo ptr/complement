@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/07 01:11:58 ptr>
+// -*- C++ -*- Time-stamp: <08/10/14 15:35:14 yeti>
 
 /*
  * Copyright (c) 2008
@@ -147,9 +147,14 @@ class sockmgr
       { me->io_worker(); }
 
   public:
-    sockmgr( int hint = 1024, int ret = 512 ) :
-         n_ret( ret )
+    sockmgr( int hint = 1024, int ret = 1024 ) :
+        efd( -1 ),
+        n_ret( ret ),
+        _worker( 0 )
       {
+        pipefd[0] = -1;
+        pipefd[1] = -1;
+
         // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
         efd = epoll_create( hint );
         if ( efd < 0 ) {
@@ -158,6 +163,7 @@ class sockmgr
         }
         if ( pipe( pipefd ) < 0 ) { // check err
           ::close( efd );
+          efd = -1;
           // throw system_error;
           throw std::runtime_error( "pipe" );
         }
@@ -189,12 +195,18 @@ class sockmgr
 
           ::write( pipefd[1], &_ctl, sizeof(ctl) );
 
-          _worker->join();
+          // _worker->join();
         }
-        ::close( pipefd[1] );
-        ::close( pipefd[0] );
-        ::close( efd );
+
         delete _worker;
+        _worker = 0;
+
+        ::close( pipefd[1] );
+        pipefd[1] = -1;
+        ::close( pipefd[0] );
+        pipefd[0] = -1;
+        ::close( efd );
+        efd = -1;
       }
 
     void push( socks_processor_t& p )
