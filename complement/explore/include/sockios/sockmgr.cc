@@ -400,6 +400,10 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
               }
             }
             break;
+          case EBADF:
+            // already closed?
+            // std::cerr << __FILE__ << ":" << __LINE__ << " " << errno << std::endl;
+            break;
           default:
             std::cerr << __FILE__ << ":" << __LINE__ << " " << errno << std::endl;
             break;
@@ -444,11 +448,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
         // throw system_error
         std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << errno << std::endl;
       }
-      {
-        std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
-        b->close();
-        b->ucnd.notify_all();
-      }
+      b->close();
       // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
       // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
@@ -465,13 +465,16 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
       b->_notify_close = false; // avoid deadlock
       // std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << std::endl;
       if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
+        if ( errno == EBADF ) {
+          // already closed?
+          // std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << errno << std::endl;
+        } else {
         // throw system_error
-        std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << errno << std::endl;
+          std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << errno << std::endl;
+        }
       }
       descr.erase( ifd );
-      std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
       b->close();
-      b->ucnd.notify_all();
     }
     // dump_descr();
   }
