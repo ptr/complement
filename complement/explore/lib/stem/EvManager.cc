@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/07 21:01:28 yeti>
+// -*- C++ -*- Time-stamp: <08/10/16 12:03:13 ptr>
 
 /*
  *
@@ -97,6 +97,16 @@ void EvManager::_Dispatch( EvManager* p )
       unique_lock<mutex> lk( lq );
       me._cnd_queue.wait( lk, me.not_empty );
     }
+  }
+
+  // try process the rest of queue, if not empty
+  {
+    unique_lock<mutex> lk( lq );
+    in_ev_queue.swap( out_ev_queue );
+  }
+  while ( !out_ev_queue.empty() ) {
+    me.Send( out_ev_queue.front() );
+    out_ev_queue.pop_front();
   }
 }
 

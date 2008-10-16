@@ -1,3 +1,10 @@
+2008-10-16  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* EvManager.cc: try to process the rest of income queue
+	after finish marker turned on, if it not empty.
+
+	* libstem: library version 4.8.3.
+
 2008-07-08  Petr Ovtchenkov  <yeti@yandex-team.ru>
 
 	* _EventHandler.cc: return state via local variable;
