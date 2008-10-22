@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <08/06/12 16:01:09 ptr>
+# -*- Makefile -*- Time-stamp: <08/10/22 15:48:09 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005-2008
 # Petr Ovtchenkov
@@ -57,6 +57,10 @@ _USE_NOSTDLIB := 1
 endif
 
 ifeq ($(OSNAME),darwin)
+_USE_NOSTDLIB := 1
+endif
+
+ifeq ($(OSNAME),windows)
 _USE_NOSTDLIB := 1
 endif
 endif
@@ -137,11 +141,13 @@ START_OBJ := $(shell for o in crt1.o crti.o crtbegin.o; do ${CXX} ${CXXFLAGS} -p
 END_OBJ := $(shell for o in crtend.o crtn.o; do ${CXX} ${CXXFLAGS} -print-file-name=$$o; done)
 STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lpthread -lc -lm
 endif
+
 ifeq ($(OSNAME),openbsd)
 START_OBJ := $(shell for o in crt0.o crtbegin.o; do ${CXX} ${CXXFLAGS} -print-file-name=$$o; done)
 END_OBJ := $(shell for o in crtend.o; do ${CXX} ${CXXFLAGS} -print-file-name=$$o; done)
 STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lpthread -lc -lm
 endif
+
 ifeq ($(OSNAME),freebsd)
 # FreeBSD < 5.3 should use -lc_r, while FreeBSD >= 5.3 use -lpthread
 PTHR := $(shell if [ ${OSREL_MAJOR} -gt 5 ] ; then echo "pthread" ; else if [ ${OSREL_MAJOR} -lt 5 ] ; then echo "c_r" ; else if [ ${OSREL_MINOR} -lt 3 ] ; then echo "c_r" ; else echo "pthread"; fi ; fi ; fi)
@@ -149,16 +155,19 @@ START_OBJ := $(shell for o in crt1.o crti.o crtbegin.o; do ${CXX} ${CXXFLAGS} -p
 END_OBJ := $(shell for o in crtend.o crtn.o; do ${CXX} ${CXXFLAGS} -print-file-name=$$o; done)
 STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -l${PTHR} -lc -lm
 endif
+
 ifeq ($(OSNAME),netbsd)
 START_OBJ := $(shell for o in crt1.o crti.o crtbegin.o; do ${CXX} ${CXXFLAGS} -print-file-name=$$o; done)
 END_OBJ := $(shell for o in crtend.o crtn.o; do ${CXX} ${CXXFLAGS} -print-file-name=$$o; done)
 STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lpthread -lc -lm
 endif
+
 ifeq ($(OSNAME),sunos)
 START_OBJ := $(shell for o in crt1.o crti.o crtbegin.o; do ${CXX} ${CXXFLAGS} -print-file-name=$$o; done)
 END_OBJ := $(shell for o in crtend.o crtn.o; do ${CXX} ${CXXFLAGS} -print-file-name=$$o; done)
 STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lpthread -lc -lm
 endif
+
 ifeq ($(OSNAME),darwin)
 # sometimes crt3.o will required: it has __cxa_at_exit, but the same defined in libc.dyn
 # at least in Mac OS X 10.4.10 (8R2218)
@@ -166,27 +175,45 @@ ifeq ($(CXX_VERSION_MAJOR),3)
 # i.e. gcc 3.3
 START_OBJ := $(shell for o in crt1.o crt2.o; do ${CXX} ${CXXFLAGS} -print-file-name=$$o; done)
 else
-ifndef USE_STATIC_LIBGCC
-# MacOS X, shared-libgcc
-ifeq ($(MACOSX_TEN_FIVE),true)
-# MacOS X >= 10.5
 START_OBJ := -lcrt1.o
-else
-# MacOS X < 10.5
-START_OBJ := -lcrt1.o
-endif
-else
-# MacOS X, not shared-libgcc
-START_OBJ := -lcrt1.o
-endif
 endif
 END_OBJ :=
 STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lpthread -lc -lm -lsupc++ ${_LGCC_EH}
 #LDFLAGS += -dynamic
 endif
-LDFLAGS += -nostdlib
-# endif
+
+ifeq ($(OSNAME),windows)
+LDFLAGS += -nodefaultlibs
+ifndef USE_STATIC_LIBGCC
+ifeq ($(shell ${CXX} ${CXXFLAGS} -print-file-name=libgcc_s.a),libgcc_s.a)
+_LGCC_S := -lgcc
 else
+_LGCC_S := -lgcc_s
+endif
+else
+_LGCC_S := -lgcc
+endif
+ifeq ($(OSREALNAME),mingw)
+STDLIBS = ${STLPORT_LIB} -lsupc++ ${_LGCC_S} -lmingw32 -lmingwex -lmsvcrt -lm -lmoldname -lcoldname -lkernel32
+else
+LDFLAGS += -Wl,-enable-auto-import
+ifneq (,$(findstring no-cygwin,$(EXTRA_CXXFLAGS)))
+STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lmingw32 -lmingwex -lmsvcrt -lm -lmoldname -lcoldname -lkernel32
+else
+STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lm -lc -lpthread -lkernel32
+endif
+endif
+else
+LDFLAGS += -nostdlib
+endif
+
+# _USE_NOSTDLIB
+else
+ifndef USE_STATIC_LIBGCC
+release-shared :	LDFLAGS += -shared-libgcc
+dbg-shared :	LDFLAGS += -shared-libgcc
+stldbg-shared :	LDFLAGS += -shared-libgcc
+endif
 ifndef WITHOUT_STLPORT
 STDLIBS = ${STLPORT_LIB}
 else
@@ -196,5 +223,7 @@ endif
 
 # workaround for gcc 2.95.x bug:
 ifeq ($(CXX_VERSION_MAJOR),2)
+ifneq ($(OSNAME),windows)
 OPT += -fPIC
+endif
 endif
