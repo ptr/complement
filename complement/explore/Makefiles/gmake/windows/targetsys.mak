@@ -22,8 +22,8 @@ LIB := dll.a
 else
 LIB := lib
 endif
-
 EXP := exp
+
 # executable:
 EXE := .exe
 

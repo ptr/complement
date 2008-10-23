@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/06 23:50:22 ptr>
+// -*- C++ -*- Time-stamp: <08/10/14 14:20:45 yeti>
 
 /*
  * Copyright (c) 2008
@@ -78,10 +78,10 @@ class sock_processor_base :
         sock_processor_base::_close();
 
         std::tr2::unique_lock<std::tr2::mutex> lk(_cnt_lck);
-        // _cnt_cnd.wait( lk, _chk );
-        if ( !_cnt_cnd.timed_wait( lk, std::tr2::seconds(1), _chk ) ) { // <-- debug
-          std::cerr << __FILE__ << ":" << __LINE__ << " " << _rcount << std::endl;
-        }
+        _cnt_cnd.wait( lk, _chk );
+        // if ( !_cnt_cnd.timed_wait( lk, std::tr2::seconds(1), _chk ) ) { // <-- debug
+        //   std::cerr << __FILE__ << ":" << __LINE__ << " " << _rcount << std::endl;
+        // }
       }
 
     void addref()

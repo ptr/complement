@@ -1,4 +1,4 @@
-# Time-stamp: <08/06/06 17:38:26 yeti>
+# Time-stamp: <08/10/22 14:57:26 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005-2008
 # Petr Ovtchenkov
@@ -41,7 +41,7 @@ _CXA_ATEXIT := $(shell ${CXX} -v 2>&1 | grep -q -e "--enable-__cxa_atexit" || ec
 
 ifeq ($(OSNAME), darwin)
 # This is to differentiate Apple-builded compiler from original
-# GNU compiler (it's has different behaviour)
+# GNU compiler (it has different behaviour)
 ifneq ("$(shell ${CXX} -v 2>&1 | grep Apple)", "")
 GCC_APPLE_CC := 1
 endif

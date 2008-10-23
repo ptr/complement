@@ -28,38 +28,40 @@ CXXFLAGS = -Ae -C -p -3 -w12
 
 DEFS += -DSTRICT
 
-ifdef STLP_BUILD_FORCE_DYNAMIC_RUNTIME
+ifdef WITH_DYNAMIC_RTL
 release-static : OPT += -ND
 dbg-static : OPT += -ND
 stldbg-static : OPT += -ND
 endif
 
-ifndef STLP_BUILD_FORCE_STATIC_RUNTIME
+ifndef WITH_STATIC_RTL
 release-shared : OPT += -ND
 dbg-shared : OPT += -ND
 stldbg-shared : OPT += -ND
 endif
 
-ifndef STLP_BUILD_NO_RTTI
+ifdef WITHOUT_THREAD
+DEFS += -D_STLP_NO_THREADS
+endif
+
+ifndef WITHOUT_RTTI
 OPT += -Ar
 endif
 
-#Add Windows target.
-ifndef STLP_BUILD_WINDOWS_95
-WINVER=0x0410
-else
-WINVER=0x0400
-endif
-release-shared: DEFS += -DWINVER=$(WINVER)
-dbg-shared: DEFS += -DWINVER=$(WINVER)
-stldbg-shared: DEFS += -DWINVER=$(WINVER)
-release-static: DEFS += -DWINVER=$(WINVER)
-dbg-static: DEFS += -DWINVER=$(WINVER)
-stldbg-static: DEFS += -DWINVER=$(WINVER)
+WINVER ?= 0x0501
+DEFS += -DWINVER=$(WINVER)
 
 OUTPUT_OPTION = -o$@
-LINK_OUTPUT_OPTION = $(subst /,\,$@)
+LINK_OUTPUT_OPTION = $@
 CPPFLAGS = $(DEFS) $(OPT) $(INCLUDES) 
+
+ifdef EXTRA_CXXFLAGS
+CXXFLAGS += $(EXTRA_CXXFLAGS)
+endif
+
+ifdef EXTRA_CFLAGS
+CFLAGS += $(EXTRA_CFLAGS)
+endif
 
 CDEPFLAGS = -E -M
 CCDEPFLAGS = -E -M
@@ -71,9 +73,9 @@ stldbg-shared : RCFLAGS += -DBUILD=stlg -DBUILD_INFOS="-gl -D_STLP_DEBUG"
 RC_OUTPUT_OPTION = $(OUTPUT_OPTION)
 
 COMPILE.rc = ${RC} ${RCFLAGS}
-LINK.cc = dm_link $(LDFLAGS)
+LINK.cc = link $(LDFLAGS)
 
-LDLIBS += user32.lib kernel32.lib
+LDLIBS += user32.lib kernel32.lib snn.lib
 
 # STLport DEBUG mode specific defines
 dbg-static : DEFS += -D_DEBUG
@@ -95,21 +97,23 @@ dbg-shared : OPT += -gl
 stldbg-static : OPT += -gl
 stldbg-shared : OPT += -gl
 
+ifndef WITHOUT_THREAD
 release-static : OPT += -D_MT
 dbg-static : OPT += -D_MT
 stldbg-static : OPT += -D_MT
+endif
 
 release-static : AR += -p128
 dbg-static : AR += -p512
 stldbg-static : AR += -p512
 
 ifndef LIBNAME
-ifdef STLP_BUILD_FORCE_DYNAMIC_RUNTIME
+ifdef WITH_DYNAMIC_RTL
 release-static: DEFS += -D_STLP_USE_STATIC_LIB
 dbg-static:  DEFS += -D_STLP_USE_STATIC_LIB
 stldbg-static:  DEFS += -D_STLP_USE_STATIC_LIB
 endif
-ifdef STLP_BUILD_FORCE_STATIC_RUNTIME
+ifdef WITH_STATIC_RTL
 release-shared: DEFS += -D_STLP_USE_DYNAMIC_LIB
 dbg-shared:  DEFS += -D_STLP_USE_DYNAMIC_LIB
 stldbg-shared:  DEFS += -D_STLP_USE_DYNAMIC_LIB
@@ -119,16 +123,16 @@ endif
 # map output option (move map files to output dir)
 
 ifdef LIBNAME
-release-shared: MAP_OUTPUT_OPTION = $(subst /,\,$(OUTPUT_DIR))\$(SO_NAME_BASE).map
-dbg-shared: MAP_OUTPUT_OPTION = $(subst /,\,$(OUTPUT_DIR_DBG))\$(SO_NAME_DBG_BASE).map
-stldbg-shared: MAP_OUTPUT_OPTION = $(subst /,\,$(OUTPUT_DIR_STLDBG))\$(SO_NAME_STLDBG_BASE).map
+release-shared: MAP_OUTPUT_OPTION = $(OUTPUT_DIR)/$(SO_NAME_BASE).map
+dbg-shared: MAP_OUTPUT_OPTION = $(OUTPUT_DIR_DBG)/$(SO_NAME_DBG_BASE).map
+stldbg-shared: MAP_OUTPUT_OPTION = $(OUTPUT_DIR_STLDBG)/$(SO_NAME_STLDBG_BASE).map
 else
-release-shared: MAP_OUTPUT_OPTION = $(subst /,\,$(OUTPUT_DIR))\$(PRGNAME).map
-release-static: MAP_OUTPUT_OPTION = $(subst /,\,$(OUTPUT_DIR))\$(PRGNAME).map
-dbg-shared: MAP_OUTPUT_OPTION = $(subst /,\,$(OUTPUT_DIR_DBG))\$(PRGNAME).map
-dbg-static: MAP_OUTPUT_OPTION = $(subst /,\,$(OUTPUT_DIR_DBG))\$(PRGNAME).map
-stldbg-shared: MAP_OUTPUT_OPTION = $(subst /,\,$(OUTPUT_DIR_STLDBG))\$(PRGNAME).map
-stldbg-static: MAP_OUTPUT_OPTION = $(subst /,\,$(OUTPUT_DIR_STLDBG))\$(PRGNAME).map
+release-shared: MAP_OUTPUT_OPTION = $(OUTPUT_DIR)/$(PRGNAME).map
+release-static: MAP_OUTPUT_OPTION = $(OUTPUT_DIR)/$(PRGNAME).map
+dbg-shared: MAP_OUTPUT_OPTION = $(OUTPUT_DIR_DBG)/$(PRGNAME).map
+dbg-static: MAP_OUTPUT_OPTION = $(OUTPUT_DIR_DBG)/$(PRGNAME).map
+stldbg-shared: MAP_OUTPUT_OPTION = $(OUTPUT_DIR_STLDBG)/$(PRGNAME).map
+stldbg-static: MAP_OUTPUT_OPTION = $(OUTPUT_DIR_STLDBG)/$(PRGNAME).map
 endif
 
 # dependency output parser (dependencies collector)

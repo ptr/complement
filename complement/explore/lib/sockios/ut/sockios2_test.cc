@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/10 23:20:58 ptr>
+// -*- C++ -*- Time-stamp: <08/10/14 17:13:11 yeti>
 
 /*
  *
@@ -685,7 +685,7 @@ int EXAM_IMPL(sockios2_test::disconnect_rawclnt)
 
 int EXAM_IMPL(sockios2_test::disconnect)
 {
-  throw exam::skip_exception();
+  // throw exam::skip_exception();
 
   const char fname[] = "/tmp/sockios2_test.shm";
   xmt::shm_alloc<0> seg;
@@ -980,11 +980,15 @@ class interrupted_writer
       { }
 
     static void read_generator( barrier* b )
-    {
+    {      
       sockstream s( "localhost", 2008 );
 
       int buff = 0;
       // cerr << "align 2" << endl;
+
+      EXAM_CHECK_ASYNC( s.good() );
+      EXAM_CHECK_ASYNC( s.is_open() );
+
       b->wait(); // <-- align 2
       // cerr << "align 2 pass" << endl;
 
@@ -1051,9 +1055,9 @@ int EXAM_IMPL(sockios2_test::read0)
       EXAM_CHECK( r.good() );
       EXAM_CHECK( r.is_open() );
 
-      for ( int i = 0; i < 64; ++i ) { // give chance for system
-        std::tr2::this_thread::yield();
-      }
+      // for ( int i = 0; i < 64; ++i ) { // give chance for system
+      //   std::tr2::this_thread::yield();
+      // }
     }
     shm.deallocate( &bnew );
     shm.deallocate( &b );

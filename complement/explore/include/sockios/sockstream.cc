@@ -112,6 +112,10 @@ basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
     ::close( basic_socket_t::_fd );
 #endif
     basic_socket_t::_fd = -1;
+   
+    std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+    ucnd.notify_all();
+
     return 0;
   }
   catch ( std::length_error& ) {
@@ -121,6 +125,10 @@ basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
     ::close( basic_socket_t::_fd );
 #endif
     basic_socket_t::_fd = -1;
+
+    std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+    ucnd.notify_all();
+
     return 0;
   }
   catch ( std::runtime_error& ) {
@@ -192,7 +200,6 @@ basic_sockbuf<charT, traits, _Alloc>::attach( sock_base::socket_type s,
     return 0;
   }
 
-  // _doclose = false;
   return basic_sockbuf<charT, traits, _Alloc>::open( dup(s), addr, t );
 }
 
@@ -240,6 +247,10 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
     ::close( basic_socket_t::_fd );
 #endif
     basic_socket_t::_fd = -1;
+
+    std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+    ucnd.notify_all();
+
     return 0;
   }
 
@@ -256,29 +267,26 @@ template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
 basic_sockbuf<charT, traits, _Alloc>::close()
 {
-  if ( !basic_socket_t::is_open() )
+  if ( !basic_socket_t::is_open() ) {
     return 0;
+  }
 
-  // if ( _doclose ) {
 #ifdef WIN32
-    ::closesocket( basic_socket_t::_fd );
+  ::closesocket( basic_socket_t::_fd );
 #else
-    ::close( basic_socket_t::_fd );
+  ::close( basic_socket_t::_fd );
 #endif
-  // }
 
-  // _STLP_ASSERT( _bbuf != 0 );
   // put area before get area
-  setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
-  setg( this->epptr(), this->epptr(), this->epptr() );
+  //setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
+  //setg( this->epptr(), this->epptr(), this->epptr() );
 
-  // if ( basic_socket_t::_notify_close ) {
-  // std::cerr << __FILE__ << ":" << __LINE__ << " " << basic_socket_t::_fd << std::endl;
   basic_socket_t::mgr->exit_notify( this, basic_socket_t::_fd );
-  //   basic_socket_t::_notify_close = false;
-  // }
 
   basic_socket_t::_fd = -1;
+
+  std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+  ucnd.notify_all();
 
   return this;
 }

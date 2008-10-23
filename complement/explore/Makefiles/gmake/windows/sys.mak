@@ -13,19 +13,10 @@
 #
 
 RC := windres
-
-ifeq ($(OSREALNAME),cygwin)
 INSTALL := install
 
 INSTALL_SO := ${INSTALL} -m 0755
 INSTALL_A := ${INSTALL} -m 0644
 INSTALL_EXE := ${INSTALL} -m 0755
-else
-INSTALL := copy
-
-INSTALL_SO := ${INSTALL}
-INSTALL_A := ${INSTALL}
-INSTALL_EXE := ${INSTALL}
-endif
 
 EXT_TEST := test
