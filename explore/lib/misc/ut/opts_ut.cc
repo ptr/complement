@@ -11,19 +11,16 @@
 #include <exam/suite.h>
 #include <config/feature.h>
 
+#include "opts_test.h"
 #include <misc/opts.h>
 
-#include "opts_test.h"
-#include "misc_test.h"
-
-extern void misc_test_suite_init( exam::test_suite&, misc_test& );
 extern void options_test_suite_init( exam::test_suite&, opts_test& );
 
 int main( int argc, const char** argv )
 {
   Opts opts;
 
-  opts.description( "test suite for 'misc' framework" );
+  opts.description( "test suite for 'misc options' framework" );
   opts.usage( "[options]" );
 
   opts << option<bool>( "print this help message", 'h', "help" )
@@ -45,12 +42,11 @@ int main( int argc, const char** argv )
     return 0;
   }
 
-  exam::test_suite t( "libmisc super test" );
+  exam::test_suite t( "libmisc, options test" );
+
   opts_test op;
-  misc_test test;
 
   options_test_suite_init( t, op );
-  misc_test_suite_init( t, test );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );

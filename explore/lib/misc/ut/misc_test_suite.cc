@@ -8,22 +8,12 @@
  *
  */
 
-#include "misc_test_suite.h"
 #include "misc_test.h"
-#include "opts_test.h"
 
 #include <config/feature.h>
 
-misc_super_test::misc_super_test() :
-  super_t( "" )
+void misc_test_suite_init( exam::test_suite& t, misc_test& test )
 {
-}
-
-int EXAM_IMPL(misc_super_test::misc_test_suite)
-{
-  exam::test_suite t( "libmisc type_traits test" );
-  misc_test test;
-
   exam::test_suite::test_case_type tc[10];
 
   tc[0] = t.add( &misc_test::type_traits_internals, test, "traits_internals" );
@@ -60,68 +50,4 @@ int EXAM_IMPL(misc_super_test::misc_test_suite)
   tc[4] = t.add( &misc_test::type_traits_is_pod, test, "is_pod", tc[0] );
   t.add( &misc_test::type_traits_is_pod_compiler_supp, test, "is_pod_compiler_supp", tc[4] );
   t.add( &misc_test::type_traits_is_empty, test, "is_empty", tc[0] );
-
-  t.flags( super_t.flags() );
-
-  // EXAM_CHECK( t.girdle() == 0 );
-
-  return /* EXAM_RESULT */ t.girdle();
-}
-
-int EXAM_IMPL(misc_super_test::options_test_suite)
-{
-  // test for options parsing
-  exam::test_suite t( "libmisc, options test" );
-
-  opts_test opts;
-
-  exam::test_suite::test_case_type tc[10];
-
-  tc[0] = 
-    t.add( &opts_test::bool_option_long, opts, "simple boolean option, long" , 
-         t.add( &opts_test::bool_option, opts, "simple boolean option" ) );
-  
-  tc[1] =
-    t.add( &opts_test::int_option_long, opts, "option with int parameter, long",
-         t.add( &opts_test::int_option, opts, "option with int parameter" ) );
-
-  t.add( &opts_test::add_check_flag, opts, "add_check_flag", tc[0] );
-  t.add( &opts_test::add_get_opt, opts, "add_get_opts", tc[1] ); 
-  t.add( &opts_test::option_position, opts, "option position", tc[0] );
-
-  t.add( &opts_test::defaults, opts, "defaults", tc[1] );
- 
-  t.add( &opts_test::bad_option, opts, "bad option", tc[0] );
-  t.add( &opts_test::bad_argument, opts, "bad argument", tc[1] );
-  t.add( &opts_test::unexpected_argument, opts, "unexpected_argument", tc[0] );
-  t.add( &opts_test::missing_argument, opts, "missing argument", tc[1] );
-
-
-  t.add( &opts_test::user_defined, opts, "user-defined type" );
-
-  tc[2] = t.add( &opts_test::compound, opts, "compound", tc[0] );
-
-  tc[3] = t.add( &opts_test::multiple, opts, "multiple", tc[0] );
-
-  t.add( &opts_test::multiple_compound, opts, "multiple_compound", tc + 2, tc + 4 );
-  
-  t.add( &opts_test::args, opts, "args" );
-
-  t.add( &opts_test::stop, opts, "stop", tc, tc + 2 ); 
-  
-  // check whether autocomplement works
-  tc[4] = t.add( &opts_test::autocomplement, opts, "autocomplement", tc[1] ); 
-  t.add( &opts_test::autocomplement_failure, opts, "autocomplement_failure", tc[4] );
-
-  t.add( &opts_test::multiple_args, opts, "multiple_args", tc[3] );
-
-  t.add( &opts_test::help, opts, "help", tc, tc + 2 );
-  
-  t.add( &opts_test::long_string, opts, "long string" );
-
-  t.flags( super_t.flags() );
-
-  // EXAM_CHECK( t.girdle() == 0 );
-
-  return /* EXAM_RESULT */ t.girdle();
 }
