@@ -92,7 +92,7 @@ int main( int argc, const char** argv )
 
   Opts opts;
 
-  opts.description( "test suite for 'sockios' framework" );
+  opts.description( "test suite for 'xmt' framework" );
   opts.usage( "[options]" );
 
   opts << option<bool>( "print this help message", 'h', "help" )
@@ -138,4 +138,4 @@ int main( int argc, const char** argv )
   }
 
   return t.girdle();
-};
+}
