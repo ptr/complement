@@ -233,7 +233,7 @@ int EXAM_IMPL(opts_test::add_get_opt)
 
 int EXAM_IMPL(opts_test::option_position)
 {
-  const char* argv[] = { "name" , "--begin" , "--f1","--f2","--end","--f1","--port=10"};
+  const char* argv[] = { "name" , "--begin", "--f1", "--f2", "--end", "--f1", "--port=10" };
   int argc = sizeof( argv ) / sizeof(argv[0]);
 
   Opts opts;
@@ -242,6 +242,7 @@ int EXAM_IMPL(opts_test::option_position)
   opts << option<bool>( "", "begin" );
   int f1_token = (opts << option<bool>( "", "f1") ).last_token();
   int f2_token = (opts << option<bool>( "", "f2") ).last_token();
+  int no_such_token = 5000; // I hope no 5000 tests here
   opts << option<bool>( "", "end" );
 
   try {
@@ -254,39 +255,41 @@ int EXAM_IMPL(opts_test::option_position)
     EXAM_CHECK(opts.get_cnt("end") == 1);
     EXAM_CHECK(opts.get_cnt("unknown") == 0);
     EXAM_CHECK(opts.get_cnt('u') == 0);
-    EXAM_CHECK(opts.get_cnt(42) == 0);
+    EXAM_CHECK(opts.get_cnt(no_such_token) == 0);
 
-    list<int> p_l(opts.get_cnt('p'));
-    vector<int> b_v(opts.get_cnt("begin"));
-    vector<int> f1_v(opts.get_cnt(f1_token));
-    vector<int> f2_v(opts.get_cnt(f2_token));
-    vector<int> e_v(opts.get_cnt("end"));
-    list<int> u_l(opts.get_cnt("unknown"));
-    bool exception_happens = false;
+    list<int> p_l( opts.get_cnt('p') );
+    vector<int> b_v( opts.get_cnt("begin") );
+    vector<int> f1_v( opts.get_cnt(f1_token) );
+    vector<int> f2_v( opts.get_cnt(f2_token) );
+    vector<int> e_v( opts.get_cnt("end") );
+    list<int> u_l( opts.get_cnt("unknown") );
 
-    opts.get_pos('p',p_l.begin());
-    opts.get_pos("begin",b_v.begin());
-    opts.get_pos("f1",f1_v.begin());
-    opts.get_pos(f2_token,f2_v.begin());
-    opts.get_pos("end",e_v.begin());
+    opts.get_pos( 'p', p_l.begin() );
+    opts.get_pos( "begin", b_v.begin() );
+    opts.get_pos( "f1", f1_v.begin() );
+    opts.get_pos( f2_token, f2_v.begin() );
+    opts.get_pos( "end", e_v.begin() );
 
     try {
       opts.get_pos("unknown",u_l.begin());
+
+      EXAM_ERROR( "Opts::unknown_option exception expected" );
     }
     catch(const Opts::unknown_option& e)
     {
-      exception_happens = true;
+      EXAM_MESSAGE( "Opts::unknown_option exception, as expected" );
     }
     
-    EXAM_CHECK( exception_happens );
-    EXAM_CHECK( !b_v.empty() && !e_v.empty() && e_v[0] > b_v[0]);
-    EXAM_CHECK( f1_v.size() == 2 && f1_v[0] == 2 && f1_v[1] == 5);
-    EXAM_CHECK( !p_l.empty() && *p_l.begin() == 6);
+    EXAM_CHECK( !b_v.empty() && !e_v.empty() && e_v[0] > b_v[0] );
+    EXAM_CHECK( f1_v.size() == 2 && f1_v[0] == 2 && f1_v[1] == 5 );
+    EXAM_CHECK( !p_l.empty() && *p_l.begin() == 6 );
     EXAM_CHECK( u_l.empty() );
   }
   catch ( const Opts::unknown_option& e ) {
+    EXAM_ERROR( "unexpected exception" );
   }
   catch ( const Opts::arg_typemismatch& e ) {
+    EXAM_ERROR( "unexpected exception" );
   }
 
   return EXAM_RESULT;
@@ -309,14 +312,17 @@ int EXAM_IMPL(opts_test::defaults)
       EXAM_CHECK( opts.get<int>( 'p' ) == 0 );
     }
     catch ( const Opts::unknown_option& e ) {
+      EXAM_ERROR( "unexpected exception" );
     }
     catch ( const Opts::arg_typemismatch& e ) {
+      EXAM_ERROR( "unexpected exception" );
     }
     catch ( ... ) {
+      EXAM_ERROR( "unexpected exception" );
     }
   }
 
-  {
+  try {
     const char* argv[] = { "name", "-r", "10" };
     int argc = sizeof( argv ) / sizeof(argv[0]);
  
@@ -329,8 +335,11 @@ int EXAM_IMPL(opts_test::defaults)
     EXAM_CHECK( opts.is_set( 'r' ) );
     EXAM_CHECK( opts.get<string>( 'r' ) == "10" );
   }
+  catch ( ... ) {
+    EXAM_ERROR( "unexpected exception" );
+  }
 
-  {
+  try {
     const char* argv[] = { "name" };
     int argc = sizeof( argv ) / sizeof(argv[0]);
  
@@ -343,8 +352,11 @@ int EXAM_IMPL(opts_test::defaults)
     EXAM_CHECK( opts.is_set( 'r' ) == false ); // not set
     EXAM_CHECK( opts.get<string>( 'r' ) == "20" ); // but has default value
   }
+  catch ( ... ) {
+    EXAM_ERROR( "unexpected exception" );
+  }
 
-  {
+  try {
     const char* argv[] = { "name", "-r", "10" };
     int argc = sizeof( argv ) / sizeof(argv[0]);
  
@@ -356,6 +368,16 @@ int EXAM_IMPL(opts_test::defaults)
 
     EXAM_CHECK( opts.is_set( 'r' ) );
     EXAM_CHECK( opts.get<string>( 'r' ) == "10" );
+    // cerr << opts.get<string>( 'r' ) << endl;
+  }
+  catch ( const Opts::unknown_option& e ) {
+    EXAM_ERROR( "unexpected exception" );
+  }
+  catch ( const Opts::arg_typemismatch& e ) {
+    EXAM_ERROR( "unexpected exception" );
+  }
+  catch ( ... ) {
+    EXAM_ERROR( "unexpected exception" );
   }
 
   return EXAM_RESULT;
@@ -370,22 +392,20 @@ int EXAM_IMPL(opts_test::bad_option)
 
   opts << option<bool>( "print this help message", 'h', "help" );
 
-  bool exception_happens = false;
-
   try {
     opts.parse( argc, argv );
 
     EXAM_ERROR( "exception expected" );
   }
   catch ( const Opts::unknown_option& e ) {
-    exception_happens = true;
+    EXAM_MESSAGE( "Opts::unknown_option exception, as expected" );
   }
   catch ( const Opts::arg_typemismatch& e ) {
+    EXAM_ERROR( "Opts::unknown_option expected" );
   }
   catch ( ... ) {
+    EXAM_ERROR( "Opts::unknown_option expected" );
   }
-
-  EXAM_CHECK( exception_happens );
 
   return EXAM_RESULT;
 }
@@ -399,23 +419,23 @@ int EXAM_IMPL(opts_test::bad_argument)
 
   opts << option<int>( "listen tcp port", 'p', "port" )[10];
 
-  bool exception_happens = false;
-
   try {
     opts.parse( argc, argv ); // <- exception here
 
     int t = opts.get<int>('p');
+
+    EXAM_ERROR( "std::invalid_argument exception expected" );
   }
   catch ( const Opts::arg_typemismatch& e ) {
-    exception_happens = true;
+    EXAM_ERROR( "std::invalid_argument exception expected" );
   }
   catch ( const std::invalid_argument& e ) {
-    exception_happens = true;
+    EXAM_MESSAGE( "std::invalid_argument exception, as expected" );
   }
   catch ( ... ) {
+    EXAM_ERROR( "std::invalid_argument exception expected" );
   }
 
-  EXAM_CHECK( exception_happens );
   // EXAM_CHECK ( opts.get_default<int>('p') == 10 );
 
   return EXAM_RESULT;
@@ -430,16 +450,17 @@ int EXAM_IMPL(opts_test::unexpected_argument)
 
   opts << option<bool>( "", 'h', "help" );
 
-  bool exception_happens = false;
-  
   try {
     opts.parse( argc, argv );
+
+    EXAM_ERROR( "Opts::arg_typemismatch exception expected" );
   }
   catch(const Opts::arg_typemismatch& e) {
-    exception_happens = true;
+    EXAM_MESSAGE( "Opts::arg_typemismatch exception, as expected" );
   }
-
-  EXAM_CHECK( exception_happens );
+  catch ( ... ) {
+    EXAM_ERROR( "Opts::arg_typemismatch exception expected" );
+  }
 
   return EXAM_RESULT;
 }
@@ -453,18 +474,17 @@ int EXAM_IMPL(opts_test::missing_argument)
 
   opts << option<int>( "", 'n', "num" )[10];
 
-  bool exception_happens = false;
-  
   try {
     opts.parse( argc, argv );
+
+    EXAM_ERROR( "Opts::missing_arg exception expected" );
   }
   catch(const Opts::missing_arg& e) {
-    exception_happens = true;
+    EXAM_MESSAGE( "Opts::missing_arg exception, as expected" );
   }
   catch ( ... ) {
+    EXAM_ERROR( "Opts::missing_arg exception expected" );
   }
-
-  EXAM_CHECK( exception_happens );
 
   return EXAM_RESULT;
 }
@@ -712,18 +732,17 @@ int EXAM_IMPL(opts_test::autocomplement_failure)
   opts << option<int>( "process number", 'p', "proc_num" )[1];
   opts << option<string>( "process type", 't', "proc_type" )["standard"];
 
-  bool exception_happens = false;
-
   try {
     opts.parse( argc, argv );
+
+    EXAM_ERROR( "Opts::unknown_option exception expected" );
   }
   catch (const Opts::unknown_option& e) {
-    exception_happens = true;
+    EXAM_MESSAGE( "Opts::unknown_option exception, as expected" );
   }
   catch ( ... ) {
+    EXAM_ERROR( "Opts::unknown_option exception expected" );
   }
-
-  EXAM_CHECK( exception_happens );
 
   return EXAM_RESULT; 
 }

@@ -14,7 +14,12 @@
 
 #include <config/feature.h>
 
-int EXAM_IMPL(misc_test_suite)
+misc_super_test::misc_super_test() :
+  super_t( "" )
+{
+}
+
+int EXAM_IMPL(misc_super_test::misc_test_suite)
 {
   exam::test_suite t( "libmisc type_traits test" );
   misc_test test;
@@ -56,10 +61,14 @@ int EXAM_IMPL(misc_test_suite)
   t.add( &misc_test::type_traits_is_pod_compiler_supp, test, "is_pod_compiler_supp", tc[4] );
   t.add( &misc_test::type_traits_is_empty, test, "is_empty", tc[0] );
 
-  return t.girdle();
+  t.flags( super_t.flags() );
+
+  // EXAM_CHECK( t.girdle() == 0 );
+
+  return /* EXAM_RESULT */ t.girdle();
 }
 
-int EXAM_IMPL(options_test_suite)
+int EXAM_IMPL(misc_super_test::options_test_suite)
 {
   // test for options parsing
   exam::test_suite t( "libmisc, options test" );
@@ -110,5 +119,9 @@ int EXAM_IMPL(options_test_suite)
   
   t.add( &opts_test::long_string, opts, "long string" );
 
-  return t.girdle();
+  t.flags( super_t.flags() );
+
+  // EXAM_CHECK( t.girdle() == 0 );
+
+  return /* EXAM_RESULT */ t.girdle();
 }

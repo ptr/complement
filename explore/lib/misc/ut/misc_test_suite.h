@@ -13,7 +13,19 @@
 
 #include <exam/suite.h>
 
-int EXAM_DECL(misc_test_suite);
-int EXAM_DECL(options_test_suite);
+class misc_super_test
+{
+  public:
+    misc_super_test();
+
+    int EXAM_DECL(misc_test_suite);
+    int EXAM_DECL(options_test_suite);
+
+  private:
+    exam::test_suite super_t;
+};
+
+// int EXAM_DECL(misc_test_suite);
+// int EXAM_DECL(options_test_suite);
 
 #endif // __MISC_TEST_SUITE_H
