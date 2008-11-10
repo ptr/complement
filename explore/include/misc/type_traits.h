@@ -962,6 +962,42 @@ struct conditional<true,_Tp1,_Tp2>
 
 # else // __GLIBCXX__ && (__GNUC__ >= 4) && !STLPORT
 #  include <tr1/type_traits>
+#  if (__GNUC__ == 4) && (__GNUC_MINOR__ < 3)
+namespace std {
+
+namespace tr1 {
+
+template <class _Tp>
+struct is_trivial :
+    public integral_constant<bool, (is_void<_Tp>::value
+                                    || is_scalar<typename remove_all_extents<_Tp>::type>::value)>
+{ };
+
+template <class _Tp>
+struct is_standard_layout :
+    public integral_constant<bool, (is_void<_Tp>::value
+                                    || is_scalar<typename remove_all_extents<_Tp>::type>::value)>
+{ };
+
+template <class _Tp>
+struct is_lvalue_reference :
+    public false_type
+{ };
+
+template <class _Tp>
+struct is_lvalue_reference<_Tp&> :
+    public true_type
+{ };
+
+template <class _Tp>
+struct is_rvalue_reference :
+    public false_type
+{ };
+
+} // namespace tr1
+
+} // namespace std
+#  endif
 # endif
 
 #else // STLPORT

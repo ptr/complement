@@ -55,14 +55,17 @@ int f()
   return 0;
 }
 
+#if defined(STLPORT) || (defined(__GNUC__) && (__GNUC__ < 4))
 template <class T>
 bool q( T v )
 {
   return std::tr1::detail::__instance<T>::__value;
 }
+#endif
 
 int EXAM_IMPL(misc_test::type_traits_internals)
 {
+#if defined(STLPORT) || (defined(__GNUC__) && (__GNUC__ < 4))
   EXAM_CHECK( std::tr1::detail::__instance<int []>::__value == true );
   EXAM_CHECK( std::tr1::detail::__instance<int *>::__value == true );
   EXAM_CHECK( std::tr1::detail::__instance<int&>::__value == false );
@@ -72,6 +75,9 @@ int EXAM_IMPL(misc_test::type_traits_internals)
   EXAM_CHECK( std::tr1::detail::__instance<int (*)()>::__value == true );
   EXAM_CHECK( std::tr1::detail::__instance<int (&)()>::__value == false );
   EXAM_CHECK( q(f) == true );
+#else
+  throw exam::skip_exception();
+#endif
 
   return EXAM_RESULT;
 }
@@ -592,6 +598,7 @@ struct Y
       { }
 };
 
+#if defined(STLPORT) || (defined(__GNUC__) && (__GNUC__ < 4))
 template <class T>
 struct __ctor_aux : // union or class
     public std::tr1::detail::__select_types
@@ -615,6 +622,8 @@ struct __ctor_aux : // union or class
 template <class T>
 const bool __ctor_aux<T>::__value = sizeof(__ctor_aux<T>::__test<T>(0)) == sizeof(std::tr1::detail::__select_types::__t1);
 #endif
+
+#endif // used misc/type_traits.h or STLport's implementation (it's same)
 
 int EXAM_IMPL(type_traits_has_x_ctor)
 {
