@@ -19,13 +19,13 @@
 
 #include <signal.h>
 
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <iostream>
 
 using namespace std;
-namespace fs = boost::filesystem;
 
 int EXAM_IMPL(shm_test::shm_segment)
 {
@@ -37,13 +37,16 @@ int EXAM_IMPL(shm_test::shm_segment)
     seg.deallocate();
     EXAM_CHECK( seg.address() == reinterpret_cast<void *>(-1) );
 
-    EXAM_REQUIRE( !fs::exists( fname ) );
+    // EXAM_REQUIRE( !fs::exists( fname ) );
+    struct stat st;
+    EXAM_REQUIRE( (stat( fname, &st ) == -1) && (errno == ENOENT) );
 
     seg.allocate( fname, 1024, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
     EXAM_CHECK( seg.address() != reinterpret_cast<void *>(-1) );
     seg.deallocate();
     EXAM_CHECK( seg.address() == reinterpret_cast<void *>(-1) );
-    EXAM_CHECK( fs::exists( fname ) ); // well, now I don't remove ref file, because shm segment may be created with another way
+    // EXAM_CHECK( fs::exists( fname ) ); // well, now I don't remove ref file, because shm segment may be created with another way
+    EXAM_CHECK( stat( fname, &st ) == 0 );
 
     // not exclusive, should pass
     seg.allocate( fname, 1024, xmt::shm_base::create, 0660 );
@@ -85,10 +88,11 @@ int EXAM_IMPL(shm_test::shm_segment)
     catch ( xmt::shm_bad_alloc& err ) {
       EXAM_CHECK( true ); // Ok
     }
-    EXAM_CHECK( fs::exists( fname ) );
+    // EXAM_CHECK( fs::exists( fname ) );
     // ----
 
-    fs::remove( fname );
+    // fs::remove( fname );
+    EXAM_CHECK( unlink( fname ) == 0 );
   }
   catch ( xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
@@ -165,7 +169,8 @@ int EXAM_IMPL(shm_test::shm_alloc)
       shmall.deallocate( ch1, sz );
     }
     seg.deallocate();
-    fs::remove( fname );
+    // fs::remove( fname );
+    EXAM_CHECK( unlink( fname ) == 0 );
   }
   catch ( xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
@@ -229,7 +234,8 @@ int EXAM_IMPL(shm_test::fork_shm)
     (&fcnd)->~__condition_event<true>();
     shm.deallocate( reinterpret_cast<char *>(&fcnd), sizeof(std::tr2::condition_event_ip) );
     seg.deallocate();
-    fs::remove( fname );
+    // fs::remove( fname );
+    EXAM_CHECK( unlink( fname ) == 0 );
   }
   catch (  xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
@@ -317,7 +323,8 @@ int EXAM_IMPL(shm_test::shm_named_obj)
     (&fcnd)->~__condition_event<true>();
     shm.deallocate( &fcnd, 1 );
     seg.deallocate();
-    fs::remove( fname );
+    // fs::remove( fname );
+    EXAM_CHECK( unlink( fname ) == 0 );
   }
   catch ( xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
@@ -351,7 +358,8 @@ shm_test::shm_test()
 shm_test::~shm_test()
 {
   seg1.deallocate();
-  fs::remove( fname1 );
+  // fs::remove( fname1 );
+  unlink( fname1 );
 }
 
 /* ******************************************************

@@ -20,13 +20,9 @@
 
 #include <signal.h>
 
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
-
 #include <iostream>
 
 using namespace std;
-namespace fs = boost::filesystem;
 
 int EXAM_IMPL(mt_test::callstack)
 {
