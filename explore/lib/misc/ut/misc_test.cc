@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 12:39:37 yeti>
+// -*- C++ -*- Time-stamp: <08/11/21 10:31:03 ptr>
 
 /*
  * Copyright (c) 2007
@@ -173,10 +173,14 @@ int EXAM_IMPL(misc_test::type_traits_is_lvalue_reference)
   return EXAM_RESULT;
 }
 
-/*
+
 int EXAM_IMPL(misc_test::type_traits_is_rvalue_reference)
 {
+  // throw exam::skip_exception();
+
+#if 0
   EXAM_CHECK( std::tr1::is_rvalue_reference<int &&>::value == true );
+#endif
 
   EXAM_CHECK( std::tr1::is_rvalue_reference<int &>::value == false );
   EXAM_CHECK( std::tr1::is_rvalue_reference<int>::value == false );
@@ -185,7 +189,7 @@ int EXAM_IMPL(misc_test::type_traits_is_rvalue_reference)
 
   return EXAM_RESULT;
 }
-*/
+
 
 int EXAM_IMPL(misc_test::type_traits_is_member_object_pointer)
 {
@@ -276,6 +280,7 @@ int EXAM_IMPL(misc_test::type_traits_is_reference)
 {
   EXAM_CHECK( std::tr1::is_reference<int &>::value == true );
   EXAM_CHECK( std::tr1::is_reference<int (&)(void)>::value == true );
+  // EXAM_CHECK( std::tr1::is_lvalue_reference<int &&>::value == true );
 
   EXAM_CHECK( std::tr1::is_reference<int>::value == false );
   EXAM_CHECK( std::tr1::is_reference<int *>::value == false );

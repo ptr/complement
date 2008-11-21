@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 12:42:03 yeti>
+// -*- C++ -*- Time-stamp: <08/11/21 10:27:53 ptr>
 
 /*
  * Copyright (c) 2007, 2008
@@ -24,7 +24,7 @@ void misc_test_suite_init( exam::test_suite& t, misc_test& test )
   t.add( &misc_test::type_traits_is_array, test, "is_array", tc[0] );
   t.add( &misc_test::type_traits_is_pointer, test, "is_pointer", tc[0] );
   t.add( &misc_test::type_traits_is_lvalue_reference, test, "is_lvalue_reference", tc[0] );
-  // t.add( &misc_test::type_traits_is_rvalue_reference, test, "is_rvalue_reference", tc[0] );
+  t.add( &misc_test::type_traits_is_rvalue_reference, test, "is_rvalue_reference", tc[0] );
 
   t.add( &misc_test::type_traits_is_member_object_pointer, test, "is_member_object_pointer", tc[0] );
   t.add( &misc_test::type_traits_is_member_function_pointer, test, "is_member_function_pointer", tc[0] );

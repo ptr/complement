@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/09/10 09:50:18 ptr>
+// -*- C++ -*- Time-stamp: <08/11/21 10:25:38 ptr>
 
 /*
  * Copyright (c) 2007, 2008
@@ -277,15 +277,10 @@ struct is_rvalue_reference :
 //     public true_type
 // { };
 
-// template <class _Tp>
-// struct is_reference :
-//     public false_type
-// { };
-
-// template <class _Tp>
-// struct is_reference<_Tp&> :
-//     public true_type
-// { };
+template <class _Tp>
+struct is_reference :
+    public integral_constant<bool, is_lvalue_reference<_Tp>::value || is_rvalue_reference<_Tp>::value>
+{ };
 
 template <class _Tp>
 struct is_function :

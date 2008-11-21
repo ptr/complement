@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 12:40:05 yeti>
+// -*- C++ -*- Time-stamp: <08/11/21 10:21:32 ptr>
 
 /*
  * Copyright (c) 2007, 2008
@@ -27,7 +27,7 @@ class misc_test
     int EXAM_DECL(type_traits_is_array);
     int EXAM_DECL(type_traits_is_pointer);
     int EXAM_DECL(type_traits_is_lvalue_reference);
-    // int EXAM_DECL(type_traits_is_rvalue_reference);
+    int EXAM_DECL(type_traits_is_rvalue_reference);
     int EXAM_DECL(type_traits_is_member_object_pointer);
     int EXAM_DECL(type_traits_is_member_function_pointer);
     int EXAM_DECL(type_traits_is_enum);
