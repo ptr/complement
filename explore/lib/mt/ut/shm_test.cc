@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/02 13:05:03 yeti>
+// -*- C++ -*- Time-stamp: <08/11/27 00:56:57 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -24,14 +24,43 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
 using namespace std;
+
+int shm_test::seg_id( int proposed_id )
+{
+  ifstream sysvips( "/proc/sysvipc/shm" );
+
+  if ( sysvips.good() ) {
+    string s;
+    getline( sysvips, s );
+    getline( sysvips, s );
+
+    while ( !sysvips.fail() ) {
+      stringstream line( s );
+      long key, shmid, perms, size, cpid, lpid, nattch;
+      line >> key >> shmid >> perms >> size >> cpid >> lpid >> nattch;
+
+      if ( shmid == proposed_id ) {
+        sysvips.close();
+        return seg_id( ++proposed_id );
+      }
+
+      getline( sysvips, s );
+    }
+  }
+
+  return proposed_id;
+}
 
 int EXAM_IMPL(shm_test::shm_segment)
 {
   const char fname[] = "/tmp/mt_test.shm";
   try {
-    xmt::detail::__shm_alloc<0> seg( 5000, 1024, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+    int shmid = seg_id( 5000 );
+    xmt::detail::__shm_alloc<0> seg( shmid, 1024, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
     EXAM_CHECK( seg.address() != reinterpret_cast<void *>(-1) );
     seg.deallocate();
@@ -54,10 +83,10 @@ int EXAM_IMPL(shm_test::shm_segment)
     try {
       // This instance has segment in usage, should throw
       seg.allocate( fname, 1024, 0, 0660 );
-      EXAM_CHECK( false );
+      EXAM_ERROR( "xmt::shm_bad_alloc exception expected" );
     }
     catch ( xmt::shm_bad_alloc& err ) {
-      EXAM_CHECK( true ); // Ok
+      EXAM_MESSAGE( "xmt::shm_bad_alloc exception as expected" ); // Ok
     }
 
     /*
@@ -83,10 +112,10 @@ int EXAM_IMPL(shm_test::shm_segment)
     try {
       // exclusive, should throw
       seg.allocate( fname, 1024, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
-      EXAM_CHECK( false ); // Fail, should throw
+      EXAM_ERROR( "xmt::shm_bad_alloc exception expected" ); // Fail, should throw
     }
     catch ( xmt::shm_bad_alloc& err ) {
-      EXAM_CHECK( true ); // Ok
+      EXAM_MESSAGE( "xmt::shm_bad_alloc exception as expected" ); // Ok
     }
     // EXAM_CHECK( fs::exists( fname ) );
     // ----
@@ -122,10 +151,10 @@ int EXAM_IMPL(shm_test::shm_alloc)
       try {
         // try to allocate third block, not enough room
         char *ch3 = shmall.allocate( 8 * 1024 - 7000 );
-        EXAM_CHECK( false );
+        EXAM_ERROR( "xmt::shm_bad_alloc exception expected" );
       }
       catch ( xmt::shm_bad_alloc& err ) {
-        EXAM_CHECK( true );
+        EXAM_MESSAGE( "xmt::shm_bad_alloc exception as expected" );
       }
       // free first blocks
       shmall.deallocate( ch1, 3500 );

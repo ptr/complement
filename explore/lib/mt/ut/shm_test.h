@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/26 10:10:18 ptr>
+// -*- C++ -*- Time-stamp: <08/11/27 00:00:36 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -32,6 +32,8 @@ class shm_test
   private:
     xmt::shm_alloc<1> seg1;
     static const char fname1[];
+
+    int seg_id( int );
 };
 
 #endif // __SHM_TEST_H

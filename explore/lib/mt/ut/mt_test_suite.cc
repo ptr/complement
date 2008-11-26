@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/25 09:43:40 ptr>
+// -*- C++ -*- Time-stamp: <08/11/27 00:47:22 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -30,6 +30,30 @@ int EXAM_DECL(signal_3_test);
 
 int main( int argc, const char** argv )
 {
+  Opts opts;
+
+  opts.description( "test suite for 'xmt' framework" );
+  opts.usage( "[options]" );
+
+  opts << option<bool>( "print this help message", 'h', "help" )
+       << option<bool>( "list all test cases", 'l', "list" )
+       << option<std::string>( "run tests by number <num list>", 'r', "run" )["0"]
+       << option<bool>( "print status of tests within test suite", 'v', "verbose" )
+       << option<bool>(  "trace checks", 't', "trace" );
+
+  try {
+    opts.parse( argc, argv );
+  }
+  catch (...) {
+    opts.help( std::cerr );
+    return 1;
+  }
+
+  if ( opts.is_set( 'h' ) ) {
+    opts.help( std::cerr );
+    return 0;
+  }
+
   exam::test_suite t( "libxmt test" );
   sys_err_test sys_err;
   mt_test test;
@@ -89,30 +113,6 @@ int main( int argc, const char** argv )
   t.add( &uid_test_wg21::uidconv, test_wg21_uid, "uid_test_wg21::uidconv",
     t.add( &uid_test_wg21::hostid, test_wg21_uid, "uid_test_wg21::hostid",
       t.add( &uid_test_wg21::hostidstr, test_wg21_uid, "uid_test_wg21::hostidstr" ) ) );
-
-  Opts opts;
-
-  opts.description( "test suite for 'xmt' framework" );
-  opts.usage( "[options]" );
-
-  opts << option<bool>( "print this help message", 'h', "help" )
-       << option<bool>( "list all test cases", 'l', "list" )
-       << option<std::string>( "run tests by number", 'r', "run" )["0"]
-       << option<bool>( "print status of tests within test suite", 'v', "verbose" )
-       << option<bool>(  "trace checks", 't', "trace" );
-
-  try {
-    opts.parse( argc, argv );
-  }
-  catch (...) {
-    opts.help( std::cerr );
-    return 1;
-  }
-
-  if ( opts.is_set( 'h' ) ) {
-    opts.help( std::cerr );
-    return 0;
-  }
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );
