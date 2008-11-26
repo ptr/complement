@@ -1,3 +1,10 @@
+2008-11-26  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* opts.h, opts.cc: use named paramenter in description,
+	if detected (<name>); a bit reformatting description;
+	
+	* libmisc: version 1.11.0.
+
 2008-09-08  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* type_traits.h: add enable_if, conditional and decay;

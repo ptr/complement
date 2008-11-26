@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/01 10:12:43 ptr>
+// -*- C++ -*- Time-stamp: <08/11/26 22:58:16 ptr>
 
 /*
  * Copyright (c) 2008
@@ -23,17 +23,38 @@ using namespace std;
 
 int option_base::_count = 0;
 
+string option_base::_parname( const char* def ) const
+{
+  string::size_type p[2];
+
+  p[0] = desc.find( '<' );
+
+  if ( p[0] != string::npos ) {
+    p[1] = desc.find( '>', p[0] );
+  }
+
+  string sample( def );
+
+  if ( (p[0] != string::npos) && (p[1] != string::npos) ) {
+    sample = desc.substr( p[0], p[1] - p[0] + 1 );
+  }
+
+  return sample;
+}
+
 std::ostream& option<string>::_describe( std::ostream& out ) const
 {
+  string sample( option_base::_parname( "<string>" ) );
+
   if ( option_base::shortname != 0 ) {
-    out << '-' << option_base::shortname << " <string>";
+    out << '-' << option_base::shortname << ' ' << sample;
     if ( !option_base::longname.empty() ) {
       out << ", ";
     }
   }
         
   if ( !option_base::longname.empty() ) {
-    out << "--" << option_base::longname << "=<string>";
+    out << "--" << option_base::longname << '=' << sample;
   }
 
   if ( option_base::has_arg ) {
@@ -47,15 +68,17 @@ std::ostream& option<string>::_describe( std::ostream& out ) const
 
 std::ostream& option<char*>::_describe( std::ostream& out ) const
 {
+  string sample( option_base::_parname( "<string>" ) );
+
   if ( option_base::shortname != 0 ) {
-    out << '-' << option_base::shortname << " <string>";
+    out << '-' << option_base::shortname << ' ' << sample;
     if ( !option_base::longname.empty() ) {
       out << ", ";
     }
   }
         
   if ( !option_base::longname.empty() ) {
-    out << "--" << option_base::longname << "=<string>";
+    out << "--" << option_base::longname << '=' << sample;
   }
 
   if ( option_base::has_arg ) {
@@ -200,7 +223,7 @@ Opts::options_container_type::const_iterator Opts::get_opt_index( const string& 
 
 void Opts::help( ostream& out )
 {
-  out << "This is " << pname;
+  out << "\nThis is " << pname;
   if ( !_brief.empty() ) {
     out << ", " << _brief;
   }
@@ -214,12 +237,13 @@ void Opts::help( ostream& out )
     out << _copyright << "\n\n";
   }  
 
-  out << "Usage:\n\n" << pname << " " << _usage << "\n"; // " [options] etc. etc."
+  out << "Usage:\n\n  " << pname << " " << _usage << "\n"; // " [options] etc. etc."
 
   if ( !storage.empty() ) {
-    out << "\nOptions:\n\n";
+    out << "\nAvailable options:\n\n";
 
     for ( options_container_type::const_iterator i = storage.begin(); i != storage.end(); ++i) {
+      out << "  ";
       (*i)->_describe( out ) << '\n';
     }
   }

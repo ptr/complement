@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 12:42:03 yeti>
+// -*- C++ -*- Time-stamp: <08/11/26 22:09:01 ptr>
 
 /*
  * Copyright (c) 2007, 2008
@@ -54,7 +54,9 @@ void options_test_suite_init( exam::test_suite& t, opts_test& opts )
 
   t.add( &opts_test::multiple_args, opts, "multiple_args", tc[3] );
 
-  t.add( &opts_test::help, opts, "help", tc, tc + 2 );
+  tc[5] = t.add( &opts_test::help, opts, "help", tc, tc + 2 );
   
   t.add( &opts_test::long_string, opts, "long string" );
+
+  t.add( &opts_test::named_param, opts, "named parameter", tc[5] );
 }

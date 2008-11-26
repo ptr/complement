@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 10:00:22 ptr>
+// -*- C++ -*- Time-stamp: <08/11/26 22:29:53 ptr>
 
 /*
  * Copyright (c) 2008
@@ -81,6 +81,8 @@ class option_base
     virtual void read( const std::string& str ) = 0;
     virtual bool _assign( void* ) const = 0;
     virtual std::ostream& _describe( std::ostream& ) const = 0;
+
+    std::string _parname( const char* ) const;
 
     char shortname;
     std::string longname;
@@ -194,10 +196,16 @@ class option :
 template <class T>
 std::ostream& option<T>::_describe( std::ostream& out ) const
 {
+  std::string def( "<" );
+  def += typeid(T).name();
+  def += '>';
+
+  std::string sample( option_base::_parname( def.c_str() ) );
+
   if ( option_base::shortname != 0 ) {
     out << '-' << option_base::shortname;
     if ( option_base::has_arg ) {
-      out << " <" << typeid(T).name() << ">";
+      out << ' ' << sample;
     }
     if ( !option_base::longname.empty() ) {
       out << ", ";
@@ -207,7 +215,7 @@ std::ostream& option<T>::_describe( std::ostream& out ) const
   if ( !option_base::longname.empty() ) {
     out << "--" << option_base::longname;
     if ( option_base::has_arg ) {
-      out << "=<" << typeid(T).name() << ">";
+      out << '=' << sample;
     }
   }
 

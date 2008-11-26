@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 10:08:01 ptr>
+// -*- C++ -*- Time-stamp: <08/11/26 23:21:32 ptr>
 
 /*
  * Copyright (c) 2008
@@ -812,7 +812,8 @@ int EXAM_IMPL(opts_test::help)
   opts.help( s );
 
   const char sample[] =
-"This is programname, test for printing help message\n\
+"\n\
+This is programname, test for printing help message\n\
 \n\
 B. L. User\n\
 \n\
@@ -820,16 +821,16 @@ Copyright (C) Youyoudine, 2008\n\
 \n\
 Usage:\n\
 \n\
-programname [options] file-from file-to\n\
+  programname [options] file-from file-to\n\
 \n\
-Options:\n\
+Available options:\n\
 \n\
--h, --help\tprint this help message\n\
---flag\tsome program flag\n\
--v, --version\tprint version\n\
--I <string>, --include=<string> [/usr/include]\tinclude paths\n\
--p <i>, --port=<i> [80]\tlisten to tcp port\n\
---mode=<string> [standard]\tprogram mode\n\
+  -h, --help\tprint this help message\n\
+  --flag\tsome program flag\n\
+  -v, --version\tprint version\n\
+  -I <string>, --include=<string> [/usr/include]\tinclude paths\n\
+  -p <i>, --port=<i> [80]\tlisten to tcp port\n\
+  --mode=<string> [standard]\tprogram mode\n\
 \n";
 
   EXAM_CHECK( s.str() == sample );
@@ -864,6 +865,50 @@ int EXAM_IMPL(opts_test::long_string)
 
     EXAM_CHECK( opts.get<string>( 's' ) == "default value" );
   }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(opts_test::named_param)
+{
+  const char* argv[] = { "program" };
+  int argc = sizeof( argv ) / sizeof(argv[0]);
+
+  Opts opts;
+
+  opts << option<string>( "server name <host>", 's', "server" )
+       << option<char*>( "name <name>", 'n', "name" )
+       << option<int>( "port <port>", 'p', "port" )[1234];
+
+  opts.parse( argc, argv );
+
+  stringstream s;
+
+  opts.help( s );
+
+  const char sample[] = 
+"\n\
+This is program\n\
+\n\
+Usage:\n\
+\n\
+  program \n\
+\n\
+Available options:\n\
+\n\
+  -s <host>, --server=<host>\tserver name <host>\n\
+  -n <name>, --name=<name>\tname <name>\n\
+  -p <port>, --port=<port> [1234]\tport <port>\n\
+\n";
+
+  // cerr << s.str();
+  // string st = s.str();
+  // string::size_type n = mismatch(st.begin(), st.end(), sample ).first - st.begin();
+  // cerr << n << endl;
+
+  // cerr << '#' << st.substr( n ) << endl;
+  
+  EXAM_CHECK( s.str() == sample );
 
   return EXAM_RESULT;
 }
