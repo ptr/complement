@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/16 12:03:13 ptr>
+// -*- C++ -*- Time-stamp: <08/11/27 19:05:59 yeti>
 
 /*
  *
@@ -88,6 +88,18 @@ void EvManager::_Dispatch( EvManager* p )
     {
       unique_lock<mutex> lk( lq );
       in_ev_queue.swap( out_ev_queue );
+#ifdef __FIT_STEM_TRACE
+      try {
+        lock_guard<mutex> lk(me._lock_tr);
+        if ( me._trs != 0 && me._trs->good() && (me._trflags & tracedispatch) ) {
+          ios_base::fmtflags f = me._trs->flags( ios_base::hex | ios_base::showbase );
+          *me._trs << "EvManager queues swapped" << endl;
+          me._trs->flags( f );
+        }
+      }
+      catch ( ... ) {
+      }
+#endif // __FIT_STEM_TRACE
     }
     while ( !out_ev_queue.empty() ) {
       me.Send( out_ev_queue.front() );
@@ -99,6 +111,19 @@ void EvManager::_Dispatch( EvManager* p )
     }
   }
 
+#ifdef __FIT_STEM_TRACE
+  try {
+    lock_guard<mutex> lk(me._lock_tr);
+    if ( me._trs != 0 && me._trs->good() && (me._trflags & tracedispatch) ) {
+      ios_base::fmtflags f = me._trs->flags( ios_base::hex | ios_base::showbase );
+      *me._trs << "EvManager Dispatch loop finished" << endl;
+      me._trs->flags( f );
+    }
+  }
+  catch ( ... ) {
+  }
+#endif // __FIT_STEM_TRACE
+
   // try process the rest of queue, if not empty
   {
     unique_lock<mutex> lk( lq );
@@ -108,6 +133,19 @@ void EvManager::_Dispatch( EvManager* p )
     me.Send( out_ev_queue.front() );
     out_ev_queue.pop_front();
   }
+
+#ifdef __FIT_STEM_TRACE
+  try {
+    lock_guard<mutex> lk(me._lock_tr);
+    if ( me._trs != 0 && me._trs->good() && (me._trflags & tracedispatch) ) {
+      ios_base::fmtflags f = me._trs->flags( ios_base::hex | ios_base::showbase );
+      *me._trs << "EvManager stop Dispatch" << endl;
+      me._trs->flags( f );
+    }
+  }
+  catch ( ... ) {
+  }
+#endif // __FIT_STEM_TRACE
 }
 
 __FIT_DECLSPEC
@@ -426,6 +464,25 @@ __FIT_DECLSPEC const detail::transport& EvManager::transport( addr_type id ) con
   throw range_error( string( "internal address" ) );
 }
 
+__FIT_DECLSPEC void EvManager::push( const Event& e )
+{
+  std::tr2::lock_guard<std::tr2::mutex> lk( _lock_queue );
+  in_ev_queue.push_back( e );
+  _cnd_queue.notify_one();
+#ifdef __FIT_STEM_TRACE
+  try {
+    lock_guard<mutex> lk(_lock_tr);
+    if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
+      ios_base::fmtflags f = _trs->flags( ios_base::hex | ios_base::showbase );
+      *_trs << "EvManager push event " << e.code() << " to queue" << endl;
+      _trs->flags( f );
+    }
+  }
+  catch ( ... ) {
+  }
+#endif // __FIT_STEM_TRACE
+}
+
 // Resolve Address -> Object Reference, call Object's dispatcher in case
 // of local object, or call appropriate channel delivery function for
 // remote object. All outgoing events, and incoming remote events
@@ -436,12 +493,12 @@ void EvManager::Send( const Event& e )
 {
   if ( e.dest() & extbit ) { // external object
     try {
-      _lock_xheap.lock();
+      unique_lock<mutex> lk( _lock_xheap );
       ext_uuid_heap_type::const_iterator i = _ex_heap.find( e.dest() );
       if ( i == _ex_heap.end() ) { // destination not found
         ostringstream s;
         s << "external address unknown: " << hex << e.dest() << " from "
-          << e.src() << ", pid " << std::tr2::getpid() << dec;
+          << e.src() << ", pid " << dec << std::tr2::getpid();
         throw invalid_argument( s.str() );
       }
 
@@ -461,13 +518,12 @@ void EvManager::Send( const Event& e )
         _gaddr_src.hid = xmt::hostid();
         _gaddr_src.pid = std::tr2::getpid();
         _gaddr_src.addr = e.src(); // it may be as local as foreign; if e.src()
-                                   // is foreign, the object is 'transit object'
+        // is foreign, the object is 'transit object'
         gaddr_src = _gaddr_src;
       } else {
         gaddr_src = j->second;
       }
-
-      _lock_xheap.unlock();
+      lk.unlock();
 
       switch ( k ) {
         case detail::transport::socket_tcp:
@@ -495,46 +551,35 @@ void EvManager::Send( const Event& e )
       }
     }
     catch ( std::logic_error& err ) {
-// #ifdef __FIT_STEM_TRACE
       try {
         lock_guard<mutex> lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-          *_trs << err.what() << " "
-                << __FILE__ << ":" << __LINE__ << endl;
+          *_trs << err.what() << " " << __FILE__ << ":" << __LINE__ << endl;
+          dump( *_trs );
         }
       }
       catch ( ... ) {
       }
-// #endif // __FIT_STEM_TRACE
-      _lock_xheap.unlock(); // <--- may unlock not locked?
     }
     catch ( std::runtime_error& err ) {
-// #ifdef __FIT_STEM_TRACE
       try {
         lock_guard<mutex> lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-          *_trs << err.what() << " "
-                << __FILE__ << ":" << __LINE__ << endl;
+          *_trs << err.what() << " " << __FILE__ << ":" << __LINE__ << endl;
         }
       }
       catch ( ... ) {
       }
-// #endif // __FIT_STEM_TRACE
-      _lock_xheap.unlock();
     }
     catch ( ... ) {
-// #ifdef __FIT_STEM_TRACE
       try {
         scoped_lock lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-          *_trs << "Unknown, uncatched exception: "
-                << __FILE__ << ":" << __LINE__ << endl;
+          *_trs << "Unknown, uncatched exception: " << __FILE__ << ":" << __LINE__ << endl;
         }
       }
       catch ( ... ) {
       }
-// #endif // __FIT_STEM_TRACE
-      _lock_xheap.unlock();
     }
   } else { // local object
     try {
@@ -655,39 +700,6 @@ addr_type EvManager::create_unique_x()
 
   return _x_id;
 }
-
-
-#if 0
-std::ostream& operator <<( ostream& s, const gaddr_type& ga )
-{
-  ios_base::fmtflags f = s.flags( 0 );
-  // s.unsetf( ios_base::showbase );
-  s << hex << setfill('0')
-    << setw(2) << static_cast<unsigned>(ga.hid.u.b[0])
-    << setw(2) << static_cast<unsigned>(ga.hid.u.b[1])
-    << setw(2) << static_cast<unsigned>(ga.hid.u.b[2])
-    << setw(2) << static_cast<unsigned>(ga.hid.u.b[3])
-    << setw(2) << static_cast<unsigned>(ga.hid.u.b[4])
-    << setw(2) << static_cast<unsigned>(ga.hid.u.b[5])
-    << setw(2) << static_cast<unsigned>(ga.hid.u.b[6])
-    << setw(2) << static_cast<unsigned>(ga.hid.u.b[7])
-    << setw(2) << static_cast<unsigned>(ga.hid.u.b[8])
-    << setw(2) << static_cast<unsigned>(ga.hid.u.b[9])
-    << setw(2) << static_cast<unsigned>(ga.hid.u.b[10])
-    << setw(2) << static_cast<unsigned>(ga.hid.u.b[11])
-    << setw(2) << static_cast<unsigned>(ga.hid.u.b[12])
-    << setw(2) << static_cast<unsigned>(ga.hid.u.b[13])
-    << setw(2) << static_cast<unsigned>(ga.hid.u.b[14])
-    << setw(2) << static_cast<unsigned>(ga.hid.u.b[15])
-    << "-"
-    << dec << ga.pid
-    << "-"
-    << setw(8) << hex << setfill( '0' ) << ga.addr;
-  s.flags( f );
-
-  return s;
-}
-#endif
 
 __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
 {

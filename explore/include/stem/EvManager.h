@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/07 21:03:34 yeti>
+// -*- C++ -*- Time-stamp: <08/11/27 13:43:31 yeti>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
@@ -204,12 +204,7 @@ class EvManager
 
     __FIT_DECLSPEC const detail::transport& transport( addr_type object_id ) const;
 
-    void push( const Event& e )
-      {
-        std::tr2::lock_guard<std::tr2::mutex> lk( _lock_queue );
-        in_ev_queue.push_back( e );
-        _cnd_queue.notify_one();
-      }
+    __FIT_DECLSPEC void push( const Event& e );
 
     __FIT_DECLSPEC void Remove( void * );
     __FIT_DECLSPEC std::ostream& dump( std::ostream& ) const;

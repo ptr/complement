@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 18:07:37 yeti>
+// -*- C++ -*- Time-stamp: <08/11/27 16:00:20 yeti>
 
 /*
  *
@@ -94,6 +94,18 @@ void dump( std::ostream& o, const EDS::Event& e )
 __FIT_DECLSPEC void NetTransport_base::_close()
 {
   if ( net != 0 ) {
+#ifdef __FIT_STEM_TRACE
+    try {
+      lock_guard<mutex> lk(manager()->_lock_tr);
+      if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
+        ios_base::fmtflags f = manager()->_trs->flags( ios_base::hex | ios_base::showbase );
+        *manager()->_trs << "NetTransport_base::_close " << self_id() << endl;
+        manager()->_trs->flags( f );
+      }
+    }
+    catch ( ... ) {
+    }
+#endif // __FIT_STEM_TRACE
     manager()->Remove( this );
     net->close();
   }
@@ -548,15 +560,17 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
       ev.dest( xdst );
       addr_type xsrc = manager()->reflect( src );
       if ( xsrc == badaddr ) {
-        ev.src( manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(&me), detail::transport::socket_tcp, 10 ), src ) );
-      } else {
-        ev.src( xsrc );
+        xsrc = manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(&me), detail::transport::socket_tcp, 10 ), src );
       }
+      ev.src( xsrc );
 #ifdef __FIT_STEM_TRACE
       try {
         lock_guard<mutex> lk(manager()->_lock_tr);
         if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
-          *manager()->_trs << __FILE__ << ":" << __LINE__ << endl;
+          ios_base::fmtflags f = manager()->_trs->flags( ios_base::hex | ios_base::showbase );
+          *manager()->_trs << "NetTransportMgr " << me.self_id() << " accept event "
+                           << ev.code() << endl;
+          manager()->_trs->flags( f );
         }
       }
       catch ( ... ) {
@@ -565,9 +579,33 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
       manager()->push( ev );
     }
     p->NetTransport_base::close();
+#ifdef __FIT_STEM_TRACE
+    try {
+      lock_guard<mutex> lk(manager()->_lock_tr);
+      if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
+        ios_base::fmtflags f = manager()->_trs->flags( ios_base::hex | ios_base::showbase );
+        *manager()->_trs << "NetTransportMgr " << me.self_id() << " loop exit" << endl;
+        manager()->_trs->flags( f );
+      }
+    }
+    catch ( ... ) {
+    }
+#endif // __FIT_STEM_TRACE
   }
   catch ( ... ) {
     p->NetTransport_base::close();
+#ifdef __FIT_STEM_TRACE
+    try {
+      lock_guard<mutex> lk(manager()->_lock_tr);
+      if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
+        ios_base::fmtflags f = manager()->_trs->flags( ios_base::hex | ios_base::showbase );
+        *manager()->_trs << "NetTransportMgr " << me.self_id() << " loop exit due to exception" << endl;
+        manager()->_trs->flags( f );
+      }
+    }
+    catch ( ... ) {
+    }
+#endif // __FIT_STEM_TRACE
     // throw;
   }
 }

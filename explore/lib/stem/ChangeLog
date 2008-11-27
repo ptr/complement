@@ -1,3 +1,16 @@
+2008-11-27  Petr Ovtchenkov  <yeti@yandex-team.ru>
+
+	* EvManager.h, EvManager.cc: move push from inline
+	to library; add tracing of push event into queue
+	by tracedispatch flag; add tracing of exit from Dispatch
+	loop, queues swap;
+
+	* NetTransport.cc: add tracing on tracenet flag
+	for close transport, exit from events loop in
+	NetTransportMgr and in case of exceptions;
+	
+	* libstem: library version 4.8.4.
+
 2008-10-16  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* EvManager.cc: try to process the rest of income queue
