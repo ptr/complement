@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 19:19:39 yeti>
+// -*- C++ -*- Time-stamp: <08/11/27 10:49:31 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2008
@@ -63,6 +63,7 @@ class stem_test
     int EXAM_DECL(echo_net);
     int EXAM_DECL(net_echo);
     int EXAM_DECL(peer);
+    int EXAM_DECL(last_event);
     int EXAM_DECL(boring_manager);
     int EXAM_DECL(convert);
 
@@ -710,6 +711,70 @@ int EXAM_IMPL(stem_test::peer)
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(stem_test::last_event)
+{
+  condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+
+  try {
+    // Client
+    std::tr2::this_thread::fork();
+
+    int eflag = 0;
+
+    try {
+      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+      stem::NetTransportMgr mgr;
+
+      stem::addr_type zero = mgr.open( "localhost", 6995 );
+
+      EXAM_REQUIRE( mgr.good() );
+      EXAM_REQUIRE( zero != stem::badaddr );
+
+      stem::Event ev( NODE_EV_ECHO );
+      ev.value() = "ping";
+      ev.dest( zero );
+
+      {
+        LastEvent le( 0, "ping" );
+
+        le.Send( ev );
+
+        EXAM_CHECK_ASYNC_F( le.wait(), eflag );
+
+        // last event from dtor
+      }
+    }
+    catch ( ... ) {
+      eflag = 2;
+    }
+    exit( eflag );
+  }
+  catch ( std::tr2::fork_in_parent& child ) {
+    connect_processor<stem::NetTransport> srv( 6995 );
+    EchoLast echo( 0, "echo service");
+
+    fcnd.notify_all();
+    
+    EXAM_CHECK( echo.wait() ); // wait last event
+
+    int stat = -1;
+    EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+    if ( WIFEXITED(stat) ) {
+      EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+    } else {
+      EXAM_ERROR( "child interrupted" );
+    }
+
+    srv.close();
+    srv.wait();
+  }
+
+  (&fcnd)->~condition_event_ip();
+  shm_cnd.deallocate( &fcnd, 1 );
+
+  return EXAM_RESULT;
+}
+
 int EXAM_IMPL(stem_test::boring_manager)
 {
   condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
@@ -756,7 +821,7 @@ int EXAM_IMPL(stem_test::boring_manager)
     int stat = -1;
     EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
     if ( WIFEXITED(stat) ) {
-        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      EXAM_CHECK( WEXITSTATUS(stat) == 0 );
     } else {
       EXAM_ERROR( "child interrupted" );
     }
@@ -837,7 +902,7 @@ int EXAM_IMPL(stem_test::convert)
 
 int main( int argc, const char** argv )
 {
-  exam::test_suite::test_case_type tc[4];
+  exam::test_suite::test_case_type tc[5];
 
   exam::test_suite t( "libstem test suite" );
   stem_test test;
@@ -852,13 +917,15 @@ int main( int argc, const char** argv )
   t.add( &stem_test::ns, test, "ns", tc[0] );
 
   t.add( &stem_test::net_echo, test, "net echo",
-         t.add( &stem_test::echo_net, test, "echo_net",
+         tc[4] = t.add( &stem_test::echo_net, test, "echo_net",
                 tc[3] = t.add( &stem_test::echo, test, "echo", tc[1] ) ) );
 
   t.add( &stem_test::boring_manager, test, "boring_manager",
          t.add( &stem_test::peer, test, "peer", tc[3] ) );
 
   t.add( &stem_test::convert, test, "convert", tc[0] );
+
+  t.add( &stem_test::last_event, test, "last event", tc[4] );
 
   Opts opts;
 

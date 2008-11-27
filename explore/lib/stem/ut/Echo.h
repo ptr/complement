@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 13:15:07 yeti>
+// -*- C++ -*- Time-stamp: <08/11/27 10:48:35 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -77,7 +77,47 @@ class PeerClient :
     DECLARE_RESPONSE_TABLE( PeerClient, stem::EventHandler );
 };
 
+class EchoLast :
+    public stem::EventHandler
+{
+  public:
+    EchoLast();
+    EchoLast( stem::addr_type id );
+    EchoLast( stem::addr_type id, const char * );
+
+    void echo( const stem::Event& );
+    void last( const stem::Event& );
+
+    bool wait();
+
+    std::tr2::condition_event cnd;
+
+  private:
+    DECLARE_RESPONSE_TABLE( EchoLast, stem::EventHandler );
+};
+
+class LastEvent :
+    public stem::EventHandler
+{
+  public:
+    LastEvent( stem::addr_type id, const char *info );
+    ~LastEvent();
+
+    void handler( const stem::Event& );
+
+    bool wait();
+
+    const std::string mess;
+
+  private:
+    std::tr2::condition_event cnd;
+    stem::addr_type peer;
+
+    DECLARE_RESPONSE_TABLE( LastEvent, stem::EventHandler );
+};
+
 #define NODE_EV_ECHO  0x903
 #define NODE_EV_REGME 0x904
+#define NODE_EV_LAST  0x905
 
 #endif // __Echo_h
