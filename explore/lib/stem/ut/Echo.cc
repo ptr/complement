@@ -165,7 +165,7 @@ void EchoLast::echo( const Event& ev )
 
 void EchoLast::last( const stem::Event& ev )
 {
-  // cerr << "Echo\n";
+  cerr << "Echo\n";
 
   cnd.notify_one();
 }
