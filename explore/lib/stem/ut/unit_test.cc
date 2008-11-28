@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/11/27 15:23:01 yeti>
+// -*- C++ -*- Time-stamp: <08/11/28 15:37:30 yeti>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2008
@@ -730,8 +730,10 @@ int EXAM_IMPL(stem_test::last_event)
       EXAM_REQUIRE( mgr.good() );
       EXAM_REQUIRE( zero != stem::badaddr );
 
+      /*
       stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
       stem::EventHandler::manager()->settrs( &std::cerr );
+      */
 
       stem::Event ev( NODE_EV_ECHO );
       ev.value() = "ping";
@@ -744,7 +746,7 @@ int EXAM_IMPL(stem_test::last_event)
 
         EXAM_CHECK_ASYNC_F( le.wait(), eflag );
 
-        // last event from dtor
+        // last event from dtor and conformation
       }
     }
     catch ( ... ) {

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/11/27 10:48:35 ptr>
+// -*- C++ -*- Time-stamp: <08/11/28 15:32:53 yeti>
 
 /*
  * Copyright (c) 2006-2008
@@ -104,6 +104,7 @@ class LastEvent :
     ~LastEvent();
 
     void handler( const stem::Event& );
+    void conformation( const stem::Event& );
 
     bool wait();
 
@@ -112,12 +113,14 @@ class LastEvent :
   private:
     std::tr2::condition_event cnd;
     stem::addr_type peer;
+    std::tr2::condition_event cnd_conf;
 
     DECLARE_RESPONSE_TABLE( LastEvent, stem::EventHandler );
 };
 
-#define NODE_EV_ECHO  0x903
-#define NODE_EV_REGME 0x904
-#define NODE_EV_LAST  0x905
+#define NODE_EV_ECHO               0x903
+#define NODE_EV_REGME              0x904
+#define NODE_EV_LAST               0x905
+#define NODE_EV_LAST_CONFORMATION  0x906
 
 #endif // __Echo_h

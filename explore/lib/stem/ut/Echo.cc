@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/11/27 11:42:36 ptr>
+// -*- C++ -*- Time-stamp: <08/11/28 15:45:11 yeti>
 
 /*
  * Copyright (c) 2006, 2007
@@ -165,7 +165,23 @@ void EchoLast::echo( const Event& ev )
 
 void EchoLast::last( const stem::Event& ev )
 {
-  cerr << "Echo\n";
+  // cerr << "Echo\n";
+
+ /*
+  * Conformation required, if I want to indeed receive 'last'
+  * message; it's required mainly for client side, to allow
+  * client wait something.
+  *
+  * Otherwise, client side can close StEM transport channels
+  * _before_ delivery event (but after accepting event for
+  * delivery---event stored in queue).
+  */
+
+  Event conf( NODE_EV_LAST_CONFORMATION );
+
+  conf.dest( ev.src() );
+
+  Send( conf );
 
   cnd.notify_one();
 }
@@ -195,6 +211,9 @@ LastEvent::~LastEvent()
     ev.dest( peer );
 
     Send( ev );
+
+    // See comments in EchoLast::last above
+    cnd_conf.timed_wait( std::tr2::milliseconds( 500 ) );
   }
 }
 
@@ -207,6 +226,12 @@ void LastEvent::handler( const stem::Event& ev )
   cnd.notify_one();
 }
 
+void LastEvent::conformation( const stem::Event& ev )
+{
+  // See comments in EchoLast::last above
+  cnd_conf.notify_one();
+}
+
 bool LastEvent::wait()
 {
   return cnd.timed_wait( std::tr2::milliseconds( 500 ) );
@@ -214,4 +239,5 @@ bool LastEvent::wait()
 
 DEFINE_RESPONSE_TABLE( LastEvent )
   EV_EDS(0,NODE_EV_ECHO,handler)
+  EV_EDS(0,NODE_EV_LAST_CONFORMATION,conformation)
 END_RESPONSE_TABLE
