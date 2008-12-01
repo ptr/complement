@@ -1,10 +1,10 @@
-# -*- Makefile -*- Time-stamp: <06/11/13 23:03:45 ptr>
+# -*- Makefile -*- Time-stamp: <08/12/02 00:04:29 ptr>
 
 SRCROOT := ../../..
 
-EXTRA_POST := checks
-EXTRA_POST_DBG := checks-dbg
-EXTRA_POST_STLDBG := checks-stldbg
+# EXTRA_POST := check
+# EXTRA_POST_DBG := check-dbg
+# EXTRA_POST_STLDBG := check-stldbg
 
 include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
@@ -13,30 +13,25 @@ ifndef WITHOUT_STLPORT
 LDFLAGS += -Wl,-rpath=${STLPORT_LIB_DIR}
 endif
 
-checks:	
-	file ${PRG} | grep ELF >/dev/null || exit 1
-	file ${test2_PRG} | grep ELF >/dev/null || exit 1
-	file ${test3_PRG} | grep ELF >/dev/null || exit 1
-	@echo
-	@echo release ok
-	@echo
-
-checks-dbg:
-	file ${PRG_DBG} | grep ELF >/dev/null || exit 1
-	file ${test2_PRG_DBG} | grep ELF >/dev/null || exit 1
-	file ${test3_PRG_DBG} | grep ELF >/dev/null || exit 1
-	@echo
-	@echo dbg ok
-	@echo
-
 ifndef WITHOUT_STLPORT
-checks-stldbg:
-	file ${PRG_STLDBG} | grep ELF >/dev/null || exit 1
-	file ${test2_PRG_STLDBG} | grep ELF >/dev/null || exit 1
-	file ${test3_PRG_STLDBG} | grep ELF >/dev/null || exit 1
-	@echo
-	@echo stldbg ok
-	@echo
+STLDTAG := stldbg-shared
 endif
 
-PHONY += checks checks-dbg checks-stldbg
+check:	release-shared dbg-shared ${STLDTAG}
+	${PRG} || exit 1 && echo release ok
+	${PRG_DBG} || exit 1 && echo dbg ok
+ifndef WITHOUT_STLPORT
+	${PRG_STLDBG} || exit 1 && echo stldbg ok
+endif
+	${test2_PRG} || exit 1 && echo release ok
+	${test2_PRG_DBG} || exit 1 && echo dbg ok
+ifndef WITHOUT_STLPORT
+	${test2_PRG_STLDBG} || exit 1 && echo stldbg ok
+endif
+	${test3_PRG} || exit 1 && echo release ok
+	${test3_PRG_DBG} || exit 1 && echo dbg ok
+ifndef WITHOUT_STLPORT
+	${test3_PRG_STLDBG} || exit 1 && echo stldbg ok
+endif
+
+PHONY += check

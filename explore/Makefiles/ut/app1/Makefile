@@ -2,9 +2,9 @@
 
 SRCROOT := ../../..
 
-EXTRA_POST := checks
-EXTRA_POST_DBG := checks-dbg
-EXTRA_POST_STLDBG := checks-stldbg
+# EXTRA_POST := check
+# EXTRA_POST_DBG := check
+# EXTRA_POST_STLDBG := check
 
 include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
@@ -13,24 +13,15 @@ ifndef WITHOUT_STLPORT
 LDFLAGS += -Wl,-rpath=${STLPORT_LIB_DIR}
 endif
 
-checks:	
-	file ${PRG} | grep ELF >/dev/null || exit 1
-	@echo
-	@echo release ok
-	@echo
-
-checks-dbg:
-	file ${PRG_DBG} | grep ELF >/dev/null || exit 1
-	@echo
-	@echo dbg ok
-	@echo
-
 ifndef WITHOUT_STLPORT
-checks-stldbg:
-	file ${PRG_STLDBG} | grep ELF >/dev/null || exit 1
-	@echo
-	@echo stldbg ok
-	@echo
+STLDTAG := stldbg-shared
 endif
 
-PHONY += checks checks-dbg checks-stldbg
+check:	release-shared dbg-shared ${STLDTAG}
+	${PRG} || exit 1 && echo release ok
+	${PRG_DBG} || exit 1 && echo dbg ok
+ifndef WITHOUT_STLPORT
+	${PRG_STLDBG} || exit 1 && echo stldbg ok
+endif
+
+PHONY += check
