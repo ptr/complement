@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/27 12:40:37 ptr>
+// -*- C++ -*- Time-stamp: <08/12/01 22:48:35 ptr>
 
 /*
  * Copyright (c) 1998, 2002, 2003, 2005, 2007, 2008
@@ -150,6 +150,23 @@ class Cron :
 
   private:
     static void _loop( Cron* );
+
+    enum {
+      CRON_ST_STARTED   = 0x10,
+      CRON_ST_SUSPENDED = 0x11
+    };
+
+    struct _running
+    {
+        _running( Cron& c ) :
+            me( c )
+          { }
+
+        bool operator()() const
+          { return !me.isState( CRON_ST_STARTED ); }
+
+        Cron& me;
+    } running;
 
     std::tr2::thread* _thr;
     std::tr2::condition_variable cond;

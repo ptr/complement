@@ -1,3 +1,12 @@
+2008-12-01  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* Cron.h, Cron.cc: fix deadlock in stopping Cron's loop;
+	use predicate for check end-of-loop condition;
+
+	* ut: unit test for basic Cron usage;
+	
+	* libstem: library version 4.8.5.
+
 2008-11-27  Petr Ovtchenkov  <yeti@yandex-team.ru>
 
 	* EvManager.h, EvManager.cc: move push from inline

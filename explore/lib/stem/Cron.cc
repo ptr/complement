@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/27 12:52:44 ptr>
+// -*- C++ -*- Time-stamp: <08/12/01 23:06:30 ptr>
 
 /*
  * Copyright (c) 1998, 2002, 2003, 2005, 2006, 2008
@@ -23,26 +23,26 @@
 
 #include <cmath>
 
-#define CRON_ST_STARTED   0x10
-#define CRON_ST_SUSPENDED 0x11
-
 namespace stem {
 
 using namespace std;
 using namespace std::tr2;
 
 __FIT_DECLSPEC Cron::Cron() :
-    EventHandler()
+    EventHandler(),
+    running( *this )
 {
 }
 
 __FIT_DECLSPEC Cron::Cron( const char *info ) :
-    EventHandler( info )
+    EventHandler( info ),
+    running( *this )
 {
 }
 
 __FIT_DECLSPEC Cron::Cron( addr_type id, const char *info ) :
-    EventHandler( id, info )
+    EventHandler( id, info ),
+    running( *this )
 {
 }
 
@@ -90,7 +90,7 @@ void __FIT_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
   _M_c.push( en );
   if ( isState( CRON_ST_SUSPENDED ) ) { // alarm if cron loop suspended
     PopState( CRON_ST_SUSPENDED );
-    cond.notify_one(); // _thr.resume();
+    cond.notify_one();
   } else if ( _M_c.top() == en ) { // cron has entries, but new entry is on top
     cond.notify_one();             // so, we need wait it
   }
@@ -158,13 +158,15 @@ void __FIT_DECLSPEC Cron::Start()
 
 void __FIT_DECLSPEC Cron::Stop()
 {
-  lock_guard<mutex> _x1( _M_l );
+  {
+    lock_guard<mutex> _x1( _M_l );
 
-  RemoveState( CRON_ST_STARTED );
-  cond.notify_one();
+    RemoveState( CRON_ST_STARTED );
+    cond.notify_one();
+  }
+
   if ( isState( CRON_ST_SUSPENDED ) ) {
     RemoveState( CRON_ST_SUSPENDED );
-    // _thr.resume();
   }
   _thr->join();
 
@@ -199,32 +201,26 @@ void Cron::_loop( Cron* p )
     unique_lock<mutex> lk( me._M_l );
     if ( me._M_c.empty() ) {
       me.PushState( CRON_ST_SUSPENDED );
-      // me._M_l.unlock();
-      // me._thr.suspend();
-      me.cond.wait( lk );
+      me.cond.wait( lk, me.running );
       continue;
     }
     // At this point _M_c should never be empty!
     abstime = me._M_c.top().expired;
-    // me._M_l.unlock();
 
-    if ( !me.cond.timed_wait( lk, abstime ) ) { // time expired, otherwise signal or error
-      // me._M_l.lock();
+    if ( !me.cond.timed_wait( lk, abstime, me.running ) ) { // time expired, otherwise signal or error
 
       if ( me._M_c.empty() ) { // event removed while I wait?
-        // me._M_l.unlock();
         continue;
       }
       __CronEntry en = me._M_c.top(); // get and eject top cron entry
       me._M_c.pop();
 
       if ( me.is_avail( en.addr ) ) { // check if target abonent exist
-        Event_base<unsigned> ev( en.code );
+        Event_base<uint32_t> ev( en.code );
         ev.dest( en.addr );
         ev.value() = en.arg;
-        me.Send( Event_convert<unsigned>()( ev ) );
+        me.Send( Event_convert<uint32_t>()( ev ) );
       } else { // do nothing, this lead to removing invalid abonent from Cron
-        // me._M_l.unlock();
         continue;
       }
 
@@ -240,7 +236,6 @@ void Cron::_loop( Cron* p )
       } else if ( (en.count) < (en.n) ) { // This SC5.0 patch 107312-06 bug
         me._M_c.push( en );
       }
-      // me._M_l.unlock();
     }
   }
 }

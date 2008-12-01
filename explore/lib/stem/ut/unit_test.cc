@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/11/28 15:37:30 yeti>
+// -*- C++ -*- Time-stamp: <08/12/01 21:58:50 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2008
@@ -27,9 +27,11 @@
 
 #include "Echo.h"
 #include "Convert.h"
+#include "Cron.h"
 
 #include <stem/NetTransport.h>
 #include <stem/EvManager.h>
+#include <stem/Cron.h>
 #include <sockios/socksrv.h>
 
 #ifndef STLPORT
@@ -66,6 +68,7 @@ class stem_test
     int EXAM_DECL(last_event);
     int EXAM_DECL(boring_manager);
     int EXAM_DECL(convert);
+    int EXAM_DECL(cron);
 
     static void thr1();
     static void thr1new();
@@ -891,23 +894,57 @@ int EXAM_IMPL(stem_test::convert)
 
   ev3.dest( conv.self_id() );
   ev3.value().super_id = 3;
-  ev3.value().message = ", wold!";
+  ev3.value().message = ", world!";
 
   conv.Send( ev3 );
 
   EXAM_CHECK( conv.wait() );
 
   EXAM_CHECK( conv.v == 3 );
-  EXAM_CHECK( conv.m3 == ", wold!" );
+  EXAM_CHECK( conv.m3 == ", world!" );
 
   conv.v = 0;
 
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(stem_test::cron)
+{
+  {
+    stem::Cron cron_obj( "cron" );
+
+    stem::addr_type ca = cron_obj.self_id();
+
+    EXAM_CHECK( ca != stem::badaddr );
+
+    CronClient client;
+
+    stem::Event_base<stem::CronEntry> ev( EV_EDS_CRON_ADD );
+    
+    ev.dest( ca );
+    ev.value().code = TEST_EV_CRON;
+    ev.value().start = std::tr2::get_system_time() + std::tr2::milliseconds( 500 );
+    ev.value().n = 1;
+    ev.value().period = 0;
+    ev.value().arg = 3;
+
+    unique_lock<mutex> lk( client.m );
+    client.Send( ev );
+
+    EXAM_CHECK( client.cnd.timed_wait( lk, std::tr2::milliseconds( 800 ) ) );
+
+    EXAM_CHECK( client.see == 3 );
+    EXAM_CHECK( client.visited == 1 );
+  }
+
+  EXAM_MESSAGE( "Cron stopped" );
+
+  return EXAM_RESULT;
+}
+
 int main( int argc, const char** argv )
 {
-  exam::test_suite::test_case_type tc[5];
+  exam::test_suite::test_case_type tc[6];
 
   exam::test_suite t( "libstem test suite" );
   stem_test test;
@@ -928,9 +965,16 @@ int main( int argc, const char** argv )
   t.add( &stem_test::boring_manager, test, "boring_manager",
          t.add( &stem_test::peer, test, "peer", tc[3] ) );
 
-  t.add( &stem_test::convert, test, "convert", tc[0] );
+  tc[5] = t.add( &stem_test::convert, test, "convert", tc[0] );
 
   t.add( &stem_test::last_event, test, "last event", tc[4] );
+
+  exam::test_suite::test_case_type cases_next[10];
+
+  cases_next[0] = tc[2];
+  cases_next[1] = tc[5];
+
+  t.add( &stem_test::cron, test, "cron", cases_next, cases_next + 2 );
 
   Opts opts;
 
@@ -939,7 +983,7 @@ int main( int argc, const char** argv )
 
   opts << option<bool>( "print this help message", 'h', "help" )
        << option<bool>( "list all test cases", 'l', "list" )
-       << option<string>( "run tests by number", 'r', "run" )["0"]
+       << option<string>( "run tests by <numbers list>", 'r', "run" )["0"]
        << option<bool>( "print status of tests within test suite", 'v', "verbose" )
        << option<bool>(  "trace checks", 't', "trace" );
 
