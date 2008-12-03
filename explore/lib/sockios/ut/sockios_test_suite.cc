@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/13 11:28:51 ptr>
+// -*- C++ -*- Time-stamp: <08/12/04 00:18:44 ptr>
 
 /*
  *
@@ -9,21 +9,14 @@
  *
  */
 
+#include "names.h"
 #include "sockios_test.h"
-#include "sockios2_test.h"
 
 #include <exam/suite.h>
 
 #include <iostream>
 #include <list>
 #include <misc/opts.h>
-
-// #include <sockios/sockstream>
-// #include <sockios/sockmgr.h>
-
-// #include "message.h"
-
-// #include "ConnectionProcessor.h"
 
 using namespace std;
 
@@ -39,7 +32,7 @@ int main( int argc, const char** argv )
 
   opts << option<bool>( "print this help message", 'h', "help" )
        << option<bool>( "list all test cases", 'l', "list" )
-       << option<string>( "run tests by number", 'r', "run" )["0"]
+       << option<string>( "run tests by <numbers list>", 'r', "run" )[""]
        << option<bool>( "print status of tests within test suite", 'v', "verbose" )
        << option<bool>(  "trace checks", 't', "trace" );
 
@@ -60,14 +53,6 @@ int main( int argc, const char** argv )
 
   exam::test_suite t( "libsockios test" );
 
-#if 0
-
-  trivial_sockios_test trivial_test;
-
-  tc[0] = t.add( &trivial_sockios_test::simple, trivial_test, "trivial_sockios_test::simple" );
-  t.add( &trivial_sockios_test::simple_udp, trivial_test, "trivial_sockios_test::simple_udp", tc[0] );
-#endif
-
   names_sockios_test names_test;
 
   t.add( &names_sockios_test::hostname_test, names_test, "names_sockios_test::hostname_test" );
@@ -76,44 +61,21 @@ int main( int argc, const char** argv )
   t.add( &names_sockios_test::hostaddr_test2, names_test, "names_sockios_test::hostaddr_test2" );
   t.add( &names_sockios_test::hostaddr_test3, names_test, "names_sockios_test::hostaddr_test3" );
 
-#if 0
   sockios_test test;
 
-  t.add( &sockios_test::long_msg, test, "sockios_test::long_msg",
-         tc[1] = t.add( &sockios_test::ctor_dtor, test, "sockios_test::ctor_dtor", tc[0] ) );
+  t.add( &sockios_test::read0, test, "sockios2_test::read0",
+    t.add( &sockios_test::srv_sigpipe, test, "sockios2_test::srv_sigpipe",
+      tc[4] = t.add( &sockios_test::fork, test, "sockios2_test::fork",
+        tc[3] = t.add( &sockios_test::processor_core_income_data, test, "all data available after sockstream was closed",
+          t.add( &sockios_test::processor_core_getline, test, "check income data before sockstream was closed",
+            t.add( &sockios_test::processor_core_two_local, test, "two local connects to connection processor",
+              t.add( &sockios_test::processor_core_one_local, test, "one local connect to connection processor",
+                t.add( &sockios_test::connect_disconnect, test, "sockios2_test::connect_disconnect",
+                  t.add( &sockios_test::srv_core, test, "sockios2_test::srv_core" ) ) ) ) ) ) ) ) );
 
-  t.add( &sockios_test::read0, test, "sockios_test::read0", // timeout 5
-         tc[2] = t.add( &sockios_test::sigpipe, test, "sockios_test::sigpipe", tc, tc + 2 ) );
-  t.add( &sockios_test::read0_srv, test, "sockios_test::read0_srv", tc[2] );
-  t.add( &sockios_test::long_block_read, test, "sockios_test::long_block_read", tc[0] );
-
-  // Old tests
-
-  t.add( &trivial_sockios_test::listen_iface, trivial_test, "trivial_sockios_test::listen_iface", tc[0] );
-
-  t.add( &trivial_sockios_test::srv_close_connection, trivial_test, "trivial_sockios_test::srv_close_connection", tc[0] );
-  t.add( &trivial_sockios_test::shared_socket, trivial_test, "trivial_sockios_test::shared_socket", tc[0] );
-  t.add( &trivial_sockios_test::client_close_socket, trivial_test, "trivial_sockios_test::client_close_socket", tc[0] );
-  t.add( test_more_bytes_in_socket, "test_more_bytes_in_socket" ); // timeout 5
-  t.add( test_more_bytes_in_socket2, "test_more_bytes_in_socket2" ); // timeout 5
-
-#endif
-
-  sockios2_test test2;
-
-  t.add( &sockios2_test::read0, test2, "sockios2_test::read0",
-    t.add( &sockios2_test::srv_sigpipe, test2, "sockios2_test::srv_sigpipe",
-      tc[4] = t.add( &sockios2_test::fork, test2, "sockios2_test::fork",
-        tc[3] = t.add( &sockios2_test::processor_core_income_data, test2, "all data available after sockstream was closed",
-          t.add( &sockios2_test::processor_core_getline, test2, "check income data before sockstream was closed",
-            t.add( &sockios2_test::processor_core_two_local, test2, "two local connects to connection processor",
-              t.add( &sockios2_test::processor_core_one_local, test2, "one local connect to connection processor",
-                t.add( &sockios2_test::connect_disconnect, test2, "sockios2_test::connect_disconnect",
-                  t.add( &sockios2_test::srv_core, test2, "sockios2_test::srv_core" ) ) ) ) ) ) ) ) );
-
-  t.add( &sockios2_test::disconnect_rawclnt, test2, "disconnect raw client", 
-    t.add( &sockios2_test::disconnect, test2, "disconnect sockstream", tc[3] ) );
-  t.add( &sockios2_test::income_data, test2, "all data available after sockstream was closed, different processes", tc[4] );
+  t.add( &sockios_test::disconnect_rawclnt, test, "disconnect raw client", 
+    t.add( &sockios_test::disconnect, test, "disconnect sockstream", tc[3] ) );
+  t.add( &sockios_test::income_data, test, "all data available after sockstream was closed, different processes", tc[4] );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( cerr );

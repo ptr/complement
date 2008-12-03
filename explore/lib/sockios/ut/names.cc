@@ -1,15 +1,15 @@
-// -*- C++ -*- Time-stamp: <08/03/27 11:04:23 ptr>
+// -*- C++ -*- Time-stamp: <08/12/04 00:11:52 ptr>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005-2007
+ * Copyright (c) 2002, 2003, 2005-2008
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
  *
  */
 
-#include "sockios_test.h"
+#include "names.h"
 
 #include <exam/suite.h>
 
@@ -102,7 +102,7 @@ int EXAM_IMPL(names_sockios_test::hostaddr_test2)
   EXAM_CHECK( localhost_found == true );
   
 #else
-  EXAM_ERROR( "Not implemented" );
+  throw exam::skip_exception();
 #endif
 
   return EXAM_RESULT;
@@ -139,7 +139,7 @@ int EXAM_IMPL(names_sockios_test::hostaddr_test3)
   EXAM_CHECK( localhost_found == true );
   
 #else
-  EXAM_ERROR( "Not implemented" );
+  throw exam::skip_exception();
 #endif
 
   return EXAM_RESULT;
