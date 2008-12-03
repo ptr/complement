@@ -1,3 +1,9 @@
+2008-12-03  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* Cron.cc: fix wakeup condition;
+
+	* libstem: library version 4.8.6.
+
 2008-12-01  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* Cron.h, Cron.cc: fix deadlock in stopping Cron's loop;

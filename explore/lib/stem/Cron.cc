@@ -196,7 +196,6 @@ void Cron::_loop( Cron* p )
 
   me.PushState( CRON_ST_STARTED );
 
-  system_time abstime;
   while ( me.isState( CRON_ST_STARTED ) ) {
     unique_lock<mutex> lk( me._M_l );
     if ( me._M_c.empty() ) {
@@ -205,37 +204,40 @@ void Cron::_loop( Cron* p )
       continue;
     }
     // At this point _M_c should never be empty!
-    abstime = me._M_c.top().expired;
 
-    if ( !me.cond.timed_wait( lk, abstime, me.running ) ) { // time expired, otherwise signal or error
+    bool alarm = me.cond.timed_wait( lk, me._M_c.top().expired );  // time expired, otherwise signal or error
 
-      if ( me._M_c.empty() ) { // event removed while I wait?
-        continue;
-      }
-      __CronEntry en = me._M_c.top(); // get and eject top cron entry
-      me._M_c.pop();
+    if ( me._M_c.empty() ) { // event removed while I wait?
+      continue;
+    }
 
-      if ( me.is_avail( en.addr ) ) { // check if target abonent exist
-        Event_base<uint32_t> ev( en.code );
-        ev.dest( en.addr );
-        ev.value() = en.arg;
-        me.Send( Event_convert<uint32_t>()( ev ) );
-      } else { // do nothing, this lead to removing invalid abonent from Cron
-        continue;
-      }
+    if ( alarm && (me._M_c.top().expired > get_system_time()) ) {
+      continue;
+    }
 
-      en.expired = en.start;
-      en.expired += en.period * ++en.count;
+    __CronEntry en = me._M_c.top(); // get and eject top cron entry
+    me._M_c.pop();
 
-      // if loop infinite, always put Cron entry in stack,
-      // otherwise check counter
-      if ( en.n == CronEntry::infinite ) {
-        en.start = en.expired;
-        en.count = 0;
-        me._M_c.push( en );
-      } else if ( (en.count) < (en.n) ) { // This SC5.0 patch 107312-06 bug
-        me._M_c.push( en );
-      }
+    if ( me.is_avail( en.addr ) ) { // check if target abonent exist
+      Event_base<uint32_t> ev( en.code );
+      ev.dest( en.addr );
+      ev.value() = en.arg;
+      me.Send( Event_convert<uint32_t>()( ev ) );
+    } else { // do nothing, this lead to removing invalid abonent from Cron
+      continue;
+    }
+
+    en.expired = en.start;
+    en.expired += en.period * ++en.count;
+
+    // if loop infinite, always put Cron entry in stack,
+    // otherwise check counter
+    if ( en.n == CronEntry::infinite ) {
+      en.start = en.expired;
+      en.count = 0;
+      me._M_c.push( en );
+    } else if ( (en.count) < (en.n) ) { // This SC5.0 patch 107312-06 bug
+      me._M_c.push( en );
     }
   }
 }

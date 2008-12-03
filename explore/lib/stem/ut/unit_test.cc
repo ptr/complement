@@ -923,15 +923,20 @@ int EXAM_IMPL(stem_test::cron)
     
     ev.dest( ca );
     ev.value().code = TEST_EV_CRON;
-    ev.value().start = std::tr2::get_system_time() + std::tr2::milliseconds( 500 );
+    system_time rec = std::tr2::get_system_time();
+    ev.value().start = rec + std::tr2::milliseconds( 500 );
     ev.value().n = 1;
-    ev.value().period = 0;
+    // ev.value().period = 0;
     ev.value().arg = 3;
 
     unique_lock<mutex> lk( client.m );
     client.Send( ev );
 
     EXAM_CHECK( client.cnd.timed_wait( lk, std::tr2::milliseconds( 800 ) ) );
+    // 'True' on the line above guarantee for
+    // (std::tr2::get_system_time() - rec) < std::tr2::milliseconds( 800 )
+
+    // cerr << (std::tr2::get_system_time() - rec).count() << endl;
 
     EXAM_CHECK( client.see == 3 );
     EXAM_CHECK( client.visited == 1 );
