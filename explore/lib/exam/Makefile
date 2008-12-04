@@ -8,25 +8,17 @@ include ${SRCROOT}/Makefiles/gmake/top.mak
 INCLUDES += -I$(SRCROOT)/include
 
 check:	all-shared
-	$(MAKE) -C ./ut
-	(cd ./ut; ${OUTPUT_DIR}/exam_self_test) || exit 1
-	(cd ./ut; ${OUTPUT_DIR_DBG}/exam_self_test) || exit 1
-ifndef WITHOUT_STLPORT
-	(cd ./ut; ${OUTPUT_DIR_STLDBG}/exam_self_test) || exit 1
-endif
+	$(MAKE) -C ./ut $@
 
 check-release-shared:	release-shared
-	$(MAKE) -C ./ut release-shared
-	(cd ./ut; ${OUTPUT_DIR}/exam_self_test) || exit 1
+	$(MAKE) -C ./ut $@
 
 check-dbg-shared:	dbg-shared
-	$(MAKE) -C ./ut dbg-shared
-	(cd ./ut; ${OUTPUT_DIR_DBG}/exam_self_test) || exit 1
+	$(MAKE) -C ./ut $@
 
 ifndef WITHOUT_STLPORT
 check-stldbg-shared:	stldbg-shared
-	$(MAKE) -C ./ut stldbg-shared
-	(cd ./ut; ${OUTPUT_DIR_STLDBG}/exam_self_test) || exit 1
+	$(MAKE) -C ./ut $@
 endif
 
 depend clean distclean mostlyclean maintainer-clean::

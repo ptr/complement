@@ -9,9 +9,14 @@
 SRCROOT := ..
 SUBDIRS := misc exam mt sockios stem
 
+-include ${SRCROOT}/Makefiles/gmake/config.mak
 include ${SRCROOT}/Makefiles/gmake/subdirs.mak
 
-all install depend clean clobber distclean check:
+ifndef WITHOUT_STLPORT
+STLP_TAGS = install-stldbg-shared stldbg-shared check-stldbg-shared
+endif
+
+all install install-release-shared install-dbg-shared depend clean distclean maintainer-clean mostlyclean check check-release-shared check-dbg-shared release-shared dbg-shared ${STLP_TAGS}:
 	+$(call doinsubdirs,${SUBDIRS})
 
-.PHONY: all install depend clean clobber distclean check
+.PHONY: all install install-release-shared install-dbg-shared depend clean distclean distclean maintainer-clean mostlyclean check check-release-shared check-dbg-shared release-shared dbg-shared ${STLP_TAGS}

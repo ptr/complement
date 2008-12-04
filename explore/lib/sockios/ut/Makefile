@@ -36,3 +36,21 @@ dbg-shared     : LDLIBS = -lxmtg -lsockiosg -lexamg -lmiscg
 ifndef WITHOUT_STLPORT
 stldbg-shared  : LDLIBS = -lxmtstlg -lsockiosstlg -lexamstlg -lmiscstlg
 endif
+
+check-release-shared:	release-shared
+	@${PRG}
+
+check-dbg-shared:	dbg-shared
+	@${PRG_DBG}
+
+ifndef WITHOUT_STLPORT
+check-stldbg-shared:	stldbg-shared
+	@${PRG_STLDBG}
+endif
+
+check:	all-shared
+	@${PRG}
+	@${PRG_DBG}
+ifndef WITHOUT_STLPORT
+	@${PRG_STLDBG}
+endif
