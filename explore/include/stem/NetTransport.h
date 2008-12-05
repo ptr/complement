@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 15:29:44 yeti>
+// -*- C++ -*- Time-stamp: <08/12/05 11:04:43 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006, 2008
@@ -36,30 +36,23 @@ extern __FIT_DECLSPEC void dump( std::ostream&, const stem::Event& );
 class NetTransport_base :
     public EventHandler // to avoid dependence from creation order
 {
-  public:
-    NetTransport_base() :
+  protected:
+    NetTransport_base( std::sockstream& s ) :
         _count( 0 ),
-        net( 0 )
+        net( s )
       { }
 
-    NetTransport_base( const char *info ) :
+    NetTransport_base( std::sockstream& s, const char *info ) :
         EventHandler( info ),
         _count( 0 ),
-        net( 0 )
+        net( s )
       { }
 
     ~NetTransport_base()
       { NetTransport_base::_close(); }
 
-    bool fail() const
-      { return net == 0 ? false : net->fail(); }
-    bool good() const
-      { return net != 0 && net->good(); }
-    bool bad() const
-      { return net == 0 || net->bad(); }
-    bool is_open() const
-      { return net != 0 && net->is_open(); }
-    virtual void close()
+  public:
+    void close()
       { NetTransport_base::_close(); }
 
     __FIT_DECLSPEC bool push( const Event&, const gaddr_type& dst, const gaddr_type& src );
@@ -68,8 +61,8 @@ class NetTransport_base :
     bool pop( Event&, gaddr_type& dst, gaddr_type& src );
     __FIT_DECLSPEC void _close();
 
-    std::sockstream *net;
     uint32_t _count;
+    std::sockstream& net;
 };
 
 class NetTransport :
@@ -88,50 +81,56 @@ class NetTransport :
 };
 
 class NetTransportMgr :
+    private std::sockstream,
     public NetTransport_base
 {
   public:
     NetTransportMgr() :
-        NetTransport_base( "stem::NetTransportMgr" ),
+        std::sockstream(),
+        NetTransport_base( *this, "stem::NetTransportMgr" ),
         _thr( 0 )
-      { net = &_channel; }
+      { }
 
     ~NetTransportMgr()
-      { NetTransportMgr::_close(); delete _thr; }
+      { NetTransport_base::_close(); join(); }
 
-    __FIT_DECLSPEC
+    bool fail() const
+      { return std::sockstream::fail(); }
+    bool good() const
+      { return std::sockstream::good(); }
+    bool bad() const
+      { return std::sockstream::bad(); }
+    bool is_open() const
+      { return std::sockstream::is_open(); }
+
     addr_type open( const char *hostname, int port,
-                    std::sock_base::stype stype = std::sock_base::sock_stream );
-    virtual __FIT_DECLSPEC void close()
-      { NetTransportMgr::_close(); }
+                    sock_base::stype type = sock_base::sock_stream,
+                    sock_base::protocol pro = sock_base::inet );
 
-    void join()
-      { if ( _thr != 0 && _thr->joinable() ) { _thr->join(); } }
+    addr_type open( const in_addr& addr, int port,
+                    sock_base::stype type = sock_base::sock_stream,
+                    sock_base::protocol pro = sock_base::inet );
+
+    addr_type open( sock_base::socket_type s, const sockaddr& addr,
+                    sock_base::stype type = sock_base::sock_stream );
+
+    addr_type open( sock_base::socket_type s,
+                    sock_base::stype type = sock_base::sock_stream );
+
+    void close()
+      {  NetTransport_base::_close(); }
+
+    void join();
 
   private:
     NetTransportMgr( const NetTransportMgr& );
     NetTransportMgr& operator =( const NetTransportMgr& );
 
-  protected:
-    __FIT_DECLSPEC void _close();
+  private:
+    addr_type discovery();
     static void _loop( NetTransportMgr* );
     std::tr2::thread* _thr;
-    std::sockstream _channel;
 };
-
-#if 0
-class NetTransportMP :
-    public NetTransport_base
-{
-  public:
-    NetTransportMP( std::sockstream& s ) :
-        NetTransport_base( "stem::NetTransportMP" )
-      { net = &s; }
-
-    __FIT_DECLSPEC
-    void connect( std::sockstream& );
-};
-#endif
 
 } // namespace stem
 

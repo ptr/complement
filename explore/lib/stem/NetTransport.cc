@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/11/27 16:00:20 yeti>
+// -*- C++ -*- Time-stamp: <08/12/05 12:18:00 ptr>
 
 /*
  *
@@ -43,16 +43,9 @@ static const uint32_t EDS_MAGIC = 0x534445c2U;
 #  error "Can't determine platform byte order!"
 #endif
 
-#define MT_IO_REENTRANT( s )   // MT_REENTRANT( (s).rdbuf()->_M_lock, _0 );
-#define MT_IO_REENTRANT_W( s ) // MT_REENTRANT( (s).rdbuf()->_M_lock_w, _0 );
-#define MT_IO_LOCK_W( s )      // (s).rdbuf()->_M_lock_w.lock();
-#define MT_IO_UNLOCK_W( s )    // (s).rdbuf()->_M_lock_w.unlock();
-
-
 __FIT_DECLSPEC
 void dump( std::ostream& o, const EDS::Event& e )
 {
-  MT_IO_REENTRANT( o )
   o << setiosflags(ios_base::showbase) << hex
     << "Code: " << e.code() << " Destination: " << e.dest() << " Source: " << e.src()
     << "\nData:\n";
@@ -93,22 +86,21 @@ void dump( std::ostream& o, const EDS::Event& e )
 
 __FIT_DECLSPEC void NetTransport_base::_close()
 {
-  if ( net != 0 ) {
 #ifdef __FIT_STEM_TRACE
-    try {
-      lock_guard<mutex> lk(manager()->_lock_tr);
-      if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
-        ios_base::fmtflags f = manager()->_trs->flags( ios_base::hex | ios_base::showbase );
-        *manager()->_trs << "NetTransport_base::_close " << self_id() << endl;
-        manager()->_trs->flags( f );
-      }
+  try {
+    lock_guard<mutex> lk(manager()->_lock_tr);
+    if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
+      ios_base::fmtflags f = manager()->_trs->flags( ios_base::hex | ios_base::showbase );
+      *manager()->_trs << "NetTransport_base::_close " << self_id() << endl;
+      manager()->_trs->flags( f );
     }
-    catch ( ... ) {
-    }
-#endif // __FIT_STEM_TRACE
-    manager()->Remove( this );
-    net->close();
   }
+  catch ( ... ) {
+  }
+#endif // __FIT_STEM_TRACE
+
+  manager()->Remove( this );
+  net.close();
 }
 
 bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
@@ -117,7 +109,7 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
   uint32_t buf[bsz];
   using namespace std;
 
-  if ( !net->read( (char *)buf, sizeof(uint32_t) ).good() ) {
+  if ( !net.read( (char *)buf, sizeof(uint32_t) ).good() ) {
     return false;
   }
 
@@ -126,18 +118,19 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " StEM Magic fail ("
-                         << net->rdbuf()->inet_addr() << ":" << net->rdbuf()->port() << ")"
+                         << net.rdbuf()->inet_addr() << ":" << net.rdbuf()->port() << ")"
                          << endl;
       }
     }
     catch ( ... ) {
     }
 
-    NetTransport_base::close();
+    _close();
     return false;
   }
 
-  if ( !net->read( (char *)&buf[1], sizeof(uint32_t) * (bsz-1) ).good() ) {
+  if ( !net.read( (char *)&buf[1], sizeof(uint32_t) * (bsz-1) ).good() ) {
+    _close();
     return false;
   }
   _rs.code( from_net( buf[1] ) );
@@ -152,13 +145,13 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " StEM Message size too big: " << sz
-                         << " (" << net->rdbuf()->inet_addr() << ":" << net->rdbuf()->port()
+                         << " (" << net.rdbuf()->inet_addr() << ":" << net.rdbuf()->port()
                          << ")" << endl;
       }
     }
     catch ( ... ) {
     }
-    NetTransport_base::close();
+    _close();
     return false;
   }
 
@@ -168,14 +161,14 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " StEM Adler-32 fail"
-                         << " (" << net->rdbuf()->inet_addr() << ":" << net->rdbuf()->port()
+                         << " (" << net.rdbuf()->inet_addr() << ":" << net.rdbuf()->port()
                          << ")" << endl;
       }
     }
     catch ( ... ) {
     }
 
-    NetTransport_base::close();
+    _close();
     return false;
   }
 
@@ -184,7 +177,7 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
   str.erase();
   str.reserve( sz );
   while ( sz-- > 0 ) {
-    str += (char)net->get();
+    str += (char)net.get();
   }
 #ifdef __FIT_STEM_TRACE
   try {
@@ -204,7 +197,7 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
   }
 #endif // __FIT_STEM_TRACE
 
-  return net->good();
+  return net.good();
 }
 
 
@@ -229,18 +222,18 @@ bool NetTransport_base::push( const Event& _rs, const gaddr_type& dst, const gad
   }
 #endif // __FIT_STEM_TRACE
 
-  if ( !net->good() ) {
+  if ( !net.good() ) {
     return false;
   }
   const int bsz = 2+(4+2+1)*2+4;
   uint32_t buf[bsz];
 
+  fill( buf, buf + bsz, 0U ); // Hmm, here problem?
+
   buf[0] = EDS_MAGIC;
   buf[1] = to_net( _rs.code() );
-  dst._xnet_pack( reinterpret_cast<char *>(buf + 2) );
-  src._xnet_pack( reinterpret_cast<char *>(buf + 9) );
-
-  MT_IO_LOCK_W( *net )
+  dst._xnet_pack( reinterpret_cast<char *>(buf + 2) ); // <<< check
+  src._xnet_pack( reinterpret_cast<char *>(buf + 9) ); // <<< check
 
   buf[16] = to_net( ++_count );
   buf[17] = to_net( _rs.flags() );
@@ -248,37 +241,34 @@ bool NetTransport_base::push( const Event& _rs, const gaddr_type& dst, const gad
   buf[19] = to_net( adler32( (unsigned char *)buf, sizeof(uint32_t) * 19 )); // crc
 
   try {
-    net->write( (const char *)buf, sizeof(uint32_t) * 20 );
-        
-    copy( _rs.value().begin(), _rs.value().end(),
-          ostream_iterator<char,char,char_traits<char> >(*net) );
+    net.write( (const char *)buf, sizeof(uint32_t) * 20 );
+    if ( !_rs.value().empty() ) {
+      net.write( _rs.value().data(), _rs.value().size() );
+    }
 
-    net->flush();
-    if ( !net->good() ) {
+    // copy( _rs.value().begin(), _rs.value().end(),
+    //      ostream_iterator<char,char,char_traits<char> >(net) );
+
+    net.flush();
+    if ( !net.good() ) {
       throw ios_base::failure( "net not good" );
     }
   }
   catch ( ios_base::failure& ) {
-    if ( net != 0 ) { // clear connection: required by non-Solaris OS
-      net->close();
-    }
+    net.close();
   }
   catch ( ... ) {
-    MT_IO_UNLOCK_W( *net )
     throw;
   }
-  MT_IO_UNLOCK_W( *net )
 
-  return net->good();
+  return net.good();
 }
 
 __FIT_DECLSPEC
 NetTransport::NetTransport( std::sockstream& s ) :
-    NetTransport_base( "stem::NetTransport" ),
+    NetTransport_base( s, "stem::NetTransport" ),
     _handshake( false )
-{
-  net = &s;
-}
+{ }
 
 __FIT_DECLSPEC
 void NetTransport::_do_handshake()
@@ -317,28 +307,28 @@ void NetTransport::_do_handshake()
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " " << err.what()
-                         << " (" << net->rdbuf()->inet_addr() << ":" << net->rdbuf()->port()
+                         << " (" << net.rdbuf()->inet_addr() << ":" << net.rdbuf()->port()
                          << ")" << endl;
       }
     }
     catch ( ... ) {
     }
 
-    net->close();
+    net.close();
   }
   catch ( ... ) {
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " unknown exception"
-                         << " (" << net->rdbuf()->inet_addr() << ":" << net->rdbuf()->port()
+                         << " (" << net.rdbuf()->inet_addr() << ":" << net.rdbuf()->port()
                          << ")" << endl;
       }
     }
     catch ( ... ) {
     }
 
-    net->close();
+    net.close();
   }
 }
 
@@ -435,59 +425,87 @@ void NetTransport::connect( sockstream& s )
 
 // connect initiator (client) function
 
-__FIT_DECLSPEC
 addr_type NetTransportMgr::open( const char *hostname, int port,
-                                 std::sock_base::stype stype )
+                                 std::sock_base::stype stype,
+                                 sock_base::protocol pro )
+{
+  std::sockstream::open( hostname, port, stype, pro );
+  if ( std::sockstream::is_open() && std::sockstream::good() ) {
+    return discovery();
+  }
+  return badaddr;
+}
+
+addr_type NetTransportMgr::open( const in_addr& addr, int port,
+                                 sock_base::stype type,
+                                 sock_base::protocol pro )
+{
+  std::sockstream::open( addr, port, type, pro );
+  if ( std::sockstream::is_open() && std::sockstream::good() ) {
+    return discovery();
+  }
+  return badaddr;
+}
+
+addr_type NetTransportMgr::open( sock_base::socket_type s, const sockaddr& addr,
+                                 sock_base::stype type )
+{
+  std::sockstream::open( s, addr, type );
+  if ( std::sockstream::is_open() && std::sockstream::good() ) {
+    return discovery();
+  }
+  return badaddr;
+}
+
+addr_type NetTransportMgr::open( sock_base::socket_type s,
+                                 sock_base::stype type )
+{
+  std::sockstream::open( s, type );
+  if ( std::sockstream::is_open() && std::sockstream::good() ) {
+    return discovery();
+  }
+  return badaddr;
+}
+
+addr_type NetTransportMgr::discovery()
 {
   try {
-    // I should be sure, that not more then one _loop running from here!
-    // For this, I enforce close connection before I try open new,
-    // and wait thread with _loop before start new.
-    if ( _channel.is_open() ) {
-      close(); // I should wait termination of _loop, clear EDS address mapping, etc.
+    Event ev( EV_STEM_TRANSPORT );
+    gaddr_type dst;
+    gaddr_type src;
+    addr_type xsrc = badaddr;
+    if ( !push( ev, gaddr_type(), self_glid() ) ) {
+      throw runtime_error( "net error or net handshake error" );
     }
-    join(); // This is safe: transparent if no _loop, and wait it if one exist
-    _channel.open( hostname, port, stype );
+    if ( !pop( ev, dst, src ) ) {
+      throw runtime_error( "net error or net handshake error" );
+    }
+    if ( ev.code() != EV_STEM_TRANSPORT_ACK ) {
+      throw runtime_error( "net handshake error" );
+    }
+    src.addr = ns_addr;
+    xsrc = manager()->reflect( src );
+    // indeed src is something like NetTransport, so substitute ns:
+    src.addr = ns_addr;
+    if ( xsrc == badaddr || (xsrc & extbit)) { // ignore local; but add new transport otherwise
+      manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
+    }
+    // indeed src is something like NetTransport, so substitute default:
+    src.addr = default_addr;
+    xsrc = manager()->reflect( src );
+    if ( xsrc == badaddr || (xsrc & extbit)) { // ignore local; but add new transport otherwise
+      xsrc = manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
+    }
 
-    if ( _channel.good() ) {
-      Event ev( EV_STEM_TRANSPORT );
-      gaddr_type dst;
-      gaddr_type src;
-      addr_type xsrc = badaddr;
-      if ( !push( ev, gaddr_type(), self_glid() ) ) {
-        throw runtime_error( "net error or net handshake error" );
-      }
-      if ( pop( ev, dst, src ) ) {
-        if ( ev.code() == EV_STEM_TRANSPORT_ACK ) {
-          src.addr = ns_addr;
-          xsrc = manager()->reflect( src );
-          // indeed src is something like NetTransport, so substitute ns:
-          src.addr = ns_addr;
-          if ( xsrc == badaddr || (xsrc & extbit)) { // ignore local; but add new transport otherwise
-            manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
-          }
-          // indeed src is something like NetTransport, so substitute default:
-          src.addr = default_addr;
-          xsrc = manager()->reflect( src );
-          if ( xsrc == badaddr || (xsrc & extbit)) { // ignore local; but add new transport otherwise
-            xsrc = manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
-          }
-        } else {
-          throw runtime_error( "net handshake error" );
-        }
-      } else {
-        throw runtime_error( "net error or net handshake error" );
-      }
-      _thr = new std::tr2::thread( _loop, this );
-      return xsrc; // zero_object;
-    }
+    _thr = new std::tr2::thread( _loop, this );
+    return xsrc; // zero_object;
   }
   catch ( runtime_error& err ) {
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " " << err.what()
-                         << " (" << _channel.rdbuf()->inet_addr() << ":" << _channel.rdbuf()->port()
+                         << " (" << rdbuf()->inet_addr() << ":" << rdbuf()->port()
                          << ")" << endl;
       }
     }
@@ -499,7 +517,7 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " unknown exception"
-                         << " (" << _channel.rdbuf()->inet_addr() << ":" << _channel.rdbuf()->port()
+                         << " (" << rdbuf()->inet_addr() << ":" << rdbuf()->port()
                          << ")" << endl;
       }
     }
@@ -507,16 +525,6 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
     }
   }
   return badaddr;
-}
-
-__FIT_DECLSPEC
-void NetTransportMgr::_close()
-{
-  _channel.rdbuf()->shutdown( sock_base::stop_in | sock_base::stop_out );
-  // _channel.rdbuf()->shutdown( sock_base::stop_in );
-  NetTransport_base::_close();
-  // _channel.close();
-  join();
 }
 
 void NetTransportMgr::_loop( NetTransportMgr* p )
@@ -527,7 +535,7 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
   gaddr_type src;
 
   try {
-    while ( p->pop( ev, dst, src ) ) {
+    while ( me.pop( ev, dst, src ) ) {
 #ifdef __FIT_STEM_TRACE
       try {
         lock_guard<mutex> lk(manager()->_lock_tr);
@@ -578,7 +586,7 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
 #endif // __FIT_STEM_TRACE
       manager()->push( ev );
     }
-    p->NetTransport_base::close();
+    me.NetTransport_base::_close();
 #ifdef __FIT_STEM_TRACE
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
@@ -593,7 +601,7 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
 #endif // __FIT_STEM_TRACE
   }
   catch ( ... ) {
-    p->NetTransport_base::close();
+    me.NetTransport_base::_close();
 #ifdef __FIT_STEM_TRACE
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
@@ -610,77 +618,14 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
   }
 }
 
-#if 0
-__FIT_DECLSPEC
-void NetTransportMP::connect( sockstream& s )
+void NetTransportMgr::join()
 {
-  Event ev;
-  gaddr_type dst;
-  gaddr_type src;
-
-  try {
-    if ( pop( ev, dst, src ) ) {
-#ifdef __FIT_STEM_TRACE
-      try {
-        lock_guard<mutex> lk(manager()->_lock_tr);
-        if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & E
-vManager::tracenet) ) {
-          *manager()->_trs << "Pid/ppid: " << std::tr2::getpid() << "/" << std::tr2::getppid() <<
-"\n";
-          manager()->dump( *manager()->_trs ) << endl;
-        }
-      }
-      catch ( ... ) {
-      }
-#endif // __FIT_STEM_TRACE
-      addr_type xdst = manager()->reflect( dst );
-      if ( xdst == badaddr ) {
-#ifdef __FIT_STEM_TRACE
-        try {
-          lock_guard<mutex> lk(manager()->_lock_tr);
-          if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracefault)) ) {
-            *manager()->_trs << __FILE__ << ":" << __LINE__
-                             << " ("
-                             << std::tr2::getpid() << "/" << std::tr2::getppid() << ") "
-                             << "Unknown destination\n";
-            manager()->dump( *manager()->_trs ) << endl;
-          }
-        }
-        catch ( ... ) {
-        }
-#endif // __FIT_STEM_TRACE
-        return;
-      }
-      ev.dest( xdst );
-      addr_type xsrc = manager()->reflect( src );
-      if ( xsrc == badaddr ) {
-        detail::transport tr( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 );
-        ev.src( manager()->SubscribeRemote( tr, src ) );
-      } else {
-        ev.src( xsrc );
-      }
-#ifdef __FIT_STEM_TRACE
-      try {
-        lock_guard<mutex> lk(manager()->_lock_tr);
-        if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
-          *manager()->_trs << __FILE__ << ":" << __LINE__ << endl;
-        }
-      }
-      catch ( ... ) {
-      }
-#endif // __FIT_STEM_TRACE
-      manager()->push( ev );
-    }
-    if ( !s.good() ) {
-      throw ios_base::failure( "sockstream not good" );
-    }
-  }
-  catch ( ... ) {
-    this->close(); // clear connection
-    net = 0;
+  if ( _thr != 0 && _thr->joinable() ) {
+    _thr->join();
+    delete _thr;
+    _thr = 0;
   }
 }
 
-#endif
 
 } // namespace stem
