@@ -1,3 +1,11 @@
+2008-12-05  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* socksrv.cc: after worker detect finish condition and do all
+	job, it send broadcast notification via condition to release
+	other workers [if available] too;
+	
+	* libsockios: release 2.1.1.
+
 2008-10-13  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* Repository: removing sock_processor from sockmgr tables done

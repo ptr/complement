@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/14 14:24:22 yeti>
+// -*- C++ -*- Time-stamp: <08/12/05 23:33:36 ptr>
 
 /*
  * Copyright (c) 2008
@@ -276,7 +276,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::pop_ready( processor&
 
   // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
   cnd.wait( lk, not_empty );
-  if ( ready_pool.empty() ) {
+  if ( ready_pool.empty() ) { // check empty, not in_work: allow process the rest
     throw finish();
   }
   p = ready_pool.front();
@@ -291,7 +291,6 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
   try {
     for ( ; ; ) {
       pop_ready( p );
-      // if ( p.c != 0 ) {
       // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       (p.c->*C)( *p.s );
       if ( p.s->rdbuf()->in_avail() > 0 ) {
@@ -310,6 +309,12 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
   }
   catch ( const finish& ) {
     // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+    try {
+      std::tr2::unique_lock<std::tr2::mutex> lk( rdlock );
+      cnd.notify_all(); // release all waiting workers
+    }
+    catch ( ... ) {
+    }
   }
 
   {
