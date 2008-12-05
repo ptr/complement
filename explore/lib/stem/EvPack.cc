@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/10/15 22:35:41 ptr>
+// -*- C++ -*- Time-stamp: <08/12/05 12:17:07 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+ * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006, 2008
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -72,11 +72,9 @@ void __pack_base::__net_pack( ostream& s, const string& str )
   uint32_t sz = static_cast<uint32_t>( str.size() );
   sz = to_net( sz );
   s.write( (const char *)&sz, sizeof(uint32_t) );
-#if !defined(__HP_aCC) || (__HP_aCC > 1) // linker problem, not compiler
-  copy( str.begin(), str.end(), std::ostream_iterator<char,char,std::char_traits<char> >(s) );
-#else // Mmm, may be with __STL_DEBUG should be a bit different...
-  copy( str.begin(), str.end(), ostream_iterator<char>(s) );
-#endif
+  if ( !str.empty() ) {
+    s.write( str.data(), str.size() );
+  }
 }
 
 __FIT_DECLSPEC
@@ -106,11 +104,9 @@ void __pack_base::__pack( ostream& s, const string& str )
 {
   string::size_type sz = str.size();
   s.write( (const char *)&sz, sizeof(sz) );
-#if !defined(__HP_aCC) || (__HP_aCC > 1) // linker problem, not compiler
-  std::copy( str.begin(), str.end(), std::ostream_iterator<char,char,std::char_traits<char> >(s) );
-#else // Mmm, may be with __STL_DEBUG should be a bit different...
-  copy( str.begin(), str.end(), ostream_iterator<char>(s) );
-#endif
+  if ( sz != 0 ) {
+    s.write( str.data(), sz );
+  }
 }
 
 __FIT_DECLSPEC void gaddr_type::pack( std::ostream& s ) const
