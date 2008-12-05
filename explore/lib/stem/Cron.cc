@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/01 23:06:30 ptr>
+// -*- C++ -*- Time-stamp: <08/12/05 11:17:36 ptr>
 
 /*
  * Copyright (c) 1998, 2002, 2003, 2005, 2006, 2008
@@ -30,19 +30,22 @@ using namespace std::tr2;
 
 __FIT_DECLSPEC Cron::Cron() :
     EventHandler(),
-    running( *this )
+    running( *this ),
+    _thr( 0 )
 {
 }
 
 __FIT_DECLSPEC Cron::Cron( const char *info ) :
     EventHandler( info ),
-    running( *this )
+    running( *this ),
+    _thr( 0 )
 {
 }
 
 __FIT_DECLSPEC Cron::Cron( addr_type id, const char *info ) :
     EventHandler( id, info ),
-    running( *this )
+    running( *this ),
+    _thr( 0 )
 {
 }
 
