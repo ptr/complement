@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/01 22:48:35 ptr>
+// -*- C++ -*- Time-stamp: <08/12/05 22:47:49 ptr>
 
 /*
  * Copyright (c) 1998, 2002, 2003, 2005, 2007, 2008
@@ -152,8 +152,7 @@ class Cron :
     static void _loop( Cron* );
 
     enum {
-      CRON_ST_STARTED   = 0x10,
-      CRON_ST_SUSPENDED = 0x11
+      CRON_ST_STARTED   = 0x10
     };
 
     struct _running
@@ -163,13 +162,12 @@ class Cron :
           { }
 
         bool operator()() const
-          { return !me.isState( CRON_ST_STARTED ); }
+          { return !me._M_c.empty() || !me.isState( CRON_ST_STARTED ); }
 
         Cron& me;
     } running;
 
     std::tr2::thread* _thr;
-    std::tr2::condition_variable cond;
 
     typedef __CronEntry value_type;
     typedef std::priority_queue<value_type,
@@ -178,6 +176,7 @@ class Cron :
 
     container_type _M_c;
     std::tr2::mutex _M_l;
+    std::tr2::condition_variable cond;
 
   private:
     DECLARE_RESPONSE_TABLE( Cron, EventHandler );

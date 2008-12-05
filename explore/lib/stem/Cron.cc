@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/05 11:17:36 ptr>
+// -*- C++ -*- Time-stamp: <08/12/05 23:10:18 ptr>
 
 /*
  * Copyright (c) 1998, 2002, 2003, 2005, 2006, 2008
@@ -91,19 +91,15 @@ void __FIT_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
 
   lock_guard<mutex> _x1( _M_l );
   _M_c.push( en );
-  if ( isState( CRON_ST_SUSPENDED ) ) { // alarm if cron loop suspended
-    PopState( CRON_ST_SUSPENDED );
-    cond.notify_one();
-  } else if ( _M_c.top() == en ) { // cron has entries, but new entry is on top
-    cond.notify_one();             // so, we need wait it
-  }
+  if ( _M_c.top() == en ) { // cron has entries, but new entry is on top
+    cond.notify_one();      // so, we need wait it; if only one entry now,
+  }                         // then notification also happen (wake-up)
 }
 
 // Remove cron entry if recipient address and event code match to request
 void __FIT_DECLSPEC Cron::Remove( const Event_base<CronEntry>& entry )
 {
   lock_guard<mutex> _x1( _M_l );
-  cond.notify_one(); // in any case, remove I something or not
 
   const CronEntry& ne = entry.value();
   std::vector<value_type> tmp;
@@ -121,6 +117,8 @@ void __FIT_DECLSPEC Cron::Remove( const Event_base<CronEntry>& entry )
     _M_c.push( tmp.back() );
     tmp.pop_back();
   }
+
+  cond.notify_one(); // in any case, remove I something or not
 }
 
 // Remove cron entry if recipient address and event code match to request
@@ -128,8 +126,6 @@ void __FIT_DECLSPEC Cron::Remove( const Event_base<CronEntry>& entry )
 void __FIT_DECLSPEC Cron::RemoveArg( const Event_base<CronEntry>& entry )
 {
   lock_guard<mutex> _x1( _M_l );
-
-  cond.notify_one(); // in any case, remove I something or not
 
   const CronEntry& ne = entry.value();
   std::vector<value_type> tmp;
@@ -148,13 +144,15 @@ void __FIT_DECLSPEC Cron::RemoveArg( const Event_base<CronEntry>& entry )
     _M_c.push( tmp.back() );
     tmp.pop_back();
   }
+
+  cond.notify_one(); // in any case, remove I something or not
 }
 
 void __FIT_DECLSPEC Cron::Start()
 {
   lock_guard<mutex> _x1( _M_l );
 
-  if ( !_M_c.empty() && _thr != 0 ) { // start only if Cron queue not empty
+  if ( !_M_c.empty() && (_thr == 0) ) { // start only if Cron queue not empty
     _thr = new thread( _loop, this );
   }
 }
@@ -168,9 +166,6 @@ void __FIT_DECLSPEC Cron::Stop()
     cond.notify_one();
   }
 
-  if ( isState( CRON_ST_SUSPENDED ) ) {
-    RemoveState( CRON_ST_SUSPENDED );
-  }
   _thr->join();
 
   delete _thr;
@@ -202,20 +197,23 @@ void Cron::_loop( Cron* p )
   while ( me.isState( CRON_ST_STARTED ) ) {
     unique_lock<mutex> lk( me._M_l );
     if ( me._M_c.empty() ) {
-      me.PushState( CRON_ST_SUSPENDED );
       me.cond.wait( lk, me.running );
-      continue;
+      if ( !me.isState( CRON_ST_STARTED ) ) {
+        break;
+      }
     }
     // At this point _M_c should never be empty!
 
-    bool alarm = me.cond.timed_wait( lk, me._M_c.top().expired );  // time expired, otherwise signal or error
+    if ( me._M_c.top().expired > get_system_time() ) {
+      bool alarm = me.cond.timed_wait( lk, me._M_c.top().expired, me.running );
 
-    if ( me._M_c.empty() ) { // event removed while I wait?
-      continue;
-    }
+      if ( me._M_c.empty() ) { // event removed while I wait?
+        continue;
+      }
 
-    if ( alarm && (me._M_c.top().expired > get_system_time()) ) {
-      continue;
+      if ( alarm && (me._M_c.top().expired > get_system_time()) ) {
+        continue;
+      }
     }
 
     __CronEntry en = me._M_c.top(); // get and eject top cron entry
@@ -239,7 +237,7 @@ void Cron::_loop( Cron* p )
       en.start = en.expired;
       en.count = 0;
       me._M_c.push( en );
-    } else if ( (en.count) < (en.n) ) { // This SC5.0 patch 107312-06 bug
+    } else if ( en.count < en.n ) {
       me._M_c.push( en );
     }
   }

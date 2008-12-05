@@ -1,5 +1,9 @@
 2008-12-05  Petr Ovtchenkov  <ptr@void-ptr.info>
 
+	* Cron.h, Cron.cc: fix cron loop and wake-up;
+
+	* libstem: library version 4.9.1.
+	
 	* NetTransport.cc, NetTransport.h: review and clean
 	NetTransport* design; reopen of NetTransportMgr
 	not permitted now, like sockstream; NetTransportMgr open
@@ -9,7 +13,7 @@
 
 2008-12-03  Petr Ovtchenkov  <ptr@void-ptr.info>
 
-	* Cron.cc: fix wakeup condition;
+	* Cron.cc: fix wake-up condition;
 
 	* libstem: library version 4.8.6.
 
