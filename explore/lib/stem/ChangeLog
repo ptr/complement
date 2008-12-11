@@ -1,3 +1,13 @@
+2008-12-12  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* EvManager.cc: NetTransport_base's push should be
+	under locks; otherwise removing object possible
+	while we still within push;
+
+	* unit_test.cc: possible test for problem above;
+
+	* libstem: library version 4.9.2.
+
 2008-12-05  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* Cron.h, Cron.cc: fix cron loop and wake-up;

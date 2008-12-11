@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/11/27 19:05:59 yeti>
+// -*- C++ -*- Time-stamp: <08/12/12 00:46:37 ptr>
 
 /*
  *
@@ -493,7 +493,7 @@ void EvManager::Send( const Event& e )
 {
   if ( e.dest() & extbit ) { // external object
     try {
-      unique_lock<mutex> lk( _lock_xheap );
+      lock_guard<mutex> lk( _lock_xheap );
       ext_uuid_heap_type::const_iterator i = _ex_heap.find( e.dest() );
       if ( i == _ex_heap.end() ) { // destination not found
         ostringstream s;
@@ -523,7 +523,8 @@ void EvManager::Send( const Event& e )
       } else {
         gaddr_src = j->second;
       }
-      lk.unlock();
+
+      lock_guard<mutex> _x2( _lock_iheap );
 
       switch ( k ) {
         case detail::transport::socket_tcp:

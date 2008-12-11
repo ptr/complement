@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/01 21:58:50 ptr>
+// -*- C++ -*- Time-stamp: <08/12/12 01:09:15 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2008
@@ -67,6 +67,7 @@ class stem_test
     int EXAM_DECL(peer);
     int EXAM_DECL(last_event);
     int EXAM_DECL(boring_manager);
+    int EXAM_DECL(boring_manager_more);
     int EXAM_DECL(convert);
     int EXAM_DECL(cron);
 
@@ -844,6 +845,76 @@ int EXAM_IMPL(stem_test::boring_manager)
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(stem_test::boring_manager_more)
+{
+  condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+
+  try {
+    // Client
+    std::tr2::this_thread::fork();
+
+    int eflag = 0;
+    stem::Event ev( NODE_EV_ECHO );
+
+    try {
+      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+
+      for ( int i = 0; i < 10; ++i ) {
+        const int n = 10;
+        stem::NetTransportMgr *mgr[n];
+        mgr[0] = new stem::NetTransportMgr;
+        mgr[0]->open( "localhost", 6995 );
+
+        for ( int j = 1; j < n; ++j ) {
+          mgr[j] = new stem::NetTransportMgr;
+          stem::addr_type a = mgr[j]->open( "localhost", 6995 );
+          EXAM_CHECK_ASYNC_F( a != stem::badaddr, eflag );
+
+          ev.dest( a );
+          ev.value() = "echo string";
+
+          EchoClient node;
+
+          node.Send( ev );
+
+          mgr[j]->close();
+          mgr[j]->join();
+          delete mgr[j];
+        }
+        mgr[0]->close();
+        mgr[0]->join();
+        delete mgr[0];
+      }
+    }
+    catch ( ... ) {
+      eflag = 2;
+    }
+    exit( eflag );
+  }
+  catch ( std::tr2::fork_in_parent& child ) {
+    connect_processor<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
+    StEMecho echo( 0, "echo service"); // <= zero! 'echo' server, default ('zero' address)
+
+    fcnd.notify_all();
+
+    int stat = -1;
+    EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+    if ( WIFEXITED(stat) ) {
+      EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+    } else {
+      EXAM_ERROR( "child interrupted" );
+    }
+
+    srv.close();
+    srv.wait();
+  }
+
+  (&fcnd)->~condition_event_ip();
+  shm_cnd.deallocate( &fcnd, 1 );
+
+  return EXAM_RESULT;
+}
+
 int EXAM_IMPL(stem_test::convert)
 {
   Convert conv;
@@ -967,8 +1038,9 @@ int main( int argc, const char** argv )
          tc[4] = t.add( &stem_test::echo_net, test, "echo_net",
                 tc[3] = t.add( &stem_test::echo, test, "echo", tc[1] ) ) );
 
-  t.add( &stem_test::boring_manager, test, "boring_manager",
-         t.add( &stem_test::peer, test, "peer", tc[3] ) );
+  t.add( &stem_test::boring_manager_more, test, "boring_manager with echo",
+         t.add( &stem_test::boring_manager, test, "boring_manager",
+                t.add( &stem_test::peer, test, "peer", tc[3] ) ) );
 
   tc[5] = t.add( &stem_test::convert, test, "convert", tc[0] );
 
