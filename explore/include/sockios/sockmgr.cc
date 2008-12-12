@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/14 15:45:50 yeti>
+// -*- C++ -*- Time-stamp: <08/12/12 14:36:12 ptr>
 
 /*
  * Copyright (c) 2008
@@ -136,14 +136,18 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
         if ( descr.find( ev_add.data.fd ) != descr.end() ) { // reuse?
           // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
           if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev_add.data.fd, &ev_add ) < 0 ) {
-            std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-            // descr.erase( ev_add.data.fd );
-            // throw system_error
-            return;
+            // std::cerr << __FILE__ << ":" << __LINE__ << " " << std::error_code( errno, std::posix_category ).message() << " " << ev_add.data.fd << " " << std::tr2::getpid() << std::endl;
+            descr.erase( ev_add.data.fd );
+            if ( epoll_ctl( efd, EPOLL_CTL_ADD, ev_add.data.fd, &ev_add ) < 0 ) {
+              std::cerr << __FILE__ << ":" << __LINE__ << " " << std::error_code( errno, std::posix_category ).message() << " " << ev_add.data.fd << " " << std::tr2::getpid() << std::endl;
+              // throw system_error
+              return;
+            }
           }         
         } else {
           // std::cerr << __FILE__ << ":" << __LINE__ << " " << ev_add.data.fd << std::endl;
           if ( epoll_ctl( efd, EPOLL_CTL_ADD, ev_add.data.fd, &ev_add ) < 0 ) {
+            // std::cerr << __FILE__ << ":" << __LINE__ << " " << std::error_code( errno, std::posix_category ).message() << " " << ev_add.data.fd << " " << std::tr2::getpid() << std::endl;
             // std::cerr << __FILE__ << ":" << __LINE__ << " " << system_error( posix_error::make_error_code( static_cast<posix_error::posix_errno>(errno) ) ).what() << std::endl;
             return; // already closed?
           }
@@ -401,7 +405,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
               xev.data.fd = ev.data.fd;
               // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
               if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) < 0 ) {
-                std::cerr << __FILE__ << ":" << __LINE__ << " " << ev.data.fd << " " << errno << std::endl;
+                std::cerr << __FILE__ << ":" << __LINE__ << " " << std::error_code( errno, std::posix_category ).message() << " " << ev.data.fd << " " << std::tr2::getpid() << std::endl;
               }
             }
             break;
