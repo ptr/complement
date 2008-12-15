@@ -1,3 +1,12 @@
+2008-12-15  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* sockstream.cc: write may be interrupted, retry;
+	second write may be interrupted too, or return with
+	EAGAIN on nonblock socket---need next attempt instead of
+	return eof.
+
+	* libsockios: release 2.1.3.
+
 2008-12-12  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* sockmgr.cc: looks like sometimes I can see 'reuse' of file

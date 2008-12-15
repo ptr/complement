@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/01 13:30:58 yeti>
+// -*- C++ -*- Time-stamp: <08/12/15 18:33:58 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -353,29 +353,25 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
   if ( count ) {
     count *= sizeof(charT);
     long offset = (this->*_xwrite)( this->pbase(), count );
-    if ( offset < 0 ) {
-      if ( errno == EAGAIN ) {
-        pollfd wpfd;
-        wpfd.fd = basic_socket_t::_fd;
-        wpfd.events = POLLOUT | POLLHUP | POLLWRNORM;
-        wpfd.revents = 0;
-        while ( poll( &wpfd, 1, basic_socket_t::_use_wrtimeout ? basic_socket_t::_wrtimeout.count() : -1 ) <= 0 ) { // wait infinite
-          if ( errno == EINTR ) { // may be interrupted, check and ignore
-            errno = 0;
-            continue;
-          }
-          return traits::eof();
-        }
-        if ( (wpfd.revents & POLLERR) != 0 ) {
-          return traits::eof();
-        }
-        offset = (this->*_xwrite)( this->pbase(), count );
-        if ( offset < 0 ) {
-          return traits::eof();
-        }
-      } else {
+    while ( offset < 0 ) {
+      if ( (errno != EAGAIN) && (errno != EINTR) ) {
         return traits::eof();
       }
+      pollfd wpfd;
+      wpfd.fd = basic_socket_t::_fd;
+      wpfd.events = POLLOUT | POLLHUP | POLLWRNORM;
+      wpfd.revents = 0;
+      while ( poll( &wpfd, 1, basic_socket_t::_use_wrtimeout ? basic_socket_t::_wrtimeout.count() : -1 ) <= 0 ) { // wait infinite
+        // may be interrupted, check and ignore
+        if ( (errno != EINTR) && (errno != EAGAIN) ) {
+          return traits::eof();
+        }
+        errno = 0;
+      }
+      if ( (wpfd.revents & POLLERR) != 0 ) {
+        return traits::eof();
+      }
+      offset = (this->*_xwrite)( this->pbase(), count );
     }
     if ( offset < count ) {
       // MUST BE: (offset % sizeof(char_traits)) == 0 !
