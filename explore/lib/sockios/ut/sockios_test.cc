@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/04 00:16:54 ptr>
+// -*- C++ -*- Time-stamp: <08/12/17 10:48:13 ptr>
 
 /*
  *
@@ -1068,5 +1068,121 @@ int EXAM_IMPL(sockios_test::read0)
     EXAM_ERROR( err.what() );
   }
 
+  return EXAM_RESULT;
+}
+
+class byte_cnt
+{
+  public:
+    static const int sz;
+    static const int bsz;
+    static int r;
+
+    byte_cnt( sockstream& s )
+      {
+        EXAM_CHECK_ASYNC( s.good() );
+      }
+
+    ~byte_cnt()
+      { }
+
+    void connect( sockstream& s )
+      {
+        char buf[bsz];
+
+        fill( buf, buf + sizeof(buf), 0x0 );
+
+        s.read( buf, sizeof(buf) );
+
+        EXAM_CHECK_ASYNC( s.good() );
+
+        lock_guard<mutex> lk( lock );
+        r += count( buf, buf + sizeof(buf), 1 );
+        if ( r == sz * bsz ) {
+          cnd.notify_one();
+        }
+      }
+
+    static mutex lock;
+    static condition_variable cnd;
+};
+
+const int byte_cnt::sz = 64 * 5;
+const int byte_cnt::bsz = 1024;  // bsz * sz > MTU of lo
+int byte_cnt::r = 0;
+mutex  byte_cnt::lock;
+condition_variable byte_cnt::cnd;
+
+struct byte_cnt_predicate
+{
+    bool operator ()()
+      { return byte_cnt::r == (byte_cnt::sz * byte_cnt::bsz); }
+};
+
+int EXAM_IMPL(sockios_test::few_packets)
+{
+  char buf[byte_cnt::bsz * byte_cnt::sz];
+
+  fill( buf, buf + sizeof(buf), 0x1 );
+
+  {
+    connect_processor<byte_cnt> prss( 2008 );
+
+    EXAM_CHECK( prss.good() );
+    EXAM_CHECK( prss.is_open() );
+
+    sockstream s( "localhost", 2008 );
+
+    EXAM_CHECK( s.is_open() );
+    EXAM_CHECK( s.good() );
+
+    s.write( buf, sizeof(buf) );
+
+    EXAM_CHECK( s.good() );
+
+    s.flush();
+
+    unique_lock<mutex> lk( byte_cnt::lock );
+    byte_cnt::cnd.timed_wait( lk, milliseconds(500), byte_cnt_predicate() );
+  }
+
+  EXAM_CHECK( byte_cnt::r == (byte_cnt::bsz * byte_cnt::sz) );
+  
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(sockios_test::few_packets_loop)
+{
+  char buf[byte_cnt::bsz];
+
+  fill( buf, buf + sizeof(buf), 0x1 );
+
+  byte_cnt::r = 0;
+
+  {
+    connect_processor<byte_cnt> prss( 2008 );
+
+    EXAM_CHECK( prss.good() );
+    EXAM_CHECK( prss.is_open() );
+
+    sockstream s( "localhost", 2008 );
+
+    EXAM_CHECK( s.is_open() );
+    EXAM_CHECK( s.good() );
+
+    for ( int i = 0; (i < byte_cnt::sz) && s.good(); ++i ) {
+      s.write( buf, sizeof(buf) );
+    }
+
+    EXAM_CHECK( s.good() );
+
+    s.flush();
+
+    unique_lock<mutex> lk( byte_cnt::lock );
+    byte_cnt::cnd.timed_wait( lk, milliseconds(500), byte_cnt_predicate() );
+  }
+
+  EXAM_CHECK( byte_cnt::r == (byte_cnt::bsz * byte_cnt::sz) );
+  
   return EXAM_RESULT;
 }

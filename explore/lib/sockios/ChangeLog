@@ -1,3 +1,15 @@
+2008-12-17  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* sockstream.cc: due to sockets nature and from fact that
+	sockets descriptors used in NONBLOCK mode, overflow() may
+	not flush whole buffer; that's why xsputn may do a few 
+	overflow() calls, before the rest of sent string become less
+	then departure buffer; xsputn also can't reset buffer directly
+	to string, because it may move content of source string within
+	overflow();
+
+	* libsockios: release 2.2.0.
+
 2008-12-15  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* sockstream.cc: write may be interrupted, retry;

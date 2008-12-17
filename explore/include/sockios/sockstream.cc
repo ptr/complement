@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/15 18:33:58 ptr>
+// -*- C++ -*- Time-stamp: <08/12/17 11:00:47 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -310,12 +310,14 @@ template<class charT, class traits, class _Alloc>
 __FIT_TYPENAME basic_sockbuf<charT, traits, _Alloc>::int_type
 basic_sockbuf<charT, traits, _Alloc>::underflow()
 {
-  if( !basic_socket_t::is_open() )
+  if( !basic_socket_t::is_open() ) {
     return traits::eof();
+  }
 
   std::tr2::unique_lock<std::tr2::mutex> lk( ulck );
 
   if ( this->gptr() < this->egptr() ) {
+    std::cerr << __FILE__ << ':' << __LINE__ << std::endl;
     return traits::to_int_type(*this->gptr());
   }
 
@@ -340,8 +342,9 @@ template<class charT, class traits, class _Alloc>
 __FIT_TYPENAME basic_sockbuf<charT, traits, _Alloc>::int_type
 basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
 {
-  if ( !basic_socket_t::is_open() )        
+  if ( !basic_socket_t::is_open() ) {
     return traits::eof();
+  }
 
   if ( !traits::eq_int_type( c, traits::eof() ) && this->pptr() < this->epptr() ) {
     sputc( traits::to_char_type(c) );
@@ -400,32 +403,30 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
 template<class charT, class traits, class _Alloc>
 int basic_sockbuf<charT, traits, _Alloc>::sync()
 {
-  // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
   if ( !basic_socket_t::is_open() ) {
     return -1;
   }
 
   long count = this->pptr() - this->pbase();
   if ( count ) {
-    // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-    // _STLP_ASSERT( this->pbase() != 0 );
     count *= sizeof(charT);
-    long start = 0;
+    long start = 0L;
+    long offset = 0L;
     while ( count > 0 ) {
-      long offset = (this->*_xwrite)( this->pbase() + start, count );
-      // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+      offset = (this->*_xwrite)( this->pbase() + start, count );
       if ( offset < 0 ) {
-        // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
         if ( errno == EINTR ) {
           errno = 0;
           continue;
-        } else if ( errno == EAGAIN ) {
+        }
+
+        if ( errno == EAGAIN ) {
           pollfd wpfd;
           wpfd.fd = basic_socket_t::_fd;
           wpfd.events = POLLOUT | POLLHUP | POLLWRNORM;
           wpfd.revents = 0;
           while ( poll( &wpfd, 1, basic_socket_t::_use_wrtimeout ? basic_socket_t::_wrtimeout.count() : -1 ) <= 0 ) { // wait infinite
-            if ( errno == EINTR ) { // may be interrupted, check and ignore
+            if ( (errno == EINTR) || (errno == EAGAIN) ) { // may be interrupted, check and ignore
               errno = 0;
               // reduce timeout?
               continue;
@@ -435,15 +436,10 @@ int basic_sockbuf<charT, traits, _Alloc>::sync()
           if ( (wpfd.revents & POLLERR) != 0 ) {
             return -1;
           }
-          offset = (this->*_xwrite)( this->pbase() + start, count );
-          if ( offset < 0 ) {
-            return -1;
-          }
-        } else {
-          return -1;
+          continue;
         }
+        return -1;
       }
-      // std::cerr << __FILE__ << ":" << __LINE__ << " " << basic_socket_t::_fd << std::endl;
       count -= offset;
       start += offset;
     }
@@ -460,27 +456,40 @@ streamsize basic_sockbuf<charT, traits, _Alloc>::xsputn( const char_type *s, str
     return 0;
   }
 
-  if ( this->epptr() - this->pptr() > n ) {
+  streamsize __n_put = this->epptr() - this->pptr();
+
+  if ( __n_put > n ) {
     traits::copy( this->pptr(), s, n );
     this->pbump( n );
-  } else {
-    streamsize __n_put = this->epptr() - this->pptr();
-    traits::copy( this->pptr(), s, __n_put );
-    this->pbump( __n_put );
+    return n;
+  }
 
-    if ( traits::eq_int_type(overflow(),traits::eof()) )
-      return 0;
-
-    setp( (char_type *)(s + __n_put), (char_type *)(s + n) );
-    this->pbump( n - __n_put );
-
+  if ( __n_put == 0 ) {
     if ( traits::eq_int_type(overflow(),traits::eof()) ) {
-      setp( _bbuf, _bbuf + ((_ebuf - _bbuf) >> 1) );
       return 0;
     }
-    setp( _bbuf, _bbuf + ((_ebuf - _bbuf) >> 1) );
+    __n_put = this->epptr() - this->pptr();
   }
-  return n;
+
+  streamsize count = 0;
+
+  while ( __n_put < n ) { // __n_put > 0 here
+    traits::copy( this->pptr(), s, __n_put );
+    this->pbump( __n_put );
+    n -= __n_put;
+    s += __n_put;
+    count += __n_put;
+    if ( traits::eq_int_type(overflow(),traits::eof()) ) {
+      return count;
+    }
+    __n_put = this->epptr() - this->pptr();
+  }
+
+  traits::copy( this->pptr(), s, n );
+  this->pbump( n );
+  count += n;
+
+  return count;
 }
 
 template<class charT, class traits, class _Alloc>

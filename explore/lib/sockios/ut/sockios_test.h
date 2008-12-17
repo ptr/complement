@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/04 00:14:58 ptr>
+// -*- C++ -*- Time-stamp: <08/12/17 10:50:19 ptr>
 
 /*
  *
@@ -32,6 +32,9 @@ class sockios_test
     int EXAM_DECL(income_data);
     int EXAM_DECL(srv_sigpipe);
     int EXAM_DECL(read0);
+
+    int EXAM_DECL(few_packets);
+    int EXAM_DECL(few_packets_loop);
 };
 
 #endif // __sockios2_test_h

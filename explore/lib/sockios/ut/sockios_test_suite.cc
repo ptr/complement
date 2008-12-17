@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/04 00:18:44 ptr>
+// -*- C++ -*- Time-stamp: <08/12/17 10:49:48 ptr>
 
 /*
  *
@@ -76,6 +76,8 @@ int main( int argc, const char** argv )
   t.add( &sockios_test::disconnect_rawclnt, test, "disconnect raw client", 
     t.add( &sockios_test::disconnect, test, "disconnect sockstream", tc[3] ) );
   t.add( &sockios_test::income_data, test, "all data available after sockstream was closed, different processes", tc[4] );
+  t.add( &sockios_test::few_packets_loop, test, "packets boundary, loop", 
+    t.add( &sockios_test::few_packets, test, "packets boundary", tc[3] ) );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( cerr );
