@@ -8,7 +8,14 @@
 	to string, because it may move content of source string within
 	overflow();
 
-	* libsockios: release 2.2.0.
+	* libsockios: release 2.2.0;
+
+	* sockmgr.cc: 'reuse' of file descriptor after accept connection,
+	old [with same number] already removed from epoll vector,
+	but still present in descr container [my bug?]; push it into
+	epoll vector; see also 2008-12-12 below;
+
+	* libsockios: release 2.2.1.
 
 2008-12-15  Petr Ovtchenkov  <ptr@void-ptr.info>
 

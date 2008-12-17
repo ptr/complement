@@ -297,10 +297,13 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
       if ( descr.find( fd ) != descr.end() ) { // reuse?
         // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
         if ( epoll_ctl( efd, EPOLL_CTL_MOD, fd, &ev_add ) < 0 ) {
-          std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << " " << errno << std::endl;
+          // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << " " << errno << std::endl;
           descr.erase( fd );
-          // throw system_error
-          return; // throw
+          if ( epoll_ctl( efd, EPOLL_CTL_ADD, fd, &ev_add ) < 0 ) {
+            std::cerr << __FILE__ << ":" << __LINE__ << " " << std::error_code( errno, std::posix_category ).message() << " " << fd << " " << std::tr2::getpid() << std::endl;
+            // throw system_error
+            return;
+          }
         }
       } else {
         // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
