@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/17 23:48:13 ptr>
+// -*- C++ -*- Time-stamp: <08/12/18 13:52:33 ptr>
 
 /*
  * Copyright (c) 2008
@@ -188,12 +188,17 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
           cmd_from_pipe();
         } else {
           typename fd_container_type::iterator ifd = descr.find( ev[i].data.fd );
-          if ( ifd == descr.end() ) {
-            std::cerr << __FILE__ << ":" << __LINE__ << " " << ev[i].data.fd << std::endl;
+          if ( ifd == descr.end() ) { // already closed
+            // and should be already removed from efd's vector,
+            // so no epoll_ctl( efd, EPOLL_CTL_DEL, ev[i].data.fd, 0 ) here
+#if 0
+            std::cerr << __FILE__ << ':' << __LINE__ << ' ' << ev[i].data.fd << std::endl;
             if ( epoll_ctl( efd, EPOLL_CTL_DEL, ev[i].data.fd, 0 ) < 0 ) {
               // throw system_error
-              std::cerr << __FILE__ << ":" << __LINE__ << " " << efd << " " << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message() << std::endl;
+              std::cerr << __FILE__ << ':' << __LINE__ << ' ' << ev[i].data.fd
+                        << ' ' << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message() << std::endl;
             }
+#endif
             continue;
             // throw std::logic_error( "file descriptor in epoll, but not in descr[]" );
           }
@@ -221,6 +226,10 @@ template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
 {
   epoll_event ev_add;
+#if 0
+  memset( &ev_add, 0, sizeof(epoll_event) );
+#endif
+
   ctl _ctl;
 
   int r = read( pipefd[0], &_ctl, sizeof(ctl) );
@@ -272,12 +281,14 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
 #endif
       ev_add.data.fd = static_cast<sockbuf_t*>(_ctl.data.ptr)->fd();
       if ( ev_add.data.fd >= 0 ) {
+#if 0
         if ( descr.find( ev_add.data.fd ) != descr.end() ) { // reuse?
           // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
           if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev_add.data.fd, &ev_add ) < 0 ) {
             // std::cerr << __FILE__ << ":" << __LINE__ << " " << std::error_code( errno, std::posix_category ).message() << " " << ev_add.data.fd << " " << std::tr2::getpid() << std::endl;
-            descr.erase( ev_add.data.fd );
+            // descr.erase( ev_add.data.fd );
             if ( epoll_ctl( efd, EPOLL_CTL_ADD, ev_add.data.fd, &ev_add ) < 0 ) {
+              descr.erase( ev_add.data.fd );
               std::cerr << __FILE__ << ":" << __LINE__ << " " << std::error_code( errno, std::posix_category ).message() << " " << ev_add.data.fd << " " << std::tr2::getpid() << std::endl;
               // throw system_error
               return;
@@ -291,6 +302,13 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
             return; // already closed?
           }
         }
+#else
+        if ( epoll_ctl( efd, EPOLL_CTL_ADD, ev_add.data.fd, &ev_add ) < 0 ) {
+          descr.erase( ev_add.data.fd );
+          // std::cerr << __FILE__ << ":" << __LINE__ << " " << std::error_code( errno, std::posix_category ).message() << " " << ev_add.data.fd << " " << std::tr2::getpid() << std::endl;
+          return; // already closed?
+        }      
+#endif
         descr[ev_add.data.fd] = fd_info( static_cast<sockbuf_t*>(_ctl.data.ptr) );
       }
       break;
@@ -433,6 +451,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
 #endif
       ev_add.data.fd = fd;
 
+#if 0
       if ( descr.find( fd ) != descr.end() ) { // reuse?
         // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
         if ( epoll_ctl( efd, EPOLL_CTL_MOD, fd, &ev_add ) < 0 ) {
@@ -452,6 +471,13 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
           return; // throw
         }
       }
+#else
+      if ( epoll_ctl( efd, EPOLL_CTL_ADD, fd, &ev_add ) < 0 ) {
+        std::cerr << __FILE__ << ":" << __LINE__ << " " << std::error_code( errno, std::posix_category ).message() << " " << fd << " " << std::tr2::getpid() << std::endl;
+        // throw system_error
+        return;
+      }      
+#endif
 
       // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       sockbuf_t* b = (*info.p)( fd, addr );
@@ -508,6 +534,9 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
         // process extract data from buffer too slow for us!
         if ( (info.flags & fd_info::level_triggered) == 0 ) {
           epoll_event xev;
+#if 1
+          xev.data.u64 = 0ULL;
+#endif
           xev.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
           xev.data.fd = ev.data.fd;
           info.flags |= fd_info::level_triggered;
@@ -622,7 +651,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
         if ( errno == EBADF ) {
           // already closed?
           // std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << errno << std::endl;
-          std::cerr << __FILE__ << ":" << __LINE__ << " " << efd << " " << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message() << std::endl;
+          std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message() << std::endl;
          } else {
         // throw system_error
           std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << errno << std::endl;

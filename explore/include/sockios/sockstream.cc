@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/17 11:00:47 ptr>
+// -*- C++ -*- Time-stamp: <08/12/18 12:04:37 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -317,7 +317,7 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
   std::tr2::unique_lock<std::tr2::mutex> lk( ulck );
 
   if ( this->gptr() < this->egptr() ) {
-    std::cerr << __FILE__ << ':' << __LINE__ << std::endl;
+    // std::cerr << __FILE__ << ':' << __LINE__ << std::endl;
     return traits::to_int_type(*this->gptr());
   }
 
