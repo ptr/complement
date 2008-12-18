@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/14 15:35:14 yeti>
+// -*- C++ -*- Time-stamp: <08/12/17 23:48:38 ptr>
 
 /*
  * Copyright (c) 2008
@@ -147,138 +147,14 @@ class sockmgr
       { me->io_worker(); }
 
   public:
-    sockmgr( int hint = 1024, int ret = 1024 ) :
-        efd( -1 ),
-        n_ret( ret ),
-        _worker( 0 )
-      {
-        pipefd[0] = -1;
-        pipefd[1] = -1;
+    sockmgr( int hint = 1024, int ret = 1024 );
 
-        // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-        efd = epoll_create( hint );
-        if ( efd < 0 ) {
-          // throw system_error( errno )
-          throw std::runtime_error( "epoll_create" );
-        }
-        if ( pipe( pipefd ) < 0 ) { // check err
-          ::close( efd );
-          efd = -1;
-          // throw system_error;
-          throw std::runtime_error( "pipe" );
-        }
-        // cfd = pipefd[1];
+    ~sockmgr();
 
-        epoll_event ev_add;
-        ev_add.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
-#if 1
-        ev_add.data.u64 = 0ULL;
-#endif
-        ev_add.data.fd = pipefd[0];
-        epoll_ctl( efd, EPOLL_CTL_ADD, pipefd[0], &ev_add );
-
-        _worker = new std::tr2::thread( _loop, this );
-        // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-
-        // ctl _ctl;
-        // _ctl.cmd = rqstart;
-
-        // write( pipefd[1], &_ctl, sizeof(ctl) );
-      }
-
-    ~sockmgr()
-      {
-        if ( _worker->joinable() ) {
-          ctl _ctl;
-          _ctl.cmd = rqstop;
-          _ctl.data.ptr = 0;
-
-          ::write( pipefd[1], &_ctl, sizeof(ctl) );
-
-          // _worker->join();
-        }
-
-        delete _worker;
-        _worker = 0;
-
-        ::close( pipefd[1] );
-        pipefd[1] = -1;
-        ::close( pipefd[0] );
-        pipefd[0] = -1;
-        ::close( efd );
-        efd = -1;
-      }
-
-    void push( socks_processor_t& p )
-      {
-        // std::cerr << __FILE__ << ":" << __LINE__ << " " << p.use_count() << std::endl;
-        ctl _ctl;
-        _ctl.cmd = listener;
-        _ctl.data.ptr = static_cast<void *>(&p);
-
-        p.addref();
-        int r = ::write( pipefd[1], &_ctl, sizeof(ctl) );
-        if ( r < 0 || r != sizeof(ctl) ) {
-          p.release();
-          throw std::runtime_error( "can't write to pipe" );
-        }
-      }
-
-    void push( sockbuf_t& s )
-      {
-        // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-        ctl _ctl;
-        _ctl.cmd = tcp_buffer;
-        _ctl.data.ptr = static_cast<void *>(&s);
-
-        errno = 0;
-        int r = ::write( pipefd[1], &_ctl, sizeof(ctl) );
-        if ( r < 0 || r != sizeof(ctl) ) {
-          throw std::runtime_error( "can't write to pipe" );
-        }
-      }
-
-    void pop( socks_processor_t& p, sock_base::socket_type _fd )
-      {
-        ctl _ctl;
-        _ctl.cmd = listener_on_exit;
-        _ctl.data.ptr = reinterpret_cast<void *>(&p);
-
-        p.addref();
-        int r = ::write( pipefd[1], &_ctl, sizeof(ctl) );
-        if ( r < 0 || r != sizeof(ctl) ) {
-          p.release();
-          throw std::runtime_error( "can't write to pipe" );
-        }
-      }
-
-    void exit_notify( sockbuf_t* b, sock_base::socket_type fd )
-      {
-        // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-        try {
-          std::tr2::unique_lock<std::tr2::mutex> lk( dll, std::tr2::defer_lock );
-
-          if ( lk.try_lock() ) {
-            if ( b->_notify_close ) {
-              // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
-              typename fd_container_type::iterator i = descr.find( fd );
-              if ( (i != descr.end()) && (i->second.b == b) && (i->second.p == 0) ) {
-                // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
-                  if ( epoll_ctl( efd, EPOLL_CTL_DEL, fd, 0 ) < 0 ) {
-                    // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
-                    // throw system_error
-                  }
-                  // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
-                  descr.erase( i );
-              }
-              b->_notify_close = false;
-            }
-          }
-        }
-        catch ( const std::tr2::lock_error& ) {
-          // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
-        }
-      }
+    void push( socks_processor_t& p );
+    void push( sockbuf_t& s );
+    void pop( socks_processor_t& p, sock_base::socket_type _fd );
+    void exit_notify( sockbuf_t* b, sock_base::socket_type fd );
 
   private:
     sockmgr( const sockmgr& )
