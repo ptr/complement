@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/17 23:48:38 ptr>
+// -*- C++ -*- Time-stamp: <08/12/19 10:00:22 ptr>
 
 /*
  * Copyright (c) 2008
@@ -161,6 +161,9 @@ class sockmgr
       { }
     sockmgr& operator =( const sockmgr& )
       { return *this; }
+
+    struct fdclose
+    { };
 
     int check_closed_listener( socks_processor_t* p );
     void dump_descr();
