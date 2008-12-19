@@ -455,6 +455,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
 
         if ( offset == 0 ) {
           // EPOLLRDHUP may be missed in kernel, but offset 0 is the same
+          epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ); // ignore possible error
           throw fdclose();
         }
 
@@ -475,6 +476,8 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
               break; // normal flow, back to epoll
             }
             // already closed?
+          } else {
+            epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ); // ignore possible error
           }
           // EBADF (already closed?), EFAULT (Bad address),
           // ECONNRESET (Connection reset by peer), ...
@@ -509,6 +512,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
     }
 
     if ( (ev.events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR) ) != 0 ) {
+      epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ); // ignore possible error
       throw fdclose();
     }
     // if ( ev.events & EPOLLHUP ) {
@@ -535,11 +539,6 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
   }
   catch ( const fdclose& ) {
     errno = 0;
-
-    if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
-      // throw system_error
-      std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << errno << std::endl;
-    }
 
     if ( info.p != 0 ) {
       b->close();
