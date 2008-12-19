@@ -13,6 +13,7 @@
 #include "shm_test.h"
 #include "mt_test_wg21.h"
 #include "sys_err_test.h"
+#include "flock_test.h"
 
 #include <config/feature.h>
 
@@ -108,11 +109,18 @@ int main( int argc, const char** argv )
 
   uid_test_wg21 test_wg21_uid;
 
+  exam::test_suite::test_case_type uidtc[3];
+
   t.add( &uid_test_wg21::uid, test_wg21_uid, "uid_test_wg21::uid",
-         t.add( &uid_test_wg21::uidstr, test_wg21_uid, "uid_test_wg21::uidstr" ) );
+         uidtc[0] = t.add( &uid_test_wg21::uidstr, test_wg21_uid, "uid_test_wg21::uidstr" ) );
   t.add( &uid_test_wg21::uidconv, test_wg21_uid, "uid_test_wg21::uidconv",
     t.add( &uid_test_wg21::hostid, test_wg21_uid, "uid_test_wg21::hostid",
       t.add( &uid_test_wg21::hostidstr, test_wg21_uid, "uid_test_wg21::hostidstr" ) ) );
+
+  flock_test flock;
+
+  t.add( &flock_test::read_lock, flock, "file lock, read",
+    t.add( &flock_test::create, flock, "create reference file", uidtc[0] ) );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );

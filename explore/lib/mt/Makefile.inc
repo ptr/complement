@@ -1,9 +1,8 @@
-# -*- Makefile -*- Time-stamp: <08/09/08 23:45:46 ptr>
+# -*- Makefile -*- Time-stamp: <08/12/19 20:22:04 yeti>
 
 LIBNAME = xmt
 MAJOR = 2
 MINOR = 0
-PATCH = 10
+PATCH = 11
 SRC_CC = xmt.cc thr_mgr.cc time.cc uid.cc shm.cc callstack.cc system_error.cc thread.cc \
-         date_time.cc
-SRC_C = fl.c
+         date_time.cc lfstream.cc
