@@ -823,6 +823,8 @@ int EXAM_IMPL(stem_test::boring_manager)
   }
   catch ( std::tr2::fork_in_parent& child ) {
     connect_processor<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
+    EXAM_CHECK( srv.is_open() );
+    EXAM_CHECK( srv.good() );
     StEMecho echo( 0, "echo service"); // <= zero! 'echo' server, default ('zero' address)
 
     fcnd.notify_all();
@@ -893,6 +895,8 @@ int EXAM_IMPL(stem_test::boring_manager_more)
   }
   catch ( std::tr2::fork_in_parent& child ) {
     connect_processor<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
+    EXAM_CHECK( srv.is_open() );
+    EXAM_CHECK( srv.good() );
     StEMecho echo( 0, "echo service"); // <= zero! 'echo' server, default ('zero' address)
 
     fcnd.notify_all();
