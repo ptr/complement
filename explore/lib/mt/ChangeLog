@@ -1,13 +1,16 @@
 2008-12-22  Petr Ovtchenkov  <ptr@void-ptr.info>
 
-	* lfstream.h, lfstream.cc: re-implementation of lfstream
-	(file streams with file locks); only fcntl-based
+	* lfstream.h, lfstream.cc: re-implementation of lfstream,
+	file streams with file locks; only fcntl-based
 	implementation supported now; POSIX fcntl-based file locking
 	don't provide file lock within same process; the solution
 	with extra rw lock mutexes has ambiguity: global table
 	required, because same file may be opened via different
 	fstreams; that's why locking within same process not provided
 	at all;
+
+	* lfstream.h: remove lock manipulators, if ones present, all
+	<< and >> operators should be overwritten;
 
 	* libxmt: release 2.0.11.
 

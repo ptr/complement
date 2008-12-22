@@ -25,6 +25,7 @@ class flock_test
     int EXAM_DECL(create);
     int EXAM_DECL(read_lock);
     int EXAM_DECL(write_lock);
+    int EXAM_DECL(format);
 
   private:
     // static xmt::Thread::ret_t thread_entry_call( void * );

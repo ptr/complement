@@ -119,9 +119,10 @@ int main( int argc, const char** argv )
 
   flock_test flock;
 
-  t.add( &flock_test::read_lock, flock, "file lock, write",
-    t.add( &flock_test::read_lock, flock, "file lock, read",
-      t.add( &flock_test::create, flock, "create reference file", uidtc[0] ) ) );
+  t.add( &flock_test::format, flock, "file lock, format io",
+    t.add( &flock_test::read_lock, flock, "file lock, write",
+      t.add( &flock_test::read_lock, flock, "file lock, read",
+        t.add( &flock_test::create, flock, "create reference file", uidtc[0] ) ) ) );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );

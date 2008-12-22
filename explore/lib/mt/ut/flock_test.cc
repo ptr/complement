@@ -215,3 +215,31 @@ int EXAM_IMPL(flock_test::write_lock)
 
   return EXAM_RESULT;
 }
+
+int EXAM_IMPL(flock_test::format)
+{
+  string name = "/tmp/xmt-";
+  name += xmt::uid_str();
+
+  lfstream f( name.c_str(), ios_base::in | ios_base::out | ios_base::trunc );
+
+  int a = 0;
+
+  f << a;
+
+  EXAM_CHECK( f.good() );
+
+  f.seekg( 0, ios::beg );
+
+  f >> a;
+
+  EXAM_CHECK( !f.fail() ); // eof bit set
+  EXAM_CHECK( a == 0 );
+
+  f.close();
+
+  unlink( name.c_str() );  
+
+  return EXAM_RESULT;
+}
+
