@@ -20,7 +20,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include <mt/lfstream.h>
+#include <mt/lfstream>
 #include <mt/shm.h>
 
 using namespace std;

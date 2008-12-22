@@ -9,7 +9,7 @@
  */
 
 #include <config/feature.h>
-#include <mt/lfstream.h>
+#include <mt/lfstream>
 
 #if defined(__unix) || defined(__unix__)
 # include <fcntl.h>
