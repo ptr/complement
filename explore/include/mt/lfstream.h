@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/19 20:27:37 yeti>
+// -*- C++ -*- Time-stamp: <08/12/20 00:31:51 ptr>
 
 /*
  *
@@ -76,10 +76,6 @@ class basic_lfilebuf :
     typedef typename _Traits::off_type off_type;
     typedef _Traits                    traits_type;
 
-    typedef typename _Traits::state_type    _State_type;
-    typedef std::basic_filebuf<_CharT, _Traits>  _Base;
-    typedef std::basic_lfilebuf<_CharT, _Traits> _Self;
-
   private:
     typedef std::detail::__flock flock_type;
 
@@ -96,7 +92,7 @@ class basic_lfilebuf :
       { flock_type::rdlock( this->fd() ); }
 
     void lock()
-      { lock( this->fd() ); }
+      { flock_type::lock( this->fd() ); }
 
     void unlock()
       { flock_type::unlock( this->fd() ); }
@@ -130,10 +126,6 @@ class basic_ilfstream :
     typedef typename _Traits::pos_type pos_type;
     typedef typename _Traits::off_type off_type;
     typedef _Traits                    traits_type;
-
-    typedef std::basic_ios<_CharT, _Traits>     _Basic_ios;
-    typedef std::basic_istream<_CharT, _Traits> _Base;
-    typedef std::basic_lfilebuf<_CharT, _Traits> _Buf;
 
   public:
     basic_ilfstream() : 
@@ -183,7 +175,7 @@ class basic_ilfstream :
 
   public:
     basic_lfilebuf<_CharT, _Traits>* rdbuf() const
-      { return const_cast<_Buf*>(&_M_buf); }
+      { return const_cast<basic_lfilebuf<_CharT, _Traits>*>(&_M_buf); }
 
     bool is_open()
       { return this->rdbuf()->is_open(); }
@@ -269,10 +261,6 @@ class basic_olfstream :
     typedef typename _Traits::off_type off_type;
     typedef _Traits                    traits_type;
 
-    typedef std::basic_ios<_CharT, _Traits>      _Basic_ios;
-    typedef std::basic_ostream<_CharT, _Traits>  _Base;
-    typedef std::basic_lfilebuf<_CharT, _Traits> _Buf;
-
   public:
     basic_olfstream() :
         basic_ios<_CharT, _Traits>(), 
@@ -318,7 +306,7 @@ class basic_olfstream :
 
   public:
     basic_lfilebuf<_CharT, _Traits>* rdbuf() const
-      { return const_cast<_Buf*>(&_M_buf); } 
+      { return const_cast<basic_lfilebuf<_CharT, _Traits>*>(&_M_buf); } 
 
     bool is_open()
       { return this->rdbuf()->is_open(); }
@@ -397,11 +385,7 @@ class basic_lfstream :
     typedef typename _Traits::off_type off_type;
     typedef _Traits                    traits_type;
 
-    typedef std::basic_ios<_CharT, _Traits>       _Basic_ios;
-    typedef std::basic_iostream<_CharT, _Traits>  _Base;
-    typedef std::basic_filebuf<_CharT, _Traits>   _Buf;
-
-  public:                         // Constructors, destructor.
+  public:
   
     basic_lfstream() :
         basic_ios<_CharT, _Traits>(),
@@ -444,10 +428,9 @@ class basic_lfstream :
 # endif    
     ~basic_lfstream() {}
 
-  public:                         // File and buffer operations.
-
+  public:
     basic_lfilebuf<_CharT, _Traits>* rdbuf() const
-      { return const_cast<_Buf*>(&_M_buf); } 
+      { return const_cast<basic_lfilebuf<_CharT, _Traits>*>(&_M_buf); } 
 
     bool is_open()
       { return this->rdbuf()->is_open(); }
@@ -496,7 +479,7 @@ class basic_lfstream :
 
     bool try_lock()
       {
-        if ( is_open() ) {
+        if ( this->is_open() ) {
           return this->rdbuf()->try_lock();
         } else {
           this->setstate(std::ios_base::failbit);
@@ -522,7 +505,7 @@ class basic_lfstream :
       { return __f(*this); }
 
   private:
-    std::basic_lfilebuf<_CharT, _Traits> _M_buf;
+    /* mutable */ std::basic_lfilebuf<_CharT, _Traits> _M_buf;
 };
 
 typedef basic_ilfstream<char,char_traits<char> > ilfstream;

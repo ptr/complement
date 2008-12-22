@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/11/27 00:47:22 ptr>
+// -*- C++ -*- Time-stamp: <08/12/22 11:41:56 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -119,8 +119,9 @@ int main( int argc, const char** argv )
 
   flock_test flock;
 
-  t.add( &flock_test::read_lock, flock, "file lock, read",
-    t.add( &flock_test::create, flock, "create reference file", uidtc[0] ) );
+  t.add( &flock_test::read_lock, flock, "file lock, write",
+    t.add( &flock_test::read_lock, flock, "file lock, read",
+      t.add( &flock_test::create, flock, "create reference file", uidtc[0] ) ) );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );
