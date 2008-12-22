@@ -27,6 +27,7 @@
 #include <mt/uid.h>
 
 #include <string>
+#include <set>
 
 int EXAM_IMPL(mt_test_wg21::date_time)
 {
@@ -340,6 +341,8 @@ int EXAM_IMPL(uid_test_wg21::uidstr)
 
   EXAM_CHECK( u1 != u2 );
 
+  std::set<std::string> cnt;
+
   for ( int i = 0; i < 100; ++i ) {
     std::string s = xmt::uid_str();
 
@@ -350,6 +353,8 @@ int EXAM_IMPL(uid_test_wg21::uidstr)
     EXAM_REQUIRE( s[23] == '-' );
 
     EXAM_REQUIRE( s.find_first_not_of( "0123456789abcdef-" ) == std::string::npos );
+    EXAM_CHECK( cnt.find( s ) == cnt.end() );
+    cnt.insert( s );
   }
 
   return EXAM_RESULT;
