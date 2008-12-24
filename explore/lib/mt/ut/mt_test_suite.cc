@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/22 11:41:56 ptr>
+// -*- C++ -*- Time-stamp: <08/12/23 23:07:11 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -119,10 +119,17 @@ int main( int argc, const char** argv )
 
   flock_test flock;
 
+  exam::test_suite::test_case_type flocktc[3];
+
+  // t.add( &flock_test::write_profane, flock, "file lock, write profane",
+
   t.add( &flock_test::format, flock, "file lock, format io",
-    t.add( &flock_test::read_lock, flock, "file lock, write",
-      t.add( &flock_test::read_lock, flock, "file lock, read",
+    flocktc[1] = t.add( &flock_test::read_lock, flock, "file lock, write",
+      flocktc[0] = t.add( &flock_test::read_lock, flock, "file lock, read",
         t.add( &flock_test::create, flock, "create reference file", uidtc[0] ) ) ) );
+
+  t.add( &flock_test::wr_lock, flock, "file lock, exclusive/shared", flocktc, flocktc + 2 );
+  t.add( &flock_test::rw_lock, flock, "file lock, shared/exclusive", flocktc, flocktc + 2 );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );

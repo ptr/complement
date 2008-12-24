@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/22 11:42:13 ptr>
+// -*- C++ -*- Time-stamp: <08/12/23 23:04:14 ptr>
 
 /*
  * Copyright (c) 2004, 2006-2008
@@ -26,10 +26,11 @@ class flock_test
     int EXAM_DECL(read_lock);
     int EXAM_DECL(write_lock);
     int EXAM_DECL(format);
+    // int EXAM_DECL(write_profane);
+    int EXAM_DECL(wr_lock);
+    int EXAM_DECL(rw_lock);
 
   private:
-    // static xmt::Thread::ret_t thread_entry_call( void * );
-    // static int x;
     std::string fname;
 };
 
