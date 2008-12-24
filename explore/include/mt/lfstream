@@ -320,6 +320,13 @@ class basic_olfstream :
         }
       }
 
+    void close()
+      {
+        if (!this->rdbuf()->close()) {
+          this->setstate(std::ios_base::failbit);
+        }
+      }
+
     void rdlock()
       {
         if ( is_open() ) {
