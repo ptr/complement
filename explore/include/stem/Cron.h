@@ -34,6 +34,7 @@
 #include <mt/date_time>
 
 #include <queue>
+#include <string>
 
 namespace stem {
 
@@ -50,7 +51,7 @@ struct CronEntry :
         start(), // immediate
         period(),
         n( static_cast<uint32_t>(infinite) ),
-        arg( 0 )
+        arg()
       { }
 
     CronEntry( const CronEntry& x ) :
@@ -67,7 +68,7 @@ struct CronEntry :
     // time_t end;
     std::tr2::nanoseconds period;
     uint32_t n;
-    uint32_t arg;
+    std::string arg;
 
     virtual __FIT_DECLSPEC void pack( std::ostream& s ) const;
     virtual __FIT_DECLSPEC void net_pack( std::ostream& s ) const;
@@ -85,7 +86,7 @@ struct __CronEntry
         period(),
         n( 0 ),
         count( 0 ),
-        arg( 0 )
+        arg()
       { }
 
     __CronEntry( const __CronEntry& x ) :
@@ -109,7 +110,7 @@ struct __CronEntry
 
     unsigned n;
     unsigned count;
-    unsigned arg;
+    std::string arg;
 };
 
 inline

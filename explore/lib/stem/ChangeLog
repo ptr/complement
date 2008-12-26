@@ -1,3 +1,10 @@
+2008-12-26  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* Cron.h, Cron.cc: replace int32 by string in argument
+	of Cron events;
+
+	* libstem: library version 4.9.3.
+
 2008-12-12  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* EvManager.cc: NetTransport_base's push should be

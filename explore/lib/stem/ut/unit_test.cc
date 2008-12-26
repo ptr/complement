@@ -1002,7 +1002,7 @@ int EXAM_IMPL(stem_test::cron)
     ev.value().start = rec + std::tr2::milliseconds( 500 );
     ev.value().n = 1;
     // ev.value().period = 0;
-    ev.value().arg = 3;
+    ev.value().arg = "3";
 
     unique_lock<mutex> lk( client.m );
     client.Send( ev );
@@ -1013,7 +1013,7 @@ int EXAM_IMPL(stem_test::cron)
 
     // cerr << (std::tr2::get_system_time() - rec).count() << endl;
 
-    EXAM_CHECK( client.see == 3 );
+    EXAM_CHECK( client.see == "3" );
     EXAM_CHECK( client.visited == 1 );
   }
 

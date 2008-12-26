@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <stem/EventHandler.h>
 #include <mt/condition_variable>
+#include <string>
 
 class CronClient :
     public stem::EventHandler
@@ -21,12 +22,12 @@ class CronClient :
   public:
     CronClient();
 
-    void cron_event( const uint32_t& arg );
+    void cron_event( /* std::string arg */ const stem::Event& );
 
     std::tr2::mutex m;
     std::tr2::condition_variable cnd;
 
-    uint32_t see;
+    std::string see;
     int visited;
 
   private:

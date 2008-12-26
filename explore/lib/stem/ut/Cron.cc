@@ -18,21 +18,23 @@ using namespace stem;
 using namespace std::tr2;
 
 CronClient::CronClient() :
-    see( 0 ),
+    see(),
     visited( 0 )
 {
 }
 
-void CronClient::cron_event( const uint32_t& arg )
+void CronClient::cron_event( /* string arg */ const stem::Event& ev )
 {
   unique_lock<mutex> lk( m );
 
-  see = arg;
+  see = /* arg */ ev.value();
+
   ++visited;
 
   cnd.notify_one();
 }
 
 DEFINE_RESPONSE_TABLE( CronClient )
-  EV_T_( ST_NULL, TEST_EV_CRON, cron_event, uint32_t )
+  // EV_T_( ST_NULL, TEST_EV_CRON, cron_event, string )
+  EV_EDS( ST_NULL, TEST_EV_CRON, cron_event )
 END_RESPONSE_TABLE

@@ -220,10 +220,10 @@ void Cron::_loop( Cron* p )
     me._M_c.pop();
 
     if ( me.is_avail( en.addr ) ) { // check if target abonent exist
-      Event_base<uint32_t> ev( en.code );
+      Event ev( en.code );
       ev.dest( en.addr );
       ev.value() = en.arg;
-      me.Send( Event_convert<uint32_t>()( ev ) );
+      me.Send( ev );
     } else { // do nothing, this lead to removing invalid abonent from Cron
       continue;
     }
