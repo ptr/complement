@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/17 10:48:13 ptr>
+// -*- C++ -*- Time-stamp: <08/12/29 22:57:02 ptr>
 
 /*
  *
@@ -1183,6 +1183,24 @@ int EXAM_IMPL(sockios_test::few_packets_loop)
   }
 
   EXAM_CHECK( byte_cnt::r == (byte_cnt::bsz * byte_cnt::sz) );
+  
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(sockios_test::two_ports)
+{
+  {
+    connect_processor<worker> prss1( 2008 );
+    connect_processor<worker> prss2( 2009 );
+
+    EXAM_CHECK( prss1.good() );
+    EXAM_CHECK( prss2.good() );
+
+    prss1.close();
+    prss1.wait();
+    prss2.close();
+    prss2.wait();
+  }
   
   return EXAM_RESULT;
 }

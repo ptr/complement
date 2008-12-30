@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/17 10:49:48 ptr>
+// -*- C++ -*- Time-stamp: <08/12/29 22:58:17 ptr>
 
 /*
  *
@@ -71,7 +71,9 @@ int main( int argc, const char** argv )
             t.add( &sockios_test::processor_core_two_local, test, "two local connects to connection processor",
               t.add( &sockios_test::processor_core_one_local, test, "one local connect to connection processor",
                 t.add( &sockios_test::connect_disconnect, test, "sockios2_test::connect_disconnect",
-                  t.add( &sockios_test::srv_core, test, "sockios2_test::srv_core" ) ) ) ) ) ) ) ) );
+                  tc[0] = t.add( &sockios_test::srv_core, test, "sockios2_test::srv_core" ) ) ) ) ) ) ) ) );
+
+  t.add( &sockios_test::two_ports, test, "two servers", tc[0] );
 
   t.add( &sockios_test::disconnect_rawclnt, test, "disconnect raw client", 
     t.add( &sockios_test::disconnect, test, "disconnect sockstream", tc[3] ) );
