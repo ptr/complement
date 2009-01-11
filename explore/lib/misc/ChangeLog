@@ -1,3 +1,11 @@
+2009-01-12  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* opts.h, opts.cc: options without argument passed
+	as option<void>; options with argument assume presence
+	of default ctor for parameter type;
+
+	* libmisc: version 1.11.1.
+
 2008-11-26  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* opts.h, opts.cc: use named paramenter in description,

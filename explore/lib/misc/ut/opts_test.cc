@@ -1,10 +1,10 @@
-// -*- C++ -*- Time-stamp: <08/11/26 23:21:32 ptr>
+// -*- C++ -*- Time-stamp: <09/01/12 00:42:54 ptr>
 
 /*
- * Copyright (c) 2008
+ * Copyright (c) 2008, 2009
  * Petr Ovtchenkov
  *
- * Copyright (c) 2008
+ * Copyright (c) 2008, 2009
  * Dmitry Osmakov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -793,7 +793,8 @@ int EXAM_IMPL(opts_test::multiple_args)
   
   try {
     opts.parse( argc, argv );
-  } catch(...) {
+  }
+  catch ( ... ) {
     EXAM_ERROR("unexpected exception");
   }
 
@@ -878,9 +879,9 @@ Available options:\n\
   -h, --help\tprint this help message\n\
   --flag\tsome program flag\n\
   -v, --version\tprint version\n\
-  -I <string>, --include=<string> [/usr/include]\tinclude paths\n\
-  -p <i>, --port=<i> [80]\tlisten to tcp port\n\
-  --mode=<string> [standard]\tprogram mode\n\
+  -I <string>, --include=<string>\tinclude paths [/usr/include]\n\
+  -p <i>, --port=<i>\tlisten to tcp port [80]\n\
+  --mode=<string>\tprogram mode [standard]\n\
 \n";
 
   EXAM_CHECK( s.str() == sample );
@@ -954,9 +955,9 @@ Usage:\n\
 \n\
 Available options:\n\
 \n\
-  -s <host>, --server=<host> []\tserver name <host>\n\
-  -n <name>, --name=<name> []\tname <name>\n\
-  -p <port>, --port=<port> [1234]\tport <port>\n\
+  -s <host>, --server=<host>\tserver name <host> []\n\
+  -n <name>, --name=<name>\tname <name> []\n\
+  -p <port>, --port=<port>\tport <port> [1234]\n\
 \n";
 
    //cerr << s.str();

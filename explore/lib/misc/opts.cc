@@ -1,10 +1,10 @@
-// -*- C++ -*- Time-stamp: <08/11/26 22:58:16 ptr>
+// -*- C++ -*- Time-stamp: <09/01/12 00:35:37 ptr>
 
 /*
- * Copyright (c) 2008
+ * Copyright (c) 2008, 2009
  * Dmitry Osmakov
  *
- * Copyright (c) 1997-1998, 2001, 2008
+ * Copyright (c) 1997-1998, 2001, 2008, 2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -57,9 +57,7 @@ std::ostream& option<string>::_describe( std::ostream& out ) const
     out << "--" << option_base::longname << '=' << sample;
   }
 
-  out << " [" << args.back() << "]\t";
-
-  return out << option_base::desc;
+  return out << '\t' << option_base::desc << " [" <<  args.back() << ']';
 }
 
 std::ostream& option<char*>::_describe( std::ostream& out ) const
@@ -77,9 +75,7 @@ std::ostream& option<char*>::_describe( std::ostream& out ) const
     out << "--" << option_base::longname << '=' << sample;
   }
 
-  out << " [" << args.back() << "]\t";
-
-  return out << option_base::desc;
+  return out << '\t' << option_base::desc << " [" << args.back() << ']';
 }
 
 std::ostream& option<void>::_describe( std::ostream& out ) const
