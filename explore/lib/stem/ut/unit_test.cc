@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/12/12 01:09:15 ptr>
+// -*- C++ -*- Time-stamp: <09/01/12 00:27:10 ptr>
 
 /*
- * Copyright (c) 2002, 2003, 2006-2008
+ * Copyright (c) 2002, 2003, 2006-2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -1062,11 +1062,11 @@ int main( int argc, const char** argv )
   opts.description( "test suite for 'StEM' framework" );
   opts.usage( "[options]" );
 
-  opts << option<bool>( "print this help message", 'h', "help" )
-       << option<bool>( "list all test cases", 'l', "list" )
-       << option<string>( "run tests by <numbers list>", 'r', "run" )["0"]
-       << option<bool>( "print status of tests within test suite", 'v', "verbose" )
-       << option<bool>(  "trace checks", 't', "trace" );
+  opts << option<void>( "print this help message", 'h', "help" )
+       << option<void>( "list all test cases", 'l', "list" )
+       << option<string>( "run tests by <numbers list>", 'r', "run" )
+       << option<void>( "print status of tests within test suite", 'v', "verbose" )
+       << option<void>(  "trace checks", 't', "trace" );
 
   try {
     opts.parse( argc, argv );

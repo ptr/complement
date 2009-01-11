@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/12/23 23:07:11 ptr>
+// -*- C++ -*- Time-stamp: <09/01/11 23:59:38 ptr>
 
 /*
- * Copyright (c) 2006-2008
+ * Copyright (c) 2006-2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -36,11 +36,11 @@ int main( int argc, const char** argv )
   opts.description( "test suite for 'xmt' framework" );
   opts.usage( "[options]" );
 
-  opts << option<bool>( "print this help message", 'h', "help" )
-       << option<bool>( "list all test cases", 'l', "list" )
-       << option<std::string>( "run tests by number <num list>", 'r', "run" )["0"]
-       << option<bool>( "print status of tests within test suite", 'v', "verbose" )
-       << option<bool>(  "trace checks", 't', "trace" );
+  opts << option<void>( "print this help message", 'h', "help" )
+       << option<void>( "list all test cases", 'l', "list" )
+       << option<std::string>( "run tests by number <num list>", 'r', "run" )
+       << option<void>( "print status of tests within test suite", 'v', "verbose" )
+       << option<void>(  "trace checks", 't', "trace" );
 
   try {
     opts.parse( argc, argv );

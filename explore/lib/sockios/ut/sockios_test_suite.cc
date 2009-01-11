@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <08/12/29 22:58:17 ptr>
+// -*- C++ -*- Time-stamp: <09/01/11 23:59:28 ptr>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005-2008
+ * Copyright (c) 2002, 2003, 2005-2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -30,11 +30,11 @@ int main( int argc, const char** argv )
   opts.description( "test suite for 'sockios' framework" );
   opts.usage( "[options]" );
 
-  opts << option<bool>( "print this help message", 'h', "help" )
-       << option<bool>( "list all test cases", 'l', "list" )
-       << option<string>( "run tests by <numbers list>", 'r', "run" )[""]
-       << option<bool>( "print status of tests within test suite", 'v', "verbose" )
-       << option<bool>(  "trace checks", 't', "trace" );
+  opts << option<void>( "print this help message", 'h', "help" )
+       << option<void>( "list all test cases", 'l', "list" )
+       << option<string>( "run tests by <numbers list>", 'r', "run" )
+       << option<void>( "print status of tests within test suite", 'v', "verbose" )
+       << option<void>(  "trace checks", 't', "trace" );
 
   try {
     opts.parse( argc, argv );
