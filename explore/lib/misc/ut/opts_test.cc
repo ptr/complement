@@ -611,7 +611,7 @@ int EXAM_IMPL(opts_test::args)
       EXAM_ERROR("unexpected exception");
     }
     
-    EXAM_CHECK( opts.get<string>('f') == "filename.conf" );
+    EXAM_CHECK( opts.get<string>("config") == "filename.conf" );
 
     EXAM_CHECK( argc == 3 );
     EXAM_CHECK( argv[0] == "name" );

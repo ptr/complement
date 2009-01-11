@@ -98,60 +98,6 @@ std::ostream& option<void>::_describe( std::ostream& out ) const
   return out << option_base::desc;
 }
 
-bool Opts::is_set( char field ) const
-{
-  options_container_type::const_iterator i = 
-    std::find_if( storage.begin(), storage.end(),
-                  std::bind2nd( ::detail::deref_equal<option_base*,char>(), field ) );
-
-  return ( (i == storage.end()) ? false : !(*i)->pos.empty());
-}
-
-bool Opts::is_set( const std::string& field ) const
-{
-  options_container_type::const_iterator i = 
-    std::find_if( storage.begin(), storage.end(),
-                  std::bind2nd( ::detail::deref_equal<option_base*,std::string>(), field ) );
-
-  return ( (i == storage.end()) ? false : !(*i)->pos.empty());
-}
-
-bool Opts::is_set( int field ) const
-{
-  options_container_type::const_iterator i = 
-    std::find_if( storage.begin(), storage.end(),
-                  std::bind2nd( ::detail::deref_equal<option_base*,int>(), field ) );
-
-  return ( (i == storage.end()) ? false : !(*i)->pos.empty());
-}
-
-int Opts::get_cnt( char field ) const
-{
-  options_container_type::const_iterator i = 
-    std::find_if( storage.begin(), storage.end(),
-                  std::bind2nd( ::detail::deref_equal<option_base*,char>(), field ) );
-
-  return ( (i == storage.end()) ? 0 : (*i)->pos.size());
-}
-
-int Opts::get_cnt( const std::string& field ) const
-{
-  options_container_type::const_iterator i = 
-    std::find_if( storage.begin(), storage.end(),
-                  std::bind2nd( ::detail::deref_equal<option_base*,std::string>(), field ) );
-
-  return ( (i == storage.end()) ? 0 : (*i)->pos.size());
-}
-
-int Opts::get_cnt( int field ) const
-{
-  options_container_type::const_iterator i = 
-    std::find_if( storage.begin(), storage.end(),
-                  std::bind2nd( ::detail::deref_equal<option_base*,int>(), field ) );
-
-  return ( (i == storage.end()) ? 0 : (*i)->pos.size());
-}
-
 string Opts::get_pname() const { return pname; }
 
 bool Opts::is_opt_name(const string& s)

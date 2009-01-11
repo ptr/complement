@@ -391,41 +391,39 @@ class Opts
       }
 
     // getting option
-  
-    template <class T ,class V>
-    T get( const V& field, const T& );
-
     template <class T, class V>
     T get( const V& field );
+    
+    template <class T>
+    T get( const char* field )
+      { return get<T,std::string>(std::string(field)); };
 
+    template <class BackInsertIterator, class V>
+    void getemall( const V& field , BackInsertIterator bi );
+    
     template <class BackInsertIterator>
-    void getemall( char field , BackInsertIterator bi );
-    template <class BackInsertIterator>
-    void getemall( const std::string& field , BackInsertIterator bi );
-    template <class BackInsertIterator>
-    void getemall( int field , BackInsertIterator bi );
-
-    bool is_set( char field ) const;
+    void getemall( const char* field , BackInsertIterator bi )
+      { getemall<BackInsertIterator, std::string>( std::string(field), bi ); }
+    
+    template <class V>
+    bool is_set( const V& field ) const;
+    
     bool is_set( const char* field ) const
       { return is_set( std::string(field) ); }
-    bool is_set( const std::string& field ) const;
-    bool is_set( int field ) const;
-
-    int get_cnt( char field ) const;
+      
+    template <class V>
+    int get_cnt( const V& field ) const;
+    
     int get_cnt( const char* field ) const
       { return get_cnt( std::string(field) ); }
-    int get_cnt( const std::string& field ) const;
-    int get_cnt( int field ) const;
 
+    template <class BackInsertIterator, class V>
+    void get_pos( const V& field, BackInsertIterator bi);
+    
     template <class BackInsertIterator>
-    void get_pos( char, BackInsertIterator bi);
-    template <class BackInsertIterator>
-    void get_pos( const char* f, BackInsertIterator bi)
-      { get_pos( std::string(f), bi ); }
-    template <class BackInsertIterator>
-    void get_pos( const std::string&, BackInsertIterator bi);
-    template <class BackInsertIterator>
-    void get_pos( int, BackInsertIterator bi);
+    void get_pos( const char* field, BackInsertIterator bi)
+      { get_pos<BackInsertIterator,std::string>(std::string(field),bi); }
+
 
     // parse
     void parse(int& ac, const char** av);
@@ -475,25 +473,6 @@ class Opts
     options_container_type::const_iterator get_opt_index( const std::string& s ) const;
 };
 
-template < class T , class V >
-T Opts::get( const V& field, const T& )
-{
-  options_container_type::const_iterator i = 
-    std::find_if( storage.begin(), storage.end(),
-                  std::bind2nd( detail::deref_equal<option_base*,V>(), field ) );
-
-  if ( i == storage.end() ) {
-    std::stringstream ss1;
-    ss1 << field;
-    throw unknown_option( ss1.str() );
-  }
-
-  T res;
-
-  (*i)->assign( res );
-
-  return res;
-}
 
 template < class T , class V >
 T Opts::get( const V& field )
@@ -515,12 +494,12 @@ T Opts::get( const V& field )
   return res;
 }
 
-template <class BackInsertIterator>
-void Opts::getemall( char field, BackInsertIterator bi )
+template <class BackInsertIterator, class V>
+void Opts::getemall( const V& field, BackInsertIterator bi )
 {
   options_container_type::const_iterator i = 
     std::find_if( storage.begin(), storage.end(),
-                  std::bind2nd( detail::deref_equal<option_base*,char>(), field ) );
+                  std::bind2nd( detail::deref_equal<option_base*,V>(), field ) );
 
   if ( i == storage.end() ) {
     std::stringstream ss1;
@@ -538,58 +517,32 @@ void Opts::getemall( char field, BackInsertIterator bi )
   }
 }
 
-template <class BackInsertIterator>
-void Opts::getemall( const std::string& field, BackInsertIterator bi )
+template <class V>
+bool Opts::is_set( const V& field ) const
 {
   options_container_type::const_iterator i = 
     std::find_if( storage.begin(), storage.end(),
-                  std::bind2nd( detail::deref_equal<option_base*,std::string>(), field ) );
+                  std::bind2nd( ::detail::deref_equal<option_base*,V>(), field ) );
 
-  if ( i == storage.end() ) {
-    std::stringstream ss1;
-    ss1 << field;
-    throw unknown_option(ss1.str());
-  }
-  
-  if ((*i)->type() != typeid(void)) {
-    typedef typename BackInsertIterator::container_type::value_type real_type;
-    
-    option<real_type>* opt = dynamic_cast< option<real_type> * >( *i );
-    opt->get( bi );
-  } else {
-    throw std::logic_error("using Opts::getemall with flag option");
-  }
+  return ( (i == storage.end()) ? false : !(*i)->pos.empty());
 }
 
-template <class BackInsertIterator>
-void Opts::getemall( int field, BackInsertIterator bi )
+template <class V>
+int Opts::get_cnt( const V& field ) const
 {
   options_container_type::const_iterator i = 
     std::find_if( storage.begin(), storage.end(),
-                  std::bind2nd( detail::deref_equal<option_base*,int>(), field ) );
+                  std::bind2nd( ::detail::deref_equal<option_base*,V>(), field ) );
 
-  if ( i == storage.end() ) {
-    std::stringstream ss1;
-    ss1 << field;
-    throw unknown_option(ss1.str());
-  }
-
-  if ((*i)->type() != typeid(void)) {
-    typedef typename BackInsertIterator::container_type::value_type real_type;
-    
-    option<real_type>* opt = dynamic_cast< option<real_type> * >( *i );
-    opt->get( bi );
-  } else {
-    throw std::logic_error("using Opts::getemall with flag option");
-  }
+  return ( (i == storage.end()) ? 0 : (*i)->pos.size());
 }
 
-template <class BackInsertIterator>
-void Opts::get_pos( char field , BackInsertIterator bi )
+template <class BackInsertIterator, class V >
+void Opts::get_pos( const V& field , BackInsertIterator bi )
 {
   options_container_type::const_iterator i = 
     std::find_if( storage.begin(), storage.end(),
-                  std::bind2nd( detail::deref_equal<option_base*,char>(), field ) );
+                  std::bind2nd( detail::deref_equal<option_base*,V>(), field ) );
 
   if ( i == storage.end() ) {
     std::stringstream ss1;
@@ -600,36 +553,5 @@ void Opts::get_pos( char field , BackInsertIterator bi )
   std::copy( (*i)->pos.begin(), (*i)->pos.end(), bi );
 }
 
-template <class BackInsertIterator>
-void Opts::get_pos( const std::string& field, BackInsertIterator bi )
-{
-  options_container_type::const_iterator i = 
-    std::find_if( storage.begin(), storage.end(),
-                  std::bind2nd( detail::deref_equal<option_base*,std::string>(), field ) );
-
-  if ( i == storage.end() ) {
-    std::stringstream ss1;
-    ss1 << field;
-    throw unknown_option(ss1.str());
-  }
-
-  std::copy( (*i)->pos.begin(), (*i)->pos.end(), bi );
-}
-
-template <class BackInsertIterator>
-void Opts::get_pos( int field, BackInsertIterator bi )
-{
-  options_container_type::const_iterator i = 
-    std::find_if( storage.begin(), storage.end(),
-                  std::bind2nd( detail::deref_equal<option_base*,int>(), field ) );
-
-  if ( i == storage.end() ) {
-    std::stringstream ss1;
-    ss1 << field;
-    throw unknown_option(ss1.str());
-  }
-
-  std::copy( (*i)->pos.begin(), (*i)->pos.end(), bi );
-}
 
 #endif // __OPTS_H__
