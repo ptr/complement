@@ -1,7 +1,7 @@
-# -*- Makefile -*- Time-stamp: <08/02/24 17:18:31 ptr>
+# -*- Makefile -*- Time-stamp: <09/01/11 09:44:01 ptr>
 
 LIBNAME = exam
 MAJOR = 0
 MINOR = 7
-PATCH = 0
+PATCH = 1
 SRC_CC = logger.cc suite.cc

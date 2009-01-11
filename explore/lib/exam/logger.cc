@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/02/24 17:19:59 ptr>
+// -*- C++ -*- Time-stamp: <09/01/11 09:43:15 ptr>
 
 /*
  * Copyright (c) 2007, 2008
@@ -172,10 +172,11 @@ void trivial_time_logger::tc( base_logger::tc_result r, const std::string& name 
         // mean = ((n + 1) * mean + static_cast<double>(*a)) / (n + 2);
         ++n;
       }
-      sum_sq -= sum * sum / n;
+      sum /= n;              // mean
+      sum_sq /= n;      
+      sum_sq -= sum * sum;   // dispersion
       sum_sq = max( 0.0, sum_sq ); // clear epsilon (round error)
-      sum_sq /= n * n; // dispersion
-      sum /= n;        // mean
+      sum_sq = sqrt(sum_sq); // mean square deviation
       if ( s != 0 ) {
         *s << "  " << sum << " " << sum_sq << " " << name << endl;
       } else {
@@ -206,10 +207,11 @@ void trivial_time_logger::tc( base_logger::tc_result r, const std::string& name,
         // mean = ((n + 1) * mean + static_cast<double>(*a)) / (n + 2);
         ++n;
       }
-      sum_sq -= sum * sum / n;
+      sum /= n;              // mean
+      sum_sq /= n;      
+      sum_sq -= sum * sum;   // dispersion
       sum_sq = max( 0.0, sum_sq ); // clear epsilon (round error)
-      sum_sq /= n * n; // dispersion
-      sum /= n;        // mean
+      sum_sq = sqrt(sum_sq); // mean square deviation
       if ( s != 0 ) {
         *s << "  " << sum << " " << sum_sq << " " << name << endl;
       } else {

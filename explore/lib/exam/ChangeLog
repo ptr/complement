@@ -1,3 +1,10 @@
+2009-01-11  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* logger.cc: print mean square deviation instead of
+	dispersion.
+
+	* libexam: version 0.7.1.
+
 2008-02-27  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* suite.cc, logger.cc, suite.h, logger.h: use xmt 2.0.0
