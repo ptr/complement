@@ -57,11 +57,7 @@ std::ostream& option<string>::_describe( std::ostream& out ) const
     out << "--" << option_base::longname << '=' << sample;
   }
 
-  if ( option_base::has_arg ) {
-    out << " [" << args.front() << "]\t";
-  } else {
-    out << '\t';
-  }
+  out << " [" << args.back() << "]\t";
 
   return out << option_base::desc;
 }
@@ -81,10 +77,22 @@ std::ostream& option<char*>::_describe( std::ostream& out ) const
     out << "--" << option_base::longname << '=' << sample;
   }
 
-  if ( option_base::has_arg ) {
-    out << " [" << args.front() << "]\t";
-  } else {
-    out << '\t';
+  out << " [" << args.back() << "]\t";
+
+  return out << option_base::desc;
+}
+
+std::ostream& option<void>::_describe( std::ostream& out ) const
+{
+  if ( option_base::shortname != 0 ) {
+    out << '-' << option_base::shortname;
+    if ( !option_base::longname.empty() ) {
+      out << ", ";
+    }
+  }
+        
+  if ( !option_base::longname.empty() ) {
+    out << "--" << option_base::longname << '\t';
   }
 
   return out << option_base::desc;
@@ -151,23 +159,6 @@ bool Opts::is_opt_name(const string& s)
   return (s.size() > 1) && (s[0] == '-') && !is_flag_group(s);
 }
 
-bool Opts::is_substr( const string& small, const string& big ) const
-{
-  if ( small.size() > big.size() ) {
-    return false;
-  }
-
-  string::const_iterator i = small.begin();
-  string::const_iterator j = big.begin();
-  for ( ; i != small.end(); ++i, ++j ) {
-    if ( *i != *j ) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 bool Opts::is_flag_group( const string& s )
 {
   string::const_iterator i = s.begin();
@@ -199,23 +190,20 @@ Opts::options_container_type::const_iterator Opts::get_opt_index( const string& 
   
   if (s.size() > 2 && s[1] == '-') {
     options_container_type::const_iterator i;
+    options_container_type::const_iterator res = storage.end();
     string tmp = s.substr(2);
 
-    // exact match
     for ( i = storage.begin(); i != storage.end(); ++i ) {
-      if ( (*i)->longname == tmp ) {
-        return i;
+      if ( (*i)->longname.find(tmp) == 0 ) {
+        if ( res != storage.end() ) { // second match
+          return storage.end(); 
+        } else { // first match
+          res = i;
+        }
       }
     }
 
-    vector< options_container_type::const_iterator > matches;
-    for ( i = storage.begin();i != storage.end();++i ) {
-      if ( is_substr( tmp, (*i)->longname ) ) {
-        matches.push_back(i);
-      }
-    }
-
-    return matches.size() == 1 ? matches[0] : storage.end();
+    return res;
   }
     
   return storage.end();
@@ -276,7 +264,7 @@ void Opts::parse( int& ac, const char** av )
         throw unknown_option(opt);
       }
 
-      if ( (*p)->has_arg ) {
+      if ( (*p)->type() != typeid(void) ) {
         if ( !arg.empty() ) {
           (*p)->read(arg);
         } else {
@@ -297,7 +285,7 @@ void Opts::parse( int& ac, const char** av )
           throw unknown_option( "-" + string(1,optgroup[j]) );
         }
         (*p)->pos.push_back(++q);
-        if ( (*p)->has_arg ) {
+        if ( (*p)->type() != typeid(void) ) {
           throw missing_arg( "-" + string(1,optgroup[j]) );
         }
       }

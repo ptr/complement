@@ -26,11 +26,11 @@ int main( int argc, const char** argv )
   opts.description( "test suite for 'misc' framework" );
   opts.usage( "[options]" );
 
-  opts << option<bool>( "print this help message", 'h', "help" )
-       << option<bool>( "list all test cases", 'l', "list" )
-       << option<std::string>( "run tests by number", 'r', "run" )["0"]
-       << option<bool>( "print status of tests within test suite", 'v', "verbose" )
-       << option<bool>(  "trace checks", 't', "trace" );
+  opts << option<void>( "print this help message", 'h', "help" )
+       << option<void>( "list all test cases", 'l', "list" )
+       << option<std::string>( "run tests by number", 'r', "run" )
+       << option<void>( "print status of tests within test suite", 'v', "verbose" )
+       << option<void>(  "trace checks", 't', "trace" );
 
   try {
     opts.parse( argc, argv );
@@ -51,7 +51,7 @@ int main( int argc, const char** argv )
 
   options_test_suite_init( t, op );
   misc_test_suite_init( t, test );
-
+  
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );
     return 0;

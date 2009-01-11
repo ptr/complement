@@ -19,8 +19,8 @@ class opts_test
 {
   public:
     // implementation
-    int EXAM_DECL(bool_option);
-    int EXAM_DECL(bool_option_long);
+    int EXAM_DECL(flag_option);
+    int EXAM_DECL(flag_option_long);
     int EXAM_DECL(int_option);
     int EXAM_DECL(int_option_long);
     int EXAM_DECL(add_check_flag);
