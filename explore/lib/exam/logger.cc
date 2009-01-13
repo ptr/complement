@@ -9,6 +9,7 @@
 
 #include <exam/logger.h>
 #include <iostream>
+#include <cmath>
 
 namespace exam {
 

@@ -1,3 +1,10 @@
+2009-01-14  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* opts.h, opts.cc: print in help value of default option, i.e.
+	default ctor or value from [] operator, instead of last option;
+
+	* libmisc: version 1.11.2.
+
 2009-01-12  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* opts.h, opts.cc: options without argument passed

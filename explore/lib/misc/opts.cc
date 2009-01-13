@@ -57,7 +57,7 @@ std::ostream& option<string>::_describe( std::ostream& out ) const
     out << "--" << option_base::longname << '=' << sample;
   }
 
-  return out << '\t' << option_base::desc << " [" <<  args.back() << ']';
+  return out << '\t' << option_base::desc << " [" <<  default_arg << ']';
 }
 
 std::ostream& option<char*>::_describe( std::ostream& out ) const
@@ -75,7 +75,7 @@ std::ostream& option<char*>::_describe( std::ostream& out ) const
     out << "--" << option_base::longname << '=' << sample;
   }
 
-  return out << '\t' << option_base::desc << " [" << args.back() << ']';
+  return out << '\t' << option_base::desc << " [" << default_arg << ']';
 }
 
 std::ostream& option<void>::_describe( std::ostream& out ) const

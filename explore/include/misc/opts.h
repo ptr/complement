@@ -118,21 +118,34 @@ class option :
   public:
     option( const char* _description, char _short_var, const char* _long_var ) :
         option_base( _description, _short_var, _long_var )
-      { args.push_back(T()); }
+      { 
+        args.push_back(T());
+        default_arg = T();
+      }
 
     option( const char* _description, char _short_var ) :
         option_base( _description, _short_var )
-      { args.push_back(T()); }
+      { 
+        args.push_back(T());
+        default_arg = T();
+      }
 
     option( const char* _description, const char* _long_var ) :
         option_base( _description, _long_var )
-      { args.push_back(T()); }
+      { 
+        args.push_back(T());
+        default_arg = T();
+      }
 
     virtual const std::type_info& type() const
       { return typeid( T ); }
 
     option<T>& operator []( const T& val )
-      { args.push_back(val); return *this; }
+      { 
+        args.push_back(val);
+        default_arg = val;
+        return *this;
+      }
 
     template <class BackInstertIterator>
     void get( BackInstertIterator bi ) const
@@ -150,6 +163,7 @@ class option :
 
   private:
     std::list<T> args;
+    T default_arg;
 
     void read( const char *str ) throw (std::invalid_argument)
       {
@@ -196,7 +210,7 @@ std::ostream& option<T>::_describe( std::ostream& out ) const
     out << "--" << option_base::longname << '=' << sample;
   }
   
-  return out << '\t' << option_base::desc << " [" << args.back() << ']';
+  return out << '\t' << option_base::desc << " [" << default_arg << ']';
 }
 
 template <>
@@ -206,24 +220,41 @@ class option<std::string> :
   public:
     option( const char* _description, char _short_var, const char* _long_var ) :
         option_base( _description, _short_var, _long_var )
-      { args.push_back( std::string() ); }
+      { 
+        args.push_back( std::string() );
+        default_arg = std::string();
+      }
 
     option( const char* _description, char _short_var ) :
         option_base( _description, _short_var )
-      { args.push_back( std::string() ); }
+      { 
+        args.push_back( std::string() );
+        default_arg = std::string();
+      }
 
     option( const char* _description, const char* _long_var ) :
         option_base( _description, _long_var )
-      { args.push_back( std::string() ); }
+      { 
+        args.push_back( std::string() );
+        default_arg = std::string();
+      }
 
     virtual const std::type_info& type() const
       { return typeid( std::string ); }
 
     option<std::string>& operator []( const char* val )
-      { args.push_back( std::string(val) ); return *this; }
+      { 
+        args.push_back( std::string(val) );
+        default_arg = val;
+        return *this;
+      }
 
     option<std::string>& operator []( const std::string& val )
-      { args.push_back( val ); return *this; }
+      { 
+        args.push_back( val );
+        default_arg = val;
+        return *this;
+      }
 
     template <class BackInstertIterator>
     void get( BackInstertIterator bi ) const
@@ -241,6 +272,7 @@ class option<std::string> :
 
   private:
     std::list<std::string> args;
+    std::string default_arg;
 
     void read( const char *str )
       {
@@ -262,24 +294,41 @@ class option<char*> :
   public:
     option( const char* _description, char _short_var, const char* _long_var ) :
         option_base( _description, _short_var, _long_var )
-      { args.push_back( std::string() ); }
+      { 
+        args.push_back( std::string() );
+        default_arg = std::string();
+      }
 
     option( const char* _description, char _short_var ) :
         option_base( _description, _short_var )
-      { args.push_back( std::string() ); }
+      { 
+        args.push_back( std::string() );
+        default_arg = std::string();
+      }
 
     option( const char* _description, const char* _long_var ) :
         option_base( _description, _long_var )
-      { args.push_back( std::string() ); }
+      { 
+        args.push_back( std::string() );
+        default_arg = std::string();
+      }
 
     virtual const std::type_info& type() const
       { return typeid( std::string ); }
 
     option<char*>& operator []( const char* val )
-      { args.push_back( std::string(val) ); return *this; }
+      { 
+        args.push_back( std::string(val) );
+        default_arg = val;
+        return *this;
+      }
 
     option<char*>& operator []( const std::string& val )
-      { args.push_back( val ); return *this; }
+      { 
+        args.push_back( val );
+        default_arg = val;
+        return *this;
+      }
 
     template <class BackInstertIterator>
     void get( BackInstertIterator bi ) const
@@ -297,6 +346,7 @@ class option<char*> :
 
   private:
     std::list<std::string> args;
+    std::string default_arg;
 
     void read( const char *str )
       {
@@ -310,7 +360,6 @@ class option<char*> :
 
     friend class Opts;
 };
-
 
 template <>
 class option<void> :
