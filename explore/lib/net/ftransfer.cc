@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/15 18:01:13 ptr>
+// -*- C++ -*- Time-stamp: <09/01/16 02:20:24 ptr>
 
 /*
  *
@@ -13,9 +13,11 @@
 #include <stem/EvPack.h>
 
 #include <iterator>
+#include <algorithm>
 
 #include <mt/lfstream>
 #include <misc/tfstream>
+#include <misc/md5.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -44,6 +46,7 @@ class file_receiver :
     misc::otfstream f;
     std::string name;
     stem::addr_type r;
+    MD5_CTX ctx;
 
     DECLARE_RESPONSE_TABLE( file_receiver, EventHandler );
 };
@@ -62,6 +65,7 @@ class file_sender :
   private:
     std::ilfstream f;
     stem::addr_type r;
+    MD5_CTX ctx;
 
     DECLARE_RESPONSE_TABLE( file_sender, EventHandler );
 };
@@ -94,6 +98,7 @@ file_receiver::file_receiver( const std::string& nm, stem::addr_type snd, stem::
   }
 
   if ( f.is_open() && f.good() ) {
+    MD5Init( &ctx );
     PushState( ST_CORE_SEND );
 
     Event ev( STEM_FILE_ACK );
@@ -122,7 +127,9 @@ file_receiver::~file_receiver()
 void file_receiver::next_chunk( const Event& in )
 {
   f.write( in.value().data(), in.value().size() );
+  
   if ( !f.fail() ) {
+    MD5Update( &ctx, reinterpret_cast<const uint8_t*>(in.value().data()), in.value().size() );
     Event ev( STEM_NEXT_CHUNK );
     ev.dest( in.src() );
     Send( ev );
@@ -133,6 +140,18 @@ void file_receiver::final( const Event& in )
 {
   string tmp = f.name();
   f.close();
+
+  uint8_t buf[16];
+  MD5Final( buf, &ctx );
+
+  if ( in.value().size() != 16 || !equal( buf, buf + 16, (const uint8_t*)in.value().data() ) ) { // fail
+    unlink( tmp.c_str() );
+    EventVoid ev( STEM_FILE_SND_RM );
+    ev.dest( r );
+    Send( ev );
+
+    return;
+  }
 
   string back = name + '~';
 
@@ -160,6 +179,7 @@ file_sender::file_sender( const string& name, const string& rmprefix, stem::addr
 {
   if ( rmprefix.empty() ) {
     if ( f.good() ) {
+      MD5Init( &ctx );
       f.rdlock();
       Event ev( STEM_FILE_NAME );
       ev.value() = name;
@@ -170,6 +190,7 @@ file_sender::file_sender( const string& name, const string& rmprefix, stem::addr
     string::size_type p = name.find( rmprefix );
   
     if ( p == 0 && f.good() ) {
+      MD5Init( &ctx );
       f.rdlock();
       Event ev( STEM_FILE_NAME );
       ev.value() = name.substr( rmprefix.length() );
@@ -212,15 +233,24 @@ void file_sender::next_chunk( const Event& rsp )
     Event fev( STEM_FINAL );
     fev.dest( rsp.src() );
 
+    fev.value().assign( 16, 0 );
+    MD5Final( (uint8_t*)(fev.value().data()), &ctx );
+
     Send( fev );
 
     nac();
   } else {
     Send( ev );
+
+    MD5Update( &ctx, reinterpret_cast<const uint8_t*>(ev.value().data()), ev.value().size() );
+
     if ( ev.value().size() < limit ) {
       PopState();
       Event fev( STEM_FINAL );
       fev.dest( rsp.src() );
+
+      fev.value().assign( 16, 0 );
+      MD5Final( (uint8_t*)fev.value().data(), &ctx );
 
       Send( fev );
 
