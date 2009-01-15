@@ -32,11 +32,8 @@
 #ifndef __aux_md5_h
 #define __aux_md5_h
 
-#ifdef __linux
-#include <stdint.h>             /* for uint_* */
-#else
-#include <sys/types.h>          /* for uint_* */
-#endif
+#include <stdint.h>
+#include <sys/types.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -64,9 +61,9 @@ typedef struct {
 #  define MD5Final  __MD5Final__
 #endif /* __hpux */
 
-void MD5Init( MD5_CTX * );
-void MD5Update(MD5_CTX *, uint8_t *, uint32_t );
-void MD5Final( uint8_t [16], MD5_CTX * );
+void MD5Init( MD5_CTX* );
+void MD5Update( MD5_CTX*, const uint8_t*, size_t );
+void MD5Final( uint8_t [16], MD5_CTX* );
 
 #ifdef  __cplusplus
 }

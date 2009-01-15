@@ -51,13 +51,13 @@ extern "C" {
 #define S43 15
 #define S44 21
 
-static void MD5Transform( uint32_t [4], uint8_t [64]);
+static void MD5Transform( uint32_t [4], const uint8_t [64]);
 #if defined( __i386 )
-#define Encode(output,input,len) memcpy( (void *)output, (void *)input, len )
-#define Decode(output,input,len) memcpy( (void *)output, (void *)input, len )
+#define Encode(output,input,len) memcpy( (void*)output, (const void*)input, len )
+#define Decode(output,input,len) memcpy( (void*)output, (const void*)input, len )
 #else
-static void Encode( uint8_t *, uint32_t *, unsigned );
-static void Decode( uint32_t *, uint8_t *, unsigned );
+static void Encode( uint8_t*, const uint32_t*, size_t );
+static void Decode( uint32_t*, const uint8_t*, size_t );
 #endif
 /* static void MD5_memcpy( char *, char *, unsigned ); */
 /* static void MD5_memset( char *, int, unsigned ); */
@@ -107,7 +107,7 @@ Rotation is separate from addition to prevent recomputation.
 
 /* MD5 initialization. Begins an MD5 operation, writing a new context.
  */
-void MD5Init ( MD5_CTX *context )
+void MD5Init( MD5_CTX* context )
 {
   context->count[0] = context->count[1] = 0;
   /* Load magic initialization constants. */
@@ -121,7 +121,7 @@ void MD5Init ( MD5_CTX *context )
   operation, processing another message block, and updating the
   context.
  */
-void MD5Update( MD5_CTX *context, uint8_t *input, uint32_t inputLen )
+void MD5Update( MD5_CTX *context, const uint8_t* input, size_t inputLen )
 {
   unsigned i, index, partLen;
 
@@ -129,9 +129,9 @@ void MD5Update( MD5_CTX *context, uint8_t *input, uint32_t inputLen )
   index = (unsigned)((context->count[0] >> 3) & 0x3F);
 
   /* Update number of bits */
-  if ( (context->count[0] += ((uint32_t)inputLen << 3)) <
-       ((uint32_t)inputLen << 3) )
+  if ( (context->count[0] += ((uint32_t)inputLen << 3)) < ((uint32_t)inputLen << 3) ) {
     context->count[1]++;
+  }
   context->count[1] += ((uint32_t)inputLen >> 29);
 
   partLen = 64 - index;
@@ -156,7 +156,7 @@ void MD5Update( MD5_CTX *context, uint8_t *input, uint32_t inputLen )
 /* MD5 finalization. Ends an MD5 message-digest operation, writing the
   the message digest and zeroizing the context.
  */
-void MD5Final( uint8_t digest[16], MD5_CTX *context )
+void MD5Final( uint8_t digest[16], MD5_CTX* context )
 {
   uint8_t bits[8];
   unsigned index, padLen;
@@ -176,12 +176,12 @@ void MD5Final( uint8_t digest[16], MD5_CTX *context )
   Encode( digest, context->state, 16 );
 
   /* Zeroize sensitive information. */
-  MD5_memset( (char *)context, 0, sizeof(*context) );
+  MD5_memset( (char*)context, 0, sizeof(*context) );
 }
 
 /* MD5 basic transformation. Transforms state based on block.
  */
-static void MD5Transform ( uint32_t state[4], uint8_t block[64] )
+static void MD5Transform( uint32_t state[4], const uint8_t block[64] )
 {
   uint32_t a = state[0], b = state[1], c = state[2], d = state[3], x[16];
 
@@ -265,14 +265,14 @@ static void MD5Transform ( uint32_t state[4], uint8_t block[64] )
   state[3] += d;
 
   /* Zeroize sensitive information. */
-  MD5_memset((char *)x, 0, sizeof (x));
+  MD5_memset( (char*)x, 0, sizeof(x) );
 }
 
 #if !defined( __i386 )
 /* Encodes input (UINT4) into output (unsigned char). Assumes len is
   a multiple of 4.
  */
-static void Encode( uint8_t *output, uint32_t *input,  unsigned len )
+static void Encode( uint8_t* output, const uint32_t* input, size_t len )
 {
   unsigned i, j;
 
@@ -287,13 +287,14 @@ static void Encode( uint8_t *output, uint32_t *input,  unsigned len )
 /* Decodes input (unsigned char) into output (UINT4). Assumes len is
   a multiple of 4.
  */
-static void Decode( uint32_t *output, uint8_t *input, unsigned len )
+static void Decode( uint32_t* output, const uint8_t* input, size_t len )
 {
   unsigned i, j;
 
-  for (i = 0, j = 0; j < len; i++, j += 4)
+  for (i = 0, j = 0; j < len; i++, j += 4) {
     output[i] = ((uint32_t)input[j]) | (((uint32_t)input[j+1]) << 8) |
       (((uint32_t)input[j+2]) << 16) | (((uint32_t)input[j+3]) << 24);
+  }
 }
 #endif
 
