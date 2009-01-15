@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/15 01:16:44 ptr>
+// -*- C++ -*- Time-stamp: <09/01/15 14:58:13 ptr>
 
 /*
  *
@@ -11,8 +11,8 @@
 
 #include <config/feature.h>
 
-#include "http_test_suite.h"
 #include "http_test.h"
+#include "ftransfer_test.h"
 
 #include <misc/opts.h>
 
@@ -52,6 +52,10 @@ int main( int argc, const char** argv )
   t.add( &http_test::base_response, test, "" );
   t.add( &http_test::request, test, "" );
   t.add( &http_test::response, test, "" );
+
+  ftransfer_test ft_test;
+
+  t.add( &ftransfer_test::core, ft_test, "file transfer core" );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );
