@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <07/02/28 00:53:40 ptr>
+// -*- C++ -*- Time-stamp: <09/01/14 18:20:58 ptr>
 
 /*
  *
- * Copyright (c) 2007
+ * Copyright (c) 2007, 2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -17,6 +17,69 @@
 #include <cstdlib>
 
 namespace misc {
+
+template <class _CharT, class _Traits>
+class basic_otfstream :
+        public std::basic_ostream<_CharT, _Traits>
+{
+  public:
+    typedef _CharT                     char_type;
+    typedef typename _Traits::int_type int_type;
+    typedef typename _Traits::pos_type pos_type;
+    typedef typename _Traits::off_type off_type;
+    typedef _Traits                    traits_type;
+
+  public:
+    basic_otfstream() : 
+        std::basic_ios<_CharT, _Traits>(),
+        std::basic_ostream<_CharT, _Traits>(0),
+        _M_buf()
+      { this->init(&_M_buf); }
+
+    explicit basic_otfstream( const char *__s ) :
+        std::basic_ios<_CharT, _Traits>(),
+        std::basic_ostream<_CharT, _Traits>(0),
+        _M_buf()
+      {
+        this->init(&_M_buf);
+        _name = __s;
+        _name += "XXXXXX";
+        int fd = ::mkstemp( const_cast<char *>(_name.c_str()) );
+        if ( fd < 0 || !_M_buf.open( fd ) ) {
+          this->setstate(std::ios_base::failbit);
+        }
+      }
+
+    void open( const char *__s )
+      {
+        _name = __s;
+        _name += "XXXXXX";
+        int fd = ::mkstemp( const_cast<char *>(_name.c_str()) );
+        if ( fd < 0 || !_M_buf.open( fd ) ) {
+          this->setstate(std::ios_base::failbit);
+        }
+      }
+
+    const char *name() const
+      { return _name.c_str(); }
+
+    std::basic_filebuf<_CharT, _Traits>* rdbuf() const
+      { return const_cast<std::basic_filebuf<_CharT, _Traits> *>(&_M_buf); }
+
+    bool is_open()
+      { return this->rdbuf()->is_open(); }
+
+    void close()
+      {
+        if (!this->rdbuf()->close()) {
+          this->setstate(std::ios_base::failbit);
+        }
+      }
+
+  private:
+    std::string _name;
+    std::basic_filebuf<_CharT, _Traits> _M_buf;
+};
 
 template <class _CharT, class _Traits>
 class basic_tfstream :
@@ -83,6 +146,10 @@ class basic_tfstream :
 
 typedef basic_tfstream<char, std::char_traits<char> > tfstream;
 typedef basic_tfstream<wchar_t, std::char_traits<wchar_t> > wtfstream;
+
+
+typedef basic_otfstream<char, std::char_traits<char> > otfstream;
+typedef basic_otfstream<wchar_t, std::char_traits<wchar_t> > wotfstream;
 
 } // namespace misc
 
