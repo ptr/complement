@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/30 20:51:24 ptr>
+// -*- C++ -*- Time-stamp: <09/01/17 00:27:32 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -215,6 +215,42 @@ int EXAM_IMPL(mt_test_wg21::semaphore)
   s1.notify_one();
   s1.wait();
 
+  return EXAM_RESULT;
+}
+
+static std::tr2::mutex cond_mtx;
+static std::tr2::condition_variable cnd;
+
+struct true_val
+{
+  bool operator()() const
+    { return (val == 1); }
+};
+
+void thread_func5()
+{
+  std::tr2::unique_lock<std::tr2::mutex> lk( cond_mtx );
+  
+  val = 1;
+  cnd.notify_one();
+}
+
+int EXAM_IMPL(mt_test_wg21::condition_var)
+{
+  val = 0;
+  
+  std::tr2::thread t( thread_func5 );
+  
+  std::tr2::unique_lock<std::tr2::mutex> lk( cond_mtx );
+  
+  EXAM_CHECK( cnd.timed_wait( lk, std::tr2::milliseconds(500), true_val() ) );
+  
+  EXAM_CHECK( val == 1 );
+  
+  t.join();
+  
+  val = 0;
+  
   return EXAM_RESULT;
 }
 

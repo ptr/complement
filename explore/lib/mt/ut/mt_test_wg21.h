@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/07/07 13:10:54 yeti>
+// -*- C++ -*- Time-stamp: <09/01/17 00:27:50 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -24,6 +24,7 @@ class mt_test_wg21
     int EXAM_DECL(barrier);
     int EXAM_DECL(semaphore);
     int EXAM_DECL(fork);
+    int EXAM_DECL(condition_var);
 
   private:
     // static xmt::Thread::ret_t thread_entry_call( void * );

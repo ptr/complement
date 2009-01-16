@@ -105,6 +105,7 @@ int main( int argc, const char** argv )
   t.add( &mt_test_wg21::mutex_test, test_wg21, "mt_test_wg21::mutex_test" );
   t.add( &mt_test_wg21::barrier, test_wg21, "mt_test_wg21::barrier" );
   t.add( &mt_test_wg21::semaphore, test_wg21, "mt_test_wg21::semaphore" );
+  t.add( &mt_test_wg21::condition_var, test_wg21, "mt_test_wg21::condition_variable" );
   t.add( &mt_test_wg21::fork, test_wg21, "mt_test_wg21::fork" );
 
   uid_test_wg21 test_wg21_uid;
