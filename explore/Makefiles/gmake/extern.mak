@@ -39,6 +39,5 @@ endif
 endif
 
 ifdef STLPORT_DIR
-STLPORT_LIB_DIR ?= $(STLPORT_DIR)/${TARGET_NAME}lib
 STLPORT_INCLUDE_DIR ?= $(STLPORT_DIR)/stlport
 endif
