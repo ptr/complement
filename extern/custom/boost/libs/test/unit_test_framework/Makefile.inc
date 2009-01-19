@@ -3,11 +3,15 @@
 BOOST_TST_SRC = $(BOOST_INCLUDE_DIR)/libs/test/src
 LIBNAME = boost_test_utf
 MAJOR = 1
-MINOR = 34
+MINOR = 37
 PATCH = 0
 SRC_CPP = $(BOOST_TST_SRC)/compiler_log_formatter.cpp \
+          $(BOOST_TST_SRC)/debug.cpp \
+          $(BOOST_TST_SRC)/exception_safety.cpp \
           $(BOOST_TST_SRC)/execution_monitor.cpp \
           $(BOOST_TST_SRC)/framework.cpp \
+          $(BOOST_TST_SRC)/interaction_based.cpp \
+          $(BOOST_TST_SRC)/logged_expectations.cpp \
           $(BOOST_TST_SRC)/plain_report_formatter.cpp \
           $(BOOST_TST_SRC)/progress_monitor.cpp \
           $(BOOST_TST_SRC)/results_collector.cpp \

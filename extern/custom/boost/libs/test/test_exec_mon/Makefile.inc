@@ -3,9 +3,10 @@
 BOOST_TST_SRC = ${BOOST_INCLUDE_DIR}/libs/test/src
 LIBNAME = boost_test_tem
 MAJOR = 1
-MINOR = 34
+MINOR = 37
 PATCH = 0
 SRC_CPP = ${BOOST_TST_SRC}/compiler_log_formatter.cpp \
+          ${BOOST_TST_SRC}/debug.cpp \
           ${BOOST_TST_SRC}/execution_monitor.cpp \
           ${BOOST_TST_SRC}/framework.cpp \
           ${BOOST_TST_SRC}/plain_report_formatter.cpp \

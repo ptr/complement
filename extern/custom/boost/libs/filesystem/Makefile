@@ -12,6 +12,8 @@ POST_INSTALL += ; rm -f  $(INSTALL_LIB_DIR)/libboost_filesystem.so $(INSTALL_LIB
 POST_INSTALL_DBG += ; rm -f  $(INSTALL_LIB_DIR_DBG)/libboost_filesystem.so $(INSTALL_LIB_DIR_DBG)/${SO_NAME_DBG}
 endif
 
+INCLUDES += -I${BOOST_INCLUDE_DIR}
+
 check:	all
 	${MAKE} -C test check
 
