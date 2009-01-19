@@ -23,6 +23,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <boost/tokenizer.hpp>
+#include <stack>
+
 // #include <iostream>
 
 namespace stem {
@@ -361,6 +364,21 @@ FileRcvMgr::~FileRcvMgr()
 void FileRcvMgr::receive( const stem::Event& ev )
 {
   try {
+    typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
+    boost::char_separator<char> sep( "/" );
+    tokenizer tokens( ev.value(), sep );
+    stack<string> st;
+    for ( tokenizer::iterator tok_iter = tokens.begin(); tok_iter != tokens.end(); ++tok_iter ) {
+      if ( *tok_iter == ".." ) {
+        if ( st.empty() ) {
+          throw invalid_argument( "attempt to exit outside base catalog" );
+        }
+        st.pop();
+      } else {
+        st.push( *tok_iter );
+      }
+    }
+
     string nm = prefix;
     if ( (nm.length() == 0) || (nm[nm.length() - 1] != '/') ) {
       if ( (ev.value().length() > 0) && (ev.value()[ev.value().length()-1] != '/') ) {

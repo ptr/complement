@@ -3,5 +3,5 @@
 LIBNAME = Net
 MAJOR = 0
 MINOR = 3
-PATCH = 0
+PATCH = 1
 SRC_CC = cgi.cc http.cc ftransfer.cc
