@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 19:08:00 yeti>
+// -*- C++ -*- Time-stamp: <09/01/21 14:53:15 ptr>
 
 /*
  *
@@ -11,6 +11,7 @@
 
 #include "Convert.h"
 #include <mt/date_time>
+#include <string>
 
 using namespace std::tr2;
 
@@ -92,6 +93,22 @@ void Convert::handler3( const mess& m )
   cnd.notify_one();
 }
 
+void Convert::handler4( const stem::EventVoid& ev )
+{
+  lock_guard<mutex> lk( mtx );
+  v = -2;
+  cnd.notify_one();
+}
+
+void Convert::handler5( const std::string& m )
+{
+  lock_guard<mutex> lk( mtx );
+  v = -3;
+  m3 = m;
+
+  cnd.notify_one();
+}
+
 bool Convert::wait()
 {
   unique_lock<mutex> lk( mtx );
@@ -103,4 +120,6 @@ DEFINE_RESPONSE_TABLE( Convert )
   EV_EDS( ST_NULL, CONV_EV1, handler1 )
   EV_Event_base_T_( ST_NULL, CONV_EV2, handler2, mess )
   EV_T_( ST_NULL, CONV_EV3, handler3, mess )
+  EV_Event_base_T_( ST_NULL, CONV_EV4, handler4, void )
+  EV_T_( ST_NULL, CONV_EV5, handler5, std::string )
 END_RESPONSE_TABLE

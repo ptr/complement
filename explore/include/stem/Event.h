@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <08/09/08 23:18:05 ptr>
+// -*- C++ -*- Time-stamp: <09/01/21 02:09:29 ptr>
 
 /*
  *
- * Copyright (c) 1995-1999, 2002, 2003, 2005-2008
+ * Copyright (c) 1995-1999, 2002, 2003, 2005-2009
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -582,7 +582,7 @@ class Event_base<void> :
         __Event_base_aux<void,std::tr1::true_type>( c )
       { }
 
-    __FIT_EXPLICIT Event_base( const Event_base& e ) :
+    Event_base( const Event_base& e ) :
         __Event_base_aux<void,std::tr1::true_type>( e )
       { }
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/12 00:27:10 ptr>
+// -*- C++ -*- Time-stamp: <09/01/21 14:52:41 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -922,6 +922,10 @@ int EXAM_IMPL(stem_test::boring_manager_more)
 int EXAM_IMPL(stem_test::convert)
 {
   Convert conv;
+
+  // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+  // stem::EventHandler::manager()->settrs( &std::cerr );
+
   mess m;
 
   m.super_id = 2;
@@ -977,6 +981,31 @@ int EXAM_IMPL(stem_test::convert)
 
   EXAM_CHECK( conv.v == 3 );
   EXAM_CHECK( conv.m3 == ", world!" );
+
+  conv.v = 0;
+
+  stem::EventVoid ev4( CONV_EV4 );
+
+  ev4.dest( conv.self_id() );
+
+  conv.Send( ev4 );
+
+  EXAM_CHECK( conv.wait() );
+  EXAM_CHECK( conv.v == -2 );
+
+  conv.v = 0;
+
+  stem::Event ev5( CONV_EV5 );
+
+  ev5.dest( conv.self_id() );
+  ev5.value() = "\nMessage pass";
+
+  conv.Send( ev5 );
+
+  EXAM_CHECK( conv.wait() );
+
+  EXAM_CHECK( conv.v == -3 );
+  EXAM_CHECK( conv.m3 == "\nMessage pass" );
 
   conv.v = 0;
 

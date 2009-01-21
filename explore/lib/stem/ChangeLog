@@ -1,3 +1,15 @@
+2009-01-21  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* EventHandler.h, _EventHandler.cc: reduce amount of
+	entities in convertion events within dispatchers;
+
+	* EventHandler.h, Event.h: add converters for marginal,
+	but very important cases; it is possible to write
+	handlers that accept EventVoid and std::string, see
+	ut/Convert.cc;
+
+	* libstem: library version 4.10.0.
+
 2008-12-26  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* Cron.h, Cron.cc: replace int32 by string in argument

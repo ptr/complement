@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/06/27 12:28:42 ptr>
+// -*- C++ -*- Time-stamp: <09/01/21 14:48:35 ptr>
 
 /*
- * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006
+ * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006, 2009
  * Petr Ovtchenkov
  * 
  * Copyright (c) 1999-2001
@@ -33,6 +33,12 @@
 #include <ostream>
 #include <typeinfo>
 
+#ifdef STLPORT
+# include <type_traits>
+#else
+# include <misc/type_traits.h>
+#endif
+
 #include <mt/mutex>
 
 #ifdef _MSC_VER
@@ -57,12 +63,10 @@ typedef unsigned state_type;
 #endif
 
 #define D1(cls) stem::__dispatcher<stem::__member_function<cls,stem::Event> >
-#define D2(cls) stem::__dispatcher_void<stem::__member_function_void<cls>,stem::EventVoid>
+#define D2(cls) stem::__dispatcher_void<stem::__member_function<cls,void>,stem::Event>
 
-#define __D_EV_T(cls,T) stem::__dispatcher_convert_Event<stem::__member_function<cls,\
-                                      stem::Event_base< T > >,stem::Event>
-#define __D_T(cls,T) stem::__dispatcher_convert_Event_extr<stem::__member_function<cls,T >,\
-                                                          stem::Event>
+#define __D_EV_T(cls,T) stem::__dispatcher_convert<stem::__member_function<cls,stem::Event_base<T> >,stem::Event>
+#define __D_T(cls,T) stem::__dispatcher_convert<stem::__member_function<cls,T>,stem::Event>
 
 #ifndef __FIT_TEMPLATE_CLASSTYPE_BUG
 #  define EV_EDS(state,event,handler) \
@@ -94,26 +98,27 @@ struct GENERIC
     virtual void foo( Event& ) = 0; // This is to allow usage of virtual
                                     // catchers, indeed never used.
     typedef void (GENERIC::*PMF)();
-    typedef void (*DPMF)();
+    typedef void (*DPMF)( void*, PMF, const Event& );
 };
 
+namespace detail {
 
 template <class T, class U>
 struct convert
 {
-    const U& operator ()( const T& x ) const
-      { return (const U&)(x); }
+    // U operator ()( T x ) const
+    //   { return (U)(x); }
 };
 
-template <class T /* stem::Event_base<X> */ >
-struct convert_Event // from transport
+template <class T>
+struct convert<stem::Event,stem::Event_base<T> >
 {
-    T operator ()( const stem::Event& x ) const
+    stem::Event_base<T> operator ()( const stem::Event& x ) const
       {
         if ( (x.flags() & __Event_Base::expand) == 0 ) {
           throw std::invalid_argument( std::string("invalid conversion") );
         }
-        T tmp;
+        stem::Event_base<T> tmp;
         if ( /* x.is_from_foreign() */ x.flags() & __Event_Base::conv ) {
           tmp.net_unpack( x );
         } else {
@@ -125,7 +130,7 @@ struct convert_Event // from transport
 };
 
 template <class T>
-struct convert_Event_extr // from transport and extract value
+struct convert<stem::Event,T>
 {
     T operator ()( const stem::Event& x ) const
       {
@@ -144,7 +149,7 @@ struct convert_Event_extr // from transport and extract value
 };
 
 template <class T>
-struct Event_convert // to transport
+struct convert<stem::Event_base<T>,stem::Event>
 {
     stem::Event operator ()( const stem::Event_base<T>& x ) const
       {
@@ -161,32 +166,47 @@ struct Event_convert // to transport
       }
 };
 
+template <>
+struct convert<stem::Event,stem::Event>
+{
+    const stem::Event& operator ()( const stem::Event& x ) const
+      { return x; }
+};
+
+template <>
+struct convert<stem::Event,std::string>
+{
+    const std::string& operator ()( const stem::Event& x ) const
+      { return x.value(); }
+};
+
+template <>
+struct convert<stem::Event,void>
+{
+    void operator ()( const stem::Event& ) const
+      { }
+};
+
+} // namespace detail
+
 template <class T, class Arg>
 struct __member_function
 {
     typedef Arg argument_type;
-    typedef Arg& reference_argument_type;
-    typedef const Arg& const_reference_argument_type;
-    typedef T   class_type;
-    typedef T * pointer_class_type;
-    typedef T&  reference_class_type;
-    typedef const T * const_pointer_class_type;
-    typedef const T&  const_reference_class_type;
+    typedef typename std::tr1::add_lvalue_reference<typename std::tr1::add_const<typename std::tr1::remove_reference<Arg>::type>::type>::type const_reference_argument_type;
+    typedef typename std::tr1::add_pointer<typename std::tr1::remove_pointer<T>::type>::type pointer_class_type;
     typedef void (T::*pmf_type)( const_reference_argument_type );
-    typedef void (*dpmf_type)( const_pointer_class_type, pmf_type,
+    typedef void (*dpmf_type)( typename std::tr1::add_const<typename std::tr1::add_pointer<typename std::tr1::remove_pointer<T>::type>::type>::type, pmf_type,
 			       const_reference_argument_type arg );
 };
 
 template <class T>
-struct __member_function_void
+struct __member_function<T,void>
 {
-    typedef T   class_type;
-    typedef T * pointer_class_type;
-    typedef T&  reference_class_type;
-    typedef const T * const_pointer_class_type;
-    typedef const T&  const_reference_class_type;
+    typedef void argument_type;
+    typedef typename std::tr1::add_pointer<typename std::tr1::remove_pointer<T>::type>::type pointer_class_type;
     typedef void (T::*pmf_type)();
-    typedef void (*dpmf_type)( const_pointer_class_type, pmf_type,
+    typedef void (*dpmf_type)( typename std::tr1::add_const<typename std::tr1::add_pointer<typename std::tr1::remove_pointer<T>::type>::type>::type, pmf_type,
 			       void * );
 };
 
@@ -209,21 +229,7 @@ template <class PMF, class Arg >
 struct __dispatcher_convert
 {
     static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, const Arg& arg )
-      { (c->*pmf)( convert<Arg,typename PMF::argument_type>()(arg) ); }
-};
-
-template <class PMF, class Arg >
-struct __dispatcher_convert_Event
-{
-    static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, const Arg& arg )
-      {	(c->*pmf)( convert_Event<typename PMF::argument_type>()(arg) ); }
-};
-
-template <class PMF, class Arg >
-struct __dispatcher_convert_Event_extr
-{
-    static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, const Arg& arg )
-      {	(c->*pmf)( convert_Event_extr<typename PMF::argument_type>()(arg) ); }
+      {	(c->*pmf)( typename stem::detail::convert<Arg,typename PMF::argument_type>()(arg) ); }
 };
 
 struct __AnyPMFentry
@@ -413,28 +419,25 @@ class __EvHandler
 			const Event& event, std::ostream& out );
     void Out( std::ostream& ) const;
 
-    convert<GENERIC::PMF, typename __member_function<T,Event>::pmf_type>  pmf;
-    convert<GENERIC::DPMF,typename __member_function<T,Event>::dpmf_type> dpmf;
-
     table_type table;
 };
 
 template <class T, class InputIterator>
-bool __EvHandler<T, InputIterator>::Dispatch( T *c, InputIterator first,
+bool __EvHandler<T, InputIterator>::Dispatch( T* c, InputIterator first,
 				   InputIterator last, const Event& event )
 {
   if ( first == last ) {
     return false;
   }
   stem::code_type code = event.code();
-  __AnyPMFentry *entry;
+  __AnyPMFentry* entry;
   typename table_type::const_iterator1 i1 = table.find( code );
   if ( i1 == table.end() ) {
     return false;
   }  
   while ( first != last ) {
     if ( table.get_1( i1, *first++, entry ) ) {
-      (*dpmf(entry->dpmf))( c, pmf(entry->pmf), event );
+      (*entry->dpmf)( c, entry->pmf, event );
       return true;
     }
   }
@@ -585,54 +588,15 @@ class EventHandler
     static EvManager *manager()
       { return _mgr; }
     __FIT_DECLSPEC void Send( const Event& e );
-    __FIT_DECLSPEC void Send( const EventVoid& e );
     __FIT_DECLSPEC void Forward( const Event& e );
-    __FIT_DECLSPEC void Forward( const EventVoid& e );
-
-/* ************************************************************ *\
-   Member template will be nice here, but sorry...
-   I put macro: if you want send message MSG to H, sending object t
-   of class T, you write in class [derived from EventHandle]
-   
-   class X :
-      public EventHandle
-   {
-     public:
-       ...
-       SEND_T_(T)
-       ...
-   } x;
-
-   class T :
-      public __pack_base
-   {
-      virtual void pack( std::ostream& s ) const;
-      virtual void net_pack( std::ostream& s ) const;
-      virtual void unpack( std::istream& s );
-      virtual void net_unpack( std::istream& s );
-   } t;
-
-
-   And then can send it via
-     ...
-     x.SendMessage( H, MSG, t );
-
-\* ************************************************************ */
-#define SEND_T_(T) \
-    void SendMessage( stem::key_type dst, stem::code_type code, const T& s ) \
-      { \
-        Event_base<T> e( code, s ); \
-        e.dest( dst ); \
-        EventHandler::Send( stem::Event_convert<T>()( e ) ); \
-      }
 
     template <class D>
     void Send( const stem::Event_base<D>& e )
-      { EventHandler::Send( stem::Event_convert<D>()( e ) ); }
+      { EventHandler::Send( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
 
     template <class D>
     void Forward( const stem::Event_base<D>& e )
-      { EventHandler::Forward( stem::Event_convert<D>()( e ) ); }
+      { EventHandler::Forward( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
 
     addr_type self_id() const
       { return _id; }

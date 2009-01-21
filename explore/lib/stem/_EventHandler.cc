@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/07/08 13:04:19 yeti>
+// -*- C++ -*- Time-stamp: <09/01/21 01:18:08 ptr>
 
 /*
- * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006, 2008
+ * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006, 2008, 2009
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -106,22 +106,9 @@ void EventHandler::Send( const Event& e )
 }
 
 __FIT_DECLSPEC
-void EventHandler::Send( const EventVoid& e )
-{
-  e.src( _id );
-  _mgr->push( stem::Event_convert<void>()( e ) );
-}
-
-__FIT_DECLSPEC
 void EventHandler::Forward( const Event& e )
 {
   _mgr->push( e );
-}
-
-__FIT_DECLSPEC
-void EventHandler::Forward( const EventVoid& e )
-{
-  _mgr->push( stem::Event_convert<void>()( e ) );
 }
 
 __FIT_DECLSPEC

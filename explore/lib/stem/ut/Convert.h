@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 19:07:02 yeti>
+// -*- C++ -*- Time-stamp: <09/01/21 01:56:55 ptr>
 
 /*
  *
@@ -53,6 +53,8 @@ class Convert :
     void handler1( const stem::Event& );
     void handler2( const stem::Event_base<mess>& );
     void handler3( const mess& );
+    void handler4( const stem::EventVoid& );
+    void handler5( const std::string& );
 
     bool wait();
 
@@ -75,5 +77,7 @@ class Convert :
 #define CONV_EV1 0x90a
 #define CONV_EV2 0x90b
 #define CONV_EV3 0x90c
+#define CONV_EV4 0x90d
+#define CONV_EV5 0x90e
 
 #endif // __Convert_h
