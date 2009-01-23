@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/15 17:59:49 ptr>
+// -*- C++ -*- Time-stamp: <09/01/24 01:34:01 ptr>
 
 /*
  *
@@ -83,24 +83,26 @@ int EXAM_IMPL(ftransfer_test::core)
   return EXAM_RESULT;
 }
 
-string md5file(const char* filename)
+static string md5file( const char* filename )
 {
-  FILE *file;
+  FILE* file;
   MD5_CTX context;
   int len;
   unsigned char buffer[1024], digest[16];
 
-  if ((file = fopen (filename, "rb")) == NULL)
+  if ( (file = fopen(filename, "rb")) == NULL ) {
     throw runtime_error("can't open file");
+  }
     
-  MD5Init (&context);
-  while (len = fread (buffer, 1, 1024, file))
-    MD5Update (&context, buffer, len);
-  MD5Final (digest, &context);
+  MD5Init(&context);
+  while ( len = fread( buffer, 1, 1024, file ) ) {
+    MD5Update( &context, buffer, len );
+  }
+  MD5Final( digest, &context );
 
-  fclose (file);
+  fclose(file);
   
-  return string((const char*)digest);
+  return string( (const char*)digest, sizeof(digest) );
 }
 
 
@@ -114,9 +116,10 @@ int EXAM_IMPL(ftransfer_test::big_file)
   {
     misc::otfstream f( "/tmp/" );
     
-    // generating 4 Mb file
-    for (int i = 0;i < (1 << 18);++i)
-      f << xmt::uid_str();
+    // generating 9MB file
+    for ( int i = 0; i < (1 << 18); ++i ) {
+      f << xmt::uid_str(); // 36
+    }
 
     EXAM_CHECK( f.good() );
 
@@ -140,7 +143,8 @@ int EXAM_IMPL(ftransfer_test::big_file)
     sender.truncate_path( "/tmp/" );
     sender.sendfile( name, receiver.self_id() );
 
-    std::tr2::this_thread::sleep( std::tr2::seconds(10) );
+    // expected speed more then 10MB/s for local transfer
+    std::tr2::this_thread::sleep( std::tr2::seconds(1) );
   }
 
   fs::remove( name );
