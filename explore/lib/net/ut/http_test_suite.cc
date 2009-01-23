@@ -54,8 +54,9 @@ int main( int argc, const char** argv )
   t.add( &http_test::response, test, "" );
 
   ftransfer_test ft_test;
-
-  t.add( &ftransfer_test::core, ft_test, "file transfer core" );
+  
+  t.add( &ftransfer_test::big_file, ft_test, "big file transfer",
+    t.add( &ftransfer_test::core, ft_test, "file transfer core" ));
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );

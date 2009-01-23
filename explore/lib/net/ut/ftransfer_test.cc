@@ -17,6 +17,7 @@
 #include <mt/uid.h>
 
 #include <misc/tfstream>
+#include <misc/md5.h>
 
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
@@ -79,5 +80,80 @@ int EXAM_IMPL(ftransfer_test::core)
 
   fs::remove_all( target );
 
+  return EXAM_RESULT;
+}
+
+string md5file(const char* filename)
+{
+  FILE *file;
+  MD5_CTX context;
+  int len;
+  unsigned char buffer[1024], digest[16];
+
+  if ((file = fopen (filename, "rb")) == NULL)
+    throw runtime_error("can't open file");
+    
+  MD5Init (&context);
+  while (len = fread (buffer, 1, 1024, file))
+    MD5Update (&context, buffer, len);
+  MD5Final (digest, &context);
+
+  fclose (file);
+  
+  return string((const char*)digest);
+}
+
+
+int EXAM_IMPL(ftransfer_test::big_file)
+{
+  namespace fs = boost::filesystem;
+
+  std::string name;
+  std::string h1, h2;
+
+  {
+    misc::otfstream f( "/tmp/" );
+    
+    // generating 4 Mb file
+    for (int i = 0;i < (1 << 18);++i)
+      f << xmt::uid_str();
+
+    EXAM_CHECK( f.good() );
+
+    name = f.name();
+  }
+
+  EXAM_CHECK( fs::exists( name ) );
+  
+  h1 = md5file( name.c_str() );
+  
+  std::string target = "/tmp/";
+
+  target += xmt::uid_str();
+
+  {
+    FileRcvMgr receiver;
+    FileSndMgr sender;
+
+    receiver.set_prefix( target );
+
+    sender.truncate_path( "/tmp/" );
+    sender.sendfile( name, receiver.self_id() );
+
+    std::tr2::this_thread::sleep( std::tr2::seconds(10) );
+  }
+
+  fs::remove( name );
+
+  name = target + '/' + name.substr( sizeof( "/tmp/" ) - 1 );
+
+  EXAM_CHECK( fs::exists( name ) );
+  
+  h2 = md5file( name.c_str() );
+  
+  EXAM_CHECK( h1 == h2 );
+
+  fs::remove_all( target );
+  
   return EXAM_RESULT;
 }

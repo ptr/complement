@@ -101,6 +101,7 @@ void EvManager::_Dispatch( EvManager* p )
       }
 #endif // __FIT_STEM_TRACE
     }
+    
     while ( !out_ev_queue.empty() ) {
       me.Send( out_ev_queue.front() );
       out_ev_queue.pop_front();

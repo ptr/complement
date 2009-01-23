@@ -19,6 +19,7 @@ class ftransfer_test
 {
   public:
     int EXAM_DECL(core);
+    int EXAM_DECL(big_file);
 };
 
 #endif // __FTRANSFER_TEST_H
