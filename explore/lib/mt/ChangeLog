@@ -1,3 +1,10 @@
+2009-01-29  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* thread, thread.cc: copy signal block/unblock/set heandler
+	methods from xmt;
+	
+	* libxmt: release 2.0.12.
+
 2008-12-22  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* lfstream.h, lfstream.cc: re-implementation of lfstream,
