@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <08/12/29 22:54:31 ptr>
+// -*- C++ -*- Time-stamp: <09/01/29 15:24:26 ptr>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005-2008
+ * Copyright (c) 2002, 2003, 2005-2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -37,6 +37,8 @@ class sockios_test
     int EXAM_DECL(few_packets_loop);
 
     int EXAM_DECL(two_ports);
+
+    int EXAM_DECL(service_stop);
 };
 
 #endif // __sockios2_test_h

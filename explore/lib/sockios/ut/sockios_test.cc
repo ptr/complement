@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/29 22:57:02 ptr>
+// -*- C++ -*- Time-stamp: <09/01/29 17:34:23 ptr>
 
 /*
  *
@@ -1200,6 +1200,87 @@ int EXAM_IMPL(sockios_test::two_ports)
     prss1.wait();
     prss2.close();
     prss2.wait();
+  }
+  
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(sockios_test::service_stop)
+{
+  try {
+    xmt::shm_alloc<0> seg;
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+    xmt::allocator_shm<barrier_ip,0> shm;
+    // xmt::allocator_shm<mutex_ip,0> mtx;
+    // xmt::allocator_shm<condition_event_ip,0> cnd;
+    // xmt::allocator_shm<int,0> ishm;
+
+    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+    barrier_ip& b2 = *new ( shm.allocate( 1 ) ) barrier_ip();
+    try {
+      this_thread::fork();
+
+      b.wait();
+
+      std::tr2::this_thread::block_signal( SIGINT );
+
+      connect_processor<worker> prss( 2008 );
+
+      int ret = 0;
+
+      EXAM_CHECK_ASYNC_F( prss.good(), ret );
+      EXAM_CHECK_ASYNC_F( prss.is_open(), ret );
+
+      sigset_t signal_mask;
+
+      sigemptyset( &signal_mask );
+      sigaddset( &signal_mask, SIGINT );
+
+      b2.wait();
+
+      int sig_caught;
+      sigwait( &signal_mask, &sig_caught );
+
+      if ( sig_caught == SIGINT ) {
+        cerr << __FILE__ << ':' << __LINE__ << endl;
+        prss.close();
+      }
+
+      prss.wait();
+
+      exit(ret);
+    }
+    catch ( std::tr2::fork_in_parent& child ) {
+      b.wait();
+
+      sockstream s( "localhost", 2008 );
+
+      EXAM_CHECK( s.good() );
+      EXAM_CHECK( s.is_open() );
+
+      b2.wait();
+
+      this_thread::sleep( milliseconds( 200 ) ); // chance for sigwait
+
+      kill( child.pid(), SIGINT );
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+    }
+
+    shm.deallocate( &b2 );
+    shm.deallocate( &b );
+
+    seg.deallocate();
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
   }
   
   return EXAM_RESULT;
