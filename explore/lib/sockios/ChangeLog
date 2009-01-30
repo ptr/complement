@@ -1,3 +1,10 @@
+2009-01-30  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* sockmgr.h, sockmgr.cc: close sock server,
+	even if open connections present;
+
+	* libsockios: release 2.2.4.
+
 2008-12-19  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* sockmgr.h, sockmgr.cc: clean code processing

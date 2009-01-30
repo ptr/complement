@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/29 17:34:23 ptr>
+// -*- C++ -*- Time-stamp: <09/01/30 14:22:38 ptr>
 
 /*
  *
@@ -1221,33 +1221,40 @@ int EXAM_IMPL(sockios_test::service_stop)
     try {
       this_thread::fork();
 
-      b.wait();
-
       std::tr2::this_thread::block_signal( SIGINT );
-
-      connect_processor<worker> prss( 2008 );
 
       int ret = 0;
 
-      EXAM_CHECK_ASYNC_F( prss.good(), ret );
-      EXAM_CHECK_ASYNC_F( prss.is_open(), ret );
+      try {
+        connect_processor<worker> prss( 2008 );
 
-      sigset_t signal_mask;
+        EXAM_CHECK_ASYNC_F( prss.good(), ret );
+        EXAM_CHECK_ASYNC_F( prss.is_open(), ret );
 
-      sigemptyset( &signal_mask );
-      sigaddset( &signal_mask, SIGINT );
+        b.wait();
 
-      b2.wait();
+        sigset_t signal_mask;
 
-      int sig_caught;
-      sigwait( &signal_mask, &sig_caught );
+        sigemptyset( &signal_mask );
+        sigaddset( &signal_mask, SIGINT );
 
-      if ( sig_caught == SIGINT ) {
-        cerr << __FILE__ << ':' << __LINE__ << endl;
-        prss.close();
+        b2.wait();
+
+        int sig_caught;
+        sigwait( &signal_mask, &sig_caught );
+
+        if ( sig_caught == SIGINT ) {
+          EXAM_MESSAGE_ASYNC( "catch INT signal" );
+          prss.close();
+        } else {
+          EXAM_ERROR_ASYNC_F( "catch of INT signal expected", ret );
+        }
+
+        prss.wait();
       }
-
-      prss.wait();
+      catch ( ... ) {
+        EXAM_ERROR_ASYNC_F( "unexpected exception", ret );
+      }
 
       exit(ret);
     }

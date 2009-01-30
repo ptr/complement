@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/12/19 10:49:44 ptr>
+// -*- C++ -*- Time-stamp: <09/01/30 14:23:29 ptr>
 
 /*
- * Copyright (c) 2008
+ * Copyright (c) 2008, 2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -82,11 +82,23 @@ void sockmgr<charT,traits,_Alloc>::push( socks_processor_t& p )
   _ctl.data.ptr = static_cast<void *>(&p);
 
   p.addref();
-  int r = ::write( pipefd[1], &_ctl, sizeof(ctl) );
-  if ( r < 0 || r != sizeof(ctl) ) {
-    p.release();
-    throw std::runtime_error( "can't write to pipe" );
-  }
+  int r = 0;
+  int ret = 0;
+  do {
+    ret = ::write( pipefd[1], &_ctl, sizeof(ctl) );
+    if ( ret < 0 ) {
+      switch ( errno ) {
+        case EINTR:
+        case EAGAIN:
+          continue;
+        default:
+          p.release();
+          throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>::push( socks_processor_t& p )" ) );
+          break;
+      }
+    }
+    r += ret;
+  } while ( (r != sizeof(ctl)) /* || (ret != 0) */ );
 }
 
 template<class charT, class traits, class _Alloc>
@@ -97,10 +109,23 @@ void sockmgr<charT,traits,_Alloc>::push( sockbuf_t& s )
   _ctl.data.ptr = static_cast<void *>(&s);
 
   errno = 0;
-  int r = ::write( pipefd[1], &_ctl, sizeof(ctl) );
-  if ( r < 0 || r != sizeof(ctl) ) {
-    throw std::runtime_error( "can't write to pipe" );
-  }
+
+  int r = 0;
+  int ret = 0;
+  do {
+    ret = ::write( pipefd[1], &_ctl, sizeof(ctl) );
+    if ( ret < 0 ) {
+      switch ( errno ) {
+        case EINTR:
+        case EAGAIN:
+          continue;
+        default:
+          throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>::push( sockbuf_t& s )" ) );
+          break;
+      }
+    }
+    r += ret;
+  } while ( (r != sizeof(ctl)) /* || (ret != 0) */ );
 }
 
 template<class charT, class traits, class _Alloc>
@@ -111,11 +136,23 @@ void sockmgr<charT,traits,_Alloc>::pop( socks_processor_t& p, sock_base::socket_
   _ctl.data.ptr = reinterpret_cast<void *>(&p);
 
   p.addref();
-  int r = ::write( pipefd[1], &_ctl, sizeof(ctl) );
-  if ( r < 0 || r != sizeof(ctl) ) {
-    p.release();
-    throw std::runtime_error( "can't write to pipe" );
-  }
+  int r = 0;
+  int ret = 0;
+  do {
+    ret = ::write( pipefd[1], &_ctl, sizeof(ctl) );
+    if ( ret < 0 ) {
+      switch ( errno ) {
+        case EINTR:
+        case EAGAIN:
+          continue;
+        default:
+          p.release();
+          throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>::pop( socks_processor_t& p, sock_base::socket_type _fd )" ) );
+          break;
+      }
+    }
+    r += ret;
+  } while ( (r != sizeof(ctl)) /* || (ret != 0) */ );
 }
 
 template<class charT, class traits, class _Alloc>
@@ -213,13 +250,23 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
 
   ctl _ctl;
 
-  int r = read( pipefd[0], &_ctl, sizeof(ctl) );
-  if ( r < 0 ) {
-    // throw system_error
-    throw std::detail::stop_request(); // runtime_error( "Stop request (normal flow)" );
-  } else if ( r == 0 ) {
-    throw runtime_error( "Read pipe return 0" );
-  }
+  int r = 0;
+  int ret = 0;
+  do {
+    ret = read( pipefd[0], &_ctl, sizeof(ctl) );
+    if ( ret < 0 ) {
+      switch ( errno ) {
+        case EINTR:
+        case EAGAIN:
+          continue;
+        default:
+          throw std::detail::stop_request(); // runtime_error( "Stop request (normal flow)" );
+      }
+    } else if ( ret == 0 ) {
+      throw runtime_error( "Read pipe return 0" );
+    }
+    r += ret;
+  } while ( r != sizeof(ctl) );
 
   switch ( _ctl.cmd ) {
     case listener:
@@ -267,13 +314,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
       break;
     case listener_on_exit:
       listeners_final.insert( _ctl.data.ptr );
-      {
-        int lfd = check_closed_listener( reinterpret_cast<socks_processor_t*>(_ctl.data.ptr) );
-        if ( lfd != -1 ) {
-          descr.erase( lfd );
-        }
-        // dump_descr();
-      }
+      check_closed_listener( reinterpret_cast<socks_processor_t*>(_ctl.data.ptr) );
       static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
       break;
     case rqstop:
@@ -412,16 +453,8 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
     }
     if ( info.p != 0 ) { // ... but controlled by processor
       (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
-
-      socks_processor_t* p = info.p;
-      descr.erase( ifd );
-      int lfd = check_closed_listener( p );
-      if ( lfd != -1 ) {
-        descr.erase( lfd );
-      }
-    } else {
-      descr.erase( ifd );
     }
+    descr.erase( ifd );
     return;
   }
 
@@ -544,14 +577,14 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
       b->close();
       (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
 
-      socks_processor_t* p = info.p;
+      // socks_processor_t* p = info.p;
 
       descr.erase( ifd );
 
-      int lfd = check_closed_listener( p );
-      if ( lfd != -1 ) {
-        descr.erase( lfd );
-      }
+      // int lfd = check_closed_listener( p );
+      // if ( lfd != -1 ) {
+      //   descr.erase( lfd );
+      // }
     } else {
       b->_notify_close = false; // avoid deadlock
       descr.erase( ifd );
@@ -562,18 +595,19 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
 }
 
 template<class charT, class traits, class _Alloc>
-int sockmgr<charT,traits,_Alloc>::check_closed_listener( socks_processor_t* p )
+void sockmgr<charT,traits,_Alloc>::check_closed_listener( socks_processor_t* p )
 {
-  int myfd = -1;
-
   if ( !listeners_final.empty() ) {
     if ( listeners_final.find( static_cast<void*>(p) ) != listeners_final.end() ) {
-      for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
+      for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ) {
         if ( i->second.p == p ) {
           if ( (i->second.flags & fd_info::listener) == 0 ) { // it's not me!
-            return -1;
+            i->second.b->close();
+            (*p)( i->first, typename socks_processor_t::adopt_close_t() );
           }
-          myfd = i->first;
+          /* i = */ descr.erase( i++ );
+        } else {
+          ++i;
         }
       }
 
@@ -583,8 +617,6 @@ int sockmgr<charT,traits,_Alloc>::check_closed_listener( socks_processor_t* p )
       p->release(); // socks_processor_t* p not under sockmgr control more
     }
   }
-
-  return myfd;
 }
 
 template<class charT, class traits, class _Alloc>
