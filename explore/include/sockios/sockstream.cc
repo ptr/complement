@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/12/18 12:04:37 ptr>
+// -*- C++ -*- Time-stamp: <09/02/03 12:51:44 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -317,7 +317,6 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
   std::tr2::unique_lock<std::tr2::mutex> lk( ulck );
 
   if ( this->gptr() < this->egptr() ) {
-    // std::cerr << __FILE__ << ':' << __LINE__ << std::endl;
     return traits::to_int_type(*this->gptr());
   }
 

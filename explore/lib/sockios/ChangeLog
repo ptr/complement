@@ -1,3 +1,15 @@
+2009-02-03  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* sockstream.cc, socksrv.cc, sockmgr.h, sockmgr.cc:
+	listener should go to utilization only after command
+	from pipe received, because on epoll we can lost it socket
+	descriptor (i.e. descriptor was closed and was set to -1);
+	EPOLLRDHUP flag removed from processing---it absent in
+	modern linux kernels (and appropriate functionality
+	absent too);
+	
+	* libsockios: release 2.3.0.
+
 2009-01-30  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* sockmgr.h, sockmgr.cc: close sock server,

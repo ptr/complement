@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/30 14:16:46 ptr>
+// -*- C++ -*- Time-stamp: <09/02/03 12:31:02 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -13,9 +13,11 @@
 
 #include <sys/epoll.h>
 
+/*
 #ifndef EPOLLRDHUP
 #  define EPOLLRDHUP 0x2000
 #endif
+*/
 
 #include <fcntl.h>
 
@@ -165,20 +167,16 @@ class sockmgr
     struct fdclose
     { };
 
-    void check_closed_listener( socks_processor_t* p );
     void dump_descr();
 
 #ifdef __USE_STLPORT_HASH
     typedef std::hash_map<sock_base::socket_type,fd_info> fd_container_type;
-    typedef std::hash_set<void *> listener_container_type;
 #endif
 #ifdef __USE_STD_HASH
     typedef __gnu_cxx::hash_map<sock_base::socket_type, fd_info> fd_container_type;
-    typedef __gnu_cxx::hash_set<void *> listener_container_type;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
     typedef std::tr1::unordered_map<sock_base::socket_type, fd_info> fd_container_type;
-    typedef std::tr1::unordered_set<void *> listener_container_type;
 #endif
 
     void io_worker();
@@ -188,11 +186,10 @@ class sockmgr
 
     int efd;
     int pipefd[2];
-    std::tr2::thread *_worker;
+    std::tr2::thread* _worker;
     const int n_ret;
 
     fd_container_type descr;
-    listener_container_type listeners_final;
     std::tr2::mutex dll;
 };
 

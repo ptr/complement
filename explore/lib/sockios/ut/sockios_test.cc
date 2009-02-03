@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/30 14:22:38 ptr>
+// -*- C++ -*- Time-stamp: <09/02/03 12:46:58 ptr>
 
 /*
  *
@@ -1282,6 +1282,145 @@ int EXAM_IMPL(sockios_test::service_stop)
     }
 
     shm.deallocate( &b2 );
+    shm.deallocate( &b );
+
+    seg.deallocate();
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  
+  return EXAM_RESULT;
+}
+
+class reader
+{
+  public:
+    reader( sockstream& )
+      { fill( buf, buf + sizeof(buf), 'b' ); }
+
+    ~reader()
+      { }
+
+    void connect( sockstream& s )
+      {
+        static int i = 0;
+
+        EXAM_CHECK_ASYNC( s.good() );
+        ++i;
+        fill( buf, buf + sizeof(buf), 'b' );
+        s.read( buf, sizeof(buf) );
+
+        /*
+        if ( s.fail() ) {
+          int j = 0;
+          while ( buf[j] == ' ' && j < sizeof(buf) ) {
+            ++j;
+          }
+          cerr << sizeof(buf) << ' ' << i << ' ' << j << endl;
+        }
+        */
+        EXAM_CHECK_ASYNC( !s.fail() );
+
+        // lock_guard<mutex> lk(lock);
+        // if ( ++visits == N ) {
+        //   cnd.notify_one();
+        // }
+      }
+
+    // static bool n_cnt()
+    //   { return visits == N; }
+
+  private:
+    char buf[64];
+
+  public:
+    // static mutex lock;
+    // static condition_variable cnd;
+
+  private:
+    // static int visits;
+};
+
+// mutex reader::lock;
+
+// condition_variable reader::cnd;
+
+// int reader::visits = 0;
+
+int EXAM_IMPL(sockios_test::quants_reader)
+{
+  try {
+    xmt::shm_alloc<0> seg;
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+    xmt::allocator_shm<barrier_ip,0> shm;
+
+    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+
+    try {
+      this_thread::fork();
+      int ret = 0;
+
+      try {
+        std::tr2::this_thread::block_signal( SIGINT );
+
+        connect_processor<reader> srv( 2008 );
+
+        EXAM_CHECK_ASYNC_F( srv.good(), ret );
+        EXAM_CHECK_ASYNC_F( srv.is_open(), ret );
+
+        sigset_t signal_mask;
+
+        sigemptyset( &signal_mask );
+        sigaddset( &signal_mask, SIGINT );
+
+        b.wait();
+
+        int sig_caught;
+        sigwait( &signal_mask, &sig_caught );
+
+        if ( sig_caught == SIGINT ) {
+          EXAM_MESSAGE_ASYNC( "catch INT signal" );
+          this_thread::sleep( milliseconds( 200 ) ); // chance to process the rest
+          srv.close();
+        } else {
+          EXAM_ERROR_ASYNC_F( "catch of INT signal expected", ret );
+        }
+
+      }
+      catch ( ... ) {
+        EXAM_ERROR_ASYNC_F( "unexpected exception", ret );
+      }
+
+      exit(ret);
+    }
+    catch ( std::tr2::fork_in_parent& child ) {
+      b.wait();
+      {
+        sockstream s( "localhost", 2008 );
+
+        char buf[64];
+        fill( buf, buf + sizeof(buf), ' ' );
+        for ( int i = 0; i < /* 819200 */ 1024; ++i ) {
+          s.write( buf, sizeof(buf) ).flush();
+          EXAM_CHECK( s.good() );
+        }
+      }
+
+      // this_thread::sleep( milliseconds( 500 ) );
+
+      kill( child.pid(), SIGINT );
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+    }
+
     shm.deallocate( &b );
 
     seg.deallocate();

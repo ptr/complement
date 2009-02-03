@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/29 15:24:26 ptr>
+// -*- C++ -*- Time-stamp: <09/02/02 14:59:40 ptr>
 
 /*
  *
@@ -39,6 +39,7 @@ class sockios_test
     int EXAM_DECL(two_ports);
 
     int EXAM_DECL(service_stop);
+    int EXAM_DECL(quants_reader);
 };
 
 #endif // __sockios2_test_h

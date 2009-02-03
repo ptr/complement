@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/10/14 14:30:00 yeti>
+// -*- C++ -*- Time-stamp: <09/02/03 12:44:54 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -306,7 +306,6 @@ void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
   if ( direction ) {
     std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
     if ( _count++ == 0 ) {
-      // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       basic_socket<charT,traits,_Alloc>::mgr = new std::detail::sockmgr<charT,traits,_Alloc>();
 #ifdef __FIT_PTHREADS
       if ( !_at_fork ) { // call only once
@@ -325,7 +324,6 @@ void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
       if ( basic_socket<charT,traits,_Alloc>::mgr == 0 ) {
         std::cerr << __FILE__ << ":" << __LINE__ << " shit happens\n";
       }
-      // std::cerr << __FILE__ << ":" << __LINE__ << " mgr destroyed " << std::tr2::getpid() << std::endl;
       delete basic_socket<charT,traits,_Alloc>::mgr;
       basic_socket<charT,traits,_Alloc>::mgr = 0;
     } else if ( _count < 0 ) {

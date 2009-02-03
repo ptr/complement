@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/29 23:42:42 ptr>
+// -*- C++ -*- Time-stamp: <09/02/02 15:03:54 ptr>
 
 /*
  *
@@ -49,7 +49,7 @@ int main( int argc, const char** argv )
     return 0;
   }
 
-  exam::test_suite::test_case_type tc[5];
+  exam::test_suite::test_case_type tc[6];
 
   exam::test_suite t( "libsockios test" );
 
@@ -63,7 +63,7 @@ int main( int argc, const char** argv )
 
   sockios_test test;
 
-  t.add( &sockios_test::read0, test, "sockios2_test::read0",
+  tc[5] = t.add( &sockios_test::read0, test, "sockios2_test::read0",
     t.add( &sockios_test::srv_sigpipe, test, "sockios2_test::srv_sigpipe",
       tc[4] = t.add( &sockios_test::fork, test, "sockios2_test::fork",
         tc[3] = t.add( &sockios_test::processor_core_income_data, test, "all data available after sockstream was closed",
@@ -81,7 +81,13 @@ int main( int argc, const char** argv )
   t.add( &sockios_test::few_packets_loop, test, "packets boundary, loop", 
     t.add( &sockios_test::few_packets, test, "packets boundary", tc[3] ) );
 
-  t.add( &sockios_test::service_stop, test, "stop service", tc[4] );
+  exam::test_suite::test_case_type extratc[5];
+
+  extratc[0] = tc[5];
+
+  extratc[1] = t.add( &sockios_test::service_stop, test, "stop service", tc[4] );
+
+  t.add( &sockios_test::quants_reader, test, "read a few fixed-size data", extratc, extratc + 2 );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( cerr );

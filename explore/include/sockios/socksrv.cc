@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/30 14:23:56 ptr>
+// -*- C++ -*- Time-stamp: <09/02/03 11:24:39 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -75,13 +75,14 @@ void sock_processor_base<charT,traits,_Alloc>::_close()
   }
   // std::cerr << __FILE__ << ":" << __LINE__ << " " << basic_socket_t::_fd << std::endl;
 
+  basic_socket<charT,traits,_Alloc>::mgr->pop( *this, basic_socket_t::_fd );
+
 #ifdef WIN32
   ::closesocket( basic_socket_t::_fd );
 #else
-  // ::shutdown( basic_socket_t::_fd, 2 );
+  ::shutdown( basic_socket_t::_fd, 2 );
   ::close( basic_socket_t::_fd );
 #endif
-  basic_socket<charT,traits,_Alloc>::mgr->pop( *this, basic_socket_t::_fd );
   basic_socket_t::_fd = -1;
 }
 
