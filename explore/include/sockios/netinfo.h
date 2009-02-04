@@ -61,6 +61,9 @@ extern "C" int x_res_init(void);
 #  include <cerrno>
 #endif // !WIN32
 
+#include <cstdlib>
+#include <cstring>
+
 #ifdef STLPORT
 _STLP_BEGIN_NAMESPACE
 #else
