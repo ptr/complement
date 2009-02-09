@@ -1,3 +1,13 @@
+2009-02-09  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* sockstream, sockstream.cc, socksrv.cc: pass socket
+	options to sockbuf or sock_processor_base; pass only
+	options that make sense for this socket type; check
+	that operation is applicable for this socket; add
+	options for tcp stream;
+
+	* libsockios: release 2.4.0.
+
 2009-02-03  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* sockstream.cc, socksrv.cc, sockmgr.h, sockmgr.cc:

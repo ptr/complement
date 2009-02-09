@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/03 11:24:39 ptr>
+// -*- C++ -*- Time-stamp: <09/02/09 12:34:20 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -109,24 +109,27 @@ void sock_processor_base<charT,traits,_Alloc>::setoptions_unsafe( sock_base::so_
 {
 #ifdef __unix
   if ( basic_socket_t::is_open_unsafe() ) {
-    if ( optname != sock_base::so_linger ) {
-      int turn = on_off ? 1 : 0;
-      if ( setsockopt( basic_socket_t::_fd, SOL_SOCKET, (int)optname, (const void *)&turn,
-                       (socklen_t)sizeof(int) ) != 0 ) {
-        _state |= ios_base::failbit;
-      }
-    } else {
-      linger l;
-      l.l_onoff = on_off ? 1 : 0;
-      l.l_linger = __v;
-      if ( setsockopt( basic_socket_t::_fd, SOL_SOCKET, (int)optname, (const void *)&l,
-                       (socklen_t)sizeof(linger) ) != 0 ) {
-        _state |= ios_base::failbit;
-      }
-      
+    int turn = on_off ? 1 : 0;
+    int ret = 0;
+    switch ( optname ) {
+      case so_debug:
+        ret = setsockopt( basic_socket_t::_fd, SOL_SOCKET, SO_DEBUG, (const void *)&turn, (socklen_t)sizeof(int) );
+        break;
+      case so_acceptconn:
+        ret = setsockopt( basic_socket_t::_fd, SOL_SOCKET, SO_ACCEPTCONN, (const void *)&turn, (socklen_t)sizeof(int) );
+        break;
+      case so_reuseaddr:
+        ret = setsockopt( basic_socket_t::_fd, SOL_SOCKET, SO_REUSEADDR, (const void *)&turn, (socklen_t)sizeof(int) );
+        break;
+      case so_tcp_defer_accept:
+        ret = setsockopt( basic_socket_t::_fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, (const void *)&turn, (socklen_t)sizeof(int) );
+        break;
+      default:
+        throw std::invalid_argument( "bad socket option" );
     }
   } else {
-    _state |= ios_base::failbit;
+    // _state |= ios_base::failbit;
+    throw std::invalid_argument( "socket is closed" );
   }
 #endif // __unix
 }

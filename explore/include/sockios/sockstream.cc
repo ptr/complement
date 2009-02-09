@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/03 12:51:44 ptr>
+// -*- C++ -*- Time-stamp: <09/02/09 12:52:27 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -532,27 +532,141 @@ int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
 }
 
 template<class charT, class traits, class _Alloc>
-void basic_sockstream<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, bool on_off, int __v )
+void basic_sockbuf<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, bool on_off, int __v )
 {
 #ifdef __unix
-  if ( _sb.is_open() ) {
-    if ( optname != sock_base::so_linger ) {
-      int turn = on_off ? 1 : 0;
-      if ( setsockopt( _sb.fd(), SOL_SOCKET, (int)optname, (const void *)&turn,
-                       (socklen_t)sizeof(int) ) != 0 ) {
-        this->setstate( ios_base::failbit );
-      }
-    } else {
-      linger l;
-      l.l_onoff = on_off ? 1 : 0;
-      l.l_linger = __v;
-      if ( setsockopt( _sb.fd(), SOL_SOCKET, (int)optname, (const void *)&l,
-                       (socklen_t)sizeof(linger) ) != 0 ) {
-        this->setstate( ios_base::failbit );
-      }
+  if ( basic_socket_t::is_open() ) {
+    int turn = on_off ? 1 : 0;
+    int ret = 0;
+    switch ( optname ) {
+      case sock_base::so_debug:
+        ret = setsockopt( basic_socket_t::_fd, SOL_SOCKET, SO_DEBUG, (const void *)&turn, (socklen_t)sizeof(int) );
+        break;
+      case sock_base::so_keepalive:
+        ret = setsockopt( basic_socket_t::_fd, SOL_SOCKET, SO_KEEPALIVE, (const void *)&turn, (socklen_t)sizeof(int) );
+        break;
+      case sock_base::so_linger:
+        {
+          linger l;
+          l.l_onoff = on_off ? 1 : 0;
+          l.l_linger = __v;
+          ret = setsockopt( basic_socket_t::_fd, SOL_SOCKET, SO_LINGER, (const void *)&l, (socklen_t)sizeof(linger) );
+        }
+        break;
+      case sock_base::so_oobinline:
+        ret = setsockopt( basic_socket_t::_fd, SOL_SOCKET, SO_OOBINLINE, (const void *)&turn, (socklen_t)sizeof(int) );
+        break;
+      case sock_base::so_tcp_nodelay:
+        if ( _type != sock_base::sock_stream ) {
+          throw std::invalid_argument( "bad socket option" );
+        }
+        ret = setsockopt( basic_socket_t::_fd, IPPROTO_TCP, TCP_NODELAY, (const void *)&turn, (socklen_t)sizeof(int) );
+        break;
+      case sock_base::so_tcp_cork:
+        if ( _type != sock_base::sock_stream ) {
+          throw std::invalid_argument( "bad socket option" );
+        }
+        ret = setsockopt( basic_socket_t::_fd, IPPROTO_TCP, TCP_CORK, (const void *)&turn, (socklen_t)sizeof(int) );
+        break;
+      case sock_base::so_tcp_quickack:
+        if ( _type != sock_base::sock_stream ) {
+          throw std::invalid_argument( "bad socket option" );
+        }
+        ret = setsockopt( basic_socket_t::_fd, IPPROTO_TCP, TCP_QUICKACK, (const void *)&turn, (socklen_t)sizeof(int) );
+        break;
+      case sock_base::so_tcp_congestion:
+        if ( _type != sock_base::sock_stream ) {
+          throw std::invalid_argument( "bad socket option" );
+        }
+        ret = setsockopt( basic_socket_t::_fd, IPPROTO_TCP, TCP_CONGESTION, (const void *)&turn, (socklen_t)sizeof(int) );
+        break;
+      default:
+        throw std::invalid_argument( "bad socket option" );
+    }
+    if ( ret != 0 ) {
+      throw std::system_error( errno, std::get_posix_category(), std::string( "socket option" ) );
     }
   } else {
-    this->setstate( ios_base::failbit );
+    throw std::invalid_argument( "socket is closed" );
+  }
+#endif // __unix
+}
+
+template<class charT, class traits, class _Alloc>
+void basic_sockbuf<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, int __v )
+{
+#ifdef __unix
+  if ( basic_socket_t::is_open() ) {
+    int ret = 0;
+    switch ( optname ) {
+      case sock_base::so_sndbuf:
+        ret = setsockopt( basic_socket_t::_fd, SOL_SOCKET, SO_SNDBUF, (const void *)&__v, (socklen_t)sizeof(int) );
+        break;
+      case sock_base::so_rcvbuf:
+        ret = setsockopt( basic_socket_t::_fd, SOL_SOCKET, SO_RCVBUF, (const void *)&__v, (socklen_t)sizeof(int) );
+        break;
+      case sock_base::so_sndlowat:
+        ret = setsockopt( basic_socket_t::_fd, SOL_SOCKET, SO_SNDLOWAT, (const void *)&__v, (socklen_t)sizeof(int) );
+        break;
+      case sock_base::so_rcvlowat:
+        ret = setsockopt( basic_socket_t::_fd, SOL_SOCKET, SO_RCVLOWAT, (const void *)&__v, (socklen_t)sizeof(int) );
+        break;
+      case sock_base::so_sndtimeo:
+        ret = setsockopt( basic_socket_t::_fd, SOL_SOCKET, SO_SNDTIMEO, (const void *)&__v, (socklen_t)sizeof(int) );
+        break;
+      case sock_base::so_rcvtimeo:
+        ret = setsockopt( basic_socket_t::_fd, SOL_SOCKET, SO_RCVTIMEO, (const void *)&__v, (socklen_t)sizeof(int) );
+        break;
+      case sock_base::so_tcp_maxseg:
+        if ( _type != sock_base::sock_stream ) {
+          throw std::invalid_argument( "bad socket option" );
+        }
+        ret = setsockopt( basic_socket_t::_fd, IPPROTO_TCP, TCP_MAXSEG, (const void *)&__v, (socklen_t)sizeof(int) );
+        break;
+      case sock_base::so_tcp_keepidle:
+        if ( _type != sock_base::sock_stream ) {
+          throw std::invalid_argument( "bad socket option" );
+        }
+        ret = setsockopt( basic_socket_t::_fd, IPPROTO_TCP, TCP_KEEPIDLE, (const void *)&__v, (socklen_t)sizeof(int) );
+        break;
+      case sock_base::so_tcp_keepintvl:
+        if ( _type != sock_base::sock_stream ) {
+          throw std::invalid_argument( "bad socket option" );
+        }
+        ret = setsockopt( basic_socket_t::_fd, IPPROTO_TCP, TCP_KEEPINTVL, (const void *)&__v, (socklen_t)sizeof(int) );
+        break;
+      case sock_base::so_tcp_keepcnt:
+        if ( _type != sock_base::sock_stream ) {
+          throw std::invalid_argument( "bad socket option" );
+        }
+        ret = setsockopt( basic_socket_t::_fd, IPPROTO_TCP, TCP_KEEPCNT, (const void *)&__v, (socklen_t)sizeof(int) );
+        break;
+      case sock_base::so_tcp_syncnt:
+        if ( _type != sock_base::sock_stream ) {
+          throw std::invalid_argument( "bad socket option" );
+        }
+        ret = setsockopt( basic_socket_t::_fd, IPPROTO_TCP, TCP_SYNCNT, (const void *)&__v, (socklen_t)sizeof(int) );
+        break;
+      case sock_base::so_tcp_linger2:
+        if ( _type != sock_base::sock_stream ) {
+          throw std::invalid_argument( "bad socket option" );
+        }
+        ret = setsockopt( basic_socket_t::_fd, IPPROTO_TCP, TCP_LINGER2, (const void *)&__v, (socklen_t)sizeof(int) );
+        break;
+      case sock_base::so_tcp_window_clamp:
+        if ( _type != sock_base::sock_stream ) {
+          throw std::invalid_argument( "bad socket option" );
+        }
+        ret = setsockopt( basic_socket_t::_fd, IPPROTO_TCP, TCP_WINDOW_CLAMP, (const void *)&__v, (socklen_t)sizeof(int) );
+        break;
+      default:
+        throw std::invalid_argument( "bad socket option" );
+    }
+    if ( ret != 0 ) {
+      throw std::system_error( errno, std::get_posix_category(), std::string( "socket option" ) );
+    }
+  } else {
+    throw std::invalid_argument( "socket is closed" );
   }
 #endif // __unix
 }
