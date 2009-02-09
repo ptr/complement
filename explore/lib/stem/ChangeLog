@@ -1,3 +1,10 @@
+2009-02-09  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* NetTransport.cc: set socket option so_tcp_nodelay,
+	i.e. disable Nagle algorithm for any StEM net connection;
+
+	* libstem: library version 4.10.1.
+
 2009-01-21  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* EventHandler.h, _EventHandler.cc: reduce amount of

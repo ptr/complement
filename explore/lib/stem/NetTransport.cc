@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/05 12:18:00 ptr>
+// -*- C++ -*- Time-stamp: <09/02/09 12:48:14 ptr>
 
 /*
  *
@@ -268,7 +268,13 @@ __FIT_DECLSPEC
 NetTransport::NetTransport( std::sockstream& s ) :
     NetTransport_base( s, "stem::NetTransport" ),
     _handshake( false )
-{ }
+{
+  try {
+    s.rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+  }
+  catch ( ... ) {
+  }
+}
 
 __FIT_DECLSPEC
 void NetTransport::_do_handshake()
@@ -442,6 +448,11 @@ addr_type NetTransportMgr::open( const in_addr& addr, int port,
 {
   std::sockstream::open( addr, port, type, pro );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
+    try {
+      std::sockstream::rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+    }
+    catch ( ... ) {
+    }
     return discovery();
   }
   return badaddr;
@@ -452,6 +463,11 @@ addr_type NetTransportMgr::open( sock_base::socket_type s, const sockaddr& addr,
 {
   std::sockstream::open( s, addr, type );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
+    try {
+      std::sockstream::rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+    }
+    catch ( ... ) {
+    }
     return discovery();
   }
   return badaddr;
@@ -462,6 +478,11 @@ addr_type NetTransportMgr::open( sock_base::socket_type s,
 {
   std::sockstream::open( s, type );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
+    try {
+      std::sockstream::rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+    }
+    catch ( ... ) {
+    }
     return discovery();
   }
   return badaddr;
