@@ -12,7 +12,7 @@ configmak=$base/Makefiles/gmake/config.mak
 
 write_option() {
   target=`echo $1 | sed -e 's/^[^=]*=//'`
-  echo $2 := $3$target >> ${configmak}
+  echo $2 = $3$target >> ${configmak}
 }
 
 write_over_option() {
@@ -21,7 +21,7 @@ write_over_option() {
 }
 
 write_raw_option() {
-  echo $2 := $3$1 >> ${configmak}
+  echo $2 = $3$1 >> ${configmak}
 }
 
 print_help() {
