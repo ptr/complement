@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/09 12:14:32 ptr>
+// -*- C++ -*- Time-stamp: <09/02/11 10:42:29 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -497,7 +497,7 @@ class basic_sockbuf :
    void setoptions( sock_base::so_t optname, bool on_off = true, int __v = 0 );
 
   protected:
-    virtual streamsize showmanyc()
+    streamsize unsafe_showmanyc()
       {
         streamsize n = this->egptr() - this->gptr();
         if ( n > 0 ) {
@@ -507,12 +507,20 @@ class basic_sockbuf :
         return basic_socket_t::_fd != -1 ? 0 : -1;
       }
 
+    virtual streamsize showmanyc()
+      {
+        std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+        return unsafe_showmanyc(); 
+      }
+
     virtual int_type underflow();
     virtual int_type overflow( int_type c = traits::eof() );
     virtual int_type pbackfail( int_type c = traits::eof() )
       {
         if ( !basic_socket_t::is_open() )
           return traits::eof();
+
+        std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
 
         if ( this->gptr() <= this->eback() ) {
           return traits::eof();
@@ -593,7 +601,7 @@ class basic_sockbuf :
              b( self )
            { }
          bool operator ()() const
-           { return b.showmanyc() != 0; }
+           { return b.unsafe_showmanyc() != 0; }
        private:
          sockbuf_type& b;
     } rdready;

@@ -1,3 +1,11 @@
+2009-02-11  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* sockstream, sockstream.cc, sockmgr.cc: lock operatons
+	with *gptr()---it may be accessed/modified from different
+	threads;
+
+	* libsockios: release 2.4.1.
+
 2009-02-09  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* sockstream, sockstream.cc, socksrv.cc: pass socket

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/09 12:52:27 ptr>
+// -*- C++ -*- Time-stamp: <09/02/11 11:50:59 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -100,6 +100,8 @@ basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
       throw std::runtime_error( "can't establish nonblock mode" );
     }
     setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
+
+    std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
     setg( this->epptr(), this->epptr(), this->epptr() );
     basic_socket_t::_notify_close = true;
     basic_socket_t::mgr->push( *this );
@@ -258,7 +260,10 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
     throw std::runtime_error( "can't establish nonblock mode" );
   }
   setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
+
+  std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
   setg( this->epptr(), this->epptr(), this->epptr() );
+  basic_socket_t::_notify_close = true;
 
   return this;
 }

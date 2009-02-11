@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/04 11:15:27 ptr>
+// -*- C++ -*- Time-stamp: <09/02/11 10:12:52 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -458,27 +458,31 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
     if ( ev.events & EPOLLIN ) {
       long offset;
       for ( ; ; ) {
-        if ( b->_ebuf == b->egptr() ) {
-          // process extract data from buffer too slow for us!
-          if ( (info.flags & fd_info::level_triggered) == 0 ) {
-            epoll_event xev;
-#if 1
-            xev.data.u64 = 0ULL;
-#endif
-            xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP;
-            xev.data.fd = ev.data.fd;
-            info.flags |= fd_info::level_triggered;
-            if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) < 0 ) {
-              throw fdclose(); // already closed?
-            }
-          }
-          if ( info.p != 0 ) {
-            (*info.p)( ev.data.fd );
-          }
-          break;
-        }
+        {
+          std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
 
-        offset = read( ev.data.fd, b->egptr(), sizeof(charT) * (b->_ebuf - b->egptr()) );
+          if ( b->_ebuf == b->egptr() ) {
+            // process extract data from buffer too slow for us!
+            if ( (info.flags & fd_info::level_triggered) == 0 ) {
+              epoll_event xev;
+#if 1
+              xev.data.u64 = 0ULL;
+#endif
+              xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP;
+              xev.data.fd = ev.data.fd;
+              info.flags |= fd_info::level_triggered;
+              if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) < 0 ) {
+                throw fdclose(); // already closed?
+              }
+            }
+            if ( info.p != 0 ) {
+              (*info.p)( ev.data.fd );
+            }
+            break;
+          }
+
+          offset = read( ev.data.fd, b->egptr(), sizeof(charT) * (b->_ebuf - b->egptr()) );
+        }
 
         if ( offset == 0 ) {
           // EPOLLRDHUP may be missed in kernel, but offset 0 is the same
