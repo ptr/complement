@@ -579,12 +579,14 @@ void basic_sockbuf<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, 
         }
         ret = setsockopt( basic_socket_t::_fd, IPPROTO_TCP, TCP_QUICKACK, (const void *)&turn, (socklen_t)sizeof(int) );
         break;
+#ifdef TCP_CONGESTION
       case sock_base::so_tcp_congestion:
         if ( _type != sock_base::sock_stream ) {
           throw std::invalid_argument( "bad socket option" );
         }
         ret = setsockopt( basic_socket_t::_fd, IPPROTO_TCP, TCP_CONGESTION, (const void *)&turn, (socklen_t)sizeof(int) );
         break;
+#endif
       default:
         throw std::invalid_argument( "bad socket option" );
     }
