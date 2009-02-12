@@ -94,6 +94,60 @@ DEFINE_RESPONSE_TABLE( EchoClient )
   EV_EDS(0,NODE_EV_ECHO,handler1)
 END_RESPONSE_TABLE
 
+
+void UglyEchoSrv::echo( const Event& ev )
+{
+  for (int i = 0;i < 8;++i) {
+    Event eev( ev.code() );
+    eev.value() = ev.value();
+
+    eev.dest( ev.src() );
+
+    Send( eev );
+  }
+}
+
+DEFINE_RESPONSE_TABLE( UglyEchoSrv )
+  EV_EDS( 0, NODE_EV_ECHO, echo )
+END_RESPONSE_TABLE
+
+
+
+void UglyEchoClient::handler1( const stem::Event& ev )
+{
+  std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
+  EXAM_CHECK_ASYNC( ev.value() == mess );
+  
+  if (ev.value() != mess ) {
+    cerr << mess << endl << endl << ev.value() << endl;
+    for (int i = 0;i < min(ev.value().size(), mess.size());++i)
+      if (ev.value()[i] != mess[i]) {
+        cerr << i << endl;
+        cerr << mess.substr(i) << endl << endl << ev.value().substr(i) << endl;
+        break;
+      }
+  }
+  
+  ++rsp_count;
+
+  cnd.notify_one();
+}
+
+bool UglyEchoClient::wait()
+{
+  std::tr2::unique_lock<std::tr2::mutex> lk( mtx );
+  bool result = cnd.timed_wait(lk, std::tr2::milliseconds( 500 ), rsp_count_not_null( *this ) );
+  
+  if (result)
+    --rsp_count;
+  return result;
+}
+
+DEFINE_RESPONSE_TABLE( UglyEchoClient )
+  EV_EDS(0,NODE_EV_ECHO,handler1)
+END_RESPONSE_TABLE
+
+
 PeerClient::PeerClient() :
     EventHandler(),
     mess( "peer client" )

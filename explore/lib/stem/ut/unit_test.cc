@@ -64,6 +64,7 @@ class stem_test
     int EXAM_DECL(echo);
     int EXAM_DECL(echo_net);
     int EXAM_DECL(net_echo);
+    int EXAM_DECL(ugly_echo_net);
     int EXAM_DECL(peer);
     int EXAM_DECL(last_event);
     int EXAM_DECL(boring_manager);
@@ -485,6 +486,92 @@ int EXAM_IMPL(stem_test::net_echo)
   catch (  xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
   }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(stem_test::ugly_echo_net)
+{
+  condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+
+  try {
+    std::tr2::this_thread::fork();
+
+    int eflag = 0;
+
+    try {
+      stem::NetTransportMgr mgr;
+
+      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+
+      stem::addr_type zero = mgr.open( "localhost", 6995 );
+
+      EXAM_CHECK_ASYNC_F( zero != stem::badaddr, eflag );
+      EXAM_CHECK_ASYNC_F( zero != 0, eflag ); // NetTransportMgr should detect external delivery
+
+      UglyEchoClient node;
+    
+      stem::Event ev( NODE_EV_ECHO );
+      ev.dest( zero );
+      
+      bool ok = true;
+      for (int i = 0;i < 10000 && ok;++i) {
+        node.mess.clear();
+        for (int j = 0;j < 16;++j)
+          node.mess += xmt::uid_str();
+          
+        ev.value() = node.mess;
+        
+        node.Send( ev );
+      
+        
+        for (int j = 0;j < 8 && ok;++j) {
+          ok = node.wait();
+        }
+        
+        if (!ok) {
+          cerr << "Failed on iteration # " << i << endl;
+          break;
+        }
+        
+        EXAM_CHECK_ASYNC_F( node.rsp_count == 0, eflag );
+      }
+      
+      EXAM_CHECK_ASYNC_F( ok, eflag );
+    
+      mgr.close();
+      mgr.join();
+    }
+    catch ( ... ) {
+    }
+
+    exit( eflag );
+  }
+  catch ( std::tr2::fork_in_parent& child ) {
+    try {
+      connect_processor<stem::NetTransport> srv( 6995 );
+
+      UglyEchoSrv echo( 0, "ugly echo service"); // <= zero!
+
+      fcnd.notify_one();
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+
+      srv.close();
+      srv.wait();
+    }
+    catch ( ... ) {
+    }
+  }
+
+  (&fcnd)->~condition_event_ip();
+  shm_cnd.deallocate( &fcnd, 1 );
 
   return EXAM_RESULT;
 }
@@ -1066,10 +1153,11 @@ int main( int argc, const char** argv )
   t.add( &stem_test::dl, test, "dl",
          t.add( &stem_test::basic2new, test, "basic2new", tc + 1, tc + 3 ) );
   t.add( &stem_test::ns, test, "ns", tc[0] );
-
-  t.add( &stem_test::net_echo, test, "net echo",
-         tc[4] = t.add( &stem_test::echo_net, test, "echo_net",
-                tc[3] = t.add( &stem_test::echo, test, "echo", tc[1] ) ) );
+  
+  t.add( &stem_test::ugly_echo_net, test, "ugly echo net", 
+    t.add( &stem_test::net_echo, test, "net echo",
+      tc[4] = t.add( &stem_test::echo_net, test, "echo_net",
+          tc[3] = t.add( &stem_test::echo, test, "echo", tc[1] ) ) ) );
 
   t.add( &stem_test::boring_manager_more, test, "boring_manager with echo",
          t.add( &stem_test::boring_manager, test, "boring_manager",

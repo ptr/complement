@@ -55,6 +55,84 @@ class EchoClient :
     DECLARE_RESPONSE_TABLE( EchoClient, stem::EventHandler );
 };
 
+class UglyEchoSrv :
+    public stem::EventHandler
+{
+  public:
+    UglyEchoSrv() { }
+    
+    UglyEchoSrv( stem::addr_type id ) :
+        EventHandler( id )
+      { }
+      
+    UglyEchoSrv( stem::addr_type id, const char* info ) :
+        EventHandler( id, info )
+      { }
+
+    void echo( const stem::Event& );
+
+  private:
+    DECLARE_RESPONSE_TABLE( UglyEchoSrv, stem::EventHandler );
+};
+
+class UglyEchoClient :
+    public stem::EventHandler
+{
+  public:
+    UglyEchoClient() :
+        rsp_count(0)
+      { }
+    
+    UglyEchoClient( stem::addr_type id ) : 
+        EventHandler( id ),
+        rsp_count(0)
+      { }
+      
+    UglyEchoClient( stem::addr_type id, const char *info ) :
+        EventHandler( id, info ),
+        rsp_count(0)
+      { }
+
+    void handler1( const stem::Event& );
+    bool wait();
+
+    std::string mess;
+    std::list< std::string > rsp; 
+    int rsp_count;
+
+  private:
+    std::tr2::condition_variable cnd;
+    std::tr2::mutex mtx;
+    
+    struct rsp_count_not_null 
+    {
+      rsp_count_not_null( UglyEchoClient& m ) :
+          me( m )
+        { }
+
+      bool operator()() const
+        { return me.rsp_count; }
+
+      UglyEchoClient& me;
+    };
+    
+    /*
+    struct rsp_not_empty
+    {
+        rsp_not_empty( UglyEchoClient& m ) :
+            me( m )
+          { }
+
+        bool operator()() const
+          { return !me.rsp.empty(); }
+
+        UglyEchoClient& me;
+    };
+    */
+    
+    DECLARE_RESPONSE_TABLE( UglyEchoClient, stem::EventHandler );
+};
+
 class PeerClient :
     public stem::EventHandler
 {
