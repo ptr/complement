@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/11 10:42:29 ptr>
+// -*- C++ -*- Time-stamp: <09/02/14 01:08:41 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -214,8 +214,8 @@ class basic_socket
     basic_socket() :
         _fd( -1 ),
         _use_rdtimeout( false ),
-        _use_wrtimeout( false ),
-        _notify_close( false )
+        _use_wrtimeout( false )// ,
+                // _notify_close( false )
       { new( Init_buf ) Init(); }
 
     ~basic_socket()
@@ -266,10 +266,10 @@ class basic_socket
     void wrtimeout() // infinite
       { _use_wrtimeout = false; }
 
-    sock_base::socket_type fd() const
-      { return _fd; }
-    bool is_open() const
-      { return _fd != -1; }
+    // sock_base::socket_type fd() const
+    //   { return _fd; }
+    // bool is_open() const
+    //   { return _fd != -1; }
 
     family_type family() const
       { return /* is_open() ? */ _address.any.sa_family /* : 0 */; }
@@ -300,7 +300,7 @@ class basic_socket
     std::tr2::milliseconds _wrtimeout;
     bool _use_rdtimeout;
     bool _use_wrtimeout;
-    bool _notify_close;
+    // bool _notify_close;
 
     static std::detail::sockmgr<charT,traits,_Alloc>* mgr;
     friend class Init;
@@ -488,15 +488,32 @@ class basic_sockbuf :
                           sock_base::stype t = sock_base::sock_stream );
 
     sockbuf_type *close();
-    void shutdown( sock_base::shutdownflg dir );
+    void shutdown( sock_base::shutdownflg dir )
+      {
+        std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+        shutdown_unsafe( dir );
+      }
 
     sock_base::stype stype() const
       { return _type; }
+
+    sock_base::socket_type fd() const
+      {
+        // std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+        return basic_socket<charT,traits,_Alloc>::fd_unsafe();
+      }
+    bool is_open() const
+      {
+        // std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+        return basic_socket<charT,traits,_Alloc>::is_open_unsafe();
+      }
 
    void setoptions( sock_base::so_t optname, int __v );
    void setoptions( sock_base::so_t optname, bool on_off = true, int __v = 0 );
 
   protected:
+    void shutdown_unsafe( sock_base::shutdownflg dir );
+
     streamsize unsafe_showmanyc()
       {
         streamsize n = this->egptr() - this->gptr();
@@ -517,10 +534,11 @@ class basic_sockbuf :
     virtual int_type overflow( int_type c = traits::eof() );
     virtual int_type pbackfail( int_type c = traits::eof() )
       {
-        if ( !basic_socket_t::is_open() )
-          return traits::eof();
-
         std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+
+        if ( !basic_socket_t::is_open_unsafe() ) {
+          return traits::eof();
+        }
 
         if ( this->gptr() <= this->eback() ) {
           return traits::eof();
@@ -605,6 +623,18 @@ class basic_sockbuf :
        private:
          sockbuf_type& b;
     } rdready;
+
+    class closed_t
+    {
+       public:
+         closed_t( sockbuf_type& self ) :
+             b( self )
+           { }
+         bool operator ()() const
+           { return b.unsafe_showmanyc() == -1; }
+       private:
+         sockbuf_type& b;
+    };
 
     sockbuf_type *_open_sockmgr( sock_base::socket_type s, const sockaddr& addr,
                                  sock_base::stype t = sock_base::sock_stream );

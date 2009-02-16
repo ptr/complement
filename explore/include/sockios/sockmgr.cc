@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/11 10:12:52 ptr>
+// -*- C++ -*- Time-stamp: <09/02/14 00:53:59 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -162,20 +162,62 @@ void sockmgr<charT,traits,_Alloc>::exit_notify( sockbuf_t* b, sock_base::socket_
     std::tr2::unique_lock<std::tr2::mutex> lk( dll, std::tr2::defer_lock );
 
     if ( lk.try_lock() ) {
-      if ( b->_notify_close ) {
-        typename fd_container_type::iterator i = descr.find( fd );
-        if ( (i != descr.end()) && (i->second.b == b) && (i->second.p == 0) ) {
-          if ( epoll_ctl( efd, EPOLL_CTL_DEL, fd, 0 ) < 0 ) {
-            // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
-            // throw system_error
+      // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+      descr.erase( fd );
+      // EPOLL_CTL_DEL done by system on close(fd)
+      ::close( fd );
+      // don't do std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
+      // here: it under this lock (sockbuf_t::close())
+      b->_fd = -1;
+      b->ucnd.notify_all();
+    } else {
+#if 0
+      /*
+        here I don't know that about processing in process_regular
+        (process_regular may process this sockbuf, or another sockbuf),
+        and I can't intersect this processing. For this I push
+        command into pipe, and will process closing socket
+        within cmd_from_pipe (ensure from intersection with process_regular).
+      */
+      ctl _ctl;
+      _ctl.cmd = tcp_buffer_on_exit;
+      _ctl.data.ptr = static_cast<void *>(b);
+
+      errno = 0;
+
+      int r = 0;
+      int ret = 0;
+      do {
+        ret = ::write( pipefd[1], &_ctl, sizeof(ctl) );
+        if ( ret < 0 ) {
+          switch ( errno ) {
+            case EINTR:
+            case EAGAIN:
+              continue;
+            default:
+              throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>::exit_notify" ) );
+              break;
           }
-          descr.erase( i );
         }
-        b->_notify_close = false;
-      }
+        r += ret;
+      } while ( (r != sizeof(ctl)) /* || (ret != 0) */ );
+#else
+      /*
+        here I don't know that about processing in process_regular
+        (process_regular may process this sockbuf, or another sockbuf),
+        and I can't intersect this processing. For this I force event
+        on epolled descriptor and will process closing socket
+        within process_regular (ensure from intersection with process_regular).
+        Note: don't call ::close(fd) here: it remove fd from epoll
+        vector and I never see event about this socket!
+      */
+      // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
+      b->shutdown_unsafe( /* sock_base::stop_in | */ sock_base::stop_out );
+#endif
     }
   }
   catch ( const std::tr2::lock_error& ) {
+    std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
   }
 }
 
@@ -216,18 +258,16 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
           cmd_from_pipe();
         } else {
           typename fd_container_type::iterator ifd = descr.find( ev[i].data.fd );
-          if ( ifd == descr.end() ) { // already closed
-            // and should be already removed from efd's vector,
+          if ( ifd != descr.end() ) {
+            fd_info& info = ifd->second;
+            if ( info.flags & fd_info::listener ) {
+              process_listener( ev[i], ifd );
+            } else {
+              process_regular( ev[i], ifd );
+            }
+          } // otherwise already closed
+            // and [should be] already removed from efd's vector,
             // so no epoll_ctl( efd, EPOLL_CTL_DEL, ev[i].data.fd, 0 ) here
-            continue;
-          }
-
-          fd_info& info = ifd->second;
-          if ( info.flags & fd_info::listener ) {
-            process_listener( ev[i], ifd );
-          } else {
-            process_regular( ev[i], ifd );
-          }
         }
       }
     }
@@ -319,9 +359,15 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
         for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ) {
           if ( i->second.p == p ) {
             if ( (i->second.flags & fd_info::listener) == 0 ) { // it's not me!
-              i->second.b->close();
-              (*p)( i->first, typename socks_processor_t::adopt_close_t() );
+              sockbuf_t* b = i->second.b;
+              {
+                std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
+                ::close( b->_fd );
+                b->_fd = -1;
+                b->ucnd.notify_all();
               }
+              (*p)( i->first, typename socks_processor_t::adopt_close_t() );
+            }
             /* i = */ descr.erase( i++ );
           } else {
             ++i;
@@ -344,12 +390,14 @@ template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename sockmgr<charT,traits,_Alloc>::fd_container_type::iterator ifd )
 {
   if ( ev.events & (/* EPOLLRDHUP | */ EPOLLHUP | EPOLLERR) ) {
-    if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
+    // if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
       // std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << system_error( posix_error::make_error_code( static_cast<posix_error::posix_errno>(errno) ) ).what() << std::endl;
-      std::cerr << __FILE__ << ":" << __LINE__ << " " << efd << " " << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message() << std::endl;
+    //  std::cerr << __FILE__ << ":" << __LINE__ << " " << efd << " " << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message() << std::endl;
 
       // already closed?
-    }
+    // }
+
+    std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
 
     descr.erase( ifd );
 
@@ -389,12 +437,12 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
                   << errno << std::endl;
       }
 
-      if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
+      // if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
         // ignore error, may be closed
         // std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " "
         //           << errno << std::endl;
         // throw system_error
-      }
+      // }
 
       // ifd removed from descr in cmd_from_pipe, see listener_on_exit label
 
@@ -403,6 +451,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
 
     if ( fcntl( fd, F_SETFL, fcntl( fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
       std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+      ::close( fd );
       throw std::runtime_error( "can't establish nonblock mode" );
     }
       
@@ -417,11 +466,17 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
       if ( epoll_ctl( efd, EPOLL_CTL_ADD, fd, &ev_add ) < 0 ) {
         std::cerr << __FILE__ << ":" << __LINE__ << " " << std::error_code( errno, std::posix_category ).message() << " " << fd << " " << std::tr2::getpid() << std::endl;
         // throw system_error
+        ::close( fd );
         return;
       }      
 
       sockbuf_t* b = (*info.p)( fd, addr );
 
+      /*
+        Here b may be 0, if processor don't delegate control
+        under sockbuf_t to sockmgr, but want to see notifications;
+        see 'if ( b == 0 )' in process_regular below.
+      */
       descr[fd] = fd_info( b, info.p );
     }
     catch ( const std::bad_alloc& ) {
@@ -440,14 +495,39 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
   fd_info& info = ifd->second;
 
   sockbuf_t* b = info.b;
-  if ( b == 0 ) { // marginal case: sockbuf wasn't created by processor...
-    if ( epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ) < 0 ) {
-      std::cerr << __FILE__ << ":" << __LINE__ << " " << ifd->first << " " << errno << std::endl;
-      // throw system_error
+  if ( b == 0 ) { // marginal case: sockbuf not delegated to sockgr by processor...
+    // This is mainly for debug and tests. Candidate for removing:
+    // I don't know how use it in usefull way.
+
+    if ( info.p == 0 ) { // this is a error
+      ::close( ifd->first );
+      descr.erase( ifd );
+      throw std::logic_error( "neither buffer, nor processor" );
     }
-    if ( info.p != 0 ) { // ... but controlled by processor
-      (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
+    // ... it totally controlled by processor
+
+    // std::cerr << __FILE__ << ":" << __LINE__ << ' ' << ifd->first << endl;
+    /* To do here: discover is data available or connection closed, and do
+       appropriate actions; now only close connection.
+     */
+    // int res = 0;
+    // int len = 0;
+    // int ret = getsockopt( ifd->first, SOL_SOCKET, SO_ERROR, (void *)&res, (socklen_t*)&len );
+    // std::cerr << __FILE__ << ":" << __LINE__ << ' ' << res << ' ' << ret << endl;
+
+    // Urgent: socket is NONBLOCK and polling ONESHOT here!
+    char c;
+    ssize_t len = ::recv( ifd->first, &c, 1, MSG_PEEK );
+
+    if ( len > 0 ) { 
+      (*info.p)( ifd->first );
+      return;
     }
+
+    // Note: close socket automatically remove it from epoll's vector,
+    // so no epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ); here
+    ::close( ifd->first );
+    (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
     descr.erase( ifd );
     return;
   }
@@ -486,7 +566,6 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
 
         if ( offset == 0 ) {
           // EPOLLRDHUP may be missed in kernel, but offset 0 is the same
-          epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ); // ignore possible error
           throw fdclose();
         }
 
@@ -507,8 +586,6 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
               break; // normal flow, back to epoll
             }
             // already closed?
-          } else {
-            epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ); // ignore possible error
           }
           // EBADF (already closed?), EFAULT (Bad address),
           // ECONNRESET (Connection reset by peer), ...
@@ -535,15 +612,14 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
           std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
           b->setg( b->eback(), b->gptr(), b->egptr() + offset );
           b->ucnd.notify_one();
-          if ( info.p != 0 ) {
-            (*info.p)( ev.data.fd );
-          }
+        }
+        if ( info.p != 0 ) {
+          (*info.p)( ev.data.fd );
         }
       }
     }
 
     if ( (ev.events & (/* EPOLLRDHUP | */ EPOLLHUP | EPOLLERR) ) != 0 ) {
-      epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ); // ignore possible error
       throw fdclose();
     }
     // if ( ev.events & EPOLLHUP ) {
@@ -572,14 +648,29 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
     errno = 0;
 
     if ( info.p != 0 ) {
-      b->close();
-      (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
+      {
+        std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
+        // Note: close socket automatically remove it from epoll's vector,
+        // so no epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ); here
+        ::close( b->_fd );
 
+        // Close and set to -1 _before_ (*info.p)( fd, adopt_close_t() );
+        // to avoid deadlock! (wait condition: data or close in
+        // basic_sockbuf::underflow())
+        b->_fd = -1;
+        b->ucnd.notify_all();
+      }
+      
+      (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
       descr.erase( ifd );
     } else {
-      b->_notify_close = false; // avoid deadlock
       descr.erase( ifd );
-      b->close();
+      std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
+      // Note: close socket automatically remove it from epoll's vector,
+      // so no epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ); here
+      ::close( b->_fd );
+      b->_fd = -1;
+      b->ucnd.notify_all();
     }
     // dump_descr();
   }

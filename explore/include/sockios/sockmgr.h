@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/03 12:31:02 ptr>
+// -*- C++ -*- Time-stamp: <09/02/13 23:47:13 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -85,7 +85,8 @@ class sockmgr
       tcp_buffer,
       rqstop,
       rqstart,
-      listener_on_exit
+      listener_on_exit,
+      tcp_buffer_on_exit
     };
 
     struct fd_info

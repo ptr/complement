@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/03 12:46:58 ptr>
+// -*- C++ -*- Time-stamp: <09/02/16 11:19:51 ptr>
 
 /*
  *
@@ -687,16 +687,15 @@ int EXAM_IMPL(sockios_test::disconnect)
 {
   // throw exam::skip_exception();
 
-  const char fname[] = "/tmp/sockios2_test.shm";
   xmt::shm_alloc<0> seg;
 
   try {
-    seg.allocate( fname, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
   }
   catch ( xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
     try {
-      seg.allocate( fname, 4096, 0, 0660 );
+      seg.allocate( 70000, 4096, 0, 0660 );
     }
     catch ( xmt::shm_bad_alloc& err2 ) {
       EXAM_ERROR( err.what() );
@@ -734,9 +733,9 @@ int EXAM_IMPL(sockios_test::disconnect)
 
     EXAM_CHECK( s.write( buf, 4 ).flush().good() );
 
-    s.rdbuf()->shutdown( sock_base::stop_in | sock_base::stop_out );
+    s.rdbuf()->shutdown( /* sock_base::stop_in | */ sock_base::stop_out );
 
-    s.close(); // should work with this line commened, but sorry
+    s.close(); // should work with this line commented, but sorry
 
     int stat = -1;
     EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
@@ -749,7 +748,6 @@ int EXAM_IMPL(sockios_test::disconnect)
 
   shm.deallocate( &b );
   seg.deallocate();
-  unlink( fname );
 
   return EXAM_RESULT;
 }
@@ -1094,7 +1092,14 @@ class byte_cnt
 
         s.read( buf, sizeof(buf) );
 
-        EXAM_CHECK_ASYNC( s.good() );
+        EXAM_CHECK_ASYNC( /* s.good() */ !s.fail() );
+        // static int j = 0;
+        // ++j;
+        // for ( int i = 0; i < bsz; ++i ) {
+        //   if ( buf[i] == 0 ) {
+        //     cerr << "***** " << i << ' ' << j << endl;
+        //   }
+        // }
 
         lock_guard<mutex> lk( lock );
         r += count( buf, buf + sizeof(buf), 1 );

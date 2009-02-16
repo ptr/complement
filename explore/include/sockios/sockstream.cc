@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/11 11:50:59 ptr>
+// -*- C++ -*- Time-stamp: <09/02/14 01:00:06 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -38,7 +38,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
                                             sock_base::stype type,
                                             sock_base::protocol prot )
 {
-  if ( basic_socket_t::is_open() ) {
+  if ( is_open() ) {
     return 0;
   }
   try {
@@ -50,7 +50,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
     if ( prot == sock_base::inet ) {
       basic_socket_t::_fd = socket( PF_INET, type, 0 );
       if ( basic_socket_t::_fd == -1 ) {
-        throw std::runtime_error( "can't open socket" );
+        throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
       }
       basic_socket_t::_address.inet.sin_family = AF_INET;
       // htons is a define at least in Linux 2.2.5-15, and it's expantion fail
@@ -64,7 +64,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
   
       // Generally, stream sockets may successfully connect() only once
       if ( connect( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof( basic_socket_t::_address ) ) == -1 ) {
-        throw std::domain_error( "connect fail" );
+        throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
       }
       if ( type == sock_base::sock_stream ) {
         _xwrite = &_Self_type::write;
@@ -76,7 +76,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
     } else if ( prot == sock_base::local ) {
       basic_socket_t::_fd = socket( PF_UNIX, type, 0 );
       if ( basic_socket_t::_fd == -1 ) {
-        throw std::runtime_error( "can't open socket" );
+        throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
       }
     } else { // other protocols not implemented yet
       throw std::invalid_argument( "protocol not implemented" );
@@ -97,26 +97,28 @@ basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
     }
 
     if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
-      throw std::runtime_error( "can't establish nonblock mode" );
+      throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
     setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
     std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
     setg( this->epptr(), this->epptr(), this->epptr() );
-    basic_socket_t::_notify_close = true;
+    // basic_socket_t::_notify_close = true;
     basic_socket_t::mgr->push( *this );
   }
-  catch ( std::domain_error& ) {
+  catch ( std::system_error& ) {
+    if ( basic_socket_t::_fd != -1 ) {
 #ifdef WIN32
-    // _errno = WSAGetLastError();
-    ::closesocket( basic_socket_t::_fd );
+      // _errno = WSAGetLastError();
+      ::closesocket( basic_socket_t::_fd );
 #else
-    ::close( basic_socket_t::_fd );
+      ::close( basic_socket_t::_fd );
 #endif
-    basic_socket_t::_fd = -1;
+      basic_socket_t::_fd = -1;
+    }
    
-    std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
-    ucnd.notify_all();
+    // std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+    // ucnd.notify_all();
 
     return 0;
   }
@@ -128,8 +130,8 @@ basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
 #endif
     basic_socket_t::_fd = -1;
 
-    std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
-    ucnd.notify_all();
+    // std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+    // ucnd.notify_all();
 
     return 0;
   }
@@ -170,7 +172,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s,
 {
   basic_sockbuf<charT, traits, _Alloc>* ret = _open_sockmgr( s, addr, t );
   if ( ret != 0 ) {
-    basic_socket_t::_notify_close = true;
+    // basic_socket_t::_notify_close = true;
     basic_socket_t::mgr->push( *this );
   }
   return ret;
@@ -211,9 +213,12 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
                                                      const sockaddr& addr,
                                                      sock_base::stype t )
 {
-  if ( basic_socket_t::is_open() || s == -1 ) {
+  std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+
+  if ( basic_socket_t::is_open_unsafe() || s == -1 ) {
     return 0;
   }
+
   basic_socket_t::_fd = s;
   memcpy( (void *)&basic_socket_t::_address.any, (const void *)&addr, sizeof(sockaddr) );
   _mode = ios_base::in | ios_base::out;
@@ -250,20 +255,21 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
 #endif
     basic_socket_t::_fd = -1;
 
-    std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
-    ucnd.notify_all();
+    // std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+    // ucnd.notify_all();
 
     return 0;
   }
 
   if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
+    ::close( basic_socket_t::_fd );
+    basic_socket_t::_fd = -1;
     throw std::runtime_error( "can't establish nonblock mode" );
   }
   setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
-  std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
   setg( this->epptr(), this->epptr(), this->epptr() );
-  basic_socket_t::_notify_close = true;
+  // basic_socket_t::_notify_close = true;
 
   return this;
 }
@@ -272,32 +278,29 @@ template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
 basic_sockbuf<charT, traits, _Alloc>::close()
 {
-  if ( !basic_socket_t::is_open() ) {
+  std::tr2::unique_lock<std::tr2::mutex> lk( ulck );
+
+  if ( !basic_socket_t::is_open_unsafe() ) {
     return 0;
   }
 
-#ifdef WIN32
-  ::closesocket( basic_socket_t::_fd );
-#else
-  ::close( basic_socket_t::_fd );
-#endif
+  basic_socket_t::mgr->exit_notify( this, basic_socket_t::_fd );
 
   // put area before get area
   //setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
   //setg( this->epptr(), this->epptr(), this->epptr() );
 
-  basic_socket_t::mgr->exit_notify( this, basic_socket_t::_fd );
+  // if ( basic_socket_t::_fd != -1 ) {
+  //   std::cerr << __FILE__ << ':' << __LINE__ << ' ' << basic_socket_t::_fd << std::endl;
+  // }
 
-  basic_socket_t::_fd = -1;
-
-  std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
-  ucnd.notify_all();
+  ucnd.wait( lk, closed_t( *this ) );
 
   return this;
 }
 
 template<class charT, class traits, class _Alloc>
-void basic_sockbuf<charT, traits, _Alloc>::shutdown( sock_base::shutdownflg dir )
+void basic_sockbuf<charT, traits, _Alloc>::shutdown_unsafe( sock_base::shutdownflg dir )
 {
   if ( basic_socket_t::is_open_unsafe() ) {
     if ( (dir & (sock_base::stop_in | sock_base::stop_out)) ==
@@ -315,11 +318,11 @@ template<class charT, class traits, class _Alloc>
 __FIT_TYPENAME basic_sockbuf<charT, traits, _Alloc>::int_type
 basic_sockbuf<charT, traits, _Alloc>::underflow()
 {
-  if( !basic_socket_t::is_open() ) {
+  std::tr2::unique_lock<std::tr2::mutex> lk( ulck );
+
+  if( !basic_socket_t::is_open_unsafe() ) {
     return traits::eof();
   }
-
-  std::tr2::unique_lock<std::tr2::mutex> lk( ulck );
 
   if ( this->gptr() < this->egptr() ) {
     return traits::to_int_type(*this->gptr());
@@ -346,7 +349,7 @@ template<class charT, class traits, class _Alloc>
 __FIT_TYPENAME basic_sockbuf<charT, traits, _Alloc>::int_type
 basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
 {
-  if ( !basic_socket_t::is_open() ) {
+  if ( !is_open() ) {
     return traits::eof();
   }
 
@@ -407,7 +410,7 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
 template<class charT, class traits, class _Alloc>
 int basic_sockbuf<charT, traits, _Alloc>::sync()
 {
-  if ( !basic_socket_t::is_open() ) {
+  if ( !is_open() ) {
     return -1;
   }
 
@@ -456,7 +459,7 @@ int basic_sockbuf<charT, traits, _Alloc>::sync()
 template<class charT, class traits, class _Alloc>
 streamsize basic_sockbuf<charT, traits, _Alloc>::xsputn( const char_type *s, streamsize n )
 {
-  if ( !basic_socket_t::is_open() || s == 0 || n == 0 ) {
+  if ( !/* basic_socket_t:: */ is_open() || s == 0 || n == 0 ) {
     return 0;
   }
 
@@ -540,7 +543,9 @@ template<class charT, class traits, class _Alloc>
 void basic_sockbuf<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, bool on_off, int __v )
 {
 #ifdef __unix
-  if ( basic_socket_t::is_open() ) {
+  std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+
+  if ( basic_socket_t::is_open_unsafe() ) {
     int turn = on_off ? 1 : 0;
     int ret = 0;
     switch ( optname ) {
@@ -603,7 +608,9 @@ template<class charT, class traits, class _Alloc>
 void basic_sockbuf<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, int __v )
 {
 #ifdef __unix
-  if ( basic_socket_t::is_open() ) {
+  std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+
+  if ( basic_socket_t::is_open_unsafe() ) {
     int ret = 0;
     switch ( optname ) {
       case sock_base::so_sndbuf:

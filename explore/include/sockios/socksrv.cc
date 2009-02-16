@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/09 12:34:20 ptr>
+// -*- C++ -*- Time-stamp: <09/02/13 22:37:45 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -219,12 +219,10 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_base::socket_type fd, const typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::adopt_close_t& )
 {
-  // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
   {
     std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
     typename worker_pool_t::iterator i = worker_pool.find( fd );
     if ( i != worker_pool.end() ) {
-      // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
       delete i->second.c;
       delete i->second.s;
       worker_pool.erase( i );
@@ -239,13 +237,12 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_bas
     if ( j != ready_pool.end() ) {
       p = *j;
       ready_pool.erase( j );
-      // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
     }
   }
+
   if ( p.c != 0 ) {
     // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
-    (p.c->*C)( *p.s );
-
+    // (p.c->*C)( *p.s );
     delete p.c;
     delete p.s;
   }
@@ -254,8 +251,6 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_bas
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_base::socket_type fd )
 {
-  // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
-
   processor p;
 
   {
@@ -295,7 +290,6 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
   try {
     for ( ; ; ) {
       pop_ready( p );
-      // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       (p.c->*C)( *p.s );
       if ( p.s->rdbuf()->in_avail() > 0 ) {
         std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
@@ -303,16 +297,13 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
       } else if ( p.s->is_open() ) {
         std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
         worker_pool[p.s->rdbuf()->fd()] = p;
-        // std::cerr << __FILE__ << ":" << __LINE__ << " " << p.s->is_open() << std::endl;
       } else {
-        // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
         delete p.c;
         delete p.s;
       }
     }
   }
   catch ( const finish& ) {
-    // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
     try {
       std::tr2::unique_lock<std::tr2::mutex> lk( rdlock );
       cnd.notify_all(); // release all waiting workers
