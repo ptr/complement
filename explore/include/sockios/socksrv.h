@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/14 14:20:45 yeti>
+// -*- C++ -*- Time-stamp: <09/02/16 23:04:28 ptr>
 
 /*
  * Copyright (c) 2008
@@ -33,7 +33,7 @@
 #endif
 
 #include <sockios/sockstream>
-#include <deque>
+#include <list>
 #include <functional>
 #include <exception>
 
@@ -210,6 +210,7 @@ class connect_processor :
 {
   private:
     typedef sock_processor_base<charT,traits,_Alloc> base_t;
+    // typedef typename std::detail::processor<Connect,charT,traits,_Alloc> processor;
 
     class Init
     {
@@ -298,38 +299,68 @@ class connect_processor :
     connect_processor& operator =( const connect_processor& )
       { return *this; }
 
-
-    struct processor
-    { 
+    class processor
+    {
+      public:
         processor() :
             c(0),
-            s(0)
+            s(0),
+            lock(0)
           { }
         processor( Connect* __c, typename sock_processor_base<charT,traits,_Alloc>::sockstream_t* __s ) :
             c(__c),
-            s(__s)
-          { }
-        processor( const processor& p ) :
-            c( p.c ),
-            s( p.s )
+            s(__s),
+            lock( new std::tr2::mutex() )
           { }
 
+      private:
+        processor( /* const */ processor& p ) // :
+        // c( p.c ),
+        // s( p.s ),
+        //  lock( p.lock )
+          { this->swap( p ); }
+
+      public:
+        processor( const processor& ) :
+            c( 0 ),
+            s( 0 ),
+            lock( 0 )
+          { }
+
+        ~processor()
+          {
+            if ( lock != 0 ) {
+              lock->lock();
+              delete c;
+              delete s;
+              lock->unlock();
+              delete lock;
+            }
+          }
+
+      public:
+        void swap( processor& p )
+          { std::swap(c, p.c); std::swap(s, p.s); std::swap(lock, p.lock); }
+
+      private:
         processor& operator =( const processor& p )
-          { c = p.c; s = p.s; return *this; }
+          { c = p.c; s = p.s; lock = p.lock; return *this; }
 
-       Connect* c;
-       typename sock_processor_base<charT,traits,_Alloc>::sockstream_t* s;
+      public:
+        Connect* c;
+        typename sock_processor_base<charT,traits,_Alloc>::sockstream_t* s;
+        std::tr2::mutex* lock;
 
-       bool operator ==( const processor& p ) const
-         { return s == p.s; }
-       bool operator ==( const typename sock_processor_base<charT,traits,_Alloc>::sockstream_t* st ) const
-         { return const_cast<const typename sock_processor_base<charT,traits,_Alloc>::sockstream_t*>(s) == st; }
-       bool operator ==( sock_base::socket_type fd ) const
-         { return s == 0 ? (fd == -1) : (s->rdbuf()->fd() == fd); }
+        // bool operator ==( const processor& p ) const
+        //   { return s == p.s; }
+        // bool operator ==( const typename sock_processor_base<charT,traits,_Alloc>::sockstream_t* st ) const
+        //   { return const_cast<const typename sock_processor_base<charT,traits,_Alloc>::sockstream_t*>(s) == st; }
+        bool operator ==( sock_base::socket_type fd ) const
+          { return s == 0 ? (fd == -1) : (s->rdbuf()->fd() == fd); }
 
 /*
        struct equal_to :
-          public std::binary_function<processor, typename sock_processor_base<charT,traits,_Alloc>::sockstream_t*, bool>
+       public std::binary_function<processor, typename sock_processor_base<charT,traits,_Alloc>::sockstream_t*, bool>
        {
           bool operator()(const processor& __x, const typename sock_processor_base<charT,traits,_Alloc>::sockstream_t* __y) const
             { return __x == __y; }
@@ -337,7 +368,6 @@ class connect_processor :
 */
     };
 
-    void pop_ready( processor& );
     void _close()
       { base_t::_close(); }
     void _stop();
@@ -351,7 +381,7 @@ class connect_processor :
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
     typedef std::tr1::unordered_map<sock_base::socket_type, processor> worker_pool_t;
 #endif
-    typedef std::deque<processor> ready_pool_t;
+    typedef std::list<processor> ready_pool_t;
 
     struct _not_empty
     {

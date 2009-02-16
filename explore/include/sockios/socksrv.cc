@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/13 22:37:45 ptr>
+// -*- C++ -*- Time-stamp: <09/02/16 23:20:06 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -201,15 +201,19 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
   }
 
   Connect* c = new Connect( *s ); // bad point! I can't read from s in ctor indeed!
+  processor tmp( c, s );
 
   if ( s->rdbuf()->in_avail() > 0 ) {
     std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
-    ready_pool.push_back( processor( c, s ) );
+    processor empty;
+    ready_pool.push_back( empty );
+    ready_pool.back().swap( tmp );
     // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
     cnd.notify_one();
   } else {
     std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-    worker_pool.insert( std::make_pair( fd, processor( c, s ) ) );
+    // worker_pool.insert( std::make_pair( fd, processor( c, s ) ) );
+    worker_pool[fd].swap( tmp );
     // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
   }
 
@@ -219,32 +223,24 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_base::socket_type fd, const typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::adopt_close_t& )
 {
+  processor p;
   {
     std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
     typename worker_pool_t::iterator i = worker_pool.find( fd );
     if ( i != worker_pool.end() ) {
-      delete i->second.c;
-      delete i->second.s;
+      p.swap( i->second );
       worker_pool.erase( i );
       return;
     }
   }
 
-  processor p;
   {
     std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
     typename ready_pool_t::iterator j = std::find( ready_pool.begin(), ready_pool.end(), /* std::bind2nd( typename processor::equal_to(), &s ) */ fd );
     if ( j != ready_pool.end() ) {
-      p = *j;
+      p.swap( *j );
       ready_pool.erase( j );
     }
-  }
-
-  if ( p.c != 0 ) {
-    // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
-    // (p.c->*C)( *p.s );
-    delete p.c;
-    delete p.s;
   }
 }
 
@@ -255,51 +251,50 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_bas
 
   {
     std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-    typename worker_pool_t::const_iterator i = worker_pool.find( fd );
+    typename worker_pool_t::iterator i = worker_pool.find( fd );
     if ( i == worker_pool.end() ) {
       return;
     }
-    p = i->second;
+    p.swap( i->second );
     worker_pool.erase( i );
   }
 
   std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
-  ready_pool.push_back( p );
+  processor empty;
+  ready_pool.push_back( empty );
+  ready_pool.back().swap( p );
   cnd.notify_one();
-}
-
-template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
-void connect_processor<Connect, charT, traits, _Alloc, C>::pop_ready( processor& p )
-{
-  std::tr2::unique_lock<std::tr2::mutex> lk( rdlock );
-
-  // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-  cnd.wait( lk, not_empty );
-  if ( ready_pool.empty() ) { // check empty, not in_work: allow process the rest
-    throw finish();
-  }
-  p = ready_pool.front();
-  ready_pool.pop_front();
 }
 
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
 {
-  processor p;
-
   try {
     for ( ; ; ) {
-      pop_ready( p );
-      (p.c->*C)( *p.s );
+      processor p; // keep it in loop, it dtor significant, and should be in loop!
+      {
+        std::tr2::unique_lock<std::tr2::mutex> lk( rdlock );
+
+        // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+        cnd.wait( lk, not_empty );
+        if ( ready_pool.empty() ) { // check empty, not in_work: allow process the rest
+          throw finish();
+        }
+        p.swap( ready_pool.front() );
+        ready_pool.pop_front();
+      }
+      {
+        std::tr2::lock_guard<std::tr2::mutex> lk( *p.lock );
+        (p.c->*C)( *p.s );
+      }
       if ( p.s->rdbuf()->in_avail() > 0 ) {
         std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
-        ready_pool.push_back( p );
+        processor empty;
+        ready_pool.push_back( empty );
+        ready_pool.back().swap( p );
       } else if ( p.s->is_open() ) {
         std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-        worker_pool[p.s->rdbuf()->fd()] = p;
-      } else {
-        delete p.c;
-        delete p.s;
+        worker_pool[p.s->rdbuf()->fd()].swap( p );
       }
     }
   }

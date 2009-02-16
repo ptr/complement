@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/16 11:19:51 ptr>
+// -*- C++ -*- Time-stamp: <09/02/16 13:41:19 ptr>
 
 /*
  *
@@ -1148,7 +1148,7 @@ int EXAM_IMPL(sockios_test::few_packets)
     s.flush();
 
     unique_lock<mutex> lk( byte_cnt::lock );
-    byte_cnt::cnd.timed_wait( lk, milliseconds(500), byte_cnt_predicate() );
+    EXAM_CHECK( byte_cnt::cnd.timed_wait( lk, milliseconds(500), byte_cnt_predicate() ) );
   }
 
   EXAM_CHECK( byte_cnt::r == (byte_cnt::bsz * byte_cnt::sz) );
@@ -1184,7 +1184,7 @@ int EXAM_IMPL(sockios_test::few_packets_loop)
     s.flush();
 
     unique_lock<mutex> lk( byte_cnt::lock );
-    byte_cnt::cnd.timed_wait( lk, milliseconds(500), byte_cnt_predicate() );
+    EXAM_CHECK( byte_cnt::cnd.timed_wait( lk, milliseconds(500), byte_cnt_predicate() ) );
   }
 
   EXAM_CHECK( byte_cnt::r == (byte_cnt::bsz * byte_cnt::sz) );
@@ -1325,6 +1325,7 @@ class reader
           cerr << sizeof(buf) << ' ' << i << ' ' << j << endl;
         }
         */
+        EXAM_CHECK_ASYNC( count( buf, buf + sizeof(buf), 'b' ) != sizeof(buf) );
         EXAM_CHECK_ASYNC( !s.fail() );
 
         // lock_guard<mutex> lk(lock);
