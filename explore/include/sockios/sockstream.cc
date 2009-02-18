@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/14 01:00:06 ptr>
+// -*- C++ -*- Time-stamp: <09/02/17 12:21:38 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -153,7 +153,7 @@ template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
 basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, sock_base::stype t )
 {
-  if ( basic_socket_t::is_open() || s == -1 ) {
+  if ( /* basic_socket_t:: */ is_open() || s == -1 ) {
     return 0;
   }
 
@@ -283,18 +283,23 @@ basic_sockbuf<charT, traits, _Alloc>::close()
   if ( !basic_socket_t::is_open_unsafe() ) {
     return 0;
   }
+  
+  shutdown_unsafe( sock_base::stop_in | sock_base::stop_out );
 
   basic_socket_t::mgr->exit_notify( this, basic_socket_t::_fd );
+
+  // shutdown_unsafe( sock_base::stop_in | sock_base::stop_out );
 
   // put area before get area
   //setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
   //setg( this->epptr(), this->epptr(), this->epptr() );
 
   // if ( basic_socket_t::_fd != -1 ) {
-  //   std::cerr << __FILE__ << ':' << __LINE__ << ' ' << basic_socket_t::_fd << std::endl;
+  // std::cerr << __FILE__ << ':' << __LINE__ << ' ' << basic_socket_t::_fd << std::endl;
   // }
 
   ucnd.wait( lk, closed_t( *this ) );
+  // std::cerr << __FILE__ << ':' << __LINE__ << ' ' << basic_socket_t::_fd << std::endl;
 
   return this;
 }

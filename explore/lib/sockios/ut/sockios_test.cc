@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/16 13:41:19 ptr>
+// -*- C++ -*- Time-stamp: <09/02/18 15:29:15 ptr>
 
 /*
  *
@@ -496,8 +496,6 @@ int EXAM_IMPL(sockios_test::processor_core_income_data)
 
 int EXAM_IMPL(sockios_test::income_data)
 {
-  const char fname[] = "/tmp/sockios2_test.shm";
-
   // worker::lock.lock();
   worker::visits = 0;
   worker::line = "";
@@ -506,7 +504,7 @@ int EXAM_IMPL(sockios_test::income_data)
 
   try {
     xmt::shm_alloc<0> seg;
-    seg.allocate( fname, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
     xmt::allocator_shm<barrier_ip,0> shm;
     barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
@@ -567,7 +565,6 @@ int EXAM_IMPL(sockios_test::income_data)
     }
     shm.deallocate( &b );
     seg.deallocate();
-    unlink( fname );
   }
   catch ( xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
@@ -602,17 +599,15 @@ std::tr2::condition_event srv_reader::cnd;
 int EXAM_IMPL(sockios_test::disconnect_rawclnt)
 {
   // throw exam::skip_exception();
-
-  const char fname[] = "/tmp/sockios2_test.shm";
   xmt::shm_alloc<0> seg;
 
   try {
-    seg.allocate( fname, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
   }
   catch ( xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
     try {
-      seg.allocate( fname, 4096, 0, 0660 );
+      seg.allocate( 70000, 4096, 0, 0660 );
     }
     catch ( xmt::shm_bad_alloc& err2 ) {
       EXAM_ERROR( err.what() );
@@ -678,7 +673,6 @@ int EXAM_IMPL(sockios_test::disconnect_rawclnt)
 
   shm.deallocate( &b );
   seg.deallocate();
-  unlink( fname );
 
   return EXAM_RESULT;
 }
@@ -754,8 +748,6 @@ int EXAM_IMPL(sockios_test::disconnect)
 
 int EXAM_IMPL(sockios_test::fork)
 {
-  const char fname[] = "/tmp/sockios2_test.shm";
-
   /* You must work very carefully with sockets, theads and fork: it unsafe in principle
      and no way to make it safe. Never try to pass _opened_ connection via fork.
      Here I create sockstream, but without connection (it check that io processing
@@ -769,7 +761,7 @@ int EXAM_IMPL(sockios_test::fork)
 
   try {
     xmt::shm_alloc<0> seg;
-    seg.allocate( fname, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
     xmt::allocator_shm<barrier_ip,0> shm;
     barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
@@ -830,7 +822,6 @@ int EXAM_IMPL(sockios_test::fork)
     }
     shm.deallocate( &b );
     seg.deallocate();
-    unlink( fname );
   }
   catch ( xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
@@ -842,8 +833,18 @@ int EXAM_IMPL(sockios_test::fork)
 class stream_reader
 {
   public:
-    stream_reader( sockstream& )
-      { }
+    stream_reader( sockstream& s )
+      {
+        try {
+          // s.rdbuf()->setoptions( sock_base::so_keepalive, true );
+          // s.rdbuf()->setoptions( sock_base::so_tcp_keepidle, 60 );
+          // s.rdbuf()->setoptions( sock_base::so_tcp_keepintvl, 1 );
+          // s.rdbuf()->setoptions( sock_base::so_tcp_keepcnt, 3 );
+        }
+        catch ( ... ) {
+          EXAM_ERROR_ASYNC( "bad option" );
+        }
+      }
 
     ~stream_reader()
       { }
@@ -881,11 +882,10 @@ class stream_reader
 int EXAM_IMPL(sockios_test::srv_sigpipe)
 {
   // throw exam::skip_exception();
-  
-  const char fname[] = "/tmp/sockios2_test.shm";
+
   try {
     xmt::shm_alloc<0> seg;
-    seg.allocate( fname, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
     xmt::allocator_shm<barrier_ip,0> shm;
     barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
@@ -944,7 +944,6 @@ int EXAM_IMPL(sockios_test::srv_sigpipe)
     }
     shm.deallocate( &b );
     seg.deallocate();
-    unlink( fname );
   }
   catch ( xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
@@ -1002,10 +1001,9 @@ barrier_ip* interrupted_writer::bb = 0;
 
 int EXAM_IMPL(sockios_test::read0)
 {
-  const char fname[] = "/tmp/sockios2_test.shm";
   try {
     xmt::shm_alloc<0> seg;
-    seg.allocate( fname, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
     xmt::allocator_shm<barrier_ip,0> shm;
     barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
@@ -1060,7 +1058,6 @@ int EXAM_IMPL(sockios_test::read0)
     shm.deallocate( &bnew );
     shm.deallocate( &b );
     seg.deallocate();
-    unlink( fname );
   }
   catch ( xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
@@ -1100,10 +1097,15 @@ class byte_cnt
         //     cerr << "***** " << i << ' ' << j << endl;
         //   }
         // }
+        // if ( s.fail() ) {
+        //   cerr << count( buf, buf + sizeof(buf), 1 ) << endl;
+        //   xmt::callstack( cerr );
+        // }
 
         lock_guard<mutex> lk( lock );
         r += count( buf, buf + sizeof(buf), 1 );
         if ( r == sz * bsz ) {
+          EXAM_MESSAGE_ASYNC( "Looks all here" );
           cnd.notify_one();
         }
       }
@@ -1325,8 +1327,11 @@ class reader
           cerr << sizeof(buf) << ' ' << i << ' ' << j << endl;
         }
         */
-        EXAM_CHECK_ASYNC( count( buf, buf + sizeof(buf), 'b' ) != sizeof(buf) );
+        EXAM_CHECK_ASYNC( count( buf, buf + sizeof(buf), ' ' ) == sizeof(buf) );
         EXAM_CHECK_ASYNC( !s.fail() );
+        // if ( s.fail() ) {
+        //   cerr << count( buf, buf + sizeof(buf), ' ' ) << endl;
+        // }
 
         // lock_guard<mutex> lk(lock);
         // if ( ++visits == N ) {

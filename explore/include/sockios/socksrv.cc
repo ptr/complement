@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/16 23:20:06 ptr>
+// -*- C++ -*- Time-stamp: <09/02/17 23:48:51 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -69,21 +69,32 @@ void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int po
 template<class charT, class traits, class _Alloc>
 void sock_processor_base<charT,traits,_Alloc>::_close()
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
-  if ( !basic_socket_t::is_open_unsafe() ) {
+  // std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+  if ( ! /* basic_socket_t:: */ is_open() ) {
     return;
   }
-  // std::cerr << __FILE__ << ":" << __LINE__ << " " << basic_socket_t::_fd << std::endl;
 
-  basic_socket<charT,traits,_Alloc>::mgr->pop( *this, basic_socket_t::_fd );
+  std::tr2::unique_lock<std::tr2::mutex> clk(_cnt_lck);
+  
+  /* all command in pipe should be processed:
+     otherwise shutdown signal to descriptor, that may not
+     in epoll vector yet
+   */
+  _cnt_cnd.wait( clk, _chk );
 
-#ifdef WIN32
-  ::closesocket( basic_socket_t::_fd );
-#else
-  ::shutdown( basic_socket_t::_fd, 2 );
-  ::close( basic_socket_t::_fd );
-#endif
+  std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+
+  ::shutdown( basic_socket_t::_fd, 0 );
+
+  // basic_socket<charT,traits,_Alloc>::mgr->pop( *this, basic_socket_t::_fd );
+
+  // ::close( basic_socket_t::_fd );
+
+  // No need wait here because join() in dtor
+
   basic_socket_t::_fd = -1;
+
+  _state |= ios_base::eofbit;
 }
 
 template<class charT, class traits, class _Alloc>
@@ -208,13 +219,11 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
     processor empty;
     ready_pool.push_back( empty );
     ready_pool.back().swap( tmp );
-    // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
     cnd.notify_one();
   } else {
     std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
     // worker_pool.insert( std::make_pair( fd, processor( c, s ) ) );
     worker_pool[fd].swap( tmp );
-    // std::cerr << __FILE__ << ":" << __LINE__ << " " << fd << std::endl;
   }
 
   return s->rdbuf();
@@ -275,7 +284,6 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
       {
         std::tr2::unique_lock<std::tr2::mutex> lk( rdlock );
 
-        // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
         cnd.wait( lk, not_empty );
         if ( ready_pool.empty() ) { // check empty, not in_work: allow process the rest
           throw finish();
@@ -283,18 +291,18 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
         p.swap( ready_pool.front() );
         ready_pool.pop_front();
       }
-      {
-        std::tr2::lock_guard<std::tr2::mutex> lk( *p.lock );
-        (p.c->*C)( *p.s );
-      }
+      std::tr2::lock_guard<std::tr2::mutex> lk( *p.lock );
       if ( p.s->rdbuf()->in_avail() > 0 ) {
-        std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
-        processor empty;
-        ready_pool.push_back( empty );
-        ready_pool.back().swap( p );
-      } else if ( p.s->is_open() ) {
-        std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-        worker_pool[p.s->rdbuf()->fd()].swap( p );
+        (p.c->*C)( *p.s );
+        if ( p.s->rdbuf()->in_avail() > 0 ) {
+          std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
+          processor empty;
+          ready_pool.push_back( empty );
+          ready_pool.back().swap( p );
+        } else if ( p.s->is_open() ) {
+          std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
+          worker_pool[p.s->rdbuf()->fd()].swap( p );
+        }
       }
     }
   }

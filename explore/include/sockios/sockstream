@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/14 01:08:41 ptr>
+// -*- C++ -*- Time-stamp: <09/02/18 15:19:04 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -239,6 +239,7 @@ class basic_socket
         static void __at_fork_prepare();
         static void __at_fork_child();
         static void __at_fork_parent();
+        static std::tr2::mutex _init_lock;
         static int _count;
         static bool _at_fork;
     };
@@ -313,10 +314,11 @@ template<class charT, class traits, class _Alloc>
 bool basic_socket<charT,traits,_Alloc>::Init::_at_fork = false;
 
 template<class charT, class traits, class _Alloc>
+std::tr2::mutex basic_socket<charT,traits,_Alloc>::Init::_init_lock;
+
+template<class charT, class traits, class _Alloc>
 void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
 {
-  static std::tr2::mutex _init_lock;
-
   if ( direction ) {
     std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
     if ( _count++ == 0 ) {
@@ -330,7 +332,6 @@ void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
       }
 #endif
 //       _sock_processor_base::_idx = std::tr2::this_thread::xalloc();
-      // std::cerr << __FILE__ << ":" << __LINE__ << " new mgr " << std::tr2::getpid() << std::endl;
     }
   } else {
     std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
@@ -349,6 +350,7 @@ void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
 template<class charT, class traits, class _Alloc>
 void basic_socket<charT,traits,_Alloc>::Init::__at_fork_prepare()
 {
+  _init_lock.lock();
 }
 
 template<class charT, class traits, class _Alloc>
@@ -357,15 +359,29 @@ void basic_socket<charT,traits,_Alloc>::Init::__at_fork_child()
   if ( _count != 0 ) {
     // stop mgr
     _count = 1;
+
+    // Prevent send stop request via pipe, inherited from
+    // parent process:
+    ::close( basic_socket<charT,traits,_Alloc>::mgr->efd );
+    basic_socket<charT,traits,_Alloc>::mgr->efd = -1;
+    ::close( basic_socket<charT,traits,_Alloc>::mgr->pipefd[1] );
+    basic_socket<charT,traits,_Alloc>::mgr->pipefd[1] = -1;
+    ::close( basic_socket<charT,traits,_Alloc>::mgr->pipefd[0] );
+    basic_socket<charT,traits,_Alloc>::mgr->pipefd[0] = -1;
+
+    // Restart sockmgr:
     delete basic_socket<charT,traits,_Alloc>::mgr;
     basic_socket<charT,traits,_Alloc>::mgr = new std::detail::sockmgr<charT,traits,_Alloc>();
   }
+  _init_lock.unlock();
   // _sock_processor_base::_idx =  std::tr2::this_thread::xalloc();
 }
 
 template<class charT, class traits, class _Alloc>
 void basic_socket<charT,traits,_Alloc>::Init::__at_fork_parent()
-{ }
+{
+  _init_lock.unlock();
+}
 
 template<class charT, class traits, class _Alloc>
 char basic_socket<charT,traits,_Alloc>::Init_buf[128];

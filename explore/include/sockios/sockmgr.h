@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/13 23:47:13 ptr>
+// -*- C++ -*- Time-stamp: <09/02/18 15:20:49 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -83,10 +83,10 @@ class sockmgr
     enum {
       listener,
       tcp_buffer,
-      rqstop,
-      rqstart,
-      listener_on_exit,
-      tcp_buffer_on_exit
+      rqstop // ,
+      // rqstart,
+      // listener_on_exit,
+      // tcp_buffer_on_exit
     };
 
     struct fd_info
@@ -156,7 +156,7 @@ class sockmgr
 
     void push( socks_processor_t& p );
     void push( sockbuf_t& s );
-    void pop( socks_processor_t& p, sock_base::socket_type _fd );
+    // void pop( socks_processor_t& p, sock_base::socket_type _fd );
     void exit_notify( sockbuf_t* b, sock_base::socket_type fd );
 
   private:
@@ -192,6 +192,8 @@ class sockmgr
 
     fd_container_type descr;
     std::tr2::mutex dll;
+
+    friend class std::basic_socket<charT,traits,_Alloc>;
 };
 
 } //detail
