@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/19 12:29:26 ptr>
+// -*- C++ -*- Time-stamp: <09/02/19 16:42:27 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -652,38 +652,55 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
     // }
     if ( ev.events & EPOLLIN ) {
       long offset;
-      for ( ; ; ) {
-        {
-          std::tr2::unique_lock<std::tr2::mutex> lk( b->ulck );
+      {
+        std::tr2::unique_lock<std::tr2::mutex> lk( b->ulck );
 
-          if ( b->_ebuf == b->egptr() ) {
-            // process extract data from buffer too slow for us!
-            if ( ((info.flags & fd_info::level_triggered) == 0) && ((ev.events & (/* EPOLLRDHUP | */ EPOLLHUP | EPOLLERR)) == 0) ) {
-              epoll_event xev;
+        if ( b->_ebuf == b->egptr() ) {
+          // process extract data from buffer too slow for us!
+          if ( ((info.flags & fd_info::level_triggered) == 0) && ((ev.events & (/* EPOLLRDHUP | */ EPOLLHUP | EPOLLERR)) == 0) ) {
+            // set to level triggered, if not done before
+            epoll_event xev;
 #if 1
-              xev.data.u64 = 0ULL;
+            xev.data.u64 = 0ULL;
 #endif
-              xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP;
-              xev.data.fd = ev.data.fd;
-              info.flags |= fd_info::level_triggered;
-              if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) < 0 ) {
-                cerr << __FILE__ << ':' << __LINE__ << ' ' << std::tr2::getpid()
-                     << ' ' << ev.data.fd << endl;
-                throw fdclose(); // already closed?
-              }
+            xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP;
+            xev.data.fd = ev.data.fd;
+            info.flags |= fd_info::level_triggered;
+            if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) < 0 ) {
+              cerr << __FILE__ << ':' << __LINE__ << ' ' << std::tr2::getpid()
+                   << ' ' << ev.data.fd << endl;
+              throw fdclose(); // already closed?
             }
-            if ( info.p != 0 ) {
-              b->ucnd.notify_one();
-              lk.unlock();
-              (*info.p)( ev.data.fd );
-            }
-            break;
           }
-
-          offset = read( ev.data.fd, b->egptr(), sizeof(charT) * (b->_ebuf - b->egptr()) );
+          if ( info.p != 0 ) {
+            b->ucnd.notify_one();
+            lk.unlock();
+            (*info.p)( ev.data.fd );
+          }
+          if ( ((ev.events & (/* EPOLLRDHUP | */ EPOLLHUP | EPOLLERR)) != 0) ) {
+            throw fdclose(); // oh, it closed!
+          }
+          return;
         }
 
-        if ( offset == 0 ) {
+        offset = read( ev.data.fd, b->egptr(), sizeof(charT) * (b->_ebuf - b->egptr()) );
+        if ( offset > 0 ) {
+          offset /= sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
+
+          // std::string st;
+
+          // _MUST_ be under same b->ulck as read above!
+          b->setg( b->eback(), b->gptr(), b->egptr() + offset );
+          // st.assign( b->gptr(), b->egptr() );
+          b->ucnd.notify_one();
+
+          // cerr << __FILE__ << ':' << __LINE__ << ' ' << st << endl;
+          //  cerr << __FILE__ << ':' << __LINE__ << ' ' << offset << endl;
+          if ( info.p != 0 ) {
+            lk.unlock();
+            (*info.p)( ev.data.fd );
+          }
+        } else if ( offset == 0 ) {
 #if 0
           int res = 0;
           int res2 = 0;
@@ -714,71 +731,52 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
 #endif
           // EPOLLRDHUP may be missed in kernel, but offset 0 is the same
           throw fdclose();
-        }
-
-        if ( offset < 0 ) {
-          if ( errno == EINTR ) { // read was interrupted
+        } else { // offset < 0
+          if ( (errno == EINTR) || (errno == EAGAIN) ) { // EWOULDBLOCK
+            // read was interrupted
+            // or no more ready data available; continue.
             errno = 0;
-            continue;
+          } else {
+            // EBADF (already closed?), EFAULT (Bad address),
+            // ECONNRESET (Connection reset by peer), ...
+            throw fdclose();
           }
-          if ( errno == EAGAIN ) { // EWOULDBLOCK
-            errno = 0;
-            epoll_event xev;
-            xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-#if 1
-            xev.data.u64 = 0ULL;
-#endif
-            xev.data.fd = ev.data.fd;
-            if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) == 0 ) {
-              break; // normal flow, back to epoll
-            }
-            // already closed?
+        }
+      }
+
+      if ( (ev.events & (/* EPOLLRDHUP | */ EPOLLHUP | EPOLLERR)) == 0 )  {
+        if ( (info.flags & fd_info::level_triggered) != 0 ) {
+          std::tr2::unique_lock<std::tr2::mutex> lk( b->ulck );
+          if ( b->_ebuf == b->egptr() ) {
+            // no error, but buffer is full; keep level triggered
+            return;
           }
-          // EBADF (already closed?), EFAULT (Bad address),
-          // ECONNRESET (Connection reset by peer), ...
-          throw fdclose();
+          // space in buffer available, switch to edge triggered
+          // (EPOLL_CTL_MOD below)
         }
 
-        offset /= sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
+        // Due to EPOLLONESHOT, we need recover this descriptor
+        // in the epoll's vector
 
-        // std::string st;
- 
-        {
-          std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
-          b->setg( b->eback(), b->gptr(), b->egptr() + offset );
-          // st.assign( b->gptr(), b->egptr() );
-          b->ucnd.notify_one();
-        }
         // cerr << __FILE__ << ':' << __LINE__ << ' ' << st << endl;
-        if ( info.p != 0 ) {
-          (*info.p)( ev.data.fd );
-        }
-        /* if ( info.flags & fd_info::level_triggered ) */ {
-          // cerr << __FILE__ << ':' << __LINE__ << ' ' << st << endl;
-          epoll_event xev;
-          xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+        epoll_event xev;
+        xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
 #if 1
-          xev.data.u64 = 0ULL;
+        xev.data.u64 = 0ULL;
 #endif
-          xev.data.fd = ev.data.fd;
-          info.flags &= ~static_cast<unsigned>(fd_info::level_triggered);
-          if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) < 0 ) {
-            cerr << __FILE__ << ':' << __LINE__ << endl;
-            throw fdclose(); // already closed?
-          }
+        xev.data.fd = ev.data.fd;
+        info.flags &= ~static_cast<unsigned>(fd_info::level_triggered);
+        if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) < 0 ) {
+          cerr << __FILE__ << ':' << __LINE__ << endl;
+          throw fdclose(); // nonrecoverable? already closed?
         }
       }
     }
 
     if ( (ev.events & (/* EPOLLRDHUP | */ EPOLLHUP | EPOLLERR) ) != 0 ) {
-      throw fdclose();
+      // EPOLLIN not set?
+      throw fdclose(); // closed connection
     }
-    // if ( ev.events & EPOLLHUP ) {
-    //   std::cerr << "Poll HUP" << std::endl;
-    // }
-    // if ( ev.events & EPOLLERR ) {
-    //   std::cerr << "Poll ERR" << std::endl;
-    // }
 #if 0
     // Never see here: raw socket?
     if ( ev.events & EPOLLPRI ) {
