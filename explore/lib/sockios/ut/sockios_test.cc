@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/18 15:29:15 ptr>
+// -*- C++ -*- Time-stamp: <09/02/18 22:11:55 ptr>
 
 /*
  *
@@ -1393,7 +1393,7 @@ int EXAM_IMPL(sockios_test::quants_reader)
 
         if ( sig_caught == SIGINT ) {
           EXAM_MESSAGE_ASYNC( "catch INT signal" );
-          this_thread::sleep( milliseconds( 200 ) ); // chance to process the rest
+          this_thread::sleep( milliseconds( 1000 ) ); // chance to process the rest
           srv.close();
         } else {
           EXAM_ERROR_ASYNC_F( "catch of INT signal expected", ret );
@@ -1411,11 +1411,20 @@ int EXAM_IMPL(sockios_test::quants_reader)
       {
         sockstream s( "localhost", 2008 );
 
+        cerr << __FILE__ << ':' << __LINE__ << ' ' << std::tr2::getpid()
+             << ' ' << s.rdbuf()->fd() << endl;
+
         char buf[64];
         fill( buf, buf + sizeof(buf), ' ' );
+
+        EXAM_CHECK( s.good() );
+
         for ( int i = 0; i < /* 819200 */ 1024; ++i ) {
           s.write( buf, sizeof(buf) ).flush();
           EXAM_CHECK( s.good() );
+          if ( !s.good() ) {
+            break;
+          }
         }
       }
 
