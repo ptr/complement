@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/18 15:29:45 ptr>
+// -*- C++ -*- Time-stamp: <09/02/19 12:29:26 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -437,7 +437,6 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
                 b->_fd = -1;
                 b->ucnd.notify_all();
               }
-              cerr << __FILE__ << ':' << __LINE__ << endl;
               (*p)( i->first, typename socks_processor_t::adopt_close_t() );
             }
             /* i = */ descr.erase( i++ );
@@ -520,8 +519,6 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
           return; // normal flow, back to epoll
         }
         // closed?
-        std::cerr << __FILE__ << ":" << __LINE__ << " " << ev.data.fd << " "
-                  << errno << std::endl;
       }
 
       // close listener:
@@ -552,9 +549,8 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
     }
 
     if ( fcntl( fd, F_SETFL, fcntl( fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
-      std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
       ::close( fd );
-      throw std::runtime_error( "can't establish nonblock mode" );
+      throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>" ) );
     }
       
     try {
@@ -566,10 +562,9 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
       ev_add.data.fd = fd;
 
       if ( epoll_ctl( efd, EPOLL_CTL_ADD, fd, &ev_add ) < 0 ) {
-        std::cerr << __FILE__ << ":" << __LINE__ << " " << std::error_code( errno, std::posix_category ).message() << " " << fd << " " << std::tr2::getpid() << std::endl;
-        // throw system_error
         ::close( fd );
-        return;
+        throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>" ) );
+        // return;
       }      
 
       sockbuf_t* b = (*info.p)( fd, addr );
@@ -586,11 +581,12 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
         cerr << __FILE__ << ':' << __LINE__ << endl;
         try {
           descr.erase( fd );
-          std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
-
-          ::close( b->_fd );
-          b->_fd = -1;
-          b->ucnd.notify_all();
+          {
+            std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
+            ::close( b->_fd );
+            b->_fd = -1;
+            b->ucnd.notify_all();
+          }
           (*info.p)( fd, typename socks_processor_t::adopt_close_t() );
         }
         catch ( ... ) {
@@ -616,13 +612,13 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
     // I don't know how use it in usefull way.
 
     if ( info.p == 0 ) { // this is a error
+      std::cerr << __FILE__ << ':' << __LINE__ << ' ' << ifd->first << std::endl;
       ::close( ifd->first );
       descr.erase( ifd );
       throw std::logic_error( "neither buffer, nor processor" );
     }
     // ... it totally controlled by processor
 
-    // std::cerr << __FILE__ << ":" << __LINE__ << ' ' << ifd->first << endl;
     /* To do here: discover is data available or connection closed, and do
        appropriate actions; now only close connection.
      */
@@ -658,7 +654,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
       long offset;
       for ( ; ; ) {
         {
-          std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
+          std::tr2::unique_lock<std::tr2::mutex> lk( b->ulck );
 
           if ( b->_ebuf == b->egptr() ) {
             // process extract data from buffer too slow for us!
@@ -671,11 +667,14 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
               xev.data.fd = ev.data.fd;
               info.flags |= fd_info::level_triggered;
               if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) < 0 ) {
+                cerr << __FILE__ << ':' << __LINE__ << ' ' << std::tr2::getpid()
+                     << ' ' << ev.data.fd << endl;
                 throw fdclose(); // already closed?
               }
             }
             if ( info.p != 0 ) {
               b->ucnd.notify_one();
+              lk.unlock();
               (*info.p)( ev.data.fd );
             }
             break;
@@ -685,6 +684,34 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
         }
 
         if ( offset == 0 ) {
+#if 0
+          int res = 0;
+          int res2 = 0;
+          socklen_t l = sizeof(int);
+          int ret = getsockopt( ev.data.fd, SOL_TCP, SO_ERROR, &res, &l );
+          l = sizeof(int);
+          ret += getsockopt( ev.data.fd, SOL_SOCKET, SO_ERROR, &res2, &l );
+          cerr << __FILE__ << ':' << __LINE__ << ' ' << std::tr2::getpid()
+               << ' ' << ev.data.fd << ' ' << (sizeof(charT) * (b->_ebuf - b->egptr())) << " '" << res << "' " << res2 << ' ' << ret << ' ' << hex << ev.events << dec << endl;
+          if ( info.flags & fd_info::level_triggered ) {
+            cerr << __FILE__ << ':' << __LINE__ << endl;
+          }
+
+          if ( (res2 == 0) && ((ev.events & (EPOLLERR | EPOLLHUP)) == 0 )) {
+            epoll_event xev;
+            xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP /* | EPOLLET | EPOLLONESHOT */;
+#if 1
+            xev.data.u64 = 0ULL;
+#endif
+            xev.data.fd = ev.data.fd;
+            if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) == 0 ) {
+              info.flags |= fd_info::level_triggered;
+              break; // normal flow, back to epoll
+            }
+          }
+          cerr << __FILE__ << ':' << __LINE__ << ' ' << std::tr2::getpid()
+               << ' ' << ev.data.fd << ' ' << errno << endl;          
+#endif
           // EPOLLRDHUP may be missed in kernel, but offset 0 is the same
           throw fdclose();
         }
@@ -709,15 +736,25 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
           }
           // EBADF (already closed?), EFAULT (Bad address),
           // ECONNRESET (Connection reset by peer), ...
-          // errno = 0;
-          // cerr << __FILE__ << ':' << __LINE__ << ' '
-          //      << std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>::push( socks_processor_t& p )" ) ).what() << endl;
           throw fdclose();
         }
 
         offset /= sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
-            
-        if ( info.flags & fd_info::level_triggered ) {
+
+        // std::string st;
+ 
+        {
+          std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
+          b->setg( b->eback(), b->gptr(), b->egptr() + offset );
+          // st.assign( b->gptr(), b->egptr() );
+          b->ucnd.notify_one();
+        }
+        // cerr << __FILE__ << ':' << __LINE__ << ' ' << st << endl;
+        if ( info.p != 0 ) {
+          (*info.p)( ev.data.fd );
+        }
+        /* if ( info.flags & fd_info::level_triggered ) */ {
+          // cerr << __FILE__ << ':' << __LINE__ << ' ' << st << endl;
           epoll_event xev;
           xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
 #if 1
@@ -726,17 +763,9 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
           xev.data.fd = ev.data.fd;
           info.flags &= ~static_cast<unsigned>(fd_info::level_triggered);
           if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) < 0 ) {
-            // std::cerr << __FILE__ << ":" << __LINE__ << " " << std::error_code( errno, std::posix_category ).message() << " " << ev.data.fd << " " << std::tr2::getpid() << std::endl;
+            cerr << __FILE__ << ':' << __LINE__ << endl;
             throw fdclose(); // already closed?
           }
-        }
-        {
-          std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
-          b->setg( b->eback(), b->gptr(), b->egptr() + offset );
-          b->ucnd.notify_one();
-        }
-        if ( info.p != 0 ) {
-          (*info.p)( ev.data.fd );
         }
       }
     }
@@ -771,6 +800,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
 
     if ( info.p != 0 ) {
       {
+        // std::cerr << __FILE__ << ':' << __LINE__ << ' ' << b->_fd << ' ' << std::tr2::getpid() << std::endl;
         std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
         // Note: close socket automatically remove it from epoll's vector,
         // so no epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ); here
@@ -779,6 +809,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
         // Close and set to -1 _before_ (*info.p)( fd, adopt_close_t() );
         // to avoid deadlock! (wait condition: data or close in
         // basic_sockbuf::underflow())
+        // std::cerr << __FILE__ << ':' << __LINE__ << ' ' << b->_fd << ' ' << std::tr2::getpid() << std::endl;
         b->_fd = -1;
         b->ucnd.notify_all();
       }
@@ -786,10 +817,15 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
       (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
       descr.erase( ifd );
     } else {
+      // std::cerr << __FILE__ << ':' << __LINE__ << ' ' << b->_fd << std::endl;
       descr.erase( ifd );
       std::tr2::lock_guard<std::tr2::mutex> lk( b->ulck );
       // Note: close socket automatically remove it from epoll's vector,
       // so no epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ); here
+#if 0
+      cerr << __FILE__ << ':' << __LINE__ << ' ' << std::tr2::getpid()
+           << ' ' << b->_fd << endl;
+#endif
       ::close( b->_fd );
       b->_fd = -1;
       b->ucnd.notify_all();
