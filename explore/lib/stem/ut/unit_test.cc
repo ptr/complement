@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/21 14:52:41 ptr>
+// -*- C++ -*- Time-stamp: <09/02/18 20:08:29 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -515,26 +515,25 @@ int EXAM_IMPL(stem_test::ugly_echo_net)
       ev.dest( zero );
       
       bool ok = true;
-      for (int i = 0;i < 10000 && ok;++i) {
+      for ( int i = 0; i < 10000 && ok; ++i ) {
+        node.lock.lock();
+
         node.mess.clear();
-        for (int j = 0;j < 16;++j)
+        for ( int j = 0; j < 16; ++j ) {
           node.mess += xmt::uid_str();
+        }
           
         ev.value() = node.mess;
+        node.lock.unlock();
         
         node.Send( ev );
-      
+              
+        ok = node.wait();
         
-        for (int j = 0;j < 8 && ok;++j) {
-          ok = node.wait();
-        }
-        
-        if (!ok) {
+        if ( !ok ) {
           cerr << "Failed on iteration # " << i << endl;
           break;
         }
-        
-        EXAM_CHECK_ASYNC_F( node.rsp_count == 0, eflag );
       }
       
       EXAM_CHECK_ASYNC_F( ok, eflag );

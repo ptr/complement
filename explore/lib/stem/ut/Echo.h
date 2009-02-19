@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/11/28 15:32:53 yeti>
+// -*- C++ -*- Time-stamp: <09/02/18 20:14:03 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -96,6 +96,7 @@ class UglyEchoClient :
     void handler1( const stem::Event& );
     bool wait();
 
+    std::tr2::mutex lock;
     std::string mess;
     std::list< std::string > rsp; 
     int rsp_count;
@@ -104,14 +105,14 @@ class UglyEchoClient :
     std::tr2::condition_variable cnd;
     std::tr2::mutex mtx;
     
-    struct rsp_count_not_null 
+    struct rsp_count_8 
     {
-      rsp_count_not_null( UglyEchoClient& m ) :
+      rsp_count_8( UglyEchoClient& m ) :
           me( m )
         { }
 
       bool operator()() const
-        { return me.rsp_count; }
+        { return me.rsp_count == 8; }
 
       UglyEchoClient& me;
     };

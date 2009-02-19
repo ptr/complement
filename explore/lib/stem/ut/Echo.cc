@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/11/28 15:45:11 yeti>
+// -*- C++ -*- Time-stamp: <09/02/18 20:45:38 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -97,12 +97,12 @@ END_RESPONSE_TABLE
 
 void UglyEchoSrv::echo( const Event& ev )
 {
-  for (int i = 0;i < 8;++i) {
-    Event eev( ev.code() );
-    eev.value() = ev.value();
+  Event eev( ev.code() );
 
-    eev.dest( ev.src() );
+  eev.dest( ev.src() );
+  eev.value() = ev.value();
 
+  for ( int i = 0; i < 8; ++i ) { // to do: check also with Event in the loop
     Send( eev );
   }
 }
@@ -115,19 +115,23 @@ END_RESPONSE_TABLE
 
 void UglyEchoClient::handler1( const stem::Event& ev )
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
+  lock.lock();
   EXAM_CHECK_ASYNC( ev.value() == mess );
   
   if (ev.value() != mess ) {
-    cerr << mess << endl << endl << ev.value() << endl;
-    for (int i = 0;i < min(ev.value().size(), mess.size());++i)
-      if (ev.value()[i] != mess[i]) {
-        cerr << i << endl;
-        cerr << mess.substr(i) << endl << endl << ev.value().substr(i) << endl;
+    cout << mess << "\n:\n" << ev.value() << endl;
+    for ( int i = 0;i  < min(ev.value().size(), mess.size()); ++i ) {
+      if ( ev.value()[i] != mess[i] ) {
+        cout << i << endl;
+        cout << mess.substr(i) << "\n\n" << ev.value().substr(i) << endl;
         break;
       }
+    }
   }
-  
+  lock.unlock();
+ 
+  std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
+ 
   ++rsp_count;
 
   cnd.notify_one();
@@ -136,10 +140,13 @@ void UglyEchoClient::handler1( const stem::Event& ev )
 bool UglyEchoClient::wait()
 {
   std::tr2::unique_lock<std::tr2::mutex> lk( mtx );
-  bool result = cnd.timed_wait(lk, std::tr2::milliseconds( 500 ), rsp_count_not_null( *this ) );
+
+  bool result = cnd.timed_wait(lk, std::tr2::milliseconds( 1000 ), rsp_count_8( *this ) );
+
+  if ( result ) {
+    rsp_count = 0;
+  }
   
-  if (result)
-    --rsp_count;
   return result;
 }
 
