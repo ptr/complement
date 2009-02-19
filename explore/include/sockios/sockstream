@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/18 15:19:04 ptr>
+// -*- C++ -*- Time-stamp: <09/02/18 18:52:21 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -214,8 +214,7 @@ class basic_socket
     basic_socket() :
         _fd( -1 ),
         _use_rdtimeout( false ),
-        _use_wrtimeout( false )// ,
-                // _notify_close( false )
+        _use_wrtimeout( false )
       { new( Init_buf ) Init(); }
 
     ~basic_socket()
@@ -301,7 +300,6 @@ class basic_socket
     std::tr2::milliseconds _wrtimeout;
     bool _use_rdtimeout;
     bool _use_wrtimeout;
-    // bool _notify_close;
 
     static std::detail::sockmgr<charT,traits,_Alloc>* mgr;
     friend class Init;
@@ -647,7 +645,7 @@ class basic_sockbuf :
              b( self )
            { }
          bool operator ()() const
-           { return b.unsafe_showmanyc() == -1; }
+          { return !b.is_open_unsafe(); }
        private:
          sockbuf_type& b;
     };

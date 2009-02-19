@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/17 12:21:38 ptr>
+// -*- C++ -*- Time-stamp: <09/02/19 11:34:53 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -103,7 +103,6 @@ basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
 
     std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
     setg( this->epptr(), this->epptr(), this->epptr() );
-    // basic_socket_t::_notify_close = true;
     basic_socket_t::mgr->push( *this );
   }
   catch ( std::system_error& ) {
@@ -264,12 +263,11 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
   if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
     ::close( basic_socket_t::_fd );
     basic_socket_t::_fd = -1;
-    throw std::runtime_error( "can't establish nonblock mode" );
+    throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>" ) );
   }
   setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
   setg( this->epptr(), this->epptr(), this->epptr() );
-  // basic_socket_t::_notify_close = true;
 
   return this;
 }
@@ -284,9 +282,11 @@ basic_sockbuf<charT, traits, _Alloc>::close()
     return 0;
   }
   
-  shutdown_unsafe( sock_base::stop_in | sock_base::stop_out );
+  // std::cerr << __FILE__ << ':' << __LINE__ << ' ' << basic_socket_t::_fd << ' ' << std::tr2::getpid() << std::endl;
+  // int x = basic_socket_t::_fd;
+  shutdown_unsafe( /* sock_base::stop_in | */ sock_base::stop_out );
 
-  basic_socket_t::mgr->exit_notify( this, basic_socket_t::_fd );
+  // basic_socket_t::mgr->exit_notify( this, basic_socket_t::_fd );
 
   // shutdown_unsafe( sock_base::stop_in | sock_base::stop_out );
 
@@ -299,6 +299,7 @@ basic_sockbuf<charT, traits, _Alloc>::close()
   // }
 
   ucnd.wait( lk, closed_t( *this ) );
+  // std::cerr << __FILE__ << ':' << __LINE__ << ' ' << basic_socket_t::_fd << ' ' << x << std::endl;  
   // std::cerr << __FILE__ << ':' << __LINE__ << ' ' << basic_socket_t::_fd << std::endl;
 
   return this;
@@ -538,7 +539,6 @@ int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
       return ::recvfrom( basic_socket_t::_fd, buf, n, 0, &basic_socket_t::_address.any, &sz );
 #endif
     }
-    // xmt::Thread::yield();
   } while ( true );
 
   return 0; // never
