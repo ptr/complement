@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/18 15:20:49 ptr>
+// -*- C++ -*- Time-stamp: <09/02/22 22:57:37 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -156,8 +156,6 @@ class sockmgr
 
     void push( socks_processor_t& p );
     void push( sockbuf_t& s );
-    // void pop( socks_processor_t& p, sock_base::socket_type _fd );
-    void exit_notify( sockbuf_t* b, sock_base::socket_type fd );
 
   private:
     sockmgr( const sockmgr& )

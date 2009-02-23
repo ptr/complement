@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/18 22:11:55 ptr>
+// -*- C++ -*- Time-stamp: <09/02/22 22:54:41 ptr>
 
 /*
  *
@@ -727,7 +727,7 @@ int EXAM_IMPL(sockios_test::disconnect)
 
     EXAM_CHECK( s.write( buf, 4 ).flush().good() );
 
-    s.rdbuf()->shutdown( /* sock_base::stop_in | */ sock_base::stop_out );
+    // s.rdbuf()->shutdown( sock_base::stop_in | sock_base::stop_out );
 
     s.close(); // should work with this line commented, but sorry
 
@@ -1393,7 +1393,7 @@ int EXAM_IMPL(sockios_test::quants_reader)
 
         if ( sig_caught == SIGINT ) {
           EXAM_MESSAGE_ASYNC( "catch INT signal" );
-          this_thread::sleep( milliseconds( 1000 ) ); // chance to process the rest
+          this_thread::sleep( milliseconds( 500 ) ); // chance to process the rest
           srv.close();
         } else {
           EXAM_ERROR_ASYNC_F( "catch of INT signal expected", ret );
@@ -1410,9 +1410,6 @@ int EXAM_IMPL(sockios_test::quants_reader)
       b.wait();
       {
         sockstream s( "localhost", 2008 );
-
-        cerr << __FILE__ << ':' << __LINE__ << ' ' << std::tr2::getpid()
-             << ' ' << s.rdbuf()->fd() << endl;
 
         char buf[64];
         fill( buf, buf + sizeof(buf), ' ' );

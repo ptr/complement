@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/18 18:52:21 ptr>
+// -*- C++ -*- Time-stamp: <09/02/20 20:53:31 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -522,13 +522,18 @@ class basic_sockbuf :
         return basic_socket<charT,traits,_Alloc>::is_open_unsafe();
       }
 
-   void setoptions( sock_base::so_t optname, int __v );
-   void setoptions( sock_base::so_t optname, bool on_off = true, int __v = 0 );
+    void setoptions( sock_base::so_t optname, int __v );
+    void setoptions( sock_base::so_t optname, bool on_off = true, int __v = 0 );
+    bool is_ready()
+      {
+        std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+        return (this->egptr() > this->gptr());
+      }
 
   protected:
     void shutdown_unsafe( sock_base::shutdownflg dir );
 
-    streamsize unsafe_showmanyc()
+    virtual streamsize showmanyc()
       {
         streamsize n = this->egptr() - this->gptr();
         if ( n > 0 ) {
@@ -536,12 +541,6 @@ class basic_sockbuf :
         }
 
         return basic_socket_t::_fd != -1 ? 0 : -1;
-      }
-
-    virtual streamsize showmanyc()
-      {
-        std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
-        return unsafe_showmanyc(); 
       }
 
     virtual int_type underflow();
@@ -633,7 +632,7 @@ class basic_sockbuf :
              b( self )
            { }
          bool operator ()() const
-           { return b.unsafe_showmanyc() != 0; }
+           { return b.showmanyc() != 0; }
        private:
          sockbuf_type& b;
     } rdready;

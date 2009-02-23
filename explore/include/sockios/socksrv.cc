@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/17 23:48:51 ptr>
+// -*- C++ -*- Time-stamp: <09/02/20 20:42:25 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -100,8 +100,6 @@ void sock_processor_base<charT,traits,_Alloc>::_close()
 template<class charT, class traits, class _Alloc>
 void sock_processor_base<charT,traits,_Alloc>::shutdown( sock_base::shutdownflg dir )
 {
-  // std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
-
   std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
   if ( basic_socket_t::is_open_unsafe() ) {
     if ( (dir & (sock_base::stop_in | sock_base::stop_out)) ==
@@ -214,7 +212,7 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
   Connect* c = new Connect( *s ); // bad point! I can't read from s in ctor indeed!
   processor tmp( c, s );
 
-  if ( s->rdbuf()->in_avail() > 0 ) {
+  if ( s->rdbuf()->is_ready() ) {
     std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
     processor empty;
     ready_pool.push_back( empty );
@@ -290,20 +288,30 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
         }
         p.swap( ready_pool.front() );
         ready_pool.pop_front();
+        // cerr << __FILE__ << ':' << __LINE__ << ' ' << p.s->rdbuf()->fd()
+        //      << ' ' << p.s->rdbuf()->is_ready() << endl;
       }
       std::tr2::lock_guard<std::tr2::mutex> lk( *p.lock );
-      if ( p.s->rdbuf()->in_avail() > 0 ) {
+      if ( p.s->rdbuf()->is_ready() ) {
         (p.c->*C)( *p.s );
-        if ( p.s->rdbuf()->in_avail() > 0 ) {
+        if ( p.s->rdbuf()->is_ready() ) {
           std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
           processor empty;
           ready_pool.push_back( empty );
           ready_pool.back().swap( p );
         } else if ( p.s->is_open() ) {
           std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
+          //if ( worker_pool.find(p.s->rdbuf()->fd()) != worker_pool.end() ) {
+          //  cerr << __FILE__ << ':' << __LINE__ << endl;
+          //}
           worker_pool[p.s->rdbuf()->fd()].swap( p );
-        }
+        }// else {
+        //  cerr << __FILE__ << ':' << __LINE__ << endl;
       }
+      // } // else {
+      //  cerr << __FILE__ << ':' << __LINE__ << ' ' << p.s->rdbuf()->fd()
+      //       << ' ' << p.s->rdbuf()->is_ready() << endl;
+      // }
     }
   }
   catch ( const finish& ) {

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/19 11:34:53 ptr>
+// -*- C++ -*- Time-stamp: <09/02/22 22:20:25 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -171,7 +171,6 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s,
 {
   basic_sockbuf<charT, traits, _Alloc>* ret = _open_sockmgr( s, addr, t );
   if ( ret != 0 ) {
-    // basic_socket_t::_notify_close = true;
     basic_socket_t::mgr->push( *this );
   }
   return ret;
@@ -282,9 +281,11 @@ basic_sockbuf<charT, traits, _Alloc>::close()
     return 0;
   }
   
-  // std::cerr << __FILE__ << ':' << __LINE__ << ' ' << basic_socket_t::_fd << ' ' << std::tr2::getpid() << std::endl;
   // int x = basic_socket_t::_fd;
-  shutdown_unsafe( /* sock_base::stop_in | */ sock_base::stop_out );
+  shutdown_unsafe( sock_base::stop_in | sock_base::stop_out );
+
+  // std::cerr << __FILE__ << ':' << __LINE__ << ' ' << basic_socket_t::_fd << ' ' << std::tr2::getpid() << std::endl;
+  // xmt::callstack( cerr );
 
   // basic_socket_t::mgr->exit_notify( this, basic_socket_t::_fd );
 
@@ -368,27 +369,22 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
 
   if ( count ) {
     count *= sizeof(charT);
-    long offset = (this->*_xwrite)( this->pbase(), count );
-    while ( offset < 0 ) {
-      if ( (errno != EAGAIN) && (errno != EINTR) ) {
-        return traits::eof();
-      }
-      pollfd wpfd;
-      wpfd.fd = basic_socket_t::_fd;
-      wpfd.events = POLLOUT | POLLHUP | POLLWRNORM;
-      wpfd.revents = 0;
-      while ( poll( &wpfd, 1, basic_socket_t::_use_wrtimeout ? basic_socket_t::_wrtimeout.count() : -1 ) <= 0 ) { // wait infinite
-        // may be interrupted, check and ignore
-        if ( (errno != EINTR) && (errno != EAGAIN) ) {
+    long offset;
+    std::tr2::nanoseconds sl( 5000ULL );
+    do {
+      offset = (this->*_xwrite)( this->pbase(), count );
+      if ( offset < 0 ) {
+        if ( (errno != EAGAIN) && (errno != EINTR) ) {
           return traits::eof();
         }
         errno = 0;
+        std::tr2::this_thread::sleep( sl );
+        if ( sl < 30000000000ULL ) {
+          sl *= 2;
+        }
       }
-      if ( (wpfd.revents & POLLERR) != 0 ) {
-        return traits::eof();
-      }
-      offset = (this->*_xwrite)( this->pbase(), count );
-    }
+    } while ( offset < 0 );
+
     if ( offset < count ) {
       // MUST BE: (offset % sizeof(char_traits)) == 0 !
       offset /= sizeof(charT);
@@ -426,33 +422,22 @@ int basic_sockbuf<charT, traits, _Alloc>::sync()
     long start = 0L;
     long offset = 0L;
     while ( count > 0 ) {
-      offset = (this->*_xwrite)( this->pbase() + start, count );
-      if ( offset < 0 ) {
-        if ( errno == EINTR ) {
-          errno = 0;
-          continue;
-        }
 
-        if ( errno == EAGAIN ) {
-          pollfd wpfd;
-          wpfd.fd = basic_socket_t::_fd;
-          wpfd.events = POLLOUT | POLLHUP | POLLWRNORM;
-          wpfd.revents = 0;
-          while ( poll( &wpfd, 1, basic_socket_t::_use_wrtimeout ? basic_socket_t::_wrtimeout.count() : -1 ) <= 0 ) { // wait infinite
-            if ( (errno == EINTR) || (errno == EAGAIN) ) { // may be interrupted, check and ignore
-              errno = 0;
-              // reduce timeout?
-              continue;
-            }
-            return -1;
+      std::tr2::nanoseconds sl( 5000ULL );
+      do {
+        offset = (this->*_xwrite)( this->pbase() + start, count );
+        if ( offset < 0 ) {
+          if ( (errno != EAGAIN) && (errno != EINTR) ) {
+            return traits::eof();
           }
-          if ( (wpfd.revents & POLLERR) != 0 ) {
-            return -1;
+          errno = 0;
+          std::tr2::this_thread::sleep( sl );
+          if ( sl < 30000000000ULL ) {
+            sl *= 2;
           }
-          continue;
         }
-        return -1;
-      }
+      } while ( offset < 0 );
+
       count -= offset;
       start += offset;
     }
