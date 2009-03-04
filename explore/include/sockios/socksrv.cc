@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/20 20:42:25 ptr>
+// -*- C++ -*- Time-stamp: <09/03/04 14:11:45 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -291,14 +291,15 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
         // cerr << __FILE__ << ':' << __LINE__ << ' ' << p.s->rdbuf()->fd()
         //      << ' ' << p.s->rdbuf()->is_ready() << endl;
       }
-      std::tr2::lock_guard<std::tr2::mutex> lk( *p.lock );
       if ( p.s->rdbuf()->is_ready() ) {
         (p.c->*C)( *p.s );
         if ( p.s->rdbuf()->is_ready() ) {
-          std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
-          processor empty;
-          ready_pool.push_back( empty );
-          ready_pool.back().swap( p );
+          if ( p.s->is_open() ) {
+            std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
+            processor empty;
+            ready_pool.push_back( empty );
+            ready_pool.back().swap( p );
+          }
         } else if ( p.s->is_open() ) {
           std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
           //if ( worker_pool.find(p.s->rdbuf()->fd()) != worker_pool.end() ) {

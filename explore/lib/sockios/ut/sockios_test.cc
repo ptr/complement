@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/22 22:54:41 ptr>
+// -*- C++ -*- Time-stamp: <09/03/04 13:57:39 ptr>
 
 /*
  *
@@ -134,9 +134,9 @@ class simple_mgr2 :
         lock_guard<mutex> lk(lock);
         ++d_cnt;
         cnd.notify_one();
-        string str;
-        getline( *cons[fd], str ); // map fd -> s
-        EXAM_CHECK_ASYNC( str == "Hello" );
+        // string str;
+        // getline( *cons[fd], str ); // map fd -> s
+        // EXAM_CHECK_ASYNC( str == "Hello" );
       }
 
   public:
@@ -948,6 +948,9 @@ int EXAM_IMPL(sockios_test::srv_sigpipe)
   catch ( xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
   }
+  catch ( ... ) {
+    EXAM_ERROR( "unknown exception" );
+  }
 
   return EXAM_RESULT;
 }
@@ -1079,7 +1082,7 @@ class byte_cnt
       }
 
     ~byte_cnt()
-      { }
+      { cerr << "# " << r << endl; }
 
     void connect( sockstream& s )
       {
@@ -1090,23 +1093,27 @@ class byte_cnt
         s.read( buf, sizeof(buf) );
 
         EXAM_CHECK_ASYNC( /* s.good() */ !s.fail() );
-        // static int j = 0;
-        // ++j;
+        static int j = 0;
+        ++j;
         // for ( int i = 0; i < bsz; ++i ) {
         //   if ( buf[i] == 0 ) {
         //     cerr << "***** " << i << ' ' << j << endl;
         //   }
         // }
-        // if ( s.fail() ) {
-        //   cerr << count( buf, buf + sizeof(buf), 1 ) << endl;
-        //   xmt::callstack( cerr );
-        // }
+        if ( s.fail() ) {
+          cerr << count( buf, buf + sizeof(buf), 1 ) << ' ' << (j-1) << endl;
+          // xmt::callstack( cerr );
+        }
 
         lock_guard<mutex> lk( lock );
         r += count( buf, buf + sizeof(buf), 1 );
+        EXAM_CHECK_ASYNC( r <= sz * bsz );
         if ( r == sz * bsz ) {
           EXAM_MESSAGE_ASYNC( "Looks all here" );
           cnd.notify_one();
+        } else if ( r > sz * bsz ) { // what it is?
+          cnd.notify_one();
+          exit(-1);
         }
       }
 
@@ -1150,7 +1157,7 @@ int EXAM_IMPL(sockios_test::few_packets)
     s.flush();
 
     unique_lock<mutex> lk( byte_cnt::lock );
-    EXAM_CHECK( byte_cnt::cnd.timed_wait( lk, milliseconds(500), byte_cnt_predicate() ) );
+    EXAM_CHECK( byte_cnt::cnd.timed_wait( lk, milliseconds(800), byte_cnt_predicate() ) );
   }
 
   EXAM_CHECK( byte_cnt::r == (byte_cnt::bsz * byte_cnt::sz) );
@@ -1329,9 +1336,9 @@ class reader
         */
         EXAM_CHECK_ASYNC( count( buf, buf + sizeof(buf), ' ' ) == sizeof(buf) );
         EXAM_CHECK_ASYNC( !s.fail() );
-        // if ( s.fail() ) {
-        //   cerr << count( buf, buf + sizeof(buf), ' ' ) << endl;
-        // }
+        if ( s.fail() ) {
+          cerr << count( buf, buf + sizeof(buf), ' ' ) << ' ' << i << endl;
+        }
 
         // lock_guard<mutex> lk(lock);
         // if ( ++visits == N ) {
@@ -1394,6 +1401,7 @@ int EXAM_IMPL(sockios_test::quants_reader)
         if ( sig_caught == SIGINT ) {
           EXAM_MESSAGE_ASYNC( "catch INT signal" );
           this_thread::sleep( milliseconds( 500 ) ); // chance to process the rest
+          cerr << __FILE__ << ':' << __LINE__ << endl;
           srv.close();
         } else {
           EXAM_ERROR_ASYNC_F( "catch of INT signal expected", ret );
@@ -1428,6 +1436,7 @@ int EXAM_IMPL(sockios_test::quants_reader)
       // this_thread::sleep( milliseconds( 500 ) );
 
       kill( child.pid(), SIGINT );
+      cerr << __FILE__ << ':' << __LINE__ << endl;
 
       int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );

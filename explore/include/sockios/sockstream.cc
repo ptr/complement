@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/22 22:20:25 ptr>
+// -*- C++ -*- Time-stamp: <09/03/04 13:05:15 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -101,8 +101,12 @@ basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
     }
     setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
-    std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
     setg( this->epptr(), this->epptr(), this->epptr() );
+
+    _fbeg = this->egptr();
+    _fend = this->_ebuf;
+
     basic_socket_t::mgr->push( *this );
   }
   catch ( std::system_error& ) {
@@ -116,7 +120,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
       basic_socket_t::_fd = -1;
     }
    
-    // std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+    // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
     // ucnd.notify_all();
 
     return 0;
@@ -129,7 +133,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
 #endif
     basic_socket_t::_fd = -1;
 
-    // std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+    // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
     // ucnd.notify_all();
 
     return 0;
@@ -211,7 +215,7 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
                                                      const sockaddr& addr,
                                                      sock_base::stype t )
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+  std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
 
   if ( basic_socket_t::is_open_unsafe() || s == -1 ) {
     return 0;
@@ -253,7 +257,7 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
 #endif
     basic_socket_t::_fd = -1;
 
-    // std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+    // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
     // ucnd.notify_all();
 
     return 0;
@@ -268,6 +272,9 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
 
   setg( this->epptr(), this->epptr(), this->epptr() );
 
+  _fbeg = this->egptr();
+  _fend = this->_ebuf;
+
   return this;
 }
 
@@ -275,7 +282,7 @@ template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
 basic_sockbuf<charT, traits, _Alloc>::close()
 {
-  std::tr2::unique_lock<std::tr2::mutex> lk( ulck );
+  std::tr2::unique_lock<std::tr2::recursive_mutex> lk( ulck );
 
   if ( !basic_socket_t::is_open_unsafe() ) {
     return 0;
@@ -296,7 +303,7 @@ basic_sockbuf<charT, traits, _Alloc>::close()
   //setg( this->epptr(), this->epptr(), this->epptr() );
 
   // if ( basic_socket_t::_fd != -1 ) {
-  // std::cerr << __FILE__ << ':' << __LINE__ << ' ' << basic_socket_t::_fd << std::endl;
+  std::cerr << __FILE__ << ':' << __LINE__ << ' ' << basic_socket_t::_fd << std::endl;
   // }
 
   ucnd.wait( lk, closed_t( *this ) );
@@ -325,31 +332,66 @@ template<class charT, class traits, class _Alloc>
 __FIT_TYPENAME basic_sockbuf<charT, traits, _Alloc>::int_type
 basic_sockbuf<charT, traits, _Alloc>::underflow()
 {
-  std::tr2::unique_lock<std::tr2::mutex> lk( ulck );
+  std::tr2::unique_lock<std::tr2::recursive_mutex> lk( ulck );
 
-  if( !basic_socket_t::is_open_unsafe() ) {
-    return traits::eof();
+  if ( this->_ebuf == this->_fend ) { // piggyback free space?
+    // next operation do nothing, if _fbeg == _fend == _ebuf == gptr(),
+    // but only sockmgr know: this was tail or front free space?
+    setg( this->eback(), this->gptr(), this->_fbeg );
+  } else // free space on front; here _must_ be: fend <= b->gptr()
+    if ( this->egptr() != this->_ebuf ) {
+    setg( this->eback(), this->gptr(), this->_ebuf ); // ready chars on tail
+  } else { // here _must_ be: gptr() == egptr() == _ebuf
+    setg( this->eback(), this->eback(), this->_fbeg ); // ready chars on front
   }
 
   if ( this->gptr() < this->egptr() ) {
+    if ( this->_fbeg == this->_fend ) {
+      cerr << __FILE__ << ':' << __LINE__ << endl;
+      basic_socket_t::mgr->restore( *this );
+    }
     return traits::to_int_type(*this->gptr());
   }
 
-  if ( this->egptr() == this->gptr() ) { // fullfilled: _ebuf == gptr()
-    setg( this->eback(), this->eback(), this->eback() );
-  }
-
-  // setg( this->eback(), this->eback(), this->eback() + offset );
   // wait on condition
   if ( basic_socket_t::_use_rdtimeout ) {
     if ( !ucnd.timed_wait( lk, basic_socket_t::_rdtimeout, rdready ) ) {
       return traits::eof();
     }
   } else {
+    cerr << __FILE__ << ':' << __LINE__ << endl;
     ucnd.wait( lk, rdready );
   }
 
-  return this->gptr() < this->egptr() ? traits::to_int_type(*this->gptr()) : traits::eof();
+  cerr << __FILE__ << ':' << __LINE__ << endl;
+
+  if ( this->gptr() < this->egptr() ) { // problem resolved in sockmgr
+    cerr << __FILE__ << ':' << __LINE__ << endl;
+    if ( this->_fbeg == this->_fend ) {
+      cerr << __FILE__ << ':' << __LINE__ << endl;
+      basic_socket_t::mgr->restore( *this );
+    }
+    return traits::to_int_type(*this->gptr());
+  }
+
+  if ( this->_ebuf == this->_fend ) { // piggyback free space
+    setg( this->eback(), this->gptr(), this->_fbeg );
+  } else if ( this->egptr() != this->_ebuf ) {
+    setg( this->eback(), this->gptr(), this->_ebuf ); // ready chars on tail
+  } else { // here _must_ be: gptr() == egptr() == _ebuf
+    setg( this->eback(), this->eback(), this->_fbeg ); // ready chars on front
+  }
+
+  if ( this->gptr() < this->egptr() ) {
+    cerr << __FILE__ << ':' << __LINE__ << endl;
+    if ( this->_fbeg == this->_fend ) {
+      cerr << __FILE__ << ':' << __LINE__ << endl;
+      basic_socket_t::mgr->restore( *this );
+    }
+    return traits::to_int_type(*this->gptr());
+  }
+
+  return traits::eof();
 }
 
 template<class charT, class traits, class _Alloc>
@@ -533,7 +575,7 @@ template<class charT, class traits, class _Alloc>
 void basic_sockbuf<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, bool on_off, int __v )
 {
 #ifdef __unix
-  std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+  std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
 
   if ( basic_socket_t::is_open_unsafe() ) {
     int turn = on_off ? 1 : 0;
@@ -598,7 +640,7 @@ template<class charT, class traits, class _Alloc>
 void basic_sockbuf<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, int __v )
 {
 #ifdef __unix
-  std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+  std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
 
   if ( basic_socket_t::is_open_unsafe() ) {
     int ret = 0;

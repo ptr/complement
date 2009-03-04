@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/22 22:57:37 ptr>
+// -*- C++ -*- Time-stamp: <09/03/04 12:32:42 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -83,7 +83,8 @@ class sockmgr
     enum {
       listener,
       tcp_buffer,
-      rqstop // ,
+      rqstop,
+      tcp_buffer_back
       // rqstart,
       // listener_on_exit,
       // tcp_buffer_on_exit
@@ -156,6 +157,7 @@ class sockmgr
 
     void push( socks_processor_t& p );
     void push( sockbuf_t& s );
+    void restore( sockbuf_t& s );
 
   private:
     sockmgr( const sockmgr& )

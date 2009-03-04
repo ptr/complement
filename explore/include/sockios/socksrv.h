@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/02/16 23:04:28 ptr>
+// -*- C++ -*- Time-stamp: <09/03/04 14:09:01 ptr>
 
 /*
- * Copyright (c) 2008
+ * Copyright (c) 2008, 2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -304,52 +304,42 @@ class connect_processor :
       public:
         processor() :
             c(0),
-            s(0),
-            lock(0)
+            s(0)
           { }
         processor( Connect* __c, typename sock_processor_base<charT,traits,_Alloc>::sockstream_t* __s ) :
             c(__c),
-            s(__s),
-            lock( new std::tr2::mutex() )
+            s(__s)
           { }
 
       private:
         processor( /* const */ processor& p ) // :
         // c( p.c ),
-        // s( p.s ),
-        //  lock( p.lock )
+        // s( p.s )
           { this->swap( p ); }
 
       public:
         processor( const processor& ) :
             c( 0 ),
-            s( 0 ),
-            lock( 0 )
+            s( 0 )
           { }
 
         ~processor()
           {
-            if ( lock != 0 ) {
-              lock->lock();
-              delete c;
-              delete s;
-              lock->unlock();
-              delete lock;
-            }
+            delete c;
+            delete s;
           }
 
       public:
         void swap( processor& p )
-          { std::swap(c, p.c); std::swap(s, p.s); std::swap(lock, p.lock); }
+          { std::swap(c, p.c); std::swap(s, p.s); }
 
       private:
         processor& operator =( const processor& p )
-          { c = p.c; s = p.s; lock = p.lock; return *this; }
+          { c = p.c; s = p.s; return *this; }
 
       public:
         Connect* c;
         typename sock_processor_base<charT,traits,_Alloc>::sockstream_t* s;
-        std::tr2::mutex* lock;
 
         // bool operator ==( const processor& p ) const
         //   { return s == p.s; }

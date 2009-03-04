@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/20 20:53:31 ptr>
+// -*- C++ -*- Time-stamp: <09/03/03 15:24:53 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -436,6 +436,8 @@ class basic_sockbuf :
 #endif // STLPORT
         _bbuf(0),
         _ebuf(0),
+        _fbeg(0),
+        _fend(0),
         _allocated( true )
       { }
 
@@ -454,6 +456,8 @@ class basic_sockbuf :
 #endif // STLPORT
         _bbuf(0),
         _ebuf(0),
+        _fbeg(0),
+        _fend(0),
         _allocated( true )
       { open( hostname, port, type, prot ); }
 
@@ -472,6 +476,8 @@ class basic_sockbuf :
 #endif // STLPORT
         _bbuf(0),
         _ebuf(0),
+        _fbeg(0),
+        _fend(0),
         _allocated( true )
       { open( addr, type, prot ); }
 
@@ -504,7 +510,7 @@ class basic_sockbuf :
     sockbuf_type *close();
     void shutdown( sock_base::shutdownflg dir )
       {
-        std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
         shutdown_unsafe( dir );
       }
 
@@ -513,12 +519,12 @@ class basic_sockbuf :
 
     sock_base::socket_type fd() const
       {
-        // std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+        // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
         return basic_socket<charT,traits,_Alloc>::fd_unsafe();
       }
     bool is_open() const
       {
-        // std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+        // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
         return basic_socket<charT,traits,_Alloc>::is_open_unsafe();
       }
 
@@ -526,8 +532,10 @@ class basic_sockbuf :
     void setoptions( sock_base::so_t optname, bool on_off = true, int __v = 0 );
     bool is_ready()
       {
-        std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
-        return (this->egptr() > this->gptr());
+        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+        return (_fend == _ebuf ?
+                (_fbeg - this->gptr()) : // <- piggyback free space
+                ((_ebuf - this->gptr()) + (_fbeg - this->eback())));
       }
 
   protected:
@@ -535,7 +543,16 @@ class basic_sockbuf :
 
     virtual streamsize showmanyc()
       {
-        streamsize n = this->egptr() - this->gptr();
+        streamsize n = _fend == _ebuf ?
+          (_fbeg - this->gptr()) : // <- piggyback free space
+          ((_ebuf - this->gptr()) + (_fbeg - this->eback()));
+
+        cerr << __FILE__ << ':' << __LINE__ << ' ' << n
+             << ' ' << (void *)_fend << ' ' << (void *)_fbeg
+             << ' ' << (void *)_ebuf << ' ' << (void *)this->gptr()
+             << ' ' << (void *)this->eback()
+             << endl;
+
         if ( n > 0 ) {
           return n;
         }
@@ -547,7 +564,7 @@ class basic_sockbuf :
     virtual int_type overflow( int_type c = traits::eof() );
     virtual int_type pbackfail( int_type c = traits::eof() )
       {
-        std::tr2::lock_guard<std::tr2::mutex> lk( ulck );
+        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
 
         if ( !basic_socket_t::is_open_unsafe() ) {
           return traits::eof();
@@ -584,6 +601,8 @@ class basic_sockbuf :
   private: // Helper functions
     charT* _bbuf;
     charT* _ebuf;
+    charT* _fbeg; // free zone begin, for sockmgr
+    charT* _fend; // free zone end, for sockmgr
     bool _allocated; // true, if _bbuf should be deallocated
 
     // Precondition: 0 < __n <= max_size().
@@ -693,7 +712,9 @@ class basic_sockbuf :
     ios_base::openmode  _mode;
     sock_base::stype    _type;
 
-    std::tr2::mutex ulck;
+  public:
+    std::tr2::recursive_mutex ulck;
+  private:
     std::tr2::condition_variable ucnd;
 
     friend class std::detail::sockmgr<charT,traits,_Alloc>;
