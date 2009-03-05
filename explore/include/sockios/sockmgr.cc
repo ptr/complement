@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/05 05:52:55 ptr>
+// -*- C++ -*- Time-stamp: <09/03/05 06:58:42 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -551,7 +551,8 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
       // data available + FIN (connection closed by peer)
       // only once. I should try to read while ::read return -1
       // and set EGAIN or return 0 (i.e. FIN discovered).
-      for ( ; ; ) {
+      bool try_more_data = true;
+      for ( ; try_more_data; ) {
         {
           std::tr2::unique_lock<std::tr2::recursive_mutex> lk( b->ulck );
           if ( b->_fr < b->_ebuf ) {
@@ -616,8 +617,10 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
                 default:           // EBADF (already closed?), EFAULT (Bad address),
                   throw fdclose(); // ECONNRESET (Connection reset by peer), ...
               }
-            } // else: process extract data from buffer too slow for us!
-              // No free space in buffer.
+            } else { // process extract data from buffer too slow for us!
+              // No free space in the buffer.
+              try_more_data = false; // pass fd to processor below and go away
+            }
           }
         }
 
