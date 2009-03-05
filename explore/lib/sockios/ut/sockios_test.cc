@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/05 06:09:38 ptr>
+// -*- C++ -*- Time-stamp: <09/03/05 10:11:42 ptr>
 
 /*
  *
@@ -1130,7 +1130,7 @@ condition_variable byte_cnt::cnd;
 struct byte_cnt_predicate
 {
     bool operator ()()
-      { return byte_cnt::r == (byte_cnt::sz * byte_cnt::bsz); }
+      { return byte_cnt::r >= (byte_cnt::sz * byte_cnt::bsz); }
 };
 
 int EXAM_IMPL(sockios_test::few_packets)
@@ -1310,61 +1310,59 @@ int EXAM_IMPL(sockios_test::service_stop)
 class reader
 {
   public:
+    static const int sz;
+    static const int bsz;
+    static int r;
+
     reader( sockstream& )
-      { fill( buf, buf + sizeof(buf), 'b' ); }
+      { }
 
     ~reader()
       { }
 
     void connect( sockstream& s )
       {
-        static int i = 0;
-
         EXAM_CHECK_ASYNC( s.good() );
-        ++i;
-        fill( buf, buf + sizeof(buf), 'b' );
+
+        char buf[sz];
+
+        fill( buf, buf + sizeof(buf), 'c' );
         s.read( buf, sizeof(buf) );
 
-        /*
-        if ( s.fail() ) {
-          int j = 0;
-          while ( buf[j] == ' ' && j < sizeof(buf) ) {
-            ++j;
-          }
-          cerr << sizeof(buf) << ' ' << i << ' ' << j << endl;
-        }
-        */
         EXAM_CHECK_ASYNC( count( buf, buf + sizeof(buf), ' ' ) == sizeof(buf) );
         EXAM_CHECK_ASYNC( !s.fail() );
-        // if ( s.fail() ) {
-        //   cerr << count( buf, buf + sizeof(buf), ' ' ) << ' ' << i << endl;
-        // }
 
-        // lock_guard<mutex> lk(lock);
-        // if ( ++visits == N ) {
-        //   cnd.notify_one();
-        // }
+        lock_guard<mutex> lk( lock );
+        r += count( buf, buf + sizeof(buf), ' ' );
+        EXAM_CHECK_ASYNC( r <= sz * bsz );
+        if ( r == sz * bsz ) {
+          EXAM_MESSAGE_ASYNC( "Looks all data here" );
+          cnd.notify_one();
+        } else if ( r > sz * bsz ) { // What it is? Ghost bytes?
+          cnd.notify_one();
+          // exit(-1);
+        }
       }
 
-    // static bool n_cnt()
-    //   { return visits == N; }
-
-  private:
-    char buf[64];
-
   public:
-    // static mutex lock;
-    // static condition_variable cnd;
+    static mutex lock;
+    static condition_variable cnd;
 
   private:
     // static int visits;
 };
 
-// mutex reader::lock;
+const int reader::sz = 64;
+const int reader::bsz = 1024;
+int reader::r = 0;
+mutex reader::lock;
+condition_variable reader::cnd;
 
-// condition_variable reader::cnd;
-
-// int reader::visits = 0;
+struct reader_cnt_predicate
+{
+    bool operator ()()
+      { return reader::r >= (reader::sz * reader::bsz); }
+};
 
 int EXAM_IMPL(sockios_test::quants_reader)
 {
@@ -1400,12 +1398,15 @@ int EXAM_IMPL(sockios_test::quants_reader)
 
         if ( sig_caught == SIGINT ) {
           EXAM_MESSAGE_ASYNC( "catch INT signal" );
-          this_thread::sleep( milliseconds( 500 ) ); // chance to process the rest
+          // this_thread::sleep( milliseconds( 500 ) ); // chance to process the rest
+          unique_lock<mutex> lk( reader::lock );
+          EXAM_CHECK_ASYNC_F( reader::cnd.timed_wait( lk, milliseconds(800), reader_cnt_predicate() ), ret );
           srv.close();
         } else {
           EXAM_ERROR_ASYNC_F( "catch of INT signal expected", ret );
         }
 
+        EXAM_CHECK_ASYNC_F( reader::r == (reader::bsz * reader::sz), ret );
       }
       catch ( ... ) {
         EXAM_ERROR_ASYNC_F( "unexpected exception", ret );
@@ -1418,21 +1419,18 @@ int EXAM_IMPL(sockios_test::quants_reader)
       {
         sockstream s( "localhost", 2008 );
 
-        char buf[64];
+        char buf[reader::sz];
         fill( buf, buf + sizeof(buf), ' ' );
 
         EXAM_CHECK( s.good() );
 
-        for ( int i = 0; i < /* 819200 */ 1024; ++i ) {
+        for ( int i = 0; (i < reader::bsz) && s.good(); ++i ) {
           s.write( buf, sizeof(buf) ).flush();
           EXAM_CHECK( s.good() );
-          if ( !s.good() ) {
-            break;
-          }
         }
       }
 
-      // this_thread::sleep( milliseconds( 500 ) );
+      this_thread::sleep( milliseconds( 500 ) );
 
       kill( child.pid(), SIGINT );
 
