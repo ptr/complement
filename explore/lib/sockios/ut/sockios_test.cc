@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/04 13:57:39 ptr>
+// -*- C++ -*- Time-stamp: <09/03/05 06:09:38 ptr>
 
 /*
  *
@@ -1082,7 +1082,7 @@ class byte_cnt
       }
 
     ~byte_cnt()
-      { cerr << "# " << r << endl; }
+      { /* cerr << "# " << r << endl; */ }
 
     void connect( sockstream& s )
       {
@@ -1093,27 +1093,27 @@ class byte_cnt
         s.read( buf, sizeof(buf) );
 
         EXAM_CHECK_ASYNC( /* s.good() */ !s.fail() );
-        static int j = 0;
-        ++j;
+        // static int j = 0;
+        // ++j;
         // for ( int i = 0; i < bsz; ++i ) {
         //   if ( buf[i] == 0 ) {
         //     cerr << "***** " << i << ' ' << j << endl;
         //   }
         // }
-        if ( s.fail() ) {
-          cerr << count( buf, buf + sizeof(buf), 1 ) << ' ' << (j-1) << endl;
+        // if ( s.fail() ) {
+        //   cerr << count( buf, buf + sizeof(buf), 1 ) << ' ' << (j-1) << endl;
           // xmt::callstack( cerr );
-        }
+        // }
 
         lock_guard<mutex> lk( lock );
         r += count( buf, buf + sizeof(buf), 1 );
         EXAM_CHECK_ASYNC( r <= sz * bsz );
         if ( r == sz * bsz ) {
-          EXAM_MESSAGE_ASYNC( "Looks all here" );
+          EXAM_MESSAGE_ASYNC( "Looks all data here" );
           cnd.notify_one();
-        } else if ( r > sz * bsz ) { // what it is?
+        } else if ( r > sz * bsz ) { // What it is? Ghost bytes?
           cnd.notify_one();
-          exit(-1);
+          // exit(-1);
         }
       }
 
@@ -1336,9 +1336,9 @@ class reader
         */
         EXAM_CHECK_ASYNC( count( buf, buf + sizeof(buf), ' ' ) == sizeof(buf) );
         EXAM_CHECK_ASYNC( !s.fail() );
-        if ( s.fail() ) {
-          cerr << count( buf, buf + sizeof(buf), ' ' ) << ' ' << i << endl;
-        }
+        // if ( s.fail() ) {
+        //   cerr << count( buf, buf + sizeof(buf), ' ' ) << ' ' << i << endl;
+        // }
 
         // lock_guard<mutex> lk(lock);
         // if ( ++visits == N ) {
@@ -1401,7 +1401,6 @@ int EXAM_IMPL(sockios_test::quants_reader)
         if ( sig_caught == SIGINT ) {
           EXAM_MESSAGE_ASYNC( "catch INT signal" );
           this_thread::sleep( milliseconds( 500 ) ); // chance to process the rest
-          cerr << __FILE__ << ':' << __LINE__ << endl;
           srv.close();
         } else {
           EXAM_ERROR_ASYNC_F( "catch of INT signal expected", ret );
@@ -1436,7 +1435,6 @@ int EXAM_IMPL(sockios_test::quants_reader)
       // this_thread::sleep( milliseconds( 500 ) );
 
       kill( child.pid(), SIGINT );
-      cerr << __FILE__ << ':' << __LINE__ << endl;
 
       int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );

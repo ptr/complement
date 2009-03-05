@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/04 12:32:42 ptr>
+// -*- C++ -*- Time-stamp: <09/03/05 05:54:26 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -85,16 +85,12 @@ class sockmgr
       tcp_buffer,
       rqstop,
       tcp_buffer_back
-      // rqstart,
-      // listener_on_exit,
-      // tcp_buffer_on_exit
     };
 
     struct fd_info
     {
         enum {
-          listener = 0x1,
-          level_triggered = 0x2
+          listener = 0x1
         };
 
         fd_info() :

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/03 15:24:53 ptr>
+// -*- C++ -*- Time-stamp: <09/03/05 05:57:33 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -436,8 +436,8 @@ class basic_sockbuf :
 #endif // STLPORT
         _bbuf(0),
         _ebuf(0),
-        _fbeg(0),
-        _fend(0),
+        _fl(0),
+        _fr(0),
         _allocated( true )
       { }
 
@@ -456,8 +456,8 @@ class basic_sockbuf :
 #endif // STLPORT
         _bbuf(0),
         _ebuf(0),
-        _fbeg(0),
-        _fend(0),
+        _fl(0),
+        _fr(0),
         _allocated( true )
       { open( hostname, port, type, prot ); }
 
@@ -476,8 +476,8 @@ class basic_sockbuf :
 #endif // STLPORT
         _bbuf(0),
         _ebuf(0),
-        _fbeg(0),
-        _fend(0),
+        _fl(0),
+        _fr(0),
         _allocated( true )
       { open( addr, type, prot ); }
 
@@ -533,9 +533,7 @@ class basic_sockbuf :
     bool is_ready()
       {
         std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
-        return (_fend == _ebuf ?
-                (_fbeg - this->gptr()) : // <- piggyback free space
-                ((_ebuf - this->gptr()) + (_fbeg - this->eback())));
+        return this->gptr() < _fr ? true : this->eback() < _fl ? true : false;
       }
 
   protected:
@@ -543,21 +541,11 @@ class basic_sockbuf :
 
     virtual streamsize showmanyc()
       {
-        streamsize n = _fend == _ebuf ?
-          (_fbeg - this->gptr()) : // <- piggyback free space
-          ((_ebuf - this->gptr()) + (_fbeg - this->eback()));
-
-        cerr << __FILE__ << ':' << __LINE__ << ' ' << n
-             << ' ' << (void *)_fend << ' ' << (void *)_fbeg
-             << ' ' << (void *)_ebuf << ' ' << (void *)this->gptr()
-             << ' ' << (void *)this->eback()
-             << endl;
-
-        if ( n > 0 ) {
-          return n;
+        if ( this->gptr() < _fr ) {
+          return (_fr - this->gptr()) + (_fl - this->eback());
         }
-
-        return basic_socket_t::_fd != -1 ? 0 : -1;
+        streamsize n = (_fl - this->eback());
+        return n > 0 ? n : basic_socket_t::_fd != -1 ? 0 : -1;
       }
 
     virtual int_type underflow();
@@ -601,8 +589,8 @@ class basic_sockbuf :
   private: // Helper functions
     charT* _bbuf;
     charT* _ebuf;
-    charT* _fbeg; // free zone begin, for sockmgr
-    charT* _fend; // free zone end, for sockmgr
+    charT* _fl; // free zone left, for sockmgr
+    charT* _fr; // free zone right, for sockmgr
     bool _allocated; // true, if _bbuf should be deallocated
 
     // Precondition: 0 < __n <= max_size().
