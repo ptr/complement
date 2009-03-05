@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/05 10:11:42 ptr>
+// -*- C++ -*- Time-stamp: <09/03/05 12:42:40 ptr>
 
 /*
  *
@@ -1427,6 +1427,9 @@ int EXAM_IMPL(sockios_test::quants_reader)
         for ( int i = 0; (i < reader::bsz) && s.good(); ++i ) {
           s.write( buf, sizeof(buf) ).flush();
           EXAM_CHECK( s.good() );
+          if ( !s.good() ) {
+            cerr << __FILE__ << ':' << __LINE__ << ' ' << i << endl;
+          }
         }
       }
 
