@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/05 05:54:26 ptr>
+// -*- C++ -*- Time-stamp: <09/03/05 16:09:54 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -178,8 +178,8 @@ class sockmgr
 
     void io_worker();
     void cmd_from_pipe();
-    void process_listener( epoll_event&, typename fd_container_type::iterator );
-    void process_regular( epoll_event&, typename fd_container_type::iterator );
+    void process_listener( const epoll_event&, typename fd_container_type::iterator );
+    void process_regular( const epoll_event&, typename fd_container_type::iterator );
 
     int efd;
     int pipefd[2];

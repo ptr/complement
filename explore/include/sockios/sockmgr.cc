@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/05 06:58:42 ptr>
+// -*- C++ -*- Time-stamp: <09/03/05 16:11:24 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -358,7 +358,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
 }
 
 template<class charT, class traits, class _Alloc>
-void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename sockmgr<charT,traits,_Alloc>::fd_container_type::iterator ifd )
+void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, typename sockmgr<charT,traits,_Alloc>::fd_container_type::iterator ifd )
 {
   if ( ev.events & (/* EPOLLRDHUP | */ EPOLLHUP | EPOLLERR) ) {
     // close listener:
@@ -501,7 +501,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( epoll_event& ev, typename s
 }
 
 template<class charT, class traits, class _Alloc>
-void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename sockmgr<charT,traits,_Alloc>::fd_container_type::iterator ifd )
+void sockmgr<charT,traits,_Alloc>::process_regular( const epoll_event& ev, typename sockmgr<charT,traits,_Alloc>::fd_container_type::iterator ifd )
 {
   fd_info& info = ifd->second;
 
@@ -561,8 +561,14 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
               b->_fr += offset / sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
               if ( (b->_fr < b->_ebuf) || (b->_fl < b->gptr()) ) { // free space available?
                 // return back to epoll
-                ev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-                if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &ev ) < 0 ) {
+                epoll_event xev; // local var, don't modify ev
+                xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+#if 1
+                xev.data.u64 = 0ULL;
+#endif
+                xev.data.fd = ev.data.fd;
+
+                if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
                   throw fdclose(); // closed?
                 }
               }
@@ -575,9 +581,17 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
                 // no more ready data available
                 errno = 0;
                 // return back to epoll
-                ev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-                if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &ev ) < 0 ) {
-                  throw fdclose(); // closed?
+                {
+                  epoll_event xev; // local var, don't modify ev
+                  xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+#if 1
+                  xev.data.u64 = 0ULL;
+#endif
+                  xev.data.fd = ev.data.fd;
+
+                  if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
+                    throw fdclose(); // closed?
+                  }
                 }
                 return;
               case EINTR: // if EINTR, continue
@@ -593,8 +607,14 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
                 b->_fl += offset / sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
                 if ( b->_fl < gptr ) { // free space available?
                   // return back to epoll
-                  ev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-                  if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &ev ) < 0 ) {
+                  epoll_event xev; // local var, don't modify ev
+                  xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+#if 1
+                  xev.data.u64 = 0ULL;
+#endif
+                  xev.data.fd = ev.data.fd;
+
+                  if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
                     throw fdclose(); // closed?
                   }
                 }
@@ -607,9 +627,16 @@ void sockmgr<charT,traits,_Alloc>::process_regular( epoll_event& ev, typename so
                   // no more ready data available; continue.
                   errno = 0;
                   // return back to epoll
-                  ev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-                  if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &ev ) < 0 ) {
-                    throw fdclose(); // closed?
+                  {
+                    epoll_event xev; // local var, don't modify ev
+                    xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+#if 1
+                    xev.data.u64 = 0ULL;
+#endif
+                    xev.data.fd = ev.data.fd;
+                    if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
+                      throw fdclose(); // closed?
+                    }
                   }
                   return;
                 case EINTR: // if EINTR, continue
