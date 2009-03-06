@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/05 13:48:17 ptr>
+// -*- C++ -*- Time-stamp: <09/03/06 15:56:18 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -132,9 +132,6 @@ basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
 #endif
     basic_socket_t::_fd = -1;
 
-    // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
-    // ucnd.notify_all();
-
     return 0;
   }
   catch ( std::runtime_error& ) {
@@ -256,9 +253,6 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
 #endif
     basic_socket_t::_fd = -1;
 
-    // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
-    // ucnd.notify_all();
-
     return 0;
   }
 
@@ -286,27 +280,9 @@ basic_sockbuf<charT, traits, _Alloc>::close()
     return 0;
   }
   
-  // int x = basic_socket_t::_fd;
   shutdown_unsafe( sock_base::stop_in | sock_base::stop_out );
 
-  // std::cerr << __FILE__ << ':' << __LINE__ << ' ' << basic_socket_t::_fd << ' ' << std::tr2::getpid() << std::endl;
-  // xmt::callstack( cerr );
-
-  // basic_socket_t::mgr->exit_notify( this, basic_socket_t::_fd );
-
-  // shutdown_unsafe( sock_base::stop_in | sock_base::stop_out );
-
-  // put area before get area
-  //setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
-  //setg( this->epptr(), this->epptr(), this->epptr() );
-
-  // if ( basic_socket_t::_fd != -1 ) {
-  // std::cerr << __FILE__ << ':' << __LINE__ << ' ' << basic_socket_t::_fd << std::endl;
-  // }
-
   ucnd.wait( lk, closed_t( *this ) );
-  // std::cerr << __FILE__ << ':' << __LINE__ << ' ' << basic_socket_t::_fd << ' ' << x << std::endl;  
-  // std::cerr << __FILE__ << ':' << __LINE__ << ' ' << basic_socket_t::_fd << std::endl;
 
   return this;
 }
@@ -327,11 +303,8 @@ void basic_sockbuf<charT, traits, _Alloc>::shutdown_unsafe( sock_base::shutdownf
 }
 
 template<class charT, class traits, class _Alloc>
-__FIT_TYPENAME basic_sockbuf<charT, traits, _Alloc>::int_type
-basic_sockbuf<charT, traits, _Alloc>::underflow()
+void basic_sockbuf<charT, traits, _Alloc>::rewind()
 {
-  std::tr2::unique_lock<std::tr2::recursive_mutex> lk( ulck );
-
   setg( this->eback(), this->gptr(), this->_fr );
   if ( this->gptr() == this->_ebuf ) {
     this->_fr = this->_fl;
@@ -339,20 +312,25 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
     setg( this->eback(), this->eback(), this->_fr );
   }
 
-  if ( (this->_fr < this->_ebuf) || (this->_fl < this->gptr()) ) {
-    //  cerr << __FILE__ << ':' << __LINE__ 
-    //       << ' ' << (void *)this->eback() << ' ' << (void *)_fl
-    //       << ' ' << (void *)this->gptr()  << ' ' << (void *)this->egptr()
-    //       << ' ' << (void *)_fr << ' ' << (void *)this->_ebuf
-    //       << endl;
+  if ( this->is_open_unsafe() && ((this->_fr < this->_ebuf) || (this->_fl < this->gptr())) ) {
+    // restore descriptor in epoll vector, free space in buffer available
     basic_socket_t::mgr->restore( *this );
   }
+}
+
+template<class charT, class traits, class _Alloc>
+__FIT_TYPENAME basic_sockbuf<charT, traits, _Alloc>::int_type
+basic_sockbuf<charT, traits, _Alloc>::underflow()
+{
+  std::tr2::unique_lock<std::tr2::recursive_mutex> lk( ulck );
+
+  rewind();
 
   if ( this->gptr() < this->egptr() ) {
     return traits::to_int_type(*this->gptr());
   }
 
-  // wait on condition
+  // no ready data, wait on condition
   if ( basic_socket_t::_use_rdtimeout ) {
     if ( !ucnd.timed_wait( lk, basic_socket_t::_rdtimeout, rdready ) ) {
       return traits::eof();
@@ -361,21 +339,7 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
     ucnd.wait( lk, rdready );
   }
 
-  setg( this->eback(), this->gptr(), this->_fr );
-  if ( this->gptr() == this->_ebuf ) {
-    this->_fr = this->_fl;
-    this->_fl = this->eback();
-    setg( this->eback(), this->eback(), this->_fr );
-  }
-
-  if ( (this->_fr < this->_ebuf) || (this->_fl < this->gptr()) ) {
-    //  cerr << __FILE__ << ':' << __LINE__ 
-    //       << ' ' << (void *)this->eback() << ' ' << (void *)_fl
-    //       << ' ' << (void *)this->gptr()  << ' ' << (void *)this->egptr()
-    //       << ' ' << (void *)_fr << ' ' << (void *)this->_ebuf
-    //       << endl;
-    basic_socket_t::mgr->restore( *this );
-  }
+  rewind();
 
   if ( this->gptr() < this->egptr() ) {
     return traits::to_int_type(*this->gptr());
@@ -414,20 +378,27 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
             {
               pollfd wpfd;
               wpfd.fd = basic_socket_t::_fd;
-              wpfd.events = POLLOUT | POLLHUP | POLLWRNORM;
+              wpfd.events = POLLOUT /* | POLLHUP | POLLWRNORM */
+#if defined(_GNU_SOURCE)
+                     | POLLRDHUP
+#endif
+                         ;
               wpfd.revents = 0;
               while ( poll( &wpfd, 1, basic_socket_t::_use_wrtimeout ? basic_socket_t::_wrtimeout.count() : -1 ) <= 0 ) { // wait infinite
                 // may be interrupted, check and ignore
                 switch ( errno ) {
                   case EINTR:
-                  case EAGAIN:
                     errno = 0;
                     continue;
                   default:
                     return traits::eof();
                 }
               }
-              if ( (wpfd.revents & POLLERR) != 0 ) {
+              if ( (wpfd.revents & (POLLERR | POLLHUP
+#if defined(_GNU_SOURCE)
+                                    | POLLRDHUP
+#endif
+                      )) != 0 ) {
                 return traits::eof();
               }
             }
@@ -487,26 +458,33 @@ int basic_sockbuf<charT, traits, _Alloc>::sync()
               {
                 pollfd wpfd;
                 wpfd.fd = basic_socket_t::_fd;
-                wpfd.events = POLLOUT | POLLHUP | POLLWRNORM;
+                wpfd.events = POLLOUT /* | POLLHUP | POLLWRNORM */
+#if defined(_GNU_SOURCE)
+                     | POLLRDHUP
+#endif
+                  ;
                 wpfd.revents = 0;
                 while ( poll( &wpfd, 1, basic_socket_t::_use_wrtimeout ? basic_socket_t::_wrtimeout.count() : -1 ) <= 0 ) { // wait infinite
                   // may be interrupted, check and ignore
                   switch ( errno ) {
                     case EINTR:
-                    case EAGAIN:
                       errno = 0;
                       continue;
                     default:
                       return -1;
                   }
                 }
-                if ( (wpfd.revents & POLLERR) != 0 ) {
+                if ( (wpfd.revents & (POLLERR | POLLHUP
+#if defined(_GNU_SOURCE)
+                                      | POLLRDHUP
+#endif
+                        )) != 0 ) {
                   return -1;
                 }
               }
               break;
             default:
-              cerr << __FILE__ << ' ' << __LINE__ << ' ' << count << endl;
+              // cerr << __FILE__ << ' ' << __LINE__ << ' ' << count << endl;
               return -1;
           }
         }

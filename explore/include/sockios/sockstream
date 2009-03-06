@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/05 05:57:33 ptr>
+// -*- C++ -*- Time-stamp: <09/03/06 09:52:37 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -536,8 +536,15 @@ class basic_sockbuf :
         return this->gptr() < _fr ? true : this->eback() < _fl ? true : false;
       }
 
+    void pubrewind()
+      {
+        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+        this->rewind();
+      }
+
   protected:
     void shutdown_unsafe( sock_base::shutdownflg dir );
+    void rewind();
 
     virtual streamsize showmanyc()
       {

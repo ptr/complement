@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/05 16:09:54 ptr>
+// -*- C++ -*- Time-stamp: <09/03/06 15:59:42 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -164,6 +164,17 @@ class sockmgr
     struct fdclose
     { };
 
+    struct no_free_space
+    { };
+
+    struct retry
+    { };
+
+    struct no_ready_data
+    { };
+
+    void net_read( sockbuf_t& b ) throw (fdclose, no_free_space, retry, no_ready_data);
+
     void dump_descr();
 
 #ifdef __USE_STLPORT_HASH
@@ -185,9 +196,7 @@ class sockmgr
     int pipefd[2];
     std::tr2::thread* _worker;
     const int n_ret;
-
     fd_container_type descr;
-    std::tr2::mutex dll;
 
     friend class std::basic_socket<charT,traits,_Alloc>;
 };

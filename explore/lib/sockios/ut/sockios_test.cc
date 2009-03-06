@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/05 12:42:40 ptr>
+// -*- C++ -*- Time-stamp: <09/03/06 15:29:00 ptr>
 
 /*
  *
@@ -1407,6 +1407,9 @@ int EXAM_IMPL(sockios_test::quants_reader)
         }
 
         EXAM_CHECK_ASYNC_F( reader::r == (reader::bsz * reader::sz), ret );
+        // if ( reader::r != (reader::bsz * reader::sz) ) {
+        //   cerr << __FILE__ << ':' << __LINE__ << ' ' << reader::r << endl;
+        // }
       }
       catch ( ... ) {
         EXAM_ERROR_ASYNC_F( "unexpected exception", ret );
@@ -1427,13 +1430,13 @@ int EXAM_IMPL(sockios_test::quants_reader)
         for ( int i = 0; (i < reader::bsz) && s.good(); ++i ) {
           s.write( buf, sizeof(buf) ).flush();
           EXAM_CHECK( s.good() );
-          if ( !s.good() ) {
-            cerr << __FILE__ << ':' << __LINE__ << ' ' << i << endl;
-          }
+          // if ( !s.good() ) {
+          //   cerr << __FILE__ << ':' << __LINE__ << ' ' << i << endl;
+          // }
         }
       }
 
-      this_thread::sleep( milliseconds( 500 ) );
+      // this_thread::sleep( milliseconds( 500 ) );
 
       kill( child.pid(), SIGINT );
 
