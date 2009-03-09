@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/04 11:33:18 ptr>
+// -*- C++ -*- Time-stamp: <09/03/07 09:42:57 ptr>
 
 /*
  *
@@ -49,7 +49,7 @@ int main( int argc, const char** argv )
   exam::test_suite t( "libsockios performance test suite 0", 5 );
   t.set_logger( &tlogger );
 
-  exam::test_suite::test_case_type tc[30];
+  exam::test_suite::test_case_type tc[60];
 
   sockios_perf_SrvR p;
 
