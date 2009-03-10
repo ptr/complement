@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/06 15:56:18 ptr>
+// -*- C++ -*- Time-stamp: <09/03/10 16:53:17 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -484,7 +484,6 @@ int basic_sockbuf<charT, traits, _Alloc>::sync()
               }
               break;
             default:
-              // cerr << __FILE__ << ' ' << __LINE__ << ' ' << count << endl;
               return -1;
           }
         }

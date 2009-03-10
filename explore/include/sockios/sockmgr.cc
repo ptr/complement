@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/06 15:59:25 ptr>
+// -*- C++ -*- Time-stamp: <09/03/10 17:46:41 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -491,58 +491,13 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
 template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Alloc>::sockbuf_t& b ) throw (fdclose, no_free_space, retry, no_ready_data)
 {
-  std::tr2::unique_lock<std::tr2::recursive_mutex> lk( b.ulck );
-  if ( b._fr < b._ebuf ) {
-    long offset = ::read( b._fd, b._fr, sizeof(charT) * (b._ebuf - b._fr) );
-    if ( offset > 0 ) {
-      b._fr += offset / sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
-      if ( (b._fr < b._ebuf) || (b._fl < b.gptr()) ) { // free space available?
-        // return back to epoll
-        epoll_event xev; // local var, don't modify ev
-        xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-#if 1
-        xev.data.u64 = 0ULL;
-#endif
-        xev.data.fd = b._fd;
-
-        if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
-          throw fdclose(); // closed?
-        }
-      }
-      b.ucnd.notify_one();
-    } else if ( offset == 0 ) {
-      // EPOLLRDHUP may be missed in kernel, but offset 0 is the same
-      throw fdclose();
-    } else switch ( errno ) { // offset < 0
-      case EAGAIN: // EWOULDBLOCK
-        // no more ready data available
-        errno = 0;
-        // return back to epoll
-        {
-          epoll_event xev; // local var, don't modify ev
-          xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-#if 1
-          xev.data.u64 = 0ULL;
-#endif
-          xev.data.fd = b._fd;
-
-          if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
-            throw fdclose(); // closed?
-          }
-        }
-        throw no_ready_data();
-      case EINTR: // if EINTR, continue
-        throw retry();
-      default:           // EBADF (already closed?), EFAULT (Bad address),
-        throw fdclose(); // ECONNRESET (Connection reset by peer), ...
-    }
-  } else {
-    charT* gptr = b.gptr();
-    if ( b._fl < gptr ) {
-      long offset = ::read( b._fd, b._fl, sizeof(charT) * (gptr - b._fl) );
+  std::tr2::unique_lock<std::tr2::recursive_mutex> lk( b.ulck, std::tr2::defer_lock_t() );
+  if ( lk.try_lock() ) {
+    if ( b._fr < b._ebuf ) {
+      long offset = ::read( b._fd, b._fr, sizeof(charT) * (b._ebuf - b._fr) );
       if ( offset > 0 ) {
-        b._fl += offset / sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
-        if ( b._fl < gptr ) { // free space available?
+        b._fr += offset / sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
+        if ( (b._fr < b._ebuf) || (b._fl < b.gptr()) ) { // free space available?
           // return back to epoll
           epoll_event xev; // local var, don't modify ev
           xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
@@ -561,8 +516,9 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
         throw fdclose();
       } else switch ( errno ) { // offset < 0
         case EAGAIN: // EWOULDBLOCK
-          // no more ready data available; return back to epoll.
+          // no more ready data available
           errno = 0;
+          // return back to epoll
           {
             epoll_event xev; // local var, don't modify ev
             xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
@@ -570,19 +526,80 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
             xev.data.u64 = 0ULL;
 #endif
             xev.data.fd = b._fd;
+
             if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
-              throw fdclose(); // hmm, unexpected here; closed?
+              throw fdclose(); // closed?
             }
           }
           throw no_ready_data();
         case EINTR: // if EINTR, continue
           throw retry();
-        default:   // EBADF (already closed?), EFAULT (Bad address),
+        default:           // EBADF (already closed?), EFAULT (Bad address),
           throw fdclose(); // ECONNRESET (Connection reset by peer), ...
       }
-    } else { // process extract data from buffer too slow for us!
-      throw no_free_space(); // No free space in the buffer.
+    } else {
+      charT* gptr = b.gptr();
+      if ( b._fl < gptr ) {
+        long offset = ::read( b._fd, b._fl, sizeof(charT) * (gptr - b._fl) );
+        if ( offset > 0 ) {
+          b._fl += offset / sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
+          if ( b._fl < gptr ) { // free space available?
+            // return back to epoll
+            epoll_event xev; // local var, don't modify ev
+            xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+#if 1
+            xev.data.u64 = 0ULL;
+#endif
+            xev.data.fd = b._fd;
+
+            if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
+              throw fdclose(); // closed?
+            }
+          }
+          b.ucnd.notify_one();
+        } else if ( offset == 0 ) {
+          // EPOLLRDHUP may be missed in kernel, but offset 0 is the same
+          throw fdclose();
+        } else switch ( errno ) { // offset < 0
+          case EAGAIN: // EWOULDBLOCK
+            // no more ready data available; return back to epoll.
+            errno = 0;
+            {
+              epoll_event xev; // local var, don't modify ev
+              xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+#if 1
+              xev.data.u64 = 0ULL;
+#endif
+              xev.data.fd = b._fd;
+              if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
+                throw fdclose(); // hmm, unexpected here; closed?
+              }
+            }
+            throw no_ready_data();
+          case EINTR: // if EINTR, continue
+            throw retry();
+          default:   // EBADF (already closed?), EFAULT (Bad address),
+            throw fdclose(); // ECONNRESET (Connection reset by peer), ...
+        }
+      } else { // process extract data from buffer too slow for us!
+        throw no_free_space(); // No free space in the buffer.
+      }
     }
+  } else { // it locked someware; let's return to this descriptor later
+    // return back to epoll
+    epoll_event xev; // local var, don't modify ev
+    xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+#if 1
+    xev.data.u64 = 0ULL;
+#endif
+    xev.data.fd = b._fd;
+
+    if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
+      cerr << __FILE__ << ':' << __LINE__ << endl;
+      throw fdclose(); // closed?
+    }
+    // really data may be available, but let's process another descriptor
+    throw no_ready_data(); 
   }
 }
 
@@ -636,7 +653,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( const epoll_event& ev, typen
       // data available + FIN (connection closed by peer)
       // only once. I should try to read while ::read return -1
       // and set EGAIN or return 0 (i.e. FIN discovered).
-      for ( ; ; ) {
+      for ( int k = 0; k < 4; ++k ) { // restrict by 4 read trials: give chance to others
         try {
           net_read( *b );
           if ( info.p != 0 ) {

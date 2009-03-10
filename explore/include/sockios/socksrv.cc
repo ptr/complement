@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/06 15:03:15 ptr>
+// -*- C++ -*- Time-stamp: <09/03/10 16:54:50 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -305,13 +305,12 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
           //  cerr << __FILE__ << ':' << __LINE__ << endl;
           //}
           worker_pool[p.s->rdbuf()->fd()].swap( p );
-        }// else {
-        //  cerr << __FILE__ << ':' << __LINE__ << endl;
+        }
+      } else if ( p.s->is_open() ) {
+        p.s->rdbuf()->pubrewind(); // worry about free space in income buffer
+        std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
+        worker_pool[p.s->rdbuf()->fd()].swap( p );
       }
-      // } // else {
-      //  cerr << __FILE__ << ':' << __LINE__ << ' ' << p.s->rdbuf()->fd()
-      //       << ' ' << p.s->rdbuf()->is_ready() << endl;
-      // }
     }
   }
   catch ( const finish& ) {

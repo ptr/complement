@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/04 10:39:51 ptr>
+// -*- C++ -*- Time-stamp: <09/03/10 17:44:01 ptr>
 
 /*
  *
@@ -152,6 +152,9 @@ int block_write()
       for ( int i = 0; i < N; ++i ) {
         s.write( buf, S ).flush();
         EXAM_CHECK_ASYNC_F( s.good(), flag );
+        if ( s.fail() ) {
+          break; // no sense to continue
+        }
       }
 
       // this_thread::sleep( milliseconds( 500 ) );
