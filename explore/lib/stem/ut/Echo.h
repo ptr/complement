@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/18 20:14:03 ptr>
+// -*- C++ -*- Time-stamp: <09/03/11 13:14:13 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -80,17 +80,20 @@ class UglyEchoClient :
 {
   public:
     UglyEchoClient() :
-        rsp_count(0)
+        rsp_count(0),
+        failflag( false )
       { }
     
     UglyEchoClient( stem::addr_type id ) : 
         EventHandler( id ),
-        rsp_count(0)
+        rsp_count(0),
+        failflag( false )
       { }
       
     UglyEchoClient( stem::addr_type id, const char *info ) :
         EventHandler( id, info ),
-        rsp_count(0)
+        rsp_count(0),
+        failflag( false )
       { }
 
     void handler1( const stem::Event& );
@@ -102,6 +105,7 @@ class UglyEchoClient :
     int rsp_count;
 
   private:
+    bool failflag;
     std::tr2::condition_variable cnd;
     std::tr2::mutex mtx;
     

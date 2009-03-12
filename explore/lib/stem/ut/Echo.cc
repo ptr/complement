@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/18 20:45:38 ptr>
+// -*- C++ -*- Time-stamp: <09/03/11 13:18:38 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -119,8 +119,9 @@ void UglyEchoClient::handler1( const stem::Event& ev )
   EXAM_CHECK_ASYNC( ev.value() == mess );
   
   if (ev.value() != mess ) {
+    failflag = true;
     cout << mess << "\n:\n" << ev.value() << endl;
-    for ( int i = 0;i  < min(ev.value().size(), mess.size()); ++i ) {
+    for ( int i = 0; i < min(ev.value().size(), mess.size()); ++i ) {
       if ( ev.value()[i] != mess[i] ) {
         cout << i << endl;
         cout << mess.substr(i) << "\n\n" << ev.value().substr(i) << endl;
@@ -131,7 +132,11 @@ void UglyEchoClient::handler1( const stem::Event& ev )
   lock.unlock();
  
   std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
- 
+
+  if ( failflag ) {
+    cout << rsp_count << endl;
+  }
+
   ++rsp_count;
 
   cnd.notify_one();
@@ -146,8 +151,11 @@ bool UglyEchoClient::wait()
   if ( result ) {
     rsp_count = 0;
   }
+
+  bool localflag = failflag;
+  failflag = false;
   
-  return result;
+  return result && !localflag;
 }
 
 DEFINE_RESPONSE_TABLE( UglyEchoClient )
