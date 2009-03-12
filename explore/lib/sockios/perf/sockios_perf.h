@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/10 17:44:01 ptr>
+// -*- C++ -*- Time-stamp: <09/03/11 18:48:45 ptr>
 
 /*
  *
@@ -27,6 +27,8 @@
 #include <mt/condition_variable>
 #include <mt/date_time>
 
+// #define WITH_NODELAY
+
 class sockios_perf_SrvR
 {
   public:
@@ -50,8 +52,13 @@ template <int N, int S>
 class SrvR
 {
   public:
-    SrvR( std::sockstream& )
-      { fill( buf, buf + S, 'b' ); }
+    SrvR( std::sockstream& s )
+      {
+#ifdef WITH_NODELAY
+        s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
+#endif
+        fill( buf, buf + S, 'b' );
+      }
 
     ~SrvR()
       { }
@@ -147,6 +154,9 @@ int block_write()
       b.wait();
 
       std::sockstream s( "localhost", P );
+#ifdef WITH_NODELAY
+      s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
+#endif
       char buf[S];
       std::fill( buf, buf + S, 'a' );
       for ( int i = 0; i < N; ++i ) {
@@ -189,6 +199,9 @@ class SrvW
   public:
     SrvW( std::sockstream& s )
       {
+#ifdef WITH_NODELAY
+        s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
+#endif
         fill( buf, buf + S, 'b' );
         for ( int i = 0; i < N; ++i ) {
           s.write( buf, S ).flush();
@@ -284,6 +297,9 @@ int block_read()
       b.wait();
 
       std::sockstream s( "localhost", P );
+#ifdef WITH_NODELAY
+      s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
+#endif
       char buf[S];
       std::fill( buf, buf + S, 'a' );
       for ( int i = 0; i < N; ++i ) {
@@ -359,8 +375,13 @@ template <int N, int S>
 class SrvRW
 {
   public:
-    SrvRW( std::sockstream& )
-      { fill( buf, buf + S, 'b' ); }
+    SrvRW( std::sockstream& s )
+      {
+#ifdef WITH_NODELAY
+        s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
+#endif
+        fill( buf, buf + S, 'b' );
+      }
 
     ~SrvRW()
       { }
@@ -457,6 +478,9 @@ int block_read_write()
       b.wait();
 
       std::sockstream s( "localhost", P );
+#ifdef WITH_NODELAY
+      s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
+#endif
       char buf[S];
       std::fill( buf, buf + S, 'a' );
       for ( int i = 0; i < N; ++i ) {
