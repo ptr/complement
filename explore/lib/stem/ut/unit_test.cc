@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/18 20:08:29 ptr>
+// -*- C++ -*- Time-stamp: <09/03/11 13:37:36 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -311,7 +311,6 @@ int EXAM_IMPL(stem_test::echo)
   return EXAM_RESULT;
 }
 
-const char fname[] = "/tmp/stem_test.shm";
 xmt::shm_alloc<0> seg;
 xmt::allocator_shm<condition_event_ip,0> shm_cnd;
 xmt::allocator_shm<barrier_ip,0>   shm_b;
@@ -319,11 +318,11 @@ xmt::allocator_shm<barrier_ip,0>   shm_b;
 stem_test::stem_test()
 {
   try {
-    seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
+    seg.allocate( 70000, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0600 );
   }
   catch ( const xmt::shm_bad_alloc& err ) {
     try {
-      seg.allocate( fname, 4*4096, 0, 0600 );
+      seg.allocate( 70000, 4*4096, 0, 0600 );
     }
     catch ( const xmt::shm_bad_alloc& err2 ) {
       string s = err.what();
@@ -338,7 +337,6 @@ stem_test::stem_test()
 stem_test::~stem_test()
 {
   seg.deallocate();
-  unlink( fname );
 }
 
 int EXAM_IMPL(stem_test::echo_net)
