@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/06 09:52:37 ptr>
+// -*- C++ -*- Time-stamp: <09/03/12 13:27:03 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -36,6 +36,7 @@
 #include <iostream>
 #include <string>
 #include <stdexcept>
+#include <algorithm>
 
 #ifdef WIN32
 #  include <winsock2.h>
@@ -65,6 +66,7 @@
 #endif // !WIN32
 
 #include <sockios/netinfo.h>
+#include <list>
 
 #ifdef STLPORT
 _STLP_BEGIN_NAMESPACE
@@ -302,6 +304,7 @@ class basic_socket
     bool _use_wrtimeout;
 
     static std::detail::sockmgr<charT,traits,_Alloc>* mgr;
+    static unsigned default_mtu;
     friend class Init;
 };
 
@@ -321,6 +324,11 @@ void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
     std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
     if ( _count++ == 0 ) {
       basic_socket<charT,traits,_Alloc>::mgr = new std::detail::sockmgr<charT,traits,_Alloc>();
+      typedef std::list<std::net_iface> ifcontainer;
+      ifcontainer inf;
+      std::get_ifaces( std::back_inserter(inf) );
+      typename ifcontainer::const_iterator m = std::max_element( inf.begin(), inf.end(), std::less_mtu );
+      default_mtu = m != inf.end() ? m->mtu : 1500;
 #ifdef __FIT_PTHREADS
       if ( !_at_fork ) { // call only once
         if ( pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child ) ) {
@@ -386,6 +394,9 @@ char basic_socket<charT,traits,_Alloc>::Init_buf[128];
 
 template <class charT, class traits, class _Alloc>
 std::detail::sockmgr<charT,traits,_Alloc>* basic_socket<charT,traits,_Alloc>::mgr = 0;
+
+template <class charT, class traits, class _Alloc>
+unsigned basic_socket<charT,traits,_Alloc>::default_mtu = 0;
 
 #ifdef STLPORT
 _STLP_END_NAMESPACE

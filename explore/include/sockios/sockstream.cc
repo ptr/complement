@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/10 16:53:17 ptr>
+// -*- C++ -*- Time-stamp: <09/03/12 13:29:23 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -83,13 +83,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const in_addr& addr, int port,
     }
 
     if ( _bbuf == 0 ) {
-      struct ifconf ifc;
-      struct ifreq  ifr;
-      ifc.ifc_len = sizeof(ifreq);
-      ifc.ifc_req = &ifr;
-      int mtu = ((ioctl(basic_socket_t::_fd, SIOCGIFMTU, &ifc) < 0 ? 1500 : ifr.ifr_mtu) - 20 - (type == sock_base::sock_stream ? 20 : 8 )) / sizeof(charT);
-      int qlen = ioctl(basic_socket_t::_fd, SIOCGIFTXQLEN, &ifc) < 0 ? 2 : ifr.ifr_qlen;
-      _M_allocate_block( type == sock_base::sock_stream ? mtu * qlen * 2 : mtu * 2 );
+      _M_allocate_block( ((type == sock_base::sock_stream ? (basic_socket_t::default_mtu - 20 - 20) * 2 : (basic_socket_t::default_mtu - 20 - 8)) * 2) / sizeof(charT) );
     }
 
     if ( _bbuf == 0 ) {
@@ -236,13 +230,7 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
   }
 
   if ( _bbuf == 0 ) {
-    struct ifconf ifc;
-    struct ifreq  ifr;
-    ifc.ifc_len = sizeof(ifreq);
-    ifc.ifc_req = &ifr;
-    int mtu = ((ioctl(basic_socket_t::_fd, SIOCGIFMTU, &ifc) < 0 ? 1500 : ifr.ifr_mtu) - 20 - (t == sock_base::sock_stream ? 20 : 8 )) / sizeof(charT);
-    int qlen = ioctl(basic_socket_t::_fd, SIOCGIFTXQLEN, &ifc) < 0 ? 2 : ifr.ifr_qlen;
-    _M_allocate_block( t == sock_base::sock_stream ? mtu * qlen * 2 : mtu * 2);
+    _M_allocate_block( ((t == sock_base::sock_stream ? (basic_socket_t::default_mtu - 20 - 20) * 2 : (basic_socket_t::default_mtu - 20 - 8)) * 2) / sizeof(charT) );
   }
 
   if ( _bbuf == 0 ) {
@@ -507,7 +495,7 @@ streamsize basic_sockbuf<charT, traits, _Alloc>::xsputn( const char_type *s, str
 
   streamsize __n_put = this->epptr() - this->pptr();
 
-  if ( __n_put > n ) {
+  if ( __n_put >= n ) {
     traits::copy( this->pptr(), s, n );
     this->pbump( n );
     return n;

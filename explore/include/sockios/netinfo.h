@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/09/06 23:42:19 ptr>
+// -*- C++ -*- Time-stamp: <09/03/12 13:25:30 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
@@ -182,9 +182,11 @@ struct net_iface
     net_iface()
       { }
 
-    net_iface( const char *nm, unsigned f, const sockaddr& address ) :
+    net_iface( const char *nm, unsigned f, const sockaddr& address, unsigned _mtu, unsigned q ) :
         name( nm ),
-        flags( f )
+        flags( f ),
+        mtu( _mtu ),
+        qlen( q )
       {
         addr.any = address;
       }
@@ -196,10 +198,16 @@ struct net_iface
     } addr;
     // struct in_addr mask;
     unsigned flags;
+    unsigned mtu;
+    unsigned qlen;
 };
 
-template <class C>
-void get_ifaces( C& lst )
+inline bool less_mtu( const net_iface& l, const net_iface& r )
+{ return l.mtu < r.mtu; };
+
+
+template <class BackInsertIterator>
+void get_ifaces( BackInsertIterator bi )
 {
   int sock = socket(AF_INET, SOCK_DGRAM, 0);
   struct ifconf ifc;
@@ -240,6 +248,9 @@ void get_ifaces( C& lst )
   struct ifreq* ifr = (struct ifreq *) ifc.ifc_req;
   struct ifreq* last = (struct ifreq *) ((char *) ifr + ifc.ifc_len);
   struct ifreq ifrflags;
+  unsigned flags = 0;
+  unsigned mtu = 0;
+  unsigned qlen = 0;
   while ( ifr < last ) {
     memset(&ifrflags, 0, sizeof(ifrflags) );
     strncpy( ifrflags.ifr_name, ifr->ifr_name, sizeof( ifrflags.ifr_name ) );
@@ -251,8 +262,24 @@ void get_ifaces( C& lst )
         close( sock );
         throw std::runtime_error( std::string("SIOCGIFFLAGS error getting flags for interface") );
       }
+      continue;
     }
-    lst.push_back( net_iface( ifr->ifr_name, ifrflags.ifr_flags, ifr->ifr_addr ) );
+
+    flags = ifrflags.ifr_flags;
+    
+    if ( ioctl( sock, SIOCGIFMTU, (char*)&ifrflags ) < 0 ) {
+      continue;
+    }
+
+    mtu = ifrflags.ifr_mtu;
+
+    if ( ioctl( sock, SIOCGIFTXQLEN, (char*)&ifrflags ) < 0 ) {
+      continue;
+    }
+
+    qlen = ifrflags.ifr_qlen;
+
+    *bi++ = net_iface( ifr->ifr_name, flags, ifr->ifr_addr, mtu, qlen );
     ifr = (struct ifreq *) ((char *) ifr + sizeof(struct ifreq));
   }
 
