@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <09/03/06 15:29:00 ptr>
+// -*- C++ -*- Time-stamp: <09/03/12 15:58:06 ptr>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005-2008
+ * Copyright (c) 2002, 2003, 2005-2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -16,7 +16,7 @@
 #include <mt/mutex>
 #include <sys/wait.h>
 #include <mt/shm.h>
-
+#include <mt/uid.h>
 
 #ifdef STLPORT
 #  include <unordered_map>
@@ -1598,18 +1598,17 @@ class ugly_echo_srv
         EXAM_CHECK_ASYNC( s.good() );
 
         int sz;
-        s.read( (char*)&sz, sizeof(int ) );
+        s.read( (char*)&sz, sizeof(int) );
         EXAM_CHECK_ASYNC( s.good() );
 
-        int* buf = new int[sz + 1];
+        char* buf = new char[sz];
         EXAM_CHECK_ASYNC( buf != 0 );
-        buf[0] = sz;
         
-        s.read( (char*)(buf + 1), sz );
+        s.read( buf, sz );
         EXAM_CHECK_ASYNC( s.good() );
         
-        for (int i = 0;i < 8;++i) {
-          s.write( (char*)buf, sz + sizeof(int) ).flush();
+        for ( int i = 0; i < 8; ++i ) {
+          s.write( (const char*)&sz, sizeof(sz) ).write( buf, sz ).flush();
           EXAM_CHECK_ASYNC( s.good() );
         }
         
@@ -1658,32 +1657,30 @@ int EXAM_IMPL(sockios_test::ugly_echo)
     catch ( std::tr2::fork_in_parent& child ) {
       b.wait();
       {
-        const int message_size = 1024;
-        int sndbuf[message_size + 1];
-        int rcvbuf[message_size + 1];
-        
-        sndbuf[0] = message_size * sizeof(int);
-        for (int j = 1;j <= message_size;++j)
-          sndbuf[j] = j;
+        std::string mess;
+        for ( int j = 0; j < 16; ++j ) {
+          mess += xmt::uid_str();
+        }
+
+        int sz = mess.size();
         
         sockstream s( "localhost", 2008 );
         EXAM_CHECK( s.good() );
         
         for ( int i = 0; i < 100 && s.good(); ++i ) {
-          s.write( (char*)sndbuf, sizeof(sndbuf) ).flush();
+          s.write( (const char *)&sz, sizeof(sz) ).write( mess.data(), mess.size() ).flush();
           EXAM_CHECK( s.good() );
           
-          for (int j = 0;j < 8;++j) {
-            memset( rcvbuf, 0, sizeof(rcvbuf) );
-            s.read( (char*)rcvbuf, sizeof(int) );
+          for ( int j = 0; j < 8; ++j ) {
+            string rcv;
+            int rsz = 0;
+            s.read( (char*)&rsz, sizeof(rsz) );
             EXAM_CHECK( s.good() );
-            
-            EXAM_CHECK( rcvbuf[0] == sndbuf[0] );
-            s.read( (char*)(rcvbuf + 1), rcvbuf[0] );
-            EXAM_CHECK( s.good() );
-            
-            for (int k = 1;k <= message_size;++k)
-              EXAM_CHECK( rcvbuf[k] == sndbuf[k] );
+            EXAM_CHECK( sz == rsz );
+            rcv.assign( rsz, ' ' );
+            s.read( const_cast<char*>(rcv.data()), rsz );
+            EXAM_CHECK( s.good() );            
+            EXAM_CHECK( rcv == mess );
           }
         }
       }
