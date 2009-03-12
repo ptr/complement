@@ -1459,3 +1459,253 @@ int EXAM_IMPL(sockios_test::quants_reader)
   
   return EXAM_RESULT;
 }
+
+class echo_srv
+{
+  public:
+
+    echo_srv( sockstream& )
+      { }
+
+    ~echo_srv()
+      { }
+
+    void connect( sockstream& s )
+      {
+        EXAM_CHECK_ASYNC( s.good() );
+
+        int sz;
+        s.read( (char*)&sz, sizeof(int ) );
+        EXAM_CHECK_ASYNC( s.good() );
+
+        int* buf = new int[sz + 1];
+        EXAM_CHECK_ASYNC( buf != 0 );
+        buf[0] = sz;
+        
+        s.read( (char*)(buf + 1), sz );
+        EXAM_CHECK_ASYNC( s.good() );
+        
+        s.write( (char*)buf, sz + sizeof(int) ).flush();
+        EXAM_CHECK_ASYNC( s.good() );
+        
+        delete[] buf;
+      }
+};
+
+int EXAM_IMPL(sockios_test::echo)
+{
+  try {
+    xmt::shm_alloc<0> seg;
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+    xmt::allocator_shm<barrier_ip,0> shm;
+
+    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+
+    try {
+      this_thread::fork();
+      int ret = 0;
+
+      try {
+        std::tr2::this_thread::block_signal( SIGINT );
+
+        connect_processor<echo_srv> srv( 2008 );
+
+        EXAM_CHECK_ASYNC_F( srv.good(), ret );
+        EXAM_CHECK_ASYNC_F( srv.is_open(), ret );
+
+        sigset_t signal_mask;
+
+        sigemptyset( &signal_mask );
+        sigaddset( &signal_mask, SIGINT );
+
+        b.wait();
+
+        int sig_caught;
+        sigwait( &signal_mask, &sig_caught );
+      }
+      catch ( ... ) {
+        EXAM_ERROR_ASYNC_F( "unexpected exception", ret );
+      }
+
+      exit(ret);
+    }
+    catch ( std::tr2::fork_in_parent& child ) {
+      b.wait();
+      {
+        const int message_size = 1024;
+        int sndbuf[message_size + 1];
+        int rcvbuf[message_size + 1];
+        
+        sndbuf[0] = message_size * sizeof(int);
+        for (int j = 1;j <= message_size;++j)
+          sndbuf[j] = j;
+        
+        sockstream s( "localhost", 2008 );
+        EXAM_CHECK( s.good() );
+        
+        for ( int i = 0; i < 1000 && s.good(); ++i ) {
+          s.write( (char*)sndbuf, sizeof(sndbuf) ).flush();
+          EXAM_CHECK( s.good() );
+        
+          memset( rcvbuf, 0, sizeof(rcvbuf) );
+          s.read( (char*)rcvbuf, sizeof(int) );
+          EXAM_CHECK( s.good() );
+          
+          EXAM_CHECK( rcvbuf[0] == sndbuf[0] );
+          s.read( (char*)(rcvbuf + 1), rcvbuf[0] );
+          EXAM_CHECK( s.good() );
+          
+          for (int j = 1;j <= message_size;++j)
+            EXAM_CHECK( rcvbuf[j] == sndbuf[j] );
+        }
+      }
+
+      kill( child.pid(), SIGINT );
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+    }
+
+    shm.deallocate( &b );
+
+    seg.deallocate();
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  
+  return EXAM_RESULT;
+}
+
+class ugly_echo_srv
+{
+  public:
+
+    ugly_echo_srv( sockstream& )
+      { }
+
+    ~ugly_echo_srv()
+      { }
+
+    void connect( sockstream& s )
+      {
+        EXAM_CHECK_ASYNC( s.good() );
+
+        int sz;
+        s.read( (char*)&sz, sizeof(int ) );
+        EXAM_CHECK_ASYNC( s.good() );
+
+        int* buf = new int[sz + 1];
+        EXAM_CHECK_ASYNC( buf != 0 );
+        buf[0] = sz;
+        
+        s.read( (char*)(buf + 1), sz );
+        EXAM_CHECK_ASYNC( s.good() );
+        
+        for (int i = 0;i < 8;++i) {
+          s.write( (char*)buf, sz + sizeof(int) ).flush();
+          EXAM_CHECK_ASYNC( s.good() );
+        }
+        
+        delete[] buf;
+      }
+};
+
+int EXAM_IMPL(sockios_test::ugly_echo)
+{
+  try {
+    xmt::shm_alloc<0> seg;
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+    xmt::allocator_shm<barrier_ip,0> shm;
+
+    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+
+    try {
+      this_thread::fork();
+      int ret = 0;
+
+      try {
+        std::tr2::this_thread::block_signal( SIGINT );
+
+        connect_processor<ugly_echo_srv> srv( 2008 );
+
+        EXAM_CHECK_ASYNC_F( srv.good(), ret );
+        EXAM_CHECK_ASYNC_F( srv.is_open(), ret );
+
+        sigset_t signal_mask;
+
+        sigemptyset( &signal_mask );
+        sigaddset( &signal_mask, SIGINT );
+
+        b.wait();
+
+        int sig_caught;
+        sigwait( &signal_mask, &sig_caught );
+      }
+      catch ( ... ) {
+        EXAM_ERROR_ASYNC_F( "unexpected exception", ret );
+      }
+
+      exit(ret);
+    }
+    catch ( std::tr2::fork_in_parent& child ) {
+      b.wait();
+      {
+        const int message_size = 1024;
+        int sndbuf[message_size + 1];
+        int rcvbuf[message_size + 1];
+        
+        sndbuf[0] = message_size * sizeof(int);
+        for (int j = 1;j <= message_size;++j)
+          sndbuf[j] = j;
+        
+        sockstream s( "localhost", 2008 );
+        EXAM_CHECK( s.good() );
+        
+        for ( int i = 0; i < 100 && s.good(); ++i ) {
+          s.write( (char*)sndbuf, sizeof(sndbuf) ).flush();
+          EXAM_CHECK( s.good() );
+          
+          for (int j = 0;j < 8;++j) {
+            memset( rcvbuf, 0, sizeof(rcvbuf) );
+            s.read( (char*)rcvbuf, sizeof(int) );
+            EXAM_CHECK( s.good() );
+            
+            EXAM_CHECK( rcvbuf[0] == sndbuf[0] );
+            s.read( (char*)(rcvbuf + 1), rcvbuf[0] );
+            EXAM_CHECK( s.good() );
+            
+            for (int k = 1;k <= message_size;++k)
+              EXAM_CHECK( rcvbuf[k] == sndbuf[k] );
+          }
+        }
+      }
+
+      kill( child.pid(), SIGINT );
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+    }
+
+    shm.deallocate( &b );
+
+    seg.deallocate();
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  
+  return EXAM_RESULT;
+}

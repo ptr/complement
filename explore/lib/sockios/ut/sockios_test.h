@@ -40,6 +40,8 @@ class sockios_test
 
     int EXAM_DECL(service_stop);
     int EXAM_DECL(quants_reader);
+    int EXAM_DECL(echo);
+    int EXAM_DECL(ugly_echo);
 };
 
 #endif // __sockios2_test_h

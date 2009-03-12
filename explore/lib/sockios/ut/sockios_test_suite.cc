@@ -86,8 +86,10 @@ int main( int argc, const char** argv )
   extratc[0] = tc[5];
 
   extratc[1] = t.add( &sockios_test::service_stop, test, "stop service", tc[4] );
-
-  t.add( &sockios_test::quants_reader, test, "read a few fixed-size data", extratc, extratc + 2 );
+  
+  t.add( &sockios_test::ugly_echo, test, "ugly echo service",
+    t.add( &sockios_test::echo, test, "echo service",
+      t.add( &sockios_test::quants_reader, test, "read a few fixed-size data", extratc, extratc + 2 ) ) );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( cerr );
