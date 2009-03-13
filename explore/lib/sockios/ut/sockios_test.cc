@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/12 15:58:06 ptr>
+// -*- C++ -*- Time-stamp: <09/03/14 01:32:38 ptr>
 
 /*
  *
@@ -1475,17 +1475,16 @@ class echo_srv
         EXAM_CHECK_ASYNC( s.good() );
 
         int sz;
-        s.read( (char*)&sz, sizeof(int ) );
+        s.read( (char*)&sz, sizeof(int) );
         EXAM_CHECK_ASYNC( s.good() );
 
-        int* buf = new int[sz + 1];
+        char* buf = new char[sz];
         EXAM_CHECK_ASYNC( buf != 0 );
-        buf[0] = sz;
         
-        s.read( (char*)(buf + 1), sz );
+        s.read( buf, sz );
         EXAM_CHECK_ASYNC( s.good() );
         
-        s.write( (char*)buf, sz + sizeof(int) ).flush();
+        s.write( (const char*)&sz, sizeof(sz) ).write( buf, sz ).flush();
         EXAM_CHECK_ASYNC( s.good() );
         
         delete[] buf;
@@ -1532,33 +1531,36 @@ int EXAM_IMPL(sockios_test::echo)
     }
     catch ( std::tr2::fork_in_parent& child ) {
       b.wait();
-      {
-        const int message_size = 1024;
-        int sndbuf[message_size + 1];
-        int rcvbuf[message_size + 1];
-        
-        sndbuf[0] = message_size * sizeof(int);
-        for (int j = 1;j <= message_size;++j)
-          sndbuf[j] = j;
-        
+      {     
         sockstream s( "localhost", 2008 );
         EXAM_CHECK( s.good() );
         
-        for ( int i = 0; i < 1000 && s.good(); ++i ) {
-          s.write( (char*)sndbuf, sizeof(sndbuf) ).flush();
-          EXAM_CHECK( s.good() );
+        class SecretsTeller :
+              public basic_socket< char,char_traits<char>,allocator<char> >
+        {
+          public:
+            static int bufsize()
+              { return (default_mtu - 20 - 20) * 2; }
+        };
         
-          memset( rcvbuf, 0, sizeof(rcvbuf) );
-          s.read( (char*)rcvbuf, sizeof(int) );
-          EXAM_CHECK( s.good() );
-          
-          EXAM_CHECK( rcvbuf[0] == sndbuf[0] );
-          s.read( (char*)(rcvbuf + 1), rcvbuf[0] );
-          EXAM_CHECK( s.good() );
-          
-          for (int j = 1;j <= message_size;++j)
-            EXAM_CHECK( rcvbuf[j] == sndbuf[j] );
-        }
+        // see _M_allocate_block in sockstream.cc,
+        // we want data to fit exactly internal buf size
+        std::string mess( SecretsTeller::bufsize() - sizeof(int), ' ' );
+        
+        int sz = mess.size();
+
+        s.write( (const char *)&sz, sizeof(sz) ).write( mess.data(), mess.size() ).flush();
+        EXAM_CHECK( s.good() );
+        
+        string rcv;
+        int rsz = 0;
+        s.read( (char*)&rsz, sizeof(rsz) );
+        EXAM_CHECK( s.good() );
+        EXAM_CHECK( sz == rsz );
+        rcv.assign( rsz, ' ' );
+        s.read( const_cast<char*>(rcv.data()), rsz );
+        EXAM_CHECK( s.good() );            
+        EXAM_CHECK( rcv == mess );
       }
 
       kill( child.pid(), SIGINT );
