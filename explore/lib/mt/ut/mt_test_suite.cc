@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/11 23:59:38 ptr>
+// -*- C++ -*- Time-stamp: <09/03/13 15:42:27 ptr>
 
 /*
  * Copyright (c) 2006-2009
@@ -9,7 +9,6 @@
  */
 
 #include "mt_test_suite.h"
-#include "mt_test.h"
 #include "shm_test.h"
 #include "mt_test_wg21.h"
 #include "sys_err_test.h"
@@ -57,7 +56,6 @@ int main( int argc, const char** argv )
 
   exam::test_suite t( "libxmt test" );
   sys_err_test sys_err;
-  mt_test test;
 
 #if 0
   t.add( timespec_diff, "timespec_diff" );
@@ -72,22 +70,6 @@ int main( int argc, const char** argv )
   exam::test_suite::test_case_type tc[3];
 
   t.add( &sys_err_test::file, sys_err, "system error, no such file" );
-  // t.add( &mt_test::callstack, test, "callstack" );
-  tc[0] = t.add( &mt_test::barrier, test, "mt_test::barrier" );
-  tc[1] = t.add( &mt_test::join_test, test, "mt_test::join_test" );
-  tc[2] = t.add( &mt_test::yield, test, "mt_test::yield",
-                 t.add( &mt_test::barrier2, test, "mt_test::barrier2",
-                        tc, tc + 2 ) );
-  t.add( &mt_test::recursive_mutex_test, test, "mt_test::recursive_mutex_test",
-         t.add( &mt_test::mutex_test, test, "mt_test::mutex_test", tc[2] ) );
-
-#ifdef __FIT_PTHREAD_SPINLOCK
-  t.add( &mt_test::spinlock_test, test, "mt_test::spinlock_test", tc[2] );
-#endif
-  t.add( &mt_test::pid, test, "mt_test::pid",
-         t.add( &mt_test::fork, test, "mt_test::fork" ) );
-
-  t.add( &mt_test::thr_mgr, test, "mt_test::thr_mgr", tc[1] );
 
   shm_test shmtest;
 
