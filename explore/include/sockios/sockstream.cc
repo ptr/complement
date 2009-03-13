@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/12 13:29:23 ptr>
+// -*- C++ -*- Time-stamp: <09/03/14 01:49:14 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -293,11 +293,12 @@ void basic_sockbuf<charT, traits, _Alloc>::shutdown_unsafe( sock_base::shutdownf
 template<class charT, class traits, class _Alloc>
 void basic_sockbuf<charT, traits, _Alloc>::rewind()
 {
-  setg( this->eback(), this->gptr(), this->_fr );
   if ( this->gptr() == this->_ebuf ) {
     this->_fr = this->_fl;
     this->_fl = this->eback();
     setg( this->eback(), this->eback(), this->_fr );
+  } else if ( this->_fr != this->egptr() ) {
+    setg( this->eback(), this->gptr(), this->_fr );
   }
 
   if ( this->is_open_unsafe() && ((this->_fr < this->_ebuf) || (this->_fl < this->gptr())) ) {

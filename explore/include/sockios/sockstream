@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/12 13:27:03 ptr>
+// -*- C++ -*- Time-stamp: <09/03/14 01:48:21 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -530,12 +530,12 @@ class basic_sockbuf :
 
     sock_base::socket_type fd() const
       {
-        // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
         return basic_socket<charT,traits,_Alloc>::fd_unsafe();
       }
     bool is_open() const
       {
-        // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
         return basic_socket<charT,traits,_Alloc>::is_open_unsafe();
       }
 
@@ -572,11 +572,7 @@ class basic_sockbuf :
       {
         std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
 
-        if ( !basic_socket_t::is_open_unsafe() ) {
-          return traits::eof();
-        }
-
-        if ( this->gptr() <= this->eback() ) {
+        if ( (this->gptr() <= this->eback()) || (_fl == this->gptr() ) ) {
           return traits::eof();
         }
 
