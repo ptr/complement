@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/01/11 09:43:15 ptr>
+// -*- C++ -*- Time-stamp: <09/03/16 17:26:57 ptr>
 
 /*
- * Copyright (c) 2007, 2008
+ * Copyright (c) 2007-2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -36,17 +36,17 @@ int base_logger::flags( int f )
   return tmp;
 }
 
-void trivial_logger::report( const char *file, int line, bool cnd, const char *expr )
+void trivial_logger::report( const char* place, bool cnd, const char* expr )
 {
   if ( (cnd && ((_flags & trace) == 0)) || ((_flags & silent) != 0) ) {
     return;
   }
 
   if ( s != 0 ) {
-    *s << file << ":" << line << ": " << (cnd ? "pass" : "fail" ) << ": " << expr
+    *s << place << ": " << (cnd ? "pass" : "fail" ) << ": " << expr
        << std::endl;
   } else {
-    fprintf( f, "%s:%d: %s: %s\n", file, line, (cnd ? "pass" : "fail" ), expr );
+    fprintf( f, "%s: %s: %s\n", place, (cnd ? "pass" : "fail" ), expr );
   }
 }
 

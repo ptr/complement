@@ -1,3 +1,12 @@
+2009-03-16  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* defs.h, suite.cc, logger.cc, suite.h, logger.h:
+	use macro HERE to print current position in source
+	file; this macro allow to remove one argument in
+	'report' methods and avoid print integers in report;
+	
+	* libexam: version 0.8.0.
+
 2009-01-11  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* logger.cc: print mean square deviation instead of
