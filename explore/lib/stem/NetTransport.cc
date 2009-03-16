@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/09 12:48:14 ptr>
+// -*- C++ -*- Time-stamp: <09/03/13 20:12:57 ptr>
 
 /*
  *
@@ -175,10 +175,8 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
   string& str = _rs.value();
 
   str.erase();
-  str.reserve( sz );
-  while ( sz-- > 0 ) {
-    str += (char)net.get();
-  }
+  str.resize( sz );
+  net.read( const_cast<char*>(str.data()), sz );
 #ifdef __FIT_STEM_TRACE
   try {
     lock_guard<mutex> lk(manager()->_lock_tr);
