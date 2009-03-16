@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/14 01:49:14 ptr>
+// -*- C++ -*- Time-stamp: <09/03/16 14:04:11 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -267,8 +267,9 @@ basic_sockbuf<charT, traits, _Alloc>::close()
   if ( !basic_socket_t::is_open_unsafe() ) {
     return 0;
   }
-  
+
   shutdown_unsafe( sock_base::stop_in | sock_base::stop_out );
+  rewind();
 
   ucnd.wait( lk, closed_t( *this ) );
 
