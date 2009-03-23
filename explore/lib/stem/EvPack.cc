@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/05 12:17:07 ptr>
+// -*- C++ -*- Time-stamp: <09/03/23 21:21:36 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006, 2008
@@ -52,18 +52,8 @@ void __pack_base::__net_unpack( istream& s, string& str )
   sz = from_net( sz );
   str.erase();
   if ( sz > 0 ) {
-    str.reserve( sz );
-#if defined(_MSC_VER) && (_MSC_VER < 1200)
-    char ch;
-#endif
-    while ( sz-- > 0 ) {
-#if defined(_MSC_VER) && (_MSC_VER < 1200)
-      s.get( ch );
-      str += ch;
-#else
-      str += (char)s.get();
-#endif
-    }
+    str.resize( sz );
+    s.read( const_cast<char*>(str.data()), sz );
   }
 }
 
@@ -85,18 +75,8 @@ void __pack_base::__unpack( istream& s, string& str )
   s.read( (char *)&sz, sizeof(sz) );
   str.erase();
   if ( sz > 0 ) {
-    str.reserve( sz );
-#if defined(_MSC_VER) && (_MSC_VER < 1200)
-    char ch;
-#endif
-    while ( sz-- > 0 ) {
-#if defined(_MSC_VER) && (_MSC_VER < 1200)
-      s.get( ch );
-      str += ch;
-#else
-      str += (char)s.get();
-#endif
-    }
+    str.resize( sz );
+    s.read( const_cast<char*>(str.data()), sz );
   }
 }
 
@@ -108,6 +88,30 @@ void __pack_base::__pack( ostream& s, const string& str )
   if ( sz != 0 ) {
     s.write( str.data(), sz );
   }
+}
+
+__FIT_DECLSPEC
+void __pack_base::__net_unpack( std::istream& s, xmt::uuid_type& u )
+{
+  s.read( (char*)u.u.b, sizeof(u.u.b) );
+}
+
+__FIT_DECLSPEC
+void __pack_base::__net_pack( std::ostream& s, const xmt::uuid_type& u )
+{
+  s.write( (const char*)u.u.b, sizeof(u.u.b) );
+}
+
+__FIT_DECLSPEC
+void __pack_base::__unpack( std::istream& s, xmt::uuid_type& u )
+{
+  s.read( (char*)u.u.b, sizeof(u.u.b) );
+}
+
+__FIT_DECLSPEC
+void __pack_base::__pack( std::ostream& s, const xmt::uuid_type& u )
+{
+  s.write( (const char*)u.u.b, sizeof(u.u.b) );
 }
 
 __FIT_DECLSPEC void gaddr_type::pack( std::ostream& s ) const

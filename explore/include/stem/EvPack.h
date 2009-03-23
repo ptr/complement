@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <06/11/23 22:19:50 ptr>
+// -*- C++ -*- Time-stamp: <09/03/23 21:15:02 ptr>
 
 /*
  *
@@ -24,6 +24,7 @@
 #endif
 
 #include <iostream>
+#include <mt/uid.h>
 
 #ifdef WIN32
 #include <winsock.h>
@@ -391,6 +392,12 @@ struct __pack_base
     static __FIT_DECLSPEC void __net_pack( std::ostream& s, const std::string& str );
     static __FIT_DECLSPEC void __unpack( std::istream& s, std::string& str );
     static __FIT_DECLSPEC void __pack( std::ostream& s, const std::string& str );
+
+    static __FIT_DECLSPEC void __net_unpack( std::istream& s, xmt::uuid_type& u );
+    static __FIT_DECLSPEC void __net_pack( std::ostream& s, const xmt::uuid_type& u );
+    static __FIT_DECLSPEC void __unpack( std::istream& s, xmt::uuid_type& u );
+    static __FIT_DECLSPEC void __pack( std::ostream& s, const xmt::uuid_type& u );
+
 #endif
 };
 
