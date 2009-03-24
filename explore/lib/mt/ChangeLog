@@ -1,3 +1,8 @@
+2009-03-25  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* uidhash.h: define hash-function for xmt::uid for
+	STL unordered associative containers.
+
 2009-01-29  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* thread, thread.cc: copy signal block/unblock/set heandler
