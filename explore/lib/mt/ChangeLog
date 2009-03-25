@@ -1,3 +1,10 @@
+2009-03-26  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* uid.h, uid.cc: added operator of formatted input
+	for uid as normilized uid string;
+
+	* libxmt: release 2.0.13.
+
 2009-03-25  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* uidhash.h: define hash-function for xmt::uid for

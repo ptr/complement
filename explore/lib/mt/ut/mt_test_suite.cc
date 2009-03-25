@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/13 15:42:27 ptr>
+// -*- C++ -*- Time-stamp: <09/03/26 01:03:31 ptr>
 
 /*
  * Copyright (c) 2006-2009
@@ -96,9 +96,10 @@ int main( int argc, const char** argv )
 
   t.add( &uid_test_wg21::uid, test_wg21_uid, "uid_test_wg21::uid",
          uidtc[0] = t.add( &uid_test_wg21::uidstr, test_wg21_uid, "uid_test_wg21::uidstr" ) );
-  t.add( &uid_test_wg21::uidconv, test_wg21_uid, "uid_test_wg21::uidconv",
-    t.add( &uid_test_wg21::hostid, test_wg21_uid, "uid_test_wg21::hostid",
-      t.add( &uid_test_wg21::hostidstr, test_wg21_uid, "uid_test_wg21::hostidstr" ) ) );
+  t.add( &uid_test_wg21::uid_stream, test_wg21_uid, "uid_test_wg21::uid_stream",
+    t.add( &uid_test_wg21::uidconv, test_wg21_uid, "uid_test_wg21::uidconv",
+      t.add( &uid_test_wg21::hostid, test_wg21_uid, "uid_test_wg21::hostid",
+        t.add( &uid_test_wg21::hostidstr, test_wg21_uid, "uid_test_wg21::hostidstr" ) ) ) );
 
   flock_test flock;
 

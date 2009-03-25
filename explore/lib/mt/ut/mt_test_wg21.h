@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/17 00:27:50 ptr>
+// -*- C++ -*- Time-stamp: <09/03/26 00:55:36 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -39,6 +39,7 @@ class uid_test_wg21
     int EXAM_DECL(hostidstr);
     int EXAM_DECL(hostid);
     int EXAM_DECL(uidconv);
+    int EXAM_DECL(uid_stream);
 };
 
 #endif // __MT_TEST_WG21_H

@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/07/07 01:13:55 ptr>
+// -*- C++ -*- Time-stamp: <09/03/26 00:54:14 ptr>
 
 /*
- * Copyright (c) 2006, 2008
+ * Copyright (c) 2006, 2008, 2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -27,6 +27,7 @@ struct uuid_type
 {
     union {
       uint8_t  b[16];
+      uint16_t s[8];
       uint32_t i[4];
       uint64_t l[2];
     } u;
@@ -77,6 +78,7 @@ xmt::uuid_type uid() throw (std::runtime_error);
 namespace std {
 
 std::ostream& operator <<( std::ostream&, const xmt::uuid_type& );
+std::istream& operator >>( std::istream&, xmt::uuid_type& );
 
 } // namespace std
 

@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/08/04 16:32:11 yeti>
+// -*- C++ -*- Time-stamp: <09/03/26 01:30:26 ptr>
 
 /*
- * Copyright (c) 2006, 2008
+ * Copyright (c) 2006, 2008, 2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -46,6 +46,100 @@ std::ostream& operator <<( std::ostream& s, const xmt::uuid_type& uid )
     << setw(2) << static_cast<unsigned>(uid.u.b[13])
     << setw(2) << static_cast<unsigned>(uid.u.b[14])
     << setw(2) << static_cast<unsigned>(uid.u.b[15]);
+  s.flags( f );
+
+  return s;
+}
+
+std::istream& operator >>( std::istream& s, xmt::uuid_type& uid )
+{
+#ifdef STLPORT
+  std::ios_base::fmtflags f = s.flags( 0 );
+#else // i.e. libstdc++
+  std::ios_base::fmtflags f = s.flags( static_cast<std::ios_base::fmtflags>(0) );
+#endif
+
+  s >> hex >> setfill('0')
+    >> setw(8) >> uid.u.i[0];
+#ifdef _LITTLE_ENDIAN
+  swap( uid.u.b[0], uid.u.b[3] );
+  swap( uid.u.b[1], uid.u.b[2] );
+#endif
+
+  char c = ' ';
+
+  s >> c;
+
+  if ( c != '-' ) {
+    s.putback( c );
+    s.setf( std::ios_base::failbit );
+    s.flags( f );
+    return s;
+  }
+  c = ' ';
+
+  s >> setw(4) >> uid.u.s[2];
+#ifdef _LITTLE_ENDIAN
+  swap( uid.u.b[4], uid.u.b[5] );
+#endif
+
+  s >> c;
+
+  if ( c != '-' ) {
+    s.putback( c );
+    s.setf( std::ios_base::failbit );
+    s.flags( f );
+    return s;
+  }
+  c = ' ';
+
+  s >> setw(4) >> uid.u.s[3];
+#ifdef _LITTLE_ENDIAN
+  swap( uid.u.b[6], uid.u.b[7] );
+#endif
+
+  s >> c;
+
+  if ( c != '-' ) {
+    s.putback( c );
+    s.setf( std::ios_base::failbit );
+    s.flags( f );
+    return s;
+  }
+  c = ' ';
+
+  s >> setw(4) >> uid.u.s[4];
+#ifdef _LITTLE_ENDIAN
+  swap( uid.u.b[8], uid.u.b[9] );
+#endif
+
+  s >> c;
+
+  if ( c != '-' ) {
+    s.putback( c );
+    s.setf( std::ios_base::failbit );
+    s.flags( f );
+    return s;
+  }
+
+  char buf[13];
+
+  s.read( buf, 4 );
+  buf[4] = ' ';
+  s.read( buf + 5, 8 );
+
+  stringstream ss( buf, 13 );
+
+  ss >> hex >> setfill('0') >> setw(4) >> uid.u.s[5];
+#ifdef _LITTLE_ENDIAN
+  swap( uid.u.b[10], uid.u.b[11] );
+#endif
+  ss >> setw(8) >> uid.u.i[3];
+#ifdef _LITTLE_ENDIAN
+  swap( uid.u.b[12], uid.u.b[15] );
+  swap( uid.u.b[13], uid.u.b[14] );
+#endif
+
   s.flags( f );
 
   return s;

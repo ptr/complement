@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/17 00:27:32 ptr>
+// -*- C++ -*- Time-stamp: <09/03/26 01:11:21 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -445,6 +445,30 @@ int EXAM_IMPL(uid_test_wg21::uidconv)
   s << u1;
 
   EXAM_CHECK( s.str() == u2 );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(uid_test_wg21::uid_stream)
+{
+  xmt::uuid_type u = xmt::uid();
+
+  std::stringstream s;
+
+  s << u;
+
+  std::cerr << std::string(u) << std::endl;
+
+  EXAM_CHECK( s.str() == std::string(u) );
+
+  xmt::uuid_type r;
+
+  s >> r;
+
+  std::cerr << std::string(r) << std::endl;
+
+  EXAM_CHECK( !s.fail() );
+  EXAM_CHECK( u == r );
 
   return EXAM_RESULT;
 }
