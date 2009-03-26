@@ -1,0 +1,3 @@
+
+#define HAVE_SNDTIMEO 1
+#define HAVE_RCVTIMEO 1

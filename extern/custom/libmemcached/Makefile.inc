@@ -1,14 +1,15 @@
-# -*- makefile -*- Time-stamp: <09/01/29 11:10:24 ptr>
+# -*- makefile -*- Time-stamp: <09/03/18 09:32:11 ptr>
 
-LIBMEMCACHED_SRC = ${HOME}/labs/libmemcached-0.25/libmemcached
+LIBMEMCACHED_SRC = ../../libmemcached/libmemcached
 LIBNAME = memcached
 MAJOR = 0
-MINOR = 25
-PATCH = 0
+MINOR = 26
+PATCH = 90
 SRC_C = $(LIBMEMCACHED_SRC)/crc.c \
         $(LIBMEMCACHED_SRC)/hsieh_hash.c \
         $(LIBMEMCACHED_SRC)/memcached.c \
         $(LIBMEMCACHED_SRC)/memcached_auto.c \
+        $(LIBMEMCACHED_SRC)/memcached_analyze.c \
         $(LIBMEMCACHED_SRC)/memcached_behavior.c \
         $(LIBMEMCACHED_SRC)/memcached_callback.c \
         $(LIBMEMCACHED_SRC)/memcached_connect.c \
@@ -22,6 +23,7 @@ SRC_C = $(LIBMEMCACHED_SRC)/crc.c \
         $(LIBMEMCACHED_SRC)/memcached_hosts.c \
         $(LIBMEMCACHED_SRC)/memcached_io.c \
         $(LIBMEMCACHED_SRC)/memcached_purge.c \
+        $(LIBMEMCACHED_SRC)/memcached_flush_buffers.c \
         $(LIBMEMCACHED_SRC)/md5.c \
         $(LIBMEMCACHED_SRC)/memcached_key.c \
         $(LIBMEMCACHED_SRC)/memcached_quit.c \
