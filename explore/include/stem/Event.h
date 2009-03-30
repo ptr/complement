@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/21 02:09:29 ptr>
+// -*- C++ -*- Time-stamp: <09/03/30 17:08:34 ptr>
 
 /*
  *
@@ -366,6 +366,57 @@ class __Event_base_aux<std::string,std::tr1::false_type> :
       { }
 
     __Event_base_aux( const __Event_Base& e, const std::string& d ) :
+        __Event_Base( e ),
+        _data( d )
+      { }
+
+    const_reference value() const
+      { return _data; }
+    reference value()
+      { return _data; }
+    size_type value_size() const
+      { return sizeof(_data); }
+
+    void pack( std::ostream& __s ) const
+      { __pack_base::__pack( __s, _data ); }
+    void unpack( std::istream& __s )
+      { __pack_base::__unpack( __s, _data ); }
+    void net_pack( std::ostream& __s ) const
+      { __pack_base::__net_pack( __s, _data ); }
+    void net_unpack( std::istream& __s )
+      { __pack_base::__net_unpack( __s, _data ); }
+
+  protected:
+    value_type _data;
+};
+
+template <>
+class __Event_base_aux<xmt::uuid_type,std::tr1::false_type> :
+        public __Event_Base
+{
+  public:
+    typedef xmt::uuid_type         value_type;
+    typedef xmt::uuid_type&        reference;
+    typedef const xmt::uuid_type&  const_reference;
+    typedef xmt::uuid_type*        pointer;
+    typedef const xmt::uuid_type*  const_pointer;
+
+    __Event_base_aux() :
+        __Event_Base(),
+        _data()
+      { }
+
+    explicit __Event_base_aux( code_type c ) :
+        __Event_Base( c ),
+        _data()
+      { }
+
+    __Event_base_aux( code_type c, const xmt::uuid_type& d ) :
+        __Event_Base( c ),
+        _data( d )
+      { }
+
+    __Event_base_aux( const __Event_Base& e, const xmt::uuid_type& d ) :
         __Event_Base( e ),
         _data( d )
       { }
