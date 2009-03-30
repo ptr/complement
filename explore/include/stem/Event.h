@@ -197,7 +197,6 @@ template <class D> class __Event_base_aux<D,std::tr1::false_type>;
 template <class D> class Event_base;
 
 template <> class Event_base<std::string>;
-template <> class Event_base<xmt::uuid_type>;
 template <> class Event_base<void>;
 
 // Typedefs:
