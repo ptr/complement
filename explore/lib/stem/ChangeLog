@@ -1,3 +1,10 @@
+2009-03-30  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* Event.h: pack/unpack Event_base<xmt::uuid>, i.e. may
+	be used in StEM transport;
+
+	* libstem: library version 4.10.3.
+
 2009-03-23  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* EvPack.cc, EvPack.h: converters to/from xmt::uuid_type
