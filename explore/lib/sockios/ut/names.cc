@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/04 00:11:52 ptr>
+// -*- C++ -*- Time-stamp: <09/04/02 16:38:21 ptr>
 
 /*
  *
@@ -23,15 +23,9 @@ using namespace std;
 
 int EXAM_IMPL(names_sockios_test::hostname_test)
 {
-  unsigned long local = htonl( 0x7f000001 ); // 127.0.0.1
+  unsigned long local = 0x7f000001; // 127.0.0.1
 
-#ifdef _LITTLE_ENDIAN
-  EXAM_CHECK( local == 0x0100007f );
-#endif
-
-#ifdef _BIG_ENDIAN
-  EXAM_CHECK( local == 0x7f000001 );
-#endif
+  EXAM_CHECK( local == INADDR_LOOPBACK );
 
   EXAM_CHECK( std::hostname( local ) == "localhost [127.0.0.1]" );
 
@@ -65,16 +59,9 @@ int EXAM_IMPL(names_sockios_test::service_test)
 int EXAM_IMPL(names_sockios_test::hostaddr_test1)
 {
 #ifdef __unix
-  in_addr addr = std::findhost( "localhost" );
+  in_addr_t addr = std::findhost( "localhost" );
 
-# ifdef _LITTLE_ENDIAN
-  EXAM_CHECK( addr.s_addr == 0x0100007f );
-# endif
-
-# ifdef _BIG_ENDIAN
-  EXAM_CHECK( addr.s_addr == 0x7f000001 );
-# endif
-  
+  EXAM_CHECK( addr == 0x7f000001 );
 #else
   EXAM_ERROR( "Not implemented" );
 #endif

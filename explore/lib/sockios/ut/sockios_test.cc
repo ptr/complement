@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/14 01:32:38 ptr>
+// -*- C++ -*- Time-stamp: <09/04/02 16:44:09 ptr>
 
 /*
  *
@@ -654,7 +654,8 @@ int EXAM_IMPL(sockios_test::disconnect_rawclnt)
 
     address.inet.sin_family = AF_INET;
     address.inet.sin_port = ((((port) >> 8) & 0xff) | (((port) & 0xff) << 8));
-    address.inet.sin_addr = std::findhost( "localhost" );
+    in_addr_t a = std::findhost( "localhost" );
+    address.inet.sin_addr.s_addr = htonl( a );
 
     EXAM_CHECK( connect( fd, &address.any, sizeof( address ) ) != -1 );
 

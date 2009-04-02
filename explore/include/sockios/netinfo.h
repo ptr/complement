@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/03/12 13:25:30 ptr>
+// -*- C++ -*- Time-stamp: <09/04/02 16:36:04 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -70,8 +70,8 @@ _STLP_BEGIN_NAMESPACE
 namespace std {
 #endif
 
-in_addr findhost( const char *hostname ) throw( std::domain_error );
-std::string hostname( unsigned long inet_addr );
+in_addr_t findhost( const char *hostname ) throw( std::domain_error );
+std::string hostname( in_addr_t inet_addr );
 std::string hostname();
 
 int service( const char *name, const char *proto ) throw( std::domain_error );

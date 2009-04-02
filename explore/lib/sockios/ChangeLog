@@ -1,3 +1,12 @@
+2009-04-02  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* sockstream, sockstream.cc, netinfo.h, netinfo.cc:
+	accept and return IPv4 address and port number in host
+	byte order, if passed or return value isn't compound type
+	[as sockaddr, where used network byte order];
+
+	* libsockios: release 2.5.0.
+
 2009-02-11  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* sockstream, sockstream.cc, sockmgr.cc: lock operatons

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/14 01:48:21 ptr>
+// -*- C++ -*- Time-stamp: <09/04/02 17:09:38 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -277,10 +277,28 @@ class basic_socket
       { return /* is_open() ? */ _address.any.sa_family /* : 0 */; }
 
     int port() const
-      { return /* is_open() && */ _address.any.sa_family == AF_INET ? _address.inet.sin_port : 0; }
+      { return /* is_open() && */ _address.any.sa_family == AF_INET ?
+#       ifdef __LITTLE_ENDIAN
+          (((_address.inet.sin_port >> 8) & 0xff) | ((_address.inet.sin_port & 0xff) << 8))
+#       elif defined(__BIG_ENDIAN)
+          _address.inet.sin_port
+#       else
+#         error Undefined byte order
+#       endif
+          : 0;
+      }
 
-    unsigned long inet_addr() const
-      { return /* is_open() && */ _address.any.sa_family == AF_INET ? _address.inet.sin_addr.s_addr : 0; }
+    in_addr_t inet_addr() const
+      { return /* is_open() && */ _address.any.sa_family == AF_INET ?
+#       ifdef __LITTLE_ENDIAN
+          (((_address.inet.sin_addr.s_addr >> 24) & 0xff) | ((_address.inet.sin_addr.s_addr & 0xff) << 24) | ((_address.inet.sin_addr.s_addr & 0xff00) << 8) | ((_address.inet.sin_addr.s_addr >> 8) & 0xff00))
+#       elif defined(__BIG_ENDIAN)
+          _address.inet.sin_addr.s_addr
+#       else
+#         error Undefined byte order
+#       endif
+          : 0;
+      }
 
     const sockaddr_in& inet_sockaddr() const throw( std::domain_error )
       {
@@ -502,9 +520,12 @@ class basic_sockbuf :
                         sock_base::stype type = sock_base::sock_stream,
                         sock_base::protocol prot = sock_base::inet );
 
-    sockbuf_type *open( const in_addr& addr, int port,
+    sockbuf_type *open( in_addr_t addr, int port,
                         sock_base::stype type = sock_base::sock_stream,
                         sock_base::protocol prot = sock_base::inet );
+
+    sockbuf_type *open( const sockaddr_in& addr,
+                        sock_base::stype type = sock_base::sock_stream );
 
     sockbuf_type *open( sock_base::socket_type s,
                         sock_base::stype t = sock_base::sock_stream );
@@ -752,7 +773,7 @@ class basic_sockstream :
         }
       }
 
-    basic_sockstream( const in_addr& addr, int port,
+    basic_sockstream( in_addr_t addr, int port,
                       sock_base::stype type = sock_base::sock_stream,
                       sock_base::protocol pro = sock_base::inet ) :
         sock_base(),
@@ -761,6 +782,18 @@ class basic_sockstream :
         basic_ios<charT,traits>::init(&_sb);
         basic_iostream<charT,traits>::clear();
         if ( _sb.open( addr, port, type, pro ) == 0 ) {
+          basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
+        }
+      }
+
+    basic_sockstream( const sockaddr_in& addr,
+                      sock_base::stype type = sock_base::sock_stream ) :
+        sock_base(),
+        basic_iostream<charT,traits>( 0 )
+      {
+        basic_ios<charT,traits>::init(&_sb);
+        basic_iostream<charT,traits>::clear();
+        if ( _sb.open( addr, type ) == 0 ) {
           basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
         }
       }
@@ -805,12 +838,21 @@ class basic_sockstream :
         }
       }
 
-    void open( const in_addr& addr, int port,
+    void open( in_addr_t addr, int port,
                sock_base::stype type = sock_base::sock_stream,
                sock_base::protocol pro = sock_base::inet )
       {
         basic_iostream<charT,traits>::clear();
         if ( _sb.open( addr, port, type, pro ) == 0 ) {
+          basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
+        }
+      }
+
+    void open( const sockaddr_in& addr,
+               sock_base::stype type = sock_base::sock_stream )
+      {
+        basic_iostream<charT,traits>::clear();
+        if ( _sb.open( addr, type ) == 0 ) {
           basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
         }
       }

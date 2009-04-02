@@ -1,22 +1,13 @@
-// -*- C++ -*- Time-stamp: <06/06/28 10:33:02 ptr>
+// -*- C++ -*- Time-stamp: <09/04/02 16:34:54 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2005
+ * Copyright (c) 1997-1999, 2002, 2005, 2009
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2000
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 2.1
- *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
+ * Licensed under the Academic Free License version 3.0
  *
  */
 
@@ -29,7 +20,7 @@ _STLP_BEGIN_NAMESPACE
 namespace std {
 #endif
 
-::in_addr findhost( const char *hostname ) throw( std::domain_error )
+::in_addr_t findhost( const char *hostname ) throw( std::domain_error )
 {
   in_addr inet;
   int _errno;
@@ -89,10 +80,16 @@ namespace std {
     throw std::domain_error( "host not found" );
   }
 
-  return inet;
+#ifdef __LITTLE_ENDIAN
+  return ((inet.s_addr >> 24) & 0xff) | ((inet.s_addr & 0xff) << 24) | ((inet.s_addr & 0xff00) << 8) | ((inet.s_addr >> 8) & 0xff00);
+#elif defined(__BIG_ENDIAN)
+  return inet.s_addr;
+#else
+#  error Undefined byte order
+#endif
 }
 
-std::string hostname( unsigned long inet_addr )
+std::string hostname( in_addr_t inet_addr )
 {
   std::string _hostname;
 
@@ -111,7 +108,13 @@ std::string hostname( unsigned long inet_addr )
 #endif
   int err = 0;
   in_addr in;
+#ifdef __LITTLE_ENDIAN
+  in.s_addr =  ((inet_addr >> 24) & 0xff) | ((inet_addr & 0xff) << 24) | ((inet_addr & 0xff00) << 8) | ((inet_addr >> 8) & 0xff00);
+#elif defined(__BIG_ENDIAN)
   in.s_addr = inet_addr;
+#else
+#  error Undefined byte order
+#endif
 #ifdef __FIT_GETHOSTBYADDR
   // For Win 'he' is thread private data, so that's safe
   // It's MT-safe also for HP-UX 11.00

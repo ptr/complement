@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/12/05 11:04:43 ptr>
+// -*- C++ -*- Time-stamp: <09/04/02 17:12:54 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006, 2008
+ * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006, 2008, 2009
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -107,9 +107,12 @@ class NetTransportMgr :
                     sock_base::stype type = sock_base::sock_stream,
                     sock_base::protocol pro = sock_base::inet );
 
-    addr_type open( const in_addr& addr, int port,
+    addr_type open( in_addr_t addr, int port,
                     sock_base::stype type = sock_base::sock_stream,
                     sock_base::protocol pro = sock_base::inet );
+
+    addr_type open( const sockaddr_in& addr,
+                    sock_base::stype type = sock_base::sock_stream );
 
     addr_type open( sock_base::socket_type s, const sockaddr& addr,
                     sock_base::stype type = sock_base::sock_stream );

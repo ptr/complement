@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <09/03/13 20:12:57 ptr>
+// -*- C++ -*- Time-stamp: <09/04/02 17:14:09 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -440,11 +440,26 @@ addr_type NetTransportMgr::open( const char *hostname, int port,
   return badaddr;
 }
 
-addr_type NetTransportMgr::open( const in_addr& addr, int port,
+addr_type NetTransportMgr::open( in_addr_t addr, int port,
                                  sock_base::stype type,
                                  sock_base::protocol pro )
 {
   std::sockstream::open( addr, port, type, pro );
+  if ( std::sockstream::is_open() && std::sockstream::good() ) {
+    try {
+      std::sockstream::rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+    }
+    catch ( ... ) {
+    }
+    return discovery();
+  }
+  return badaddr;
+}
+
+addr_type NetTransportMgr::open( const sockaddr_in& addr,
+                                 sock_base::stype type )
+{
+  std::sockstream::open( addr, type );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
     try {
       std::sockstream::rdbuf()->setoptions( sock_base::so_tcp_nodelay );
