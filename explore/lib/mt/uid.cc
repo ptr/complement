@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/26 01:30:26 ptr>
+// -*- C++ -*- Time-stamp: <09/04/06 21:14:06 ptr>
 
 /*
  * Copyright (c) 2006, 2008, 2009
@@ -59,8 +59,18 @@ std::istream& operator >>( std::istream& s, xmt::uuid_type& uid )
   std::ios_base::fmtflags f = s.flags( static_cast<std::ios_base::fmtflags>(0) );
 #endif
 
-  s >> hex >> setfill('0')
-    >> setw(8) >> uid.u.i[0];
+  if ( (f & std::ios_base::skipws) != 0 ) {
+    s.setf( std::ios_base::skipws );
+  }
+
+  std::istream::sentry __sentry( s ); // skip whitespace
+
+  if ( !__sentry ) {
+    s.flags( f );
+    return s;
+  }
+
+  s >> hex >> uid.u.i[0];
 #ifdef _LITTLE_ENDIAN
   swap( uid.u.b[0], uid.u.b[3] );
   swap( uid.u.b[1], uid.u.b[2] );
@@ -78,7 +88,7 @@ std::istream& operator >>( std::istream& s, xmt::uuid_type& uid )
   }
   c = ' ';
 
-  s >> setw(4) >> uid.u.s[2];
+  s >> uid.u.s[2];
 #ifdef _LITTLE_ENDIAN
   swap( uid.u.b[4], uid.u.b[5] );
 #endif
@@ -93,7 +103,7 @@ std::istream& operator >>( std::istream& s, xmt::uuid_type& uid )
   }
   c = ' ';
 
-  s >> setw(4) >> uid.u.s[3];
+  s >> uid.u.s[3];
 #ifdef _LITTLE_ENDIAN
   swap( uid.u.b[6], uid.u.b[7] );
 #endif
@@ -108,7 +118,7 @@ std::istream& operator >>( std::istream& s, xmt::uuid_type& uid )
   }
   c = ' ';
 
-  s >> setw(4) >> uid.u.s[4];
+  s >> uid.u.s[4];
 #ifdef _LITTLE_ENDIAN
   swap( uid.u.b[8], uid.u.b[9] );
 #endif
@@ -130,11 +140,11 @@ std::istream& operator >>( std::istream& s, xmt::uuid_type& uid )
 
   stringstream ss( buf, 13 );
 
-  ss >> hex >> setfill('0') >> setw(4) >> uid.u.s[5];
+  ss >> hex >> uid.u.s[5];
 #ifdef _LITTLE_ENDIAN
   swap( uid.u.b[10], uid.u.b[11] );
 #endif
-  ss >> setw(8) >> uid.u.i[3];
+  ss >> uid.u.i[3];
 #ifdef _LITTLE_ENDIAN
   swap( uid.u.b[12], uid.u.b[15] );
   swap( uid.u.b[13], uid.u.b[14] );

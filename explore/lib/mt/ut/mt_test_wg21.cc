@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/26 01:11:21 ptr>
+// -*- C++ -*- Time-stamp: <09/04/06 21:16:14 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -18,6 +18,7 @@
 #include <typeinfo>
 
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 
 #include <sys/wait.h>
@@ -457,18 +458,29 @@ int EXAM_IMPL(uid_test_wg21::uid_stream)
 
   s << u;
 
-  std::cerr << std::string(u) << std::endl;
-
   EXAM_CHECK( s.str() == std::string(u) );
 
   xmt::uuid_type r;
 
   s >> r;
 
-  std::cerr << std::string(r) << std::endl;
-
   EXAM_CHECK( !s.fail() );
   EXAM_CHECK( u == r );
+
+  xmt::uuid_type u2 = xmt::uid();
+  xmt::uuid_type u3 = xmt::uid();
+
+  s.clear();
+
+  s << "   " << u2 << ' ' << u3;
+
+  xmt::uuid_type r2, r3;
+
+  s >> r2 >> r3;
+
+  EXAM_CHECK( !s.fail() );
+  EXAM_CHECK( u2 == r2 );
+  EXAM_CHECK( u3 == r3 );
 
   return EXAM_RESULT;
 }

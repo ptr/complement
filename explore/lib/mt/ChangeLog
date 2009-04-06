@@ -1,3 +1,9 @@
+2009-04-06  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* uid.cc: skip whitespaces in uid formatted input;
+
+	* libxmt: release 2.0.14.
+
 2009-03-26  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* uid.h, uid.cc: added operator of formatted input
