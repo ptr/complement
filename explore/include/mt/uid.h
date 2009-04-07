@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/26 00:54:14 ptr>
+// -*- C++ -*- Time-stamp: <09/04/07 16:46:04 ptr>
 
 /*
  * Copyright (c) 2006, 2008, 2009
@@ -9,8 +9,9 @@
  */
 
 /*
- * See RFC 4122 "A Universally Unique IDentifier (UUID) URN Namespace"
- * See ISO/IEC 9834-8:2004
+ * Refs:
+ *  - RFC 4122 "A Universally Unique IDentifier (UUID) URN Namespace"
+ *  - ISO/IEC 9834-8:2004
  */
 
 #ifndef __mt_uid_h
@@ -21,7 +22,6 @@
 #endif
 
 #include <string>
-// #include <algorithm>
 #include <stdint.h>
 #include <stdexcept>
 #include <ostream>
@@ -77,6 +77,11 @@ const xmt::uuid_type& hostid() throw (std::runtime_error);
 
 std::string uid_str() throw (std::runtime_error);
 xmt::uuid_type uid() throw (std::runtime_error);
+xmt::uuid_type uid_md5( const void*, size_t );
+inline xmt::uuid_type uid_md5( const char* s )
+{ return xmt::uid_md5( s, strlen(s) ); }
+inline xmt::uuid_type uid_md5( const std::string& s )
+{ return xmt::uid_md5( s.data(), s.size() ); }
 
 } // namespace xmt
 

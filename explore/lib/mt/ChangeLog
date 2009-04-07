@@ -1,3 +1,9 @@
+2009-04-07  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* uid.h, uid.cc: generate uid from raw data or string;
+
+	* libxmt: release 2.0.15.
+
 2009-04-06  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* uid.cc: skip whitespaces in uid formatted input;

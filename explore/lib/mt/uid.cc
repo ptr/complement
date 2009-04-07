@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/04/06 21:14:06 ptr>
+// -*- C++ -*- Time-stamp: <09/04/07 16:47:41 ptr>
 
 /*
  * Copyright (c) 2006, 2008, 2009
@@ -17,6 +17,7 @@
 #include <fcntl.h>
 #include <stdexcept>
 #include <mt/system_error>
+#include <misc/md5.h>
 
 #include <iostream>
 
@@ -330,6 +331,19 @@ xmt::uuid_type uid() throw (runtime_error)
   id.u.b[13] = v[13];
   id.u.b[14] = v[14];
   id.u.b[15] = v[15];
+
+  return id;
+}
+
+xmt::uuid_type uid_md5( const void* s, size_t n )
+{
+  uuid_type id;
+
+  MD5_CTX context;
+
+  MD5Init( &context );
+  MD5Update( &context, reinterpret_cast<const uint8_t*>(s), n );
+  MD5Final( id.u.b, &context );
 
   return id;
 }

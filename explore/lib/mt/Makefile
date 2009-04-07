@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <07/08/03 23:56:04 ptr>
+# -*- Makefile -*- Time-stamp: <09/04/07 16:40:56 ptr>
 
 SRCROOT := ../..
 
@@ -8,7 +8,18 @@ include ${SRCROOT}/Makefiles/gmake/top.mak
 INCLUDES += -I$(SRCROOT)/include
 HEADERS_BASE = $(SRCROOT)/include/mt $(SRCROOT)/include/config $(SRCROOT)/include/misc
 
-# LDLIBS += -ldl -lbfd
+release-shared:	LDFLAGS += -L$(SRCROOT)/lib/misc/${OUTPUT_DIR}
+dbg-shared:	LDFLAGS += -L$(SRCROOT)/lib/misc/${OUTPUT_DIR_DBG}
+ifndef WITHOUT_STLPORT
+stldbg-shared:	LDFLAGS += -L$(SRCROOT)/lib/misc/${OUTPUT_DIR_STLDBG}
+endif
+
+release-shared:	LDLIBS += -lmisc
+dbg-shared:	LDLIBS += -lmiscg
+ifndef WITHOUT_STLPORT
+stldbg-shared:	LDLIBS += -lmiscstlg
+endif
+
 LDLIBS += -ldl -lbfd
 
 check:	all-shared
