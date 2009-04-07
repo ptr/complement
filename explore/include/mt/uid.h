@@ -8,6 +8,11 @@
  *
  */
 
+/*
+ * See RFC 4122 "A Universally Unique IDentifier (UUID) URN Namespace"
+ * See ISO/IEC 9834-8:2004
+ */
+
 #ifndef __mt_uid_h
 #define __mt_uid_h
 
