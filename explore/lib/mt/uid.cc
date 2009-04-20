@@ -83,7 +83,7 @@ std::istream& operator >>( std::istream& s, xmt::uuid_type& uid )
 
   if ( c != '-' ) {
     s.putback( c );
-    s.setf( std::ios_base::failbit );
+    s.setstate( std::ios_base::failbit );
     s.flags( f );
     return s;
   }
@@ -98,7 +98,7 @@ std::istream& operator >>( std::istream& s, xmt::uuid_type& uid )
 
   if ( c != '-' ) {
     s.putback( c );
-    s.setf( std::ios_base::failbit );
+    s.setstate( std::ios_base::failbit );
     s.flags( f );
     return s;
   }
@@ -113,7 +113,7 @@ std::istream& operator >>( std::istream& s, xmt::uuid_type& uid )
 
   if ( c != '-' ) {
     s.putback( c );
-    s.setf( std::ios_base::failbit );
+    s.setstate( std::ios_base::failbit );
     s.flags( f );
     return s;
   }
@@ -128,18 +128,19 @@ std::istream& operator >>( std::istream& s, xmt::uuid_type& uid )
 
   if ( c != '-' ) {
     s.putback( c );
-    s.setf( std::ios_base::failbit );
+    s.setstate( std::ios_base::failbit );
     s.flags( f );
     return s;
   }
 
-  char buf[13];
+  string buf;
 
-  s.read( buf, 4 );
-  buf[4] = ' ';
-  s.read( buf + 5, 8 );
+  buf.resize( 13, ' ' );
 
-  stringstream ss( buf, 13 );
+  s.read( const_cast<char*>(buf.data()), 4 );
+  s.read( const_cast<char*>(buf.data()) + 5, 8 );
+
+  stringstream ss( buf );
 
   ss >> hex >> uid.u.s[5];
 #ifdef _LITTLE_ENDIAN

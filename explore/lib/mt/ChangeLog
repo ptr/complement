@@ -1,3 +1,10 @@
+2009-04-20  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* uid.cc: fixed attempt to set failbit with wrong method;
+	fixed ill-formed parsing of uid in input operator;
+
+	* libxmt: release 2.0.16.
+
 2009-04-07  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* uid.h, uid.cc: generate uid from raw data or string;
