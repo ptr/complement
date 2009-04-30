@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <08/06/30 18:36:09 yeti>
+// -*- C++ -*- Time-stamp: <09/04/30 11:34:39 ptr>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2006-2008
+ * Copyright (c) 2002, 2003, 2006-2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -82,7 +82,7 @@ DEFINE_RESPONSE_TABLE( NewNodeDL )
   EV_EDS(0,NODE_EV2,handler1)
 END_RESPONSE_TABLE
 
-void *create_NewNodeDL( unsigned a )
+void *create_NewNodeDL( stem::addr_type a )
 {
   return (void *)new NewNodeDL( a );
 }

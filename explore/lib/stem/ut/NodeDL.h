@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/06/30 18:35:02 yeti>
+// -*- C++ -*- Time-stamp: <09/04/30 11:35:12 ptr>
 
 /*
  *
@@ -61,7 +61,7 @@ class NewNodeDL :
 
 #define NODE_EV2 0x901
 
-extern "C" void *create_NewNodeDL( unsigned );
+extern "C" void *create_NewNodeDL( stem::addr_type );
 extern "C" int wait_NewNodeDL( void * );
 extern "C" int v_NewNodeDL( void * );
 extern "C" void destroy_NewNodeDL( void * );

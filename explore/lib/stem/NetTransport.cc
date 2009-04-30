@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <09/04/02 17:14:09 ptr>
+// -*- C++ -*- Time-stamp: <09/04/30 10:57:40 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
+ * Copyright (c) 1997-1999, 2002-2003, 2005-2009
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -99,11 +99,15 @@ __FIT_DECLSPEC void NetTransport_base::_close()
   }
 #endif // __FIT_STEM_TRACE
 
-  manager()->Remove( this );
+  EventHandler::addr_container_type::iterator j = _ids.begin();
+  ++j;
+  for ( ; j != _ids.end(); ++j ) {    
+    manager()->Unsubscribe( *j );
+  }
   net.close();
 }
 
-bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
+bool NetTransport_base::pop( Event& _rs )
 {
   const int bsz = 2+(4+2+1)*2+4;
   uint32_t buf[bsz];
@@ -134,8 +138,21 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
     return false;
   }
   _rs.code( from_net( buf[1] ) );
-  dst._xnet_unpack( (const char *)&buf[2] );
-  src._xnet_unpack( (const char *)&buf[9] );
+  addr_type dst;
+  dst.u.i[0] = buf[2];
+  dst.u.i[1] = buf[3];
+  dst.u.i[2] = buf[4];
+  dst.u.i[3] = buf[5];
+
+  addr_type src;
+  src.u.i[0] = buf[9];
+  src.u.i[1] = buf[10];
+  src.u.i[2] = buf[11];
+  src.u.i[3] = buf[12];
+
+  _rs.src( src );
+  _rs.dest( dst );
+
   uint32_t _x_count = from_net( buf[16] );
   _rs.resetf( from_net( buf[17] ) );
   uint32_t sz = from_net( buf[18] );
@@ -198,9 +215,7 @@ bool NetTransport_base::pop( Event& _rs, gaddr_type& dst, gaddr_type& src )
   return net.good();
 }
 
-
-__FIT_DECLSPEC
-bool NetTransport_base::push( const Event& _rs, const gaddr_type& dst, const gaddr_type& src )
+bool NetTransport_base::Dispatch( const Event& _rs )
 {
 #ifdef __FIT_STEM_TRACE
   try {
@@ -208,7 +223,7 @@ bool NetTransport_base::push( const Event& _rs, const gaddr_type& dst, const gad
     if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
       int flags = manager()->_trs->flags();
       *manager()->_trs << "\tMessage to remote " << hex << showbase << _rs.code() << " "
-                       << src << " -> " << dst << endl;
+                       << _rs.src() << " -> " << _rs.dest() << endl;
 #ifdef STLPORT
       manager()->_trs->flags( flags );
 #else
@@ -230,8 +245,19 @@ bool NetTransport_base::push( const Event& _rs, const gaddr_type& dst, const gad
 
   buf[0] = EDS_MAGIC;
   buf[1] = to_net( _rs.code() );
-  dst._xnet_pack( reinterpret_cast<char *>(buf + 2) ); // <<< check
-  src._xnet_pack( reinterpret_cast<char *>(buf + 9) ); // <<< check
+
+  addr_type dst = _rs.dest();
+  addr_type src = _rs.src();
+
+  buf[2] = dst.u.i[0];
+  buf[3] = dst.u.i[1];
+  buf[4] = dst.u.i[2];
+  buf[5] = dst.u.i[3];
+
+  buf[9] = src.u.i[0];
+  buf[10] = src.u.i[1];
+  buf[11] = src.u.i[2];
+  buf[12] = src.u.i[3];
 
   buf[16] = to_net( ++_count );
   buf[17] = to_net( _rs.flags() );
@@ -264,8 +290,7 @@ bool NetTransport_base::push( const Event& _rs, const gaddr_type& dst, const gad
 
 __FIT_DECLSPEC
 NetTransport::NetTransport( std::sockstream& s ) :
-    NetTransport_base( s, "stem::NetTransport" ),
-    _handshake( false )
+    NetTransport_base( s, "stem::NetTransport" )
 {
   try {
     s.rdbuf()->setoptions( sock_base::so_tcp_nodelay );
@@ -275,81 +300,12 @@ NetTransport::NetTransport( std::sockstream& s ) :
 }
 
 __FIT_DECLSPEC
-void NetTransport::_do_handshake()
-{
-  try {
-    Event ev;
-    gaddr_type dst;
-    gaddr_type src;
-
-    if ( pop( ev, dst, src ) ) {
-      if ( ev.code() == EV_STEM_TRANSPORT ) {
-        src.addr = ns_addr;
-        addr_type xsrc = manager()->reflect( src );
-        if ( xsrc == badaddr || (xsrc & extbit) ) { // ignore, if local; but add new transport otherwise
-          manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
-        }
-        src.addr = default_addr;
-        xsrc = manager()->reflect( src );
-        if ( xsrc == badaddr || (xsrc & extbit) ) { // ignore, if local; but add new transport otherwise
-          manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
-        }
-        Event ack( EV_STEM_TRANSPORT_ACK );
-        if ( !push( ack, src, self_glid() ) ) { // the source (second arg) is NetTransport
-          throw runtime_error( "net handshake error" );
-        }
-      } else {
-        throw runtime_error( "net handshake error" );
-      }
-    } else {
-      throw runtime_error( "net error or net handshake error" );
-    }
-    _handshake = true;
-  }
-  catch ( runtime_error& err ) {
-    try {
-      lock_guard<mutex> lk(manager()->_lock_tr);
-      if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
-        *manager()->_trs << __FILE__ << ":" << __LINE__ << " " << err.what()
-                         << " (" << net.rdbuf()->inet_addr() << ":" << net.rdbuf()->port()
-                         << ")" << endl;
-      }
-    }
-    catch ( ... ) {
-    }
-
-    net.close();
-  }
-  catch ( ... ) {
-    try {
-      lock_guard<mutex> lk(manager()->_lock_tr);
-      if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
-        *manager()->_trs << __FILE__ << ":" << __LINE__ << " unknown exception"
-                         << " (" << net.rdbuf()->inet_addr() << ":" << net.rdbuf()->port()
-                         << ")" << endl;
-      }
-    }
-    catch ( ... ) {
-    }
-
-    net.close();
-  }
-}
-
-__FIT_DECLSPEC
 void NetTransport::connect( sockstream& s )
 {
-  if ( !_handshake ) {
-    _do_handshake();
-    return;
-  }
-
   try {
     Event ev;
-    gaddr_type dst;
-    gaddr_type src;
 
-    if ( pop( ev, dst, src ) ) {
+    if ( pop( ev ) ) {
 #ifdef __FIT_STEM_TRACE
       try {
         lock_guard<mutex> lk(manager()->_lock_tr);
@@ -361,31 +317,7 @@ void NetTransport::connect( sockstream& s )
       catch ( ... ) {
       }
 #endif // __FIT_STEM_TRACE
-      addr_type xdst = manager()->reflect( dst );
-      if ( xdst == badaddr ) {
-#ifdef __FIT_STEM_TRACE
-        try {
-          lock_guard<mutex> lk(manager()->_lock_tr);
-          if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracefault)) ) {
-            *manager()->_trs << __FILE__ << ":" << __LINE__
-                             << " ("
-                             << std::tr2::getpid() << "/" << std::tr2::getppid() << ") "
-                             << "Unknown destination\n";
-            manager()->dump( *manager()->_trs ) << endl;
-          }
-        }
-        catch ( ... ) {
-        }
-#endif // __FIT_STEM_TRACE
-        return;
-      }
-      ev.dest( xdst );
-      addr_type xsrc = manager()->reflect( src );
-      if ( xsrc == badaddr ) {
-        ev.src( manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src ) );
-      } else {
-        ev.src( xsrc );
-      }
+
 #ifdef __FIT_STEM_TRACE
       try {
         lock_guard<mutex> lk(manager()->_lock_tr);
@@ -503,61 +435,6 @@ addr_type NetTransportMgr::open( sock_base::socket_type s,
 
 addr_type NetTransportMgr::discovery()
 {
-  try {
-    Event ev( EV_STEM_TRANSPORT );
-    gaddr_type dst;
-    gaddr_type src;
-    addr_type xsrc = badaddr;
-    if ( !push( ev, gaddr_type(), self_glid() ) ) {
-      throw runtime_error( "net error or net handshake error" );
-    }
-    if ( !pop( ev, dst, src ) ) {
-      throw runtime_error( "net error or net handshake error" );
-    }
-    if ( ev.code() != EV_STEM_TRANSPORT_ACK ) {
-      throw runtime_error( "net handshake error" );
-    }
-    src.addr = ns_addr;
-    xsrc = manager()->reflect( src );
-    // indeed src is something like NetTransport, so substitute ns:
-    src.addr = ns_addr;
-    if ( xsrc == badaddr || (xsrc & extbit)) { // ignore local; but add new transport otherwise
-      manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
-    }
-    // indeed src is something like NetTransport, so substitute default:
-    src.addr = default_addr;
-    xsrc = manager()->reflect( src );
-    if ( xsrc == badaddr || (xsrc & extbit)) { // ignore local; but add new transport otherwise
-      xsrc = manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(this), detail::transport::socket_tcp, 10 ), src );
-    }
-
-    _thr = new std::tr2::thread( _loop, this );
-    return xsrc; // zero_object;
-  }
-  catch ( runtime_error& err ) {
-    try {
-      lock_guard<mutex> lk(manager()->_lock_tr);
-      if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
-        *manager()->_trs << __FILE__ << ":" << __LINE__ << " " << err.what()
-                         << " (" << rdbuf()->inet_addr() << ":" << rdbuf()->port()
-                         << ")" << endl;
-      }
-    }
-    catch ( ... ) {
-    }
-  }
-  catch ( ... ) {
-    try {
-      lock_guard<mutex> lk(manager()->_lock_tr);
-      if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
-        *manager()->_trs << __FILE__ << ":" << __LINE__ << " unknown exception"
-                         << " (" << rdbuf()->inet_addr() << ":" << rdbuf()->port()
-                         << ")" << endl;
-      }
-    }
-    catch ( ... ) {
-    }
-  }
   return badaddr;
 }
 
@@ -565,11 +442,9 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
 {
   NetTransportMgr& me = *p;
   Event ev;
-  gaddr_type dst;
-  gaddr_type src;
 
   try {
-    while ( me.pop( ev, dst, src ) ) {
+    while ( me.pop( ev ) ) {
 #ifdef __FIT_STEM_TRACE
       try {
         lock_guard<mutex> lk(manager()->_lock_tr);
@@ -581,30 +456,7 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
       catch ( ... ) {
       }
 #endif // __FIT_STEM_TRACE
-      addr_type xdst = manager()->reflect( dst );
-      if ( xdst == badaddr ) {
-#ifdef __FIT_STEM_TRACE
-        try {
-          lock_guard<mutex> lk(manager()->_lock_tr);
-          if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracefault)) ) {
-            *manager()->_trs << __FILE__ << ":" << __LINE__
-                             << " ("
-                             << std::tr2::getpid() << "/" << std::tr2::getppid() << ") "
-                             << "Unknown destination\n";
-            manager()->dump( *manager()->_trs ) << endl;
-          }
-        }
-        catch ( ... ) {
-        }
-#endif // __FIT_STEM_TRACE
-        continue;
-      }
-      ev.dest( xdst );
-      addr_type xsrc = manager()->reflect( src );
-      if ( xsrc == badaddr ) {
-        xsrc = manager()->SubscribeRemote( detail::transport( static_cast<NetTransport_base *>(&me), detail::transport::socket_tcp, 10 ), src );
-      }
-      ev.src( xsrc );
+
 #ifdef __FIT_STEM_TRACE
       try {
         lock_guard<mutex> lk(manager()->_lock_tr);

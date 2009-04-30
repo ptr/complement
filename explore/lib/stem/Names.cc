@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/06/30 18:11:16 yeti>
+// -*- C++ -*- Time-stamp: <09/04/30 11:20:43 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006, 2008
+ * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2009
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -51,23 +51,17 @@ __FIT_DECLSPEC Names::~Names()
 
 void __FIT_DECLSPEC Names::ns_list( const Event& rq )
 {
-  typedef NameRecords<gaddr_type,string> Seq;
+  typedef NameRecords<addr_type,string> Seq;
   Event_base<Seq> rs( EV_STEM_NS_LIST );
   Seq::container_type& lst = rs.value().container;
 
-  EvManager::ext_uuid_heap_type::const_iterator j;
-
-  manager()->_lock_xheap.lock();
   manager()->_lock_iheap.lock();
   for ( EvManager::info_heap_type::const_iterator i = manager()->iheap.begin(); i != manager()->iheap.end(); ++i ) {
-    
-    j = manager()->_ex_heap.find( i->first );
-    if ( j != manager()->_ex_heap.end() ) {
-      lst.push_back( make_pair( j->second, i->second ) );
+    for ( std::list<addr_type>::const_iterator j = i->second.begin(); j != i->second.end(); ++j ) {
+      lst.push_back( make_pair( *j, i->first ) );
     }
   }
   manager()->_lock_iheap.unlock();
-  manager()->_lock_xheap.unlock();
 
   rs.dest( rq.src() );
   Send( rs );
@@ -75,22 +69,18 @@ void __FIT_DECLSPEC Names::ns_list( const Event& rq )
 
 void __FIT_DECLSPEC Names::ns_name( const Event& rq )
 {
-  typedef NameRecords<gaddr_type,string> Seq;
+  typedef NameRecords<addr_type,string> Seq;
   Event_base<Seq> rs( EV_STEM_NS_NAME );
   Seq::container_type& lst = rs.value().container;
 
-  manager()->_lock_xheap.lock();
   manager()->_lock_iheap.lock();
-  for ( EvManager::info_heap_type::const_iterator i = manager()->iheap.begin(); i != manager()->iheap.end(); ++i ) {
-    if ( i->second == rq.value() ) {
-      EvManager::ext_uuid_heap_type::const_iterator j = manager()->_ex_heap.find( i->first );
-      if ( j != manager()->_ex_heap.end() ) {
-        lst.push_back( make_pair( j->second, i->second ) );
-      }
+  EvManager::info_heap_type::const_iterator i = manager()->iheap.find( rq.value() );
+  if ( i != manager()->iheap.end() ) {
+    for ( std::list<addr_type>::const_iterator j = i->second.begin(); j != i->second.end(); ++j ) {
+      lst.push_back( make_pair( *j, i->first ) );
     }
   }
   manager()->_lock_iheap.unlock();
-  manager()->_lock_xheap.unlock();
 
   rs.dest( rq.src() );
   Send( rs );
@@ -104,29 +94,15 @@ END_RESPONSE_TABLE
 __FIT_DECLSPEC
 void NameRecord::pack( std::ostream& s ) const
 {
-  addr.pack( s );
+  __pack( s, addr );
   __pack( s, record );
-}
-
-__FIT_DECLSPEC
-void NameRecord::net_pack( std::ostream& s ) const
-{
-  addr.net_pack( s );
-  __net_pack( s, record );
 }
 
 __FIT_DECLSPEC
 void NameRecord::unpack( std::istream& s )
 {
-  addr.unpack( s );
+  __unpack( s, addr );
   __unpack( s, record );
-}
-
-__FIT_DECLSPEC
-void NameRecord::net_unpack( std::istream& s )
-{
-  addr.net_unpack( s );
-  __net_unpack( s, record );
 }
 
 } // namespace stem

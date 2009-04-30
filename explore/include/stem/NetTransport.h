@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/04/02 17:12:54 ptr>
+// -*- C++ -*- Time-stamp: <09/04/29 20:15:58 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006, 2008, 2009
+ * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2009
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -55,10 +55,10 @@ class NetTransport_base :
     void close()
       { NetTransport_base::_close(); }
 
-    __FIT_DECLSPEC bool push( const Event&, const gaddr_type& dst, const gaddr_type& src );
+    bool Dispatch( const Event& );
 
   protected:
-    bool pop( Event&, gaddr_type& dst, gaddr_type& src );
+    bool pop( Event& );
     __FIT_DECLSPEC void _close();
 
     uint32_t _count;
@@ -74,10 +74,6 @@ class NetTransport :
 
     __FIT_DECLSPEC
     void connect( std::sockstream& );
-
-  private:
-    void _do_handshake();
-    bool _handshake;
 };
 
 class NetTransportMgr :

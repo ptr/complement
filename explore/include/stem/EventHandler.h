@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/21 14:48:35 ptr>
+// -*- C++ -*- Time-stamp: <09/04/29 17:55:15 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006, 2009
@@ -119,11 +119,7 @@ struct convert<stem::Event,stem::Event_base<T> >
           throw std::invalid_argument( std::string("invalid conversion") );
         }
         stem::Event_base<T> tmp;
-        if ( /* x.is_from_foreign() */ x.flags() & __Event_Base::conv ) {
-          tmp.net_unpack( x );
-        } else {
-          tmp.unpack( x );
-        }
+        tmp.unpack( x );
         
         return tmp;
       }
@@ -138,11 +134,7 @@ struct convert<stem::Event,T>
           throw std::invalid_argument( std::string("invalid conversion") );
         }
         stem::Event_base<T> tmp;
-        if ( /* x.is_from_foreign() */ x.flags() & __Event_Base::conv ) {
-          tmp.net_unpack( x );
-        } else {
-          tmp.unpack( x );
-        }
+        tmp.unpack( x );
         
         return tmp.value();
       }
@@ -154,13 +146,8 @@ struct convert<stem::Event_base<T>,stem::Event>
     stem::Event operator ()( const stem::Event_base<T>& x ) const
       {
         stem::Event tmp;
-        // first is evident, the second was introduced
-        // to support Forward autodetection (and commented with addressing changes)
-        if ( x.is_to_foreign() /* || x.is_from_foreign() */ ) {
-          x.net_pack( tmp );
-        } else {
-          x.pack( tmp );
-        }
+
+        x.pack( tmp );
 
         return tmp;
       }
@@ -599,8 +586,7 @@ class EventHandler
       { EventHandler::Forward( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
 
     addr_type self_id() const
-      { return _id; }
-    __FIT_DECLSPEC gaddr_type self_glid() const;
+      { return _ids.front(); }
 
     void State( state_type state )
       { PushState( state ); }
@@ -627,7 +613,12 @@ class EventHandler
     h_iterator __find( state_type );
     const_h_iterator __find( state_type ) const;
 
-    addr_type _id;
+  protected:
+    typedef std::list<addr_type> addr_container_type;
+    // addr_type _id;
+    addr_container_type _ids;
+
+  private:
     static class EvManager *_mgr;
     static class Names     *_ns;
 

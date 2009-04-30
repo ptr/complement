@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/30 16:18:07 ptr>
+// -*- C++ -*- Time-stamp: <09/04/30 12:01:01 ptr>
 
 /*
  *
@@ -52,74 +52,15 @@
 
 namespace stem {
 
-typedef uint32_t addr_type;
+typedef xmt::uuid_type addr_type;
 typedef uint32_t code_type;
 
 extern const addr_type badaddr;
-extern const addr_type extbit;
 extern const addr_type default_addr;
 extern const addr_type ns_addr;
 extern const addr_type janus_addr;
+
 extern const code_type badcode;
-
-struct gaddr_type :
-        public __pack_base
-{
-    gaddr_type() :
-        hid(),
-        pid( 0xffffffff ),
-        addr( badaddr )
-      { }
-
-    explicit gaddr_type( const xmt::uuid_type& _hid, pid_t _pid, stem::addr_type _addr ) :
-        hid( _hid ),
-        pid( _pid ),
-        addr( _addr )
-      { }
-
-    explicit gaddr_type( pid_t _pid, stem::addr_type _addr ) :
-        hid( xmt::hostid() ),
-        pid( _pid ),
-        addr( _addr )
-      { }
-
-    explicit gaddr_type( stem::addr_type _addr ) :
-        hid( xmt::hostid() ),
-        pid( std::tr2::getpid() ),
-        addr( _addr )
-      { }
-
-    gaddr_type( const gaddr_type& g ) :
-        hid( g.hid ),
-        pid( g.pid ),
-        addr( g.addr )
-      { }
-
-    xmt::uuid_type  hid;
-    // int64_t         pid; // pid_t defined as int, so it may be int64_t
-    // most systems has max(pid) < 2^15, 64-bit Linuxes max(pid) < 4 *1024 *1024
-    // but some other unixes may has larger numbers... check it
-    uint32_t         pid;
-    stem::addr_type addr;
-
-    __FIT_DECLSPEC virtual void pack( std::ostream& ) const;
-    __FIT_DECLSPEC virtual void unpack( std::istream& );
-    __FIT_DECLSPEC virtual void net_pack( std::ostream& ) const;
-    __FIT_DECLSPEC virtual void net_unpack( std::istream& );
-
-    gaddr_type& operator =( const gaddr_type& g )
-      { hid = g.hid; pid = g.pid; addr = g.addr; return *this; }
-
-    bool operator ==( const gaddr_type& ga ) const
-      { return hid == ga.hid && pid == ga.pid && addr == ga.addr; }
-    bool operator !=( const gaddr_type& ga ) const
-      { return hid != ga.hid || pid != ga.pid || addr != ga.addr; }
-    __FIT_DECLSPEC bool operator <( const gaddr_type& ga ) const;
-
-    
-    __FIT_DECLSPEC void _xnet_pack( char *buf ) const;
-    __FIT_DECLSPEC void _xnet_unpack( const char *buf );
-};
 
 class __Event_Base
 {
@@ -155,10 +96,6 @@ class __Event_Base
       { return _src; }
     uint32_t flags() const
       { return _flags; }
-    bool is_from_foreign() const
-      { return ((_src & extbit) != 0) && (_src != badaddr); }
-    bool is_to_foreign() const
-      { return ((_dst & extbit) != 0) && (_dst != badaddr); }
 
     void code( code_type c ) const
       { _code = c; }
@@ -218,9 +155,7 @@ typedef Event_base<std::string> Event;
       // unsigned flags;
 
       virtual void pack( std::ostream& s ) const;
-      virtual void net_pack( std::ostream& s ) const;
       virtual void unpack( std::istream& s );
-      virtual void net_unpack( std::istream& s );
    };
 
    Of cause, if it not a POD type, std::string
@@ -279,10 +214,6 @@ class __Event_base_aux<D,std::tr1::true_type> :
       { __pack_base::__pack( __s, _data ); }
     void unpack( std::istream& __s )
       { __pack_base::__unpack( __s, _data ); }
-    void net_pack( std::ostream& __s ) const
-      { __pack_base::__net_pack( __s, _data ); }
-    void net_unpack( std::istream& __s )
-      { __pack_base::__net_unpack( __s, _data ); }
 
   protected:
     value_type _data;
@@ -330,10 +261,6 @@ class __Event_base_aux<D,std::tr1::false_type> :
       { _data.pack( __s ); }
     void unpack( std::istream& __s )
       { _data.unpack( __s ); }
-    void net_pack( std::ostream& __s ) const
-      { _data.net_pack( __s ); }
-    void net_unpack( std::istream& __s )
-      { _data.net_unpack( __s ); }
 
   protected:
     value_type _data;
@@ -381,10 +308,6 @@ class __Event_base_aux<std::string,std::tr1::false_type> :
       { __pack_base::__pack( __s, _data ); }
     void unpack( std::istream& __s )
       { __pack_base::__unpack( __s, _data ); }
-    void net_pack( std::ostream& __s ) const
-      { __pack_base::__net_pack( __s, _data ); }
-    void net_unpack( std::istream& __s )
-      { __pack_base::__net_unpack( __s, _data ); }
 
   protected:
     value_type _data;
@@ -432,10 +355,6 @@ class __Event_base_aux<xmt::uuid_type,std::tr1::false_type> :
       { __pack_base::__pack( __s, _data ); }
     void unpack( std::istream& __s )
       { __pack_base::__unpack( __s, _data ); }
-    void net_pack( std::ostream& __s ) const
-      { __pack_base::__net_pack( __s, _data ); }
-    void net_unpack( std::istream& __s )
-      { __pack_base::__net_unpack( __s, _data ); }
 
   protected:
     value_type _data;
@@ -470,10 +389,6 @@ class __Event_base_aux<void,std::tr1::true_type> :
       { }
     void unpack( std::istream& __s )
       { }
-    void net_pack( std::ostream& __s ) const
-      { }
-    void net_unpack( std::istream& __s )
-      { }
 };
 
 template <class D>
@@ -500,8 +415,6 @@ class Event_base :
         __Event_base_aux<D,typename std::tr1::is_pod<D>::type>( e, e._data )
       { }
 
-    void net_pack( Event& s ) const;
-    void net_unpack( const Event& s );
     void pack( Event& s ) const;
     void unpack( const Event& s );
 };
@@ -531,24 +444,6 @@ class Event_base<std::string> :
         __Event_base_aux<std::string,std::tr1::false_type>( e, e._data )
       { }
 
-    void net_pack( Event& s ) const
-      {
-        s.code( _code );
-        s.dest( _dst );
-        s.src( _src );
-        s.resetf( _flags );
-        s.value() = _data;
-      }
-
-    void net_unpack( const Event& s )
-      {
-        _code = s.code();
-        _dst  = s.dest();
-        _src  = s.src();
-        _flags = s.flags();
-        _data = s.value();
-      }
-
     void pack( Event& s ) const
       {
         s.code( _code );
@@ -569,39 +464,15 @@ class Event_base<std::string> :
 };
 
 template <class D>
-void Event_base<D>::net_pack( Event& s ) const
+void Event_base<D>::pack( Event& s ) const
 {
   s.code( _Base::_code );
   s.dest( _Base::_dst );
   s.src( _Base::_src );
   s.resetf( _Base::_flags | (__Event_Base::conv | __Event_Base::expand) );
   std::ostringstream ss;
-  _Base::net_pack( ss );
-  s.value() = ss.str();  
-}
-
-template <class D>
-void Event_base<D>::net_unpack( const Event& s )
-{
-  _Base::_code = s.code();
-  _Base::_dst  = s.dest();
-  _Base::_src  = s.src();
-  _Base::_flags = s.flags() & ~(__Event_Base::conv | __Event_Base::expand);
-  std::istringstream ss( s.value() );
-  _Base::net_unpack( ss );
-}
-
-template <class D>
-void Event_base<D>::pack( Event& s ) const
-{
-  s.code( _Base::_code );
-  s.dest( _Base::_dst );
-  s.src( _Base::_src );
-  s.resetf( _Base::_flags | __Event_Base::expand & ~__Event_Base::conv );
-  // s.unsetf( __Event_Base::conv );
-  std::ostringstream ss;
   _Base::pack( ss );
-  s.value() = ss.str();
+  s.value() = ss.str();  
 }
 
 template <class D>
@@ -610,8 +481,7 @@ void Event_base<D>::unpack( const Event& s )
   _Base::_code = s.code();
   _Base::_dst  = s.dest();
   _Base::_src  = s.src();
-  _Base::_flags = s.flags() & ~__Event_Base::expand;
-  // _Base::unsetf( __Event_Base::expand );
+  _Base::_flags = s.flags() & ~(__Event_Base::conv | __Event_Base::expand);
   std::istringstream ss( s.value() );
   _Base::unpack( ss );
 }
@@ -637,7 +507,7 @@ class Event_base<void> :
         __Event_base_aux<void,std::tr1::true_type>( e )
       { }
 
-    void net_pack( Event& s ) const
+    void pack( Event& s ) const
       {
         s.code( _code );
         s.dest( _dst );
@@ -646,7 +516,7 @@ class Event_base<void> :
         s.value().erase();
       }
 
-    void net_unpack( const Event& s )
+    void unpack( const Event& s )
       {
         _code = s.code();
         _dst  = s.dest();
@@ -654,94 +524,14 @@ class Event_base<void> :
         _flags = s.flags() & ~(__Event_Base::conv | __Event_Base::expand);
       }
 
-    void pack( Event& s ) const
-      {
-        s.code( _code );
-        s.dest( _dst );
-        s.src( _src );
-        s.resetf( _Base::_flags & ~__Event_Base::conv | __Event_Base::expand );
-        s.value().erase();
-      }
-
-    void unpack( const Event& s )
-      {
-        _code = s.code();
-        _dst  = s.dest();
-        _src  = s.src();
-        _flags = s.flags() & ~__Event_Base::expand;
-      }
-
     void pack( std::ostream& ) const
       { }
     void unpack( std::istream& )
-      { }
-    void net_pack( std::ostream& ) const
-      { }
-    void net_unpack( std::istream& )
       { }
 };
 
 } // namespace stem
 
-namespace std {
-
-ostream& operator <<( ostream& o, const stem::gaddr_type& g );
-
-} // namespace std
-
 namespace EDS = stem;
-
-#if defined(__USE_STLPORT_HASH) || defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-#  define __HASH_NAMESPACE std
-#endif
-#if defined(__USE_STD_HASH)
-#  define __HASH_NAMESPACE __gnu_cxx
-#endif
-
-namespace __HASH_NAMESPACE {
-
-#ifdef __USE_STD_TR1
-namespace tr1 {
-#endif
-
-template <>
-struct hash<stem::gaddr_type>
-{
-    size_t operator()(const stem::gaddr_type& __x) const
-      { return __x.addr | (__x.pid << 23); }
-};
-
-#ifdef __USE_STD_TR1
-}
-#endif
-
-#if defined(__GNUC__) && (__GNUC__ < 4) && !defined(HASH_VOID_PTR_DEFINED)
-template<>
-struct hash<void *>
-{
-   size_t operator()(const void *__x) const
-     { return reinterpret_cast<size_t>(__x); }
-};
-
-#define HASH_VOID_PTR_DEFINED
-
-#endif // __GNUC__ < 4
-
-} // namespace __HASH_NAMESPACE
-
-#undef __HASH_NAMESPACE
-
-#ifdef __USE_STLPORT_HASH
-#  undef __USE_STLPORT_HASH
-#endif
-#ifdef __USE_STD_HASH
-#  undef __USE_STD_HASH
-#endif
-#ifdef __USE_STLPORT_TR1
-#  undef __USE_STLPORT_TR1
-#endif
-#ifdef __USE_STD_TR1
-#  undef __USE_STD_TR1
-#endif
 
 #endif // __stem_Event_h

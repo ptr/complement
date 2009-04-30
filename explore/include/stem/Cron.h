@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/05 22:47:49 ptr>
+// -*- C++ -*- Time-stamp: <09/04/30 12:02:13 ptr>
 
 /*
  * Copyright (c) 1998, 2002, 2003, 2005, 2007, 2008
@@ -71,9 +71,7 @@ struct CronEntry :
     std::string arg;
 
     virtual __FIT_DECLSPEC void pack( std::ostream& s ) const;
-    virtual __FIT_DECLSPEC void net_pack( std::ostream& s ) const;
     virtual __FIT_DECLSPEC void unpack( std::istream& s );
-    virtual __FIT_DECLSPEC void net_unpack( std::istream& s );
 };
 
 struct __CronEntry

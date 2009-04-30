@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/12/05 23:10:18 ptr>
+// -*- C++ -*- Time-stamp: <09/04/30 12:04:02 ptr>
 
 /*
- * Copyright (c) 1998, 2002, 2003, 2005, 2006, 2008
+ * Copyright (c) 1998, 2002-2003, 2005-2006, 2008-2009
  * Petr Ovtchenkov
  * 
  * Copyright (c) 1999-2001
@@ -266,16 +266,6 @@ void CronEntry::pack( std::ostream& s ) const
 }
 
 __FIT_DECLSPEC
-void CronEntry::net_pack( std::ostream& s ) const
-{
-  __net_pack( s, code );
-  __net_pack( s, static_cast<int64_t>( start.nanoseconds_since_epoch().count() ) );
-  __net_pack( s, static_cast<int64_t>( period.count() ) );
-  __net_pack( s, n );
-  __net_pack( s, arg );
-}
-
-__FIT_DECLSPEC
 void CronEntry::unpack( std::istream& s )
 {
   __unpack( s, code );
@@ -286,19 +276,6 @@ void CronEntry::unpack( std::istream& s )
   period = std::tr2::nanoseconds( v );
   __unpack( s, n );
   __unpack( s, arg );
-}
-
-__FIT_DECLSPEC
-void CronEntry::net_unpack( std::istream& s )
-{
-  __net_unpack( s, code );
-  int64_t v;
-  __net_unpack( s, v );
-  start = std::tr2::system_time( 0, v );
-  __net_unpack( s, v );
-  period = std::tr2::nanoseconds( v );
-  __net_unpack( s, n );
-  __net_unpack( s, arg );
 }
 
 } // namespace stem

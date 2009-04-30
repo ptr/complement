@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <06/11/24 18:23:55 ptr>
+// -*- C++ -*- Time-stamp: <09/04/30 10:47:30 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005, 2006
+ * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2009
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -59,18 +59,16 @@ struct NameRecord :
         record( nr.record )
       { }
 
-    NameRecord( const gaddr_type& a, const std::string& r ) :
+    NameRecord( const addr_type& a, const std::string& r ) :
         addr( a ),
         record( r )
       { }
 
-    gaddr_type    addr;
+    addr_type    addr;
     std::string  record;
 
     virtual __FIT_DECLSPEC void pack( std::ostream& s ) const;
-    virtual __FIT_DECLSPEC void net_pack( std::ostream& s ) const;
     virtual __FIT_DECLSPEC void unpack( std::istream& s );
-    virtual __FIT_DECLSPEC void net_unpack( std::istream& s );
 };
 
 inline bool operator == ( const NameRecord& nr, const std::string& s )
@@ -79,7 +77,7 @@ inline bool operator == ( const NameRecord& nr, const std::string& s )
 // bool operator == ( const std::string& s, const NameRecord& nr )
 // { return nr.record == s; }
 
-inline bool operator == ( const NameRecord& nr, const gaddr_type& a )
+inline bool operator == ( const NameRecord& nr, const addr_type& a )
 { return nr.addr == a; }
 
 // bool operator == ( addr_type a, const NameRecord& nr )
@@ -105,38 +103,24 @@ struct NameRecords :
     container_type container;
 
     virtual void pack( std::ostream& s ) const;
-    virtual void net_pack( std::ostream& s ) const;
     virtual void unpack( std::istream& s );
-    virtual void net_unpack( std::istream& s );
 };
-
 
 template <class Addr, class Info, class Sequence>
 void NameRecords<Addr,Info,Sequence>::pack( std::ostream& s ) const
 {
-  __pack( s, container.size() );
-  for ( const_iterator i = container.begin(); i != container.end(); ++i ) {
-    // __pack( s, i->first );
-    i->first.pack( s );
-    __pack( s, i->second );
-  }
-}
-
-template <class Addr, class Info, class Sequence>
-void NameRecords<Addr,Info,Sequence>::net_pack( std::ostream& s ) const
-{
-  __net_pack( s, static_cast<uint32_t>(container.size()) );
+  __pack( s, static_cast<uint32_t>(container.size()) );
   for ( const_iterator i = container.begin(); i != container.end(); ++i ) {
     // __net_pack( s, i->first );
-    i->first.net_pack( s );
-    __net_pack( s, i->second );
+    __pack( s, i->first );
+    __pack( s, i->second );
   }
 }
 
 template <class Addr, class Info, class Sequence>
 void NameRecords<Addr,Info,Sequence>::unpack( std::istream& s )
 {
-  typename container_type::size_type sz;
+  uint32_t sz;
   container.clear();
 
   __unpack( s, sz );
@@ -145,28 +129,9 @@ void NameRecords<Addr,Info,Sequence>::unpack( std::istream& s )
   Info i;
 
   while ( sz-- > 0 ) {
-    // __unpack( s, a );
-    a.unpack( s );
-    __unpack( s, i );
-    container.push_back( std::make_pair(a, i) );
-  }
-}
-
-template <class Addr, class Info, class Sequence>
-void NameRecords<Addr,Info,Sequence>::net_unpack( std::istream& s )
-{
-  uint32_t sz;
-  container.clear();
-
-  __net_unpack( s, sz );
-  // container.reserve( sz );
-  Addr a;
-  Info i;
-
-  while ( sz-- > 0 ) {
     // __net_unpack( s, a );
-    a.net_unpack( s );
-    __net_unpack( s, i );
+    __unpack( s, a );
+    __unpack( s, i );
     container.push_back( std::make_pair(a, i) );
   }
 }

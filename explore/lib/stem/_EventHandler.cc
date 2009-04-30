@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/21 01:18:08 ptr>
+// -*- C++ -*- Time-stamp: <09/04/29 17:47:19 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006, 2008, 2009
@@ -87,12 +87,6 @@ EventHandler::Init::~Init()
 { _guard( 0 ); }
 
 __FIT_DECLSPEC
-const string EventHandler::who_is( addr_type k ) const
-{
-  return _mgr->who_is( k );
-}
-
-__FIT_DECLSPEC
 bool EventHandler::is_avail( addr_type id ) const
 {
   return _mgr->is_avail( id );
@@ -101,7 +95,7 @@ bool EventHandler::is_avail( addr_type id ) const
 __FIT_DECLSPEC
 void EventHandler::Send( const Event& e )
 {
-  e.src( _id );
+  e.src( _ids.front() );
   _mgr->push( e );
 }
 
@@ -210,7 +204,7 @@ EventHandler::EventHandler()
 {
   new( Init_buf ) Init();
   theHistory.push_front( ST_NULL );  // State( ST_NULL );
-  _id = _mgr->Subscribe( this );
+  _ids.push_back( _mgr->Subscribe( this ) );
 }
 
 __FIT_DECLSPEC
@@ -218,7 +212,7 @@ EventHandler::EventHandler( const char *info )
 {
   new( Init_buf ) Init();
   theHistory.push_front( ST_NULL );  // State( ST_NULL );
-  _id = _mgr->Subscribe( this, info );
+  _ids.push_back( _mgr->Subscribe( this, info ) );
 }
 
 __FIT_DECLSPEC
@@ -226,7 +220,7 @@ EventHandler::EventHandler( addr_type id, const char *info )
 {
   new( Init_buf ) Init();
   theHistory.push_front( ST_NULL );  // State( ST_NULL );
-  _id = _mgr->SubscribeID( id, this, info );
+  _ids.push_back( _mgr->SubscribeID( id, this, info ) );
   // _STLP_ASSERT( _id != -1 ); // already registered, or id has Event::extbit
 //  if ( _id == -1 ) {
 //    _mgr->Subscribe( this, "" );
@@ -236,7 +230,9 @@ EventHandler::EventHandler( addr_type id, const char *info )
 __FIT_DECLSPEC
 EventHandler::~EventHandler()
 {
-   _mgr->Unsubscribe( _id );
+  for ( addr_container_type::iterator i = _ids.begin(); i != _ids.end(); ++i ) {
+    _mgr->Unsubscribe( *i );
+  }
   ((Init *)Init_buf)->~Init();
 }
 
@@ -250,12 +246,6 @@ void EventHandler::TraceStack( ostream& out ) const
     out << "[" << *hst_i++ << "]";
   }
   out << endl;
-}
-
-__FIT_DECLSPEC
-gaddr_type EventHandler::self_glid() const
-{
-  return gaddr_type(xmt::hostid(), std::tr2::getpid(), _id );
 }
 
 } // namespace stem

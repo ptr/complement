@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <09/01/21 14:53:15 ptr>
+// -*- C++ -*- Time-stamp: <09/04/30 11:50:51 ptr>
 
 /*
  *
- * Copyright (c) 2007, 2008
+ * Copyright (c) 2007-2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -21,22 +21,10 @@ void mess::pack( std::ostream& s ) const
   __pack( s, message );
 }
 
-void mess::net_pack( std::ostream& s ) const
-{
-  __net_pack( s, super_id );
-  __net_pack( s, message );
-}
-
 void mess::unpack( std::istream& s )
 {
   __unpack( s, super_id );
   __unpack( s, message );
-}
-
-void mess::net_unpack( std::istream& s )
-{
-  __net_unpack( s, super_id );
-  __net_unpack( s, message );
 }
 
 int Convert::v = 0;

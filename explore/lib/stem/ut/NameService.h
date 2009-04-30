@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/06/30 18:45:50 yeti>
+// -*- C++ -*- Time-stamp: <09/04/30 11:22:58 ptr>
 
 /*
- * Copyright (c) 2006-2008
+ * Copyright (c) 2006-2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -24,7 +24,7 @@ class Naming :
     Naming( stem::addr_type id );
     ~Naming();
 
-    typedef stem::NameRecords<stem::gaddr_type,std::string> nsrecords_type;
+    typedef stem::NameRecords<stem::addr_type,std::string> nsrecords_type;
 
     void names_list( const nsrecords_type& );
     void names_name( const nsrecords_type& );

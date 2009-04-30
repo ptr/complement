@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <09/01/21 01:56:55 ptr>
+// -*- C++ -*- Time-stamp: <09/04/30 11:51:25 ptr>
 
 /*
  *
- * Copyright (c) 2007, 2008
+ * Copyright (c) 2007-2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -25,9 +25,7 @@ struct mess :
     public stem::__pack_base
 {
     void pack( std::ostream& s ) const;
-    void net_pack( std::ostream& s ) const;
     void unpack( std::istream& s );
-    void net_unpack( std::istream& s );
 
     mess()
       { }
