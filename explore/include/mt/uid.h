@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/04/07 16:46:04 ptr>
+// -*- C++ -*- Time-stamp: <09/05/03 00:52:00 ptr>
 
 /*
  * Copyright (c) 2006, 2008, 2009
@@ -26,6 +26,12 @@
 #include <stdexcept>
 #include <ostream>
 
+#ifdef STLPORT
+# include <type_traits>
+#else
+# include <misc/type_traits.h>
+#endif
+
 namespace xmt {
 
 struct uuid_type
@@ -38,15 +44,15 @@ struct uuid_type
     } u;
 
   
-    uuid_type()
-      { u.l[0] = 0; u.l[1] = 0; }
+//    uuid_type()
+//      { u.l[0] = 0; u.l[1] = 0; }
 
-    uuid_type( const uuid_type& uid )
-      {
+//    uuid_type( const uuid_type& uid )
+//      {
         // u.i[0] = uid.u.i[0]; u.i[1] = uid.u.i[1];
         // u.i[2] = uid.u.i[2]; u.i[3] = uid.u.i[3];
-        u.l[0] = uid.u.l[0]; u.l[1] = uid.u.l[1];
-      }
+//        u.l[0] = uid.u.l[0]; u.l[1] = uid.u.l[1];
+//      }
 
     uuid_type& operator =( const uuid_type& uid )
       { u.l[0] = uid.u.l[0]; u.l[1] = uid.u.l[1]; return *this; }
@@ -72,11 +78,20 @@ struct uuid_type
     operator std::string() const;
 };
 
-const char *hostid_str() throw (std::runtime_error);
+extern const uuid_type nil_uuid; // NIL UUID
+
+// Hostid:
+
+const char* hostid_str() throw (std::runtime_error);
 const xmt::uuid_type& hostid() throw (std::runtime_error);
+
+// UUID genration:
 
 std::string uid_str() throw (std::runtime_error);
 xmt::uuid_type uid() throw (std::runtime_error);
+
+// Create UUID from MD5 signature:
+
 xmt::uuid_type uid_md5( const void*, size_t );
 inline xmt::uuid_type uid_md5( const char* s )
 { return xmt::uid_md5( s, strlen(s) ); }
@@ -89,6 +104,24 @@ namespace std {
 
 std::ostream& operator <<( std::ostream&, const xmt::uuid_type& );
 std::istream& operator >>( std::istream&, xmt::uuid_type& );
+
+namespace tr1 {
+
+template <>
+struct is_trivial<xmt::uuid_type> :
+    public integral_constant<bool, true>
+{ };
+
+template <>
+struct is_standard_layout<xmt::uuid_type> :
+    public integral_constant<bool, true>
+{ };
+
+template <>
+struct is_pod<xmt::uuid_type> :
+    public integral_constant<bool, true>
+{ };
+}
 
 } // namespace std
 

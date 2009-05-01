@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/06/30 13:48:26 yeti>
+// -*- C++ -*- Time-stamp: <09/05/03 00:46:24 ptr>
 
 /*
- * Copyright (c) 2006-2008
+ * Copyright (c) 2006-2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -21,7 +21,11 @@
 #include <stdexcept>
 #include <algorithm>
 
-#include <misc/type_traits.h>
+#ifdef STLPORT
+# include <type_traits>
+#else
+# include <misc/type_traits.h>
+#endif
 
 #include <mt/xmt.h>
 
@@ -68,7 +72,7 @@ class shm_bad_alloc :
 
 template <class T>
 struct is_ipc_sharable :
-    public std::tr1::false_type
+    public std::tr1::integral_constant<bool,std::tr1::is_pod<T>::value>
 { };
 
 #define  __SPEC_(C,T,B)               \
@@ -80,23 +84,6 @@ struct C<T > :                        \
 #define __SPEC_FULL(C,T,B) \
 __SPEC_(C,T,B);            \
 __SPEC_(C,volatile T,B);
-
-__SPEC_FULL(is_ipc_sharable,bool,true);
-__SPEC_FULL(is_ipc_sharable,char,true);
-__SPEC_FULL(is_ipc_sharable,signed char,true);
-__SPEC_FULL(is_ipc_sharable,unsigned char,true);
-__SPEC_FULL(is_ipc_sharable,wchar_t,true);
-__SPEC_FULL(is_ipc_sharable,short,true);
-__SPEC_FULL(is_ipc_sharable,unsigned short,true);
-__SPEC_FULL(is_ipc_sharable,int,true);
-__SPEC_FULL(is_ipc_sharable,unsigned int,true);
-__SPEC_FULL(is_ipc_sharable,long,true);
-__SPEC_FULL(is_ipc_sharable,unsigned long,true);
-__SPEC_FULL(is_ipc_sharable,long long,true);
-__SPEC_FULL(is_ipc_sharable,unsigned long long,true);
-__SPEC_FULL(is_ipc_sharable,float,true);
-__SPEC_FULL(is_ipc_sharable,double,true);
-__SPEC_FULL(is_ipc_sharable,long double,true);
 
 __SPEC_FULL(is_ipc_sharable,xmt::__condition<true>,true);
 __SPEC_FULL(is_ipc_sharable,xmt::__semaphore<true>,true);

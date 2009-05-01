@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/04/07 16:47:41 ptr>
+// -*- C++ -*- Time-stamp: <09/05/01 12:50:17 ptr>
 
 /*
  * Copyright (c) 2006, 2008, 2009
@@ -160,6 +160,8 @@ std::istream& operator >>( std::istream& s, xmt::uuid_type& uid )
 } // namespace std
 
 namespace xmt {
+
+const uuid_type nil_uuid = { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } }; // NIL UUID
 
 namespace detail {
 

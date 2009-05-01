@@ -1,3 +1,9 @@
+2009-05-01  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* uid.h, uid.cc: made from uuid_type POD type;
+
+	* libxmt: release 2.1.0.
+
 2009-04-20  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* uid.cc: fixed attempt to set failbit with wrong method;
