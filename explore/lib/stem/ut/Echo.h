@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/03/11 13:14:13 ptr>
+// -*- C++ -*- Time-stamp: <09/05/04 16:19:29 ptr>
 
 /*
- * Copyright (c) 2006-2008
+ * Copyright (c) 2006-2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -22,8 +22,9 @@ class StEMecho :
 {
   public:
     StEMecho();
+    StEMecho( const char* );
     StEMecho( stem::addr_type id );
-    StEMecho( stem::addr_type id, const char * );
+    StEMecho( stem::addr_type id, const char* );
 
     void echo( const stem::Event& );
     void regme( const stem::Event& );
@@ -61,6 +62,10 @@ class UglyEchoSrv :
   public:
     UglyEchoSrv() { }
     
+    UglyEchoSrv(  const char* info ) :
+        EventHandler( info )
+      { }
+
     UglyEchoSrv( stem::addr_type id ) :
         EventHandler( id )
       { }
@@ -84,6 +89,12 @@ class UglyEchoClient :
         failflag( false )
       { }
     
+    UglyEchoClient( const char* info ) :
+        EventHandler( info ),
+        rsp_count(0),
+        failflag( false )
+      { }
+
     UglyEchoClient( stem::addr_type id ) : 
         EventHandler( id ),
         rsp_count(0),
@@ -165,8 +176,9 @@ class EchoLast :
 {
   public:
     EchoLast();
+    EchoLast( const char* );
     EchoLast( stem::addr_type id );
-    EchoLast( stem::addr_type id, const char * );
+    EchoLast( stem::addr_type id, const char* );
 
     void echo( const stem::Event& );
     void last( const stem::Event& );
@@ -183,7 +195,8 @@ class LastEvent :
     public stem::EventHandler
 {
   public:
-    LastEvent( stem::addr_type id, const char *info );
+    LastEvent( const char* info );
+    LastEvent( stem::addr_type id, const char* info );
     ~LastEvent();
 
     void handler( const stem::Event& );

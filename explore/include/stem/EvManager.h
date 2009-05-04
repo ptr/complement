@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/04/30 10:53:55 ptr>
+// -*- C++ -*- Time-stamp: <09/05/05 10:48:58 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009
@@ -57,36 +57,46 @@
 #  endif
 #endif
 
+namespace stem {
+namespace detail {
+
+typedef std::pair<int,EventHandler*> weighted_handler_type;
+
+} // namespace detail
+} // namespace stem
+
 namespace std {
 
 // for priority_queue
 
 template<>
-struct less< std::pair<unsigned,stem::EventHandler*> >
+struct less<stem::detail::weighted_handler_type>
 {
-    bool operator()(const std::pair<unsigned,stem::EventHandler*>& __x, const std::pair<unsigned,stem::EventHandler*>& __y) const
-      { return __x.first < __y.first; }
+    bool operator()(const stem::detail::weighted_handler_type& __x, const stem::detail::weighted_handler_type& __y) const
+      { return __x.first > __y.first; }
 };
 
-}
+} // namespace std
 
 namespace stem {
 
 class EvManager
 {
   private:
-    typedef std::pair<unsigned,EventHandler*> weighted_handler;
+    typedef stem::detail::weighted_handler_type weighted_handler_type;
+    typedef std::priority_queue<weighted_handler_type> handlers_type;
+    typedef std::list<addr_type> addr_collection_type;
 #ifdef __USE_STLPORT_HASH
-    typedef std::hash_map<addr_type,std::priority_queue<weighted_handler> > local_heap_type;
-    typedef std::hash_map<std::string,std::list<addr_type> > info_heap_type;
+    typedef std::hash_map<addr_type,handlers_type> local_heap_type;
+    typedef std::hash_map<std::string,addr_collection_type> info_heap_type;
 #endif
 #ifdef __USE_STD_HASH
-    typedef __gnu_cxx::hash_map<addr_type,std::priority_queue<weighted_handler> > local_heap_type;
-    typedef __gnu_cxx::hash_map<std::string,std::list<addr_type> > info_heap_type;
+    typedef __gnu_cxx::hash_map<addr_type,handlers_type> local_heap_type;
+    typedef __gnu_cxx::hash_map<std::string,addr_collection_type> info_heap_type;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::tr1::unordered_map<addr_type,std::priority_queue<weighted_handler> > local_heap_type;
-    typedef std::tr1::unordered_map<std::string,std::list<addr_type> > info_heap_type;
+    typedef std::tr1::unordered_map<addr_type,handlers_type> local_heap_type;
+    typedef std::tr1::unordered_map<std::string,addr_collection_type> info_heap_type;
 #endif
 
   public:
@@ -103,35 +113,37 @@ class EvManager
     __FIT_DECLSPEC EvManager();
     __FIT_DECLSPEC ~EvManager();
 
-    __FIT_DECLSPEC addr_type Subscribe( EventHandler *object, const std::string& info );
-    __FIT_DECLSPEC addr_type Subscribe( EventHandler *object, const char *info = 0 );
-    __FIT_DECLSPEC addr_type SubscribeID( addr_type id, EventHandler *object,
-                                          const std::string& info );
-    __FIT_DECLSPEC addr_type SubscribeID( addr_type id, EventHandler *object,
-                                          const char *info = 0 );
-    __FIT_DECLSPEC bool Unsubscribe( addr_type id );
+    __FIT_DECLSPEC void Subscribe( const addr_type& id, EventHandler* object, int nice = 0 );
+    __FIT_DECLSPEC void Subscribe( const addr_type& id, EventHandler* object, const std::string& info, int nice = 0 );
+    __FIT_DECLSPEC void Subscribe( const addr_type& id, EventHandler* object, const char* info, int nice = 0 );
+    __FIT_DECLSPEC void Unsubscribe( const addr_type& id, EventHandler* );
 
-    bool is_avail( addr_type id ) const
+    bool is_avail( const addr_type& id ) const
       {
         std::tr2::lock_guard<std::tr2::mutex> lk( _lock_heap );
         return unsafe_is_avail(id);
       }
 
-    void change_announce( addr_type id, const std::string& info )
+    void annotate( const addr_type& id, const std::string& info )
       {
+        if ( info.empty() ) {
+          return;
+        }
         std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
         unsafe_annotate( id, info );
       }
 
-    void change_announce( addr_type id, const char *info )
+    void annotate( const addr_type& id, const char* info )
       {
+        if ( info == 0 || info[0] == 0 ) {
+          return;
+        }
         std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
-        unsafe_annotate( id, info );
+        unsafe_annotate( id, std::string( info ) );
       }
 
     __FIT_DECLSPEC void push( const Event& e );
 
-    __FIT_DECLSPEC void Remove( void * );
     __FIT_DECLSPEC std::ostream& dump( std::ostream& ) const;
 
     void settrf( unsigned f );
@@ -141,21 +153,17 @@ class EvManager
     unsigned trflags() const;
     void settrs( std::ostream * );
 
+    // This is UUID, not address
+    const xmt::uuid_type& self_id() const
+      { return _id; }
+
   protected:
-    bool unsafe_is_avail( addr_type id ) const
+    bool unsafe_is_avail( const addr_type& id ) const
       {
         return heap.find( id ) != heap.end();
       }
 
-    void unsafe_annotate( addr_type id, const std::string& info )
-      {
-        iheap[ info ].push_back( id );
-      }
-
-    void unsafe_annotate( addr_type id, const char *info )
-      {
-        iheap[ std::string(info) ].push_back( id );
-      }
+    void unsafe_annotate( const addr_type& id, const std::string& info );
 
   private:
     struct _not_empty
@@ -172,7 +180,8 @@ class EvManager
 
 
     void Send( const Event& e );
-    __FIT_DECLSPEC void unsafe_Remove( void * );
+
+    const xmt::uuid_type _id;
 
     local_heap_type heap;   // address -> EventHandler *
     info_heap_type  iheap;  // address -> info string (both local and external)

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/04 19:29:53 ptr>
+// -*- C++ -*- Time-stamp: <09/05/05 09:56:52 ptr>
 
 /*
  *
@@ -136,7 +136,9 @@ int EXAM_IMPL(stem_perf::local_too)
   stem::NetTransportMgr mgr;
 
   Tester t1;
-  Tester t2( 0 ); // <= zero!
+  Tester t2;
+
+  t2.set_default();
 
   stem::addr_type zero = mgr.open( "localhost", port );
 
@@ -197,7 +199,8 @@ int EXAM_IMPL(stem_perf::net_loopback)
         sigemptyset( &signal_mask );
         sigaddset( &signal_mask, SIGINT );
 
-        Tester t2( 0 ); // <= zero!
+        Tester t2;
+        t2.set_default();
 
         b.wait();
 
@@ -345,7 +348,8 @@ int EXAM_IMPL(stem_perf::net_loopback_inv)
       EXAM_CHECK( srv.good() );
       EXAM_CHECK( srv.is_open() );
 
-      Tester t2( 0 ); // <= zero!
+      Tester t2;
+      t2.set_default();
 
       b.wait();
 
@@ -416,7 +420,8 @@ int EXAM_IMPL(stem_perf::net_loopback_inv2)
         sigemptyset( &signal_mask );
         sigaddset( &signal_mask, SIGINT );
 
-        Tester t2( 0 ); // <= zero!
+        Tester t2;
+        t2.set_default();
 
         b.wait();
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/04/29 20:15:58 ptr>
+// -*- C++ -*- Time-stamp: <09/05/02 22:55:02 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2009
@@ -74,6 +74,9 @@ class NetTransport :
 
     __FIT_DECLSPEC
     void connect( std::sockstream& );
+
+  private:
+    bool exchange;
 };
 
 class NetTransportMgr :

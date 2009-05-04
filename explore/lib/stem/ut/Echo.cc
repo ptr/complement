@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/11 13:18:38 ptr>
+// -*- C++ -*- Time-stamp: <09/05/05 11:07:54 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -16,9 +16,16 @@
 #include <exam/suite.h>
 #include <mt/date_time>
 
+#include <exam/defs.h>
+
 using namespace stem;
 
 StEMecho::StEMecho()
+{
+}
+
+StEMecho::StEMecho( const char* info ) :
+    EventHandler( info )
 {
 }
 
@@ -27,7 +34,7 @@ StEMecho::StEMecho( addr_type id ) :
 {
 }
 
-StEMecho::StEMecho( addr_type id, const char *info ) :
+StEMecho::StEMecho( addr_type id, const char* info ) :
     EventHandler( id, info )
 {
 }
@@ -45,7 +52,7 @@ void StEMecho::echo( const Event& ev )
 void StEMecho::regme( const stem::Event& ev )
 {
   // cerr << "Echo\n";
-  manager()->change_announce( ev.src(), ev.value() );
+  manager()->annotate( ev.src(), ev.value() );
 
   cnd.notify_one();
 }
@@ -87,7 +94,7 @@ void EchoClient::handler1( const stem::Event& ev )
 
 bool EchoClient::wait()
 {
-  return cnd.timed_wait( std::tr2::milliseconds( 500 ) );
+  return cnd.timed_wait( std::tr2::milliseconds( 800 ) );
 }
 
 DEFINE_RESPONSE_TABLE( EchoClient )
@@ -212,6 +219,11 @@ EchoLast::EchoLast()
 {
 }
 
+EchoLast::EchoLast( const char* info ) :
+    EventHandler( info )
+{
+}
+
 EchoLast::EchoLast( addr_type id ) :
     EventHandler( id )
 {
@@ -264,6 +276,13 @@ DEFINE_RESPONSE_TABLE( EchoLast )
   EV_EDS( 0, NODE_EV_ECHO, echo )
   EV_EDS( 0, NODE_EV_LAST, last )
 END_RESPONSE_TABLE
+
+LastEvent::LastEvent( const char* info ) :
+    EventHandler( info ),
+    mess( info ),
+    peer( stem::badaddr )
+{
+}
 
 LastEvent::LastEvent( stem::addr_type id, const char *info ) :
     EventHandler( id, info ),

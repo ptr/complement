@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <08/06/30 18:41:59 yeti>
+// -*- C++ -*- Time-stamp: <09/05/05 11:09:36 ptr>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2006-2008
+ * Copyright (c) 2002, 2003, 2006-2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -29,6 +29,12 @@ Node::Node( stem::addr_type id ) :
 {
 }
 
+Node::Node( stem::addr_type id, int nice ) :
+    EventHandler( id, nice ),
+    v( 0 )
+{
+}
+
 Node::Node( stem::addr_type id, const char *info ) :
     EventHandler( id, info ),
     v( 0 )
@@ -51,7 +57,7 @@ void Node::handler1( const stem::Event& )
 bool Node::wait()
 {
   unique_lock<mutex> lk( m );
-  return cnd.timed_wait( lk, std::tr2::milliseconds( 500 ) );
+  return cnd.timed_wait( lk, std::tr2::milliseconds( 800 ) );
 }
 
 DEFINE_RESPONSE_TABLE( Node )

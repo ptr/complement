@@ -1,3 +1,29 @@
+2009-05-05  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* Repository: StEM objects addressing scheme changed;
+	StEM object (EventHandler) has unique (globally) address
+	[xmt::uuid_type]; concept of 'internal/external' addresses
+	removed; tables for 'external' addresses removed; 'external'
+	bit removed; conversions processed as for foreign delivery
+	in any case; __[un]pack methods removed, __net_[un]pack
+	renamed to __[un]pack; reverse mapping (EventHandler* -> address)
+	removed; special mapping to transport (address -> transport)
+	removed; EventHandler may has few addresses; addresses of objects
+	in another process assigned to appropriate NetTransport_base
+	(net transport channel representation); empty description
+	not present in NS table more; NS represent as 
+	{description -> {address}} (changed);
+
+	* Repository: EventHandler may assign his address as 'default' with
+	obj.set_default(); if no default object assigned on peer side,
+	NetTransportMgr::open return nil_uuid; peer's address of ns mapped
+	to Net* channel within 'discovery/first connect' procedure;
+
+	* Repository: NetTransport* assign address of StEM object to self
+	from received event source, if this address unknown on this side;
+
+	* libstem: revision 5.0.0.
+
 2009-03-30  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* Event.h: pack/unpack Event_base<xmt::uuid>, i.e. may

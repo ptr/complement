@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/04/30 10:57:40 ptr>
+// -*- C++ -*- Time-stamp: <09/05/04 15:54:22 ptr>
 
 /*
  *
@@ -28,6 +28,8 @@
 #include <mt/thread>
 #include <mt/mutex>
 
+#include <exam/defs.h>
+
 const uint32_t EDS_MSG_LIMIT = 0x400000; // 4MB
 
 namespace stem {
@@ -42,6 +44,9 @@ static const uint32_t EDS_MAGIC = 0x534445c2U;
 #else
 #  error "Can't determine platform byte order!"
 #endif
+
+extern mutex _def_lock;
+extern addr_type _default_addr;
 
 __FIT_DECLSPEC
 void dump( std::ostream& o, const EDS::Event& e )
@@ -102,7 +107,7 @@ __FIT_DECLSPEC void NetTransport_base::_close()
   EventHandler::addr_container_type::iterator j = _ids.begin();
   ++j;
   for ( ; j != _ids.end(); ++j ) {    
-    manager()->Unsubscribe( *j );
+    manager()->Unsubscribe( *j, this );
   }
   net.close();
 }
@@ -121,7 +126,7 @@ bool NetTransport_base::pop( Event& _rs )
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
-        *manager()->_trs << __FILE__ << ":" << __LINE__ << " StEM Magic fail ("
+        *manager()->_trs << HERE << " StEM Magic fail ("
                          << net.rdbuf()->inet_addr() << ":" << net.rdbuf()->port() << ")"
                          << endl;
       }
@@ -161,7 +166,7 @@ bool NetTransport_base::pop( Event& _rs )
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
-        *manager()->_trs << __FILE__ << ":" << __LINE__ << " StEM Message size too big: " << sz
+        *manager()->_trs << HERE << " StEM Message size too big: " << sz
                          << " (" << net.rdbuf()->inet_addr() << ":" << net.rdbuf()->port()
                          << ")" << endl;
       }
@@ -177,14 +182,13 @@ bool NetTransport_base::pop( Event& _rs )
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
-        *manager()->_trs << __FILE__ << ":" << __LINE__ << " StEM Adler-32 fail"
+        *manager()->_trs << HERE << " StEM CRC fail"
                          << " (" << net.rdbuf()->inet_addr() << ":" << net.rdbuf()->port()
                          << ")" << endl;
       }
     }
     catch ( ... ) {
     }
-
     _close();
     return false;
   }
@@ -217,6 +221,10 @@ bool NetTransport_base::pop( Event& _rs )
 
 bool NetTransport_base::Dispatch( const Event& _rs )
 {
+  //if ( _rs.dest() == _ids.front() ) {
+    // to be useful, derive NetTransport_base from another class, derived from EventHandler
+  //  return EventHandler::Dispatch( _rs );
+  // }
 #ifdef __FIT_STEM_TRACE
   try {
     lock_guard<mutex> lk(manager()->_lock_tr);
@@ -224,6 +232,7 @@ bool NetTransport_base::Dispatch( const Event& _rs )
       int flags = manager()->_trs->flags();
       *manager()->_trs << "\tMessage to remote " << hex << showbase << _rs.code() << " "
                        << _rs.src() << " -> " << _rs.dest() << endl;
+      manager()->dump( *manager()->_trs ) << endl;
 #ifdef STLPORT
       manager()->_trs->flags( flags );
 #else
@@ -290,10 +299,18 @@ bool NetTransport_base::Dispatch( const Event& _rs )
 
 __FIT_DECLSPEC
 NetTransport::NetTransport( std::sockstream& s ) :
-    NetTransport_base( s, "stem::NetTransport" )
+    NetTransport_base( s, "stem::NetTransport" ),
+    exchange( false )
 {
   try {
     s.rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+
+    __pack_base::__pack( s, EventHandler::ns() );
+    {
+      lock_guard<mutex> lk( _def_lock );
+      __pack_base::__pack( s, _default_addr );
+    }
+    s.flush();
   }
   catch ( ... ) {
   }
@@ -303,6 +320,23 @@ __FIT_DECLSPEC
 void NetTransport::connect( sockstream& s )
 {
   try {
+    if ( !exchange ) {
+      addr_type ns;
+      addr_type fdef;
+      __pack_base::__unpack( s, ns );
+      __pack_base::__unpack( s, fdef );
+
+      _ids.push_back( ns );
+      manager()->Subscribe( ns, this, "nsf", 1000 );
+      if ( fdef != xmt::nil_uuid ) {
+        _ids.push_back( fdef );
+        manager()->Subscribe( fdef, this, "foreign default", 1000 );
+      }
+
+      exchange = true;
+      return;
+    }
+
     Event ev;
 
     if ( pop( ev ) ) {
@@ -318,16 +352,11 @@ void NetTransport::connect( sockstream& s )
       }
 #endif // __FIT_STEM_TRACE
 
-#ifdef __FIT_STEM_TRACE
-      try {
-        lock_guard<mutex> lk(manager()->_lock_tr);
-        if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
-          *manager()->_trs << __FILE__ << ":" << __LINE__ << endl;
-        }
+      if ( !manager()->is_avail( ev.src() ) ) {
+        _ids.push_back( ev.src() );
+        manager()->Subscribe( ev.src(), this, 1000 );
       }
-      catch ( ... ) {
-      }
-#endif // __FIT_STEM_TRACE
+
       manager()->push( ev );
     }
   }
@@ -335,7 +364,7 @@ void NetTransport::connect( sockstream& s )
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
-        *manager()->_trs << __FILE__ << ":" << __LINE__ << " " << ex.what()
+        *manager()->_trs << HERE << " " << ex.what()
                          << " (" << s.rdbuf()->inet_addr() << ":" << s.rdbuf()->port()
                          << ")" << endl;
       }
@@ -435,6 +464,30 @@ addr_type NetTransportMgr::open( sock_base::socket_type s,
 
 addr_type NetTransportMgr::discovery()
 {
+  __pack_base::__pack( *this, EventHandler::ns() );
+  {
+    lock_guard<mutex> lk( _def_lock );
+    __pack_base::__pack( *this, _default_addr );
+  }
+  this->flush();
+  
+  addr_type ns;
+  addr_type fdef;
+  __pack_base::__unpack( *this, ns );
+  __pack_base::__unpack( *this, fdef );
+
+  if ( !this->fail() ) {
+    _ids.push_back( ns );
+    manager()->Subscribe( ns, this, "nsf", 1000 );
+    if ( fdef != xmt::nil_uuid ) {
+      _ids.push_back( fdef );
+      manager()->Subscribe( fdef, this, "foreign default", 1000 );
+    }
+    _thr = new std::tr2::thread( _loop, this );
+    return fdef;
+    // return ns;
+  }
+
   return badaddr;
 }
 
@@ -449,19 +502,9 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
       try {
         lock_guard<mutex> lk(manager()->_lock_tr);
         if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracenet) ) {
+          ios_base::fmtflags f = manager()->_trs->flags( ios_base::hex | ios_base::showbase );
           *manager()->_trs << "Pid/ppid: " << std::tr2::getpid() << "/" << std::tr2::getppid() << "\n";
           manager()->dump( *manager()->_trs ) << endl;
-        }
-      }
-      catch ( ... ) {
-      }
-#endif // __FIT_STEM_TRACE
-
-#ifdef __FIT_STEM_TRACE
-      try {
-        lock_guard<mutex> lk(manager()->_lock_tr);
-        if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
-          ios_base::fmtflags f = manager()->_trs->flags( ios_base::hex | ios_base::showbase );
           *manager()->_trs << "NetTransportMgr " << me.self_id() << " accept event "
                            << ev.code() << endl;
           manager()->_trs->flags( f );
@@ -470,6 +513,12 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
       catch ( ... ) {
       }
 #endif // __FIT_STEM_TRACE
+
+      if ( !manager()->is_avail( ev.src() ) ) {
+        me._ids.push_back( ev.src() );
+        manager()->Subscribe( ev.src(), &me, 1000 );
+      }
+
       manager()->push( ev );
     }
     me.NetTransport_base::_close();

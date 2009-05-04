@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/04/29 17:55:15 ptr>
+// -*- C++ -*- Time-stamp: <09/05/05 09:38:26 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006, 2009
@@ -566,14 +566,16 @@ class EventHandler
     };
 
     __FIT_DECLSPEC EventHandler();
-    explicit __FIT_DECLSPEC EventHandler( const char *info );
-    explicit __FIT_DECLSPEC EventHandler( addr_type id, const char *info = 0 );
+    explicit __FIT_DECLSPEC EventHandler( const char* info );
+    explicit __FIT_DECLSPEC EventHandler( const addr_type& id, int nice = 0 );
+    explicit __FIT_DECLSPEC EventHandler( const addr_type& id, const char* info );
     virtual __FIT_DECLSPEC ~EventHandler();
 
-    __FIT_DECLSPEC const std::string who_is( addr_type k ) const;
-    __FIT_DECLSPEC bool is_avail( addr_type id ) const;
-    static EvManager *manager()
+    __FIT_DECLSPEC bool is_avail( const addr_type& id ) const;
+    static EvManager* manager()
       { return _mgr; }
+    static addr_type ns();
+    addr_type set_default() const; // become default object
     __FIT_DECLSPEC void Send( const Event& e );
     __FIT_DECLSPEC void Forward( const Event& e );
 
@@ -585,7 +587,7 @@ class EventHandler
     void Forward( const stem::Event_base<D>& e )
       { EventHandler::Forward( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
 
-    addr_type self_id() const
+    const addr_type& self_id() const
       { return _ids.front(); }
 
     void State( state_type state )
@@ -615,7 +617,6 @@ class EventHandler
 
   protected:
     typedef std::list<addr_type> addr_container_type;
-    // addr_type _id;
     addr_container_type _ids;
 
   private:

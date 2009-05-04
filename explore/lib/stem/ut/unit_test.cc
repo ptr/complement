@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/04/30 11:49:34 ptr>
+// -*- C++ -*- Time-stamp: <09/05/05 09:51:00 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -58,6 +58,7 @@ class stem_test
     int EXAM_DECL(basic2);
     int EXAM_DECL(basic1new);
     int EXAM_DECL(basic2new);
+    int EXAM_DECL(weight);
     int EXAM_DECL(dl);
     int EXAM_DECL(ns);
 
@@ -84,7 +85,7 @@ int EXAM_IMPL(stem_test::basic1)
 
   Node node( addr );
 
-  EDS::Event ev( NODE_EV1 );
+  stem::Event ev( NODE_EV1 );
 
   ev.dest( addr );
   node.Send( ev );
@@ -116,7 +117,7 @@ void stem_test::thr1()
 {
   Node node( xmt::uid() );
 
-  EDS::Event ev( NODE_EV1 );
+  stem::Event ev( NODE_EV1 );
 
   ev.dest( exchange_addr );
   node.Send( ev );
@@ -128,7 +129,7 @@ int EXAM_IMPL(stem_test::basic1new)
 
   NewNode *node = new NewNode( addr );
 
-  EDS::Event ev( NODE_EV1 );
+  stem::Event ev( NODE_EV1 );
 
   ev.dest( addr );
   node->Send( ev );
@@ -160,12 +161,34 @@ void stem_test::thr1new()
 {
   NewNode *node = new NewNode( xmt::uid() );
 
-  EDS::Event ev( NODE_EV1 );
+  stem::Event ev( NODE_EV1 );
 
   ev.dest( exchange_addr );
   node->Send( ev );
 
   delete node;
+}
+
+int EXAM_IMPL(stem_test::weight)
+{
+  stem::addr_type addr = xmt::uid();
+
+  Node node( addr );          // <- The same address
+  Node node_nice( addr, -1 ); // <- but different weight
+
+  // This event should receive node_nice, but not node:
+  stem::Event ev( NODE_EV1 );
+
+  ev.dest( addr );
+  node.Send( ev );
+
+  EXAM_CHECK( node_nice.wait() );
+  EXAM_CHECK( node_nice.v == 1 );
+
+  EXAM_CHECK( !node.wait() );
+  EXAM_CHECK( node.v == 0 );
+
+  return EXAM_RESULT;
 }
 
 int EXAM_IMPL(stem_test::dl)
@@ -205,45 +228,43 @@ int EXAM_IMPL(stem_test::dl)
 
 int EXAM_IMPL(stem_test::ns)
 {
-#if 0
   stem::addr_type addr = xmt::uid();
 
   Node node( addr, "Node" );
   Naming nm;
 
   stem::Event ev( EV_STEM_GET_NS_LIST );
-  ev.dest( stem::ns_addr );
+  ev.dest( stem::EventHandler::ns() );
   nm.Send( ev );
 
   nm.wait();
 
   // this is sample of all inline find:
-  Naming::nsrecords_type::const_iterator i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "ns" ) ), select2nd<pair<stem::gaddr_type,string> >() ) );
+  Naming::nsrecords_type::const_iterator i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "ns" ) ), select2nd<pair<stem::addr_type,string> >() ) );
 
   EXAM_CHECK( i != nm.lst.end() );
   EXAM_CHECK( i->second == "ns" );
-  EXAM_CHECK( i->first.hid == xmt::hostid() );
-  EXAM_CHECK( i->first.pid == std::tr2::getpid() );
-  EXAM_CHECK( i->first.addr == stem::ns_addr );
+  EXAM_CHECK( i->first == stem::EventHandler::ns() );
 
   // well, but for few seaches declare and reuse functors:
   equal_to<string> eq;
-  equal_to<stem::gaddr_type> eqa;
+  equal_to<stem::addr_type> eqa;
 
-  select1st<pair<stem::gaddr_type,string> > first;
-  select2nd<pair<stem::gaddr_type,string> > second;
+  select1st<pair<stem::addr_type,string> > first;
+  select2nd<pair<stem::addr_type,string> > second;
 
+  // find address of object with "Node" annotation
   i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eq, string( "Node" ) ), second ) );
 
   EXAM_CHECK( i != nm.lst.end() );
   EXAM_CHECK( i->second == "Node" );
-  EXAM_CHECK( i->first.addr == addr );
+  EXAM_CHECK( i->first == addr );
+  EXAM_CHECK( i->first == node.self_id() );
 
-  i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eqa, nm.self_glid() ), first ) );
-
-  EXAM_CHECK( i != nm.lst.end() );
-  EXAM_CHECK( i->first == nm.self_glid() );
-  EXAM_CHECK( i->second.length() == 0 );
+  // Try to find record for nm...
+  i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eqa, nm.self_id() ), first ) );
+  // ... no such record, because nm has empty annotation:
+  EXAM_CHECK( i == nm.lst.end() );
 
   nm.lst.clear();
   nm.reset();
@@ -251,7 +272,7 @@ int EXAM_IMPL(stem_test::ns)
   EXAM_CHECK( nm.lst.empty() );
 
   stem::Event evname( EV_STEM_GET_NS_NAME );
-  evname.dest( stem::ns_addr );
+  evname.dest( stem::EventHandler::ns() );
   evname.value() = "Node";
   nm.Send( evname );
 
@@ -265,9 +286,9 @@ int EXAM_IMPL(stem_test::ns)
 
   EXAM_CHECK( i != nm.lst.end() );
   EXAM_CHECK( i->second == "Node" );
-  EXAM_CHECK( i->first.addr == addr );
+  EXAM_CHECK( i->first == addr );
 
-  i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eqa, nm.self_glid() ), first ) );
+  i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eqa, nm.self_id() ), first ) );
 
   EXAM_CHECK( i == nm.lst.end() );
 
@@ -282,32 +303,31 @@ int EXAM_IMPL(stem_test::ns)
   nm.wait();
 
   EXAM_CHECK( nm.lst.empty() );
-#else
-  throw exam::skip_exception();
-#endif
 
   return EXAM_RESULT;
 }
 
 int EXAM_IMPL(stem_test::echo)
 {
-#if 0
   try {
     connect_processor<stem::NetTransport> srv( 6995 );
     stem::NetTransportMgr mgr;
 
-    StEMecho echo( 0, "echo service"); // <= zero!
+    stem::addr_type addr = xmt::uid();
 
-    stem::addr_type zero = mgr.open( "localhost", 6995 );
+    StEMecho echo( addr, "echo service");
 
-    EXAM_CHECK( zero != stem::badaddr );
-    EXAM_CHECK( zero == 0 ); // NetTransportMgr should detect local delivery
+    stem::addr_type remote_default = mgr.open( "localhost", 6995 );
+
+    EXAM_CHECK( remote_default == stem::badaddr ); // not assigned default
+    // EXAM_CHECK( remote_ns != stem::badaddr );
+    // EXAM_CHECK( remote_ns == stem::EventHandler::ns() ); // Name service of this StEM process
 
     EchoClient node;
     
     stem::Event ev( NODE_EV_ECHO );
 
-    ev.dest( zero );
+    ev.dest( addr );
     ev.value() = node.mess;
 
     node.Send( ev );
@@ -322,16 +342,14 @@ int EXAM_IMPL(stem_test::echo)
   }
   catch ( ... ) {
   }
-#else
-  throw exam::skip_exception();
-#endif
 
   return EXAM_RESULT;
 }
 
 xmt::shm_alloc<0> seg;
 xmt::allocator_shm<condition_event_ip,0> shm_cnd;
-xmt::allocator_shm<barrier_ip,0>   shm_b;
+xmt::allocator_shm<barrier_ip,0>         shm_b;
+xmt::allocator_shm<stem::addr_type,0>    shm_a;
 
 stem_test::stem_test()
 {
@@ -359,8 +377,8 @@ stem_test::~stem_test()
 
 int EXAM_IMPL(stem_test::echo_net)
 {
-#if 0
   condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+  stem::addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::addr_type();
 
   try {
     std::tr2::this_thread::fork();
@@ -372,17 +390,20 @@ int EXAM_IMPL(stem_test::echo_net)
 
       EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
 
-      stem::addr_type zero = mgr.open( "localhost", 6995 );
+      stem::addr_type def_object = mgr.open( "localhost", 6995 );
 
-      EXAM_CHECK_ASYNC_F( zero != stem::badaddr, eflag );
-      EXAM_CHECK_ASYNC_F( zero != 0, eflag ); // NetTransportMgr should detect external delivery
+      EXAM_CHECK_ASYNC_F( def_object != stem::badaddr, eflag );
+      EXAM_CHECK_ASYNC_F( def_object == addr, eflag );
 
       EchoClient node;
     
       stem::Event ev( NODE_EV_ECHO );
 
-      ev.dest( zero );
+      ev.dest( addr );
       ev.value() = node.mess;
+
+      // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+      // stem::EventHandler::manager()->settrs( &std::cerr );
 
       node.Send( ev );
 
@@ -400,7 +421,13 @@ int EXAM_IMPL(stem_test::echo_net)
     try {
       connect_processor<stem::NetTransport> srv( 6995 );
 
-      StEMecho echo( 0, "echo service"); // <= zero!
+      StEMecho echo( "echo service" );
+
+      addr = echo.self_id();
+      echo.set_default(); // become default object
+
+      // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+      // stem::EventHandler::manager()->settrs( &std::cerr );
 
       fcnd.notify_one();
 
@@ -421,11 +448,7 @@ int EXAM_IMPL(stem_test::echo_net)
 
   (&fcnd)->~condition_event_ip();
   shm_cnd.deallocate( &fcnd, 1 );
-
-  // cerr << "Fine\n";
-#else
-  throw exam::skip_exception();
-#endif
+  shm_a.deallocate( &addr, 1 );
 
   return EXAM_RESULT;
 }
@@ -434,10 +457,10 @@ int EXAM_IMPL(stem_test::echo_net)
 
 int EXAM_IMPL(stem_test::net_echo)
 {
-#if 0
   try {
     barrier_ip& b = *new ( shm_b.allocate( 1 ) ) barrier_ip();
     condition_event_ip& c = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+    stem::addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::addr_type();
 
     try {
       std::tr2::this_thread::fork();
@@ -446,7 +469,10 @@ int EXAM_IMPL(stem_test::net_echo)
       // server part
       {
         connect_processor<stem::NetTransport> srv( 6995 );
-        StEMecho echo( 0, "echo service");
+        StEMecho echo( "echo service" );
+
+        addr = echo.self_id();
+        echo.set_default(); // become default object
 
         // echo.manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch );
         // echo.manager()->settrs( &std::cerr );
@@ -471,14 +497,15 @@ int EXAM_IMPL(stem_test::net_echo)
 
       EXAM_CHECK( c.timed_wait( std::tr2::milliseconds( 800 ) ) ); // wait server start
 
-      stem::addr_type zero = mgr.open( "localhost", 6995 );
+      stem::addr_type def_object = mgr.open( "localhost", 6995 );
 
       EXAM_REQUIRE( mgr.good() );
-      EXAM_REQUIRE( zero != stem::badaddr );
+      EXAM_REQUIRE( def_object != stem::badaddr );
+      EXAM_CHECK( def_object == addr );
 
       EchoClient node;
       stem::Event ev( NODE_EV_ECHO );
-      ev.dest( zero );
+      ev.dest( def_object );
 
       ev.value() = node.mess;
       node.Send( ev );
@@ -503,20 +530,17 @@ int EXAM_IMPL(stem_test::net_echo)
     shm_cnd.deallocate( &c, 1 );
     (&b)->~barrier_ip();
     shm_b.deallocate( &b, 1 );
+    shm_a.deallocate( &addr, 1 );
   }
   catch (  xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
   }
-#else
-  throw exam::skip_exception();
-#endif
 
   return EXAM_RESULT;
 }
 
 int EXAM_IMPL(stem_test::ugly_echo_net)
 {
-#if 0
   condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
 
   try {
@@ -529,15 +553,14 @@ int EXAM_IMPL(stem_test::ugly_echo_net)
 
       EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
 
-      stem::addr_type zero = mgr.open( "localhost", 6995 );
+      stem::addr_type def_object = mgr.open( "localhost", 6995 );
 
-      EXAM_CHECK_ASYNC_F( zero != stem::badaddr, eflag );
-      EXAM_CHECK_ASYNC_F( zero != 0, eflag ); // NetTransportMgr should detect external delivery
+      EXAM_CHECK_ASYNC_F( def_object != stem::badaddr, eflag );
 
       UglyEchoClient node;
     
       stem::Event ev( NODE_EV_ECHO );
-      ev.dest( zero );
+      ev.dest( def_object );
       
       bool ok = true;
       for ( int i = 0; i < 10000 && ok; ++i ) {
@@ -575,7 +598,9 @@ int EXAM_IMPL(stem_test::ugly_echo_net)
     try {
       connect_processor<stem::NetTransport> srv( 6995 );
 
-      UglyEchoSrv echo( 0, "ugly echo service"); // <= zero!
+      UglyEchoSrv echo( "ugly echo service");
+
+      echo.set_default();
 
       fcnd.notify_one();
 
@@ -596,9 +621,6 @@ int EXAM_IMPL(stem_test::ugly_echo_net)
 
   (&fcnd)->~condition_event_ip();
   shm_cnd.deallocate( &fcnd, 1 );
-#else
-  throw exam::skip_exception();
-#endif
 
   return EXAM_RESULT;
 }
@@ -835,7 +857,6 @@ int EXAM_IMPL(stem_test::peer)
 
 int EXAM_IMPL(stem_test::last_event)
 {
-#if 0
   condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
 
   try {
@@ -848,10 +869,10 @@ int EXAM_IMPL(stem_test::last_event)
       EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
       stem::NetTransportMgr mgr;
 
-      stem::addr_type zero = mgr.open( "localhost", 6995 );
+      stem::addr_type def_object = mgr.open( "localhost", 6995 );
 
       EXAM_REQUIRE( mgr.good() );
-      EXAM_REQUIRE( zero != stem::badaddr );
+      EXAM_REQUIRE( def_object != stem::badaddr );
 
       /*
       stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
@@ -860,10 +881,10 @@ int EXAM_IMPL(stem_test::last_event)
 
       stem::Event ev( NODE_EV_ECHO );
       ev.value() = "ping";
-      ev.dest( zero );
+      ev.dest( def_object );
 
       {
-        LastEvent le( 0, "ping" );
+        LastEvent le( "ping" );
 
         le.Send( ev );
 
@@ -879,7 +900,9 @@ int EXAM_IMPL(stem_test::last_event)
   }
   catch ( std::tr2::fork_in_parent& child ) {
     connect_processor<stem::NetTransport> srv( 6995 );
-    EchoLast echo( 0, "echo service");
+    EchoLast echo( "echo service" );
+
+    echo.set_default(); // become default object
 
     fcnd.notify_all();
     
@@ -899,16 +922,12 @@ int EXAM_IMPL(stem_test::last_event)
 
   (&fcnd)->~condition_event_ip();
   shm_cnd.deallocate( &fcnd, 1 );
-#else
-  throw exam::skip_exception();
-#endif
 
   return EXAM_RESULT;
 }
 
 int EXAM_IMPL(stem_test::boring_manager)
 {
-#if 0
   condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
 
   try {
@@ -948,7 +967,8 @@ int EXAM_IMPL(stem_test::boring_manager)
     connect_processor<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
     EXAM_CHECK( srv.is_open() );
     EXAM_CHECK( srv.good() );
-    StEMecho echo( 0, "echo service"); // <= zero! 'echo' server, default ('zero' address)
+    StEMecho echo( "echo service");
+    echo.set_default();
 
     fcnd.notify_all();
 
@@ -966,16 +986,12 @@ int EXAM_IMPL(stem_test::boring_manager)
 
   (&fcnd)->~condition_event_ip();
   shm_cnd.deallocate( &fcnd, 1 );
-#else
-  throw exam::skip_exception();
-#endif
 
   return EXAM_RESULT;
 }
 
 int EXAM_IMPL(stem_test::boring_manager_more)
 {
-#if 0
   condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
 
   try {
@@ -1024,7 +1040,8 @@ int EXAM_IMPL(stem_test::boring_manager_more)
     connect_processor<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
     EXAM_CHECK( srv.is_open() );
     EXAM_CHECK( srv.good() );
-    StEMecho echo( 0, "echo service"); // <= zero! 'echo' server, default ('zero' address)
+    StEMecho echo( "echo service");
+    echo.set_default();
 
     fcnd.notify_all();
 
@@ -1042,16 +1059,12 @@ int EXAM_IMPL(stem_test::boring_manager_more)
 
   (&fcnd)->~condition_event_ip();
   shm_cnd.deallocate( &fcnd, 1 );
-#else
-  throw exam::skip_exception();
-#endif
 
   return EXAM_RESULT;
 }
 
 int EXAM_IMPL(stem_test::convert)
 {
-#if 0
   Convert conv;
 
   // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
@@ -1139,16 +1152,12 @@ int EXAM_IMPL(stem_test::convert)
   EXAM_CHECK( conv.m3 == "\nMessage pass" );
 
   conv.v = 0;
-#else
-  throw exam::skip_exception();
-#endif
 
   return EXAM_RESULT;
 }
 
 int EXAM_IMPL(stem_test::cron)
 {
-#if 0
   {
     stem::Cron cron_obj( "cron" );
 
@@ -1182,9 +1191,6 @@ int EXAM_IMPL(stem_test::cron)
   }
 
   EXAM_MESSAGE( "Cron stopped" );
-#else
-  throw exam::skip_exception();
-#endif
 
   return EXAM_RESULT;
 }
@@ -1203,6 +1209,7 @@ int main( int argc, const char** argv )
 
   t.add( &stem_test::dl, test, "dl",
          t.add( &stem_test::basic2new, test, "basic2new", tc + 1, tc + 3 ) );
+  t.add( &stem_test::weight, test, "weight", tc, tc + 2 );
   t.add( &stem_test::ns, test, "ns", tc[0] );
   
   t.add( &stem_test::ugly_echo_net, test, "ugly echo net", 

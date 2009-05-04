@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/04/30 11:59:36 ptr>
+// -*- C++ -*- Time-stamp: <09/05/05 11:06:49 ptr>
 
 /*
  *
@@ -23,22 +23,21 @@
 #include <mt/mutex>
 
 // #include <typeinfo>
+#include <exam/defs.h>
 
 namespace stem {
 
 using namespace std;
 using namespace std::tr2;
 
-const addr_type badaddr      = xmt::uuid_type();
-const code_type badcode      = 0xffffffff;
-// const addr_type default_addr = 0x00000000;
-const addr_type ns_addr      ; // = 0x00000001;
-// const addr_type janus_addr   = 0x00000002;
+const addr_type& badaddr = xmt::nil_uuid;
+const code_type badcode  = 0xffffffff;
 
 std::string EvManager::inv_key_str( "invalid key" );
 
 __FIT_DECLSPEC EvManager::EvManager() :
     not_empty( *this ),
+    _id( xmt::uid() ),
     _dispatch_stop( false ),
     _trflags( 0 ),
     _trs( 0 ),
@@ -138,65 +137,80 @@ void EvManager::_Dispatch( EvManager* p )
 }
 
 __FIT_DECLSPEC
-addr_type EvManager::Subscribe( EventHandler *object, const std::string& info )
+void EvManager::Subscribe( const addr_type& id, EventHandler* object, int nice )
 {
-  addr_type id = xmt::uid();
-  {
-    lock_guard<mutex> lk( _lock_heap );
-    heap[id].push( make_pair( 1, object) );
-  }
-
-  if ( !info.empty() ) {
-    lock_guard<mutex> lk( _lock_iheap );
-    iheap[id].push_back( id );
-  }
-
-  return id;
+  lock_guard<mutex> lk( _lock_heap );
+  heap[id].push( make_pair( nice, object) );
 }
 
 __FIT_DECLSPEC
-addr_type EvManager::Subscribe( EventHandler *object, const char *info )
-{
-  return info ? Subscribe( object, string(info) ) : Subscribe( object, string() );
-}
-
-__FIT_DECLSPEC
-addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
-                                  const std::string& info )
+void EvManager::Subscribe( const addr_type& id, EventHandler* object, const std::string& info, int nice )
 {
   {
     lock_guard<mutex> lk( _lock_heap );
-    heap[id].push( make_pair( 1, object) );
+    heap[id].push( make_pair( nice, object) );
   }
 
-  if ( !info.empty() ) {
-    lock_guard<mutex> lk( _lock_iheap );
-    iheap[id].push_back( id );
-  }
-
-  return id;
+  annotate( id, info );
 }
 
 __FIT_DECLSPEC
-addr_type EvManager::SubscribeID( addr_type id, EventHandler *object,
-                                  const char *info )
+void EvManager::Subscribe( const addr_type& id, EventHandler* object, const char* info, int nice )
 {
-  return info ? SubscribeID( id, object, string(info) ) : SubscribeID( id, object, string() );
+  {
+    lock_guard<mutex> lk( _lock_heap );
+    heap[id].push( make_pair( nice, object) );
+  }
+
+  annotate( id, info );
 }
 
 __FIT_DECLSPEC
-bool EvManager::Unsubscribe( addr_type id )
+void EvManager::Unsubscribe( const addr_type& id, EventHandler* obj )
 {
   {
     lock_guard<mutex> _x1( _lock_heap );
-    heap.erase( id );
 
-    // Notify remotes?
+    local_heap_type::iterator i = heap.find( id );
+    if ( i != heap.end() ) {
+      if ( i->second.size() == 1 ) {
+        heap.erase( i );
+      } else {
+        handlers_type tmp;
+        swap( i->second, tmp );
+        while ( !tmp.empty() ) {
+          weighted_handler_type handler = tmp.top();
+          if ( handler.second != obj ) {
+            i->second.push( handler );
+          }
+          tmp.pop();
+        }
+      }
+    }
   }
-  // lock_guard<mutex> _x1( _lock_iheap );
-  // iheap.erase( id );
+  {
+    std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
 
-  return true;
+    for ( info_heap_type::iterator i = iheap.begin(); i != iheap.end(); ) {
+      for ( addr_collection_type::iterator j = i->second.begin(); j != i->second.end(); ++j ) {
+        if ( *j == id ) {
+          lock_guard<mutex> _x1( _lock_heap );
+
+          local_heap_type::iterator k = heap.find( id );
+          if ( k == heap.end() ) { // all objects with this addr removed
+            i->second.erase( j );
+          }
+          break;
+        }
+      }
+
+      if ( i->second.empty() ) {
+        iheap.erase( i++ );
+      } else {
+        ++i;
+      }
+    }
+  }
 }
 
 void EvManager::settrf( unsigned f )
@@ -280,7 +294,9 @@ void EvManager::Send( const Event& e )
       catch ( ... ) {
       }
 #endif // __FIT_STEM_TRACE
-      object->Dispatch( e ); // call dispatcher
+      if ( !object->Dispatch( e ) ) { // call dispatcher
+        throw std::logic_error( "no catcher for event" );
+      }
     }
     catch ( std::logic_error& err ) {
       try {
@@ -353,6 +369,21 @@ void EvManager::Send( const Event& e )
   }
 }
 
+void EvManager::unsafe_annotate( const addr_type& id, const std::string& info )
+{
+  info_heap_type::iterator i = iheap.find( info );
+  if ( i == iheap.end() ) {
+    iheap[info].push_back( id );
+  } else {
+    for ( addr_collection_type::const_iterator j = i->second.begin(); j != i->second.end(); ++j ) {
+      if ( *j == id ) {
+        return;
+      }
+    }
+    i->second.push_back( id );
+  }
+}
+
 __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
 {
   ios_base::fmtflags f = s.flags( ios_base::hex | ios_base::showbase );
@@ -373,8 +404,11 @@ __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
 
     for ( info_heap_type::const_iterator i = iheap.begin(); i != iheap.end(); ++i ) {
       s << i->first << "\t=> '";
-      for ( std::list<addr_type>::const_iterator j = i->second.begin(); j != i->second.end(); ++j ) {
-        s << *j << ' ';
+      for ( addr_collection_type::const_iterator j = i->second.begin(); j != i->second.end(); ) {
+        s << *j;
+        if ( ++j != i->second.end() ) {
+          s << ' ';
+        }
       }
       s << "'\n";
     }
