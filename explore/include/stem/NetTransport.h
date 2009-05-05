@@ -57,6 +57,8 @@ class NetTransport_base :
 
     bool Dispatch( const Event& );
 
+    addr_type ns_remote() const;
+
   protected:
     bool pop( Event& );
     __FIT_DECLSPEC void _close();

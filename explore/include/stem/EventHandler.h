@@ -546,10 +546,15 @@ class EventHandler
     typedef EventHandler ThisCls;
 
   protected:
+    typedef std::list<addr_type> addr_container_type;
+
     // See comment near EventHandler::EventHandler() implementation
     // HistoryContainer& theHistory;
     HistoryContainer theHistory;
     std::tr2::recursive_mutex _theHistory_lock;
+
+  public:
+    typedef addr_container_type::const_iterator id_iterator;
 
   public:
 
@@ -589,6 +594,10 @@ class EventHandler
 
     const addr_type& self_id() const
       { return _ids.front(); }
+    id_iterator self_ids_begin() const
+      { return _ids.begin(); }
+    id_iterator self_ids_end() const
+      { return _ids.end(); }
 
     void State( state_type state )
       { PushState( state ); }
@@ -616,7 +625,6 @@ class EventHandler
     const_h_iterator __find( state_type ) const;
 
   protected:
-    typedef std::list<addr_type> addr_container_type;
     addr_container_type _ids;
 
   private:

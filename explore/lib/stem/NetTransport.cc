@@ -89,6 +89,22 @@ void dump( std::ostream& o, const EDS::Event& e )
   }
 }
 
+addr_type NetTransport_base::ns_remote() const
+{
+  if ( net.is_open() ) {
+    id_iterator i = EventHandler::self_ids_begin();
+    if ( i != EventHandler::self_ids_end() ) { // self, born address
+      // see NetTransport::discovery and NetTransport::connect
+      // about assign of peer's NS
+      if ( ++i != EventHandler::self_ids_end() ) {
+        return *i;
+      }
+    }
+  }
+
+  return badaddr;
+}
+
 __FIT_DECLSPEC void NetTransport_base::_close()
 {
 #ifdef __FIT_STEM_TRACE
