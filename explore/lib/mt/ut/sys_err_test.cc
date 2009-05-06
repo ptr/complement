@@ -1,7 +1,7 @@
 // -*- C++ -*- Time-stamp: <08/07/25 10:08:26 ptr>
 
 /*
- * Copyright (c) 2008
+ * Copyright (c) 2008, 2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -13,8 +13,7 @@
 #include <mt/system_error>
 #include <cerrno>
 #include <string>
-
-// #include <iostream>
+#include <cstring>
 
 #include <stdio.h>
 

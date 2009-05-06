@@ -25,6 +25,7 @@
 #include <stdint.h>
 #include <stdexcept>
 #include <ostream>
+#include <cstring>
 
 #ifdef STLPORT
 # include <type_traits>
