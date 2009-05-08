@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/12/23 23:03:46 ptr>
+// -*- C++ -*- Time-stamp: <09/05/08 10:49:28 ptr>
 
 /*
- * Copyright (c) 2004, 2006-2008
+ * Copyright (c) 2004, 2006-2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -22,6 +22,7 @@
 
 #include <mt/lfstream>
 #include <mt/shm.h>
+#include <mt/thread>
 
 using namespace std;
 
@@ -70,7 +71,7 @@ int EXAM_IMPL(flock_test::read_lock)
     std::tr2::condition_event_ip& fcnd2 = *new( shm.allocate( sizeof(std::tr2::condition_event_ip) ) ) std::tr2::condition_event_ip();
 
     try {
-      xmt::fork();
+      std::tr2::this_thread::fork();
 
       try {
 
@@ -94,7 +95,7 @@ int EXAM_IMPL(flock_test::read_lock)
 
       exit( 0 );
     }
-    catch ( xmt::fork_in_parent& child ) {
+    catch ( std::tr2::fork_in_parent& child ) {
       try {
         EXAM_CHECK( child.pid() > 0 );
 
@@ -149,7 +150,7 @@ int EXAM_IMPL(flock_test::write_lock)
     std::tr2::condition_event_ip& fcnd2 = *new( shm.allocate( sizeof(std::tr2::condition_event_ip) ) ) std::tr2::condition_event_ip();
 
     try {
-      xmt::fork();
+      std::tr2::this_thread::fork();
 
       try {
 
@@ -173,7 +174,7 @@ int EXAM_IMPL(flock_test::write_lock)
 
       exit( 0 );
     }
-    catch ( xmt::fork_in_parent& child ) {
+    catch ( std::tr2::fork_in_parent& child ) {
       try {
         EXAM_CHECK( child.pid() > 0 );
 
@@ -261,7 +262,7 @@ int EXAM_IMPL(flock_test::write_profane)
     std::tr2::condition_event_ip& fcnd2 = *new( shm.allocate( sizeof(std::tr2::condition_event_ip) ) ) std::tr2::condition_event_ip();
 
     try {
-      xmt::fork();
+      std::tr2::this_thread::fork();
 
       try {
 
@@ -285,7 +286,7 @@ int EXAM_IMPL(flock_test::write_profane)
 
       exit( 0 );
     }
-    catch ( xmt::fork_in_parent& child ) {
+    catch ( std::tr2::fork_in_parent& child ) {
       try {
         EXAM_CHECK( child.pid() > 0 );
 
@@ -342,7 +343,7 @@ int EXAM_IMPL(flock_test::wr_lock)
     std::tr2::condition_event_ip& fcnd2 = *new( shm.allocate( sizeof(std::tr2::condition_event_ip) ) ) std::tr2::condition_event_ip();
 
     try {
-      xmt::fork();
+      std::tr2::this_thread::fork();
 
       try {
 
@@ -366,7 +367,7 @@ int EXAM_IMPL(flock_test::wr_lock)
 
       exit( 0 );
     }
-    catch ( xmt::fork_in_parent& child ) {
+    catch ( std::tr2::fork_in_parent& child ) {
       try {
         EXAM_CHECK( child.pid() > 0 );
 
@@ -421,7 +422,7 @@ int EXAM_IMPL(flock_test::rw_lock)
     std::tr2::condition_event_ip& fcnd2 = *new( shm.allocate( sizeof(std::tr2::condition_event_ip) ) ) std::tr2::condition_event_ip();
 
     try {
-      xmt::fork();
+      std::tr2::this_thread::fork();
 
       try {
 
@@ -445,7 +446,7 @@ int EXAM_IMPL(flock_test::rw_lock)
 
       exit( 0 );
     }
-    catch ( xmt::fork_in_parent& child ) {
+    catch ( std::tr2::fork_in_parent& child ) {
       try {
         EXAM_CHECK( child.pid() > 0 );
 

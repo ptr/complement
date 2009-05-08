@@ -1,3 +1,13 @@
+2009-05-08  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* shm.h, shm.cc, shm_test.cc: paradigm of shared memory
+	segment, coupled with file, removed, due to principal
+	race condition;
+
+	* shm_test.cc, flock_test.cc: reference to mt/xmt.h removed;
+	
+	* libxmt: release 2.1.1.
+
 2009-05-01  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* uid.h, uid.cc: made from uuid_type POD type;

@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <06/12/20 11:44:26 ptr>
+// -*- C++ -*- Time-stamp: <09/05/08 11:09:47 ptr>
 
 /*
- * Copyright (c) 2006
+ * Copyright (c) 2006, 2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -9,56 +9,24 @@
  */
 
 #include <mt/shm.h>
+#include <mt/system_error>
 
 namespace xmt {
 
-const char *shm_bad_alloc::what() const throw()
+static const std::string rstring( "shared memory" );
+
+const char* shm_bad_alloc::what() const throw()
 {
-  switch ( err ) {
-    case 0:
-      return "All fine";
-    case EACCES:
-      return "Permission denied";
-    case EBADF:
-      return "Bad file number";
-    case EFAULT:
-      return "Bad address";
-    case ELOOP:
-      return "Too many symbolic links encountered";
-    case ENAMETOOLONG:
-      return "File name too long";
-    case ENOENT:
-      return "No such file or directory or segment";
-    case ENOMEM:
-      return "Out of memory";
-    case ENOTDIR:
-      return "Not a directory";
-    case EEXIST:
-      return "File exists";
-    case EINVAL:
-      return "Invalid argument";
-    case ENFILE:
-      return "File table overflow";
-    case ENOSPC:
-      return "No space left on device";
-    case EPERM:
-      return "Operation not permitted";
-    case EIDRM:
-      return "Identifier removed";
-    case EOVERFLOW:
-      return "Value too large for defined data type";
-
-    case -1:
-      return "Address already assigned";
-    case -2:
-      return "Shared memory segment not allocated";
-    case -3:
-      return "Not enough space left in shared memory segment";
-    case -4:
-      return "Reference file exists";
+  if ( err == -1 ) {
+    return "shared memory: address already assigned";
   }
-
-  return "unknown";
+  if ( err == -2 ) {
+    return "shared memory: segment not allocated";
+  }
+  if ( err == -3 ) {
+    return "shared memory: not enough space left in shared memory segment";
+  }
+  return std::system_error( err, std::get_posix_category(), rstring ).what();
 }
 
 } // namespace xmt

@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/11/27 00:56:57 ptr>
+// -*- C++ -*- Time-stamp: <09/05/08 10:58:21 ptr>
 
 /*
- * Copyright (c) 2006-2008
+ * Copyright (c) 2006-2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -12,7 +12,7 @@
 
 #include <mt/condition_variable>
 #include <mt/shm.h>
-
+#include <mt/thread>
 
 #include <sys/shm.h>
 #include <sys/wait.h>
@@ -57,7 +57,6 @@ int shm_test::seg_id( int proposed_id )
 
 int EXAM_IMPL(shm_test::shm_segment)
 {
-  const char fname[] = "/tmp/mt_test.shm";
   try {
     int shmid = seg_id( 5000 );
     xmt::detail::__shm_alloc<0> seg( shmid, 1024, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
@@ -66,23 +65,17 @@ int EXAM_IMPL(shm_test::shm_segment)
     seg.deallocate();
     EXAM_CHECK( seg.address() == reinterpret_cast<void *>(-1) );
 
-    // EXAM_REQUIRE( !fs::exists( fname ) );
-    struct stat st;
-    EXAM_REQUIRE( (stat( fname, &st ) == -1) && (errno == ENOENT) );
-
-    seg.allocate( fname, 1024, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+    seg.allocate( shmid, 1024, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
     EXAM_CHECK( seg.address() != reinterpret_cast<void *>(-1) );
     seg.deallocate();
     EXAM_CHECK( seg.address() == reinterpret_cast<void *>(-1) );
-    // EXAM_CHECK( fs::exists( fname ) ); // well, now I don't remove ref file, because shm segment may be created with another way
-    EXAM_CHECK( stat( fname, &st ) == 0 );
 
     // not exclusive, should pass
-    seg.allocate( fname, 1024, xmt::shm_base::create, 0660 );
+    seg.allocate( shmid, 1024, xmt::shm_base::create, 0660 );
     EXAM_CHECK( seg.address() != reinterpret_cast<void *>(-1) );
     try {
       // This instance has segment in usage, should throw
-      seg.allocate( fname, 1024, 0, 0660 );
+      seg.allocate( shmid, 1024, 0, 0660 );
       EXAM_ERROR( "xmt::shm_bad_alloc exception expected" );
     }
     catch ( xmt::shm_bad_alloc& err ) {
@@ -107,21 +100,6 @@ int EXAM_IMPL(shm_test::shm_segment)
 
     seg.deallocate();
     EXAM_CHECK( seg.address() == reinterpret_cast<void *>(-1) );
-
-    // ----
-    try {
-      // exclusive, should throw
-      seg.allocate( fname, 1024, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
-      EXAM_ERROR( "xmt::shm_bad_alloc exception expected" ); // Fail, should throw
-    }
-    catch ( xmt::shm_bad_alloc& err ) {
-      EXAM_MESSAGE( "xmt::shm_bad_alloc exception as expected" ); // Ok
-    }
-    // EXAM_CHECK( fs::exists( fname ) );
-    // ----
-
-    // fs::remove( fname );
-    EXAM_CHECK( unlink( fname ) == 0 );
   }
   catch ( xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
@@ -134,11 +112,10 @@ int EXAM_IMPL(shm_test::shm_segment)
 
 int EXAM_IMPL(shm_test::shm_alloc)
 {
-  const char fname[] = "/tmp/mt_test.shm";
   try {
     xmt::shm_alloc<0> seg;
 
-    seg.allocate( fname, 7000, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+    seg.allocate( 90000, 7000, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
     {
       xmt::allocator_shm<char,0> shmall;
@@ -198,8 +175,6 @@ int EXAM_IMPL(shm_test::shm_alloc)
       shmall.deallocate( ch1, sz );
     }
     seg.deallocate();
-    // fs::remove( fname );
-    EXAM_CHECK( unlink( fname ) == 0 );
   }
   catch ( xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
@@ -215,17 +190,16 @@ int EXAM_IMPL(shm_test::shm_alloc)
  */
 int EXAM_IMPL(shm_test::fork_shm)
 {
-  const char fname[] = "/tmp/mt_test.shm";
   try {
     xmt::shm_alloc<0> seg;
 
-    seg.allocate( fname, 1024, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+    seg.allocate( 90000, 1024, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
     xmt::allocator_shm<char,0> shm;
 
     std::tr2::condition_event_ip& fcnd = *new( shm.allocate( sizeof(std::tr2::condition_event_ip) ) ) std::tr2::condition_event_ip();
 
     try {
-      xmt::fork();
+      std::tr2::this_thread::fork();
 
       try {
 
@@ -240,7 +214,7 @@ int EXAM_IMPL(shm_test::fork_shm)
 
       exit( 1 );
     }
-    catch ( xmt::fork_in_parent& child ) {
+    catch ( std::tr2::fork_in_parent& child ) {
       try {
         EXAM_CHECK( child.pid() > 0 );
 
@@ -263,8 +237,6 @@ int EXAM_IMPL(shm_test::fork_shm)
     (&fcnd)->~__condition_event<true>();
     shm.deallocate( reinterpret_cast<char *>(&fcnd), sizeof(std::tr2::condition_event_ip) );
     seg.deallocate();
-    // fs::remove( fname );
-    EXAM_CHECK( unlink( fname ) == 0 );
   }
   catch (  xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
@@ -278,14 +250,13 @@ int EXAM_IMPL(shm_test::fork_shm)
  */
 int EXAM_IMPL(shm_test::shm_named_obj)
 {
-  const char fname[] = "/tmp/mt_test.shm";
   enum {
     test_Condition_Object = 1
   };
   try {
     xmt::shm_alloc<0> seg;
 
-    seg.allocate( fname, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+    seg.allocate( 90000, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
     xmt::shm_name_mgr<0>& nm = seg.name_mgr();
 
     xmt::allocator_shm<std::tr2::condition_event_ip,0> shm;
@@ -294,7 +265,7 @@ int EXAM_IMPL(shm_test::shm_named_obj)
     nm.named( fcnd, test_Condition_Object );
 
     try {
-      xmt::fork();
+      std::tr2::this_thread::fork();
 
       int eflag = 0;
 
@@ -308,7 +279,7 @@ int EXAM_IMPL(shm_test::shm_named_obj)
                                         // in totally different address spaces
           // in our case xmt::shm_name_mgr<0> instance derived from parent
           // process
-          seg.allocate( fname, 4*4096, 0, 0660 );
+          seg.allocate( 90000, 4*4096, 0, 0660 );
         }
         
         xmt::shm_name_mgr<0>& nm_ch = seg_ch.name_mgr();
@@ -327,7 +298,7 @@ int EXAM_IMPL(shm_test::shm_named_obj)
 
       exit( eflag );
     }
-    catch ( xmt::fork_in_parent& child ) {
+    catch ( std::tr2::fork_in_parent& child ) {
       try {
         EXAM_CHECK( child.pid() > 0 );
 
@@ -352,8 +323,6 @@ int EXAM_IMPL(shm_test::shm_named_obj)
     (&fcnd)->~__condition_event<true>();
     shm.deallocate( &fcnd, 1 );
     seg.deallocate();
-    // fs::remove( fname );
-    EXAM_CHECK( unlink( fname ) == 0 );
   }
   catch ( xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
@@ -364,20 +333,18 @@ int EXAM_IMPL(shm_test::shm_named_obj)
 
 /* ******************************************************
  */
-const char shm_test::fname1[] = "/tmp/mt_test.shm.1";
 
 shm_test::shm_test()
 {
   try {
-    seg1.allocate( fname1, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+    seg1.allocate( 90001, 4*4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
   }
   catch ( xmt::shm_bad_alloc& err ) {
     try {
-      seg1.allocate( fname1, 4*4096, 0, 0660 );
+      seg1.allocate( 90001, 4*4096, 0, 0660 );
     }
     catch ( xmt::shm_bad_alloc& err2 ) {
       EXAM_ERROR_ASYNC( err2.what() );
-      unlink( fname1 );
     }
   }
 }
@@ -387,8 +354,6 @@ shm_test::shm_test()
 shm_test::~shm_test()
 {
   seg1.deallocate();
-  // fs::remove( fname1 );
-  unlink( fname1 );
 }
 
 /* ******************************************************
@@ -409,7 +374,7 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
     nm.named( fcnd, ObjName );
 
     try {
-      xmt::fork();
+      std::tr2::this_thread::fork();
 
       int eflag = 0;
 
@@ -425,7 +390,7 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
       }
       exit( eflag );
     }
-    catch ( xmt::fork_in_parent& child ) {
+    catch ( std::tr2::fork_in_parent& child ) {
       EXAM_CHECK( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ) );
       int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
@@ -441,7 +406,7 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
     nm.named( fcnd1, ObjName ); // ObjName should be free here
 
     try {
-      xmt::fork();
+      std::tr2::this_thread::fork();
 
       int eflag = 0;
 
@@ -458,7 +423,7 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
       
       exit( eflag );
     }
-    catch ( xmt::fork_in_parent& child ) {
+    catch ( std::tr2::fork_in_parent& child ) {
       EXAM_CHECK( fcnd1.timed_wait( std::tr2::milliseconds( 800 ) ) );
       int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
@@ -476,7 +441,7 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
     nm.named( b, ObjName ); // ObjName should be free here
     
     try {
-      xmt::fork();
+      std::tr2::this_thread::fork();
 
       int eflag = 0;
       try {
@@ -492,7 +457,7 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
     
       exit( eflag );
     }
-    catch ( xmt::fork_in_parent& child ) {
+    catch ( std::tr2::fork_in_parent& child ) {
       b.wait();
       int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );

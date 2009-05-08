@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/05/03 00:46:24 ptr>
+// -*- C++ -*- Time-stamp: <09/05/08 00:15:30 ptr>
 
 /*
  * Copyright (c) 2006-2009
@@ -26,8 +26,6 @@
 #else
 # include <misc/type_traits.h>
 #endif
-
-#include <mt/xmt.h>
 
 #include <mt/mutex>
 #include <mt/condition_variable>
@@ -85,12 +83,6 @@ struct C<T > :                        \
 __SPEC_(C,T,B);            \
 __SPEC_(C,volatile T,B);
 
-__SPEC_FULL(is_ipc_sharable,xmt::__condition<true>,true);
-__SPEC_FULL(is_ipc_sharable,xmt::__semaphore<true>,true);
-__SPEC_FULL(is_ipc_sharable,xmt::__barrier<true>,true);
-__SPEC_FULL(is_ipc_sharable,xmt::shared_mutex,true);
-__SPEC_FULL(is_ipc_sharable,xmt::shared_recursive_mutex,true);
-
 __SPEC_FULL(is_ipc_sharable,std::tr2::condition_variable_ip,true);
 __SPEC_FULL(is_ipc_sharable,std::tr2::condition_variable_any_ip,true);
 __SPEC_FULL(is_ipc_sharable,std::tr2::condition_event_ip,true);
@@ -121,9 +113,6 @@ class __shm_alloc :
     __shm_alloc() throw()
       { }
 
-    __shm_alloc( const char *name, size_type sz, int o, int mode, int f = 0, void *addr = 0 )
-      { allocate( name, sz, o, mode, f, addr ); }
-
     __shm_alloc( key_t k, size_type sz, int o, int mode, int f = 0, void *addr = 0 )
       { allocate( k, sz, o, mode, f, addr ); }
 
@@ -138,7 +127,6 @@ class __shm_alloc :
         }
       }
 
-    static pointer allocate( const char *name, size_type sz, int o, int mode, int f = 0, void *addr = 0 );
     static pointer allocate( key_t k, size_type sz, int o, int mode, int f = 0, void *addr = 0 );
     static pointer allocate( int id, int f = 0, void *addr = 0 );
 
@@ -188,47 +176,6 @@ int __shm_alloc<Inst>::_id = -1;
 
 template <int Inst>
 void *__shm_alloc<Inst>::_seg = reinterpret_cast<void *>(-1);
-
-template <int Inst>
-typename __shm_alloc<Inst>::pointer __shm_alloc<Inst>::allocate( const char *name, size_type sz, int o, int mode, int f, void *addr )
-{
-  if ( _id != -1 ) {
-    throw shm_bad_alloc( -1 );
-  }
-  int of = 0;
-  if ( o & create ) {
-    of |= O_CREAT;
-  }
-  if ( o & exclusive ) {
-    of |= O_EXCL;
-  }
-  if ( f & SHM_RDONLY ) {
-    of |= O_RDONLY;
-  } else {
-    of |= O_RDWR;
-  }
-  bool rmfile = true;
-  if ( (o & create) && !(o & exclusive) ) {
-    int exist_fd = open( name, of & ~O_CREAT, (0777 & mode) );
-    if ( exist_fd >= 0 ) {
-      rmfile = false;
-      ::close( exist_fd );
-    }
-  }
-  int fd = open( name, of, (0777 & mode) );
-  if ( fd < 0 ) {
-    throw shm_bad_alloc();
-  }
-  close( fd );
-  key_t k = ftok( name, Inst );
-  if ( k == -1 ) {
-    if ( (o & create) && (rmfile || (o & exclusive)) ) {
-      unlink( name );
-    }
-    throw shm_bad_alloc();
-  }
-  return allocate( k, sz, o, mode, f, addr );
-}
 
 template <int Inst>
 typename __shm_alloc<Inst>::pointer __shm_alloc<Inst>::allocate( key_t k, size_type sz, int o, int mode, int f, void *addr )
@@ -446,14 +393,6 @@ class shm_alloc
 
 
   public:
-    static void allocate( const char *name, size_type sz, int o, int mode, int f = 0, void *addr = 0 )
-      {
-        _master *m = reinterpret_cast<_master *>( _seg.allocate( name, sz, o, mode, f, addr ) );
-        if ( m->_magic != MAGIC ) {
-          init( *m );
-        }
-      }
-
     static void allocate( key_t k, size_type sz, int o, int mode, int f = 0, void *addr = 0 )
       {
         _master *m = reinterpret_cast<_master *>( _seg.allocate( k, sz, o, mode, f, addr ) );
