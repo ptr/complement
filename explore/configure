@@ -46,6 +46,7 @@ Available options:
   --with-stlport=<dir>  use STLport in catalog <dir>
   --with-stlport-headers=<dir> use STLport headers in catalog <dir>
   --without-stlport     compile without STLport (default)
+  --without-bfd         compile without bfd
   --with-boost=<dir>    use boost headers in catalog <dir>
   --with-system-boost   use boost installed on this system
   --with-msvc=<dir>     use MS VC from this catalog
@@ -151,6 +152,10 @@ do
     --without-stlport)
       write_option "1" WITHOUT_STLPORT
       stlport_set=y
+      ;;
+    --without-bfd)
+      write_option "1" WITHOUT_BFD
+      bfd_set=y
       ;;
     --with-boost=*)
       write_option "$option" BOOST_DIR
@@ -271,5 +276,9 @@ if [ -n "${LDFLAGS}" ]; then
     echo "Both --with-extra-ldflags and \$LDFLAGS set, using the first"
   fi
 fi
+
+if [ "$bfd_set" = "y" ]; then
+  echo EXTRA_CXXFLAGS += -D__FIT_DISABLE_BFD >> ${configmak}
+fi 
 
 default_settings

@@ -20,7 +20,10 @@ ifndef WITHOUT_STLPORT
 stldbg-shared:	LDLIBS += -lmiscstlg
 endif
 
-LDLIBS += -ldl -lbfd
+LDLIBS += -ldl 
+ifndef WITHOUT_BFD
+LDLIBS += -lbfd
+endif
 
 check:	all-shared
 	$(MAKE) -C ut $@
