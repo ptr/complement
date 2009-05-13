@@ -40,7 +40,7 @@ void NodeDL::handler1( const stem::Event& )
 bool NodeDL::wait()
 {
   unique_lock<mutex> lk( m );
-  return cnd.timed_wait( lk, std::tr2::milliseconds( 500 ) );
+  return cnd.timed_wait( lk, std::tr2::milliseconds( 500 ), check_v( *this ) );
 }
 
 DEFINE_RESPONSE_TABLE( NodeDL )
@@ -75,7 +75,7 @@ void NewNodeDL::handler1( const stem::Event& )
 bool NewNodeDL::wait()
 {
   unique_lock<mutex> lk( m );
-  return cnd.timed_wait( lk, std::tr2::milliseconds( 500 ) );
+  return cnd.timed_wait( lk, std::tr2::milliseconds( 800 ), check_v( *this )  );
 }
 
 DEFINE_RESPONSE_TABLE( NewNodeDL )

@@ -33,6 +33,18 @@ class NodeDL :
   private:
     std::tr2::mutex m;
     std::tr2::condition_variable cnd;
+    
+    struct check_v 
+    {
+      check_v( NodeDL& m ) :
+          me( m )
+        { }
+
+      bool operator()() const
+        { return me.v == 1; }
+
+      NodeDL& me;
+    };
 
     DECLARE_RESPONSE_TABLE( NodeDL, stem::EventHandler );
 };
@@ -55,6 +67,18 @@ class NewNodeDL :
   private:
     std::tr2::mutex m;
     std::tr2::condition_variable cnd;
+    
+    struct check_v 
+    {
+      check_v( NewNodeDL& m ) :
+          me( m )
+        { }
+
+      bool operator()() const
+        { return me.v == 1; }
+
+      NewNodeDL& me;
+    };
 
     DECLARE_RESPONSE_TABLE( NewNodeDL, stem::EventHandler );
 };
