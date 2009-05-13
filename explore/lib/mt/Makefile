@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <09/04/07 16:40:56 ptr>
+# -*- Makefile -*- Time-stamp: <09/05/13 18:57:31 ptr>
 
 SRCROOT := ../..
 
@@ -7,6 +7,10 @@ include ${SRCROOT}/Makefiles/gmake/top.mak
 
 INCLUDES += -I$(SRCROOT)/include
 HEADERS_BASE = $(SRCROOT)/include/mt $(SRCROOT)/include/config $(SRCROOT)/include/misc
+
+ifdef WITHOUT_BFD
+DEFS += -D__FIT_DISABLE_BFD
+endif
 
 release-shared:	LDFLAGS += -L$(SRCROOT)/lib/misc/${OUTPUT_DIR}
 dbg-shared:	LDFLAGS += -L$(SRCROOT)/lib/misc/${OUTPUT_DIR_DBG}

@@ -1,3 +1,7 @@
+2009-05-13  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* Makefile: disable libbfd usage, if WITHOUT_BFD set.
+
 2009-05-08  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* shm.h, shm.cc, shm_test.cc: paradigm of shared memory
