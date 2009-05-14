@@ -488,3 +488,15 @@ int EXAM_IMPL(flock_test::rw_lock)
 
   return EXAM_RESULT;
 }
+
+int EXAM_IMPL(flock_test::try_lock)
+{
+  lfstream f( fname.c_str() );
+
+  EXAM_CHECK( f.is_open() );
+  EXAM_CHECK( f.good() );  
+  EXAM_CHECK( f.try_lock() );
+  
+  return EXAM_RESULT;
+}
+

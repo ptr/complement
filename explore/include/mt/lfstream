@@ -98,10 +98,10 @@ class basic_lfilebuf :
       { flock_type::unlock( this->fd() ); }
 
     bool try_rdlock()
-      { flock_type::try_rdlock( this->fd() ); }
+      { return flock_type::try_rdlock( this->fd() ); }
 
     bool try_lock()
-      { flock_type::try_lock( this->fd() ); }
+      { return flock_type::try_lock( this->fd() ); }
 
 #ifndef STLPORT
   public:

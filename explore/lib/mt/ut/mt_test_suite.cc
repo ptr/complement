@@ -114,6 +114,7 @@ int main( int argc, const char** argv )
 
   t.add( &flock_test::wr_lock, flock, "file lock, exclusive/shared", flocktc, flocktc + 2 );
   t.add( &flock_test::rw_lock, flock, "file lock, shared/exclusive", flocktc, flocktc + 2 );
+  t.add( &flock_test::try_lock, flock, "try lock test", flocktc, flocktc + 2 );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );

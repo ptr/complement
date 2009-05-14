@@ -29,6 +29,7 @@ class flock_test
     // int EXAM_DECL(write_profane);
     int EXAM_DECL(wr_lock);
     int EXAM_DECL(rw_lock);
+    int EXAM_DECL(try_lock);
 
   private:
     std::string fname;
