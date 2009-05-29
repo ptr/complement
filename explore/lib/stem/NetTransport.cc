@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/05/04 15:54:22 ptr>
+// -*- C++ -*- Time-stamp: <09/05/29 20:24:56 ptr>
 
 /*
  *
@@ -111,9 +111,14 @@ __FIT_DECLSPEC void NetTransport_base::_close()
   try {
     lock_guard<mutex> lk(manager()->_lock_tr);
     if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
-      ios_base::fmtflags f = manager()->_trs->flags( ios_base::hex | ios_base::showbase );
+      ios_base::fmtflags f = manager()->_trs->flags( ios_base::showbase );
       *manager()->_trs << "NetTransport_base::_close " << self_id() << endl;
+#ifdef STLPORT
       manager()->_trs->flags( f );
+#else
+      manager()->_trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+
     }
   }
   catch ( ... ) {
@@ -142,9 +147,15 @@ bool NetTransport_base::pop( Event& _rs )
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
+        ios_base::fmtflags f = manager()->_trs->flags( 0 );
         *manager()->_trs << HERE << " StEM Magic fail ("
                          << net.rdbuf()->inet_addr() << ":" << net.rdbuf()->port() << ")"
                          << endl;
+#ifdef STLPORT
+        manager()->_trs->flags( f );
+#else
+        manager()->_trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
       }
     }
     catch ( ... ) {
@@ -182,9 +193,15 @@ bool NetTransport_base::pop( Event& _rs )
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
+        ios_base::fmtflags f = manager()->_trs->flags( 0 );
         *manager()->_trs << HERE << " StEM Message size too big: " << sz
                          << " (" << net.rdbuf()->inet_addr() << ":" << net.rdbuf()->port()
                          << ")" << endl;
+#ifdef STLPORT
+        manager()->_trs->flags( f );
+#else
+        manager()->_trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
       }
     }
     catch ( ... ) {
@@ -198,9 +215,15 @@ bool NetTransport_base::pop( Event& _rs )
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
+        ios_base::fmtflags f = manager()->_trs->flags( 0 );
         *manager()->_trs << HERE << " StEM CRC fail"
                          << " (" << net.rdbuf()->inet_addr() << ":" << net.rdbuf()->port()
                          << ")" << endl;
+#ifdef STLPORT
+        manager()->_trs->flags( f );
+#else
+        manager()->_trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
       }
     }
     catch ( ... ) {
@@ -218,7 +241,7 @@ bool NetTransport_base::pop( Event& _rs )
   try {
     lock_guard<mutex> lk(manager()->_lock_tr);
     if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
-      int flags = manager()->_trs->flags();
+      int flags = manager()->_trs->flags( 0 );
       *manager()->_trs << "\tMessage from remote " << hex << showbase << _rs.code() << " "
                        << src << " -> " << dst << endl;
 #ifdef STLPORT
@@ -245,7 +268,7 @@ bool NetTransport_base::Dispatch( const Event& _rs )
   try {
     lock_guard<mutex> lk(manager()->_lock_tr);
     if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
-      int flags = manager()->_trs->flags();
+      int flags = manager()->_trs->flags( 0 );
       *manager()->_trs << "\tMessage to remote " << hex << showbase << _rs.code() << " "
                        << _rs.src() << " -> " << _rs.dest() << endl;
       manager()->dump( *manager()->_trs ) << endl;
@@ -360,8 +383,14 @@ void NetTransport::connect( sockstream& s )
       try {
         lock_guard<mutex> lk(manager()->_lock_tr);
         if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracenet) ) {
+          ios_base::fmtflags f = manager()->_trs->flags( 0 );
           *manager()->_trs << "Pid/ppid: " << std::tr2::getpid() << "/" << std::tr2::getppid() << "\n";
           manager()->dump( *manager()->_trs ) << endl;
+#ifdef STLPORT
+          manager()->_trs->flags( f );
+#else
+          manager()->_trs->flags( static_cast<std::_Ios_Fmtflags>( f ) );
+#endif
         }
       }
       catch ( ... ) {
@@ -380,9 +409,15 @@ void NetTransport::connect( sockstream& s )
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
+        ios_base::fmtflags f = manager()->_trs->flags( 0 );
         *manager()->_trs << HERE << " " << ex.what()
                          << " (" << s.rdbuf()->inet_addr() << ":" << s.rdbuf()->port()
                          << ")" << endl;
+#ifdef STLPORT
+        manager()->_trs->flags( f );
+#else
+        manager()->_trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
       }
     }
     catch ( ... ) {
@@ -392,9 +427,15 @@ void NetTransport::connect( sockstream& s )
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
+        ios_base::fmtflags f = manager()->_trs->flags( 0 );
         *manager()->_trs << __FILE__ << ":" << __LINE__ << " unknown exception"
                          << " (" << s.rdbuf()->inet_addr() << ":" << s.rdbuf()->port()
                          << ")" << endl;
+#ifdef STLPORT
+        manager()->_trs->flags( f );
+#else
+        manager()->_trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
       }
     }
     catch ( ... ) {
@@ -518,12 +559,16 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
       try {
         lock_guard<mutex> lk(manager()->_lock_tr);
         if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracenet) ) {
-          ios_base::fmtflags f = manager()->_trs->flags( ios_base::hex | ios_base::showbase );
+          ios_base::fmtflags f = manager()->_trs->flags( 0 );
           *manager()->_trs << "Pid/ppid: " << std::tr2::getpid() << "/" << std::tr2::getppid() << "\n";
           manager()->dump( *manager()->_trs ) << endl;
           *manager()->_trs << "NetTransportMgr " << me.self_id() << " accept event "
                            << ev.code() << endl;
+#ifdef STLPORT
           manager()->_trs->flags( f );
+#else
+          manager()->_trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
         }
       }
       catch ( ... ) {
@@ -542,9 +587,13 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
-        ios_base::fmtflags f = manager()->_trs->flags( ios_base::hex | ios_base::showbase );
+        ios_base::fmtflags f = manager()->_trs->flags( 0 );
         *manager()->_trs << "NetTransportMgr " << me.self_id() << " loop exit" << endl;
+#ifdef STLPORT
         manager()->_trs->flags( f );
+#else
+        manager()->_trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
       }
     }
     catch ( ... ) {
@@ -557,9 +606,13 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & (EvManager::tracenet)) ) {
-        ios_base::fmtflags f = manager()->_trs->flags( ios_base::hex | ios_base::showbase );
+        ios_base::fmtflags f = manager()->_trs->flags( 0 );
         *manager()->_trs << "NetTransportMgr " << me.self_id() << " loop exit due to exception" << endl;
+#ifdef STLPORT
         manager()->_trs->flags( f );
+#else
+        manager()->_trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
       }
     }
     catch ( ... ) {

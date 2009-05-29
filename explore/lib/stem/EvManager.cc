@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/05/05 11:06:49 ptr>
+// -*- C++ -*- Time-stamp: <09/05/29 20:04:12 ptr>
 
 /*
  *
@@ -386,24 +386,23 @@ void EvManager::unsafe_annotate( const addr_type& id, const std::string& info )
 
 __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
 {
-  ios_base::fmtflags f = s.flags( ios_base::hex | ios_base::showbase );
-  s << "Local map:\n";
+  ios_base::fmtflags f = s.flags( ios_base::showbase );
 
-  // s << hex << showbase;
   {
     lock_guard<mutex> lk( _lock_heap );
 
     for ( local_heap_type::const_iterator i = heap.begin(); i != heap.end(); ++i ) {
-      s << i->first << "\t=> " << i->second.top().second << "\n";
+      s << i->first << " => " << i->second.top().second
+        << " (" << i->second.top().second->classtype().name() << ")\n";
     }
   }
 
-  s << "\nInfo map:\n";
+  s << '\n'; // "\nInfo map:\n";
   {
     lock_guard<mutex> lk( _lock_iheap );
 
     for ( info_heap_type::const_iterator i = iheap.begin(); i != iheap.end(); ++i ) {
-      s << i->first << "\t=> '";
+      s << i->first << " => '";
       for ( addr_collection_type::const_iterator j = i->second.begin(); j != i->second.end(); ) {
         s << *j;
         if ( ++j != i->second.end() ) {
