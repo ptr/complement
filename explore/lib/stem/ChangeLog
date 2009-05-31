@@ -1,3 +1,10 @@
+2009-06-01  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* NetTransport.h, EvManager.cc: C++ names resolution
+	during tracing;
+
+	* libstem: revision 5.0.2.
+
 2009-05-29  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* Repository: change information and formatting flags

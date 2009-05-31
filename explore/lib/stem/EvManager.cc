@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/05/29 20:04:12 ptr>
+// -*- C++ -*- Time-stamp: <09/05/30 02:37:22 ptr>
 
 /*
  *
@@ -24,6 +24,7 @@
 
 // #include <typeinfo>
 #include <exam/defs.h>
+#include <mt/callstack.h>
 
 namespace stem {
 
@@ -285,7 +286,7 @@ void EvManager::Send( const Event& e )
       try {
         lock_guard<mutex> lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
-          *_trs << object->classtype().name()
+          *_trs << xmt::demangle( object->classtype().name() )
                 << " (" << object << ")\n";
           object->DispatchTrace( e, *_trs );
           *_trs << endl;
@@ -303,7 +304,7 @@ void EvManager::Send( const Event& e )
         lock_guard<mutex> lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
           *_trs << err.what() << "\n"
-                << object->classtype().name() << " (" << object << ")\n";
+                << xmt::demangle( object->classtype().name() ) << " (" << object << ")\n";
           object->DispatchTrace( e, *_trs );
           *_trs << endl;
         }
@@ -316,7 +317,7 @@ void EvManager::Send( const Event& e )
         lock_guard<mutex> lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
           *_trs << "Unknown, uncatched exception during process:\n"
-                << object->classtype().name() << " (" << object << ")\n";
+                << xmt::demangle( object->classtype().name() ) << " (" << object << ")\n";
           object->DispatchTrace( e, *_trs );
           *_trs << endl;
         }
@@ -393,7 +394,7 @@ __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
 
     for ( local_heap_type::const_iterator i = heap.begin(); i != heap.end(); ++i ) {
       s << i->first << " => " << i->second.top().second
-        << " (" << i->second.top().second->classtype().name() << ")\n";
+        << " (" << xmt::demangle( i->second.top().second->classtype().name() ) << ")\n";
     }
   }
 
