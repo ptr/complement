@@ -1,3 +1,10 @@
+2009-06-01  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* demangle.cc: demangle names, via GCC's cxxabi;
+	unit tests added too;
+	
+	* libxmt: release 2.1.2.
+
 2009-05-13  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* Makefile: disable libbfd usage, if WITHOUT_BFD set.

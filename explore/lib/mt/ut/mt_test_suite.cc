@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/26 01:03:31 ptr>
+// -*- C++ -*- Time-stamp: <09/06/01 00:59:18 ptr>
 
 /*
  * Copyright (c) 2006-2009
@@ -13,6 +13,7 @@
 #include "mt_test_wg21.h"
 #include "sys_err_test.h"
 #include "flock_test.h"
+#include "misc.h"
 
 #include <config/feature.h>
 
@@ -115,6 +116,11 @@ int main( int argc, const char** argv )
   t.add( &flock_test::wr_lock, flock, "file lock, exclusive/shared", flocktc, flocktc + 2 );
   t.add( &flock_test::rw_lock, flock, "file lock, shared/exclusive", flocktc, flocktc + 2 );
   t.add( &flock_test::try_lock, flock, "try lock test", flocktc, flocktc + 2 );
+
+  mt_test_misc misc;
+
+  t.add( &mt_test_misc::demangle, misc, "demangle" );
+  t.add( &mt_test_misc::function, misc, "function" );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );
