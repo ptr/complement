@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/01 01:55:23 ptr>
+// -*- C++ -*- Time-stamp: <09/06/02 13:51:42 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2009
@@ -48,9 +48,6 @@ class NetTransport_base :
         net( s )
       { }
 
-    ~NetTransport_base()
-      { NetTransport_base::_close(); }
-
     virtual const std::type_info& classtype() const
        { return typeid(NetTransport_base); }
 
@@ -76,6 +73,9 @@ class NetTransport :
   public:
     __FIT_DECLSPEC
     NetTransport( std::sockstream& );
+    ~NetTransport()
+      { NetTransport_base::_close(); }
+
 
     __FIT_DECLSPEC
     void connect( std::sockstream& );

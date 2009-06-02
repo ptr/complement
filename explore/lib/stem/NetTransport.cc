@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/05/29 20:24:56 ptr>
+// -*- C++ -*- Time-stamp: <09/06/02 13:57:03 ptr>
 
 /*
  *
@@ -161,12 +161,12 @@ bool NetTransport_base::pop( Event& _rs )
     catch ( ... ) {
     }
 
-    _close();
+    net.close();
     return false;
   }
 
   if ( !net.read( (char *)&buf[1], sizeof(uint32_t) * (bsz-1) ).good() ) {
-    _close();
+    net.close();
     return false;
   }
   _rs.code( from_net( buf[1] ) );
@@ -206,7 +206,7 @@ bool NetTransport_base::pop( Event& _rs )
     }
     catch ( ... ) {
     }
-    _close();
+    net.close();
     return false;
   }
 
@@ -228,7 +228,7 @@ bool NetTransport_base::pop( Event& _rs )
     }
     catch ( ... ) {
     }
-    _close();
+    net.close();
     return false;
   }
 
@@ -582,7 +582,7 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
 
       manager()->push( ev );
     }
-    me.NetTransport_base::_close();
+    me.net.close();
 #ifdef __FIT_STEM_TRACE
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
@@ -601,7 +601,7 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
 #endif // __FIT_STEM_TRACE
   }
   catch ( ... ) {
-    me.NetTransport_base::_close();
+    me.net.close();
 #ifdef __FIT_STEM_TRACE
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
