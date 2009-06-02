@@ -65,6 +65,7 @@ class stem_test
     int EXAM_DECL(echo);
     int EXAM_DECL(echo_net);
     int EXAM_DECL(net_echo);
+    int EXAM_DECL(triple_echo);
     int EXAM_DECL(ugly_echo_net);
     int EXAM_DECL(peer);
     int EXAM_DECL(last_event);
@@ -453,8 +454,165 @@ int EXAM_IMPL(stem_test::echo_net)
   return EXAM_RESULT;
 }
 
-// same as echo_net(), but server in child process
+int EXAM_IMPL(stem_test::triple_echo)
+{
+  try {
+    xmt::allocator_shm<barrier_ip,0> shm;
+    xmt::allocator_shm<condition_event_ip,0> cnd;
 
+    barrier_ip& b1 = *new ( shm.allocate( 1 ) ) barrier_ip();
+    barrier_ip& b2 = *new ( shm.allocate( 1 ) ) barrier_ip();
+    condition_event_ip& c = *new ( cnd.allocate(1) ) condition_event_ip();
+
+    try {
+      int res = 0;
+
+      this_thread::fork();
+
+      try {
+
+        this_thread::fork();
+        
+        // srv
+        connect_processor<stem::NetTransport> srv( 6995 );
+
+        StEMecho echo( "echo service" );
+
+        echo.set_default(); // become default object       
+        
+        {
+          stem::NetTransportMgr mgr;
+        
+          stem::addr_type def_object = mgr.open( "localhost", 6995 );
+
+          EXAM_CHECK( def_object != stem::badaddr );
+
+          EchoClient node;
+      
+          stem::Event ev( NODE_EV_ECHO );
+
+          ev.dest( def_object );
+          ev.value() = node.mess;
+
+          // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+          // stem::EventHandler::manager()->settrs( &std::cerr );
+
+          node.Send( ev );
+
+          EXAM_CHECK( node.wait() );
+        
+          mgr.close();
+          mgr.join();
+        }
+        
+        b1.wait();
+        
+        c.wait();
+
+        srv.close();
+        srv.wait();
+
+        exit(res);
+      }
+      catch( std::tr2::fork_in_parent& child ) {
+        // echo client
+        b1.wait();
+
+        stem::NetTransportMgr mgr;
+        
+        stem::addr_type def_object = mgr.open( "localhost", 6995 );
+
+        EXAM_CHECK_ASYNC( def_object != stem::badaddr );
+
+        EchoClient node;
+      
+        stem::Event ev( NODE_EV_ECHO );
+
+        ev.dest( def_object );
+        ev.value() = node.mess;
+
+        // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+        // stem::EventHandler::manager()->settrs( &std::cerr );
+
+        node.Send( ev );
+
+        EXAM_CHECK_ASYNC( node.wait() );
+      
+        mgr.close();
+        mgr.join();
+
+        b2.wait();
+        
+        //stem::EventHandler dummy;
+
+        //stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+        //stem::EventHandler::manager()->settrs( &std::cerr );
+
+        c.wait();
+
+        int stat = -1;
+        EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+        if ( WIFEXITED(stat) ) {
+          EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+        } else {
+          EXAM_ERROR( "child interrupted" );
+        }
+
+        exit(res);
+      }
+    }
+    catch( std::tr2::fork_in_parent& child ) {
+      // echo client
+      b2.wait();
+      
+      {
+        stem::NetTransportMgr mgr;
+      
+        stem::addr_type def_object = mgr.open( "localhost", 6995 );
+
+        EXAM_CHECK( def_object != stem::badaddr );
+
+        EchoClient node;
+    
+        stem::Event ev( NODE_EV_ECHO );
+
+        ev.dest( def_object );
+        ev.value() = node.mess;
+
+        // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+        // stem::EventHandler::manager()->settrs( &std::cerr );
+
+        node.Send( ev );
+
+        EXAM_CHECK( node.wait() );
+      
+        mgr.close();
+        mgr.join();
+      }
+
+      c.notify_all();
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+    }
+
+    cnd.deallocate( &c );
+    shm.deallocate( &b2 );
+    shm.deallocate( &b1 );
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  
+  return EXAM_RESULT;
+}
+
+// same as echo_net(), but server in child process
 int EXAM_IMPL(stem_test::net_echo)
 {
   try {
@@ -1203,9 +1361,10 @@ int main( int argc, const char** argv )
   t.add( &stem_test::ns, test, "ns", tc[0] );
   
   t.add( &stem_test::ugly_echo_net, test, "ugly echo net", 
-    t.add( &stem_test::net_echo, test, "net echo",
-      tc[4] = t.add( &stem_test::echo_net, test, "echo_net",
-          tc[3] = t.add( &stem_test::echo, test, "echo", tc[1] ) ) ) );
+    t.add( &stem_test::triple_echo, test, "triple echo", 
+      t.add( &stem_test::net_echo, test, "net echo",
+        tc[4] = t.add( &stem_test::echo_net, test, "echo_net",
+            tc[3] = t.add( &stem_test::echo, test, "echo", tc[1] ) ) ) ) );
 
   t.add( &stem_test::boring_manager_more, test, "boring_manager with echo",
          t.add( &stem_test::boring_manager, test, "boring_manager",
