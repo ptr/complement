@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/05/08 16:38:27 ptr>
+// -*- C++ -*- Time-stamp: <09/06/02 16:28:18 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -472,7 +472,14 @@ int EXAM_IMPL(stem_test::triple_echo)
       try {
 
         this_thread::fork();
-        
+
+#if 0
+        stem::EventHandler dummy;
+
+        stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault | stem::EvManager::tracesubscr);
+        stem::EventHandler::manager()->settrs( &std::cerr );
+#endif
+
         // srv
         connect_processor<stem::NetTransport> srv( 6995 );
 
@@ -485,7 +492,7 @@ int EXAM_IMPL(stem_test::triple_echo)
         
           stem::addr_type def_object = mgr.open( "localhost", 6995 );
 
-          EXAM_CHECK( def_object != stem::badaddr );
+          EXAM_CHECK_ASYNC_F( def_object != stem::badaddr, res );
 
           EchoClient node;
       
@@ -499,7 +506,7 @@ int EXAM_IMPL(stem_test::triple_echo)
 
           node.Send( ev );
 
-          EXAM_CHECK( node.wait() );
+          EXAM_CHECK_ASYNC_F( node.wait(), res );
         
           mgr.close();
           mgr.join();
@@ -518,11 +525,18 @@ int EXAM_IMPL(stem_test::triple_echo)
         // echo client
         b1.wait();
 
+#if 0        
+        stem::EventHandler dummy;
+
+        stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault | stem::EvManager::tracesubscr);
+        stem::EventHandler::manager()->settrs( &std::cerr );
+#endif
+
         stem::NetTransportMgr mgr;
         
         stem::addr_type def_object = mgr.open( "localhost", 6995 );
 
-        EXAM_CHECK_ASYNC( def_object != stem::badaddr );
+        EXAM_CHECK_ASYNC_F( def_object != stem::badaddr, res );
 
         EchoClient node;
       
@@ -536,26 +550,21 @@ int EXAM_IMPL(stem_test::triple_echo)
 
         node.Send( ev );
 
-        EXAM_CHECK_ASYNC( node.wait() );
+        EXAM_CHECK_ASYNC_F( node.wait(), res );
       
         mgr.close();
         mgr.join();
 
         b2.wait();
-        
-        //stem::EventHandler dummy;
-
-        //stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
-        //stem::EventHandler::manager()->settrs( &std::cerr );
 
         c.wait();
 
         int stat = -1;
-        EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+        EXAM_CHECK_ASYNC_F( waitpid( child.pid(), &stat, 0 ) == child.pid(), res );
         if ( WIFEXITED(stat) ) {
-          EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+          EXAM_CHECK_ASYNC_F( WEXITSTATUS(stat) == 0, res );
         } else {
-          EXAM_ERROR( "child interrupted" );
+          EXAM_ERROR_ASYNC_F( "child interrupted", res );
         }
 
         exit(res);
