@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/02 14:36:59 ptr>
+// -*- C++ -*- Time-stamp: <09/06/02 16:27:00 ptr>
 
 /*
  *
@@ -237,7 +237,21 @@ void EvManager::Unsubscribe( const addr_type& id, EventHandler* obj )
     local_heap_type::iterator i = heap.find( id );
     if ( i != heap.end() ) {
       if ( i->second.size() == 1 ) {
-        heap.erase( i );
+        if ( i->second.top().second == obj ) {
+          heap.erase( i );
+        } else {
+          try {
+            lock_guard<mutex> lk(_lock_tr);
+            if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+              *_trs << "EvManager unsubscribe: address " << id << " not correspond to "
+                    << obj << " ("
+                    << xmt::demangle( obj->classtype().name() ) << ")\n";
+            }
+          }
+          catch ( ... ) {
+          }
+          return;
+        }
       } else {
         handlers_type tmp;
         swap( i->second, tmp );

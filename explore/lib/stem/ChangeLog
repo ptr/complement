@@ -1,3 +1,16 @@
+2009-06-02  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* EvManager.cc, NetTransport.cc: erase id from
+	addresses list of NetworkTransport_base, when
+	address unsibscribed; EvManager check that
+	unsubscribed address correspond to object, even
+	in case of single record and report about problem;
+
+	* EvManager.h, EvManager.cc: add tracesubscr flag
+	to trace StEM's subscription/unsubscription;
+
+	* libstem: revision 5.0.3.
+
 2009-06-01  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* NetTransport.h, EvManager.cc: C++ names resolution

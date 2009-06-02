@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/02 13:57:03 ptr>
+// -*- C++ -*- Time-stamp: <09/06/02 16:07:11 ptr>
 
 /*
  *
@@ -127,8 +127,9 @@ __FIT_DECLSPEC void NetTransport_base::_close()
 
   EventHandler::addr_container_type::iterator j = _ids.begin();
   ++j;
-  for ( ; j != _ids.end(); ++j ) {    
+  for ( ; j != _ids.end(); ) {    
     manager()->Unsubscribe( *j, this );
+    _ids.erase( j++ );
   }
   net.close();
 }
