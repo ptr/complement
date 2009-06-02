@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/05/30 02:37:22 ptr>
+// -*- C++ -*- Time-stamp: <09/06/02 14:36:59 ptr>
 
 /*
  *
@@ -80,7 +80,7 @@ void EvManager::_Dispatch( EvManager* p )
       try {
         lock_guard<mutex> lk(me._lock_tr);
         if ( me._trs != 0 && me._trs->good() && (me._trflags & tracedispatch) ) {
-          ios_base::fmtflags f = me._trs->flags( ios_base::hex | ios_base::showbase );
+          ios_base::fmtflags f = me._trs->flags( 0 );
           *me._trs << "EvManager queues swapped" << endl;
           me._trs->flags( f );
         }
@@ -104,7 +104,7 @@ void EvManager::_Dispatch( EvManager* p )
   try {
     lock_guard<mutex> lk(me._lock_tr);
     if ( me._trs != 0 && me._trs->good() && (me._trflags & tracedispatch) ) {
-      ios_base::fmtflags f = me._trs->flags( ios_base::hex | ios_base::showbase );
+      ios_base::fmtflags f = me._trs->flags( 0 );
       *me._trs << "EvManager Dispatch loop finished" << endl;
       me._trs->flags( f );
     }
@@ -127,7 +127,7 @@ void EvManager::_Dispatch( EvManager* p )
   try {
     lock_guard<mutex> lk(me._lock_tr);
     if ( me._trs != 0 && me._trs->good() && (me._trflags & tracedispatch) ) {
-      ios_base::fmtflags f = me._trs->flags( ios_base::hex | ios_base::showbase );
+      ios_base::fmtflags f = me._trs->flags( 0 );
       *me._trs << "EvManager stop Dispatch" << endl;
       me._trs->flags( f );
     }
@@ -141,6 +141,21 @@ __FIT_DECLSPEC
 void EvManager::Subscribe( const addr_type& id, EventHandler* object, int nice )
 {
   lock_guard<mutex> lk( _lock_heap );
+#ifdef __FIT_STEM_TRACE
+  try {
+    lock_guard<mutex> lk(_lock_tr);
+    if ( _trs != 0 && _trs->good() && (_trflags & tracesubscr) ) {
+      ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+      *_trs << "EvManager subscribe " << id << " nice " << nice << ' '
+               << object << " ("
+               << xmt::demangle( object->classtype().name() ) << ")" << endl;
+      _trs->flags( f );
+    }
+  }
+  catch ( ... ) {
+  }
+#endif // __FIT_STEM_TRACE
+
   heap[id].push( make_pair( nice, object) );
 }
 
@@ -149,6 +164,22 @@ void EvManager::Subscribe( const addr_type& id, EventHandler* object, const std:
 {
   {
     lock_guard<mutex> lk( _lock_heap );
+#ifdef __FIT_STEM_TRACE
+    try {
+      lock_guard<mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & tracesubscr) ) {
+        ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+        *_trs << "EvManager subscribe " << id << " nice " << nice << ' '
+                 << object << " ("
+                 << xmt::demangle( object->classtype().name() ) << "), "
+                 << info << endl;
+        _trs->flags( f );
+      }
+    }
+    catch ( ... ) {
+    }
+#endif // __FIT_STEM_TRACE
+
     heap[id].push( make_pair( nice, object) );
   }
 
@@ -160,6 +191,22 @@ void EvManager::Subscribe( const addr_type& id, EventHandler* object, const char
 {
   {
     lock_guard<mutex> lk( _lock_heap );
+#ifdef __FIT_STEM_TRACE
+    try {
+      lock_guard<mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & tracesubscr) ) {
+        ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+        *_trs << "EvManager subscribe " << id << " nice " << nice << ' '
+                 << object << " ("
+                 << xmt::demangle( object->classtype().name() ) << "), "
+                 << info << endl;
+        _trs->flags( f );
+      }
+    }
+    catch ( ... ) {
+    }
+#endif // __FIT_STEM_TRACE
+
     heap[id].push( make_pair( nice, object) );
   }
 
@@ -171,6 +218,21 @@ void EvManager::Unsubscribe( const addr_type& id, EventHandler* obj )
 {
   {
     lock_guard<mutex> _x1( _lock_heap );
+
+#ifdef __FIT_STEM_TRACE
+    try {
+      lock_guard<mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & tracesubscr) ) {
+        ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+        *_trs << "EvManager unsubscribe " << id << ' '
+                 << obj << " ("
+                 << xmt::demangle( obj->classtype().name() ) << ')' << endl;
+        _trs->flags( f );
+      }
+    }
+    catch ( ... ) {
+    }
+#endif // __FIT_STEM_TRACE
 
     local_heap_type::iterator i = heap.find( id );
     if ( i != heap.end() ) {
@@ -331,8 +393,7 @@ void EvManager::Send( const Event& e )
     try {
       lock_guard<mutex> lk(_lock_tr);
       if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-        *_trs << err.what() << "\n"
-              << __FILE__ << ":" << __LINE__ << endl;
+        *_trs << HERE << ' ' << err.what() << endl;
       }
     }
     catch ( ... ) {
@@ -345,8 +406,7 @@ void EvManager::Send( const Event& e )
     try {
       lock_guard<mutex> lk(_lock_tr);
       if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-        *_trs << err.what() << " "
-              << __FILE__ << ":" << __LINE__ << endl;
+        *_trs << HERE << ' ' << err.what() << endl;
       }
     }
     catch ( ... ) {
@@ -359,8 +419,7 @@ void EvManager::Send( const Event& e )
     try {
       scoped_lock lk(_lock_tr);
       if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-        *_trs << "Unknown, uncatched exception: "
-              << __FILE__ << ":" << __LINE__ << endl;
+        *_trs << HERE << " unknown, uncatched exception" << endl;
       }
     }
     catch ( ... ) {

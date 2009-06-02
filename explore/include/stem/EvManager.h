@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/05/05 10:48:58 ptr>
+// -*- C++ -*- Time-stamp: <09/06/02 14:09:27 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009
@@ -105,7 +105,8 @@ class EvManager
       notrace = 0,
       tracenet = 1,
       tracedispatch = 2,
-      tracefault = 4
+      tracefault = 4,
+      tracesubscr = 8
     };
 
     typedef std::deque< Event > queue_type;
