@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/12 00:35:37 ptr>
+// -*- C++ -*- Time-stamp: <09/06/06 00:28:50 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -131,21 +131,24 @@ Opts::options_container_type::const_iterator Opts::get_opt_index( const string& 
   }
   
   if (s.size() > 2 && s[1] == '-') {
-    options_container_type::const_iterator i;
     options_container_type::const_iterator res = storage.end();
     string tmp = s.substr(2);
+    bool ambiguous = false;
 
-    for ( i = storage.begin(); i != storage.end(); ++i ) {
+    for ( options_container_type::const_iterator i = storage.begin(); i != storage.end(); ++i ) {
       if ( (*i)->longname.find(tmp) == 0 ) {
-        if ( res != storage.end() ) { // second match
-          return storage.end(); 
-        } else { // first match
+        if ( (*i)->longname.size() == tmp.size() ) { // i.e. longname == tmp
+          return i; // precise match; return it even if ambiguous
+        }
+        if ( res == storage.end() ) { // first match
           res = i;
+        } else {
+          ambiguous = true;
         }
       }
     }
 
-    return res;
+    return ambiguous ? storage.end() : res;
   }
     
   return storage.end();

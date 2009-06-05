@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/05 20:17:15 ptr>
+// -*- C++ -*- Time-stamp: <09/06/06 00:36:12 ptr>
 
 /*
  * Copyright (c) 2008
@@ -44,6 +44,7 @@ class opts_test
     int EXAM_DECL(long_string);
     int EXAM_DECL(named_param);
     int EXAM_DECL(z_bug);
+    int EXAM_DECL(z_bug_reorder);
 };
 
 #endif // __MISC_TEST_H

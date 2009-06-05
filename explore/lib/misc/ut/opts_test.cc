@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/05 20:16:57 ptr>
+// -*- C++ -*- Time-stamp: <09/06/06 00:44:24 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -990,17 +990,20 @@ Available options:\n\
 
 int EXAM_IMPL(opts_test::z_bug)
 {
-  const char* argv[] = { "name", "--rz=dbmeta-rz.mail.yandex.ru" };
+  const char* argv[] = { "name", "--rz=dbmeta-rz.mail.yandex.ru", "--rzc=4392" };
   int argc = sizeof( argv ) / sizeof(argv[0]);
 
   Opts opts;
 
   opts << option<string>( "RZ server <host>", "rz" )["localhost"]
-       << option<int>( "RZ server control <port>", "rzconrol" )[4391]
+       << option<int>( "RZ server control <port>", "rzcontrol" )[4391]
        << option<int>( "RZ server query <port>", "rzquery" )[4390];
 
   try {
     opts.parse( argc, argv );
+  
+    EXAM_CHECK( opts.get<string>( "rz" ) == "dbmeta-rz.mail.yandex.ru" );
+    // EXAM_CHECK( opts.get<int>( "rzcontrol" ) == 4392 );
   }
   catch( const Opts::arg_typemismatch& e ) {
     EXAM_ERROR( "Opts::arg_typemismatch exception" );
@@ -1014,8 +1017,39 @@ int EXAM_IMPL(opts_test::z_bug)
   catch ( ... ) {
     EXAM_ERROR( "unexpected exception" );
   }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(opts_test::z_bug_reorder)
+{
+  const char* argv[] = { "name", "--rzqu=4392", "--rz=dbmeta-rz.mail.yandex.ru" };
+  int argc = sizeof( argv ) / sizeof(argv[0]);
+
+  Opts opts;
+
+  opts << option<int>( "RZ server query <port>", "rzquery" )[4390]
+       << option<int>( "RZ server control <port>", "rzcontrol" )[4391]
+       << option<string>( "RZ server <host>", "rz" )["localhost"];
+
+  try {
+    opts.parse( argc, argv );
   
-  EXAM_CHECK( opts.get<string>( "rz" ) == "dbmeta-rz.mail.yandex.ru" );
+    EXAM_CHECK( opts.get<string>( "rz" ) == "dbmeta-rz.mail.yandex.ru" );
+    EXAM_CHECK( opts.get<int>( "rzquery" ) == 4392 );
+  }
+  catch( const Opts::arg_typemismatch& e ) {
+    EXAM_ERROR( "Opts::arg_typemismatch exception" );
+  }
+  catch ( const Opts::unknown_option& ) {
+    EXAM_ERROR( "Opts::unknown_option exception" );
+  }
+  catch( const Opts::missing_arg& ) {
+    EXAM_ERROR( "Opts::missing_arg exception" );
+  }
+  catch ( ... ) {
+    EXAM_ERROR( "unexpected exception" );
+  }
 
   return EXAM_RESULT;
 }

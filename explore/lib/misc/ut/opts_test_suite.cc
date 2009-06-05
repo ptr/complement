@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/05 20:18:15 ptr>
+// -*- C++ -*- Time-stamp: <09/06/06 00:40:55 ptr>
 
 /*
  * Copyright (c) 2007-2009
@@ -47,14 +47,15 @@ void options_test_suite_init( exam::test_suite& t, opts_test& opts )
   
   // check whether autocomplement works
   tc[4] = t.add( &opts_test::autocomplement, opts, "autocomplement", tc[1] ); 
-  t.add( &opts_test::autocomplement_failure, opts, "autocomplement_failure", tc[4] );
+  tc[7] = t.add( &opts_test::autocomplement_failure, opts, "autocomplement_failure", tc[4] );
 
   t.add( &opts_test::multiple_args, opts, "multiple_args", tc[3] );
 
   tc[5] = t.add( &opts_test::help, opts, "help", tc, tc + 2 );
-  
-  t.add( &opts_test::z_bug, opts, "[r]z bug",
-    t.add( &opts_test::long_string, opts, "long string" ) );
+  tc[6] = t.add( &opts_test::long_string, opts, "long string" );
+
+  t.add( &opts_test::z_bug_reorder, opts, "autocomplement and precise match, reorder",
+    t.add( &opts_test::z_bug, opts, "autocomplement and precise match", tc + 6, tc + 8 ) );
 
   t.add( &opts_test::named_param, opts, "named parameter", tc[5] );
 }

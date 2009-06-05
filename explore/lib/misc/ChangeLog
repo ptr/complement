@@ -1,3 +1,10 @@
+2009-06-06  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* opts.cc: if option match precise, don't treat it as
+	ambiguity;
+
+	* libmisc: version 1.12.1.
+
 2009-02-04  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* libmisc: removed argsi.cc, arguments.cc (replaced by opts) and
