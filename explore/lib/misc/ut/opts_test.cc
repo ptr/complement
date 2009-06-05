@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/12 00:42:54 ptr>
+// -*- C++ -*- Time-stamp: <09/06/05 20:16:57 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -32,7 +32,8 @@ int EXAM_IMPL(opts_test::flag_option)
 
   try {
     opts.parse( argc, argv );
-  } catch(...) {
+  }
+  catch ( ... ) {
     EXAM_ERROR("unexpected exception");
   }
   
@@ -52,7 +53,8 @@ int EXAM_IMPL(opts_test::flag_option_long)
 
   try {
     opts.parse( argc, argv );
-  } catch(...) {
+  }
+  catch ( ... ) {
     EXAM_ERROR("unexpected exception");
   }
   
@@ -432,7 +434,7 @@ int EXAM_IMPL(opts_test::unexpected_argument)
 
     EXAM_ERROR( "Opts::arg_typemismatch exception expected" );
   }
-  catch(const Opts::arg_typemismatch& e) {
+  catch( const Opts::arg_typemismatch& e ) {
     EXAM_MESSAGE( "Opts::arg_typemismatch exception, as expected" );
   }
   catch ( ... ) {
@@ -456,7 +458,7 @@ int EXAM_IMPL(opts_test::missing_argument)
 
     EXAM_ERROR( "Opts::missing_arg exception expected" );
   }
-  catch(const Opts::missing_arg& e) {
+  catch( const Opts::missing_arg& e ) {
     EXAM_MESSAGE( "Opts::missing_arg exception, as expected" );
   }
   catch ( ... ) {
@@ -478,8 +480,9 @@ int EXAM_IMPL(opts_test::multiple)
     
     try {
       opts.parse( argc, argv );
-    } catch(...) {
-      EXAM_ERROR("unexpected exception");
+    }
+    catch ( ... ) {
+      EXAM_ERROR( "unexpected exception" );
     }
     
     EXAM_CHECK( opts.get_cnt('v') == 3 );
@@ -495,7 +498,8 @@ int EXAM_IMPL(opts_test::multiple)
     
     try {
       opts.parse( argc, argv );
-    } catch(...) {
+    }
+    catch ( ... ) {
       EXAM_ERROR("unexpected exception");
     }
 
@@ -512,7 +516,8 @@ int EXAM_IMPL(opts_test::multiple)
 
     try {
       opts.parse( argc, argv );
-    } catch(...) {
+    }
+    catch( ... ) {
       EXAM_ERROR("unexpected exception");
     }
 
@@ -536,7 +541,8 @@ int EXAM_IMPL(opts_test::compound)
 
     try {
       opts.parse( argc, argv );
-    } catch(...) {
+    }
+    catch ( ... ) {
       EXAM_ERROR("unexpected exception");
     }
 
@@ -561,7 +567,8 @@ int EXAM_IMPL(opts_test::multiple_compound)
     
   try {
     opts.parse( argc, argv );
-  } catch(...) {
+  }
+  catch ( ... ) {
     EXAM_ERROR("unexpected exception");
   }
 
@@ -607,7 +614,8 @@ int EXAM_IMPL(opts_test::args)
 
     try {
       opts.parse( argc, argv );
-    } catch(...) {
+    }
+    catch ( ... ) {
       EXAM_ERROR("unexpected exception");
     }
     
@@ -629,7 +637,8 @@ int EXAM_IMPL(opts_test::args)
 
     try {
       opts.parse( argc, argv );
-    } catch(...) {
+    }
+    catch ( ... ) {
       EXAM_ERROR("unexpected exception");
     }
     
@@ -651,7 +660,8 @@ int EXAM_IMPL(opts_test::args)
     
     try {
       opts.parse( argc, argv );
-    } catch(...) {
+    }
+    catch ( ... ) {
       EXAM_ERROR("unexpected exception");
     }
     
@@ -678,7 +688,8 @@ int EXAM_IMPL(opts_test::stop)
 
     try {
       opts.parse( argc, argv );
-    } catch(...) {
+    }
+    catch ( ... ) {
       EXAM_ERROR("unexpected exception");
     }
 
@@ -725,7 +736,8 @@ int EXAM_IMPL(opts_test::user_defined)
 
   try {
     opts.parse( argc, argv );
-  } catch(...) {
+  }
+  catch ( ... ) {
     EXAM_ERROR("unexpected exception");
   }
 
@@ -748,7 +760,8 @@ int EXAM_IMPL(opts_test::autocomplement)
 
   try {
     opts.parse( argc, argv );
-  } catch(...) {
+  }
+  catch ( ... ) {
     EXAM_ERROR("unexpected exception");
   }
 
@@ -851,7 +864,8 @@ int EXAM_IMPL(opts_test::help)
     
   try {
     opts.parse( argc, argv );
-  } catch(...) {
+  }
+  catch ( ... ) {
     EXAM_ERROR("unexpected exception");
   }
 
@@ -901,8 +915,9 @@ int EXAM_IMPL(opts_test::long_string)
   
     try {
       opts.parse( argc, argv );
-    } catch(...) {
-    EXAM_ERROR("unexpected exception");
+    }
+    catch ( ... ) {
+      EXAM_ERROR("unexpected exception");
     }
 
     EXAM_CHECK( opts.get<string>( 's' ) == "long string" );
@@ -918,7 +933,8 @@ int EXAM_IMPL(opts_test::long_string)
   
     try {
       opts.parse( argc, argv );
-    } catch(...) {
+    }
+    catch ( ... ) {
       EXAM_ERROR("unexpected exception");
     }
 
@@ -968,6 +984,38 @@ Available options:\n\
    //cerr << '#' << st.substr( n ) << endl;
   
   EXAM_CHECK( s.str() == sample );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(opts_test::z_bug)
+{
+  const char* argv[] = { "name", "--rz=dbmeta-rz.mail.yandex.ru" };
+  int argc = sizeof( argv ) / sizeof(argv[0]);
+
+  Opts opts;
+
+  opts << option<string>( "RZ server <host>", "rz" )["localhost"]
+       << option<int>( "RZ server control <port>", "rzconrol" )[4391]
+       << option<int>( "RZ server query <port>", "rzquery" )[4390];
+
+  try {
+    opts.parse( argc, argv );
+  }
+  catch( const Opts::arg_typemismatch& e ) {
+    EXAM_ERROR( "Opts::arg_typemismatch exception" );
+  }
+  catch ( const Opts::unknown_option& ) {
+    EXAM_ERROR( "Opts::unknown_option exception" );
+  }
+  catch( const Opts::missing_arg& ) {
+    EXAM_ERROR( "Opts::missing_arg exception" );
+  }
+  catch ( ... ) {
+    EXAM_ERROR( "unexpected exception" );
+  }
+  
+  EXAM_CHECK( opts.get<string>( "rz" ) == "dbmeta-rz.mail.yandex.ru" );
 
   return EXAM_RESULT;
 }

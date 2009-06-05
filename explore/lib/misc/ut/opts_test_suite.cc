@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/11/26 22:09:01 ptr>
+// -*- C++ -*- Time-stamp: <09/06/05 20:18:15 ptr>
 
 /*
- * Copyright (c) 2007, 2008
+ * Copyright (c) 2007-2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -53,7 +53,8 @@ void options_test_suite_init( exam::test_suite& t, opts_test& opts )
 
   tc[5] = t.add( &opts_test::help, opts, "help", tc, tc + 2 );
   
-  t.add( &opts_test::long_string, opts, "long string" );
+  t.add( &opts_test::z_bug, opts, "[r]z bug",
+    t.add( &opts_test::long_string, opts, "long string" ) );
 
   t.add( &opts_test::named_param, opts, "named parameter", tc[5] );
 }
