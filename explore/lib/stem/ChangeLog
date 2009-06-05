@@ -1,3 +1,15 @@
+2009-06-05  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* EventHandler.h, _EventHandler.cc: worry about
+	empty states container; clean states container
+	and remove all own StEM addresses in dtor;
+	add public 'solitary' method to remove object
+	from StEM communication at all---workaround
+	for case when event processing may collide with
+	object's dtor;
+
+	* libstem: revision 5.1.0.
+
 2009-06-02  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* EvManager.cc, NetTransport.cc: erase id from

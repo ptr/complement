@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/05/05 11:07:54 ptr>
+// -*- C++ -*- Time-stamp: <09/06/05 14:10:19 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -60,6 +60,25 @@ void StEMecho::regme( const stem::Event& ev )
 DEFINE_RESPONSE_TABLE( StEMecho )
   EV_EDS( 0, NODE_EV_ECHO, echo )
   EV_EDS( 0, NODE_EV_REGME, regme )
+END_RESPONSE_TABLE
+
+EchoClientTrivial::EchoClientTrivial() :
+    EventHandler(),
+    mess( "echo string" )
+{
+}
+
+EchoClientTrivial::~EchoClientTrivial()
+{
+}
+
+void EchoClientTrivial::handler1( const stem::Event& ev )
+{
+  EXAM_CHECK_ASYNC( ev.value() == mess );
+}
+
+DEFINE_RESPONSE_TABLE( EchoClientTrivial )
+  EV_EDS(0,NODE_EV_ECHO,handler1)
 END_RESPONSE_TABLE
 
 EchoClient::EchoClient() :

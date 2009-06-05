@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/05/05 09:38:49 ptr>
+// -*- C++ -*- Time-stamp: <09/06/05 01:17:23 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2008-2009
@@ -119,6 +119,9 @@ __FIT_DECLSPEC
 state_type EventHandler::State() const
 {
   lock_guard<recursive_mutex> lk( _theHistory_lock );
+  if ( theHistory.empty() ) {
+    return ST_TERMINAL;
+  }
   state_type top = theHistory.front();
   return top;
 }
@@ -135,6 +138,9 @@ __FIT_DECLSPEC
 void EventHandler::PopState()
 {
   lock_guard<recursive_mutex> lk( _theHistory_lock );
+  if ( theHistory.empty() ) {
+    return;
+  }
   theHistory.pop_front();
   while ( theHistory.front() == ST_TERMINAL ) {
     theHistory.pop_front();
@@ -155,6 +161,9 @@ __FIT_DECLSPEC
 void EventHandler::RemoveState( state_type state )
 {
   lock_guard<recursive_mutex> lk( _theHistory_lock );
+  if ( theHistory.empty() ) {
+    return;
+  }
   h_iterator hst_i = __find( state );
   if ( hst_i != theHistory.end() && *hst_i != ST_TERMINAL ) {
     theHistory.erase( hst_i );
@@ -240,9 +249,7 @@ EventHandler::EventHandler( const addr_type& id, const char* info )
 __FIT_DECLSPEC
 EventHandler::~EventHandler()
 {
-  for ( addr_container_type::iterator i = _ids.begin(); i != _ids.end(); ++i ) {
-    _mgr->Unsubscribe( *i, this );
-  }
+  EventHandler::solitary();
   ((Init *)Init_buf)->~Init();
 }
 
@@ -269,6 +276,18 @@ addr_type EventHandler::set_default() const
   _default_addr = _ids.front();
 
   return tmp;
+}
+
+void EventHandler::solitary()
+{
+  lock_guard<recursive_mutex> lk( _theHistory_lock );
+
+  for ( addr_container_type::iterator i = _ids.begin(); i != _ids.end(); ) {
+    _mgr->Unsubscribe( *i, this );
+    _ids.erase( i++ );
+  }
+
+  theHistory.clear();
 }
 
 } // namespace stem

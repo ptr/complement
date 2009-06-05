@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <07/07/20 00:14:24 ptr>
+# -*- makefile -*- Time-stamp: <09/06/05 00:22:34 ptr>
 
 PRGNAME = stem_ut
 SRC_CC = unit_test.cc \
@@ -6,4 +6,5 @@ SRC_CC = unit_test.cc \
          NameService.cc \
          Echo.cc \
          Convert.cc \
-         Cron.cc
+         Cron.cc \
+         vf.cc

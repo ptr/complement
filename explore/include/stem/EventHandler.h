@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/05/05 09:38:26 ptr>
+// -*- C++ -*- Time-stamp: <09/06/05 01:04:54 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006, 2009
@@ -593,11 +593,12 @@ class EventHandler
       { EventHandler::Forward( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
 
     const addr_type& self_id() const
-      { return _ids.front(); }
+      { return _ids.empty() ? stem::badaddr : _ids.front(); }
     id_iterator self_ids_begin() const
       { return _ids.begin(); }
     id_iterator self_ids_end() const
       { return _ids.end(); }
+    void solitary();
 
     void State( state_type state )
       { PushState( state ); }

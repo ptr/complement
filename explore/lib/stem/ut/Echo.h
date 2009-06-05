@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/05/04 16:19:29 ptr>
+// -*- C++ -*- Time-stamp: <09/06/05 14:07:07 ptr>
 
 /*
  * Copyright (c) 2006-2009
@@ -33,6 +33,21 @@ class StEMecho :
 
   private:
     DECLARE_RESPONSE_TABLE( StEMecho, stem::EventHandler );
+};
+
+class EchoClientTrivial :
+    public stem::EventHandler
+{
+  public:
+    EchoClientTrivial();
+    ~EchoClientTrivial();
+
+    void handler1( const stem::Event& );
+
+    const std::string mess;
+
+  private:
+    DECLARE_RESPONSE_TABLE( EchoClientTrivial, stem::EventHandler );
 };
 
 class EchoClient :

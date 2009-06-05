@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/02 16:28:18 ptr>
+// -*- C++ -*- Time-stamp: <09/06/05 14:08:11 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -28,6 +28,7 @@
 #include "Echo.h"
 #include "Convert.h"
 #include "Cron.h"
+#include "vf.h"
 
 #include <stem/NetTransport.h>
 #include <stem/EvManager.h>
@@ -73,6 +74,7 @@ class stem_test
     int EXAM_DECL(boring_manager_more);
     int EXAM_DECL(convert);
     int EXAM_DECL(cron);
+    int EXAM_DECL(vf);
 
     static void thr1();
     static void thr1new();
@@ -1175,7 +1177,7 @@ int EXAM_IMPL(stem_test::boring_manager_more)
           ev.dest( a );
           ev.value() = "echo string";
 
-          EchoClient node;
+          EchoClientTrivial node;
 
           node.Send( ev );
 
@@ -1203,11 +1205,22 @@ int EXAM_IMPL(stem_test::boring_manager_more)
     fcnd.notify_all();
 
     int stat = -1;
-    EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
-    if ( WIFEXITED(stat) ) {
-      EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+    pid_t chp = waitpid( child.pid(), &stat, 0 );
+    EXAM_CHECK( chp == child.pid() );
+    if ( chp != -1 ) {
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else if ( WIFSIGNALED(stat) ) {
+        stringstream s( "child interrupted by uncatch signal " );
+        s << WTERMSIG(stat);
+        EXAM_ERROR( s.str().c_str() );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
     } else {
-      EXAM_ERROR( "child interrupted" );
+      std::system_error err( errno, std::get_posix_category(), std::string( "waitpid interrupted" ) );
+
+      EXAM_ERROR( err.what() );
     }
 
     srv.close();
@@ -1352,9 +1365,28 @@ int EXAM_IMPL(stem_test::cron)
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(stem_test::vf)
+{
+  {
+    stem::addr_type addr = xmt::uid();
+ 
+    VF obj( addr );
+
+    stem::Event ev( 0x300 ); // not significant
+    
+    ev.dest( addr );
+
+    for ( int i = 0; i < 1000; ++i ) {
+      obj.Send( ev );
+    }
+  }
+
+  return EXAM_RESULT;
+}
+
 int main( int argc, const char** argv )
 {
-  exam::test_suite::test_case_type tc[6];
+  exam::test_suite::test_case_type tc[7];
 
   exam::test_suite t( "libstem test suite" );
   stem_test test;
@@ -1381,7 +1413,7 @@ int main( int argc, const char** argv )
 
   tc[5] = t.add( &stem_test::convert, test, "convert", tc[0] );
 
-  t.add( &stem_test::last_event, test, "last event", tc[4] );
+  tc[6] = t.add( &stem_test::last_event, test, "last event", tc[4] );
 
   exam::test_suite::test_case_type cases_next[10];
 
@@ -1389,6 +1421,8 @@ int main( int argc, const char** argv )
   cases_next[1] = tc[5];
 
   t.add( &stem_test::cron, test, "cron", cases_next, cases_next + 2 );
+
+  t.add( &stem_test::vf, test, "dtor when come event", tc[6] );
 
   Opts opts;
 
