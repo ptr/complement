@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/04/30 12:02:13 ptr>
+// -*- C++ -*- Time-stamp: <09/06/08 17:07:10 ptr>
 
 /*
- * Copyright (c) 1998, 2002, 2003, 2005, 2007, 2008
+ * Copyright (c) 1998, 2002, 2003, 2005, 2007-2009
  * Petr Ovtchenkov
  * 
  * Copyright (c) 1999-2001
@@ -165,6 +165,29 @@ class Cron :
 
         Cron& me;
     } running;
+
+    struct _ready
+    {
+        _ready( Cron& c ) :
+            me( c )
+          { }
+
+        bool operator()() const
+          {
+            if ( me._M_c.empty() ) {
+              return true;
+            }
+            if ( !me.isState( CRON_ST_STARTED ) ) {
+              return true;
+            }
+            if ( me._M_c.top().expired <= std::tr2::get_system_time() ) {
+              return true;
+            }
+            return false;
+          }
+
+        Cron& me;
+    } ready;
 
     std::tr2::thread* _thr;
 

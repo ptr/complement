@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/04/30 12:04:02 ptr>
+// -*- C++ -*- Time-stamp: <09/06/08 17:12:25 ptr>
 
 /*
  * Copyright (c) 1998, 2002-2003, 2005-2006, 2008-2009
@@ -31,6 +31,7 @@ using namespace std::tr2;
 __FIT_DECLSPEC Cron::Cron() :
     EventHandler(),
     running( *this ),
+    ready( *this ),
     _thr( 0 )
 {
 }
@@ -38,6 +39,7 @@ __FIT_DECLSPEC Cron::Cron() :
 __FIT_DECLSPEC Cron::Cron( const char *info ) :
     EventHandler( info ),
     running( *this ),
+    ready( *this ),
     _thr( 0 )
 {
 }
@@ -45,6 +47,7 @@ __FIT_DECLSPEC Cron::Cron( const char *info ) :
 __FIT_DECLSPEC Cron::Cron( addr_type id, const char *info ) :
     EventHandler( id, info ),
     running( *this ),
+    ready( *this ),
     _thr( 0 )
 {
 }
@@ -205,7 +208,11 @@ void Cron::_loop( Cron* p )
     // At this point _M_c should never be empty!
 
     if ( me._M_c.top().expired > get_system_time() ) {
-      bool alarm = me.cond.timed_wait( lk, me._M_c.top().expired, me.running );
+      bool alarm = me.cond.timed_wait( lk, me._M_c.top().expired, me.ready );
+
+      if ( !me.isState( CRON_ST_STARTED ) ) {
+        break;
+      }
 
       if ( me._M_c.empty() ) { // event removed while I wait?
         continue;
