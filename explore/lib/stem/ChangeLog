@@ -1,3 +1,11 @@
+2009-06-10  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* NetTransport.cc: first close connection, then do
+	'solitary' (see 2009-06-05) in NetTransport_base::_close
+	to avoid access after destroy;
+
+	* libstem: revision 5.1.2.
+
 2009-06-08  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* Cron.h, Cron.cc: fix condition check in cron

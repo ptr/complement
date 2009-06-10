@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/02 16:27:00 ptr>
+// -*- C++ -*- Time-stamp: <09/06/10 20:16:15 ptr>
 
 /*
  *
@@ -80,9 +80,17 @@ void EvManager::_Dispatch( EvManager* p )
       try {
         lock_guard<mutex> lk(me._lock_tr);
         if ( me._trs != 0 && me._trs->good() && (me._trflags & tracedispatch) ) {
+#ifdef STLPORT
           ios_base::fmtflags f = me._trs->flags( 0 );
+#else
+          ios_base::fmtflags f = me._trs->flags( static_cast<std::_Ios_Fmtflags>(0) );
+#endif
           *me._trs << "EvManager queues swapped" << endl;
+#ifdef STLPORT
           me._trs->flags( f );
+#else
+          me._trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
         }
       }
       catch ( ... ) {
@@ -104,9 +112,17 @@ void EvManager::_Dispatch( EvManager* p )
   try {
     lock_guard<mutex> lk(me._lock_tr);
     if ( me._trs != 0 && me._trs->good() && (me._trflags & tracedispatch) ) {
+#ifdef STLPORT
       ios_base::fmtflags f = me._trs->flags( 0 );
+#else
+      ios_base::fmtflags f = me._trs->flags( static_cast<std::_Ios_Fmtflags>(0) );
+#endif
       *me._trs << "EvManager Dispatch loop finished" << endl;
+#ifdef STLPORT
       me._trs->flags( f );
+#else
+      me._trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
     }
   }
   catch ( ... ) {
@@ -127,9 +143,17 @@ void EvManager::_Dispatch( EvManager* p )
   try {
     lock_guard<mutex> lk(me._lock_tr);
     if ( me._trs != 0 && me._trs->good() && (me._trflags & tracedispatch) ) {
+#ifdef STLPORT
       ios_base::fmtflags f = me._trs->flags( 0 );
+#else
+      ios_base::fmtflags f = me._trs->flags( static_cast<std::_Ios_Fmtflags>(0) );
+#endif
       *me._trs << "EvManager stop Dispatch" << endl;
+#ifdef STLPORT
       me._trs->flags( f );
+#else
+      me._trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
     }
   }
   catch ( ... ) {
@@ -149,7 +173,11 @@ void EvManager::Subscribe( const addr_type& id, EventHandler* object, int nice )
       *_trs << "EvManager subscribe " << id << " nice " << nice << ' '
                << object << " ("
                << xmt::demangle( object->classtype().name() ) << ")" << endl;
+#ifdef STLPORT
       _trs->flags( f );
+#else
+      _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
     }
   }
   catch ( ... ) {
@@ -173,7 +201,11 @@ void EvManager::Subscribe( const addr_type& id, EventHandler* object, const std:
                  << object << " ("
                  << xmt::demangle( object->classtype().name() ) << "), "
                  << info << endl;
+#ifdef STLPORT
         _trs->flags( f );
+#else
+        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
       }
     }
     catch ( ... ) {
@@ -200,7 +232,11 @@ void EvManager::Subscribe( const addr_type& id, EventHandler* object, const char
                  << object << " ("
                  << xmt::demangle( object->classtype().name() ) << "), "
                  << info << endl;
+#ifdef STLPORT
         _trs->flags( f );
+#else
+        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
       }
     }
     catch ( ... ) {
@@ -227,7 +263,11 @@ void EvManager::Unsubscribe( const addr_type& id, EventHandler* obj )
         *_trs << "EvManager unsubscribe " << id << ' '
                  << obj << " ("
                  << xmt::demangle( obj->classtype().name() ) << ')' << endl;
+#ifdef STLPORT
         _trs->flags( f );
+#else
+        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
       }
     }
     catch ( ... ) {
@@ -338,7 +378,11 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
     if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
       ios_base::fmtflags f = _trs->flags( ios_base::hex | ios_base::showbase );
       *_trs << "EvManager push event " << e.code() << " to queue" << endl;
+#ifdef STLPORT
       _trs->flags( f );
+#else
+      _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
     }
   }
   catch ( ... ) {
@@ -488,7 +532,11 @@ __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
   }
 
   s << endl;
+#ifdef STLPORT
   s.flags( f );
+#else
+  s.flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
 
   return s;
 }
