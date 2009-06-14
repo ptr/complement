@@ -1,27 +1,52 @@
-// -*- C++ -*- Time-stamp: <06/06/28 10:33:02 ptr>
+// -*- C++ -*- Time-stamp: <09/06/12 21:49:22 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2005
+ * Copyright (c) 1997-1999, 2002, 2005, 2009
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2000
  * Parallel Graphics Ltd.
  *
- * Licensed under the Academic Free License Version 2.1
- *
- * This material is provided "as is", with absolutely no warranty expressed
- * or implied. Any use is at your own risk.
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies and
- * that both that copyright notice and this permission notice appear
- * in supporting documentation.
+ * Licensed under the Academic Free License version 3.0
  *
  */
 
 #include <string>
 #include <sockios/sockstream>
+#include <fstream>
+
+#ifdef __linux__
+namespace std {
+
+namespace detail {
+
+static unsigned discovery_local_mtu()
+{
+  unsigned mtu;
+
+  // /proc/sys/net/unix/max_dgram_qlen
+
+  ifstream f( "/proc/sys/net/core/wmem_max" );
+  
+
+  f >> mtu;
+
+  if ( !f.fail() ) {
+    return mtu;
+  }
+
+  return 65535;
+}
+
+
+unsigned local_mtu = discovery_local_mtu();
+
+} // namespace detail
+
+} // namespace std
+#else
+
+#endif
 
 #ifdef WIN32
 
