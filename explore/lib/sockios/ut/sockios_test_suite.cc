@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/02 15:03:54 ptr>
+// -*- C++ -*- Time-stamp: <09/06/15 13:56:34 ptr>
 
 /*
  *
@@ -11,6 +11,7 @@
 
 #include "names.h"
 #include "sockios_test.h"
+#include "unix_socket.h"
 
 #include <exam/suite.h>
 
@@ -90,6 +91,10 @@ int main( int argc, const char** argv )
   t.add( &sockios_test::ugly_echo, test, "ugly echo service",
     t.add( &sockios_test::echo, test, "echo service",
       t.add( &sockios_test::quants_reader, test, "read a few fixed-size data", extratc, extratc + 2 ) ) );
+
+  unix_sockios_test unx;
+
+  t.add( &unix_sockios_test::core_test, unx, "core unix socket", tc[0] );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( cerr );

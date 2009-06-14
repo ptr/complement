@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/10 16:54:50 ptr>
+// -*- C++ -*- Time-stamp: <09/06/15 13:53:57 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -9,6 +9,10 @@
  */
 
 namespace std {
+
+// namespace detail {
+// extern unsigned local_mtu;
+// }
 
 template<class charT, class traits, class _Alloc>
 void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int port, sock_base::stype type, sock_base::protocol prot )
@@ -56,10 +60,54 @@ void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int po
       basic_socket_t::mgr->push( *this );
       // std::cerr << __FILE__ << ":" << __LINE__ << " " << count() << std::endl;
     }
-  } else if ( prot == sock_base::local ) {
-    return;
   } else {
+    throw domain_error( "socket not belongs to inet type" );
+  }
+
+  _state = ios_base::goodbit;
+
+  return;
+}
+
+template<class charT, class traits, class _Alloc>
+void sock_processor_base<charT,traits,_Alloc>::open( const char* path, sock_base::stype type, sock_base::protocol prot )
+{
+  std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+  if ( basic_socket_t::is_open_unsafe() ) {
     return;
+  }
+  _mode = ios_base::in | ios_base::out;
+  _state = ios_base::goodbit;
+#ifdef WIN32
+  ::WSASetLastError( 0 );
+#endif
+  if ( prot == sock_base::local ) {
+    basic_socket_t::_fd = socket( PF_UNIX, type, 0 );
+    if ( basic_socket_t::_fd == -1 ) {
+      _state |= ios_base::failbit | ios_base::badbit;
+      return;
+    }
+    basic_socket_t::_address.unx.sun_family = AF_UNIX;
+    strncpy(basic_socket_t::_address.unx.sun_path, path, sizeof(basic_socket_t::_address.unx.sun_path));
+    unlink( path ); // ignore error
+
+    if ( ::bind( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof(basic_socket_t::_address.unx.sun_family) + strlen(basic_socket_t::_address.unx.sun_path) ) == -1 ) {
+      _state |= ios_base::failbit;
+#ifdef WIN32
+      ::closesocket( basic_socket_t::_fd );
+#else
+      ::close( basic_socket_t::_fd );
+#endif
+      basic_socket_t::_fd = -1;
+      return;
+    }
+    if ( type == sock_base::sock_dgram ) {
+      // Concept only, I lost sockstream* here:
+      create_stream( basic_socket_t::_fd, basic_socket_t::_address.any );
+      // basic_socket_t::mgr->push_dp( *this );
+    }
+  } else {
+    throw domain_error( "socket not belongs to unix type" );
   }
   _state = ios_base::goodbit;
 

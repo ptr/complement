@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/04 14:09:01 ptr>
+// -*- C++ -*- Time-stamp: <09/06/12 21:17:30 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -73,6 +73,13 @@ class sock_processor_base :
         _rcount( 0 )
       { sock_processor_base::open( port, t, sock_base::inet ); }
 
+    explicit sock_processor_base( const char* path, sock_base::stype t = sock_base::sock_dgram ) :
+        _chk( *this ),
+        _rcount( 0 )
+      {
+        sock_processor_base::open( path, t, sock_base::local );
+      }
+
     virtual ~sock_processor_base()
       {        
         sock_processor_base::_close();
@@ -109,6 +116,7 @@ class sock_processor_base :
       }
 
     void open( const in_addr& addr, int port, sock_base::stype type, sock_base::protocol prot );
+    void open( const char* path, sock_base::stype type, sock_base::protocol prot );
 
     void open( unsigned long addr, int port, sock_base::stype type, sock_base::protocol prot )
       {

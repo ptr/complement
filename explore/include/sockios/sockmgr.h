@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/06 15:59:42 ptr>
+// -*- C++ -*- Time-stamp: <09/06/15 08:35:03 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -84,13 +84,15 @@ class sockmgr
       listener,
       tcp_buffer,
       rqstop,
-      tcp_buffer_back
+      tcp_buffer_back,
+      dgram_proc
     };
 
     struct fd_info
     {
         enum {
-          listener = 0x1
+          listener = 0x1,
+          dgram_proc = 0x2
         };
 
         fd_info() :
@@ -152,6 +154,7 @@ class sockmgr
     ~sockmgr();
 
     void push( socks_processor_t& p );
+    void push_dp( socks_processor_t& p );
     void push( sockbuf_t& s );
     void restore( sockbuf_t& s );
 
