@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/14 17:57:51 ptr>
+// -*- C++ -*- Time-stamp: <09/06/16 16:39:15 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -854,6 +854,16 @@ class basic_sockstream :
       {
         basic_iostream<charT,traits>::clear();
         if ( _sb.open( hostname, port, type, pro ) == 0 ) {
+          basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
+        }
+      }
+
+    void open( const char* path,
+               sock_base::stype type = sock_base::sock_dgram,
+               sock_base::protocol pro = sock_base::local )
+      {
+        basic_iostream<charT,traits>::clear();
+        if ( _sb.open( path, type, pro ) == 0 ) {
           basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
         }
       }

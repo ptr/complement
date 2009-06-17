@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/12 22:46:39 ptr>
+// -*- C++ -*- Time-stamp: <09/06/17 16:32:50 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -173,13 +173,13 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path,
       if ( connect( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof( basic_socket_t::_address.unx ) ) == -1 ) {
         throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
       }
-      if ( type == sock_base::sock_stream ) {
+      // if ( type == sock_base::sock_stream ) {
         _xwrite = &_Self_type::write;
         _xread = &_Self_type::read;
-      } else if ( type == sock_base::sock_dgram ) {
-        _xwrite = &_Self_type::send;
-        _xread = &_Self_type::recv;
-      }
+        // } else if ( type == sock_base::sock_dgram ) {
+        // _xwrite = &_Self_type::send;
+        // _xread = &_Self_type::recv;
+        // }
     } else if ( prot == sock_base::inet ) {
       throw domain_error( "socket not belongs to unix type" );
     } else { // other protocols not implemented yet

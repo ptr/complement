@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/15 12:43:13 ptr>
+// -*- C++ -*- Time-stamp: <09/06/17 19:22:59 ptr>
 
 /*
  *
@@ -18,6 +18,9 @@
 
 #include <mt/mutex>
 #include <mt/condition_variable>
+
+#include <sockios/syslog.h>
+#include <locale>
 
 using namespace std;
 using namespace std::tr2;
@@ -110,6 +113,15 @@ int EXAM_IMPL(unix_sockios_test::core_test)
   }
 
   unlink( f );
+
+#if 0
+  {
+    misc::open_syslog();
+    int i = 20;
+    misc::use_syslog<LOG_INFO,LOG_USER>() << "hello " << i << ", ok" << endl;
+    misc::close_syslog();
+  }
+#endif
 
   return EXAM_RESULT;
 }

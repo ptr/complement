@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/15 13:16:53 ptr>
+// -*- C++ -*- Time-stamp: <09/06/17 16:30:05 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -9,8 +9,6 @@
  */
 
 #include <mt/system_error>
-
-#include <exam/defs.h>
 
 namespace std {
 
