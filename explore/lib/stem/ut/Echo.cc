@@ -348,3 +348,58 @@ DEFINE_RESPONSE_TABLE( LastEvent )
   EV_EDS(0,NODE_EV_ECHO,handler)
   EV_EDS(0,NODE_EV_LAST_CONFORMATION,conformation)
 END_RESPONSE_TABLE
+
+ProxyEcho::ProxyEcho() :
+  sender(0)
+{
+}
+
+ProxyEcho::ProxyEcho( const char* info ) :
+    EventHandler( info ),
+    sender(0)
+{
+}
+
+ProxyEcho::ProxyEcho( addr_type id ) :
+    EventHandler( id ),
+    sender(0)
+{
+}
+
+ProxyEcho::ProxyEcho( addr_type id, const char* info ) :
+    EventHandler( id, info ),
+    sender(0)
+{
+}
+
+ProxyEcho::~ProxyEcho()
+{
+  if (sender != 0) {
+    delete sender;
+  }
+}
+
+void ProxyEcho::proxy( const stem::Event& ev )
+{
+  if ( sender == 0 ) {
+    sender = new MsgSender();
+  }
+  sender->echo( ev );
+}
+
+MsgSender::MsgSender()
+{
+}
+
+void MsgSender::echo( const stem::Event& ev )
+{
+  Event rsp( ev.code() );
+  rsp.dest( ev.src() );
+  rsp.value() = ev.value();
+  Send( rsp );
+}
+
+DEFINE_RESPONSE_TABLE( ProxyEcho )
+  EV_EDS( 0, NODE_EV_ECHO, proxy )
+END_RESPONSE_TABLE
+

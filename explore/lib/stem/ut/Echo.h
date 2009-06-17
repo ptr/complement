@@ -229,6 +229,34 @@ class LastEvent :
     DECLARE_RESPONSE_TABLE( LastEvent, stem::EventHandler );
 };
 
+class MsgSender :
+    public stem::EventHandler
+{
+  public:
+    MsgSender();
+    
+    void echo( const stem::Event& );
+};
+
+class ProxyEcho :
+    public stem::EventHandler
+{
+  public:
+    ProxyEcho();
+    ProxyEcho( const char* );
+    ProxyEcho( stem::addr_type id );
+    ProxyEcho( stem::addr_type id, const char* );
+    
+    ~ProxyEcho();
+
+    void proxy( const stem::Event& );
+    
+    MsgSender* sender;
+    
+  private:
+    DECLARE_RESPONSE_TABLE( ProxyEcho, stem::EventHandler );
+};
+
 #define NODE_EV_ECHO               0x903
 #define NODE_EV_REGME              0x904
 #define NODE_EV_LAST               0x905

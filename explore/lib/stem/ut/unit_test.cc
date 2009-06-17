@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/05 14:08:11 ptr>
+// -*- C++ -*- Time-stamp: <09/06/18 10:13:23 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -75,6 +75,7 @@ class stem_test
     int EXAM_DECL(convert);
     int EXAM_DECL(cron);
     int EXAM_DECL(vf);
+    int EXAM_DECL(command_mgr);
 
     static void thr1();
     static void thr1new();
@@ -1384,6 +1385,97 @@ int EXAM_IMPL(stem_test::vf)
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(stem_test::command_mgr)
+{  
+  try {    
+    xmt::allocator_shm<barrier_ip,0> shm;
+    xmt::allocator_shm<condition_event_ip,0> cnd;
+
+    barrier_ip& b1 = *new ( shm.allocate( 1 ) ) barrier_ip();
+    condition_event_ip& c = *new ( cnd.allocate(1) ) condition_event_ip();
+
+    try {
+      int res = 0;
+
+      this_thread::fork();
+
+      {
+        connect_processor<stem::NetTransport> srv( 6995 );
+
+        EXAM_CHECK_ASYNC_F( srv.good(), res );
+      
+        ProxyEcho pe;
+      
+        pe.set_default();
+
+        b1.wait();
+
+        c.wait();
+
+        //srv.close();
+        //srv.wait();
+      }
+
+      exit(res);
+    }
+    catch ( std::tr2::fork_in_parent& child ) {
+      // client
+      b1.wait();
+      
+      {
+        stem::NetTransportMgr mgr;
+
+        stem::addr_type addr = mgr.open( "localhost", 6995 );
+
+        EXAM_CHECK( addr != stem::badaddr );
+
+        EchoClient node;
+      
+        for ( int i = 0; i < 1000; ++i ) {
+          stem::Event ev( NODE_EV_ECHO );
+
+          ev.dest( addr );
+          ev.value() = node.mess;
+
+          node.Send( ev );
+
+          EXAM_CHECK( node.wait() );
+        }
+
+        mgr.close();
+        mgr.join();
+      }    
+      
+      c.notify_all();
+
+      int stat = -1;
+      pid_t r = waitpid( child.pid(), &stat, 0 );
+      EXAM_CHECK( r == child.pid() );
+      if ( r != -1 ) {
+        if ( WIFEXITED(stat) ) {
+          EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+        } else if ( WIFSIGNALED(stat) ) {
+          stringstream s( "child interrupted by uncatch signal " );
+          s << WTERMSIG(stat);
+          EXAM_ERROR( s.str().c_str() );
+        } else {
+          EXAM_ERROR( "child interrupted?" );
+        }
+      } else {
+        EXAM_ERROR( "waitpid interrupted?" );
+      }
+    }
+
+    cnd.deallocate( &c );
+    shm.deallocate( &b1 );
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  
+  return EXAM_RESULT;
+}
+
 int main( int argc, const char** argv )
 {
   exam::test_suite::test_case_type tc[7];
@@ -1407,22 +1499,24 @@ int main( int argc, const char** argv )
         tc[4] = t.add( &stem_test::echo_net, test, "echo_net",
             tc[3] = t.add( &stem_test::echo, test, "echo", tc[1] ) ) ) ) );
 
-  t.add( &stem_test::boring_manager_more, test, "boring_manager with echo",
-         t.add( &stem_test::boring_manager, test, "boring_manager",
-                t.add( &stem_test::peer, test, "peer", tc[3] ) ) );
+  exam::test_suite::test_case_type cases_next[10];
 
+  cases_next[2] =
+    t.add( &stem_test::boring_manager_more, test, "boring_manager with echo",
+      t.add( &stem_test::boring_manager, test, "boring_manager",
+        t.add( &stem_test::peer, test, "peer", tc[3] ) ) );
+                
   tc[5] = t.add( &stem_test::convert, test, "convert", tc[0] );
 
   tc[6] = t.add( &stem_test::last_event, test, "last event", tc[4] );
-
-  exam::test_suite::test_case_type cases_next[10];
 
   cases_next[0] = tc[2];
   cases_next[1] = tc[5];
 
   t.add( &stem_test::cron, test, "cron", cases_next, cases_next + 2 );
 
-  t.add( &stem_test::vf, test, "dtor when come event", tc[6] );
+  cases_next[3] = t.add( &stem_test::vf, test, "dtor when come event", tc[6] );
+  t.add( &stem_test::command_mgr, test, "command mgr", cases_next + 2, cases_next + 4 );
 
   Opts opts;
 
