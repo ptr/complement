@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <09/04/02 16:38:21 ptr>
+// -*- C++ -*- Time-stamp: <09/06/18 14:57:31 ptr>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005-2008
+ * Copyright (c) 2002, 2003, 2005-2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -113,10 +113,10 @@ int EXAM_IMPL(names_sockios_test::hostaddr_test3)
         }
         break;
       case PF_INET6:
-        if ( ((sockaddr_in6 *)&*i)->sin6_addr.in6_u.u6_addr32[0] == 0 &&
-             ((sockaddr_in6 *)&*i)->sin6_addr.in6_u.u6_addr32[1] == 0 && 
-             ((sockaddr_in6 *)&*i)->sin6_addr.in6_u.u6_addr32[2] == 0 &&
-             ((sockaddr_in6 *)&*i)->sin6_addr.in6_u.u6_addr32[3] == 1 ) {
+        if ( ((sockaddr_in6 *)&*i)->sin6_addr.s6_addr32[0] == 0 &&
+             ((sockaddr_in6 *)&*i)->sin6_addr.s6_addr32[1] == 0 && 
+             ((sockaddr_in6 *)&*i)->sin6_addr.s6_addr32[2] == 0 &&
+             ((sockaddr_in6 *)&*i)->sin6_addr.s6_addr32[3] == 1 ) {
           localhost_found = true;
         }
         break;
