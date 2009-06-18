@@ -1,3 +1,14 @@
+2009-06-17  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* sockstreams: client-side sockstream for UNIX sockets;
+	UNIX sockets work under dgram protocol type;
+
+	* syslog.h, syslog.cc: because syslog is UNIX socket,
+	use new functionality for cheap syslog feature---without
+	locking and frequent stream creation;
+
+	* libsockios: release 2.6.0.
+
 2009-04-02  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* sockstream, sockstream.cc, netinfo.h, netinfo.cc:

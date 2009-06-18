@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/10 17:46:41 ptr>
+// -*- C++ -*- Time-stamp: <09/06/18 07:50:31 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -88,7 +88,7 @@ sockmgr<charT,traits,_Alloc>::~sockmgr()
   }
 
   for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
-    if ( (i->second.flags & fd_info::listener) == 0 ) {
+    if ( (i->second.flags & (fd_info::listener | fd_info::dgram_proc)) == 0 ) {
       sockbuf_t* b = i->second.b;
       if ( b != 0 ) {
         std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
@@ -105,7 +105,7 @@ sockmgr<charT,traits,_Alloc>::~sockmgr()
     if ( (i->second.flags & fd_info::listener) != 0 ) {
       ::close( i->first );
       i->second.p->stop();
-    }
+    } // fd_info::dgram_proc?
   }
 }
 
@@ -128,6 +128,31 @@ void sockmgr<charT,traits,_Alloc>::push( socks_processor_t& p )
         default:
           p.release();
           throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>::push( socks_processor_t& p )" ) );
+      }
+    }
+    r += ret;
+  } while ( (r != sizeof(ctl)) /* || (ret != 0) */ );
+}
+
+template<class charT, class traits, class _Alloc>
+void sockmgr<charT,traits,_Alloc>::push_dp( socks_processor_t& p )
+{
+  ctl _ctl;
+  _ctl.cmd = dgram_proc;
+  _ctl.data.ptr = static_cast<void *>(&p);
+
+  p.addref();
+  int r = 0;
+  int ret = 0;
+  do {
+    ret = ::write( pipefd[1], &_ctl, sizeof(ctl) );
+    if ( ret < 0 ) {
+      switch ( errno ) {
+        case EINTR:
+          continue;
+        default:
+          p.release();
+          throw std::system_error( errno, std::get_posix_category(), std::string( __PRETTY_FUNCTION__ ) );
       }
     }
     r += ret;
@@ -213,6 +238,8 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
             fd_info& info = ifd->second;
             if ( info.flags & fd_info::listener ) {
               process_listener( ev[i], ifd );
+            } else if ( info.flags & fd_info::dgram_proc ) {
+              process_dgram_srv( ev[i], ifd );
             } else {
               process_regular( ev[i], ifd );
             }
@@ -226,7 +253,7 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
   catch ( std::detail::stop_request& ) {
     // this is possible, normal flow of operation
     for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
-      if ( (i->second.flags & fd_info::listener) == 0 ) {
+      if ( (i->second.flags & (fd_info::listener | fd_info::dgram_proc)) == 0 ) {
         sockbuf_t* b = i->second.b;
         if ( b != 0 ) {
           std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
@@ -341,6 +368,35 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
         return; // already closed?
       }
       // cerr << __FILE__ << ':' << __LINE__ << endl;
+      break;
+    case dgram_proc:
+      ev_add.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+#if 1
+      ev_add.data.u64 = 0ULL;
+#endif
+      ev_add.data.fd = static_cast<socks_processor_t*>(_ctl.data.ptr)->fd();
+      if ( ev_add.data.fd >= 0 ) {
+        if ( fcntl( ev_add.data.fd, F_SETFL, fcntl( ev_add.data.fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
+          static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
+          throw std::runtime_error( "can't establish nonblock mode on listener" );
+        }
+        if ( descr.find( ev_add.data.fd ) != descr.end() ) { // reuse?
+          if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev_add.data.fd, &ev_add ) < 0 ) {
+            std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+            // descr.erase( ev_add.data.fd );
+            static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
+            return;
+          }
+        } else {
+          if ( epoll_ctl( efd, EPOLL_CTL_ADD, ev_add.data.fd, &ev_add ) < 0 ) {
+            std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+            static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
+            return;
+          }
+        }
+        descr[ev_add.data.fd] = fd_info( fd_info::dgram_proc, 0, static_cast<socks_processor_t*>(_ctl.data.ptr) );
+      }
+      static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
       break;
   }
 }
@@ -489,6 +545,104 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
 }
 
 template<class charT, class traits, class _Alloc>
+void sockmgr<charT,traits,_Alloc>::process_dgram_srv( const epoll_event& ev, typename sockmgr<charT,traits,_Alloc>::fd_container_type::iterator ifd )
+{
+  if ( ev.events & (/* EPOLLRDHUP | */ EPOLLHUP | EPOLLERR) ) {
+    // close listener:
+    fd_info info = ifd->second;
+
+    for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ) {
+      if ( i->second.p == info.p ) {
+        if ( (i->second.flags & fd_info::dgram_proc) == 0 ) { // it's not me!
+          sockbuf_t* b = i->second.b;
+          {
+            std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
+            ::close( b->_fd );
+            b->_fd = -1;
+            b->ucnd.notify_all();
+          }
+          // possible problem, because of it may happen in dtor of info.p(...):
+          (*info.p)( i->first, typename socks_processor_t::adopt_close_t() );
+        }
+        /* i = */ descr.erase( i++ );
+      } else {
+        ++i;
+      }
+    }
+
+    // no more connection with this processor
+    info.p->stop();
+    ::close( ev.data.fd );
+
+    return;
+  }
+
+  if ( (ev.events & EPOLLIN) == 0 ) {
+    // sockbuf_t* b = (*info.p)( ifd->first, addr );
+    return; // I don't know what to do this case...
+  }
+
+  fd_info& info = ifd->second;
+  sockaddr addr;
+  socklen_t sz = sizeof( sockaddr ); // sockaddr_un or sockaddr_in
+
+  // Urgent: socket is NONBLOCK and polling ONESHOT here!
+  char c;
+  ssize_t len = ::recvfrom( ifd->first, &c, 1, MSG_PEEK, &addr, &sz );
+
+  if ( /* len <= 0 */ len < 0 ) { // epoll notified, no data
+    // cerr << HERE << ' ' << len << ' ' << errno << ' ' << std::system_error( errno, std::get_posix_category() ).what() << endl;
+    switch ( errno ) {
+      default:
+        // case EAGAIN: // <---
+        // case EBADF:
+        // case ECONNREFUSED:
+        // case ENOMEM:
+        // case ENOTCONN:
+        descr.erase( ifd );
+        // may be in dtor of info.p!
+        // no more connection with this processor
+        // info.p->stop();
+        // ::close( ev.data.fd );
+        break;
+      case EINTR:
+        break;
+    }
+    return;
+  }
+
+  // cerr << HERE << endl;
+  // (*info.p)( ifd->first );
+  sockbuf_t* b = (*info.p)( ifd->first, addr );
+
+#if 0
+  try {
+    /*
+      Here b may be 0, if processor don't delegate control
+      under sockbuf_t to sockmgr, but want to see notifications;
+      see 'if ( b == 0 )' in process_regular below.
+    */
+    descr[fd] = fd_info( b, info.p );
+  }
+  catch ( ... ) {
+    cerr << __FILE__ << ':' << __LINE__ << endl;
+    try {
+      descr.erase( fd );
+      {
+        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
+        ::close( b->_fd );
+        b->_fd = -1;
+        b->ucnd.notify_all();
+      }
+      (*info.p)( fd, typename socks_processor_t::adopt_close_t() );
+    }
+    catch ( ... ) {
+    }
+  }
+#endif
+}
+
+template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Alloc>::sockbuf_t& b ) throw (fdclose, no_free_space, retry, no_ready_data)
 {
   std::tr2::unique_lock<std::tr2::recursive_mutex> lk( b.ulck, std::tr2::defer_lock_t() );
@@ -519,7 +673,7 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
           // no more ready data available
           errno = 0;
           // return back to epoll
-          {
+          if ( b._type == std::sock_base::sock_stream ) {
             epoll_event xev; // local var, don't modify ev
             xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
 #if 1
@@ -530,6 +684,8 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
             if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
               throw fdclose(); // closed?
             }
+          } else if ( b._type == std::sock_base::sock_dgram ) {
+            throw fdclose(); // closed?
           }
           throw no_ready_data();
         case EINTR: // if EINTR, continue
@@ -564,7 +720,7 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
           case EAGAIN: // EWOULDBLOCK
             // no more ready data available; return back to epoll.
             errno = 0;
-            {
+            if ( b._type == std::sock_base::sock_stream ) {
               epoll_event xev; // local var, don't modify ev
               xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
 #if 1
@@ -574,6 +730,8 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
               if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
                 throw fdclose(); // hmm, unexpected here; closed?
               }
+            } else if ( b._type == std::sock_base::sock_dgram ) {
+              throw fdclose();
             }
             throw no_ready_data();
           case EINTR: // if EINTR, continue
@@ -649,11 +807,22 @@ void sockmgr<charT,traits,_Alloc>::process_regular( const epoll_event& ev, typen
 
   try {
     if ( ev.events & EPOLLIN ) {
-      // loop here because epoll may report about few events:
-      // data available + FIN (connection closed by peer)
-      // only once. I should try to read while ::read return -1
-      // and set EGAIN or return 0 (i.e. FIN discovered).
-      for ( int k = 0; k < 4; ++k ) { // restrict by 4 read trials: give chance to others
+      if ( b->stype() == std::sock_base::sock_stream ) {
+        // loop here because epoll may report about few events:
+        // data available + FIN (connection closed by peer)
+        // only once. I should try to read while ::read return -1
+        // and set EGAIN or return 0 (i.e. FIN discovered).
+        for ( int k = 0; k < 4; ++k ) { // restrict by 4 read trials: give chance to others
+          try {
+            net_read( *b );
+            if ( info.p != 0 ) {
+              (*info.p)( ev.data.fd );
+            }
+          }
+          catch ( const retry& ) {
+          }
+        }
+      } else if ( b->stype() == std::sock_base::sock_dgram ) {
         try {
           net_read( *b );
           if ( info.p != 0 ) {

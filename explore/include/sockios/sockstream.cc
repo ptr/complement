@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/12 22:46:39 ptr>
+// -*- C++ -*- Time-stamp: <09/06/17 21:31:43 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -77,8 +77,8 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port,
         _xwrite = &_Self_type::write;
         _xread = &_Self_type::read;
       } else if ( type == sock_base::sock_dgram ) {
-        _xwrite = &_Self_type::send;
-        _xread = &_Self_type::recv;
+        _xwrite = &_Self_type::sendto_in;
+        _xread = &_Self_type::recvfrom_in;
       }
     } else if ( prot == sock_base::local ) {
       throw domain_error( "socket not belongs to inet type" );
@@ -173,13 +173,13 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path,
       if ( connect( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof( basic_socket_t::_address.unx ) ) == -1 ) {
         throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
       }
-      if ( type == sock_base::sock_stream ) {
-        _xwrite = &_Self_type::write;
-        _xread = &_Self_type::read;
-      } else if ( type == sock_base::sock_dgram ) {
-        _xwrite = &_Self_type::send;
-        _xread = &_Self_type::recv;
-      }
+      // if ( type == sock_base::sock_stream ) {
+      //  _xwrite = &_Self_type::write;
+      //  _xread = &_Self_type::read;
+      // } else if ( type == sock_base::sock_dgram ) {
+      _xwrite = &_Self_type::sendto_un;
+      _xread = &_Self_type::recvfrom_un;
+      // }
     } else if ( prot == sock_base::inet ) {
       throw domain_error( "socket not belongs to unix type" );
     } else { // other protocols not implemented yet
@@ -275,8 +275,8 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
         _xwrite = &_Self_type::write;
         _xread = &_Self_type::read;
       } else if ( type == sock_base::sock_dgram ) {
-        _xwrite = &_Self_type::send;
-        _xread = &_Self_type::recv;
+        _xwrite = &_Self_type::sendto_in;
+        _xread = &_Self_type::recvfrom_in;
       }
     } else {
       throw domain_error( "socket not belongs to inet type" );
@@ -422,8 +422,14 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
     _xwrite = &_Self_type::write;
     _xread = &_Self_type::read;
   } else if ( t == sock_base::sock_dgram ) {
-    _xwrite = &_Self_type::sendto;
-    _xread = &_Self_type::recvfrom;
+    if ( basic_socket_t::_address.any.sa_family == AF_INET ) {
+      _xwrite = &_Self_type::sendto_in;
+      _xread = &_Self_type::recvfrom_in;
+    } else if ( basic_socket_t::_address.any.sa_family == AF_UNIX ) {
+      _xwrite = &_Self_type::sendto_un;
+      _xread = &_Self_type::recvfrom_un;
+    } else {
+    }
   } else {
     basic_socket_t::_fd = -1;
     return 0; // unsupported type
@@ -733,45 +739,6 @@ streamsize basic_sockbuf<charT, traits, _Alloc>::xsputn( const char_type *s, str
   count += n;
 
   return count;
-}
-
-template<class charT, class traits, class _Alloc>
-int basic_sockbuf<charT, traits, _Alloc>::recvfrom( void *buf, size_t n )
-{
-#if defined(_WIN32) || (defined(__hpux) && !defined(_INCLUDE_POSIX1C_SOURCE))
-  int sz = sizeof( sockaddr_in );
-#else
-  socklen_t sz = sizeof( sockaddr_in );
-#endif
-
-  typename basic_socket_t::sockaddr_t addr;
-
-#ifdef __FIT_POLL
-  pollfd pfd;
-  pfd.fd = basic_socket_t::_fd;
-  pfd.events = POLLIN;
-#endif // __FIT_POLL
-  do {
-#ifdef __FIT_POLL
-    pfd.revents = 0;
-    if ( poll( &pfd, 1, /* _timeout */ -1 ) > 0 ) { // wait infinite
-      // get address of caller only
-      char buff[32];    
-      ::recvfrom( basic_socket_t::_fd, buff, 32, MSG_PEEK, &addr.any, &sz );
-    } else {
-      return 0; // poll wait infinite, so it can't return 0 (timeout), so it return -1.
-    }
-#endif // __FIT_POLL
-    if ( memcmp( &basic_socket_t::_address.inet, &addr.inet, sizeof(sockaddr_in) ) == 0 ) {
-#ifdef WIN32
-      return ::recvfrom( basic_socket_t::_fd, (char *)buf, n, 0, &basic_socket_t::_address.any, &sz );
-#else
-      return ::recvfrom( basic_socket_t::_fd, buf, n, 0, &basic_socket_t::_address.any, &sz );
-#endif
-    }
-  } while ( true );
-
-  return 0; // never
 }
 
 template<class charT, class traits, class _Alloc>

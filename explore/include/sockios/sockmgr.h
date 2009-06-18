@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/06 15:59:42 ptr>
+// -*- C++ -*- Time-stamp: <09/06/18 06:14:45 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -84,13 +84,15 @@ class sockmgr
       listener,
       tcp_buffer,
       rqstop,
-      tcp_buffer_back
+      tcp_buffer_back,
+      dgram_proc
     };
 
     struct fd_info
     {
         enum {
-          listener = 0x1
+          listener = 0x1,
+          dgram_proc = 0x2
         };
 
         fd_info() :
@@ -152,6 +154,7 @@ class sockmgr
     ~sockmgr();
 
     void push( socks_processor_t& p );
+    void push_dp( socks_processor_t& p );
     void push( sockbuf_t& s );
     void restore( sockbuf_t& s );
 
@@ -190,6 +193,7 @@ class sockmgr
     void io_worker();
     void cmd_from_pipe();
     void process_listener( const epoll_event&, typename fd_container_type::iterator );
+    void process_dgram_srv( const epoll_event&, typename fd_container_type::iterator );
     void process_regular( const epoll_event&, typename fd_container_type::iterator );
 
     int efd;
@@ -201,7 +205,7 @@ class sockmgr
     friend class std::basic_socket<charT,traits,_Alloc>;
 };
 
-} //detail
+} // detail
 
 } // namesapce std
 

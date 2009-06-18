@@ -1,3 +1,5 @@
+// -*- C++ -*- Time-stamp: <09/06/18 09:54:36 ptr>
+
 /*
  *
  * Copyright (c) 2009
@@ -15,6 +17,7 @@
 struct unix_sockios_test
 {
     int EXAM_DECL(core_test);
+    int EXAM_DECL(core_write_test);
 };
 
 #endif // __unix_socket_h
