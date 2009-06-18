@@ -18,7 +18,9 @@
 
 #include <exam/defs.h>
 
+using namespace std;
 using namespace stem;
+using namespace std::tr2;
 
 StEMecho::StEMecho()
 {
@@ -83,19 +85,22 @@ END_RESPONSE_TABLE
 
 EchoClient::EchoClient() :
     EventHandler(),
-    mess( "echo string" )
+    mess( "echo string" ),
+    v(0)
 {
 }
 
 EchoClient::EchoClient( stem::addr_type id ) :
     EventHandler( id ),
-    mess( "echo string" )
+    mess( "echo string" ),
+    v(0)
 {
 }
 
 EchoClient::EchoClient( stem::addr_type id, const char *info ) :
     EventHandler( id, info ),
-    mess( "echo string" )
+    mess( "echo string" ),
+    v(0)
 {
 }
 
@@ -106,14 +111,22 @@ EchoClient::~EchoClient()
 
 void EchoClient::handler1( const stem::Event& ev )
 {
+  lock_guard<mutex> lk( m );
+  
   EXAM_CHECK_ASYNC( ev.value() == mess );
-
+  
+  v = 1;
   cnd.notify_one();
 }
 
 bool EchoClient::wait()
 {
-  return cnd.timed_wait( std::tr2::milliseconds( 800 ) );
+  unique_lock<mutex> lk( m );
+  bool res = cnd.timed_wait( lk, std::tr2::milliseconds( 2000 ), check_v( *this ) );
+  
+  v = 0;
+   
+  return res; 
 }
 
 DEFINE_RESPONSE_TABLE( EchoClient )

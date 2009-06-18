@@ -12,6 +12,7 @@
 #define __Echo_h
 
 #include <string>
+#include <mt/mutex>
 #include <mt/condition_variable>
 #include <stem/EventHandler.h>
 // #include <stem/Names.h>
@@ -64,9 +65,24 @@ class EchoClient :
     bool wait();
 
     const std::string mess;
+    
+    int v;
 
   private:
-    std::tr2::condition_event cnd;
+    std::tr2::mutex m;
+    std::tr2::condition_variable cnd;
+    
+    struct check_v 
+    {
+      check_v( EchoClient& m ) :
+          me( m )
+        { }
+
+      bool operator()() const
+        { return me.v == 1; }
+
+      EchoClient& me;
+    };
 
     DECLARE_RESPONSE_TABLE( EchoClient, stem::EventHandler );
 };
