@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/15 08:35:03 ptr>
+// -*- C++ -*- Time-stamp: <09/06/18 06:14:45 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -193,6 +193,7 @@ class sockmgr
     void io_worker();
     void cmd_from_pipe();
     void process_listener( const epoll_event&, typename fd_container_type::iterator );
+    void process_dgram_srv( const epoll_event&, typename fd_container_type::iterator );
     void process_regular( const epoll_event&, typename fd_container_type::iterator );
 
     int efd;
@@ -204,7 +205,7 @@ class sockmgr
     friend class std::basic_socket<charT,traits,_Alloc>;
 };
 
-} //detail
+} // detail
 
 } // namesapce std
 

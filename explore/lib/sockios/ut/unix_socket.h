@@ -15,6 +15,7 @@
 struct unix_sockios_test
 {
     int EXAM_DECL(core_test);
+    int EXAM_DECL(core_write_test);
 };
 
 #endif // __unix_socket_h

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/17 16:30:05 ptr>
+// -*- C++ -*- Time-stamp: <09/06/18 07:50:31 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -238,6 +238,8 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
             fd_info& info = ifd->second;
             if ( info.flags & fd_info::listener ) {
               process_listener( ev[i], ifd );
+            } else if ( info.flags & fd_info::dgram_proc ) {
+              process_dgram_srv( ev[i], ifd );
             } else {
               process_regular( ev[i], ifd );
             }
@@ -540,6 +542,104 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
       (*info.p)( fd, typename socks_processor_t::adopt_close_t() );
     }
   }
+}
+
+template<class charT, class traits, class _Alloc>
+void sockmgr<charT,traits,_Alloc>::process_dgram_srv( const epoll_event& ev, typename sockmgr<charT,traits,_Alloc>::fd_container_type::iterator ifd )
+{
+  if ( ev.events & (/* EPOLLRDHUP | */ EPOLLHUP | EPOLLERR) ) {
+    // close listener:
+    fd_info info = ifd->second;
+
+    for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ) {
+      if ( i->second.p == info.p ) {
+        if ( (i->second.flags & fd_info::dgram_proc) == 0 ) { // it's not me!
+          sockbuf_t* b = i->second.b;
+          {
+            std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
+            ::close( b->_fd );
+            b->_fd = -1;
+            b->ucnd.notify_all();
+          }
+          // possible problem, because of it may happen in dtor of info.p(...):
+          (*info.p)( i->first, typename socks_processor_t::adopt_close_t() );
+        }
+        /* i = */ descr.erase( i++ );
+      } else {
+        ++i;
+      }
+    }
+
+    // no more connection with this processor
+    info.p->stop();
+    ::close( ev.data.fd );
+
+    return;
+  }
+
+  if ( (ev.events & EPOLLIN) == 0 ) {
+    // sockbuf_t* b = (*info.p)( ifd->first, addr );
+    return; // I don't know what to do this case...
+  }
+
+  fd_info& info = ifd->second;
+  sockaddr addr;
+  socklen_t sz = sizeof( sockaddr ); // sockaddr_un or sockaddr_in
+
+  // Urgent: socket is NONBLOCK and polling ONESHOT here!
+  char c;
+  ssize_t len = ::recvfrom( ifd->first, &c, 1, MSG_PEEK, &addr, &sz );
+
+  if ( /* len <= 0 */ len < 0 ) { // epoll notified, no data
+    // cerr << HERE << ' ' << len << ' ' << errno << ' ' << std::system_error( errno, std::get_posix_category() ).what() << endl;
+    switch ( errno ) {
+      default:
+        // case EAGAIN: // <---
+        // case EBADF:
+        // case ECONNREFUSED:
+        // case ENOMEM:
+        // case ENOTCONN:
+        descr.erase( ifd );
+        // may be in dtor of info.p!
+        // no more connection with this processor
+        // info.p->stop();
+        // ::close( ev.data.fd );
+        break;
+      case EINTR:
+        break;
+    }
+    return;
+  }
+
+  // cerr << HERE << endl;
+  // (*info.p)( ifd->first );
+  sockbuf_t* b = (*info.p)( ifd->first, addr );
+
+#if 0
+  try {
+    /*
+      Here b may be 0, if processor don't delegate control
+      under sockbuf_t to sockmgr, but want to see notifications;
+      see 'if ( b == 0 )' in process_regular below.
+    */
+    descr[fd] = fd_info( b, info.p );
+  }
+  catch ( ... ) {
+    cerr << __FILE__ << ':' << __LINE__ << endl;
+    try {
+      descr.erase( fd );
+      {
+        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
+        ::close( b->_fd );
+        b->_fd = -1;
+        b->ucnd.notify_all();
+      }
+      (*info.p)( fd, typename socks_processor_t::adopt_close_t() );
+    }
+    catch ( ... ) {
+    }
+  }
+#endif
 }
 
 template<class charT, class traits, class _Alloc>

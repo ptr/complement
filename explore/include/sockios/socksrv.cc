@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/15 13:53:57 ptr>
+// -*- C++ -*- Time-stamp: <09/06/18 06:43:59 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -103,8 +103,8 @@ void sock_processor_base<charT,traits,_Alloc>::open( const char* path, sock_base
     }
     if ( type == sock_base::sock_dgram ) {
       // Concept only, I lost sockstream* here:
-      create_stream( basic_socket_t::_fd, basic_socket_t::_address.any );
-      // basic_socket_t::mgr->push_dp( *this );
+      // create_stream( basic_socket_t::_fd, basic_socket_t::_address.any );
+      basic_socket_t::mgr->push_dp( *this );
     }
   } else {
     throw domain_error( "socket not belongs to unix type" );

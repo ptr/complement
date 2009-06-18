@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/17 19:22:59 ptr>
+// -*- C++ -*- Time-stamp: <09/06/18 07:10:29 ptr>
 
 /*
  *
@@ -122,6 +122,56 @@ int EXAM_IMPL(unix_sockios_test::core_test)
     misc::close_syslog();
   }
 #endif
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(unix_sockios_test::core_write_test)
+{
+  // throw exam::skip_exception();
+
+  const char* f = "/tmp/sock_test";
+  // const char* f = "/dev/log";
+  {
+    simple_us_mgr s( f );
+
+    EXAM_CHECK( s.is_open() );
+    EXAM_CHECK( s.good() );
+
+    {
+      sockstream str( f );
+
+      EXAM_CHECK( str.is_open() );
+      EXAM_CHECK( str.good() );
+
+      str << "Hello, world!" << endl;
+
+      {
+        unique_lock<mutex> lk( simple_us_mgr::lock );
+
+        EXAM_CHECK( simple_us_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_us_mgr::n_cnt_check ) );
+      }
+      {
+        lock_guard<mutex> lk(simple_us_mgr::lock);
+        EXAM_CHECK( simple_us_mgr::d_cnt == 0 );
+      }
+      {
+        lock_guard<mutex> lk(simple_us_mgr::lock);
+        EXAM_CHECK( simple_us_mgr::c_cnt == 0 );
+      }
+
+      str.close();
+    }
+
+    unique_lock<mutex> lk( simple_us_mgr::lock );
+
+    // EXAM_CHECK( simple_us_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_us_mgr::c_cnt_check ) );
+    EXAM_CHECK( simple_us_mgr::d_cnt == 0 );
+
+    s.close();
+  }
+
+  unlink( f );
 
   return EXAM_RESULT;
 }
