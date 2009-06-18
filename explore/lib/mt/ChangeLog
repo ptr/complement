@@ -1,3 +1,9 @@
+2009-06-18  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* shm.cc: fix error report;
+
+	* libxmt: release 2.1.3.
+
 2009-06-01  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* demangle.cc: demangle names, via GCC's cxxabi;
