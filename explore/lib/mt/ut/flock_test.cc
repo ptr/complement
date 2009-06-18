@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/05/08 10:49:28 ptr>
+// -*- C++ -*- Time-stamp: <09/06/18 11:36:59 ptr>
 
 /*
  * Copyright (c) 2004, 2006-2009
@@ -73,27 +73,29 @@ int EXAM_IMPL(flock_test::read_lock)
     try {
       std::tr2::this_thread::fork();
 
+      int ret = 0;
       try {
 
         lfstream f( fname.c_str() );
 
-        EXAM_CHECK_ASYNC( f.is_open() );
-        EXAM_CHECK_ASYNC( f.good() );
+        EXAM_CHECK_ASYNC_F( f.is_open(), ret );
+        EXAM_CHECK_ASYNC_F( f.good(), ret );
 
         f.rdlock();
 
         fcnd.notify_one();
 
-        EXAM_CHECK_ASYNC( fcnd2.timed_wait( std::tr2::milliseconds( 800 ) ) );
+        EXAM_CHECK_ASYNC_F( fcnd2.timed_wait( std::tr2::milliseconds( 800 ) ), ret );
 
         f.unlock();
 
         //  EXAM_CHECK_ASYNC( fcnd2.timed_wait( std::tr2::milliseconds( 800 ) ) );
       }
       catch ( ... ) {
+        EXAM_ERROR_ASYNC_F( "unexpected exception", ret );
       }
 
-      exit( 0 );
+      exit( ret );
     }
     catch ( std::tr2::fork_in_parent& child ) {
       try {
@@ -103,8 +105,8 @@ int EXAM_IMPL(flock_test::read_lock)
 
         lfstream f( fname.c_str() );
 
-        EXAM_CHECK_ASYNC( f.is_open() );
-        EXAM_CHECK_ASYNC( f.good() );
+        EXAM_CHECK( f.is_open() );
+        EXAM_CHECK( f.good() );
 
         f.rdlock();
 
