@@ -1,3 +1,11 @@
+2009-06-23  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* syslog.cc: local timestamp should be present, but should
+	be a bit broken to force syslogd to put valid timestamp;
+	this is useful for syslogd before 1.5;
+
+	* libsockios: release 2.6.1.
+
 2009-06-17  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* sockstreams: client-side sockstream for UNIX sockets;

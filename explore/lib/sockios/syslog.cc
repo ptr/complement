@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/17 19:20:51 ptr>
+// -*- C++ -*- Time-stamp: <09/06/23 15:28:12 ptr>
 
 /*
  * Copyright (c) 2009
@@ -106,10 +106,6 @@ struct hash<std::tr2::thread_base::id>
 #endif
 
 #include <sys/syslog.h>
-
-#include <locale>
-#include <mt/date_time>
-
 #include <sockios/syslog.h>
 
 extern char* __progname; // from crt0, linux
@@ -149,20 +145,17 @@ class syslog_init
     ~syslog_init();
 };
 
-// std::sockstream* _slog;
-// std::locale* _loc;
 static log_heap_type slogs;
 
 // const char format[] = "%h %e %T ";
+const char timeline[] = "                "; // "Jun 23 14:56:38 ";
 
 char syslog_init::Init_buf[128];
 int syslog_init::Init::_count = 0;
 std::tr2::mutex syslog_init::Init::_init_lock;
 bool syslog_init::Init::_at_fork = false;
 std::tr2::mutex _heap_lock;
-#if 0
-static string exename;
-#endif
+// static string exename;
 
 void syslog_init::Init::_guard( int direction )
 {
@@ -191,61 +184,36 @@ void syslog_init::Init::_guard( int direction )
       }
 
       openlog( exename.c_str(), LOG_PID, LOG_USER );
-#else
-      // ++_count; // see syslog_aux
-      // detail::_loc = new locale( "C" ); // or loc( "" ); --- default
-      // detail::_slog = new sockstream( "/dev/log" );
-      // detail::_slog->imbue( *detail::_loc );
 #endif
     }
   } else {
     std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
-    if ( --_count == 0 ) {
-#if 0
-      closelog();
-#else
-      // delete detail::_slog;
-      // delete detail::_loc;
-#endif
-    }
+    --_count;
+    // if ( --_count == 0 ) {
+    // }
   }
 }
 
 void syslog_init::Init::__at_fork_prepare()
 {
   _init_lock.lock();
-  if ( _count != 0 ) {
-    // delete detail::_slog;
-    // delete detail::_loc;
-    close_syslog();
-  }
+  // if ( _count != 0 ) {
+  close_syslog();
+  //  _count = 0;
+  // }
 }
 
 void syslog_init::Init::__at_fork_child()
 {
-  if ( _count != 0 ) {
-    // detail::_loc = new locale( "C" ); // or loc( "" ); --- default
-    // detail::_slog = new sockstream( "/dev/log" );
-    // detail::_slog->imbue( *detail::_loc );
-
-    // closelog();
-    // openlog( "", LOG_PID, LOG_USER );
-    // _count = 1;
-  }
+  // if ( _count != 0 ) {
+  // }
   _init_lock.unlock();
 }
 
 void syslog_init::Init::__at_fork_parent()
 {
-  if ( _count != 0 ) {
-    // detail::_loc = new locale( "C" ); // or loc( "" ); --- default
-    // detail::_slog = new sockstream( "/dev/log" );
-    // detail::_slog->imbue( *detail::_loc );
-
-    // closelog();
-    // openlog( "", LOG_PID, LOG_USER );
-    // _count = 1;
-  }
+  // if ( _count != 0 ) {
+  // }
   _init_lock.unlock();
 }
 
@@ -259,7 +227,7 @@ syslog_init::~syslog_init()
   ((Init *)Init_buf)->~Init();
 }
 
-static syslog_init _slog_aux;
+static syslog_init _slog_aux; // register fork handlers
 
 ostream& xsyslog( int _level, int _facility )
 {
@@ -287,23 +255,28 @@ ostream& xsyslog( int _level, int _facility )
   // localtime_r( &t, &ts );
 
   slog << '<' << (LOG_PRI(_level) | (_facility & LOG_FACMASK)) << '>';
+  /*
+   Jun 23 14:56:32
+   0123456789012345
+
+   syslogd 1.5 ignore client timestamp (even local),
+   but syslogd 1.4 (1.4.1 too?) not. But both try to detect invalid
+   timestamp and put own if so. To detect timestamp used
+   bytes 3, 6 (space), 9, 12 (':'); total length is 16.
+   
+   */
   // tmp.put( *detail::_slog, *detail::_slog, ' ', &ts, detail::format, detail::format + sizeof(detail::format) );
-  slog << __progname << '[' << std::tr2::getpid() << "]: ";
+  slog << detail::timeline
+       << __progname << '[' << std::tr2::getpid() << "]: ";
   
   return slog;
 }
 
 } // namespace detail
 
-// void open_syslog()
-// {
-  // detail::_slog_aux = new detail::syslog_init();
-// }
-
 void close_syslog()
 {
   std::tr2::lock_guard<std::tr2::mutex> lk( detail::_heap_lock );
-  // delete detail::_slog_aux;
   for ( detail::log_heap_type::iterator i = detail::slogs.begin(); i != detail::slogs.end(); ) {
     delete i->second;
     detail::slogs.erase( i++ );
