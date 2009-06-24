@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/17 21:31:43 ptr>
+// -*- C++ -*- Time-stamp: <09/06/24 20:55:25 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -364,7 +364,8 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s,
                                             sock_base::stype t )
 {
   basic_sockbuf<charT, traits, _Alloc>* ret = _open_sockmgr( s, addr, t );
-  if ( ret != 0 ) {
+  if ( (ret != 0) && (t == sock_base::sock_stream) ) {
+    // push to mgr only statefull (connected) sockets
     basic_socket_t::mgr->push( *this );
   }
   return ret;
@@ -375,7 +376,7 @@ basic_sockbuf<charT, traits, _Alloc> *
 basic_sockbuf<charT, traits, _Alloc>::attach( sock_base::socket_type s,
                                               sock_base::stype t )
 {
-  if ( basic_socket_t::is_open() || s == -1 ) {
+  if ( s == -1 ) {
     return 0;
   }
 
@@ -392,8 +393,17 @@ basic_sockbuf<charT, traits, _Alloc>::attach( sock_base::socket_type s,
                                               const sockaddr& addr,
                                               sock_base::stype t )
 {
-  if ( basic_socket_t::is_open() || s == -1 ) {
+  if ( s == -1 ) {
     return 0;
+  }
+
+  if ( basic_socket_t::is_open() ) {
+    if ( (s != basic_socket_t::_fd) || (t != _type) ||
+         (basic_socket_t::_address.any.sa_family != addr.sa_family) ) {
+      return 0;
+    }
+    memcpy( (void *)&basic_socket_t::_address.any, (const void *)&addr, sizeof(sockaddr) );
+    return this;
   }
 
   return basic_sockbuf<charT, traits, _Alloc>::open( dup(s), addr, t );
