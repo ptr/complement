@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/18 07:10:29 ptr>
+// -*- C++ -*- Time-stamp: <09/06/24 15:29:02 ptr>
 
 /*
  *
@@ -31,18 +31,24 @@ class simple_us_mgr :
   public:
     simple_us_mgr() :
         sock_basic_processor()
-      { }
+      { fill( buf, buf + 1024, 0 ); }
 
     simple_us_mgr( const char* path, sock_base::stype t = sock_base::sock_dgram ) :
         sock_basic_processor( path, t )
-      { }
+      { fill( buf, buf + 1024, 0 ); }
 
     ~simple_us_mgr()
       { /* cerr << "In destructor\n"; */ }
 
   protected:
-    virtual sock_basic_processor::sockbuf_t* operator ()( sock_base::socket_type, const sockaddr& )
-      { lock_guard<mutex> lk(lock); ++n_cnt; cnd.notify_one(); return 0; }
+    virtual sock_basic_processor::sockbuf_t* operator ()( sock_base::socket_type fd, const sockaddr& )
+      {
+        lock_guard<mutex> lk(lock);
+        ++n_cnt;
+        size_t n = ::read( fd, buf, 1024 );
+        cnd.notify_one();
+        return 0;
+      }
     virtual void operator ()( sock_base::socket_type, const adopt_close_t& )
       { lock_guard<mutex> lk(lock); ++c_cnt; cnd.notify_one(); }
     virtual void operator ()( sock_base::socket_type )
@@ -54,6 +60,7 @@ class simple_us_mgr :
     static int c_cnt;
     static int d_cnt;
     static condition_variable cnd;
+    static char buf[];
 
     static bool n_cnt_check()
       { return n_cnt == 1; }
@@ -68,6 +75,7 @@ int simple_us_mgr::n_cnt = 0;
 int simple_us_mgr::c_cnt = 0;
 int simple_us_mgr::d_cnt = 0;
 condition_variable simple_us_mgr::cnd;
+char simple_us_mgr::buf[1024];
 
 int EXAM_IMPL(unix_sockios_test::core_test)
 {
@@ -150,6 +158,7 @@ int EXAM_IMPL(unix_sockios_test::core_write_test)
         unique_lock<mutex> lk( simple_us_mgr::lock );
 
         EXAM_CHECK( simple_us_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_us_mgr::n_cnt_check ) );
+        EXAM_CHECK( string(simple_us_mgr::buf) == "Hello, world!\n" );
       }
       {
         lock_guard<mutex> lk(simple_us_mgr::lock);
