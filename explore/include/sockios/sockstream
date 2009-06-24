@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/17 21:25:14 ptr>
+// -*- C++ -*- Time-stamp: <09/06/24 22:07:07 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -67,6 +67,7 @@
 #endif // !WIN32
 
 #include <sockios/netinfo.h>
+#include <sockios/syslog.h>
 #include <list>
 
 #ifdef STLPORT
@@ -376,6 +377,7 @@ void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
 template<class charT, class traits, class _Alloc>
 void basic_socket<charT,traits,_Alloc>::Init::__at_fork_prepare()
 {
+  misc::close_syslog();
   _init_lock.lock();
 }
 

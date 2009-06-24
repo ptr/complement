@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/23 15:28:12 ptr>
+// -*- C++ -*- Time-stamp: <09/06/24 22:05:58 ptr>
 
 /*
  * Copyright (c) 2009
@@ -163,9 +163,9 @@ void syslog_init::Init::_guard( int direction )
     std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
     if ( _count++ == 0 ) {
       if ( !_at_fork ) { // call only once
-        if ( pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child ) ) {
+//        if ( pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child ) ) {
           // throw system_error
-        }
+//        }
         _at_fork = true;
       }
 #if 0
