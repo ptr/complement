@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/10 20:09:12 ptr>
+// -*- C++ -*- Time-stamp: <09/06/24 16:22:27 ptr>
 
 /*
  *
@@ -131,15 +131,15 @@ __FIT_DECLSPEC void NetTransport_base::_close()
 
 bool NetTransport_base::pop( Event& _rs )
 {
-  const int bsz = 2+(4+2+1)*2+4;
-  uint32_t buf[bsz];
+  msg_hdr header;
+
   using namespace std;
 
-  if ( !net.read( (char *)buf, sizeof(uint32_t) ).good() ) {
+  if ( !net.read( (char *)&header.magic, sizeof(uint32_t) ).good() ) {
     return false;
   }
 
-  if ( buf[0] != EDS_MAGIC ) {
+  if ( header.magic != EDS_MAGIC ) {
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
@@ -165,29 +165,29 @@ bool NetTransport_base::pop( Event& _rs )
     return false;
   }
 
-  if ( !net.read( (char *)&buf[1], sizeof(uint32_t) * (bsz-1) ).good() ) {
+  if ( !net.read( (char *)&header.code, sizeof(msg_hdr) - sizeof(uint32_t) ).good() ) {
     net.close();
     return false;
   }
-  _rs.code( from_net( buf[1] ) );
+  _rs.code( from_net( header.code ) );
   addr_type dst;
-  dst.u.i[0] = buf[2];
-  dst.u.i[1] = buf[3];
-  dst.u.i[2] = buf[4];
-  dst.u.i[3] = buf[5];
+  dst.u.i[0] = header.dst[0];
+  dst.u.i[1] = header.dst[1];
+  dst.u.i[2] = header.dst[2];
+  dst.u.i[3] = header.dst[3];
 
   addr_type src;
-  src.u.i[0] = buf[9];
-  src.u.i[1] = buf[10];
-  src.u.i[2] = buf[11];
-  src.u.i[3] = buf[12];
+  src.u.i[0] = header.src[0];
+  src.u.i[1] = header.src[1];
+  src.u.i[2] = header.src[2];
+  src.u.i[3] = header.src[3];
 
   _rs.src( src );
   _rs.dest( dst );
 
-  uint32_t _x_count = from_net( buf[16] );
-  _rs.resetf( from_net( buf[17] ) );
-  uint32_t sz = from_net( buf[18] );
+  uint32_t _x_count = from_net( header.pad3 );
+  _rs.resetf( from_net( header.flags ) );
+  uint32_t sz = from_net( header.sz );
 
   if ( sz >= EDS_MSG_LIMIT ) {
     try {
@@ -214,8 +214,8 @@ bool NetTransport_base::pop( Event& _rs )
     return false;
   }
 
-  adler32_type adler = adler32( (unsigned char *)buf, sizeof(uint32_t) * 19 );
-  if ( adler != from_net( buf[19] ) ) {
+  adler32_type adler = adler32( (unsigned char *)&header, sizeof(msg_hdr) - sizeof(uint32_t) );
+  if ( adler != from_net( header.crc ) ) {
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
       if ( manager()->_trs != 0 && manager()->_trs->good() && (manager()->_trflags & EvManager::tracefault) ) {
@@ -302,34 +302,34 @@ bool NetTransport_base::Dispatch( const Event& _rs )
   if ( !net.good() ) {
     return false;
   }
-  const int bsz = 2+(4+2+1)*2+4;
-  uint32_t buf[bsz];
 
-  fill( buf, buf + bsz, 0U ); // Hmm, here problem?
+  msg_hdr header;
 
-  buf[0] = EDS_MAGIC;
-  buf[1] = to_net( _rs.code() );
+  fill( (char *)&header, (char *)&header + sizeof(msg_hdr), 0U );
+
+  header.magic = EDS_MAGIC;
+  header.code = to_net( _rs.code() );
 
   addr_type dst = _rs.dest();
   addr_type src = _rs.src();
 
-  buf[2] = dst.u.i[0];
-  buf[3] = dst.u.i[1];
-  buf[4] = dst.u.i[2];
-  buf[5] = dst.u.i[3];
+  header.dst[0] = dst.u.i[0];
+  header.dst[1] = dst.u.i[1];
+  header.dst[2] = dst.u.i[2];
+  header.dst[3] = dst.u.i[3];
 
-  buf[9] = src.u.i[0];
-  buf[10] = src.u.i[1];
-  buf[11] = src.u.i[2];
-  buf[12] = src.u.i[3];
+  header.src[0] = src.u.i[0];
+  header.src[1] = src.u.i[1];
+  header.src[2] = src.u.i[2];
+  header.src[3] = src.u.i[3];
 
-  buf[16] = to_net( ++_count );
-  buf[17] = to_net( _rs.flags() );
-  buf[18] = to_net( static_cast<uint32_t>(_rs.value().size()) );
-  buf[19] = to_net( adler32( (unsigned char *)buf, sizeof(uint32_t) * 19 )); // crc
+  header.pad3 = to_net( ++_count );
+  header.flags = to_net( _rs.flags() );
+  header.sz = to_net( static_cast<uint32_t>(_rs.value().size()) );
+  header.crc = to_net( adler32( (unsigned char *)&header, sizeof(msg_hdr) - sizeof(uint32_t) )); // crc
 
   try {
-    net.write( (const char *)buf, sizeof(uint32_t) * 20 );
+    net.write( (const char *)&header, sizeof(msg_hdr) );
     if ( !_rs.value().empty() ) {
       net.write( _rs.value().data(), _rs.value().size() );
     }
