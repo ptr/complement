@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/24 16:07:03 ptr>
+// -*- C++ -*- Time-stamp: <09/06/24 20:46:27 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2009
@@ -66,6 +66,10 @@ class NetTransport_base :
     virtual const std::type_info& classtype() const
        { return typeid(NetTransport_base); }
 
+  private:
+    NetTransport_base( NetTransport_base& );
+    NetTransport_base operator =( const NetTransport_base& );
+
   public:
     void close()
       { NetTransport_base::_close(); }
@@ -109,7 +113,13 @@ class NetTransportMgr :
   public:
     NetTransportMgr() :
         std::sockstream(),
-        NetTransport_base( *this, "stem::NetTransportMgr" ),
+        NetTransport_base( dynamic_cast<std::sockstream&>(*this) ),
+        _thr( 0 )
+      { }
+
+    NetTransportMgr( const char* info ) :
+        std::sockstream(),
+        NetTransport_base( dynamic_cast<std::sockstream&>(*this), info ),
         _thr( 0 )
       { }
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/24 16:22:27 ptr>
+// -*- C++ -*- Time-stamp: <09/06/24 20:03:29 ptr>
 
 /*
  *
@@ -581,6 +581,8 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
   NetTransportMgr& me = *p;
   Event ev;
 
+  addr_type self = me.self_id();
+
   try {
     while ( me.pop( ev ) ) {
 #ifdef __FIT_STEM_TRACE
@@ -594,8 +596,8 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
 #endif
           *manager()->_trs << "Pid/ppid: " << std::tr2::getpid() << "/" << std::tr2::getppid() << "\n";
           manager()->dump( *manager()->_trs ) << endl;
-          *manager()->_trs << "NetTransportMgr " << me.self_id() << " accept event "
-                           << ev.code() << endl;
+          *manager()->_trs << "NetTransportMgr " << self << " accept event "
+                           << hex << showbase << ev.code() << endl;
 #ifdef STLPORT
           manager()->_trs->flags( f );
 #else
@@ -624,7 +626,7 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
 #else
         ios_base::fmtflags f = manager()->_trs->flags( static_cast<std::_Ios_Fmtflags>(0) );
 #endif
-        *manager()->_trs << "NetTransportMgr " << me.self_id() << " loop exit" << endl;
+        *manager()->_trs << "NetTransportMgr " << self << " loop exit" << endl;
 #ifdef STLPORT
         manager()->_trs->flags( f );
 #else
