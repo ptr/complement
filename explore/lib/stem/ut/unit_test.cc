@@ -75,6 +75,7 @@ class stem_test
     int EXAM_DECL(convert);
     int EXAM_DECL(cron);
     int EXAM_DECL(vf);
+    int EXAM_DECL(vf1);
     int EXAM_DECL(command_mgr);
 
     static void thr1();
@@ -1385,6 +1386,23 @@ int EXAM_IMPL(stem_test::vf)
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(stem_test::vf1)
+{
+  {
+    stem::addr_type addr = xmt::uid();
+ 
+    VF1 obj( addr );
+
+    stem::Event ev( 0x300 ); // not significant
+    
+    ev.dest( addr );
+
+    obj.Send( ev );
+  }
+
+  return EXAM_RESULT;
+}
+
 int EXAM_IMPL(stem_test::command_mgr)
 {  
   try {    
@@ -1516,6 +1534,7 @@ int main( int argc, const char** argv )
   t.add( &stem_test::cron, test, "cron", cases_next, cases_next + 2 );
 
   cases_next[3] = t.add( &stem_test::vf, test, "dtor when come event", tc[6] );
+  t.add( &stem_test::vf1, test, "dtor when come event - resource control", cases_next[3] );
   t.add( &stem_test::command_mgr, test, "command mgr", cases_next + 2, cases_next + 4 );
 
   Opts opts;

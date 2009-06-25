@@ -12,6 +12,7 @@
 #include "vf.h"
 
 #include <mt/date_time>
+#include <exam/suite.h>
 
 // #include <iostream>
 
@@ -35,6 +36,31 @@ bool VF::Dispatch( const stem::Event& )
   this_thread::sleep( milliseconds(100) );
 
   s += '.';
+
+  return true;
+}
+
+VF1::VF1( stem::addr_type id ) :
+    EventHandler( id )
+{
+  s = new char[42];
+  EXAM_CHECK_ASYNC( s != 0 ); 
+}
+
+VF1::~VF1()
+{
+  if ( s != 0 ) {
+    delete s;
+    s = 0;
+  }
+}
+
+bool VF1::Dispatch( const stem::Event& )
+{
+  this_thread::sleep( milliseconds(500) );
+
+  // ok, i want to use s here
+  EXAM_CHECK_ASYNC( s != 0 );
 
   return true;
 }

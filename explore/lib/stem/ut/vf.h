@@ -48,4 +48,17 @@ class VF :
     std::string s;
 };
 
+class VF1 :
+    public stem::EventHandler
+{
+  public:
+    VF1( stem::addr_type id );
+    virtual ~VF1();
+
+    virtual bool Dispatch( const stem::Event& );
+
+  private:
+    char* s;
+};
+
 #endif // __vf_h
