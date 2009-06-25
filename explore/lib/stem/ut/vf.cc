@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/05 00:45:08 ptr>
+// -*- C++ -*- Time-stamp: <09/06/25 21:10:31 ptr>
 
 /*
  *
@@ -50,14 +50,14 @@ VF1::VF1( stem::addr_type id ) :
 VF1::~VF1()
 {
   if ( s != 0 ) {
-    delete s;
+    delete[] s;
     s = 0;
   }
 }
 
 bool VF1::Dispatch( const stem::Event& )
 {
-  this_thread::sleep( milliseconds(500) );
+  this_thread::sleep( milliseconds(1500) );
 
   // ok, i want to use s here
   EXAM_CHECK_ASYNC( s != 0 );
