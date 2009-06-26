@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/26 16:10:22 ptr>
+// -*- C++ -*- Time-stamp: <09/06/26 21:32:01 ptr>
 
 /*
  *
@@ -394,13 +394,25 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
 void EvManager::Send( const Event& e )
 {
   try {
-    _lock_heap.lock();
-    local_heap_type::iterator i = heap.find( e.dest() );
-    if ( i == heap.end() ) { // destination not found
-      throw invalid_argument( string("address unknown") );
-    }
-    EventHandler* object = i->second.top().second; // target object
-    _lock_heap.unlock();
+    EventHandler* object = 0;
+    bool obj_locked = false;
+    do {
+      lock_guard<mutex> lk(_lock_heap);
+      // any object can't be removed from heap within lk scope
+      local_heap_type::iterator i = heap.find( e.dest() );
+      if ( i == heap.end() ) { // destination not found
+        throw invalid_argument( string("address unknown") );
+      }
+      object = i->second.top().second; // target object
+      obj_locked = !object->_theHistory_lock.try_lock();
+      // if lock object here failed, then something already lock it,
+      // possible during attempt to unsubscribe and destroy;
+      // don't lock it, unlock heap and repeate search object:
+      // may be it already removed
+    } while ( obj_locked );
+
+    // object already locked here, see loop above:
+    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( object->_theHistory_lock, std::tr2::adopt_lock );
 
     try {
 #ifdef __FIT_STEM_TRACE
@@ -448,7 +460,6 @@ void EvManager::Send( const Event& e )
     }      
   }
   catch ( std::logic_error& err ) {
-// #ifdef __FIT_STEM_TRACE
     try {
       lock_guard<mutex> lk(_lock_tr);
       if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
@@ -457,11 +468,8 @@ void EvManager::Send( const Event& e )
     }
     catch ( ... ) {
     }
-// #endif // __FIT_STEM_TRACE
-    _lock_heap.unlock();
   }
   catch ( std::runtime_error& err ) {
-// #ifdef __FIT_STEM_TRACE
     try {
       lock_guard<mutex> lk(_lock_tr);
       if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
@@ -470,21 +478,16 @@ void EvManager::Send( const Event& e )
     }
     catch ( ... ) {
     }
-// #endif // __FIT_STEM_TRACE
-    _lock_heap.unlock();
   }
   catch ( ... ) {
-// #ifdef __FIT_STEM_TRACE
     try {
-      scoped_lock lk(_lock_tr);
+      lock_guard<mutex> lk(_lock_tr);
       if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
         *_trs << HERE << " unknown, uncatched exception" << endl;
       }
     }
     catch ( ... ) {
     }
-// #endif // __FIT_STEM_TRACE
-    _lock_heap.unlock();
   }
 }
 

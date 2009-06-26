@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/26 17:26:32 ptr>
+// -*- C++ -*- Time-stamp: <09/06/26 20:44:16 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006, 2009
@@ -637,6 +637,7 @@ class EventHandler
     static class Names     *_ns;
 
     friend class Init;
+    friend class EvManager;
 };
 
 template <class Handler>
@@ -689,11 +690,6 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
     __FIT_TEMPLATE_CLASSTYPE_BUG_PARTIAL_WORAROUND(cls)                   \
     virtual void Trace( std::ostream& out ) const                       \
        { theEventsTable.Out( out ); }                                     \
-    virtual bool DispatchTrace( const stem::Event& __e, std::ostream& __s )\
-       {                                                                  \
-         std::tr2::lock_guard<std::tr2::recursive_mutex> lk( this->_theHistory_lock ); \
-         return theEventsTable.DispatchTrace( theHistory.begin(),         \
-                                              theHistory.end(), __e, __s ); } \
     virtual const std::type_info& classtype() const                       \
        { return typeid(ThisCls); }                                        \
     typedef stem::__EvHandler<cls,stem::h_iterator> evtable_type;           \
@@ -702,14 +698,16 @@ inline void __EvTableLoader<EventHandler>( EventHandler::table_type *,
     typedef pcls::ThisCls ParentThisCls;	                          \
     static __FIT_DECLSPEC const evtable_decl_type *get_ev_table_decl();    \
   protected:					                          \
+    virtual bool DispatchTrace( const stem::Event& __e, std::ostream& __s )\
+       {                                                                  \
+         return theEventsTable.DispatchTrace( theHistory.begin(),         \
+                                              theHistory.end(), __e, __s ); } \
     virtual bool Dispatch( const stem::Event& __e )                        \
        {                                                                  \
-         std::tr2::lock_guard<std::tr2::recursive_mutex> lk( this->_theHistory_lock ); \
          return theEventsTable.Dispatch( this, theHistory.begin(),        \
                                          theHistory.end(), __e ); }       \
     virtual bool DispatchStub( const stem::Event& __e )                    \
        {                                                                  \
-         std::tr2::lock_guard<std::tr2::recursive_mutex> lk( this->_theHistory_lock ); \
          return theEventsTable.DispatchStub( this, theHistory.begin(),    \
                                              theHistory.end(), __e ); }   \
     static __FIT_DECLSPEC evtable_type theEventsTable;                     \
