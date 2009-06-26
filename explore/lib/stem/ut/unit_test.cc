@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/18 10:13:23 ptr>
+// -*- C++ -*- Time-stamp: <09/06/26 19:29:02 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -90,6 +90,8 @@ int EXAM_IMPL(stem_test::basic1)
 
   Node node( addr );
 
+  stem::stem_scope scope( node );
+
   stem::Event ev( NODE_EV1 );
 
   ev.dest( addr );
@@ -107,6 +109,8 @@ int EXAM_IMPL(stem_test::basic2)
 {
   Node node( exchange_addr );
   
+  stem::stem_scope scope( node );
+
   thread t1( thr1 );
 
   t1.join();
@@ -122,6 +126,8 @@ void stem_test::thr1()
 {
   Node node( xmt::uid() );
 
+  stem::stem_scope scope( node );
+
   stem::Event ev( NODE_EV1 );
 
   ev.dest( exchange_addr );
@@ -134,14 +140,19 @@ int EXAM_IMPL(stem_test::basic1new)
 
   NewNode *node = new NewNode( addr );
 
-  stem::Event ev( NODE_EV1 );
+  {
+    stem::stem_scope scope( *node );
 
-  ev.dest( addr );
-  node->Send( ev );
+    stem::Event ev( NODE_EV1 );
 
-  node->wait();
+    ev.dest( addr );
+    node->Send( ev );
 
-  EXAM_CHECK( node->v == 1 );
+    node->wait();
+
+    EXAM_CHECK( node->v == 1 );
+  }
+
   delete node;
 
   return EXAM_RESULT;
@@ -151,12 +162,17 @@ int EXAM_IMPL(stem_test::basic2new)
 {
   NewNode *node = new NewNode( exchange_addr );
   
-  thread t1( thr1new );
+  {
+    stem::stem_scope scope( *node );
 
-  t1.join();
+    thread t1( thr1new );
 
-  node->wait();
-  EXAM_CHECK( node->v == 1 );
+    t1.join();
+
+    node->wait();
+    EXAM_CHECK( node->v == 1 );
+  }
+
   delete node;
 
   return EXAM_RESULT;
@@ -166,10 +182,14 @@ void stem_test::thr1new()
 {
   NewNode *node = new NewNode( xmt::uid() );
 
-  stem::Event ev( NODE_EV1 );
+  {
+    stem::stem_scope scope( *node );
 
-  ev.dest( exchange_addr );
-  node->Send( ev );
+    stem::Event ev( NODE_EV1 );
+
+    ev.dest( exchange_addr );
+    node->Send( ev );
+  }
 
   delete node;
 }
@@ -181,17 +201,22 @@ int EXAM_IMPL(stem_test::weight)
   Node node( addr );          // <- The same address
   Node node_nice( addr, -1 ); // <- but different weight
 
-  // This event should receive node_nice, but not node:
-  stem::Event ev( NODE_EV1 );
+  {
+    stem::stem_scope scope( node );
+    stem::stem_scope scope_nice( node_nice );
 
-  ev.dest( addr );
-  node.Send( ev );
+    // This event should receive node_nice, but not node:
+    stem::Event ev( NODE_EV1 );
 
-  EXAM_CHECK( node_nice.wait() );
-  EXAM_CHECK( node_nice.v == 1 );
+    ev.dest( addr );
+    node.Send( ev );
 
-  EXAM_CHECK( !node.wait() );
-  EXAM_CHECK( node.v == 0 );
+    EXAM_CHECK( node_nice.wait() );
+    EXAM_CHECK( node_nice.v == 1 );
+
+    EXAM_CHECK( !node.wait() );
+    EXAM_CHECK( node.v == 0 );
+  }
 
   return EXAM_RESULT;
 }
@@ -218,12 +243,17 @@ int EXAM_IMPL(stem_test::dl)
   stem::addr_type addr = xmt::uid();
 
   NewNodeDL *node = reinterpret_cast<NewNodeDL *>( f( addr )  );
-  stem::Event ev( NODE_EV2 );
-  ev.dest( addr );
-  node->Send( ev );
 
-  EXAM_CHECK( w( reinterpret_cast<void *>(node) ) == 1 );
-  EXAM_CHECK( v(reinterpret_cast<void *>(node)) == 1 );
+  {
+    stem::stem_scope scope( *node );
+
+    stem::Event ev( NODE_EV2 );
+    ev.dest( addr );
+    node->Send( ev );
+
+    EXAM_CHECK( w( reinterpret_cast<void *>(node) ) == 1 );
+    EXAM_CHECK( v(reinterpret_cast<void *>(node)) == 1 );
+  }
 
   g( reinterpret_cast<void *>(node) );
   dlclose( lh );
@@ -238,76 +268,81 @@ int EXAM_IMPL(stem_test::ns)
   Node node( addr, "Node" );
   Naming nm;
 
-  stem::Event ev( EV_STEM_GET_NS_LIST );
-  ev.dest( stem::EventHandler::ns() );
-  nm.Send( ev );
+  {
+    stem::stem_scope scope( node );
+    stem::stem_scope nm_scope( nm );
 
-  nm.wait();
+    stem::Event ev( EV_STEM_GET_NS_LIST );
+    ev.dest( stem::EventHandler::ns() );
+    nm.Send( ev );
 
-  // this is sample of all inline find:
-  Naming::nsrecords_type::const_iterator i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "ns" ) ), select2nd<pair<stem::addr_type,string> >() ) );
+    nm.wait();
 
-  EXAM_CHECK( i != nm.lst.end() );
-  EXAM_CHECK( i->second == "ns" );
-  EXAM_CHECK( i->first == stem::EventHandler::ns() );
+    // this is sample of all inline find:
+    Naming::nsrecords_type::const_iterator i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "ns" ) ), select2nd<pair<stem::addr_type,string> >() ) );
 
-  // well, but for few seaches declare and reuse functors:
-  equal_to<string> eq;
-  equal_to<stem::addr_type> eqa;
+    EXAM_CHECK( i != nm.lst.end() );
+    EXAM_CHECK( i->second == "ns" );
+    EXAM_CHECK( i->first == stem::EventHandler::ns() );
 
-  select1st<pair<stem::addr_type,string> > first;
-  select2nd<pair<stem::addr_type,string> > second;
+    // well, but for few seaches declare and reuse functors:
+    equal_to<string> eq;
+    equal_to<stem::addr_type> eqa;
 
-  // find address of object with "Node" annotation
-  i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eq, string( "Node" ) ), second ) );
+    select1st<pair<stem::addr_type,string> > first;
+    select2nd<pair<stem::addr_type,string> > second;
 
-  EXAM_CHECK( i != nm.lst.end() );
-  EXAM_CHECK( i->second == "Node" );
-  EXAM_CHECK( i->first == addr );
-  EXAM_CHECK( i->first == node.self_id() );
+    // find address of object with "Node" annotation
+    i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eq, string( "Node" ) ), second ) );
 
-  // Try to find record for nm...
-  i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eqa, nm.self_id() ), first ) );
-  // ... no such record, because nm has empty annotation:
-  EXAM_CHECK( i == nm.lst.end() );
+    EXAM_CHECK( i != nm.lst.end() );
+    EXAM_CHECK( i->second == "Node" );
+    EXAM_CHECK( i->first == addr );
+    EXAM_CHECK( i->first == node.self_id() );
 
-  nm.lst.clear();
-  nm.reset();
+    // Try to find record for nm...
+    i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eqa, nm.self_id() ), first ) );
+    // ... no such record, because nm has empty annotation:
+    EXAM_CHECK( i == nm.lst.end() );
 
-  EXAM_CHECK( nm.lst.empty() );
+    nm.lst.clear();
+    nm.reset();
 
-  stem::Event evname( EV_STEM_GET_NS_NAME );
-  evname.dest( stem::EventHandler::ns() );
-  evname.value() = "Node";
-  nm.Send( evname );
+    EXAM_CHECK( nm.lst.empty() );
 
-  nm.wait();
+    stem::Event evname( EV_STEM_GET_NS_NAME );
+    evname.dest( stem::EventHandler::ns() );
+    evname.value() = "Node";
+    nm.Send( evname );
 
-  i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eq, string( "ns" ) ), second ) );
+    nm.wait();
 
-  EXAM_CHECK( i == nm.lst.end() );
+    i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eq, string( "ns" ) ), second ) );
 
-  i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eq, string( "Node" ) ), second ) );
+    EXAM_CHECK( i == nm.lst.end() );
 
-  EXAM_CHECK( i != nm.lst.end() );
-  EXAM_CHECK( i->second == "Node" );
-  EXAM_CHECK( i->first == addr );
+    i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eq, string( "Node" ) ), second ) );
 
-  i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eqa, nm.self_id() ), first ) );
+    EXAM_CHECK( i != nm.lst.end() );
+    EXAM_CHECK( i->second == "Node" );
+    EXAM_CHECK( i->first == addr );
 
-  EXAM_CHECK( i == nm.lst.end() );
+    i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( eqa, nm.self_id() ), first ) );
 
-  nm.lst.clear();
-  nm.reset();
+    EXAM_CHECK( i == nm.lst.end() );
 
-  EXAM_CHECK( nm.lst.empty() );
+    nm.lst.clear();
+    nm.reset();
 
-  evname.value() = "No-such-name";
-  nm.Send( evname );
+    EXAM_CHECK( nm.lst.empty() );
 
-  nm.wait();
+    evname.value() = "No-such-name";
+    nm.Send( evname );
 
-  EXAM_CHECK( nm.lst.empty() );
+    nm.wait();
+
+    EXAM_CHECK( nm.lst.empty() );
+  }
 
   return EXAM_RESULT;
 }
@@ -321,26 +356,31 @@ int EXAM_IMPL(stem_test::echo)
     stem::addr_type addr = xmt::uid();
 
     StEMecho echo( addr, "echo service");
+    {
+      stem::stem_scope scope( echo );
 
-    stem::addr_type remote_default = mgr.open( "localhost", 6995 );
+      stem::addr_type remote_default = mgr.open( "localhost", 6995 );
 
-    EXAM_CHECK( remote_default == stem::badaddr ); // not assigned default
-    // EXAM_CHECK( remote_ns != stem::badaddr );
-    // EXAM_CHECK( remote_ns == stem::EventHandler::ns() ); // Name service of this StEM process
+      EXAM_CHECK( remote_default == stem::badaddr ); // not assigned default
+      // EXAM_CHECK( remote_ns != stem::badaddr );
+      // EXAM_CHECK( remote_ns == stem::EventHandler::ns() ); // Name service of this StEM process
 
-    EchoClient node;
+      EchoClient node;
+
+      stem::stem_scope scope_node( node );
+   
+      stem::Event ev( NODE_EV_ECHO );
+
+      ev.dest( addr );
+      ev.value() = node.mess;
+
+      node.Send( ev );
+
+      EXAM_CHECK( node.wait() );
     
-    stem::Event ev( NODE_EV_ECHO );
-
-    ev.dest( addr );
-    ev.value() = node.mess;
-
-    node.Send( ev );
-
-    EXAM_CHECK( node.wait() );
-    
-    mgr.close();
-    mgr.join();
+      mgr.close();
+      mgr.join();
+    }
 
     srv.close();
     srv.wait();
@@ -401,19 +441,22 @@ int EXAM_IMPL(stem_test::echo_net)
       EXAM_CHECK_ASYNC_F( def_object == addr, eflag );
 
       EchoClient node;
+      {
+        stem::stem_scope scope( node );
     
-      stem::Event ev( NODE_EV_ECHO );
+        stem::Event ev( NODE_EV_ECHO );
 
-      ev.dest( addr );
-      ev.value() = node.mess;
+        ev.dest( addr );
+        ev.value() = node.mess;
 
-      // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
-      // stem::EventHandler::manager()->settrs( &std::cerr );
+        // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+        // stem::EventHandler::manager()->settrs( &std::cerr );
 
-      node.Send( ev );
+        node.Send( ev );
 
-      EXAM_CHECK_ASYNC_F( node.wait(), eflag );
-    
+        EXAM_CHECK_ASYNC_F( node.wait(), eflag );
+      }
+
       mgr.close();
       mgr.join();
     }
@@ -428,20 +471,25 @@ int EXAM_IMPL(stem_test::echo_net)
 
       StEMecho echo( "echo service" );
 
-      addr = echo.self_id();
-      echo.set_default(); // become default object
+      {
+        stem::stem_scope scope( echo );
 
-      // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
-      // stem::EventHandler::manager()->settrs( &std::cerr );
+        addr = echo.self_id();
+        echo.set_default(); // become default object
 
-      fcnd.notify_one();
+        // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+        // stem::EventHandler::manager()->settrs( &std::cerr );
 
-      int stat = -1;
-      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
-      if ( WIFEXITED(stat) ) {
-        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
-      } else {
-        EXAM_ERROR( "child interrupted" );
+        fcnd.notify_one();
+
+        int stat = -1;
+        EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+
+        if ( WIFEXITED(stat) ) {
+          EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+        } else {
+          EXAM_ERROR( "child interrupted" );
+        }
       }
 
       srv.close();
@@ -477,21 +525,23 @@ int EXAM_IMPL(stem_test::triple_echo)
 
         this_thread::fork();
 
+        {
 #if 0
-        stem::EventHandler dummy;
+          stem::EventHandler dummy;
 
-        stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault | stem::EvManager::tracesubscr);
-        stem::EventHandler::manager()->settrs( &std::cerr );
+          stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault | stem::EvManager::tracesubscr);
+          stem::EventHandler::manager()->settrs( &std::cerr );
 #endif
 
-        // srv
-        connect_processor<stem::NetTransport> srv( 6995 );
+          // srv
+          connect_processor<stem::NetTransport> srv( 6995 );
 
-        StEMecho echo( "echo service" );
-
-        echo.set_default(); // become default object       
+          StEMecho echo( "echo service" );
         
-        {
+          stem::stem_scope scope( echo );
+
+          echo.set_default(); // become default object       
+
           stem::NetTransportMgr mgr;
         
           stem::addr_type def_object = mgr.open( "localhost", 6995 );
@@ -499,6 +549,8 @@ int EXAM_IMPL(stem_test::triple_echo)
           EXAM_CHECK_ASYNC_F( def_object != stem::badaddr, res );
 
           EchoClient node;
+
+          stem::stem_scope node_scope( node );
       
           stem::Event ev( NODE_EV_ECHO );
 
@@ -514,15 +566,14 @@ int EXAM_IMPL(stem_test::triple_echo)
         
           mgr.close();
           mgr.join();
+        
+          b1.wait();
+        
+          c.wait();
+
+          srv.close();
+          srv.wait();
         }
-        
-        b1.wait();
-        
-        c.wait();
-
-        srv.close();
-        srv.wait();
-
         exit(res);
       }
       catch( std::tr2::fork_in_parent& child ) {
@@ -543,18 +594,22 @@ int EXAM_IMPL(stem_test::triple_echo)
         EXAM_CHECK_ASYNC_F( def_object != stem::badaddr, res );
 
         EchoClient node;
+
+        {
+          stem::stem_scope scope( node );
       
-        stem::Event ev( NODE_EV_ECHO );
+          stem::Event ev( NODE_EV_ECHO );
 
-        ev.dest( def_object );
-        ev.value() = node.mess;
+          ev.dest( def_object );
+          ev.value() = node.mess;
 
-        // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
-        // stem::EventHandler::manager()->settrs( &std::cerr );
+          // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+          // stem::EventHandler::manager()->settrs( &std::cerr );
 
-        node.Send( ev );
+          node.Send( ev );
 
-        EXAM_CHECK_ASYNC_F( node.wait(), res );
+          EXAM_CHECK_ASYNC_F( node.wait(), res );
+        }
       
         mgr.close();
         mgr.join();
@@ -586,12 +641,14 @@ int EXAM_IMPL(stem_test::triple_echo)
         EXAM_CHECK( def_object != stem::badaddr );
 
         EchoClient node;
-    
+
+        stem::stem_scope scope( node );
+   
         stem::Event ev( NODE_EV_ECHO );
 
         ev.dest( def_object );
         ev.value() = node.mess;
-
+          
         // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
         // stem::EventHandler::manager()->settrs( &std::cerr );
 
@@ -642,6 +699,8 @@ int EXAM_IMPL(stem_test::net_echo)
         connect_processor<stem::NetTransport> srv( 6995 );
         StEMecho echo( "echo service" );
 
+        stem::stem_scope scope( echo );
+
         addr = echo.self_id();
         echo.set_default(); // become default object
 
@@ -675,6 +734,9 @@ int EXAM_IMPL(stem_test::net_echo)
       EXAM_CHECK( def_object == addr );
 
       EchoClient node;
+
+      stem::stem_scope scope( node );
+
       stem::Event ev( NODE_EV_ECHO );
       ev.dest( def_object );
 
@@ -729,33 +791,37 @@ int EXAM_IMPL(stem_test::ugly_echo_net)
       EXAM_CHECK_ASYNC_F( def_object != stem::badaddr, eflag );
 
       UglyEchoClient node;
-    
-      stem::Event ev( NODE_EV_ECHO );
-      ev.dest( def_object );
-      
-      bool ok = true;
-      for ( int i = 0; i < 10000 && ok; ++i ) {
-        node.lock.lock();
 
-        node.mess.clear();
-        for ( int j = 0; j < 16; ++j ) {
-          node.mess += xmt::uid_str();
-        }
-          
-        ev.value() = node.mess;
-        node.lock.unlock();
-        
-        node.Send( ev );
-              
-        ok = node.wait();
-        
-        if ( !ok ) {
-          cerr << "Failed on iteration # " << i << endl;
-          break;
-        }
-      }
+      {
+        stem::stem_scope scope( node );
+
+        stem::Event ev( NODE_EV_ECHO );
+        ev.dest( def_object );
       
-      EXAM_CHECK_ASYNC_F( ok, eflag );
+        bool ok = true;
+        for ( int i = 0; i < 10000 && ok; ++i ) {
+          node.lock.lock();
+
+          node.mess.clear();
+          for ( int j = 0; j < 16; ++j ) {
+            node.mess += xmt::uid_str();
+          }
+          
+          ev.value() = node.mess;
+          node.lock.unlock();
+        
+          node.Send( ev );
+              
+          ok = node.wait();
+        
+          if ( !ok ) {
+            cerr << "Failed on iteration # " << i << endl;
+            break;
+          }
+        }
+      
+        EXAM_CHECK_ASYNC_F( ok, eflag );
+      }
     
       mgr.close();
       mgr.join();
@@ -771,16 +837,20 @@ int EXAM_IMPL(stem_test::ugly_echo_net)
 
       UglyEchoSrv echo( "ugly echo service");
 
-      echo.set_default();
+      {
+        stem::stem_scope scope( echo );
 
-      fcnd.notify_one();
+        echo.set_default();
 
-      int stat = -1;
-      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
-      if ( WIFEXITED(stat) ) {
-        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
-      } else {
-        EXAM_ERROR( "child interrupted" );
+        fcnd.notify_one();
+
+        int stat = -1;
+        EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+        if ( WIFEXITED(stat) ) {
+          EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+        } else {
+          EXAM_ERROR( "child interrupted" );
+        }
       }
 
       srv.close();
@@ -850,68 +920,73 @@ int EXAM_IMPL(stem_test::peer)
       PeerClient c1( "c1 local" );  // c1 client
       Naming nm;
 
-      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+      {
+        stem::stem_scope scope( c1 );
+        stem::stem_scope nm_scope( nm );
 
-      stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
-      // It done like it should on client side
+        EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
 
-      EXAM_CHECK_ASYNC_F( zero != stem::badaddr, eflag );
+        stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
+        // It done like it should on client side
 
-      stem::Event ev( NODE_EV_REGME );
-      ev.dest( zero );
+        EXAM_CHECK_ASYNC_F( zero != stem::badaddr, eflag );
 
-      ev.value() = "c1@here";
-      c1.Send( ev ); // 'register' c1 client on 'echo' server
+        stem::Event ev( NODE_EV_REGME );
+        ev.dest( zero );
 
-      stem::Event evname( EV_STEM_GET_NS_NAME );
-      Naming::nsrecords_type::const_iterator i;
+        ev.value() = "c1@here";
+        c1.Send( ev ); // 'register' c1 client on 'echo' server
 
-      evname.dest( stem::EventHandler::ns() );
-      evname.value() = "nsf"; // <- ask for "name service foreign"
+        stem::Event evname( EV_STEM_GET_NS_NAME );
+        Naming::nsrecords_type::const_iterator i;
 
-      nm.reset();
-      nm.lst.clear();
-      nm.Send( evname );
+        evname.dest( stem::EventHandler::ns() );
+        evname.value() = "nsf"; // <- ask for "name service foreign"
 
-      EXAM_CHECK_ASYNC_F( nm.wait(), eflag );
-      EXAM_CHECK_ASYNC_F( !nm.lst.empty(), eflag );
+        nm.reset();
+        nm.lst.clear();
+        nm.Send( evname );
 
-      if ( !nm.lst.empty() ) {
-        EXAM_CHECK_ASYNC_F( nm.lst.begin()->first != stem::badaddr, eflag );
-        EXAM_CHECK_ASYNC_F( nm.lst.begin()->second == "nsf", eflag );
+        EXAM_CHECK_ASYNC_F( nm.wait(), eflag );
+        EXAM_CHECK_ASYNC_F( !nm.lst.empty(), eflag );
 
-        // Ask NS of process with c2 about address of "c2@here"
+        if ( !nm.lst.empty() ) {
+          EXAM_CHECK_ASYNC_F( nm.lst.begin()->first != stem::badaddr, eflag );
+          EXAM_CHECK_ASYNC_F( nm.lst.begin()->second == "nsf", eflag );
 
-        stem::addr_type nsf = nm.lst.begin()->first;
+          // Ask NS of process with c2 about address of "c2@here"
 
-        evname.dest( nsf );
-        evname.value() = "c2@here";
+          stem::addr_type nsf = nm.lst.begin()->first;
 
-        EXAM_CHECK_ASYNC_F( pcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+          evname.dest( nsf );
+          evname.value() = "c2@here";
 
-        do {
-          nm.reset();
-          nm.lst.clear();
-          nm.Send( evname );
-          nm.wait();
-          i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "c2@here" ) ), select2nd<pair<stem::addr_type,string> >() ) );
-        } while ( i == nm.lst.end() );
+          EXAM_CHECK_ASYNC_F( pcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
 
-        EXAM_CHECK_ASYNC_F( i != nm.lst.end(), eflag );
-        EXAM_CHECK_ASYNC_F( i->second == "c2@here", eflag );
+          do {
+            nm.reset();
+            nm.lst.clear();
+            nm.Send( evname );
+            nm.wait();
+            i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "c2@here" ) ), select2nd<pair<stem::addr_type,string> >() ) );
+          } while ( i == nm.lst.end() );
 
-        // c2 accessable via mgr; set nice to 1000,
-        // as for common remote object (may be 2000, routing
-        // via two net connctions?)
-        c1.manager()->Subscribe( i->first, &mgr, i->second, 1000 );
+          EXAM_CHECK_ASYNC_F( i != nm.lst.end(), eflag );
+          EXAM_CHECK_ASYNC_F( i->second == "c2@here", eflag );
 
-        stem::Event pe( NODE_EV_ECHO );
-        pe.dest( i->first );
-        pe.value() = "c2 local"; // <<-- mess is like name ... |
+          // c2 accessable via mgr; set nice to 1000,
+          // as for common remote object (may be 2000, routing
+          // via two net connctions?)
+          c1.manager()->Subscribe( i->first, &mgr, i->second, 1000 );
+
+          stem::Event pe( NODE_EV_ECHO );
+          pe.dest( i->first );
+          pe.value() = "c2 local"; // <<-- mess is like name ... |
                                  //                            .
-        c1.Send( pe );
+          c1.Send( pe );
 
-        EXAM_CHECK_ASYNC_F( scnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+          EXAM_CHECK_ASYNC_F( scnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+        }
       }
 
       mgr.close();
@@ -953,23 +1028,27 @@ int EXAM_IMPL(stem_test::peer)
                                    //                                          ^
       PeerClient c2( "c2 local" ); // <<--- name the same as mess expected ... |
 
-      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
-      stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
-      // It done like it should on client side
+      {
+        stem::stem_scope scope( c2 );
 
-      EXAM_CHECK_ASYNC_F( zero != stem::badaddr, eflag );
+        EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+        stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
+        // It done like it should on client side
 
-      stem::Event ev( NODE_EV_REGME );
-      ev.dest( zero );
+        EXAM_CHECK_ASYNC_F( zero != stem::badaddr, eflag );
 
-      ev.value() = "c2@here";
-      c2.Send( ev ); // 'register' c2 client on 'echo' server
+        stem::Event ev( NODE_EV_REGME );
+        ev.dest( zero );
 
-      pcnd.notify_one();
+        ev.value() = "c2@here";
+        c2.Send( ev ); // 'register' c2 client on 'echo' server
 
-      c2.wait();
-      // cerr << "Fine!" << endl;
-      scnd.notify_one();
+        pcnd.notify_one();
+
+        c2.wait();
+        // cerr << "Fine!" << endl;
+        scnd.notify_one();
+      }
 
       mgr.close();
       mgr.join();
@@ -983,23 +1062,28 @@ int EXAM_IMPL(stem_test::peer)
   catch ( std::tr2::fork_in_parent& child ) {
     connect_processor<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
     StEMecho echo( "echo service"); // <= zero! 'echo' server, default ('zero' address)
-    echo.set_default();
+    {
+      stem::stem_scope scope( echo );
 
-    fcnd.notify_all();
+      echo.set_default();
 
-    int stat = -1;
-    EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
-    if ( WIFEXITED(stat) ) {
-      EXAM_CHECK( WEXITSTATUS(stat) == 0 );
-    } else {
-      EXAM_ERROR( "child interrupted" );
-    }
-    stat = -1;
-    EXAM_CHECK( waitpid( fpid, &stat, 0 ) == fpid );
-    if ( WIFEXITED(stat) ) {
-      EXAM_CHECK( WEXITSTATUS(stat) == 0 );
-    } else {
-      EXAM_ERROR( "child interrupted" );
+      fcnd.notify_all();
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+
+      stat = -1;
+      EXAM_CHECK( waitpid( fpid, &stat, 0 ) == fpid );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
     }
 
     srv.close();
@@ -1046,6 +1130,7 @@ int EXAM_IMPL(stem_test::last_event)
 
       {
         LastEvent le( "ping" );
+        le.enable();
 
         le.Send( ev );
 
@@ -1062,6 +1147,8 @@ int EXAM_IMPL(stem_test::last_event)
   catch ( std::tr2::fork_in_parent& child ) {
     connect_processor<stem::NetTransport> srv( 6995 );
     EchoLast echo( "echo service" );
+
+    stem::stem_scope scope( echo );
 
     echo.set_default(); // become default object
 
@@ -1128,7 +1215,9 @@ int EXAM_IMPL(stem_test::boring_manager)
     connect_processor<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
     EXAM_CHECK( srv.is_open() );
     EXAM_CHECK( srv.good() );
-    StEMecho echo( "echo service");
+    StEMecho echo( "echo service" );
+    stem::stem_scope scope( echo );
+
     echo.set_default();
 
     fcnd.notify_all();
@@ -1180,6 +1269,7 @@ int EXAM_IMPL(stem_test::boring_manager_more)
           ev.value() = "echo string";
 
           EchoClientTrivial node;
+          stem::stem_scope scope( node );
 
           node.Send( ev );
 
@@ -1202,6 +1292,8 @@ int EXAM_IMPL(stem_test::boring_manager_more)
     EXAM_CHECK( srv.is_open() );
     EXAM_CHECK( srv.good() );
     StEMecho echo( "echo service");
+    stem::stem_scope scope( echo );
+
     echo.set_default();
 
     fcnd.notify_all();
@@ -1238,6 +1330,7 @@ int EXAM_IMPL(stem_test::boring_manager_more)
 int EXAM_IMPL(stem_test::convert)
 {
   Convert conv;
+  stem::stem_scope scope( conv );
 
   // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
   // stem::EventHandler::manager()->settrs( &std::cerr );
@@ -1332,12 +1425,14 @@ int EXAM_IMPL(stem_test::cron)
 {
   {
     stem::Cron cron_obj( "cron" );
+    stem::stem_scope scope( cron_obj );
 
     stem::addr_type ca = cron_obj.self_id();
 
     EXAM_CHECK( ca != stem::badaddr );
 
     CronClient client;
+    stem::stem_scope client_scope( client );
 
     stem::Event_base<stem::CronEntry> ev( EV_EDS_CRON_ADD );
     
@@ -1373,6 +1468,7 @@ int EXAM_IMPL(stem_test::vf)
     stem::addr_type addr = xmt::uid();
  
     VF obj( addr );
+    stem::stem_scope scope( obj );
 
     stem::Event ev( 0x300 ); // not significant
     
@@ -1392,6 +1488,7 @@ int EXAM_IMPL(stem_test::vf1)
     stem::addr_type addr = xmt::uid();
  
     VF1 obj( addr );
+    stem::stem_scope scope( obj );
 
     stem::Event ev( 0x300 ); // not significant
     
@@ -1423,7 +1520,8 @@ int EXAM_IMPL(stem_test::command_mgr)
         EXAM_CHECK_ASYNC_F( srv.good(), res );
       
         ProxyEcho pe;
-      
+        stem::stem_scope scope( pe );
+
         pe.set_default();
 
         b1.wait();
@@ -1448,6 +1546,7 @@ int EXAM_IMPL(stem_test::command_mgr)
         EXAM_CHECK( addr != stem::badaddr );
 
         EchoClient node;
+        stem::stem_scope scope( node );
       
         for ( int i = 0; i < 1000; ++i ) {
           stem::Event ev( NODE_EV_ECHO );

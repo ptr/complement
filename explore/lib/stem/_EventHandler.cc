@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/05 01:17:23 ptr>
+// -*- C++ -*- Time-stamp: <09/06/26 18:50:11 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2008-2009
@@ -69,10 +69,12 @@ void EventHandler::Init::_guard( int direction )
 #endif
       EventHandler::_mgr = new EvManager();
       EventHandler::_ns = new Names( "ns" );
+      EventHandler::_ns->enable();
     }
   } else {
     --_count;
     if ( _count == 1 ) {
+      EventHandler::_ns->disable();
       delete EventHandler::_ns;
       EventHandler::_ns = 0;
     } else if ( _count == 0 ) {
@@ -211,39 +213,41 @@ const_h_iterator EventHandler::__find( state_type state ) const
 }
 
 __FIT_DECLSPEC
-EventHandler::EventHandler()
+EventHandler::EventHandler() :
+    _nice( 0 )
 {
   new( Init_buf ) Init();
   theHistory.push_front( ST_NULL );  // State( ST_NULL );
   _ids.push_back( xmt::uid() );
-  _mgr->Subscribe( _ids.back(), this );
 }
 
 __FIT_DECLSPEC
-EventHandler::EventHandler( const char* info )
+EventHandler::EventHandler( const char* info ) :
+    _nice( 0 )
 {
   new( Init_buf ) Init();
   theHistory.push_front( ST_NULL );  // State( ST_NULL );
   _ids.push_back( xmt::uid() );
-  _mgr->Subscribe( _ids.back(), this, info );
+  _mgr->annotate( _ids.back(), info );
 }
 
 __FIT_DECLSPEC
-EventHandler::EventHandler( const addr_type& id, int nice )
+EventHandler::EventHandler( const addr_type& id, int nice ) :
+    _nice( nice )
 {
   new( Init_buf ) Init();
   theHistory.push_front( ST_NULL );  // State( ST_NULL );
   _ids.push_back( id );
-  _mgr->Subscribe( id, this, nice );
 }
 
 __FIT_DECLSPEC
-EventHandler::EventHandler( const addr_type& id, const char* info )
+EventHandler::EventHandler( const addr_type& id, const char* info ) :
+    _nice( 0 )
 {
   new( Init_buf ) Init();
   theHistory.push_front( ST_NULL );  // State( ST_NULL );
   _ids.push_back( id );
-  _mgr->Subscribe( id, this, info );
+  _mgr->annotate( id, info );
 }
 
 __FIT_DECLSPEC
@@ -288,6 +292,24 @@ void EventHandler::solitary()
   }
 
   theHistory.clear();
+}
+
+void EventHandler::enable()
+{
+  lock_guard<recursive_mutex> lk( _theHistory_lock );
+
+  for ( addr_container_type::iterator i = _ids.begin(); i != _ids.end(); ++i ) {
+    _mgr->Subscribe( *i, this, _nice );
+  }
+}
+
+void EventHandler::disable()
+{
+  lock_guard<recursive_mutex> lk( _theHistory_lock );
+
+  for ( addr_container_type::iterator i = _ids.begin(); i != _ids.end(); ++i ) {
+    _mgr->Unsubscribe( *i, this );
+  }
 }
 
 } // namespace stem

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/05 01:04:54 ptr>
+// -*- C++ -*- Time-stamp: <09/06/26 17:26:32 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006, 2009
@@ -576,6 +576,9 @@ class EventHandler
     explicit __FIT_DECLSPEC EventHandler( const addr_type& id, const char* info );
     virtual __FIT_DECLSPEC ~EventHandler();
 
+    void enable();
+    void disable();
+
     __FIT_DECLSPEC bool is_avail( const addr_type& id ) const;
     static EvManager* manager()
       { return _mgr; }
@@ -624,6 +627,7 @@ class EventHandler
   private:
     h_iterator __find( state_type );
     const_h_iterator __find( state_type ) const;
+    int _nice;
 
   protected:
     addr_container_type _ids;
@@ -738,73 +742,21 @@ __FIT_DECLSPEC stem::__DeclareAnyPMF<cls> cls::theDeclEventsTable[] = {
   { 0, 0, {0, 0, "End of table" } }             \
 };
 
-#ifndef __TRACE
+class stem_scope
+{
+  public:
+    explicit stem_scope( const EventHandler& obj ) :
+        r( obj )
+      { const_cast<EventHandler&>(r).enable(); }
+    ~stem_scope()
+      { const_cast<EventHandler&>(r).disable(); }
 
-#define TRACE_EH(handler)           ((void)0)
-#define TRACE_ED(handler,e)         ((void)0)
+  private:
+    stem_scope( const stem_scope& );
+    stem_scope& operator =( const stem_scope& );
 
-#endif // __TRACE
-
-#ifndef __WARN
-
-#define WARN_EH(c,handler)          ((void)0)
-#define WARN_ED(c,handler,e)        ((void)0)
-
-#endif // __WARN
-
-#if defined(__TRACE) || defined(__WARN)
-
-// DIAG_DECLARE_GROUP(EventHandler);
-// DIAG_DECLARE_GROUP(EventDispatch);
-
-#ifdef __TRACE
-/*
-#define TRACE_EH(handler)           TRACEX_EH(EventHandler,4,(handler))
-#define TRACEX_EH(g,l,handler)                                       \
-  CLDiagBase::Out.seekp(0,ostream::beg);                             \
-  CLDiagBase::Out << "\n\t" << handler.isA() << " -> ";              \
-  handler.TraceStack( CLDiagBase::Out );                             \
-  handler.Trace( CLDiagBase::Out );                                  \
-  CLDiagBase::Out << ends;                                           \
-  CLDiagGroup##g::Trace(l,CLDiagBase::Out.str(),__FILE__,__LINE__);
-
-#define TRACE_ED(handler,e)         TRACEX_ED(EventDispatch,3,(handler),e)
-#define TRACEX_ED(g,l,handler,e)                                     \
-  CLDiagBase::Out.seekp(0,ostream::beg);                             \
-  CLDiagBase::Out << "\n\t" << handler.isA() << " -> ";              \
-  handler.TraceStack( CLDiagBase::Out );                             \
-  handler.DispatchTrace( e, CLDiagBase::Out );                       \
-  CLDiagBase::Out << ends;                                           \
-  CLDiagGroup##g::Trace(l,CLDiagBase::Out.str(),__FILE__,__LINE__);
-*/
-#endif // __TRACE
-
-#ifdef __WARN
-/*
-#define WARN_EH(c,handler)          WARNX_EH(EventHandler,c,4,(handler))
-#define WARNX_EH(g,c,l,handler)                                     \
-  if(c){                                                            \
-    CLDiagBase::Out.seekp(0,ostream::beg);                          \
-    CLDiagBase::Out << "\n\t" << handler.isA() << " -> ";           \
-    handler.TraceStack( CLDiagBase::Out );                          \
-    handler.Trace( CLDiagBase::Out );                               \
-    CLDiagBase::Out << ends;                                        \
-    CLDiagGroup##g::Warn(l,CLDiagBase::Out.str(),__FILE__,__LINE__);\
-  }
-
-#define WARN_ED(c,handler,e)        WARNX_ED(EventDispatch,c,3,(handler),e)
-#define WARNX_ED(g,c,l,handler,e)                                   \
-  if(c) {                                                           \
-    CLDiagBase::Out.seekp(0,ostream::beg);                          \
-    CLDiagBase::Out << "\n\t" << handler.isA() << " -> ";           \
-    handler.TraceStack( CLDiagBase::Out );                          \
-    handler.DispatchTrace( e, CLDiagBase::Out );                    \
-    CLDiagBase::Out << ends;                                        \
-    CLDiagGroup##g::Trace(l,CLDiagBase::Out.str(),__FILE__,__LINE__);\
-  }
-*/
-#endif // __WARN
-#endif // __TRACE || __WARN
+    const EventHandler& r;
+};
 
 // #ifndef __FIT_NAMESPACE_TYPEDEF_BUG
 } // namespace stem

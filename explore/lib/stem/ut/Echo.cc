@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/05 14:10:19 ptr>
+// -*- C++ -*- Time-stamp: <09/06/26 18:01:52 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -335,6 +335,8 @@ LastEvent::~LastEvent()
     // See comments in EchoLast::last above
     cnd_conf.timed_wait( std::tr2::milliseconds( 500 ) );
   }
+
+  this->disable();
 }
 
 void LastEvent::handler( const stem::Event& ev )

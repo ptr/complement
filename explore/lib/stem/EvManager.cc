@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/10 20:16:15 ptr>
+// -*- C++ -*- Time-stamp: <09/06/26 16:10:22 ptr>
 
 /*
  *
@@ -275,33 +275,34 @@ void EvManager::Unsubscribe( const addr_type& id, EventHandler* obj )
 #endif // __FIT_STEM_TRACE
 
     local_heap_type::iterator i = heap.find( id );
-    if ( i != heap.end() ) {
-      if ( i->second.size() == 1 ) {
-        if ( i->second.top().second == obj ) {
-          heap.erase( i );
-        } else {
-          try {
-            lock_guard<mutex> lk(_lock_tr);
-            if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-              *_trs << "EvManager unsubscribe: address " << id << " not correspond to "
-                    << obj << " ("
-                    << xmt::demangle( obj->classtype().name() ) << ")\n";
-            }
-          }
-          catch ( ... ) {
-          }
-          return;
-        }
+    if ( i == heap.end() ) {
+      return;
+    }
+    if ( i->second.size() == 1 ) {
+      if ( i->second.top().second == obj ) {
+        heap.erase( i );
       } else {
-        handlers_type tmp;
-        swap( i->second, tmp );
-        while ( !tmp.empty() ) {
-          weighted_handler_type handler = tmp.top();
-          if ( handler.second != obj ) {
-            i->second.push( handler );
+        try {
+          lock_guard<mutex> lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+            *_trs << "EvManager unsubscribe: address " << id << " not correspond to "
+                  << obj << " ("
+                  << xmt::demangle( obj->classtype().name() ) << ")\n";
           }
-          tmp.pop();
         }
+        catch ( ... ) {
+        }
+        return;
+      }
+    } else {
+      handlers_type tmp;
+      swap( i->second, tmp );
+      while ( !tmp.empty() ) {
+        weighted_handler_type handler = tmp.top();
+        if ( handler.second != obj ) {
+          i->second.push( handler );
+        }
+        tmp.pop();
       }
     }
   }
