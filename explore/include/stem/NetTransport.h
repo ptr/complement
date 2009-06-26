@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/24 20:46:27 ptr>
+// -*- C++ -*- Time-stamp: <09/06/27 01:07:46 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2009
@@ -41,10 +41,7 @@ class NetTransport_base :
         uint32_t magic;
         uint32_t code;
         uint32_t dst[4];
-        uint32_t pad0[3];
         uint32_t src[4];
-        uint32_t pad1[3];
-        uint32_t pad3; // _x_count
         uint32_t flags;
         uint32_t sz;
         uint32_t crc;
@@ -53,13 +50,11 @@ class NetTransport_base :
 
   protected:
     NetTransport_base( std::sockstream& s ) :
-        _count( 0 ),
         net( s )
       { }
 
     NetTransport_base( std::sockstream& s, const char *info ) :
         EventHandler( info ),
-        _count( 0 ),
         net( s )
       { }
 
@@ -82,7 +77,6 @@ class NetTransport_base :
     bool pop( Event& );
     __FIT_DECLSPEC void _close();
 
-    uint32_t _count;
     std::sockstream& net;
 };
 

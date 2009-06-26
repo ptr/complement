@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/24 20:03:29 ptr>
+// -*- C++ -*- Time-stamp: <09/06/27 01:10:17 ptr>
 
 /*
  *
@@ -185,7 +185,6 @@ bool NetTransport_base::pop( Event& _rs )
   _rs.src( src );
   _rs.dest( dst );
 
-  uint32_t _x_count = from_net( header.pad3 );
   _rs.resetf( from_net( header.flags ) );
   uint32_t sz = from_net( header.sz );
 
@@ -305,7 +304,7 @@ bool NetTransport_base::Dispatch( const Event& _rs )
 
   msg_hdr header;
 
-  fill( (char *)&header, (char *)&header + sizeof(msg_hdr), 0U );
+  // fill( (char *)&header, (char *)&header + sizeof(msg_hdr), 0U );
 
   header.magic = EDS_MAGIC;
   header.code = to_net( _rs.code() );
@@ -323,7 +322,6 @@ bool NetTransport_base::Dispatch( const Event& _rs )
   header.src[2] = src.u.i[2];
   header.src[3] = src.u.i[3];
 
-  header.pad3 = to_net( ++_count );
   header.flags = to_net( _rs.flags() );
   header.sz = to_net( static_cast<uint32_t>(_rs.value().size()) );
   header.crc = to_net( adler32( (unsigned char *)&header, sizeof(msg_hdr) - sizeof(uint32_t) )); // crc
