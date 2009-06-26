@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/26 20:44:16 ptr>
+// -*- C++ -*- Time-stamp: <09/06/26 23:36:48 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006, 2009
@@ -625,6 +625,9 @@ class EventHandler
     __FIT_DECLSPEC void TraceStack( ostream& ) const;
 
   private:
+    EventHandler( const EventHandler& );
+    EventHandler& operator =( const EventHandler& );
+
     h_iterator __find( state_type );
     const_h_iterator __find( state_type ) const;
     int _nice;
