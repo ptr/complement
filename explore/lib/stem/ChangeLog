@@ -1,3 +1,18 @@
+2009-06-27  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* EventHandler, EvManager: do explicit subscription
+	of EventHandlers in StEM---no registration of EventHandler
+	in EvManager in ctor; use either stem_scope guard,
+	or obj.enable()/obj.disable() pair;
+
+	* EvManager.cc, EventHandler.h: fix object destruction
+	when it used in EvManager;
+
+	* EventHandler.h: make EventHandler non-copieable,
+	non-assignable;
+	
+	* libstem: revision 5.2.0.
+
 2009-06-24  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* NetTransport.h, NetTransport.cc: clean code for
