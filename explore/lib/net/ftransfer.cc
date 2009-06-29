@@ -92,6 +92,7 @@ file_receiver::file_receiver( const std::string& nm, stem::addr_type snd, stem::
     name( nm ),
     r( remover )
 {
+  EventHandler::enable();
   string::size_type p = nm.rfind( '/' );
   if ( p != string::npos ) {
     string prefix = nm.substr( 0, p + 1 );
@@ -120,6 +121,7 @@ file_receiver::file_receiver( const std::string& nm, stem::addr_type snd, stem::
 
 file_receiver::~file_receiver()
 {
+  EventHandler::disable();
   if ( f.is_open() ) {
     string tmp = f.name();
     f.close();
@@ -180,6 +182,7 @@ file_sender::file_sender( const string& name, const string& rmprefix, stem::addr
     f( name.c_str() ),
     r( remover )
 {
+  EventHandler::enable();
   if ( rmprefix.empty() ) {
     if ( f.good() ) {
       MD5Init( &ctx );
@@ -205,6 +208,7 @@ file_sender::file_sender( const string& name, const string& rmprefix, stem::addr
 
 file_sender::~file_sender()
 {
+  EventHandler::disable();
   if ( f.is_open() ) {
     f.unlock();
     f.close();
