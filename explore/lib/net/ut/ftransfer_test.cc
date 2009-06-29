@@ -49,6 +49,9 @@ int EXAM_IMPL(ftransfer_test::core)
     FileRcvMgr receiver;
     FileSndMgr sender;
 
+    stem_scope scope_r( receiver );
+    stem_scope scope_s( sender );
+
     receiver.set_prefix( target );
 
     sender.truncate_path( "/tmp/" );
@@ -138,13 +141,16 @@ int EXAM_IMPL(ftransfer_test::big_file)
     FileRcvMgr receiver;
     FileSndMgr sender;
 
+    stem_scope scope_r( receiver );
+    stem_scope scope_s( sender );
+
     receiver.set_prefix( target );
 
     sender.truncate_path( "/tmp/" );
     sender.sendfile( name, receiver.self_id() );
 
     // expected speed more then 10MB/s for local transfer
-    std::tr2::this_thread::sleep( std::tr2::seconds(1) );
+    std::tr2::this_thread::sleep( std::tr2::seconds(5) );
   }
 
   fs::remove( name );
