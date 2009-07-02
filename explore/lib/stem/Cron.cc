@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/08 17:12:25 ptr>
+// -*- C++ -*- Time-stamp: <09/07/02 17:23:37 ptr>
 
 /*
  * Copyright (c) 1998, 2002-2003, 2005-2006, 2008-2009
@@ -32,28 +32,36 @@ __FIT_DECLSPEC Cron::Cron() :
     EventHandler(),
     running( *this ),
     ready( *this ),
-    _thr( 0 )
+    _thr( 0 ),
+    _run( false )
 {
+  this->enable();
 }
 
 __FIT_DECLSPEC Cron::Cron( const char *info ) :
     EventHandler( info ),
     running( *this ),
     ready( *this ),
-    _thr( 0 )
+    _thr( 0 ),
+    _run( false )
 {
+  this->enable();
 }
 
 __FIT_DECLSPEC Cron::Cron( addr_type id, const char *info ) :
     EventHandler( id, info ),
     running( *this ),
     ready( *this ),
-    _thr( 0 )
+    _thr( 0 ),
+    _run( false )
 {
+  this->enable();
 }
 
 __FIT_DECLSPEC Cron::~Cron()
 {
+  this->disable();
+
   if ( isState( CRON_ST_STARTED ) ) {
     Stop();
   }
@@ -165,9 +173,11 @@ void __FIT_DECLSPEC Cron::Stop()
   {
     lock_guard<mutex> _x1( _M_l );
 
-    RemoveState( CRON_ST_STARTED );
+    _run = false;
     cond.notify_one();
   }
+
+  RemoveState( CRON_ST_STARTED );
 
   _thr->join();
 
@@ -197,11 +207,13 @@ void Cron::_loop( Cron* p )
 
   me.PushState( CRON_ST_STARTED );
 
-  while ( me.isState( CRON_ST_STARTED ) ) {
-    unique_lock<mutex> lk( me._M_l );
+  unique_lock<mutex> lk( me._M_l );
+  me._run = true;
+
+  while ( me._run ) {
     if ( me._M_c.empty() ) {
       me.cond.wait( lk, me.running );
-      if ( !me.isState( CRON_ST_STARTED ) ) {
+      if ( !me._run ) {
         break;
       }
     }
@@ -210,7 +222,7 @@ void Cron::_loop( Cron* p )
     if ( me._M_c.top().expired > get_system_time() ) {
       bool alarm = me.cond.timed_wait( lk, me._M_c.top().expired, me.ready );
 
-      if ( !me.isState( CRON_ST_STARTED ) ) {
+      if ( !me._run ) {
         break;
       }
 

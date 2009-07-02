@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/26 21:32:01 ptr>
+// -*- C++ -*- Time-stamp: <09/07/02 17:06:27 ptr>
 
 /*
  *
@@ -396,20 +396,26 @@ void EvManager::Send( const Event& e )
   try {
     EventHandler* object = 0;
     bool obj_locked = false;
-    do {
-      lock_guard<mutex> lk(_lock_heap);
-      // any object can't be removed from heap within lk scope
-      local_heap_type::iterator i = heap.find( e.dest() );
-      if ( i == heap.end() ) { // destination not found
-        throw invalid_argument( string("address unknown") );
+    for ( ; ; ) {
+      {
+        lock_guard<mutex> lk(_lock_heap);
+        // any object can't be removed from heap within lk scope
+        local_heap_type::iterator i = heap.find( e.dest() );
+        if ( i == heap.end() ) { // destination not found
+          throw invalid_argument( string("address unknown") );
+        }
+        object = i->second.top().second; // target object
+        obj_locked = !object->_theHistory_lock.try_lock();
+        // if lock object here failed, then something already lock it,
+        // possible during attempt to unsubscribe and destroy;
+        // don't lock it, unlock heap and repeate search object:
+        // may be it already removed
       }
-      object = i->second.top().second; // target object
-      obj_locked = !object->_theHistory_lock.try_lock();
-      // if lock object here failed, then something already lock it,
-      // possible during attempt to unsubscribe and destroy;
-      // don't lock it, unlock heap and repeate search object:
-      // may be it already removed
-    } while ( obj_locked );
+      if ( !obj_locked ) {
+        break;
+      }
+      std::tr2::this_thread::yield();
+    }
 
     // object already locked here, see loop above:
     std::tr2::lock_guard<std::tr2::recursive_mutex> lk( object->_theHistory_lock, std::tr2::adopt_lock );

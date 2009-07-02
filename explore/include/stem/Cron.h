@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/08 17:07:10 ptr>
+// -*- C++ -*- Time-stamp: <09/07/02 16:49:28 ptr>
 
 /*
  * Copyright (c) 1998, 2002, 2003, 2005, 2007-2009
@@ -161,7 +161,7 @@ class Cron :
           { }
 
         bool operator()() const
-          { return !me._M_c.empty() || !me.isState( CRON_ST_STARTED ); }
+          { return !me._M_c.empty() || !me._run; }
 
         Cron& me;
     } running;
@@ -177,7 +177,7 @@ class Cron :
             if ( me._M_c.empty() ) {
               return true;
             }
-            if ( !me.isState( CRON_ST_STARTED ) ) {
+            if ( !me._run ) {
               return true;
             }
             if ( me._M_c.top().expired <= std::tr2::get_system_time() ) {
@@ -199,6 +199,10 @@ class Cron :
     container_type _M_c;
     std::tr2::mutex _M_l;
     std::tr2::condition_variable cond;
+    bool _run;
+
+    friend struct _running;
+    friend struct _ready;
 
   private:
     DECLARE_RESPONSE_TABLE( Cron, EventHandler );

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/26 19:29:02 ptr>
+// -*- C++ -*- Time-stamp: <09/07/02 17:20:29 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -1425,8 +1425,6 @@ int EXAM_IMPL(stem_test::cron)
 {
   {
     stem::Cron cron_obj( "cron" );
-    stem::stem_scope scope( cron_obj );
-
     stem::addr_type ca = cron_obj.self_id();
 
     EXAM_CHECK( ca != stem::badaddr );
