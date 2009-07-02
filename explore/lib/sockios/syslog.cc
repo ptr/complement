@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/24 22:05:58 ptr>
+// -*- C++ -*- Time-stamp: <09/07/02 13:31:54 ptr>
 
 /*
  * Copyright (c) 2009
@@ -148,7 +148,13 @@ class syslog_init
 static log_heap_type slogs;
 
 // const char format[] = "%h %e %T ";
-const char timeline[] = "                "; // "Jun 23 14:56:38 ";
+#if 0
+//                       0123456789012345
+//                          |  |  |  |  |
+const char timeline[] = "         :  :   "; // "Jun 23 14:56:38 ";
+#else
+const char timeline[] = ""; // null-length string
+#endif
 
 char syslog_init::Init_buf[128];
 int syslog_init::Init::_count = 0;
@@ -242,7 +248,7 @@ ostream& xsyslog( int _level, int _facility )
   std::tr2::thread_base::id id =  std::tr2::this_thread::get_id();
   _heap_lock.lock();
   if ( detail::slogs[id] == 0 ) {
-    detail::slogs[id] = new sockstream( "/dev/log" );
+    detail::slogs[id] = new sockstream( "/dev/log", sock_base::sock_dgram );
   }
   sockstream& slog = *detail::slogs[id];
   _heap_lock.unlock();
