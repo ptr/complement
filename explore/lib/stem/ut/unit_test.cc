@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/02 17:20:29 ptr>
+// -*- C++ -*- Time-stamp: <09/07/03 16:34:51 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -65,6 +65,7 @@ class stem_test
 
     int EXAM_DECL(echo);
     int EXAM_DECL(echo_net);
+    int EXAM_DECL(echo_local);
     int EXAM_DECL(net_echo);
     int EXAM_DECL(triple_echo);
     int EXAM_DECL(ugly_echo_net);
@@ -502,6 +503,98 @@ int EXAM_IMPL(stem_test::echo_net)
   (&fcnd)->~condition_event_ip();
   shm_cnd.deallocate( &fcnd, 1 );
   shm_a.deallocate( &addr, 1 );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(stem_test::echo_local)
+{
+  throw exam::skip_exception();
+
+  condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+  stem::addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::addr_type();
+
+  const char f[] = "/tmp/stem_echo";
+
+  try {
+    std::tr2::this_thread::fork();
+
+    int eflag = 0;
+
+    try {
+      stem::NetTransportMgr mgr;
+
+      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+
+      stem::addr_type def_object = mgr.open( f /* , sock_base::sock_stream */ );
+
+      EXAM_CHECK_ASYNC_F( def_object != stem::badaddr, eflag );
+      EXAM_CHECK_ASYNC_F( def_object == addr, eflag );
+
+      EchoClient node;
+      {
+        stem::stem_scope scope( node );
+    
+        stem::Event ev( NODE_EV_ECHO );
+
+        ev.dest( addr );
+        ev.value() = node.mess;
+
+        // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+        // stem::EventHandler::manager()->settrs( &std::cerr );
+
+        node.Send( ev );
+
+        EXAM_CHECK_ASYNC_F( node.wait(), eflag );
+      }
+
+      mgr.close();
+      mgr.join();
+    }
+    catch ( ... ) {
+    }
+
+    exit( eflag );
+  }
+  catch ( std::tr2::fork_in_parent& child ) {
+    try {
+      connect_processor<stem::NetTransport> srv( f );
+
+      StEMecho echo( "echo service" );
+
+      {
+        stem::stem_scope scope( echo );
+
+        addr = echo.self_id();
+        echo.set_default(); // become default object
+
+        // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+        // stem::EventHandler::manager()->settrs( &std::cerr );
+
+        fcnd.notify_one();
+
+        int stat = -1;
+        EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+
+        if ( WIFEXITED(stat) ) {
+          EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+        } else {
+          EXAM_ERROR( "child interrupted" );
+        }
+      }
+
+      srv.close();
+      srv.wait();
+    }
+    catch ( ... ) {
+    }
+  }
+
+  (&fcnd)->~condition_event_ip();
+  shm_cnd.deallocate( &fcnd, 1 );
+  shm_a.deallocate( &addr, 1 );
+
+  unlink( f );
 
   return EXAM_RESULT;
 }
@@ -1613,6 +1706,7 @@ int main( int argc, const char** argv )
       t.add( &stem_test::net_echo, test, "net echo",
         tc[4] = t.add( &stem_test::echo_net, test, "echo_net",
             tc[3] = t.add( &stem_test::echo, test, "echo", tc[1] ) ) ) ) );
+  t.add( &stem_test::echo_local, test, "echo unix socket", tc[3] );
 
   exam::test_suite::test_case_type cases_next[10];
 

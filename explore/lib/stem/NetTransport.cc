@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/27 01:10:17 ptr>
+// -*- C++ -*- Time-stamp: <09/07/03 15:58:44 ptr>
 
 /*
  *
@@ -473,11 +473,21 @@ void NetTransport::connect( sockstream& s )
 
 // connect initiator (client) function
 
-addr_type NetTransportMgr::open( const char *hostname, int port,
+addr_type NetTransportMgr::open( const char* hostname, int port,
                                  std::sock_base::stype stype,
                                  sock_base::protocol pro )
 {
   std::sockstream::open( hostname, port, stype, pro );
+  if ( std::sockstream::is_open() && std::sockstream::good() ) {
+    return discovery();
+  }
+  return badaddr;
+}
+
+addr_type NetTransportMgr::open( const char* path,
+                                 std::sock_base::stype stype )
+{
+  std::sockstream::open( path, stype );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
     return discovery();
   }

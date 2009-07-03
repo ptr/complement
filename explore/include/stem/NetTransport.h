@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/27 01:07:46 ptr>
+// -*- C++ -*- Time-stamp: <09/07/03 15:57:40 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2009
@@ -129,9 +129,12 @@ class NetTransportMgr :
     bool is_open() const
       { return std::sockstream::is_open(); }
 
-    addr_type open( const char *hostname, int port,
+    addr_type open( const char* hostname, int port,
                     sock_base::stype type = sock_base::sock_stream,
                     sock_base::protocol pro = sock_base::inet );
+
+    addr_type open( const char* path,
+                    sock_base::stype type = sock_base::sock_stream );
 
     addr_type open( in_addr_t addr, int port,
                     sock_base::stype type = sock_base::sock_stream,
