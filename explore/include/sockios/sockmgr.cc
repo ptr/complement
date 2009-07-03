@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/18 07:50:31 ptr>
+// -*- C++ -*- Time-stamp: <09/07/03 19:55:58 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -442,14 +442,17 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
 
   fd_info info = ifd->second;
 
-  for ( ; ; ) {
+  const int acc_lim = 3;
+
+  for ( int i = 0; i < acc_lim; ++i ) {
     int fd = accept( ev.data.fd, &addr, &sz );
     if ( fd < 0 ) {
       // if ( (errno == EINTR) || (errno == ECONNABORTED) /* || (errno == ERESTARTSYS) */ ) {
       //  errno = 0;
       //  continue;
       // }
-      if ( (errno == EAGAIN) || (errno == EINTR) || (errno == ECONNABORTED) ) { // EWOULDBLOCK == EAGAIN
+      // if i == 0, then suspect that listener closed
+      if ( i > 0 && ((errno == EAGAIN) || (errno == EINTR) || (errno == ECONNABORTED)) ) { // EWOULDBLOCK == EAGAIN
         // back to listen
         errno = 0;
         epoll_event xev;
@@ -542,6 +545,42 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
       (*info.p)( fd, typename socks_processor_t::adopt_close_t() );
     }
   }
+
+  // restricted accept, acc_lim reached;
+  // then try to return listener back to epoll
+  epoll_event xev;
+  xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+#if 1
+  xev.data.u64 = 0ULL;
+#endif
+  xev.data.fd = ev.data.fd;
+  if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) == 0 ) {
+    return; // normal flow, back to epoll
+  }
+  // listener closed?
+
+  // do procedure when listener closed:
+  for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ) {
+    if ( i->second.p == info.p ) {
+      if ( (i->second.flags & fd_info::listener) == 0 ) { // it's not me!
+        sockbuf_t* b = i->second.b;
+        {
+          std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
+          ::close( b->_fd );
+          b->_fd = -1;
+          b->ucnd.notify_all();
+        }
+        (*info.p)( i->first, typename socks_processor_t::adopt_close_t() );
+      }
+      /* i = */ descr.erase( i++ );
+    } else {
+      ++i;
+    }
+  }
+
+  // no more connection with this listener
+  info.p->stop();
+  ::close( ev.data.fd );
 }
 
 template<class charT, class traits, class _Alloc>

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/03 14:52:27 ptr>
+// -*- C++ -*- Time-stamp: <09/07/03 20:37:25 ptr>
 
 /*
  *
@@ -97,8 +97,15 @@ int main( int argc, const char** argv )
   t.add( &unix_sockios_test::core_write_test, unx, "core unix dgram socket write",
     t.add( &unix_sockios_test::core_test, unx, "core unix dgram socket", tc[0] ) );
 
-  t.add( &unix_sockios_test::stream_core_write_test, unx, "core unix stream socket write",
-    t.add( &unix_sockios_test::stream_core_test, unx, "core unix stream socket", tc[0] ) );
+  extratc[2] = t.add( &unix_sockios_test::processor_core_income_data, unx, "all data available after sockstream was closed, unix socket",
+    t.add( &unix_sockios_test::processor_core_getline, unx, "check income data before sockstream was closed, unix socket",
+      t.add( &unix_sockios_test::processor_core_two_local, unx, "two local connects to connection processor, unix socket",
+        t.add( &unix_sockios_test::processor_core_one_local, unx, "one local connect to connection processor, unix socket",
+          t.add( &unix_sockios_test::stream_core_write_test, unx, "core unix stream socket write",
+            t.add( &unix_sockios_test::stream_core_test, unx, "core unix stream socket", tc[0] ) ) ) ) ) );
+
+  extratc[3] = tc[4];
+  t.add( &unix_sockios_test::income_data, unx, "all data available after sockstream was closed, different processes, unix socket", extratc + 2, extratc + 4 );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( cerr );
