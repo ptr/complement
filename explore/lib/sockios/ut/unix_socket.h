@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/18 09:54:36 ptr>
+// -*- C++ -*- Time-stamp: <09/07/03 14:51:31 ptr>
 
 /*
  *
@@ -18,6 +18,8 @@ struct unix_sockios_test
 {
     int EXAM_DECL(core_test);
     int EXAM_DECL(core_write_test);
+    int EXAM_DECL(stream_core_test);
+    int EXAM_DECL(stream_core_write_test);
 };
 
 #endif // __unix_socket_h

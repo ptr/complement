@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/18 06:43:20 ptr>
+// -*- C++ -*- Time-stamp: <09/07/03 14:52:27 ptr>
 
 /*
  *
@@ -94,8 +94,11 @@ int main( int argc, const char** argv )
 
   unix_sockios_test unx;
 
-  t.add( &unix_sockios_test::core_write_test, unx, "core unix socket write",
-    t.add( &unix_sockios_test::core_test, unx, "core unix socket", tc[0] ) );
+  t.add( &unix_sockios_test::core_write_test, unx, "core unix dgram socket write",
+    t.add( &unix_sockios_test::core_test, unx, "core unix dgram socket", tc[0] ) );
+
+  t.add( &unix_sockios_test::stream_core_write_test, unx, "core unix stream socket write",
+    t.add( &unix_sockios_test::stream_core_test, unx, "core unix stream socket", tc[0] ) );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( cerr );

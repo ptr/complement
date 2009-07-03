@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/24 20:55:25 ptr>
+// -*- C++ -*- Time-stamp: <09/07/03 15:53:48 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -30,11 +30,16 @@ extern unsigned local_mtu;
 }
 
 template<class charT, class traits, class _Alloc>
-basic_sockbuf<charT, traits, _Alloc> *
-basic_sockbuf<charT, traits, _Alloc>::open( const char *name, int port,
+basic_sockbuf<charT, traits, _Alloc>*
+basic_sockbuf<charT, traits, _Alloc>::open( const char* name, int port,
                                             sock_base::stype type,
                                             sock_base::protocol prot )
-{ return basic_sockbuf<charT, traits, _Alloc>::open( std::findhost( name ), port, type, prot ); }
+{
+  return prot == sock_base::inet ?
+    basic_sockbuf<charT, traits, _Alloc>::open( std::findhost( name ), port, type, prot ) :
+    prot == sock_base::local ?
+    basic_sockbuf<charT, traits, _Alloc>::open( name, type ) : 0;
+}
 
 template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
@@ -148,9 +153,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port,
 
 template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
-basic_sockbuf<charT, traits, _Alloc>::open( const char* path,
-                                            sock_base::stype type,
-                                            sock_base::protocol prot )
+basic_sockbuf<charT, traits, _Alloc>::open( const char* path, sock_base::stype type )
 {
   if ( is_open() ) {
     return 0;
@@ -161,29 +164,23 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path,
 #ifdef WIN32
     WSASetLastError( 0 );
 #endif
-    if ( prot == sock_base::local ) {
-      basic_socket_t::_fd = socket( PF_UNIX, type, 0 );
-      if ( basic_socket_t::_fd == -1 ) {
-        throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
-      }
-      basic_socket_t::_address.unx.sun_family = AF_UNIX;
-      strncpy(basic_socket_t::_address.unx.sun_path, path, sizeof(basic_socket_t::_address.unx.sun_path));
+    basic_socket_t::_fd = socket( PF_UNIX, type, 0 );
+    if ( basic_socket_t::_fd == -1 ) {
+      throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+    }
+    basic_socket_t::_address.unx.sun_family = AF_UNIX;
+    strncpy(basic_socket_t::_address.unx.sun_path, path, sizeof(basic_socket_t::_address.unx.sun_path));
 
-      // Generally, stream sockets may successfully connect() only once
-      if ( connect( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof( basic_socket_t::_address.unx ) ) == -1 ) {
-        throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
-      }
-      // if ( type == sock_base::sock_stream ) {
-      //  _xwrite = &_Self_type::write;
-      //  _xread = &_Self_type::read;
-      // } else if ( type == sock_base::sock_dgram ) {
+    // Generally, stream sockets may successfully connect() only once
+    if ( connect( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof( basic_socket_t::_address.unx ) ) == -1 ) {
+      throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+    }
+    if ( type == sock_base::sock_stream ) {
+      _xwrite = &_Self_type::write;
+      _xread = &_Self_type::read;
+    } else if ( type == sock_base::sock_dgram ) {
       _xwrite = &_Self_type::sendto_un;
       _xread = &_Self_type::recvfrom_un;
-      // }
-    } else if ( prot == sock_base::inet ) {
-      throw domain_error( "socket not belongs to unix type" );
-    } else { // other protocols not implemented yet
-      throw std::invalid_argument( "protocol not implemented" );
     }
 
     if ( _bbuf == 0 ) {

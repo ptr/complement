@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/12 21:17:30 ptr>
+// -*- C++ -*- Time-stamp: <09/07/03 16:04:32 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -77,7 +77,7 @@ class sock_processor_base :
         _chk( *this ),
         _rcount( 0 )
       {
-        sock_processor_base::open( path, t, sock_base::local );
+        sock_processor_base::open( path, t );
       }
 
     virtual ~sock_processor_base()
@@ -116,7 +116,7 @@ class sock_processor_base :
       }
 
     void open( const in_addr& addr, int port, sock_base::stype type, sock_base::protocol prot );
-    void open( const char* path, sock_base::stype type, sock_base::protocol prot );
+    void open( const char* path, sock_base::stype type );
 
     void open( unsigned long addr, int port, sock_base::stype type, sock_base::protocol prot )
       {
@@ -249,6 +249,13 @@ class connect_processor :
 
     explicit connect_processor( int port ) :
         base_t( port, sock_base::sock_stream ),
+        not_empty( *this ),
+        _in_work( true ),
+        ploop( loop, this )
+      { new( Init_buf ) Init(); /* base_t::_real_stop = &connect_processor::_xstop; */ }
+
+    explicit connect_processor( const char* path ) :
+        base_t( path, sock_base::sock_stream ),
         not_empty( *this ),
         _in_work( true ),
         ploop( loop, this )

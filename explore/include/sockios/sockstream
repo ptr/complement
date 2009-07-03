@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/24 22:07:07 ptr>
+// -*- C++ -*- Time-stamp: <09/07/03 15:52:04 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -520,7 +520,7 @@ class basic_sockbuf :
         _M_deallocate_block();
       }
 
-    sockbuf_type *open( const char *hostname, int port,
+    sockbuf_type *open( const char* hostname, int port,
                         sock_base::stype type = sock_base::sock_stream,
                         sock_base::protocol prot = sock_base::inet );
 
@@ -529,8 +529,7 @@ class basic_sockbuf :
                         sock_base::protocol prot = sock_base::inet );
 
     sockbuf_type *open( const char* path,
-                        sock_base::stype type = sock_base::sock_dgram,
-                        sock_base::protocol prot = sock_base::local );
+                        sock_base::stype type = sock_base::sock_dgram );
 
     sockbuf_type *open( const sockaddr_in& addr,
                         sock_base::stype type = sock_base::sock_stream );
@@ -789,7 +788,7 @@ class basic_sockstream :
         basic_iostream<charT,traits>( 0 )
 	  { basic_ios<charT,traits>::init(&_sb); }
 
-    basic_sockstream( const char *hostname, int port,
+    basic_sockstream( const char* hostname, int port,
                       sock_base::stype type = sock_base::sock_stream,
                       sock_base::protocol pro = sock_base::inet ) :
         sock_base(),
@@ -803,14 +802,13 @@ class basic_sockstream :
       }
 
     basic_sockstream( const char* path,
-                      sock_base::stype type = sock_base::sock_dgram,
-                      sock_base::protocol pro = sock_base::local ) :
+                      sock_base::stype type = sock_base::sock_dgram ) :
         sock_base(),
         basic_iostream<charT,traits>( 0 )
       {
         basic_ios<charT,traits>::init(&_sb);
         basic_iostream<charT,traits>::clear();
-        if ( _sb.open( path, type, pro ) == 0 ) {
+        if ( _sb.open( path, type ) == 0 ) {
           basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
         }
       }
@@ -870,7 +868,7 @@ class basic_sockstream :
     bool is_open() const
       { return _sb.is_open(); }
 
-    void open( const char *hostname, int port,
+    void open( const char* hostname, int port,
                sock_base::stype type = sock_base::sock_stream,
                sock_base::protocol pro = sock_base::inet )
       {
@@ -881,11 +879,10 @@ class basic_sockstream :
       }
 
     void open( const char* path,
-               sock_base::stype type = sock_base::sock_dgram,
-               sock_base::protocol pro = sock_base::local )
+               sock_base::stype type = sock_base::sock_dgram )
       {
         basic_iostream<charT,traits>::clear();
-        if ( _sb.open( path, type, pro ) == 0 ) {
+        if ( _sb.open( path, type ) == 0 ) {
           basic_ios<charT,traits>::setstate( ios_base::failbit | ios_base::badbit );
         }
       }
