@@ -1,3 +1,16 @@
+2009-07-03  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* NetTransport.h, NetTransport.cc: forgot tcp_no_delay
+	in NetTransportMgr::open;
+
+	* NetTransport.h, NetTransport.cc: don't try to set
+	tcp_no_delay for non-tcp connections;
+
+	* NetTransport.h, NetTransport.cc: support
+	connection-oriented UNIX sockets as StEM transport;
+
+	* libstem: revision 5.2.2.
+
 2009-06-27  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* EventHandler, EvManager: do explicit subscription

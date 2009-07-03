@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/03 16:34:51 ptr>
+// -*- C++ -*- Time-stamp: <09/07/03 20:48:24 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -509,7 +509,7 @@ int EXAM_IMPL(stem_test::echo_net)
 
 int EXAM_IMPL(stem_test::echo_local)
 {
-  throw exam::skip_exception();
+  // throw exam::skip_exception();
 
   condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
   stem::addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::addr_type();
@@ -561,6 +561,9 @@ int EXAM_IMPL(stem_test::echo_local)
       connect_processor<stem::NetTransport> srv( f );
 
       StEMecho echo( "echo service" );
+
+      EXAM_CHECK( srv.good() );
+      EXAM_CHECK( srv.is_open() );
 
       {
         stem::stem_scope scope( echo );

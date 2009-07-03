@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/03 15:58:44 ptr>
+// -*- C++ -*- Time-stamp: <09/07/03 21:25:16 ptr>
 
 /*
  *
@@ -356,7 +356,9 @@ NetTransport::NetTransport( std::sockstream& s ) :
     exchange( false )
 {
   try {
-    s.rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+    if ( s.rdbuf()->family() == AF_INET /* and TCP */ ) {
+      s.rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+    }
 
     __pack_base::__pack( s, EventHandler::ns() );
     {
@@ -479,6 +481,13 @@ addr_type NetTransportMgr::open( const char* hostname, int port,
 {
   std::sockstream::open( hostname, port, stype, pro );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
+    try {
+      if ( (pro == sock_base::inet) && (stype == sock_base::sock_stream) ) {
+        std::sockstream::rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+      }
+    }
+    catch ( ... ) {
+    }
     return discovery();
   }
   return badaddr;
@@ -501,7 +510,9 @@ addr_type NetTransportMgr::open( in_addr_t addr, int port,
   std::sockstream::open( addr, port, type, pro );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
     try {
-      std::sockstream::rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+      if ( (pro == sock_base::inet) && (type == sock_base::sock_stream) ) {
+        std::sockstream::rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+      }
     }
     catch ( ... ) {
     }
@@ -516,7 +527,9 @@ addr_type NetTransportMgr::open( const sockaddr_in& addr,
   std::sockstream::open( addr, type );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
     try {
-      std::sockstream::rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+      if ( type == sock_base::sock_stream ) {
+        std::sockstream::rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+      }
     }
     catch ( ... ) {
     }
@@ -531,7 +544,9 @@ addr_type NetTransportMgr::open( sock_base::socket_type s, const sockaddr& addr,
   std::sockstream::open( s, addr, type );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
     try {
-      std::sockstream::rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+      if ( (addr.sa_family == AF_INET) && (type == sock_base::sock_stream) ) {
+        std::sockstream::rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+      }
     }
     catch ( ... ) {
     }
@@ -546,7 +561,7 @@ addr_type NetTransportMgr::open( sock_base::socket_type s,
   std::sockstream::open( s, type );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
     try {
-      std::sockstream::rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+      // std::sockstream::rdbuf()->setoptions( sock_base::so_tcp_nodelay );
     }
     catch ( ... ) {
     }
