@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/03 19:55:58 ptr>
+// -*- C++ -*- Time-stamp: <09/07/14 15:06:13 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -214,6 +214,7 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
 {
   epoll_event ev[ n_ret ];
 
+  std::tr2::this_thread::block_signal( SIGPIPE );
   memset( ev, 0, n_ret * sizeof(epoll_event) );
 
   try {

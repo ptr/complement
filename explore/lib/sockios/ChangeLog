@@ -1,3 +1,10 @@
+2009-07-14  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* sockmgr.cc, socksrv.cc: block SIGPIPE in loops
+	with sockets processing.
+
+	* libsockios: release 2.6.4.
+
 2009-07-03  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* sockstreams: no sense to mention sock_base::local

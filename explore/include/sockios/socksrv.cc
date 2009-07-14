@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/03 14:29:13 ptr>
+// -*- C++ -*- Time-stamp: <09/07/14 15:11:26 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -327,6 +327,8 @@ template <class Connect, class charT, class traits, class _Alloc, void (Connect:
 void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
 {
   try {
+    std::tr2::this_thread::block_signal( SIGPIPE );
+
     for ( ; ; ) {
       processor p; // keep it in loop, it dtor significant, and should be in loop!
       {
