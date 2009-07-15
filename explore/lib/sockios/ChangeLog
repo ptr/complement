@@ -1,3 +1,12 @@
+2009-07-15  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* sockstream, sockmgr.cc: allow set error report
+	stream via set_sock_error_stream( ostream* ),
+	to report non-fatal, but important problems from
+	sockmgr;
+	
+	* libsockios: release 2.6.5.
+
 2009-07-14  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* sockmgr.cc, socksrv.cc: block SIGPIPE in loops

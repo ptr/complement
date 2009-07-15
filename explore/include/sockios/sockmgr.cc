@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/14 15:06:13 ptr>
+// -*- C++ -*- Time-stamp: <09/07/15 20:32:32 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -226,27 +226,58 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
           errno = 0;
           continue;
         }
-        // throw system_error
-        std::cerr << __FILE__ << ":" << __LINE__ << " " << efd << " " << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message() << std::endl;
+
+        extern std::tr2::mutex _se_lock;
+        extern std::ostream* _se_stream;
+
+        std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+        if ( _se_stream != 0 ) {
+          *_se_stream << __FILE__ << ':' << __LINE__ << ' '
+                      << efd << ' '
+                      << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
+                      << std::endl;
+        }
+
+        throw std::detail::stop_request();
       }
 
       for ( int i = 0; i < n; ++i ) {
-        if ( ev[i].data.fd == pipefd[0] ) {
-          cmd_from_pipe();
-        } else {
-          typename fd_container_type::iterator ifd = descr.find( ev[i].data.fd );
-          if ( ifd != descr.end() ) {
-            fd_info& info = ifd->second;
-            if ( info.flags & fd_info::listener ) {
-              process_listener( ev[i], ifd );
-            } else if ( info.flags & fd_info::dgram_proc ) {
-              process_dgram_srv( ev[i], ifd );
-            } else {
-              process_regular( ev[i], ifd );
-            }
-          } // otherwise already closed
-            // and [should be] already removed from efd's vector,
-            // so no epoll_ctl( efd, EPOLL_CTL_DEL, ev[i].data.fd, 0 ) here
+        try {
+          if ( ev[i].data.fd == pipefd[0] ) {
+            cmd_from_pipe();
+          } else {
+            typename fd_container_type::iterator ifd = descr.find( ev[i].data.fd );
+            if ( ifd != descr.end() ) {
+              fd_info& info = ifd->second;
+              if ( info.flags & fd_info::listener ) {
+                process_listener( ev[i], ifd );
+              } else if ( info.flags & fd_info::dgram_proc ) {
+                process_dgram_srv( ev[i], ifd );
+              } else {
+                process_regular( ev[i], ifd );
+              }
+            } // otherwise already closed
+              // and [should be] already removed from efd's vector,
+              // so no epoll_ctl( efd, EPOLL_CTL_DEL, ev[i].data.fd, 0 ) here
+          }
+        }
+        catch ( const std::system_error& err ) {
+          extern std::tr2::mutex _se_lock;
+          extern std::ostream* _se_stream;
+
+          std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+          if ( _se_stream != 0 ) {
+            *_se_stream << err.what() << std::endl;
+          }
+        }
+        catch ( const std::runtime_error& err ) {
+          extern std::tr2::mutex _se_lock;
+          extern std::ostream* _se_stream;
+
+          std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+          if ( _se_stream != 0 ) {
+            *_se_stream << err.what() << std::endl;
+          }
         }
       }
     }
@@ -344,18 +375,25 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
       ev_add.data.fd = static_cast<sockbuf_t*>(_ctl.data.ptr)->fd();
       if ( ev_add.data.fd >= 0 ) {
         if ( epoll_ctl( efd, EPOLL_CTL_ADD, ev_add.data.fd, &ev_add ) < 0 ) {
-          cerr << __FILE__ << ':' << __LINE__ << endl;
+          extern std::tr2::mutex _se_lock;
+          extern std::ostream* _se_stream;
+
+          std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+          if ( _se_stream != 0 ) {
+            *_se_stream << __FILE__ << ':' << __LINE__ << ' '
+                        << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
+                        << std::endl;
+          }
+
           descr.erase( ev_add.data.fd );
-          // std::cerr << __FILE__ << ":" << __LINE__ << " " << std::error_code( errno, std::posix_category ).message() << " " << ev_add.data.fd << " " << std::tr2::getpid() << std::endl;
+
           return; // already closed?
         }
         descr[ev_add.data.fd] = fd_info( static_cast<sockbuf_t*>(_ctl.data.ptr) );
       }
-      // ->release() ?
       break;
     case rqstop:
-      // std::cerr << "Stop request\n";
-      throw std::detail::stop_request(); // runtime_error( "Stop request (normal flow)" );
+      throw std::detail::stop_request();
       // break;
     case tcp_buffer_back:
       // return back to epoll
@@ -365,10 +403,8 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
 #endif
       ev_add.data.fd = _ctl.data.fd;
       if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev_add.data.fd, &ev_add ) < 0 ) {
-        // cerr << __FILE__ << ':' << __LINE__ << endl;
         return; // already closed?
       }
-      // cerr << __FILE__ << ':' << __LINE__ << endl;
       break;
     case dgram_proc:
       ev_add.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
@@ -383,14 +419,31 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
         }
         if ( descr.find( ev_add.data.fd ) != descr.end() ) { // reuse?
           if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev_add.data.fd, &ev_add ) < 0 ) {
-            std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+            extern std::tr2::mutex _se_lock;
+            extern std::ostream* _se_stream;
+
+            std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+            if ( _se_stream != 0 ) {
+              *_se_stream << __FILE__ << ':' << __LINE__ << ' '
+                          << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
+                          << std::endl;
+            }
+
             // descr.erase( ev_add.data.fd );
             static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
             return;
           }
         } else {
           if ( epoll_ctl( efd, EPOLL_CTL_ADD, ev_add.data.fd, &ev_add ) < 0 ) {
-            std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+            extern std::tr2::mutex _se_lock;
+            extern std::ostream* _se_stream;
+
+            std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+            if ( _se_stream != 0 ) {
+              *_se_stream << __FILE__ << ':' << __LINE__ << ' '
+                          << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
+                          << std::endl;
+            }
             static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
             return;
           }
@@ -466,6 +519,20 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
           return; // normal flow, back to epoll
         }
         // closed?
+      } else if ( (errno == EMFILE) || (errno == ENFILE) ) {
+        // back to listen
+        int save_errno = errno;
+        errno = 0;
+        epoll_event xev;
+        xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+#if 1
+        xev.data.u64 = 0ULL;
+#endif
+        xev.data.fd = ev.data.fd;
+        if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) == 0 ) {
+          throw std::system_error( save_errno, std::get_posix_category(), std::string( __PRETTY_FUNCTION__ ) );
+        }
+        // closed?
       }
 
       // close listener:
@@ -497,7 +564,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
 
     if ( fcntl( fd, F_SETFL, fcntl( fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
       ::close( fd );
-      throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>" ) );
+      throw std::system_error( errno, std::get_posix_category(), std::string( __PRETTY_FUNCTION__ ) );
     }
       
     try {
@@ -510,7 +577,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
 
       if ( epoll_ctl( efd, EPOLL_CTL_ADD, fd, &ev_add ) < 0 ) {
         ::close( fd );
-        throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>" ) );
+        throw std::system_error( errno, std::get_posix_category(), std::string( __PRETTY_FUNCTION__ ) );
         // return;
       }      
 
@@ -525,7 +592,15 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
         descr[fd] = fd_info( b, info.p );
       }
       catch ( ... ) {
-        cerr << __FILE__ << ':' << __LINE__ << endl;
+        extern std::tr2::mutex _se_lock;
+        extern std::ostream* _se_stream;
+
+        {
+          std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+          if ( _se_stream != 0 ) {
+            *_se_stream << __FILE__ << ':' << __LINE__ << std::endl;
+          }
+        }
         try {
           descr.erase( fd );
           {
@@ -541,7 +616,15 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
       }
     }
     catch ( ... ) {
-      cerr << __FILE__ << ':' << __LINE__ << ' ' << fd << endl;
+      extern std::tr2::mutex _se_lock;
+      extern std::ostream* _se_stream;
+
+      {
+        std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+        if ( _se_stream != 0 ) {
+          *_se_stream << __FILE__ << ':' << __LINE__ << ' ' << fd << std::endl;
+        }
+      }
       ::close( fd );
       (*info.p)( fd, typename socks_processor_t::adopt_close_t() );
     }
@@ -665,7 +748,15 @@ void sockmgr<charT,traits,_Alloc>::process_dgram_srv( const epoll_event& ev, typ
     descr[fd] = fd_info( b, info.p );
   }
   catch ( ... ) {
-    cerr << __FILE__ << ':' << __LINE__ << endl;
+    extern std::tr2::mutex _se_lock;
+    extern std::ostream* _se_stream;
+
+    {
+      std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+      if ( _se_stream != 0 ) {
+        *_se_stream << __FILE__ << ':' << __LINE__ << std::endl;
+      }
+    }
     try {
       descr.erase( fd );
       {
@@ -793,7 +884,16 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
     xev.data.fd = b._fd;
 
     if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
-      cerr << __FILE__ << ':' << __LINE__ << endl;
+      extern std::tr2::mutex _se_lock;
+      extern std::ostream* _se_stream;
+
+      std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+      if ( _se_stream != 0 ) {
+        *_se_stream << __FILE__ << ':' << __LINE__ << ' '
+                    << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
+                    << std::endl;
+      }
+
       throw fdclose(); // closed?
     }
     // really data may be available, but let's process another descriptor

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/03 15:52:04 ptr>
+// -*- C++ -*- Time-stamp: <09/07/15 20:00:36 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -75,6 +75,8 @@ _STLP_BEGIN_NAMESPACE
 #else
 namespace std {
 #endif
+
+ostream* set_sock_error_stream( ostream* new_stream );
 
 class sock_base
 {

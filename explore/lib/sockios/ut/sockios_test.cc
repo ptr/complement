@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/04/02 16:44:09 ptr>
+// -*- C++ -*- Time-stamp: <09/07/15 20:34:49 ptr>
 
 /*
  *
@@ -43,10 +43,12 @@ using namespace std::tr2;
 
 sockios_test::sockios_test()
 {
+  set_sock_error_stream( &cerr );
 }
 
 sockios_test::~sockios_test()
 {
+  set_sock_error_stream( 0 );
 }
 
 /* ************************************************************ */
