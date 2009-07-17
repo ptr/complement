@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/11 18:48:45 ptr>
+// -*- C++ -*- Time-stamp: <09/07/17 17:14:28 ptr>
 
 /*
  *
@@ -27,36 +27,34 @@
 #include <mt/condition_variable>
 #include <mt/date_time>
 
-// #define WITH_NODELAY
-
 class sockios_perf_SrvR
 {
   public:
     sockios_perf_SrvR();
     ~sockios_perf_SrvR();
 
-    template <int N, int S, int P>
+    template <int N, int S, int P, int ND>
     int EXAM_DECL(rx);
 };
 
-template <int N, int S, int P>
+template <int N, int S, int P, int ND>
 int block_write();
 
-template <int N, int S, int P>
+template <int N, int S, int P, int ND>
 int EXAM_IMPL(sockios_perf_SrvR::rx)
 {
-  return block_write<N,S,P>();
+  return block_write<N,S,P,ND>();
 }
 
-template <int N, int S>
+template <int N, int S, int ND>
 class SrvR
 {
   public:
     SrvR( std::sockstream& s )
       {
-#ifdef WITH_NODELAY
-        s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
-#endif
+        if ( ND ) {
+          s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
+        }
         fill( buf, buf + S, 'b' );
       }
 
@@ -89,19 +87,19 @@ class SrvR
     static int visits;
 };
 
-template <int N, int S>
-std::tr2::mutex SrvR<N,S>::lock;
+template <int N, int S, int ND>
+std::tr2::mutex SrvR<N,S,ND>::lock;
 
-template <int N, int S>
-std::tr2::condition_variable SrvR<N,S>::cnd;
+template <int N, int S, int ND>
+std::tr2::condition_variable SrvR<N,S,ND>::cnd;
 
-template <int N, int S>
-int SrvR<N,S>::visits = 0;
+template <int N, int S, int ND>
+int SrvR<N,S,ND>::visits = 0;
 
-template <int N, int S, int P>
+template <int N, int S, int P, int ND>
 int block_write()
 {
-  typedef SrvR<N,S> processor;
+  typedef SrvR<N,S,ND> processor;
 
   int flag = 0;
 
@@ -142,7 +140,6 @@ int block_write()
         } else {
           EXAM_ERROR_ASYNC_F( "catch of INT signal expected", flag );
         }
-
       }
       catch ( ... ) {
         EXAM_ERROR_ASYNC_F( "unexpected exception", flag );
@@ -154,9 +151,10 @@ int block_write()
       b.wait();
 
       std::sockstream s( "localhost", P );
-#ifdef WITH_NODELAY
-      s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
-#endif
+      if ( ND ) {
+        s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
+      }
+
       char buf[S];
       std::fill( buf, buf + S, 'a' );
       for ( int i = 0; i < N; ++i ) {
@@ -193,15 +191,16 @@ int block_write()
   return flag;
 }
 
-template <int N, int S>
+template <int N, int S, int ND>
 class SrvW
 {
   public:
     SrvW( std::sockstream& s )
       {
-#ifdef WITH_NODELAY
-        s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
-#endif
+        if ( ND ) {
+          s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
+        }
+
         fill( buf, buf + S, 'b' );
         for ( int i = 0; i < N; ++i ) {
           s.write( buf, S ).flush();
@@ -232,19 +231,19 @@ class SrvW
     static int visits;
 };
 
-template <int N, int S>
-std::tr2::mutex SrvW<N,S>::lock;
+template <int N, int S, int ND>
+std::tr2::mutex SrvW<N,S,ND>::lock;
 
-template <int N, int S>
-std::tr2::condition_variable SrvW<N,S>::cnd;
+template <int N, int S, int ND>
+std::tr2::condition_variable SrvW<N,S,ND>::cnd;
 
-template <int N, int S>
-int SrvW<N,S>::visits = 0;
+template <int N, int S, int ND>
+int SrvW<N,S,ND>::visits = 0;
 
-template <int N, int S, int P>
+template <int N, int S, int P, int ND>
 int block_read()
 {
-  typedef SrvW<N,S> processor;
+  typedef SrvW<N,S,ND> processor;
 
   int flag = 0;
 
@@ -297,9 +296,10 @@ int block_read()
       b.wait();
 
       std::sockstream s( "localhost", P );
-#ifdef WITH_NODELAY
-      s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
-#endif
+      if ( ND ) {
+        s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
+      }
+
       char buf[S];
       std::fill( buf, buf + S, 'a' );
       for ( int i = 0; i < N; ++i ) {
@@ -339,17 +339,17 @@ class sockios_perf_SrvW
     sockios_perf_SrvW();
     ~sockios_perf_SrvW();
 
-    template <int N, int S, int P>
+    template <int N, int S, int P, int ND>
     int EXAM_DECL(rx);
 };
 
-template <int N, int S, int P>
+template <int N, int S, int P, int ND>
 int block_read();
 
-template <int N, int S, int P>
+template <int N, int S, int P, int ND>
 int EXAM_IMPL(sockios_perf_SrvW::rx)
 {
-  return block_read<N,S,P>();
+  return block_read<N,S,P,ND>();
 }
 
 class sockios_perf_SrvRW
@@ -358,28 +358,29 @@ class sockios_perf_SrvRW
     sockios_perf_SrvRW();
     ~sockios_perf_SrvRW();
 
-    template <int N, int S, int P>
+    template <int N, int S, int P, int ND>
     int EXAM_DECL(rx);
 };
 
-template <int N, int S, int P>
+template <int N, int S, int P, int ND>
 int block_read_write();
 
-template <int N, int S, int P>
+template <int N, int S, int P, int ND>
 int EXAM_IMPL(sockios_perf_SrvRW::rx)
 {
-  return block_read_write<N/2,S,P>();
+  return block_read_write<N/2,S,P,ND>();
 }
 
-template <int N, int S>
+template <int N, int S, int ND>
 class SrvRW
 {
   public:
     SrvRW( std::sockstream& s )
       {
-#ifdef WITH_NODELAY
-        s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
-#endif
+        if ( ND ) {
+          s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
+        }
+
         fill( buf, buf + S, 'b' );
       }
 
@@ -413,19 +414,19 @@ class SrvRW
     static int visits;
 };
 
-template <int N, int S>
-std::tr2::mutex SrvRW<N,S>::lock;
+template <int N, int S, int ND>
+std::tr2::mutex SrvRW<N,S,ND>::lock;
 
-template <int N, int S>
-std::tr2::condition_variable SrvRW<N,S>::cnd;
+template <int N, int S, int ND>
+std::tr2::condition_variable SrvRW<N,S,ND>::cnd;
 
-template <int N, int S>
-int SrvRW<N,S>::visits = 0;
+template <int N, int S, int ND>
+int SrvRW<N,S,ND>::visits = 0;
 
-template <int N, int S, int P>
+template <int N, int S, int P, int ND>
 int block_read_write()
 {
-  typedef SrvRW<N,S> processor;
+  typedef SrvRW<N,S,ND> processor;
 
   int flag = 0;
 
@@ -478,9 +479,11 @@ int block_read_write()
       b.wait();
 
       std::sockstream s( "localhost", P );
-#ifdef WITH_NODELAY
-      s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
-#endif
+
+      if ( ND ) {
+        s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
+      }
+
       char buf[S];
       std::fill( buf, buf + S, 'a' );
       for ( int i = 0; i < N; ++i ) {
