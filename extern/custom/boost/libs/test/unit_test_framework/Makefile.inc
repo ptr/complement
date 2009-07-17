@@ -1,9 +1,9 @@
-# -*- makefile -*- Time-stamp: <06/05/26 09:05:07 ptr>
+# -*- makefile -*- Time-stamp: <09/07/17 23:50:59 ptr>
 
 BOOST_TST_SRC = $(BOOST_INCLUDE_DIR)/libs/test/src
 LIBNAME = boost_test_utf
 MAJOR = 1
-MINOR = 37
+MINOR = 39
 PATCH = 0
 SRC_CPP = $(BOOST_TST_SRC)/compiler_log_formatter.cpp \
           $(BOOST_TST_SRC)/debug.cpp \

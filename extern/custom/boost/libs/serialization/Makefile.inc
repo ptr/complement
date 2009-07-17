@@ -1,10 +1,10 @@
-# -*- makefile -*- Time-stamp: <06/06/02 19:38:29 ptr>
+# -*- makefile -*- Time-stamp: <09/07/17 23:45:40 ptr>
 
 BOOST_SR_SRC = ${BOOST_INCLUDE_DIR}/libs/serialization/src
 #BOOST_SR_SRC = src
 LIBNAME = boost_serialization
 MAJOR = 1
-MINOR = 37
+MINOR = 39
 PATCH = 0
 SRC_CPP = ${BOOST_SR_SRC}/basic_archive.cpp \
           ${BOOST_SR_SRC}/basic_iarchive.cpp \
