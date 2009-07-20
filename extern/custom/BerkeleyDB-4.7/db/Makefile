@@ -1,15 +1,19 @@
-# -*- makefile -*- Time-stamp: <09/07/20 15:06:27 ptr>
+# -*- makefile -*- Time-stamp: <09/07/20 15:22:41 ptr>
 
-SRCROOT := ../../../explore
+SRCROOT ?= ../../../../explore
 COMPILER_NAME := gcc
 
 # EXTRA_PRE = configure
 # EXTRA_PRE_DBG = configure
 # EXTRA_PRE_STLDBG = configure
 
+BERKELEYDB_SRC ?= ${HOME}/labs/BerkeleyDB
+
+include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
 
-BERKELEYDB_SRC ?= ${HOME}/labs/BerkeleyDB
+INCLUDES += -I../build_unix -I${BERKELEYDB_SRC}
+DEFS += -D_GNU_SOURCE -D_REENTRANT
 
 check:	all-shared
 	$(MAKE) -C test check || exit 1
@@ -42,7 +46,7 @@ maintainer-clean::
 	$(MAKE) -C test maintainer-clean
 
 configure:
-	[ -d build_unix ] || mkdir build_unix
-	cd build_unix && { [ -z "${PREFIX}" ] && ${BERKELEYDB_SRC}/dist/configure --enable-compat185 --enable-cxx || ${BERKELEYDB_SRC}/dist/configure --prefix=$(PREFIX) --enable-compat185 --enable-cxx; }
+	[ -d ../build_unix ] || mkdir ../build_unix
+	cd ../build_unix && { [ -z "${PREFIX}" ] && ${BERKELEYDB_SRC}/dist/configure --enable-compat185 --enable-cxx || ${BERKELEYDB_SRC}/dist/configure --prefix=$(PREFIX) --enable-compat185 --enable-cxx; }
 
 PHONY += configure

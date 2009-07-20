@@ -1,16 +1,11 @@
-# -*- makefile -*- Time-stamp: <09/03/19 09:11:25 ptr>
+# -*- makefile -*- Time-stamp: <09/07/20 15:18:53 ptr>
 
-BERKELEYDB_SRC = ../../BerkeleyDB
-# LIBNAME = db_cxx
+# BERKELEYDB_SRC = ../../BerkeleyDB
+
 LIBNAME = db
 MAJOR = 4
 MINOR = 7
 PATCH = 25
-
-# LIBNAMES = db
-# db_MAJOR = 4
-# db_MINOR = 7
-# db_PATCH = 25
 
 SRC_BTREE = \
         ${BERKELEYDB_SRC}/btree/bt_compare.c \
@@ -271,18 +266,3 @@ SRC_C = \
         ${BERKELEYDB_SRC}/xa/xa_db.c \
         ${BERKELEYDB_SRC}/xa/xa_map.c \
         ${BERKELEYDB_SRC}/common/zerofill.c
-
-# SRC_CPP = \
-#        ${BERKELEYDB_SRC}/cxx/cxx_db.cpp \
-#        ${BERKELEYDB_SRC}/cxx/cxx_dbc.cpp \
-#        ${BERKELEYDB_SRC}/cxx/cxx_dbt.cpp \
-#        ${BERKELEYDB_SRC}/cxx/cxx_env.cpp \
-#        ${BERKELEYDB_SRC}/cxx/cxx_except.cpp \
-#        ${BERKELEYDB_SRC}/cxx/cxx_lock.cpp \
-#        ${BERKELEYDB_SRC}/cxx/cxx_logc.cpp \
-#        ${BERKELEYDB_SRC}/cxx/cxx_mpool.cpp \
-#        ${BERKELEYDB_SRC}/cxx/cxx_multi.cpp \
-#        ${BERKELEYDB_SRC}/cxx/cxx_seq.cpp \
-#        ${BERKELEYDB_SRC}/cxx/cxx_txn.cpp
-
-# db_SRC_C = ${SRC_C}
