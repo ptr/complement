@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/04 19:27:36 ptr>
+// -*- C++ -*- Time-stamp: <09/07/20 13:55:32 ptr>
 
 /*
  *
@@ -45,7 +45,7 @@ int main( int argc, const char** argv )
   }
 
   exam::trivial_time_logger tlogger( std::cout );
-  exam::test_suite t( "libstem performance test suite 0", 10 );
+  exam::test_suite t( "libstem performance test suite 0", 20 );
   t.set_logger( &tlogger );
 
   exam::test_suite::test_case_type tc[30];

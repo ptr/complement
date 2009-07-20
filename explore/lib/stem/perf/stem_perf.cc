@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/05/05 09:56:52 ptr>
+// -*- C++ -*- Time-stamp: <09/07/20 13:57:55 ptr>
 
 /*
  *
@@ -38,23 +38,26 @@ const int EV_TEST = 0x1000;
 const int EV_SETPEER = 0x1001;
 const int port = 6480;
 
-static const int N = 1000;
+static const int N = 100000;
 
 Tester::Tester() :
     peer( badaddr )
 {
+  EventHandler::enable();
 }
 
 Tester::Tester( stem::addr_type id ) :
     EventHandler( id ),
     peer( badaddr )
 {
+  EventHandler::enable();
 }
 
 Tester::Tester( stem::addr_type id, const char* info ) :
     EventHandler( id, info ),
     peer( badaddr )
 {
+  EventHandler::enable();
 }
 
 bool Tester::n_cnt()
@@ -210,7 +213,7 @@ int EXAM_IMPL(stem_perf::net_loopback)
         if ( sig_caught == SIGINT ) {
           EXAM_MESSAGE_ASYNC( "catch INT signal" );
           std::tr2::unique_lock<std::tr2::mutex> lk(Tester::lock);
-          EXAM_CHECK_ASYNC_F( Tester::cnd.timed_wait( lk, std::tr2::milliseconds( 500 ), Tester::n_cnt ), flag );
+          EXAM_CHECK_ASYNC_F( Tester::cnd.timed_wait( lk, std::tr2::milliseconds( 2000 ), Tester::n_cnt ), flag );
           // {
           // std::tr2::lock_guard<std::tr2::mutex_ip> lk2(m);
           // j = 1;
@@ -250,7 +253,7 @@ int EXAM_IMPL(stem_perf::net_loopback)
 
       // {
       // std::tr2::unique_lock<std::tr2::mutex_ip> lk(m);
-      EXAM_CHECK( c.timed_wait( std::tr2::milliseconds( 500 ) ) );
+      EXAM_CHECK( c.timed_wait( std::tr2::milliseconds( 2000 ) ) );
       // }
 
       // this_thread::sleep( milliseconds( 500 ) );
@@ -355,7 +358,7 @@ int EXAM_IMPL(stem_perf::net_loopback_inv)
 
       {
         std::tr2::unique_lock<std::tr2::mutex> lk(Tester::lock);
-        EXAM_CHECK( Tester::cnd.timed_wait( lk, std::tr2::milliseconds( 500 ), Tester::n_cnt ) );
+        EXAM_CHECK( Tester::cnd.timed_wait( lk, std::tr2::milliseconds( 2000 ), Tester::n_cnt ) );
       }
 
       kill( child.pid(), SIGINT );
@@ -466,7 +469,7 @@ int EXAM_IMPL(stem_perf::net_loopback_inv2)
 
       {
         std::tr2::unique_lock<std::tr2::mutex> lk(Tester::lock);
-        EXAM_CHECK( Tester::cnd.timed_wait( lk, std::tr2::milliseconds( 500 ), Tester::n_cnt ) );
+        EXAM_CHECK( Tester::cnd.timed_wait( lk, std::tr2::milliseconds( 2000 ), Tester::n_cnt ) );
       }
 
       kill( child.pid(), SIGINT );
