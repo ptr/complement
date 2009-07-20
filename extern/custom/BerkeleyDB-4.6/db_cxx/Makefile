@@ -7,6 +7,8 @@ COMPILER_NAME := gcc
 # EXTRA_PRE_DBG = configure
 # EXTRA_PRE_STLDBG = configure
 
+BERKELEYDB_SRC ?= ${HOME}/labs/BerkeleyDB
+
 include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
 

@@ -26,20 +26,25 @@ check-stldbg:	stldbg-shared
 endif
 
 depend::
-	$(MAKE) -C test depend
+	$(MAKE) -C db_cxx depend
+	$(MAKE) -C db depend
 
 clean::
-	$(MAKE) -C test clean
+	$(MAKE) -C db_cxx clean
+	$(MAKE) -C db clean
 
 distclean::
-	$(MAKE) -C test distclean
+	$(MAKE) -C db_cxx distclean
+	$(MAKE) -C db distclean
 
 mostlyclean::
-	$(MAKE) -C test mostlyclean
+	$(MAKE) -C db_cxx mostlyclean
+	$(MAKE) -C db mostlyclean
 
 maintainer-clean::
 	[ -d build_unix ] && rm -r build_unix
-	$(MAKE) -C test maintainer-clean
+	$(MAKE) -C db_cxx maintainer-clean
+	$(MAKE) -C db maintainer-clean
 
 configure:
 	[ -d build_unix ] || mkdir build_unix

@@ -1,6 +1,5 @@
 # -*- makefile -*- Time-stamp: <09/03/19 09:11:25 ptr>
 
-BERKELEYDB_SRC = ../../../BerkeleyDB
 LIBNAME = db
 MAJOR = 4
 MINOR = 6
