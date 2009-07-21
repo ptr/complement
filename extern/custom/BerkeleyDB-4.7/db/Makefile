@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <09/07/20 15:22:41 ptr>
+# -*- makefile -*- Time-stamp: <09/07/21 11:34:26 ptr>
 
 SRCROOT ?= ../../../../explore
 COMPILER_NAME := gcc
@@ -29,21 +29,21 @@ check-stldbg:	stldbg-shared
 	$(MAKE) -C test check-stldbg-shared || exit 1
 endif
 
-depend::
-	$(MAKE) -C test depend
+#depend::
+#	$(MAKE) -C test depend
 
-clean::
-	$(MAKE) -C test clean
+#clean::
+#	$(MAKE) -C test clean
 
-distclean::
-	$(MAKE) -C test distclean
+#distclean::
+#	$(MAKE) -C test distclean
 
-mostlyclean::
-	$(MAKE) -C test mostlyclean
+#mostlyclean::
+#	$(MAKE) -C test mostlyclean
 
-maintainer-clean::
+#maintainer-clean::
 	[ -d build_unix ] && rm -r build_unix
-	$(MAKE) -C test maintainer-clean
+#	$(MAKE) -C test maintainer-clean
 
 configure:
 	[ -d ../build_unix ] || mkdir ../build_unix

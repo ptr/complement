@@ -1,4 +1,4 @@
-# -*- makefile -*- Time-stamp: <09/07/21 11:34:06 ptr>
+# -*- makefile -*- Time-stamp: <09/07/21 11:33:33 ptr>
 
 SRCROOT ?= ../../../../explore
 COMPILER_NAME := gcc
@@ -63,6 +63,6 @@ maintainer-clean::
 
 configure:
 	[ -d ../build_unix ] || mkdir ../build_unix
-	cd ../build_unix && { [ -z "${PREFIX}" ] && ${BERKELEYDB_SRC}/dist/configure --enable-compat185 --enable-cxx || ${BERKELEYDB_SRC}/dist/configure --prefix=$(PREFIX) --enable-compat185 --enable-cxx; }
+	cd ../build_unix && { [ -z "${PREFIX}" ] && ${BERKELEYDB_SRC}/dist/configure --enable-compat185 --enable-cxx --disable-mutexsupport --disable-queue --disable-replication --disable-statistics --disable-verify || ${BERKELEYDB_SRC}/dist/configure --prefix=$(PREFIX) --enable-compat185 --enable-cxx --disable-mutexsupport --disable-queue --disable-replication --disable-statistics --disable-verify; }
 
 PHONY += configure
