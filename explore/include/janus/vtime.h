@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/23 10:16:54 ptr>
+// -*- C++ -*- Time-stamp: <09/07/22 08:50:07 ptr>
 
 #ifndef __vtime_h
 #define __vtime_h
@@ -15,6 +15,9 @@
 #include <stem/EventHandler.h>
 
 #include <mt/time.h>
+
+#include <mt/uid.h>
+#include <mt/uidhash.h>
 
 #ifdef STLPORT
 #  include <unordered_map>
@@ -38,8 +41,8 @@
 
 namespace janus {
 
-// typedef stem::addr_type oid_type;
-typedef stem::gaddr_type oid_type;
+typedef stem::addr_type oid_type;
+extern const oid_type& nil_oid;
 
 } // namespace janus
 
@@ -51,6 +54,7 @@ typedef stem::gaddr_type oid_type;
 #  define __HASH_NAMESPACE __gnu_cxx
 #endif
 
+#if 0 // xxxxx
 namespace __HASH_NAMESPACE {
 
 #ifdef __USE_STD_TR1
@@ -72,11 +76,15 @@ struct hash<janus::oid_type>
 
 #undef __HASH_NAMESPACE
 #endif
+#endif // xxxxx
 
 namespace janus {
 
 typedef uint32_t vtime_unit_type;
 typedef stem::addr_type group_type; // required, used in VTSend
+
+extern const group_type& nil_gid;
+
 #ifdef __USE_STLPORT_HASH
 typedef std::hash_map<oid_type, vtime_unit_type> vtime_type;
 #endif
@@ -101,9 +109,7 @@ struct vtime :
     public stem::__pack_base
 {
     void pack( std::ostream& s ) const;
-    void net_pack( std::ostream& s ) const;
     void unpack( std::istream& s );
-    void net_unpack( std::istream& s );
 
   vtime()
     { }
@@ -177,9 +183,7 @@ struct gvtime :
     public stem::__pack_base
 {
     void pack( std::ostream& s ) const;
-    void net_pack( std::ostream& s ) const;
     void unpack( std::istream& s );
-    void net_unpack( std::istream& s );
 
   gvtime()
     { }
@@ -205,12 +209,10 @@ struct VSsync_rq :
     public stem::__pack_base
 {
     void pack( std::ostream& s ) const;
-    void net_pack( std::ostream& s ) const;
     void unpack( std::istream& s );
-    void net_unpack( std::istream& s );
 
     VSsync_rq() :
-        grp(0),
+        grp(nil_gid),
         mess()
       { }
     VSsync_rq( const VSsync_rq& _gvt ) :
@@ -226,9 +228,7 @@ struct VSsync :
     public VSsync_rq
 {
     void pack( std::ostream& s ) const;
-    void net_pack( std::ostream& s ) const;
     void unpack( std::istream& s );
-    void net_unpack( std::istream& s );
 
     VSsync()
       { }
@@ -244,9 +244,7 @@ struct VSmess :
     public VSsync
 {
     void pack( std::ostream& s ) const;
-    void net_pack( std::ostream& s ) const;
     void unpack( std::istream& s );
-    void net_unpack( std::istream& s );
 
     VSmess() :
         code(0),
@@ -343,6 +341,8 @@ struct vs_base
     first_user_group = 10
   };
 };
+
+extern const group_type vshosts_gid;
 
 class Janus;
 

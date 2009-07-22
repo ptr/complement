@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <07/08/23 08:47:46 ptr>
+// -*- C++ -*- Time-stamp: <09/07/22 11:13:07 ptr>
 
 #include <janus/vtime.h>
-#include <janus/janus.h>
-#include <janus/vshostmgr.h>
+// #include <janus/janus.h>
+// #include <janus/vshostmgr.h>
 
 #include <stdint.h>
 
@@ -12,21 +12,16 @@ using namespace std;
 using namespace xmt;
 using namespace stem;
 
+const oid_type& nil_oid = xmt::nil_uuid;
+const group_type& nil_gid = xmt::nil_uuid;
+const group_type vshosts_gid = {{ 0x51, 0xd8, 0x58, 0x18, 0xe8, 0x00, 0x4a, 0x20, 0x88, 0x5f, 0x75, 0xba, 0xde, 0x28, 0x6f, 0xe9 }};
+
 void vtime::pack( std::ostream& s ) const
 {
   __pack( s, static_cast<uint8_t>(vt.size()) );
   for ( vtime_type::const_iterator i = vt.begin(); i != vt.end(); ++i ) {
-    i->first.pack( s ); // __pack( s, i->first );
+    __pack( s, i->first );
     __pack( s, i->second );
-  }
-}
-
-void vtime::net_pack( std::ostream& s ) const
-{
-  __net_pack( s, static_cast<uint8_t>(vt.size()) );
-  for ( vtime_type::const_iterator i = vt.begin(); i != vt.end(); ++i ) {
-    i->first.net_pack( s ); // __net_pack( s, i->first );
-    __net_pack( s, i->second );
   }
 }
 
@@ -39,24 +34,8 @@ void vtime::unpack( std::istream& s )
     oid_type oid;
     vtime_unit_type v;
 
-    oid.unpack( s ); // __unpack( s, oid );
+    __unpack( s, oid );
     __unpack( s, v );
-
-    vt[oid] = v;
-  }
-}
-
-void vtime::net_unpack( std::istream& s )
-{
-  vt.clear();
-  uint8_t n;
-  __net_unpack( s, n );
-  while ( n-- > 0 ) {
-    oid_type oid;
-    vtime_unit_type v;
-
-    oid.net_unpack( s ); // __net_unpack( s, oid );
-    __net_unpack( s, v );
 
     vt[oid] = v;
   }
@@ -68,15 +47,6 @@ void gvtime::pack( std::ostream& s ) const
   for ( gvtime_type::const_iterator i = gvt.begin(); i != gvt.end(); ++i ) {
     __pack( s, i->first );
     i->second.pack( s );
-  }
-}
-
-void gvtime::net_pack( std::ostream& s ) const
-{
-  __net_pack( s, static_cast<uint8_t>(gvt.size()) );
-  for ( gvtime_type::const_iterator i = gvt.begin(); i != gvt.end(); ++i ) {
-    __net_pack( s, i->first );
-    i->second.net_pack( s );
   }
 }
 
@@ -92,28 +62,10 @@ void gvtime::unpack( std::istream& s )
   }
 }
 
-void gvtime::net_unpack( std::istream& s )
-{
-  gvt.clear();
-  uint8_t n;
-  __net_unpack( s, n );
-  while ( n-- > 0 ) {
-    group_type gid;
-    __net_unpack( s, gid );
-    gvt[gid].net_unpack( s );
-  }
-}
-
 void VSsync_rq::pack( std::ostream& s ) const
 {
   __pack( s, grp );
   __pack( s, mess );
-}
-
-void VSsync_rq::net_pack( std::ostream& s ) const
-{
-  __net_pack( s, grp );
-  __net_pack( s, mess );
 }
 
 void VSsync_rq::unpack( std::istream& s )
@@ -122,22 +74,10 @@ void VSsync_rq::unpack( std::istream& s )
   __unpack( s, mess );
 }
 
-void VSsync_rq::net_unpack( std::istream& s )
-{
-  __net_unpack( s, grp );
-  __net_unpack( s, mess );
-}
-
 void VSsync::pack( std::ostream& s ) const
 {
   gvt.pack( s );
   VSsync_rq::pack( s );
-}
-
-void VSsync::net_pack( std::ostream& s ) const
-{
-  gvt.net_pack( s );
-  VSsync_rq::net_pack( s );
 }
 
 void VSsync::unpack( std::istream& s )
@@ -146,38 +86,18 @@ void VSsync::unpack( std::istream& s )
   VSsync_rq::unpack( s );
 }
 
-void VSsync::net_unpack( std::istream& s )
-{
-  gvt.net_unpack( s );
-  VSsync_rq::net_unpack( s );
-}
-
 void VSmess::pack( std::ostream& s ) const
 {
   __pack( s, code );
-  src.pack( s ); // __pack( s, src );
+  __pack( s, src );
   VSsync::pack( s );
-}
-
-void VSmess::net_pack( std::ostream& s ) const
-{
-  __net_pack( s, code );
-  src.net_pack( s ); // __net_pack( s, src );
-  VSsync::net_pack( s );
 }
 
 void VSmess::unpack( std::istream& s )
 {
   __unpack( s, code );
-  src.unpack( s ); // __unpack( s, src );
+  __unpack( s, src );
   VSsync::unpack( s );
-}
-
-void VSmess::net_unpack( std::istream& s )
-{
-  __net_unpack( s, code );
-  src.net_unpack( s ); // __net_unpack( s, src );
-  VSsync::net_unpack( s );
 }
 
 bool operator <=( const vtime_type& l, const vtime_type& r )
@@ -555,8 +475,8 @@ void VTHandler::Init::__at_fork_prepare()
 void VTHandler::Init::__at_fork_child()
 {
   if ( *_rcount != 0 ) {
-    delete VTHandler::_vtdsp->_hostmgr;
-    VTHandler::_vtdsp->_hostmgr = new VSHostMgr( "vshostmgr" );
+    // delete VTHandler::_vtdsp->_hostmgr;
+    // VTHandler::_vtdsp->_hostmgr = new VSHostMgr( "vshostmgr" );
   }
 }
 
@@ -566,9 +486,9 @@ void VTHandler::Init::__at_fork_parent()
 
 void VTHandler::Init::_guard( int direction )
 {
-  static xmt::recursive_mutex _init_lock;
+  static std::tr2::recursive_mutex _init_lock;
 
-  xmt::recursive_scoped_lock lk(_init_lock);
+  std::tr2::lock_guard<std::tr2::recursive_mutex> lk(_init_lock);
   static int _count = 0;
 
   if ( direction ) {
@@ -577,14 +497,14 @@ void VTHandler::Init::_guard( int direction )
       _rcount = &_count;
       pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child );
 #endif
-      VTHandler::_vtdsp = new Janus( janus_addr, "janus" );
-      VTHandler::_vtdsp->_hostmgr = new VSHostMgr( "vshostmgr" );
+      // VTHandler::_vtdsp = new Janus( xmt::uid(), "janus" );
+      // VTHandler::_vtdsp->_hostmgr = new VSHostMgr( "vshostmgr" );
     }
   } else {
     --_count;
     if ( _count == 1 ) { // 0+1 due to _hostmgr
-      delete VTHandler::_vtdsp;
-      VTHandler::_vtdsp = 0;
+      // delete VTHandler::_vtdsp;
+      // VTHandler::_vtdsp = 0;
     }
   }
 }
@@ -598,7 +518,7 @@ VTHandler::Init::~Init()
 void VTHandler::JaSend( const stem::Event& ev )
 {
   ev.src( self_id() );
-  _vtdsp->JaSend( ev, ev.dest() ); // throw domain_error, if not group member
+  // _vtdsp->JaSend( ev, ev.dest() ); // throw domain_error, if not group member
 }
 
 VTHandler::VTHandler() :
@@ -621,24 +541,24 @@ VTHandler::VTHandler( stem::addr_type id, const char *info ) :
 
 VTHandler::~VTHandler()
 {
-  Unsubscribe();
+  // Unsubscribe();
 
   ((Init *)Init_buf)->~Init();
 }
 
 void VTHandler::Unsubscribe()
 {
-  _vtdsp->Unsubscribe( oid_type( self_id() ) );
+  // _vtdsp->Unsubscribe( oid_type( self_id() ) );
 }
 
 void VTHandler::JoinGroup( group_type grp )
 {
-  _vtdsp->Subscribe( self_id(), oid_type( self_id() ), grp );
+  // _vtdsp->Subscribe( self_id(), oid_type( self_id() ), grp );
 }
 
 void VTHandler::LeaveGroup( group_type grp )
 {
-  _vtdsp->Unsubscribe( oid_type( self_id() ), grp );
+  // _vtdsp->Unsubscribe( oid_type( self_id() ), grp );
 }
 
 void VTHandler::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
@@ -648,8 +568,9 @@ void VTHandler::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
   out_ev.value().grp = ev.value().grp;
   get_gvtime( ev.value().grp, out_ev.value().gvt.gvt );
 #ifdef __FIT_VS_TRACE
+#if 0
   try {
-    scoped_lock lk(_vtdsp->_lock_tr);
+    std::tr2::lock_guard<std::tr2::mutex> lk(_vtdsp->_lock_tr);
     if ( _vtdsp->_trs != 0 && _vtdsp->_trs->good() && (_vtdsp->_trflags & Janus::tracegroup) ) {
       *_vtdsp->_trs << " -> VS_SYNC_TIME G" << ev.value().grp << " "
                     << hex << showbase
@@ -658,6 +579,7 @@ void VTHandler::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
   }
   catch ( ... ) {
   }
+#endif
 #endif // __FIT_VS_TRACE
   Send( out_ev );
 }
@@ -670,8 +592,9 @@ void VTHandler::VSNewMember_data( const stem::Event_base<VSsync_rq>& ev, const s
   get_gvtime( ev.value().grp, out_ev.value().gvt.gvt );
   out_ev.value().mess = data;
 #ifdef __FIT_VS_TRACE
+#if 0
   try {
-    scoped_lock lk(_vtdsp->_lock_tr);
+    std::tr2::lock_guard<std::tr2::mutex> lk(_vtdsp->_lock_tr);
     if ( _vtdsp->_trs != 0 && _vtdsp->_trs->good() && (_vtdsp->_trflags & Janus::tracegroup) ) {
       *_vtdsp->_trs << " -> VS_SYNC_TIME (data) G" << ev.value().grp << " "
                     << hex << showbase
@@ -680,20 +603,22 @@ void VTHandler::VSNewMember_data( const stem::Event_base<VSsync_rq>& ev, const s
   }
   catch ( ... ) {
   }
+#endif
 #endif // __FIT_VS_TRACE
   Send( out_ev );
 }
 
 void VTHandler::get_gvtime( group_type g, gvtime_type& gvt )
 {
-  _vtdsp->get_gvtime( g, self_id(), gvt );
+  // _vtdsp->get_gvtime( g, self_id(), gvt );
 }
 
 void VTHandler::VSOutMember( const stem::Event_base<VSsync_rq>& ev )
 {
 #ifdef __FIT_VS_TRACE
+#if 0
   try {
-    scoped_lock lk(_vtdsp->_lock_tr);
+    std::tr2::lock_guard<std::tr2::mutex> lk(_vtdsp->_lock_tr);
     if ( _vtdsp->_trs != 0 && _vtdsp->_trs->good() && (_vtdsp->_trflags & Janus::tracegroup) ) {
       *_vtdsp->_trs << "<-  VS_OUT_MEMBER G" << ev.value().grp
                     << hex << showbase
@@ -702,6 +627,7 @@ void VTHandler::VSOutMember( const stem::Event_base<VSsync_rq>& ev )
   }
   catch ( ... ) {
   }
+#endif
 #endif // __FIT_VS_TRACE
 }
 
@@ -710,8 +636,9 @@ void VTHandler::VSsync_time( const stem::Event_base<VSsync>& ev )
   try {
     // sync data from ev.value().mess
 #ifdef __FIT_VS_TRACE
+#if 0
     try {
-      scoped_lock lk(_vtdsp->_lock_tr);
+      std::tr2::lock_guard<std::tr2::mutex> lk(_vtdsp->_lock_tr);
       if ( _vtdsp->_trs != 0 && _vtdsp->_trs->good() && (_vtdsp->_trflags & Janus::tracegroup) ) {
         *_vtdsp->_trs << "<-  VS_SYNC_TIME G" << ev.value().grp << " "
                       << hex << showbase
@@ -720,8 +647,9 @@ void VTHandler::VSsync_time( const stem::Event_base<VSsync>& ev )
     }
     catch ( ... ) {
     }
+#endif
 #endif // __FIT_VS_TRACE
-    _vtdsp->set_gvtime( ev.value().grp, self_id(), ev.value().gvt.gvt );
+    // _vtdsp->set_gvtime( ev.value().grp, self_id(), ev.value().gvt.gvt );
   }
   catch ( const domain_error&  ) {
   }
@@ -734,8 +662,9 @@ void VTHandler::VSMergeRemoteGroup( const stem::Event_base<VSsync_rq>& e )
   out_ev.value().grp = e.value().grp;
   get_gvtime( e.value().grp, out_ev.value().gvt.gvt );
 #ifdef __FIT_VS_TRACE
+#if 0
   try {
-    scoped_lock lk(_vtdsp->_lock_tr);
+    std::tr2::lock_guard<std::tr2::mutex> lk(_vtdsp->_lock_tr);
     if ( _vtdsp->_trs != 0 && _vtdsp->_trs->good() && (_vtdsp->_trflags & Janus::tracegroup) ) {
       *_vtdsp->_trs << " -> VS_SYNC_GROUP_TIME G" << e.value().grp << " "
                     << hex << showbase
@@ -744,6 +673,7 @@ void VTHandler::VSMergeRemoteGroup( const stem::Event_base<VSsync_rq>& e )
   }
   catch ( ... ) {
   }
+#endif
 #endif // __FIT_VS_TRACE
   Send( out_ev );
 }
@@ -756,8 +686,9 @@ void VTHandler::VSMergeRemoteGroup_data( const stem::Event_base<VSsync_rq>& e, c
   get_gvtime( e.value().grp, out_ev.value().gvt.gvt );
   out_ev.value().mess = data;
 #ifdef __FIT_VS_TRACE
+#if 0
   try {
-    scoped_lock lk(_vtdsp->_lock_tr);
+    std::tr2::lock_guard<std::tr2::mutex> lk(_vtdsp->_lock_tr);
     if ( _vtdsp->_trs != 0 && _vtdsp->_trs->good() && (_vtdsp->_trflags & Janus::tracegroup) ) {
       *_vtdsp->_trs << " -> VS_SYNC_GROUP_TIME (data) G" << e.value().grp << " "
                     << hex << showbase
@@ -766,6 +697,7 @@ void VTHandler::VSMergeRemoteGroup_data( const stem::Event_base<VSsync_rq>& e, c
   }
   catch ( ... ) {
   }
+#endif
 #endif // __FIT_VS_TRACE
   Send( out_ev );
 }

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/02/25 22:21:57 ptr>
+// -*- C++ -*- Time-stamp: <09/07/22 09:48:51 ptr>
 
 #include "vt_operations.h"
 
@@ -21,6 +21,7 @@ int EXAM_IMPL(vtime_test_suite)
                         tc[0] = t.add( &vtime_operations::vt_compare, vt_oper, "Compare" ) ) );
   t.add( &vtime_operations::vt_diff, vt_oper, "Differences", tc[0] );
 
+#if 0
   t.add( &vtime_operations::VTMess_core, vt_oper, "VTmess core transfer", 
          tc[2] = t.add( &vtime_operations::gvt_add, vt_oper, "Group VT add", tc[1] ) );
 
@@ -37,6 +38,7 @@ int EXAM_IMPL(vtime_test_suite)
                       t.add( &vtime_operations::vt_object, vt_oper, "VT order", tc[2] )))))))))) );
 
   t.add( &vtime_operations::wellknownhost, vt_oper, "well-known host", tc[3] );
+#endif
 
   return t.girdle();
 }
