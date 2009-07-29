@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/17 17:14:28 ptr>
+// -*- C++ -*- Time-stamp: <09/07/29 14:09:36 ptr>
 
 /*
  *
@@ -26,6 +26,27 @@
 #include <mt/mutex>
 #include <mt/condition_variable>
 #include <mt/date_time>
+
+class server_conn
+{
+  public:
+    server_conn( std::sockstream& s )
+      {
+      }
+
+    void connect( std::sockstream& s )
+      { }
+
+    // static std::tr2::mutex lock;
+    // static std::tr2::condition_variable cnd;
+};
+
+class sockios_perf_conn
+{
+  public:
+    int EXAM_DECL(connect);
+    int EXAM_DECL(connect_basic);
+};
 
 class sockios_perf_SrvR
 {

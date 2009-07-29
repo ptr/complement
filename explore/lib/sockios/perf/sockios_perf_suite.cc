@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/17 17:15:01 ptr>
+// -*- C++ -*- Time-stamp: <09/07/29 14:08:55 ptr>
 
 /*
  *
@@ -161,6 +161,11 @@ int main( int argc, const char** argv )
   tc[89] = t.add( &sockios_perf_SrvRW::rx<1,1,6480,1>, prw, "client write/read 1 1 bytes blocks (reference) TCP_NODELAY", tc[88] );
   tc[90] = t.add( &sockios_perf_SrvRW::rx<32,1638400,6480,1>, prw, "client write/read 32 1638400 bytes blocks TCP_NODELAY", tc[89] );
   tc[91] = t.add( &sockios_perf_SrvRW::rx<1024,51200,6480,1>, prw, "client write/read 1024 51200 bytes blocks TCP_NODELAY", tc[90] );
+
+  sockios_perf_conn conn;
+
+  t.add( &sockios_perf_conn::connect, conn, "connect" );
+  t.add( &sockios_perf_conn::connect_basic, conn, "connect basic" );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );
