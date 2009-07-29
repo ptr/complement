@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Time-stamp: <09/05/13 19:05:20 ptr>
+# Time-stamp: <09/07/29 18:29:24 ptr>
 
 base=`cd \`dirname $0\`; echo $PWD`
 
@@ -11,12 +11,12 @@ configmak=$base/Makefiles/gmake/config.mak
 # echo "# TARGET_PROC=x86" >> ${configmak}
 
 write_option() {
-  target=`echo $1 | sed -e 's/^[^=]*=//'`
+  target=`echo $1 | sed -e 's/^[^=]*=//' -e 's/^["'']//' -e 's/["'']$//'`
   echo $2 = $3$target >> ${configmak}
 }
 
 write_over_option() {
-  target=`echo $1 | sed -e 's/^[^=]*=//'`
+  target=`echo $1 | sed -e 's/^[^=]*=//' -e 's/^["'']//' -e 's/["'']$//'`
   echo $2 ?= $target >> ${configmak}
 }
 
