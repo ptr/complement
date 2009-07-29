@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/29 15:18:20 ptr>
+// -*- C++ -*- Time-stamp: <09/07/29 17:18:24 ptr>
 
 /*
  *
@@ -128,7 +128,7 @@ int EXAM_IMPL(sockios_perf_conn::connect_basic)
 
       try {
 #if 0
-        std::tr2::this_thread::unblock_signal( SIGINT );
+        std::tr::this_thread::unblock_signal( SIGINT );
 
         int fd = socket( PF_INET, sock_base::sock_stream, 0 );
 
@@ -202,14 +202,23 @@ int EXAM_IMPL(sockios_perf_conn::connect_basic)
     catch ( std::tr2::fork_in_parent& child ) {
       b.wait();
 
-#if 0
-      for ( int i = 0; i < 1000; ++i ) {
-        std::sockstream s( "localhost", 6480 );
-        // if ( ND ) {
-        //   s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
-        // }
-        // EXAM_CHECK( s.is_open() );
+#if 1
+      // std::sockstream s0( "localhost", 6480 );
+      {
+        std::socket_mgr_preload s0;
+  
+        // std::sockstream s;
+        for ( int i = 0; i < 1000; ++i ) {
+          // s.open( "localhost", 6480 );
+          std::sockstream s( "localhost", 6480 );
+          // if ( ND ) {
+          //   s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
+          // }
+          // EXAM_CHECK( s.is_open() );
+          // s.close();
+        }
       }
+      // s0.close();
 #else
       union sockaddr_t {
           sockaddr_in inet;

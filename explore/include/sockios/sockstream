@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/15 20:00:36 ptr>
+// -*- C++ -*- Time-stamp: <09/07/29 17:10:12 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -421,6 +421,18 @@ std::detail::sockmgr<charT,traits,_Alloc>* basic_socket<charT,traits,_Alloc>::mg
 
 template <class charT, class traits, class _Alloc>
 unsigned basic_socket<charT,traits,_Alloc>::default_mtu = 0;
+
+template<class charT, class traits, class _Alloc>
+class basic_socket_mgr_preload :
+    public basic_socket<charT,traits,_Alloc>
+{
+  public:
+    basic_socket_mgr_preload() :
+        basic_socket<charT,traits,_Alloc>()
+      { }
+};
+
+typedef basic_socket_mgr_preload<char,char_traits<char>,allocator<char> > socket_mgr_preload;
 
 #ifdef STLPORT
 _STLP_END_NAMESPACE
