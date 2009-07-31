@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/20 13:55:32 ptr>
+// -*- C++ -*- Time-stamp: <09/07/31 13:51:25 ptr>
 
 /*
  *
@@ -52,11 +52,12 @@ int main( int argc, const char** argv )
 
   stem_perf p;
 
-  t.add( &stem_perf::net_loopback_inv2, p, "StEM event, via net loopback iface, inverted send",
-    t.add( &stem_perf::net_loopback_inv, p, "StEM event, via net loopback iface, inverted",
-      t.add( &stem_perf::net_loopback, p, "StEM event, via net loopback iface",
-        t.add( &stem_perf::local_too, p, "StEM local event, with NetTransport",
-          t.add( &stem_perf::local, p, "StEM local event" ) ) ) ) );
+  t.add( &stem_perf::parallel, p, "StEM dispatch parallel",
+    t.add( &stem_perf::net_loopback_inv2, p, "StEM event, via net loopback iface, inverted send",
+      t.add( &stem_perf::net_loopback_inv, p, "StEM event, via net loopback iface, inverted",
+        t.add( &stem_perf::net_loopback, p, "StEM event, via net loopback iface",
+          t.add( &stem_perf::local_too, p, "StEM local event, with NetTransport",
+            t.add( &stem_perf::local, p, "StEM local event" ) ) ) ) ) );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );

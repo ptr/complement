@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/04 19:23:47 ptr>
+// -*- C++ -*- Time-stamp: <09/07/31 13:48:26 ptr>
 
 /*
  *
@@ -78,6 +78,44 @@ class Tester :
     DECLARE_RESPONSE_TABLE( Tester, stem::EventHandler );
 };
 
+class Busy :
+    public stem::EventHandler
+{
+  public:
+    Busy( stem::addr_type id );
+
+    bool wait();
+
+  private:
+    void handler( const stem::Event& );
+
+    class pred
+    {
+      public:
+        pred( Busy& b ) :
+            busy( &b )
+          { }
+
+        bool operator()() const
+          { return busy->cnt == busy->cnt_lim; }
+
+      private:
+        Busy* busy;
+    };
+
+    std::tr2::mutex lock;
+    std::tr2::condition_variable cnd;
+
+    int cnt;
+
+    friend class pred;
+
+    DECLARE_RESPONSE_TABLE( Busy, stem::EventHandler );
+
+  public:
+    const int cnt_lim;
+};
+
 class stem_perf
 {
   public:
@@ -89,6 +127,7 @@ class stem_perf
     int EXAM_DECL(net_loopback);
     int EXAM_DECL(net_loopback_inv);
     int EXAM_DECL(net_loopback_inv2);
+    int EXAM_DECL(parallel);
 
   private:
     // Tester tester;

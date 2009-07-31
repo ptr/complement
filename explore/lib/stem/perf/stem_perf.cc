@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/20 13:57:55 ptr>
+// -*- C++ -*- Time-stamp: <09/07/31 14:24:57 ptr>
 
 /*
  *
@@ -99,11 +99,40 @@ void Tester::send()
   }
 }
 
-DEFINE_RESPONSE_TABLE( Tester)
+DEFINE_RESPONSE_TABLE( Tester )
   EV_EDS( ST_NULL, EV_TEST, handler1 )
   EV_EDS( ST_NULL, EV_SETPEER, handler2 )
 END_RESPONSE_TABLE
 
+Busy::Busy( stem::addr_type id ) :
+    EventHandler( id ),
+    cnt( 0 ),
+    cnt_lim( 10 )
+{
+  EventHandler::enable();
+}
+
+bool Busy::wait()
+{
+  pred p( *this );
+
+  unique_lock<mutex> lk( lock );
+  return cnd.timed_wait( lk, std::tr2::seconds( 5 ), p );
+}
+
+void Busy::handler( const stem::Event& )
+{
+  this_thread::sleep( milliseconds(100) );
+
+  lock_guard<mutex> lk(lock);
+  if ( ++cnt == cnt_lim ) {
+    cnd.notify_one();
+  }
+}
+
+DEFINE_RESPONSE_TABLE( Busy )
+  EV_EDS( ST_NULL, EV_TEST, handler )
+END_RESPONSE_TABLE
 
 stem_perf::stem_perf()
 {
@@ -499,6 +528,33 @@ int EXAM_IMPL(stem_perf::net_loopback_inv2)
   }
 
   Tester::visits = 0;
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(stem_perf::parallel)
+{
+  stem::addr_type a1 = xmt::uid();
+  stem::addr_type a2 = xmt::uid();
+
+  Busy b1( a1 );
+  Busy b2( a2 );
+
+  Tester t;
+
+  Event ev1( EV_TEST );
+  ev1.dest( a1 );
+
+  Event ev2( EV_TEST );
+  ev2.dest( a2 );
+
+  for ( int i = 0; i < b1.cnt_lim; ++i ) {
+    t.Send( ev1 );
+    t.Send( ev2 );
+  }
+
+  EXAM_CHECK( b1.wait() );
+  EXAM_CHECK( b2.wait() );
 
   return EXAM_RESULT;
 }
