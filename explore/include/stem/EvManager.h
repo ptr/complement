@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/02 14:09:27 ptr>
+// -*- C++ -*- Time-stamp: <09/08/03 13:48:56 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009
@@ -109,8 +109,6 @@ class EvManager
       tracesubscr = 8
     };
 
-    typedef std::deque< Event > queue_type;
-
     __FIT_DECLSPEC EvManager();
     __FIT_DECLSPEC ~EvManager();
 
@@ -187,10 +185,57 @@ class EvManager
     local_heap_type heap;   // address -> EventHandler *
     info_heap_type  iheap;  // address -> info string (both local and external)
 
+    typedef std::deque< Event > queue_type;
+    typedef std::list< Event > subqueue_type;
+
     queue_type in_ev_queue;
     queue_type out_ev_queue;
 
     static void _Dispatch( EvManager* );
+
+    struct subqueue_container
+    {
+        subqueue_container() :
+            stop( false )
+          { }
+
+        subqueue_container( const subqueue_container& ) :
+            stop( false )
+          { }
+
+        subqueue_container& operator =( const subqueue_container& )
+          { stop = false; return *this; }
+
+        std::tr2::mutex lock;
+        std::tr2::condition_variable cnd;
+        subqueue_type q;
+        bool stop;
+    };
+
+    class subqueue_condition
+    {
+      public:
+        subqueue_condition( subqueue_container& q ) :
+            sq( q )
+          { }
+
+        bool operator()() const
+          { return !sq.q.empty() || sq.stop; }
+
+      private:
+        subqueue_container& sq;
+    };
+
+    typedef std::list<subqueue_container> nests_type;
+    nests_type nests;
+
+    struct nest_ref
+    {
+        EvManager* mgr;
+        subqueue_container* q;
+    };
+
+    static void _Dispatch_sub( nest_ref );
 
     bool not_finished();
 

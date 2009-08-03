@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/02 17:06:27 ptr>
+// -*- C++ -*- Time-stamp: <09/08/03 17:32:53 ptr>
 
 /*
  *
@@ -53,7 +53,7 @@ __FIT_DECLSPEC EvManager::~EvManager()
   {
     lock_guard<mutex> lk( _lock_queue );
     _dispatch_stop = true;
-    _cnd_queue.notify_one();
+    _cnd_queue.notify_all();
   }
 
   _ev_queue_thr.join();
@@ -71,6 +71,18 @@ void EvManager::_Dispatch( EvManager* p )
   mutex& lq = me._lock_queue;
   queue_type& in_ev_queue = me.in_ev_queue;
   queue_type& out_ev_queue = me.out_ev_queue;
+
+  list<nest_ref> refs;
+  list<thread*>  threads;
+
+  for ( int k = 0; k < 4; ++k ) {
+    me.nests.push_back( subqueue_container() );
+    refs.push_back( nest_ref() );
+    refs.back().mgr = p;
+    refs.back().q = &me.nests.back();
+
+    threads.push_back( new thread(_Dispatch_sub, refs.back() ) );
+  }
 
   while ( me.not_finished() ) {
     {
@@ -98,14 +110,51 @@ void EvManager::_Dispatch( EvManager* p )
 #endif // __FIT_STEM_TRACE
     }
     
+    // cerr << out_ev_queue.size() << endl;
+
+    Event ev;
+
     while ( !out_ev_queue.empty() ) {
-      me.Send( out_ev_queue.front() );
-      out_ev_queue.pop_front();
+      for ( nests_type::iterator i = me.nests.begin(); i != me.nests.end() && !out_ev_queue.empty(); ++i ) {
+        lock_guard<mutex> lk( i->lock );
+        for ( subqueue_type::const_iterator j = i->q.begin(); j != i->q.end(); ++j ) {
+          if ( j->dest() == out_ev_queue.front().dest() ) {
+            i->q.push_back( ev );
+            swap( i->q.back(), out_ev_queue.front() );
+            out_ev_queue.pop_front();
+            break;
+          }
+        }
+      }
+
+      for ( nests_type::iterator i = me.nests.begin(); i != me.nests.end() && !out_ev_queue.empty(); ++i ) {
+        lock_guard<mutex> lk( i->lock );
+        if ( i->q.empty() ) {
+          i->q.push_back( ev );
+          swap( i->q.back(), out_ev_queue.front() );
+          out_ev_queue.pop_front();
+          i->cnd.notify_one();
+          break;
+        }
+      }
     }
+
     {
       unique_lock<mutex> lk( lq );
       me._cnd_queue.wait( lk, me.not_empty );
     }
+  }
+
+  for ( nests_type::iterator i = me.nests.begin(); i != me.nests.end(); ++i ) {
+    lock_guard<mutex> lk(i->lock);
+    i->stop = true;
+    i->cnd.notify_one();
+  }
+
+  for ( list<thread*>::iterator k = threads.begin(); k != threads.end(); ++k ) {
+    (*k)->join();
+    delete *k;
+    *k = 0;
   }
 
 #ifdef __FIT_STEM_TRACE
@@ -159,6 +208,31 @@ void EvManager::_Dispatch( EvManager* p )
   catch ( ... ) {
   }
 #endif // __FIT_STEM_TRACE
+}
+
+void EvManager::_Dispatch_sub( nest_ref p )
+{
+  EvManager& me = *p.mgr;
+  subqueue_container& sq = *p.q;
+  subqueue_type& q = sq.q;
+  mutex& lock = sq.lock;
+  condition_variable& cnd = sq.cnd;
+
+  subqueue_condition qcnd( sq );
+
+  Event ev;
+
+  do {
+    unique_lock<mutex> lk( lock );
+    while ( !q.empty() ) {
+      swap( ev, q.front() );
+      q.pop_front();
+      lk.unlock();
+      me.Send( ev );
+      lk.lock();
+    }
+    cnd.wait( lk, qcnd );
+  } while ( me.not_finished() );
 }
 
 __FIT_DECLSPEC

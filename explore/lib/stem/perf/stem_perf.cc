@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/31 14:24:57 ptr>
+// -*- C++ -*- Time-stamp: <09/08/03 15:58:23 ptr>
 
 /*
  *
@@ -155,7 +155,7 @@ int EXAM_IMPL(stem_perf::local)
   }
 
   std::tr2::unique_lock<std::tr2::mutex> lk(Tester::lock);
-  EXAM_CHECK( Tester::cnd.timed_wait( lk, std::tr2::milliseconds( 500 ), Tester::n_cnt ) );
+  EXAM_CHECK( Tester::cnd.timed_wait( lk, std::tr2::milliseconds( 1500 ), Tester::n_cnt ) );
 
   Tester::visits = 0;
 
@@ -182,7 +182,7 @@ int EXAM_IMPL(stem_perf::local_too)
   }
 
   std::tr2::unique_lock<std::tr2::mutex> lk(Tester::lock);
-  EXAM_CHECK( Tester::cnd.timed_wait( lk, std::tr2::milliseconds( 500 ), Tester::n_cnt ) );
+  EXAM_CHECK( Tester::cnd.timed_wait( lk, std::tr2::milliseconds( 1500 ), Tester::n_cnt ) );
 
   mgr.close();
   mgr.join();
