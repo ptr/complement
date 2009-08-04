@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/05/01 12:58:31 ptr>
+// -*- C++ -*- Time-stamp: <09/08/04 14:10:30 ptr>
 
 /*
  *
@@ -114,6 +114,14 @@ class __Event_Base
       expand = 2
     };
 
+    void swap( __Event_Base& l )
+      {
+        std::swap( _code, l._code );
+        std::swap( _dst, l._dst );
+        std::swap( _src, l._src );
+        std::swap( _flags, l._flags );
+      }
+
   protected:
     mutable code_type  _code; // event code
     mutable addr_type  _dst;  // destination
@@ -211,6 +219,12 @@ class __Event_base_aux<D,std::tr1::true_type> :
     void unpack( std::istream& __s )
       { __pack_base::__unpack( __s, _data ); }
 
+    void swap( __Event_base_aux<D,std::tr1::true_type>& l )
+      {
+        __Event_Base::swap( static_cast<__Event_Base&>(l) );
+        std::swap( _data, l._data );
+      }
+
   protected:
     value_type _data;
 };
@@ -257,6 +271,12 @@ class __Event_base_aux<D,std::tr1::false_type> :
       { _data.pack( __s ); }
     void unpack( std::istream& __s )
       { _data.unpack( __s ); }
+
+    void swap( __Event_base_aux<D,std::tr1::false_type>& l )
+      {
+        __Event_Base::swap( static_cast<__Event_Base&>(l) );
+        std::swap( _data, l._data );
+      }
 
   protected:
     value_type _data;
@@ -305,6 +325,12 @@ class __Event_base_aux<std::string,std::tr1::false_type> :
     void unpack( std::istream& __s )
       { __pack_base::__unpack( __s, _data ); }
 
+    void swap( __Event_base_aux<std::string,std::tr1::false_type>& l )
+      {
+        __Event_Base::swap( static_cast<__Event_Base&>(l) );
+        std::swap( _data, l._data );
+      }
+
   protected:
     value_type _data;
 };
@@ -352,6 +378,12 @@ class __Event_base_aux<xmt::uuid_type,std::tr1::false_type> :
     void unpack( std::istream& __s )
       { __pack_base::__unpack( __s, _data ); }
 
+    void swap( __Event_base_aux<xmt::uuid_type,std::tr1::false_type>& l )
+      {
+        __Event_Base::swap( static_cast<__Event_Base&>(l) );
+        std::swap( _data, l._data );
+      }
+
   protected:
     value_type _data;
 };
@@ -385,6 +417,9 @@ class __Event_base_aux<void,std::tr1::true_type> :
       { }
     void unpack( std::istream& __s )
       { }
+
+    // void swap( __Event_base_aux<void,std::tr1::true_type>& l )
+    //   { __Event_Base::swap( static_cast<__Event_Base&>(l) ); }
 };
 
 template <class D>
@@ -527,6 +562,14 @@ class Event_base<void> :
 };
 
 } // namespace stem
+
+namespace std {
+
+template <class T>
+inline void swap( stem::Event_base<T>& l, stem::Event_base<T>& r )
+{ l.swap(r); }
+
+} // namespace std
 
 namespace EDS = stem;
 

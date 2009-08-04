@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/05/03 00:52:00 ptr>
+// -*- C++ -*- Time-stamp: <09/08/04 14:09:57 ptr>
 
 /*
  * Copyright (c) 2006, 2008, 2009
@@ -77,6 +77,12 @@ struct uuid_type
       }
 
     operator std::string() const;
+
+    void swap( uuid_type& r )
+      {
+        std::swap( u.l[0], r.u.l[0] );
+        std::swap( u.l[1], r.u.l[1] );
+      }
 };
 
 extern const uuid_type nil_uuid; // NIL UUID
@@ -122,7 +128,12 @@ template <>
 struct is_pod<xmt::uuid_type> :
     public integral_constant<bool, true>
 { };
-}
+
+} // namespace tr1
+
+template <>
+inline void swap( xmt::uuid_type& l, xmt::uuid_type& r )
+{ l.swap(r); }
 
 } // namespace std
 
