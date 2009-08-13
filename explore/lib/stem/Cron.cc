@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/08/13 18:36:32 ptr>
+// -*- C++ -*- Time-stamp: <09/08/13 21:37:12 ptr>
 
 /*
  * Copyright (c) 1998, 2002-2003, 2005-2006, 2008-2009
@@ -181,6 +181,7 @@ void Cron::_loop( Cron* p )
   // If Cron's container empty, this thread suspend, and can be alarmed
   // after Add (Cron entry) event.
   Cron& me = *p;
+  system_time st;
 
   unique_lock<mutex> lk( me._M_l );
   me._run = true;
@@ -195,17 +196,24 @@ void Cron::_loop( Cron* p )
     // At this point _M_c should never be empty!
 
     if ( me._M_c.top().expired > get_system_time() ) {
-      bool alarm = me.cond.timed_wait( lk, me._M_c.top().expired, me.ready );
+      st = me._M_c.top().expired;
+      bool alarm;
+      try {
+        alarm = me.cond.timed_wait( lk, st, me.ready );
 
-      if ( !me._run ) {
-        break;
+        if ( !me._run ) {
+          break;
+        }
+
+        if ( me._M_c.empty() ) { // event removed while I wait?
+          continue;
+        }
+
+        if ( alarm && (me._M_c.top().expired > get_system_time()) ) {
+          continue;
+        }
       }
-
-      if ( me._M_c.empty() ) { // event removed while I wait?
-        continue;
-      }
-
-      if ( alarm && (me._M_c.top().expired > get_system_time()) ) {
+      catch ( const system_error& ) { // Cron crash, destroyed or bad time?
         continue;
       }
     }
