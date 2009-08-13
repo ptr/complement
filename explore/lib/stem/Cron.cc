@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/02 17:23:37 ptr>
+// -*- C++ -*- Time-stamp: <09/08/13 18:36:32 ptr>
 
 /*
  * Copyright (c) 1998, 2002-2003, 2005-2006, 2008-2009
@@ -62,15 +62,28 @@ __FIT_DECLSPEC Cron::~Cron()
 {
   this->disable();
 
-  if ( isState( CRON_ST_STARTED ) ) {
-    Stop();
+  if ( _thr != 0 ) {
+    {
+      lock_guard<mutex> _x1( _M_l );
+
+      _run = false;
+      cond.notify_one();
+    }
+    _thr->join();
+    delete _thr;
+    _thr = 0;
   }
 }
 
 void __FIT_DECLSPEC Cron::AddFirst( const Event_base<CronEntry>& entry )
 {
   Add( entry );
-  Start();
+
+  lock_guard<mutex> _x1( _M_l );
+
+  _thr = new thread( _loop, this );
+
+  PushState( CRON_ST_STARTED );
 }
 
 void __FIT_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
@@ -159,42 +172,6 @@ void __FIT_DECLSPEC Cron::RemoveArg( const Event_base<CronEntry>& entry )
   cond.notify_one(); // in any case, remove I something or not
 }
 
-void __FIT_DECLSPEC Cron::Start()
-{
-  lock_guard<mutex> _x1( _M_l );
-
-  if ( !_M_c.empty() && (_thr == 0) ) { // start only if Cron queue not empty
-    _thr = new thread( _loop, this );
-  }
-}
-
-void __FIT_DECLSPEC Cron::Stop()
-{
-  {
-    lock_guard<mutex> _x1( _M_l );
-
-    _run = false;
-    cond.notify_one();
-  }
-
-  RemoveState( CRON_ST_STARTED );
-
-  _thr->join();
-
-  delete _thr;
-  _thr = 0;
-}
-
-void __FIT_DECLSPEC Cron::EmptyStart()
-{
-  // do nothing
-}
-
-void __FIT_DECLSPEC Cron::EmptyStop()
-{
-  // do nothing
-}
-
 void Cron::_loop( Cron* p )
 {
   // After creation cron loop (one per every Cron object),
@@ -204,8 +181,6 @@ void Cron::_loop( Cron* p )
   // If Cron's container empty, this thread suspend, and can be alarmed
   // after Add (Cron entry) event.
   Cron& me = *p;
-
-  me.PushState( CRON_ST_STARTED );
 
   unique_lock<mutex> lk( me._M_l );
   me._run = true;
@@ -262,16 +237,11 @@ void Cron::_loop( Cron* p )
   }
 }
 
-
 DEFINE_RESPONSE_TABLE( Cron )
   EV_Event_base_T_(ST_NULL,EV_EDS_CRON_ADD,AddFirst,CronEntry)
   EV_Event_base_T_(CRON_ST_STARTED,EV_EDS_CRON_ADD,Add,CronEntry)
   EV_Event_base_T_(ST_NULL,EV_EDS_CRON_REMOVE,Remove,CronEntry)
   EV_Event_base_T_(ST_NULL,EV_EDS_CRON_REMOVE_ARG,RemoveArg,CronEntry)
-  EV_VOID(ST_NULL,EV_EDS_CRON_START,Start)
-  EV_VOID(CRON_ST_STARTED,EV_EDS_CRON_STOP,Stop)
-  EV_VOID(CRON_ST_STARTED,EV_EDS_CRON_START,EmptyStart)
-  EV_VOID(ST_NULL,EV_EDS_CRON_STOP,EmptyStop)
 END_RESPONSE_TABLE
 
 __FIT_DECLSPEC

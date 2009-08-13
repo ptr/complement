@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/02 16:49:28 ptr>
+// -*- C++ -*- Time-stamp: <09/08/13 18:34:40 ptr>
 
 /*
  * Copyright (c) 1998, 2002, 2003, 2005, 2007-2009
@@ -141,11 +141,6 @@ class Cron :
     __FIT_DECLSPEC void AddFirst( const Event_base<CronEntry>& );
     __FIT_DECLSPEC void Remove( const Event_base<CronEntry>& );
     __FIT_DECLSPEC void RemoveArg( const Event_base<CronEntry>& );
-    __FIT_DECLSPEC void Start();
-    __FIT_DECLSPEC void Stop();
-
-    __FIT_DECLSPEC void EmptyStart();
-    __FIT_DECLSPEC void EmptyStop();
 
   private:
     static void _loop( Cron* );

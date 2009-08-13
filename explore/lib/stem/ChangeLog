@@ -1,3 +1,10 @@
+2009-08-13  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* Cron.h, Cron.cc, EDSEv.h: unuseful and dangerous
+	functionality removed;
+
+	* libstem: revision 5.2.3.
+
 2009-07-03  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* NetTransport.h, NetTransport.cc: forgot tcp_no_delay
