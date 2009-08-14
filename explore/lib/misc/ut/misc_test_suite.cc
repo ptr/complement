@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/11/21 10:27:53 ptr>
+// -*- C++ -*- Time-stamp: <09/08/13 23:30:15 ptr>
 
 /*
  * Copyright (c) 2007, 2008
@@ -50,4 +50,6 @@ void misc_test_suite_init( exam::test_suite& t, misc_test& test )
   tc[4] = t.add( &misc_test::type_traits_is_pod, test, "is_pod", tc[0] );
   t.add( &misc_test::type_traits_is_pod_compiler_supp, test, "is_pod_compiler_supp", tc[4] );
   t.add( &misc_test::type_traits_is_empty, test, "is_empty", tc[0] );
+
+  t.add( &misc_test::ratio, test, "ratio", tc[0] );
 }

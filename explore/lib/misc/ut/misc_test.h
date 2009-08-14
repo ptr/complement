@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/11/21 10:21:32 ptr>
+// -*- C++ -*- Time-stamp: <09/08/13 23:25:06 ptr>
 
 /*
  * Copyright (c) 2007, 2008
@@ -55,6 +55,8 @@ class misc_test
 
     // aux
     int EXAM_DECL(type_traits_has_x_ctor);
+
+    int EXAM_DECL(ratio);
 };
 
 #endif // __MISC_TEST_H

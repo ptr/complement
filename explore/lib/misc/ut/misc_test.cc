@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/11/21 10:31:03 ptr>
+// -*- C++ -*- Time-stamp: <09/08/14 10:13:22 ptr>
 
 /*
- * Copyright (c) 2007
+ * Copyright (c) 2007, 2009
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -11,6 +11,8 @@
 #include "misc_test.h"
 
 #include <misc/type_traits.h>
+
+#include <misc/ratio>
 
 using namespace std;
 
@@ -635,3 +637,37 @@ int EXAM_IMPL(type_traits_has_x_ctor)
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(misc_test::ratio)
+{
+  EXAM_CHECK( (std::ratio<1,1>::num == 1LL) && (std::ratio<1,1>::den == 1LL) );
+  EXAM_CHECK( (std::ratio<2,1>::num == 2LL) && (std::ratio<2,1>::den == 1LL) );
+  EXAM_CHECK( (std::ratio<1,2>::num == 1LL) && (std::ratio<1,2>::den == 2LL) );
+  EXAM_CHECK( (std::ratio<2,2>::num == 1LL) && (std::ratio<2,2>::den == 1LL) );
+  EXAM_CHECK( (std::ratio<100,5>::num == 20LL) && (std::ratio<100,5>::den == 1LL) );
+  EXAM_CHECK( (std::ratio<-10,100>::num == -1LL) && (std::ratio<-10,100>::den == 10LL) );
+  EXAM_CHECK( (std::ratio<3,-5>::num == -3LL) && (std::ratio<3,-5>::den == 5LL) );
+  EXAM_CHECK( (std::ratio<7>::num == 7LL) && (std::ratio<7>::den == 1LL) );
+
+  typedef std::ratio<3,5> three_five;
+  typedef std::ratio<2,7> two_seven;
+
+  EXAM_CHECK( (std::ratio_add<three_five,two_seven>::type::num == 31LL) && (std::ratio_add<three_five,two_seven>::type::den == 35LL) );
+
+  EXAM_CHECK( (std::ratio_add<std::atto,std::atto>::type::num == 1LL) && (std::ratio_add<std::atto,std::atto>::type::den == 500000000000000000LL) );
+
+  EXAM_CHECK( (std::ratio_subtract<std::femto,std::atto>::type::num == 999LL) && (std::ratio_subtract<std::femto,std::atto>::type::den == 1000000000000000000LL) );
+
+  EXAM_CHECK( (std::ratio_multiply<std::femto,std::peta>::type::num == 1LL) && (std::ratio_multiply<std::femto,std::peta>::type::den == 1LL) );
+
+  EXAM_CHECK( (std::ratio_divide<std::micro,std::nano>::type::num == 1000LL) && (std::ratio_divide<std::micro,std::nano>::type::den == 1LL) );
+
+  EXAM_CHECK( (std::ratio_equal<std::milli,std::milli>::value) );
+
+  EXAM_CHECK( (!std::ratio_equal<std::milli,std::kilo>::value) );
+
+  EXAM_CHECK( (std::ratio_not_equal<std::milli,std::kilo>::value) );
+
+  EXAM_CHECK( (std::ratio_less<std::mega,std::giga>::value) );
+
+  return EXAM_RESULT;
+}
