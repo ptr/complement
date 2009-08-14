@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/10/04 01:04:14 ptr>
+// -*- C++ -*- Time-stamp: <09/07/22 08:59:45 ptr>
 
 #include <janus/janus.h>
 #include <janus/vshostmgr.h>
@@ -9,7 +9,7 @@
 namespace janus {
 
 using namespace std;
-using namespace xmt;
+using namespace std::tr2;
 using namespace stem;
 
 Janus::~Janus()
@@ -19,38 +19,38 @@ Janus::~Janus()
 
 void Janus::settrf( unsigned f )
 {
-  scoped_lock _x1( _lock_tr );
+  std::tr2::lock_guard<std::tr2::mutex> _x1( _lock_tr );
   _trflags |= f;
 }
 
 void Janus::unsettrf( unsigned f )
 {
-  scoped_lock _x1( _lock_tr );
+  lock_guard<mutex> _x1( _lock_tr );
   _trflags &= (0xffffffff & ~f);
 }
 
 void Janus::resettrf( unsigned f )
 {
-  scoped_lock _x1( _lock_tr );
+  lock_guard<mutex> _x1( _lock_tr );
   _trflags = f;
 }
 
 void Janus::cleantrf()
 {
-  scoped_lock _x1( _lock_tr );
+  lock_guard<mutex> _x1( _lock_tr );
   _trflags = 0;
 }
 
 unsigned Janus::trflags() const
 {
-  scoped_lock _x1( _lock_tr );
+  lock_guard<mutex> _x1( _lock_tr );
 
   return _trflags;
 }
 
 void Janus::settrs( std::ostream *s )
 {
-  scoped_lock _x1( _lock_tr );
+  lock_guard<mutex> _x1( _lock_tr );
   _trs = s;
 }
 
@@ -72,7 +72,7 @@ void Janus::JaDispatch( const stem::Event_base<VSmess>& m )
     }
     catch ( const out_of_range& err ) {
       try {
-        scoped_lock lk(_lock_tr);
+        lock_guard<mutex> lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
           *_trs << err.what() << " "
                 << __FILE__ << ":" << __LINE__ << endl;
@@ -83,7 +83,7 @@ void Janus::JaDispatch( const stem::Event_base<VSmess>& m )
     }
     catch ( const domain_error& err ) {
       try {
-        scoped_lock lk(_lock_tr);
+        lock_guard<mutex> lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
           *_trs << err.what() << " "
                 << __FILE__ << ":" << __LINE__ << endl;
@@ -104,7 +104,7 @@ void Janus::check_and_send( detail::vtime_obj_rec& vt, const stem::Event_base<VS
     ev.value() = m.value().mess;
 #ifdef __FIT_VS_TRACE
     try {
-      scoped_lock lk(_lock_tr);
+      lock_guard<mutex> lk(_lock_tr);
       if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
         *_trs << "Deliver " << m.value() << endl;
       }
@@ -117,7 +117,7 @@ void Janus::check_and_send( detail::vtime_obj_rec& vt, const stem::Event_base<VS
   } else {
 #ifdef __FIT_VS_TRACE
     try {
-      scoped_lock lk(_lock_tr);
+      lock_guard<mutex> lk(_lock_tr);
       if ( _trs != 0 && _trs->good() && (_trflags & tracedelayed) ) {
         *_trs << "Delayed " << m.value() << endl;
       }
@@ -143,7 +143,7 @@ void Janus::check_and_send_delayed( detail::vtime_obj_rec& vt )
         evd.value() = j->second->value().mess;
 #ifdef __FIT_VS_TRACE
         try {
-          scoped_lock lk(_lock_tr);
+          lock_guard<mutex> lk(_lock_tr);
           if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
             *_trs << "Deliver delayed " << j->second->value() << endl;
           }
@@ -158,7 +158,7 @@ void Janus::check_and_send_delayed( detail::vtime_obj_rec& vt )
       } else {
 #ifdef __FIT_VS_TRACE
         try {
-          scoped_lock lk(_lock_tr);
+          lock_guard<mutex> lk(_lock_tr);
           if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
             *_trs << "Remain delayed " << j->second->value()
                   << "\nReason: ";
@@ -180,7 +180,7 @@ void Janus::JaSend( const stem::Event& e, group_type grp )
 {
   // This method not called from Dispatch, but work on the same level and in the same
   // scope, so this lock (from stem::EventHandler) required here:
-  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
+  lock_guard<recursive_mutex> lk( this->_theHistory_lock );
 
   const pair<gid_map_type::const_iterator,gid_map_type::const_iterator> range =
     grmap.equal_range( grp );
@@ -214,19 +214,11 @@ void Janus::JaSend( const stem::Event& e, group_type grp )
           // check local or remote? i->second.addr
           // if remote, forward it to foreign VTDispatcher?
           try {
-            /* const transport tr = */ manager()->transport( k->second.stem_addr() );
             // remote delivery
-            gaddr_type ga = manager()->reflect( k->second.stem_addr() );
-            if ( ga != gaddr_type() ) {
-              ga.addr = stem::janus_addr;
-              addr_type a = manager()->reflect( ga );
-              if ( a == badaddr ) {
-                a = manager()->SubscribeRemote( ga, "janus" );
-              }
-              m.dest( a );
-              Forward( m );
-              vt.base_advance(g->second); // store last send VT to obj
-            }
+            // possible manager()->Subscribe( ... )
+            m.dest( k->second.stem_addr() );
+            Forward( m );
+            vt.base_advance(g->second); // store last send VT to obj
           }
           catch ( const range_error& ) {
             // local delivery
@@ -236,7 +228,7 @@ void Janus::JaSend( const stem::Event& e, group_type grp )
         }
         catch ( const out_of_range& err ) {
           try {
-            scoped_lock lk(_lock_tr);
+            lock_guard<mutex> lk(_lock_tr);
             if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
               *_trs << err.what() << " "
                     << __FILE__ << ":" << __LINE__ << endl;
@@ -247,7 +239,7 @@ void Janus::JaSend( const stem::Event& e, group_type grp )
         }
         catch ( const domain_error& err ) {
           try {
-            scoped_lock lk(_lock_tr);
+            lock_guard<mutex> lk(_lock_tr);
             if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
               *_trs << err.what() << " "
                     << __FILE__ << ":" << __LINE__ << endl;
@@ -268,14 +260,14 @@ void Janus::JaSend( const stem::Event& e, group_type grp )
 void Janus::Subscribe( stem::addr_type addr, const oid_type& oid, group_type grp )
 {
   // See comment on top of VTSend above
-  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
+  lock_guard<recursive_mutex> lk( this->_theHistory_lock );
 
   pair<gid_map_type::const_iterator,gid_map_type::const_iterator> range =
     grmap.equal_range( grp );
 
 #ifdef __FIT_VS_TRACE
   try {
-    scoped_lock lk(_lock_tr);
+    lock_guard<mutex> lk(_lock_tr);
     if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
       int f = _trs->flags();
       *_trs << " VS subscribe G" << grp << " "
@@ -339,7 +331,7 @@ void Janus::Subscribe( stem::addr_type addr, const oid_type& oid, group_type grp
 void Janus::Unsubscribe( const oid_type& oid, group_type grp )
 {
   // See comment on top of VTSend above
-  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
+  lock_guard<recursive_mutex> lk( this->_theHistory_lock );
 
   pair<gid_map_type::iterator,gid_map_type::iterator> range =
     grmap.equal_range( grp );
@@ -357,12 +349,7 @@ void Janus::Unsubscribe( const oid_type& oid, group_type grp )
         stem::addr_type addr = j->second.stem_addr();
 
         // if address is foreign, send VS_OUT_MEMBER to foreign janus
-        if ( (addr & stem::extbit) != 0 ) {
-          gaddr_type ga = manager()->reflect( addr );
-          if ( ga != gaddr_type() ) {
-            ga.addr = stem::janus_addr;
-          }
-          addr = manager()->reflect( ga );
+        if ( /* (addr & stem::extbit) != 0 */ true ) { // Only for foreign address?
           // send only once, foreign janus will resend to other group members
           // in the same process:
           if ( addr_cache.find(addr) != addr_cache.end() ) {
@@ -377,7 +364,7 @@ void Janus::Unsubscribe( const oid_type& oid, group_type grp )
         ev.value().grp = grp;
 #ifdef __FIT_VS_TRACE
         try {
-          scoped_lock lk(_lock_tr);
+          lock_guard<mutex> lk(_lock_tr);
           if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
             *_trs << " -> VS_OUT_MEMBER "
                   << hex << showbase
@@ -407,7 +394,7 @@ void Janus::Unsubscribe( const oid_type& oid, group_type grp )
 void Janus::Unsubscribe( const oid_type& oid )
 {
   // See comment on top of JaSend above
-  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
+  lock_guard<recursive_mutex> lk( this->_theHistory_lock );
 
   vt_map_type::iterator i = vtmap.find( oid );
   if ( i != vtmap.end() ) {
@@ -430,12 +417,7 @@ void Janus::Unsubscribe( const oid_type& oid )
             stem::addr_type addr = j->second.stem_addr();
 
             // if address is foreign, send VS_OUT_MEMBER to foreign janus
-            if ( (addr & stem::extbit) != 0 ) {
-              gaddr_type ga = manager()->reflect( addr );
-              if ( ga != gaddr_type() ) {
-                ga.addr = stem::janus_addr;
-              }
-              addr = manager()->reflect( ga );
+            if ( /* (addr & stem::extbit) != 0 */ true ) { // only for foreign address?
               // send only once, foreign janus will resend to other group members
               // in the same process:
               if ( addr_cache.find(addr) != addr_cache.end() ) {
@@ -450,7 +432,7 @@ void Janus::Unsubscribe( const oid_type& oid )
             ev.value().grp = *grp;
 #ifdef __FIT_VS_TRACE
             try {
-              scoped_lock lk(_lock_tr);
+              lock_guard<mutex> lk(_lock_tr);
               if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
                 *_trs << " -> VS_OUT_MEMBER "
                       << hex << showbase
@@ -477,7 +459,7 @@ void Janus::Unsubscribe( const oid_type& oid )
 void Janus::get_gvtime( group_type grp, stem::addr_type addr, gvtime_type& gvt )
 {
   // See comment on top of JaSend above
-  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
+  lock_guard<recursive_mutex> lk( this->_theHistory_lock );
 
   pair<gid_map_type::iterator,gid_map_type::iterator> range =
     grmap.equal_range( grp );
@@ -490,7 +472,7 @@ void Janus::get_gvtime( group_type grp, stem::addr_type addr, gvtime_type& gvt )
   }
 
   try {
-    scoped_lock lk(_lock_tr);
+    lock_guard<mutex> lk(_lock_tr);
     if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
       *_trs << "virtual synchrony object not member of group" << " " << __FILE__ << ":" << __LINE__ << endl;
     }
@@ -504,7 +486,7 @@ void Janus::get_gvtime( group_type grp, stem::addr_type addr, gvtime_type& gvt )
 void Janus::set_gvtime( group_type grp, stem::addr_type addr, const gvtime_type& gvt )
 {
   // See comment on top of JaSend above
-  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
+  lock_guard<recursive_mutex> lk( this->_theHistory_lock );
 
   pair<gid_map_type::iterator,gid_map_type::iterator> range =
     grmap.equal_range( grp );
@@ -513,7 +495,7 @@ void Janus::set_gvtime( group_type grp, stem::addr_type addr, const gvtime_type&
     if ( i != vtmap.end() && i->second.stem_addr() == addr ) {
 #ifdef __FIT_VS_TRACE
       try {
-        scoped_lock lk(_lock_tr);
+       lock_guard<mutex> lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
           *_trs << "Set gvt G" << grp << " " << i->first
                 << " (" << addr << ") " << gvt << endl;
@@ -529,7 +511,7 @@ void Janus::set_gvtime( group_type grp, stem::addr_type addr, const gvtime_type&
   }
 
   try {
-    scoped_lock lk(_lock_tr);
+    lock_guard<mutex> lk(_lock_tr);
     if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
       *_trs << "virtual synchrony object not member of group" << " " << __FILE__ << ":" << __LINE__ << endl;
     }
@@ -542,10 +524,10 @@ void Janus::set_gvtime( group_type grp, stem::addr_type addr, const gvtime_type&
 
 void Janus::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
 {
-  if ( ev.value().grp != vshosts_group ) { // shouldn't happens, only trace
+  if ( ev.value().grp != vshosts_gid ) { // shouldn't happens, only trace
 #ifdef __FIT_VS_TRACE
     try {
-      scoped_lock lk(_lock_tr);
+      lock_guard<mutex> lk(_lock_tr);
       if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) && (_trflags & tracefault) ) {
         *_trs << "Unexpected VS_NEW_MEMBER on Janus: G" << ev.value().grp << " "
               << hex << showbase
@@ -563,7 +545,7 @@ void Janus::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
   ev.dest( _hostmgr->self_id() );
 #ifdef __FIT_VS_TRACE
   try {
-    scoped_lock lk(_lock_tr);
+    lock_guard<mutex> lk(_lock_tr);
     if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
       *_trs << "<-> VS_NEW_MEMBER G" << vshosts_group << " "
             << hex << showbase
@@ -575,6 +557,7 @@ void Janus::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
 #endif // __FIT_VS_TRACE
   Forward( ev );
 
+#if 0 // fix required
   // Return info about me (VS node) back to remote VS node
   gaddr_type ga = manager()->reflect( ev.src() );
   addr_type janus_addr = badaddr;
@@ -585,12 +568,15 @@ void Janus::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
       janus_addr = manager()->SubscribeRemote( ga, "janus" );
     }
   }
+#endif
   stem::Event_base<VSsync_rq> evr( VS_NEW_MEMBER_RV );
+#if 0 // fix required
   evr.dest( janus_addr );
-  evr.value().grp = vshosts_group;
+  evr.value().grp = vshosts_gid;
+#endif
 #ifdef __FIT_VS_TRACE
   try {
-    scoped_lock lk(_lock_tr);
+    lock_guard<mutex> lk(_lock_tr);
     if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
       *_trs << " -> VS_NEW_MEMBER_RV G" << vshosts_group << " "
             << hex << showbase
@@ -601,225 +587,6 @@ void Janus::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
   }
 #endif // __FIT_VS_TRACE
   Send( evr );
-}
-
-void Janus::VSNewRemoteMemberDirect( const stem::Event_base<VSsync_rq>& ev )
-{
-  if ( ev.value().grp == vshosts_group ) { // special group, and this shouldn't happens
-    return;
-  }
-  group_type grp = ev.value().grp;
-  pair<gid_map_type::const_iterator,gid_map_type::const_iterator> range = grmap.equal_range( grp );
-  if ( range.first == range.second ) { // no local (?) member within this group
-    return;
-  }
-
-  const addr_type addr = ev.src();
-  gaddr_type ga = manager()->reflect( addr );
-  addr_type janus_addr = badaddr;
-  if ( ga != gaddr_type() ) {
-    ga.addr = stem::janus_addr;
-    janus_addr = manager()->reflect( ga );
-    if ( janus_addr == badaddr ) {
-      janus_addr = manager()->SubscribeRemote( ga, "janus" );
-    }
-  }
-  for ( ; range.first != range.second; ++range.first ) {
-    vt_map_type::iterator i = vtmap.find( range.first->second );
-    if ( i != vtmap.end() ) {
-      // Inform local (?) object about new remote group member
-      stem::Event_base<VSsync_rq> evs( VS_NEW_MEMBER );
-      evs.dest( i->second.stem_addr() );
-      evs.src( addr );
-      evs.value().grp = grp;
-#ifdef __FIT_VS_TRACE
-      try {
-        scoped_lock lk(_lock_tr);
-        if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
-          *_trs << " -> VS_NEW_MEMBER (remote) G" << grp << " "
-                << hex << showbase
-                << evs.src() << " -> " << evs.dest() << dec << endl;
-        }
-      }
-      catch ( ... ) {
-      }
-#endif // __FIT_VS_TRACE
-      Forward( evs );
-      // Inform remote object about local (?) group member
-      stem::Event_base<VSsync_rq> evr( VS_NEW_MEMBER_RV );
-      evr.dest( janus_addr );
-      evr.src( i->second.stem_addr() );
-      evr.value().grp = grp;
-#ifdef __FIT_VS_TRACE
-      try {
-        scoped_lock lk(_lock_tr);
-        if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
-          *_trs << " -> VS_NEW_MEMBER_RV G" << grp << " "
-                << hex << showbase
-                << evr.src() << " -> " << evr.dest() << dec << endl;
-        }
-      }
-      catch ( ... ) {
-      }
-#endif // __FIT_VS_TRACE
-      Forward( evr );
-    }
-  }
-
-  const gaddr_type oid = manager()->reflect( addr ); // ???? oid == gaddr
-
-  vtmap[oid].add( addr, grp );
-  grmap.insert( make_pair(grp,oid) );
-}
-
-void Janus::VSNewRemoteMemberRevert( const stem::Event_base<VSsync_rq>& ev )
-{
-  if ( ev.value().grp != vshosts_group ) {
-    group_type grp = ev.value().grp;
-    pair<gid_map_type::const_iterator,gid_map_type::const_iterator> range = grmap.equal_range( grp );
-    if ( range.first != range.second ) { // we have local? member within this group
-      const addr_type addr = ev.src();
-      const gaddr_type oid = manager()->reflect( addr ); // ???? oid == gaddr
-#ifdef __FIT_VS_TRACE
-      try {
-        scoped_lock lk(_lock_tr);
-        if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
-          int f = _trs->flags();
-          *_trs << " VS add remote object " << hex << showbase << oid
-                << dec << " G" << grp << endl;
-#ifdef STLPORT
-          _trs->flags( f );
-#else
-          _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
-#endif
-        }
-      }
-      catch ( ... ) {
-      }
-#endif // __FIT_VS_TRACE
-      // add remote memer of group grp
-      vtmap[oid].add( addr, grp );
-      grmap.insert( make_pair(grp,oid) );
-    }
-#ifdef __FIT_VS_TRACE
-      else {
-      // this VS node has no group grp, so do nothing
-      // except trace info
-      try {
-        scoped_lock lk(_lock_tr);
-        if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) && (_trflags & tracefault) ) {
-          int f = _trs->flags();
-          *_trs << " VS node don't has such group, ignore G" << grp << endl;
-#ifdef STLPORT
-          _trs->flags( f );
-#else
-          _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
-#endif
-        }
-      }
-      catch ( ... ) {
-      }
-    }
-#endif // __FIT_VS_TRACE
-  } else {
-    const addr_type addr = ev.src();
-    const gaddr_type oid = manager()->reflect( ev.src() ); // ???? oid == gaddr
-
-#ifdef __FIT_VS_TRACE
-    try {
-      scoped_lock lk(_lock_tr);
-      if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
-        int f = _trs->flags();
-        *_trs << " VS see node " << hex << showbase << oid << endl;
-#ifdef STLPORT
-        _trs->flags( f );
-#else
-        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
-#endif
-      }
-    }
-    catch ( ... ) {
-    }
-#endif // __FIT_VS_TRACE
-
-    vtmap[oid].add( addr, vshosts_group );
-    grmap.insert( make_pair(static_cast<group_type>(vshosts_group),oid) );
-
-    // send request for sync all groups, that present in this VS node:
-    stem::Event_base<VSsync_rq> e( VS_MERGE_GROUP );
-    e.dest( ev.src() );
-    group_cache_t gcache;
-    for ( gid_map_type::const_iterator i = grmap.begin(); i != grmap.end(); ++i ) {
-      // for all groups, except vshosts_group,
-      // and only once for earch group
-      if ( (i->first != vshosts_group) && (gcache.find( i->first ) == gcache.end()) ) {
-        e.value().grp = i->first;
-        Send( e );
-        gcache.insert( i->first );
-      }
-    }
-  }
-}
-
-void Janus::VSOutMember( const stem::Event_base<VSsync_rq>& ev )
-{
-#ifdef __FIT_VS_TRACE
-  try {
-    scoped_lock lk(_lock_tr);
-    if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
-      *_trs << "<-  VS_OUT_MEMBER G" << ev.value().grp
-            << hex << showbase
-            << ev.src() << " -> " << ev.dest() << dec << endl;
-    }
-  }
-  catch ( ... ) {
-  }
-#endif // __FIT_VS_TRACE
-
-  const gaddr_type oid = manager()->reflect( ev.src() ); // ???? oid == gaddr
-  const group_type grp = ev.value().grp;
-
-
-  pair<gid_map_type::iterator,gid_map_type::iterator> range =
-    grmap.equal_range( grp );
-
-  vt_map_type::iterator i = vtmap.find( oid );
-
-  while ( range.first != range.second ) {
-    if ( range.first->second == oid ) {
-      grmap.erase( range.first++ );
-    } else {
-      vt_map_type::iterator j = vtmap.find( range.first->second );
-      if ( j != vtmap.end() ) {
-        stem::addr_type addr = j->second.stem_addr();
-
-        // send only to local addresses
-        if ( (addr & stem::extbit) == 0 ) {
-          ev.dest( addr );
-#ifdef __FIT_VS_TRACE
-          try {
-            scoped_lock lk(_lock_tr);
-            if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
-              *_trs << " -> VS_OUT_MEMBER "
-                    << hex << showbase
-                    << ev.src() << " -> " << ev.dest() << dec << endl;
-            }
-          }
-          catch ( ... ) {
-          }
-#endif // __FIT_VS_TRACE
-          Forward( ev );
-        }
-      }
-      ++range.first;
-    }
-  }
-
-  if ( i != vtmap.end() ) {
-    if ( i->second.rm_group( grp ) ) { // no groups more
-      vtmap.erase( i );
-    }
-  }
 }
 
 int Janus::connect( const char *host, int port )
@@ -840,7 +607,7 @@ size_t Janus::vs_known_processes() const
 Janus::difference_type Janus::group_size( group_type grp ) const
 {
   // See comment on top of JaSend above
-  xmt::recursive_scoped_lock lk( this->_theHistory_lock );
+  lock_guard<recursive_mutex> lk( this->_theHistory_lock );
 
   pair<gid_map_type::const_iterator,gid_map_type::const_iterator> range = grmap.equal_range( grp );
 
@@ -852,7 +619,7 @@ void Janus::VSMergeRemoteGroup( const stem::Event_base<VSsync_rq>& e )
   const group_type grp = e.value().grp;
 #ifdef __FIT_VS_TRACE
   try {
-    scoped_lock lk(_lock_tr);
+    lock_guard<mutex> lk(_lock_tr);
     if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
       int f = _trs->flags();
       *_trs << " VS merge remote group request G" << grp << endl;
@@ -923,7 +690,7 @@ void Janus::VSsync_group_time( const stem::Event_base<VSsync>& ev )
   const addr_type addr = ev.src();
 #ifdef __FIT_VS_TRACE
   try {
-    scoped_lock lk(_lock_tr);
+    lock_guard<mutex> lk(_lock_tr);
     if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
       int f = _trs->flags();
       *_trs << " VS sync group time from " << hex << showbase << addr
@@ -989,7 +756,7 @@ void Janus::VSOldRemoteMemberRevert( const stem::Event_base<VSsync_rq>& ev )
   const gaddr_type oid = manager()->reflect( addr ); // ???? oid == gaddr
 #ifdef __FIT_VS_TRACE
   try {
-    scoped_lock lk(_lock_tr);
+    lock_guard<mutex> lk(_lock_tr);
     if ( _trs != 0 && _trs->good() && (_trflags & tracegroup) ) {
       int f = _trs->flags();
       *_trs << " VS remote " << hex << showbase << addr
@@ -1014,10 +781,6 @@ void Janus::VSOldRemoteMemberRevert( const stem::Event_base<VSsync_rq>& ev )
 DEFINE_RESPONSE_TABLE( Janus )
   EV_Event_base_T_( ST_NULL, VS_MESS, JaDispatch, VSmess )
   EV_Event_base_T_( ST_NULL, VS_NEW_MEMBER, VSNewMember, VSsync_rq )
-  EV_Event_base_T_( ST_NULL, VS_NEW_REMOTE_MEMBER, VSNewRemoteMemberDirect, VSsync_rq )
-  EV_Event_base_T_( ST_NULL, VS_NEW_MEMBER_RV, VSNewRemoteMemberRevert, VSsync_rq )
-  EV_Event_base_T_( ST_NULL, VS_OLD_MEMBER_RV, VSOldRemoteMemberRevert, VSsync_rq )
-  EV_Event_base_T_( ST_NULL, VS_OUT_MEMBER, VSOutMember, VSsync_rq )
   EV_Event_base_T_( ST_NULL, VS_MERGE_GROUP, VSMergeRemoteGroup, VSsync_rq )
   EV_Event_base_T_( ST_NULL, VS_SYNC_GROUP_TIME, VSsync_group_time, VSsync )
 END_RESPONSE_TABLE

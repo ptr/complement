@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/25 01:40:20 ptr>
+// -*- C++ -*- Time-stamp: <09/07/22 23:13:06 ptr>
 
 #ifndef __janus_h
 #define __janus_h
@@ -6,7 +6,7 @@
 #include <ostream>
 #include <iterator>
 
-#include <mt/xmt.h>
+#include <mt/mutex>
 #include <stem/Event.h>
 #include <stem/EventHandler.h>
 
@@ -126,7 +126,7 @@ class Janus :
     vt_map_type vtmap;
     gid_map_type grmap;
 
-    xmt::mutex _lock_tr;
+    std::tr2::mutex _lock_tr;
     unsigned _trflags;
     std::ostream *_trs;
 
@@ -146,10 +146,6 @@ class Janus :
 
     void JaDispatch( const stem::Event_base<VSmess>& );
     void VSNewMember( const stem::Event_base<VSsync_rq>& e );
-    void VSNewRemoteMemberDirect( const stem::Event_base<VSsync_rq>& e );
-    void VSNewRemoteMemberRevert( const stem::Event_base<VSsync_rq>& e );
-    void VSOldRemoteMemberRevert( const stem::Event_base<VSsync_rq>& e );
-    void VSOutMember( const stem::Event_base<VSsync_rq>& e );
 
     void VSMergeRemoteGroup( const stem::Event_base<VSsync_rq>& e );
     void VSsync_group_time( const stem::Event_base<VSsync>& ev );

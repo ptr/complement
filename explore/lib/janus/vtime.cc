@@ -12,9 +12,8 @@ using namespace std;
 using namespace xmt;
 using namespace stem;
 
-const oid_type& nil_oid = xmt::nil_uuid;
-const group_type& nil_gid = xmt::nil_uuid;
-const group_type vshosts_gid = {{ 0x51, 0xd8, 0x58, 0x18, 0xe8, 0x00, 0x4a, 0x20, 0x88, 0x5f, 0x75, 0xba, 0xde, 0x28, 0x6f, 0xe9 }};
+const janus::addr_type& nil_addr = xmt::nil_uuid;
+const gid_type& nil_gid = xmt::nil_uuid;
 
 void vtime::pack( std::ostream& s ) const
 {
@@ -31,13 +30,13 @@ void vtime::unpack( std::istream& s )
   uint8_t n;
   __unpack( s, n );
   while ( n-- > 0 ) {
-    oid_type oid;
+    janus::addr_type addr;
     vtime_unit_type v;
 
-    __unpack( s, oid );
+    __unpack( s, addr );
     __unpack( s, v );
 
-    vt[oid] = v;
+    vt[addr] = v;
   }
 }
 
@@ -56,7 +55,7 @@ void gvtime::unpack( std::istream& s )
   uint8_t n;
   __unpack( s, n );
   while ( n-- > 0 ) {
-    group_type gid;
+    gid_type gid;
     __unpack( s, gid );
     gvt[gid].unpack( s );
   }
@@ -382,13 +381,13 @@ bool vtime_obj_rec::order_correct_delayed( const VSmess& m )
   return true;
 }
 
-void vtime_obj_rec::delta( gvtime& vtstamp, const oid_type& from, const oid_type& to, group_type grp )
+void vtime_obj_rec::delta( gvtime& vtstamp, const janus::addr_type& from, const janus::addr_type& to, gid_type grp )
 {
   vtstamp.gvt = vt.gvt - svt[to]; // delta
   vtstamp[grp][from] = vt.gvt[grp][from]; // my counter, as is, not delta
 }
 
-bool vtime_obj_rec::rm_group( group_type g )
+bool vtime_obj_rec::rm_group( gid_type g )
 {
   // strike out group g from my groups list
   groups_container_type::iterator i = groups.find( g );
@@ -432,24 +431,24 @@ bool vtime_obj_rec::rm_group( group_type g )
   return groups.empty() ? true : false;
 }
 
-void vtime_obj_rec::rm_member( const oid_type& oid )
+void vtime_obj_rec::rm_member( const janus::addr_type& addr )
 {
-  delta_vtime_type::iterator i = lvt.find( oid );
+  delta_vtime_type::iterator i = lvt.find( addr );
 
   if ( i != lvt.end() ) {
     lvt.erase( i );
   }
 
-  snd_delta_vtime_t::iterator j = svt.find( oid );
+  snd_delta_vtime_t::iterator j = svt.find( addr );
 
   if ( j != lvt.end() ) {
     svt.erase( j );
   }
 }
 
-void vtime_obj_rec::sync( group_type g, const oid_type& oid, const gvtime_type& gvt )
+void vtime_obj_rec::sync( gid_type g, const janus::addr_type& addr, const gvtime_type& gvt )
 {
-  lvt[oid] = gvt;
+  lvt[addr] = gvt;
   gvtime_type::const_iterator i = gvt.find( g );
   if ( i != gvt.end() ) {
     sup( vt.gvt[g], i->second.vt );
@@ -551,12 +550,12 @@ void VTHandler::Unsubscribe()
   // _vtdsp->Unsubscribe( oid_type( self_id() ) );
 }
 
-void VTHandler::JoinGroup( group_type grp )
+void VTHandler::JoinGroup( gid_type grp )
 {
   // _vtdsp->Subscribe( self_id(), oid_type( self_id() ), grp );
 }
 
-void VTHandler::LeaveGroup( group_type grp )
+void VTHandler::LeaveGroup( gid_type grp )
 {
   // _vtdsp->Unsubscribe( oid_type( self_id() ), grp );
 }
@@ -608,7 +607,7 @@ void VTHandler::VSNewMember_data( const stem::Event_base<VSsync_rq>& ev, const s
   Send( out_ev );
 }
 
-void VTHandler::get_gvtime( group_type g, gvtime_type& gvt )
+void VTHandler::get_gvtime( gid_type g, gvtime_type& gvt )
 {
   // _vtdsp->get_gvtime( g, self_id(), gvt );
 }

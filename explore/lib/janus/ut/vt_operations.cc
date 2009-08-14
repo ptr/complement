@@ -32,10 +32,10 @@ vtime_operations::~vtime_operations()
 
 int EXAM_IMPL(vtime_operations::vt_compare)
 {
-  const oid_type p0(xmt::uid());
-  const oid_type p1(xmt::uid());
-  const oid_type p2(xmt::uid());
-  const oid_type p3(xmt::uid());
+  const janus::addr_type p0(xmt::uid());
+  const janus::addr_type p1(xmt::uid());
+  const janus::addr_type p2(xmt::uid());
+  const janus::addr_type p3(xmt::uid());
 
   vtime_type vt1;
   vtime_type vt2;
@@ -78,9 +78,9 @@ int EXAM_IMPL(vtime_operations::vt_compare)
 
 int EXAM_IMPL(vtime_operations::vt_add)
 {
-  const oid_type p1(xmt::uid());
-  const oid_type p2(xmt::uid());
-  const oid_type p3(xmt::uid());
+  const janus::addr_type p1(xmt::uid());
+  const janus::addr_type p2(xmt::uid());
+  const janus::addr_type p3(xmt::uid());
 
   vtime_type vt1;
   vtime_type vt2;
@@ -123,9 +123,9 @@ int EXAM_IMPL(vtime_operations::vt_add)
 
 int EXAM_IMPL(vtime_operations::vt_diff)
 {
-  const oid_type p1(xmt::uid());
-  const oid_type p2(xmt::uid());
-  const oid_type p3(xmt::uid());
+  const janus::addr_type p1(xmt::uid());
+  const janus::addr_type p2(xmt::uid());
+  const janus::addr_type p3(xmt::uid());
 
   vtime_type vt1;
   vtime_type vt2;
@@ -187,9 +187,9 @@ int EXAM_IMPL(vtime_operations::vt_diff)
 
 int EXAM_IMPL(vtime_operations::vt_max)
 {
-  const oid_type p1(xmt::uid());
-  const oid_type p2(xmt::uid());
-  const oid_type p3(xmt::uid());
+  const janus::addr_type p1(xmt::uid());
+  const janus::addr_type p2(xmt::uid());
+  const janus::addr_type p3(xmt::uid());
 
   vtime_type vt1;
   vtime_type vt2;
@@ -264,12 +264,12 @@ int EXAM_IMPL(vtime_operations::vt_max)
 
 int EXAM_IMPL(vtime_operations::gvt_add)
 {
-  const oid_type p0(xmt::uid());
-  const oid_type p1(xmt::uid());
-  const oid_type p2(xmt::uid());
+  const janus::addr_type p0(xmt::uid());
+  const janus::addr_type p1(xmt::uid());
+  const janus::addr_type p2(xmt::uid());
 
-  const group_type g0 = xmt::uid();
-  const group_type g1 = xmt::uid();
+  const gid_type g0 = xmt::uid();
+  const gid_type g1 = xmt::uid();
 
   {
     gvtime_type gvt1;

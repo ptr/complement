@@ -1,10 +1,11 @@
-// -*- C++ -*- Time-stamp: <07/08/23 12:36:32 ptr>
+// -*- C++ -*- Time-stamp: <09/05/09 00:40:32 ptr>
 
 #ifndef __vshostmgr_h
 #define __vshostmgr_h
 
 #include <janus/vtime.h>
 
+#include <mt/condition_variable>
 #include <stem/NetTransport.h>
 #include <stem/Event.h>
 #include <sockios/sockmgr.h>
@@ -38,15 +39,15 @@ class VSHostMgr :
   private:
     // typedef std::list<stem::gaddr_type> vshost_container_t;
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::tr1::unordered_set<stem::gaddr_type> vshost_container_t;
+    typedef std::tr1::unordered_set<stem::addr_type> vshost_container_t;
     typedef std::tr1::unordered_set<std::string> vs_wellknown_hosts_container_t;
 #endif
 #ifdef __USE_STD_HASH
-    typedef __gnu_cxx::hash_set<stem::gaddr_type> vshost_container_t;
+    typedef __gnu_cxx::hash_set<stem::addr_type> vshost_container_t;
     typedef __gnu_cxx::hash_set<std::string> vs_wellknown_hosts_container_t;
 #endif
 #ifdef __USE_STLPORT_HASH
-    typedef std::hash_set<stem::gaddr_type> vshost_container_t;
+    typedef std::hash_set<stem::addr_type> vshost_container_t;
     typedef std::hash_set<std::string> vs_wellknown_hosts_container_t;
 #endif
 
@@ -74,7 +75,7 @@ class VSHostMgr :
 
     size_type vs_known_processes() const
        {
-         xmt::recursive_scoped_lock lk( this->_theHistory_lock );
+         std::tr2::lock_guard<std::tr2::recursive_mutex> lk( this->_theHistory_lock );
          size_type tmp = vshost.size();
          return tmp;
        }
@@ -83,7 +84,7 @@ class VSHostMgr :
 
   private:
     typedef std::list<stem::NetTransportMgr *> nmgr_container_t;
-    typedef std::list<std::sockmgr_stream_MP<stem::NetTransport> *> srv_container_t;
+    typedef std::list<std::connect_processor<stem::NetTransport> *> srv_container_t;
 
     vshost_container_t vshost;
     nmgr_container_t _clients;
@@ -92,26 +93,50 @@ class VSHostMgr :
     class Finalizer :
         public stem::EventHandler
     {
+      private:
+        struct _not_stop
+        {
+            _not_stop( Finalizer& m ) :
+                me( m )
+              { }
+
+            bool operator()() const
+              { return me._final; }
+
+            Finalizer& me;
+        } not_stop;
+
       public:
         Finalizer( const char *info ) :
-          EventHandler( info )
-          { cnd.set( false ); }
+            EventHandler( info ),
+            not_stop( *this ),
+            _final( false )
+          { }
 
         void wait()
-          { cnd.try_wait(); }
+          {
+            std::tr2::unique_lock<std::tr2::mutex> lk(_lock);
+            _cnd.wait( lk, not_stop );
+          }
 
       private:
         void final()
-          { cnd.set( true ); }
+          {
+            std::tr2::lock_guard<std::tr2::mutex> lk(_lock);
+            _final = true;
+            _cnd.notify_one();
+          }
 
-        xmt::condition cnd;
+        std::tr2::mutex _lock;
+        std::tr2::condition_variable _cnd;
+        bool _final;
 
         DECLARE_RESPONSE_TABLE( Finalizer, stem::EventHandler );
     };
 
     Finalizer finalizer;
 
-    static xmt::mutex _wknh_lock;
+    static std::tr2::mutex _wknh_lock;
     static vs_wellknown_hosts_container_t _wknhosts;
     static int _srvport;
 

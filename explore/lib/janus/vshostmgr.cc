@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <07/08/26 12:56:20 ptr>
+// -*- C++ -*- Time-stamp: <09/05/09 00:38:02 ptr>
 
 #include <janus/vshostmgr.h>
 
@@ -12,7 +12,7 @@
 #include <stem/EvPack.h>
 #include <sockios/sockmgr.h>
 
-#include <mt/xmt.h>
+#include <mt/mutex>
 
 #include <list>
 #include <sstream>
