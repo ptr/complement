@@ -1,3 +1,10 @@
+2009-08-17  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* EvManager.cc, EvManager.h: parallel events
+	dispatching without violation of sequence order;
+
+	* libstem: revision 5.3.0.
+
 2009-08-13  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* Cron.h, Cron.cc, EDSEv.h: unuseful and dangerous
