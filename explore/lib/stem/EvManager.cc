@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/08/03 17:32:53 ptr>
+// -*- C++ -*- Time-stamp: <09/08/17 17:30:22 ptr>
 
 /*
  *
@@ -115,6 +115,12 @@ void EvManager::_Dispatch( EvManager* p )
     Event ev;
 
     while ( !out_ev_queue.empty() ) {
+      /*
+        In next two cycles, if event extracted from out_ev_queue
+        and pushed to some nest, then jump next iteration of outer
+        cycle ('while' above) requied: search for next event
+        from first nest.
+       */
       for ( nests_type::iterator i = me.nests.begin(); i != me.nests.end() && !out_ev_queue.empty(); ++i ) {
         lock_guard<mutex> lk( i->lock );
         for ( subqueue_type::const_iterator j = i->q.begin(); j != i->q.end(); ++j ) {
@@ -122,7 +128,7 @@ void EvManager::_Dispatch( EvManager* p )
             i->q.push_back( ev );
             swap( i->q.back(), out_ev_queue.front() );
             out_ev_queue.pop_front();
-            break;
+            goto next_event;
           }
         }
       }
@@ -134,9 +140,12 @@ void EvManager::_Dispatch( EvManager* p )
           swap( i->q.back(), out_ev_queue.front() );
           out_ev_queue.pop_front();
           i->cnd.notify_one();
-          break;
+          goto next_event;
         }
       }
+
+      next_event:
+      ;
     }
 
     {
