@@ -1,3 +1,11 @@
+2009-08-21  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* Cron.h, Cron.cc: change of expiration
+	time was ignored, when top waiting message
+	replaced by another message;
+
+	* libstem: revision 5.3.1.
+
 2009-08-17  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* EvManager.cc, EvManager.h: parallel events

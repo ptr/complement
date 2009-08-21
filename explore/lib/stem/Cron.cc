@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/08/13 21:37:12 ptr>
+// -*- C++ -*- Time-stamp: <09/08/21 18:15:35 ptr>
 
 /*
  * Copyright (c) 1998, 2002-2003, 2005-2006, 2008-2009
@@ -33,7 +33,8 @@ __FIT_DECLSPEC Cron::Cron() :
     running( *this ),
     ready( *this ),
     _thr( 0 ),
-    _run( false )
+    _run( false ),
+    _top_changed( false )
 {
   this->enable();
 }
@@ -43,7 +44,8 @@ __FIT_DECLSPEC Cron::Cron( const char *info ) :
     running( *this ),
     ready( *this ),
     _thr( 0 ),
-    _run( false )
+    _run( false ),
+    _top_changed( false )
 {
   this->enable();
 }
@@ -53,7 +55,8 @@ __FIT_DECLSPEC Cron::Cron( addr_type id, const char *info ) :
     running( *this ),
     ready( *this ),
     _thr( 0 ),
-    _run( false )
+    _run( false ),
+    _top_changed( false )
 {
   this->enable();
 }
@@ -116,6 +119,7 @@ void __FIT_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
   lock_guard<mutex> _x1( _M_l );
   _M_c.push( en );
   if ( _M_c.top() == en ) { // cron has entries, but new entry is on top
+    _top_changed = true;
     cond.notify_one();      // so, we need wait it; if only one entry now,
   }                         // then notification also happen (wake-up)
 }
@@ -133,6 +137,8 @@ void __FIT_DECLSPEC Cron::Remove( const Event_base<CronEntry>& entry )
   while ( !_M_c.empty() ) {
     if (  _M_c.top().addr != entry.src() || _M_c.top().code != ne.code ) {
       tmp.push_back( _M_c.top() );
+    } else {
+      _top_changed = true; // may be not on top...
     }
     _M_c.pop();
   }
@@ -160,6 +166,8 @@ void __FIT_DECLSPEC Cron::RemoveArg( const Event_base<CronEntry>& entry )
     if (  _M_c.top().addr != entry.src() || _M_c.top().code != ne.code 
           || _M_c.top().arg != ne.arg ) {
       tmp.push_back( _M_c.top() );
+    } else {
+      _top_changed = true; // may be not on top...
     }
     _M_c.pop();
   }
@@ -197,6 +205,7 @@ void Cron::_loop( Cron* p )
 
     if ( me._M_c.top().expired > get_system_time() ) {
       st = me._M_c.top().expired;
+      me._top_changed = false;
       bool alarm;
       try {
         alarm = me.cond.timed_wait( lk, st, me.ready );
@@ -211,6 +220,13 @@ void Cron::_loop( Cron* p )
 
         if ( alarm && (me._M_c.top().expired > get_system_time()) ) {
           continue;
+        }
+
+        if ( me._top_changed ) {
+          me._top_changed = false;
+          if ( me._M_c.top().expired > get_system_time() ) {
+            continue;
+          }
         }
       }
       catch ( const system_error& ) { // Cron crash, destroyed or bad time?

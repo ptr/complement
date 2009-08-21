@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/08/13 18:34:40 ptr>
+// -*- C++ -*- Time-stamp: <09/08/21 18:07:18 ptr>
 
 /*
  * Copyright (c) 1998, 2002, 2003, 2005, 2007-2009
@@ -169,16 +169,7 @@ class Cron :
 
         bool operator()() const
           {
-            if ( me._M_c.empty() ) {
-              return true;
-            }
-            if ( !me._run ) {
-              return true;
-            }
-            if ( me._M_c.top().expired <= std::tr2::get_system_time() ) {
-              return true;
-            }
-            return false;
+            return (!me._run || me._top_changed || me._M_c.empty() || (me._M_c.top().expired <= std::tr2::get_system_time())) ? true : false;
           }
 
         Cron& me;
@@ -195,6 +186,7 @@ class Cron :
     std::tr2::mutex _M_l;
     std::tr2::condition_variable cond;
     bool _run;
+    bool _top_changed;
 
     friend struct _running;
     friend struct _ready;
