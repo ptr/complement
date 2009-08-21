@@ -6,6 +6,12 @@
 
 	* libstem: revision 5.3.1.
 
+	* Cron.h, Cron.cc: CronEntry carry Event,
+	instead of code, address, string; this allow
+	to use convertable events in Cron.
+	
+	* libstem: revision 5.3.2.
+
 2009-08-17  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* EvManager.cc, EvManager.h: parallel events

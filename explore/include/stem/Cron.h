@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/08/21 18:07:18 ptr>
+// -*- C++ -*- Time-stamp: <09/08/21 20:03:19 ptr>
 
 /*
  * Copyright (c) 1998, 2002, 2003, 2005, 2007-2009
@@ -47,68 +47,60 @@ struct CronEntry :
     };
 
     CronEntry() :
-        code( badcode ),
         start(), // immediate
         period(),
         n( static_cast<uint32_t>(infinite) ),
-        arg()
+        ev()
       { }
 
     CronEntry( const CronEntry& x ) :
-        code( x.code ),
         start( x.start ),
         period( x.period ),
         n( x.n ),
-        arg( x.arg )
+        ev( x.ev )
       { }
 
-    code_type code;
-    // time_t start;
     std::tr2::system_time start;
-    // time_t end;
     std::tr2::nanoseconds period;
     uint32_t n;
-    std::string arg;
+    stem::Event ev;
 
     virtual __FIT_DECLSPEC void pack( std::ostream& s ) const;
     virtual __FIT_DECLSPEC void unpack( std::istream& s );
+
+    void swap( CronEntry& );
 };
 
 struct __CronEntry
 {
     __CronEntry() :
         expired(),
-        code( badcode ),
-        addr( badaddr ),
         start(),
         period(),
         n( 0 ),
         count( 0 ),
-        arg()
+        ev()
       { }
 
     __CronEntry( const __CronEntry& x ) :
         expired( x.expired ),
-        code( x.code ),
-        addr( x.addr ),
         start( x.start ),
         period( x.period ),
         n( x.n ),
         count( x.count ),
-        arg( x.arg )
+        ev( x.ev )
       {  }
 
-    std::tr2::system_time expired;
+    void swap( __CronEntry& );
 
-    code_type code;
-    addr_type addr;
+    std::tr2::system_time expired;
 
     std::tr2::system_time start;
     std::tr2::nanoseconds period;
 
     unsigned n;
     unsigned count;
-    std::string arg;
+    stem::Event ev;
 };
 
 inline
@@ -196,5 +188,17 @@ class Cron :
 };
 
 } // namespace stem
+
+namespace std {
+
+template <>
+inline void swap( stem::CronEntry& l, stem::CronEntry& r )
+{ l.swap(r); }
+
+template <>
+inline void swap( stem::__CronEntry& l, stem::__CronEntry& r )
+{ l.swap(r); }
+
+} // namespace std
 
 #endif // __Cron_h

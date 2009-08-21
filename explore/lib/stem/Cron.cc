@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/08/21 18:15:35 ptr>
+// -*- C++ -*- Time-stamp: <09/08/21 20:08:58 ptr>
 
 /*
  * Copyright (c) 1998, 2002-2003, 2005-2006, 2008-2009
@@ -94,11 +94,14 @@ void __FIT_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
   const CronEntry& ne = entry.value();
   __CronEntry en;
 
-  en.code = ne.code;
-  en.addr = entry.src();
   en.start = ne.start;
   en.n = ne.n;
-  en.arg = ne.arg;
+  en.ev = ne.ev;
+
+  if ( en.ev.dest() == badaddr ) {
+    en.ev.dest( entry.src() );
+  }
+
   if ( en.n == 1 ) {
     en.period = nanoseconds(0LL);
   } else {
@@ -135,7 +138,7 @@ void __FIT_DECLSPEC Cron::Remove( const Event_base<CronEntry>& entry )
   tmp.reserve( _M_c.size() );
 
   while ( !_M_c.empty() ) {
-    if (  _M_c.top().addr != entry.src() || _M_c.top().code != ne.code ) {
+    if ( _M_c.top().ev.src() != entry.value().ev.src() || _M_c.top().ev.dest() != entry.value().ev.dest() || _M_c.top().ev.code() != ne.ev.code() ) {
       tmp.push_back( _M_c.top() );
     } else {
       _top_changed = true; // may be not on top...
@@ -163,8 +166,7 @@ void __FIT_DECLSPEC Cron::RemoveArg( const Event_base<CronEntry>& entry )
   tmp.reserve( _M_c.size() );
 
   while ( !_M_c.empty() ) {
-    if (  _M_c.top().addr != entry.src() || _M_c.top().code != ne.code 
-          || _M_c.top().arg != ne.arg ) {
+    if ( _M_c.top().ev.src() != entry.value().ev.src() || _M_c.top().ev.dest() != entry.value().ev.dest() || _M_c.top().ev.code() != ne.ev.code() || _M_c.top().ev.value() != ne.ev.value() ) {
       tmp.push_back( _M_c.top() );
     } else {
       _top_changed = true; // may be not on top...
@@ -237,11 +239,8 @@ void Cron::_loop( Cron* p )
     __CronEntry en = me._M_c.top(); // get and eject top cron entry
     me._M_c.pop();
 
-    if ( me.is_avail( en.addr ) ) { // check if target abonent exist
-      Event ev( en.code );
-      ev.dest( en.addr );
-      ev.value() = en.arg;
-      me.Send( ev );
+    if ( me.is_avail( en.ev.dest() ) ) { // check if target abonent exist
+      me.Forward( en.ev );
     } else { // do nothing, this lead to removing invalid abonent from Cron
       continue;
     }
@@ -271,24 +270,59 @@ END_RESPONSE_TABLE
 __FIT_DECLSPEC
 void CronEntry::pack( std::ostream& s ) const
 {
-  __pack( s, code );
   __pack( s, static_cast<int64_t>( start.nanoseconds_since_epoch().count() ) );
   __pack( s, static_cast<int64_t>( period.count() ) );
   __pack( s, n );
-  __pack( s, arg );
+  __pack( s, ev.code() );
+  __pack( s, ev.dest() );
+  __pack( s, ev.src() );
+  __pack( s, ev.flags() );
+  __pack( s, ev.value() );
 }
 
 __FIT_DECLSPEC
 void CronEntry::unpack( std::istream& s )
 {
-  __unpack( s, code );
   int64_t v;
   __unpack( s, v );
   start = std::tr2::system_time( 0, v );
   __unpack( s, v );
   period = std::tr2::nanoseconds( v );
   __unpack( s, n );
-  __unpack( s, arg );
+  stem::code_type c;
+  __unpack( s, c );
+  ev.code( c );
+  stem::addr_type a;
+  __unpack( s, a );
+  ev.dest( a );
+  __unpack( s, a );
+  ev.src( a );
+  uint32_t f;
+  __unpack( s, f );
+  ev.resetf( f );
+  // string d;
+  __unpack( s, ev.value() );
+  // std::swap( d, ev.value() );
+}
+
+void CronEntry::swap( CronEntry& e )
+{
+  std::swap( start, e.start );
+  std::swap( period, e.period );
+  std::swap( n, e.n );
+  std::swap( ev, e.ev );
+}
+
+void __CronEntry::swap( __CronEntry& e )
+{
+  std::swap( expired, e.expired );
+
+  std::swap( start, e.start );
+  std::swap( period, e.period );
+
+  std::swap( n, e.n );
+  std::swap( count, e.count );
+  std::swap( ev, e.ev );
 }
 
 } // namespace stem

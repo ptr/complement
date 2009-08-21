@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/03 20:48:24 ptr>
+// -*- C++ -*- Time-stamp: <09/08/21 19:51:07 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -1529,14 +1529,18 @@ int EXAM_IMPL(stem_test::cron)
     stem::stem_scope client_scope( client );
 
     stem::Event_base<stem::CronEntry> ev( EV_EDS_CRON_ADD );
-    
+    stem::Event cr( TEST_EV_CRON );
+
+    cr.dest( client.self_id() );
+    cr.src( client.self_id() );
+    cr.value() = "3";
+ 
     ev.dest( ca );
-    ev.value().code = TEST_EV_CRON;
+    ev.value().ev = cr;
     system_time rec = std::tr2::get_system_time();
     ev.value().start = rec + std::tr2::milliseconds( 500 );
     ev.value().n = 1;
     // ev.value().period = 0;
-    ev.value().arg = "3";
 
     unique_lock<mutex> lk( client.m );
     client.Send( ev );
