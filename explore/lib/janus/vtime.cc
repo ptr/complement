@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/22 11:13:07 ptr>
+// -*- C++ -*- Time-stamp: <09/09/01 11:04:46 ptr>
 
 #include <janus/vtime.h>
 // #include <janus/janus.h>
@@ -99,16 +99,16 @@ void VSmess::unpack( std::istream& s )
   VSsync::unpack( s );
 }
 
-bool operator <=( const vtime_type& l, const vtime_type& r )
+bool vtime::operator <=( const vtime& r ) const
 {
-  if ( l.empty() ) {
+  if ( vt.empty() ) {
     return true;
   }
 
-  for ( vtime_type::const_iterator i = l.begin(); i != l.end(); ++i ) {
+  for ( vtime_type::const_iterator i = vt.begin(); i != vt.end(); ++i ) {
     if ( i->second > 0 ) {
-      vtime_type::const_iterator j = r.find( i->first );
-      if ( j == r.end() || i->second > j->second ) {
+      vtime_type::const_iterator j = r.vt.find( i->first );
+      if ( j == r.vt.end() || i->second > j->second ) {
 	return false;
       }
     }
@@ -117,48 +117,48 @@ bool operator <=( const vtime_type& l, const vtime_type& r )
   return true;
 }
 
-vtime_type operator -( const vtime_type& l, const vtime_type& r )
+vtime vtime::operator -( const vtime& r ) const
 {
-  vtime_type tmp( r.begin(), r.end() );
+  vtime tmp( r.vt.begin(), r.vt.end() );
 
-  for ( vtime_type::iterator i = tmp.begin(); i != tmp.end(); ++i ) {
+  for ( vtime_type::iterator i = tmp.vt.begin(); i != tmp.vt.end(); ++i ) {
     if ( i->second > 0 ) {
-      vtime_type::const_iterator p = l.find(i->first);
-      if ( p == l.end() || p->second < i->second ) {
+      vtime_type::const_iterator p = vt.find(i->first);
+      if ( p == vt.end() || p->second < i->second ) {
 	throw range_error( "vtime different: right value grater then left" );
       }
       i->second = p->second - i->second;
     }
   }
 
-  for ( vtime_type::const_iterator i = l.begin(); i != l.end(); ++i ) {
-    vtime_type::iterator p = tmp.find(i->first);
-    if ( p == tmp.end() ) {
-      tmp[i->first] = i->second;
+  for ( vtime_type::const_iterator i = vt.begin(); i != vt.end(); ++i ) {
+    vtime_type::iterator p = tmp.vt.find(i->first);
+    if ( p == tmp.vt.end() ) {
+      tmp.vt[i->first] = i->second;
     }
   }
 
   return tmp;
 }
 
-vtime_type operator +( const vtime_type& l, const vtime_type& r )
+vtime vtime::operator +( const vtime& r ) const
 {
-  vtime_type tmp( l.begin(), l.end() );
+  vtime tmp( vt.begin(), vt.end() );
 
-  for ( vtime_type::const_iterator i = r.begin(); i != r.end(); ++i ) {
-    tmp[i->first] += i->second;
+  for ( vtime_type::const_iterator i = r.vt.begin(); i != r.vt.end(); ++i ) {
+    tmp.vt[i->first] += i->second;
   }
 
   return tmp;
 }
 
-vtime_type& operator +=( vtime_type& l, const vtime_type& r )
+vtime& vtime::operator +=( const vtime& r )
 {
-  for ( vtime_type::const_iterator i = r.begin(); i != r.end(); ++i ) {
-    l[i->first] += i->second;
+  for ( vtime_type::const_iterator i = r.vt.begin(); i != r.vt.end(); ++i ) {
+    vt[i->first] += i->second;
   }
 
-  return l;
+  return *this;
 }
 
 #if 0
@@ -173,15 +173,6 @@ vtime_type max( const vtime_type& l, const vtime_type& r )
   return tmp;
 }
 #endif
-
-vtime_type& sup( vtime_type& l, const vtime_type& r )
-{
-  for ( vtime_type::const_iterator i = r.begin(); i != r.end(); ++i ) {
-    l[i->first] = std::max( l[i->first], i->second );
-  }
-  return l;
-}
-
 
 #if 0
 // template <>
@@ -198,13 +189,13 @@ vtime max( const vtime& l, const vtime& r )
 
 vtime& sup( vtime& l, const vtime& r )
 {
-  for ( vtime_type::const_iterator i = r.vt.begin(); i != r.vt.end(); ++i ) {
+  for ( vtime::vtime_type::const_iterator i = r.vt.begin(); i != r.vt.end(); ++i ) {
     l[i->first] = std::max( l[i->first], i->second );
   }
   return l;
 }
 
-vtime& vtime::operator +=( const vtime_type::value_type& t )
+vtime& vtime::operator +=( const vtime::vtime_type::value_type& t )
 {
   vt[t.first] += t.second;
 
@@ -713,14 +704,14 @@ END_RESPONSE_TABLE
 
 namespace std {
 
-ostream& operator <<( ostream& o, const janus::vtime_type::value_type& v )
+ostream& operator <<( ostream& o, const janus::vtime::vtime_type::value_type& v )
 {
   return o << "(" << v.first << "," << v.second << ")";
 }
 
-ostream& operator <<( ostream& o, const janus::vtime_type& v )
+ostream& operator <<( ostream& o, const janus::vtime::vtime_type& v )
 {
-  for ( janus::vtime_type::const_iterator i = v.begin(); i != v.end(); ++i ) {
+  for ( janus::vtime::vtime_type::const_iterator i = v.begin(); i != v.end(); ++i ) {
     if ( i != v.begin() ) {
       o << ", ";
     }

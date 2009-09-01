@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/22 08:50:07 ptr>
+// -*- C++ -*- Time-stamp: <09/09/01 11:05:23 ptr>
 
 #ifndef __vtime_h
 #define __vtime_h
@@ -53,78 +53,64 @@ typedef xmt::uuid_type gid_type; // required, used in VTSend
 
 extern const gid_type& nil_gid;
 
-#ifdef __USE_STLPORT_HASH
-typedef std::hash_map<addr_type, vtime_unit_type> vtime_type;
-#endif
-#ifdef __USE_STD_HASH
-typedef __gnu_cxx::hash_map<addr_type, vtime_unit_type> vtime_type;
-#endif
-#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-typedef std::tr1::unordered_map<addr_type, vtime_unit_type> vtime_type;
-#endif
-
-bool operator <=( const vtime_type& l, const vtime_type& r );
-inline bool operator >=( const vtime_type& l, const vtime_type& r )
-  { return r <= l; }
-vtime_type operator -( const vtime_type& l, const vtime_type& r );
-vtime_type operator +( const vtime_type& l, const vtime_type& r );
-vtime_type& operator +=( vtime_type& l, const vtime_type& r );
-
-// vt::vtime_type max( const vt::vtime_type& l, const vt::vtime_type& r );
-vtime_type& sup( vtime_type& l, const vtime_type& r );
-
 struct vtime :
     public stem::__pack_base
 {
+#ifdef __USE_STLPORT_HASH
+    typedef std::hash_map<addr_type, vtime_unit_type> vtime_type;
+#endif
+#ifdef __USE_STD_HASH
+    typedef __gnu_cxx::hash_map<addr_type, vtime_unit_type> vtime_type;
+#endif
+#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+    typedef std::tr1::unordered_map<addr_type, vtime_unit_type> vtime_type;
+#endif
+
     void pack( std::ostream& s ) const;
     void unpack( std::istream& s );
 
-  vtime()
-    { }
-  vtime( const vtime& _vt ) :
-    vt( _vt.vt.begin(), _vt.vt.end() )
-    { }
-  vtime( const vtime_type& _vt ) :
-    vt( _vt.begin(), _vt.end() )
-    { }
+    vtime()
+      { }
+    vtime( const vtime& _vt ) :
+        vt( _vt.vt.begin(), _vt.vt.end() )
+      { }
+    vtime( const vtime_type& _vt ) :
+        vt( _vt.begin(), _vt.end() )
+      { }
 
-  vtime& operator =( const vtime& _vt )
-    { vt = _vt.vt; }
+    template <class C>
+    vtime( const C& first, const C& last ) :
+        vt( first, last )
+      { }
 
-  // bool operator ==( const vtime& r ) const
-  //   { return vt == r.vt; }
+    vtime& operator =( const vtime& _vt )
+      { vt = _vt.vt; }
 
-  bool operator <=( const vtime& r ) const
-    { return vt <= r.vt; }
-  bool operator >=( const vtime& r ) const
-    { return vt >= r.vt; }
+    // bool operator ==( const vtime& r ) const
+    //   { return vt == r.vt; }
 
-  vtime operator -( const vtime& r ) const
-    { return vtime( vt - r.vt ); }
+    bool operator <=( const vtime& r ) const;
 
-  vtime operator +( const vtime& r ) const
-    { return vtime( vt + r.vt ); }
+    bool operator >=( const vtime& r ) const
+      { return r <= *this; }
 
-  vtime& operator +=( const vtime_type& t )
-  {
-    vt += t;
-    return *this;
-  }
-  vtime& operator +=( const vtime& t )
-  {
-    vt += t.vt;
-    return *this;
-  }
-  
-  vtime& operator +=( const vtime_type::value_type& );
+    vtime operator +( const vtime& r ) const;
+    vtime operator -( const vtime& r ) const;
 
-  vtime_type::mapped_type& operator[]( const vtime_type::key_type& k )
-    { return vt[k]; }
-  const vtime_type::mapped_type& operator[]( const vtime_type::key_type& k ) const
-    { return vt[k]; }
+    vtime& operator +=( const vtime& t );
+    vtime& operator +=( const vtime_type::value_type& );
 
+    vtime_type::mapped_type& operator[]( const vtime_type::key_type& k )
+      { return vt[k]; }
+    const vtime_type::mapped_type& operator[]( const vtime_type::key_type& k ) const
+      { return vt[k]; }
+
+    void swap( vtime& _vt )
+      { std::swap( vt, _vt.vt ); }
+    void clear()
+      { vt.clear(); }
     
-  mutable vtime_type vt;
+    mutable vtime_type vt;
 };
 
 
@@ -385,8 +371,8 @@ class VTHandler :
 
 namespace std {
 
-ostream& operator <<( ostream&, const janus::vtime_type::value_type& );
-ostream& operator <<( ostream&, const janus::vtime_type& );
+ostream& operator <<( ostream&, const janus::vtime::vtime_type::value_type& );
+ostream& operator <<( ostream&, const janus::vtime::vtime_type& );
 ostream& operator <<( ostream&, const janus::vtime& );
 ostream& operator <<( ostream&, const janus::gvtime_type::value_type& );
 ostream& operator <<( ostream&, const janus::gvtime_type& );

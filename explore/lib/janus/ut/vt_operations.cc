@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/22 10:35:01 ptr>
+// -*- C++ -*- Time-stamp: <09/09/01 11:06:19 ptr>
 
 #include "vt_operations.h"
 
@@ -37,8 +37,8 @@ int EXAM_IMPL(vtime_operations::vt_compare)
   const janus::addr_type p2(xmt::uid());
   const janus::addr_type p3(xmt::uid());
 
-  vtime_type vt1;
-  vtime_type vt2;
+  vtime vt1;
+  vtime vt2;
 
   vt1[p1] = 1;
   vt1[p2] = 1;
@@ -82,10 +82,10 @@ int EXAM_IMPL(vtime_operations::vt_add)
   const janus::addr_type p2(xmt::uid());
   const janus::addr_type p3(xmt::uid());
 
-  vtime_type vt1;
-  vtime_type vt2;
-  vtime_type vt3;
-  vtime_type vt4;
+  vtime vt1;
+  vtime vt2;
+  vtime vt3;
+  vtime vt4;
 
   vt1[p1] = 1;
   vt1[p2] = 1;
@@ -127,10 +127,10 @@ int EXAM_IMPL(vtime_operations::vt_diff)
   const janus::addr_type p2(xmt::uid());
   const janus::addr_type p3(xmt::uid());
 
-  vtime_type vt1;
-  vtime_type vt2;
-  vtime_type vt3;
-  vtime_type vt4;
+  vtime vt1;
+  vtime vt2;
+  vtime vt3;
+  vtime vt4;
 
   vt1[p1] = 1;
   vt1[p2] = 1;
@@ -191,10 +191,10 @@ int EXAM_IMPL(vtime_operations::vt_max)
   const janus::addr_type p2(xmt::uid());
   const janus::addr_type p3(xmt::uid());
 
-  vtime_type vt1;
-  vtime_type vt2;
-  vtime_type vt3;
-  vtime_type vt4;
+  vtime vt1;
+  vtime vt2;
+  vtime vt3;
+  vtime vt4;
 
   vt1[p1] = 1;
   vt1[p2] = 1;
@@ -275,8 +275,8 @@ int EXAM_IMPL(vtime_operations::gvt_add)
     gvtime_type gvt1;
     gvtime_type gvt2;
 
-    vtime_type vt1;
-    vtime_type vt2;
+    vtime vt1;
+    vtime vt2;
 
     vt1[p1] = 1;
     vt1[p2] = 1;
@@ -299,8 +299,8 @@ int EXAM_IMPL(vtime_operations::gvt_add)
     gvtime_type gvt1;
     gvtime_type gvt2;
 
-    vtime_type vt1;
-    vtime_type vt2;
+    vtime vt1;
+    vtime vt2;
 
     vt1[p1] = 1;
     vt1[p2] = 1;
@@ -322,8 +322,8 @@ int EXAM_IMPL(vtime_operations::gvt_add)
   {
     gvtime_type gvt1;
 
-    vtime_type vt1;
-    vtime_type vt2;
+    vtime vt1;
+    vtime vt2;
 
     vt1[p1] = 1;
     vt1[p2] = 1;
