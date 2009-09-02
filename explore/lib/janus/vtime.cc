@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/01 11:04:46 ptr>
+// -*- C++ -*- Time-stamp: <09/09/02 15:58:29 ptr>
 
 #include <janus/vtime.h>
 // #include <janus/janus.h>
@@ -202,39 +202,23 @@ vtime& vtime::operator +=( const vtime::vtime_type::value_type& t )
   return *this;
 }
 
-gvtime_type& operator +=( gvtime_type& gvt, const gvtime_type::value_type& t )
+gvtime gvtime::operator -( const gvtime& r ) const
 {
-  gvt[t.first] += t.second;
+  gvtime tmp( r );
 
-  return gvt;
-}
-
-gvtime_type& operator +=( gvtime_type& l, const gvtime_type& r )
-{
-  for ( gvtime_type::const_iterator g = r.begin(); g != r.end(); ++g ) {
-    l[g->first] += g->second;
-  }
-
-  return l;
-}
-
-gvtime_type operator -( const gvtime_type& l, const gvtime_type& r )
-{
-  gvtime_type tmp( r );
-
-  for ( gvtime_type::iterator g = tmp.begin(); g != tmp.end(); ++g ) {
-    gvtime_type::const_iterator i = l.find( g->first );
-    if ( i == l.end() ) {
+  for ( gvtime_type::iterator g = tmp.gvt.begin(); g != tmp.gvt.end(); ++g ) {
+    gvtime_type::const_iterator i = gvt.find( g->first );
+    if ( i == gvt.end() ) {
       throw range_error( "gvtime different: right value grater then left" );
     }
 
     g->second = i->second - g->second;
   }
 
-  for ( gvtime_type::const_iterator g = l.begin(); g != l.end(); ++g ) {
-    gvtime_type::const_iterator i = tmp.find(g->first);
-    if ( i == tmp.end() ) {
-      tmp[g->first] = g->second;
+  for ( gvtime_type::const_iterator g = gvt.begin(); g != gvt.end(); ++g ) {
+    gvtime_type::const_iterator i = tmp.gvt.find(g->first);
+    if ( i == tmp.gvt.end() ) {
+      tmp.gvt[g->first] = g->second;
     }
   }
 
@@ -262,7 +246,7 @@ namespace detail {
 bool vtime_obj_rec::deliver( const VSmess& m )
 {
   if ( order_correct( m ) ) {
-    lvt[m.src] += m.gvt.gvt;
+    lvt[m.src] += m.gvt;
     lvt[m.src][m.grp][m.src] = vt.gvt[m.grp][m.src] + 1;
     sup( vt.gvt[m.grp], lvt[m.src][m.grp] );
     return true;
@@ -274,7 +258,7 @@ bool vtime_obj_rec::deliver( const VSmess& m )
 bool vtime_obj_rec::deliver_delayed( const VSmess& m )
 {
   if ( order_correct_delayed( m ) ) {
-    lvt[m.src] += m.gvt.gvt;
+    lvt[m.src] += m.gvt;
     lvt[m.src][m.grp][m.src] = vt.gvt[m.grp][m.src] + 1;
     sup( vt.gvt[m.grp], lvt[m.src][m.grp] );
     return true;
@@ -374,7 +358,7 @@ bool vtime_obj_rec::order_correct_delayed( const VSmess& m )
 
 void vtime_obj_rec::delta( gvtime& vtstamp, const janus::addr_type& from, const janus::addr_type& to, gid_type grp )
 {
-  vtstamp.gvt = vt.gvt - svt[to]; // delta
+  vtstamp = vt - svt[to]; // delta
   vtstamp[grp][from] = vt.gvt[grp][from]; // my counter, as is, not delta
 }
 
@@ -388,7 +372,7 @@ bool vtime_obj_rec::rm_group( gid_type g )
   groups.erase( i );
 
   // remove my VT component for group g
-  gvtime_type::iterator j = vt.gvt.find( g );
+  gvtime::gvtime_type::iterator j = vt.gvt.find( g );
 
   if ( j != vt.gvt.end() ) {
     vt.gvt.erase( j );
@@ -396,17 +380,17 @@ bool vtime_obj_rec::rm_group( gid_type g )
 
   // remove sended VT components for group g
   for ( snd_delta_vtime_t::iterator k = svt.begin(); k != svt.end(); ++k ) {
-    gvtime_type::iterator l = k->second.find( g );
-    if ( l != k->second.end() ) {
-      k->second.erase( l );
+    gvtime::gvtime_type::iterator l = k->second.gvt.find( g );
+    if ( l != k->second.gvt.end() ) {
+      k->second.gvt.erase( l );
     }
   }
 
   // remove recieved VT components for group g
   for ( delta_vtime_type::iterator k = lvt.begin(); k != lvt.end(); ++k ) {
-    gvtime_type::iterator l = k->second.find( g );
-    if ( l != k->second.end() ) {
-      k->second.erase( l );
+    gvtime::gvtime_type::iterator l = k->second.gvt.find( g );
+    if ( l != k->second.gvt.end() ) {
+      k->second.gvt.erase( l );
     }
   }
 
@@ -437,10 +421,10 @@ void vtime_obj_rec::rm_member( const janus::addr_type& addr )
   }
 }
 
-void vtime_obj_rec::sync( gid_type g, const janus::addr_type& addr, const gvtime_type& gvt )
+void vtime_obj_rec::sync( gid_type g, const janus::addr_type& addr, const gvtime::gvtime_type& gvt )
 {
   lvt[addr] = gvt;
-  gvtime_type::const_iterator i = gvt.find( g );
+  gvtime::gvtime_type::const_iterator i = gvt.find( g );
   if ( i != gvt.end() ) {
     sup( vt.gvt[g], i->second.vt );
     // vtime_type::const_iterator j = i->second.vt.find( oid );
@@ -598,7 +582,7 @@ void VTHandler::VSNewMember_data( const stem::Event_base<VSsync_rq>& ev, const s
   Send( out_ev );
 }
 
-void VTHandler::get_gvtime( gid_type g, gvtime_type& gvt )
+void VTHandler::get_gvtime( gid_type g, gvtime::gvtime_type& gvt )
 {
   // _vtdsp->get_gvtime( g, self_id(), gvt );
 }
@@ -723,15 +707,15 @@ ostream& operator <<( ostream& o, const janus::vtime::vtime_type& v )
 ostream& operator <<( ostream& o, const janus::vtime& v )
 { return o << v.vt; }
 
-ostream& operator <<( ostream& o, const janus::gvtime_type::value_type& v )
+ostream& operator <<( ostream& o, const janus::gvtime::gvtime_type::value_type& v )
 {
   o << v.first << ": " << v.second.vt;
 }
 
-ostream& operator <<( ostream& o, const janus::gvtime_type& v )
+ostream& operator <<( ostream& o, const janus::gvtime::gvtime_type& v )
 {
   o << "{\n";
-  for ( janus::gvtime_type::const_iterator i = v.begin(); i != v.end(); ++i ) {
+  for ( janus::gvtime::gvtime_type::const_iterator i = v.begin(); i != v.end(); ++i ) {
     o << "\t" << *i << "\n";
   }
   return o << "}\n";

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/01 11:05:23 ptr>
+// -*- C++ -*- Time-stamp: <09/09/02 15:59:37 ptr>
 
 #ifndef __vtime_h
 #define __vtime_h
@@ -119,44 +119,48 @@ vtime& sup( vtime& l, const vtime& r );
 
 // typedef std::pair<group_type, vtime> vtime_group_type;
 // typedef std::list<vtime_group_type> gvtime_type;
-#ifdef __USE_STLPORT_HASH
-typedef std::hash_map<gid_type, vtime> gvtime_type;
-#endif
-#ifdef __USE_STD_HASH
-typedef __gnu_cxx::hash_map<gid_type, vtime> gvtime_type;
-#endif
-#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-typedef std::tr1::unordered_map<gid_type, vtime> gvtime_type;
-#endif
-
-gvtime_type& operator +=( gvtime_type&, const gvtime_type::value_type& );
-gvtime_type& operator +=( gvtime_type&, const gvtime_type& );
-gvtime_type operator -( const gvtime_type& l, const gvtime_type& r );
 
 struct gvtime :
     public stem::__pack_base
 {
+#ifdef __USE_STLPORT_HASH
+    typedef std::hash_map<gid_type, vtime> gvtime_type;
+#endif
+#ifdef __USE_STD_HASH
+    typedef __gnu_cxx::hash_map<gid_type, vtime> gvtime_type;
+#endif
+#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+    typedef std::tr1::unordered_map<gid_type, vtime> gvtime_type;
+#endif
     void pack( std::ostream& s ) const;
     void unpack( std::istream& s );
 
-  gvtime()
-    { }
-  gvtime( const gvtime& _gvt ) :
-    gvt( _gvt.gvt.begin(), _gvt.gvt.end() )
-    { }
+    gvtime()
+      { }
+    gvtime( const gvtime& _gvt ) :
+        gvt( _gvt.gvt.begin(), _gvt.gvt.end() )
+      { }
+    template <class C>
+    gvtime( const C& first, const C& last ) :
+        gvt( first, last )
+      { }
 
-  gvtime& operator =( const gvtime& _gvt )
-    { gvt = _gvt.gvt; }
+    gvtime& operator =( const gvtime& _gvt )
+      { gvt = _gvt.gvt; }
+    gvtime& operator =( const gvtime_type& _gvt )
+      { gvt = _gvt; }
 
-  gvtime& operator +=( const gvtime_type::value_type& );
-  gvtime& operator +=( const gvtime& );
+    gvtime operator -( const gvtime& ) const;
 
-  gvtime_type::mapped_type& operator[]( const gvtime_type::key_type k )
-    { return gvt[k]; }
-  const gvtime_type::mapped_type& operator[]( const gvtime_type::key_type k ) const
-    { return gvt[k]; }
+    gvtime& operator +=( const gvtime_type::value_type& );
+    gvtime& operator +=( const gvtime& );
 
-  mutable gvtime_type gvt;
+    gvtime_type::mapped_type& operator[]( const gvtime_type::key_type k )
+      { return gvt[k]; }
+    const gvtime_type::mapped_type& operator[]( const gvtime_type::key_type k ) const
+      { return gvt[k]; }
+
+    mutable gvtime_type gvt;
 };
 
 struct VSsync_rq :
@@ -240,31 +244,31 @@ class vtime_obj_rec
       { ++vt.gvt[grp][from]; /* increment my VT counter */ }
     void delta( gvtime& vtstamp, const janus::addr_type& from, const janus::addr_type& to, gid_type grp );
     void base_advance( const janus::addr_type& to )
-      { svt[to] = vt.gvt; /* store last sent VT to obj */ }
-    void get_gvt( gvtime_type& gvt ) const
+      { svt[to].gvt = vt.gvt; /* store last sent VT to obj */ }
+    void get_gvt( gvtime::gvtime_type& gvt ) const
       { gvt = vt.gvt; }
-    void sync( gid_type, const janus::addr_type&, const gvtime_type& );
+    void sync( gid_type, const janus::addr_type&, const gvtime::gvtime_type& );
 
 #ifdef __FIT_EXAM
-    const gvtime_type::mapped_type& operator[]( const gvtime_type::key_type k ) const
+    const gvtime::gvtime_type::mapped_type& operator[]( const gvtime::gvtime_type::key_type k ) const
       { return vt[k]; }
 #endif
 
   private:
 #ifdef __USE_STLPORT_HASH
     typedef std::hash_set<gid_type> groups_container_type;
-    typedef std::hash_map<janus::addr_type, gvtime_type> delta_vtime_type;
-    typedef std::hash_map<janus::addr_type, gvtime_type> snd_delta_vtime_t;
+    typedef std::hash_map<janus::addr_type, gvtime> delta_vtime_type;
+    typedef std::hash_map<janus::addr_type, gvtime> snd_delta_vtime_t;
 #endif
 #ifdef __USE_STD_HASH
     typedef __gnu_cxx::hash_set<gid_type> groups_container_type;
-    typedef __gnu_cxx::hash_map<janus::addr_type, gvtime_type> delta_vtime_type;
-    typedef __gnu_cxx::hash_map<janus::addr_type, gvtime_type> snd_delta_vtime_t;
+    typedef __gnu_cxx::hash_map<janus::addr_type, gvtime> delta_vtime_type;
+    typedef __gnu_cxx::hash_map<janus::addr_type, gvtime> snd_delta_vtime_t;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
     typedef std::tr1::unordered_set<gid_type> groups_container_type;
-    typedef std::tr1::unordered_map<janus::addr_type, gvtime_type> delta_vtime_type;
-    typedef std::tr1::unordered_map<janus::addr_type, gvtime_type> snd_delta_vtime_t;
+    typedef std::tr1::unordered_map<janus::addr_type, gvtime> delta_vtime_type;
+    typedef std::tr1::unordered_map<janus::addr_type, gvtime> snd_delta_vtime_t;
 #endif
 
     janus::addr_type addr; // stem address of object
@@ -334,7 +338,7 @@ class VTHandler :
     void VSMergeRemoteGroup_data( const stem::Event_base<VSsync_rq>& e, const std::string& data );
 
 
-    void get_gvtime( gid_type g, gvtime_type& gvt );
+    void get_gvtime( gid_type g, gvtime::gvtime_type& gvt );
 
   private:
     static Janus *_vtdsp;
@@ -374,8 +378,8 @@ namespace std {
 ostream& operator <<( ostream&, const janus::vtime::vtime_type::value_type& );
 ostream& operator <<( ostream&, const janus::vtime::vtime_type& );
 ostream& operator <<( ostream&, const janus::vtime& );
-ostream& operator <<( ostream&, const janus::gvtime_type::value_type& );
-ostream& operator <<( ostream&, const janus::gvtime_type& );
+ostream& operator <<( ostream&, const janus::gvtime::gvtime_type::value_type& );
+ostream& operator <<( ostream&, const janus::gvtime::gvtime_type& );
 ostream& operator <<( ostream&, const janus::gvtime& );
 ostream& operator <<( ostream& o, const janus::VSsync& );
 ostream& operator <<( ostream& o, const janus::VSmess& );

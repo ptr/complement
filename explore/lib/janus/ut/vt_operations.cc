@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/01 11:06:19 ptr>
+// -*- C++ -*- Time-stamp: <09/09/02 16:01:45 ptr>
 
 #include "vt_operations.h"
 
@@ -272,8 +272,8 @@ int EXAM_IMPL(vtime_operations::gvt_add)
   const gid_type g1 = xmt::uid();
 
   {
-    gvtime_type gvt1;
-    gvtime_type gvt2;
+    gvtime gvt1;
+    gvtime gvt2;
 
     vtime vt1;
     vtime vt2;
@@ -296,8 +296,8 @@ int EXAM_IMPL(vtime_operations::gvt_add)
     EXAM_CHECK( gvt1[g1][p2] == 0 );
   }
   {
-    gvtime_type gvt1;
-    gvtime_type gvt2;
+    gvtime gvt1;
+    gvtime gvt2;
 
     vtime vt1;
     vtime vt2;
@@ -320,7 +320,7 @@ int EXAM_IMPL(vtime_operations::gvt_add)
     EXAM_CHECK( gvt1[g1][p2] == 1 );
   }
   {
-    gvtime_type gvt1;
+    gvtime gvt1;
 
     vtime vt1;
     vtime vt2;
