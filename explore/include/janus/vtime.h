@@ -1,4 +1,13 @@
-// -*- C++ -*- Time-stamp: <09/09/02 15:59:37 ptr>
+// -*- C++ -*- Time-stamp: <09/09/03 09:30:42 ptr>
+
+/*
+ *
+ * Copyright (c) 2008-2009
+ * Petr Ovtchenkov
+ *
+ * Licensed under the Academic Free License version 3.0
+ *
+ */
 
 #ifndef __vtime_h
 #define __vtime_h

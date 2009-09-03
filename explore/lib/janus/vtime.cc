@@ -1,4 +1,13 @@
-// -*- C++ -*- Time-stamp: <09/09/02 15:58:29 ptr>
+// -*- C++ -*- Time-stamp: <09/09/03 09:31:12 ptr>
+
+/*
+ *
+ * Copyright (c) 2008-2009
+ * Petr Ovtchenkov
+ *
+ * Licensed under the Academic Free License version 3.0
+ *
+ */
 
 #include <janus/vtime.h>
 // #include <janus/janus.h>

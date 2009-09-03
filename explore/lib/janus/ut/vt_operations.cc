@@ -1,4 +1,13 @@
-// -*- C++ -*- Time-stamp: <09/09/02 16:01:45 ptr>
+// -*- C++ -*- Time-stamp: <09/09/03 09:30:13 ptr>
+
+/*
+ *
+ * Copyright (c) 2008-2009
+ * Petr Ovtchenkov
+ *
+ * Licensed under the Academic Free License version 3.0
+ *
+ */
 
 #include "vt_operations.h"
 
