@@ -1,9 +1,22 @@
-// -*- C++ -*- Time-stamp: <07/08/17 10:20:54 ptr>
+// -*- C++ -*- Time-stamp: <09/09/04 22:52:03 ptr>
+
+/*
+ *
+ * Copyright (c) 2008-2009
+ * Petr Ovtchenkov
+ *
+ * Licensed under the Academic Free License version 3.0
+ *
+ */
 
 #include "vt_operations.h"
 
 #include <iostream>
 #include <janus/vtime.h>
+
+#include <mt/mutex>
+#include <mt/condition_variable>
+#include <mt/date_time>
 
 namespace janus {
 
@@ -21,16 +34,40 @@ class VTM_handler :
     void handlerE( const stem::Event_base<VSmess>& );
     void handlerV( const VSmess& );
 
-    void wait();
+    template <class Duration>
+    bool wait( const Duration& rel_time )
+      {
+        std::tr2::unique_lock<std::tr2::mutex> lk( mtx );
+
+        return cnd.timed_wait( lk, rel_time, status );
+      }
 
     stem::code_type code;
-    oid_type src;    
+    addr_type src;    
     gvtime gvt;
-    group_type grp;
+    gid_type grp;
     std::string mess;
 
+    void reset()
+      { std::tr2::lock_guard<std::tr2::mutex> lk( mtx ); pass = false; }
+
+
   private:
-    xmt::condition cnd;
+    std::tr2::mutex mtx;
+    std::tr2::condition_variable cnd;
+    bool pass;
+
+    struct _status
+    {
+        _status( VTM_handler& m ) :
+            me( m )
+          { }
+
+        bool operator()() const;
+
+        VTM_handler& me;
+    } status;
+
 
     DECLARE_RESPONSE_TABLE( VTM_handler, stem::EventHandler );
 };
@@ -38,21 +75,27 @@ class VTM_handler :
 #define VT_MESS  0x1201
 
 VTM_handler::VTM_handler() :
-    EventHandler()
+    EventHandler(),
+    pass( false ),
+    status( *this )
 {
-  cnd.set( false );
+  enable();
 }
 
 VTM_handler::VTM_handler( stem::addr_type id ) :
-    EventHandler( id )
+    EventHandler( id ),
+    pass( false ),
+    status( *this )
 {
-  cnd.set( false );
+  enable();
 }
 
 VTM_handler::VTM_handler( stem::addr_type id, const char *info ) :
-    EventHandler( id, info )
+    EventHandler( id, info ),
+    pass( false ),
+    status( *this )
 {
-  cnd.set( false );
+  enable();
 }
 
 VTM_handler::~VTM_handler()
@@ -69,7 +112,10 @@ void VTM_handler::handlerE( const stem::Event_base<VSmess>& ev )
   mess = ev.value().mess;
 
   PushState( 1 );
-  cnd.set( true );
+
+  std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
+  pass = true;
+  cnd.notify_one();
 }
 
 void VTM_handler::handlerV( const VSmess& m )
@@ -81,14 +127,15 @@ void VTM_handler::handlerV( const VSmess& m )
   mess = m.mess;
 
   PopState();
-  cnd.set( true );
+
+  std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
+  pass = true;
+  cnd.notify_one();
 }
 
-void VTM_handler::wait()
+bool VTM_handler::_status::operator()() const
 {
-  cnd.try_wait();
-
-  cnd.set( false );
+  return me.pass;
 }
 
 DEFINE_RESPONSE_TABLE( VTM_handler )
@@ -98,9 +145,12 @@ END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::VTMess_core)
 {
-  const oid_type t0(0);
-  const oid_type t1(1);
-  const oid_type t3(3);
+  const addr_type t0 = xmt::uid();
+  const addr_type t1 = xmt::uid();
+  const addr_type t3 = xmt::uid();
+  const gid_type g = xmt::uid();
+  const gid_type g0 = xmt::uid();
+  const gid_type g1 = xmt::uid();
 
   VTM_handler h;
 
@@ -109,24 +159,26 @@ int EXAM_IMPL(vtime_operations::VTMess_core)
   ev.dest( h.self_id() );
   ev.value().code = 2;
   ev.value().src = t3;
-  ev.value().gvt[0][t0] = 1;
-  ev.value().gvt[0][t1] = 2;
-  ev.value().gvt[1][t0] = 3;
-  ev.value().gvt[1][t1] = 4;
-  ev.value().grp = janus::vs_base::first_user_group + 7;
+  ev.value().gvt[g0][t0] = 1;
+  ev.value().gvt[g0][t1] = 2;
+  ev.value().gvt[g1][t0] = 3;
+  ev.value().gvt[g1][t1] = 4;
+  ev.value().grp = g;
   ev.value().mess = "data";
 
   h.Send( ev );
 
-  h.wait();
+  EXAM_CHECK( h.wait( std::tr2::milliseconds(500) ) );
+
+  h.reset();
 
   EXAM_CHECK( h.code == 2 );
   EXAM_CHECK( h.src == t3 );
-  EXAM_CHECK( h.gvt[0][t0] == 1 );
-  EXAM_CHECK( h.gvt[0][t1] == 2 );
-  EXAM_CHECK( h.gvt[1][t0] == 3 );
-  EXAM_CHECK( h.gvt[1][t1] == 4 );
-  EXAM_CHECK( h.grp == (janus::vs_base::first_user_group + 7) );
+  EXAM_CHECK( h.gvt[g0][t0] == 1 );
+  EXAM_CHECK( h.gvt[g0][t1] == 2 );
+  EXAM_CHECK( h.gvt[g1][t0] == 3 );
+  EXAM_CHECK( h.gvt[g1][t1] == 4 );
+  EXAM_CHECK( h.grp == g );
   EXAM_CHECK( h.mess == "data" );
 
   ev.value().code = 3;
@@ -134,15 +186,17 @@ int EXAM_IMPL(vtime_operations::VTMess_core)
 
   h.Send( ev );
 
-  h.wait();
+  EXAM_CHECK( h.wait( std::tr2::milliseconds(500) ) );
+
+  h.reset();
 
   EXAM_CHECK( h.code == 3 );
   EXAM_CHECK( h.src == t3 );
-  EXAM_CHECK( h.gvt[0][t0] == 1 );
-  EXAM_CHECK( h.gvt[0][t1] == 2 );
-  EXAM_CHECK( h.gvt[1][t0] == 3 );
-  EXAM_CHECK( h.gvt[1][t1] == 4 );
-  EXAM_CHECK( h.grp == (janus::vs_base::first_user_group + 7) );
+  EXAM_CHECK( h.gvt[g0][t0] == 1 );
+  EXAM_CHECK( h.gvt[g0][t1] == 2 );
+  EXAM_CHECK( h.gvt[g1][t0] == 3 );
+  EXAM_CHECK( h.gvt[g1][t1] == 4 );
+  EXAM_CHECK( h.grp == g );
   EXAM_CHECK( h.mess == "more data" );
 
   return EXAM_RESULT;

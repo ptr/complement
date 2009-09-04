@@ -1,4 +1,13 @@
-// -*- C++ -*- Time-stamp: <09/07/22 09:47:59 ptr>
+// -*- C++ -*- Time-stamp: <09/09/04 22:51:42 ptr>
+
+/*
+ *
+ * Copyright (c) 2008-2009
+ * Petr Ovtchenkov
+ *
+ * Licensed under the Academic Free License version 3.0
+ *
+ */
 
 #ifndef __vt_operations_h
 #define __vt_operations_h
@@ -20,7 +29,7 @@ class vtime_operations
 
     int EXAM_DECL(gvt_add);
 
-    //int EXAM_DECL(VTMess_core);
+    int EXAM_DECL(VTMess_core);
 
     //int EXAM_DECL(vt_object);
 

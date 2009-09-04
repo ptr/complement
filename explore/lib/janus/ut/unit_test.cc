@@ -2,8 +2,14 @@
 
 #include "vt_operations.h"
 
-int EXAM_DECL(vtime_test_suite);
+#include <exam/suite.h>
+#include <misc/opts.h>
+#include <iostream>
+#include <string>
 
+// int EXAM_DECL(vtime_test_suite);
+
+#if 0
 int EXAM_IMPL(vtime_test_suite)
 {
   using namespace janus;
@@ -20,6 +26,7 @@ int EXAM_IMPL(vtime_test_suite)
          tc[1] = t.add( &vtime_operations::vt_add, vt_oper, "Additions",
                         tc[0] = t.add( &vtime_operations::vt_compare, vt_oper, "Compare" ) ) );
   t.add( &vtime_operations::vt_diff, vt_oper, "Differences", tc[0] );
+  t.add( &vtime_operations::gvt_add, vt_oper, "Grouped VT additions", tc[1] );
 
 #if 0
   t.add( &vtime_operations::VTMess_core, vt_oper, "VTmess core transfer", 
@@ -42,9 +49,70 @@ int EXAM_IMPL(vtime_test_suite)
 
   return t.girdle();
 }
+#endif
 
-int main( int, char ** )
+int main( int argc, const char ** argv )
 {
+  using namespace std;
 
-  return vtime_test_suite(0);
+  Opts opts;
+
+  opts << option<void>( "print this help message", 'h', "help" )
+       << option<void>( "list all test cases", 'l', "list" )
+       << option<string>( "run tests <sequence>", 'r', "run" )
+       << option<void>( "print status of tests within test suite", 'v', "verbose" )
+       << option<void>( "trace checks", 't', "trace" );
+
+  try {
+    opts.parse( argc, argv );
+  }
+  catch ( ... ) {
+    opts.help( cerr );
+    return 1;
+  }
+
+  if ( opts.is_set( 'h' ) ) {
+    opts.help( cerr );
+    return 0;
+  }
+
+  using namespace janus;
+
+  exam::test_suite::test_case_type tc[4];
+
+  exam::test_suite t( "virtual time operations" );
+
+  janus::vtime_operations vt_oper;
+
+  t.flags( /* exam::base_logger::trace */ exam::base_logger::verbose );
+
+  t.add( &vtime_operations::vt_max, vt_oper, "Max",
+         tc[1] = t.add( &vtime_operations::vt_add, vt_oper, "Additions",
+                        tc[0] = t.add( &vtime_operations::vt_compare, vt_oper, "Compare" ) ) );
+  t.add( &vtime_operations::vt_diff, vt_oper, "Differences", tc[0] );
+  tc[2] = t.add( &vtime_operations::gvt_add, vt_oper, "Grouped VT additions", tc[1] );
+  t.add( &vtime_operations::VTMess_core, vt_oper, "VTmess core transfer", tc[2] );
+
+  if ( opts.is_set( 'v' ) ) {
+    t.flags( t.flags() | exam::base_logger::verbose );
+  }
+
+  if ( opts.is_set( 't' ) ) {
+    t.flags( t.flags() | exam::base_logger::trace );
+  }
+
+  if ( opts.is_set( 'l' ) ) {
+    t.print_graph( cerr );
+  } else if ( opts.is_set( 'r' ) ) {
+    stringstream ss( opts.get<string>( 'r' ) );
+    int n;
+    int res = 0;
+    while ( ss >> n ) {
+      res |= t.single( n );
+    }
+
+    return res;
+  }
+  
+  return t.girdle();
 }
