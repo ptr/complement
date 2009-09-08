@@ -11,6 +11,7 @@
 #include <mt/shm.h>
 #include <mt/system_error>
 #include <iostream>
+#include <cstring>
 
 namespace xmt {
 
