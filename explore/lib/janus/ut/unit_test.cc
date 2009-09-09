@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/22 09:48:51 ptr>
+// -*- C++ -*- Time-stamp: <09/09/07 19:25:42 ptr>
 
 #include "vt_operations.h"
 
@@ -86,12 +86,15 @@ int main( int argc, const char ** argv )
 
   t.flags( /* exam::base_logger::trace */ exam::base_logger::verbose );
 
-  t.add( &vtime_operations::vt_max, vt_oper, "Max",
+  tc[3] = t.add( &vtime_operations::vt_max, vt_oper, "Max",
          tc[1] = t.add( &vtime_operations::vt_add, vt_oper, "Additions",
                         tc[0] = t.add( &vtime_operations::vt_compare, vt_oper, "Compare" ) ) );
   t.add( &vtime_operations::vt_diff, vt_oper, "Differences", tc[0] );
   tc[2] = t.add( &vtime_operations::gvt_add, vt_oper, "Grouped VT additions", tc[1] );
   t.add( &vtime_operations::VTMess_core, vt_oper, "VTmess core transfer", tc[2] );
+
+  t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
+    t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member", tc[3] ) );
 
   if ( opts.is_set( 'v' ) ) {
     t.flags( t.flags() | exam::base_logger::verbose );
@@ -103,6 +106,7 @@ int main( int argc, const char ** argv )
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( cerr );
+    return 0;
   } else if ( opts.is_set( 'r' ) ) {
     stringstream ss( opts.get<string>( 'r' ) );
     int n;

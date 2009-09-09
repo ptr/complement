@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/03 09:30:13 ptr>
+// -*- C++ -*- Time-stamp: <09/09/05 00:06:07 ptr>
 
 /*
  *
@@ -209,7 +209,7 @@ int EXAM_IMPL(vtime_operations::vt_max)
   vt1[p2] = 1;
 
   vt3 = vt1;
-  janus::sup( vt3, vt2 );
+  vt3.sup( vt2 );
 
   EXAM_CHECK( vt3 <= vt1 );
   EXAM_CHECK( vt1 <= vt3 );
@@ -217,7 +217,7 @@ int EXAM_IMPL(vtime_operations::vt_max)
   vt2[p1] = 1;
   
   vt3 = vt1;
-  janus::sup( vt3, vt2 );
+  vt3.sup( vt2 );
 
   EXAM_CHECK( vt3 <= vt1 );
   EXAM_CHECK( vt1 <= vt3 );
@@ -225,7 +225,7 @@ int EXAM_IMPL(vtime_operations::vt_max)
   vt2[p2] = 1;
 
   vt3 = vt1;
-  janus::sup( vt3, vt2 );
+  vt3.sup( vt2 );
 
   EXAM_CHECK( vt3 <= vt1 );
   EXAM_CHECK( vt1 <= vt3 );
@@ -233,7 +233,7 @@ int EXAM_IMPL(vtime_operations::vt_max)
   vt2[p3] = 1;
 
   vt3 = vt1;
-  janus::sup( vt3, vt2 );
+  vt3.sup( vt2 );
 
   vt4[p1] = 1;
   vt4[p2] = 1;
@@ -250,7 +250,7 @@ int EXAM_IMPL(vtime_operations::vt_max)
   vt4.clear();
 
   vt3 = vt1;
-  janus::sup( vt3, vt2 );
+  vt3.sup( vt2 );
 
   vt4[p1] = 1;
   vt4[p2] = 2;
@@ -261,7 +261,7 @@ int EXAM_IMPL(vtime_operations::vt_max)
   vt2[p3] = 4;
 
   vt3 = vt1;
-  janus::sup( vt3, vt2 );
+  vt3.sup( vt2 );
 
   vt4[p3] = 4;
 

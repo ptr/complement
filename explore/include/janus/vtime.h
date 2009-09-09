@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/03 09:30:42 ptr>
+// -*- C++ -*- Time-stamp: <09/09/08 12:49:35 ptr>
 
 /*
  *
@@ -109,6 +109,8 @@ struct vtime :
     vtime& operator +=( const vtime& t );
     vtime& operator +=( const vtime_type::value_type& );
 
+    vtime& sup( const vtime& r );
+
     vtime_type::mapped_type& operator[]( const vtime_type::key_type& k )
       { return vt[k]; }
     const vtime_type::mapped_type& operator[]( const vtime_type::key_type& k ) const
@@ -122,9 +124,17 @@ struct vtime :
     mutable vtime_type vt;
 };
 
+#ifdef __USE_STLPORT_HASH
+typedef std::hash_map<addr_type,vtime> vtime_matrix_type;
+#endif
+#ifdef __USE_STD_HASH
+typedef __gnu_cxx::hash_map<addr_type,vtime> vtime_matrix_type;
+#endif
+#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+typedef std::tr1::unordered_map<addr_type,vtime> vtime_matrix_type;
+#endif
 
 // vtime max( const vtime& l, const vtime& r );
-vtime& sup( vtime& l, const vtime& r );
 
 // typedef std::pair<group_type, vtime> vtime_group_type;
 // typedef std::list<vtime_group_type> gvtime_type;

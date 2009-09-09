@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/03 09:31:12 ptr>
+// -*- C++ -*- Time-stamp: <09/09/05 00:04:08 ptr>
 
 /*
  *
@@ -196,12 +196,12 @@ vtime max( const vtime& l, const vtime& r )
 }
 #endif
 
-vtime& sup( vtime& l, const vtime& r )
+vtime& vtime::sup( const vtime& r )
 {
   for ( vtime::vtime_type::const_iterator i = r.vt.begin(); i != r.vt.end(); ++i ) {
-    l[i->first] = std::max( l[i->first], i->second );
+    vt[i->first] = std::max( vt[i->first], i->second );
   }
-  return l;
+  return *this;
 }
 
 vtime& vtime::operator +=( const vtime::vtime_type::value_type& t )
@@ -257,7 +257,7 @@ bool vtime_obj_rec::deliver( const VSmess& m )
   if ( order_correct( m ) ) {
     lvt[m.src] += m.gvt;
     lvt[m.src][m.grp][m.src] = vt.gvt[m.grp][m.src] + 1;
-    sup( vt.gvt[m.grp], lvt[m.src][m.grp] );
+    vt.gvt[m.grp].sup( lvt[m.src][m.grp] );
     return true;
   }
 
@@ -269,7 +269,7 @@ bool vtime_obj_rec::deliver_delayed( const VSmess& m )
   if ( order_correct_delayed( m ) ) {
     lvt[m.src] += m.gvt;
     lvt[m.src][m.grp][m.src] = vt.gvt[m.grp][m.src] + 1;
-    sup( vt.gvt[m.grp], lvt[m.src][m.grp] );
+    vt.gvt[m.grp].sup( lvt[m.src][m.grp] );
     return true;
   }
 
@@ -435,7 +435,7 @@ void vtime_obj_rec::sync( gid_type g, const janus::addr_type& addr, const gvtime
   lvt[addr] = gvt;
   gvtime::gvtime_type::const_iterator i = gvt.find( g );
   if ( i != gvt.end() ) {
-    sup( vt.gvt[g], i->second.vt );
+    vt.gvt[g].sup( i->second.vt );
     // vtime_type::const_iterator j = i->second.vt.find( oid );
     // if ( j != i->second.vt.end() ) {
     //   vt.gvt[g][oid] = j->second;
