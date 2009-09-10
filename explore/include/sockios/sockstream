@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/29 17:10:12 ptr>
+// -*- C++ -*- Time-stamp: <09/09/10 15:14:05 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -19,7 +19,14 @@
 #endif
 
 #if !defined(__sun) && !defined(_WIN32) // i.e. __linux and __hpux
-#include <sys/poll.h> // pollfd
+# include <sys/poll.h> // pollfd
+# if !defined(POLLRDHUP) && defined(__linux__)
+#  ifndef __sparc__
+#    define POLLRDHUP 0x2000
+#  else
+#    define POLLRDHUP 0x800
+#  endif
+# endif
 #endif
 
 #include <mt/mutex>
