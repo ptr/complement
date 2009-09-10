@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/05 00:04:08 ptr>
+// -*- C++ -*- Time-stamp: <09/09/09 13:36:28 ptr>
 
 /*
  *
@@ -209,6 +209,23 @@ vtime& vtime::operator +=( const vtime::vtime_type::value_type& t )
   vt[t.first] += t.second;
 
   return *this;
+}
+
+// This assume that l >= r !!!
+vtime chg( const vtime& l, const vtime& r )
+{
+  vtime tmp;
+
+  for ( vtime::vtime_type::const_iterator i = l.vt.begin(); i != l.vt.end(); ++i ) {
+    vtime::vtime_type::const_iterator j = r.vt.find( i->first );
+    if ( j == r.vt.end() ) {
+      tmp.vt.insert( *i );
+    } else if ( i->second > j->second ) {
+      tmp.vt.insert( *i );
+    }
+  }
+
+  return tmp;
 }
 
 gvtime gvtime::operator -( const gvtime& r ) const

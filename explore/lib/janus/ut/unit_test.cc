@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/07 19:25:42 ptr>
+// -*- C++ -*- Time-stamp: <09/09/09 15:09:01 ptr>
 
 #include "vt_operations.h"
 
@@ -93,8 +93,9 @@ int main( int argc, const char ** argv )
   tc[2] = t.add( &vtime_operations::gvt_add, vt_oper, "Grouped VT additions", tc[1] );
   t.add( &vtime_operations::VTMess_core, vt_oper, "VTmess core transfer", tc[2] );
 
-  t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
-    t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member", tc[3] ) );
+  t.add( &vtime_operations::VT_one_group_send, vt_oper, "VT one group send",
+    t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
+       t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member", tc[3] ) ) );
 
   if ( opts.is_set( 'v' ) ) {
     t.flags( t.flags() | exam::base_logger::verbose );

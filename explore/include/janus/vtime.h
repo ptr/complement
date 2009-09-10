@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/08 12:49:35 ptr>
+// -*- C++ -*- Time-stamp: <09/09/09 13:28:54 ptr>
 
 /*
  *
@@ -123,6 +123,8 @@ struct vtime :
     
     mutable vtime_type vt;
 };
+
+vtime chg( const vtime&, const vtime& );
 
 #ifdef __USE_STLPORT_HASH
 typedef std::hash_map<addr_type,vtime> vtime_matrix_type;
