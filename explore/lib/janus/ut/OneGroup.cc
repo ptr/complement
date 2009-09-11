@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/10 15:29:34 ptr>
+// -*- C++ -*- Time-stamp: <09/09/10 18:20:45 ptr>
 
 /*
  *
@@ -18,14 +18,13 @@
 #include <mt/condition_variable>
 #include <mt/date_time>
 
+#include <algorithm>
 #include <set>
 #include <list>
 
 namespace janus {
 
 using namespace std;
-
-typedef set<stem::addr_type> super_spirit_type;
 
 struct VT_base :
     public stem::__pack_base
@@ -115,16 +114,47 @@ struct VT_sync :
       { }
 };
 
+
+#define VT_GROUP_R1  0x1205
+#define VT_GROUP_R2  0x1206
+#define VT_MESS      0x1207
+
 class VTM_one_group_handler :
     public stem::EventHandler
 {
+  private:
+    typedef std::set<stem::addr_type> super_spirit_type;
+
   public:
     VTM_one_group_handler();
     VTM_one_group_handler( stem::addr_type id );
     VTM_one_group_handler( stem::addr_type id, const char *info );
     ~VTM_one_group_handler();
 
-    void join( super_spirit_type& );
+    template <class InputIter>
+    void VTjoin( InputIter first, InputIter last )
+      {
+        // super is ordered container
+        super_spirit_type super( first, last );
+        
+        super.insert( self_id() );
+
+        super_spirit_type::const_iterator i = super.find( self_id() );
+
+        if ( ++i == super.end() ) {
+          i = super.begin();
+        }
+
+        if ( i != super.end() && *i != self_id() ) {
+          stem::Event_base<VT_sync> ev( VT_GROUP_R1 );
+
+          ev.dest( *i );
+          ev.value().vt = vt[self_id()];
+
+          Send( ev );
+        }
+      }
+
     void VTSend( const stem::Event& );
 
     template <class Duration>
@@ -172,10 +202,6 @@ class VTM_one_group_handler :
 
     DECLARE_RESPONSE_TABLE( VTM_one_group_handler, stem::EventHandler );
 };
-
-#define VT_GROUP_R1  0x1205
-#define VT_GROUP_R2  0x1206
-#define VT_MESS      0x1207
 
 #define EV_FREE      0x9000
 
@@ -314,26 +340,6 @@ void VTM_one_group_handler::new_member_round2( const stem::Event_base<VT_sync>& 
   cnd.notify_one();
 }
 
-void VTM_one_group_handler::join( super_spirit_type& super )
-{
-  super.insert( self_id() );
-
-  super_spirit_type::const_iterator i = super.find( self_id() );
-
-  if ( ++i == super.end() ) {
-    i = super.begin();
-  }
-
-  if ( i != super.end() && *i != self_id() ) {
-    stem::Event_base<VT_sync> ev( VT_GROUP_R1 );
-
-    ev.dest( *i );
-    ev.value().vt = vt[self_id()];
-
-    Send( ev );
-  }
-}
-
 void VTM_one_group_handler::vt_process( const stem::Event_base<VT_event>& ev )
 {
   vtime tmp = vt[ev.src()];
@@ -428,17 +434,21 @@ END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::VT_one_group_core)
 {
-  super_spirit_type super_spirit;
+  list<stem::addr_type> super_spirit;
 
   VTM_one_group_handler a1;
 
   a1.vt[a1.self_id()][a1.self_id()] = 1;
 
-  a1.join( super_spirit );
+  a1.VTjoin( super_spirit.begin(), super_spirit.end() );
+
+  super_spirit.push_back( a1.self_id() );
 
   VTM_one_group_handler a2;
   
-  a2.join( super_spirit );
+  a2.VTjoin( super_spirit.begin(), super_spirit.end() );
+
+  super_spirit.push_back( a2.self_id() );
 
   EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
 
@@ -457,7 +467,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core)
 
 int EXAM_IMPL(vtime_operations::VT_one_group_core3)
 {
-  super_spirit_type super_spirit;
+  list<stem::addr_type> super_spirit;
 
   VTM_one_group_handler a1;
   VTM_one_group_handler a2;
@@ -465,12 +475,16 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3)
 
   a1.vt[a1.self_id()][a1.self_id()] = 1;
 
-  a1.join( super_spirit );
+  a1.VTjoin( super_spirit.begin(), super_spirit.end() );
+
+  super_spirit.push_back( a1.self_id() );
   
   // a2.vt[a1.self_id()] = 1;
   a2.vt[a2.self_id()][a2.self_id()] = 2;
 
-  a2.join( super_spirit );
+  a2.VTjoin( super_spirit.begin(), super_spirit.end() );
+
+  super_spirit.push_back( a2.self_id() );
 
   EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
 
@@ -484,7 +498,9 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3)
   EXAM_CHECK( a2.vt[a1.self_id()][a1.self_id()] == 1 );
   EXAM_CHECK( a2.vt[a1.self_id()][a2.self_id()] == 2 );
   
-  a3.join( super_spirit );
+  a3.VTjoin( super_spirit.begin(), super_spirit.end() );
+
+  super_spirit.push_back( a3.self_id() );
 
   EXAM_CHECK( a3.wait( std::tr2::milliseconds(500) ) );
 
@@ -523,15 +539,19 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3)
 
 int EXAM_IMPL(vtime_operations::VT_one_group_send)
 {
-  super_spirit_type super_spirit;
+  list<stem::addr_type> super_spirit;
 
   VTM_one_group_handler a1;
 
-  a1.join( super_spirit );
+  a1.VTjoin( super_spirit.begin(), super_spirit.end() );
+
+  super_spirit.push_back( a1.self_id() );
 
   VTM_one_group_handler a2;
 
-  a2.join( super_spirit );
+  a2.VTjoin( super_spirit.begin(), super_spirit.end() );
+
+  super_spirit.push_back( a2.self_id() );
 
   EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
 
@@ -554,7 +574,9 @@ int EXAM_IMPL(vtime_operations::VT_one_group_send)
 
   VTM_one_group_handler a3;
 
-  a3.join( super_spirit );
+  a3.VTjoin( super_spirit.begin(), super_spirit.end() );
+
+  super_spirit.push_back( a3.self_id() );
 
   EXAM_CHECK( a3.wait( std::tr2::milliseconds(500) ) );
 
