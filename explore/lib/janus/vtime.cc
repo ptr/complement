@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/11 17:14:27 ptr>
+// -*- C++ -*- Time-stamp: <09/09/12 00:07:44 ptr>
 
 /*
  *
@@ -269,6 +269,11 @@ basic_vs::basic_vs( stem::addr_type id ) :
 
 basic_vs::basic_vs( stem::addr_type id, const char* info ) :
     EventHandler( id, info )
+{
+}
+
+basic_vs::basic_vs( const char* info ) :
+    EventHandler( info )
 {
 }
 

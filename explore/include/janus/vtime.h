@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/11 17:14:14 ptr>
+// -*- C++ -*- Time-stamp: <09/09/12 00:06:24 ptr>
 
 /*
  *
@@ -259,7 +259,8 @@ class basic_vs :
   public:
     basic_vs();
     basic_vs( stem::addr_type id );
-    basic_vs( stem::addr_type id, const char *info );
+    basic_vs( stem::addr_type id, const char* info );
+    basic_vs( const char* info );
     ~basic_vs();
 
     template <class InputIter>
