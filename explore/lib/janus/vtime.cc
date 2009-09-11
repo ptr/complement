@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/09 13:36:28 ptr>
+// -*- C++ -*- Time-stamp: <09/09/11 17:14:27 ptr>
 
 /*
  *
@@ -47,65 +47,6 @@ void vtime::unpack( std::istream& s )
 
     vt[addr] = v;
   }
-}
-
-void gvtime::pack( std::ostream& s ) const
-{
-  __pack( s, static_cast<uint8_t>(gvt.size()) );
-  for ( gvtime_type::const_iterator i = gvt.begin(); i != gvt.end(); ++i ) {
-    __pack( s, i->first );
-    i->second.pack( s );
-  }
-}
-
-void gvtime::unpack( std::istream& s )
-{
-  gvt.clear();
-  uint8_t n;
-  __unpack( s, n );
-  while ( n-- > 0 ) {
-    gid_type gid;
-    __unpack( s, gid );
-    gvt[gid].unpack( s );
-  }
-}
-
-void VSsync_rq::pack( std::ostream& s ) const
-{
-  __pack( s, grp );
-  __pack( s, mess );
-}
-
-void VSsync_rq::unpack( std::istream& s )
-{
-  __unpack( s, grp );
-  __unpack( s, mess );
-}
-
-void VSsync::pack( std::ostream& s ) const
-{
-  gvt.pack( s );
-  VSsync_rq::pack( s );
-}
-
-void VSsync::unpack( std::istream& s )
-{
-  gvt.unpack( s );
-  VSsync_rq::unpack( s );
-}
-
-void VSmess::pack( std::ostream& s ) const
-{
-  __pack( s, code );
-  __pack( s, src );
-  VSsync::pack( s );
-}
-
-void VSmess::unpack( std::istream& s )
-{
-  __unpack( s, code );
-  __unpack( s, src );
-  VSsync::unpack( s );
 }
 
 bool vtime::operator <=( const vtime& r ) const
@@ -228,6 +169,55 @@ vtime chg( const vtime& l, const vtime& r )
   return tmp;
 }
 
+void vs_event::pack( std::ostream& s ) const
+{
+  basic_event::pack( s );
+  __pack( s, ev.code() );
+  __pack( s, ev.flags() );
+  __pack( s, ev.value() );
+}
+
+void vs_event::unpack( std::istream& s )
+{
+  basic_event::unpack( s );
+  stem::code_type c;
+  __unpack( s, c );
+  ev.code( c );
+  uint32_t f;
+  __unpack( s, f );
+  ev.resetf( f );
+  // string d;
+  __unpack( s, ev.value() );
+  // std::swap( d, ev.value() );
+}
+
+void vs_event::swap( vs_event& r )
+{
+  std::swap( vt, r.vt );
+  std::swap( ev, r.ev );
+}
+
+void gvtime::pack( std::ostream& s ) const
+{
+  __pack( s, static_cast<uint8_t>(gvt.size()) );
+  for ( gvtime_type::const_iterator i = gvt.begin(); i != gvt.end(); ++i ) {
+    __pack( s, i->first );
+    i->second.pack( s );
+  }
+}
+
+void gvtime::unpack( std::istream& s )
+{
+  gvt.clear();
+  uint8_t n;
+  __unpack( s, n );
+  while ( n-- > 0 ) {
+    gid_type gid;
+    __unpack( s, gid );
+    gvt[gid].unpack( s );
+  }
+}
+
 gvtime gvtime::operator -( const gvtime& r ) const
 {
   gvtime tmp( r );
@@ -267,506 +257,208 @@ gvtime& gvtime::operator +=( const gvtime& t )
   return *this;
 }
 
-namespace detail {
-
-bool vtime_obj_rec::deliver( const VSmess& m )
+basic_vs::basic_vs() :
+    EventHandler()
 {
-  if ( order_correct( m ) ) {
-    lvt[m.src] += m.gvt;
-    lvt[m.src][m.grp][m.src] = vt.gvt[m.grp][m.src] + 1;
-    vt.gvt[m.grp].sup( lvt[m.src][m.grp] );
-    return true;
-  }
-
-  return false;
 }
 
-bool vtime_obj_rec::deliver_delayed( const VSmess& m )
+basic_vs::basic_vs( stem::addr_type id ) :
+    EventHandler( id )
 {
-  if ( order_correct_delayed( m ) ) {
-    lvt[m.src] += m.gvt;
-    lvt[m.src][m.grp][m.src] = vt.gvt[m.grp][m.src] + 1;
-    vt.gvt[m.grp].sup( lvt[m.src][m.grp] );
-    return true;
-  }
-
-  return false;
 }
 
-bool vtime_obj_rec::order_correct( const VSmess& m )
+basic_vs::basic_vs( stem::addr_type id, const char* info ) :
+    EventHandler( id, info )
 {
-  if ( groups.find( m.grp ) == groups.end() ) {
-    throw domain_error( "virtual synchrony object not member of group" );
-  }
+}
 
-  gvtime gvt( m.gvt );
+basic_vs::~basic_vs()
+{
+}
 
-  if ( (vt.gvt[m.grp][m.src] + 1) != gvt[m.grp][m.src] ) {
-    if ( (vt.gvt[m.grp][m.src] + 1) > gvt[m.grp][m.src] ) {
-      throw out_of_range( "duplicate or wrong virtual synchrony message" );
-    }
-    return false;
-  }
+void basic_vs::vs( const stem::Event& inc_ev )
+{
+  stem::Event_base<vs_event> ev( VS_EVENT );
+  ev.value().ev = inc_ev;
+  ev.value().ev.setf( stem::__Event_Base::vs );
 
-  vtime xvt = lvt[m.src][m.grp] + gvt[m.grp];
-  xvt[m.src] = 0; // force exclude message originator, it checked above
+  vtime& self = vt[self_id()];
+  ++self[self_id()];
 
-  if ( !(xvt <= vt[m.grp]) ) {
-    return false;
-  }
-
-  // check side casuality (via groups other then message's group)
-  for ( groups_container_type::const_iterator l = groups.begin(); l != groups.end(); ++l ) {
-    if ( (*l != m.grp) && !((lvt[m.src][*l] + gvt[*l]) <= vt[*l]) ) {
-      return false;
+  for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+    if ( i->first != self_id() ) {
+      ev.dest( i->first );
+      ev.value().vt = chg( self, vt[i->first] );
+      // vt[i->first] = self;
+      Send( ev );
     }
   }
-
-  return true;
 }
 
-ostream& vtime_obj_rec::trace_deliver( const VSmess& m, ostream& o )
+void basic_vs::new_member_round1( const stem::Event_base<VT_sync>& ev )
 {
-  if ( groups.find( m.grp ) == groups.end() ) {
-    return o << "virtual synchrony object not member of group";
+  vtime& newbie = vt[ev.src()];
+  vtime& self = vt[self_id()];
+
+  newbie = ev.value().vt;
+  newbie[self_id()] = self[self_id()];
+  self[ev.src()] = newbie[ev.src()];
+
+  // super is ordered container
+  group_members_type super;
+
+  // all group members (except newbie) take from vtime
+  for (vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+    super.insert( i->first );
   }
 
-  gvtime gvt( m.gvt );
+  group_members_type::const_iterator i = super.find( self_id() );
 
-  if ( (vt.gvt[m.grp][m.src] + 1) != gvt[m.grp][m.src] ) {
-    if ( (vt.gvt[m.grp][m.src] + 1) > gvt[m.grp][m.src] ) {
-      return o << "duplicate or wrong VT message, " << vt.gvt << " vs " << gvt;
-    }
-    return o << "counter violation, " << vt.gvt << " vs " << gvt;
+  if ( ++i == super.end() ) {
+    i = super.begin();
   }
 
-  vtime xvt = lvt[m.src][m.grp] + gvt[m.grp];
-  xvt[m.src] = 0; // force exclude message originator, it checked above
-
-  if ( !(xvt <= vt[m.grp]) ) {
-    return o << "casuality violation, " << xvt << " vs " << vt[m.grp];
+  if ( *i == self_id() ) {
+    return; // I'm single in the group
   }
 
-  // check side casuality (via groups other then message's group)
-  for ( groups_container_type::const_iterator l = groups.begin(); l != groups.end(); ++l ) {
-    if ( (*l != m.grp) && !((lvt[m.src][*l] + gvt[*l]) <= vt[*l]) ) {
-      return o << "side casuality violation, " << (lvt[m.src][*l] + gvt[*l]) << " vs " << vt[*l];
-    }
-  }
+  if ( ev.src() != self_id() ) { // continue round 1
+    stem::Event_base<VT_sync> ev_next( VS_GROUP_R1 );
 
-  return o << "should be delivered";
-}
+    ev_next.dest( *i );
+    ev_next.src( ev.src() );
+    ev_next.value().vt = newbie;
 
-bool vtime_obj_rec::order_correct_delayed( const VSmess& m )
-{
-  gvtime gvt( m.gvt );
+    Forward( ev_next );
+  } else { // start round 2
+    stem::Event_base<VT_sync> ev_next( VS_GROUP_R2 );
 
-  if ( (vt.gvt[m.grp][m.src] + 1) != gvt[m.grp][m.src] ) {
-    return false;
-  }
+    ev_next.dest( *i );
+    ev_next.src( ev.src() );
+    ev_next.value().vt = newbie;
 
-  vtime xvt = lvt[m.src][m.grp] + gvt[m.grp];
-  xvt[m.src] = 0; // force exclude message originator, it checked above
-
-  if ( !(xvt <= vt[m.grp]) ) {
-    return false;
-  }
-
-  // check side casuality (via groups other then message's group)
-  for ( groups_container_type::const_iterator l = groups.begin(); l != groups.end(); ++l ) {
-    if ( (*l != m.grp) && !((lvt[m.src][*l] + gvt[*l]) <= vt[*l]) ) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-void vtime_obj_rec::delta( gvtime& vtstamp, const janus::addr_type& from, const janus::addr_type& to, gid_type grp )
-{
-  vtstamp = vt - svt[to]; // delta
-  vtstamp[grp][from] = vt.gvt[grp][from]; // my counter, as is, not delta
-}
-
-bool vtime_obj_rec::rm_group( gid_type g )
-{
-  // strike out group g from my groups list
-  groups_container_type::iterator i = groups.find( g );
-  if ( i == groups.end() ) {
-    throw domain_error( "virtual synchrony object not member of group" );
-  }
-  groups.erase( i );
-
-  // remove my VT component for group g
-  gvtime::gvtime_type::iterator j = vt.gvt.find( g );
-
-  if ( j != vt.gvt.end() ) {
-    vt.gvt.erase( j );
-  }
-
-  // remove sended VT components for group g
-  for ( snd_delta_vtime_t::iterator k = svt.begin(); k != svt.end(); ++k ) {
-    gvtime::gvtime_type::iterator l = k->second.gvt.find( g );
-    if ( l != k->second.gvt.end() ) {
-      k->second.gvt.erase( l );
-    }
-  }
-
-  // remove recieved VT components for group g
-  for ( delta_vtime_type::iterator k = lvt.begin(); k != lvt.end(); ++k ) {
-    gvtime::gvtime_type::iterator l = k->second.gvt.find( g );
-    if ( l != k->second.gvt.end() ) {
-      k->second.gvt.erase( l );
-    }
-  }
-
-  // remove messages for group g that wait in delay pool
-  for ( dpool_t::iterator p = dpool.begin(); p != dpool.end(); ) {
-    if ( p->second->value().grp == g ) {
-      dpool.erase( p++ );
-    } else {
-      ++p;
-    }
-  }
-
-  return groups.empty() ? true : false;
-}
-
-void vtime_obj_rec::rm_member( const janus::addr_type& addr )
-{
-  delta_vtime_type::iterator i = lvt.find( addr );
-
-  if ( i != lvt.end() ) {
-    lvt.erase( i );
-  }
-
-  snd_delta_vtime_t::iterator j = svt.find( addr );
-
-  if ( j != lvt.end() ) {
-    svt.erase( j );
+    Forward( ev_next );
   }
 }
 
-void vtime_obj_rec::sync( gid_type g, const janus::addr_type& addr, const gvtime::gvtime_type& gvt )
+void basic_vs::new_member_round2( const stem::Event_base<VT_sync>& ev )
 {
-  lvt[addr] = gvt;
-  gvtime::gvtime_type::const_iterator i = gvt.find( g );
-  if ( i != gvt.end() ) {
-    vt.gvt[g].sup( i->second.vt );
-    // vtime_type::const_iterator j = i->second.vt.find( oid );
-    // if ( j != i->second.vt.end() ) {
-    //   vt.gvt[g][oid] = j->second;
-    //   cerr << "**** " << gvt << endl;
-    // }
+  vtime& newbie = vt[ev.src()];
+  vtime& self = vt[self_id()];
+
+  newbie = ev.value().vt;
+
+  // super is ordered container
+  group_members_type super;
+
+  // all group members (include newbie) take from vtime
+  for (vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+    super.insert( i->first );
   }
-}
 
-} // namespace detail
+  group_members_type::const_iterator i = super.find( self_id() );
 
-
-char *Init_buf[128];
-Janus *VTHandler::_vtdsp = 0;
-static int *_rcount = 0;
-
-void VTHandler::Init::__at_fork_prepare()
-{
-}
-
-void VTHandler::Init::__at_fork_child()
-{
-  if ( *_rcount != 0 ) {
-    // delete VTHandler::_vtdsp->_hostmgr;
-    // VTHandler::_vtdsp->_hostmgr = new VSHostMgr( "vshostmgr" );
+  if ( ++i == super.end() ) {
+    i = super.begin();
   }
-}
 
-void VTHandler::Init::__at_fork_parent()
-{
-}
+  if ( *i == self_id() ) {
+    return; // I'm single in the group?
+  }
 
-void VTHandler::Init::_guard( int direction )
-{
-  static std::tr2::recursive_mutex _init_lock;
-
-  std::tr2::lock_guard<std::tr2::recursive_mutex> lk(_init_lock);
-  static int _count = 0;
-
-  if ( direction ) {
-    if ( _count++ == 0 ) {
-#ifdef _PTHREADS
-      _rcount = &_count;
-      pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child );
-#endif
-      // VTHandler::_vtdsp = new Janus( xmt::uid(), "janus" );
-      // VTHandler::_vtdsp->_hostmgr = new VSHostMgr( "vshostmgr" );
-    }
+  if ( ev.src() != self_id() ) {
+    ev.dest( *i );
+    Forward( ev );
   } else {
-    --_count;
-    if ( _count == 1 ) { // 0+1 due to _hostmgr
-      // delete VTHandler::_vtdsp;
-      // VTHandler::_vtdsp = 0;
+    for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+      if ( i->first != self_id() ) {
+        vt[i->first][i->first] = i->second;
+        vt[i->first][self_id()] = self[self_id()];
+      }      
     }
+    this->round2_pass();
   }
 }
 
-VTHandler::Init::Init()
-{ _guard( 1 ); }
-
-VTHandler::Init::~Init()
-{ _guard( 0 ); }
-
-void VTHandler::JaSend( const stem::Event& ev )
+void basic_vs::vt_process( const stem::Event_base<vs_event>& ev )
 {
-  ev.src( self_id() );
-  // _vtdsp->JaSend( ev, ev.dest() ); // throw domain_error, if not group member
-}
+  vtime tmp = vt[ev.src()];
+  tmp.sup( ev.value().vt );
 
-VTHandler::VTHandler() :
-   EventHandler()
-{
-  new( Init_buf ) Init();
-}
+  vtime& self = vt[self_id()];
 
-VTHandler::VTHandler( const char *info ) :
-   EventHandler( info )
-{
-  new( Init_buf ) Init();
-}
-
-VTHandler::VTHandler( stem::addr_type id, const char *info ) :
-   EventHandler( id, info )
-{
-  new( Init_buf ) Init();
-}
-
-VTHandler::~VTHandler()
-{
-  // Unsubscribe();
-
-  ((Init *)Init_buf)->~Init();
-}
-
-void VTHandler::Unsubscribe()
-{
-  // _vtdsp->Unsubscribe( oid_type( self_id() ) );
-}
-
-void VTHandler::JoinGroup( gid_type grp )
-{
-  // _vtdsp->Subscribe( self_id(), oid_type( self_id() ), grp );
-}
-
-void VTHandler::LeaveGroup( gid_type grp )
-{
-  // _vtdsp->Unsubscribe( oid_type( self_id() ), grp );
-}
-
-void VTHandler::VSNewMember( const stem::Event_base<VSsync_rq>& ev )
-{
-  stem::Event_base<VSsync> out_ev( VS_SYNC_TIME );
-  out_ev.dest( ev.src() );
-  out_ev.value().grp = ev.value().grp;
-  get_gvtime( ev.value().grp, out_ev.value().gvt.gvt );
-#ifdef __FIT_VS_TRACE
-#if 0
-  try {
-    std::tr2::lock_guard<std::tr2::mutex> lk(_vtdsp->_lock_tr);
-    if ( _vtdsp->_trs != 0 && _vtdsp->_trs->good() && (_vtdsp->_trflags & Janus::tracegroup) ) {
-      *_vtdsp->_trs << " -> VS_SYNC_TIME G" << ev.value().grp << " "
-                    << hex << showbase
-                    << self_id() << " -> " << out_ev.dest() << dec << endl;
-    }
-  }
-  catch ( ... ) {
-  }
-#endif
-#endif // __FIT_VS_TRACE
-  Send( out_ev );
-}
-
-void VTHandler::VSNewMember_data( const stem::Event_base<VSsync_rq>& ev, const string& data )
-{
-  stem::Event_base<VSsync> out_ev( VS_SYNC_TIME );
-  out_ev.dest( ev.src() );
-  out_ev.value().grp = ev.value().grp;
-  get_gvtime( ev.value().grp, out_ev.value().gvt.gvt );
-  out_ev.value().mess = data;
-#ifdef __FIT_VS_TRACE
-#if 0
-  try {
-    std::tr2::lock_guard<std::tr2::mutex> lk(_vtdsp->_lock_tr);
-    if ( _vtdsp->_trs != 0 && _vtdsp->_trs->good() && (_vtdsp->_trflags & Janus::tracegroup) ) {
-      *_vtdsp->_trs << " -> VS_SYNC_TIME (data) G" << ev.value().grp << " "
-                    << hex << showbase
-                    << self_id() << " -> " << out_ev.dest() << dec << endl;
-    }
-  }
-  catch ( ... ) {
-  }
-#endif
-#endif // __FIT_VS_TRACE
-  Send( out_ev );
-}
-
-void VTHandler::get_gvtime( gid_type g, gvtime::gvtime_type& gvt )
-{
-  // _vtdsp->get_gvtime( g, self_id(), gvt );
-}
-
-void VTHandler::VSOutMember( const stem::Event_base<VSsync_rq>& ev )
-{
-#ifdef __FIT_VS_TRACE
-#if 0
-  try {
-    std::tr2::lock_guard<std::tr2::mutex> lk(_vtdsp->_lock_tr);
-    if ( _vtdsp->_trs != 0 && _vtdsp->_trs->good() && (_vtdsp->_trflags & Janus::tracegroup) ) {
-      *_vtdsp->_trs << "<-  VS_OUT_MEMBER G" << ev.value().grp
-                    << hex << showbase
-                    << ev.src() << " -> " << ev.dest() << dec << endl;
-    }
-  }
-  catch ( ... ) {
-  }
-#endif
-#endif // __FIT_VS_TRACE
-}
-
-void VTHandler::VSsync_time( const stem::Event_base<VSsync>& ev )
-{
-  try {
-    // sync data from ev.value().mess
-#ifdef __FIT_VS_TRACE
-#if 0
-    try {
-      std::tr2::lock_guard<std::tr2::mutex> lk(_vtdsp->_lock_tr);
-      if ( _vtdsp->_trs != 0 && _vtdsp->_trs->good() && (_vtdsp->_trflags & Janus::tracegroup) ) {
-        *_vtdsp->_trs << "<-  VS_SYNC_TIME G" << ev.value().grp << " "
-                      << hex << showbase
-                      << ev.src() << " -> " << ev.dest() << dec << endl;
+  for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+    if ( i->first == ev.src() ) {
+      if ( (i->second + 1) != tmp[ev.src()] ) {
+        if ( (i->second + 1) < tmp[ev.src()] ) {
+          dc.push_back( ev ); // Delay
+        } else {
+          // Ghost event from past: Drop? Error?
+        }
+        return;
       }
+    } else if ( i->second < tmp[i->first] ) {
+      dc.push_back( ev ); // Delay
+      return;
     }
-    catch ( ... ) {
+  }
+
+  ++self[ev.src()];
+  vt[ev.src()] = tmp; // vt[ev.src()] = self; ??
+  
+  ev.value().ev.src( ev.src() );
+  ev.value().ev.dest( ev.dest() );
+
+  this->Dispatch( ev.value().ev );
+
+  /*
+    for each event in delay_queue try to process it;
+    repeat procedure if any event from delay_queue was processed.
+   */
+  bool delayed_process;
+  do {
+    delayed_process = false;
+    for ( delay_container_type::iterator k = dc.begin(); k != dc.end(); ) {
+      tmp = vt[k->src()];
+      tmp.sup( k->value().vt );
+
+      for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+        if ( i->first == k->src() ) {
+          if ( (i->second + 1) != tmp[k->src()] ) {
+            ++k;
+            goto try_next;
+          }
+        } else if ( i->second < tmp[i->first] ) {
+          ++k;
+          goto try_next;
+        }
+      }
+
+      ++self[k->src()];
+      vt[k->src()] = tmp; // vt[k->src()] = self; ??
+
+      k->value().ev.src( k->src() );
+      k->value().ev.dest( k->dest() );
+
+      this->Dispatch( k->value().ev );
+
+      dc.erase( k++ );
+      delayed_process = true;
+
+      try_next:
+        ;
     }
-#endif
-#endif // __FIT_VS_TRACE
-    // _vtdsp->set_gvtime( ev.value().grp, self_id(), ev.value().gvt.gvt );
-  }
-  catch ( const domain_error&  ) {
-  }
+  } while ( delayed_process );
 }
 
-void VTHandler::VSMergeRemoteGroup( const stem::Event_base<VSsync_rq>& e )
-{
-  stem::Event_base<VSsync> out_ev( VS_SYNC_GROUP_TIME );
-  out_ev.dest( e.src() );
-  out_ev.value().grp = e.value().grp;
-  get_gvtime( e.value().grp, out_ev.value().gvt.gvt );
-#ifdef __FIT_VS_TRACE
-#if 0
-  try {
-    std::tr2::lock_guard<std::tr2::mutex> lk(_vtdsp->_lock_tr);
-    if ( _vtdsp->_trs != 0 && _vtdsp->_trs->good() && (_vtdsp->_trflags & Janus::tracegroup) ) {
-      *_vtdsp->_trs << " -> VS_SYNC_GROUP_TIME G" << e.value().grp << " "
-                    << hex << showbase
-                    << self_id() << " -> " << out_ev.dest() << dec << endl;
-    }
-  }
-  catch ( ... ) {
-  }
-#endif
-#endif // __FIT_VS_TRACE
-  Send( out_ev );
-}
+const stem::code_type basic_vs::VS_GROUP_R1 = 0x300;
+const stem::code_type basic_vs::VS_GROUP_R2 = 0x301;
+const stem::code_type basic_vs::VS_EVENT = 0x302;
 
-void VTHandler::VSMergeRemoteGroup_data( const stem::Event_base<VSsync_rq>& e, const string& data )
-{
-  stem::Event_base<VSsync> out_ev( VS_SYNC_GROUP_TIME );
-  out_ev.dest( e.src() );
-  out_ev.value().grp = e.value().grp;
-  get_gvtime( e.value().grp, out_ev.value().gvt.gvt );
-  out_ev.value().mess = data;
-#ifdef __FIT_VS_TRACE
-#if 0
-  try {
-    std::tr2::lock_guard<std::tr2::mutex> lk(_vtdsp->_lock_tr);
-    if ( _vtdsp->_trs != 0 && _vtdsp->_trs->good() && (_vtdsp->_trflags & Janus::tracegroup) ) {
-      *_vtdsp->_trs << " -> VS_SYNC_GROUP_TIME (data) G" << e.value().grp << " "
-                    << hex << showbase
-                    << self_id() << " -> " << out_ev.dest() << dec << endl;
-    }
-  }
-  catch ( ... ) {
-  }
-#endif
-#endif // __FIT_VS_TRACE
-  Send( out_ev );
-}
-
-
-DEFINE_RESPONSE_TABLE( VTHandler )
-  EV_Event_base_T_( ST_NULL, VS_NEW_MEMBER, VSNewMember, VSsync_rq )
-  EV_Event_base_T_( ST_NULL, VS_OUT_MEMBER, VSOutMember, VSsync_rq )
-  EV_Event_base_T_( ST_NULL, VS_SYNC_TIME, VSsync_time, VSsync )
-  EV_Event_base_T_( ST_NULL, VS_MERGE_GROUP, VSMergeRemoteGroup, VSsync_rq )
+DEFINE_RESPONSE_TABLE( basic_vs )
+  EV_Event_base_T_( ST_NULL, VS_GROUP_R1, new_member_round1, VT_sync )
+  EV_Event_base_T_( ST_NULL, VS_GROUP_R2, new_member_round2, VT_sync )
+  EV_Event_base_T_( ST_NULL, VS_EVENT, vt_process, vs_event )
 END_RESPONSE_TABLE
 
-} // namespace vt
-
-namespace std {
-
-ostream& operator <<( ostream& o, const janus::vtime::vtime_type::value_type& v )
-{
-  return o << "(" << v.first << "," << v.second << ")";
-}
-
-ostream& operator <<( ostream& o, const janus::vtime::vtime_type& v )
-{
-  for ( janus::vtime::vtime_type::const_iterator i = v.begin(); i != v.end(); ++i ) {
-    if ( i != v.begin() ) {
-      o << ", ";
-    }
-    o << *i;
-  }
-  return o;
-}
-
-ostream& operator <<( ostream& o, const janus::vtime& v )
-{ return o << v.vt; }
-
-ostream& operator <<( ostream& o, const janus::gvtime::gvtime_type::value_type& v )
-{
-  o << v.first << ": " << v.second.vt;
-}
-
-ostream& operator <<( ostream& o, const janus::gvtime::gvtime_type& v )
-{
-  o << "{\n";
-  for ( janus::gvtime::gvtime_type::const_iterator i = v.begin(); i != v.end(); ++i ) {
-    o << "\t" << *i << "\n";
-  }
-  return o << "}\n";
-}
-
-ostream& operator <<( ostream& o, const janus::gvtime& v )
-{
-  return o << v.gvt;
-}
-
-ostream& operator <<( ostream& o, const janus::VSsync& m )
-{
-  // ios_base::fmtflags f = o.flags( ios_base::hex );
-  o << "G" << m.grp << " " << m.gvt;
-  
-  return o;
-}
-
-ostream& operator <<( ostream& o, const janus::VSmess& m )
-{
-  ios_base::fmtflags f = o.flags( ios_base::hex | ios_base::showbase );
-  o << "C" << m.code << dec << " " << m.src << " " << static_cast<const janus::VSsync&>(m);
-  o.flags( f );
-  return o;
-}
-
 } // namespace janus
-

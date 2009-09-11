@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/09 13:28:54 ptr>
+// -*- C++ -*- Time-stamp: <09/09/11 17:14:14 ptr>
 
 /*
  *
@@ -19,6 +19,7 @@
 #include <istream>
 #include <ostream>
 #include <stdexcept>
+#include <set>
 
 #include <stem/Event.h>
 #include <stem/EventHandler.h>
@@ -46,7 +47,6 @@
 #    define __USE_STD_TR1
 #  endif
 #endif
-
 
 namespace janus {
 
@@ -136,6 +136,55 @@ typedef __gnu_cxx::hash_map<addr_type,vtime> vtime_matrix_type;
 typedef std::tr1::unordered_map<addr_type,vtime> vtime_matrix_type;
 #endif
 
+struct basic_event :
+    public stem::__pack_base
+{
+    void pack( std::ostream& s ) const
+      { vt.pack( s ); }
+
+    void unpack( std::istream& s )
+      { vt.unpack( s ); }
+
+    basic_event()
+      { }
+    basic_event( const basic_event& vt_ ) :
+        vt( vt_.vt )
+      { }
+
+    void swap( basic_event& r )
+      { std::swap( vt, r.vt ); }
+
+    vtime vt;
+};
+
+struct vs_event :
+    public basic_event
+{
+    vs_event()
+      { }
+    vs_event( const vs_event& e ) :
+        basic_event( e ),
+        ev( e.ev )
+      { }
+
+    virtual void pack( std::ostream& s ) const;
+    virtual void unpack( std::istream& s );
+
+    void swap( vs_event& );
+
+    stem::Event ev;
+};
+
+struct VT_sync :
+    public basic_event
+{
+    VT_sync()
+      { }
+    VT_sync( const VT_sync& vt_ ) :
+        basic_event( vt_ )
+      { }
+};
+
 // vtime max( const vtime& l, const vtime& r );
 
 // typedef std::pair<group_type, vtime> vtime_group_type;
@@ -184,201 +233,6 @@ struct gvtime :
     mutable gvtime_type gvt;
 };
 
-struct VSsync_rq :
-    public stem::__pack_base
-{
-    void pack( std::ostream& s ) const;
-    void unpack( std::istream& s );
-
-    VSsync_rq() :
-        grp(nil_gid),
-        mess()
-      { }
-    VSsync_rq( const VSsync_rq& _gvt ) :
-        grp( _gvt.grp ),
-        mess( _gvt.mess )
-      { }
-
-    gid_type grp;
-    std::string mess;
-};
-
-struct VSsync :
-    public VSsync_rq
-{
-    void pack( std::ostream& s ) const;
-    void unpack( std::istream& s );
-
-    VSsync()
-      { }
-    VSsync( const VSsync& _gvt ) :
-        VSsync_rq( _gvt ),
-        gvt( _gvt.gvt )
-      { }
-
-    gvtime gvt;
-};
-
-struct VSmess :
-    public VSsync
-{
-    void pack( std::ostream& s ) const;
-    void unpack( std::istream& s );
-
-    VSmess() :
-        code(0),
-        src()
-      { }
-    VSmess( const VSmess& _gvt ) :
-        VSsync( _gvt ),
-        code( _gvt.code ),
-        src( _gvt.src )
-      { }
-
-    stem::code_type code;
-    addr_type src;    
-};
-
-namespace detail {
-
-class vtime_obj_rec
-{
-  public:
-    void add_group( gid_type g )
-      { groups.insert(g); }
-    void add( janus::addr_type a, gid_type g )
-      { addr = a; groups.insert(g); }
-    bool rm_group( gid_type );
-    void rm_member( const janus::addr_type& );
-
-    template <typename BackInsertIterator>
-    void groups_list( BackInsertIterator bi ) const
-      { std::copy( groups.begin(), groups.end(), bi ); }
-
-    // stem::addr_type stem_addr() const
-    //   { return addr; }
-
-    bool deliver( const VSmess& ev );
-    bool deliver_delayed( const VSmess& ev );
-    std::ostream& trace_deliver( const VSmess& m, std::ostream& o );
-    void next( const janus::addr_type& from, gid_type grp )
-      { ++vt.gvt[grp][from]; /* increment my VT counter */ }
-    void delta( gvtime& vtstamp, const janus::addr_type& from, const janus::addr_type& to, gid_type grp );
-    void base_advance( const janus::addr_type& to )
-      { svt[to].gvt = vt.gvt; /* store last sent VT to obj */ }
-    void get_gvt( gvtime::gvtime_type& gvt ) const
-      { gvt = vt.gvt; }
-    void sync( gid_type, const janus::addr_type&, const gvtime::gvtime_type& );
-
-#ifdef __FIT_EXAM
-    const gvtime::gvtime_type::mapped_type& operator[]( const gvtime::gvtime_type::key_type k ) const
-      { return vt[k]; }
-#endif
-
-  private:
-#ifdef __USE_STLPORT_HASH
-    typedef std::hash_set<gid_type> groups_container_type;
-    typedef std::hash_map<janus::addr_type, gvtime> delta_vtime_type;
-    typedef std::hash_map<janus::addr_type, gvtime> snd_delta_vtime_t;
-#endif
-#ifdef __USE_STD_HASH
-    typedef __gnu_cxx::hash_set<gid_type> groups_container_type;
-    typedef __gnu_cxx::hash_map<janus::addr_type, gvtime> delta_vtime_type;
-    typedef __gnu_cxx::hash_map<janus::addr_type, gvtime> snd_delta_vtime_t;
-#endif
-#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::tr1::unordered_set<gid_type> groups_container_type;
-    typedef std::tr1::unordered_map<janus::addr_type, gvtime> delta_vtime_type;
-    typedef std::tr1::unordered_map<janus::addr_type, gvtime> snd_delta_vtime_t;
-#endif
-
-    janus::addr_type addr; // stem address of object
-    delta_vtime_type lvt;  // last recieve VT from neighbours
-    snd_delta_vtime_t svt; // last send VT to neighbours
-    gvtime vt;             // VT of object
-
-    groups_container_type groups; // member of groups
-
-  public:
-    // delay pool should be here
-    typedef std::pair<xmt::timespec,stem::Event_base<VSmess>*> delay_item_t;
-    typedef std::list<delay_item_t> dpool_t;
-
-    dpool_t dpool;
-
-  private:
-    bool order_correct( const VSmess& );
-    bool order_correct_delayed( const VSmess& );
-};
-
-} // namespace detail
-
-class Janus;
-
-class VTHandler :
-        public stem::EventHandler
-{
-  private:
-    class Init
-    {
-      public:
-        Init();
-        ~Init();
-      private:
-        static void _guard( int );
-        static void __at_fork_prepare();
-        static void __at_fork_child();
-        static void __at_fork_parent();
-    };
-
-  public:
-    VTHandler();
-    explicit VTHandler( const char *info );
-    explicit VTHandler( stem::addr_type id, const char *info = 0 );
-    virtual ~VTHandler();
-
-    void JaSend( const stem::Event& e );
-    void JoinGroup( gid_type grp );
-    void LeaveGroup( gid_type grp );
-
-    virtual void VSNewMember( const stem::Event_base<VSsync_rq>& e );
-    virtual void VSOutMember( const stem::Event_base<VSsync_rq>& e );
-    virtual void VSsync_time( const stem::Event_base<VSsync>& );
-    virtual void VSMergeRemoteGroup( const stem::Event_base<VSsync_rq>& e );
-
-    // template <class D>
-    // void JaSend( const stem::Event_base<D>& e )
-    //   { VTHandler::JaSend( stem::Event_convert<D>()( e ) ); }
-
-    static Janus *vtdispatcher()
-      { return _vtdsp; }
-
-  protected:
-    void Unsubscribe();
-    void VSNewMember_data( const stem::Event_base<VSsync_rq>&, const std::string& data );
-    void VSMergeRemoteGroup_data( const stem::Event_base<VSsync_rq>& e, const std::string& data );
-
-
-    void get_gvtime( gid_type g, gvtime::gvtime_type& gvt );
-
-  private:
-    static Janus *_vtdsp;
-    friend class Janus;
-
-    DECLARE_RESPONSE_TABLE( VTHandler, stem::EventHandler );
-};
-
-#define VS_MESS               0x300
-#define VS_NEW_MEMBER         0x301
-#define VS_OUT_MEMBER         0x302
-#define VS_SYNC_TIME          0x303
-#define VS_NEW_REMOTE_MEMBER  0x304
-#define VS_NEW_MEMBER_RV      0x305
-#define VS_OLD_MEMBER_RV      0x306
-#define VS_HOST_MGR_FINAL     0x307
-#define VS_MERGE_GROUP        0x308
-#define VS_SYNC_GROUP_TIME    0x309
-
 #ifdef __USE_STLPORT_HASH
 #  undef __USE_STLPORT_HASH
 #endif
@@ -392,18 +246,80 @@ class VTHandler :
 #  undef __USE_STD_TR1
 #endif
 
+class basic_vs :
+    public stem::EventHandler
+{
+  private:
+    typedef std::set<stem::addr_type> group_members_type;
+
+    static const stem::code_type VS_GROUP_R1;
+    static const stem::code_type VS_GROUP_R2;
+    static const stem::code_type VS_EVENT;
+
+  public:
+    basic_vs();
+    basic_vs( stem::addr_type id );
+    basic_vs( stem::addr_type id, const char *info );
+    ~basic_vs();
+
+    template <class InputIter>
+    void VTjoin( InputIter first, InputIter last )
+      {
+        // super is ordered container
+        group_members_type super( first, last );
+        
+        super.insert( self_id() );
+
+        group_members_type::const_iterator i = super.find( self_id() );
+
+        if ( ++i == super.end() ) {
+          i = super.begin();
+        }
+
+        if ( i != super.end() && *i != self_id() ) {
+          stem::Event_base<VT_sync> ev( VS_GROUP_R1 );
+
+          ev.dest( *i );
+          ev.value().vt = vt[self_id()];
+
+          Send( ev );
+        }
+      }
+
+    void vs( const stem::Event& );
+
+    template <class D>
+    void vs( const stem::Event_base<D>& e )
+      { basic_vs::vs( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
+
+  protected:
+    vtime_matrix_type vt;
+
+    virtual void round2_pass() = 0;
+
+  private:
+    void new_member_round1( const stem::Event_base<VT_sync>& );
+    void new_member_round2( const stem::Event_base<VT_sync>& );
+    void vt_process( const stem::Event_base<vs_event>& );
+
+    typedef std::list<stem::Event_base<vs_event> > delay_container_type;
+
+    delay_container_type dc;
+
+    DECLARE_RESPONSE_TABLE( basic_vs, stem::EventHandler );
+};
+
 } // namespace janus
 
 namespace std {
 
-ostream& operator <<( ostream&, const janus::vtime::vtime_type::value_type& );
-ostream& operator <<( ostream&, const janus::vtime::vtime_type& );
-ostream& operator <<( ostream&, const janus::vtime& );
-ostream& operator <<( ostream&, const janus::gvtime::gvtime_type::value_type& );
-ostream& operator <<( ostream&, const janus::gvtime::gvtime_type& );
-ostream& operator <<( ostream&, const janus::gvtime& );
-ostream& operator <<( ostream& o, const janus::VSsync& );
-ostream& operator <<( ostream& o, const janus::VSmess& );
+template <>
+inline void swap( janus::basic_event& l, janus::basic_event& r )
+{ l.swap( r ); }
+
+template <>
+inline void swap( janus::vs_event& l, janus::vs_event& r )
+{ l.swap( r ); }
 
 } // namespace std
 
