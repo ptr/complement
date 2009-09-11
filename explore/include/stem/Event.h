@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/08/04 14:10:30 ptr>
+// -*- C++ -*- Time-stamp: <09/09/11 16:03:17 ptr>
 
 /*
  *
@@ -110,8 +110,10 @@ class __Event_Base
       { _flags = 0; }
 
     enum {
-      conv = 1,
-      expand = 2
+      conv    = 0x1,
+      expand  = 0x2,
+      vs      = 0x4,
+      vs_join = 0x8
     };
 
     void swap( __Event_Base& l )
