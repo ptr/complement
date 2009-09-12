@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/11 17:15:15 ptr>
+// -*- C++ -*- Time-stamp: <09/09/12 09:25:50 ptr>
 
 /*
  *
@@ -47,6 +47,7 @@ class VTM_one_group_handler :
       { return basic_vs::vt; }
 
     virtual void round2_pass();
+    virtual void vs_event_origin( const janus::vtime&, const stem::Event& );
 
     std::string mess;
 
@@ -111,6 +112,10 @@ void VTM_one_group_handler::round2_pass()
   std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
   pass = true;
   cnd.notify_one();
+}
+
+void VTM_one_group_handler::vs_event_origin( const vtime&, const stem::Event& )
+{
 }
 
 bool VTM_one_group_handler::_status::operator()() const

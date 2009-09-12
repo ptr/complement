@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/12 00:07:44 ptr>
+// -*- C++ -*- Time-stamp: <09/09/12 09:25:14 ptr>
 
 /*
  *
@@ -285,10 +285,12 @@ void basic_vs::vs( const stem::Event& inc_ev )
 {
   stem::Event_base<vs_event> ev( VS_EVENT );
   ev.value().ev = inc_ev;
-  ev.value().ev.setf( stem::__Event_Base::vs );
+  ev.value().ev.setf( stem::__Event_Base::vs );  
 
   vtime& self = vt[self_id()];
   ++self[self_id()];
+
+  this->vs_event_origin( self, ev.value().ev );
 
   for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
     if ( i->first != self_id() ) {
