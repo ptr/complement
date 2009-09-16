@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/12 09:24:50 ptr>
+// -*- C++ -*- Time-stamp: <09/09/16 16:14:19 ptr>
 
 /*
  *
@@ -298,6 +298,7 @@ class basic_vs :
 
     virtual void round2_pass() = 0;
     virtual void vs_event_origin( const vtime&, const stem::Event& ) = 0;
+    virtual void vs_event_derivative( const vtime&, const stem::Event& ) = 0;
 
   private:
     void new_member_round1( const stem::Event_base<VT_sync>& );

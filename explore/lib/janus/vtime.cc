@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/12 09:25:14 ptr>
+// -*- C++ -*- Time-stamp: <09/09/16 16:16:50 ptr>
 
 /*
  *
@@ -416,6 +416,8 @@ void basic_vs::vt_process( const stem::Event_base<vs_event>& ev )
   ev.value().ev.src( ev.src() );
   ev.value().ev.dest( ev.dest() );
 
+  this->vs_event_derivative( self, ev.value().ev );
+
   this->Dispatch( ev.value().ev );
 
   /*
@@ -446,6 +448,8 @@ void basic_vs::vt_process( const stem::Event_base<vs_event>& ev )
 
       k->value().ev.src( k->src() );
       k->value().ev.dest( k->dest() );
+
+      this->vs_event_derivative( self, k->value().ev );
 
       this->Dispatch( k->value().ev );
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/12 09:25:50 ptr>
+// -*- C++ -*- Time-stamp: <09/09/16 16:15:26 ptr>
 
 /*
  *
@@ -48,6 +48,7 @@ class VTM_one_group_handler :
 
     virtual void round2_pass();
     virtual void vs_event_origin( const janus::vtime&, const stem::Event& );
+    virtual void vs_event_derivative( const vtime&, const stem::Event& );
 
     std::string mess;
 
@@ -115,6 +116,10 @@ void VTM_one_group_handler::round2_pass()
 }
 
 void VTM_one_group_handler::vs_event_origin( const vtime&, const stem::Event& )
+{
+}
+
+void VTM_one_group_handler::vs_event_derivative( const vtime&, const stem::Event& )
 {
 }
 
