@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/17 19:18:47 ptr>
+// -*- C++ -*- Time-stamp: <09/09/18 15:45:53 ptr>
 
 /*
  *
@@ -55,10 +55,11 @@ int main( int argc, const char ** argv )
   t.add( &vtime_operations::vt_diff, vt_oper, "Differences", tc[0] );
   tc[2] = t.add( &vtime_operations::gvt_add, vt_oper, "Grouped VT additions", tc[1] );
 
-  t.add( &vtime_operations::VT_one_group_replay, vt_oper, "VT one group replay",
-    t.add( &vtime_operations::VT_one_group_send, vt_oper, "VT one group send",
-      t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
-        t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member", tc[3] ) ) ) );
+  t.add( &vtime_operations::VT_one_group_late_replay, vt_oper, "VT one group late replay",
+    t.add( &vtime_operations::VT_one_group_replay, vt_oper, "VT one group replay",
+      t.add( &vtime_operations::VT_one_group_send, vt_oper, "VT one group send",
+        t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
+          t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member", tc[3] ) ) ) ) );
 
   if ( opts.is_set( 'v' ) ) {
     t.flags( t.flags() | exam::base_logger::verbose );

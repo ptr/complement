@@ -1,3 +1,34 @@
+2009-09-18  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* Repo: implement single group concept;
+	virtual synchrony events are totally within
+	StEM framework (VS event is a StEM event that
+	incapsulate Event, possible converted, i.e. event that
+	may incapsulte already serialized data);
+	special VS dispatcher removed---no needs in it;
+
+	* Repo: timestamp within message isn't time difference,
+	but values that was changed since last received
+	message from peer; 
+
+	* Repo: framework (via pure functions) for serialization
+	virtual synchrony events and re-play it just before
+	attempt to join group (aka 'change view')---this
+	may help to recover state and sync it with other
+	group members;
+
+	* Repo: group member list or way to discover
+	group members before join group is outer problem,
+	not part of virtual synchrony---it very specific
+	to application;
+	
+	* libjanus: version 0.7.0.
+
+2009-07-22  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* Repo: recover vtime operations after shift
+	to StEM 5.
+
 2007-10-09  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* janus.h, janus.cc, vtime.h: send notification about

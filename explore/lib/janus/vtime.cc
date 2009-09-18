@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/18 09:59:40 ptr>
+// -*- C++ -*- Time-stamp: <09/09/18 17:32:03 ptr>
 
 /*
  *
@@ -284,6 +284,7 @@ basic_vs::basic_vs( const char* info ) :
 
 basic_vs::~basic_vs()
 {
+  disable();
 }
 
 void basic_vs::vs( const stem::Event& inc_ev )

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/18 13:06:05 ptr>
+// -*- C++ -*- Time-stamp: <09/09/18 17:31:06 ptr>
 
 /*
  *
@@ -110,7 +110,7 @@ VTM_one_group_handler::VTM_one_group_handler( stem::addr_type id, const char* in
 
 VTM_one_group_handler::~VTM_one_group_handler()
 {
-  // cnd.wait();
+  disable();
 }
 
 void VTM_one_group_handler::round1_start()

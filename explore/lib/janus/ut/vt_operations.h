@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/17 18:27:39 ptr>
+// -*- C++ -*- Time-stamp: <09/09/18 15:40:58 ptr>
 
 /*
  *
@@ -31,6 +31,7 @@ class vtime_operations
     int EXAM_DECL(VT_one_group_core3);
     int EXAM_DECL(VT_one_group_send);
     int EXAM_DECL(VT_one_group_replay);
+    int EXAM_DECL(VT_one_group_late_replay);
 
     int EXAM_DECL(gvt_add);
 
