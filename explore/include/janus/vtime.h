@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/16 16:14:19 ptr>
+// -*- C++ -*- Time-stamp: <09/09/18 09:35:21 ptr>
 
 /*
  *
@@ -277,6 +277,8 @@ class basic_vs :
           i = super.begin();
         }
 
+        this->round1_start();
+
         if ( i != super.end() && *i != self_id() ) {
           stem::Event_base<VT_sync> ev( VS_GROUP_R1 );
 
@@ -296,9 +298,12 @@ class basic_vs :
   protected:
     vtime_matrix_type vt;
 
+    virtual void round1_start() = 0;
     virtual void round2_pass() = 0;
     virtual void vs_event_origin( const vtime&, const stem::Event& ) = 0;
     virtual void vs_event_derivative( const vtime&, const stem::Event& ) = 0;
+    
+    void replay( const vtime&, const stem::Event& );
 
   private:
     void new_member_round1( const stem::Event_base<VT_sync>& );

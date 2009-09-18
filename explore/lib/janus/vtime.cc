@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/16 16:16:50 ptr>
+// -*- C++ -*- Time-stamp: <09/09/18 09:59:40 ptr>
 
 /*
  *
@@ -38,14 +38,19 @@ void vtime::unpack( std::istream& s )
   vt.clear();
   uint8_t n;
   __unpack( s, n );
-  while ( n-- > 0 ) {
+
+  if ( !s.fail() && n != 0 ) {
     janus::addr_type addr;
     vtime_unit_type v;
 
-    __unpack( s, addr );
-    __unpack( s, v );
+    do {
+      __unpack( s, addr );
+      __unpack( s, v );
 
-    vt[addr] = v;
+      if ( !s.fail() ) {
+        vt[addr] = v;
+      }
+    } while ( --n != 0 && !s.fail() ); 
   }
 }
 
@@ -460,6 +465,21 @@ void basic_vs::vt_process( const stem::Event_base<vs_event>& ev )
         ;
     }
   } while ( delayed_process );
+}
+
+void basic_vs::replay( const vtime& _vt, const stem::Event& inc_ev )
+{
+  // here must be: vt[self_id()] <= _vt;
+  // another assume: replay called in correct order
+  // (vs_event_origin + vs_event_derivative produce correct order)
+
+  if ( _vt <= vt[self_id()] ) {
+    throw std::runtime_error( "invalid VS event order for replay" );
+  }
+
+  vt[self_id()] = _vt;
+
+  this->Dispatch( inc_ev );
 }
 
 const stem::code_type basic_vs::VS_GROUP_R1 = 0x300;
