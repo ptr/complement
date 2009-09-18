@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/04/29 13:27:56 ptr>
+// -*- C++ -*- Time-stamp: <09/09/18 09:19:59 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2009
@@ -30,11 +30,13 @@ void __pack_base::__unpack( istream& s, string& str )
 {
   uint32_t sz;
   s.read( (char *)&sz, sizeof(uint32_t) );
-  sz = from_net( sz );
-  str.erase();
-  if ( sz > 0 ) {
-    str.resize( sz );
-    s.read( const_cast<char*>(str.data()), sz );
+  if ( !s.fail() ) {
+    sz = from_net( sz );
+    str.erase();
+    if ( sz > 0 ) {
+      str.resize( sz );
+      s.read( const_cast<char*>(str.data()), sz );
+    }
   }
 }
 
@@ -52,13 +54,13 @@ void __pack_base::__pack( ostream& s, const string& str )
 __FIT_DECLSPEC
 void __pack_base::__unpack( std::istream& s, xmt::uuid_type& u )
 {
-  s.read( (char*)u.u.b, sizeof(u.u.b) );
+  s.read( reinterpret_cast<char*>(u.u.b), sizeof(u.u.b) );
 }
 
 __FIT_DECLSPEC
 void __pack_base::__pack( std::ostream& s, const xmt::uuid_type& u )
 {
-  s.write( (const char*)u.u.b, sizeof(u.u.b) );
+  s.write( reinterpret_cast<const char*>(u.u.b), sizeof(u.u.b) );
 }
 
 } // namespace stem

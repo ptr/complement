@@ -1,3 +1,10 @@
+2009-09-18  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* EvPack.cc: if string size unpack fail,
+	don't try to unpack string's data [bug];
+
+	* libstem: revision 5.3.3.
+
 2009-08-21  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* Cron.h, Cron.cc: change of expiration
