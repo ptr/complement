@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/18 17:31:06 ptr>
+// -*- C++ -*- Time-stamp: <09/09/30 16:50:30 ptr>
 
 /*
  *
@@ -50,8 +50,8 @@ class VTM_one_group_handler :
     vtime_matrix_type& vt()
       { return basic_vs::vt; }
 
-    virtual void round1_start();
-    virtual void round2_pass();
+    virtual void vs_pub_recover();
+    virtual void vs_pub_view_update();
     virtual void vs_event_origin( const janus::vtime&, const stem::Event& );
     virtual void vs_event_derivative( const vtime&, const stem::Event& );
 
@@ -113,11 +113,11 @@ VTM_one_group_handler::~VTM_one_group_handler()
   disable();
 }
 
-void VTM_one_group_handler::round1_start()
+void VTM_one_group_handler::vs_pub_recover()
 {
 }
 
-void VTM_one_group_handler::round2_pass()
+void VTM_one_group_handler::vs_pub_view_update()
 {
   std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
   pass = true;
@@ -154,75 +154,53 @@ END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::VT_one_group_core)
 {
-  list<stem::addr_type> super_spirit;
-
   VTM_one_group_handler a1;
-
-  a1.vt()[a1.self_id()][a1.self_id()] = 1;
-
-  a1.VTjoin( super_spirit.begin(), super_spirit.end() );
-
-  super_spirit.push_back( a1.self_id() );
-
   VTM_one_group_handler a2;
   
-  a2.VTjoin( super_spirit.begin(), super_spirit.end() );
-
-  super_spirit.push_back( a2.self_id() );
+  a2.vs_join( a1.self_id() );
 
   EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
 
   EXAM_CHECK( a1.vt()[a1.self_id()][a1.self_id()] == 1 );
   EXAM_CHECK( a1.vt()[a1.self_id()][a2.self_id()] == 0 );
-  EXAM_CHECK( a1.vt()[a2.self_id()][a1.self_id()] == 1 );
+  EXAM_CHECK( a1.vt()[a2.self_id()][a1.self_id()] == 0 );
   EXAM_CHECK( a1.vt()[a2.self_id()][a2.self_id()] == 0 );
 
-  EXAM_CHECK( a2.vt()[a2.self_id()][a1.self_id()] == 1 );
-  EXAM_CHECK( a2.vt()[a2.self_id()][a2.self_id()] == 0 );
   EXAM_CHECK( a2.vt()[a1.self_id()][a1.self_id()] == 1 );
   EXAM_CHECK( a2.vt()[a1.self_id()][a2.self_id()] == 0 );
+  EXAM_CHECK( a2.vt()[a2.self_id()][a1.self_id()] == 1 );
+  EXAM_CHECK( a2.vt()[a2.self_id()][a2.self_id()] == 0 );
 
   return EXAM_RESULT;
 }
 
 int EXAM_IMPL(vtime_operations::VT_one_group_core3)
 {
-  list<stem::addr_type> super_spirit;
-
   VTM_one_group_handler a1;
   VTM_one_group_handler a2;
   VTM_one_group_handler a3;
 
-  a1.vt()[a1.self_id()][a1.self_id()] = 1;
-
-  a1.VTjoin( super_spirit.begin(), super_spirit.end() );
-
-  super_spirit.push_back( a1.self_id() );
-  
-  // a2.vt[a1.self_id()] = 1;
-  a2.vt()[a2.self_id()][a2.self_id()] = 2;
-
-  a2.VTjoin( super_spirit.begin(), super_spirit.end() );
-
-  super_spirit.push_back( a2.self_id() );
+  a2.vs_join( a1.self_id() );
 
   EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
 
   EXAM_CHECK( a1.vt()[a1.self_id()][a1.self_id()] == 1 );
-  EXAM_CHECK( a1.vt()[a1.self_id()][a2.self_id()] == 2 );
-  EXAM_CHECK( a1.vt()[a2.self_id()][a1.self_id()] == 1 );
-  EXAM_CHECK( a1.vt()[a2.self_id()][a2.self_id()] == 2 );
+  EXAM_CHECK( a1.vt()[a1.self_id()][a2.self_id()] == 0 );
+  EXAM_CHECK( a1.vt()[a2.self_id()][a1.self_id()] == 0 );
+  EXAM_CHECK( a1.vt()[a2.self_id()][a2.self_id()] == 0 );
 
-  EXAM_CHECK( a2.vt()[a2.self_id()][a1.self_id()] == 1 );
-  EXAM_CHECK( a2.vt()[a2.self_id()][a2.self_id()] == 2 );
   EXAM_CHECK( a2.vt()[a1.self_id()][a1.self_id()] == 1 );
-  EXAM_CHECK( a2.vt()[a1.self_id()][a2.self_id()] == 2 );
-  
-  a3.VTjoin( super_spirit.begin(), super_spirit.end() );
+  EXAM_CHECK( a2.vt()[a1.self_id()][a2.self_id()] == 0 );
+  EXAM_CHECK( a2.vt()[a2.self_id()][a1.self_id()] == 1 );
+  EXAM_CHECK( a2.vt()[a2.self_id()][a2.self_id()] == 0 );
 
-  super_spirit.push_back( a3.self_id() );
+  a1.reset();
+  a2.reset();
+
+  a3.vs_join( a2.self_id() );
 
   EXAM_CHECK( a3.wait( std::tr2::milliseconds(500) ) );
+  EXAM_CHECK( a1.wait( std::tr2::milliseconds(500) ) );
 
   EXAM_CHECK( a1.vt()[a1.self_id()][a1.self_id()] == 1 );
   EXAM_CHECK( a1.vt()[a1.self_id()][a2.self_id()] == 2 );
@@ -230,48 +208,39 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3)
   EXAM_CHECK( a1.vt()[a2.self_id()][a1.self_id()] == 1 );
   EXAM_CHECK( a1.vt()[a2.self_id()][a2.self_id()] == 2 );
   EXAM_CHECK( a1.vt()[a2.self_id()][a3.self_id()] == 0 );
-  EXAM_CHECK( a1.vt()[a3.self_id()][a1.self_id()] == 1 );
-  EXAM_CHECK( a1.vt()[a3.self_id()][a2.self_id()] == 2 );
+  EXAM_CHECK( a1.vt()[a3.self_id()][a1.self_id()] == 0 );
+  EXAM_CHECK( a1.vt()[a3.self_id()][a2.self_id()] == 0 );
   EXAM_CHECK( a1.vt()[a3.self_id()][a3.self_id()] == 0 );
 
+  EXAM_CHECK( a2.vt()[a1.self_id()][a1.self_id()] == 1 );
+  EXAM_CHECK( a2.vt()[a1.self_id()][a2.self_id()] == 0 );
+  EXAM_CHECK( a2.vt()[a1.self_id()][a3.self_id()] == 0 );
   EXAM_CHECK( a2.vt()[a2.self_id()][a1.self_id()] == 1 );
   EXAM_CHECK( a2.vt()[a2.self_id()][a2.self_id()] == 2 );
   EXAM_CHECK( a2.vt()[a2.self_id()][a3.self_id()] == 0 );
-  EXAM_CHECK( a2.vt()[a1.self_id()][a1.self_id()] == 1 );
-  EXAM_CHECK( a2.vt()[a1.self_id()][a2.self_id()] == 2 );
-  EXAM_CHECK( a2.vt()[a1.self_id()][a3.self_id()] == 0 );
-  EXAM_CHECK( a2.vt()[a3.self_id()][a1.self_id()] == 1 );
-  EXAM_CHECK( a2.vt()[a3.self_id()][a2.self_id()] == 2 );
+  EXAM_CHECK( a2.vt()[a3.self_id()][a1.self_id()] == 0 );
+  EXAM_CHECK( a2.vt()[a3.self_id()][a2.self_id()] == 0 );
   EXAM_CHECK( a2.vt()[a3.self_id()][a3.self_id()] == 0 );
 
+  EXAM_CHECK( a3.vt()[a1.self_id()][a1.self_id()] == 0 );
+  EXAM_CHECK( a3.vt()[a1.self_id()][a2.self_id()] == 0 );
+  EXAM_CHECK( a3.vt()[a1.self_id()][a3.self_id()] == 0 );
+  EXAM_CHECK( a3.vt()[a2.self_id()][a1.self_id()] == 1 );
+  EXAM_CHECK( a3.vt()[a2.self_id()][a2.self_id()] == 2 );
+  EXAM_CHECK( a3.vt()[a2.self_id()][a3.self_id()] == 0 );
   EXAM_CHECK( a3.vt()[a3.self_id()][a1.self_id()] == 1 );
   EXAM_CHECK( a3.vt()[a3.self_id()][a2.self_id()] == 2 );
   EXAM_CHECK( a3.vt()[a3.self_id()][a3.self_id()] == 0 );
-  EXAM_CHECK( a3.vt()[a1.self_id()][a1.self_id()] == 1 );
-  // EXAM_CHECK( a3.vt()[a1.self_id()][a2.self_id()] == 2 );
-  EXAM_CHECK( a3.vt()[a1.self_id()][a3.self_id()] == 0 );
-  // EXAM_CHECK( a3.vt()[a2.self_id()][a1.self_id()] == 1 );
-  EXAM_CHECK( a3.vt()[a2.self_id()][a2.self_id()] == 2 );
-  EXAM_CHECK( a3.vt()[a2.self_id()][a3.self_id()] == 0 );
 
   return EXAM_RESULT;
 }
 
 int EXAM_IMPL(vtime_operations::VT_one_group_send)
 {
-  list<stem::addr_type> super_spirit;
-
   VTM_one_group_handler a1;
-
-  a1.VTjoin( super_spirit.begin(), super_spirit.end() );
-
-  super_spirit.push_back( a1.self_id() );
-
   VTM_one_group_handler a2;
 
-  a2.VTjoin( super_spirit.begin(), super_spirit.end() );
-
-  super_spirit.push_back( a2.self_id() );
+  a2.vs_join( a1.self_id() );
 
   EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
 
@@ -282,11 +251,11 @@ int EXAM_IMPL(vtime_operations::VT_one_group_send)
   ev.value() = "message";
 
   a1.vs( ev );
-  EXAM_CHECK( a1.vt()[a1.self_id()][a1.self_id()] == 1 );
+  EXAM_CHECK( a1.vt()[a1.self_id()][a1.self_id()] == 2 );
 
   EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
 
-  EXAM_CHECK( a2.vt()[a2.self_id()][a1.self_id()] == 1 );
+  EXAM_CHECK( a2.vt()[a2.self_id()][a1.self_id()] == 2 );
   EXAM_CHECK( a2.mess == "message" );
 
   a1.reset();
@@ -294,14 +263,13 @@ int EXAM_IMPL(vtime_operations::VT_one_group_send)
 
   VTM_one_group_handler a3;
 
-  a3.VTjoin( super_spirit.begin(), super_spirit.end() );
+  a3.vs_join( a1.self_id() );
 
-  super_spirit.push_back( a3.self_id() );
-
+  EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
   EXAM_CHECK( a3.wait( std::tr2::milliseconds(500) ) );
 
-  EXAM_CHECK( a3.vt()[a3.self_id()][a1.self_id()] == 1 );
-  EXAM_CHECK( a3.vt()[a1.self_id()][a1.self_id()] == 1 );
+  EXAM_CHECK( a3.vt()[a3.self_id()][a1.self_id()] == 4 );
+  EXAM_CHECK( a3.vt()[a1.self_id()][a1.self_id()] == 4 );
   // EXAM_CHECK( a3.vt()[a2.self_id()][a1.self_id()] == 1 );
 
   a1.reset();

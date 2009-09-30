@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/18 09:35:21 ptr>
+// -*- C++ -*- Time-stamp: <09/09/30 16:53:47 ptr>
 
 /*
  *
@@ -140,20 +140,22 @@ struct basic_event :
     public stem::__pack_base
 {
     void pack( std::ostream& s ) const
-      { vt.pack( s ); }
+      { __pack( s, view ); vt.pack( s ); }
 
     void unpack( std::istream& s )
-      { vt.unpack( s ); }
+      { __unpack( s, view ); vt.unpack( s ); }
 
     basic_event()
       { }
     basic_event( const basic_event& vt_ ) :
+        view( vt_.view ),
         vt( vt_.vt )
       { }
 
     void swap( basic_event& r )
-      { std::swap( vt, r.vt ); }
+      { std::swap( view, r.view ); std::swap( vt, r.vt ); }
 
+    uint32_t view;
     vtime vt;
 };
 
@@ -175,14 +177,38 @@ struct vs_event :
     stem::Event ev;
 };
 
-struct VT_sync :
+struct vs_points :
     public basic_event
 {
-    VT_sync()
+    vs_points()
       { }
-    VT_sync( const VT_sync& vt_ ) :
-        basic_event( vt_ )
+    vs_points( const vs_points& vt_ ) :
+        basic_event( vt_ ),
+        points( vt_.points )
       { }
+
+    virtual void pack( std::ostream& s ) const;
+    virtual void unpack( std::istream& s );
+
+    void swap( vs_points& );
+
+    struct access_t {
+        xmt::uuid_type hostid;
+        uint8_t family;
+        uint8_t type;
+        std::string data;
+    };
+
+#ifdef __USE_STLPORT_HASH
+    typedef std::hash_multimap<addr_type,access_t> points_type;
+#endif
+#ifdef __USE_STD_HASH
+    typedef __gnu_cxx::hash_multimap<addr_type,access_t> points_type;
+#endif
+#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+    typedef std::tr1::unordered_multimap<addr_type,access_t> points_type;
+#endif
+    points_type points;
 };
 
 // vtime max( const vtime& l, const vtime& r );
@@ -233,6 +259,80 @@ struct gvtime :
     mutable gvtime_type gvt;
 };
 
+class basic_vs :
+    public stem::EventHandler
+{
+  private:
+    typedef std::set<stem::addr_type> group_members_type;
+
+    static const stem::code_type VS_EVENT;
+    static const stem::code_type VS_LEAVE;
+    static const stem::code_type VS_JOIN_RQ;
+    static const stem::code_type VS_JOIN_RS;
+    static const stem::code_type VS_LOCK_VIEW;
+    static const stem::code_type VS_LOCK_VIEW_ACK;
+    static const stem::code_type VS_LOCK_VIEW_NAK;
+    static const stem::code_type VS_UPDATE_VIEW;
+
+  public:
+    basic_vs();
+    basic_vs( stem::addr_type id );
+    basic_vs( stem::addr_type id, const char* info );
+    basic_vs( const char* info );
+    ~basic_vs();
+
+    void vs_join( const stem::addr_type& );
+    void vs( const stem::Event& );
+
+    template <class D>
+    void vs( const stem::Event_base<D>& e )
+      { basic_vs::vs( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
+
+  protected:
+    vtime_matrix_type vt;
+
+    virtual void vs_pub_recover() = 0;
+    virtual void vs_pub_view_update() = 0;
+    virtual void vs_event_origin( const vtime&, const stem::Event& ) = 0;
+    virtual void vs_event_derivative( const vtime&, const stem::Event& ) = 0;
+    
+    void replay( const vtime&, const stem::Event& );
+
+  private:
+    void vs_lock_view( const stem::EventVoid& );
+    void vs_lock_view_ack( const stem::EventVoid& );
+    void vs_lock_view_nak( const stem::EventVoid& );
+    void vs_view_update();
+    void vt_process( const stem::Event_base<vs_event>& );
+    void vs_leave( const stem::Event_base<basic_event>& );
+    void vs_join_request( const stem::Event_base<vs_points>& );
+    void vs_group_points( const stem::Event_base<vs_points>& );
+
+    typedef std::list<stem::Event_base<vs_event> > delay_container_type;
+
+  protected:
+#ifdef __USE_STLPORT_HASH
+    typedef std::hash_set<addr_type> lock_rsp_type;
+#endif
+#ifdef __USE_STD_HASH
+    typedef __gnu_cxx::hash_set<addr_type> lock_rsp_type;
+#endif
+#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+    typedef std::tr1::unordered_set<addr_type> lock_rsp_type;
+#endif
+
+    delay_container_type dc;
+    vs_points::points_type points;
+    unsigned view;
+    stem::addr_type lock_addr;
+    lock_rsp_type lock_rsp;
+    stem::addr_type group_applicant;
+
+  private:
+    DECLARE_RESPONSE_TABLE( basic_vs, stem::EventHandler );
+};
+
+
 #ifdef __USE_STLPORT_HASH
 #  undef __USE_STLPORT_HASH
 #endif
@@ -245,77 +345,6 @@ struct gvtime :
 #ifdef __USE_STD_TR1
 #  undef __USE_STD_TR1
 #endif
-
-class basic_vs :
-    public stem::EventHandler
-{
-  private:
-    typedef std::set<stem::addr_type> group_members_type;
-
-    static const stem::code_type VS_GROUP_R1;
-    static const stem::code_type VS_GROUP_R2;
-    static const stem::code_type VS_EVENT;
-
-  public:
-    basic_vs();
-    basic_vs( stem::addr_type id );
-    basic_vs( stem::addr_type id, const char* info );
-    basic_vs( const char* info );
-    ~basic_vs();
-
-    template <class InputIter>
-    void VTjoin( InputIter first, InputIter last )
-      {
-        // super is ordered container
-        group_members_type super( first, last );
-        
-        super.insert( self_id() );
-
-        group_members_type::const_iterator i = super.find( self_id() );
-
-        if ( ++i == super.end() ) {
-          i = super.begin();
-        }
-
-        this->round1_start();
-
-        if ( i != super.end() && *i != self_id() ) {
-          stem::Event_base<VT_sync> ev( VS_GROUP_R1 );
-
-          ev.dest( *i );
-          ev.value().vt = vt[self_id()];
-
-          Send( ev );
-        }
-      }
-
-    void vs( const stem::Event& );
-
-    template <class D>
-    void vs( const stem::Event_base<D>& e )
-      { basic_vs::vs( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
-
-  protected:
-    vtime_matrix_type vt;
-
-    virtual void round1_start() = 0;
-    virtual void round2_pass() = 0;
-    virtual void vs_event_origin( const vtime&, const stem::Event& ) = 0;
-    virtual void vs_event_derivative( const vtime&, const stem::Event& ) = 0;
-    
-    void replay( const vtime&, const stem::Event& );
-
-  private:
-    void new_member_round1( const stem::Event_base<VT_sync>& );
-    void new_member_round2( const stem::Event_base<VT_sync>& );
-    void vt_process( const stem::Event_base<vs_event>& );
-
-    typedef std::list<stem::Event_base<vs_event> > delay_container_type;
-
-    delay_container_type dc;
-
-    DECLARE_RESPONSE_TABLE( basic_vs, stem::EventHandler );
-};
 
 } // namespace janus
 

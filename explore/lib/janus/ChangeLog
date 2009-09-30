@@ -1,3 +1,18 @@
+2009-09-30  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* Repo: join to group implemented via
+	concept of 'view'; join done through 'leader'
+	with lock 'view' and update 'view [two-stage
+	fixation]; 'leader' may be arbitrarily chosen
+	by applicant from group members;
+
+	* Repo: virtual time send full timestamp
+	instead of 'change', due to I should keep
+	special 'sent' time vectors---negative use-case
+	was found for previous implementation;
+	
+	* libjanus: revision 0.8.0.
+
 2009-09-18  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* Repo: implement single group concept;
