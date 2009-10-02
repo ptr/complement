@@ -30,6 +30,8 @@ class sockios_test
     int EXAM_DECL(processor_core_income_data);
     int EXAM_DECL(fork);
     int EXAM_DECL(income_data);
+    int EXAM_DECL(check_rdtimeout_fail);
+    int EXAM_DECL(check_rdtimeout);
     int EXAM_DECL(srv_sigpipe);
     int EXAM_DECL(read0);
 

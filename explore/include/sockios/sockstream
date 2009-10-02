@@ -270,7 +270,12 @@ class basic_socket
 #endif
 
     template <class Duration>
-    void rdtimeout( const Duration& );
+    void rdtimeout( const Duration& d )
+      {
+        _use_rdtimeout = true;
+        _rdtimeout = (std::tr2::milliseconds) d;
+      }
+
     void rdtimeout() // infinite
       { _use_rdtimeout = false; }
 

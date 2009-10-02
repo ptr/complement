@@ -575,6 +575,136 @@ int EXAM_IMPL(sockios_test::income_data)
   return EXAM_RESULT;
 }
 
+class lazy_worker
+{
+  public:
+    lazy_worker( sockstream& )
+      { }
+    ~lazy_worker()
+      { }
+    void connect( sockstream& s )
+      {
+        this_thread::sleep( std::tr2::milliseconds(200) );
+
+        string tmp;
+        getline(s, tmp);
+        s << tmp << endl;
+
+        cnd.notify_one();
+      }
+    static std::tr2::condition_event cnd;
+};
+
+std::tr2::condition_event lazy_worker::cnd;
+
+int EXAM_IMPL(sockios_test::check_rdtimeout_fail)
+{
+  try {
+    xmt::shm_alloc<0> seg;
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+    xmt::allocator_shm<barrier_ip,0> shm;
+    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+
+    try {
+      this_thread::fork();
+      int res = 0;
+      try {
+        this_thread::fork();
+      }
+      catch ( std::tr2::fork_in_parent& child )
+      {
+        connect_processor<lazy_worker> prss( 2008 );
+
+        EXAM_CHECK_ASYNC_F( prss.good(), res );
+        EXAM_CHECK_ASYNC_F( prss.is_open(), res );
+
+        b.wait();
+
+        EXAM_CHECK_ASYNC_F( lazy_worker::cnd.timed_wait( milliseconds( 2000 ) ), res );
+      }
+      exit( res );
+    }
+    catch ( std::tr2::fork_in_parent& child ) {
+      b.wait();
+      {
+        sockstream s( "localhost", 2008 );
+        EXAM_CHECK( s.good() );
+        EXAM_CHECK( s.is_open() );
+
+        s.rdbuf()->rdtimeout( std::tr2::milliseconds(100) );
+        EXAM_CHECK( s.good() );
+        EXAM_CHECK( s.is_open() );
+
+        s << "Test_message" << endl;
+        string res("");
+        s >> res;
+        EXAM_CHECK( res == "" );
+      }
+    }
+    shm.deallocate( &b );
+    seg.deallocate();
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(sockios_test::check_rdtimeout)
+{
+  try {
+    xmt::shm_alloc<0> seg;
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+    xmt::allocator_shm<barrier_ip,0> shm;
+    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+
+    try {
+      this_thread::fork();
+      int res = 0;
+
+      try {
+        this_thread::fork();
+      }
+      catch ( std::tr2::fork_in_parent& child ){
+        connect_processor<lazy_worker> prss( 2008 );
+
+        EXAM_CHECK_ASYNC_F( prss.good(), res );
+        EXAM_CHECK_ASYNC_F( prss.is_open(), res );
+
+        b.wait();
+
+        EXAM_CHECK_ASYNC_F( lazy_worker::cnd.timed_wait( milliseconds( 2000 ) ), res );
+      }
+      exit( res );
+    }
+    catch ( std::tr2::fork_in_parent& child ) {
+      b.wait();
+      {
+        sockstream s( "localhost", 2008 );
+        EXAM_CHECK( s.good() );
+        EXAM_CHECK( s.is_open() );
+
+        s.rdbuf()->rdtimeout( std::tr2::milliseconds(500) );
+        EXAM_CHECK( s.good() );
+        EXAM_CHECK( s.is_open() );
+
+        s << "Test_message" << endl;
+        string res("");
+        s >> res;
+        EXAM_CHECK( res == "Test_message" );
+      }
+    }
+    shm.deallocate( &b );
+    seg.deallocate();
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  return EXAM_RESULT;
+}
+
 class srv_reader
 {
   public:
