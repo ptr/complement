@@ -1,5 +1,4 @@
-# -*- makefile -*- Time-stamp: <03/03/31 15:18:29 ptr>
-# $Id$
+# -*- makefile -*- Time-stamp: <09/10/05 23:11:53 ptr>
 
 SRCROOT := ../../../../../explore
 COMPILER_NAME := gcc
@@ -7,13 +6,13 @@ COMPILER_NAME := gcc
 include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
 
-INCLUDES += -I$(STLPORT_INCLUDE_DIR) -I${BOOST_INCLUDE_DIR} -I/usr/include/python2.6
+INCLUDES += -I${BOOST_INCLUDE_DIR} -I/usr/include/python2.6
 
-ifeq ($(OSNAME),linux)
+ifndef WITHOUT_STLPORT
+
 release-shared: LDSEARCH = -L${STLPORT_LIB_DIR}
 stldbg-shared:  LDSEARCH = -L${STLPORT_LIB_DIR}
 dbg-shared:     LDSEARCH = -L${STLPORT_LIB_DIR}
-endif
 
 ifeq ($(OSNAME),sunos)
 release-shared : LDLIBS = -lstlport -lrt
@@ -23,4 +22,14 @@ else
 release-shared : LDLIBS = -lstlport
 stldbg-shared  : LDLIBS = -lstlportstlg
 dbg-shared     : LDLIBS = -lstlportg
+endif
+
+else
+
+ifeq ($(OSNAME),sunos)
+release-shared : LDLIBS = -lrt
+stldbg-shared  : LDLIBS = -lrt
+dbg-shared     : LDLIBS = -lrt
+endif
+
 endif

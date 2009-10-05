@@ -1,15 +1,15 @@
-# -*- makefile -*- Time-stamp: <07/02/03 09:26:04 ptr>
+# -*- makefile -*- Time-stamp: <09/10/05 23:06:58 ptr>
 #
-# Copyright (c) 2006, 2007
+# Copyright (c) 2006, 2007, 2009
 # Petr Ovtchenkov
 #
 # Licensed under the Academic Free License version 3.0
 #
 
 SRCROOT := ../../../../explore
-SUBDIRS := date_time filesystem program_options regex serialization \
+SUBDIRS := date_time filesystem program_options regex \
            test/unit_test_framework test/prg_exec_mon \
-           thread
+           thread python
 
 include ${SRCROOT}/Makefiles/gmake/subdirs.mak
 
