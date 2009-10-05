@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <09/07/22 10:14:32 ptr>
+# -*- Makefile -*- Time-stamp: <09/10/05 17:14:48 ptr>
 
 SRCROOT := ../..
 COMPILER_NAME := gcc
@@ -12,18 +12,18 @@ LIBMT_DIR = ../mt
 LIBSOCK_DIR = ../sockios
 LIBSTEM_DIR = ../stem
 
-release-shared: LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR} -L${LIBSOCK_DIR}/${OUTPUT_DIR} -L${LIBSTEM_DIR}/${OUTPUT_DIR} -L${HOME}/lib
+release-shared: LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR} -L${LIBSOCK_DIR}/${OUTPUT_DIR} -L${LIBSTEM_DIR}/${OUTPUT_DIR}
 
 release-shared:	LDLIBS = -lxmt -lsockios -lstem 
 
-dbg-shared: LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR_DBG} -L${LIBSOCK_DIR}/${OUTPUT_DIR_DBG} -L${LIBSTEM_DIR}/${OUTPUT_DIR_DBG} -L${HOME}/lib
+dbg-shared: LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR_DBG} -L${LIBSOCK_DIR}/${OUTPUT_DIR_DBG} -L${LIBSTEM_DIR}/${OUTPUT_DIR_DBG}
 
 dbg-shared:	LDLIBS = -lxmtg -lsockiosg -lstemg
 
 dbg-shared:	DEFS += -D__FIT_VS_TRACE
 
 ifndef WITHOUT_STLPORT
-dbg-shared: LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSOCK_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSTEM_DIR}/${OUTPUT_DIR_STLDBG} -L${HOME}/lib
+dbg-shared: LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSOCK_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSTEM_DIR}/${OUTPUT_DIR_STLDBG}
 
 stldbg-shared:	LDLIBS = -lxmtstlg -lsockiosstlg -lstemstlg
 
