@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/03 20:37:25 ptr>
+// -*- C++ -*- Time-stamp: <09/10/05 16:29:41 ptr>
 
 /*
  *
@@ -89,10 +89,12 @@ int main( int argc, const char** argv )
   extratc[1] = t.add( &sockios_test::service_stop, test, "stop service", tc[4] );
 
   t.add( &sockios_test::check_rdtimeout_fail, test, "check reading with timeout failure",
-    t.add( &sockios_test::check_rdtimeout, test, "check reading with timeout",
-      t.add( &sockios_test::ugly_echo, test, "ugly echo service",
-        t.add( &sockios_test::echo, test, "echo service",
-          t.add( &sockios_test::quants_reader, test, "read a few fixed-size data", extratc, extratc + 2 ) ) ) ) );
+    t.add( &sockios_test::check_rdtimeout, test, "check reading with timeout", extratc, extratc + 2 ) );
+
+  
+  t.add( &sockios_test::ugly_echo, test, "ugly echo service",
+    t.add( &sockios_test::echo, test, "echo service",
+      t.add( &sockios_test::quants_reader, test, "read a few fixed-size data", extratc, extratc + 2 ) ) );
 
   unix_sockios_test unx;
 

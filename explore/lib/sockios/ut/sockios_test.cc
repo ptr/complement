@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/15 20:34:49 ptr>
+// -*- C++ -*- Time-stamp: <09/10/05 16:44:41 ptr>
 
 /*
  *
@@ -605,14 +605,12 @@ int EXAM_IMPL(sockios_test::check_rdtimeout_fail)
 
     xmt::allocator_shm<barrier_ip,0> shm;
     barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+    barrier_ip& b2 = *new ( shm.allocate( 1 ) ) barrier_ip();
 
     try {
       this_thread::fork();
       int res = 0;
-      try {
-        this_thread::fork();
-      }
-      catch ( std::tr2::fork_in_parent& child )
+
       {
         connect_processor<lazy_worker> prss( 2008 );
 
@@ -622,7 +620,9 @@ int EXAM_IMPL(sockios_test::check_rdtimeout_fail)
         b.wait();
 
         EXAM_CHECK_ASYNC_F( lazy_worker::cnd.timed_wait( milliseconds( 2000 ) ), res );
+        b2.wait();
       }
+
       exit( res );
     }
     catch ( std::tr2::fork_in_parent& child ) {
@@ -639,10 +639,21 @@ int EXAM_IMPL(sockios_test::check_rdtimeout_fail)
         s << "Test_message" << endl;
         string res("");
         s >> res;
+        EXAM_CHECK( s.fail() );
         EXAM_CHECK( res == "" );
+      }
+      b2.wait();
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
       }
     }
     shm.deallocate( &b );
+    shm.deallocate( &b2 );
     seg.deallocate();
   }
   catch ( xmt::shm_bad_alloc& err ) {
@@ -659,15 +670,13 @@ int EXAM_IMPL(sockios_test::check_rdtimeout)
 
     xmt::allocator_shm<barrier_ip,0> shm;
     barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+    barrier_ip& b2 = *new ( shm.allocate( 1 ) ) barrier_ip();
 
     try {
       this_thread::fork();
       int res = 0;
 
-      try {
-        this_thread::fork();
-      }
-      catch ( std::tr2::fork_in_parent& child ){
+      {
         connect_processor<lazy_worker> prss( 2008 );
 
         EXAM_CHECK_ASYNC_F( prss.good(), res );
@@ -676,7 +685,9 @@ int EXAM_IMPL(sockios_test::check_rdtimeout)
         b.wait();
 
         EXAM_CHECK_ASYNC_F( lazy_worker::cnd.timed_wait( milliseconds( 2000 ) ), res );
+        b2.wait();
       }
+
       exit( res );
     }
     catch ( std::tr2::fork_in_parent& child ) {
@@ -693,10 +704,21 @@ int EXAM_IMPL(sockios_test::check_rdtimeout)
         s << "Test_message" << endl;
         string res("");
         s >> res;
+        EXAM_CHECK( !s.fail() );
         EXAM_CHECK( res == "Test_message" );
+      }
+      b2.wait();
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
       }
     }
     shm.deallocate( &b );
+    shm.deallocate( &b2 );
     seg.deallocate();
   }
   catch ( xmt::shm_bad_alloc& err ) {
