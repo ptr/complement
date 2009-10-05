@@ -20,6 +20,7 @@
 #include <iterator>
 #include <list>
 #include <boost/lexical_cast.hpp>
+#include <algorithm>
 
 namespace http {
 

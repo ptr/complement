@@ -1,11 +1,7 @@
-# -*- makefile -*- Time-stamp: <03/03/31 15:11:21 ptr>
-# $Id$
-
 BOOST_PY_SRC = ${BOOST_INCLUDE_DIR}/libs/python/src
-#BOOST_FS_SRC = src
-LIBNAME = boost_fs
+LIBNAME = boost_python
 MAJOR = 1
-MINOR = 30
+MINOR = 40
 PATCH = 0
 SRC_CPP = ${BOOST_PY_SRC}/numeric.cpp \
           ${BOOST_PY_SRC}/list.cpp \
@@ -13,7 +9,7 @@ SRC_CPP = ${BOOST_PY_SRC}/numeric.cpp \
           ${BOOST_PY_SRC}/dict.cpp \
           ${BOOST_PY_SRC}/tuple.cpp \
           ${BOOST_PY_SRC}/str.cpp \
-          ${BOOST_PY_SRC}/aix_init_module.cpp \
+          ${BOOST_PY_SRC}/slice.cpp \
           ${BOOST_PY_SRC}/converter/from_python.cpp \
           ${BOOST_PY_SRC}/converter/registry.cpp \
           ${BOOST_PY_SRC}/converter/type_id.cpp \
@@ -28,6 +24,10 @@ SRC_CPP = ${BOOST_PY_SRC}/numeric.cpp \
           ${BOOST_PY_SRC}/converter/builtin_converters.cpp \
           ${BOOST_PY_SRC}/converter/arg_to_python_base.cpp \
           ${BOOST_PY_SRC}/object/iterator.cpp \
+          ${BOOST_PY_SRC}/object/stl_iterator.cpp \
           ${BOOST_PY_SRC}/object_protocol.cpp \
-          ${BOOST_PY_SRC}/object_operators.cpp
-
+          ${BOOST_PY_SRC}/object_operators.cpp \
+          ${BOOST_PY_SRC}/wrapper.cpp \
+          ${BOOST_PY_SRC}/import.cpp \
+          ${BOOST_PY_SRC}/exec.cpp \
+          ${BOOST_PY_SRC}/object/function_doc_signature.cpp
