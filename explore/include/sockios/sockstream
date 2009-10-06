@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/10 15:14:05 ptr>
+// -*- C++ -*- Time-stamp: <09/10/06 13:09:23 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -269,18 +269,35 @@ class basic_socket
 #  endif
 #endif
 
+    void rdtimeout( const std::tr2::nanoseconds& d )
+      {
+        _use_rdtimeout = true;
+        _rdtimeout = d;
+      }
+
     template <class Duration>
     void rdtimeout( const Duration& d )
       {
         _use_rdtimeout = true;
-        _rdtimeout = (std::tr2::milliseconds) d;
+        _rdtimeout = static_cast<std::tr2::nanoseconds>(d);
       }
 
     void rdtimeout() // infinite
       { _use_rdtimeout = false; }
 
+    void wrtimeout( const std::tr2::nanoseconds& d )
+      {
+        _use_wrtimeout = true;
+        _wrtimeout = d;
+      }
+
     template <class Duration>
-    void wrtimeout( const Duration& );
+    void wrtimeout( const Duration& d )
+      {
+        _use_wrtimeout = true;
+        _wrtimeout = static_cast<std::tr2::nanoseconds>(d);
+      }
+
     void wrtimeout() // infinite
       { _use_wrtimeout = false; }
 
@@ -333,8 +350,8 @@ class basic_socket
         sockaddr    any;
     } _address;
 
-    std::tr2::milliseconds _rdtimeout;
-    std::tr2::milliseconds _wrtimeout;
+    std::tr2::nanoseconds _rdtimeout;
+    std::tr2::nanoseconds _wrtimeout;
     bool _use_rdtimeout;
     bool _use_wrtimeout;
 
