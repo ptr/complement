@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/30 16:53:47 ptr>
+// -*- C++ -*- Time-stamp: <09/10/05 20:47:39 ptr>
 
 /*
  *
@@ -281,6 +281,7 @@ class basic_vs :
     basic_vs( const char* info );
     ~basic_vs();
 
+    void vs_tcp_point( uint32_t, int );
     void vs_join( const stem::addr_type& );
     void vs( const stem::Event& );
 

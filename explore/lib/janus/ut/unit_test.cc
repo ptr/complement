@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/18 15:45:53 ptr>
+// -*- C++ -*- Time-stamp: <09/10/06 10:03:54 ptr>
 
 /*
  *
@@ -43,7 +43,7 @@ int main( int argc, const char ** argv )
 
   using namespace janus;
 
-  exam::test_suite::test_case_type tc[4];
+  exam::test_suite::test_case_type tc[10];
 
   exam::test_suite t( "virtual time operations" );
 
@@ -59,7 +59,9 @@ int main( int argc, const char ** argv )
     t.add( &vtime_operations::VT_one_group_replay, vt_oper, "VT one group replay",
       t.add( &vtime_operations::VT_one_group_send, vt_oper, "VT one group send",
         t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
-          t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member", tc[3] ) ) ) ) );
+          tc[4] = t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member", tc[3] ) ) ) ) );
+
+  t.add( &vtime_operations::VT_one_group_network, vt_oper, "VT over network", tc[4] );
 
   if ( opts.is_set( 'v' ) ) {
     t.flags( t.flags() | exam::base_logger::verbose );

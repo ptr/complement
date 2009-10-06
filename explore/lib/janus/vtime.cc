@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/30 17:21:18 ptr>
+// -*- C++ -*- Time-stamp: <09/10/06 09:40:48 ptr>
 
 /*
  *
@@ -14,6 +14,8 @@
 #include <stdint.h>
 
 #include <sys/socket.h>
+#include <sockios/sockstream>
+#include <stem/NetTransport.h>
 
 namespace janus {
 
@@ -385,6 +387,20 @@ void basic_vs::vs( const stem::Event& inc_ev )
   // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
 }
 
+// addr in network byte order, port in native byte order
+void basic_vs::vs_tcp_point( uint32_t addr, int port )
+{
+  vs_points::access_t& p = points.insert( make_pair(self_id(), vs_points::access_t()) )->second;
+
+  p.hostid = xmt::hostid();
+  p.family = AF_INET;
+  p.type = std::sock_base::sock_stream;
+  p.data.resize( /* sizeof(uint32_t) + sizeof(uint16_t) */ 6 );
+  memcpy( (void *)p.data.data(), (const void *)&addr, 4 );
+  uint16_t prt = stem::to_net( static_cast<uint32_t>(port) );
+  memcpy( (void *)(p.data.data() + 4), (const void *)&prt, 2 );  
+}
+
 void basic_vs::vs_join( const stem::addr_type& a )
 {
   this->vs_pub_recover();
@@ -392,6 +408,7 @@ void basic_vs::vs_join( const stem::addr_type& a )
   stem::Event_base<vs_points> ev( VS_JOIN_RQ );
 
   ev.dest( a );
+  ev.value().points = points;
 
   Send( ev );
 }
@@ -454,7 +471,28 @@ void basic_vs::vs_group_points( const stem::Event_base<vs_points>& ev )
   // view = ev.value().view;
 
   for ( vs_points::points_type::const_iterator i = ev.value().points.begin(); i != ev.value().points.end(); ++i ) {
-    points.insert( *i );
+    if ( hostid() != i->second.hostid ) {
+      if ( i->second.family == AF_INET ) {
+        // i.e. IP not 127.x.x.x
+        if ( *reinterpret_cast<const uint8_t*>(i->second.data.data()) != 127 ) {
+          points.insert( *i );
+        }
+      }
+    } else {
+      points.insert( *i );
+      if ( i->second.family == AF_INET ) {
+        if ( !is_avail( i->first ) ) {
+          // leak now; should be pool here?
+          stem::NetTransportMgr* mgr = new stem::NetTransportMgr();
+
+          sockaddr_in sa;
+          sa.sin_family = AF_INET;
+          memcpy( (void*)&sa.sin_port, (void*)(i->second.data.data() + 4), 2 );
+          memcpy( (void*)&sa.sin_addr.s_addr, (void *)i->second.data.data(), 4 );
+          mgr->open( sa );
+        }
+      }
+    }
   }
 }
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/30 16:48:59 ptr>
+// -*- C++ -*- Time-stamp: <09/10/06 10:08:00 ptr>
 
 /*
  *
@@ -17,6 +17,11 @@
 #include <mt/mutex>
 #include <mt/condition_variable>
 #include <mt/date_time>
+#include <sys/wait.h>
+#include <mt/shm.h>
+#include <mt/thread>
+#include <sockios/sockmgr.h>
+#include <stem/NetTransport.h>
 
 #include <algorithm>
 #include <set>
@@ -450,5 +455,87 @@ int EXAM_IMPL(vtime_operations::VT_one_group_late_replay)
 
   return EXAM_RESULT;
 }
+
+int EXAM_IMPL(vtime_operations::VT_one_group_network)
+{
+  try {
+    xmt::shm_alloc<0> seg;
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+    std::tr2::barrier_ip& b = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
+    std::tr2::barrier_ip& b2 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
+
+    stem::addr_type a_stored;
+
+    try {
+      tr2::this_thread::fork();
+      int res = 0;
+
+      {
+        VTM_one_group_advanced_handler a1;
+
+        a_stored = a1.self_id();
+
+        connect_processor<stem::NetTransport> srv( 2009 );
+
+        EXAM_CHECK_ASYNC_F( srv.is_open(), res );
+
+        a1.set_default();
+
+        b.wait();
+        b2.wait();
+      }
+
+      unlink( (std::string( "/tmp/janus." ) + std::string(a_stored) ).c_str() );
+
+      exit( res );
+    }
+    catch ( std::tr2::fork_in_parent& child ) {
+      b.wait();
+      {
+        VTM_one_group_advanced_handler a2;
+
+        a_stored = a2.self_id();
+
+        stem::NetTransportMgr mgr;
+
+        stem::addr_type a1 = mgr.open( "localhost", 2009 );
+
+        EXAM_CHECK( a1 != stem::badaddr );
+        
+        a2.vs_join( a1 );
+
+        EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
+      }
+      b2.wait();
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+
+      unlink( (std::string( "/tmp/janus." ) + std::string(a_stored) ).c_str() );
+    }
+    shm.deallocate( &b );
+    shm.deallocate( &b2 );
+    seg.deallocate();
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(vtime_operations::VT_one_group_access_point)
+{
+
+  return EXAM_RESULT;
+}
+
 
 } // namespace janus
