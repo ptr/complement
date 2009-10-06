@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/03 20:39:24 ptr>
+// -*- C++ -*- Time-stamp: <09/10/06 15:45:58 ptr>
 
 /*
  *
@@ -682,6 +682,37 @@ int EXAM_IMPL(unix_sockios_test::income_data)
   catch ( xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
   }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(unix_sockios_test::open_timeout)
+{
+  const char* f = "/tmp/sock_test";
+
+  {
+    simple_us_mgr s( f, sock_base::sock_stream );
+
+    EXAM_CHECK( s.is_open() );
+    EXAM_CHECK( s.good() );
+    /*
+    {
+      sockstream str( f, std::tr2::milliseconds(100), sock_base::sock_stream );
+
+      EXAM_CHECK( str.is_open() );
+      EXAM_CHECK( str.good() );
+    }
+    */
+  }
+
+  {
+    sockstream str( f, std::tr2::milliseconds(100), sock_base::sock_stream );
+
+    EXAM_CHECK( !str.is_open() );
+    EXAM_CHECK( !str.good() );
+  }
+
+  unlink( f );
 
   return EXAM_RESULT;
 }

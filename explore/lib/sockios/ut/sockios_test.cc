@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/05 16:44:41 ptr>
+// -*- C++ -*- Time-stamp: <09/10/06 15:12:03 ptr>
 
 /*
  *
@@ -698,6 +698,67 @@ int EXAM_IMPL(sockios_test::check_rdtimeout)
         EXAM_CHECK( s.is_open() );
 
         s.rdbuf()->rdtimeout( std::tr2::milliseconds(500) );
+        EXAM_CHECK( s.good() );
+        EXAM_CHECK( s.is_open() );
+
+        s << "Test_message" << endl;
+        string res("");
+        s >> res;
+        EXAM_CHECK( !s.fail() );
+        EXAM_CHECK( res == "Test_message" );
+      }
+      b2.wait();
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+    }
+    shm.deallocate( &b );
+    shm.deallocate( &b2 );
+    seg.deallocate();
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(sockios_test::open_timeout)
+{
+  try {
+    xmt::shm_alloc<0> seg;
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+    xmt::allocator_shm<barrier_ip,0> shm;
+    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+    barrier_ip& b2 = *new ( shm.allocate( 1 ) ) barrier_ip();
+
+    try {
+      this_thread::fork();
+      int res = 0;
+
+      {
+        connect_processor<lazy_worker> prss( 2008 );
+
+        EXAM_CHECK_ASYNC_F( prss.good(), res );
+        EXAM_CHECK_ASYNC_F( prss.is_open(), res );
+
+        b.wait();
+
+        EXAM_CHECK_ASYNC_F( lazy_worker::cnd.timed_wait( milliseconds( 2000 ) ), res );
+        b2.wait();
+      }
+
+      exit( res );
+    }
+    catch ( std::tr2::fork_in_parent& child ) {
+      b.wait();
+      {
+        sockstream s( "localhost", 2008, std::tr2::milliseconds(100) );
         EXAM_CHECK( s.good() );
         EXAM_CHECK( s.is_open() );
 

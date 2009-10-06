@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/05 16:29:41 ptr>
+// -*- C++ -*- Time-stamp: <09/10/06 15:41:14 ptr>
 
 /*
  *
@@ -88,8 +88,9 @@ int main( int argc, const char** argv )
 
   extratc[1] = t.add( &sockios_test::service_stop, test, "stop service", tc[4] );
 
-  t.add( &sockios_test::check_rdtimeout_fail, test, "check reading with timeout failure",
-    t.add( &sockios_test::check_rdtimeout, test, "check reading with timeout", extratc, extratc + 2 ) );
+  t.add( &sockios_test::open_timeout, test, "timeout for open",
+    t.add( &sockios_test::check_rdtimeout_fail, test, "check reading with timeout failure",
+      t.add( &sockios_test::check_rdtimeout, test, "check reading with timeout", extratc, extratc + 2 ) ) );
 
   
   t.add( &sockios_test::ugly_echo, test, "ugly echo service",
@@ -106,10 +107,11 @@ int main( int argc, const char** argv )
       t.add( &unix_sockios_test::processor_core_two_local, unx, "two local connects to connection processor, unix socket",
         t.add( &unix_sockios_test::processor_core_one_local, unx, "one local connect to connection processor, unix socket",
           t.add( &unix_sockios_test::stream_core_write_test, unx, "core unix stream socket write",
-            t.add( &unix_sockios_test::stream_core_test, unx, "core unix stream socket", tc[0] ) ) ) ) ) );
+            extratc[4] = t.add( &unix_sockios_test::stream_core_test, unx, "core unix stream socket", tc[0] ) ) ) ) ) );
 
   extratc[3] = tc[4];
   t.add( &unix_sockios_test::income_data, unx, "all data available after sockstream was closed, different processes, unix socket", extratc + 2, extratc + 4 );
+  t.add( &unix_sockios_test::open_timeout, unx, "open timeout, unix socket", extratc[4] );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( cerr );

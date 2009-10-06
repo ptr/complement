@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/03 20:33:22 ptr>
+// -*- C++ -*- Time-stamp: <09/10/06 15:38:25 ptr>
 
 /*
  *
@@ -25,6 +25,7 @@ struct unix_sockios_test
     int EXAM_DECL(processor_core_getline);
     int EXAM_DECL(processor_core_income_data);
     int EXAM_DECL(income_data);
+    int EXAM_DECL(open_timeout);
 };
 
 #endif // __unix_socket_h

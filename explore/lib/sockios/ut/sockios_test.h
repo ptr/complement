@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/02/02 14:59:40 ptr>
+// -*- C++ -*- Time-stamp: <09/10/06 15:06:18 ptr>
 
 /*
  *
@@ -32,6 +32,7 @@ class sockios_test
     int EXAM_DECL(income_data);
     int EXAM_DECL(check_rdtimeout_fail);
     int EXAM_DECL(check_rdtimeout);
+    int EXAM_DECL(open_timeout);
     int EXAM_DECL(srv_sigpipe);
     int EXAM_DECL(read0);
 

@@ -1,3 +1,10 @@
+2009-10-06  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* sockstream, sockstream.cc: timeout for open;
+	it may be useful for stream-oriented connections;
+
+	* libsockios: release 2.6.7.
+
 2009-07-29  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* sockstream: early start of sockets manager with

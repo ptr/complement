@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/03 15:53:48 ptr>
+// -*- C++ -*- Time-stamp: <09/10/06 15:19:42 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -39,6 +39,14 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* name, int port,
     basic_sockbuf<charT, traits, _Alloc>::open( std::findhost( name ), port, type, prot ) :
     prot == sock_base::local ?
     basic_sockbuf<charT, traits, _Alloc>::open( name, type ) : 0;
+}
+
+template<class charT, class traits, class _Alloc>
+basic_sockbuf<charT, traits, _Alloc>*
+basic_sockbuf<charT, traits, _Alloc>::open( const char* name, int port,
+                                            const std::tr2::nanoseconds& timeout )
+{
+  return basic_sockbuf<charT, traits, _Alloc>::open( std::findhost( name ), port, timeout );
 }
 
 template<class charT, class traits, class _Alloc>
@@ -102,6 +110,136 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port,
     if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
       throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
+    setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
+
+    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+    setg( this->epptr(), this->epptr(), this->epptr() );
+
+    _fl = _fr = this->eback();
+
+    basic_socket_t::mgr->push( *this );
+  }
+  catch ( std::system_error& ) {
+    if ( basic_socket_t::_fd != -1 ) {
+#ifdef WIN32
+      // _errno = WSAGetLastError();
+      ::closesocket( basic_socket_t::_fd );
+#else
+      ::close( basic_socket_t::_fd );
+#endif
+      basic_socket_t::_fd = -1;
+    }
+   
+    // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+    // ucnd.notify_all();
+
+    return 0;
+  }
+  catch ( std::length_error& ) {
+#ifdef WIN32
+    ::closesocket( basic_socket_t::_fd );
+#else
+    ::close( basic_socket_t::_fd );
+#endif
+    basic_socket_t::_fd = -1;
+
+    return 0;
+  }
+  catch ( std::runtime_error& ) {
+#ifdef WIN32
+    // _errno = WSAGetLastError();
+#else
+#endif
+    return 0;
+  }
+  catch ( std::invalid_argument& ) {
+    return 0;
+  }
+
+  return this;
+}
+
+template<class charT, class traits, class _Alloc>
+basic_sockbuf<charT, traits, _Alloc> *
+basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port, const std::tr2::nanoseconds& timeout )
+{
+  // open timeout for sock_base::sock_stream, sock_base::inet only
+  if ( is_open() ) {
+    return 0;
+  }
+  try {
+    _mode = ios_base::in | ios_base::out;
+    _type = sock_base::sock_stream;
+#ifdef WIN32
+    WSASetLastError( 0 );
+#endif
+
+    basic_socket_t::_fd = socket( PF_INET, sock_base::sock_stream, 0 );
+    if ( basic_socket_t::_fd == -1 ) {
+      throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+    }
+
+    if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
+      throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+    }
+
+    basic_socket_t::_address.inet.sin_family = AF_INET;
+    // htons is a define at least in Linux 2.2.5-15, and it's expantion fail
+    // for gcc 2.95.3, so it not used here
+#ifdef __LITTLE_ENDIAN
+    basic_socket_t::_address.inet.sin_port = ((port >> 8) & 0xff) | ((port & 0xff) << 8);
+    basic_socket_t::_address.inet.sin_addr.s_addr = ((addr >> 24) & 0xff) | ((addr & 0xff) << 24) | ((addr & 0xff00) << 8) | ((addr >> 8) & 0xff00);
+#elif defined(__BIG_ENDIAN)
+    basic_socket_t::_address.inet.sin_port = static_cast<in_port_t>(port);
+    basic_socket_t::_address.inet.sin_addr.s_addr = addr;
+#else
+#  error Undefined byte order
+#endif
+  
+    // Generally, stream sockets may successfully connect() only once
+    if ( connect( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof( basic_socket_t::_address ) ) == -1 ) {
+      if ( errno == EINPROGRESS ) {
+        pollfd wpfd;
+        wpfd.fd = basic_socket_t::_fd;
+        wpfd.events = POLLOUT /* | POLLHUP | POLLWRNORM */
+#if defined(_GNU_SOURCE)
+                       | POLLRDHUP
+#endif
+          ;
+        wpfd.revents = 0;
+        while ( poll( &wpfd, 1, timeout.count() / 1000LL ) <= 0 ) {
+          // may be interrupted, check and ignore
+          switch ( errno ) {
+            case EINTR:
+              errno = 0;
+              continue;
+            default:
+              throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+          }
+        }
+        if ( (wpfd.revents & (POLLERR | POLLHUP
+#if defined(_GNU_SOURCE)
+                              | POLLRDHUP
+#endif
+                )) != 0 ) {
+          throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+        }
+      } else {
+        throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+      }
+    }
+
+    _xwrite = &_Self_type::write;
+    _xread = &_Self_type::read;
+
+    if ( _bbuf == 0 ) {
+      _M_allocate_block( (basic_socket_t::default_mtu - 20 - 20) * 2 );
+    }
+
+    if ( _bbuf == 0 ) {
+      throw std::length_error( "can't allocate block" );
+    }
+
     setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
     std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
@@ -245,6 +383,127 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, sock_base::stype t
 
 template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
+basic_sockbuf<charT, traits, _Alloc>::open( const char* path, const std::tr2::nanoseconds& timeout, sock_base::stype type )
+{
+  if ( is_open() ) {
+    return 0;
+  }
+  try {
+    _mode = ios_base::in | ios_base::out;
+    _type = type;
+#ifdef WIN32
+    WSASetLastError( 0 );
+#endif
+    basic_socket_t::_fd = socket( PF_UNIX, type, 0 );
+    if ( basic_socket_t::_fd == -1 ) {
+      throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+    }
+    basic_socket_t::_address.unx.sun_family = AF_UNIX;
+    strncpy(basic_socket_t::_address.unx.sun_path, path, sizeof(basic_socket_t::_address.unx.sun_path));
+
+    if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
+      throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+    }
+
+    // Generally, stream sockets may successfully connect() only once
+    if ( connect( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof( basic_socket_t::_address.unx ) ) == -1 ) {
+      if ( errno == EINPROGRESS ) {
+        pollfd wpfd;
+        wpfd.fd = basic_socket_t::_fd;
+        wpfd.events = POLLOUT /* | POLLHUP | POLLWRNORM */
+#if defined(_GNU_SOURCE)
+                       | POLLRDHUP
+#endif
+          ;
+        wpfd.revents = 0;
+        while ( poll( &wpfd, 1, timeout.count() / 1000LL ) <= 0 ) {
+          // may be interrupted, check and ignore
+          switch ( errno ) {
+            case EINTR:
+              errno = 0;
+              continue;
+            default:
+              throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+          }
+        }
+        if ( (wpfd.revents & (POLLERR | POLLHUP
+#if defined(_GNU_SOURCE)
+                              | POLLRDHUP
+#endif
+                )) != 0 ) {
+          throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+        }
+      } else {
+        throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+      }
+    }
+    if ( type == sock_base::sock_stream ) {
+      _xwrite = &_Self_type::write;
+      _xread = &_Self_type::read;
+    } else if ( type == sock_base::sock_dgram ) {
+      _xwrite = &_Self_type::sendto_un;
+      _xread = &_Self_type::recvfrom_un;
+    }
+
+    if ( _bbuf == 0 ) {
+      _M_allocate_block( (std::detail::local_mtu << 1) / sizeof(charT) );
+    }
+
+    if ( _bbuf == 0 ) {
+      throw std::length_error( "can't allocate block" );
+    }
+
+    setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
+
+    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+    setg( this->epptr(), this->epptr(), this->epptr() );
+
+    _fl = _fr = this->eback();
+
+    basic_socket_t::mgr->push( *this );
+  }
+  catch ( std::system_error& ) {
+    if ( basic_socket_t::_fd != -1 ) {
+#ifdef WIN32
+      // _errno = WSAGetLastError();
+      ::closesocket( basic_socket_t::_fd );
+#else
+      ::close( basic_socket_t::_fd );
+#endif
+      basic_socket_t::_fd = -1;
+    }
+   
+    // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+    // ucnd.notify_all();
+
+    return 0;
+  }
+  catch ( std::length_error& ) {
+#ifdef WIN32
+    ::closesocket( basic_socket_t::_fd );
+#else
+    ::close( basic_socket_t::_fd );
+#endif
+    basic_socket_t::_fd = -1;
+
+    return 0;
+  }
+  catch ( std::runtime_error& ) {
+#ifdef WIN32
+    // _errno = WSAGetLastError();
+#else
+#endif
+    return 0;
+  }
+  catch ( std::invalid_argument& ) {
+    return 0;
+  }
+
+  return this;
+}
+
+template<class charT, class traits, class _Alloc>
+basic_sockbuf<charT, traits, _Alloc> *
 basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
                                             sock_base::stype type )
 {
@@ -290,6 +549,132 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
     if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
       throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
+    setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
+
+    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+    setg( this->epptr(), this->epptr(), this->epptr() );
+
+    _fl = _fr = this->eback();
+
+    basic_socket_t::mgr->push( *this );
+  }
+  catch ( std::system_error& ) {
+    if ( basic_socket_t::_fd != -1 ) {
+#ifdef WIN32
+      // _errno = WSAGetLastError();
+      ::closesocket( basic_socket_t::_fd );
+#else
+      ::close( basic_socket_t::_fd );
+#endif
+      basic_socket_t::_fd = -1;
+    }
+   
+    // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+    // ucnd.notify_all();
+
+    return 0;
+  }
+  catch ( std::length_error& ) {
+#ifdef WIN32
+    ::closesocket( basic_socket_t::_fd );
+#else
+    ::close( basic_socket_t::_fd );
+#endif
+    basic_socket_t::_fd = -1;
+
+    return 0;
+  }
+  catch ( std::runtime_error& ) {
+#ifdef WIN32
+    // _errno = WSAGetLastError();
+#else
+#endif
+    return 0;
+  }
+  catch ( std::invalid_argument& ) {
+    return 0;
+  }
+
+  return this;
+}
+
+template<class charT, class traits, class _Alloc>
+basic_sockbuf<charT, traits, _Alloc> *
+basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
+                                            const std::tr2::nanoseconds& timeout,
+                                            sock_base::stype type )
+{
+  if ( is_open() ) {
+    return 0;
+  }
+  try {
+    _mode = ios_base::in | ios_base::out;
+    _type = type;
+#ifdef WIN32
+    WSASetLastError( 0 );
+#endif
+    if ( addr.sin_family == AF_INET ) {
+      basic_socket_t::_fd = socket( PF_INET, type, 0 );
+      if ( basic_socket_t::_fd == -1 ) {
+        throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+      }
+      basic_socket_t::_address.inet = addr;
+
+      if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
+        throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+      }
+
+      // Generally, stream sockets may successfully connect() only once
+      if ( connect( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof( basic_socket_t::_address ) ) == -1 ) {
+        if ( errno == EINPROGRESS ) {
+          pollfd wpfd;
+          wpfd.fd = basic_socket_t::_fd;
+          wpfd.events = POLLOUT /* | POLLHUP | POLLWRNORM */
+#if defined(_GNU_SOURCE)
+                        | POLLRDHUP
+#endif
+            ;
+          wpfd.revents = 0;
+          while ( poll( &wpfd, 1, timeout.count() / 1000LL ) <= 0 ) {
+            // may be interrupted, check and ignore
+            switch ( errno ) {
+              case EINTR:
+                errno = 0;
+                continue;
+              default:
+                throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+            }
+          }
+          if ( (wpfd.revents & (POLLERR | POLLHUP
+#if defined(_GNU_SOURCE)
+                                | POLLRDHUP
+#endif
+                  )) != 0 ) {
+            throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+          }
+        } else {
+          throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+        }
+      }
+      if ( type == sock_base::sock_stream ) {
+        _xwrite = &_Self_type::write;
+        _xread = &_Self_type::read;
+      } else if ( type == sock_base::sock_dgram ) {
+        _xwrite = &_Self_type::sendto_in;
+        _xread = &_Self_type::recvfrom_in;
+      }
+    } else {
+      throw domain_error( "socket not belongs to inet type" );
+    }
+
+    if ( _bbuf == 0 ) {
+      _M_allocate_block( ((type == sock_base::sock_stream ? (basic_socket_t::default_mtu - 20 - 20) * 2 : (basic_socket_t::default_mtu - 20 - 8)) * 2) / sizeof(charT) );
+    }
+
+    if ( _bbuf == 0 ) {
+      throw std::length_error( "can't allocate block" );
+    }
+
     setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
     std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
@@ -591,7 +976,7 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
 #endif
                          ;
               wpfd.revents = 0;
-              while ( poll( &wpfd, 1, basic_socket_t::_use_wrtimeout ? basic_socket_t::_wrtimeout.count() : -1 ) <= 0 ) { // wait infinite
+              while ( poll( &wpfd, 1, basic_socket_t::_use_wrtimeout ? basic_socket_t::_wrtimeout.count() / 1000LL: -1 ) <= 0 ) { // wait infinite
                 // may be interrupted, check and ignore
                 switch ( errno ) {
                   case EINTR:
@@ -671,7 +1056,7 @@ int basic_sockbuf<charT, traits, _Alloc>::sync()
 #endif
                   ;
                 wpfd.revents = 0;
-                while ( poll( &wpfd, 1, basic_socket_t::_use_wrtimeout ? basic_socket_t::_wrtimeout.count() : -1 ) <= 0 ) { // wait infinite
+                while ( poll( &wpfd, 1, basic_socket_t::_use_wrtimeout ? basic_socket_t::_wrtimeout.count() / 1000LL : -1 ) <= 0 ) { // wait infinite
                   // may be interrupted, check and ignore
                   switch ( errno ) {
                     case EINTR:
