@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/03 15:57:40 ptr>
+// -*- C++ -*- Time-stamp: <09/10/08 14:52:16 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2009
@@ -72,6 +72,11 @@ class NetTransport_base :
     bool Dispatch( const Event& );
 
     addr_type ns_remote() const;
+
+    void add_route( const addr_type& );
+    void rm_route( const addr_type& );
+    void add_remote_route( const addr_type& );
+    void rm_remote_route( const addr_type& );
 
   protected:
     bool pop( Event& );

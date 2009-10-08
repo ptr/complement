@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/08/21 19:51:07 ptr>
+// -*- C++ -*- Time-stamp: <09/10/08 16:49:14 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -78,6 +78,9 @@ class stem_test
     int EXAM_DECL(vf);
     int EXAM_DECL(vf1);
     int EXAM_DECL(command_mgr);
+
+    int EXAM_DECL(route_to_net);
+    int EXAM_DECL(route_from_net);
 
     static void thr1();
     static void thr1new();
@@ -1691,6 +1694,200 @@ int EXAM_IMPL(stem_test::command_mgr)
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(stem_test::route_to_net)
+{
+  condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+  stem::addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::addr_type();
+
+  addr = stem::badaddr;
+
+  try {
+    std::tr2::this_thread::fork();
+
+    int eflag = 0;
+
+    try {
+      stem::NetTransportMgr mgr;
+
+      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+
+      /* stem::addr_type def_object = */ mgr.open( "localhost", 6995 );
+
+      // EXAM_CHECK_ASYNC_F( def_object != stem::badaddr, eflag );
+      // EXAM_CHECK_ASYNC_F( def_object == addr, eflag );
+      EXAM_CHECK_ASYNC_F( addr != stem::badaddr, eflag );
+
+      mgr.add_route( addr );
+
+      EchoClient node;
+      {
+        stem::stem_scope scope( node );
+    
+        stem::Event ev( NODE_EV_ECHO );
+
+        ev.dest( addr );
+        ev.value() = node.mess;
+
+        // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+        // stem::EventHandler::manager()->settrs( &std::cerr );
+
+        node.Send( ev );
+
+        EXAM_CHECK_ASYNC_F( node.wait(), eflag );
+      }
+
+      mgr.close();
+      mgr.join();
+    }
+    catch ( ... ) {
+    }
+
+    exit( eflag );
+  }
+  catch ( std::tr2::fork_in_parent& child ) {
+    try {
+      connect_processor<stem::NetTransport> srv( 6995 );
+
+      StEMecho echo( "echo service" );
+
+      {
+        stem::stem_scope scope( echo );
+
+        addr = echo.self_id();
+        // echo.set_default(); // become default object
+
+        // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+        // stem::EventHandler::manager()->settrs( &std::cerr );
+
+        fcnd.notify_one();
+
+        int stat = -1;
+        EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+
+        if ( WIFEXITED(stat) ) {
+          EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+        } else {
+          EXAM_ERROR( "child interrupted" );
+        }
+      }
+
+      srv.close();
+      srv.wait();
+    }
+    catch ( ... ) {
+    }
+  }
+
+  (&fcnd)->~condition_event_ip();
+  shm_cnd.deallocate( &fcnd, 1 );
+  shm_a.deallocate( &addr, 1 );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(stem_test::route_from_net)
+{
+  condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+  condition_event_ip& fcnd2 = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+  condition_event_ip& fcnd3 = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+  stem::addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::addr_type();
+
+  addr = stem::badaddr;
+
+  try {
+    std::tr2::this_thread::fork();
+
+    int eflag = 0;
+
+    try {
+      stem::NetTransportMgr mgr;
+
+      StEMecho echo( "echo service" );
+      addr = echo.self_id();
+
+      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+
+      /* stem::addr_type def_object = */ mgr.open( "localhost", 6995 );
+
+      EXAM_CHECK_ASYNC_F( mgr.is_open(), eflag );
+      EXAM_CHECK_ASYNC_F( mgr.good(), eflag );
+
+      {
+        stem::stem_scope scope( echo );
+        mgr.add_remote_route( echo.self_id() );
+
+        this_thread::sleep( milliseconds(200) ); // chance to accept on other side
+
+        fcnd2.notify_one();
+        EXAM_CHECK_ASYNC_F( fcnd3.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+      }
+
+      mgr.close();
+      mgr.join();
+    }
+    catch ( ... ) {
+    }
+
+    exit( eflag );
+  }
+  catch ( std::tr2::fork_in_parent& child ) {
+    try {
+      connect_processor<stem::NetTransport> srv( 6995 );
+
+      fcnd.notify_one();
+
+      EchoClient node;
+      {
+        stem::stem_scope scope( node );
+    
+        stem::Event ev( NODE_EV_ECHO );
+
+        EXAM_CHECK( fcnd2.timed_wait( std::tr2::milliseconds( 800 ) ) );
+        EXAM_CHECK( addr != stem::badaddr );
+        EXAM_CHECK( node.is_avail( addr ) );
+
+        ev.dest( addr );
+        ev.value() = node.mess;
+
+        // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+        // stem::EventHandler::manager()->settrs( &std::cerr );
+
+        node.Send( ev );
+
+        EXAM_CHECK( node.wait() );
+      }
+
+      fcnd3.notify_one();
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+
+      srv.close();
+      srv.wait();
+    }
+    catch ( ... ) {
+    }
+  }
+
+  (&fcnd)->~condition_event_ip();
+  (&fcnd2)->~condition_event_ip();
+  (&fcnd3)->~condition_event_ip();
+
+  shm_cnd.deallocate( &fcnd, 1 );
+  shm_cnd.deallocate( &fcnd2, 1 );
+  shm_cnd.deallocate( &fcnd3, 1 );
+
+  shm_a.deallocate( &addr, 1 );
+
+  return EXAM_RESULT;
+}
+
 int main( int argc, const char** argv )
 {
   exam::test_suite::test_case_type tc[7];
@@ -1714,6 +1911,8 @@ int main( int argc, const char** argv )
         tc[4] = t.add( &stem_test::echo_net, test, "echo_net",
             tc[3] = t.add( &stem_test::echo, test, "echo", tc[1] ) ) ) ) );
   t.add( &stem_test::echo_local, test, "echo unix socket", tc[3] );
+  t.add( &stem_test::route_from_net, test, "route from net", 
+    t.add( &stem_test::route_to_net, test, "route to net", tc[4] ) );
 
   exam::test_suite::test_case_type cases_next[10];
 

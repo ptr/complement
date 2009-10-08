@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/03 21:25:16 ptr>
+// -*- C++ -*- Time-stamp: <09/10/08 15:11:53 ptr>
 
 /*
  *
@@ -103,6 +103,43 @@ addr_type NetTransport_base::ns_remote() const
   }
 
   return badaddr;
+}
+
+void NetTransport_base::add_route( const addr_type& a )
+{
+  std::tr2::lock_guard<std::tr2::recursive_mutex> lk( this->_theHistory_lock );
+  _ids.push_back( a );
+  manager()->Subscribe( a, this, 1000 );
+}
+
+void NetTransport_base::rm_route( const addr_type& a )
+{
+  std::tr2::lock_guard<std::tr2::recursive_mutex> lk( this->_theHistory_lock );
+  addr_container_type::iterator i = _ids.begin();
+  ++i;
+  while ( i != _ids.end() ) {
+    if ( *i == a ) {
+      _ids.erase( i++ );
+      manager()->Unsubscribe( a, this );
+    } else {
+      ++i;
+    }
+  }
+}
+
+void NetTransport_base::add_remote_route( const addr_type& addr )
+{
+  Event ev( EV_STEM_ANNOTATION );
+
+  ev.dest( badaddr ); // special: no destination
+  ev.src( addr );     // will be annotated in NetTransport::connect
+                      // or NetTransportMgr::_loop
+
+  NetTransport_base::Dispatch( ev );
+}
+
+void NetTransport_base::rm_remote_route( const addr_type& addr )
+{
 }
 
 __FIT_DECLSPEC void NetTransport_base::_close()

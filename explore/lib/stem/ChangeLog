@@ -1,3 +1,12 @@
+2009-10-08  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* NetTransport.cc, NetTransport.h: annotation
+	of object's address on any side of [network]
+	channel; address linked to NetTransport_base,
+	so object may be accessed via this channel;
+	
+	* libstem: revision 5.3.4.
+
 2009-09-18  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* EvPack.cc: if string size unpack fail,
