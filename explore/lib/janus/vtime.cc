@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/06 09:40:48 ptr>
+// -*- C++ -*- Time-stamp: <09/10/12 13:28:36 ptr>
 
 /*
  *
@@ -353,6 +353,12 @@ basic_vs::~basic_vs()
       Send( ev );
     }
   }
+
+  // well, VS_LEAVE may not departed yet...
+  for ( access_container_type::iterator i = remotes_.begin(); i != remotes_.end(); ++i ) {
+    delete *i;
+  }
+  remotes_.clear();
 }
 
 void basic_vs::vs( const stem::Event& inc_ev )
@@ -398,7 +404,21 @@ void basic_vs::vs_tcp_point( uint32_t addr, int port )
   p.data.resize( /* sizeof(uint32_t) + sizeof(uint16_t) */ 6 );
   memcpy( (void *)p.data.data(), (const void *)&addr, 4 );
   uint16_t prt = stem::to_net( static_cast<uint32_t>(port) );
-  memcpy( (void *)(p.data.data() + 4), (const void *)&prt, 2 );  
+  memcpy( (void *)(p.data.data() + 4), (const void *)&prt, 2 );
+}
+
+void basic_vs::vs_tcp_point( const sockaddr_in& a )
+{
+  if ( a.sin_family == PF_INET ) {
+    vs_points::access_t& p = points.insert( make_pair(self_id(), vs_points::access_t()) )->second;
+
+    p.hostid = xmt::hostid();
+    p.family = AF_INET;
+    p.type = std::sock_base::sock_stream;
+    p.data.resize( /* sizeof(uint32_t) + sizeof(uint16_t) */ 6 );
+    memcpy( (void *)p.data.data(), (const void *)&a.sin_addr, 4 );
+    memcpy( (void *)(p.data.data() + 4), (const void *)&a.sin_port, 2 );
+  }
 }
 
 void basic_vs::vs_join( const stem::addr_type& a )
@@ -411,6 +431,19 @@ void basic_vs::vs_join( const stem::addr_type& a )
   ev.value().points = points;
 
   Send( ev );
+}
+
+void basic_vs::vs_join( const stem::addr_type& a, const char* host, int port )
+{
+  if ( !is_avail( a ) ) {
+    remotes_.push_back( new stem::NetTransportMgr() );
+    stem::addr_type trial_node = remotes_.back()->open( host, port );
+    if ( remotes_.back()->is_open() && (trial_node != a) ) {
+      remotes_.back()->add_route( a );
+      remotes_.back()->add_remote_route( EventHandler::self_id() );
+    }
+  }
+  vs_join( a );
 }
 
 void basic_vs::vs_join_request( const stem::Event_base<vs_points>& ev )
@@ -476,20 +509,53 @@ void basic_vs::vs_group_points( const stem::Event_base<vs_points>& ev )
         // i.e. IP not 127.x.x.x
         if ( *reinterpret_cast<const uint8_t*>(i->second.data.data()) != 127 ) {
           points.insert( *i );
+          if ( !is_avail( i->first ) ) {
+            for ( access_container_type::iterator j = remotes_.begin(); j != remotes_.end(); ) {
+              if ( !(*j)->is_open() ) {
+                delete *j;
+                remotes_.erase( j++ );
+              } else {
+                ++j;
+              }
+            }
+
+            remotes_.push_back( new stem::NetTransportMgr() );
+
+            sockaddr_in sa;
+            sa.sin_family = AF_INET;
+            memcpy( (void*)&sa.sin_port, (void*)(i->second.data.data() + 4), 2 );
+            memcpy( (void*)&sa.sin_addr.s_addr, (void *)i->second.data.data(), 4 );
+            stem::addr_type trial_node = remotes_.back()->open( sa );
+            if ( remotes_.back()->is_open() && (trial_node != i->first) ) {
+              remotes_.back()->add_route( i->first );
+              remotes_.back()->add_remote_route( EventHandler::self_id() );
+            }
+          }
         }
       }
     } else {
       points.insert( *i );
       if ( i->second.family == AF_INET ) {
         if ( !is_avail( i->first ) ) {
-          // leak now; should be pool here?
-          stem::NetTransportMgr* mgr = new stem::NetTransportMgr();
+          for ( access_container_type::iterator j = remotes_.begin(); j != remotes_.end(); ) {
+            if ( !(*j)->is_open() ) {
+              delete *j;
+              remotes_.erase( j++ );
+            } else {
+              ++j;
+            }
+          }
+          remotes_.push_back( new stem::NetTransportMgr() );
 
           sockaddr_in sa;
           sa.sin_family = AF_INET;
           memcpy( (void*)&sa.sin_port, (void*)(i->second.data.data() + 4), 2 );
           memcpy( (void*)&sa.sin_addr.s_addr, (void *)i->second.data.data(), 4 );
-          mgr->open( sa );
+          stem::addr_type trial_node = remotes_.back()->open( sa );
+          if ( remotes_.back()->is_open() && (trial_node != i->first) ) {
+            remotes_.back()->add_route( i->first );
+            remotes_.back()->add_remote_route( EventHandler::self_id() );
+          }
         }
       }
     }

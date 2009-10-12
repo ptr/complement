@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/05 20:47:39 ptr>
+// -*- C++ -*- Time-stamp: <09/10/12 13:23:33 ptr>
 
 /*
  *
@@ -23,6 +23,7 @@
 
 #include <stem/Event.h>
 #include <stem/EventHandler.h>
+#include <stem/NetTransport.h>
 
 #include <mt/time.h>
 
@@ -282,7 +283,9 @@ class basic_vs :
     ~basic_vs();
 
     void vs_tcp_point( uint32_t, int );
+    void vs_tcp_point( const sockaddr_in& );
     void vs_join( const stem::addr_type& );
+    void vs_join( const stem::addr_type&, const char*, int );
     void vs( const stem::Event& );
 
     template <class D>
@@ -330,6 +333,10 @@ class basic_vs :
     stem::addr_type group_applicant;
 
   private:
+    typedef std::list<stem::NetTransportMgr*> access_container_type;
+
+    access_container_type remotes_;
+
     DECLARE_RESPONSE_TABLE( basic_vs, stem::EventHandler );
 };
 

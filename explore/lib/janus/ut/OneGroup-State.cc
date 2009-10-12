@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/06 10:08:00 ptr>
+// -*- C++ -*- Time-stamp: <09/10/12 17:55:33 ptr>
 
 /*
  *
@@ -533,6 +533,252 @@ int EXAM_IMPL(vtime_operations::VT_one_group_network)
 
 int EXAM_IMPL(vtime_operations::VT_one_group_access_point)
 {
+  try {
+    xmt::shm_alloc<0> seg;
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+    xmt::allocator_shm<stem::addr_type,0> shm_a;
+
+    std::tr2::barrier_ip& b = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
+    std::tr2::barrier_ip& b2 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip( 3 );
+    std::tr2::barrier_ip& b3 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
+    std::tr2::barrier_ip& b4 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip( 3 );
+    std::tr2::barrier_ip& b5 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
+    stem::addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::addr_type();
+
+    addr = stem::badaddr;
+
+    stem::addr_type a_stored;
+
+    try {
+      tr2::this_thread::fork();
+
+      std::tr2::this_thread::block_signal( SIGINT );
+      std::tr2::this_thread::block_signal( SIGQUIT );
+      std::tr2::this_thread::block_signal( SIGILL );
+      std::tr2::this_thread::block_signal( SIGABRT );
+      std::tr2::this_thread::block_signal( SIGFPE );
+      std::tr2::this_thread::block_signal( SIGSEGV );
+      std::tr2::this_thread::block_signal( SIGTERM );
+      std::tr2::this_thread::block_signal( SIGPIPE );
+
+      int res = 0;
+
+      try { // establish group: first member
+        VTM_one_group_advanced_handler a1;
+
+        a_stored = a1.self_id();
+
+        addr = a1.self_id();
+
+        connect_processor<stem::NetTransport> srv( 2009 );
+
+        EXAM_CHECK_ASYNC_F( srv.is_open(), res );
+
+        list<net_iface> ifaces;
+
+        get_ifaces( back_inserter(ifaces) );
+
+        if ( !ifaces.empty() ) {
+          for ( list<net_iface>::iterator f = ifaces.begin(); f != ifaces.end(); ++f ) {
+            if ( f->addr.any.sa_family == PF_INET ) {
+              f->addr.inet.sin_port = stem::to_net( static_cast<short>(2009) );
+              a1.vs_tcp_point( f->addr.inet );
+            }// else if ( f->addr.any.sa_family == PF_INET6 ) {
+            // refzone.inet6_point( f->addr.inet.sin_addr.s_addr );
+            // }
+          }
+        }
+
+        // a1.set_default();
+
+        b.wait();
+
+        // a2 join:
+        // EXAM_CHECK_ASYNC_F( a1.wait( std::tr2::milliseconds(500) ), res );
+        // a1.reset();
+
+        // a3 join:
+        // EXAM_CHECK_ASYNC_F( a1.wait( std::tr2::milliseconds(500) ), res );
+        // a1.reset();
+      
+        b4.wait();
+
+        EXAM_CHECK_ASYNC_F( a1.wait( std::tr2::milliseconds(500) ), res );
+        EXAM_CHECK_ASYNC_F( a1.mess == "message", res );
+
+        b2.wait();
+      }
+      catch ( ... ) {
+        EXAM_ERROR_ASYNC_F( "unkown exception", res );
+      }
+
+      unlink( (std::string( "/tmp/janus." ) + std::string(a_stored) ).c_str() );
+
+      exit( res );
+    }
+    catch ( std::tr2::fork_in_parent& child ) {
+      try {
+        tr2::this_thread::fork();
+
+        std::tr2::this_thread::block_signal( SIGINT );
+        std::tr2::this_thread::block_signal( SIGQUIT );
+        std::tr2::this_thread::block_signal( SIGILL );
+        std::tr2::this_thread::block_signal( SIGABRT );
+        std::tr2::this_thread::block_signal( SIGFPE );
+        std::tr2::this_thread::block_signal( SIGSEGV );
+        std::tr2::this_thread::block_signal( SIGTERM );
+        std::tr2::this_thread::block_signal( SIGPIPE );
+
+        int res = 0;
+
+        b3.wait(); // wait while second member join
+        try { // the third member
+          VTM_one_group_advanced_handler a3;
+
+          a_stored = a3.self_id();
+
+          connect_processor<stem::NetTransport> srv( 2011 );
+
+          EXAM_CHECK_ASYNC_F( srv.is_open(), res );
+
+          EXAM_CHECK_ASYNC_F( addr != stem::badaddr, res );
+
+          list<net_iface> ifaces;
+
+          get_ifaces( back_inserter(ifaces) );
+
+          if ( !ifaces.empty() ) {
+            for ( list<net_iface>::iterator f = ifaces.begin(); f != ifaces.end(); ++f ) {
+              if ( f->addr.any.sa_family == PF_INET ) {
+                f->addr.inet.sin_port = stem::to_net( static_cast<short>(2011) );
+                a3.vs_tcp_point( f->addr.inet );
+              }// else if ( f->addr.any.sa_family == PF_INET6 ) {
+              // refzone.inet6_point( f->addr.inet.sin_addr.s_addr );
+              // }
+            }
+          }
+
+          a3.vs_join( addr, "localhost", 2009 );
+
+          EXAM_CHECK_ASYNC_F( a3.wait( std::tr2::milliseconds(500) ), res );
+
+          a3.reset();
+
+          stem::Event ev( EV_FREE );
+          ev.value() = "message";
+          ev.dest( a3.self_id() );
+
+          a3.Send( ev ); // simulate outer event
+
+          EXAM_CHECK_ASYNC_F( a3.wait( std::tr2::milliseconds(500) ), res );
+          EXAM_CHECK_ASYNC_F( a3.mess == "message", res );
+
+          b4.wait();
+          b5.wait();
+          b2.wait();
+        }
+        catch ( ... ) {
+          EXAM_ERROR_ASYNC_F( "unkown exception", res );
+        }
+
+        unlink( (std::string( "/tmp/janus." ) + std::string(a_stored) ).c_str() );
+
+        exit( res );
+      }
+      catch ( std::tr2::fork_in_parent& child2 ) {
+
+        std::tr2::this_thread::block_signal( SIGINT );
+        std::tr2::this_thread::block_signal( SIGQUIT );
+        std::tr2::this_thread::block_signal( SIGILL );
+        std::tr2::this_thread::block_signal( SIGABRT );
+        std::tr2::this_thread::block_signal( SIGFPE );
+        std::tr2::this_thread::block_signal( SIGSEGV );
+        std::tr2::this_thread::block_signal( SIGTERM );
+        std::tr2::this_thread::block_signal( SIGPIPE );
+
+        b.wait(); // wait first memeber
+        try {
+          VTM_one_group_advanced_handler a2;
+
+          a_stored = a2.self_id();
+
+          connect_processor<stem::NetTransport> srv( 2010 );
+
+          EXAM_CHECK( addr != stem::badaddr );
+        
+          list<net_iface> ifaces;
+
+          get_ifaces( back_inserter(ifaces) );
+
+          if ( !ifaces.empty() ) {
+            for ( list<net_iface>::iterator f = ifaces.begin(); f != ifaces.end(); ++f ) {
+              if ( f->addr.any.sa_family == PF_INET ) {
+                f->addr.inet.sin_port = stem::to_net( static_cast<short>(2010) );
+                a2.vs_tcp_point( f->addr.inet );
+              }// else if ( f->addr.any.sa_family == PF_INET6 ) {
+              // refzone.inet6_point( f->addr.inet.sin_addr.s_addr );
+              // }
+            }
+          }
+
+          a2.vs_join( addr, "localhost", 2009 );
+
+          // a2 join to group:
+          EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
+
+          a2.reset();
+
+          b3.wait();
+          // a3 join to group:
+          EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
+
+          a2.reset();
+
+          b4.wait();
+
+          EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
+
+          EXAM_CHECK( a2.mess == "message" );
+
+          b5.wait();
+          b2.wait();
+        }
+        catch ( ... ) {
+          EXAM_ERROR( "unkown exception" );
+        }
+
+        int stat = -1;
+        EXAM_CHECK( waitpid( child2.pid(), &stat, 0 ) == child2.pid() );
+        if ( WIFEXITED(stat) ) {
+          EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+        } else {
+          EXAM_ERROR( "child interrupted" );
+        }
+      }
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+
+      unlink( (std::string( "/tmp/janus." ) + std::string(a_stored) ).c_str() );
+    }
+    shm.deallocate( &b );
+    shm.deallocate( &b2 );
+    shm.deallocate( &b3 );
+    shm.deallocate( &b4 );
+    shm.deallocate( &b5 );
+    shm_a.deallocate( &addr );
+    seg.deallocate();
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
 
   return EXAM_RESULT;
 }
