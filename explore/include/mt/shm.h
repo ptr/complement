@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/05/08 00:15:30 ptr>
+// -*- C++ -*- Time-stamp: <09/10/12 15:19:13 ptr>
 
 /*
  * Copyright (c) 2006-2009
@@ -185,8 +185,9 @@ typename __shm_alloc<Inst>::pointer __shm_alloc<Inst>::allocate( key_t k, size_t
   }
 
   static const size_type psz = getpagesize();
+  const size_type rqsz = sz + sizeof(typename shm_alloc<Inst>::_master) + sizeof(typename shm_alloc<Inst>::_aheader);
 
-  _id = shmget( k, ((sz + sizeof(typename shm_alloc<Inst>::_master) + sizeof(typename shm_alloc<Inst>::_aheader) )/ psz + 1) * psz, o | (0777 & mode) );
+  _id = shmget( k, (rqsz / psz + (rqsz % psz == 0 ? 0 : 1)) * psz, o | (0777 & mode) );
   if ( _id == -1 ) {
     throw shm_bad_alloc();
   }
