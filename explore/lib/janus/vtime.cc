@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/12 13:28:36 ptr>
+// -*- C++ -*- Time-stamp: <09/10/13 14:53:39 ptr>
 
 /*
  *
@@ -423,6 +423,8 @@ void basic_vs::vs_tcp_point( const sockaddr_in& a )
 
 void basic_vs::vs_join( const stem::addr_type& a )
 {
+  PushState( VS_ST_LOCKED );
+
   this->vs_pub_recover();
 
   stem::Event_base<vs_points> ev( VS_JOIN_RQ );
@@ -481,6 +483,7 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_points>& ev )
 
       basic_vs::vs( view_lock_ev );
       lock_addr = self_id(); // after vs()!
+      PushState( VS_ST_LOCKED );
     } else { // single in group: lock not required
       // cerr << __FILE__ << ':' << __LINE__ << endl;
       ++view;
@@ -495,6 +498,10 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_points>& ev )
 //    ev.dest( leader );
 //    Forward( ev );
 //  }
+}
+
+void basic_vs::vs_join_request_lk( const stem::Event_base<vs_points>& ev )
+{
 }
 
 void basic_vs::vs_group_points( const stem::Event_base<vs_points>& ev )
@@ -565,33 +572,36 @@ void basic_vs::vs_group_points( const stem::Event_base<vs_points>& ev )
 void basic_vs::vs_lock_view( const stem::EventVoid& ev )
 {
   // cerr << __FILE__ << ':' << __LINE__ << endl;
-  if ( lock_addr == stem::badaddr ) {
-    // cerr << __FILE__ << ':' << __LINE__ << ' ' << ev.src() << endl;
-    lock_addr = ev.src();
-    stem::EventVoid view_lock_ev( VS_LOCK_VIEW_ACK );
-    view_lock_ev.dest( lock_addr );
-    Send( view_lock_ev );
-  } else {
-    // cerr << __FILE__ << ':' << __LINE__ << ' ' << ev.src() << endl;
-    if ( ev.src() != lock_addr ) {
-      if ( ev.src() < lock_addr ) {
-        stem::EventVoid view_lock_ev_n( VS_LOCK_VIEW_NAK );
-        view_lock_ev_n.dest( lock_addr );
-        Send( view_lock_ev_n );
+  // cerr << __FILE__ << ':' << __LINE__ << ' ' << ev.src() << endl;
+  PushState( VS_ST_LOCKED );
+  lock_addr = ev.src();
+  stem::EventVoid view_lock_ev( VS_LOCK_VIEW_ACK );
+  view_lock_ev.dest( lock_addr );
+  Send( view_lock_ev );
+}
 
-        lock_addr = ev.src();
+void basic_vs::vs_lock_view_lk( const stem::EventVoid& ev )
+{
+  // cerr << __FILE__ << ':' << __LINE__ << endl;
+  // cerr << __FILE__ << ':' << __LINE__ << ' ' << ev.src() << endl;
+  if ( ev.src() != lock_addr ) {
+    if ( ev.src() < lock_addr ) {
+      stem::EventVoid view_lock_ev_n( VS_LOCK_VIEW_NAK );
+      view_lock_ev_n.dest( lock_addr );
+      Send( view_lock_ev_n );
 
-        stem::EventVoid view_lock_ev( VS_LOCK_VIEW_ACK );
-        view_lock_ev.dest( lock_addr );
-        Send( view_lock_ev );
-      } /* else {
-      } */
-    } /* else {
+      lock_addr = ev.src();
+
       stem::EventVoid view_lock_ev( VS_LOCK_VIEW_ACK );
       view_lock_ev.dest( lock_addr );
       Send( view_lock_ev );
+    } /* else {
     } */
-  }
+  } /* else {
+    stem::EventVoid view_lock_ev( VS_LOCK_VIEW_ACK );
+    view_lock_ev.dest( lock_addr );
+    Send( view_lock_ev );
+  } */
 }
 
 void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
@@ -615,6 +625,7 @@ void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
       vt[self_id()][group_applicant]; // i.e. create entry in vt
       group_applicant = stem::badaddr;
       lock_addr = stem::badaddr; // before vs()!
+      PopState( VS_ST_LOCKED );
       lock_rsp.clear();
 
       stem::EventVoid update_view_ev( VS_UPDATE_VIEW );
@@ -630,44 +641,33 @@ void basic_vs::vs_lock_view_nak( const stem::EventVoid& ev )
   if ( lock_addr == self_id() ) { // I'm owner of the lock
     lock_addr = stem::badaddr;
     lock_rsp.clear();
+    PopState( VS_ST_LOCKED );
   }
 }
 
 void basic_vs::vs_view_update()
 {
+  lock_addr = stem::badaddr; // clear lock
+  PopState( VS_ST_LOCKED );
+
   // cerr << __FILE__ << ':' << __LINE__ << endl;
   this->vs_pub_view_update();
 }
 
-void basic_vs::vt_process( const stem::Event_base<vs_event>& ev )
+void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
 {
   // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << ' ' << hex << ev.value().ev.code() << dec << endl;
   // check the view version first:
   if ( ev.value().view != view ) {
-    // cerr << __FILE__ << ':' << __LINE__ << endl;
-    if ( ev.value().ev.code() != VS_UPDATE_VIEW ) {
-      return; // ? view changed, but this object unknown yet
+    if ( ev.value().view > view ) {
+      dc.push_back( ev ); // push event into delay queue
     }
-    // cerr << __FILE__ << ':' << __LINE__ << endl;
-    if ( (view != 0) && (lock_addr != ev.src()) ) {
-      // cerr << __FILE__ << ':' << __LINE__ << ' ' << lock_addr 
-      //      << ' ' << ev.src() << endl;
-      return; // ? update view: not owner of lock
-    }
-    // cerr << __FILE__ << ':' << __LINE__ << endl;
-    if ( (view != 0) && ((view + 1) != ev.value().view) ) {
-      return; // ? view changed, but this object unknown yet
-    }
-    // cerr << __FILE__ << ':' << __LINE__ << ' ' << ev.value().vt.vt.size() << ' ' << self_id() << endl;
-    if ( view == 0 ) {
-      // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-      vt[self_id()] = ev.value().vt.vt; // align time with origin
-      --vt[self_id()][ev.src()]; // will be incremented below
-    }
-    view = ev.value().view;
-    lock_addr = stem::badaddr; // clear lock
+    return;
   }
-  // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
+  if ( ev.value().ev.code() == VS_UPDATE_VIEW ) {
+    dc.push_back( ev ); // push event into delay queue
+    return;
+  }
 
   // check virtual time:
   vtime tmp = vt[ev.src()];
@@ -705,35 +705,124 @@ void basic_vs::vt_process( const stem::Event_base<vs_event>& ev )
   }
 
   ++self[ev.src()];
-  // cerr << __FILE__ << ':' << __LINE__ << endl;
   vt[ev.src()] = tmp; // vt[ev.src()] = self; ??   <--------
   
   ev.value().ev.src( ev.src() );
   ev.value().ev.dest( ev.dest() );
 
-  if ( (ev.value().ev.code() != VS_UPDATE_VIEW) && (ev.value().ev.code() != VS_LOCK_VIEW) ) {
+  if ( ev.value().ev.code() != VS_LOCK_VIEW ) {
     // Update view not passed into vs_event_derivative,
     // it specific for Virtual Synchrony
     this->vs_event_derivative( self, ev.value().ev );
-  } else {
+  }
+
+  this->Dispatch( ev.value().ev );
+
+  if ( !dc.empty() ) {
+    process_delayed();
+  }
+}
+
+void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
+{
+  if ( ev.value().view != view ) {
+    // cerr << __FILE__ << ':' << __LINE__ << endl;
+    if ( ev.value().ev.code() != VS_UPDATE_VIEW ) {
+      dc.push_back( ev ); // push event into delay queue
+      return; // ? view changed, but this object unknown yet
+    }
+    // cerr << __FILE__ << ':' << __LINE__ << endl;
+    if ( (view != 0) && (lock_addr != ev.src()) ) {
+      // cerr << __FILE__ << ':' << __LINE__ << ' ' << lock_addr 
+      //      << ' ' << ev.src() << endl;
+      return; // ? update view: not owner of lock
+    }
+    // cerr << __FILE__ << ':' << __LINE__ << endl;
+    if ( (view != 0) && ((view + 1) != ev.value().view) ) {
+      dc.push_back( ev ); // push event into delay queue
+      return; // ? view changed, but this object unknown yet
+    }
+    // cerr << __FILE__ << ':' << __LINE__ << ' ' << ev.value().vt.vt.size() << ' ' << self_id() << endl;
+    if ( view == 0 ) {
+      // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
+      vt[self_id()] = ev.value().vt.vt; // align time with origin
+      --vt[self_id()][ev.src()]; // will be incremented below
+    }
+    view = ev.value().view;
+  }
+
+  const stem::code_type& code = ev.value().ev.code();
+  if ( (code != VS_UPDATE_VIEW) && (code != VS_LOCK_VIEW) ) {
+    dc.push_back( ev ); // push event into delay queue
+    return;
+  }
+
+  // check virtual time:
+  vtime tmp = vt[ev.src()];
+
+  for ( vtime::vtime_type::const_iterator i = ev.value().vt.vt.begin(); i != ev.value().vt.vt.end(); ++i ) {
+    if ( i->second < tmp[i->first] ) {
+      // ev.src() fail?
+      // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
+      return;
+    }
+    tmp[i->first] = i->second;
+  }
+
+  vtime& self = vt[self_id()];
+
+  for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+    if ( i->first == ev.src() ) {
+      if ( (i->second + 1) != tmp[ev.src()] ) {
+        if ( (i->second + 1) < tmp[ev.src()] ) {
+          // cerr << __FILE__ << ':' << __LINE__ << ' ' << i->first << ' ' << ev.src()  << ' ' << (i->second + 1) << ' ' << tmp[ev.src()] << endl;
+          dc.push_back( ev ); // push event into delay queue
+        } else {
+          // Ghost event from past: Drop? Error?
+          // cerr << __FILE__ << ':' << __LINE__ << ' ' << i->first << ' ' << ev.src() << endl;
+        }
+        return;
+      }
+    } else if ( i->second < tmp[i->first] ) {
+      // cerr << __FILE__ << ':' << __LINE__ << ' ' << i->first << ' ' << ev.src() << ' ' << i->second << ' ' << tmp[i->first] << endl;
+      dc.push_back( ev ); // push event into delay queue
+      return;
+    }
+  }
+
+  ++self[ev.src()];
+  vt[ev.src()] = tmp; // vt[ev.src()] = self; ??   <--------
+  
+  ev.value().ev.src( ev.src() );
+  ev.value().ev.dest( ev.dest() );
+
+  if ( code == VS_UPDATE_VIEW ) {
     /* Specific for update view: vt[self_id()] should
        contain all group members, even if virtual time
        is zero (copy/assign vt don't copy entry with zero vtime!)
     */
-    vtime& self = vt[self_id()];
     for ( vtime::vtime_type::const_iterator i = ev.value().vt.vt.begin(); i != ev.value().vt.vt.end(); ++i ) {
       self[i->first];
     }
   }
 
-  // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
   this->Dispatch( ev.value().ev );
 
+  if ( !dc.empty() ) {
+    process_delayed();
+  }
+}
+
+void basic_vs::process_delayed()
+{
   /*
     for each event in delay_queue try to process it;
     repeat procedure if any event from delay_queue was processed.
    */
   bool delayed_process;
+  vtime tmp;
+  vtime& self = vt[self_id()];
+
   do {
     delayed_process = false;
     for ( delay_container_type::iterator k = dc.begin(); k != dc.end(); ) {
@@ -828,15 +917,21 @@ const stem::code_type basic_vs::VS_LOCK_VIEW_ACK = 0x307;
 const stem::code_type basic_vs::VS_LOCK_VIEW_NAK = 0x308;
 const stem::code_type basic_vs::VS_UPDATE_VIEW   = 0x309;
 
+const stem::state_type basic_vs::VS_ST_LOCKED = 0x10000;
+
 DEFINE_RESPONSE_TABLE( basic_vs )
-  EV_Event_base_T_( ST_NULL, VS_EVENT, vt_process, vs_event )
+  EV_Event_base_T_( ST_NULL, VS_EVENT, vs_process, vs_event )
+  EV_Event_base_T_( VS_ST_LOCKED, VS_EVENT, vs_process_lk, vs_event )
   EV_Event_base_T_( ST_NULL, VS_LEAVE, vs_leave, basic_event )
   EV_Event_base_T_( ST_NULL, VS_JOIN_RQ, vs_join_request, vs_points )
-  EV_Event_base_T_( ST_NULL, VS_JOIN_RS, vs_group_points, vs_points )
+  EV_Event_base_T_( VS_ST_LOCKED, VS_JOIN_RQ, vs_join_request_lk, vs_points )
+  EV_Event_base_T_( VS_ST_LOCKED, VS_JOIN_RS, vs_group_points, vs_points )
   EV_Event_base_T_( ST_NULL, VS_LOCK_VIEW, vs_lock_view, void )
-  EV_Event_base_T_( ST_NULL, VS_LOCK_VIEW_ACK, vs_lock_view_ack, void )
-  EV_Event_base_T_( ST_NULL, VS_LOCK_VIEW_NAK, vs_lock_view_nak, void )
-  EV_VOID( ST_NULL, VS_UPDATE_VIEW, vs_view_update )
+  EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_VIEW, vs_lock_view_lk, void )
+  EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_VIEW_ACK, vs_lock_view_ack, void )
+  EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_VIEW_NAK, vs_lock_view_nak, void )
+  EV_VOID( VS_ST_LOCKED, VS_UPDATE_VIEW, vs_view_update )
+  // EV_VOID( ST_NULL, VS_UPDATE_VIEW, vs_view_update )
 END_RESPONSE_TABLE
 
 } // namespace janus

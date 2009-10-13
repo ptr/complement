@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/12 13:23:33 ptr>
+// -*- C++ -*- Time-stamp: <09/10/13 14:34:26 ptr>
 
 /*
  *
@@ -275,6 +275,9 @@ class basic_vs :
     static const stem::code_type VS_LOCK_VIEW_NAK;
     static const stem::code_type VS_UPDATE_VIEW;
 
+  protected:
+    static const stem::state_type VS_ST_LOCKED;
+
   public:
     basic_vs();
     basic_vs( stem::addr_type id );
@@ -304,13 +307,18 @@ class basic_vs :
 
   private:
     void vs_lock_view( const stem::EventVoid& );
+    void vs_lock_view_lk( const stem::EventVoid& );
     void vs_lock_view_ack( const stem::EventVoid& );
     void vs_lock_view_nak( const stem::EventVoid& );
     void vs_view_update();
-    void vt_process( const stem::Event_base<vs_event>& );
+    void vs_process( const stem::Event_base<vs_event>& );
+    void vs_process_lk( const stem::Event_base<vs_event>& );
     void vs_leave( const stem::Event_base<basic_event>& );
     void vs_join_request( const stem::Event_base<vs_points>& );
+    void vs_join_request_lk( const stem::Event_base<vs_points>& );
     void vs_group_points( const stem::Event_base<vs_points>& );
+
+    void process_delayed();
 
     typedef std::list<stem::Event_base<vs_event> > delay_container_type;
 

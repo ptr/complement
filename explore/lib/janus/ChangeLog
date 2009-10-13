@@ -1,3 +1,15 @@
+2009-10-13  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* Repo: virtual synchrony lock-related
+	issues implemented with node state change;
+	out-of-order events go to delayed queue in
+	locked state too;
+	
+	* Repo: announce and interchange by access
+	points for group members;
+
+	* libjanus: revision 0.9.0.
+
 2009-09-30  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* Repo: join to group implemented via
