@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/13 14:34:26 ptr>
+// -*- C++ -*- Time-stamp: <09/10/15 15:53:21 ptr>
 
 /*
  *
@@ -212,6 +212,23 @@ struct vs_points :
     points_type points;
 };
 
+struct vs_join_rq :
+    public vs_points
+{
+    vs_join_rq()
+      { }
+    vs_join_rq( const vs_join_rq& vt_ ) :
+        vs_points( vt_ )
+      { }
+
+    virtual void pack( std::ostream& s ) const;
+    virtual void unpack( std::istream& s );
+
+    void swap( vs_join_rq& );
+
+    xmt::uuid_type reference;
+};
+
 // vtime max( const vtime& l, const vtime& r );
 
 // typedef std::pair<group_type, vtime> vtime_group_type;
@@ -274,6 +291,13 @@ class basic_vs :
     static const stem::code_type VS_LOCK_VIEW_ACK;
     static const stem::code_type VS_LOCK_VIEW_NAK;
     static const stem::code_type VS_UPDATE_VIEW;
+    static const stem::code_type VS_FLUSH_LOCK_VIEW;
+    static const stem::code_type VS_FLUSH_LOCK_VIEW_ACK;
+    static const stem::code_type VS_FLUSH_LOCK_VIEW_NAK;
+
+  protected:
+    static const stem::code_type VS_FLUSH_VIEW;
+    static const stem::code_type VS_FLUSH_VIEW_JOIN;
 
   protected:
     static const stem::state_type VS_ST_LOCKED;
@@ -294,15 +318,18 @@ class basic_vs :
     template <class D>
     void vs( const stem::Event_base<D>& e )
       { basic_vs::vs( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
+    void vs_send_flush();
 
   protected:
     vtime_matrix_type vt;
 
-    virtual void vs_pub_recover() = 0;
+    virtual xmt::uuid_type vs_pub_recover() = 0;
+    virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& ) = 0;
     virtual void vs_pub_view_update() = 0;
     virtual void vs_event_origin( const vtime&, const stem::Event& ) = 0;
     virtual void vs_event_derivative( const vtime&, const stem::Event& ) = 0;
-    
+    virtual void vs_pub_flush() = 0;
+
     void replay( const vtime&, const stem::Event& );
 
   private:
@@ -311,12 +338,20 @@ class basic_vs :
     void vs_lock_view_ack( const stem::EventVoid& );
     void vs_lock_view_nak( const stem::EventVoid& );
     void vs_view_update();
+
     void vs_process( const stem::Event_base<vs_event>& );
     void vs_process_lk( const stem::Event_base<vs_event>& );
     void vs_leave( const stem::Event_base<basic_event>& );
-    void vs_join_request( const stem::Event_base<vs_points>& );
-    void vs_join_request_lk( const stem::Event_base<vs_points>& );
+    void vs_join_request( const stem::Event_base<vs_join_rq>& );
+    void vs_join_request_lk( const stem::Event_base<vs_join_rq>& );
     void vs_group_points( const stem::Event_base<vs_points>& );
+
+    void vs_flush_lock_view( const stem::EventVoid& );
+    void vs_flush_lock_view_lk( const stem::EventVoid& );
+    void vs_flush_lock_view_ack( const stem::EventVoid& );
+    void vs_flush_lock_view_nak( const stem::EventVoid& );
+    void vs_flush( const xmt::uuid_type& );
+    void vs_flush_wr( const xmt::uuid_type& );
 
     void process_delayed();
 

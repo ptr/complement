@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/30 16:50:30 ptr>
+// -*- C++ -*- Time-stamp: <09/10/15 15:17:26 ptr>
 
 /*
  *
@@ -50,10 +50,12 @@ class VTM_one_group_handler :
     vtime_matrix_type& vt()
       { return basic_vs::vt; }
 
-    virtual void vs_pub_recover();
+    virtual xmt::uuid_type vs_pub_recover();
+    virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& );
     virtual void vs_pub_view_update();
     virtual void vs_event_origin( const janus::vtime&, const stem::Event& );
     virtual void vs_event_derivative( const vtime&, const stem::Event& );
+    virtual void vs_pub_flush();
 
     std::string mess;
 
@@ -113,7 +115,12 @@ VTM_one_group_handler::~VTM_one_group_handler()
   disable();
 }
 
-void VTM_one_group_handler::vs_pub_recover()
+xmt::uuid_type VTM_one_group_handler::vs_pub_recover()
+{
+  return xmt::nil_uuid;
+}
+
+void VTM_one_group_handler::vs_resend_from( const xmt::uuid_type&, const stem::addr_type& )
 {
 }
 
@@ -129,6 +136,10 @@ void VTM_one_group_handler::vs_event_origin( const vtime&, const stem::Event& )
 }
 
 void VTM_one_group_handler::vs_event_derivative( const vtime&, const stem::Event& )
+{
+}
+
+void VTM_one_group_handler::vs_pub_flush()
 {
 }
 

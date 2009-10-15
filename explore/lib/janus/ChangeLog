@@ -1,3 +1,11 @@
+2009-10-15  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* Repo: interface and test [may be used as
+	sample] for state recovery during join
+	to group.
+	
+	* libjanus: revision 0.10.0.
+
 2009-10-13  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* Repo: virtual synchrony lock-related

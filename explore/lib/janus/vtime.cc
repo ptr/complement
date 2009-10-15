@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/13 14:53:39 ptr>
+// -*- C++ -*- Time-stamp: <09/10/15 17:42:26 ptr>
 
 /*
  *
@@ -248,6 +248,24 @@ void vs_points::swap( vs_points& r )
   std::swap( points, r.points );
 }
 
+void vs_join_rq::pack( std::ostream& s ) const
+{
+  vs_points::pack( s );
+  __pack( s, reference );
+}
+
+void vs_join_rq::unpack( std::istream& s )
+{
+  vs_points::unpack( s );
+  __unpack( s, reference );
+}
+
+void vs_join_rq::swap( vs_join_rq& r )
+{
+  vs_points::swap( r );
+  std::swap( reference, r.reference );
+}
+
 void gvtime::pack( std::ostream& s ) const
 {
   __pack( s, static_cast<uint8_t>(gvt.size()) );
@@ -376,7 +394,9 @@ void basic_vs::vs( const stem::Event& inc_ev )
   vtime& self = vt[self_id()];
   ++self[self_id()];
 
-  if ( (inc_ev.code() != VS_UPDATE_VIEW) && (inc_ev.code() != VS_LOCK_VIEW) ) {
+  const stem::code_type code = inc_ev.code();
+
+  if ( (code != VS_UPDATE_VIEW) && (code != VS_LOCK_VIEW) && (code != VS_FLUSH_LOCK_VIEW ) ) {
     this->vs_event_origin( self, ev.value().ev );
   }
 
@@ -425,14 +445,19 @@ void basic_vs::vs_join( const stem::addr_type& a )
 {
   PushState( VS_ST_LOCKED );
 
-  this->vs_pub_recover();
+  xmt::uuid_type ref = this->vs_pub_recover();
 
-  stem::Event_base<vs_points> ev( VS_JOIN_RQ );
+  if ( is_avail( a ) ) {
+    stem::Event_base<vs_join_rq> ev( VS_JOIN_RQ );
 
-  ev.dest( a );
-  ev.value().points = points;
+    ev.dest( a );
+    ev.value().points = points;
+    ev.value().reference = ref;
 
-  Send( ev );
+    Send( ev );
+  } else { // peer unavailable (or I'm group founder), no lock required
+    PopState( VS_ST_LOCKED );
+  }
 }
 
 void basic_vs::vs_join( const stem::addr_type& a, const char* host, int port )
@@ -448,7 +473,7 @@ void basic_vs::vs_join( const stem::addr_type& a, const char* host, int port )
   vs_join( a );
 }
 
-void basic_vs::vs_join_request( const stem::Event_base<vs_points>& ev )
+void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
 {
   // cerr << __FILE__ << ':' << __LINE__ << endl;
 //  if ( leader == self_id() ) {
@@ -484,8 +509,11 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_points>& ev )
       basic_vs::vs( view_lock_ev );
       lock_addr = self_id(); // after vs()!
       PushState( VS_ST_LOCKED );
+      this->vs_resend_from( ev.value().reference, ev.src() );
     } else { // single in group: lock not required
       // cerr << __FILE__ << ':' << __LINE__ << endl;
+      this->vs_resend_from( ev.value().reference, ev.src() );
+
       ++view;
       vt[self_id()][ev.src()]; // i.e. create entry in vt
       stem::EventVoid update_view_ev( VS_UPDATE_VIEW );
@@ -500,7 +528,7 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_points>& ev )
 //  }
 }
 
-void basic_vs::vs_join_request_lk( const stem::Event_base<vs_points>& ev )
+void basic_vs::vs_join_request_lk( const stem::Event_base<vs_join_rq>& ev )
 {
 }
 
@@ -664,7 +692,10 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
     }
     return;
   }
-  if ( ev.value().ev.code() == VS_UPDATE_VIEW ) {
+
+  stem::code_type code = ev.value().ev.code();
+
+  if ( code == VS_UPDATE_VIEW ) {
     dc.push_back( ev ); // push event into delay queue
     return;
   }
@@ -710,7 +741,7 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
   ev.value().ev.src( ev.src() );
   ev.value().ev.dest( ev.dest() );
 
-  if ( ev.value().ev.code() != VS_LOCK_VIEW ) {
+  if ( (code != VS_LOCK_VIEW) && (code != VS_FLUSH_LOCK_VIEW) ) {
     // Update view not passed into vs_event_derivative,
     // it specific for Virtual Synchrony
     this->vs_event_derivative( self, ev.value().ev );
@@ -725,9 +756,11 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
 
 void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
 {
+  const stem::code_type code = ev.value().ev.code();
+
   if ( ev.value().view != view ) {
     // cerr << __FILE__ << ':' << __LINE__ << endl;
-    if ( ev.value().ev.code() != VS_UPDATE_VIEW ) {
+    if ( code != VS_UPDATE_VIEW ) {
       dc.push_back( ev ); // push event into delay queue
       return; // ? view changed, but this object unknown yet
     }
@@ -751,8 +784,7 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
     view = ev.value().view;
   }
 
-  const stem::code_type& code = ev.value().ev.code();
-  if ( (code != VS_UPDATE_VIEW) && (code != VS_LOCK_VIEW) ) {
+  if ( (code != VS_UPDATE_VIEW) && (code != VS_LOCK_VIEW) && (code != VS_FLUSH_VIEW) && (code != VS_FLUSH_LOCK_VIEW) ) {
     dc.push_back( ev ); // push event into delay queue
     return;
   }
@@ -804,6 +836,9 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
     for ( vtime::vtime_type::const_iterator i = ev.value().vt.vt.begin(); i != ev.value().vt.vt.end(); ++i ) {
       self[i->first];
     }
+  } else if ( code == VS_FLUSH_VIEW ) {
+    // flush passed into vs_event_derivative
+    this->vs_event_derivative( self, ev.value().ev );
   }
 
   this->Dispatch( ev.value().ev );
@@ -905,7 +940,121 @@ void basic_vs::replay( const vtime& _vt, const stem::Event& inc_ev )
 
 //  vt[self_id()] = _vt;
 
-  this->Dispatch( inc_ev );
+  if ( inc_ev.code() != VS_FLUSH_VIEW ) {
+    this->Dispatch( inc_ev );
+  }
+}
+
+void basic_vs::vs_send_flush()
+{
+  if ( lock_addr == stem::badaddr ) {
+    if ( vt[self_id()].vt.size() > 1 ) {
+      // cerr << __FILE__ << ':' << __LINE__ << endl;
+      lock_rsp.clear();
+
+      stem::EventVoid view_lock_ev( VS_FLUSH_LOCK_VIEW );
+
+      basic_vs::vs( view_lock_ev );
+      lock_addr = self_id(); // after vs()!
+      PushState( VS_ST_LOCKED );
+    } else { // single in group: lock not required
+      // cerr << __FILE__ << ':' << __LINE__ << endl;
+      stem::Event_base<xmt::uuid_type> flush_ev( VS_FLUSH_VIEW );
+
+      flush_ev.value() = xmt::uid();
+
+      basic_vs::vs( flush_ev );
+    }
+  }
+}
+
+void basic_vs::vs_flush_lock_view( const stem::EventVoid& ev )
+{
+  PushState( VS_ST_LOCKED );
+  lock_addr = ev.src();
+  stem::EventVoid view_lock_ev( VS_FLUSH_LOCK_VIEW_ACK );
+  view_lock_ev.dest( lock_addr );
+  Send( view_lock_ev );
+}
+
+void basic_vs::vs_flush_lock_view_lk( const stem::EventVoid& ev )
+{
+  if ( ev.src() != lock_addr ) {
+    if ( ev.src() < lock_addr ) {
+      stem::EventVoid view_lock_ev_n( VS_FLUSH_LOCK_VIEW_NAK );
+      view_lock_ev_n.dest( lock_addr );
+      Send( view_lock_ev_n );
+
+      lock_addr = ev.src();
+
+      stem::EventVoid view_lock_ev( VS_FLUSH_LOCK_VIEW_ACK );
+      view_lock_ev.dest( lock_addr );
+      Send( view_lock_ev );
+    } /* else {
+    } */
+  }
+}
+
+void basic_vs::vs_flush_lock_view_ack( const stem::EventVoid& ev )
+{
+  // cerr << __FILE__ << ':' << __LINE__ << endl;
+  if ( lock_addr == self_id() ) { // I'm owner of the lock
+    lock_rsp.insert( ev.src() );
+    vtime& self = vt[self_id()];
+    // cerr << __FILE__ << ':' << __LINE__ << ' ' << lock_rsp.size() << ' ' << self.vt.size() << endl;
+    if ( (lock_rsp.size() + 1) == self.vt.size() ) {
+      // cerr << __FILE__ << ':' << __LINE__ << endl;
+      for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i !=self.vt.end(); ++i ) {
+        if ( (i->first != self_id()) && (lock_rsp.find( i->first ) == lock_rsp.end()) ) {
+          // cerr << __FILE__ << ':' << __LINE__ << endl;
+          return;
+        }
+      }
+      // cerr << __FILE__ << ':' << __LINE__ << ' ' << group_applicant << endl;
+      // response from all group members available
+      lock_addr = stem::badaddr; // before vs()!
+      PopState( VS_ST_LOCKED );
+      lock_rsp.clear();
+
+      this->vs_pub_flush();
+
+      stem::Event_base<xmt::uuid_type> flush_ev( VS_FLUSH_VIEW );
+
+      flush_ev.value() = xmt::uid();
+
+      basic_vs::vs( flush_ev );      
+    }
+  }
+}
+
+void basic_vs::vs_flush_lock_view_nak( const stem::EventVoid& ev )
+{
+  // cerr << __FILE__ << ':' << __LINE__ << endl;
+  if ( lock_addr == self_id() ) { // I'm owner of the lock
+    lock_addr = stem::badaddr;
+    lock_rsp.clear();
+    PopState( VS_ST_LOCKED );
+  }
+}
+
+void basic_vs::vs_flush( const xmt::uuid_type& id )
+{
+  lock_addr = stem::badaddr; // clear lock
+  PopState( VS_ST_LOCKED );
+
+  // cerr << __FILE__ << ':' << __LINE__ << endl;
+  this->vs_pub_flush();
+}
+
+// Special case for 're-send rest events', to avoid interference
+// with true VS_FLUSH_VIEW---it work with view lock,
+// but in this case I want to bypass locking and keep the rest
+// functionality, like history writing.
+
+void basic_vs::vs_flush_wr( const xmt::uuid_type& id )
+{
+  // cerr << __FILE__ << ':' << __LINE__ << endl;
+  this->vs_pub_flush();
 }
 
 const stem::code_type basic_vs::VS_EVENT         = 0x302;
@@ -916,6 +1065,11 @@ const stem::code_type basic_vs::VS_LOCK_VIEW     = 0x306;
 const stem::code_type basic_vs::VS_LOCK_VIEW_ACK = 0x307;
 const stem::code_type basic_vs::VS_LOCK_VIEW_NAK = 0x308;
 const stem::code_type basic_vs::VS_UPDATE_VIEW   = 0x309;
+const stem::code_type basic_vs::VS_FLUSH_LOCK_VIEW = 0x30a;
+const stem::code_type basic_vs::VS_FLUSH_LOCK_VIEW_ACK = 0x30b;
+const stem::code_type basic_vs::VS_FLUSH_LOCK_VIEW_NAK = 0x30c;
+const stem::code_type basic_vs::VS_FLUSH_VIEW    = 0x30d;
+const stem::code_type basic_vs::VS_FLUSH_VIEW_JOIN = 0x30e;
 
 const stem::state_type basic_vs::VS_ST_LOCKED = 0x10000;
 
@@ -923,15 +1077,22 @@ DEFINE_RESPONSE_TABLE( basic_vs )
   EV_Event_base_T_( ST_NULL, VS_EVENT, vs_process, vs_event )
   EV_Event_base_T_( VS_ST_LOCKED, VS_EVENT, vs_process_lk, vs_event )
   EV_Event_base_T_( ST_NULL, VS_LEAVE, vs_leave, basic_event )
-  EV_Event_base_T_( ST_NULL, VS_JOIN_RQ, vs_join_request, vs_points )
-  EV_Event_base_T_( VS_ST_LOCKED, VS_JOIN_RQ, vs_join_request_lk, vs_points )
+  EV_Event_base_T_( ST_NULL, VS_JOIN_RQ, vs_join_request, vs_join_rq )
+  EV_Event_base_T_( VS_ST_LOCKED, VS_JOIN_RQ, vs_join_request_lk, vs_join_rq )
   EV_Event_base_T_( VS_ST_LOCKED, VS_JOIN_RS, vs_group_points, vs_points )
   EV_Event_base_T_( ST_NULL, VS_LOCK_VIEW, vs_lock_view, void )
   EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_VIEW, vs_lock_view_lk, void )
   EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_VIEW_ACK, vs_lock_view_ack, void )
   EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_VIEW_NAK, vs_lock_view_nak, void )
   EV_VOID( VS_ST_LOCKED, VS_UPDATE_VIEW, vs_view_update )
-  // EV_VOID( ST_NULL, VS_UPDATE_VIEW, vs_view_update )
+
+  EV_Event_base_T_( ST_NULL, VS_FLUSH_LOCK_VIEW, vs_flush_lock_view, void )
+  EV_Event_base_T_( VS_ST_LOCKED, VS_FLUSH_LOCK_VIEW, vs_flush_lock_view_lk, void )
+  EV_Event_base_T_( VS_ST_LOCKED, VS_FLUSH_LOCK_VIEW_ACK, vs_flush_lock_view_ack, void )
+  EV_Event_base_T_( VS_ST_LOCKED, VS_FLUSH_LOCK_VIEW_NAK, vs_flush_lock_view_nak, void )
+  EV_T_( VS_ST_LOCKED, VS_FLUSH_VIEW, vs_flush, xmt::uuid_type )
+  EV_T_( ST_NULL, VS_FLUSH_VIEW_JOIN, vs_flush_wr, xmt::uuid_type )
+
 END_RESPONSE_TABLE
 
 } // namespace janus

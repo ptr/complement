@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/08 20:09:33 ptr>
+// -*- C++ -*- Time-stamp: <09/10/13 17:24:53 ptr>
 
 /*
  *
@@ -55,7 +55,7 @@ int main( int argc, const char ** argv )
   t.add( &vtime_operations::vt_diff, vt_oper, "Differences", tc[0] );
   tc[2] = t.add( &vtime_operations::gvt_add, vt_oper, "Grouped VT additions", tc[1] );
 
-  t.add( &vtime_operations::VT_one_group_late_replay, vt_oper, "VT one group late replay",
+  tc[5] = t.add( &vtime_operations::VT_one_group_late_replay, vt_oper, "VT one group late replay",
     t.add( &vtime_operations::VT_one_group_replay, vt_oper, "VT one group replay",
       t.add( &vtime_operations::VT_one_group_send, vt_oper, "VT one group send",
         t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
@@ -63,6 +63,8 @@ int main( int argc, const char ** argv )
 
   t.add( &vtime_operations::VT_one_group_access_point, vt_oper, "VT network access points",
     t.add( &vtime_operations::VT_one_group_network, vt_oper, "VT over network", tc[4] ) );
+
+  t.add( &vtime_operations::VT_one_group_recover, vt_oper, "VT one group recover", tc[5] );
 
   if ( opts.is_set( 'v' ) ) {
     t.flags( t.flags() | exam::base_logger::verbose );

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/12 17:55:33 ptr>
+// -*- C++ -*- Time-stamp: <09/10/15 15:16:43 ptr>
 
 /*
  *
@@ -56,10 +56,12 @@ class VTM_one_group_advanced_handler :
     vtime_matrix_type& vt()
       { return basic_vs::vt; }
 
-    virtual void vs_pub_recover();
+    virtual xmt::uuid_type vs_pub_recover();
+    virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& );
     virtual void vs_pub_view_update();
     virtual void vs_event_origin( const janus::vtime&, const stem::Event& );
     virtual void vs_event_derivative( const vtime&, const stem::Event& );
+    virtual void vs_pub_flush();
 
     std::string mess;
 
@@ -120,7 +122,7 @@ VTM_one_group_advanced_handler::~VTM_one_group_advanced_handler()
   disable();
 }
 
-void VTM_one_group_advanced_handler::vs_pub_recover()
+xmt::uuid_type VTM_one_group_advanced_handler::vs_pub_recover()
 {
   vtime _vt;
   stem::Event ev;
@@ -129,7 +131,7 @@ void VTM_one_group_advanced_handler::vs_pub_recover()
 
   try {
     // Try to read serialized events and re-play history.
-    // Note: don't call round1_start from ctor,
+    // Note: don't call this function from ctor,
     // because
     //   - it _virtual_ function
     //   - it call 'replay' that call StEM's Dispatch,
@@ -157,6 +159,12 @@ void VTM_one_group_advanced_handler::vs_pub_recover()
     history.clear();
     history.seekp( 0, ios_base::end );
   }
+
+  return xmt::nil_uuid;
+}
+
+void VTM_one_group_advanced_handler::vs_resend_from( const xmt::uuid_type&, const stem::addr_type& )
+{
 }
 
 void VTM_one_group_advanced_handler::vs_pub_view_update()
@@ -180,6 +188,10 @@ void VTM_one_group_advanced_handler::vs_event_derivative( const vtime& _vt, cons
   stem::__pack_base::__pack( history, ev.code() );
   stem::__pack_base::__pack( history, ev.flags() );
   stem::__pack_base::__pack( history, ev.value() );
+}
+
+void VTM_one_group_advanced_handler::vs_pub_flush()
+{
 }
 
 bool VTM_one_group_advanced_handler::_status::operator()() const

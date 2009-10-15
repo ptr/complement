@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/06 09:59:49 ptr>
+// -*- C++ -*- Time-stamp: <09/10/13 17:22:59 ptr>
 
 /*
  *
@@ -36,24 +36,9 @@ class vtime_operations
     int EXAM_DECL(VT_one_group_network);
     int EXAM_DECL(VT_one_group_access_point);
 
+    int EXAM_DECL(VT_one_group_recover);
+
     int EXAM_DECL(gvt_add);
-
-    //int EXAM_DECL(vt_object);
-
-    //int EXAM_DECL(VTDispatch1);
-    //int EXAM_DECL(VTDispatch2);
-
-    //int EXAM_DECL(VTHandler1);
-    //int EXAM_DECL(VTHandler2);
-
-    //int EXAM_DECL(VTSubscription);
-    //int EXAM_DECL(VTEntryIntoGroup);
-    //int EXAM_DECL(VTEntryIntoGroup2);
-    //int EXAM_DECL(VTEntryIntoGroup3);
-
-    //int EXAM_DECL(remote);
-    //int EXAM_DECL(mgroups);
-    //int EXAM_DECL(wellknownhost);
 
   private:
     // xmt::shm_alloc<0> seg;
