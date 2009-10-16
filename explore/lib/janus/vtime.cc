@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/15 17:42:26 ptr>
+// -*- C++ -*- Time-stamp: <09/10/16 15:33:38 ptr>
 
 /*
  *
@@ -465,12 +465,27 @@ void basic_vs::vs_join( const stem::addr_type& a, const char* host, int port )
   if ( !is_avail( a ) ) {
     remotes_.push_back( new stem::NetTransportMgr() );
     stem::addr_type trial_node = remotes_.back()->open( host, port );
-    if ( remotes_.back()->is_open() && (trial_node != a) ) {
-      remotes_.back()->add_route( a );
+    if ( remotes_.back()->is_open() ) {
+      if ( trial_node != a ) {
+        remotes_.back()->add_route( a );
+      }
       remotes_.back()->add_remote_route( EventHandler::self_id() );
+      vs_join( a );
     }
+  } else {
+    vs_join( a );
   }
-  vs_join( a );
+}
+
+void basic_vs::vs_join( const char* host, int port )
+{
+  remotes_.push_back( new stem::NetTransportMgr() );
+  stem::addr_type trial_node = remotes_.back()->open( host, port );
+  if ( remotes_.back()->is_open() ) {
+    remotes_.back()->add_route( trial_node );
+    remotes_.back()->add_remote_route( EventHandler::self_id() );
+    vs_join( trial_node );
+  }
 }
 
 void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
