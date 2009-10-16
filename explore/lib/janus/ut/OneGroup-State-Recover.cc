@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/15 17:42:39 ptr>
+// -*- C++ -*- Time-stamp: <09/10/15 20:39:18 ptr>
 
 /*
  *
@@ -217,7 +217,7 @@ void VTM_one_group_recover::vs_resend_from( const xmt::uuid_type& from, const st
   stem::Event ev;
   stem::code_type c;
   uint32_t f;
-  bool ref_point_found = false;
+  bool ref_point_found = (from == xmt::nil_uuid) ? true : false;
 
   ev.dest( addr );
   ev.src( self_id() );
