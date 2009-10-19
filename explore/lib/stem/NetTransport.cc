@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/08 15:11:53 ptr>
+// -*- C++ -*- Time-stamp: <09/10/19 17:39:53 ptr>
 
 /*
  *
@@ -162,8 +162,8 @@ __FIT_DECLSPEC void NetTransport_base::_close()
   }
 #endif // __FIT_STEM_TRACE
 
-  net.close();
   EventHandler::solitary();
+  net.close();
 }
 
 bool NetTransport_base::pop( Event& _rs )
