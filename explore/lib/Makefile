@@ -7,7 +7,7 @@
 #
 
 SRCROOT := ..
-SUBDIRS := misc exam mt sockios stem
+SUBDIRS := misc exam mt sockios stem janus
 
 -include ${SRCROOT}/Makefiles/gmake/config.mak
 include ${SRCROOT}/Makefiles/gmake/subdirs.mak
