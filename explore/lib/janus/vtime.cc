@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/16 15:33:38 ptr>
+// -*- C++ -*- Time-stamp: <09/10/19 18:06:27 ptr>
 
 /*
  *
@@ -373,6 +373,14 @@ basic_vs::~basic_vs()
   }
 
   // well, VS_LEAVE may not departed yet...
+  for ( access_container_type::iterator i = remotes_.begin(); i != remotes_.end(); ++i ) {
+    (*i)->close();
+  }
+
+  for ( access_container_type::iterator i = remotes_.begin(); i != remotes_.end(); ++i ) {
+    (*i)->join();
+  }
+
   for ( access_container_type::iterator i = remotes_.begin(); i != remotes_.end(); ++i ) {
     delete *i;
   }
