@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/15 20:39:18 ptr>
+// -*- C++ -*- Time-stamp: <09/10/22 18:43:10 ptr>
 
 /*
  *
@@ -478,6 +478,10 @@ int EXAM_IMPL(vtime_operations::VT_one_group_recover)
       EXAM_CHECK( a2.vt()[a3.self_id()][a1.self_id()] == 0 );
       EXAM_CHECK( a2.vt()[a3.self_id()][a2.self_id()] == 0 );
       EXAM_CHECK( a2.vt()[a3.self_id()][a3.self_id()] == 0 );
+
+      // a3 not only join, but replay too...
+      // so we may dalay here...
+      std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
 
       EXAM_CHECK( a3.vt()[a1.self_id()][a1.self_id()] == 0 );
       EXAM_CHECK( a3.vt()[a1.self_id()][a2.self_id()] == 0 );

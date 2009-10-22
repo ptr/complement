@@ -1,3 +1,16 @@
+2009-10-22  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* vtime.h, vtime.cc: node treated as failed
+	when lock ack not received within specified
+	timeout [now happens when accept new member
+	into group or during flush message
+	processing]; VS_LEAVE removed [required actions
+	will be	done when fail will be detected;
+	in other cases we has no interest for special
+	processing];
+
+	* libjanus: revision 0.11.0.
+
 2009-10-15  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* Repo: interface and test [may be used as

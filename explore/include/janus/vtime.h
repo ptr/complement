@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/16 15:28:03 ptr>
+// -*- C++ -*- Time-stamp: <09/10/22 19:19:49 ptr>
 
 /*
  *
@@ -48,6 +48,10 @@
 #    define __USE_STD_TR1
 #  endif
 #endif
+
+namespace stem {
+class Cron;
+}
 
 namespace janus {
 
@@ -284,7 +288,6 @@ class basic_vs :
     typedef std::set<stem::addr_type> group_members_type;
 
     static const stem::code_type VS_EVENT;
-    static const stem::code_type VS_LEAVE;
     static const stem::code_type VS_JOIN_RQ;
     static const stem::code_type VS_JOIN_RS;
     static const stem::code_type VS_LOCK_VIEW;
@@ -294,6 +297,7 @@ class basic_vs :
     static const stem::code_type VS_FLUSH_LOCK_VIEW;
     static const stem::code_type VS_FLUSH_LOCK_VIEW_ACK;
     static const stem::code_type VS_FLUSH_LOCK_VIEW_NAK;
+    static const stem::code_type VS_LOCK_SAFETY; // from cron, timeout
 
   protected:
     static const stem::code_type VS_FLUSH_VIEW;
@@ -301,6 +305,19 @@ class basic_vs :
 
   protected:
     static const stem::state_type VS_ST_LOCKED;
+
+  private:
+    class Init
+    {
+      public:
+        Init();
+        ~Init();
+      private:
+        static void _guard( int );
+        static void __at_fork_prepare();
+        static void __at_fork_child();
+        static void __at_fork_parent();
+    };
 
   public:
     basic_vs();
@@ -342,7 +359,6 @@ class basic_vs :
 
     void vs_process( const stem::Event_base<vs_event>& );
     void vs_process_lk( const stem::Event_base<vs_event>& );
-    void vs_leave( const stem::Event_base<basic_event>& );
     void vs_join_request( const stem::Event_base<vs_join_rq>& );
     void vs_join_request_lk( const stem::Event_base<vs_join_rq>& );
     void vs_group_points( const stem::Event_base<vs_points>& );
@@ -354,7 +370,12 @@ class basic_vs :
     void vs_flush( const xmt::uuid_type& );
     void vs_flush_wr( const xmt::uuid_type& );
 
+    void vs_lock_safety( const stem::EventVoid& ev );
+
     void process_delayed();
+
+    void add_lock_safety();
+    void rm_lock_safety();
 
     typedef std::list<stem::Event_base<vs_event> > delay_container_type;
 
@@ -381,7 +402,11 @@ class basic_vs :
 
     access_container_type remotes_;
 
+    static class stem::Cron* _cron;
+
     DECLARE_RESPONSE_TABLE( basic_vs, stem::EventHandler );
+
+    friend class Init;
 };
 
 
