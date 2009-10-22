@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/08/17 17:30:22 ptr>
+// -*- C++ -*- Time-stamp: <09/10/22 18:09:19 ptr>
 
 /*
  *
@@ -486,6 +486,9 @@ void EvManager::Send( const Event& e )
         local_heap_type::iterator i = heap.find( e.dest() );
         if ( i == heap.end() ) { // destination not found
           throw invalid_argument( string("address unknown") );
+        }
+        if ( i->second.empty() ) { // object hasn't StEM address 
+          return; // Unsubscribe in progress?
         }
         object = i->second.top().second; // target object
         obj_locked = !object->_theHistory_lock.try_lock();
