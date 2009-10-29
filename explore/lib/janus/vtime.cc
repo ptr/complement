@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/29 10:22:25 ptr>
+// -*- C++ -*- Time-stamp: <09/10/29 14:57:26 ptr>
 
 /*
  *
@@ -531,10 +531,38 @@ void basic_vs::vs_join( const stem::addr_type& a, const char* host, int port )
   }
 }
 
+void basic_vs::vs_join( const stem::addr_type& a, const sockaddr_in& srv )
+{
+  if ( !is_avail( a ) ) {
+    remotes_.push_back( new stem::NetTransportMgr() );
+    stem::addr_type trial_node = remotes_.back()->open( srv );
+    if ( remotes_.back()->is_open() ) {
+      if ( trial_node != a ) {
+        remotes_.back()->add_route( a );
+      }
+      remotes_.back()->add_remote_route( EventHandler::self_id() );
+      vs_join( a );
+    }
+  } else {
+    vs_join( a );
+  }
+}
+
 void basic_vs::vs_join( const char* host, int port )
 {
   remotes_.push_back( new stem::NetTransportMgr() );
   stem::addr_type trial_node = remotes_.back()->open( host, port );
+  if ( remotes_.back()->is_open() ) {
+    remotes_.back()->add_route( trial_node );
+    remotes_.back()->add_remote_route( EventHandler::self_id() );
+    vs_join( trial_node );
+  }
+}
+
+void basic_vs::vs_join( const sockaddr_in& a )
+{
+  remotes_.push_back( new stem::NetTransportMgr() );
+  stem::addr_type trial_node = remotes_.back()->open( a );
   if ( remotes_.back()->is_open() ) {
     remotes_.back()->add_route( trial_node );
     remotes_.back()->add_remote_route( EventHandler::self_id() );
