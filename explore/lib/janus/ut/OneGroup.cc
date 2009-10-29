@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/15 15:17:26 ptr>
+// -*- C++ -*- Time-stamp: <09/10/29 11:06:43 ptr>
 
 /*
  *
@@ -168,9 +168,13 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core)
   VTM_one_group_handler a1;
   VTM_one_group_handler a2;
   
+  EXAM_CHECK( a1.vs_group_size() == 0 );
+
   a2.vs_join( a1.self_id() );
 
   EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
+
+  EXAM_CHECK( a1.vs_group_size() == 2 );
 
   EXAM_CHECK( a1.vt()[a1.self_id()][a1.self_id()] == 1 );
   EXAM_CHECK( a1.vt()[a1.self_id()][a2.self_id()] == 0 );

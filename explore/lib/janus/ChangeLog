@@ -1,3 +1,10 @@
+2009-10-29  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* vtime.h, vtime.cc: vs_group_size return
+	group size (0, if not in group);
+
+	* libjanus: revision 0.11.1.
+
 2009-10-22  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* vtime.h, vtime.cc: node treated as failed

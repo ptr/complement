@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/22 19:19:49 ptr>
+// -*- C++ -*- Time-stamp: <09/10/29 09:57:36 ptr>
 
 /*
  *
@@ -284,6 +284,9 @@ struct gvtime :
 class basic_vs :
     public stem::EventHandler
 {
+  public:
+    typedef vtime::vtime_type::size_type size_type;
+
   private:
     typedef std::set<stem::addr_type> group_members_type;
 
@@ -337,6 +340,7 @@ class basic_vs :
     void vs( const stem::Event_base<D>& e )
       { basic_vs::vs( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
     void vs_send_flush();
+    size_type vs_group_size() const;
 
   protected:
     vtime_matrix_type vt;

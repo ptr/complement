@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/22 19:20:22 ptr>
+// -*- C++ -*- Time-stamp: <09/10/29 10:22:25 ptr>
 
 /*
  *
@@ -540,6 +540,13 @@ void basic_vs::vs_join( const char* host, int port )
     remotes_.back()->add_remote_route( EventHandler::self_id() );
     vs_join( trial_node );
   }
+}
+
+basic_vs::size_type basic_vs::vs_group_size() const
+{
+  vtime_matrix_type::const_iterator i = vt.find( self_id() );
+  
+  return i == vt.end() ? 0 : i->second.vt.size();
 }
 
 void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
