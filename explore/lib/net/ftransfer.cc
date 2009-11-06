@@ -63,10 +63,12 @@ class file_sender :
 
     void ack( const stem::Event& );
     void nac();
+    void finilaze();
     void next_chunk( const stem::Event& );
 
   private:
     std::ilfstream f;
+    std::string name;
     stem::addr_type r;
     MD5_CTX ctx;
 
@@ -177,9 +179,10 @@ DEFINE_RESPONSE_TABLE( file_receiver )
   EV_EDS(ST_CORE_SEND,STEM_FINAL,final)
 END_RESPONSE_TABLE
 
-file_sender::file_sender( const string& name, const string& rmprefix, stem::addr_type rcv, stem::addr_type remover ) :
+file_sender::file_sender( const string& nm, const string& rmprefix, stem::addr_type rcv, stem::addr_type remover ) :
     EventHandler(),
-    f( name.c_str() ),
+    name( nm ),
+    f( nm.c_str() ),
     r( remover )
 {
   EventHandler::enable();
@@ -245,7 +248,7 @@ void file_sender::next_chunk( const Event& rsp )
 
     Send( fev );
 
-    nac();
+    finilaze();
   } else {
     Send( ev );
 
@@ -261,7 +264,7 @@ void file_sender::next_chunk( const Event& rsp )
 
       Send( fev );
 
-      nac();
+      finilaze();
     }
   }
 }
@@ -273,33 +276,50 @@ void file_sender::nac()
     f.close();
   }
 
-  EventVoid ev( STEM_FILE_SND_RM );
+  Event ev( STEM_FILE_SND_RM );
 
   ev.dest( r );
+  Send( ev );
+}
 
+void file_sender::finilaze()
+{
+  if ( f.is_open() ) {
+    f.unlock();
+    f.close();
+  }
+
+  Event ev( STEM_FILE_SND_RM );
+  
+  ev.value() = name;
+  
+  ev.dest( r );
   Send( ev );
 }
 
 DEFINE_RESPONSE_TABLE( file_sender )
   EV_EDS(ST_NULL,STEM_FILE_ACK,ack)
-  EV_VOID(ST_NULL,STEM_FILE_NAC,nac)
+  EV_EDS(ST_NULL,STEM_FILE_NAC,nac)
   EV_EDS(ST_CORE_SEND,STEM_NEXT_CHUNK,next_chunk)
 END_RESPONSE_TABLE
 
 } // namespace detail
 
 FileSndMgr::FileSndMgr() :
-    EventHandler()
+    EventHandler(),
+    watcher( xmt::nil_uuid )
 {
 }
 
 FileSndMgr::FileSndMgr( const char* info ) :
-    EventHandler( info )
+    EventHandler( info ),
+    watcher( xmt::nil_uuid )
 {
 }
 
 FileSndMgr::FileSndMgr( addr_type id, const char* info ) :
-    EventHandler( id, info )
+    EventHandler( id, info ),
+    watcher( xmt::nil_uuid )
 {
 }
 
@@ -329,6 +349,12 @@ void FileSndMgr::finish( const stem::Event& ev )
   if ( i != senders.end() ) {
     delete i->second;
     senders.erase( i );
+  }
+  if (!ev.value().empty()) {
+    Event reply( EV_FILE_COPIED );
+    reply.value() = ev.value();
+    reply.dest( watcher );
+    Send( reply );
   }
 }
 

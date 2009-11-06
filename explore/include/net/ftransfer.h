@@ -30,6 +30,9 @@ class file_sender;
 
 } // namespace detail
 
+// TODO: find better place and value for it
+#define EV_FILE_COPIED 0xF11EC01D
+
 class FileSndMgr :
     public EventHandler
 {
@@ -38,7 +41,9 @@ class FileSndMgr :
     explicit FileSndMgr( const char* );
     explicit FileSndMgr( addr_type id, const char* info = 0 );
     ~FileSndMgr();
-
+    
+    void set_watcher( stem::addr_type w )
+      { watcher = w; }
     void truncate_path( const std::string& p )
       { tranc_prefix = p; }
     void sendfile( const std::string& name, stem::addr_type );
@@ -48,6 +53,7 @@ class FileSndMgr :
     void dummy( const stem::Event& );
 
     std::string tranc_prefix;
+    stem::addr_type watcher;
 
     typedef std::map<stem::addr_type, detail::file_sender*> container_type;
     container_type senders;
