@@ -307,19 +307,19 @@ END_RESPONSE_TABLE
 
 FileSndMgr::FileSndMgr() :
     EventHandler(),
-    watcher( xmt::nil_uuid )
+    watcher( badaddr )
 {
 }
 
 FileSndMgr::FileSndMgr( const char* info ) :
     EventHandler( info ),
-    watcher( xmt::nil_uuid )
+    watcher( badaddr )
 {
 }
 
 FileSndMgr::FileSndMgr( addr_type id, const char* info ) :
     EventHandler( id, info ),
-    watcher( xmt::nil_uuid )
+    watcher( badaddr )
 {
 }
 
@@ -350,7 +350,8 @@ void FileSndMgr::finish( const stem::Event& ev )
     delete i->second;
     senders.erase( i );
   }
-  if (!ev.value().empty()) {
+
+  if ( !ev.value().empty() ) {
     Event reply( EV_FILE_COPIED );
     reply.value() = ev.value();
     reply.dest( watcher );
