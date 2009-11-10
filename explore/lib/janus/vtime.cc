@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/11/10 10:10:38 ptr>
+// -*- C++ -*- Time-stamp: <09/11/10 10:46:25 ptr>
 
 /*
  *
@@ -515,7 +515,7 @@ int basic_vs::vs_join( const stem::addr_type& a )
   // peer unavailable (or I'm group founder), no lock required
   PopState( VS_ST_LOCKED );
 
-  return 1;
+  return a == stem::badaddr ? 0 : 1;
 }
 
 int basic_vs::vs_join( const stem::addr_type& a, const char* host, int port )
