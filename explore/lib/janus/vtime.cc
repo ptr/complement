@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/29 14:57:26 ptr>
+// -*- C++ -*- Time-stamp: <09/11/10 10:10:38 ptr>
 
 /*
  *
@@ -493,7 +493,7 @@ void basic_vs::vs_tcp_point( const sockaddr_in& a )
   }
 }
 
-void basic_vs::vs_join( const stem::addr_type& a )
+int basic_vs::vs_join( const stem::addr_type& a )
 {
   PushState( VS_ST_LOCKED );
 
@@ -509,65 +509,115 @@ void basic_vs::vs_join( const stem::addr_type& a )
     Send( ev );
 
     add_lock_safety();  // belay: avoid infinite lock
-  } else { // peer unavailable (or I'm group founder), no lock required
-    PopState( VS_ST_LOCKED );
+
+    return 0;
   }
+  // peer unavailable (or I'm group founder), no lock required
+  PopState( VS_ST_LOCKED );
+
+  return 1;
 }
 
-void basic_vs::vs_join( const stem::addr_type& a, const char* host, int port )
+int basic_vs::vs_join( const stem::addr_type& a, const char* host, int port )
 {
   if ( !is_avail( a ) ) {
+    if ( a == stem::badaddr ) {
+      return 2;
+    }
+
     remotes_.push_back( new stem::NetTransportMgr() );
     stem::addr_type trial_node = remotes_.back()->open( host, port );
-    if ( remotes_.back()->is_open() ) {
-      if ( trial_node != a ) {
-        remotes_.back()->add_route( a );
-      }
-      remotes_.back()->add_remote_route( EventHandler::self_id() );
-      vs_join( a );
+
+    if ( !remotes_.back()->is_open() ) {
+      delete remotes_.back();
+      remotes_.pop_back();
+
+      return 3;
     }
-  } else {
-    vs_join( a );
+
+    if ( trial_node != a ) {
+      remotes_.back()->add_route( a );
+    }
+    remotes_.back()->add_remote_route( EventHandler::self_id() );
   }
+
+  return vs_join( a );
 }
 
-void basic_vs::vs_join( const stem::addr_type& a, const sockaddr_in& srv )
+int basic_vs::vs_join( const stem::addr_type& a, const sockaddr_in& srv )
 {
   if ( !is_avail( a ) ) {
+    if ( a == stem::badaddr ) {
+      return 2;
+    }
+
     remotes_.push_back( new stem::NetTransportMgr() );
     stem::addr_type trial_node = remotes_.back()->open( srv );
-    if ( remotes_.back()->is_open() ) {
-      if ( trial_node != a ) {
-        remotes_.back()->add_route( a );
-      }
-      remotes_.back()->add_remote_route( EventHandler::self_id() );
-      vs_join( a );
+
+    if ( !remotes_.back()->is_open() ) {
+      delete remotes_.back();
+      remotes_.pop_back();
+
+      return 3;
     }
-  } else {
-    vs_join( a );
+
+    if ( trial_node != a ) {
+      remotes_.back()->add_route( a );
+    }
+    remotes_.back()->add_remote_route( EventHandler::self_id() );
   }
+
+  return vs_join( a );
 }
 
-void basic_vs::vs_join( const char* host, int port )
+int basic_vs::vs_join( const char* host, int port )
 {
   remotes_.push_back( new stem::NetTransportMgr() );
   stem::addr_type trial_node = remotes_.back()->open( host, port );
-  if ( remotes_.back()->is_open() ) {
-    remotes_.back()->add_route( trial_node );
-    remotes_.back()->add_remote_route( EventHandler::self_id() );
-    vs_join( trial_node );
+
+  if ( !remotes_.back()->is_open() ) {
+    delete remotes_.back();
+    remotes_.pop_back();
+
+    return 3;
   }
+
+  if ( trial_node == stem::badaddr ) {
+    delete remotes_.back();
+    remotes_.pop_back();
+
+    return 4;
+  }
+
+  remotes_.back()->add_route( trial_node );
+  remotes_.back()->add_remote_route( EventHandler::self_id() );
+
+  return vs_join( trial_node );
 }
 
-void basic_vs::vs_join( const sockaddr_in& a )
+int basic_vs::vs_join( const sockaddr_in& a )
 {
   remotes_.push_back( new stem::NetTransportMgr() );
   stem::addr_type trial_node = remotes_.back()->open( a );
-  if ( remotes_.back()->is_open() ) {
-    remotes_.back()->add_route( trial_node );
-    remotes_.back()->add_remote_route( EventHandler::self_id() );
-    vs_join( trial_node );
+
+  if ( !remotes_.back()->is_open() ) {
+    delete remotes_.back();
+    remotes_.pop_back();
+
+    return 3;
   }
+
+  if ( trial_node == stem::badaddr ) {
+    delete remotes_.back();
+    remotes_.pop_back();
+
+    return 4;
+  }
+
+  remotes_.back()->add_route( trial_node );
+  remotes_.back()->add_remote_route( EventHandler::self_id() );
+
+  return vs_join( trial_node );
 }
 
 basic_vs::size_type basic_vs::vs_group_size() const
