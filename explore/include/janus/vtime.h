@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/11/10 09:41:31 ptr>
+// -*- C++ -*- Time-stamp: <09/11/10 17:10:08 ptr>
 
 /*
  *
@@ -343,6 +343,18 @@ class basic_vs :
       { basic_vs::vs( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
     void vs_send_flush();
     size_type vs_group_size() const;
+
+    void send_to_vsg( const stem::Event& ); // not VS!
+
+    template <class D>
+    void send_to_vsg( const stem::Event_base<D>& e ) // not VS!
+      { basic_vs::send_to_vsg( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
+
+    void forward_to_vsg( const stem::Event& ); // not VS!
+
+    template <class D>
+    void forward_to_vsg( const stem::Event_base<D>& e ) // not VS!
+      { basic_vs::forward_to_vsg( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
 
   protected:
     vtime_matrix_type vt;

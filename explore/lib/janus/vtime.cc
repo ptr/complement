@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/11/10 10:46:25 ptr>
+// -*- C++ -*- Time-stamp: <09/11/10 17:09:23 ptr>
 
 /*
  *
@@ -463,6 +463,38 @@ void basic_vs::vs( const stem::Event& inc_ev )
     }
   }
   // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
+}
+
+void basic_vs::send_to_vsg( const stem::Event& ev ) // not VS!
+{
+  stem::Event sev = ev;
+
+  sev.src( self_id() );
+
+  vtime& self = vt[self_id()];
+
+  for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+    if ( i->first != self_id() ) {
+      // cerr << __FILE__ << ':' << __LINE__ << ' ' << i->first << endl;
+      sev.dest( i->first );
+      Forward( sev );
+    }
+  }
+}
+
+void basic_vs::forward_to_vsg( const stem::Event& ev ) // not VS!
+{
+  stem::Event sev = ev;
+
+  vtime& self = vt[self_id()];
+
+  for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+    if ( i->first != self_id() ) {
+      // cerr << __FILE__ << ':' << __LINE__ << ' ' << i->first << endl;
+      sev.dest( i->first );
+      Forward( sev );
+    }
+  }
 }
 
 // addr in network byte order, port in native byte order
