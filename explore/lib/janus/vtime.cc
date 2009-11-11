@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/11/10 17:09:23 ptr>
+// -*- C++ -*- Time-stamp: <09/11/11 23:56:38 ptr>
 
 /*
  *
@@ -1339,7 +1339,42 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
           stem::EventVoid update_view_ev( VS_UPDATE_VIEW );
 
           basic_vs::vs( update_view_ev );
-        } else {
+        } else if ( self.vt.size() == 2 ) { // two nodes in group and one not conform
+          // who is in group, but not conform lock?
+          for ( vtime::vtime_type::iterator i = self.vt.begin(); i != self.vt.end(); ) {
+            if ( i->first == self_id() ) {
+              ++i;
+            } else {
+              vt.erase( i->first ); // erase it from group
+              self.vt.erase( i++ );
+              /* Not required: after next event from node
+                 it will be removed
+              for ( vtime_matrix_type::iterator j = vt.begin(); j != vt.end(); ++j ) {
+                if( j->first != self_id() ) {
+                  j->second.erase( i->first );
+                }
+              }
+              */
+              break;
+            }
+          }
+
+          // response from all group members available
+          ++view;
+          if ( group_applicant != stem::badaddr ) {
+            vt[self_id()][group_applicant]; // i.e. create entry in vt
+            group_applicant = stem::badaddr;
+          }
+          lock_addr = stem::badaddr; // before vs()!
+          PopState( VS_ST_LOCKED );
+          lock_rsp.clear();
+
+          rm_lock_safety();
+
+          stem::EventVoid update_view_ev( VS_UPDATE_VIEW );
+
+          basic_vs::vs( update_view_ev );
+        } else { // problem on this side?
           cerr << __FILE__ << ':' << __LINE__ << ' ' << (lock_rsp.size() + 1) <<  ' ' << self.vt.size() << endl;
         }
       } else {
