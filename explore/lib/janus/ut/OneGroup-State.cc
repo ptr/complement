@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/22 15:25:15 ptr>
+// -*- C++ -*- Time-stamp: <09/11/13 16:21:36 ptr>
 
 /*
  *
@@ -105,12 +105,12 @@ VTM_one_group_advanced_handler::VTM_one_group_advanced_handler() :
 }
 
 VTM_one_group_advanced_handler::VTM_one_group_advanced_handler( const stem::addr_type& id ) :
-    basic_vs( id ),
+    basic_vs( /* id */ ),
     pass( false ),
     status( *this )
 {
   string nm( "/tmp/janus." );
-  nm += std::string( self_id() );
+  nm += std::string( /* self_id() */ id );
 
   history.open( nm.c_str(), ios_base::in | ios_base::out | ios_base::app );
 
@@ -307,7 +307,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_replay)
 
       a3.vs_join( a2.self_id() );
 
-      EXAM_CHECK( a1.wait( std::tr2::milliseconds(500) ) );
+      EXAM_CHECK( a1.wait( std::tr2::milliseconds(700) ) );
       // a3 not only join, but replay too...
       EXAM_CHECK( a3.wait( std::tr2::milliseconds(500) ) );
       // so I can't just check a3's vtime...
@@ -412,9 +412,9 @@ int EXAM_IMPL(vtime_operations::VT_one_group_late_replay)
 
       a1.Send( ev );
 
-      EXAM_CHECK( a1.wait( std::tr2::milliseconds(500) ) );
+      EXAM_CHECK( a1.wait( std::tr2::milliseconds(700) ) );
       EXAM_CHECK( a1.mess == "extra message" );
-      EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
+      EXAM_CHECK( a2.wait( std::tr2::milliseconds(700) ) );
       EXAM_CHECK( a2.mess == "extra message" );
     }
 

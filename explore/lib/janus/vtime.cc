@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/11/11 23:56:38 ptr>
+// -*- C++ -*- Time-stamp: <09/11/13 16:32:38 ptr>
 
 /*
  *
@@ -395,22 +395,6 @@ basic_vs::basic_vs() :
   new( Init_buf ) Init();
 }
 
-basic_vs::basic_vs( stem::addr_type id ) :
-    EventHandler( id ),
-    view( 0 ),
-    lock_addr( stem::badaddr )
-{
-  new( Init_buf ) Init();
-}
-
-basic_vs::basic_vs( stem::addr_type id, const char* info ) :
-    EventHandler( id, info ),
-    view( 0 ),
-    lock_addr( stem::badaddr )
-{
-  new( Init_buf ) Init();
-}
-
 basic_vs::basic_vs( const char* info ) :
     EventHandler( info ),
     view( 0 ),
@@ -421,9 +405,30 @@ basic_vs::basic_vs( const char* info ) :
 
 basic_vs::~basic_vs()
 {
+  stem::addr_type sid = self_id();
+
   disable();
 
   ((Init *)Init_buf)->~Init();
+
+#if 0
+  stem::Event_base<janus::addr_type> sev( VS_LAST_WILL );
+
+  sev.src( stem::badaddr );
+  sev.value() = sid;
+
+  vtime& self = vt[sid];
+
+  for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+    if ( i->first != sid ) {
+      // cerr << __FILE__ << ':' << __LINE__ << ' ' << i->first << endl;
+      sev.dest( i->first );
+      Forward( sev );
+      // to first only
+      break;
+    }
+  }
+#endif
 
   for ( access_container_type::iterator i = remotes_.begin(); i != remotes_.end(); ++i ) {
     delete *i;
@@ -433,8 +438,9 @@ basic_vs::~basic_vs()
 
 void basic_vs::vs( const stem::Event& inc_ev )
 {
+  // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
   if ( lock_addr != stem::badaddr ) {
-    cerr << "View Update" << endl;
+    cerr << __FILE__ << ':' << __LINE__ << " View Update" << endl;
     return;
   }
 
@@ -532,6 +538,7 @@ int basic_vs::vs_join( const stem::addr_type& a )
   xmt::uuid_type ref = this->vs_pub_recover();
 
   if ( is_avail( a ) ) {
+    // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
     stem::Event_base<vs_join_rq> ev( VS_JOIN_RQ );
 
     ev.dest( a );
@@ -695,6 +702,7 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
       // check: group_applicant re-enter (fail was not detected yet)
       for ( vtime::vtime_type::iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
         if ( i->first == group_applicant ) { // same address
+          // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
           vt.erase( group_applicant );
           self.vt.erase( i );
           break;
@@ -839,9 +847,12 @@ void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
     lock_rsp.insert( ev.src() );
     vtime& self = vt[self_id()];
     // cerr << __FILE__ << ':' << __LINE__ << ' ' << lock_rsp.size() << ' ' << self.vt.size() << endl;
-    if ( (lock_rsp.size() + 1) == self.vt.size() ) {
+    /* Below '>=' instead of '==', because of scenario 'one node exit,
+       another node added'
+     */
+    if ( (lock_rsp.size() + 1) >= self.vt.size() ) {
       // cerr << __FILE__ << ':' << __LINE__ << endl;
-      for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i !=self.vt.end(); ++i ) {
+      for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
         if ( (i->first != self_id()) && (lock_rsp.find( i->first ) == lock_rsp.end()) ) {
           // cerr << __FILE__ << ':' << __LINE__ << endl;
           return;
@@ -850,8 +861,10 @@ void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
       // cerr << __FILE__ << ':' << __LINE__ << ' ' << group_applicant << endl;
       // response from all group members available
       ++view;
-      vt[self_id()][group_applicant]; // i.e. create entry in vt
-      group_applicant = stem::badaddr;
+      if ( group_applicant != stem::badaddr ) {
+        vt[self_id()][group_applicant]; // i.e. create entry in vt
+        group_applicant = stem::badaddr;
+      }
       lock_addr = stem::badaddr; // before vs()!
       PopState( VS_ST_LOCKED );
       lock_rsp.clear();
@@ -964,6 +977,7 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
 {
   const stem::code_type code = ev.value().ev.code();
 
+  // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
   if ( ev.value().view != view ) {
     // cerr << __FILE__ << ':' << __LINE__ << endl;
     if ( code != VS_UPDATE_VIEW ) {
@@ -987,6 +1001,23 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
       vt[self_id()] = ev.value().vt.vt; // align time with origin
       --vt[self_id()][ev.src()]; // will be incremented below
     }
+#if 0
+    else { // (view + 1) == ev.value().view
+      // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
+
+      vtime& self = vt[self_id()];
+      for ( vtime::vtime_type::iterator i = self.vt.begin(); i != self.vt.end(); ) {
+        if ( ev.value().vt.vt.find( i->first ) == ev.value().vt.vt.end() ) {
+          cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
+          vt.erase( i->first );
+          self.vt.erase( i++ );
+          // break;
+        } else {
+          ++i;
+        }
+      }
+    }
+#endif
     view = ev.value().view;
   }
 
@@ -1039,6 +1070,7 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
        contain all group members, even if virtual time
        is zero (copy/assign vt don't copy entry with zero vtime!)
     */
+    // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
     for ( vtime::vtime_type::const_iterator i = ev.value().vt.vt.begin(); i != ev.value().vt.vt.end(); ++i ) {
       self[i->first];
     }
@@ -1202,7 +1234,10 @@ void basic_vs::vs_flush_lock_view_ack( const stem::EventVoid& ev )
     lock_rsp.insert( ev.src() );
     vtime& self = vt[self_id()];
     // cerr << __FILE__ << ':' << __LINE__ << ' ' << lock_rsp.size() << ' ' << self.vt.size() << endl;
-    if ( (lock_rsp.size() + 1) == self.vt.size() ) {
+    /* Below '>=' instead of '==', because of scenario 'one node exit,
+       another node added'
+     */
+    if ( (lock_rsp.size() + 1) >= self.vt.size() ) {
       // cerr << __FILE__ << ':' << __LINE__ << endl;
       for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i !=self.vt.end(); ++i ) {
         if ( (i->first != self_id()) && (lock_rsp.find( i->first ) == lock_rsp.end()) ) {
@@ -1297,6 +1332,7 @@ void basic_vs::rm_lock_safety()
 
 void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
 {
+  // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
   if ( ev.src() == self_id() ) {
     if ( lock_addr == stem::badaddr ) {
       return; // no lock more
@@ -1304,83 +1340,49 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
 
     if ( lock_addr == self_id() ) { // I'm owner of the lock
       vtime& self = vt[self_id()];
-      if ( (lock_rsp.size() + 1) < self.vt.size() ) { // not all conforms lock
-        if ( (lock_rsp.size() * 2 + 1) >= self.vt.size() ) { // at least half conforms
-          // who is in group, but not conform lock?
-          for ( vtime::vtime_type::iterator i = self.vt.begin(); i != self.vt.end(); ) {
-            if ( (i->first == self_id()) || (lock_rsp.find( i->first ) == lock_rsp.end()) ) {
-              ++i;
-            } else {
-              vt.erase( i->first ); // erase it from group
-              self.vt.erase( i++ );
-              /* Not required: after next event from node
-                 it will be removed
-              for ( vtime_matrix_type::iterator j = vt.begin(); j != vt.end(); ++j ) {
-                if( j->first != self_id() ) {
-                  j->second.erase( i->first );
-                }
-              }
-              */
-            }
+      // if ( (lock_rsp.size() + 1) < self.vt.size() ) { // not all conforms lock
+      if ( (lock_rsp.size() * 2 + 1) >= self.vt.size() ) { // at least half conforms
+        // who is in group, but not conform lock?
+        for ( vtime::vtime_type::iterator i = self.vt.begin(); i != self.vt.end(); ) {
+          if ( (i->first == self_id()) || (lock_rsp.find( i->first ) != lock_rsp.end()) ) {
+            ++i;
+          } else {
+            // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
+            vt.erase( i->first ); // erase it from group
+            self.vt.erase( i++ );
+            /* Not required: after next event from node
+               it will be removed
+               for ( vtime_matrix_type::iterator j = vt.begin(); j != vt.end(); ++j ) {
+                 if( j->first != self_id() ) {
+                   j->second.erase( i->first );
+                 }
+               }
+            */
           }
-
-          // response from all group members available
-          ++view;
-          if ( group_applicant != stem::badaddr ) {
-            vt[self_id()][group_applicant]; // i.e. create entry in vt
-            group_applicant = stem::badaddr;
-          }
-          lock_addr = stem::badaddr; // before vs()!
-          PopState( VS_ST_LOCKED );
-          lock_rsp.clear();
-
-          rm_lock_safety();
-
-          stem::EventVoid update_view_ev( VS_UPDATE_VIEW );
-
-          basic_vs::vs( update_view_ev );
-        } else if ( self.vt.size() == 2 ) { // two nodes in group and one not conform
-          // who is in group, but not conform lock?
-          for ( vtime::vtime_type::iterator i = self.vt.begin(); i != self.vt.end(); ) {
-            if ( i->first == self_id() ) {
-              ++i;
-            } else {
-              vt.erase( i->first ); // erase it from group
-              self.vt.erase( i++ );
-              /* Not required: after next event from node
-                 it will be removed
-              for ( vtime_matrix_type::iterator j = vt.begin(); j != vt.end(); ++j ) {
-                if( j->first != self_id() ) {
-                  j->second.erase( i->first );
-                }
-              }
-              */
-              break;
-            }
-          }
-
-          // response from all group members available
-          ++view;
-          if ( group_applicant != stem::badaddr ) {
-            vt[self_id()][group_applicant]; // i.e. create entry in vt
-            group_applicant = stem::badaddr;
-          }
-          lock_addr = stem::badaddr; // before vs()!
-          PopState( VS_ST_LOCKED );
-          lock_rsp.clear();
-
-          rm_lock_safety();
-
-          stem::EventVoid update_view_ev( VS_UPDATE_VIEW );
-
-          basic_vs::vs( update_view_ev );
-        } else { // problem on this side?
-          cerr << __FILE__ << ':' << __LINE__ << ' ' << (lock_rsp.size() + 1) <<  ' ' << self.vt.size() << endl;
         }
-      } else {
-        // do nothing? shouldn't happen?
-        cerr << __FILE__ << ':' << __LINE__ << endl;
+
+        // response from all group members available
+        ++view;
+        if ( group_applicant != stem::badaddr ) {
+          vt[self_id()][group_applicant]; // i.e. create entry in vt
+          group_applicant = stem::badaddr;
+        }
+        lock_addr = stem::badaddr; // before vs()!
+        PopState( VS_ST_LOCKED );
+        lock_rsp.clear();
+
+        rm_lock_safety();
+
+        stem::EventVoid update_view_ev( VS_UPDATE_VIEW );
+
+        basic_vs::vs( update_view_ev );
+      } else { // problem on this side?
+        cerr << __FILE__ << ':' << __LINE__ << ' ' << (lock_rsp.size() + 1) <<  ' ' << self.vt.size() << endl;
       }
+      // } else {
+        // do nothing? shouldn't happen?
+      //   cerr << __FILE__ << ':' << __LINE__ << endl;
+      // }
       // cerr << __FILE__ << ':' << __LINE__ << ' ' << (lock_rsp.size() + 1) <<  ' ' << self.vt.size() << endl;
       // if ( (lock_rsp.size() + 1) == self.vt.size() ) {
       // }
@@ -1388,6 +1390,49 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
       cerr << __FILE__ << ':' << __LINE__ << ' ' << lock_addr << " (" << self_id() << ')' << endl;
     }
   }
+}
+
+void basic_vs::process_last_will( const stem::Event_base<janus::addr_type>& ev )
+{
+  // Don't check ev.src() here: it may be badaddr
+  if ( ev.value() == self_id() ) { // illegal usage
+    return; 
+  }
+
+#if 0
+  vtime& self = vt[self_id()];
+  vt.erase( ev.value() );      // erase it from group
+  self.vt.erase( ev.value() );
+
+  if ( lock_addr == stem::badaddr ) {
+    if ( self.vt.size() > 1 ) {
+      cerr << __FILE__ << ':' << __LINE__ << ' ' << self.vt.size()
+           << ' ' << self_id() << endl;
+#if 1
+      lock_rsp.clear();
+
+      group_applicant = stem::badaddr;
+
+      stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
+
+      basic_vs::vs( view_lock_ev );
+      lock_addr = self_id(); // after vs()!
+      PushState( VS_ST_LOCKED );
+
+      add_lock_safety(); // belay: avoid infinite lock
+#endif
+    } else { // single in group
+      ++view;
+      stem::EventVoid update_view_ev( VS_UPDATE_VIEW );
+
+      basic_vs::vs( update_view_ev );
+    }
+  }
+#endif
+}
+
+void basic_vs::process_last_will_lk( const stem::Event_base<janus::addr_type>& ev )
+{
 }
 
 const stem::code_type basic_vs::VS_EVENT         = 0x302;
@@ -1403,6 +1448,7 @@ const stem::code_type basic_vs::VS_FLUSH_LOCK_VIEW_NAK = 0x30c;
 const stem::code_type basic_vs::VS_FLUSH_VIEW    = 0x30d;
 const stem::code_type basic_vs::VS_FLUSH_VIEW_JOIN = 0x30e;
 const stem::code_type basic_vs::VS_LOCK_SAFETY   = 0x30f;
+const stem::code_type basic_vs::VS_LAST_WILL     = 0x310;
 
 const stem::state_type basic_vs::VS_ST_LOCKED = 0x10000;
 
@@ -1425,6 +1471,9 @@ DEFINE_RESPONSE_TABLE( basic_vs )
   EV_T_( VS_ST_LOCKED, VS_FLUSH_VIEW, vs_flush, xmt::uuid_type )
   EV_T_( ST_NULL, VS_FLUSH_VIEW_JOIN, vs_flush_wr, xmt::uuid_type )
   EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_SAFETY, vs_lock_safety, void )
+
+  EV_Event_base_T_( ST_NULL, VS_LAST_WILL, process_last_will, janus::addr_type )
+  EV_Event_base_T_( VS_ST_LOCKED, VS_LAST_WILL, process_last_will_lk, janus::addr_type )
 END_RESPONSE_TABLE
 
 } // namespace janus

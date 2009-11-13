@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/11/10 17:10:08 ptr>
+// -*- C++ -*- Time-stamp: <09/11/13 16:24:42 ptr>
 
 /*
  *
@@ -301,6 +301,7 @@ class basic_vs :
     static const stem::code_type VS_FLUSH_LOCK_VIEW_ACK;
     static const stem::code_type VS_FLUSH_LOCK_VIEW_NAK;
     static const stem::code_type VS_LOCK_SAFETY; // from cron, timeout
+    static const stem::code_type VS_LAST_WILL;
 
   protected:
     static const stem::code_type VS_FLUSH_VIEW;
@@ -324,8 +325,6 @@ class basic_vs :
 
   public:
     basic_vs();
-    basic_vs( stem::addr_type id );
-    basic_vs( stem::addr_type id, const char* info );
     basic_vs( const char* info );
     ~basic_vs();
 
@@ -394,6 +393,9 @@ class basic_vs :
 
     void add_lock_safety();
     void rm_lock_safety();
+
+    void process_last_will( const stem::Event_base<janus::addr_type>& );
+    void process_last_will_lk( const stem::Event_base<janus::addr_type>& );
 
     typedef std::list<stem::Event_base<vs_event> > delay_container_type;
 

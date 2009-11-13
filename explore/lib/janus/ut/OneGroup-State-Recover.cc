@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/22 18:43:10 ptr>
+// -*- C++ -*- Time-stamp: <09/11/13 16:28:37 ptr>
 
 /*
  *
@@ -111,12 +111,12 @@ VTM_one_group_recover::VTM_one_group_recover() :
 }
 
 VTM_one_group_recover::VTM_one_group_recover( const stem::addr_type& id ) :
-    basic_vs( id ),
+    basic_vs(),
     pass( false ),
     status( *this )
 {
   string nm( "/tmp/janus." );
-  nm += std::string( self_id() );
+  nm += std::string( id );
 
   history.open( nm.c_str(), ios_base::in | ios_base::out /* | ios_base::app */ );
   if ( !history.is_open() ) {

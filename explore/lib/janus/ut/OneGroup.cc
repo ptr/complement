@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/29 11:06:43 ptr>
+// -*- C++ -*- Time-stamp: <09/11/13 16:27:07 ptr>
 
 /*
  *
@@ -35,8 +35,6 @@ class VTM_one_group_handler :
 {
   public:
     VTM_one_group_handler();
-    VTM_one_group_handler( stem::addr_type id );
-    VTM_one_group_handler( stem::addr_type id, const char *info );
     ~VTM_one_group_handler();
 
     template <class Duration>
@@ -88,22 +86,6 @@ class VTM_one_group_handler :
 
 VTM_one_group_handler::VTM_one_group_handler() :
     basic_vs(),
-    pass( false ),
-    status( *this )
-{
-  enable();
-}
-
-VTM_one_group_handler::VTM_one_group_handler( stem::addr_type id ) :
-    basic_vs( id ),
-    pass( false ),
-    status( *this )
-{
-  enable();
-}
-
-VTM_one_group_handler::VTM_one_group_handler( stem::addr_type id, const char* info ) :
-    basic_vs( id, info ),
     pass( false ),
     status( *this )
 {
