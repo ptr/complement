@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/11/13 16:24:42 ptr>
+// -*- C++ -*- Time-stamp: <09/11/13 23:21:33 ptr>
 
 /*
  *
@@ -397,7 +397,9 @@ class basic_vs :
     void process_last_will( const stem::Event_base<janus::addr_type>& );
     void process_last_will_lk( const stem::Event_base<janus::addr_type>& );
 
-    typedef std::list<stem::Event_base<vs_event> > delay_container_type;
+    // vs order violation events
+    typedef std::list<stem::Event_base<vs_event> > ove_container_type;
+    typedef std::list<stem::Event> delayed_container_type;
 
   protected:
 #ifdef __USE_STLPORT_HASH
@@ -410,7 +412,8 @@ class basic_vs :
     typedef std::tr1::unordered_set<addr_type> lock_rsp_type;
 #endif
 
-    delay_container_type dc;
+    ove_container_type ove;
+    delayed_container_type de;
     vs_points::points_type points;
     unsigned view;
     stem::addr_type lock_addr;

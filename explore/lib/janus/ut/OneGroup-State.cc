@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/11/13 16:21:36 ptr>
+// -*- C++ -*- Time-stamp: <09/11/16 12:36:16 ptr>
 
 /*
  *
@@ -53,6 +53,14 @@ class VTM_one_group_advanced_handler :
         return cnd.timed_wait( lk, rel_time, status );
       }
 
+    template <class Duration>
+    bool wait_view( const Duration& rel_time )
+      {
+        std::tr2::unique_lock<std::tr2::mutex> lk( mtx_view );
+
+        return cnd_view.timed_wait( lk, rel_time, status_view );
+      }
+
     vtime_matrix_type& vt()
       { return basic_vs::vt; }
 
@@ -68,12 +76,19 @@ class VTM_one_group_advanced_handler :
     void reset()
       { std::tr2::lock_guard<std::tr2::mutex> lk( mtx ); pass = false; }
 
+    void reset_view()
+      { std::tr2::lock_guard<std::tr2::mutex> lk( mtx_view ); pass_view = false; }
+
   private:
     void message( const stem::Event& );
 
     std::tr2::mutex mtx;
     std::tr2::condition_variable cnd;
     bool pass;
+
+    std::tr2::mutex mtx_view;
+    std::tr2::condition_variable cnd_view;
+    bool pass_view;
 
     struct _status
     {
@@ -86,6 +101,17 @@ class VTM_one_group_advanced_handler :
         VTM_one_group_advanced_handler& me;
     } status;
 
+    struct _status_view
+    {
+        _status_view( VTM_one_group_advanced_handler& m ) :
+            me( m )
+          { }
+
+        bool operator()() const;
+
+        VTM_one_group_advanced_handler& me;
+    } status_view;
+
     std::fstream history;
 
     DECLARE_RESPONSE_TABLE( VTM_one_group_advanced_handler, janus::basic_vs );
@@ -94,7 +120,9 @@ class VTM_one_group_advanced_handler :
 VTM_one_group_advanced_handler::VTM_one_group_advanced_handler() :
     basic_vs(),
     pass( false ),
-    status( *this )
+    pass_view( false ),
+    status( *this ),
+    status_view( *this )
 {
   string nm( "/tmp/janus." );
   nm += std::string( self_id() );
@@ -107,7 +135,9 @@ VTM_one_group_advanced_handler::VTM_one_group_advanced_handler() :
 VTM_one_group_advanced_handler::VTM_one_group_advanced_handler( const stem::addr_type& id ) :
     basic_vs( /* id */ ),
     pass( false ),
-    status( *this )
+    pass_view( false ),
+    status( *this ),
+    status_view( *this )
 {
   string nm( "/tmp/janus." );
   nm += std::string( /* self_id() */ id );
@@ -169,9 +199,9 @@ void VTM_one_group_advanced_handler::vs_resend_from( const xmt::uuid_type&, cons
 
 void VTM_one_group_advanced_handler::vs_pub_view_update()
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
-  pass = true;
-  cnd.notify_one();
+  std::tr2::lock_guard<std::tr2::mutex> lk( mtx_view );
+  pass_view = true;
+  cnd_view.notify_one();
 }
 
 void VTM_one_group_advanced_handler::vs_event_origin( const vtime& _vt, const stem::Event& ev )
@@ -197,6 +227,11 @@ void VTM_one_group_advanced_handler::vs_pub_flush()
 bool VTM_one_group_advanced_handler::_status::operator()() const
 {
   return me.pass;
+}
+
+bool VTM_one_group_advanced_handler::_status_view::operator()() const
+{
+  return me.pass_view;
 }
 
 void VTM_one_group_advanced_handler::message( const stem::Event& ev )
@@ -231,7 +266,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_replay)
   
     a2.vs_join( a1.self_id() );
 
-    EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
+    EXAM_CHECK( a2.wait_view( std::tr2::milliseconds(500) ) );
 
     try {
       VTM_one_group_advanced_handler a3;
@@ -239,8 +274,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_replay)
       a3_stored = a3.self_id();
       a3.vs_join( a2.self_id() );
 
-      EXAM_CHECK( a1.wait( std::tr2::milliseconds(500) ) );
-      EXAM_CHECK( a3.wait( std::tr2::milliseconds(500) ) );
+      EXAM_CHECK( a1.wait_view( std::tr2::milliseconds(500) ) );
+      EXAM_CHECK( a3.wait_view( std::tr2::milliseconds(500) ) );
 
       EXAM_CHECK( a1.vt()[a1.self_id()][a1.self_id()] == 1 );
       EXAM_CHECK( a1.vt()[a1.self_id()][a2.self_id()] == 2 );
@@ -272,9 +307,9 @@ int EXAM_IMPL(vtime_operations::VT_one_group_replay)
       EXAM_CHECK( a3.vt()[a3.self_id()][a2.self_id()] == 2 );
       EXAM_CHECK( a3.vt()[a3.self_id()][a3.self_id()] == 0 );
 
-      a1.reset();
-      a2.reset();
-      a3.reset();
+      a1.reset_view();
+      a2.reset_view();
+      a3.reset_view();
 
       stem::Event ev( EV_FREE );
       ev.value() = "message";
@@ -302,12 +337,17 @@ int EXAM_IMPL(vtime_operations::VT_one_group_replay)
     try {
       a1.reset();
       a2.reset();
+      // EXAM_CHECK( a1.wait_view( std::tr2::milliseconds(700) ) );
+      // EXAM_CHECK( a2.wait_view( std::tr2::milliseconds(700) ) );
+      EXAM_CHECK( a1.wait_view( std::tr2::milliseconds(300) ) || a2.wait_view( std::tr2::milliseconds(300) ) );
+      a1.reset_view();
+      a2.reset_view();
 
       VTM_one_group_advanced_handler a3( /* super_spirit.back() */ a3_stored );
 
       a3.vs_join( a2.self_id() );
 
-      EXAM_CHECK( a1.wait( std::tr2::milliseconds(700) ) );
+      EXAM_CHECK( a1.wait_view( std::tr2::milliseconds(700) ) );
       // a3 not only join, but replay too...
       EXAM_CHECK( a3.wait( std::tr2::milliseconds(500) ) );
       // so I can't just check a3's vtime...
@@ -359,25 +399,25 @@ int EXAM_IMPL(vtime_operations::VT_one_group_late_replay)
   
     a2.vs_join( a1.self_id() );
 
-    EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
+    EXAM_CHECK( a2.wait_view( std::tr2::milliseconds(500) ) );
 
     try {
       VTM_one_group_advanced_handler a3;
 
       a3_stored = a3.self_id();
 
-      a1.reset();
-      a2.reset();
+      a1.reset_view();
+      a2.reset_view();
 
       a3.vs_join( a1.self_id() );
 
 
-      EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
-      EXAM_CHECK( a3.wait( std::tr2::milliseconds(500) ) );
+      EXAM_CHECK( a2.wait_view( std::tr2::milliseconds(500) ) );
+      EXAM_CHECK( a3.wait_view( std::tr2::milliseconds(500) ) );
 
-      a1.reset();
-      a2.reset();
-      a3.reset();
+      a1.reset_view();
+      a2.reset_view();
+      a3.reset_view();
 
       stem::Event ev( EV_FREE );
       ev.value() = "message";
@@ -391,6 +431,9 @@ int EXAM_IMPL(vtime_operations::VT_one_group_late_replay)
       EXAM_CHECK( a2.mess == "message" );
       EXAM_CHECK( a3.wait( std::tr2::milliseconds(500) ) );
       EXAM_CHECK( a3.mess == "message" );
+
+      a1.reset();
+      a2.reset();
     }
     catch ( const std::runtime_error& err ) {
       EXAM_ERROR( err.what() );
@@ -402,7 +445,12 @@ int EXAM_IMPL(vtime_operations::VT_one_group_late_replay)
       EXAM_ERROR( "unknown exception" );
     }
 
+    EXAM_CHECK( a1.wait_view( std::tr2::milliseconds(300) ) || a2.wait_view( std::tr2::milliseconds(300) ) );
+
     {
+      a1.reset_view();
+      a2.reset_view();
+
       a1.reset();
       a2.reset();
 
@@ -423,18 +471,22 @@ int EXAM_IMPL(vtime_operations::VT_one_group_late_replay)
 
       a3.vs_join( a2.self_id() );
 
-      EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
+      EXAM_CHECK( a1.wait_view( std::tr2::milliseconds(300) ) || a2.wait_view( std::tr2::milliseconds(300) ) );
       // a3 not only join, but replay too...
       EXAM_CHECK( a3.wait( std::tr2::milliseconds(500) ) );
       // so I can't just check a3's vtime...
 
       // EXAM_CHECK( a3.vt()[a3.self_id()][a1.self_id()] == 1 );
       // EXAM_CHECK( a3.vt()[a3.self_id()][a2.self_id()] == 0 );
-      EXAM_CHECK( a1.vt()[a1.self_id()][a1.self_id()] == 5 );
-      EXAM_CHECK( a1.vt()[a1.self_id()][a2.self_id()] == 0 );
+
+      /* Below set 'greater or equal' because I don't know
+         whether VS_LAST_WILL from 'old' a3 pass through a1 or a2
+       */
+      EXAM_CHECK( a1.vt()[a1.self_id()][a1.self_id()] >= 5 );
+      EXAM_CHECK( a1.vt()[a1.self_id()][a2.self_id()] >= 0 );
       EXAM_CHECK( a1.vt()[a1.self_id()][a3.self_id()] == 0 );
-      EXAM_CHECK( a2.vt()[a2.self_id()][a1.self_id()] == 5 );
-      EXAM_CHECK( a2.vt()[a2.self_id()][a2.self_id()] == 0 );
+      EXAM_CHECK( a2.vt()[a2.self_id()][a1.self_id()] >= 5 );
+      EXAM_CHECK( a2.vt()[a2.self_id()][a2.self_id()] >= 0 );
       EXAM_CHECK( a2.vt()[a2.self_id()][a3.self_id()] == 0 );
 
       EXAM_CHECK( a1.mess == "extra message" );
@@ -518,7 +570,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_network)
         
         a2.vs_join( a1 );
 
-        EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
+        EXAM_CHECK( a2.wait_view( std::tr2::milliseconds(500) ) );
       }
       b2.wait();
 
@@ -674,7 +726,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_access_point)
 
           a3.vs_join( addr, "localhost", 2009 );
 
-          EXAM_CHECK_ASYNC_F( a3.wait( std::tr2::milliseconds(500) ), res );
+          EXAM_CHECK_ASYNC_F( a3.wait_view( std::tr2::milliseconds(500) ), res );
 
           a3.reset();
 
@@ -738,13 +790,13 @@ int EXAM_IMPL(vtime_operations::VT_one_group_access_point)
           a2.vs_join( addr, "localhost", 2009 );
 
           // a2 join to group:
-          EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
+          EXAM_CHECK( a2.wait_view( std::tr2::milliseconds(500) ) );
 
-          a2.reset();
+          a2.reset_view();
 
           b3.wait();
           // a3 join to group:
-          EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
+          EXAM_CHECK( a2.wait_view( std::tr2::milliseconds(500) ) );
 
           a2.reset();
 

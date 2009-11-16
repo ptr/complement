@@ -1,3 +1,20 @@
+2009-11-16  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* vtime.h, vtime.cc: basic_vs object
+	make attempt to notify some group member about
+	own end-of-life; on such notification basic_vs
+	[that remain in group] initiate view update;
+	this view update faster then fail detection,
+	because not try to wait responce from exited
+	object;
+
+	* vtime.h, vtime.cc: 'delayed queue' was renamed
+	to 'order violated events queue';
+	added 'delayed queue'---events that wait
+	something like 'view update' to departure;
+
+	* libjanus: revision 0.11.4.
+
 2009-11-10  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* vtime.h, vtime.cc: added send_to_vsg and
