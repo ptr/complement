@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/11/16 12:24:11 ptr>
+// -*- C++ -*- Time-stamp: <09/11/18 16:42:40 ptr>
 
 /*
  *
@@ -1351,7 +1351,9 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
     if ( lock_addr == self_id() ) { // I'm owner of the lock
       vtime& self = vt[self_id()];
       // if ( (lock_rsp.size() + 1) < self.vt.size() ) { // not all conforms lock
-      if ( (lock_rsp.size() * 2 + 1) >= self.vt.size() ) { // at least half conforms
+      // at least half conforms, or group small and unstable;
+      // in case of 'too small' group 'no conformation' may happens!
+      if ( ((lock_rsp.size() * 2 + 1) >= self.vt.size()) || (self.vt.size() <= 2) ) {
         // who is in group, but not conform lock?
         for ( vtime::vtime_type::iterator i = self.vt.begin(); i != self.vt.end(); ) {
           if ( (i->first == self_id()) || (lock_rsp.find( i->first ) != lock_rsp.end()) ) {
