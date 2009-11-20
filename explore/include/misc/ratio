@@ -17,20 +17,24 @@
 #include <config/feature.h>
 #endif
 
-#include <cstdint>
-
 #if !defined(STLPORT) || (_STLPORT_VERSION < 0x520)
 
+# if defined(__GNUC__) && ((__GNUC__ < 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ < 3)))
+#  include <stdint.h>
+# else
+#  include <cstdint>
+# endif
 // libstdc++ v3, timestamp 20050519 (3.4.4) has __type_traits,
 // libstdc++ v3, timestamp 20060306 (3.4.6) has __type_traits,
 // while libstdc++ v3, 20050921 (4.0.2) not; use libstdc++ instead
 # if defined(STLPORT) || (defined(__GNUC__) && (__GNUC__ < 4) ) /* !defined(__GLIBCXX__) || (defined(__GNUC__) && (__GNUC__ < 4)) */
 #  include <misc/type_traits.h>
-# elif defined(__GNUC__) && ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))
+# elif defined(__GNUC__) && ((__GNUC__ > 4) || (((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))))
 #  include <type_traits>
 namespace std::tr1 = std;
 # endif
 #else // STLPORT
+# include <cstdint>
 # include <type_traits>
 #endif
 
