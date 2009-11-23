@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/11/16 12:39:39 ptr>
+// -*- C++ -*- Time-stamp: <09/11/23 23:26:42 ptr>
 
 /*
  *
@@ -272,7 +272,14 @@ void VTM_one_group_recover::vs_resend_from( const xmt::uuid_type& from, const st
           }
         }
       } else {
-        ev.setf( stem::__Event_Base::vs );
+        /* flag stem::__Event_Base::vs is set to avoid forwarding
+           'recovery' event to other group members;
+           stem::__Event_Base::vs_join is set to distinguish event
+           as come during recovery and record it (see VTM_one_group_recover::message,
+           and call VTM_one_group_recover::vs_event_derivative in
+           VTM_one_group_recover::message).
+         */
+        ev.setf( stem::__Event_Base::vs | stem::__Event_Base::vs_join );
         // Change event, to avoid interference with
         // true VS_FLUSH_VIEW---it work with view lock,
         // but in this case I want to bypass locking
@@ -339,6 +346,11 @@ void VTM_one_group_recover::message( const stem::Event& ev )
 
   if ( (ev.flags() & stem::__Event_Base::vs) == 0 ) {
     vs( ev );
+  } else if ( (ev.flags() & stem::__Event_Base::vs_join) != 0 ) {
+    // This is event come during recovery procedure:
+    stem::Event xev;
+    ev.pack( xev );
+    VTM_one_group_recover::vs_event_derivative( vtime(), xev );
   }
 
   std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
