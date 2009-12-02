@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/04/02 16:36:04 ptr>
+// -*- C++ -*- Time-stamp: <09/12/02 20:22:18 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -212,7 +212,6 @@ void get_ifaces( BackInsertIterator bi )
   int sock = socket(AF_INET, SOCK_DGRAM, 0);
   struct ifconf ifc;
   char st_buf[100 * sizeof(struct ifreq)];
-  char *buf = 0;
   int len = sizeof( st_buf );
   ifc.ifc_len = len;
   ifc.ifc_buf = st_buf;
@@ -225,14 +224,12 @@ void get_ifaces( BackInsertIterator bi )
         close( sock );
         throw std::runtime_error( std::string("SIOCGIFCONF ioctl error getting list of interfaces") );
       }
-    } else {
-      if ( ifc.ifc_len < sizeof(struct ifreq) ) {
-        if ( ifc.ifc_buf != st_buf ) {
-          free( ifc.ifc_buf );
-        }
-        close( sock );
-        throw std::runtime_error( std::string("SIOCGIFCONF ioctl gave too small return buffer") );
+    } else if ( static_cast<unsigned>(ifc.ifc_len) < sizeof(struct ifreq) ) {
+      if ( ifc.ifc_buf != st_buf ) {
+        free( ifc.ifc_buf );
       }
+      close( sock );
+      throw std::runtime_error( std::string("SIOCGIFCONF ioctl gave too small return buffer") );
     }
     if ( ifc.ifc_len >= len ) {
       len = ifc.ifc_len + 10 * sizeof(struct ifreq);

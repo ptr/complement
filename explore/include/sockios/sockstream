@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/06 16:07:20 ptr>
+// -*- C++ -*- Time-stamp: <09/12/02 20:13:13 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -501,100 +501,100 @@ class basic_sockbuf :
       
     basic_sockbuf() :
         rdready( *this ),
-#if !defined(STLPORT) && defined(__GNUC__)
-#if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4))) // hmm, 3.3.6 
-        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) ),
-#else  // 4.1.1
-        _mode( _S_in | _S_out ),
-#endif // __GNUC__
-#else  // STLPORT
-        _mode( 0 ),
-#endif // STLPORT
         _bbuf(0),
         _ebuf(0),
         _fl(0),
         _fr(0),
-        _allocated( true )
+        _allocated( true ),
+#if !defined(STLPORT) && defined(__GNUC__)
+#if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4))) // hmm, 3.3.6 
+        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) )
+#else  // 4.1.1
+        _mode( _S_in | _S_out )
+#endif // __GNUC__
+#else  // STLPORT
+        _mode( 0 )
+#endif // STLPORT
       { }
 
     basic_sockbuf( const char *hostname, int port,
                    sock_base::stype type = sock_base::sock_stream,
                    sock_base::protocol prot = sock_base::inet ) :
         rdready( *this ),
-#if !defined(STLPORT) && defined(__GNUC__)
-#if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)))
-        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) ),
-#else  // 4.1.1
-        _mode( _S_in | _S_out ),
-#endif // __GNUC__
-#else  // STLPORT
-        _mode( 0 ),
-#endif // STLPORT
         _bbuf(0),
         _ebuf(0),
         _fl(0),
         _fr(0),
-        _allocated( true )
+        _allocated( true ),
+#if !defined(STLPORT) && defined(__GNUC__)
+#if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)))
+        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) )
+#else  // 4.1.1
+        _mode( _S_in | _S_out )
+#endif // __GNUC__
+#else  // STLPORT
+        _mode( 0 )
+#endif // STLPORT
       { open( hostname, port, type, prot ); }
 
     template <class Duration>
     basic_sockbuf( const char *hostname, int port,
                    const Duration& timeout ) :
         rdready( *this ),
-#if !defined(STLPORT) && defined(__GNUC__)
-#if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)))
-        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) ),
-#else  // 4.1.1
-        _mode( _S_in | _S_out ),
-#endif // __GNUC__
-#else  // STLPORT
-        _mode( 0 ),
-#endif // STLPORT
         _bbuf(0),
         _ebuf(0),
         _fl(0),
         _fr(0),
-        _allocated( true )
+        _allocated( true ),
+#if !defined(STLPORT) && defined(__GNUC__)
+#if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)))
+        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) )
+#else  // 4.1.1
+        _mode( _S_in | _S_out )
+#endif // __GNUC__
+#else  // STLPORT
+        _mode( 0 )
+#endif // STLPORT
       { open( hostname, port, timeout ); }
 
     basic_sockbuf( const in_addr& addr, int port,
                    sock_base::stype type = sock_base::sock_stream,
                    sock_base::protocol prot = sock_base::inet ) :
         rdready( *this ),
-#if !defined(STLPORT) && defined(__GNUC__)
-#if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)))
-        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) ),
-#else  // 4.1.1
-        _mode( _S_in | _S_out ),
-#endif // __GNUC__
-#else  // STLPORT
-        _mode( 0 ),
-#endif // STLPORT
         _bbuf(0),
         _ebuf(0),
         _fl(0),
         _fr(0),
-        _allocated( true )
+        _allocated( true ),
+#if !defined(STLPORT) && defined(__GNUC__)
+#if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)))
+        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) )
+#else  // 4.1.1
+        _mode( _S_in | _S_out )
+#endif // __GNUC__
+#else  // STLPORT
+        _mode( 0 )
+#endif // STLPORT
       { open( addr, type, prot ); }
 
     template <class Duration>
     basic_sockbuf( const in_addr& addr, int port,
                    const Duration& timeout ) :
         rdready( *this ),
-#if !defined(STLPORT) && defined(__GNUC__)
-#if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)))
-        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) ),
-#else  // 4.1.1
-        _mode( _S_in | _S_out ),
-#endif // __GNUC__
-#else  // STLPORT
-        _mode( 0 ),
-#endif // STLPORT
         _bbuf(0),
         _ebuf(0),
         _fl(0),
         _fr(0),
-        _allocated( true )
+        _allocated( true ),
+#if !defined(STLPORT) && defined(__GNUC__)
+#if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)))
+        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) )
+#else  // 4.1.1
+        _mode( _S_in | _S_out )
+#endif // __GNUC__
+#else  // STLPORT
+        _mode( 0 )
+#endif // STLPORT
       { open( addr, timeout ); }
 
     virtual ~basic_sockbuf()

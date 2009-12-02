@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/15 20:32:32 ptr>
+// -*- C++ -*- Time-stamp: <09/12/02 20:27:43 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -17,8 +17,8 @@ namespace detail {
 template<class charT, class traits, class _Alloc>
 sockmgr<charT,traits,_Alloc>::sockmgr( int hint, int ret ) :
     efd( -1 ),
-    n_ret( ret ),
-    _worker( 0 )
+    _worker( 0 ),
+    n_ret( ret )
 {
   pipefd[0] = -1;
   pipefd[1] = -1;
@@ -736,7 +736,7 @@ void sockmgr<charT,traits,_Alloc>::process_dgram_srv( const epoll_event& ev, typ
 
   // cerr << HERE << endl;
   // (*info.p)( ifd->first );
-  sockbuf_t* b = (*info.p)( ifd->first, addr );
+  /* sockbuf_t* b = */ (*info.p)( ifd->first, addr );
 
 #if 0
   try {
