@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/11/18 16:42:40 ptr>
+// -*- C++ -*- Time-stamp: <09/12/14 19:23:54 ptr>
 
 /*
  *
@@ -448,7 +448,6 @@ void basic_vs::vs( const stem::Event& inc_ev )
   stem::Event_base<vs_event> ev( VS_EVENT );
   ev.value().view = view;
   ev.value().ev = inc_ev;
-  ev.value().ev.setf( stem::__Event_Base::vs );
 
   vtime& self = vt[self_id()];
   ++self[self_id()];
@@ -459,6 +458,7 @@ void basic_vs::vs( const stem::Event& inc_ev )
     this->vs_event_origin( self, ev.value().ev );
   }
 
+  ev.value().ev.setf( stem::__Event_Base::vs );
   // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << ' ' << hex << inc_ev.code() << dec << endl;
   for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
     if ( i->first != self_id() ) {
