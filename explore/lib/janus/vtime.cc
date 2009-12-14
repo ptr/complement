@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/12/14 19:23:54 ptr>
+// -*- C++ -*- Time-stamp: <09/12/14 21:01:14 ptr>
 
 /*
  *
@@ -436,13 +436,13 @@ basic_vs::~basic_vs()
   remotes_.clear();
 }
 
-void basic_vs::vs( const stem::Event& inc_ev )
+int basic_vs::vs( const stem::Event& inc_ev )
 {
   // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-  if ( lock_addr != stem::badaddr ) {
+  if ( vs_group_size() == 0 || /* lock_addr != stem::badaddr || */ isState(VS_ST_LOCKED) ) {
     de.push_back( inc_ev );
     // cerr << __FILE__ << ':' << __LINE__ << " View Update " << self_id() << ' ' << lock_addr << endl;
-    return;
+    return 1;
   }
 
   stem::Event_base<vs_event> ev( VS_EVENT );
@@ -470,6 +470,8 @@ void basic_vs::vs( const stem::Event& inc_ev )
     }
   }
   // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
+
+  return 0;
 }
 
 void basic_vs::send_to_vsg( const stem::Event& ev ) // not VS!

@@ -5,6 +5,12 @@
 	chance to distinguish original event from
 	derivated one during recovery from history;
 
+	* vtime.cc: before process within vs()
+	method [within framework of virtual synchrony]
+	we need to check that i) node join to virtual
+	synchrony group [vs_join pass], and ii) node
+	not in locked state;
+
 	* libjanus: revision 0.11.5.
 
 2009-11-16  Petr Ovtchenkov  <ptr@void-ptr.info>
