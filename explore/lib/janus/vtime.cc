@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/12/14 21:01:14 ptr>
+// -*- C++ -*- Time-stamp: <09/12/15 16:58:43 ptr>
 
 /*
  *
@@ -439,11 +439,15 @@ basic_vs::~basic_vs()
 int basic_vs::vs( const stem::Event& inc_ev )
 {
   // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-  if ( vs_group_size() == 0 || /* lock_addr != stem::badaddr || */ isState(VS_ST_LOCKED) ) {
+  if ( /* vs_group_size() == 0 || */ /* lock_addr != stem::badaddr || */ isState(VS_ST_LOCKED) ) {
     de.push_back( inc_ev );
     // cerr << __FILE__ << ':' << __LINE__ << " View Update " << self_id() << ' ' << lock_addr << endl;
     return 1;
   }
+
+  // if ( !de.empty() ) {
+  //   cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << ' ' << de.size() << endl;
+  // }
 
   stem::Event_base<vs_event> ev( VS_EVENT );
   ev.value().view = view;
@@ -556,6 +560,15 @@ int basic_vs::vs_join( const stem::addr_type& a )
   }
   // peer unavailable (or I'm group founder), no lock required
   PopState( VS_ST_LOCKED );
+
+  while ( !de.empty() ) {
+    if ( basic_vs::vs( de.front() ) ) {
+      de.pop_back(); // event pushed back in vs() above, remove it
+      break;
+    }
+    de.pop_front();
+    // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << ' ' << de.size() << endl;
+  }
 
   return a == stem::badaddr ? 0 : 1;
 }
@@ -881,7 +894,10 @@ void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
       // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
 
       while ( !de.empty() ) {
-        basic_vs::vs( de.front() );
+        if ( basic_vs::vs( de.front() ) ) {
+          de.pop_back(); // event pushed back in vs() above, remove it
+          break;
+        }
         de.pop_front();
         // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << ' ' << de.size() << endl;
       }
@@ -910,6 +926,15 @@ void basic_vs::vs_view_update()
 
   // cerr << __FILE__ << ':' << __LINE__ << endl;
   this->vs_pub_view_update();
+
+  while ( !de.empty() ) {
+    if ( basic_vs::vs( de.front() ) ) {
+      de.pop_back(); // event pushed back in vs() above, remove it
+      break;
+    }
+    de.pop_front();
+    // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << ' ' << de.size() << endl;
+  }
 }
 
 void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
