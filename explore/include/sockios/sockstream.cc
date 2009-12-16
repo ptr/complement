@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/06 15:19:42 ptr>
+// -*- C++ -*- Time-stamp: <09/12/16 17:05:37 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -207,7 +207,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port, const std:
 #endif
           ;
         wpfd.revents = 0;
-        while ( poll( &wpfd, 1, timeout.count() / 1000LL ) <= 0 ) {
+        while ( poll( &wpfd, 1, timeout.count() / 1000000LL ) <= 0 ) {
           // may be interrupted, check and ignore
           switch ( errno ) {
             case EINTR:
@@ -416,7 +416,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, const std::tr2::na
 #endif
           ;
         wpfd.revents = 0;
-        while ( poll( &wpfd, 1, timeout.count() / 1000LL ) <= 0 ) {
+        while ( poll( &wpfd, 1, timeout.count() / 1000000LL ) <= 0 ) {
           // may be interrupted, check and ignore
           switch ( errno ) {
             case EINTR:
@@ -635,7 +635,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
 #endif
             ;
           wpfd.revents = 0;
-          while ( poll( &wpfd, 1, timeout.count() / 1000LL ) <= 0 ) {
+          while ( poll( &wpfd, 1, timeout.count() / 1000000LL ) <= 0 ) {
             // may be interrupted, check and ignore
             switch ( errno ) {
               case EINTR:
@@ -976,7 +976,7 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
 #endif
                          ;
               wpfd.revents = 0;
-              while ( poll( &wpfd, 1, basic_socket_t::_use_wrtimeout ? basic_socket_t::_wrtimeout.count() / 1000LL: -1 ) <= 0 ) { // wait infinite
+              while ( poll( &wpfd, 1, basic_socket_t::_use_wrtimeout ? basic_socket_t::_wrtimeout.count() / 1000000LL: -1 ) <= 0 ) { // wait infinite
                 // may be interrupted, check and ignore
                 switch ( errno ) {
                   case EINTR:
@@ -1056,7 +1056,7 @@ int basic_sockbuf<charT, traits, _Alloc>::sync()
 #endif
                   ;
                 wpfd.revents = 0;
-                while ( poll( &wpfd, 1, basic_socket_t::_use_wrtimeout ? basic_socket_t::_wrtimeout.count() / 1000LL : -1 ) <= 0 ) { // wait infinite
+                while ( poll( &wpfd, 1, basic_socket_t::_use_wrtimeout ? basic_socket_t::_wrtimeout.count() / 1000000LL : -1 ) <= 0 ) { // wait infinite
                   // may be interrupted, check and ignore
                   switch ( errno ) {
                     case EINTR:
