@@ -58,7 +58,11 @@ class file_sender :
     public EventHandler
 {
   public:
-    file_sender( const std::string& name, const std::string& rmprefix, stem::addr_type rcv, stem::addr_type remover );
+    file_sender( const std::string& name,
+                 const std::string& rmprefix,
+                 stem::addr_type rcv,
+                 stem::addr_type remover,
+                 stem::addr_type watcher );
     ~file_sender();
 
     void ack( const stem::Event& );
@@ -70,6 +74,7 @@ class file_sender :
     std::ilfstream f;
     std::string name;
     stem::addr_type r;
+    stem::addr_type w;
     MD5_CTX ctx;
 
     DECLARE_RESPONSE_TABLE( file_sender, EventHandler );
@@ -179,11 +184,16 @@ DEFINE_RESPONSE_TABLE( file_receiver )
   EV_EDS(ST_CORE_SEND,STEM_FINAL,final)
 END_RESPONSE_TABLE
 
-file_sender::file_sender( const string& nm, const string& rmprefix, stem::addr_type rcv, stem::addr_type remover ) :
+file_sender::file_sender( const string& nm,
+                          const string& rmprefix,
+                          stem::addr_type rcv,
+                          stem::addr_type remover,
+                          stem::addr_type watcher ) :
     EventHandler(),
     name( nm ),
     f( nm.c_str() ),
-    r( remover )
+    r( remover ),
+    w( watcher )
 {
   EventHandler::enable();
   if ( rmprefix.empty() ) {
@@ -289,12 +299,19 @@ void file_sender::finilaze()
     f.close();
   }
 
-  Event ev( STEM_FILE_SND_RM );
+  {
+    Event ev( STEM_FILE_SND_RM );
+    ev.value() = name;  
+    ev.dest( r );
+    Send( ev );
+  }
   
-  ev.value() = name;
-  
-  ev.dest( r );
-  Send( ev );
+  {
+    Event reply( EV_FILE_COPIED );
+    reply.value() = name;
+    reply.dest( w );
+    Send( reply );
+  }  
 }
 
 DEFINE_RESPONSE_TABLE( file_sender )
@@ -306,20 +323,17 @@ END_RESPONSE_TABLE
 } // namespace detail
 
 FileSndMgr::FileSndMgr() :
-    EventHandler(),
-    watcher( badaddr )
+    EventHandler()
 {
 }
 
 FileSndMgr::FileSndMgr( const char* info ) :
-    EventHandler( info ),
-    watcher( badaddr )
+    EventHandler( info )
 {
 }
 
 FileSndMgr::FileSndMgr( addr_type id, const char* info ) :
-    EventHandler( id, info ),
-    watcher( badaddr )
+    EventHandler( id, info )
 {
 }
 
@@ -332,10 +346,10 @@ FileSndMgr::~FileSndMgr()
   senders.clear();
 }
 
-void FileSndMgr::sendfile( const std::string& name, stem::addr_type to )
+void FileSndMgr::sendfile( const std::string& name, stem::addr_type to, stem::addr_type watcher )
 {
   try {
-    detail::file_sender* f = new detail::file_sender( name, tranc_prefix, to, self_id() );
+    detail::file_sender* f = new detail::file_sender( name, tranc_prefix, to, self_id(), watcher );
 
     senders[f->self_id()] = f;
   }
@@ -349,13 +363,6 @@ void FileSndMgr::finish( const stem::Event& ev )
   if ( i != senders.end() ) {
     delete i->second;
     senders.erase( i );
-  }
-
-  if ( !ev.value().empty() ) {
-    Event reply( EV_FILE_COPIED );
-    reply.value() = ev.value();
-    reply.dest( watcher );
-    Send( reply );
   }
 }
 

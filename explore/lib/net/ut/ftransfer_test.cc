@@ -22,7 +22,50 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
+#include <stem/EventHandler.h>
+
 using namespace stem;
+
+class FileWatcher :
+    public stem::EventHandler
+{
+  public:
+    FileWatcher();
+    FileWatcher( const char* );
+    ~FileWatcher();
+
+    void file_copied_handler( const stem::Event& );
+    
+    string file_name;
+    
+  private:
+    DECLARE_RESPONSE_TABLE( FileWatcher, stem::EventHandler );
+};
+
+FileWatcher::FileWatcher()
+{
+  enable();
+}
+
+FileWatcher::FileWatcher( const char* info ) :
+    EventHandler( info )
+{
+  enable();
+}
+
+FileWatcher::~FileWatcher()
+{
+  disable();
+}
+
+void FileWatcher::file_copied_handler( const stem::Event& ev) {
+  file_name = ev.value();
+}
+
+DEFINE_RESPONSE_TABLE( FileWatcher )
+  EV_EDS( 0, EV_FILE_COPIED, file_copied_handler )
+END_RESPONSE_TABLE
+
 
 int EXAM_IMPL(ftransfer_test::core)
 {
@@ -44,6 +87,8 @@ int EXAM_IMPL(ftransfer_test::core)
   std::string target = "/tmp/";
 
   target += xmt::uid_str();
+  
+  FileWatcher watcher;
 
   {
     FileRcvMgr receiver;
@@ -55,17 +100,19 @@ int EXAM_IMPL(ftransfer_test::core)
     receiver.set_prefix( target );
 
     sender.truncate_path( "/tmp/" );
-    sender.sendfile( name, receiver.self_id() );
+    sender.sendfile( name, receiver.self_id(), watcher.self_id() );
 
     std::tr2::this_thread::sleep( std::tr2::milliseconds(400) );
   }
 
   fs::remove( name );
+  
+  EXAM_CHECK( watcher.file_name == name );
 
   name = target + '/' + name.substr( sizeof( "/tmp/" ) - 1 );
 
   EXAM_CHECK( fs::exists( name ) );
-
+  
   {
     std::ifstream f( name.c_str() );
     std::string line;

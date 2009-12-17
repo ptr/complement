@@ -42,18 +42,15 @@ class FileSndMgr :
     explicit FileSndMgr( addr_type id, const char* info = 0 );
     ~FileSndMgr();
     
-    void set_watcher( stem::addr_type w )
-      { watcher = w; }
     void truncate_path( const std::string& p )
       { tranc_prefix = p; }
-    void sendfile( const std::string& name, stem::addr_type );
+    void sendfile( const std::string& name, stem::addr_type to, stem::addr_type watcher = stem::badaddr );
 
   private:
     void finish( const stem::Event& );
     void dummy( const stem::Event& );
 
     std::string tranc_prefix;
-    stem::addr_type watcher;
 
     typedef std::map<stem::addr_type, detail::file_sender*> container_type;
     container_type senders;
