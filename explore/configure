@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Time-stamp: <09/07/29 18:29:24 ptr>
+# Time-stamp: <09/12/17 16:21:57 ptr>
 
 base=`cd \`dirname $0\`; echo $PWD`
 
@@ -49,6 +49,7 @@ Available options:
   --without-bfd         disable BFD usage
   --with-boost=<dir>    use boost headers in catalog <dir>
   --with-system-boost   use boost installed on this system
+  --with-lua=<dir>      use lua sources in catalog <dir>
   --with-msvc=<dir>     use MS VC from this catalog
   --with-mssdk=<dir>    use MS SDK from this catalog
   --with-extra-cxxflags=<options>
@@ -161,6 +162,9 @@ do
       ;;
     --with-system-boost)
       write_option "1" USE_SYSTEM_BOOST
+      ;;
+    --with-lua=*)
+      write_option "$option" LUA_SRC
       ;;
     --with-msvc=*)
       write_option "$option" MSVC_DIR
