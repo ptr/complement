@@ -10,29 +10,17 @@ INCLUDES += -I${LUA_SRC}
 DEFS += -DLUA_USE_LINUX
 #DEFS += -DLUA_USE_POSIX -DLUA_USE_DLOPEN
 
-LDFLAGS += -L../liblua/${OUTPUT_DIR}
-LDLIBS += -ldl --static -llua --shared -lm
+release-shared:	LDFLAGS += -L../liblua/${OUTPUT_DIR}
 
-check:	all-shared
-	$(MAKE) -C test check || exit 1
+dbg-shared:	LDFLAGS += -L../liblua/${OUTPUT_DIR_DBG}
 
-check-release:	release-shared
-	$(MAKE) -C test check-release-shared || exit 1
+release-shared:	LDLIBS += -Wl,-dn -llua -Wl,-dy
 
-check-dbg:	dbg-shared
-	$(MAKE) -C test check-dbg-shared || exit 1
+dbg-shared:	LDLIBS += -Wl,-dn -lluag -Wl,-dy
 
-depend::
-	$(MAKE) -C test depend
+LDLIBS += -lm -ldl
 
-clean::
-	$(MAKE) -C test clean
+#release-shared:	LDLIBS += -llua
 
-distclean::
-	$(MAKE) -C test distclean
+#dbg-shared:	LDLIBS += -lluag
 
-mostlyclean::
-	$(MAKE) -C test mostlyclean
-
-maintainer-clean::
-	$(MAKE) -C test maintainer-clean
