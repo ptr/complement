@@ -161,6 +161,10 @@ void file_receiver::final( const Event& in )
     EventVoid ev( STEM_FILE_SND_RM );
     ev.dest( r );
     Send( ev );
+    
+    EventVoid nac( STEM_FILE_NAC );
+    nac.dest( in.src() );
+    Send( nac );    
 
     return;
   }
@@ -176,6 +180,10 @@ void file_receiver::final( const Event& in )
     EventVoid ev( STEM_FILE_SND_RM );
     ev.dest( r );
     Send( ev );
+    
+    EventVoid fin( STEM_FINAL );
+    fin.dest( in.src() );
+    Send( fin );      
   }
 }
 
@@ -249,7 +257,7 @@ void file_sender::next_chunk( const Event& rsp )
   }
 
   if ( ev.value().size() == 0 ) {
-    PopState();
+    //PopState();
     Event fev( STEM_FINAL );
     fev.dest( rsp.src() );
 
@@ -257,15 +265,12 @@ void file_sender::next_chunk( const Event& rsp )
     MD5Final( (uint8_t*)(fev.value().data()), &ctx );
 
     Send( fev );
-
-    finilaze();
   } else {
     Send( ev );
 
     MD5Update( &ctx, reinterpret_cast<const uint8_t*>(ev.value().data()), ev.value().size() );
 
     if ( ev.value().size() < limit ) {
-      PopState();
       Event fev( STEM_FINAL );
       fev.dest( rsp.src() );
 
@@ -273,8 +278,6 @@ void file_sender::next_chunk( const Event& rsp )
       MD5Final( (uint8_t*)fev.value().data(), &ctx );
 
       Send( fev );
-
-      finilaze();
     }
   }
 }
@@ -294,6 +297,8 @@ void file_sender::nac()
 
 void file_sender::finilaze()
 {
+  PopState();
+  
   if ( f.is_open() ) {
     f.unlock();
     f.close();
@@ -318,6 +323,7 @@ DEFINE_RESPONSE_TABLE( file_sender )
   EV_EDS(ST_NULL,STEM_FILE_ACK,ack)
   EV_EDS(ST_NULL,STEM_FILE_NAC,nac)
   EV_EDS(ST_CORE_SEND,STEM_NEXT_CHUNK,next_chunk)
+  EV_EDS(ST_CORE_SEND,STEM_FINAL,finilaze)
 END_RESPONSE_TABLE
 
 } // namespace detail
