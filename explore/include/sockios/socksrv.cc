@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/14 15:11:26 ptr>
+// -*- C++ -*- Time-stamp: <10/01/13 10:23:20 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -8,11 +8,14 @@
  *
  */
 
+#include <exam/defs.h>
+
 namespace std {
 
-// namespace detail {
-// extern unsigned local_mtu;
-// }
+namespace detail {
+extern std::tr2::mutex _se_lock;
+extern std::ostream* _se_stream;
+}
 
 template<class charT, class traits, class _Alloc>
 void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int port, sock_base::stype type, sock_base::protocol prot )
@@ -373,12 +376,38 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
     catch ( ... ) {
     }
   }
+  catch ( const std::exception& e ) {
+    try {
+      std::tr2::lock_guard<std::tr2::mutex> lk(std::detail::_se_lock);
+      if ( std::detail::_se_stream != 0 ) {
+        *std::detail::_se_stream << HERE << ' ' << e.what() << std::endl;
+      }
+    }
+    catch ( ... ) {
+    }
+  }
+  catch ( ... ) {
+    try {
+      std::tr2::lock_guard<std::tr2::mutex> lk(std::detail::_se_lock);
+      if ( std::detail::_se_stream != 0 ) {
+        *std::detail::_se_stream << HERE << " unknown exception" << std::endl;
+      }
+    }
+    catch ( ... ) {
+    }
+  }
 
-  {
+  try {
     std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
     if ( !worker_pool.empty() ) {
-      std::cerr << __FILE__ << ":" << __LINE__ << " " << worker_pool.size() << std::endl;
+      std::tr2::lock_guard<std::tr2::mutex> lk(std::detail::_se_lock);
+      if ( std::detail::_se_stream != 0 ) {
+        *std::detail::_se_stream << HERE << " worker pool not empty, remains "
+                    << worker_pool.size() << std::endl;
+      }
     }
+  }
+  catch ( ... ) {
   }
 
 //  {

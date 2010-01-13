@@ -1,3 +1,16 @@
+2010-01-13  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* sockstream, socksrv.h: avoid usage cerr for
+	error report, use suggested error stream, if it
+	was set;
+
+	* socksrv.cc, sockmgr.cc: ditto;
+
+	* sockmgr.cc: more accurate catch exceptions in
+	control loop;
+
+	* libsockios: release 2.6.9.
+
 2009-12-16  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* sockstream.cc: fix factor for timeouts for

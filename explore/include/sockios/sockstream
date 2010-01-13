@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/12/02 20:13:13 ptr>
+// -*- C++ -*- Time-stamp: <10/01/13 09:56:46 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
@@ -77,11 +77,19 @@
 #include <sockios/syslog.h>
 #include <list>
 
+#include <exam/defs.h>
+
 #ifdef STLPORT
 _STLP_BEGIN_NAMESPACE
 #else
 namespace std {
 #endif
+
+namespace detail {
+// extern unsigned local_mtu;
+extern std::tr2::mutex _se_lock;
+extern std::ostream* _se_stream;
+}
 
 ostream* set_sock_error_stream( ostream* new_stream );
 
@@ -395,12 +403,18 @@ void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
     std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
     if ( --_count == 0 ) {
       if ( basic_socket<charT,traits,_Alloc>::mgr == 0 ) {
-        std::cerr << __FILE__ << ":" << __LINE__ << " shit happens\n";
+        std::tr2::lock_guard<std::tr2::mutex> lk(std::detail::_se_lock);
+        if ( std::detail::_se_stream != 0 ) {
+          *std::detail::_se_stream << HERE << " net manager not exist" << std::endl;;
+        }
       }
       delete basic_socket<charT,traits,_Alloc>::mgr;
       basic_socket<charT,traits,_Alloc>::mgr = 0;
     } else if ( _count < 0 ) {
-       std::cerr << __FILE__ << ":" << __LINE__ << " shit happens\n";
+      std::tr2::lock_guard<std::tr2::mutex> lk(std::detail::_se_lock);
+      if ( std::detail::_se_stream != 0 ) {
+        *std::detail::_se_stream << HERE << " too many deletes" << std::endl;;
+      }
     }
   }
 }

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/12/02 20:27:43 ptr>
+// -*- C++ -*- Time-stamp: <10/01/13 10:32:12 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -9,6 +9,7 @@
  */
 
 #include <mt/system_error>
+#include <exam/defs.h>
 
 namespace std {
 
@@ -232,7 +233,7 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
 
         std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
         if ( _se_stream != 0 ) {
-          *_se_stream << __FILE__ << ':' << __LINE__ << ' '
+          *_se_stream << HERE << ' '
                       << efd << ' '
                       << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
                       << std::endl;
@@ -283,32 +284,80 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
     }
   }
   catch ( std::detail::stop_request& ) {
-    // this is possible, normal flow of operation
-    for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
-      if ( (i->second.flags & (fd_info::listener | fd_info::dgram_proc)) == 0 ) {
-        sockbuf_t* b = i->second.b;
-        if ( b != 0 ) {
-          std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
-          ::close( b->_fd );
-          b->_fd = -1;
-          b->ucnd.notify_all();
-        } else {
-          ::close( i->first );
+    try {
+      // this is possible, normal flow of operation
+      for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
+        if ( (i->second.flags & (fd_info::listener | fd_info::dgram_proc)) == 0 ) {
+          sockbuf_t* b = i->second.b;
+          if ( b != 0 ) {
+            std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
+            ::close( b->_fd );
+            b->_fd = -1;
+            b->ucnd.notify_all();
+          } else {
+            ::close( i->first );
+          }
+          (*i->second.p)( i->first, typename socks_processor_t::adopt_close_t() );
         }
-        (*i->second.p)( i->first, typename socks_processor_t::adopt_close_t() );
+      }
+      for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
+        if ( (i->second.flags & fd_info::listener) != 0 ) {
+          i->second.p->stop();
+        }
       }
     }
-    for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
-      if ( (i->second.flags & fd_info::listener) != 0 ) {
-        i->second.p->stop();
+    catch ( std::exception& e ) {
+      try {
+        extern std::tr2::mutex _se_lock;
+        extern std::ostream* _se_stream;
+
+        std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+        if ( _se_stream != 0 ) {
+          *_se_stream << HERE << ' ' << e.what() << std::endl;
+        }
+      }
+      catch ( ... ) {
+      }
+    }
+    catch ( ... ) {
+      try {
+        extern std::tr2::mutex _se_lock;
+        extern std::ostream* _se_stream;
+
+        std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+        if ( _se_stream != 0 ) {
+          *_se_stream << HERE << " unknown exception" << std::endl;
+        }
+      }
+      catch ( ... ) {
       }
     }
   }
   catch ( std::exception& e ) {
-    std::cerr << e.what() << std::endl;
+    try {
+      extern std::tr2::mutex _se_lock;
+      extern std::ostream* _se_stream;
+
+      std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+      if ( _se_stream != 0 ) {
+        *_se_stream << HERE << ' ' << e.what() << std::endl;
+      }
+    }
+    catch ( ... ) {
+    }
   }
   catch ( ... ) {
+    try {
+      extern std::tr2::mutex _se_lock;
+      extern std::ostream* _se_stream;
 
+      std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+      if ( _se_stream != 0 ) {
+        *_se_stream << HERE << " unknown exception" << std::endl;
+      }
+    }
+    catch ( ... ) {
+    }
   }
 }
 
@@ -351,14 +400,30 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
         }
         if ( descr.find( ev_add.data.fd ) != descr.end() ) { // reuse?
           if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev_add.data.fd, &ev_add ) < 0 ) {
-            std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+            extern std::tr2::mutex _se_lock;
+            extern std::ostream* _se_stream;
+
+            std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+            if ( _se_stream != 0 ) {
+              *_se_stream << HERE << ' '
+                          << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
+                          << std::endl;
+            }
             // descr.erase( ev_add.data.fd );
             static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
             return;
           }
         } else {
           if ( epoll_ctl( efd, EPOLL_CTL_ADD, ev_add.data.fd, &ev_add ) < 0 ) {
-            std::cerr << __FILE__ << ":" << __LINE__ << std::endl;
+            extern std::tr2::mutex _se_lock;
+            extern std::ostream* _se_stream;
+
+            std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+            if ( _se_stream != 0 ) {
+              *_se_stream << HERE << ' '
+                          << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
+                          << std::endl;
+            }
             static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
             return;
           }
@@ -380,7 +445,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
 
           std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
           if ( _se_stream != 0 ) {
-            *_se_stream << __FILE__ << ':' << __LINE__ << ' '
+            *_se_stream << HERE << ' '
                         << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
                         << std::endl;
           }
@@ -424,7 +489,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
 
             std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
             if ( _se_stream != 0 ) {
-              *_se_stream << __FILE__ << ':' << __LINE__ << ' '
+              *_se_stream << HERE << ' '
                           << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
                           << std::endl;
             }
@@ -440,7 +505,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
 
             std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
             if ( _se_stream != 0 ) {
-              *_se_stream << __FILE__ << ':' << __LINE__ << ' '
+              *_se_stream << HERE << ' '
                           << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
                           << std::endl;
             }
@@ -598,7 +663,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
         {
           std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
           if ( _se_stream != 0 ) {
-            *_se_stream << __FILE__ << ':' << __LINE__ << std::endl;
+            *_se_stream << HERE << std::endl;
           }
         }
         try {
@@ -622,7 +687,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
       {
         std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
         if ( _se_stream != 0 ) {
-          *_se_stream << __FILE__ << ':' << __LINE__ << ' ' << fd << std::endl;
+          *_se_stream << HERE << ' ' << fd << std::endl;
         }
       }
       ::close( fd );
@@ -754,7 +819,7 @@ void sockmgr<charT,traits,_Alloc>::process_dgram_srv( const epoll_event& ev, typ
     {
       std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
       if ( _se_stream != 0 ) {
-        *_se_stream << __FILE__ << ':' << __LINE__ << std::endl;
+        *_se_stream << HERE << std::endl;
       }
     }
     try {
@@ -889,7 +954,7 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
 
       std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
       if ( _se_stream != 0 ) {
-        *_se_stream << __FILE__ << ':' << __LINE__ << ' '
+        *_se_stream << HERE << ' '
                     << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
                     << std::endl;
       }
@@ -924,7 +989,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( const epoll_event& ev, typen
     // int res = 0;
     // int len = 0;
     // int ret = getsockopt( ifd->first, SOL_SOCKET, SO_ERROR, (void *)&res, (socklen_t*)&len );
-    // std::cerr << __FILE__ << ":" << __LINE__ << ' ' << res << ' ' << ret << endl;
+    // std::cerr << HERE << ' ' << res << ' ' << ret << endl;
 
     // Urgent: socket is NONBLOCK and polling ONESHOT here!
     char c;
@@ -1034,16 +1099,22 @@ void sockmgr<charT,traits,_Alloc>::process_regular( const epoll_event& ev, typen
 template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::dump_descr()
 {
-  for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
-    std::cerr << i->first << " "
-              << std::hex
-              << i->second.flags
-              << " "
-              << (void*)i->second.b
-              << " "
-              << (void*)i->second.p
-              << std::dec
-              << endl;
+  extern std::tr2::mutex _se_lock;
+  extern std::ostream* _se_stream;
+
+  std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+  if ( _se_stream != 0 ) {
+    for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
+      *_se_stream << i->first << " "
+                  << std::hex
+                  << i->second.flags
+                  << " "
+                  << (void*)i->second.b
+                  << " "
+                  << (void*)i->second.p
+                  << std::dec
+                  << endl;
+    }
   }
 }
 

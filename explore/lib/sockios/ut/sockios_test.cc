@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/06 15:12:03 ptr>
+// -*- C++ -*- Time-stamp: <10/01/13 00:18:28 ptr>
 
 /*
  *
@@ -1076,20 +1076,25 @@ class stream_reader
 
     static void load_generator( barrier* b )
     {
-      sockstream s( "localhost", 2008 );
+      try {
+        sockstream s( "localhost", 2008 );
 
-      char buf[1024];
+        char buf[1024];
 
-      fill( buf, buf + 1024, 0 );
+        fill( buf, buf + 1024, 0 );
 
-      b->wait();
+        b->wait();
 
-      while( true ) {
-        s.write( buf, 1024 );
-        s.flush();
+        while( true ) {
+          s.write( buf, 1024 );
+          s.flush();
 
-        s.read( buf, 1024 );
-        this_thread::yield();
+          s.read( buf, 1024 );
+          this_thread::yield();
+        }
+      }
+      catch ( ... ) {
+        EXAM_ERROR_ASYNC( "Hmm?" );
       }
     }
 
@@ -1108,30 +1113,36 @@ int EXAM_IMPL(sockios_test::srv_sigpipe)
     try {
       this_thread::fork();
 
-      b.wait();
-      /*
-       * This process will be killed,
-       * so I don't care about safe termination.
-       */
+      try {
+        b.wait();
+        /*
+         * This process will be killed,
+         * so I don't care about safe termination.
+         */
 
-      const int b_count = 10;
-      barrier bb( b_count );
+        const int b_count = 10;
+        barrier bb( b_count );
 
-      thread* th1 = new thread( stream_reader::load_generator, &bb );
+        thread* th1 = new thread( stream_reader::load_generator, &bb );
 
-      for ( int i = 0; i < (b_count - 1); ++i ) {
-        new thread( stream_reader::load_generator, &bb );
+        for ( int i = 0; i < (b_count - 1); ++i ) {
+          new thread( stream_reader::load_generator, &bb );
+        }
+
+        this_thread::sleep( milliseconds( 100 ) );
+
+        b.wait();
+
+        th1->join(); // Will be interrupted!
       }
-
-      this_thread::sleep( milliseconds( 100 ) );
-
-      b.wait();
-
-      th1->join(); // Will be interrupted!
+      catch ( ... ) {
+        EXAM_ERROR( "unknown exception" );
+      }
 
       exit( 0 );
     }
     catch ( std::tr2::fork_in_parent& child ) {
+      try {
       connect_processor<stream_reader> r( 2008 );
 
       EXAM_CHECK( r.good() );
@@ -1157,6 +1168,10 @@ int EXAM_IMPL(sockios_test::srv_sigpipe)
       // for ( int i = 0; i < 64; ++i ) { // give chance for system
       //   std::tr2::this_thread::yield();
       // }
+      }
+      catch ( ... ) {
+        EXAM_ERROR( "unkown exception" );
+      }
     }
     shm.deallocate( &b );
     seg.deallocate();

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/12/02 20:26:11 ptr>
+// -*- C++ -*- Time-stamp: <10/01/13 10:49:11 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -46,6 +46,11 @@ namespace std {
 template <class charT, class traits, class _Alloc> class basic_sockbuf;
 template <class charT, class traits, class _Alloc> class basic_sockstream;
 template <class charT, class traits, class _Alloc> class sock_processor_base;
+
+namespace detail {
+extern std::tr2::mutex _se_lock;
+extern std::ostream* _se_stream;
+}
 
 template <class charT, class traits, class _Alloc>
 class sock_processor_base :
@@ -104,7 +109,10 @@ class sock_processor_base :
           _cnt_cnd.notify_one();
         }
         if ( _rcount < 0 ) { // <-- debug
-          xmt::callstack( std::cerr );
+          std::tr2::lock_guard<std::tr2::mutex> lk(std::detail::_se_lock);
+          if ( std::detail::_se_stream != 0 ) {
+            xmt::callstack( *std::detail::_se_stream );
+          }
         }
       }
 
@@ -266,10 +274,7 @@ class connect_processor :
         connect_processor::_close();
 
         // _stop();
-
-        if ( ploop.joinable() ) {
-          ploop.join();
-        }
+        connect_processor::wait();
 
         // {
         //   std::tr2::lock_guard<std::tr2::mutex> lk2( rdlock );
