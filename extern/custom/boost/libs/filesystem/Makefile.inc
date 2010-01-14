@@ -4,7 +4,7 @@ BOOST_FS_SRC = ${BOOST_INCLUDE_DIR}/libs/filesystem/src
 #BOOST_FS_SRC = src
 LIBNAME = boost_fs
 MAJOR = 1
-MINOR = 40
+MINOR = 41
 PATCH = 0
 SRC_CPP = ${BOOST_FS_SRC}/operations.cpp \
           ${BOOST_FS_SRC}/path.cpp \
