@@ -10,6 +10,9 @@ SRCROOT := ..
 SUBDIRS := misc exam mt sockios stem janus
 
 -include ${SRCROOT}/Makefiles/gmake/config.mak
+ifdef BOOST_DIR
+SUBDIRS += net
+endif
 include ${SRCROOT}/Makefiles/gmake/subdirs.mak
 
 ifndef WITHOUT_STLPORT
