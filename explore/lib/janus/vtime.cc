@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/15 17:31:40 ptr>
+// -*- C++ -*- Time-stamp: <10/01/15 18:59:17 ptr>
 
 /*
  *
@@ -570,7 +570,14 @@ int basic_vs::vs_join( const stem::addr_type& a )
     // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << ' ' << de.size() << endl;
   }
 
-  return a == stem::badaddr ? 0 : 1;
+  if ( a == stem::badaddr ) {
+    stem::addr_type sid = self_id();
+    vt[sid][sid]; // make self-entry not empty (used in vs_group_size)
+
+    return 0;
+  }
+
+  return 1;
 }
 
 int basic_vs::vs_join( const stem::addr_type& a, const char* host, int port )
