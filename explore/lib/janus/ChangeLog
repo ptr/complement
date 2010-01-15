@@ -1,3 +1,12 @@
+2010-01-15  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* vtime.cc: call vs_pub_view_update() for
+	view update originator too;
+
+	* vtime.cc: ditto, for vs_pub_flush();
+
+	* libjanus: revision 0.11.7.
+
 2009-12-15  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* vtime.cc: fix delayed events processing;
