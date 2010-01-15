@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/12/15 16:58:43 ptr>
+// -*- C++ -*- Time-stamp: <10/01/15 17:20:44 ptr>
 
 /*
  *
@@ -741,6 +741,8 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
       self[ev.src()]; // i.e. create entry in vt
       stem::EventVoid update_view_ev( VS_UPDATE_VIEW );
 
+      this->vs_pub_view_update();
+
       basic_vs::vs( update_view_ev );
     }
   }
@@ -888,6 +890,8 @@ void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
       rm_lock_safety();
 
       stem::EventVoid update_view_ev( VS_UPDATE_VIEW );
+
+      this->vs_pub_view_update();
 
       basic_vs::vs( update_view_ev );
 
