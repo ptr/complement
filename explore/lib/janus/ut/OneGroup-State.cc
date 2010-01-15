@@ -257,6 +257,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_replay)
     a1_stored = a1.self_id();
     a2_stored = a2.self_id();
   
+    a1.vs_join( stem::badaddr );
     a2.vs_join( a1.self_id() );
 
     EXAM_CHECK( a1.wait_view( std::tr2::milliseconds(500) ) );
@@ -374,6 +375,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_late_replay)
     a1_stored = a1.self_id();
     a2_stored = a2.self_id();
   
+    a1.vs_join( stem::badaddr );
     a2.vs_join( a1.self_id() );
 
     EXAM_CHECK( a2.wait_view( std::tr2::milliseconds(500) ) );
@@ -520,6 +522,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_network)
 
         a_stored = a1.self_id();
 
+        a1.vs_join( stem::badaddr );
+
         connect_processor<stem::NetTransport> srv( 2009 );
 
         EXAM_CHECK_ASYNC_F( srv.is_open(), res );
@@ -635,6 +639,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_access_point)
         }
 
         // a1.set_default();
+        a1.vs_join( stem::badaddr );
 
         b.wait();
 
@@ -825,6 +830,5 @@ int EXAM_IMPL(vtime_operations::VT_one_group_access_point)
 
   return EXAM_RESULT;
 }
-
 
 } // namespace janus

@@ -6,4 +6,5 @@ SRC_CC = unit_test.cc \
          vt_operations.cc \
          OneGroup.cc \
          OneGroup-State.cc \
-         OneGroup-State-Recover.cc
+         OneGroup-State-Recover.cc \
+         leader.cc

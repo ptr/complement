@@ -186,6 +186,7 @@ vtime chg( const vtime& l, const vtime& r )
 void vs_event::pack( std::ostream& s ) const
 {
   basic_event::pack( s );
+  __pack( s, id );
   __pack( s, ev.code() );
   __pack( s, ev.flags() );
   __pack( s, ev.value() );
@@ -194,6 +195,7 @@ void vs_event::pack( std::ostream& s ) const
 void vs_event::unpack( std::istream& s )
 {
   basic_event::unpack( s );
+  __unpack( s, id );
   stem::code_type c;
   __unpack( s, c );
   ev.code( c );
@@ -466,6 +468,7 @@ int basic_vs::vs_aux( const stem::Event& inc_ev )
   // }
 
   stem::Event_base<vs_event> ev( VS_EVENT );
+  ev.value().id = xmt::uid();
   ev.value().view = view;
   ev.value().ev = inc_ev;
 
