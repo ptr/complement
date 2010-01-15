@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/15 17:20:44 ptr>
+// -*- C++ -*- Time-stamp: <10/01/15 17:31:40 ptr>
 
 /*
  *
@@ -1230,6 +1230,8 @@ void basic_vs::vs_send_flush()
       add_lock_safety(); // belay: avoid infinite lock
     } else { // single in group: lock not required
       // cerr << __FILE__ << ':' << __LINE__ << endl;
+      this->vs_pub_flush();
+
       stem::Event_base<xmt::uuid_type> flush_ev( VS_FLUSH_VIEW );
 
       flush_ev.value() = xmt::uid();
