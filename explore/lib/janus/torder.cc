@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/15 21:02:14 ptr>
+// -*- C++ -*- Time-stamp: <10/01/18 19:18:33 ptr>
 
 /*
  *
@@ -19,17 +19,24 @@ using namespace stem;
 using namespace std::tr2;
 
 torder_vs::torder_vs() :
-    basic_vs()
+    basic_vs(),
+    leader_( stem::badaddr )
 {
 }
 
 torder_vs::torder_vs( const char* info ) :
-    basic_vs( info )
+    basic_vs( info ),
+    leader_( stem::badaddr )
 {
 }
 
 torder_vs::~torder_vs()
 {
+}
+
+void torder_vs::leader()
+{
+  leader_ = self_id();
 }
 
 int torder_vs::vs( const stem::Event& inc_ev )
@@ -145,6 +152,10 @@ void torder_vs::vs_process( const stem::Event_base<vs_event>& ev )
   }
 
   this->Dispatch( ev.value().ev );
+
+  // if ( is_leader() ) {
+  //   vs();
+  // }
 
   if ( !ove.empty() ) {
     process_delayed();

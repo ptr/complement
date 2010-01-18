@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/15 21:05:34 ptr>
+// -*- C++ -*- Time-stamp: <10/01/18 16:49:45 ptr>
 
 /*
  *
@@ -13,6 +13,7 @@
 #define __leader_h
 
 #include <janus/torder.h>
+#include <fstream>
 
 namespace janus {
 
@@ -20,7 +21,7 @@ class VT_with_leader :
         public torder_vs
 {
   public:
-    VT_with_leader();
+    VT_with_leader( const char*, bool = false );
     ~VT_with_leader();
 
     xmt::uuid_type vs_pub_recover();
@@ -32,6 +33,8 @@ class VT_with_leader :
 
   private:
     void message( const stem::Event& );
+
+    std::ofstream f;
 
     DECLARE_RESPONSE_TABLE( VT_with_leader, janus::torder_vs );
 };
