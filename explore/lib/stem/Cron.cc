@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/08/21 20:08:58 ptr>
+// -*- C++ -*- Time-stamp: <10/01/18 20:48:29 ptr>
 
 /*
  * Copyright (c) 1998, 2002-2003, 2005-2006, 2008-2009
@@ -84,7 +84,11 @@ void __FIT_DECLSPEC Cron::AddFirst( const Event_base<CronEntry>& entry )
 
   lock_guard<mutex> _x1( _M_l );
 
+  _run = true;
   _thr = new thread( _loop, this );
+  if ( !_thr->joinable() ) {
+    _run = false;
+  }
 
   PushState( CRON_ST_STARTED );
 }
@@ -194,7 +198,6 @@ void Cron::_loop( Cron* p )
   system_time st;
 
   unique_lock<mutex> lk( me._M_l );
-  me._run = true;
 
   while ( me._run ) {
     if ( me._M_c.empty() ) {
