@@ -1,3 +1,10 @@
+2010-01-21  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* vtime.h, vtime.cc: it is enough single vector
+	for virtual time, due to 'view' consept;
+
+	* libjanus: revision 0.12.0.
+
 2010-01-15  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* vtime.cc: call vs_pub_view_update() for
