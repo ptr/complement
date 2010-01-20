@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/21 01:52:33 ptr>
+// -*- C++ -*- Time-stamp: <10/01/21 02:13:34 ptr>
 
 /*
  *
@@ -65,13 +65,15 @@ void vs_event_total_order::swap( vs_event_total_order& r )
 
 torder_vs::torder_vs() :
     basic_vs(),
-    leader_( stem::badaddr )
+    leader_( stem::badaddr ),
+    is_leader_( false )
 {
 }
 
 torder_vs::torder_vs( const char* info ) :
     basic_vs( info ),
-    leader_( stem::badaddr )
+    leader_( stem::badaddr ),
+    is_leader_( false )
 {
 }
 
@@ -82,13 +84,14 @@ torder_vs::~torder_vs()
 void torder_vs::leader()
 {
   leader_ = self_id();
+  is_leader_ = true;
 }
 
 int torder_vs::vs_torder( const stem::Event& inc_ev )
 {
-  if ( (inc_ev.flags() & stem::__Event_Base::vs) != 0 ) {
-    return 1;
-  }
+  // if ( (inc_ev.flags() & stem::__Event_Base::vs) != 0 ) {
+  //   return 1;
+  // }
 
   stem::Event_base<vs_event_total_order> ev( VS_EVENT_TORDER );
 

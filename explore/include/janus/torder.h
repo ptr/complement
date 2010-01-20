@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/20 18:32:53 ptr>
+// -*- C++ -*- Time-stamp: <10/01/21 02:11:48 ptr>
 
 /*
  *
@@ -75,7 +75,7 @@ class torder_vs :
     void leader();
 
     bool is_leader() const
-      { return self_id() == leader_; }
+      { return is_leader_; }
 
   private:
 #ifdef __USE_STLPORT_HASH
@@ -90,6 +90,7 @@ class torder_vs :
 
     conf_cnt_type conform_container_;
     stem::addr_type leader_;
+    bool is_leader_;
 
     void vs_process_torder( const stem::Event_base<vs_event_total_order>& );
 
