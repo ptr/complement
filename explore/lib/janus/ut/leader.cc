@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/18 18:48:42 ptr>
+// -*- C++ -*- Time-stamp: <10/01/21 00:26:34 ptr>
 
 /*
  *
@@ -79,10 +79,10 @@ void VT_with_leader::vs_pub_flush()
 void VT_with_leader::message( const stem::Event& ev )
 {
   if ( (ev.flags() & stem::__Event_Base::vs) == 0 ) {
-    vs( ev );
+    vs_torder( ev );
   }
 
-  if ( is_leader() ) {
+  if ( is_leader() || ((ev.flags() & stem::__Event_Base::vs) != 0) ) {
     f << ev.value() << '\n';
   }
 }
@@ -184,8 +184,6 @@ int EXAM_IMPL(vtime_operations::leader)
       catch ( ... ) {
         EXAM_ERROR_ASYNC_F( "unkown exception", res );
       }
-
-      // unlink( (std::string( "/tmp/janus." ) + std::string(a_stored) ).c_str() );
 
       exit( res );
     }
@@ -361,8 +359,6 @@ int EXAM_IMPL(vtime_operations::leader)
       } else {
         EXAM_ERROR( "child interrupted" );
       }
-
-      // unlink( (std::string( "/tmp/janus." ) + std::string(a_stored) ).c_str() );
     }
     shm.deallocate( &b );
     shm.deallocate( &b2 );
@@ -373,6 +369,12 @@ int EXAM_IMPL(vtime_operations::leader)
   catch ( xmt::shm_bad_alloc& err ) {
     EXAM_ERROR( err.what() );
   }
+
+  EXAM_CHECK( system( "diff -q /tmp/a1 /tmp/a2 && diff -q /tmp/a2 /tmp/a3" ) == 0 );
+
+  unlink( "/tmp/a1" );
+  unlink( "/tmp/a2" );
+  unlink( "/tmp/a3" );
 
   return EXAM_RESULT;
 }

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/18 19:18:33 ptr>
+// -*- C++ -*- Time-stamp: <10/01/21 00:33:31 ptr>
 
 /*
  *
@@ -17,6 +17,51 @@ using namespace std;
 using namespace xmt;
 using namespace stem;
 using namespace std::tr2;
+
+void vs_event_total_order::pack( std::ostream& s ) const
+{
+  // basic_event::pack( s );
+  __pack( s, id );
+  __pack( s, static_cast<uint32_t>(conform.size()) );
+  for ( list<uuid_type>::const_iterator i = conform.begin(); i != conform.end(); ++i ) {
+    __pack( s, *i );
+  }
+  __pack( s, ev.code() );
+  __pack( s, ev.flags() );
+  __pack( s, ev.value() );
+}
+
+void vs_event_total_order::unpack( std::istream& s )
+{
+  // basic_event::unpack( s );
+  __unpack( s, id );
+  uint32_t sz = 0;
+  uuid_type tmp;
+  __unpack( s, sz );
+  while ( sz > 0 ) {
+    __unpack( s, tmp );
+    conform.push_back( tmp );
+    --sz;
+  }
+
+  stem::code_type c;
+  __unpack( s, c );
+  ev.code( c );
+  uint32_t f;
+  __unpack( s, f );
+  ev.resetf( f );
+  // string d;
+  __unpack( s, ev.value() );
+  // std::swap( d, ev.value() );
+}
+
+void vs_event_total_order::swap( vs_event_total_order& r )
+{
+  // std::swap( vt, r.vt );
+  std::swap( id, r.id );
+  std::swap( conform, r.conform );
+  std::swap( ev, r.ev );
+}
 
 torder_vs::torder_vs() :
     basic_vs(),
@@ -39,246 +84,95 @@ void torder_vs::leader()
   leader_ = self_id();
 }
 
-int torder_vs::vs( const stem::Event& inc_ev )
+int torder_vs::vs_torder( const stem::Event& inc_ev )
 {
-  // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-  if ( /* vs_group_size() == 0 || */ /* lock_addr != stem::badaddr || */ isState(VS_ST_LOCKED) ) {
-    de.push_back( inc_ev );
-    // cerr << __FILE__ << ':' << __LINE__ << " View Update " << self_id() << ' ' << lock_addr << endl;
-    return 1;
-  }
+  stem::Event_base<vs_event_total_order> ev( VS_EVENT_TORDER );
 
-  // if ( !de.empty() ) {
-  //   cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << ' ' << de.size() << endl;
-  // }
-
-  stem::Event_base<vs_event> ev( VS_EVENT );
-  ev.value().id = xmt::uid();
-  ev.value().view = view;
   ev.value().ev = inc_ev;
+  ev.value().id = xmt::uid();
 
-  vtime& self = vt[self_id()];
-  ++self[self_id()];
-
-  const stem::code_type code = inc_ev.code();
-
-  if ( (code != VS_UPDATE_VIEW) && (code != VS_LOCK_VIEW) && (code != VS_FLUSH_LOCK_VIEW ) ) {
-    this->vs_event_origin( self, ev.value().ev );
+  if ( is_leader() ) {
+    ev.value().conform.push_back( ev.value().id );
+  } else {
+    conform_container_[ev.value().id] = ev.value().ev;
   }
 
-  ev.value().ev.setf( stem::__Event_Base::vs );
-  // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << ' ' << hex << inc_ev.code() << dec << endl;
-  for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
-    if ( i->first != self_id() ) {
-      // cerr << __FILE__ << ':' << __LINE__ << ' ' << i->first << endl;
-      ev.dest( i->first );
-      ev.value().vt = self; // chg( self, vt[i->first] );
-      // vt[i->first] = self; // <------------
-      Send( ev );
-    }
-  }
-  // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-
-  return 0;
+  return basic_vs::vs( ev );
 }
 
 // void torder_vs::vs_send_flush()
 // {
 // }
 
-void torder_vs::vs_process( const stem::Event_base<vs_event>& ev )
+void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>& ev )
 {
-  // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << ' ' << hex << ev.value().ev.code() << dec << endl;
-  // check the view version first:
-  if ( ev.value().view != view ) {
-    if ( ev.value().view > view ) {
-      ove.push_back( ev ); // push event into delay queue
-    }
-    return;
-  }
-
-  stem::code_type code = ev.value().ev.code();
-
-  if ( code == VS_UPDATE_VIEW ) {
-    ove.push_back( ev ); // push event into delay queue
-    return;
-  }
-
-  // check virtual time:
-  vtime tmp = vt[ev.src()];
-
-  for ( vtime::vtime_type::const_iterator i = ev.value().vt.vt.begin(); i != ev.value().vt.vt.end(); ++i ) {
-    if ( i->second < tmp[i->first] ) {
-      // ev.src() fail?
-      // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-      return;
-    }
-    tmp[i->first] = i->second;
-  }
-
-  // tmp.sup( ev.value().vt );
-
-  vtime& self = vt[self_id()];
-
-  for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
-    if ( i->first == ev.src() ) {
-      if ( (i->second + 1) != tmp[ev.src()] ) {
-        if ( (i->second + 1) < tmp[ev.src()] ) {
-          // cerr << __FILE__ << ':' << __LINE__ << ' ' << i->first << ' ' << ev.src()  << ' ' << (i->second + 1) << ' ' << tmp[ev.src()] << endl;
-          ove.push_back( ev ); // push event into delay queue
-        } else {
-          // Ghost event from past: Drop? Error?
-          // cerr << __FILE__ << ':' << __LINE__ << ' ' << i->first << ' ' << ev.src() << endl;
-        }
-        return;
-      }
-    } else if ( i->second < tmp[i->first] ) {
-      // cerr << __FILE__ << ':' << __LINE__ << ' ' << i->first << ' ' << ev.src() << ' ' << i->second << ' ' << tmp[i->first] << endl;
-      ove.push_back( ev ); // push event into delay queue
-      return;
-    }
-  }
-
-  ++self[ev.src()];
-  vt[ev.src()] = tmp; // vt[ev.src()] = self; ??   <--------
-  
   ev.value().ev.src( ev.src() );
   ev.value().ev.dest( ev.dest() );
+  ev.value().ev.setf( stem::__Event_Base::vs );
 
-  if ( (code != VS_LOCK_VIEW) && (code != VS_FLUSH_LOCK_VIEW) ) {
-    // Update view not passed into vs_event_derivative,
-    // it specific for Virtual Synchrony
-    this->vs_event_derivative( self, ev.value().ev );
-  }
+  if ( is_leader() ) {
+    // I'm leader; original event not from me;
+    // send conformation first ...
+    stem::Event_base<vs_event_total_order> cnf( VS_EVENT_TORDER );
 
-  this->Dispatch( ev.value().ev );
+    cnf.value().ev.code( VS_ORDER_CONF );
+    cnf.value().id = xmt::nil_uuid;
+    cnf.value().conform.push_back( ev.value().id );
+    vs( cnf );
 
-  // if ( is_leader() ) {
-  //   vs();
-  // }
-
-  if ( !ove.empty() ) {
-    process_delayed();
+    // ... and then process
+    this->Dispatch( ev.value().ev );
+  } else {
+    if ( ev.value().id == xmt::nil_uuid ) {
+      // expected VS_ORDER_CONF and non-empty ev.value().conform here
+      for ( std::list<vs_event_total_order::id_type>::const_iterator i = ev.value().conform.begin();
+            i != ev.value().conform.end(); ++i ) {
+        conf_cnt_type::iterator k = conform_container_.find( *i );
+        if ( k != conform_container_.end() ) {
+          k->second.setf( stem::__Event_Base::vs );
+          this->Dispatch( k->second );
+          conform_container_.erase( k );
+        } // else {
+          /* I see conformation, but no event [yet]?
+             Because it _after_ casual order processing,
+             this shouldn't happens.
+           */
+          //   cerr << HERE << endl;
+        // }
+      }
+    } else if ( ev.value().conform.empty() ) {
+      // I'm not a leader, no conformations in event
+      conform_container_[ev.value().id] = ev.value().ev;
+    } else if ( find( ev.value().conform.begin(), ev.value().conform.end(), ev.value().id ) != ev.value().conform.end() ) {
+      // event origin: leader; I see conformation in event
+      this->Dispatch( ev.value().ev );
+    } else {
+      // it's from me?
+      for ( std::list<vs_event_total_order::id_type>::const_iterator i = ev.value().conform.begin();
+            i != ev.value().conform.end(); ++i ) {
+        conf_cnt_type::iterator k = conform_container_.find( *i );
+        if ( k != conform_container_.end() ) {
+          k->second.setf( stem::__Event_Base::vs );
+          this->Dispatch( k->second );
+          conform_container_.erase( k );
+        } // else {
+          /* I see conformation, but no event [yet]?
+             Because it _after_ casual order processing,
+             this shouldn't happens.
+           */
+        //  cerr << HERE << ' ' << ev.value().id << endl;
+        //  conform_container_[ev.value().id] = ev.value().ev;
+        // }
+      }
+    }
   }
 }
 
-void torder_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
-{
-  const stem::code_type code = ev.value().ev.code();
-
-  // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-  if ( ev.value().view != view ) {
-    // cerr << __FILE__ << ':' << __LINE__ << endl;
-    if ( code != VS_UPDATE_VIEW ) {
-      ove.push_back( ev ); // push event into delay queue
-      return; // ? view changed, but this object unknown yet
-    }
-//    cerr << __FILE__ << ':' << __LINE__ << ' ' << ev.src() << ' ' << self_id() << endl;
-    if ( (view != 0) && (lock_addr != ev.src()) ) {
-      // cerr << __FILE__ << ':' << __LINE__ << ' ' << lock_addr 
-      //      << ' ' << ev.src() << endl;
-      return; // ? update view: not owner of lock
-    }
-    // cerr << __FILE__ << ':' << __LINE__ << endl;
-    if ( (view != 0) && ((view + 1) != ev.value().view) ) {
-      ove.push_back( ev ); // push event into delay queue
-      return; // ? view changed, but this object unknown yet
-    }
-    // cerr << __FILE__ << ':' << __LINE__ << ' ' << ev.value().vt.vt.size() << ' ' << self_id() << endl;
-    if ( view == 0 ) {
-      // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-      vt[self_id()] = ev.value().vt.vt; // align time with origin
-      --vt[self_id()][ev.src()]; // will be incremented below
-    }
-#if 1
-    else { // (view + 1) == ev.value().view
-      // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-
-      vtime& self = vt[self_id()];
-      for ( vtime::vtime_type::iterator i = self.vt.begin(); i != self.vt.end(); ) {
-        if ( ev.value().vt.vt.find( i->first ) == ev.value().vt.vt.end() ) {
-          // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-          vt.erase( i->first );
-          self.vt.erase( i++ );
-          // break;
-        } else {
-          ++i;
-        }
-      }
-    }
-#endif
-    view = ev.value().view;
-  }
-  // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-
-  if ( (code != VS_UPDATE_VIEW) && (code != VS_LOCK_VIEW) && (code != VS_FLUSH_VIEW) && (code != VS_FLUSH_LOCK_VIEW) ) {
-    ove.push_back( ev ); // push event into delay queue
-    return;
-  }
-
-  // check virtual time:
-  vtime tmp = vt[ev.src()];
-
-  for ( vtime::vtime_type::const_iterator i = ev.value().vt.vt.begin(); i != ev.value().vt.vt.end(); ++i ) {
-    if ( i->second < tmp[i->first] ) {
-      // ev.src() fail?
-      // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-      return;
-    }
-    tmp[i->first] = i->second;
-  }
-
-  vtime& self = vt[self_id()];
-
-  for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
-    if ( i->first == ev.src() ) {
-      if ( (i->second + 1) != tmp[ev.src()] ) {
-        if ( (i->second + 1) < tmp[ev.src()] ) {
-          // cerr << __FILE__ << ':' << __LINE__ << ' ' << i->first << ' ' << ev.src()  << ' ' << (i->second + 1) << ' ' << tmp[ev.src()] << endl;
-          ove.push_back( ev ); // push event into delay queue
-        } else {
-          // Ghost event from past: Drop? Error?
-          // cerr << __FILE__ << ':' << __LINE__ << ' ' << i->first << ' ' << ev.src() << endl;
-        }
-        return;
-      }
-    } else if ( i->second < tmp[i->first] ) {
-      // cerr << __FILE__ << ':' << __LINE__ << ' ' << i->first << ' ' << ev.src() << ' ' << i->second << ' ' << tmp[i->first] << endl;
-      ove.push_back( ev ); // push event into delay queue
-      return;
-    }
-  }
-
-  ++self[ev.src()];
-  vt[ev.src()] = tmp; // vt[ev.src()] = self; ??   <--------
-  
-  ev.value().ev.src( ev.src() );
-  ev.value().ev.dest( ev.dest() );
-
-  if ( code == VS_UPDATE_VIEW ) {
-    /* Specific for update view: vt[self_id()] should
-       contain all group members, even if virtual time
-       is zero (copy/assign vt don't copy entry with zero vtime!)
-    */
-    // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-    for ( vtime::vtime_type::const_iterator i = ev.value().vt.vt.begin(); i != ev.value().vt.vt.end(); ++i ) {
-      self[i->first];
-    }
-  } else if ( code == VS_FLUSH_VIEW ) {
-    // flush passed into vs_event_derivative
-    this->vs_event_derivative( self, ev.value().ev );
-  }
-
-  this->Dispatch( ev.value().ev );
-
-  if ( !ove.empty() ) {
-    process_delayed();
-  }
-}
+const stem::code_type torder_vs::VS_EVENT_TORDER = 0x301;
+const stem::code_type torder_vs::VS_ORDER_CONF = 0x303;
 
 DEFINE_RESPONSE_TABLE( torder_vs )
-  EV_Event_base_T_( ST_NULL, VS_EVENT, vs_process, vs_event )
-  EV_Event_base_T_( VS_ST_LOCKED, VS_EVENT, vs_process_lk, vs_event )
+  EV_Event_base_T_( ST_NULL, VS_EVENT_TORDER, vs_process_torder, vs_event_total_order )
 END_RESPONSE_TABLE
 
 } // namespace janus

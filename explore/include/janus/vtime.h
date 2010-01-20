@@ -179,7 +179,6 @@ struct vs_event :
 
     void swap( vs_event& );
 
-    xmt::uuid_type id;
     stem::Event ev;
 };
 
@@ -291,22 +290,22 @@ class basic_vs :
   private:
     typedef std::set<stem::addr_type> group_members_type;
 
+    static const stem::code_type VS_EVENT;
     static const stem::code_type VS_JOIN_RQ;
     static const stem::code_type VS_JOIN_RS;
+    static const stem::code_type VS_LOCK_VIEW;
     static const stem::code_type VS_LOCK_VIEW_ACK;
     static const stem::code_type VS_LOCK_VIEW_NAK;
+    static const stem::code_type VS_UPDATE_VIEW;
+    static const stem::code_type VS_FLUSH_LOCK_VIEW;
     static const stem::code_type VS_FLUSH_LOCK_VIEW_ACK;
     static const stem::code_type VS_FLUSH_LOCK_VIEW_NAK;
     static const stem::code_type VS_LOCK_SAFETY; // from cron, timeout
     static const stem::code_type VS_LAST_WILL;
 
   protected:
-    static const stem::code_type VS_EVENT;
-    static const stem::code_type VS_LOCK_VIEW;
-    static const stem::code_type VS_UPDATE_VIEW;
     static const stem::code_type VS_FLUSH_VIEW;
     static const stem::code_type VS_FLUSH_VIEW_JOIN;
-    static const stem::code_type VS_FLUSH_LOCK_VIEW;
 
   protected:
     static const stem::state_type VS_ST_LOCKED;
@@ -399,10 +398,8 @@ class basic_vs :
 
     void vs_lock_safety( const stem::EventVoid& ev );
 
-  protected:
     void process_delayed();
 
-  private:
     void add_lock_safety();
     void rm_lock_safety();
 
