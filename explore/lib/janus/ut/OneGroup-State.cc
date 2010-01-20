@@ -61,8 +61,8 @@ class VTM_one_group_advanced_handler :
         return cnd_view.timed_wait( lk, rel_time, status_view );
       }
 
-    vtime_matrix_type& vt()
-      { return basic_vs::vt; }
+    vtime& vt()
+      { return basic_vs::self; }
 
     virtual xmt::uuid_type vs_pub_recover();
     virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& );
@@ -266,47 +266,34 @@ int EXAM_IMPL(vtime_operations::VT_one_group_replay)
   
     a2.vs_join( a1.self_id() );
 
+    EXAM_CHECK( a1.wait_view( std::tr2::milliseconds(500) ) );
     EXAM_CHECK( a2.wait_view( std::tr2::milliseconds(500) ) );
 
     try {
       VTM_one_group_advanced_handler a3;
 
+      a1.reset_view();
+      a2.reset_view();
+
       a3_stored = a3.self_id();
       a3.vs_join( a2.self_id() );
 
       EXAM_CHECK( a1.wait_view( std::tr2::milliseconds(500) ) );
+      EXAM_CHECK( a2.wait_view( std::tr2::milliseconds(500) ) );
       EXAM_CHECK( a3.wait_view( std::tr2::milliseconds(500) ) );
-
-      EXAM_CHECK( a1.vt()[a1.self_id()][a1.self_id()] == 1 );
-      EXAM_CHECK( a1.vt()[a1.self_id()][a2.self_id()] == 2 );
-      EXAM_CHECK( a1.vt()[a1.self_id()][a3.self_id()] == 0 );
-      EXAM_CHECK( a1.vt()[a2.self_id()][a1.self_id()] == 1 );
-      EXAM_CHECK( a1.vt()[a2.self_id()][a2.self_id()] == 2 );
-      EXAM_CHECK( a1.vt()[a2.self_id()][a3.self_id()] == 0 );
-      EXAM_CHECK( a1.vt()[a3.self_id()][a1.self_id()] == 0 );
-      EXAM_CHECK( a1.vt()[a3.self_id()][a2.self_id()] == 0 );
-      EXAM_CHECK( a1.vt()[a3.self_id()][a3.self_id()] == 0 );
-
-      EXAM_CHECK( a2.vt()[a1.self_id()][a1.self_id()] == 1 );
-      EXAM_CHECK( a2.vt()[a1.self_id()][a2.self_id()] == 0 );
-      EXAM_CHECK( a2.vt()[a1.self_id()][a3.self_id()] == 0 );
-      EXAM_CHECK( a2.vt()[a2.self_id()][a1.self_id()] == 1 );
-      EXAM_CHECK( a2.vt()[a2.self_id()][a2.self_id()] == 2 );
-      EXAM_CHECK( a2.vt()[a2.self_id()][a3.self_id()] == 0 );
-      EXAM_CHECK( a2.vt()[a3.self_id()][a1.self_id()] == 0 );
-      EXAM_CHECK( a2.vt()[a3.self_id()][a2.self_id()] == 0 );
-      EXAM_CHECK( a2.vt()[a3.self_id()][a3.self_id()] == 0 );
-
-      EXAM_CHECK( a3.vt()[a1.self_id()][a1.self_id()] == 0 );
-      EXAM_CHECK( a3.vt()[a1.self_id()][a2.self_id()] == 0 );
-      EXAM_CHECK( a3.vt()[a1.self_id()][a3.self_id()] == 0 );
-      EXAM_CHECK( a3.vt()[a2.self_id()][a1.self_id()] == 1 );
-      EXAM_CHECK( a3.vt()[a2.self_id()][a2.self_id()] == 2 );
-      EXAM_CHECK( a3.vt()[a2.self_id()][a3.self_id()] == 0 );
-      EXAM_CHECK( a3.vt()[a3.self_id()][a1.self_id()] == 1 );
-      EXAM_CHECK( a3.vt()[a3.self_id()][a2.self_id()] == 2 );
-      EXAM_CHECK( a3.vt()[a3.self_id()][a3.self_id()] == 0 );
-
+      
+      EXAM_CHECK( a1.vt()[a1.self_id()] == 1 );
+      EXAM_CHECK( a1.vt()[a2.self_id()] == 2 );
+      EXAM_CHECK( a1.vt()[a3.self_id()] == 0 );
+      
+      EXAM_CHECK( a2.vt()[a1.self_id()] == 1 );
+      EXAM_CHECK( a2.vt()[a2.self_id()] == 2 );
+      EXAM_CHECK( a2.vt()[a3.self_id()] == 0 );
+      
+      EXAM_CHECK( a3.vt()[a1.self_id()] == 1 );
+      EXAM_CHECK( a3.vt()[a2.self_id()] == 2 );
+      EXAM_CHECK( a3.vt()[a3.self_id()] == 0 );
+      
       a1.reset_view();
       a2.reset_view();
       a3.reset_view();
@@ -323,6 +310,9 @@ int EXAM_IMPL(vtime_operations::VT_one_group_replay)
       EXAM_CHECK( a2.mess == "message" );
       EXAM_CHECK( a3.wait( std::tr2::milliseconds(500) ) );
       EXAM_CHECK( a3.mess == "message" );
+      
+      a1.reset();
+      a2.reset();
     }
     catch ( const std::runtime_error& err ) {
       EXAM_ERROR( err.what() );
@@ -335,11 +325,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_replay)
     }
 
     try {
-      a1.reset();
-      a2.reset();
-      // EXAM_CHECK( a1.wait_view( std::tr2::milliseconds(700) ) );
-      // EXAM_CHECK( a2.wait_view( std::tr2::milliseconds(700) ) );
-      EXAM_CHECK( a1.wait_view( std::tr2::milliseconds(300) ) || a2.wait_view( std::tr2::milliseconds(300) ) );
+      EXAM_CHECK( a1.wait_view( std::tr2::milliseconds(300) ) );
+      EXAM_CHECK( a2.wait_view( std::tr2::milliseconds(300) ) );
       a1.reset_view();
       a2.reset_view();
 
@@ -351,9 +338,6 @@ int EXAM_IMPL(vtime_operations::VT_one_group_replay)
       // a3 not only join, but replay too...
       EXAM_CHECK( a3.wait( std::tr2::milliseconds(500) ) );
       // so I can't just check a3's vtime...
-
-      // EXAM_CHECK( a3.vt()[a3.self_id()][a1.self_id()] == 0 );
-      // EXAM_CHECK( a3.vt()[a3.self_id()][a2.self_id()] == 4 );
 
       EXAM_CHECK( a3.mess == "message" );
     }
@@ -445,7 +429,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_late_replay)
       EXAM_ERROR( "unknown exception" );
     }
 
-    EXAM_CHECK( a1.wait_view( std::tr2::milliseconds(300) ) || a2.wait_view( std::tr2::milliseconds(300) ) );
+    EXAM_CHECK( a1.wait_view( std::tr2::milliseconds(300) ) );
+    EXAM_CHECK( a2.wait_view( std::tr2::milliseconds(300) ) );
 
     {
       a1.reset_view();
@@ -482,13 +467,14 @@ int EXAM_IMPL(vtime_operations::VT_one_group_late_replay)
       /* Below set 'greater or equal' because I don't know
          whether VS_LAST_WILL from 'old' a3 pass through a1 or a2
        */
-      EXAM_CHECK( a1.vt()[a1.self_id()][a1.self_id()] >= 5 );
-      EXAM_CHECK( a1.vt()[a1.self_id()][a2.self_id()] >= 0 );
-      EXAM_CHECK( a1.vt()[a1.self_id()][a3.self_id()] == 0 );
-      EXAM_CHECK( a2.vt()[a2.self_id()][a1.self_id()] >= 5 );
-      EXAM_CHECK( a2.vt()[a2.self_id()][a2.self_id()] >= 0 );
-      EXAM_CHECK( a2.vt()[a2.self_id()][a3.self_id()] == 0 );
-
+    
+      EXAM_CHECK( a1.vt()[a1.self_id()] >= 5 );
+      EXAM_CHECK( a1.vt()[a2.self_id()] >= 0 );
+      EXAM_CHECK( a1.vt()[a3.self_id()] == 0 );
+      EXAM_CHECK( a2.vt()[a1.self_id()] >= 5 );
+      EXAM_CHECK( a2.vt()[a2.self_id()] >= 0 );
+      EXAM_CHECK( a2.vt()[a3.self_id()] == 0 );
+      
       EXAM_CHECK( a1.mess == "extra message" );
       EXAM_CHECK( a2.mess == "extra message" );
       EXAM_CHECK( a3.mess == "message" );

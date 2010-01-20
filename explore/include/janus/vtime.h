@@ -354,9 +354,9 @@ class basic_vs :
     template <class D>
     void forward_to_vsg( const stem::Event_base<D>& e ) // not VS!
       { basic_vs::forward_to_vsg( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
-
+		
   protected:
-    vtime_matrix_type vt;
+    vtime self;
 
     virtual xmt::uuid_type vs_pub_recover() = 0;
     virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& ) = 0;

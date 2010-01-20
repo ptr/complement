@@ -29,6 +29,7 @@ class vtime_operations
 
     int EXAM_DECL(VT_one_group_core);
     int EXAM_DECL(VT_one_group_core3);
+    int EXAM_DECL(VT_one_group_core3_sim);
     int EXAM_DECL(VT_one_group_send);
     int EXAM_DECL(VT_one_group_replay);
     int EXAM_DECL(VT_one_group_late_replay);

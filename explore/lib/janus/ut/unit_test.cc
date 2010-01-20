@@ -58,8 +58,9 @@ int main( int argc, const char ** argv )
   tc[5] = t.add( &vtime_operations::VT_one_group_late_replay, vt_oper, "VT one group late replay",
     t.add( &vtime_operations::VT_one_group_replay, vt_oper, "VT one group replay",
       t.add( &vtime_operations::VT_one_group_send, vt_oper, "VT one group send",
-        t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
-          tc[4] = t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member", tc[3] ) ) ) ) );
+        t.add( &vtime_operations::VT_one_group_core3_sim, vt_oper, "VT one group add two members simultaneously",
+          t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
+            tc[4] = t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member", tc[3] ) ) ) ) ) );
 
   t.add( &vtime_operations::VT_one_group_access_point, vt_oper, "VT network access points",
     t.add( &vtime_operations::VT_one_group_network, vt_oper, "VT over network", tc[4] ) );
@@ -73,7 +74,7 @@ int main( int argc, const char ** argv )
   if ( opts.is_set( 't' ) ) {
     t.flags( t.flags() | exam::base_logger::trace );
   }
-
+  
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( cerr );
     return 0;

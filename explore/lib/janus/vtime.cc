@@ -417,8 +417,6 @@ basic_vs::~basic_vs()
   sev.src( stem::badaddr );
   sev.value() = sid;
 
-  vtime& self = vt[sid];
-
   for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
     if ( i->first != sid ) {
       // cerr << __FILE__ << ':' << __LINE__ << ' ' << i->first << endl;
@@ -453,7 +451,6 @@ int basic_vs::vs( const stem::Event& inc_ev )
   ev.value().view = view;
   ev.value().ev = inc_ev;
 
-  vtime& self = vt[self_id()];
   ++self[self_id()];
 
   const stem::code_type code = inc_ev.code();
@@ -484,8 +481,6 @@ void basic_vs::send_to_vsg( const stem::Event& ev ) // not VS!
 
   sev.src( self_id() );
 
-  vtime& self = vt[self_id()];
-
   for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
     if ( i->first != self_id() ) {
       // cerr << __FILE__ << ':' << __LINE__ << ' ' << i->first << endl;
@@ -498,8 +493,6 @@ void basic_vs::send_to_vsg( const stem::Event& ev ) // not VS!
 void basic_vs::forward_to_vsg( const stem::Event& ev ) // not VS!
 {
   stem::Event sev = ev;
-
-  vtime& self = vt[self_id()];
 
   for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
     if ( i->first != self_id() ) {
@@ -572,7 +565,7 @@ int basic_vs::vs_join( const stem::addr_type& a )
 
   if ( a == stem::badaddr ) {
     stem::addr_type sid = self_id();
-    vt[sid][sid]; // make self-entry not empty (used in vs_group_size)
+    self[sid]; // make self-entry not empty (used in vs_group_size)
 
     return 0;
   }
@@ -683,10 +676,8 @@ int basic_vs::vs_join( const sockaddr_in& a )
 }
 
 basic_vs::size_type basic_vs::vs_group_size() const
-{
-  vtime_matrix_type::const_iterator i = vt.find( self_id() );
-  
-  return i == vt.end() ? 0 : i->second.vt.size();
+{  
+  return self.vt.size();
 }
 
 void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
@@ -715,7 +706,6 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
   }
 
   if ( lock_addr == stem::badaddr ) {
-    vtime& self = vt[self_id()];
 
     if ( self.vt.size() > 1 ) {
       // cerr << __FILE__ << ':' << __LINE__ << endl;
@@ -726,7 +716,6 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
       for ( vtime::vtime_type::iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
         if ( i->first == group_applicant ) { // same address
           // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-          vt.erase( group_applicant );
           self.vt.erase( i );
           break;
         }
@@ -753,11 +742,6 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
       basic_vs::vs( update_view_ev );
     }
   }
-
-//  } else {
-//    ev.dest( leader );
-//    Forward( ev );
-//  }
 }
 
 void basic_vs::vs_join_request_lk( const stem::Event_base<vs_join_rq>& ev )
@@ -831,8 +815,6 @@ void basic_vs::vs_group_points( const stem::Event_base<vs_points>& ev )
 
 void basic_vs::vs_lock_view( const stem::EventVoid& ev )
 {
-  // cerr << __FILE__ << ':' << __LINE__ << endl;
-  // cerr << __FILE__ << ':' << __LINE__ << ' ' << ev.src() << ' ' << self_id() << endl;
   PushState( VS_ST_LOCKED );
   lock_addr = ev.src();
   stem::EventVoid view_lock_ev( VS_LOCK_VIEW_ACK );
@@ -870,7 +852,6 @@ void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
   // cerr << __FILE__ << ':' << __LINE__ << endl;
   if ( lock_addr == self_id() ) { // I'm owner of the lock
     lock_rsp.insert( ev.src() );
-    vtime& self = vt[self_id()];
     // cerr << __FILE__ << ':' << __LINE__ << ' ' << lock_rsp.size() << ' ' << self.vt.size() << endl;
     /* Below '>=' instead of '==', because of scenario 'one node exit,
        another node added'
@@ -887,7 +868,7 @@ void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
       // response from all group members available
       ++view;
       if ( group_applicant != stem::badaddr ) {
-        vt[self_id()][group_applicant]; // i.e. create entry in vt
+        self[group_applicant]; // i.e. create entry in vt
         group_applicant = stem::badaddr;
       }
       lock_addr = stem::badaddr; // before vs()!
@@ -965,22 +946,8 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
     ove.push_back( ev ); // push event into delay queue
     return;
   }
-
-  // check virtual time:
-  vtime tmp = vt[ev.src()];
-
-  for ( vtime::vtime_type::const_iterator i = ev.value().vt.vt.begin(); i != ev.value().vt.vt.end(); ++i ) {
-    if ( i->second < tmp[i->first] ) {
-      // ev.src() fail?
-      // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-      return;
-    }
-    tmp[i->first] = i->second;
-  }
-
-  // tmp.sup( ev.value().vt );
-
-  vtime& self = vt[self_id()];
+  
+  vtime tmp = ev.value().vt;
 
   for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
     if ( i->first == ev.src() ) {
@@ -1002,7 +969,6 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
   }
 
   ++self[ev.src()];
-  vt[ev.src()] = tmp; // vt[ev.src()] = self; ??   <--------
   
   ev.value().ev.src( ev.src() );
   ev.value().ev.dest( ev.dest() );
@@ -1045,18 +1011,16 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
     // cerr << __FILE__ << ':' << __LINE__ << ' ' << ev.value().vt.vt.size() << ' ' << self_id() << endl;
     if ( view == 0 ) {
       // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-      vt[self_id()] = ev.value().vt.vt; // align time with origin
-      --vt[self_id()][ev.src()]; // will be incremented below
+      self= ev.value().vt.vt; // align time with origin
+      --self[ev.src()]; // will be incremented below
     }
 #if 1
     else { // (view + 1) == ev.value().view
       // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
 
-      vtime& self = vt[self_id()];
       for ( vtime::vtime_type::iterator i = self.vt.begin(); i != self.vt.end(); ) {
         if ( ev.value().vt.vt.find( i->first ) == ev.value().vt.vt.end() ) {
           // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-          vt.erase( i->first );
           self.vt.erase( i++ );
           // break;
         } else {
@@ -1075,18 +1039,7 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
   }
 
   // check virtual time:
-  vtime tmp = vt[ev.src()];
-
-  for ( vtime::vtime_type::const_iterator i = ev.value().vt.vt.begin(); i != ev.value().vt.vt.end(); ++i ) {
-    if ( i->second < tmp[i->first] ) {
-      // ev.src() fail?
-      // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-      return;
-    }
-    tmp[i->first] = i->second;
-  }
-
-  vtime& self = vt[self_id()];
+  vtime tmp = ev.value().vt;
 
   for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
     if ( i->first == ev.src() ) {
@@ -1108,7 +1061,6 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
   }
 
   ++self[ev.src()];
-  vt[ev.src()] = tmp; // vt[ev.src()] = self; ??   <--------
   
   ev.value().ev.src( ev.src() );
   ev.value().ev.dest( ev.dest() );
@@ -1142,23 +1094,11 @@ void basic_vs::process_delayed()
    */
   bool delayed_process;
   vtime tmp;
-  vtime& self = vt[self_id()];
 
   do {
     delayed_process = false;
     for ( ove_container_type::iterator k = ove.begin(); k != ove.end(); ) {
-      tmp = vt[k->src()];
-
-      for ( vtime::vtime_type::const_iterator i = k->value().vt.vt.begin(); i != k->value().vt.vt.end(); ++i ) {
-        if ( i->second < tmp[i->first] ) {
-          // ev.src() fail?
-          ove.erase( k++ );
-          goto try_next;
-        }
-        tmp[i->first] = i->second;
-      }
-
-      // tmp.sup( k->value().vt );
+      tmp = k->value().vt;
 
       for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
         if ( i->first == k->src() ) {
@@ -1173,7 +1113,6 @@ void basic_vs::process_delayed()
       }
 
       ++self[k->src()];
-      vt[k->src()] = tmp; // vt[k->src()] = self; ??
 
       k->value().ev.src( k->src() );
       k->value().ev.dest( k->dest() );
@@ -1187,7 +1126,6 @@ void basic_vs::process_delayed()
            contain all group members, even if virtual time
            is zero (copy/assign vt don't copy entry with zero vtime!)
         */
-        vtime& self = vt[self_id()];
         for ( vtime::vtime_type::const_iterator i = k->value().vt.vt.begin(); i != k->value().vt.vt.end(); ++i ) {
           self[i->first];
         }
@@ -1224,7 +1162,7 @@ void basic_vs::replay( const vtime& _vt, const stem::Event& inc_ev )
 void basic_vs::vs_send_flush()
 {
   if ( lock_addr == stem::badaddr ) {
-    if ( vt[self_id()].vt.size() > 1 ) {
+    if ( self.vt.size() > 1 ) {
       // cerr << __FILE__ << ':' << __LINE__ << endl;
       lock_rsp.clear();
 
@@ -1282,7 +1220,6 @@ void basic_vs::vs_flush_lock_view_ack( const stem::EventVoid& ev )
   // cerr << __FILE__ << ':' << __LINE__ << endl;
   if ( lock_addr == self_id() ) { // I'm owner of the lock
     lock_rsp.insert( ev.src() );
-    vtime& self = vt[self_id()];
     // cerr << __FILE__ << ':' << __LINE__ << ' ' << lock_rsp.size() << ' ' << self.vt.size() << endl;
     /* Below '>=' instead of '==', because of scenario 'one node exit,
        another node added'
@@ -1389,7 +1326,6 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
     }
 
     if ( lock_addr == self_id() ) { // I'm owner of the lock
-      vtime& self = vt[self_id()];
       // if ( (lock_rsp.size() + 1) < self.vt.size() ) { // not all conforms lock
       // at least half conforms, or group small and unstable;
       // in case of 'too small' group 'no conformation' may happens!
@@ -1400,7 +1336,6 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
             ++i;
           } else {
             // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
-            vt.erase( i->first ); // erase it from group
             self.vt.erase( i++ );
             /* Not required: after next event from node
                it will be removed
@@ -1416,7 +1351,7 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
         // response from all group members available
         ++view;
         if ( group_applicant != stem::badaddr ) {
-          vt[self_id()][group_applicant]; // i.e. create entry in vt
+          self[group_applicant]; // i.e. create entry in vt
           group_applicant = stem::badaddr;
         }
         lock_addr = stem::badaddr; // before vs()!
@@ -1454,8 +1389,6 @@ void basic_vs::process_last_will( const stem::Event_base<janus::addr_type>& ev )
 
 #if 1
   if ( lock_addr == stem::badaddr ) {
-    vtime& self = vt[self_id()];
-    vt.erase( ev.value() );      // erase it from group
     self.vt.erase( ev.value() );
 
     if ( self.vt.size() > 1 ) {
