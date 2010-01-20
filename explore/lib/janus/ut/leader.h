@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/18 16:49:45 ptr>
+// -*- C++ -*- Time-stamp: <10/01/21 01:45:20 ptr>
 
 /*
  *
@@ -33,6 +33,7 @@ class VT_with_leader :
 
   private:
     void message( const stem::Event& );
+    void sync_message( const stem::Event& );
 
     std::ofstream f;
 

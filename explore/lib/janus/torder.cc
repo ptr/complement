@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/21 00:33:31 ptr>
+// -*- C++ -*- Time-stamp: <10/01/21 01:52:33 ptr>
 
 /*
  *
@@ -86,6 +86,10 @@ void torder_vs::leader()
 
 int torder_vs::vs_torder( const stem::Event& inc_ev )
 {
+  if ( (inc_ev.flags() & stem::__Event_Base::vs) != 0 ) {
+    return 1;
+  }
+
   stem::Event_base<vs_event_total_order> ev( VS_EVENT_TORDER );
 
   ev.value().ev = inc_ev;
@@ -97,7 +101,13 @@ int torder_vs::vs_torder( const stem::Event& inc_ev )
     conform_container_[ev.value().id] = ev.value().ev;
   }
 
-  return basic_vs::vs( ev );
+  int ret = basic_vs::vs( ev );
+
+  if ( is_leader() ) {
+    this->Dispatch( inc_ev );
+  }
+
+  return ret;
 }
 
 // void torder_vs::vs_send_flush()

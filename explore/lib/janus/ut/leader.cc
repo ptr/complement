@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/21 00:26:34 ptr>
+// -*- C++ -*- Time-stamp: <10/01/21 01:59:55 ptr>
 
 /*
  *
@@ -76,21 +76,29 @@ void VT_with_leader::vs_pub_flush()
 {
 }
 
+#define EV_EXT_EV_SAMPLE      0x9010
+#define EV_VS_EV_SAMPLE       0x9011
+
 void VT_with_leader::message( const stem::Event& ev )
 {
-  if ( (ev.flags() & stem::__Event_Base::vs) == 0 ) {
-    vs_torder( ev );
-  }
+  // retranslate this message within virtual synchrony group
+  // with total order of events
 
-  if ( is_leader() || ((ev.flags() & stem::__Event_Base::vs) != 0) ) {
-    f << ev.value() << '\n';
-  }
+  stem::Event sync( EV_VS_EV_SAMPLE );
+
+  sync.value() = ev.value();
+
+  vs_torder( sync );
 }
 
-#define EV_SAMPLE      0x9010
+void VT_with_leader::sync_message( const stem::Event& ev )
+{
+  f << ev.value() << '\n';
+}
 
 DEFINE_RESPONSE_TABLE( VT_with_leader )
-  EV_EDS( ST_NULL, EV_SAMPLE, message )
+  EV_EDS( ST_NULL, EV_EXT_EV_SAMPLE, message )
+  EV_EDS( ST_NULL, EV_VS_EV_SAMPLE, sync_message )
 END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::leader)
@@ -167,7 +175,7 @@ int EXAM_IMPL(vtime_operations::leader)
 
         EXAM_CHECK_ASYNC_F( i < 5, res );
 
-        stem::Event ev( EV_SAMPLE );
+        stem::Event ev( EV_EXT_EV_SAMPLE );
         ev.dest( a1.self_id() );
 
         for ( int j = 0; j < 100; ++j ) {
@@ -242,7 +250,7 @@ int EXAM_IMPL(vtime_operations::leader)
 
           EXAM_CHECK_ASYNC_F( i < 5, res );
 
-          stem::Event ev( EV_SAMPLE );
+          stem::Event ev( EV_EXT_EV_SAMPLE );
           ev.dest( a3.self_id() );
 
           for ( int j = 300; j < 400; ++j ) {
@@ -259,8 +267,6 @@ int EXAM_IMPL(vtime_operations::leader)
         catch ( ... ) {
           EXAM_ERROR_ASYNC_F( "unkown exception", res );
         }
-
-        // unlink( (std::string( "/tmp/janus." ) + std::string(a_stored) ).c_str() );
 
         exit( res );
       }
@@ -325,7 +331,7 @@ int EXAM_IMPL(vtime_operations::leader)
 
           EXAM_CHECK( i < 5 );
 
-          stem::Event ev( EV_SAMPLE );
+          stem::Event ev( EV_EXT_EV_SAMPLE );
           ev.dest( a2.self_id() );
 
           for ( int j = 100; j < 200; ++j ) {
