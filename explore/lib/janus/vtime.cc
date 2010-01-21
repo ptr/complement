@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/21 18:00:42 ptr>
+// -*- C++ -*- Time-stamp: <10/01/21 20:22:38 ptr>
 
 /*
  *
@@ -434,6 +434,24 @@ basic_vs::~basic_vs()
   remotes_.clear();
 }
 
+int basic_vs::vs( const stem::Event& inc_ev )
+{
+  int ret = vs_aux( inc_ev );
+
+  if ( ret == 0 ) {
+    // if ( inc_ev.src() == stem::badaddr ) {
+    inc_ev.src( self_id() );
+    inc_ev.dest( self_id() );
+      // }
+    inc_ev.setf( stem::__Event_Base::vs );
+
+    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( this->_theHistory_lock );
+    this->Dispatch( inc_ev );
+  }
+
+  return ret;
+}
+
 int basic_vs::vs_aux( const stem::Event& inc_ev )
 {
   // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
@@ -455,10 +473,6 @@ int basic_vs::vs_aux( const stem::Event& inc_ev )
 
   const stem::code_type code = inc_ev.code();
 
-  if ( (code != VS_UPDATE_VIEW) && (code != VS_LOCK_VIEW) && (code != VS_FLUSH_LOCK_VIEW ) ) {
-    this->vs_event_origin( self, ev.value().ev );
-  }
-
   ev.value().ev.setf( stem::__Event_Base::vs );
   // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << ' ' << hex << inc_ev.code() << dec << endl;
   for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
@@ -471,6 +485,10 @@ int basic_vs::vs_aux( const stem::Event& inc_ev )
     }
   }
   // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
+
+  if ( (code != VS_UPDATE_VIEW) && (code != VS_LOCK_VIEW) && (code != VS_FLUSH_LOCK_VIEW ) ) {
+    this->vs_event_origin( self, ev.value().ev );
+  }
 
   return 0;
 }
@@ -555,8 +573,8 @@ int basic_vs::vs_join( const stem::addr_type& a )
   PopState( VS_ST_LOCKED );
 
   while ( !de.empty() ) {
-    if ( basic_vs::vs_aux( de.front() ) ) {
-      de.pop_back(); // event pushed back in vs_aux() above, remove it
+    if ( basic_vs::vs( de.front() ) ) {
+      de.pop_back(); // event pushed back in vs() above, remove it
       break;
     }
     de.pop_front();
@@ -886,8 +904,8 @@ void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
       // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
 
       while ( !de.empty() ) {
-        if ( basic_vs::vs_aux( de.front() ) ) {
-          de.pop_back(); // event pushed back in vs_aux() above, remove it
+        if ( basic_vs::vs( de.front() ) ) {
+          de.pop_back(); // event pushed back in vs() above, remove it
           break;
         }
         de.pop_front();
@@ -920,8 +938,8 @@ void basic_vs::vs_view_update()
   this->vs_pub_view_update();
 
   while ( !de.empty() ) {
-    if ( basic_vs::vs_aux( de.front() ) ) {
-      de.pop_back(); // event pushed back in vs_aux() above, remove it
+    if ( basic_vs::vs( de.front() ) ) {
+      de.pop_back(); // event pushed back in vs() above, remove it
       break;
     }
     de.pop_front();

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/21 18:03:13 ptr>
+// -*- C++ -*- Time-stamp: <10/01/21 20:06:50 ptr>
 
 /*
  *
@@ -36,6 +36,7 @@ namespace janus {
 using namespace std;
 
 #define EV_FREE      0x9000
+#define EV_FREE_SYNC 0x9001
 
 class VTM_one_group_recover :
     public basic_vs
@@ -80,6 +81,7 @@ class VTM_one_group_recover :
 
   private:
     void message( const stem::Event& );
+    void sync_message( const stem::Event& );
 
     std::tr2::mutex mtx;
     std::tr2::condition_variable cnd;
@@ -342,11 +344,17 @@ bool VTM_one_group_recover::_status_view::operator()() const
 
 void VTM_one_group_recover::message( const stem::Event& ev )
 {
+  stem::Event sync( ev );
+  sync.code( EV_FREE_SYNC );
+
+  vs( sync );
+}
+
+void VTM_one_group_recover::sync_message( const stem::Event& ev )
+{
   mess = ev.value();
 
-  if ( (ev.flags() & stem::__Event_Base::vs) == 0 ) {
-    vs_aux( ev );
-  } else if ( (ev.flags() & stem::__Event_Base::vs_join) != 0 ) {
+  if ( (ev.flags() & stem::__Event_Base::vs_join) != 0 ) {
     // This is event come during recovery procedure:
     stem::Event xev;
     ev.pack( xev );
@@ -360,6 +368,7 @@ void VTM_one_group_recover::message( const stem::Event& ev )
 
 DEFINE_RESPONSE_TABLE( VTM_one_group_recover )
   EV_EDS( ST_NULL, EV_FREE, message )
+  EV_EDS( ST_NULL, EV_FREE_SYNC, sync_message )
 END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::VT_one_group_recover)

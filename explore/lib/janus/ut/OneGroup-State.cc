@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/21 18:02:39 ptr>
+// -*- C++ -*- Time-stamp: <10/01/21 19:54:00 ptr>
 
 /*
  *
@@ -36,6 +36,7 @@ namespace janus {
 using namespace std;
 
 #define EV_FREE      0x9000
+#define EV_FREE_SYNC 0x9001
 
 class VTM_one_group_advanced_handler :
     public basic_vs
@@ -81,6 +82,7 @@ class VTM_one_group_advanced_handler :
 
   private:
     void message( const stem::Event& );
+    void sync_message( const stem::Event& );
 
     std::tr2::mutex mtx;
     std::tr2::condition_variable cnd;
@@ -236,11 +238,15 @@ bool VTM_one_group_advanced_handler::_status_view::operator()() const
 
 void VTM_one_group_advanced_handler::message( const stem::Event& ev )
 {
-  mess = ev.value();
+  stem::Event sync( ev );
+  sync.code( EV_FREE_SYNC );
 
-  if ( (ev.flags() & stem::__Event_Base::vs) == 0 ) {
-    vs_aux( ev );
-  }
+  vs( sync );
+}
+
+void VTM_one_group_advanced_handler::sync_message( const stem::Event& ev )
+{
+  mess = ev.value();
 
   std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
   pass = true;
@@ -249,6 +255,7 @@ void VTM_one_group_advanced_handler::message( const stem::Event& ev )
 
 DEFINE_RESPONSE_TABLE( VTM_one_group_advanced_handler )
   EV_EDS( ST_NULL, EV_FREE, message )
+  EV_EDS( ST_NULL, EV_FREE_SYNC, sync_message )
 END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::VT_one_group_replay)
