@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/21 19:54:00 ptr>
+// -*- C++ -*- Time-stamp: <10/01/21 21:10:16 ptr>
 
 /*
  *
@@ -68,8 +68,7 @@ class VTM_one_group_advanced_handler :
     virtual xmt::uuid_type vs_pub_recover();
     virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& );
     virtual void vs_pub_view_update();
-    virtual void vs_event_origin( const janus::vtime&, const stem::Event& );
-    virtual void vs_event_derivative( const vtime&, const stem::Event& );
+    virtual void vs_pub_rec( const stem::Event& );
     virtual void vs_pub_flush();
 
     std::string mess;
@@ -156,7 +155,6 @@ VTM_one_group_advanced_handler::~VTM_one_group_advanced_handler()
 
 xmt::uuid_type VTM_one_group_advanced_handler::vs_pub_recover()
 {
-  vtime _vt;
   stem::Event ev;
   stem::code_type c;
   uint32_t f;
@@ -171,9 +169,6 @@ xmt::uuid_type VTM_one_group_advanced_handler::vs_pub_recover()
     //     depend upon data from this class.
     history.seekg( 0, ios_base::beg );
     while ( !history.fail() ) {
-      _vt.clear();
-      _vt.unpack( history );
-
       stem::__pack_base::__unpack( history, c );
       ev.code( c );
       stem::__pack_base::__unpack( history, f );
@@ -181,7 +176,7 @@ xmt::uuid_type VTM_one_group_advanced_handler::vs_pub_recover()
       stem::__pack_base::__unpack( history, ev.value() );
 
       if ( !history.fail() ) {
-        this->replay( _vt, ev );
+        this->replay( ev );
       }
     }
     history.clear();
@@ -206,17 +201,8 @@ void VTM_one_group_advanced_handler::vs_pub_view_update()
   cnd_view.notify_one();
 }
 
-void VTM_one_group_advanced_handler::vs_event_origin( const vtime& _vt, const stem::Event& ev )
+void VTM_one_group_advanced_handler::vs_pub_rec( const stem::Event& ev )
 {
-  _vt.pack( history );
-  stem::__pack_base::__pack( history, ev.code() );
-  stem::__pack_base::__pack( history, ev.flags() );
-  stem::__pack_base::__pack( history, ev.value() );
-}
-
-void VTM_one_group_advanced_handler::vs_event_derivative( const vtime& _vt, const stem::Event& ev )
-{
-  _vt.pack( history );
   stem::__pack_base::__pack( history, ev.code() );
   stem::__pack_base::__pack( history, ev.flags() );
   stem::__pack_base::__pack( history, ev.value() );

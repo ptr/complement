@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/21 20:06:50 ptr>
+// -*- C++ -*- Time-stamp: <10/01/21 21:15:57 ptr>
 
 /*
  *
@@ -68,8 +68,7 @@ class VTM_one_group_recover :
     virtual xmt::uuid_type vs_pub_recover();
     virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& );
     virtual void vs_pub_view_update();
-    virtual void vs_event_origin( const janus::vtime&, const stem::Event& );
-    virtual void vs_event_derivative( const vtime&, const stem::Event& );
+    virtual void vs_pub_rec( const stem::Event& );
     virtual void vs_pub_flush();
 
     std::string mess;
@@ -166,7 +165,6 @@ VTM_one_group_recover::~VTM_one_group_recover()
 
 xmt::uuid_type VTM_one_group_recover::vs_pub_recover()
 {
-  vtime _vt;
   stem::Event ev;
   stem::code_type c;
   uint32_t f;
@@ -186,9 +184,6 @@ xmt::uuid_type VTM_one_group_recover::vs_pub_recover()
     stem::__pack_base::__unpack( history, last_flush_off );
     if ( !history.fail() ) { // offset for last flush ok
       while ( !history.fail() ) {
-        // _vt.clear();
-        // _vt.unpack( history );
-
         stem::__pack_base::__unpack( history, c );
         ev.code( c );
         stem::__pack_base::__unpack( history, f );
@@ -197,7 +192,7 @@ xmt::uuid_type VTM_one_group_recover::vs_pub_recover()
 
         if ( !history.fail() ) {
           if ( history.tellg() <= last_flush_off ) {
-            this->replay( _vt, ev );
+            this->replay( ev );
             if ( ev.code() == basic_vs::VS_FLUSH_VIEW ) {
               stem::Event_base<xmt::uuid_type> fev;
               fev.unpack( ev );              
@@ -255,9 +250,6 @@ void VTM_one_group_recover::vs_resend_from( const xmt::uuid_type& from, const st
   history.seekg( sizeof(uint64_t), ios_base::beg );
 
   while ( !history.fail() ) {
-    // _vt.clear();
-    // _vt.unpack( history );
-
     stem::__pack_base::__unpack( history, c );
     ev.code( c );
     stem::__pack_base::__unpack( history, f );
@@ -304,17 +296,8 @@ void VTM_one_group_recover::vs_pub_view_update()
   cnd_view.notify_one();
 }
 
-void VTM_one_group_recover::vs_event_origin( const vtime& _vt, const stem::Event& ev )
+void VTM_one_group_recover::vs_pub_rec( const stem::Event& ev )
 {
-  // _vt.pack( history );
-  stem::__pack_base::__pack( history, ev.code() );
-  stem::__pack_base::__pack( history, ev.flags() );
-  stem::__pack_base::__pack( history, ev.value() );
-}
-
-void VTM_one_group_recover::vs_event_derivative( const vtime& _vt, const stem::Event& ev )
-{
-  // _vt.pack( history );
   stem::__pack_base::__pack( history, ev.code() );
   stem::__pack_base::__pack( history, ev.flags() );
   stem::__pack_base::__pack( history, ev.value() );
@@ -358,7 +341,7 @@ void VTM_one_group_recover::sync_message( const stem::Event& ev )
     // This is event come during recovery procedure:
     stem::Event xev;
     ev.pack( xev );
-    VTM_one_group_recover::vs_event_derivative( vtime(), xev );
+    VTM_one_group_recover::vs_pub_rec( xev );
   }
 
   std::tr2::lock_guard<std::tr2::mutex> lk( mtx );

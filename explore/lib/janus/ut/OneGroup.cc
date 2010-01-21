@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/21 19:53:09 ptr>
+// -*- C++ -*- Time-stamp: <10/01/21 21:04:57 ptr>
 
 /*
  *
@@ -61,8 +61,8 @@ class VTM_one_group_handler :
     virtual xmt::uuid_type vs_pub_recover();
     virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& );
     virtual void vs_pub_view_update();
-    virtual void vs_event_origin( const janus::vtime&, const stem::Event& );
-    virtual void vs_event_derivative( const vtime&, const stem::Event& );
+    virtual void vs_pub_rec( const stem::Event& );
+
     virtual void vs_pub_flush();
 
     std::string mess;
@@ -135,11 +135,7 @@ void VTM_one_group_handler::vs_pub_view_update()
   cnd.notify_one();
 }
 
-void VTM_one_group_handler::vs_event_origin( const vtime&, const stem::Event& )
-{
-}
-
-void VTM_one_group_handler::vs_event_derivative( const vtime&, const stem::Event& )
+void VTM_one_group_handler::vs_pub_rec( const stem::Event& )
 {
 }
 

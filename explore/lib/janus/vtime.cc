@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/21 20:22:38 ptr>
+// -*- C++ -*- Time-stamp: <10/01/21 21:13:06 ptr>
 
 /*
  *
@@ -487,7 +487,7 @@ int basic_vs::vs_aux( const stem::Event& inc_ev )
   // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
 
   if ( (code != VS_UPDATE_VIEW) && (code != VS_LOCK_VIEW) && (code != VS_FLUSH_LOCK_VIEW ) ) {
-    this->vs_event_origin( self, ev.value().ev );
+    this->vs_pub_rec( ev.value().ev );
   }
 
   return 0;
@@ -992,9 +992,9 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
   ev.value().ev.dest( ev.dest() );
 
   if ( (code != VS_LOCK_VIEW) && (code != VS_FLUSH_LOCK_VIEW) ) {
-    // Update view not passed into vs_event_derivative,
+    // Update view not passed into vs_pub_rec,
     // it specific for Virtual Synchrony
-    this->vs_event_derivative( self, ev.value().ev );
+    this->vs_pub_rec( ev.value().ev );
   }
 
   this->Dispatch( ev.value().ev );
@@ -1093,8 +1093,8 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
       self[i->first];
     }
   } else if ( code == VS_FLUSH_VIEW ) {
-    // flush passed into vs_event_derivative
-    this->vs_event_derivative( self, ev.value().ev );
+    // flush passed into vs_pub_rec
+    this->vs_pub_rec( ev.value().ev );
   }
 
   this->Dispatch( ev.value().ev );
@@ -1136,9 +1136,9 @@ void basic_vs::process_delayed()
       k->value().ev.dest( k->dest() );
 
       if ( (k->value().ev.code() != VS_UPDATE_VIEW) && (k->value().ev.code() != VS_LOCK_VIEW) ) {
-        // Update view not passed into vs_event_derivative,
+        // Update view not passed into vs_pub_rec,
         // it specific for Virtual Synchrony
-        this->vs_event_derivative( self, k->value().ev );
+        this->vs_pub_rec( k->value().ev );
       } else {
         /* Specific for update view: vt[self_id()] should
            contain all group members, even if virtual time
@@ -1160,7 +1160,7 @@ void basic_vs::process_delayed()
   } while ( delayed_process );
 }
 
-void basic_vs::replay( const vtime& _vt, const stem::Event& inc_ev )
+void basic_vs::replay( const stem::Event& inc_ev )
 {
   // here must be: vt[self_id()] <= _vt;
   // another assume: replay called in correct order
