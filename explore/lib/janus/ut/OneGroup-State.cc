@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/11/16 12:36:16 ptr>
+// -*- C++ -*- Time-stamp: <10/01/21 18:02:39 ptr>
 
 /*
  *
@@ -239,7 +239,7 @@ void VTM_one_group_advanced_handler::message( const stem::Event& ev )
   mess = ev.value();
 
   if ( (ev.flags() & stem::__Event_Base::vs) == 0 ) {
-    vs( ev );
+    vs_aux( ev );
   }
 
   std::tr2::lock_guard<std::tr2::mutex> lk( mtx );

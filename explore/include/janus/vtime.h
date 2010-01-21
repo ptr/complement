@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/12/14 20:20:57 ptr>
+// -*- C++ -*- Time-stamp: <10/01/21 17:58:25 ptr>
 
 /*
  *
@@ -335,11 +335,11 @@ class basic_vs :
     int vs_join( const stem::addr_type&, const sockaddr_in& );
     int vs_join( const char*, int );
     int vs_join( const sockaddr_in& );
-    int vs( const stem::Event& );
+    int vs_aux( const stem::Event& );
 
     template <class D>
-    int vs( const stem::Event_base<D>& e )
-      { return basic_vs::vs( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
+    int vs_aux( const stem::Event_base<D>& e )
+      { return basic_vs::vs_aux( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
     void vs_send_flush();
     size_type vs_group_size() const;
 

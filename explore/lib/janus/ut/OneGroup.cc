@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/11/13 16:27:07 ptr>
+// -*- C++ -*- Time-stamp: <10/01/21 18:02:10 ptr>
 
 /*
  *
@@ -284,7 +284,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_send)
   stem::Event ev( EV_FREE );
   ev.value() = "message";
 
-  a1.vs( ev );
+  a1.vs_aux( ev );
   EXAM_CHECK( a1.vt()[a1.self_id()] == 2 );
 
   EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
@@ -320,7 +320,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_send)
 
   ev.value() = "another message";
 
-  a3.vs( ev );
+  a3.vs_aux( ev );
   EXAM_CHECK( a3.vt()[a3.self_id()] == 1 );
 
   EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );

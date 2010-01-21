@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/11/23 23:26:42 ptr>
+// -*- C++ -*- Time-stamp: <10/01/21 18:03:13 ptr>
 
 /*
  *
@@ -345,7 +345,7 @@ void VTM_one_group_recover::message( const stem::Event& ev )
   mess = ev.value();
 
   if ( (ev.flags() & stem::__Event_Base::vs) == 0 ) {
-    vs( ev );
+    vs_aux( ev );
   } else if ( (ev.flags() & stem::__Event_Base::vs_join) != 0 ) {
     // This is event come during recovery procedure:
     stem::Event xev;
