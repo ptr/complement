@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/21 21:13:06 ptr>
+// -*- C++ -*- Time-stamp: <10/01/22 10:39:09 ptr>
 
 /*
  *
@@ -1173,6 +1173,7 @@ void basic_vs::replay( const stem::Event& inc_ev )
 //  vt[self_id()] = _vt;
 
   if ( inc_ev.code() != VS_FLUSH_VIEW ) {
+    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( this->_theHistory_lock );
     this->Dispatch( inc_ev );
   }
 }
