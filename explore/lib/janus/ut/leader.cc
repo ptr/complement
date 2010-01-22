@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/21 01:59:55 ptr>
+// -*- C++ -*- Time-stamp: <10/01/22 10:31:18 ptr>
 
 /*
  *
@@ -64,11 +64,7 @@ void VT_with_leader::vs_pub_view_update()
 {
 }
 
-void VT_with_leader::vs_event_origin( const vtime&, const stem::Event& )
-{
-}
-
-void VT_with_leader::vs_event_derivative( const vtime&, const stem::Event& )
+void VT_with_leader::vs_pub_rec( const stem::Event& )
 {
 }
 

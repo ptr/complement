@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/21 02:13:34 ptr>
+// -*- C++ -*- Time-stamp: <10/01/22 10:47:04 ptr>
 
 /*
  *
@@ -89,10 +89,6 @@ void torder_vs::leader()
 
 int torder_vs::vs_torder( const stem::Event& inc_ev )
 {
-  // if ( (inc_ev.flags() & stem::__Event_Base::vs) != 0 ) {
-  //   return 1;
-  // }
-
   stem::Event_base<vs_event_total_order> ev( VS_EVENT_TORDER );
 
   ev.value().ev = inc_ev;
@@ -104,7 +100,7 @@ int torder_vs::vs_torder( const stem::Event& inc_ev )
     conform_container_[ev.value().id] = ev.value().ev;
   }
 
-  int ret = basic_vs::vs( ev );
+  int ret = basic_vs::vs_aux( ev );
 
   if ( is_leader() ) {
     this->Dispatch( inc_ev );
@@ -131,7 +127,7 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
     cnf.value().ev.code( VS_ORDER_CONF );
     cnf.value().id = xmt::nil_uuid;
     cnf.value().conform.push_back( ev.value().id );
-    vs( cnf );
+    vs_aux( cnf );
 
     // ... and then process
     this->Dispatch( ev.value().ev );

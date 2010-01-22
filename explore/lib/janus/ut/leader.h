@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/21 01:45:20 ptr>
+// -*- C++ -*- Time-stamp: <10/01/22 10:31:25 ptr>
 
 /*
  *
@@ -27,8 +27,7 @@ class VT_with_leader :
     xmt::uuid_type vs_pub_recover();
     void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& );
     void vs_pub_view_update();
-    void vs_event_origin( const vtime&, const stem::Event& );
-    void vs_event_derivative( const vtime&, const stem::Event& );
+    void vs_pub_rec( const stem::Event& );
     void vs_pub_flush();
 
   private:
