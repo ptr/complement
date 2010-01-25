@@ -1,3 +1,17 @@
+2010-01-25  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* vtime.h, vtime.cc: two variants of virtual
+	synchrony event initiation; vs() with Dispatch
+	event to self and vs_aux()---without Dispatch
+	events to self [i.e. caller responsible for
+	processing on origin node];
+
+	* vtime.h, vtime.cc: don't distinguish recording
+	for original/derivative events recording; use
+	one function vs_pub_rec instead of two;
+
+	* libjanus: revision 0.13.0.
+
 2010-01-21  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* vtime.h, vtime.cc: it is enough single vector
