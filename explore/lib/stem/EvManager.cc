@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/22 18:09:19 ptr>
+// -*- C++ -*- Time-stamp: <10/01/27 16:57:26 ptr>
 
 /*
  *
@@ -445,10 +445,13 @@ unsigned EvManager::trflags() const
   return _trflags;
 }
 
-void EvManager::settrs( std::ostream *s )
+std::ostream* EvManager::settrs( std::ostream* s )
 {
   lock_guard<mutex> _x1( _lock_tr );
+  std::ostream* tmp = _trs;
   _trs = s;
+
+  return tmp;
 }
 
 __FIT_DECLSPEC void EvManager::push( const Event& e )
@@ -472,6 +475,88 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
   catch ( ... ) {
   }
 #endif // __FIT_STEM_TRACE
+}
+
+void EvManager::sync_call( EventHandler& object, const Event& e )
+{
+  try {
+    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( object._theHistory_lock );
+
+    try {
+#ifdef __FIT_STEM_TRACE
+      try {
+        lock_guard<mutex> lk(_lock_tr);
+        if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
+          *_trs << xmt::demangle( object.classtype().name() )
+                << " (" << &object << ")\n";
+          object.DispatchTrace( e, *_trs );
+          *_trs << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+#endif // __FIT_STEM_TRACE
+      if ( !object.Dispatch( e ) ) { // call dispatcher
+        throw std::logic_error( "no catcher for event" );
+      }
+    }
+    catch ( std::logic_error& err ) {
+      try {
+        lock_guard<mutex> lk(_lock_tr);
+        if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+          *_trs << err.what() << "\n"
+                << xmt::demangle( object.classtype().name() ) << " (" << &object << ")\n";
+          object.DispatchTrace( e, *_trs );
+          *_trs << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+    }
+    catch ( ... ) {
+      try {
+        lock_guard<mutex> lk(_lock_tr);
+        if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+          *_trs << "Unknown, uncatched exception during process:\n"
+                << xmt::demangle( object.classtype().name() ) << " (" << &object << ")\n";
+          object.DispatchTrace( e, *_trs );
+          *_trs << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+    }      
+  }
+  catch ( std::logic_error& err ) {
+    try {
+      lock_guard<mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+        *_trs << HERE << ' ' << err.what() << endl;
+      }
+    }
+    catch ( ... ) {
+    }
+  }
+  catch ( std::runtime_error& err ) {
+    try {
+      lock_guard<mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+        *_trs << HERE << ' ' << err.what() << endl;
+      }
+    }
+    catch ( ... ) {
+    }
+  }
+  catch ( ... ) {
+    try {
+      lock_guard<mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+        *_trs << HERE << " unknown, uncatched exception" << endl;
+      }
+    }
+    catch ( ... ) {
+    }
+  }
 }
 
 void EvManager::Send( const Event& e )
