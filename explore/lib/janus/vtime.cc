@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/28 01:01:43 ptr>
+// -*- C++ -*- Time-stamp: <10/01/28 01:10:44 ptr>
 
 /*
  *
@@ -416,7 +416,7 @@ basic_vs::~basic_vs()
   sev.src( stem::badaddr );
   sev.value() = sid;
 
-  for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+  for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
     if ( i->first != sid ) {
       // cerr << __FILE__ << ':' << __LINE__ << ' ' << i->first << endl;
       sev.dest( i->first );
@@ -459,16 +459,16 @@ int basic_vs::vs_aux( const stem::Event& inc_ev )
   ev.value().view = view;
   ev.value().ev = inc_ev;
 
-  ++self[self_id()];
+  ++vt[self_id()];
 
   const stem::code_type code = inc_ev.code();
 
   ev.value().ev.setf( stem::__Event_Base::vs );
 
-  for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+  for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
     if ( i->first != self_id() ) {
       ev.dest( i->first );
-      ev.value().vt = self;
+      ev.value().vt = vt;
       Send( ev );
     }
   }
@@ -486,7 +486,7 @@ void basic_vs::send_to_vsg( const stem::Event& ev ) // not VS!
 
   sev.src( self_id() );
 
-  for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+  for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
     if ( i->first != self_id() ) {
       sev.dest( i->first );
       Forward( sev );
@@ -498,7 +498,7 @@ void basic_vs::forward_to_vsg( const stem::Event& ev ) // not VS!
 {
   stem::Event sev = ev;
 
-  for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+  for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
     if ( i->first != self_id() ) {
       sev.dest( i->first );
       Forward( sev );
@@ -566,7 +566,7 @@ int basic_vs::vs_join( const stem::addr_type& a )
 
   if ( a == stem::badaddr ) {
     stem::addr_type sid = self_id();
-    self[sid]; // make self-entry not empty (used in vs_group_size)
+    vt[sid]; // make self-entry not empty (used in vs_group_size)
 
     vs_pub_join();
     this->vs_pub_view_update();
@@ -685,7 +685,7 @@ void basic_vs::vs_pub_join()
 
 basic_vs::size_type basic_vs::vs_group_size() const
 {  
-  return self.vt.size();
+  return vt.vt.size();
 }
 
 void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
@@ -712,14 +712,14 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
   }
 
   if ( lock_addr == stem::badaddr ) {
-    if ( self.vt.size() > 1 ) {
+    if ( vt.vt.size() > 1 ) {
       lock_rsp.clear();
       group_applicant = ev.src();
 
       // check: group_applicant re-enter (fail was not detected yet)
-      for ( vtime::vtime_type::iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+      for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
         if ( i->first == group_applicant ) { // same address
-          self.vt.erase( i );
+          vt.vt.erase( i );
           break;
         }
       }
@@ -736,7 +736,7 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
       this->vs_resend_from( ev.value().reference, ev.src() );
 
       ++view;
-      self[ev.src()]; // i.e. create entry in vt
+      vt[ev.src()]; // i.e. create entry in vt
       stem::EventVoid update_view_ev( VS_UPDATE_VIEW );
       basic_vs::vs_aux( update_view_ev );
 
@@ -850,8 +850,8 @@ void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
     /* Below '>=' instead of '==', because of scenario 'one node exit,
        another node added'
      */
-    if ( (lock_rsp.size() + 1) >= self.vt.size() ) {
-      for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+    if ( (lock_rsp.size() + 1) >= vt.vt.size() ) {
+      for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
         if ( (i->first != self_id()) && (lock_rsp.find( i->first ) == lock_rsp.end()) ) {
           return;
         }
@@ -859,7 +859,7 @@ void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
       // response from all group members available
       ++view;
       if ( group_applicant != stem::badaddr ) {
-        self[group_applicant]; // i.e. create entry in vt
+        vt[group_applicant]; // i.e. create entry in vt
         group_applicant = stem::badaddr;
       }
       lock_addr = stem::badaddr; // before vs_aux()!
@@ -914,7 +914,7 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
   
   vtime tmp = ev.value().vt;
 
-  for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+  for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
     if ( i->first == ev.src() ) {
       if ( (i->second + 1) != tmp[ev.src()] ) {
         if ( (i->second + 1) < tmp[ev.src()] ) {
@@ -930,7 +930,7 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
     }
   }
 
-  ++self[ev.src()];
+  ++vt[ev.src()];
   
   ev.value().ev.src( ev.src() );
   ev.value().ev.dest( ev.dest() );
@@ -969,13 +969,13 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
     }
 
     if ( view == 0 ) {
-      self= ev.value().vt.vt; // align time with origin
-      --self[ev.src()]; // will be incremented below
+      vt = ev.value().vt.vt; // align time with origin
+      --vt[ev.src()]; // will be incremented below
       join_final = true;
     } else { // (view + 1) == ev.value().view
-      for ( vtime::vtime_type::iterator i = self.vt.begin(); i != self.vt.end(); ) {
+      for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
         if ( ev.value().vt.vt.find( i->first ) == ev.value().vt.vt.end() ) {
-          self.vt.erase( i++ );
+          vt.vt.erase( i++ );
           // break;
         } else {
           ++i;
@@ -993,7 +993,7 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
   // check virtual time:
   vtime tmp = ev.value().vt;
 
-  for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+  for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
     if ( i->first == ev.src() ) {
       if ( (i->second + 1) != tmp[ev.src()] ) {
         if ( (i->second + 1) < tmp[ev.src()] ) {
@@ -1009,7 +1009,7 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
     }
   }
 
-  ++self[ev.src()];
+  ++vt[ev.src()];
   
   ev.value().ev.src( ev.src() );
   ev.value().ev.dest( ev.dest() );
@@ -1020,7 +1020,7 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
        is zero (copy/assign vt don't copy entry with zero vtime!)
     */
     for ( vtime::vtime_type::const_iterator i = ev.value().vt.vt.begin(); i != ev.value().vt.vt.end(); ++i ) {
-      self[i->first];
+      vt[i->first];
     }
 
     lock_addr = stem::badaddr; // clear lock
@@ -1072,7 +1072,7 @@ void basic_vs::process_delayed()
     for ( ove_container_type::iterator k = ove.begin(); k != ove.end(); ) {
       tmp = k->value().vt;
 
-      for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i != self.vt.end(); ++i ) {
+      for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
         if ( i->first == k->src() ) {
           if ( (i->second + 1) != tmp[k->src()] ) {
             ++k;
@@ -1084,7 +1084,7 @@ void basic_vs::process_delayed()
         }
       }
 
-      ++self[k->src()];
+      ++vt[k->src()];
 
       k->value().ev.src( k->src() );
       k->value().ev.dest( k->dest() );
@@ -1095,7 +1095,7 @@ void basic_vs::process_delayed()
            is zero (copy/assign vt don't copy entry with zero vtime!)
         */
         for ( vtime::vtime_type::const_iterator i = k->value().vt.vt.begin(); i != k->value().vt.vt.end(); ++i ) {
-          self[i->first];
+          vt[i->first];
         }
 
         lock_addr = stem::badaddr; // clear lock
@@ -1114,7 +1114,7 @@ void basic_vs::process_delayed()
              is zero (copy/assign vt don't copy entry with zero vtime!)
           */
           for ( vtime::vtime_type::const_iterator i = k->value().vt.vt.begin(); i != k->value().vt.vt.end(); ++i ) {
-            self[i->first];
+            vt[i->first];
           }
         }
 
@@ -1144,7 +1144,7 @@ void basic_vs::replay( const stem::Event& inc_ev )
 void basic_vs::vs_send_flush()
 {
   if ( lock_addr == stem::badaddr ) {
-    if ( self.vt.size() > 1 ) {
+    if ( vt.vt.size() > 1 ) {
       lock_rsp.clear();
 
       stem::EventVoid view_lock_ev( VS_FLUSH_LOCK_VIEW );
@@ -1199,8 +1199,8 @@ void basic_vs::vs_flush_lock_view_ack( const stem::EventVoid& ev )
     /* Below '>=' instead of '==', because of scenario 'one node exit,
        another node added'
      */
-    if ( (lock_rsp.size() + 1) >= self.vt.size() ) {
-      for ( vtime::vtime_type::const_iterator i = self.vt.begin(); i !=self.vt.end(); ++i ) {
+    if ( (lock_rsp.size() + 1) >= vt.vt.size() ) {
+      for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
         if ( (i->first != self_id()) && (lock_rsp.find( i->first ) == lock_rsp.end()) ) {
           return;
         }
@@ -1291,16 +1291,16 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
     }
 
     if ( lock_addr == self_id() ) { // I'm owner of the lock
-      // if ( (lock_rsp.size() + 1) < self.vt.size() ) { // not all conforms lock
+      // if ( (lock_rsp.size() + 1) < vt.vt.size() ) { // not all conforms lock
       // at least half conforms, or group small and unstable;
       // in case of 'too small' group 'no conformation' may happens!
-      if ( ((lock_rsp.size() * 2 + 1) >= self.vt.size()) || (self.vt.size() <= 2) ) {
+      if ( ((lock_rsp.size() * 2 + 1) >= vt.vt.size()) || (vt.vt.size() <= 2) ) {
         // who is in group, but not conform lock?
-        for ( vtime::vtime_type::iterator i = self.vt.begin(); i != self.vt.end(); ) {
+        for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
           if ( (i->first == self_id()) || (lock_rsp.find( i->first ) != lock_rsp.end()) ) {
             ++i;
           } else {
-            self.vt.erase( i++ );
+            vt.vt.erase( i++ );
             /* Not required: after next event from node
                it will be removed
                for ( vtime_matrix_type::iterator j = vt.begin(); j != vt.end(); ++j ) {
@@ -1315,7 +1315,7 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
         // response from all group members available
         ++view;
         if ( group_applicant != stem::badaddr ) {
-          self[group_applicant]; // i.e. create entry in vt
+          vt[group_applicant]; // i.e. create entry in vt
           group_applicant = stem::badaddr;
         }
         lock_addr = stem::badaddr; // before vs_aux()!
@@ -1328,14 +1328,14 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
 
         basic_vs::vs_aux( update_view_ev );
       } else { // problem on this side?
-        cerr << __FILE__ << ':' << __LINE__ << ' ' << (lock_rsp.size() + 1) <<  ' ' << self.vt.size() << endl;
+        cerr << __FILE__ << ':' << __LINE__ << ' ' << (lock_rsp.size() + 1) <<  ' ' << vt.vt.size() << endl;
       }
       // } else {
         // do nothing? shouldn't happen?
       //   cerr << __FILE__ << ':' << __LINE__ << endl;
       // }
-      // cerr << __FILE__ << ':' << __LINE__ << ' ' << (lock_rsp.size() + 1) <<  ' ' << self.vt.size() << endl;
-      // if ( (lock_rsp.size() + 1) == self.vt.size() ) {
+      // cerr << __FILE__ << ':' << __LINE__ << ' ' << (lock_rsp.size() + 1) <<  ' ' << vt.vt.size() << endl;
+      // if ( (lock_rsp.size() + 1) == vt.vt.size() ) {
       // }
     } else {
       cerr << __FILE__ << ':' << __LINE__ << ' ' << lock_addr << " (" << self_id() << ')' << endl;
@@ -1351,9 +1351,9 @@ void basic_vs::process_last_will( const stem::Event_base<janus::addr_type>& ev )
   }
 
   if ( lock_addr == stem::badaddr ) {
-    self.vt.erase( ev.value() );
+    vt.vt.erase( ev.value() );
 
-    if ( self.vt.size() > 1 ) {
+    if ( vt.vt.size() > 1 ) {
       lock_rsp.clear();
 
       group_applicant = stem::badaddr;

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/27 20:09:52 ptr>
+// -*- C++ -*- Time-stamp: <10/01/28 01:12:05 ptr>
 
 /*
  *
@@ -66,7 +66,7 @@ class VTM_one_group_advanced_handler :
       }
 
     vtime& vt()
-      { return basic_vs::self; }
+      { return basic_vs::vt; }
 
     virtual xmt::uuid_type vs_pub_recover();
     virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& );

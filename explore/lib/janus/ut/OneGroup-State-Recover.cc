@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/21 21:15:57 ptr>
+// -*- C++ -*- Time-stamp: <10/01/28 01:12:42 ptr>
 
 /*
  *
@@ -63,7 +63,7 @@ class VTM_one_group_recover :
       }
 
     vtime& vt()
-      { return basic_vs::self; }
+      { return basic_vs::vt; }
 
     virtual xmt::uuid_type vs_pub_recover();
     virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& );

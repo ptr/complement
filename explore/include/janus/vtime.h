@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/27 21:39:09 ptr>
+// -*- C++ -*- Time-stamp: <10/01/28 01:04:31 ptr>
 
 /*
  *
@@ -365,7 +365,7 @@ class basic_vs :
       { basic_vs::forward_to_vsg( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
 		
   protected:
-    vtime self;
+    vtime vt;
 
     virtual xmt::uuid_type vs_pub_recover() = 0;
     virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& ) = 0;
