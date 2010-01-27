@@ -175,6 +175,10 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core)
   
   EXAM_CHECK( a1.vs_group_size() == 0 );
 
+  a1.vs_join( stem::badaddr );
+
+  EXAM_CHECK( a1.vs_group_size() == 1 );
+
   a2.vs_join( a1.self_id() );
 
   EXAM_CHECK( a1.wait( std::tr2::milliseconds(500) ) );
@@ -197,6 +201,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3)
   VTM_one_group_handler a2;
   VTM_one_group_handler a3;
 
+  a1.vs_join( stem::badaddr );
   a2.vs_join( a1.self_id() );
   
   EXAM_CHECK( a1.wait( std::tr2::milliseconds(500) ) );
@@ -270,6 +275,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_send)
   VTM_one_group_handler a1;
   VTM_one_group_handler a2;
 
+  a1.vs_join( stem::badaddr );
   a2.vs_join( a1.self_id() );
 
   EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );

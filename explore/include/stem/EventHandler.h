@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/26 23:36:48 ptr>
+// -*- C++ -*- Time-stamp: <10/01/27 17:00:02 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006, 2009
@@ -586,6 +586,7 @@ class EventHandler
     addr_type set_default() const; // become default object
     __FIT_DECLSPEC void Send( const Event& e );
     __FIT_DECLSPEC void Forward( const Event& e );
+    __FIT_DECLSPEC void sync_call( const Event& e );
 
     template <class D>
     void Send( const stem::Event_base<D>& e )
@@ -594,6 +595,10 @@ class EventHandler
     template <class D>
     void Forward( const stem::Event_base<D>& e )
       { EventHandler::Forward( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
+
+    template <class D>
+    void sync_call( const stem::Event_base<D>& e )
+      { EventHandler::sync_call( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
 
     const addr_type& self_id() const
       { return _ids.empty() ? stem::badaddr : _ids.front(); }

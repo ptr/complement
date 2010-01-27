@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/13 17:22:59 ptr>
+// -*- C++ -*- Time-stamp: <10/01/15 15:47:00 ptr>
 
 /*
  *
@@ -40,6 +40,8 @@ class vtime_operations
     int EXAM_DECL(VT_one_group_recover);
 
     int EXAM_DECL(gvt_add);
+
+    int EXAM_DECL(leader);
 
   private:
     // xmt::shm_alloc<0> seg;

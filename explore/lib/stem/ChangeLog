@@ -1,3 +1,12 @@
+2010-01-27  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* EventHandler, EvManager: synchronous call
+	implemented; check object state, search
+	appropriate handler as in normal Send, but
+	done on the stack of caller and synchronous;
+
+	* libstem: revision 5.3.7.
+
 2010-01-18  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* Cron.cc: fix race with loop run marker;

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/08/03 13:48:56 ptr>
+// -*- C++ -*- Time-stamp: <10/01/27 16:52:10 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009
@@ -150,11 +150,13 @@ class EvManager
     void resettrf( unsigned f );
     void cleantrf();
     unsigned trflags() const;
-    void settrs( std::ostream * );
+    std::ostream* settrs( std::ostream* );
 
     // This is UUID, not address
     const xmt::uuid_type& self_id() const
       { return _id; }
+
+    void sync_call( EventHandler&, const Event& e );
 
   protected:
     bool unsafe_is_avail( const addr_type& id ) const

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/26 18:50:11 ptr>
+// -*- C++ -*- Time-stamp: <10/01/27 17:01:47 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2008-2009
@@ -107,6 +107,12 @@ __FIT_DECLSPEC
 void EventHandler::Forward( const Event& e )
 {
   _mgr->push( e );
+}
+
+__FIT_DECLSPEC
+void EventHandler::sync_call( const Event& e )
+{
+  _mgr->sync_call( *this, e );
 }
 
 __FIT_DECLSPEC

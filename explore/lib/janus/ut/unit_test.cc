@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/13 17:24:53 ptr>
+// -*- C++ -*- Time-stamp: <10/01/16 00:55:52 ptr>
 
 /*
  *
@@ -62,10 +62,11 @@ int main( int argc, const char ** argv )
           t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
             tc[4] = t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member", tc[3] ) ) ) ) ) );
 
-  t.add( &vtime_operations::VT_one_group_access_point, vt_oper, "VT network access points",
+  tc[6] = t.add( &vtime_operations::VT_one_group_access_point, vt_oper, "VT network access points",
     t.add( &vtime_operations::VT_one_group_network, vt_oper, "VT over network", tc[4] ) );
 
   t.add( &vtime_operations::VT_one_group_recover, vt_oper, "VT one group recover", tc[5] );
+  t.add( &vtime_operations::leader, vt_oper, "VT total order, leader", tc[6] );
 
   if ( opts.is_set( 'v' ) ) {
     t.flags( t.flags() | exam::base_logger::verbose );

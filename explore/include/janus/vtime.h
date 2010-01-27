@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/21 21:11:26 ptr>
+// -*- C++ -*- Time-stamp: <10/01/27 21:39:09 ptr>
 
 /*
  *
@@ -371,8 +371,8 @@ class basic_vs :
     virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& ) = 0;
     virtual void vs_pub_view_update() = 0;
     virtual void vs_pub_rec( const stem::Event& ) = 0;
-
     virtual void vs_pub_flush() = 0;
+    virtual void vs_pub_join();
 
     void replay( const stem::Event& );
 
@@ -381,7 +381,6 @@ class basic_vs :
     void vs_lock_view_lk( const stem::EventVoid& );
     void vs_lock_view_ack( const stem::EventVoid& );
     void vs_lock_view_nak( const stem::EventVoid& );
-    void vs_view_update();
 
     void vs_process( const stem::Event_base<vs_event>& );
     void vs_process_lk( const stem::Event_base<vs_event>& );
