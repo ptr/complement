@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/27 20:25:26 ptr>
+// -*- C++ -*- Time-stamp: <10/01/27 22:16:59 ptr>
 
 /*
  *
@@ -59,6 +59,7 @@ class torder_vs :
   private:
     static const stem::code_type VS_EVENT_TORDER;
     static const stem::code_type VS_ORDER_CONF;
+    static const stem::code_type VS_LEADER;
 
   public:
     torder_vs();
@@ -86,9 +87,12 @@ class torder_vs :
       { return is_leader_; }
 
   protected:
+    virtual void vs_pub_view_update();
     virtual void vs_pub_join();
 
   private:
+    void vs_leader( const stem::EventVoid& );
+
 #ifdef __USE_STLPORT_HASH
     typedef std::hash_map<vs_event_total_order::id_type,stem::Event> conf_cnt_t;
 #endif

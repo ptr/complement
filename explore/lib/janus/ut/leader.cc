@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/27 20:30:04 ptr>
+// -*- C++ -*- Time-stamp: <10/01/27 22:11:12 ptr>
 
 /*
  *
@@ -59,6 +59,7 @@ void VT_with_leader::vs_resend_from( const xmt::uuid_type&, const stem::addr_typ
 
 void VT_with_leader::vs_pub_view_update()
 {
+  torder_vs::vs_pub_view_update();
 }
 
 void VT_with_leader::vs_pub_rec( const stem::Event& )

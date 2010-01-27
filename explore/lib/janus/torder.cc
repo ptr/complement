@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/27 20:27:43 ptr>
+// -*- C++ -*- Time-stamp: <10/01/27 22:24:48 ptr>
 
 /*
  *
@@ -134,6 +134,20 @@ void torder_vs::vs_pub_join()
   }
 }
 
+void torder_vs::vs_pub_view_update()
+{
+  if ( (vs_group_size() > 1) && is_leader_ ) {
+    EventVoid ev( VS_LEADER );
+    send_to_vsg( ev );
+  }
+}
+
+void torder_vs::vs_leader( const stem::EventVoid& ev )
+{
+  leader_ = ev.src();
+  is_leader_ = false;
+}
+
 // void torder_vs::vs_send_flush()
 // {
 // }
@@ -203,10 +217,12 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
 }
 
 const stem::code_type torder_vs::VS_EVENT_TORDER = 0x301;
-const stem::code_type torder_vs::VS_ORDER_CONF = 0x303;
+const stem::code_type torder_vs::VS_ORDER_CONF   = 0x303;
+const stem::code_type torder_vs::VS_LEADER       = 0x300;
 
 DEFINE_RESPONSE_TABLE( torder_vs )
   EV_Event_base_T_( ST_NULL, VS_EVENT_TORDER, vs_process_torder, vs_event_total_order )
+  EV_Event_base_T_( ST_NULL, VS_LEADER, vs_leader, void )
 END_RESPONSE_TABLE
 
 } // namespace janus
