@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/27 20:07:46 ptr>
+// -*- C++ -*- Time-stamp: <10/01/27 21:55:09 ptr>
 
 /*
  *
@@ -583,8 +583,8 @@ int basic_vs::vs_join( const stem::addr_type& a )
     stem::addr_type sid = self_id();
     self[sid]; // make self-entry not empty (used in vs_group_size)
 
-    this->vs_pub_view_update();
     vs_pub_join();
+    this->vs_pub_view_update();
 
     return 0;
   }
@@ -933,25 +933,6 @@ void basic_vs::vs_lock_view_nak( const stem::EventVoid& ev )
   }
 }
 
-void basic_vs::vs_view_update()
-{
-  lock_addr = stem::badaddr; // clear lock
-  PopState( VS_ST_LOCKED );
-
-  rm_lock_safety();
-
-  this->vs_pub_view_update();
-
-  while ( !de.empty() ) {
-    if ( basic_vs::vs( de.front() ) ) {
-      de.pop_back(); // event pushed back in vs() above, remove it
-      break;
-    }
-    de.pop_front();
-    // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << ' ' << de.size() << endl;
-  }
-}
-
 void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
 {
   // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << ' ' << hex << ev.value().ev.code() << dec << endl;
@@ -1099,16 +1080,36 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
     for ( vtime::vtime_type::const_iterator i = ev.value().vt.vt.begin(); i != ev.value().vt.vt.end(); ++i ) {
       self[i->first];
     }
+
+    lock_addr = stem::badaddr; // clear lock
+    PopState( VS_ST_LOCKED );
+
+    rm_lock_safety();
+
+    if ( join_final ) {
+      vs_pub_join();
+    }
+    this->vs_pub_view_update();
+
+    while ( !de.empty() ) {
+      if ( basic_vs::vs( de.front() ) ) {
+        de.pop_back(); // event pushed back in vs() above, remove it
+        break;
+      }
+      de.pop_front();
+    }
+
+    if ( !ove.empty() ) {
+      process_delayed();
+    }
+
+    return;
   } else if ( code == VS_FLUSH_VIEW ) {
     // flush passed into vs_pub_rec
     this->vs_pub_rec( ev.value().ev );
   }
 
   basic_vs::sync_call( ev.value().ev );
-
-  if ( join_final ) {
-    vs_pub_join();
-  }
 
   if ( !ove.empty() ) {
     process_delayed();
@@ -1146,11 +1147,7 @@ void basic_vs::process_delayed()
       k->value().ev.src( k->src() );
       k->value().ev.dest( k->dest() );
 
-      if ( (k->value().ev.code() != VS_UPDATE_VIEW) && (k->value().ev.code() != VS_LOCK_VIEW) ) {
-        // Update view not passed into vs_pub_rec,
-        // it specific for Virtual Synchrony
-        this->vs_pub_rec( k->value().ev );
-      } else {
+      if ( k->value().ev.code() == VS_UPDATE_VIEW ) {
         /* Specific for update view: vt[self_id()] should
            contain all group members, even if virtual time
            is zero (copy/assign vt don't copy entry with zero vtime!)
@@ -1158,9 +1155,29 @@ void basic_vs::process_delayed()
         for ( vtime::vtime_type::const_iterator i = k->value().vt.vt.begin(); i != k->value().vt.vt.end(); ++i ) {
           self[i->first];
         }
-      }
 
-      basic_vs::sync_call( k->value().ev );
+        lock_addr = stem::badaddr; // clear lock
+        PopState( VS_ST_LOCKED );
+
+        rm_lock_safety();
+        this->vs_pub_view_update();
+      } else {
+        if ( k->value().ev.code() != VS_LOCK_VIEW ) {
+          // Update view not passed into vs_pub_rec,
+          // it specific for Virtual Synchrony
+          this->vs_pub_rec( k->value().ev );
+        } else {
+          /* Specific for lock view: vt[self_id()] should
+             contain all group members, even if virtual time
+             is zero (copy/assign vt don't copy entry with zero vtime!)
+          */
+          for ( vtime::vtime_type::const_iterator i = k->value().vt.vt.begin(); i != k->value().vt.vt.end(); ++i ) {
+            self[i->first];
+          }
+        }
+
+        basic_vs::sync_call( k->value().ev );
+      }
 
       ove.erase( k++ );
       delayed_process = true;
@@ -1481,7 +1498,6 @@ DEFINE_RESPONSE_TABLE( basic_vs )
   EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_VIEW, vs_lock_view_lk, void )
   EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_VIEW_ACK, vs_lock_view_ack, void )
   EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_VIEW_NAK, vs_lock_view_nak, void )
-  EV_VOID( VS_ST_LOCKED, VS_UPDATE_VIEW, vs_view_update )
 
   EV_Event_base_T_( ST_NULL, VS_FLUSH_LOCK_VIEW, vs_flush_lock_view, void )
   EV_Event_base_T_( VS_ST_LOCKED, VS_FLUSH_LOCK_VIEW, vs_flush_lock_view_lk, void )

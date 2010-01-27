@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/27 15:52:08 ptr>
+// -*- C++ -*- Time-stamp: <10/01/27 21:39:09 ptr>
 
 /*
  *
@@ -381,7 +381,6 @@ class basic_vs :
     void vs_lock_view_lk( const stem::EventVoid& );
     void vs_lock_view_ack( const stem::EventVoid& );
     void vs_lock_view_nak( const stem::EventVoid& );
-    void vs_view_update();
 
     void vs_process( const stem::Event_base<vs_event>& );
     void vs_process_lk( const stem::Event_base<vs_event>& );
