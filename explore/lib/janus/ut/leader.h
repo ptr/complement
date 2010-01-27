@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/22 10:31:25 ptr>
+// -*- C++ -*- Time-stamp: <10/01/27 20:29:51 ptr>
 
 /*
  *
@@ -21,7 +21,7 @@ class VT_with_leader :
         public torder_vs
 {
   public:
-    VT_with_leader( const char*, bool = false );
+    VT_with_leader( const char* );
     ~VT_with_leader();
 
     xmt::uuid_type vs_pub_recover();

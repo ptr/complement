@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/22 10:47:04 ptr>
+// -*- C++ -*- Time-stamp: <10/01/27 20:27:43 ptr>
 
 /*
  *
@@ -103,10 +103,35 @@ int torder_vs::vs_torder( const stem::Event& inc_ev )
   int ret = basic_vs::vs_aux( ev );
 
   if ( is_leader() ) {
-    this->Dispatch( inc_ev );
+    torder_vs::sync_call( inc_ev );
   }
 
   return ret;
+}
+
+int torder_vs::vs_torder_aux( const stem::Event& inc_ev )
+{
+  stem::Event_base<vs_event_total_order> ev( VS_EVENT_TORDER );
+
+  ev.value().ev = inc_ev;
+  ev.value().id = xmt::uid();
+
+  if ( is_leader() ) {
+    ev.value().conform.push_back( ev.value().id );
+  } else {
+    conform_container_[ev.value().id] = ev.value().ev;
+  }
+
+  // don't forget process event on this node!
+  return basic_vs::vs_aux( ev );
+}
+
+void torder_vs::vs_pub_join()
+{
+  if ( vs_group_size() == 1 ) {
+    leader_ = self_id();
+    is_leader_ = true;
+  }
 }
 
 // void torder_vs::vs_send_flush()
@@ -130,7 +155,7 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
     vs_aux( cnf );
 
     // ... and then process
-    this->Dispatch( ev.value().ev );
+    torder_vs::sync_call( ev.value().ev );
   } else {
     if ( ev.value().id == xmt::nil_uuid ) {
       // expected VS_ORDER_CONF and non-empty ev.value().conform here
@@ -139,7 +164,7 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
         conf_cnt_type::iterator k = conform_container_.find( *i );
         if ( k != conform_container_.end() ) {
           k->second.setf( stem::__Event_Base::vs );
-          this->Dispatch( k->second );
+          torder_vs::sync_call( k->second );
           conform_container_.erase( k );
         } // else {
           /* I see conformation, but no event [yet]?
@@ -154,7 +179,7 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
       conform_container_[ev.value().id] = ev.value().ev;
     } else if ( find( ev.value().conform.begin(), ev.value().conform.end(), ev.value().id ) != ev.value().conform.end() ) {
       // event origin: leader; I see conformation in event
-      this->Dispatch( ev.value().ev );
+      torder_vs::sync_call( ev.value().ev );
     } else {
       // it's from me?
       for ( std::list<vs_event_total_order::id_type>::const_iterator i = ev.value().conform.begin();
@@ -162,7 +187,7 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
         conf_cnt_type::iterator k = conform_container_.find( *i );
         if ( k != conform_container_.end() ) {
           k->second.setf( stem::__Event_Base::vs );
-          this->Dispatch( k->second );
+          torder_vs::sync_call( k->second );
           conform_container_.erase( k );
         } // else {
           /* I see conformation, but no event [yet]?

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/21 02:11:48 ptr>
+// -*- C++ -*- Time-stamp: <10/01/27 20:25:26 ptr>
 
 /*
  *
@@ -72,10 +72,21 @@ class torder_vs :
       { return torder_vs::vs_torder( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
     // void vs_send_flush();
 
+  protected:
+    int vs_torder_aux( const stem::Event& );
+
+    template <class D>
+    int vs_torder_aux( const stem::Event_base<D>& e )
+      { return torder_vs::vs_torder_aux( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
+
+  public:
     void leader();
 
     bool is_leader() const
       { return is_leader_; }
+
+  protected:
+    virtual void vs_pub_join();
 
   private:
 #ifdef __USE_STLPORT_HASH

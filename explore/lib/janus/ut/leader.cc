@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/22 10:31:18 ptr>
+// -*- C++ -*- Time-stamp: <10/01/27 20:30:04 ptr>
 
 /*
  *
@@ -36,13 +36,10 @@ namespace janus {
 
 using namespace std;
 
-VT_with_leader::VT_with_leader( const char* nm, bool isleader ) :
+VT_with_leader::VT_with_leader( const char* nm ) :
     torder_vs(),
     f( nm )
 {
-  if ( isleader ) {
-    leader();
-  }
   enable();
 }
 
@@ -130,7 +127,7 @@ int EXAM_IMPL(vtime_operations::leader)
       int res = 0;
 
       try { // establish group: first member
-        VT_with_leader a1( "/tmp/a1", true );
+        VT_with_leader a1( "/tmp/a1" );
 
         a_stored = a1.self_id();
 
