@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/22 10:39:09 ptr>
+// -*- C++ -*- Time-stamp: <10/01/27 20:07:46 ptr>
 
 /*
  *
@@ -444,9 +444,7 @@ int basic_vs::vs( const stem::Event& inc_ev )
     inc_ev.dest( self_id() );
       // }
     inc_ev.setf( stem::__Event_Base::vs );
-
-    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( this->_theHistory_lock );
-    this->Dispatch( inc_ev );
+    basic_vs::sync_call( inc_ev );
   }
 
   return ret;
@@ -585,6 +583,9 @@ int basic_vs::vs_join( const stem::addr_type& a )
     stem::addr_type sid = self_id();
     self[sid]; // make self-entry not empty (used in vs_group_size)
 
+    this->vs_pub_view_update();
+    vs_pub_join();
+
     return 0;
   }
 
@@ -691,6 +692,11 @@ int basic_vs::vs_join( const sockaddr_in& a )
   remotes_.back()->add_remote_route( EventHandler::self_id() );
 
   return vs_join( trial_node );
+}
+
+void basic_vs::vs_pub_join()
+{
+  // cerr << HERE << ' ' << this << endl;
 }
 
 basic_vs::size_type basic_vs::vs_group_size() const
@@ -934,7 +940,6 @@ void basic_vs::vs_view_update()
 
   rm_lock_safety();
 
-  // cerr << __FILE__ << ':' << __LINE__ << endl;
   this->vs_pub_view_update();
 
   while ( !de.empty() ) {
@@ -997,7 +1002,7 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
     this->vs_pub_rec( ev.value().ev );
   }
 
-  this->Dispatch( ev.value().ev );
+  basic_vs::sync_call( ev.value().ev );
 
   if ( !ove.empty() ) {
     process_delayed();
@@ -1007,6 +1012,7 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
 void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
 {
   const stem::code_type code = ev.value().ev.code();
+  bool join_final = false;
 
   // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
   if ( ev.value().view != view ) {
@@ -1031,6 +1037,7 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
       // cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
       self= ev.value().vt.vt; // align time with origin
       --self[ev.src()]; // will be incremented below
+      join_final = true;
     }
 #if 1
     else { // (view + 1) == ev.value().view
@@ -1097,7 +1104,11 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
     this->vs_pub_rec( ev.value().ev );
   }
 
-  this->Dispatch( ev.value().ev );
+  basic_vs::sync_call( ev.value().ev );
+
+  if ( join_final ) {
+    vs_pub_join();
+  }
 
   if ( !ove.empty() ) {
     process_delayed();
@@ -1149,7 +1160,7 @@ void basic_vs::process_delayed()
         }
       }
 
-      this->Dispatch( k->value().ev );
+      basic_vs::sync_call( k->value().ev );
 
       ove.erase( k++ );
       delayed_process = true;
@@ -1173,8 +1184,7 @@ void basic_vs::replay( const stem::Event& inc_ev )
 //  vt[self_id()] = _vt;
 
   if ( inc_ev.code() != VS_FLUSH_VIEW ) {
-    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( this->_theHistory_lock );
-    this->Dispatch( inc_ev );
+    basic_vs::sync_call( inc_ev );
   }
 }
 
