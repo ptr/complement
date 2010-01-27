@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/21 21:10:16 ptr>
+// -*- C++ -*- Time-stamp: <10/01/27 20:09:52 ptr>
 
 /*
  *
@@ -22,6 +22,9 @@
 #include <mt/thread>
 #include <sockios/sockmgr.h>
 #include <stem/NetTransport.h>
+#if 0
+#include <stem/EvManager.h>
+#endif
 
 #include <algorithm>
 #include <set>
@@ -258,6 +261,12 @@ int EXAM_IMPL(vtime_operations::VT_one_group_replay)
     a2_stored = a2.self_id();
   
     a1.vs_join( stem::badaddr );
+
+#if 0
+    stem::EventHandler::manager()->settrf( stem::EvManager::tracedispatch );
+    stem::EventHandler::manager()->settrs( &std::cerr );
+#endif
+
     a2.vs_join( a1.self_id() );
 
     EXAM_CHECK( a1.wait_view( std::tr2::milliseconds(500) ) );
