@@ -1,3 +1,7 @@
+2010-01-28  Dmitry Osmakov  <d.osmakov@gmail.com>
+
+	* repository: fix damaged code, add unit tests.
+
 2006-05-24  Petr Ovtchenkov  <ptr@island.corbina.net>
 
 	* Integer.h, Makefile, Makefile.ini: fix some corrupted
