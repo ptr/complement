@@ -2,15 +2,34 @@
 #ifndef __LA_Integer_h
 #define __LA_Integer_h
 
-#include <iostream>
-#include <algorithm>
+#ifndef __config_feature_h
+#include <config/feature.h>
+#endif
 
-// #ifndef _SYS_ISA_DEFS_H
-// #include <sys/isa_defs.h>
-// #endif
+#if !defined(STLPORT) || (_STLPORT_VERSION < 0x520)
+
+# if defined(__GNUC__) && ((__GNUC__ < 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ < 3)))
+#  include <stdint.h>
+# else
+#  include <cstdint>
+# endif
+// libstdc++ v3, timestamp 20050519 (3.4.4) has __type_traits,
+// libstdc++ v3, timestamp 20060306 (3.4.6) has __type_traits,
+// while libstdc++ v3, 20050921 (4.0.2) not; use libstdc++ instead
+# if defined(STLPORT) || (defined(__GNUC__) && (__GNUC__ < 4) ) /* !defined(__GLIBCXX__) || (defined(__GNUC__) && (__GNUC__ < 4)) */
+#  include <misc/type_traits.h>
+# elif defined(__GNUC__) && ((__GNUC__ > 4) || (((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))))
+#  include <type_traits>
+namespace std::tr1 = std;
+# endif
+#else // STLPORT
+# include <cstdint>
+# include <type_traits>
+#endif
 
 #include <string>
-#include <type_traits>
+#include <iostream>
+#include <algorithm>
 
 namespace detail {
   
@@ -186,13 +205,13 @@ const typename la_int< P, T >::ubase_type la_int< P, T >::long_bits = 8 * sizeof
 template <int P, class T>
 const typename la_int< P, T >::ubase_type la_int< P, T >::shift_first_to_hi = 8 * sizeof(T) - 1;
 template <int P, class T>
-const typename la_int< P, T >::ubase_type la_int< P, T >::sign_mask = (la_int< P, T >::ubase_type(1) << la_int< P, T >::shift_first_to_hi);
+const typename la_int< P, T >::ubase_type la_int< P, T >::sign_mask = (typename la_int< P, T >::ubase_type(1) << la_int< P, T >::shift_first_to_hi);
 template <int P, class T>
-const typename la_int< P, T >::ubase_type la_int< P, T >::no_sign_mask = (la_int< P, T >::ubase_type)(~la_int< P, T >::sign_mask);
+const typename la_int< P, T >::ubase_type la_int< P, T >::no_sign_mask = (typename la_int< P, T >::ubase_type)(~la_int< P, T >::sign_mask);
 template <int P, class T>
 const typename la_int< P, T >::ubase_type la_int< P, T >::hi_bit_mask = la_int< P, T >::sign_mask >> 1;
 template <int P, class T>
-const typename la_int< P, T >::ubase_type la_int< P, T >::UMAX = ~la_int< P, T >::ubase_type(0);
+const typename la_int< P, T >::ubase_type la_int< P, T >::UMAX = ~typename la_int< P, T >::ubase_type(0);
 template <int P, class T>
 const typename la_int< P, T >::ubase_type la_int< P, T >::MAX = la_int< P, T >::no_sign_mask;
 
@@ -208,7 +227,7 @@ la_int<P,T>::la_int( base_type x )
       *first++ = 0;
     }
   } else if ( P > 1 ) {
-    *last &= no_sign_mask;
+    *last &= la_int<P,T>::no_sign_mask;
     *first++ = UMAX;
     while ( first < last ) {
       *first++ = MAX;
