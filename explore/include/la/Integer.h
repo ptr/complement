@@ -10,49 +10,46 @@
 // #endif
 
 #include <string>
+#include <type_traits>
 
-struct la_int_traits {
-    static unsigned long long_bits;
-    static unsigned long shift_first_to_hi;
-    static unsigned long sign_mask;
-    static unsigned long no_sign_mask;
-    static unsigned long hi_bit_mask;
-    static unsigned long UMAX;
-    static unsigned long MAX;
+namespace detail {
+  
+template <class _Tp>
+struct make_extended
+{
 };
 
-struct la_char_traits {
-    static unsigned long long_bits;
-    static unsigned long shift_first_to_hi;
-    static unsigned long sign_mask;
-    static unsigned long no_sign_mask;
-    static unsigned long hi_bit_mask;
-    static unsigned long UMAX;
-    static unsigned long MAX;
+template <>
+struct make_extended<signed char>
+{
+    typedef short type;
 };
 
-struct la_short_traits {
-    static unsigned long long_bits;
-    static unsigned long shift_first_to_hi;
-    static unsigned long sign_mask;
-    static unsigned long no_sign_mask;
-    static unsigned long hi_bit_mask;
-    static unsigned long UMAX;
-    static unsigned long MAX;
+template <>
+struct make_extended<signed short>
+{ 
+    typedef long type;
 };
 
-template <int P, class LL, class UL, class L, class T> class la_int;
-typedef la_int<4, long long, unsigned long, long, la_int_traits> Integer4;
+template <>
+struct make_extended<signed long>
+{
+    typedef long long type;
+};
 
-template <int P, class LL, class UL, class L, class T>
+}
+
+template <int P, class T > class la_int;
+typedef la_int<4, long> Integer4;
+
+template <int P, class T>
 class la_int
 {
   public:
-    typedef LL long_base_type;
-    typedef UL ubase_type;
-    typedef L base_type;
-    typedef T traits_type;
-
+    typedef typename std::tr1::make_signed<T>::type base_type;
+    typedef typename std::tr1::make_unsigned<base_type>::type ubase_type;
+    typedef typename detail::make_extended<base_type>::type long_base_type;
+        
     la_int()
       { std::fill( d, d + P, 0 ); }
     
@@ -132,9 +129,17 @@ class la_int
     la_int& assign( const std::string& ); // input from string
     operator std::string(); // output to string
     operator std::string() const;
-    void outputbin();
     
   protected:
+
+    static const ubase_type long_bits;
+    static const ubase_type shift_first_to_hi;
+    static const ubase_type sign_mask;
+    static const ubase_type no_sign_mask;
+    static const ubase_type hi_bit_mask;
+    static const ubase_type UMAX;
+    static const ubase_type MAX;    
+
     bool __overflow( ubase_type x ) const
       { return base_type(x) < 0; }
     void radix_complement();
@@ -169,47 +174,30 @@ class la_int
     void __load( __longlong& t, ubase_type hi, ubase_type lo ) const
       {
         t.a.hi = hi >> 1;
-        t.a.lo = lo | (hi << traits_type::shift_first_to_hi);
+        t.a.lo = lo | (hi << shift_first_to_hi);
       }
 
     //friend std::ostream& operator <<( std::ostream&, const la_int& );
     //friend std::istream& operator >>( std::istream&, la_int& );
 };
 
-template <int P, class LL, class UL, class L, class T>
-void la_int<P,LL,UL,L,T>::outputbin()
-{
-  for (int i = 0;i < P;++i) {
-    for (int j = 8 * sizeof(ubase_type) - 1;j >= 0;--j) {
-      std::cout << ((d[i] & (1UL << j)) ? 1 : 0); 
-    }
-    std::cout << ".";
-  }
-  std::cout << std::endl;
-}
+template <int P, class T>
+const typename la_int< P, T >::ubase_type la_int< P, T >::long_bits = 8 * sizeof(T);
+template <int P, class T>
+const typename la_int< P, T >::ubase_type la_int< P, T >::shift_first_to_hi = 8 * sizeof(T) - 1;
+template <int P, class T>
+const typename la_int< P, T >::ubase_type la_int< P, T >::sign_mask = (la_int< P, T >::ubase_type(1) << la_int< P, T >::shift_first_to_hi);
+template <int P, class T>
+const typename la_int< P, T >::ubase_type la_int< P, T >::no_sign_mask = (la_int< P, T >::ubase_type)(~la_int< P, T >::sign_mask);
+template <int P, class T>
+const typename la_int< P, T >::ubase_type la_int< P, T >::hi_bit_mask = la_int< P, T >::sign_mask >> 1;
+template <int P, class T>
+const typename la_int< P, T >::ubase_type la_int< P, T >::UMAX = ~la_int< P, T >::ubase_type(0);
+template <int P, class T>
+const typename la_int< P, T >::ubase_type la_int< P, T >::MAX = la_int< P, T >::no_sign_mask;
 
-template <int P, class LL, class UL, class L, class T>
-la_int<P,LL,UL,L,T>::la_int( base_type x )
-{
-  ubase_type *last   = d + P;
-  ubase_type *first  = d;
-
-  *--last = x;
-  if ( x >= 0 ) {
-    while ( first < last ) {
-      *first++ = 0;
-    }
-  } else if ( P > 1 ) {
-    *last &= traits_type::no_sign_mask;
-    *first++ = traits_type::UMAX;
-    while ( first < last ) {
-      *first++ = traits_type::MAX;
-    }
-  }
-}
-
-template <int P, class LL, class UL, class L, class T>
-la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::operator =( base_type x )
+template <int P, class T>
+la_int<P,T>::la_int( base_type x )
 {
   ubase_type *last   = d + P;
   ubase_type *first  = d;
@@ -220,31 +208,51 @@ la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::operator =( base_type x )
       *first++ = 0;
     }
   } else if ( P > 1 ) {
-    *last &= traits_type::no_sign_mask;
-    *first++ = traits_type::UMAX;
+    *last &= no_sign_mask;
+    *first++ = UMAX;
     while ( first < last ) {
-      *first++ = traits_type::MAX;
+      *first++ = MAX;
+    }
+  }
+}
+
+template <int P, class T>
+la_int<P,T>& la_int<P,T>::operator =( base_type x )
+{
+  ubase_type *last   = d + P;
+  ubase_type *first  = d;
+
+  *--last = x;
+  if ( x >= 0 ) {
+    while ( first < last ) {
+      *first++ = 0;
+    }
+  } else if ( P > 1 ) {
+    *last &= no_sign_mask;
+    *first++ = UMAX;
+    while ( first < last ) {
+      *first++ = MAX;
     }
   }
 
   return *this;
 }
 
-template <int P, class LL, class UL, class L, class T>
-la_int<P,LL,UL,L,T>::la_int( const la_int& x )
+template <int P, class T>
+la_int<P,T>::la_int( const la_int& x )
 {
   std::copy( x.d, x.d + P, d );
 }
 
-template <int P, class LL, class UL, class L, class T>
-la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::operator =( const la_int& x )
+template <int P, class T>
+la_int<P,T>& la_int<P,T>::operator =( const la_int& x )
 {
   std::copy( x.d, x.d + P, d );
   return *this;
 }
 
-template <int P, class LL, class UL, class L, class T>
-bool la_int<P,LL,UL,L,T>::operator <( const la_int& x ) const
+template <int P, class T>
+bool la_int<P,T>::operator <( const la_int& x ) const
 {
   const ubase_type *last   = d + P;
   const ubase_type *first  = d;
@@ -260,8 +268,8 @@ bool la_int<P,LL,UL,L,T>::operator <( const la_int& x ) const
   return false;
 }
 
-template <int P, class LL, class UL, class L, class T>
-bool la_int<P,LL,UL,L,T>::operator ==( const la_int& x ) const
+template <int P, class T>
+bool la_int<P,T>::operator ==( const la_int& x ) const
 {
   const ubase_type *last   = d+P;
   const ubase_type *first  = d;
@@ -275,8 +283,8 @@ bool la_int<P,LL,UL,L,T>::operator ==( const la_int& x ) const
   return true;
 }
 
-template <int P, class LL, class UL, class L, class T>
-la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::operator +=( const la_int& x )
+template <int P, class T>
+la_int<P,T>& la_int<P,T>::operator +=( const la_int& x )
 {
   ubase_type k = 0UL;
   ubase_type *last   = d+P;
@@ -286,14 +294,14 @@ la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::operator +=( const la_int& x )
   while ( first < --last ) {
     *last += *--second + k;
     k = __overflow( *last ) ? 1 : 0;
-    *last &= traits_type::no_sign_mask; // clear sign bit
+    *last &= no_sign_mask; // clear sign bit
   }
   *last += *--second + k;
   return *this;
 }
 
-template <int P, class LL, class UL, class L, class T>
-la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::operator -=( const la_int& x )
+template <int P, class T>
+la_int<P,T>& la_int<P,T>::operator -=( const la_int& x )
 {
   ubase_type k = 1;
   ubase_type *last  = d + P;
@@ -301,17 +309,17 @@ la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::operator -=( const la_int& x )
   const ubase_type *second = x.d + P;
 
   while ( first < --last ) {
-    *last += traits_type::UMAX - *--second + k;
+    *last += UMAX - *--second + k;
     k = __overflow( *last ) ? 0 : 1;
-    *last &= traits_type::no_sign_mask; // clear sign bit
+    *last &= no_sign_mask; // clear sign bit
   }
-  *last +=  traits_type::UMAX - *--second + k;
+  *last +=  UMAX - *--second + k;
 
   return *this;
 }
 
-template <int P, class LL, class UL, class L, class T>
-la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::operator *=( const la_int& x )
+template <int P, class T>
+la_int<P,T>& la_int<P,T>::operator *=( const la_int& x )
 {
   if ( !( isNegative() || x.isNegative() ) ) {
     multiply_aux( x, d );
@@ -338,8 +346,8 @@ la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::operator *=( const la_int& x )
   return *this;
 }
 
-template <int P, class LL, class UL, class L, class T>
-void la_int<P,LL,UL,L,T>::multiply_aux( const la_int& x, ubase_type *r ) const
+template <int P, class T>
+void la_int<P,T>::multiply_aux( const la_int& x, ubase_type *r ) const
 {
   ubase_type w[P + P];
   ubase_type *wp = w + P;
@@ -360,30 +368,30 @@ void la_int<P,LL,UL,L,T>::multiply_aux( const la_int& x, ubase_type *r ) const
       t.A = *u != 0 ? ((long_base_type)*u * *v + *wl + k) : ((long_base_type)*wl + k);
       // next two lines are calculations t.A mod LONG_MAX
       k = (t.a.hi << 1) | (__overflow( t.a.lo ) ? 1 : 0);
-      *wl-- = t.a.lo & traits_type::no_sign_mask; // with clear sign bit
+      *wl-- = t.a.lo & no_sign_mask; // with clear sign bit
     }
     *wl = k;
   }
   std::copy( wp, end, r ); // copy low half of digits
 }
 
-template <int P, class LL, class UL, class L, class T>
-void la_int<P,LL,UL,L,T>::radix_complement()
+template <int P, class T>
+void la_int<P,T>::radix_complement()
 {
   ubase_type *first = d;
   ubase_type *last = d + P;
   ubase_type k = 1;
 
   while ( first < --last ) {
-    *last = (~*last & traits_type::no_sign_mask) + k;
+    *last = (~*last & no_sign_mask) + k;
     k = __overflow( *last ) ? 1 : 0;
-    *last &= traits_type::no_sign_mask; // clear sign bit
+    *last &= no_sign_mask; // clear sign bit
   }
   *last = ~*last + k;
 }
 
-template <int P, class LL, class UL, class L, class T>
-la_int<P,LL,UL,L,T> la_int<P,LL,UL,L,T>::operator -() const
+template <int P, class T>
+la_int<P,T> la_int<P,T>::operator -() const
 {
   la_int r( *this );
 
@@ -392,8 +400,8 @@ la_int<P,LL,UL,L,T> la_int<P,LL,UL,L,T>::operator -() const
   return r;
 }
 
-template <int P, class LL, class UL, class L, class T>
-la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::operator /=( const la_int& x )
+template <int P, class T>
+la_int<P,T>& la_int<P,T>::operator /=( const la_int& x )
 {
   if ( !( isNegative() || x.isNegative() ) ) {
     divide_aux3( x, d );
@@ -420,8 +428,8 @@ la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::operator /=( const la_int& x )
   return *this;
 }
 
-template <int P, class LL, class UL, class L, class T>
-la_int<P,LL,UL,L,T> la_int<P,LL,UL,L,T>::operator %( const la_int& x ) const
+template <int P, class T>
+la_int<P,T> la_int<P,T>::operator %( const la_int& x ) const
 {
   if ( !( isNegative() || x.isNegative() ) ) {
     la_int r;
@@ -447,8 +455,8 @@ la_int<P,LL,UL,L,T> la_int<P,LL,UL,L,T>::operator %( const la_int& x ) const
   return tmp2;
 }
 
-template <int P, class LL, class UL, class L, class T>
-la_int<P,LL,UL,L,T> la_int<P,LL,UL,L,T>::div( const la_int& x, la_int& r ) const
+template <int P, class T>
+la_int<P,T> la_int<P,T>::div( const la_int& x, la_int& r ) const
 {
   if ( !( isNegative() || x.isNegative() ) ) {
     la_int res;
@@ -474,8 +482,8 @@ la_int<P,LL,UL,L,T> la_int<P,LL,UL,L,T>::div( const la_int& x, la_int& r ) const
   return tmp2;
 }
 
-template <int P, class LL, class UL, class L, class T>
-la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::div1( const la_int& x, la_int& r )
+template <int P, class T>
+la_int<P,T>& la_int<P,T>::div1( const la_int& x, la_int& r )
 {
   if ( !( isNegative() || x.isNegative() ) ) {
     divide_aux3( x, d, r.d );
@@ -506,11 +514,11 @@ la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::div1( const la_int& x, la_int& r )
   This do division of number u_0 u_1 ... u_{P-1} on number v_0 (with single
   digit).
 */
-template <int P, class LL, class UL, class L, class T>
-typename la_int<P,LL,UL,L,T>::ubase_type *
-la_int<P,LL,UL,L,T>::divide_aux( typename la_int<P,LL,UL,L,T>::ubase_type *u,
-                                 typename la_int<P,LL,UL,L,T>::ubase_type v,
-                                 typename la_int<P,LL,UL,L,T>::ubase_type *q ) const
+template <int P, class T>
+typename la_int<P,T>::ubase_type *
+la_int<P,T>::divide_aux( typename la_int<P,T>::ubase_type *u,
+                                 typename la_int<P,T>::ubase_type v,
+                                 typename la_int<P,T>::ubase_type *q ) const
 {
   __longlong t;
   
@@ -536,11 +544,11 @@ la_int<P,LL,UL,L,T>::divide_aux( typename la_int<P,LL,UL,L,T>::ubase_type *u,
   return qi;
 }
 
-template <int P, class LL, class UL, class L, class T>
-typename la_int<P,LL,UL,L,T>::ubase_type *
-la_int<P,LL,UL,L,T>::divide_aux2( typename la_int<P,LL,UL,L,T>::ubase_type *u,
-                                  typename la_int<P,LL,UL,L,T>::ubase_type *v,
-                                  typename la_int<P,LL,UL,L,T>::ubase_type *q,
+template <int P, class T>
+typename la_int<P,T>::ubase_type *
+la_int<P,T>::divide_aux2( typename la_int<P,T>::ubase_type *u,
+                                  typename la_int<P,T>::ubase_type *v,
+                                  typename la_int<P,T>::ubase_type *q,
                                   int m, int n ) const
 {
   // D2
@@ -554,7 +562,7 @@ la_int<P,LL,UL,L,T>::divide_aux2( typename la_int<P,LL,UL,L,T>::ubase_type *u,
   while ( uj < um ) {
     // D3: calculate qt
     __load( t, *uj, *(uj+1) ); // t.A = *(u+j) * (LONG_MAX + 1) + *(u+j+1)
-    qt = (*uj >= *v) ? traits_type::MAX : (ubase_type) (t.A / (long_base_type)*v);
+    qt = (*uj >= *v) ? MAX : (ubase_type) (t.A / (long_base_type)*v);
     if ( qt == 0 ) { // other loop part don't need if qt == 0
       *qj++ = qt; // D5
       ++uj;       // D7
@@ -562,10 +570,10 @@ la_int<P,LL,UL,L,T>::divide_aux2( typename la_int<P,LL,UL,L,T>::ubase_type *u,
     }
 
     t.A %= (long_base_type)*v;
-    t.A <<= traits_type::shift_first_to_hi; // t.A = (u_j * b + u_j+1 - qt* v_1) * b
+    t.A <<= shift_first_to_hi; // t.A = (u_j * b + u_j+1 - qt* v_1) * b
     t.A += (long_base_type)*(uj+2) - (long_base_type)(*(v+1)) * (long_base_type)qt;
     if ( t.A < 0LL ) { // v_2*qt > (u_j*b + u_{j+1}) mod v_1?
-      t.A += ((long_base_type)*v << traits_type::shift_first_to_hi) + (long_base_type)(*(v+1));
+      t.A += ((long_base_type)*v << shift_first_to_hi) + (long_base_type)(*(v+1));
       qt--;
       if ( t.A < 0 ) { // v_2*qt > (u_j*b + u_{j+1}) mod v_1 + v_1*b?
         qt--;
@@ -581,11 +589,11 @@ la_int<P,LL,UL,L,T>::divide_aux2( typename la_int<P,LL,UL,L,T>::ubase_type *u,
       t.a.hi <<= 1;
       t.a.hi |= (__overflow( t.a.lo ) ? 1 : 0);
       tmp = *uji + k;
-      k = (__overflow( tmp ) ? traits_type::UMAX : 0 ) - t.a.hi;
-      tmp &= traits_type::no_sign_mask;
-      tmp -= t.a.lo & traits_type::no_sign_mask;
-      k += (__overflow( tmp ) ? traits_type::UMAX : 0);
-      *uji-- = tmp & traits_type::no_sign_mask;
+      k = (__overflow( tmp ) ? UMAX : 0 ) - t.a.hi;
+      tmp &= no_sign_mask;
+      tmp -= t.a.lo & no_sign_mask;
+      k += (__overflow( tmp ) ? UMAX : 0);
+      *uji-- = tmp & no_sign_mask;
     }
     *uji += k;
     
@@ -594,9 +602,9 @@ la_int<P,LL,UL,L,T>::divide_aux2( typename la_int<P,LL,UL,L,T>::ubase_type *u,
       k = 1;
       uji = u+n;
       while ( uj < uji ) {
-        *uji = (~*uji & traits_type::no_sign_mask) + k;
+        *uji = (~*uji & no_sign_mask) + k;
         k = __overflow( *uji ) ? 1 : 0;
-        *uji-- &= traits_type::no_sign_mask; // clear sign bit
+        *uji-- &= no_sign_mask; // clear sign bit
       }
       *uji = ~*uji + k;
       // radix complement done, decrease *qj
@@ -608,10 +616,10 @@ la_int<P,LL,UL,L,T>::divide_aux2( typename la_int<P,LL,UL,L,T>::ubase_type *u,
       while ( uj < uji ) {
         *uji += *--vi + k;
         k = __overflow( *uji ) ? 1 : 0;
-        *uji-- &= traits_type::no_sign_mask; // clear sign bit
+        *uji-- &= no_sign_mask; // clear sign bit
       }
       *uji += k;
-      *uji &= traits_type::no_sign_mask;
+      *uji &= no_sign_mask;
     }
     *qj++ = qt; // D5
     ++uj;       // D7
@@ -620,8 +628,8 @@ la_int<P,LL,UL,L,T>::divide_aux2( typename la_int<P,LL,UL,L,T>::ubase_type *u,
   return qj;
 }
 
-template <int P, class LL, class UL, class L, class T>
-void la_int<P,LL,UL,L,T>::divide_aux3( const la_int& x, ubase_type *r,
+template <int P, class T>
+void la_int<P,T>::divide_aux3( const la_int& x, ubase_type *r,
 			     ubase_type *modulo ) const
 {
   ubase_type u[P+1];
@@ -639,11 +647,11 @@ void la_int<P,LL,UL,L,T>::divide_aux3( const la_int& x, ubase_type *r,
     std::copy( d, d + P, u );
     qj = divide_aux( u, x.d[P-1], q );
     if ( r ) {
-      fill( r, std::copy_backward( q, qj, r+P ), 0 );
+      std::fill( r, std::copy_backward( q, qj, r+P ), 0 );
     }
     if ( modulo ) {
       *(modulo+P-1) = *(u+P-1);
-      fill( modulo, modulo+P-1, 0 );
+      std::fill( modulo, modulo+P-1, 0 );
     }
     return;
   }
@@ -662,7 +670,7 @@ void la_int<P,LL,UL,L,T>::divide_aux3( const la_int& x, ubase_type *r,
   // D1: normalisation (v_1 >= floor( b/2 ), b here LONG_MAX + 1)
   // find hiest non-zero bit.
   int sh = 0;
-  ubase_type tmp = traits_type::hi_bit_mask;
+  ubase_type tmp = hi_bit_mask;
   while ( (*v & tmp) == 0 ) {
     tmp >>= 1;
     ++sh;
@@ -674,13 +682,13 @@ void la_int<P,LL,UL,L,T>::divide_aux3( const la_int& x, ubase_type *r,
   
   qj = divide_aux2( u, v, q, m, n );
   if ( r ) {
-    fill( r, std::copy_backward( q, qj, r+P ), 0 );
+    std::fill( r, std::copy_backward( q, qj, r+P ), 0 );
   }
   if ( modulo ) {
-    fill( v, v + P, 0 );
+    std::fill( v, v + P, 0 );
     std::copy_backward( u+m+1, u+m+n+1, v+P );
     qj = divide_aux( v, 1UL << sh, q );
-    fill( modulo, std::copy_backward( q, qj, modulo+P ), 0 );
+    std::fill( modulo, std::copy_backward( q, qj, modulo+P ), 0 );
   }
 }
 
@@ -688,12 +696,12 @@ void la_int<P,LL,UL,L,T>::divide_aux3( const la_int& x, ubase_type *r,
   This is shift left: << sh, sign bit to be taken into account!
   I expected that first < last and non-zero sh!
 */
-template <int P, class LL, class UL, class L, class T>
-void la_int<P,LL,UL,L,T>::shl_aux( ubase_type *first, ubase_type *last, int sh ) const
+template <int P, class T>
+void la_int<P,T>::shl_aux( ubase_type *first, ubase_type *last, int sh ) const
 {
-  int s_bit_sh = traits_type::long_bits - 1;
+  int s_bit_sh = long_bits - 1;
   int s_bit_shr = 0;
-  int shr = traits_type::long_bits - sh;
+  int shr = long_bits - sh;
   ubase_type tmp;
   ubase_type tmp2 = 0;
   ubase_type tmp3 = 0;
@@ -712,7 +720,7 @@ void la_int<P,LL,UL,L,T>::shl_aux( ubase_type *first, ubase_type *last, int sh )
     *last <<= s_bit_shr;
     *last |= tmp3;
     tmp3 = tmp;
-    *last &= traits_type::no_sign_mask;
+    *last &= no_sign_mask;
 
     ++s_bit_shr;
     --s_bit_sh;
@@ -727,37 +735,37 @@ void la_int<P,LL,UL,L,T>::shl_aux( ubase_type *first, ubase_type *last, int sh )
   *last |= tmp3;
 }
 
-template <int P, class LL, class UL, class L, class T>
-void la_int<P,LL,UL,L,T>::shr_aux( ubase_type *first, ubase_type *last,
+template <int P, class T>
+void la_int<P,T>::shr_aux( ubase_type *first, ubase_type *last,
 			  int sh ) const
 {
-  int shr = traits_type::long_bits - sh - 1;
+  int shr = long_bits - sh - 1;
 
   while ( first < --last ) {
     *last >>= sh;
     *last |= *(last-1) << shr;
-    *last &= traits_type::no_sign_mask;
+    *last &= no_sign_mask;
   }
   *last >>= sh;
 }
 
-template <int P, class LL, class UL, class L, class T>
-void la_int<P,LL,UL,L,T>::shr_aux2( ubase_type *first, ubase_type *last ) const
+template <int P, class T>
+void la_int<P,T>::shr_aux2( ubase_type *first, ubase_type *last ) const
 {
-  int shr = traits_type::long_bits - 2;
+  int shr = long_bits - 2;
 
   while ( first < --last ) {
     *last >>= 1;
     *last |= *(last-1) << shr;
-    *last &= traits_type::no_sign_mask;
+    *last &= no_sign_mask;
   }
-  ubase_type s = *last & traits_type::sign_mask;
+  ubase_type s = *last & sign_mask;
   *last >>= 1;
   *last |= s;
 }
 
-template <int P, class LL, class UL, class L, class T>
-la_int<P,LL,UL,L,T> la_int<P,LL,UL,L,T>::gcd( const la_int& x ) const
+template <int P, class T>
+la_int<P,T> la_int<P,T>::gcd( const la_int& x ) const
 {
   la_int u( *this );
   la_int v( x );
@@ -786,7 +794,7 @@ la_int<P,LL,UL,L,T> la_int<P,LL,UL,L,T>::gcd( const la_int& x ) const
     while ( (t.d[P-1] & 1) == 0 ) {
       shr_aux2( t.d, t.d + P );
     }
-    if ( !(*t.d & traits_type::sign_mask) ) {
+    if ( !(*t.d & sign_mask) ) {
       u = t;
     } else {
       v = t;
@@ -800,8 +808,8 @@ la_int<P,LL,UL,L,T> la_int<P,LL,UL,L,T>::gcd( const la_int& x ) const
   return u;
 }
 
-template <int P, class LL, class UL, class L, class T>
-la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::assign( const std::string& s )
+template <int P, class T>
+la_int<P,T>& la_int<P,T>::assign( const std::string& s )
 {
   std::string::size_type f = s.find_first_not_of( " \t\n" );
 
@@ -830,15 +838,15 @@ la_int<P,LL,UL,L,T>& la_int<P,LL,UL,L,T>::assign( const std::string& s )
   return *this;
 }
 
-template <int P, class LL, class UL, class L, class T>
-la_int<P,LL,UL,L,T>::operator std::string()
+template <int P, class T>
+la_int<P,T>::operator std::string()
 {
   std::string s;
   la_int ten( 10 );
   la_int n;
   la_int tmp( *this );
   bool flag = false;
-  if ( *tmp.d & traits_type::sign_mask ) {
+  if ( *tmp.d & sign_mask ) {
     flag = true;
     tmp.radix_complement();
   }
@@ -855,15 +863,15 @@ la_int<P,LL,UL,L,T>::operator std::string()
   return s;
 }
 
-template <int P, class LL, class UL, class L, class T>
-la_int<P,LL,UL,L,T>::operator std::string() const
+template <int P, class T>
+la_int<P,T>::operator std::string() const
 {
   std::string s;
   la_int ten( 10 );
   la_int n;
   la_int tmp( *this );
   bool flag = false;
-  if ( *tmp.d & traits_type::sign_mask ) {
+  if ( *tmp.d & sign_mask ) {
     flag = true;
     tmp.radix_complement();
   }
@@ -878,6 +886,12 @@ la_int<P,LL,UL,L,T>::operator std::string() const
   
   std::reverse( s.begin(), s.end() );
   return s;
+}
+
+template <int P, class T>
+la_int<P,T> abs( const la_int<P,T>& x)
+{
+  return (x >= 0 ? x : - x);
 }
 
 #endif // __LA_Integer_h

@@ -1,14 +1,14 @@
 #include "la_test.h"
 
-#include <LA/Integer.h>
+#include <la/Integer.h>
 
 #include <string>
 #include <iostream>
 
 using namespace std;
 
-typedef la_int<1, long long, unsigned long, long, la_int_traits> Integer1; // equal to long
-typedef la_int<2, long long, unsigned long, long, la_int_traits> Integer2;
+typedef la_int<1, long> Integer1; // equal to long
+typedef la_int<2, long> Integer2;
 
 int inrange( int l, int r, int x )
 {
@@ -17,7 +17,7 @@ int inrange( int l, int r, int x )
 
 int EXAM_IMPL(la_test::one_char)
 {
-  typedef la_int<1, short, unsigned char, char, la_char_traits> IntegerC;
+  typedef la_int<1, char> IntegerC;
   
   for (int i = CHAR_MIN;i <= CHAR_MAX;++i) {
     IntegerC x = (char)i;
@@ -62,7 +62,7 @@ int EXAM_IMPL(la_test::one_char)
 
 int EXAM_IMPL(la_test::one_short)
 {
-  typedef la_int<1, long, unsigned short, short, la_short_traits> IntegerS;
+  typedef la_int<1, short> IntegerS;
   
   srand( 42 );
   for (int p = 0;p < 32;++p) {
@@ -115,7 +115,7 @@ string to_string( long long x ) {
 
 int EXAM_IMPL(la_test::two_chars)
 {
-  typedef la_int<2, short, unsigned char, char, la_char_traits> IntegerS;
+  typedef la_int<2, char> IntegerS;
   
   srand( 42 );
   for (int p = 0;p < 16;++p) {
