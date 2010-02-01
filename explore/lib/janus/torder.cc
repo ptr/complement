@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/27 22:24:48 ptr>
+// -*- C++ -*- Time-stamp: <10/02/01 18:20:45 ptr>
 
 /*
  *
@@ -102,7 +102,9 @@ int torder_vs::vs_torder( const stem::Event& inc_ev )
 
   int ret = basic_vs::vs_aux( ev );
 
-  if ( is_leader() ) {
+  if ( (ret == 0) && is_leader() ) {
+    inc_ev.src( self_id() );
+    inc_ev.dest( self_id() );
     torder_vs::sync_call( inc_ev );
   }
 

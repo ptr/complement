@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/28 01:10:44 ptr>
+// -*- C++ -*- Time-stamp: <10/02/01 18:20:38 ptr>
 
 /*
  *
@@ -556,20 +556,20 @@ int basic_vs::vs_join( const stem::addr_type& a )
   // peer unavailable (or I'm group founder), no lock required
   PopState( VS_ST_LOCKED );
 
-  while ( !de.empty() ) {
-    if ( basic_vs::vs( de.front() ) ) {
-      de.pop_back(); // event pushed back in vs() above, remove it
-      break;
-    }
-    de.pop_front();
-  }
-
   if ( a == stem::badaddr ) {
     stem::addr_type sid = self_id();
     vt[sid]; // make self-entry not empty (used in vs_group_size)
 
     vs_pub_join();
     this->vs_pub_view_update();
+
+    while ( !de.empty() ) {
+      if ( basic_vs::vs( de.front() ) ) {
+        de.pop_back(); // event pushed back in vs() above, remove it
+        break;
+      }
+      de.pop_front();
+    }
 
     return 0;
   }
@@ -864,6 +864,7 @@ void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
       }
       lock_addr = stem::badaddr; // before vs_aux()!
       PopState( VS_ST_LOCKED );
+
       lock_rsp.clear();
 
       rm_lock_safety();
@@ -892,6 +893,14 @@ void basic_vs::vs_lock_view_nak( const stem::EventVoid& ev )
     PopState( VS_ST_LOCKED );
 
     rm_lock_safety();
+
+    while ( !de.empty() ) {
+      if ( basic_vs::vs( de.front() ) ) {
+        de.pop_back(); // event pushed back in vs() above, remove it
+        break;
+      }
+      de.pop_front();
+    }
   }
 }
 
@@ -1053,6 +1062,14 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
 
   basic_vs::sync_call( ev.value().ev );
 
+  while ( !de.empty() ) {
+    if ( basic_vs::vs( de.front() ) ) {
+      de.pop_back(); // event pushed back in vs() above, remove it
+      break;
+    }
+    de.pop_front();
+  }
+
   if ( !ove.empty() ) {
     process_delayed();
   }
@@ -1209,13 +1226,20 @@ void basic_vs::vs_flush_lock_view_ack( const stem::EventVoid& ev )
       lock_addr = stem::badaddr; // before vs_aux()!
       PopState( VS_ST_LOCKED );
       lock_rsp.clear();
-
       rm_lock_safety();
 
       stem::Event_base<xmt::uuid_type> flush_ev( VS_FLUSH_VIEW );
       flush_ev.value() = xmt::uid();
       basic_vs::vs_aux( flush_ev );      
       this->vs_pub_flush();
+
+      while ( !de.empty() ) {
+        if ( basic_vs::vs( de.front() ) ) {
+          de.pop_back(); // event pushed back in vs() above, remove it
+          break;
+        }
+        de.pop_front();
+      }
     }
   }
 }
@@ -1228,6 +1252,13 @@ void basic_vs::vs_flush_lock_view_nak( const stem::EventVoid& ev )
     PopState( VS_ST_LOCKED );
 
     rm_lock_safety();
+    while ( !de.empty() ) {
+      if ( basic_vs::vs( de.front() ) ) {
+        de.pop_back(); // event pushed back in vs() above, remove it
+        break;
+      }
+      de.pop_front();
+    }
   }
 }
 
@@ -1239,6 +1270,14 @@ void basic_vs::vs_flush( const xmt::uuid_type& id )
   rm_lock_safety();
 
   this->vs_pub_flush();
+
+  while ( !de.empty() ) {
+    if ( basic_vs::vs( de.front() ) ) {
+      de.pop_back(); // event pushed back in vs() above, remove it
+      break;
+    }
+    de.pop_front();
+  }
 }
 
 // Special case for 're-send rest events', to avoid interference
@@ -1327,6 +1366,14 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
         stem::EventVoid update_view_ev( VS_UPDATE_VIEW );
 
         basic_vs::vs_aux( update_view_ev );
+
+        while ( !de.empty() ) {
+          if ( basic_vs::vs( de.front() ) ) {
+            de.pop_back(); // event pushed back in vs() above, remove it
+            break;
+          }
+          de.pop_front();
+        }
       } else { // problem on this side?
         cerr << __FILE__ << ':' << __LINE__ << ' ' << (lock_rsp.size() + 1) <<  ' ' << vt.vt.size() << endl;
       }

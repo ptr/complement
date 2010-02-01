@@ -1,3 +1,25 @@
+2010-02-01  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* vtime.cc: check and try to process delayed
+	events after pop locked state;
+
+	* torder.cc: if event was delayed, don't
+	process it on leader side too;
+
+	* torder.cc: set source and destination for
+	event before pass it to VS processing
+	on leader side;
+
+	* libjanus: revision 0.14.1.
+
+2010-01-28  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* torder.h, torder.cc: virtual synchrony
+	with total order of events [aka ABCAST]
+	implementation;
+
+	* libjanus: revision 0.14.0.
+
 2010-01-25  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* vtime.h, vtime.cc: two variants of virtual
