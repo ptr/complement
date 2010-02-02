@@ -1,3 +1,13 @@
+2010-02-03  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* vtime.cc: sefault VS lock timeout increased
+	from 200 ms to 20 sec;
+
+	* torder.cc: pass address of origin to delayed
+	event too;
+	
+	* libjanus: revision 0.14.2.
+
 2010-02-01  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* vtime.cc: check and try to process delayed
