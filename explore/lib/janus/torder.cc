@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/01 18:20:45 ptr>
+// -*- C++ -*- Time-stamp: <10/02/03 00:31:18 ptr>
 
 /*
  *
@@ -90,11 +90,12 @@ void torder_vs::leader()
 int torder_vs::vs_torder( const stem::Event& inc_ev )
 {
   stem::Event_base<vs_event_total_order> ev( VS_EVENT_TORDER );
+  stem::addr_type me = self_id();
 
   ev.value().ev = inc_ev;
   ev.value().id = xmt::uid();
-  ev.value().ev.src( self_id() );
-  ev.value().ev.dest( self_id() );
+  ev.value().ev.src( me );
+  ev.value().ev.dest( me );
 
   if ( is_leader() ) {
     ev.value().conform.push_back( ev.value().id );
@@ -114,11 +115,12 @@ int torder_vs::vs_torder( const stem::Event& inc_ev )
 int torder_vs::vs_torder_aux( const stem::Event& inc_ev )
 {
   stem::Event_base<vs_event_total_order> ev( VS_EVENT_TORDER );
+  stem::addr_type me = self_id();
 
   ev.value().ev = inc_ev;
   ev.value().id = xmt::uid();
-  ev.value().ev.src( self_id() );
-  ev.value().ev.dest( self_id() );
+  ev.value().ev.src( me );
+  ev.value().ev.dest( me );
 
   if ( is_leader() ) {
     ev.value().conform.push_back( ev.value().id );
