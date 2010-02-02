@@ -31,7 +31,7 @@ using namespace std::tr2;
 const janus::addr_type& nil_addr = xmt::nil_uuid;
 const gid_type& nil_gid = xmt::nil_uuid;
 
-static std::tr2::milliseconds vs_lock_timeout( 200 );
+static std::tr2::milliseconds vs_lock_timeout( 20000 );
 
 void vtime::pack( std::ostream& s ) const
 {
