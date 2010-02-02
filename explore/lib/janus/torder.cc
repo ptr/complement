@@ -93,6 +93,8 @@ int torder_vs::vs_torder( const stem::Event& inc_ev )
 
   ev.value().ev = inc_ev;
   ev.value().id = xmt::uid();
+  ev.value().ev.src( self_id() );
+  ev.value().ev.dest( self_id() );
 
   if ( is_leader() ) {
     ev.value().conform.push_back( ev.value().id );
@@ -103,9 +105,7 @@ int torder_vs::vs_torder( const stem::Event& inc_ev )
   int ret = basic_vs::vs_aux( ev );
 
   if ( (ret == 0) && is_leader() ) {
-    inc_ev.src( self_id() );
-    inc_ev.dest( self_id() );
-    torder_vs::sync_call( inc_ev );
+    torder_vs::sync_call( ev.value().ev );
   }
 
   return ret;
@@ -117,6 +117,8 @@ int torder_vs::vs_torder_aux( const stem::Event& inc_ev )
 
   ev.value().ev = inc_ev;
   ev.value().id = xmt::uid();
+  ev.value().ev.src( self_id() );
+  ev.value().ev.dest( self_id() );
 
   if ( is_leader() ) {
     ev.value().conform.push_back( ev.value().id );
