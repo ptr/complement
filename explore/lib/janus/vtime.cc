@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/04 10:22:20 ptr>
+// -*- C++ -*- Time-stamp: <10/02/04 11:04:31 ptr>
 
 /*
  *
@@ -715,6 +715,7 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
     if ( vt.vt.size() > 1 ) {
       lock_rsp.clear();
       group_applicant = ev.src();
+      group_applicant_ref = ev.value().reference;
 
       // check: group_applicant re-enter (fail was not detected yet)
       for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
@@ -725,11 +726,9 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
       }
 
       stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
-
       basic_vs::vs_aux( view_lock_ev );
       lock_addr = self_id(); // after vs_aux()!
       PushState( VS_ST_LOCKED );
-      this->vs_resend_from( ev.value().reference, ev.src() );
 
       add_lock_safety(); // belay: avoid infinite lock
     } else { // single in group: lock not required
@@ -860,6 +859,7 @@ void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
       ++view;
       if ( group_applicant != stem::badaddr ) {
         vt[group_applicant]; // i.e. create entry in vt
+        this->vs_resend_from( group_applicant_ref, group_applicant );
         group_applicant = stem::badaddr;
       }
       lock_addr = stem::badaddr; // before vs_aux()!

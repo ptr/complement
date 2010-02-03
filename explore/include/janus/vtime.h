@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/03 21:10:14 ptr>
+// -*- C++ -*- Time-stamp: <10/02/04 11:02:51 ptr>
 
 /*
  *
@@ -429,6 +429,7 @@ class basic_vs :
     stem::addr_type lock_addr;
     lock_rsp_type lock_rsp;
     stem::addr_type group_applicant;
+    stem::addr_type group_applicant_ref;
 
   private:
     typedef std::list<stem::NetTransportMgr*> access_container_type;

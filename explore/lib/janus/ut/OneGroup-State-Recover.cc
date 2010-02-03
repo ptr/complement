@@ -503,7 +503,6 @@ int EXAM_IMPL(vtime_operations::VT_one_group_recover)
 
       EXAM_CHECK( a1.mess == "extra message" );
       EXAM_CHECK( a2.mess == "extra message" );
-      // EXAM_CHECK( a3.mess == "message" );
       EXAM_CHECK( a3.mess == "extra message" );
     }
     catch ( const std::runtime_error& err ) {
