@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/01 18:20:38 ptr>
+// -*- C++ -*- Time-stamp: <10/02/04 10:22:20 ptr>
 
 /*
  *
@@ -1324,70 +1324,78 @@ void basic_vs::rm_lock_safety()
 
 void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
 {
-  if ( ev.src() == self_id() ) {
-    if ( lock_addr == stem::badaddr ) {
-      return; // no lock more
-    }
+  if ( ev.src() != self_id() ) {
+    return;
+  }
 
-    if ( lock_addr == self_id() ) { // I'm owner of the lock
-      // if ( (lock_rsp.size() + 1) < vt.vt.size() ) { // not all conforms lock
-      // at least half conforms, or group small and unstable;
-      // in case of 'too small' group 'no conformation' may happens!
-      if ( ((lock_rsp.size() * 2 + 1) >= vt.vt.size()) || (vt.vt.size() <= 2) ) {
-        // who is in group, but not conform lock?
-        for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
-          if ( (i->first == self_id()) || (lock_rsp.find( i->first ) != lock_rsp.end()) ) {
-            ++i;
-          } else {
-            vt.vt.erase( i++ );
-            /* Not required: after next event from node
-               it will be removed
-               for ( vtime_matrix_type::iterator j = vt.begin(); j != vt.end(); ++j ) {
-                 if( j->first != self_id() ) {
-                   j->second.erase( i->first );
-                 }
-               }
-            */
-          }
-        }
+  if ( lock_addr == stem::badaddr ) {
+    return; // no lock more
+  }
 
-        // response from all group members available
-        ++view;
-        if ( group_applicant != stem::badaddr ) {
-          vt[group_applicant]; // i.e. create entry in vt
-          group_applicant = stem::badaddr;
-        }
-        lock_addr = stem::badaddr; // before vs_aux()!
-        PopState( VS_ST_LOCKED );
-        lock_rsp.clear();
-
-        rm_lock_safety();
-
-        stem::EventVoid update_view_ev( VS_UPDATE_VIEW );
-
-        basic_vs::vs_aux( update_view_ev );
-
-        while ( !de.empty() ) {
-          if ( basic_vs::vs( de.front() ) ) {
-            de.pop_back(); // event pushed back in vs() above, remove it
-            break;
-          }
-          de.pop_front();
-        }
-      } else { // problem on this side?
-        cerr << __FILE__ << ':' << __LINE__ << ' ' << (lock_rsp.size() + 1) <<  ' ' << vt.vt.size() << endl;
-      }
-      // } else {
-        // do nothing? shouldn't happen?
-      //   cerr << __FILE__ << ':' << __LINE__ << endl;
-      // }
-      // cerr << __FILE__ << ':' << __LINE__ << ' ' << (lock_rsp.size() + 1) <<  ' ' << vt.vt.size() << endl;
-      // if ( (lock_rsp.size() + 1) == vt.vt.size() ) {
-      // }
+  // Check channels
+  for ( access_container_type::iterator i = remotes_.begin(); i != remotes_.end(); ) {
+    if ( !(*i)->is_open() || (*i)->bad() ) {
+      delete *i;
+      remotes_.erase( i++ );
     } else {
-      cerr << __FILE__ << ':' << __LINE__ << ' ' << lock_addr << " (" << self_id() << ')' << endl;
+      ++i;
     }
   }
+
+  if ( lock_addr != self_id() ) {
+    cerr << __FILE__ << ':' << __LINE__ << ' ' << lock_addr << " (" << self_id() << ')' << ' ' << is_avail(lock_addr) << endl;
+    // if ( is_avail(lock_addr) ) {
+    return;
+    // }
+  }
+
+  // I'm owner of the lock
+  // if ( (lock_rsp.size() + 1) < vt.vt.size() ) { // not all conforms lock
+  // at least half conforms, or group small and unstable;
+  // in case of 'too small' group 'no conformation' may happens!
+  if ( ((lock_rsp.size() * 2 + 1) >= vt.vt.size()) || (vt.vt.size() <= 2) ) {
+    // who is in group, but not conform lock?
+    for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
+      if ( (i->first == self_id()) || (lock_rsp.find( i->first ) != lock_rsp.end()) ) {
+        ++i;
+      } else {
+        vt.vt.erase( i++ );
+      }
+    }
+
+    // response from all group members available
+    ++view;
+    if ( group_applicant != stem::badaddr ) {
+      vt[group_applicant]; // i.e. create entry in vt
+      group_applicant = stem::badaddr;
+    }
+    lock_addr = stem::badaddr; // before vs_aux()!
+    PopState( VS_ST_LOCKED );
+    lock_rsp.clear();
+
+    rm_lock_safety();
+
+    stem::EventVoid update_view_ev( VS_UPDATE_VIEW );
+
+    basic_vs::vs_aux( update_view_ev );
+
+    while ( !de.empty() ) {
+      if ( basic_vs::vs( de.front() ) ) {
+        de.pop_back(); // event pushed back in vs() above, remove it
+        break;
+      }
+      de.pop_front();
+    }
+  } else { // problem on this side?
+    cerr << __FILE__ << ':' << __LINE__ << ' ' << (lock_rsp.size() + 1) <<  ' ' << vt.vt.size() << endl;
+  }
+  // } else {
+  // do nothing? shouldn't happen?
+  //   cerr << __FILE__ << ':' << __LINE__ << endl;
+  // }
+  // cerr << __FILE__ << ':' << __LINE__ << ' ' << (lock_rsp.size() + 1) <<  ' ' << vt.vt.size() << endl;
+  // if ( (lock_rsp.size() + 1) == vt.vt.size() ) {
+  // }
 }
 
 void basic_vs::process_last_will( const stem::Event_base<janus::addr_type>& ev )
@@ -1425,6 +1433,55 @@ void basic_vs::process_last_will( const stem::Event_base<janus::addr_type>& ev )
 
 void basic_vs::process_last_will_lk( const stem::Event_base<janus::addr_type>& ev )
 {
+}
+
+void basic_vs::check_remotes()
+{
+  bool drop = false;
+  for ( access_container_type::iterator i = remotes_.begin(); i != remotes_.end(); ) {
+    if ( !(*i)->is_open() || (*i)->bad() ) {
+      delete *i;
+      remotes_.erase( i++ );
+      drop = true;
+    } else {
+      ++i;
+    }
+  }
+
+  if ( drop ) {
+    drop = false;
+    for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
+      if ( !is_avail( i->first ) ) {
+        vt.vt.erase( i++ );
+        drop = true;
+      } else {
+        ++i;
+      }
+    }
+
+    if ( drop ) {
+      if ( !isState(VS_ST_LOCKED) ) {
+        if ( vt.vt.size() > 1 ) {
+          lock_rsp.clear();
+
+          group_applicant = stem::badaddr;
+          stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
+
+          basic_vs::vs_aux( view_lock_ev );
+          lock_addr = self_id(); // after vs_aux()!
+          PushState( VS_ST_LOCKED );
+
+          add_lock_safety(); // belay: avoid infinite lock
+        } else { // single in group: lock not required
+          ++view;
+        }
+      } else {
+        const stem::EventVoid cr_ev( VS_LOCK_SAFETY );
+        cr_ev.dest( self_id() );
+        Send( cr_ev );
+      }
+    }
+  }
 }
 
 const stem::code_type basic_vs::VS_EVENT         = 0x302;
