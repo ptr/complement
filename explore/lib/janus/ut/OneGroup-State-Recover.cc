@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/28 01:12:42 ptr>
+// -*- C++ -*- Time-stamp: <10/02/04 19:05:18 ptr>
 
 /*
  *
@@ -12,7 +12,7 @@
 #include "vt_operations.h"
 
 #include <iostream>
-#include <janus/vtime.h>
+#include <janus/casual.h>
 
 #include <mt/mutex>
 #include <mt/condition_variable>

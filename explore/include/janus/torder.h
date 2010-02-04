@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/04 08:36:37 ptr>
+// -*- C++ -*- Time-stamp: <10/02/04 19:03:26 ptr>
 
 /*
  *
@@ -13,6 +13,8 @@
 #define __janus_torder_h
 
 #include <janus/vtime.h>
+#include <janus/casual.h>
+
 #include <list>
 
 #ifdef STLPORT
