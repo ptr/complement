@@ -1,3 +1,14 @@
+2010-02-04  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* vtime.cc: process closed connection, initiate
+	view update;
+
+	* torder.cc: try to detect leader failure;
+	elect new leader, if current leader fail
+	detected;
+	
+	* libjanus: revision 0.14.3.
+
 2010-02-03  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* vtime.cc: sefault VS lock timeout increased
