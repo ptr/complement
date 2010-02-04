@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/27 22:16:59 ptr>
+// -*- C++ -*- Time-stamp: <10/02/04 08:36:37 ptr>
 
 /*
  *
@@ -92,6 +92,7 @@ class torder_vs :
 
   private:
     void vs_leader( const stem::EventVoid& );
+    void next_leader_election();
 
 #ifdef __USE_STLPORT_HASH
     typedef std::hash_map<vs_event_total_order::id_type,stem::Event> conf_cnt_t;
@@ -102,8 +103,10 @@ class torder_vs :
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
     typedef std::tr1::unordered_map<vs_event_total_order::id_type,stem::Event> conf_cnt_type;
 #endif
+    typedef std::list<vs_event_total_order::id_type> orig_order_cnt_type;
 
     conf_cnt_type conform_container_;
+    orig_order_cnt_type orig_order_container_;
     stem::addr_type leader_;
     bool is_leader_;
 

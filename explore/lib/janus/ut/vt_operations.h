@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/01/15 15:47:00 ptr>
+// -*- C++ -*- Time-stamp: <10/02/03 12:59:49 ptr>
 
 /*
  *
- * Copyright (c) 2008-2009
+ * Copyright (c) 2008-2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -42,6 +42,7 @@ class vtime_operations
     int EXAM_DECL(gvt_add);
 
     int EXAM_DECL(leader);
+    int EXAM_DECL(leader_fail);
 
   private:
     // xmt::shm_alloc<0> seg;
