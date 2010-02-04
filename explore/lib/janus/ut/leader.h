@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/27 20:29:51 ptr>
+// -*- C++ -*- Time-stamp: <10/02/04 19:56:49 ptr>
 
 /*
  *
@@ -29,6 +29,7 @@ class VT_with_leader :
     void vs_pub_view_update();
     void vs_pub_rec( const stem::Event& );
     void vs_pub_flush();
+    virtual void vs_pub_tord_rec( const stem::Event& );
 
   private:
     void message( const stem::Event& );

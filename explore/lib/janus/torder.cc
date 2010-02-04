@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/04 10:11:29 ptr>
+// -*- C++ -*- Time-stamp: <10/02/04 20:10:05 ptr>
 
 /*
  *
@@ -18,51 +18,6 @@ using namespace xmt;
 using namespace stem;
 using namespace std::tr2;
 
-void vs_event_total_order::pack( std::ostream& s ) const
-{
-  // basic_event::pack( s );
-  __pack( s, id );
-  __pack( s, static_cast<uint32_t>(conform.size()) );
-  for ( list<uuid_type>::const_iterator i = conform.begin(); i != conform.end(); ++i ) {
-    __pack( s, *i );
-  }
-  __pack( s, ev.code() );
-  __pack( s, ev.flags() );
-  __pack( s, ev.value() );
-}
-
-void vs_event_total_order::unpack( std::istream& s )
-{
-  // basic_event::unpack( s );
-  __unpack( s, id );
-  uint32_t sz = 0;
-  uuid_type tmp;
-  __unpack( s, sz );
-  while ( sz > 0 ) {
-    __unpack( s, tmp );
-    conform.push_back( tmp );
-    --sz;
-  }
-
-  stem::code_type c;
-  __unpack( s, c );
-  ev.code( c );
-  uint32_t f;
-  __unpack( s, f );
-  ev.resetf( f );
-  // string d;
-  __unpack( s, ev.value() );
-  // std::swap( d, ev.value() );
-}
-
-void vs_event_total_order::swap( vs_event_total_order& r )
-{
-  // std::swap( vt, r.vt );
-  std::swap( id, r.id );
-  std::swap( conform, r.conform );
-  std::swap( ev, r.ev );
-}
-
 torder_vs::torder_vs() :
     basic_vs(),
     leader_( stem::badaddr ),
@@ -79,12 +34,6 @@ torder_vs::torder_vs( const char* info ) :
 
 torder_vs::~torder_vs()
 {
-}
-
-void torder_vs::leader()
-{
-  leader_ = self_id();
-  is_leader_ = true;
 }
 
 int torder_vs::vs_torder( const stem::Event& inc_ev )
@@ -108,6 +57,8 @@ int torder_vs::vs_torder( const stem::Event& inc_ev )
 
   if ( is_leader_ ) {
     if ( ret == 0 ) {
+      ev.value().ev.setf( stem::__Event_Base::vs );
+      this->vs_pub_tord_rec( ev.value().ev );
       torder_vs::sync_call( ev.value().ev );
     }
   } else if ( conform_container_.size() > 3 ) {
@@ -240,6 +191,8 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
     vs_aux( cnf );
 
     // ... and then process
+    ev.value().ev.setf( stem::__Event_Base::vs );
+    this->vs_pub_tord_rec( ev.value().ev );
     torder_vs::sync_call( ev.value().ev );
   } else {
     if ( ev.value().id == xmt::nil_uuid ) {
@@ -249,6 +202,7 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
         conf_cnt_type::iterator k = conform_container_.find( *i );
         if ( k != conform_container_.end() ) {
           k->second.setf( stem::__Event_Base::vs );
+          // this->vs_pub_tord_rec( ev.value().ev ); // conformation
           torder_vs::sync_call( k->second );
           conform_container_.erase( k );
           orig_order_cnt_type::iterator j = find( orig_order_container_.begin(), orig_order_container_.end(), *i );
@@ -269,6 +223,8 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
       orig_order_container_.push_back( ev.value().id );
     } else if ( find( ev.value().conform.begin(), ev.value().conform.end(), ev.value().id ) != ev.value().conform.end() ) {
       // event origin: leader; I see conformation in event
+      ev.value().ev.setf( stem::__Event_Base::vs );
+      this->vs_pub_tord_rec( ev.value().ev );
       torder_vs::sync_call( ev.value().ev );
     } else {
       // it's from me?
@@ -277,6 +233,7 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
         conf_cnt_type::iterator k = conform_container_.find( *i );
         if ( k != conform_container_.end() ) {
           k->second.setf( stem::__Event_Base::vs );
+          this->vs_pub_tord_rec( ev.value().ev );
           torder_vs::sync_call( k->second );
           conform_container_.erase( k );
           orig_order_cnt_type::iterator j = find( orig_order_container_.begin(), orig_order_container_.end(), *i );
@@ -339,6 +296,7 @@ void torder_vs::next_leader_election()
             if ( k != conform_container_.end() ) {
               k->second.setf( stem::__Event_Base::vs );
 
+              this->vs_pub_tord_rec( k->second );
               torder_vs::sync_call( k->second );
               conform_container_.erase( k );
             }

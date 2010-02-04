@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/04 18:28:57 ptr>
+// -*- C++ -*- Time-stamp: <10/02/04 19:45:51 ptr>
 
 /*
  *
@@ -326,6 +326,51 @@ gvtime& gvtime::operator +=( const gvtime& t )
   }
 
   return *this;
+}
+
+void vs_event_total_order::pack( std::ostream& s ) const
+{
+  // basic_event::pack( s );
+  __pack( s, id );
+  __pack( s, static_cast<uint32_t>(conform.size()) );
+  for ( list<uuid_type>::const_iterator i = conform.begin(); i != conform.end(); ++i ) {
+    __pack( s, *i );
+  }
+  __pack( s, ev.code() );
+  __pack( s, ev.flags() );
+  __pack( s, ev.value() );
+}
+
+void vs_event_total_order::unpack( std::istream& s )
+{
+  // basic_event::unpack( s );
+  __unpack( s, id );
+  uint32_t sz = 0;
+  uuid_type tmp;
+  __unpack( s, sz );
+  while ( sz > 0 ) {
+    __unpack( s, tmp );
+    conform.push_back( tmp );
+    --sz;
+  }
+
+  stem::code_type c;
+  __unpack( s, c );
+  ev.code( c );
+  uint32_t f;
+  __unpack( s, f );
+  ev.resetf( f );
+  // string d;
+  __unpack( s, ev.value() );
+  // std::swap( d, ev.value() );
+}
+
+void vs_event_total_order::swap( vs_event_total_order& r )
+{
+  // std::swap( vt, r.vt );
+  std::swap( id, r.id );
+  std::swap( conform, r.conform );
+  std::swap( ev, r.ev );
 }
 
 } // namespace janus

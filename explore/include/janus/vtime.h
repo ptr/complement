@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/04 18:59:57 ptr>
+// -*- C++ -*- Time-stamp: <10/02/04 19:44:26 ptr>
 
 /*
  *
@@ -269,6 +269,29 @@ struct gvtime :
       { return gvt[k]; }
 
     mutable gvtime_type gvt;
+};
+
+struct vs_event_total_order :
+        public stem::__pack_base
+{
+    typedef xmt::uuid_type id_type;
+
+    vs_event_total_order()
+      { }
+    vs_event_total_order( const vs_event_total_order& e ) :
+        id( e.id ),
+        conform( e.conform ),
+        ev( e.ev )
+      { }
+
+    virtual void pack( std::ostream& s ) const;
+    virtual void unpack( std::istream& s );
+
+    void swap( vs_event_total_order& );
+
+    id_type id;
+    std::list<id_type> conform;
+    stem::Event ev;
 };
 
 #ifdef __USE_STLPORT_HASH

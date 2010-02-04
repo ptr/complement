@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/04 19:03:26 ptr>
+// -*- C++ -*- Time-stamp: <10/02/04 19:52:42 ptr>
 
 /*
  *
@@ -32,29 +32,6 @@
 
 namespace janus {
 
-struct vs_event_total_order :
-        public stem::__pack_base
-{
-    typedef xmt::uuid_type id_type;
-
-    vs_event_total_order()
-      { }
-    vs_event_total_order( const vs_event_total_order& e ) :
-        id( e.id ),
-        conform( e.conform ),
-        ev( e.ev )
-      { }
-
-    virtual void pack( std::ostream& s ) const;
-    virtual void unpack( std::istream& s );
-
-    void swap( vs_event_total_order& );
-
-    id_type id;
-    std::list<id_type> conform;
-    stem::Event ev;
-};
-
 class torder_vs :
     public basic_vs
 {
@@ -83,14 +60,13 @@ class torder_vs :
       { return torder_vs::vs_torder_aux( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
 
   public:
-    void leader();
-
     bool is_leader() const
       { return is_leader_; }
 
   protected:
     virtual void vs_pub_view_update();
     virtual void vs_pub_join();
+    virtual void vs_pub_tord_rec( const stem::Event& ) = 0;
 
   private:
     void vs_leader( const stem::EventVoid& );
