@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/04 19:02:24 ptr>
+// -*- C++ -*- Time-stamp: <10/02/04 19:27:12 ptr>
 
 /*
  *
@@ -1137,11 +1137,19 @@ void basic_vs::process_last_will_lk( const stem::Event_base<janus::addr_type>& e
 
 void basic_vs::check_remotes()
 {
-  bool drop = false;
   for ( access_container_type::iterator i = remotes_.begin(); i != remotes_.end(); ) {
     if ( !(*i)->is_open() || (*i)->bad() ) {
       delete *i;
       remotes_.erase( i++ );
+    } else {
+      ++i;
+    }
+  }
+
+  bool drop = false;
+  for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
+    if ( !is_avail( i->first ) ) {
+      vt.vt.erase( i++ );
       drop = true;
     } else {
       ++i;
@@ -1149,37 +1157,25 @@ void basic_vs::check_remotes()
   }
 
   if ( drop ) {
-    drop = false;
-    for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
-      if ( !is_avail( i->first ) ) {
-        vt.vt.erase( i++ );
-        drop = true;
-      } else {
-        ++i;
+    if ( !isState(VS_ST_LOCKED) ) {
+      if ( vt.vt.size() > 1 ) {
+        lock_rsp.clear();
+
+        group_applicant = stem::badaddr;
+        stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
+
+        basic_vs::vs_aux( view_lock_ev );
+        lock_addr = self_id(); // after vs_aux()!
+        PushState( VS_ST_LOCKED );
+
+        add_lock_safety(); // belay: avoid infinite lock
+      } else { // single in group: lock not required
+        ++view;
       }
-    }
-
-    if ( drop ) {
-      if ( !isState(VS_ST_LOCKED) ) {
-        if ( vt.vt.size() > 1 ) {
-          lock_rsp.clear();
-
-          group_applicant = stem::badaddr;
-          stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
-
-          basic_vs::vs_aux( view_lock_ev );
-          lock_addr = self_id(); // after vs_aux()!
-          PushState( VS_ST_LOCKED );
-
-          add_lock_safety(); // belay: avoid infinite lock
-        } else { // single in group: lock not required
-          ++view;
-        }
-      } else {
-        const stem::EventVoid cr_ev( VS_LOCK_SAFETY );
-        cr_ev.dest( self_id() );
-        Send( cr_ev );
-      }
+    } else {
+      const stem::EventVoid cr_ev( VS_LOCK_SAFETY );
+      cr_ev.dest( self_id() );
+      Send( cr_ev );
     }
   }
 }
