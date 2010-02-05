@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/04 19:56:49 ptr>
+// -*- C++ -*- Time-stamp: <10/02/05 15:57:28 ptr>
 
 /*
  *
@@ -14,6 +14,7 @@
 
 #include <janus/torder.h>
 #include <fstream>
+#include <string>
 
 namespace janus {
 
@@ -36,6 +37,7 @@ class VT_with_leader :
     void sync_message( const stem::Event& );
 
     std::ofstream f;
+    std::string name;
 
     DECLARE_RESPONSE_TABLE( VT_with_leader, janus::torder_vs );
 };

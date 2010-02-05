@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/04 19:57:27 ptr>
+// -*- C++ -*- Time-stamp: <10/02/05 16:37:14 ptr>
 
 /*
  *
@@ -38,7 +38,8 @@ using namespace std;
 
 VT_with_leader::VT_with_leader( const char* nm ) :
     torder_vs(),
-    f( nm )
+    f( nm ),
+    name( nm )
 {
   enable();
 }
@@ -64,6 +65,7 @@ void VT_with_leader::vs_pub_view_update()
 
 void VT_with_leader::vs_pub_rec( const stem::Event& )
 {
+  // cerr << name << endl;
 }
 
 void VT_with_leader::vs_pub_flush()
@@ -395,6 +397,7 @@ int EXAM_IMPL(vtime_operations::leader_fail)
     std::tr2::barrier_ip& b = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
     std::tr2::barrier_ip& b2 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip( 3 );
     std::tr2::barrier_ip& b3 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
+    std::tr2::barrier_ip& b4 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip( 3 );
     stem::addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::addr_type();
 
     addr = stem::badaddr;
@@ -453,6 +456,9 @@ int EXAM_IMPL(vtime_operations::leader_fail)
 
         EXAM_CHECK_ASYNC_F( i < 5, res );
 
+        b4.wait(); // group size 3
+
+        // a1 is group leader here
         stem::Event ev( EV_EXT_EV_SAMPLE );
         ev.dest( a1.self_id() );
 
@@ -462,14 +468,17 @@ int EXAM_IMPL(vtime_operations::leader_fail)
           ev.value() = v.str();
           a1.Send( ev );
         }
+
+        b4.wait(); // group size 3, align with others
+        std::tr2::this_thread::sleep( std::tr2::milliseconds(50) );
       }
       catch ( ... ) {
         EXAM_ERROR_ASYNC_F( "unkown exception", res );
       }
 
-      std::tr2::this_thread::sleep( std::tr2::milliseconds(120) );
+      // std::tr2::this_thread::sleep( std::tr2::milliseconds(120) );
 
-      b2.wait();
+      b2.wait(); // should be here: after dtor of a1
 
       exit( res );
     }
@@ -526,10 +535,12 @@ int EXAM_IMPL(vtime_operations::leader_fail)
 
           EXAM_CHECK_ASYNC_F( i < 5, res );
 
+          b4.wait(); // group size 3
+
           stem::Event ev( EV_EXT_EV_SAMPLE );
           ev.dest( a3.self_id() );
 
-          for ( int j = 300; j < 400; ++j ) {
+          for ( int j = 300; j < 310; ++j ) {
             stringstream v;
             v << j;
             ev.value() = v.str();
@@ -537,7 +548,19 @@ int EXAM_IMPL(vtime_operations::leader_fail)
             // std::tr2::this_thread::sleep( std::tr2::milliseconds(20) );
           }
 
-          std::tr2::this_thread::sleep( std::tr2::milliseconds(120) );
+          b4.wait(); // group size 3, first 10 events with a1 group leader
+
+          // a1 go away, leader failure should be detected and new leader
+          // should be elected
+          for ( int j = 310; j < 400; ++j ) {
+            stringstream v;
+            v << j;
+            ev.value() = v.str();
+            a3.Send( ev );
+            // std::tr2::this_thread::sleep( std::tr2::milliseconds(20) );
+          }
+
+          std::tr2::this_thread::sleep( std::tr2::milliseconds(520) );
           b2.wait();
         }
         catch ( ... ) {
@@ -605,10 +628,12 @@ int EXAM_IMPL(vtime_operations::leader_fail)
 
           EXAM_CHECK( i < 5 );
 
+          b4.wait(); // group size 3
+
           stem::Event ev( EV_EXT_EV_SAMPLE );
           ev.dest( a2.self_id() );
 
-          for ( int j = 100; j < 200; ++j ) {
+          for ( int j = 100; j < 110; ++j ) {
             stringstream v;
             v << j;
             ev.value() = v.str();
@@ -616,7 +641,19 @@ int EXAM_IMPL(vtime_operations::leader_fail)
             // std::tr2::this_thread::sleep( std::tr2::milliseconds(20) );
           }
 
-          std::tr2::this_thread::sleep( std::tr2::milliseconds(120) );
+          b4.wait(); // group size 3, first 10 events with a1 group leader
+
+          // a1 go away, leader failure should be detected and new leader
+          // should be elected
+          for ( int j = 110; j < 200; ++j ) {
+            stringstream v;
+            v << j;
+            ev.value() = v.str();
+            a2.Send( ev );
+            // std::tr2::this_thread::sleep( std::tr2::milliseconds(20) );
+          }
+
+          std::tr2::this_thread::sleep( std::tr2::milliseconds(520) );
           b2.wait();
         }
         catch ( ... ) {
@@ -643,6 +680,7 @@ int EXAM_IMPL(vtime_operations::leader_fail)
     shm.deallocate( &b );
     shm.deallocate( &b2 );
     shm.deallocate( &b3 );
+    shm.deallocate( &b4 );
     shm_a.deallocate( &addr );
     seg.deallocate();
   }
