@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/04 20:10:05 ptr>
+// -*- C++ -*- Time-stamp: <10/02/08 17:17:19 ptr>
 
 /*
  *
@@ -61,7 +61,7 @@ int torder_vs::vs_torder( const stem::Event& inc_ev )
       this->vs_pub_tord_rec( ev.value().ev );
       torder_vs::sync_call( ev.value().ev );
     }
-  } else if ( conform_container_.size() > 3 ) {
+  } else if ( conform_container_.size() > 0 ) {
     check_remotes();
 
     vtime::vtime_type::const_iterator i;
