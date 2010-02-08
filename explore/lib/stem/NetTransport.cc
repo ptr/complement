@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/19 17:39:53 ptr>
+// -*- C++ -*- Time-stamp: <10/02/08 15:37:17 ptr>
 
 /*
  *
@@ -677,6 +677,7 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
       manager()->push( ev );
     }
     me.net.close();
+    me.NetTransport_base::_close();
 #ifdef __FIT_STEM_TRACE
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);
@@ -700,6 +701,7 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
   }
   catch ( ... ) {
     me.net.close();
+    me.NetTransport_base::_close();
 #ifdef __FIT_STEM_TRACE
     try {
       lock_guard<mutex> lk(manager()->_lock_tr);

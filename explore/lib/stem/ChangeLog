@@ -1,3 +1,12 @@
+2010-02-08  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* NetTransport.cc: do _close in
+	NetTransportMgr::_loop after close network
+	to force StEM remove addresses, associated
+	with NetTransportMgr before dtor call;
+
+	* libstem: revision 5.3.8.
+
 2010-01-27  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* EventHandler, EvManager: synchronous call
