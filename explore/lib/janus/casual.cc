@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/04 19:27:12 ptr>
+// -*- C++ -*- Time-stamp: <10/02/10 17:01:24 ptr>
 
 /*
  *
@@ -425,6 +425,25 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
         }
       }
 
+      // check net channels (from me)
+      for ( access_container_type::iterator i = remotes_.begin(); i != remotes_.end(); ) {
+        if ( !(*i)->is_open() || (*i)->bad() ) {
+          delete *i;
+          remotes_.erase( i++ );
+        } else {
+          ++i;
+        }
+      }
+
+      // check vitual time nodes accessibility
+      for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
+        if ( !is_avail( i->first ) ) {
+          vt.vt.erase( i++ );
+        } else {
+          ++i;
+        }
+      }
+
       stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
       basic_vs::vs_aux( view_lock_ev );
       lock_addr = self_id(); // after vs_aux()!
@@ -446,6 +465,16 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
 
 void basic_vs::vs_join_request_lk( const stem::Event_base<vs_join_rq>& ev )
 {
+  Event_base<CronEntry> cr( EV_EDS_CRON_ADD );
+
+  ev.pack( cr.value().ev );
+
+  cr.dest( _cron->self_id() );
+  cr.value().start = get_system_time() + std::tr2::milliseconds(10);
+  cr.value().n = 1;
+  cr.value().period = 0;
+
+  Send( cr );
 }
 
 void basic_vs::vs_group_points( const stem::Event_base<vs_points>& ev )

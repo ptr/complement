@@ -1,3 +1,12 @@
+2010-02-10  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* casual.cc: check nodes accessibility in
+	group during process join request;
+	repeate join request, if initial request come
+	when node was in locked state;
+
+	* libjanus: revision 0.14.4.
+
 2010-02-04  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* vtime.cc: process closed connection, initiate
