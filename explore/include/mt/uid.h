@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/08/04 14:09:57 ptr>
+// -*- C++ -*- Time-stamp: <10/02/15 19:08:31 ptr>
 
 /*
  * Copyright (c) 2006, 2008, 2009
@@ -76,6 +76,11 @@ struct uuid_type
         return u.l[0] < uid.u.l[0] ? true : u.l[0] > uid.u.l[0] ? false : (u.l[1] < uid.u.l[1]);
       }
 
+    bool operator >( const uuid_type& uid ) const
+      {
+        return u.l[0] > uid.u.l[0] ? true : u.l[0] < uid.u.l[0] ? false : (u.l[1] > uid.u.l[1]);
+      }
+
     operator std::string() const;
 
     void swap( uuid_type& r )
@@ -84,6 +89,12 @@ struct uuid_type
         std::swap( u.l[1], r.u.l[1] );
       }
 };
+
+inline bool operator >=( const uuid_type& l, const uuid_type& r )
+{ return !(l < r); }
+
+inline bool operator <=( const uuid_type& l, const uuid_type& r )
+{ return !(l > r); }
 
 extern const uuid_type nil_uuid; // NIL UUID
 

@@ -1,3 +1,10 @@
+2010-02-15  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* uid.h: add operators >, >=, <= for
+	uuid_type;
+
+	* libxmt: release 2.1.4.
+
 2009-06-18  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* shm.cc: fix error report;
