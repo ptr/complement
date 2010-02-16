@@ -7,6 +7,10 @@
 	from one object to another; copy only 'own'
 	access points;
 
+	* vtime.h, vtime.cc, casual.h, casual.cc:
+	exchange by access points between group
+	members;
+
 	* libjanus: revision 0.14.5.
 
 2010-02-10  Petr Ovtchenkov  <ptr@void-ptr.info>

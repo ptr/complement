@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/16 13:12:43 ptr>
+// -*- C++ -*- Time-stamp: <10/02/16 17:16:02 ptr>
 
 /*
  *
@@ -81,6 +81,8 @@ class basic_vs :
     static const stem::code_type VS_FLUSH_LOCK_VIEW_NAK;
     static const stem::code_type VS_LOCK_SAFETY; // from cron, timeout
     static const stem::code_type VS_LAST_WILL;
+    static const stem::code_type VS_ACCESS_POINT_PRI;
+    static const stem::code_type VS_ACCESS_POINT_SEC;
 
   protected:
     static const stem::code_type VS_FLUSH_VIEW;
@@ -143,7 +145,9 @@ class basic_vs :
     template <class D>
     void forward_to_vsg( const stem::Event_base<D>& e ) // not VS!
       { basic_vs::forward_to_vsg( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
-		
+
+    void access_points_refresh();
+
   protected:
     void check_remotes();
 
@@ -155,6 +159,7 @@ class basic_vs :
     virtual void vs_pub_rec( const stem::Event& ) = 0;
     virtual void vs_pub_flush() = 0;
     virtual void vs_pub_join();
+    virtual void pub_access_point();
 
     void replay( const stem::Event& );
 
@@ -186,6 +191,9 @@ class basic_vs :
 
     void process_last_will( const stem::Event_base<janus::addr_type>& );
     void process_last_will_lk( const stem::Event_base<janus::addr_type>& );
+
+    void access_points_refresh_pri( const stem::Event_base<janus::detail::access_points>& );
+    void access_points_refresh_sec( const stem::Event_base<janus::detail::access_points>& );
 
     // vs order violation events
     typedef std::list<stem::Event_base<vs_event> > ove_container_type;

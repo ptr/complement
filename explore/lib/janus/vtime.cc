@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/04 19:45:51 ptr>
+// -*- C++ -*- Time-stamp: <10/02/16 16:43:30 ptr>
 
 /*
  *
@@ -249,6 +249,51 @@ void vs_points::swap( vs_points& r )
   std::swap( vt, r.vt );
   std::swap( points, r.points );
 }
+
+namespace detail {
+
+void access_points::pack( std::ostream& s ) const
+{
+  __pack( s, static_cast<uint32_t>( points.size() ) );
+  for (  janus::vs_points::points_type::const_iterator i = points.begin(); i != points.end(); ++i ) {
+    __pack( s, i->first );
+    __pack( s, i->second.hostid );
+    __pack( s, i->second.family );
+    __pack( s, i->second.type );
+    __pack( s, i->second.data );
+  }
+}
+
+void access_points::unpack( std::istream& s )
+{
+  uint32_t sz;
+  __unpack( s, sz );
+  if ( !s.fail() ) {
+    addr_type a;
+    janus::vs_points::access_t acc;
+    points.clear();
+    while ( sz > 0 ) {
+      __unpack( s, a );
+      __unpack( s, acc.hostid );
+      __unpack( s, acc.family );
+      __unpack( s, acc.type );
+      __unpack( s, acc.data );
+      if ( !s.fail() ) {
+        points.insert( make_pair( a, acc ) );
+        --sz;
+      } else {
+        break;
+      }
+    }
+  }
+}
+
+void access_points::swap( access_points& r )
+{
+  std::swap( points, r.points );
+}
+
+} // namespace detail
 
 void vs_join_rq::pack( std::ostream& s ) const
 {

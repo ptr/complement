@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/16 13:59:11 ptr>
+// -*- C++ -*- Time-stamp: <10/02/16 17:20:05 ptr>
 
 /*
  *
@@ -1224,6 +1224,65 @@ void basic_vs::check_remotes()
   }
 }
 
+void basic_vs::pub_access_point()
+{
+  // fill own access point
+}
+
+void basic_vs::access_points_refresh_pri( const stem::Event_base<janus::detail::access_points>& ev )
+{
+  if ( ev.src() == self_id() ) {
+    return;
+  }
+
+  // points.clear(); ?
+
+  vtime::vtime_type::const_iterator i = vt.vt.find( ev.src() );
+
+  if ( i == vt.vt.end() ) {
+    return;
+  }
+
+  this->pub_access_point(); // user-defined
+
+  pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = ev.value().points.equal_range( ev.src() );
+  for ( ; range.first != range.second; ++range.first ) {
+    vs_points::access_t& p = points.insert( make_pair(ev.src(), vs_points::access_t()) )->second;
+    p = range.first->second;
+  }
+
+  range = points.equal_range( self_id() );
+
+  stem::Event_base<janus::detail::access_points> my( VS_ACCESS_POINT_SEC );
+
+  for ( ; range.first != range.second; ++range.first ) {
+    vs_points::access_t& p = my.value().points.insert( make_pair(ev.src(), vs_points::access_t()) )->second;
+    p = range.first->second;
+  }
+
+  send_to_vsg( my );
+}
+
+void basic_vs::access_points_refresh_sec( const stem::Event_base<janus::detail::access_points>& ev )
+{
+  if ( ev.src() == self_id() ) {
+    return;
+  }
+
+  vtime::vtime_type::const_iterator i = vt.vt.find( ev.src() );
+
+  if ( i == vt.vt.end() ) {
+    return;
+  }
+
+  pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = ev.value().points.equal_range( ev.src() );
+  for ( ; range.first != range.second; ++range.first ) {
+    vs_points::access_t& p = points.insert( make_pair(ev.src(), vs_points::access_t()) )->second;
+    p = range.first->second;
+  }
+}
+
+
 const stem::code_type basic_vs::VS_EVENT         = 0x302;
 const stem::code_type basic_vs::VS_JOIN_RQ       = 0x304;
 const stem::code_type basic_vs::VS_JOIN_RS       = 0x305;
@@ -1238,6 +1297,8 @@ const stem::code_type basic_vs::VS_FLUSH_VIEW    = 0x30d;
 const stem::code_type basic_vs::VS_FLUSH_VIEW_JOIN = 0x30e;
 const stem::code_type basic_vs::VS_LOCK_SAFETY   = 0x30f;
 const stem::code_type basic_vs::VS_LAST_WILL     = 0x310;
+const stem::code_type basic_vs::VS_ACCESS_POINT_PRI = 0x311;
+const stem::code_type basic_vs::VS_ACCESS_POINT_SEC = 0x312;
 
 const stem::state_type basic_vs::VS_ST_LOCKED = 0x10000;
 
@@ -1262,6 +1323,8 @@ DEFINE_RESPONSE_TABLE( basic_vs )
 
   EV_Event_base_T_( ST_NULL, VS_LAST_WILL, process_last_will, janus::addr_type )
   EV_Event_base_T_( VS_ST_LOCKED, VS_LAST_WILL, process_last_will_lk, janus::addr_type )
+  EV_Event_base_T_( ST_NULL, VS_ACCESS_POINT_PRI, access_points_refresh_pri, janus::detail::access_points )
+  EV_Event_base_T_( ST_NULL, VS_ACCESS_POINT_SEC, access_points_refresh_sec, janus::detail::access_points )
 END_RESPONSE_TABLE
 
 } // namespace janus

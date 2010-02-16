@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/04 19:44:26 ptr>
+// -*- C++ -*- Time-stamp: <10/02/16 16:27:30 ptr>
 
 /*
  *
@@ -205,6 +205,28 @@ struct vs_points :
 #endif
     points_type points;
 };
+
+namespace detail {
+
+struct access_points :
+        public stem::__pack_base
+{
+    access_points()
+      { }
+
+    access_points( const access_points& r ) :
+        points( r.points )
+      { }
+
+    virtual void pack( std::ostream& s ) const;
+    virtual void unpack( std::istream& s );
+
+    void swap( access_points& );
+
+    janus::vs_points::points_type points;
+};
+
+} // namespace detail
 
 struct vs_join_rq :
     public vs_points
