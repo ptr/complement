@@ -1,6 +1,6 @@
-# -*- makefile -*- Time-stamp: <08/10/22 15:51:41 ptr>
+# -*- makefile -*- Time-stamp: <10/02/16 09:53:17 ptr>
 #
-# Copyright (c) 1997-1999, 2002, 2003, 2005-2008
+# Copyright (c) 1997-1999, 2002, 2003, 2005-2010
 # Petr Ovtchenkov
 #
 # Portion Copyright (c) 1999-2001
@@ -42,10 +42,19 @@ NOT_USE_NOSTDLIB := 1
 endif
 endif
 
+# Android NDK 1.5 r1, in pre-build gcc 4.2.1 no libsupc++, is we should link with libstdc++?
+#ifeq ($(OSNAME),android)
+#NOT_USE_NOSTDLIB := 1
+#endif
+
 endif
 
 ifndef NOT_USE_NOSTDLIB
 ifeq ($(OSNAME),linux)
+_USE_NOSTDLIB := 1
+endif
+
+ifeq ($(OSNAME),android)
 _USE_NOSTDLIB := 1
 endif
 
@@ -157,6 +166,13 @@ START_OBJ := $(shell for o in crti.o crtbeginS.o; do ${CXX} ${CXXFLAGS} -print-f
 #START_A_OBJ := $(shell for o in crti.o crtbeginT.o; do ${CXX} -print-file-name=$$o; done)
 END_OBJ := $(shell for o in crtendS.o crtn.o; do ${CXX} ${CXXFLAGS} -print-file-name=$$o; done)
 STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lpthread -lc -lm
+endif
+
+ifeq ($(OSNAME),android)
+START_OBJ := $(shell for o in crti.o crtbeginS.o; do ${CXX} ${CXXFLAGS} -print-file-name=$$o; done)
+#START_A_OBJ := $(shell for o in crti.o crtbeginT.o; do ${CXX} -print-file-name=$$o; done)
+END_OBJ := $(shell for o in crtendS.o crtn.o; do ${CXX} ${CXXFLAGS} -print-file-name=$$o; done)
+STDLIBS = ${STLPORT_LIB} ${_LGCC_S} -lthread_db -lc -lm
 endif
 
 ifeq ($(OSNAME),openbsd)
