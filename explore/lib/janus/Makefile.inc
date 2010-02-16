@@ -1,9 +1,9 @@
-# -*- makefile -*- Time-stamp: <10/02/10 16:56:17 ptr>
+# -*- makefile -*- Time-stamp: <10/02/16 15:16:28 ptr>
 
 LIBNAME = janus
 MAJOR = 0
 MINOR = 14
-PATCH = 4
+PATCH = 5
 SRC_CC = vtime.cc \
          casual.cc \
          torder.cc

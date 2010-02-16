@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/10 17:01:24 ptr>
+// -*- C++ -*- Time-stamp: <10/02/16 13:59:11 ptr>
 
 /*
  *
@@ -234,6 +234,16 @@ void basic_vs::vs_tcp_point( const sockaddr_in& a )
   }
 }
 
+void basic_vs::vs_copy_tcp_points( const basic_vs& orig )
+{
+  pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = orig.points.equal_range( orig.self_id() );
+
+  for ( ; range.first != range.second; ++range.first ) {
+    vs_points::access_t& p = points.insert( make_pair(self_id(), vs_points::access_t()) )->second;
+    p = range.first->second;
+  }
+}
+
 int basic_vs::vs_join( const stem::addr_type& a )
 {
   PushState( VS_ST_LOCKED );
@@ -438,6 +448,7 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
       // check vitual time nodes accessibility
       for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
         if ( !is_avail( i->first ) ) {
+          points.erase( i->first );
           vt.vt.erase( i++ );
         } else {
           ++i;
@@ -713,6 +724,7 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
     } else { // (view + 1) == ev.value().view
       for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
         if ( ev.value().vt.vt.find( i->first ) == ev.value().vt.vt.end() ) {
+          points.erase( i->first );
           vt.vt.erase( i++ );
           // break;
         } else {
@@ -1088,6 +1100,7 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
       if ( (i->first == self_id()) || (lock_rsp.find( i->first ) != lock_rsp.end()) ) {
         ++i;
       } else {
+        points.erase( i->first );
         vt.vt.erase( i++ );
       }
     }
@@ -1135,6 +1148,7 @@ void basic_vs::process_last_will( const stem::Event_base<janus::addr_type>& ev )
   }
 
   if ( lock_addr == stem::badaddr ) {
+    points.erase( ev.value() );
     vt.vt.erase( ev.value() );
 
     if ( vt.vt.size() > 1 ) {
@@ -1178,6 +1192,7 @@ void basic_vs::check_remotes()
   bool drop = false;
   for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
     if ( !is_avail( i->first ) ) {
+      points.erase( i->first );
       vt.vt.erase( i++ );
       drop = true;
     } else {

@@ -1,3 +1,14 @@
+2010-02-16  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* casual.cc: remove access points, if
+	appropriate object leave group;
+
+	* casual.h, casual.cc: copy access points
+	from one object to another; copy only 'own'
+	access points;
+
+	* libjanus: revision 0.14.5.
+
 2010-02-10  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* casual.cc: check nodes accessibility in
