@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/16 17:20:05 ptr>
+// -*- C++ -*- Time-stamp: <10/02/17 16:29:30 ptr>
 
 /*
  *
@@ -1224,6 +1224,23 @@ void basic_vs::check_remotes()
   }
 }
 
+void basic_vs::access_points_refresh()
+{
+  this->pub_access_point(); // user-defined
+
+  stem::addr_type sid = self_id();
+
+  pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = points.equal_range( sid );
+
+  stem::Event_base<janus::detail::access_points> my( VS_ACCESS_POINT_PRI );
+
+  for ( ; range.first != range.second; ++range.first ) {
+    my.value().points.insert( *range.first );
+  }
+
+  send_to_vsg( my );
+}
+
 void basic_vs::pub_access_point()
 {
   // fill own access point
@@ -1245,22 +1262,21 @@ void basic_vs::access_points_refresh_pri( const stem::Event_base<janus::detail::
 
   this->pub_access_point(); // user-defined
 
-  pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = ev.value().points.equal_range( ev.src() );
-  for ( ; range.first != range.second; ++range.first ) {
-    vs_points::access_t& p = points.insert( make_pair(ev.src(), vs_points::access_t()) )->second;
-    p = range.first->second;
-  }
-
-  range = points.equal_range( self_id() );
+  pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = points.equal_range( self_id() );
 
   stem::Event_base<janus::detail::access_points> my( VS_ACCESS_POINT_SEC );
 
   for ( ; range.first != range.second; ++range.first ) {
-    vs_points::access_t& p = my.value().points.insert( make_pair(ev.src(), vs_points::access_t()) )->second;
-    p = range.first->second;
+    my.value().points.insert( *range.first );
   }
 
   send_to_vsg( my );
+
+  range = ev.value().points.equal_range( ev.src() );
+
+  for ( ; range.first != range.second; ++range.first ) {
+    points.insert( *range.first );
+  }
 }
 
 void basic_vs::access_points_refresh_sec( const stem::Event_base<janus::detail::access_points>& ev )
