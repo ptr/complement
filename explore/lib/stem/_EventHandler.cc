@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <10/01/27 17:01:47 ptr>
+// -*- C++ -*- Time-stamp: <10/02/18 00:44:35 ptr>
 
 /*
- * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2008-2009
+ * Copyright (c) 1995-1999, 2002-2003, 2005-2010
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -97,14 +97,14 @@ bool EventHandler::is_avail( const addr_type& id ) const
 }
 
 __FIT_DECLSPEC
-void EventHandler::Send( const Event& e )
+void EventHandler::Send( const Event& e ) const
 {
   e.src( _ids.front() );
   _mgr->push( e );
 }
 
 __FIT_DECLSPEC
-void EventHandler::Forward( const Event& e )
+void EventHandler::Forward( const Event& e ) const
 {
   _mgr->push( e );
 }

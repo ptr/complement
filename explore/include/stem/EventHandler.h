@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <10/01/27 17:00:02 ptr>
+// -*- C++ -*- Time-stamp: <10/02/18 00:43:42 ptr>
 
 /*
- * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006, 2009
+ * Copyright (c) 1995-1999, 2002, 2003, 2005-2010
  * Petr Ovtchenkov
  * 
  * Copyright (c) 1999-2001
@@ -584,16 +584,16 @@ class EventHandler
       { return _mgr; }
     static addr_type ns();
     addr_type set_default() const; // become default object
-    __FIT_DECLSPEC void Send( const Event& e );
-    __FIT_DECLSPEC void Forward( const Event& e );
+    __FIT_DECLSPEC void Send( const Event& e ) const;
+    __FIT_DECLSPEC void Forward( const Event& e ) const;
     __FIT_DECLSPEC void sync_call( const Event& e );
 
     template <class D>
-    void Send( const stem::Event_base<D>& e )
+    void Send( const stem::Event_base<D>& e ) const
       { EventHandler::Send( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
 
     template <class D>
-    void Forward( const stem::Event_base<D>& e )
+    void Forward( const stem::Event_base<D>& e ) const
       { EventHandler::Forward( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
 
     template <class D>
