@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/17 16:29:30 ptr>
+// -*- C++ -*- Time-stamp: <10/02/18 19:02:04 ptr>
 
 /*
  *
@@ -180,26 +180,28 @@ int basic_vs::vs_aux( const stem::Event& inc_ev )
   return 0;
 }
 
-void basic_vs::send_to_vsg( const stem::Event& ev ) // not VS!
+void basic_vs::send_to_vsg( const stem::Event& ev ) const // not VS!
 {
   stem::Event sev = ev;
+  stem::addr_type sid = self_id();
 
-  sev.src( self_id() );
+  sev.src( sid );
 
   for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-    if ( i->first != self_id() ) {
+    if ( i->first != sid ) {
       sev.dest( i->first );
       Forward( sev );
     }
   }
 }
 
-void basic_vs::forward_to_vsg( const stem::Event& ev ) // not VS!
+void basic_vs::forward_to_vsg( const stem::Event& ev ) const // not VS!
 {
   stem::Event sev = ev;
+  stem::addr_type sid = self_id();
 
   for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-    if ( i->first != self_id() ) {
+    if ( i->first != sid ) {
       sev.dest( i->first );
       Forward( sev );
     }

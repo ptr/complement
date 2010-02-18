@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/16 17:16:02 ptr>
+// -*- C++ -*- Time-stamp: <10/02/18 19:00:07 ptr>
 
 /*
  *
@@ -134,16 +134,16 @@ class basic_vs :
     void vs_send_flush();
     size_type vs_group_size() const;
 
-    void send_to_vsg( const stem::Event& ); // not VS!
+    void send_to_vsg( const stem::Event& ) const; // not VS!
 
     template <class D>
-    void send_to_vsg( const stem::Event_base<D>& e ) // not VS!
+    void send_to_vsg( const stem::Event_base<D>& e ) const // not VS!
       { basic_vs::send_to_vsg( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
 
-    void forward_to_vsg( const stem::Event& ); // not VS!
+    void forward_to_vsg( const stem::Event& ) const; // not VS!
 
     template <class D>
-    void forward_to_vsg( const stem::Event_base<D>& e ) // not VS!
+    void forward_to_vsg( const stem::Event_base<D>& e ) const // not VS!
       { basic_vs::forward_to_vsg( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
 
     void access_points_refresh();

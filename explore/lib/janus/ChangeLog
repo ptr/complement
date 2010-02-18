@@ -1,3 +1,11 @@
+2010-02-18  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* casual.h, casual.cc: add const qualifier
+	for forward_to_vsg and send_to_vsg,
+	StEM alike;
+
+	* libjanus: revision 0.14.6.
+
 2010-02-16  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* casual.cc: remove access points, if
