@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/04 19:52:42 ptr>
+// -*- C++ -*- Time-stamp: <10/03/10 19:41:56 ptr>
 
 /*
  *
@@ -51,6 +51,8 @@ class torder_vs :
     int vs_torder( const stem::Event_base<D>& e )
       { return torder_vs::vs_torder( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
     // void vs_send_flush();
+
+    void leave();
 
   protected:
     int vs_torder_aux( const stem::Event& );

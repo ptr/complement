@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/08 17:17:19 ptr>
+// -*- C++ -*- Time-stamp: <10/03/10 19:44:06 ptr>
 
 /*
  *
@@ -34,6 +34,7 @@ torder_vs::torder_vs( const char* info ) :
 
 torder_vs::~torder_vs()
 {
+  leave();
 }
 
 int torder_vs::vs_torder( const stem::Event& inc_ev )
@@ -307,6 +308,15 @@ void torder_vs::next_leader_election()
         }
         break;
       }
+    }
+  }
+}
+
+void torder_vs::leave()
+{
+  if ( is_leader_ ) {
+    if ( vs_group_size() > 1 ) {
+      next_leader_election();
     }
   }
 }
