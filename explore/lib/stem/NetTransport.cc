@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/08 15:37:17 ptr>
+// -*- C++ -*- Time-stamp: <10/03/08 13:24:54 ptr>
 
 /*
  *
@@ -385,6 +385,11 @@ bool NetTransport_base::Dispatch( const Event& _rs )
   }
 
   return net.good();
+}
+
+int NetTransport_base::flags() const
+{
+  return EvManager::remote;
 }
 
 __FIT_DECLSPEC

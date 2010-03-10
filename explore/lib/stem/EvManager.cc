@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/01/27 16:57:26 ptr>
+// -*- C++ -*- Time-stamp: <10/03/10 19:13:01 ptr>
 
 /*
  *
- * Copyright (c) 1995-1999, 2002, 2003, 2005-2009
+ * Copyright (c) 1995-1999, 2002, 2003, 2005-2010
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -247,15 +247,15 @@ void EvManager::_Dispatch_sub( nest_ref p )
 __FIT_DECLSPEC
 void EvManager::Subscribe( const addr_type& id, EventHandler* object, int nice )
 {
-  lock_guard<mutex> lk( _lock_heap );
+  lock_guard<rw_mutex> lk( _lock_heap );
 #ifdef __FIT_STEM_TRACE
   try {
     lock_guard<mutex> lk(_lock_tr);
     if ( _trs != 0 && _trs->good() && (_trflags & tracesubscr) ) {
       ios_base::fmtflags f = _trs->flags( ios_base::showbase );
       *_trs << "EvManager subscribe " << id << " nice " << nice << ' '
-               << object << " ("
-               << xmt::demangle( object->classtype().name() ) << ")" << endl;
+            << object << " ("
+            << xmt::demangle( object->classtype().name() ) << ")" << endl;
 #ifdef STLPORT
       _trs->flags( f );
 #else
@@ -267,23 +267,23 @@ void EvManager::Subscribe( const addr_type& id, EventHandler* object, int nice )
   }
 #endif // __FIT_STEM_TRACE
 
-  heap[id].push( make_pair( nice, object) );
+  heap[id].push( make_pair( nice, make_pair(object->flags(),object)) );
 }
 
 __FIT_DECLSPEC
 void EvManager::Subscribe( const addr_type& id, EventHandler* object, const std::string& info, int nice )
 {
   {
-    lock_guard<mutex> lk( _lock_heap );
+    lock_guard<rw_mutex> lk( _lock_heap );
 #ifdef __FIT_STEM_TRACE
     try {
       lock_guard<mutex> lk(_lock_tr);
       if ( _trs != 0 && _trs->good() && (_trflags & tracesubscr) ) {
         ios_base::fmtflags f = _trs->flags( ios_base::showbase );
         *_trs << "EvManager subscribe " << id << " nice " << nice << ' '
-                 << object << " ("
-                 << xmt::demangle( object->classtype().name() ) << "), "
-                 << info << endl;
+              << object << " ("
+              << xmt::demangle( object->classtype().name() ) << "), "
+              << info << endl;
 #ifdef STLPORT
         _trs->flags( f );
 #else
@@ -295,7 +295,7 @@ void EvManager::Subscribe( const addr_type& id, EventHandler* object, const std:
     }
 #endif // __FIT_STEM_TRACE
 
-    heap[id].push( make_pair( nice, object) );
+    heap[id].push( make_pair( nice, make_pair(object->flags(),object)) );
   }
 
   annotate( id, info );
@@ -305,16 +305,16 @@ __FIT_DECLSPEC
 void EvManager::Subscribe( const addr_type& id, EventHandler* object, const char* info, int nice )
 {
   {
-    lock_guard<mutex> lk( _lock_heap );
+    lock_guard<rw_mutex> lk( _lock_heap );
 #ifdef __FIT_STEM_TRACE
     try {
       lock_guard<mutex> lk(_lock_tr);
       if ( _trs != 0 && _trs->good() && (_trflags & tracesubscr) ) {
         ios_base::fmtflags f = _trs->flags( ios_base::showbase );
         *_trs << "EvManager subscribe " << id << " nice " << nice << ' '
-                 << object << " ("
-                 << xmt::demangle( object->classtype().name() ) << "), "
-                 << info << endl;
+              << object << " ("
+              << xmt::demangle( object->classtype().name() ) << "), "
+              << info << endl;
 #ifdef STLPORT
         _trs->flags( f );
 #else
@@ -326,9 +326,9 @@ void EvManager::Subscribe( const addr_type& id, EventHandler* object, const char
     }
 #endif // __FIT_STEM_TRACE
 
-    heap[id].push( make_pair( nice, object) );
+    heap[id].push( make_pair( nice, make_pair(object->flags(),object)) );
   }
-
+  
   annotate( id, info );
 }
 
@@ -336,7 +336,7 @@ __FIT_DECLSPEC
 void EvManager::Unsubscribe( const addr_type& id, EventHandler* obj )
 {
   {
-    lock_guard<mutex> _x1( _lock_heap );
+    lock_guard<rw_mutex> _x1( _lock_heap );
 
 #ifdef __FIT_STEM_TRACE
     try {
@@ -362,7 +362,7 @@ void EvManager::Unsubscribe( const addr_type& id, EventHandler* obj )
       return;
     }
     if ( i->second.size() == 1 ) {
-      if ( i->second.top().second == obj ) {
+      if ( i->second.top().second.second == obj ) {
         heap.erase( i );
       } else {
         try {
@@ -382,23 +382,23 @@ void EvManager::Unsubscribe( const addr_type& id, EventHandler* obj )
       swap( i->second, tmp );
       while ( !tmp.empty() ) {
         weighted_handler_type handler = tmp.top();
-        if ( handler.second != obj ) {
+        if ( handler.second.second != obj ) {
           i->second.push( handler );
         }
         tmp.pop();
       }
     }
   }
+
   {
     std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
 
     for ( info_heap_type::iterator i = iheap.begin(); i != iheap.end(); ) {
       for ( addr_collection_type::iterator j = i->second.begin(); j != i->second.end(); ++j ) {
         if ( *j == id ) {
-          lock_guard<mutex> _x1( _lock_heap );
+          basic_read_lock<rw_mutex> _x1( _lock_heap );
 
-          local_heap_type::iterator k = heap.find( id );
-          if ( k == heap.end() ) { // all objects with this addr removed
+          if ( heap.find( id ) == heap.end() ) { // all objects with this addr removed
             i->second.erase( j );
           }
           break;
@@ -456,6 +456,8 @@ std::ostream* EvManager::settrs( std::ostream* s )
 
 __FIT_DECLSPEC void EvManager::push( const Event& e )
 {
+#if 0
+  // any event pushed into queue
   std::tr2::lock_guard<std::tr2::mutex> lk( _lock_queue );
   in_ev_queue.push_back( e );
   _cnd_queue.notify_one();
@@ -475,6 +477,170 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
   catch ( ... ) {
   }
 #endif // __FIT_STEM_TRACE
+
+#else // if 0
+  // process events to 'remotes' here (on stack)
+  // may lead t stalling, if send delay (can't deliver
+  // packet immediately)
+  try {
+    EventHandler* object = 0;
+    bool obj_locked = false;
+    for ( ; ; ) {
+      {
+        basic_read_lock<rw_mutex> lk(_lock_heap);
+        // any object can't be removed from heap within lk scope
+        local_heap_type::iterator i = heap.find( e.dest() );
+        if ( i == heap.end() ) {
+          throw invalid_argument( string("address unknown") );
+        }
+        if ( i->second.empty() ) { // object hasn't StEM address 
+          return; // Unsubscribe in progress?
+        }
+
+        if ( (i->second.top().second.first & (EvManager::remote | EvManager::nosend) ) == 0 ) {
+          // push event into queue
+          // throw int(0);  // low performance
+
+          std::tr2::lock_guard<std::tr2::mutex> lk( _lock_queue );
+          in_ev_queue.push_back( e );
+          _cnd_queue.notify_one();
+#ifdef __FIT_STEM_TRACE
+          try {
+            lock_guard<mutex> lk(_lock_tr);
+            if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
+              ios_base::fmtflags f = _trs->flags( ios_base::hex | ios_base::showbase );
+              *_trs << "EvManager push event " << e.code() << " to queue" << endl;
+#ifdef STLPORT
+              _trs->flags( f );
+#else
+              _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+            }
+          }
+          catch ( ... ) {
+          }
+#endif // __FIT_STEM_TRACE
+          return;
+        }
+
+        // process event here
+
+        object = i->second.top().second.second; // target object
+
+        obj_locked = !object->_theHistory_lock.try_lock();
+        // if lock object here failed, then something already lock it,
+        // possible during attempt to unsubscribe and destroy;
+        // don't lock it, unlock heap and repeate search object:
+        // may be it already removed
+      }
+      if ( !obj_locked ) {
+        break;
+      }
+      std::tr2::this_thread::yield();
+    }
+
+    // object already locked here, see loop above:
+    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( object->_theHistory_lock, std::tr2::adopt_lock );
+
+    try {
+#ifdef __FIT_STEM_TRACE
+      try {
+        lock_guard<mutex> lk(_lock_tr);
+        if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
+          *_trs << xmt::demangle( object->classtype().name() )
+                << " (" << object << ")\n";
+          object->DispatchTrace( e, *_trs );
+          *_trs << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+#endif // __FIT_STEM_TRACE
+      if ( !object->Dispatch( e ) ) { // call dispatcher
+        throw std::logic_error( "no catcher for event" );
+      }
+    }
+    catch ( std::logic_error& err ) {
+      try {
+        lock_guard<mutex> lk(_lock_tr);
+        if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+          *_trs << err.what() << "\n"
+                << xmt::demangle( object->classtype().name() ) << " (" << object << ")\n";
+          object->DispatchTrace( e, *_trs );
+          *_trs << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+    }
+    catch ( ... ) {
+      try {
+        lock_guard<mutex> lk(_lock_tr);
+        if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+          *_trs << "Unknown, uncatched exception during process:\n"
+                << xmt::demangle( object->classtype().name() ) << " (" << object << ")\n";
+          object->DispatchTrace( e, *_trs );
+          *_trs << endl;
+        }
+      }
+      catch ( ... ) {
+      }
+    }      
+  }
+#if 0 // low performance
+  catch ( int ) {
+    std::tr2::lock_guard<std::tr2::mutex> lk( _lock_queue );
+    in_ev_queue.push_back( e );
+    _cnd_queue.notify_one();
+#ifdef __FIT_STEM_TRACE
+    try {
+      lock_guard<mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
+        ios_base::fmtflags f = _trs->flags( ios_base::hex | ios_base::showbase );
+        *_trs << "EvManager push event " << e.code() << " to queue" << endl;
+#ifdef STLPORT
+        _trs->flags( f );
+#else
+        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+      }
+    }
+    catch ( ... ) {
+    }
+#endif // __FIT_STEM_TRACE
+  }
+#endif // if 0
+  catch ( std::logic_error& err ) {
+    try {
+      lock_guard<mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+        *_trs << HERE << ' ' << err.what() << endl;
+      }
+    }
+    catch ( ... ) {
+    }
+  }
+  catch ( std::runtime_error& err ) {
+    try {
+      lock_guard<mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+        *_trs << HERE << ' ' << err.what() << endl;
+      }
+    }
+    catch ( ... ) {
+    }
+  }
+  catch ( ... ) {
+    try {
+      lock_guard<mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
+        *_trs << HERE << " unknown, uncatched exception" << endl;
+      }
+    }
+    catch ( ... ) {
+    }
+  }
+#endif // if 0
 }
 
 void EvManager::sync_call( EventHandler& object, const Event& e )
@@ -566,7 +732,7 @@ void EvManager::Send( const Event& e )
     bool obj_locked = false;
     for ( ; ; ) {
       {
-        lock_guard<mutex> lk(_lock_heap);
+        basic_read_lock<rw_mutex> lk(_lock_heap);
         // any object can't be removed from heap within lk scope
         local_heap_type::iterator i = heap.find( e.dest() );
         if ( i == heap.end() ) { // destination not found
@@ -575,7 +741,7 @@ void EvManager::Send( const Event& e )
         if ( i->second.empty() ) { // object hasn't StEM address 
           return; // Unsubscribe in progress?
         }
-        object = i->second.top().second; // target object
+        object = i->second.top().second.second; // target object
         obj_locked = !object->_theHistory_lock.try_lock();
         // if lock object here failed, then something already lock it,
         // possible during attempt to unsubscribe and destroy;
@@ -688,11 +854,11 @@ __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
   ios_base::fmtflags f = s.flags( ios_base::showbase );
 
   {
-    lock_guard<mutex> lk( _lock_heap );
+    basic_read_lock<rw_mutex> lk( _lock_heap );
 
     for ( local_heap_type::const_iterator i = heap.begin(); i != heap.end(); ++i ) {
-      s << i->first << " => " << i->second.top().second
-        << " (" << xmt::demangle( i->second.top().second->classtype().name() ) << ")\n";
+      s << i->first << " => " << i->second.top().second.second
+        << " (" << xmt::demangle( i->second.top().second.second->classtype().name() ) << ")\n";
     }
   }
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/18 00:43:42 ptr>
+// -*- C++ -*- Time-stamp: <10/03/08 13:12:43 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005-2010
@@ -628,6 +628,7 @@ class EventHandler
     virtual const std::type_info& classtype() const
        { return typeid(EventHandler); }
     __FIT_DECLSPEC void TraceStack( ostream& ) const;
+    virtual int flags() const;
 
   private:
     EventHandler( const EventHandler& );

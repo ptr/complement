@@ -1,3 +1,17 @@
+2010-03-10  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* EventHandler, EvManager, NetTransport:
+	EventHandler's may mark itself as 'remote'
+	or 'nosend'; for such objects events
+	dispatching will be done on stack
+	[no recursion via Send()]; this give better
+	performance in important cases;
+
+	* EvManager: lock heap via rw_mutex,
+	performance improved;
+
+	* libstem: revision 5.4.0.
+
 2010-02-18  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* EventHandler.h, _EventHandler.cc: add

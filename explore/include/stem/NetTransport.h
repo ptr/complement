@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/10/08 14:52:16 ptr>
+// -*- C++ -*- Time-stamp: <10/03/10 19:13:45 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2009
+ * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2010
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -60,6 +60,8 @@ class NetTransport_base :
 
     virtual const std::type_info& classtype() const
        { return typeid(NetTransport_base); }
+
+    virtual int flags() const;
 
   private:
     NetTransport_base( NetTransport_base& );

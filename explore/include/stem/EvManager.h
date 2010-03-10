@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <10/01/27 16:52:10 ptr>
+// -*- C++ -*- Time-stamp: <10/03/10 19:13:29 ptr>
 
 /*
- * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009
+ * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2010
  * Petr Ovtchenkov
  * 
  * Copyright (c) 1999-2001
@@ -60,7 +60,7 @@
 namespace stem {
 namespace detail {
 
-typedef std::pair<int,EventHandler*> weighted_handler_type;
+typedef std::pair<int,std::pair<int,EventHandler*> > weighted_handler_type;
 
 } // namespace detail
 } // namespace stem
@@ -109,6 +109,11 @@ class EvManager
       tracesubscr = 8
     };
 
+    enum objectflags {
+      remote = 1,
+      nosend = 2
+    };
+
     __FIT_DECLSPEC EvManager();
     __FIT_DECLSPEC ~EvManager();
 
@@ -119,8 +124,8 @@ class EvManager
 
     bool is_avail( const addr_type& id ) const
       {
-        std::tr2::lock_guard<std::tr2::mutex> lk( _lock_heap );
-        return unsafe_is_avail(id);
+        std::tr2::basic_read_lock<std::tr2::rw_mutex> lk( _lock_heap );
+        return unsafe_is_avail( id );
       }
 
     void annotate( const addr_type& id, const std::string& info )
@@ -160,9 +165,7 @@ class EvManager
 
   protected:
     bool unsafe_is_avail( const addr_type& id ) const
-      {
-        return heap.find( id ) != heap.end();
-      }
+      { return heap.find( id ) != heap.end(); }
 
     void unsafe_annotate( const addr_type& id, const std::string& info );
 
@@ -243,7 +246,7 @@ class EvManager
 
     bool _dispatch_stop;
 
-    std::tr2::mutex _lock_heap;
+    std::tr2::rw_mutex _lock_heap;
     std::tr2::mutex _lock_iheap;
 
     std::tr2::mutex _lock_queue;

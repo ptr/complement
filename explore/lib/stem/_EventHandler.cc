@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/18 00:44:35 ptr>
+// -*- C++ -*- Time-stamp: <10/03/08 13:16:12 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2010
@@ -316,6 +316,11 @@ void EventHandler::disable()
   for ( addr_container_type::iterator i = _ids.begin(); i != _ids.end(); ++i ) {
     _mgr->Unsubscribe( *i, this );
   }
+}
+
+int EventHandler::flags() const
+{
+  return 0;
 }
 
 } // namespace stem
