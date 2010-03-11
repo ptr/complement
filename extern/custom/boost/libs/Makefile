@@ -9,7 +9,7 @@
 SRCROOT := ../../../../explore
 SUBDIRS := date_time filesystem program_options regex \
            test/unit_test_framework test/prg_exec_mon \
-           thread python
+           thread python system
 
 include ${SRCROOT}/Makefiles/gmake/subdirs.mak
 
