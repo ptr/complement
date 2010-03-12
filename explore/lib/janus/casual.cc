@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/18 19:02:04 ptr>
+// -*- C++ -*- Time-stamp: <10/03/12 14:52:39 ptr>
 
 /*
  *
@@ -1170,6 +1170,8 @@ void basic_vs::process_last_will( const stem::Event_base<janus::addr_type>& ev )
       stem::EventVoid update_view_ev( VS_UPDATE_VIEW );
 
       basic_vs::vs_aux( update_view_ev );
+
+      this->vs_pub_view_update();
     }
   } else {
     cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
