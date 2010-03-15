@@ -3,7 +3,7 @@
 BOOST_SRC = $(BOOST_INCLUDE_DIR)/libs/thread/src
 LIBNAME = boost_thread
 MAJOR = 1
-MINOR = 41
+MINOR = 42
 PATCH = 0
 
 SRC_CPP = $(BOOST_SRC)/pthread/thread.cpp \
