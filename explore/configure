@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Time-stamp: <09/12/17 16:21:57 ptr>
+# Time-stamp: <10/03/15 23:40:19 ptr>
 
 base=`cd \`dirname $0\`; echo $PWD`
 
@@ -48,6 +48,7 @@ Available options:
   --without-stlport     compile without STLport (default)
   --without-bfd         disable BFD usage
   --with-boost=<dir>    use boost headers in catalog <dir>
+  --with-boostlog=<dir> use boost.log in catalog <dir>
   --with-system-boost   use boost installed on this system
   --with-lua=<dir>      use lua sources in catalog <dir>
   --with-msvc=<dir>     use MS VC from this catalog
@@ -159,6 +160,9 @@ do
       ;;
     --with-boost=*)
       write_option "$option" BOOST_DIR
+      ;;
+    --with-boostlog=*)
+      write_option "$option" BOOST_LOG_DIR
       ;;
     --with-system-boost)
       write_option "1" USE_SYSTEM_BOOST
