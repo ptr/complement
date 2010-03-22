@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Time-stamp: <10/03/15 23:40:19 ptr>
+# Time-stamp: <10/03/22 14:45:18 ptr>
 
 base=`cd \`dirname $0\`; echo $PWD`
 
@@ -74,7 +74,10 @@ Available options:
   --without-debug       don't build debug variant
   --without-stldebug    don't build STLport's STLP_DEBUG mode
   --enable-static       build static
-  --disable-shared      don't build shared 
+  --disable-shared      don't build shared
+  --with-sigcxx=<dir>   use sigc++ sources in catalog <dir>
+  --with-glibmm=<dir>   use glibmm sources in catalog <dir> (require sigc++)
+  --with-libxmlxx=<dir> use libxml++ sources in catalog <dir> (require sigc++, glibmm)
 
 Environment variables:
 
@@ -235,6 +238,15 @@ do
       ;;
     --includedir=*)
       write_option "$option" INSTALL_HDR_DIR '${DESTDIR}'
+      ;;
+    --with-sigcxx=*)
+      write_option "$option" LIBSIGCXX_DIR
+      ;;
+    --with-glibmm=*)
+      write_option "$option" GLIBMM_DIR
+      ;;
+    --with-libxmlxx=*)
+      write_option "$option" LIBXMLXX_DIR
       ;;
   esac
 done

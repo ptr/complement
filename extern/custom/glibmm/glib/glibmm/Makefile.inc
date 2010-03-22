@@ -1,4 +1,6 @@
-# -*- makefile -*- Time-stamp: <10/03/18 09:37:48 ptr>
+# -*- makefile -*- Time-stamp: <10/03/22 14:27:51 ptr>
+
+GLIBMM_SRC = ${GLIBMM_DIR}/glib/glibmm
 
 LIBNAME = glibmm-2.6
 MAJOR = 4

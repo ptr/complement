@@ -1,12 +1,11 @@
-# -*- makefile -*- Time-stamp: <10/03/18 09:38:45 ptr>
+# -*- makefile -*- Time-stamp: <10/03/22 14:31:24 ptr>
 
 SRCROOT := ../../../../../explore
-# POST_INSTALL = ln -sf ${SO_NAME} $(INSTALL_LIB_DIR)/libboost_date_time.so
 
-GLIBMM_DIR = ${HOME}/labs/glibmm-2.23.3
-GLIBMM_SRC = ${GLIBMM_DIR}/glib/glibmm
+#GLIBMM_DIR = ${HOME}/labs/glibmm-2.23.3
+#GLIBMM_SRC = ${GLIBMM_DIR}/glib/glibmm
 
-LIBSIGCXX_DIR = ${HOME}/labs/libsigc++2
+#LIBSIGCXX_DIR = ${HOME}/labs/libsigc++2
 
 include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak

@@ -1,11 +1,6 @@
-# -*- makefile -*- Time-stamp: <10/03/18 09:38:45 ptr>
+# -*- makefile -*- Time-stamp: <10/03/22 14:37:56 ptr>
 
 SRCROOT := ../../../../explore
-# POST_INSTALL = ln -sf ${SO_NAME} $(INSTALL_LIB_DIR)/libboost_date_time.so
-
-#LIBSIGCXX_DIR = ${HOME}/labs/libsigc++-2.2.4.2
-LIBSIGCXX_DIR = ${HOME}/labs/libsigc++2
-LIBSIGCXX_SRC = ${LIBSIGCXX_DIR}/sigc++
 
 EXTRA_PRE = generate
 EXTRA_PRE_DBG = generate
@@ -13,6 +8,10 @@ EXTRA_PRE_STLDBG = generate
 
 include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
+
+#LIBSIGCXX_DIR ?= ${HOME}/labs/libsigc++-2.2.4.2
+#LIBSIGCXX_DIR ?= ${HOME}/labs/libsigc++2
+#LIBSIGCXX_SRC = ${LIBSIGCXX_DIR}/sigc++
 
 %.h:	${LIBSIGCXX_SRC}/macros/%.h.m4
 	m4 -I ${LIBSIGCXX_SRC}/macros $< >$@
@@ -53,8 +52,8 @@ generate:	dirs class_slot.h hide.h limit_reference.h method_slot.h \
                 adaptors/lambda/select.h
 
 dirs:
-	[ ! -d functors ] && mkdir functors; \
-        [ ! -d adaptors ] && mkdir adaptors; \
-        [ ! -d adaptors/lambda ] && mkdir adaptors/lambda
+	[ ! -d functors ] && mkdir functors || exit 0; \
+        [ ! -d adaptors ] && mkdir adaptors || exit 0; \
+        [ ! -d adaptors/lambda ] && mkdir adaptors/lambda || exit 0
 
 PHONY += generate dirs

@@ -1,4 +1,6 @@
-# -*- makefile -*- Time-stamp: <10/03/18 09:37:48 ptr>
+# -*- makefile -*- Time-stamp: <10/03/22 14:31:51 ptr>
+
+LIBSIGCXX_SRC = ${LIBSIGCXX_DIR}/sigc++
 
 LIBNAME = sigc++
 MAJOR = 2

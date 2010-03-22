@@ -1,4 +1,6 @@
-# -*- makefile -*- Time-stamp: <10/03/21 23:01:26 ptr>
+# -*- makefile -*- Time-stamp: <10/03/22 14:44:22 ptr>
+
+LIBXMLXX_SRC = ${LIBXMLXX_DIR}/libxml++
 
 LIBNAME = libxml++
 MAJOR = 2
