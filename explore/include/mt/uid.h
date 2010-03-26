@@ -1,7 +1,7 @@
 // -*- C++ -*- Time-stamp: <10/02/15 19:08:31 ptr>
 
 /*
- * Copyright (c) 2006, 2008, 2009
+ * Copyright (c) 2006, 2008-2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -27,7 +27,7 @@
 #include <ostream>
 #include <cstring>
 
-#ifdef STLPORT
+#if defined(STLPORT) && ((_STLPORT_MAJOR > 5) || ((_STLPORT_MAJOR == 5) && (_STLPORT_MINOR > 1)))
 # include <type_traits>
 #else
 # include <misc/type_traits.h>
