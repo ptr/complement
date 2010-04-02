@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/03/12 14:52:39 ptr>
+// -*- C++ -*- Time-stamp: <10/04/02 20:52:25 ptr>
 
 /*
  *
@@ -905,21 +905,25 @@ void basic_vs::vs_send_flush()
 {
   if ( lock_addr == stem::badaddr ) {
     if ( vt.vt.size() > 1 ) {
-      lock_rsp.clear();
+      check_remotes(); // is anybody leave us?
+      if ( vt.vt.size() > 1 ) {
+        lock_rsp.clear();
 
-      stem::EventVoid view_lock_ev( VS_FLUSH_LOCK_VIEW );
+        stem::EventVoid view_lock_ev( VS_FLUSH_LOCK_VIEW );
 
-      basic_vs::vs_aux( view_lock_ev );
-      lock_addr = self_id(); // after vs_aux()!
-      PushState( VS_ST_LOCKED );
+        basic_vs::vs_aux( view_lock_ev );
+        lock_addr = self_id(); // after vs_aux()!
+        PushState( VS_ST_LOCKED );
 
-      add_lock_safety(); // belay: avoid infinite lock
-    } else { // single in group: lock not required
-      stem::Event_base<xmt::uuid_type> flush_ev( VS_FLUSH_VIEW );
-      flush_ev.value() = xmt::uid();
-      basic_vs::vs_aux( flush_ev );
-      this->vs_pub_flush();
+        add_lock_safety(); // belay: avoid infinite lock
+        return;
+      }
     }
+    // single in group: lock not required
+    stem::Event_base<xmt::uuid_type> flush_ev( VS_FLUSH_VIEW );
+    flush_ev.value() = xmt::uid();
+    basic_vs::vs_aux( flush_ev );
+    this->vs_pub_flush();
   }
 }
 
@@ -1221,9 +1225,35 @@ void basic_vs::check_remotes()
         ++view;
       }
     } else {
-      const stem::EventVoid cr_ev( VS_LOCK_SAFETY );
-      cr_ev.dest( self_id() );
-      Send( cr_ev );
+      if ( vt.vt.size() > 1 ) {
+        const stem::EventVoid cr_ev( VS_LOCK_SAFETY );
+        cr_ev.dest( self_id() );
+        Send( cr_ev );
+      } else {
+        // single in group, lock not actual more
+        ++view;
+        if ( group_applicant != stem::badaddr ) {
+          vt[group_applicant]; // i.e. create entry in vt
+          group_applicant = stem::badaddr;
+        }
+        lock_addr = stem::badaddr; // before vs_aux()!
+        PopState( VS_ST_LOCKED );
+        lock_rsp.clear();
+
+        rm_lock_safety();
+
+        stem::EventVoid update_view_ev( VS_UPDATE_VIEW );
+
+        basic_vs::vs_aux( update_view_ev );
+
+        while ( !de.empty() ) {
+          if ( basic_vs::vs( de.front() ) ) {
+            de.pop_back(); // event pushed back in vs() above, remove it
+            break;
+          }
+          de.pop_front();
+        }
+      }
     }
   }
 }

@@ -1,3 +1,11 @@
+2010-04-02  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* casual.cc: check channels before send
+	flush message; clear lock state if remains
+	single in group;
+
+	* libjanus: revision 0.14.8.
+
 2010-03-10  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* torder.h, torder.cc: method leave()
