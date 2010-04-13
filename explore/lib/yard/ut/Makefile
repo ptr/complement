@@ -55,6 +55,3 @@ check:	all-shared
 ifndef WITHOUT_STLPORT
 	@${PRG_STLDBG}
 endif
-
-depend clean distclean mostlyclean maintainer-clean::
-	${MAKE} -C dl $@
