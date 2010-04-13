@@ -23,3 +23,4 @@ endif
 
 depend clean distclean mostlyclean maintainer-clean::
 	${MAKE} -C ut $@
+	${MAKE} -C perf $@

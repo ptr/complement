@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/04/12 19:44:20 ptr>
+// -*- C++ -*- Time-stamp: <10/04/13 18:06:25 ptr>
 
 /*
  * Copyright (c) 2010
@@ -73,7 +73,7 @@ int EXAM_IMPL(yard_test::create)
 
 int EXAM_IMPL(yard_test::put)
 {
-  const int nn = 1024;
+  const int nn = 102400;
 
   vector<xmt::uuid_type> data_put;
   vector<yard::id_type>  data_key;
@@ -86,9 +86,9 @@ int EXAM_IMPL(yard_test::put)
 
     char data[] = "Hello, world!";
 
-    yard::id_type id = db.put( data, sizeof(data) );
+    yard::id_type id = db.put_revision( data, sizeof(data) );
 
-    yard::id_type id2 = db.put( data, sizeof(data) );
+    yard::id_type id2 = db.put_revision( data, sizeof(data) );
 
     EXAM_CHECK( id == id2 );
 
@@ -98,7 +98,7 @@ int EXAM_IMPL(yard_test::put)
       // cerr << i << endl;
       gen = xmt::uid();
       data_put.push_back( gen );
-      data_key.push_back( db.put( &gen, sizeof(xmt::uuid_type) ) );
+      data_key.push_back( db.put_revision( &gen, sizeof(xmt::uuid_type) ) );
 
       // for ( int j = 0; j <= i; ++j ) {
       //   cerr << ' ' << j << endl;

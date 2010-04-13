@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/04/13 09:46:09 ptr>
+// -*- C++ -*- Time-stamp: <10/04/13 17:42:39 ptr>
 
 /*
  *
@@ -32,14 +32,15 @@ class yard
     yard( const char* path );
     ~yard();
 
-    id_type put( const void*, size_type ) throw (std::ios_base::failure);
-    id_type put( const std::string& s ) throw (std::ios_base::failure)
-      { return put( s.data(), s.length() ); }
+    id_type put_revision( const void*, size_type ) throw (std::ios_base::failure);
+    id_type put_revision( const std::string& s ) throw (std::ios_base::failure)
+      { return put_revision( s.data(), s.length() ); }
 
     std::string get( const id_type& ) throw (std::ios_base::failure, std::invalid_argument);
 
   private:
-    void create_block( int ) throw (std::ios_base::failure);
+    offset_type create_block( int ) throw (std::ios_base::failure);
+    id_type put_raw( const id_type&, const void*, size_type ) throw (std::ios_base::failure);
 
   private:
     static const size_t first_hash_size;

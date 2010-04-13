@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/04/13 09:48:00 ptr>
+// -*- C++ -*- Time-stamp: <10/04/13 17:50:36 ptr>
 
 /*
  *
@@ -105,7 +105,7 @@ yard::~yard()
   delete block_offset;
 }
 
-void yard::create_block( int hv ) throw (std::ios_base::failure)
+yard::offset_type yard::create_block( int hv ) throw (std::ios_base::failure)
 {
   f.seekp( 0, ios_base::end );
 
@@ -128,14 +128,17 @@ void yard::create_block( int hv ) throw (std::ios_base::failure)
     f.write( reinterpret_cast<const char *>(&v), sizeof(uint64_t) );
   }
 
-  block_offset[hv] = off;
-
+  return off;
   // Note: block offset not in hash table yet!
 }
 
-id_type yard::put( const void* data, yard::size_type sz ) throw (std::ios_base::failure)
+id_type yard::put_revision( const void* data, size_type sz ) throw (std::ios_base::failure)
 {
-  id_type id = xmt::uid_md5( data, sz );
+  return put_raw( xmt::uid_md5( data, sz ), data, sz );
+}
+
+id_type yard::put_raw( const id_type& id, const void* data, yard::size_type sz ) throw (std::ios_base::failure)
+{
   int hv = 0x1ff & id.u.i[0];
 
   if ( block_offset[hv] != static_cast<offset_type>(-1) ) {
@@ -208,9 +211,7 @@ id_type yard::put( const void* data, yard::size_type sz ) throw (std::ios_base::
       f.write( reinterpret_cast<const char *>(&v), sizeof(uint64_t) );
     }
   } else {
-    create_block( hv );
-
-    // f.seekp( 0, ios_base::end );
+    block_offset[hv] = create_block( hv );
     // write data
     offset_type off = f.tellp();
     f.write( reinterpret_cast<const char *>(data), sz );
