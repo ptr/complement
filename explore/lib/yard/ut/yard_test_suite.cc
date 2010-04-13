@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/04/01 12:04:59 ptr>
+// -*- C++ -*- Time-stamp: <10/04/08 14:19:43 ptr>
 
 /*
  * Copyright (c) 2010
@@ -9,8 +9,8 @@
  */
 
 #include <exam/suite.h>
-
 #include <misc/opts.h>
+#include "yard_test.h"
 
 using namespace std;
 using namespace std::tr2;
@@ -22,8 +22,8 @@ int main( int argc, const char** argv )
   exam::test_suite t( "libyard test suite" );
   yard_test test;
 
-  // tc[1] = t.add( &yard_test::basic2, test, "basic2",
-  //                tc[0] = t.add( &yard_test::basic1, test, "basic1" ) );
+  t.add( &yard_test::put, test, "put object",
+    t.add( &yard_test::create, test, "create hash" ) );
 
   Opts opts;
 

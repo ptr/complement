@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/04/01 12:07:48 ptr>
+// -*- C++ -*- Time-stamp: <10/04/13 10:31:36 ptr>
 
 /*
  *
@@ -52,8 +52,11 @@ int main( int argc, const char** argv )
 
   yard_perf p;
 
-  // t.add( &stem_perf::parallel, p, "StEM dispatch parallel",
-  //  t.add( &stem_perf::net_loopback_inv2, p, "StEM event, via net loopback iface, inverted send" ) );
+  t.add( &yard_perf::put_more_more, p, "Yard put 102400",
+    t.add( &yard_perf::put_more, p, "Yard put 10240",
+      tc[0] = t.add( &yard_perf::put, p, "Yard put 1024" ) ) );
+
+  t.add( &yard_perf::put_get, p, "Yard put/get 1024", tc[0] );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );
