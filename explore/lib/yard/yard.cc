@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/04/13 17:50:36 ptr>
+// -*- C++ -*- Time-stamp: <10/04/14 17:44:43 ptr>
 
 /*
  *
@@ -29,6 +29,8 @@ const size_t yard::block_size = 4096;
 const size_t yard::hash_block_n = (yard::block_size - 2 * sizeof(uint64_t)) / (sizeof(id_type) + 2 * sizeof(uint64_t));
 const size_t yard::hash_block_id_off = 2 * sizeof(uint64_t);
 const size_t yard::hash_block_off_off = yard::hash_block_id_off + yard::hash_block_n * sizeof(id_type);
+
+// xmt::uuid_type obj_table;
 
 // struct block_basket
 // {
@@ -134,10 +136,43 @@ yard::offset_type yard::create_block( int hv ) throw (std::ios_base::failure)
 
 id_type yard::put_revision( const void* data, size_type sz ) throw (std::ios_base::failure)
 {
-  return put_raw( xmt::uid_md5( data, sz ), data, sz );
+  id_type id = xmt::uid_md5( data, sz );
+  put_raw( id, data, sz );
+  return id;
 }
 
-id_type yard::put_raw( const id_type& id, const void* data, yard::size_type sz ) throw (std::ios_base::failure)
+void yard::put_object( const id_type& id, const void* data, size_type sz ) throw (std::ios_base::failure)
+{
+  id_type rid = put_revision( data, sz );
+
+  try {
+    std::string obj;
+    offset_type off = get_priv( id, obj );
+    // obj += std::string( reinterpret_cast<const char*>(&rid), sizeof(id_type) );
+    
+    f.seekp( 0, ios_base::end );
+    // write data
+    offset_type off_data = f.tellp();
+    f.write( reinterpret_cast<const char *>(obj.data()), obj.size() );
+    f.write( reinterpret_cast<const char *>(&rid), sizeof(id_type) );
+
+    // re-write offset of data...
+    f.seekp( off, ios_base::beg );
+
+    uint64_t v = off_data;
+    f.write( reinterpret_cast<const char *>(&v), sizeof(uint64_t) ); // offset
+    // ... and data size
+    v = obj.size() + sizeof(id_type);
+    f.write( reinterpret_cast<const char *>(&v), sizeof(uint64_t) ); // size
+
+    // old offset and size are lost now
+  }
+  catch ( const std::invalid_argument& ) {
+    put_raw( id, &rid, sizeof(id_type) );
+  }
+}
+
+void yard::put_raw( const id_type& id, const void* data, yard::size_type sz ) throw (std::ios_base::failure)
 {
   int hv = 0x1ff & id.u.i[0];
 
@@ -155,7 +190,7 @@ id_type yard::put_raw( const id_type& id, const void* data, yard::size_type sz )
       for ( int i = 0; i < n; ++i ) {
         f.read( reinterpret_cast<char *>(&rid), sizeof(id_type) );
         if ( rid == id ) {
-          return id;
+          return;
         }
       }
     } while( v != static_cast<uint64_t>(-1) );
@@ -238,11 +273,12 @@ id_type yard::put_raw( const id_type& id, const void* data, yard::size_type sz )
     f.write( reinterpret_cast<const char *>(&v), sizeof(uint64_t) );
   }
 
-  return id;
+  return;
 }
 
 std::string yard::get( const id_type& id ) throw (std::ios_base::failure, std::invalid_argument)
 {
+#if 0
   int hv = 0x1ff & id.u.i[0];
   if ( block_offset[hv] != static_cast<offset_type>(-1) ) {
     id_type rid;
@@ -267,6 +303,61 @@ std::string yard::get( const id_type& id ) throw (std::ios_base::failure, std::i
           std::string ret( sz, char(0) );
           f.read( const_cast<char *>(ret.data()), sz );
           return ret;
+        }
+      }
+    } while( v != static_cast<uint64_t>(-1) );
+  }
+
+  throw std::invalid_argument( "not found" );
+#else
+  std::string ret;
+  get_priv( id, ret );
+  return ret;
+#endif
+}
+
+std::string yard::get_object( const id_type& id ) throw (std::ios_base::failure, std::invalid_argument)
+{
+  std::string ret;
+  get_priv( id, ret ); // object's revisions
+
+  id_type rid;
+  
+  // extract last revision
+  std::copy( ret.data() + ret.size() - sizeof(id_type), ret.data() + ret.size(), reinterpret_cast<char*>(&rid) );
+  get_priv( rid, ret ); // last object's revision
+
+  return ret;
+}
+
+yard::offset_type yard::get_priv( const id_type& id, std::string& ret ) throw (std::ios_base::failure, std::invalid_argument)
+{
+  int hv = 0x1ff & id.u.i[0];
+  if ( block_offset[hv] != static_cast<offset_type>(-1) ) {
+    id_type rid;
+    uint64_t v = block_offset[hv];
+    int n;
+    offset_type last_block_off;
+    do {
+      last_block_off = v;
+      f.seekg( last_block_off, ios_base::beg );
+      f.read( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
+      n = v;
+      f.read( reinterpret_cast<char *>(&v), sizeof(uint64_t) ); // next
+      for ( int i = 0; i < n; ++i ) {
+        f.read( reinterpret_cast<char *>(&rid), sizeof(id_type) );
+        if ( rid == id ) {
+          offset_type ref_offset = last_block_off + hash_block_off_off + i * 2 * sizeof(uint64_t);
+          f.seekg( ref_offset, ios_base::beg );
+          f.read( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
+          offset_type d_off = v;
+          f.read( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
+          size_type sz = v;
+          f.seekg( d_off, ios_base::beg );
+          ret.clear();
+          ret.assign( sz, char(0) );
+          f.read( const_cast<char *>(ret.data()), sz );
+          return ref_offset;
         }
       }
     } while( v != static_cast<uint64_t>(-1) );

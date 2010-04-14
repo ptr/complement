@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/04/13 10:31:36 ptr>
+// -*- C++ -*- Time-stamp: <10/04/14 18:53:17 ptr>
 
 /*
  *
@@ -52,11 +52,13 @@ int main( int argc, const char** argv )
 
   yard_perf p;
 
-  t.add( &yard_perf::put_more_more, p, "Yard put 102400",
-    t.add( &yard_perf::put_more, p, "Yard put 10240",
-      tc[0] = t.add( &yard_perf::put, p, "Yard put 1024" ) ) );
+  tc[1] = t.add( &yard_perf::put_more_more, p, "put-102400",
+    t.add( &yard_perf::put_more, p, "put-10240",
+      tc[0] = t.add( &yard_perf::put, p, "put-1024" ) ) );
 
-  t.add( &yard_perf::put_get, p, "Yard put/get 1024", tc[0] );
+  t.add( &yard_perf::put_get, p, "put/get-1024", tc[0] );
+  t.add( &yard_perf::put_object_r2, p, "put object-1024 r2",
+    t.add( &yard_perf::put_object, p, "put object-1024", tc[0] ) );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );

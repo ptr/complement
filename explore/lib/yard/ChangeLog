@@ -1,3 +1,10 @@
+2010-04-14  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* yard: implemented 'put/get revision';
+	implemented 'put/get object';
+
+	* libyard: revision 0.1.0.
+
 2010-04-01  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* yard: framework established.

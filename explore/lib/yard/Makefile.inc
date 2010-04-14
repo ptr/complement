@@ -1,7 +1,7 @@
-# -*- Makefile -*- Time-stamp: <10/04/01 12:12:07 ptr>
+# -*- Makefile -*- Time-stamp: <10/04/14 21:52:16 ptr>
 
 LIBNAME = yard
 MAJOR = 0
-MINOR = 0
+MINOR = 1
 PATCH = 0
 SRC_CC = yard.cc

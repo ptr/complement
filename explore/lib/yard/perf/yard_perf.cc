@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/04/13 13:57:45 ptr>
+// -*- C++ -*- Time-stamp: <10/04/14 18:52:25 ptr>
 
 /*
  * Copyright (c) 2010
@@ -56,7 +56,7 @@ int EXAM_IMPL(yard_perf::put_get)
 {
   const int nn = 1024;
 
-  vector<yard::id_type>  data_key;
+  vector<yard::id_type> data_key;
 
   data_key.reserve( nn );
 
@@ -129,6 +129,72 @@ int EXAM_IMPL(yard_perf::put_more_more)
     for ( int i = 0; i < nn; ++i ) {
       gen = xmt::uid();
       db.put_revision( &gen, sizeof(xmt::uuid_type) );
+    }
+  }
+  catch ( const std::ios_base::failure& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  unlink( "/tmp/yard" );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_perf::put_object)
+{
+  const int nn = 1024;
+
+  try {
+    yard::yard db( "/tmp/yard" );
+
+    xmt::uuid_type gen;
+    xmt::uuid_type id;
+
+    for ( int i = 0; i < nn; ++i ) {
+      gen = xmt::uid();
+      id = xmt::uid();
+      db.put_object( id, &gen, sizeof(xmt::uuid_type) );
+    }
+  }
+  catch ( const std::ios_base::failure& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  unlink( "/tmp/yard" );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_perf::put_object_r2)
+{
+  const int nn = 1024;
+
+  try {
+    yard::yard db( "/tmp/yard" );
+
+    xmt::uuid_type gen;
+    xmt::uuid_type id;
+
+    vector<yard::id_type> data_key;
+
+    data_key.reserve( nn );
+
+    for ( int i = 0; i < nn; ++i ) {
+      gen = xmt::uid();
+      id = xmt::uid();
+      data_key.push_back( id );
+      db.put_object( id, &gen, sizeof(xmt::uuid_type) );
+    }
+
+    for ( int i = 0; i < nn; ++i ) {
+      gen = xmt::uid();
+      db.put_object( data_key[i], &gen, sizeof(xmt::uuid_type) );
     }
   }
   catch ( const std::ios_base::failure& err ) {
