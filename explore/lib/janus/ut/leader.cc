@@ -72,8 +72,9 @@ void VT_with_leader::vs_pub_flush()
 {
 }
 
-void VT_with_leader::vs_pub_tord_rec( const stem::Event& )
+void VT_with_leader::vs_pub_tord_rec( const stem::Event& ev )
 {
+  f << ev.value() << '\n';
 }
 
 #define EV_EXT_EV_SAMPLE      0x9010
@@ -186,7 +187,7 @@ int EXAM_IMPL(vtime_operations::leader)
           // std::tr2::this_thread::sleep( std::tr2::milliseconds(20) );
         }
 
-        std::tr2::this_thread::sleep( std::tr2::milliseconds(120) );
+        std::tr2::this_thread::sleep( std::tr2::milliseconds(1200) );
         b2.wait();
       }
       catch ( ... ) {
@@ -261,7 +262,7 @@ int EXAM_IMPL(vtime_operations::leader)
             // std::tr2::this_thread::sleep( std::tr2::milliseconds(20) );
           }
 
-          std::tr2::this_thread::sleep( std::tr2::milliseconds(120) );
+          std::tr2::this_thread::sleep( std::tr2::milliseconds(1200) );
           b2.wait();
         }
         catch ( ... ) {
@@ -342,7 +343,7 @@ int EXAM_IMPL(vtime_operations::leader)
             // std::tr2::this_thread::sleep( std::tr2::milliseconds(20) );
           }
 
-          std::tr2::this_thread::sleep( std::tr2::milliseconds(120) );
+          std::tr2::this_thread::sleep( std::tr2::milliseconds(1200) );
           b2.wait();
         }
         catch ( ... ) {
@@ -470,7 +471,7 @@ int EXAM_IMPL(vtime_operations::leader_fail)
         }
 
         b4.wait(); // group size 3, align with others
-        std::tr2::this_thread::sleep( std::tr2::milliseconds(50) );
+        std::tr2::this_thread::sleep( std::tr2::milliseconds(520) );
       }
       catch ( ... ) {
         EXAM_ERROR_ASYNC_F( "unkown exception", res );

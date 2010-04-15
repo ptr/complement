@@ -204,6 +204,7 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
         if ( k != conform_container_.end() ) {
           k->second.setf( stem::__Event_Base::vs );
           // this->vs_pub_tord_rec( ev.value().ev ); // conformation
+          this->vs_pub_tord_rec( k->second );
           torder_vs::sync_call( k->second );
           conform_container_.erase( k );
           orig_order_cnt_type::iterator j = find( orig_order_container_.begin(), orig_order_container_.end(), *i );
@@ -234,7 +235,7 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
         conf_cnt_type::iterator k = conform_container_.find( *i );
         if ( k != conform_container_.end() ) {
           k->second.setf( stem::__Event_Base::vs );
-          this->vs_pub_tord_rec( ev.value().ev );
+          this->vs_pub_tord_rec( ev.value().ev ); // may be k->second?
           torder_vs::sync_call( k->second );
           conform_container_.erase( k );
           orig_order_cnt_type::iterator j = find( orig_order_container_.begin(), orig_order_container_.end(), *i );
