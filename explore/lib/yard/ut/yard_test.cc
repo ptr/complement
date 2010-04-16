@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/04/14 17:31:49 ptr>
+// -*- C++ -*- Time-stamp: <10/04/16 00:44:46 ptr>
 
 /*
  * Copyright (c) 2010
@@ -24,7 +24,7 @@ int EXAM_IMPL(yard_test::create)
   const int hash_size = 0x200;
 
   try {
-    yard::yard db( "/tmp/yard" );
+    yard::underground db( "/tmp/yard" );
 
     fstream f( "/tmp/yard" );
 
@@ -46,7 +46,7 @@ int EXAM_IMPL(yard_test::create)
 
   try {
     // assume that it run after "create" above
-    yard::yard db( "/tmp/yard" );
+    yard::underground db( "/tmp/yard" );
 
     fstream f( "/tmp/yard" );
 
@@ -82,7 +82,7 @@ int EXAM_IMPL(yard_test::put)
   data_key.reserve( nn );
 
   try {
-    yard::yard db( "/tmp/yard" );
+    yard::underground db( "/tmp/yard" );
 
     char data[] = "Hello, world!";
 
@@ -138,7 +138,7 @@ int EXAM_IMPL(yard_test::put_object)
   data_key.reserve( nn );
 
   try {
-    yard::yard db( "/tmp/yard" );
+    yard::underground db( "/tmp/yard" );
 
     xmt::uuid_type gen;
 

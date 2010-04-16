@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/04/14 17:39:01 ptr>
+// -*- C++ -*- Time-stamp: <10/04/16 09:47:48 ptr>
 
 /*
  *
@@ -23,14 +23,14 @@ namespace yard {
 
 typedef xmt::uuid_type id_type;
 
-class yard
+class underground
 {
   public:
     typedef size_t size_type;
     typedef off_t  offset_type;
 
-    yard( const char* path );
-    ~yard();
+    underground( const char* path );
+    ~underground();
 
     id_type put_revision( const void*, size_type ) throw (std::ios_base::failure);
     id_type put_revision( const std::string& s ) throw (std::ios_base::failure)
@@ -57,6 +57,24 @@ class yard
 
     std::fstream f;
     offset_type* block_offset;
+};
+
+class yard
+{
+  public:
+    yard( const char* path );
+    ~yard();
+
+  private:
+    struct vertex
+    {
+        int type;
+        id_type id;
+        id_type rid;
+        bool mod_flag;
+    };
+
+    underground* disc;
 };
 
 } // namespace yard

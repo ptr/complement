@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/04/14 17:44:43 ptr>
+// -*- C++ -*- Time-stamp: <10/04/16 09:48:50 ptr>
 
 /*
  *
@@ -24,11 +24,11 @@ namespace yard {
 
 using namespace std;
 
-const size_t yard::first_hash_size = 0x200; // 0x00 - 0x1ff
-const size_t yard::block_size = 4096;
-const size_t yard::hash_block_n = (yard::block_size - 2 * sizeof(uint64_t)) / (sizeof(id_type) + 2 * sizeof(uint64_t));
-const size_t yard::hash_block_id_off = 2 * sizeof(uint64_t);
-const size_t yard::hash_block_off_off = yard::hash_block_id_off + yard::hash_block_n * sizeof(id_type);
+const size_t underground::first_hash_size = 0x200; // 0x00 - 0x1ff
+const size_t underground::block_size = 4096;
+const size_t underground::hash_block_n = (underground::block_size - 2 * sizeof(uint64_t)) / (sizeof(id_type) + 2 * sizeof(uint64_t));
+const size_t underground::hash_block_id_off = 2 * sizeof(uint64_t);
+const size_t underground::hash_block_off_off = underground::hash_block_id_off + underground::hash_block_n * sizeof(id_type);
 
 // xmt::uuid_type obj_table;
 
@@ -64,7 +64,7 @@ struct data_descr
   
 */
 
-yard::yard( const char* path ) :
+underground::underground( const char* path ) :
     f( path, ios_base::in | ios_base::out ),
     block_offset( new offset_type[first_hash_size] )
 {
@@ -102,12 +102,12 @@ yard::yard( const char* path ) :
   }
 }
 
-yard::~yard()
+underground::~underground()
 {
   delete block_offset;
 }
 
-yard::offset_type yard::create_block( int hv ) throw (std::ios_base::failure)
+underground::offset_type underground::create_block( int hv ) throw (std::ios_base::failure)
 {
   f.seekp( 0, ios_base::end );
 
@@ -126,7 +126,7 @@ yard::offset_type yard::create_block( int hv ) throw (std::ios_base::failure)
 
   v = 0;
 
-  for ( int i = (yard::block_size - 2 * sizeof(uint64_t)) / sizeof(uint64_t); i > 0; --i ) {
+  for ( int i = (underground::block_size - 2 * sizeof(uint64_t)) / sizeof(uint64_t); i > 0; --i ) {
     f.write( reinterpret_cast<const char *>(&v), sizeof(uint64_t) );
   }
 
@@ -134,14 +134,14 @@ yard::offset_type yard::create_block( int hv ) throw (std::ios_base::failure)
   // Note: block offset not in hash table yet!
 }
 
-id_type yard::put_revision( const void* data, size_type sz ) throw (std::ios_base::failure)
+id_type underground::put_revision( const void* data, size_type sz ) throw (std::ios_base::failure)
 {
   id_type id = xmt::uid_md5( data, sz );
   put_raw( id, data, sz );
   return id;
 }
 
-void yard::put_object( const id_type& id, const void* data, size_type sz ) throw (std::ios_base::failure)
+void underground::put_object( const id_type& id, const void* data, size_type sz ) throw (std::ios_base::failure)
 {
   id_type rid = put_revision( data, sz );
 
@@ -172,7 +172,7 @@ void yard::put_object( const id_type& id, const void* data, size_type sz ) throw
   }
 }
 
-void yard::put_raw( const id_type& id, const void* data, yard::size_type sz ) throw (std::ios_base::failure)
+void underground::put_raw( const id_type& id, const void* data, underground::size_type sz ) throw (std::ios_base::failure)
 {
   int hv = 0x1ff & id.u.i[0];
 
@@ -276,7 +276,7 @@ void yard::put_raw( const id_type& id, const void* data, yard::size_type sz ) th
   return;
 }
 
-std::string yard::get( const id_type& id ) throw (std::ios_base::failure, std::invalid_argument)
+std::string underground::get( const id_type& id ) throw (std::ios_base::failure, std::invalid_argument)
 {
 #if 0
   int hv = 0x1ff & id.u.i[0];
@@ -316,7 +316,7 @@ std::string yard::get( const id_type& id ) throw (std::ios_base::failure, std::i
 #endif
 }
 
-std::string yard::get_object( const id_type& id ) throw (std::ios_base::failure, std::invalid_argument)
+std::string underground::get_object( const id_type& id ) throw (std::ios_base::failure, std::invalid_argument)
 {
   std::string ret;
   get_priv( id, ret ); // object's revisions
@@ -330,7 +330,7 @@ std::string yard::get_object( const id_type& id ) throw (std::ios_base::failure,
   return ret;
 }
 
-yard::offset_type yard::get_priv( const id_type& id, std::string& ret ) throw (std::ios_base::failure, std::invalid_argument)
+underground::offset_type underground::get_priv( const id_type& id, std::string& ret ) throw (std::ios_base::failure, std::invalid_argument)
 {
   int hv = 0x1ff & id.u.i[0];
   if ( block_offset[hv] != static_cast<offset_type>(-1) ) {
@@ -364,6 +364,16 @@ yard::offset_type yard::get_priv( const id_type& id, std::string& ret ) throw (s
   }
 
   throw std::invalid_argument( "not found" );
+}
+
+yard::yard( const char* path ) :
+    disc( new underground( path ) )
+{
+}
+
+yard::~yard()
+{
+  delete disc;
 }
 
 } // namespace yard

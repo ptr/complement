@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/04/14 18:52:25 ptr>
+// -*- C++ -*- Time-stamp: <10/04/16 00:45:58 ptr>
 
 /*
  * Copyright (c) 2010
@@ -31,7 +31,7 @@ int EXAM_IMPL(yard_perf::put)
   const int nn = 1024;
 
   try {
-    yard::yard db( "/tmp/yard" );
+    yard::underground db( "/tmp/yard" );
 
     xmt::uuid_type gen;
 
@@ -61,7 +61,7 @@ int EXAM_IMPL(yard_perf::put_get)
   data_key.reserve( nn );
 
   try {
-    yard::yard db( "/tmp/yard" );
+    yard::underground db( "/tmp/yard" );
 
     xmt::uuid_type gen;
 
@@ -96,7 +96,7 @@ int EXAM_IMPL(yard_perf::put_more)
   const int nn = 10240;
 
   try {
-    yard::yard db( "/tmp/yard" );
+    yard::underground db( "/tmp/yard" );
 
     xmt::uuid_type gen;
 
@@ -122,7 +122,7 @@ int EXAM_IMPL(yard_perf::put_more_more)
   const int nn = 102400;
 
   try {
-    yard::yard db( "/tmp/yard" );
+    yard::underground db( "/tmp/yard" );
 
     xmt::uuid_type gen;
 
@@ -148,7 +148,7 @@ int EXAM_IMPL(yard_perf::put_object)
   const int nn = 1024;
 
   try {
-    yard::yard db( "/tmp/yard" );
+    yard::underground db( "/tmp/yard" );
 
     xmt::uuid_type gen;
     xmt::uuid_type id;
@@ -176,7 +176,7 @@ int EXAM_IMPL(yard_perf::put_object_r2)
   const int nn = 1024;
 
   try {
-    yard::yard db( "/tmp/yard" );
+    yard::underground db( "/tmp/yard" );
 
     xmt::uuid_type gen;
     xmt::uuid_type id;
