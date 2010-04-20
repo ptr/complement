@@ -1,3 +1,10 @@
+2010-04-20  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* NetTransport: timeout for 'discovery'
+	process in NetTransportMgr;
+
+	* libstem: revision 5.4.1.
+
 2010-03-10  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* EventHandler, EvManager, NetTransport:
