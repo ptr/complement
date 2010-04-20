@@ -140,6 +140,7 @@ class NetTransportMgr :
                     sock_base::stype type = sock_base::sock_stream,
                     sock_base::protocol pro = sock_base::inet );
 
+
     addr_type open( const char* path,
                     sock_base::stype type = sock_base::sock_stream );
 
@@ -156,6 +157,26 @@ class NetTransportMgr :
     addr_type open( sock_base::socket_type s,
                     sock_base::stype type = sock_base::sock_stream );
 
+    template <class Duration>
+    addr_type open( const char* hostname, int port,
+                    const Duration& timeout,
+                    sock_base::stype type = sock_base::sock_stream,
+                    sock_base::protocol pro = sock_base::inet );
+
+    template <class Duration>
+    addr_type open( const char* path, const Duration& timeout,
+                    sock_base::stype type = sock_base::sock_dgram );
+
+    template <class Duration>
+    addr_type open( in_addr_t addr, int port,
+                    const Duration& timeout,
+                    sock_base::stype type = sock_base::sock_stream,
+                    sock_base::protocol pro = sock_base::inet );
+
+    template <class Duration>
+    addr_type open( const sockaddr_in& addr, const Duration& timeout,
+                    sock_base::stype type = sock_base::sock_stream );
+
     void close()
       {  NetTransport_base::_close(); }
 
@@ -169,10 +190,85 @@ class NetTransportMgr :
     NetTransportMgr& operator =( const NetTransportMgr& );
 
   private:
-    addr_type discovery();
+    addr_type discovery( const std::tr2::nanoseconds& timeout = std::tr2::nanoseconds() );
+
     static void _loop( NetTransportMgr* );
     std::tr2::thread* _thr;
 };
+
+
+template <class Duration>
+addr_type NetTransportMgr::open( const char* hostname, int port,
+                            const Duration& timeout,
+                            sock_base::stype type,
+                            sock_base::protocol pro )
+{
+  std::sockstream::open( hostname, port, timeout );
+  if ( std::sockstream::is_open() && std::sockstream::good() ) {
+    try {
+      if ( (pro == sock_base::inet) && (type == sock_base::sock_stream) ) {
+        std::sockstream::rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+      }
+    }
+    catch ( ... ) {
+    }
+    return discovery( static_cast<std::tr2::nanoseconds>(timeout).count() );
+  }
+  return stem::badaddr;
+}
+
+template <class Duration>
+addr_type NetTransportMgr::open( const char* path,
+                            const Duration& timeout,
+                            sock_base::stype type )
+{
+  std::sockstream::open( path, timeout, type );
+  if ( std::sockstream::is_open() && std::sockstream::good() ) {
+    return discovery( static_cast<std::tr2::nanoseconds>(timeout).count() );
+  }
+  return stem::badaddr;
+}
+
+template <class Duration>
+addr_type NetTransportMgr::open( in_addr_t addr, int port,
+                            const Duration& timeout,
+                            sock_base::stype type,
+                            sock_base::protocol pro )
+{
+  std::sockstream::open( addr, port, timeout );
+  if ( std::sockstream::is_open() && std::sockstream::good() ) {
+    try {
+      if ( (pro == sock_base::inet) && (type == sock_base::sock_stream) ) {
+        std::sockstream::rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+      }
+    }
+    catch ( ... ) {
+    }
+    return discovery( static_cast<std::tr2::nanoseconds>(timeout).count() );
+  }
+  return stem::badaddr;
+}
+
+template <class Duration>
+addr_type NetTransportMgr::open( const sockaddr_in& addr,
+                            const Duration& timeout,
+                            sock_base::stype type )
+{
+  std::sockstream::open( addr, timeout, type );
+  if ( std::sockstream::is_open() && std::sockstream::good() ) {
+    try {
+      if ( type == sock_base::sock_stream ) {
+        std::sockstream::rdbuf()->setoptions( sock_base::so_tcp_nodelay );
+      }
+    }
+    catch ( ... ) {
+    }
+    return discovery( static_cast<std::tr2::nanoseconds>(timeout).count() );
+  }
+  return stem::badaddr;
+}
+
+
 
 } // namespace stem
 

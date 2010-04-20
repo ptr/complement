@@ -612,17 +612,21 @@ addr_type NetTransportMgr::open( sock_base::socket_type s,
   return badaddr;
 }
 
-addr_type NetTransportMgr::discovery()
+stem::addr_type NetTransportMgr::discovery( const std::tr2::nanoseconds& timeout )
 {
   __pack_base::__pack( *this, EventHandler::ns() );
   {
-    lock_guard<mutex> lk( _def_lock );
+    std::tr2::lock_guard< std::tr2::mutex > lk( _def_lock );
     __pack_base::__pack( *this, _default_addr );
   }
   this->flush();
   
   addr_type ns;
   addr_type fdef;
+
+  if ( timeout != nanoseconds() ) {
+    std::sockstream::rdbuf()->rdtimeout( timeout );
+  }
   __pack_base::__unpack( *this, ns );
   __pack_base::__unpack( *this, fdef );
 
@@ -635,11 +639,11 @@ addr_type NetTransportMgr::discovery()
     }
     _thr = new std::tr2::thread( _loop, this );
     return fdef;
-    // return ns;
   }
 
-  return badaddr;
+  return stem::badaddr;
 }
+
 
 void NetTransportMgr::_loop( NetTransportMgr* p )
 {
@@ -649,6 +653,7 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
   addr_type self = me.self_id();
 
   try {
+    me.rdbuf()->rdtimeout(); // reset not to use rdtimeout 
     while ( me.pop( ev ) ) {
 #ifdef __FIT_STEM_TRACE
       try {
