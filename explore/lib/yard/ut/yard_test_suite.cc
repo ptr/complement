@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/04/14 16:06:44 ptr>
+// -*- C++ -*- Time-stamp: <10/04/20 16:16:37 ptr>
 
 /*
  * Copyright (c) 2010
@@ -22,9 +22,10 @@ int main( int argc, const char** argv )
   exam::test_suite t( "libyard test suite" );
   yard_test test;
 
-  t.add( &yard_test::put_object, test, "put object",
-    t.add( &yard_test::put, test, "put revision",
-      t.add( &yard_test::create, test, "create hash" ) ) );
+  t.add( &yard_test::manifest, test, "manifest",
+    t.add( &yard_test::put_object, test, "put object",
+      t.add( &yard_test::put, test, "put revision",
+        t.add( &yard_test::create, test, "create hash" ) ) ) );
 
   Opts opts;
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/04/16 00:44:46 ptr>
+// -*- C++ -*- Time-stamp: <10/05/12 19:45:21 ptr>
 
 /*
  * Copyright (c) 2010
@@ -171,6 +171,47 @@ int EXAM_IMPL(yard_test::put_object)
 
       // cerr << i << ' ' << std::string(*reinterpret_cast<const xmt::uuid_type*>(tmp.data())) << ' ' << std::string(data_put[i]) << endl;
       EXAM_CHECK( db.get( data_key[i] ) == std::string( reinterpret_cast<char*>(&data_put[i].u.b[0]), sizeof(xmt::uuid_type) ) );
+    }
+  }
+  catch ( const std::ios_base::failure& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  unlink( "/tmp/yard" );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::manifest)
+{
+  xmt::uuid_type root = xmt::uid_md5( ".HEAD." ); // xmt::uid();
+  xmt::uuid_type L = xmt::uid_md5( ".INBOX." );
+  xmt::uuid_type l = xmt::uid(); // uid_md5( ".title." );
+
+  try {
+    {
+      yard::yard db( "/tmp/yard" );
+
+      db.add_manifest( root );
+      db.add_manifest( root, L );
+      db.add_leaf( L, l, std::string( "Inbox" ) );
+    }
+
+    {
+      yard::yard db( "/tmp/yard" );
+
+      // db.add_manifest( root );
+      EXAM_CHECK( db.get( l ) == "Inbox" );
+    }
+
+    {
+      yard::yard db( "/tmp/yard" );
+
+      // db.add_manifest( root );
+      EXAM_CHECK( db.get( l ) == "Inbox" );
     }
   }
   catch ( const std::ios_base::failure& err ) {
