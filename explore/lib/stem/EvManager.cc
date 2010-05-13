@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/03/10 19:13:01 ptr>
+// -*- C++ -*- Time-stamp: <10/05/13 21:52:32 ptr>
 
 /*
  *
@@ -386,6 +386,11 @@ void EvManager::Unsubscribe( const addr_type& id, EventHandler* obj )
           i->second.push( handler );
         }
         tmp.pop();
+      }
+      // check case: nothing was returned back;
+      // this may happens if one object had few addresses
+      if ( i->second.empty() ) {
+        heap.erase( i );
       }
     }
   }
