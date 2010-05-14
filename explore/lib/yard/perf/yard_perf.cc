@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/04/16 00:45:58 ptr>
+// -*- C++ -*- Time-stamp: <10/05/14 10:19:49 ptr>
 
 /*
  * Copyright (c) 2010
@@ -195,6 +195,52 @@ int EXAM_IMPL(yard_perf::put_object_r2)
     for ( int i = 0; i < nn; ++i ) {
       gen = xmt::uid();
       db.put_object( data_key[i], &gen, sizeof(xmt::uuid_type) );
+    }
+  }
+  catch ( const std::ios_base::failure& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  unlink( "/tmp/yard" );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_perf::put_mess)
+{
+  const int nn = 1024*1;
+
+  xmt::uuid_type root = xmt::uid_md5( ".HEAD." ); // xmt::uid();
+  xmt::uuid_type L = xmt::uid_md5( ".INBOX." );
+  xmt::uuid_type l = xmt::uid(); // uid_md5( ".title." );
+
+  string mess( 1000, char(0) );
+
+  try {
+    yard::yard db( "/tmp/yard" );
+
+    db.add_manifest( root );
+    db.add_manifest( root, L );
+    db.add_leaf( L, l, std::string( "Inbox" ) );
+
+    // xmt::uuid_type gen;
+    xmt::uuid_type id;
+
+    vector<yard::id_type> data_key;
+
+    data_key.reserve( nn );
+
+    for ( int i = 0; i < nn; ++i ) {
+      id = xmt::uid();
+      // data_key.push_back( id );
+
+      string mess_put( mess );
+      mess_put += string( id );
+
+      db.add_leaf( L, id, mess_put );
     }
   }
   catch ( const std::ios_base::failure& err ) {

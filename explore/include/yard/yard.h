@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/12 14:50:49 ptr>
+// -*- C++ -*- Time-stamp: <10/05/13 08:47:18 ptr>
 
 /*
  *
@@ -59,6 +59,20 @@ class underground
     std::string get_object( const id_type& ) throw (std::ios_base::failure, std::invalid_argument);
     std::pair<std::string,id_type> get_object_r( const id_type& ) throw (std::ios_base::failure, std::invalid_argument);
 
+    template <class BackInsertIterator>
+    void get_object_revisions( const id_type& id, BackInsertIterator bi ) throw (std::ios_base::failure, std::invalid_argument)
+      {
+        std::string rev;
+        get_priv( id, rev ); // object's revisions
+
+        // extract revisions
+        if ( rev.size() >= sizeof(id_type) ) {
+          for ( const char* p = rev.data(); p < (rev.data() + rev.size()); p += sizeof(id_type) ) {
+            *bi++ = *reinterpret_cast<const id_type*>(p);
+          }
+        }
+      }
+
     void flush();
 
   private:
@@ -95,6 +109,10 @@ class yard
       { yard::add_leaf( mid, id, s.data(), s.size() ); }
 
     std::string get( const id_type& );
+
+    template <class BackInsertIterator>
+    void get_revisions( const id_type& id, BackInsertIterator bi )
+      { disc->get_object_revisions( id, bi ); }
 
     void flush();
 

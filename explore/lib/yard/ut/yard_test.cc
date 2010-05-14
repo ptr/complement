@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/12 19:45:21 ptr>
+// -*- C++ -*- Time-stamp: <10/05/13 10:42:57 ptr>
 
 /*
  * Copyright (c) 2010
@@ -198,6 +198,12 @@ int EXAM_IMPL(yard_test::manifest)
       db.add_manifest( root );
       db.add_manifest( root, L );
       db.add_leaf( L, l, std::string( "Inbox" ) );
+
+      list<yard::id_type> revs;
+
+      db.get_revisions( l, back_inserter(revs) );
+
+      EXAM_CHECK( revs.size() == 1 );
     }
 
     {
@@ -205,6 +211,12 @@ int EXAM_IMPL(yard_test::manifest)
 
       // db.add_manifest( root );
       EXAM_CHECK( db.get( l ) == "Inbox" );
+
+      list<yard::id_type> revs;
+
+      db.get_revisions( l, back_inserter(revs) );
+
+      EXAM_CHECK( revs.size() == 1 );
     }
 
     {

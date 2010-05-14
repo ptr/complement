@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/12 19:33:34 ptr>
+// -*- C++ -*- Time-stamp: <10/05/13 10:39:44 ptr>
 
 /*
  *
@@ -155,6 +155,13 @@ id_type underground::put_object( const id_type& id, const void* data, size_type 
   try {
     std::string obj;
     offset_type off = get_priv( id, obj );
+
+    if ( obj.size() >= sizeof(id_type) ) {
+      if ( *reinterpret_cast<const id_type*>(obj.data() + obj.size() - sizeof(id_type)) == rid ) {
+        return rid; // not changed
+      }
+    }
+
     // obj += std::string( reinterpret_cast<const char*>(&rid), sizeof(id_type) );
     
     f.seekp( 0, ios_base::end );
@@ -327,18 +334,13 @@ std::string underground::get( const id_type& id ) throw (std::ios_base::failure,
 
 std::pair<std::string,id_type> underground::get_object_r( const id_type& id ) throw (std::ios_base::failure, std::invalid_argument)
 {
-  cerr << HERE << endl;
   std::pair<std::string,id_type> ret;
   get_priv( id, ret.first ); // object's revisions
   
-  cerr << HERE << ' ' << ret.first.size() << endl;
   // extract last revision
   std::copy( ret.first.data() + ret.first.size() - sizeof(id_type), ret.first.data() + ret.first.size(), reinterpret_cast<char*>(&ret.second) );
-  cerr << HERE << ' ' << ret.second << endl;
 
   get_priv( ret.second, ret.first ); // last object's revision
-
-  cerr << HERE << ' ' << ret.first.size() << endl;
 
   return ret;
 }
@@ -382,7 +384,6 @@ underground::offset_type underground::get_priv( const id_type& id, std::string& 
           size_type sz = v;
           f.seekg( d_off, ios_base::beg );
           ret.clear();
-          // cerr << HERE << endl;
           ret.assign( sz, char(0) );
           f.read( const_cast<char *>(ret.data()), sz );
           return ref_offset;
@@ -444,7 +445,6 @@ void yard::add_manifest( const id_type& id )
         if ( !s.fail() ) {
           graph_type::iterator u = g.find( idr );
           if ( u != g.end() ) {
-            cerr << HERE << ' ' << u->second << endl;
             v->adj_list.push_back( make_pair( u->second, meta ) );
             if ( ridr != u->second->rid ) {
               v->mod_flag = true;
@@ -452,12 +452,9 @@ void yard::add_manifest( const id_type& id )
           }
         }
       }
-
-      cerr << HERE << endl;
     }
     catch ( const std::invalid_argument& ) {
       v->mod_flag = true;
-      cerr << HERE << endl;
     }
   } else if ( !v->mod_flag ) {
     // check edges
@@ -489,7 +486,6 @@ void yard::add_manifest( const id_type& id )
           if ( u != g.end() ) {
             if ( find_if( v->adj_list.begin(), v->adj_list.end(), compose1( bind2nd(equal_to<vertex*>(), u->second), select1st<pair<vertex*,uint32_t> >() ) ) == v->adj_list.end() ) {
               // problem: what about removed edge? v->mod_flag?
-              cerr << HERE << ' ' << u->second << endl;
               v->adj_list.push_back( make_pair( u->second, meta ) );
             }
             // v->adj_list.push_back( make_pair( u->second, meta ) );
@@ -507,12 +503,9 @@ void yard::add_manifest( const id_type& id )
           }
         }
       }
-
-      cerr << HERE << endl;
     }
     catch ( const std::invalid_argument& ) {
       v->mod_flag = true;
-      cerr << HERE << endl;
     }
   }
 }
@@ -532,7 +525,6 @@ void yard::add_manifest( const id_type& id1, const id_type& id2 )
      *       this case not happens here
      */
     //   ii) link not exist
-    cerr << HERE << ' ' << v2 << endl;
     v->adj_list.push_back( make_pair( v2, 0 ) );
     if ( !v->mod_flag ) {
       /*
@@ -553,13 +545,20 @@ void yard::add_leaf( const id_type& id, const void* data, yard::size_type sz )
     v = new vertex;
     v->type = leaf;
     v->id = id;
+    v->blob.assign( reinterpret_cast<const char*>(data), sz );
 
     pair<string,id_type> content;
     try {
       content = disc->get_object_r( id );
-      v->blob = std::string( (const char *)data, sz );
-      if ( content.first != v->blob ) {
-        v->rid = disc->put_object( id, data, sz );
+      uint32_t sz = *reinterpret_cast<const uint32_t*>(content.first.data());
+      string blob_check( content.first.data() + sizeof(uint32_t), sz );
+      if ( blob_check != v->blob ) {
+        stringstream s;
+        uint32_t tmp = sz;
+        s.write( reinterpret_cast<const char*>(&tmp), sizeof(uint32_t) );
+        s.write( reinterpret_cast<const char*>(data), sz );
+        // no edges (at least yet)
+        v->rid = disc->put_object( id, s.str() );
         v->mod_flag = true;
       } else {
         v->rid = content.second;
@@ -567,18 +566,24 @@ void yard::add_leaf( const id_type& id, const void* data, yard::size_type sz )
       }
     }
     catch ( const std::invalid_argument& ) {
-      v->blob = std::string( (const char *)data, sz );
-      v->rid = disc->put_object( id, data, sz );
+      stringstream s;
+      uint32_t tmp = sz;
+      s.write( reinterpret_cast<const char*>(&tmp), sizeof(uint32_t) );
+      s.write( reinterpret_cast<const char*>(data), sz );
+      // no edges (at least yet)
+      v->rid = disc->put_object( id, s.str() );
       v->mod_flag = true;
-      cerr << HERE << endl;
     }
   } else {
-    v->blob = std::string( (const char *)data, sz );
-    id_type rid = disc->put_object( id, data, sz );
+    stringstream s;
+    uint32_t tmp = sz;
+    s.write( reinterpret_cast<const char*>(&tmp), sizeof(uint32_t) );
+    s.write( reinterpret_cast<const char*>(data), sz );
+    // no edges (at least yet)
+    v->blob.assign( reinterpret_cast<const char*>(data), sz );
+    id_type rid = disc->put_object( id, s.str() );
     v->mod_flag = rid != v->rid ? true : false;
   }
-
-  cerr << HERE << endl;
 }
 
 void yard::add_leaf( const id_type& mid, const id_type& id, const void* data, yard::size_type sz )
@@ -596,7 +601,6 @@ void yard::add_leaf( const id_type& mid, const id_type& id, const void* data, ya
      *       this case not happens here
      */
     //   ii) link not exist
-    cerr << HERE << ' ' << v2 << endl;
     v->adj_list.push_back( make_pair( v2, 0 ) );
     if ( !v->mod_flag ) {
       /*
@@ -614,10 +618,8 @@ void yard::flush()
 
   for ( graph_type::iterator i = g.begin(); i != g.end(); ++i ) {
     if ( i->second->mod_flag ) {
-      cerr << HERE << ' ' << i->first << endl;
       Lb.push_back( i->second );
     }
-    cerr << HERE << ' ' << i->second << endl;
     i->second->adj_list.push_back( make_pair( vertex::pointer_type(0), 0 ) ); // marker
   }
 
@@ -625,11 +627,9 @@ void yard::flush()
     // graph g transpose
     for ( graph_type::const_iterator i = g.begin(); i != g.end(); ++i ) {
       for ( vertex::adj_list_type::iterator j = i->second->adj_list.begin(); /* j != i->second->adj_list.end() */ j->first != 0;  ) {
-        cerr << HERE << ' ' << i->second << endl;
         j->first->adj_list.push_back( make_pair( i->second, j->second ) );
         i->second->adj_list.erase( j++ );
       }
-      cerr << HERE << ' ' << i->second->adj_list.size() << endl;
       i->second->adj_list.pop_front(); // remove marker
     }
 
@@ -637,9 +637,7 @@ void yard::flush()
     while ( !Lb.empty() ) {
       vertex* i = Lb.front();
       Lb.pop_front();
-      cerr << HERE << ' ' << i << endl;
       for ( vertex::adj_list_type::iterator j = i->adj_list.begin(); j != i->adj_list.end(); ++j ) {
-        cerr << HERE << ' ' << j->first << ' ' << j->second << endl;
         if ( !j->first->mod_flag ) {
           Lb.push_back( j->first );
           j->first->mod_flag = true;
@@ -675,7 +673,6 @@ void yard::flush()
             stringstream s;
             // calc i's hash
             uint32_t blob_sz = i->second->blob.size();
-
             s.write( reinterpret_cast<const char*>(&blob_sz), sizeof(uint32_t) );
             if ( blob_sz > 0 ) {
               s.write( i->second->blob.data(), blob_sz );
@@ -687,10 +684,9 @@ void yard::flush()
               s.write( reinterpret_cast<const char*>(&j->first->rid), sizeof(id_type) );
               s.write( reinterpret_cast<const char*>(&j->second), sizeof(uint32_t) );
             }
-            disc->put_object( i->first, s.str().data(), s.str().size() );
+            disc->put_object( i->first, s.str() );
             // write i
             i->second->mod_flag = false;
-            cerr << HERE << ' ' << i->first << endl;
           } else {
             // Lb.push_back( *j );
             ++blacks;
@@ -705,14 +701,11 @@ void yard::flush()
 
 std::string yard::get( const id_type& id )
 {
-  cerr << HERE << endl;
   graph_type::const_iterator r = g.find( id );
   if ( r == g.end() ) {
-    cerr << HERE << endl;
     pair<string,id_type> content;
     try {
       content = disc->get_object_r( id );
-      cerr << HERE << endl;
 
       vertex*& v = g[id];
       v = new vertex;
@@ -728,17 +721,12 @@ std::string yard::get( const id_type& id )
       v->rid = content.second;
       v->mod_flag = false;
 
-      cerr << HERE << ' ' << v->id << ' ' << v->rid << endl;
-      cerr << HERE << ' ' << v->blob << endl;
-
       return v->blob;
     }
     catch ( const std::invalid_argument& a ) {
-      cerr << HERE << endl;
       throw a;
     }
   }
-  cerr << HERE << endl;
 
   return r->second->blob;
 }
