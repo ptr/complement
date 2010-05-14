@@ -1,3 +1,11 @@
+2010-05-14  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* gmake/lib/gcc.mak: use -nodefaultlibs instead of
+	-nostdlib for gcc; avoid computation of start
+	and end object files;
+
+	* gmake/app/gcc.mak: ditto.
+
 2008-09-08  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* gmake/top.mak: corrected check of settings for builds
