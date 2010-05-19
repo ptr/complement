@@ -1,3 +1,16 @@
+2010-05-19  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* casual.cc: avoid for duplicate access
+	points;
+
+	* casual.cc: prohibit join to self;
+
+	* casual.cc: during processing join request
+	take into account group size after clear died
+	connections;
+	
+	* libjanus: revision 0.14.9.
+
 2010-04-02  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* casual.cc: check channels before send

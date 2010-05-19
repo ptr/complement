@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/04/02 20:52:25 ptr>
+// -*- C++ -*- Time-stamp: <10/05/19 17:55:50 ptr>
 
 /*
  *
@@ -211,28 +211,67 @@ void basic_vs::forward_to_vsg( const stem::Event& ev ) const // not VS!
 // addr in network byte order, port in native byte order
 void basic_vs::vs_tcp_point( uint32_t addr, int port )
 {
+  string d;
+  d.resize( /* sizeof(uint32_t) + sizeof(uint16_t) */ 6 );
+  memcpy( (void *)d.data(), (const void *)&addr, 4 );
+  uint16_t prt = stem::to_net( static_cast<uint32_t>(port) );
+  memcpy( (void *)(d.data() + 4), (const void *)&prt, 2 );
+
+  pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = points.equal_range( self_id() );
+  for ( ; range.first != range.second; ++range.first ) {
+    // hostid is equal: select by self_id()
+    if ( (range.first->second.family == AF_INET) &&
+         (range.first->second.type == std::sock_base::sock_stream) &&
+         (range.first->second.data == d) ) {
+      return; // already in points
+    }
+  }
+
   vs_points::access_t& p = points.insert( make_pair(self_id(), vs_points::access_t()) )->second;
 
   p.hostid = xmt::hostid();
   p.family = AF_INET;
   p.type = std::sock_base::sock_stream;
+#if 0
   p.data.resize( /* sizeof(uint32_t) + sizeof(uint16_t) */ 6 );
   memcpy( (void *)p.data.data(), (const void *)&addr, 4 );
   uint16_t prt = stem::to_net( static_cast<uint32_t>(port) );
   memcpy( (void *)(p.data.data() + 4), (const void *)&prt, 2 );
+#else
+  swap( p.data, d );
+#endif
 }
 
 void basic_vs::vs_tcp_point( const sockaddr_in& a )
 {
   if ( a.sin_family == PF_INET ) {
+    string d;
+    d.resize( /* sizeof(uint32_t) + sizeof(uint16_t) */ 6 );
+    memcpy( (void *)d.data(), (const void *)&a.sin_addr, 4 );
+    memcpy( (void *)(d.data() + 4), (const void *)&a.sin_port, 2 );
+
+    pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = points.equal_range( self_id() );
+    for ( ; range.first != range.second; ++range.first ) {
+      // hostid is equal: select by self_id()
+      if ( (range.first->second.family == AF_INET) &&
+           (range.first->second.type == std::sock_base::sock_stream) &&
+           (range.first->second.data == d) ) {
+        return; // already in points
+      }
+    }
+
     vs_points::access_t& p = points.insert( make_pair(self_id(), vs_points::access_t()) )->second;
 
     p.hostid = xmt::hostid();
     p.family = AF_INET;
     p.type = std::sock_base::sock_stream;
+#if 0
     p.data.resize( /* sizeof(uint32_t) + sizeof(uint16_t) */ 6 );
     memcpy( (void *)p.data.data(), (const void *)&a.sin_addr, 4 );
     memcpy( (void *)(p.data.data() + 4), (const void *)&a.sin_port, 2 );
+#else
+    swap( p.data, d );
+#endif
   }
 }
 
@@ -248,6 +287,10 @@ void basic_vs::vs_copy_tcp_points( const basic_vs& orig )
 
 int basic_vs::vs_join( const stem::addr_type& a )
 {
+  if ( find( self_ids_begin(), self_ids_end(), a ) != self_ids_end() ) {
+    return 1; // join to self prohibited
+  }
+
   PushState( VS_ST_LOCKED );
 
   xmt::uuid_type ref = this->vs_pub_recover();
@@ -343,31 +386,55 @@ int basic_vs::vs_join( const stem::addr_type& a, const sockaddr_in& srv )
 
 int basic_vs::vs_join( const char* host, int port )
 {
-  remotes_.push_back( new stem::NetTransportMgr() );
-  stem::addr_type trial_node = remotes_.back()->open( host, port );
-
-  if ( !remotes_.back()->is_open() ) {
-    delete remotes_.back();
-    remotes_.pop_back();
-
-    return 3;
+  int ret = 6;
+  list<sockaddr> haddrs;
+  gethostaddr2( host, back_inserter(haddrs) );
+  for ( list<sockaddr>::const_iterator i = haddrs.begin(); i != haddrs.end(); ++i ) {
+    switch ( i->sa_family ) {
+      case PF_INET:
+        ((sockaddr_in *)&*i)->sin_port = htons( static_cast<int16_t>(port) );
+        ret = vs_join( *((sockaddr_in *)&*i) );
+        if ( ret == 0 ) {
+          return 0;
+        }
+        break;
+      case PF_INET6:
+        break;
+    }
   }
 
-  if ( trial_node == stem::badaddr ) {
-    delete remotes_.back();
-    remotes_.pop_back();
-
-    return 4;
-  }
-
-  remotes_.back()->add_route( trial_node );
-  remotes_.back()->add_remote_route( EventHandler::self_id() );
-
-  return vs_join( trial_node );
+  return ret;
 }
 
 int basic_vs::vs_join( const sockaddr_in& a )
 {
+  // Checks, to avoid joining to self:
+  string d;
+  d.resize( /* sizeof(uint32_t) + sizeof(uint16_t) */ 6 );
+  memcpy( (void *)d.data(), (const void *)&a.sin_addr, 4 );
+  memcpy( (void *)(d.data() + 4), (const void *)&a.sin_port, 2 );
+
+  bool local = false;
+
+  for ( id_iterator me = self_ids_begin(); me != self_ids_end(); ++me ) {
+    pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = points.equal_range( *me );
+    for ( ; range.first != range.second; ++range.first ) {
+      // hostid is equal: select by self_id()
+      if ( (range.first->second.family == AF_INET) &&
+           (range.first->second.type == std::sock_base::sock_stream) &&
+           (range.first->second.data == d) ) {
+        if ( get_default() == *me ) {
+          return 5; // attempt to join to self detected
+        }
+        local = true; // not self, but object is local; skip network later
+      }
+    }
+  }
+
+  if ( local ) {
+    return vs_join( get_default() ); // local object, skip network
+  }
+
   remotes_.push_back( new stem::NetTransportMgr() );
   stem::addr_type trial_node = remotes_.back()->open( a );
 
@@ -423,39 +490,43 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
     }
   }
 
-  if ( lock_addr == stem::badaddr ) {
-    if ( vt.vt.size() > 1 ) {
-      lock_rsp.clear();
+  if ( lock_addr != stem::badaddr ) {
+    return;
+  }
+
+  if ( vt.vt.size() > 1 ) {
+    // check: group_applicant re-enter (fail was not detected yet)
+    for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
+      if ( i->first == group_applicant ) { // same address
+        vt.vt.erase( i );
+        break;
+      }
+    }
+
+    // check net channels (from me)
+    for ( access_container_type::iterator i = remotes_.begin(); i != remotes_.end(); ) {
+      if ( !(*i)->is_open() || (*i)->bad() ) {
+        delete *i;
+        remotes_.erase( i++ );
+      } else {
+        ++i;
+      }
+    }
+
+    // check vitual time nodes accessibility
+    for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
+      if ( !is_avail( i->first ) ) {
+        points.erase( i->first );
+        vt.vt.erase( i++ );
+      } else {
+        ++i;
+      }
+    }
+
+    lock_rsp.clear();
+    if ( vt.vt.size() > 1 ) { // still not lone?
       group_applicant = ev.src();
       group_applicant_ref = ev.value().reference;
-
-      // check: group_applicant re-enter (fail was not detected yet)
-      for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-        if ( i->first == group_applicant ) { // same address
-          vt.vt.erase( i );
-          break;
-        }
-      }
-
-      // check net channels (from me)
-      for ( access_container_type::iterator i = remotes_.begin(); i != remotes_.end(); ) {
-        if ( !(*i)->is_open() || (*i)->bad() ) {
-          delete *i;
-          remotes_.erase( i++ );
-        } else {
-          ++i;
-        }
-      }
-
-      // check vitual time nodes accessibility
-      for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
-        if ( !is_avail( i->first ) ) {
-          points.erase( i->first );
-          vt.vt.erase( i++ );
-        } else {
-          ++i;
-        }
-      }
 
       stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
       basic_vs::vs_aux( view_lock_ev );
@@ -463,17 +534,19 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
       PushState( VS_ST_LOCKED );
 
       add_lock_safety(); // belay: avoid infinite lock
-    } else { // single in group: lock not required
-      this->vs_resend_from( ev.value().reference, ev.src() );
 
-      ++view;
-      vt[ev.src()]; // i.e. create entry in vt
-      stem::EventVoid update_view_ev( VS_UPDATE_VIEW );
-      basic_vs::vs_aux( update_view_ev );
-
-      this->vs_pub_view_update();
+      return;
     }
   }
+  // single in group: lock not required
+  this->vs_resend_from( ev.value().reference, ev.src() );
+
+  ++view;
+  vt[ev.src()]; // i.e. create entry in vt
+  stem::EventVoid update_view_ev( VS_UPDATE_VIEW );
+  basic_vs::vs_aux( update_view_ev );
+
+  this->vs_pub_view_update();
 }
 
 void basic_vs::vs_join_request_lk( const stem::Event_base<vs_join_rq>& ev )
