@@ -1,3 +1,11 @@
+2010-05-19  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* EventHandler: get_default return address
+	of 'default' StEM object [nay be used during
+	communication with another process];
+	
+	* libstem: revision 5.4.3.
+
 2010-05-13  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* EvManager.cc: remove address line from heap,

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/03/08 13:16:12 ptr>
+// -*- C++ -*- Time-stamp: <10/05/19 17:02:49 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2010
@@ -278,12 +278,19 @@ void EventHandler::TraceStack( ostream& out ) const
 addr_type EventHandler::ns()
 { return _ns->self_id(); }
 
-
 addr_type EventHandler::set_default() const
 {
   lock_guard<mutex> lk( _def_lock );
   addr_type tmp = _default_addr;
   _default_addr = _ids.front();
+
+  return tmp;
+}
+
+addr_type EventHandler::get_default()
+{
+  lock_guard<mutex> lk( _def_lock );
+  addr_type tmp = _default_addr;
 
   return tmp;
 }
