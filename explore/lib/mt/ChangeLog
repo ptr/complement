@@ -1,3 +1,10 @@
+2010-05-21  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* thread.cc: fix 'erase in unordered
+	container' bug;
+	
+	* libxmt: release 2.1.5.
+
 2010-02-15  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* uid.h: add operators >, >=, <= for

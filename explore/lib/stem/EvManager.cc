@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/13 21:52:32 ptr>
+// -*- C++ -*- Time-stamp: <10/05/21 14:31:59 ptr>
 
 /*
  *
@@ -398,7 +398,8 @@ void EvManager::Unsubscribe( const addr_type& id, EventHandler* obj )
   {
     std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
 
-    for ( info_heap_type::iterator i = iheap.begin(); i != iheap.end(); ) {
+    list<info_heap_type::key_type> trash;
+    for ( info_heap_type::iterator i = iheap.begin(); i != iheap.end(); ++i ) {
       for ( addr_collection_type::iterator j = i->second.begin(); j != i->second.end(); ++j ) {
         if ( *j == id ) {
           basic_read_lock<rw_mutex> _x1( _lock_heap );
@@ -411,10 +412,11 @@ void EvManager::Unsubscribe( const addr_type& id, EventHandler* obj )
       }
 
       if ( i->second.empty() ) {
-        iheap.erase( i++ );
-      } else {
-        ++i;
+        trash.push_back( i->first );
       }
+    }
+    for ( list<info_heap_type::key_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
+      iheap.erase( *i );
     }
   }
 }

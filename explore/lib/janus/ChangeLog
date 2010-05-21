@@ -1,3 +1,10 @@
+2010-05-21  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* casual.cc: fix 'erase in unordered
+	container' bug;
+	
+	* libjanus: revision 0.14.10.
+
 2010-05-19  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* casual.cc: avoid for duplicate access

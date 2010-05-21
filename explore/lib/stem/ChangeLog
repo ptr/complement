@@ -1,3 +1,10 @@
+2010-05-21  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* EvManager.cc: fix 'erase in unordered
+	container' bug;
+
+	* libstem: revision 5.4.4.
+
 2010-05-19  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* EventHandler: get_default return address

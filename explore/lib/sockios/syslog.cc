@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/07/02 13:31:54 ptr>
+// -*- C++ -*- Time-stamp: <10/05/21 15:22:47 ptr>
 
 /*
- * Copyright (c) 2009
+ * Copyright (c) 2009, 2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -285,8 +285,8 @@ void close_syslog()
   std::tr2::lock_guard<std::tr2::mutex> lk( detail::_heap_lock );
   for ( detail::log_heap_type::iterator i = detail::slogs.begin(); i != detail::slogs.end(); ) {
     delete i->second;
-    detail::slogs.erase( i++ );
   }
+  detail::slogs.clear();
 }
 
 } // namespace misc

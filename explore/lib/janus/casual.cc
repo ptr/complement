@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/19 17:55:50 ptr>
+// -*- C++ -*- Time-stamp: <10/05/21 14:16:23 ptr>
 
 /*
  *
@@ -498,7 +498,7 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
     // check: group_applicant re-enter (fail was not detected yet)
     for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
       if ( i->first == group_applicant ) { // same address
-        vt.vt.erase( i );
+        vt.vt.erase( i ); // ok, thanks to break below
         break;
       }
     }
@@ -514,13 +514,16 @@ void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
     }
 
     // check vitual time nodes accessibility
-    for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
+    list<janus::addr_type> trash;
+    for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
       if ( !is_avail( i->first ) ) {
         points.erase( i->first );
-        vt.vt.erase( i++ );
-      } else {
-        ++i;
+        trash.push_back( i->first );
       }
+    }
+
+    for ( list<janus::addr_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
+      vt.vt.erase( *i );
     }
 
     lock_rsp.clear();
@@ -797,14 +800,16 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
       --vt[ev.src()]; // will be incremented below
       join_final = true;
     } else { // (view + 1) == ev.value().view
-      for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
+      list<janus::addr_type> trash;
+      for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
         if ( ev.value().vt.vt.find( i->first ) == ev.value().vt.vt.end() ) {
           points.erase( i->first );
-          vt.vt.erase( i++ );
+          trash.push_back( i->first );
           // break;
-        } else {
-          ++i;
         }
+      }
+      for ( list<janus::addr_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
+        vt.vt.erase( *i );
       }
     }
     view = ev.value().view;
@@ -1175,13 +1180,15 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
   // in case of 'too small' group 'no conformation' may happens!
   if ( ((lock_rsp.size() * 2 + 1) >= vt.vt.size()) || (vt.vt.size() <= 2) ) {
     // who is in group, but not conform lock?
-    for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
-      if ( (i->first == self_id()) || (lock_rsp.find( i->first ) != lock_rsp.end()) ) {
-        ++i;
-      } else {
+    list<janus::addr_type> trash;
+    for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
+      if ( (i->first != self_id()) && (lock_rsp.find( i->first ) == lock_rsp.end()) ) {
         points.erase( i->first );
-        vt.vt.erase( i++ );
+        trash.push_back( i->first );
       }
+    }
+    for ( list<janus::addr_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
+      vt.vt.erase( *i );
     }
 
     // response from all group members available
@@ -1271,14 +1278,16 @@ void basic_vs::check_remotes()
   }
 
   bool drop = false;
-  for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
+  list<janus::addr_type> trash;
+  for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
     if ( !is_avail( i->first ) ) {
       points.erase( i->first );
-      vt.vt.erase( i++ );
+      trash.push_back( i->first );
       drop = true;
-    } else {
-      ++i;
     }
+  }
+  for ( list<janus::addr_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
+    vt.vt.erase( *i );
   }
 
   if ( drop ) {

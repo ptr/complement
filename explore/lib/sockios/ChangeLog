@@ -1,3 +1,10 @@
+2010-05-21  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* sockmgr.cc, syslog.cc: fix 'erase in
+	unordered container' bug;
+	
+	* libsockios: release 2.6.10.
+
 2010-01-13  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* sockstream, socksrv.h: avoid usage cerr for

@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <10/01/13 10:32:12 ptr>
+// -*- C++ -*- Time-stamp: <10/05/21 15:22:14 ptr>
 
 /*
- * Copyright (c) 2008, 2009
+ * Copyright (c) 2008-2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -527,7 +527,8 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
     // close listener:
     fd_info info = ifd->second;
 
-    for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ) {
+    std::list<typename fd_container_type::key_type> trash;
+    for ( typename fd_container_type::const_iterator i = descr.begin(); i != descr.end(); ++i ) {
       if ( i->second.p == info.p ) {
         if ( (i->second.flags & fd_info::listener) == 0 ) { // it's not me!
           sockbuf_t* b = i->second.b;
@@ -539,10 +540,11 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
           }
           (*info.p)( i->first, typename socks_processor_t::adopt_close_t() );
         }
-        /* i = */ descr.erase( i++ );
-      } else {
-        ++i;
+        trash.push_back( i->first );
       }
+    }
+    for ( typename std::list<typename fd_container_type::key_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
+      descr.erase( *i );
     }
 
     // no more connection with this listener
@@ -602,7 +604,8 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
 
       // close listener:
 
-      for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ) {
+      std::list<typename fd_container_type::key_type> trash;
+      for ( typename fd_container_type::const_iterator i = descr.begin(); i != descr.end(); ++i ) {
         if ( i->second.p == info.p ) {
           if ( (i->second.flags & fd_info::listener) == 0 ) { // it's not me!
             sockbuf_t* b = i->second.b;
@@ -614,10 +617,11 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
             }
             (*info.p)( i->first, typename socks_processor_t::adopt_close_t() );
           }
-          /* i = */ descr.erase( i++ );
-        } else {
-          ++i;
+          trash.push_back( i->first );
         }
+      }
+      for ( typename std::list<typename fd_container_type::key_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
+        descr.erase( *i );
       }
 
       // no more connection with this listener
@@ -709,7 +713,8 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
   // listener closed?
 
   // do procedure when listener closed:
-  for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ) {
+  std::list<typename fd_container_type::key_type> trash;
+  for ( typename fd_container_type::const_iterator i = descr.begin(); i != descr.end(); ++i ) {
     if ( i->second.p == info.p ) {
       if ( (i->second.flags & fd_info::listener) == 0 ) { // it's not me!
         sockbuf_t* b = i->second.b;
@@ -721,10 +726,11 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
         }
         (*info.p)( i->first, typename socks_processor_t::adopt_close_t() );
       }
-      /* i = */ descr.erase( i++ );
-    } else {
-      ++i;
+      trash.push_back( i->first );
     }
+  }
+  for ( typename std::list<typename fd_container_type::key_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
+    descr.erase( *i );
   }
 
   // no more connection with this listener
@@ -739,7 +745,8 @@ void sockmgr<charT,traits,_Alloc>::process_dgram_srv( const epoll_event& ev, typ
     // close listener:
     fd_info info = ifd->second;
 
-    for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ) {
+    std::list<typename fd_container_type::key_type> trash;
+    for ( typename fd_container_type::const_iterator i = descr.begin(); i != descr.end(); ++i ) {
       if ( i->second.p == info.p ) {
         if ( (i->second.flags & fd_info::dgram_proc) == 0 ) { // it's not me!
           sockbuf_t* b = i->second.b;
@@ -752,10 +759,11 @@ void sockmgr<charT,traits,_Alloc>::process_dgram_srv( const epoll_event& ev, typ
           // possible problem, because of it may happen in dtor of info.p(...):
           (*info.p)( i->first, typename socks_processor_t::adopt_close_t() );
         }
-        /* i = */ descr.erase( i++ );
-      } else {
-        ++i;
+        trash.push_back( i->first );
       }
+    }
+    for ( typename std::list<typename fd_container_type::key_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
+      descr.erase( *i );
     }
 
     // no more connection with this processor
