@@ -1,5 +1,12 @@
 2010-05-21  Petr Ovtchenkov  <ptr@void-ptr.info>
 
+	* casual.h, casual.cc: *_nak functions never
+	run, removed;
+
+	* casual.cc: race condition in vs_send_flush;
+
+	* libjanus: revision 0.14.11.
+
 	* casual.cc: fix 'erase in unordered
 	container' bug;
 	
