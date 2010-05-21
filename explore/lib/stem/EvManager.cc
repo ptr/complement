@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/21 14:31:59 ptr>
+// -*- C++ -*- Time-stamp: <10/05/21 22:03:35 ptr>
 
 /*
  *
@@ -50,6 +50,17 @@ __FIT_DECLSPEC EvManager::EvManager() :
 
 __FIT_DECLSPEC EvManager::~EvManager()
 {
+  stop_queue();
+}
+
+bool EvManager::not_finished()
+{
+  lock_guard<mutex> lk( _lock_queue );
+  return !_dispatch_stop;
+}
+
+void EvManager::stop_queue()
+{
   {
     lock_guard<mutex> lk( _lock_queue );
     _dispatch_stop = true;
@@ -59,10 +70,15 @@ __FIT_DECLSPEC EvManager::~EvManager()
   _ev_queue_thr.join();
 }
 
-bool EvManager::not_finished()
+void EvManager::start_queue()
 {
-  lock_guard<mutex> lk( _lock_queue );
-  return !_dispatch_stop;
+  if ( !_ev_queue_thr.joinable()  ) {
+    lock_guard<mutex> lk( _lock_queue );
+    _dispatch_stop = false;
+
+    (&_ev_queue_thr)->~thread();
+    new (&_ev_queue_thr) std::tr2::thread( _Dispatch, this );
+  }
 }
 
 void EvManager::_Dispatch( EvManager* p )

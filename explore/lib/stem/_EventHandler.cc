@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/21 21:05:38 ptr>
+// -*- C++ -*- Time-stamp: <10/05/21 22:06:47 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2010
@@ -41,19 +41,26 @@ static mutex _mf_lock;
 void EventHandler::Init::__at_fork_prepare()
 {
   _mf_lock.lock();
+  if ( _rcount != 0 ) {
+    EventHandler::_mgr->stop_queue();
+  }
 }
 
 void EventHandler::Init::__at_fork_child()
 {
   if ( _rcount != 0 ) {
-    EventHandler::_mgr->~EvManager();
-    EventHandler::_mgr = new( EventHandler::_mgr ) EvManager();
+    // EventHandler::_mgr->~EvManager();
+    // EventHandler::_mgr = new( EventHandler::_mgr ) EvManager();
+    EventHandler::_mgr->start_queue();
   }
   _mf_lock.unlock();
 }
 
 void EventHandler::Init::__at_fork_parent()
 {
+  if ( _rcount != 0 ) {
+    EventHandler::_mgr->start_queue();
+  }
   _mf_lock.unlock();
 }
 

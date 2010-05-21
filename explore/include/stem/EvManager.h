@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/03/10 19:13:29 ptr>
+// -*- C++ -*- Time-stamp: <10/05/21 21:50:45 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2010
@@ -168,6 +168,8 @@ class EvManager
       { return heap.find( id ) != heap.end(); }
 
     void unsafe_annotate( const addr_type& id, const std::string& info );
+    void stop_queue();
+    void start_queue();
 
   private:
     struct _not_empty
@@ -263,6 +265,7 @@ class EvManager
     friend class NetTransportMgr;
     friend class NetTransport_base;
     friend class NetTransport;
+    friend class EventHandler::Init;
 };
 
 } // namespace stem
