@@ -39,7 +39,8 @@ using namespace std;
 VT_with_leader::VT_with_leader( const char* nm ) :
     torder_vs(),
     f( nm ),
-    name( nm )
+    name( nm ),
+    flushed( false )
 {
   enable();
 }
@@ -70,6 +71,7 @@ void VT_with_leader::vs_pub_rec( const stem::Event& )
 
 void VT_with_leader::vs_pub_flush()
 {
+  flushed = true;
 }
 
 void VT_with_leader::vs_pub_tord_rec( const stem::Event& ev )
@@ -696,6 +698,108 @@ int EXAM_IMPL(vtime_operations::leader_fail)
   unlink( "/tmp/a1" );
   unlink( "/tmp/a2" );
   unlink( "/tmp/a3" );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(vtime_operations::double_flush)
+{
+  VT_with_leader a1("/tmp/a1");
+  VT_with_leader a2("/tmp/a2");
+  VT_with_leader a3("/tmp/a3");
+  
+  a1.vs_join( stem::badaddr );
+  EXAM_CHECK( a1.vs_group_size() == 1 );
+  a2.vs_join( a1.self_id() );
+
+  {
+    int i = 0;
+    while ( i < 100 && a2.vs_group_size() < 2 ) {
+      std::tr2::this_thread::sleep( std::tr2::milliseconds(100) );
+      ++i;
+    }
+  }
+
+  EXAM_CHECK( a1.vs_group_size() == 2 );
+  EXAM_CHECK( a2.vs_group_size() == 2 );
+
+  a3.vs_join( a2.self_id() );
+
+  {
+    int i = 0;
+    while ( i < 100 && a3.vs_group_size() < 3 ) {
+      std::tr2::this_thread::sleep( std::tr2::milliseconds(100) );
+      ++i;
+    }
+  }
+
+  EXAM_CHECK( a1.vs_group_size() == 3 );
+  EXAM_CHECK( a2.vs_group_size() == 3 );
+  EXAM_CHECK( a3.vs_group_size() == 3 );
+
+  a1.vs_send_flush();
+  a2.vs_send_flush();
+
+  {
+    int i = 0;
+    while ( i < 100 && !(a1.flushed && a2.flushed && a3.flushed) ) {
+      std::tr2::this_thread::sleep( std::tr2::milliseconds(100) );
+      ++i;
+    }
+  }
+
+  EXAM_CHECK( a1.flushed );
+  EXAM_CHECK( a2.flushed );
+  EXAM_CHECK( a3.flushed );
+
+  VT_with_leader a4("/tmp/a4");
+
+  a4.vs_join( a3.self_id() );
+
+  {
+    int i = 0;
+    while ( i < 100 && a4.vs_group_size() < 4 ) {
+      std::tr2::this_thread::sleep( std::tr2::milliseconds(100) );
+      ++i;
+    }
+  }
+
+  EXAM_CHECK( a3.vs_group_size() == 4 ); 
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(vtime_operations::flush_and_join)
+{
+  VT_with_leader a1("/tmp/a1");
+  VT_with_leader a2("/tmp/a2");
+  VT_with_leader a3("/tmp/a3");
+
+  a1.vs_join( stem::badaddr );
+
+  EXAM_CHECK( a1.vs_group_size() == 1 );
+  a2.vs_join( a1.self_id() );
+
+  {
+    int i = 0;
+    while ( i < 100 && a2.vs_group_size() < 2 ) {
+      std::tr2::this_thread::sleep( std::tr2::milliseconds(100) );
+      ++i;
+    }
+  }
+
+  a3.vs_join( a2.self_id() );
+  a1.vs_send_flush();
+
+  {
+    int i = 0;
+    while ( i < 100 && !(a3.vs_group_size() == 3 || (a1.flushed && a2.flushed)) ) {
+      std::tr2::this_thread::sleep( std::tr2::milliseconds(100) );
+      ++i;
+    }
+  }
+
+  EXAM_CHECK( (a3.vs_group_size() == 3) || (a1.flushed && a2.flushed) );
 
   return EXAM_RESULT;
 }

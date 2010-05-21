@@ -32,6 +32,7 @@ class VT_with_leader :
     void vs_pub_flush();
     virtual void vs_pub_tord_rec( const stem::Event& );
 
+    bool flushed;
   private:
     void message( const stem::Event& );
     void sync_message( const stem::Event& );

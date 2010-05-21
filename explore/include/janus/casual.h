@@ -167,7 +167,6 @@ class basic_vs :
     void vs_lock_view( const stem::EventVoid& );
     void vs_lock_view_lk( const stem::EventVoid& );
     void vs_lock_view_ack( const stem::EventVoid& );
-    void vs_lock_view_nak( const stem::EventVoid& );
 
     void vs_process( const stem::Event_base<vs_event>& );
     void vs_process_lk( const stem::Event_base<vs_event>& );
@@ -178,7 +177,6 @@ class basic_vs :
     void vs_flush_lock_view( const stem::EventVoid& );
     void vs_flush_lock_view_lk( const stem::EventVoid& );
     void vs_flush_lock_view_ack( const stem::EventVoid& );
-    void vs_flush_lock_view_nak( const stem::EventVoid& );
     void vs_flush( const xmt::uuid_type& );
     void vs_flush_wr( const xmt::uuid_type& );
 

@@ -640,24 +640,12 @@ void basic_vs::vs_lock_view( const stem::EventVoid& ev )
 
 void basic_vs::vs_lock_view_lk( const stem::EventVoid& ev )
 {
-  if ( ev.src() != lock_addr ) {
-    if ( ev.src() < lock_addr ) {
-      stem::EventVoid view_lock_ev_n( VS_LOCK_VIEW_NAK );
-      view_lock_ev_n.dest( lock_addr );
-      Send( view_lock_ev_n );
-
-      lock_addr = ev.src();
-
-      stem::EventVoid view_lock_ev( VS_LOCK_VIEW_ACK );
-      view_lock_ev.dest( lock_addr );
-      Send( view_lock_ev );
-    } /* else {
-    } */
-  } /* else {
+  if ( ev.src() < lock_addr ) {
+    lock_addr = ev.src();
     stem::EventVoid view_lock_ev( VS_LOCK_VIEW_ACK );
     view_lock_ev.dest( lock_addr );
     Send( view_lock_ev );
-  } */
+  }
 }
 
 void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
@@ -703,24 +691,6 @@ void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
   }
 }
 
-void basic_vs::vs_lock_view_nak( const stem::EventVoid& ev )
-{
-  if ( lock_addr == self_id() ) { // I'm owner of the lock
-    lock_addr = stem::badaddr;
-    lock_rsp.clear();
-    PopState( VS_ST_LOCKED );
-
-    rm_lock_safety();
-
-    while ( !de.empty() ) {
-      if ( basic_vs::vs( de.front() ) ) {
-        de.pop_back(); // event pushed back in vs() above, remove it
-        break;
-      }
-      de.pop_front();
-    }
-  }
-}
 
 void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
 {
@@ -1018,19 +988,12 @@ void basic_vs::vs_flush_lock_view( const stem::EventVoid& ev )
 
 void basic_vs::vs_flush_lock_view_lk( const stem::EventVoid& ev )
 {
-  if ( ev.src() != lock_addr ) {
-    if ( ev.src() < lock_addr ) {
-      stem::EventVoid view_lock_ev_n( VS_FLUSH_LOCK_VIEW_NAK );
-      view_lock_ev_n.dest( lock_addr );
-      Send( view_lock_ev_n );
+  if ( ev.src() < lock_addr ) {
+    lock_addr = ev.src();
 
-      lock_addr = ev.src();
-
-      stem::EventVoid view_lock_ev( VS_FLUSH_LOCK_VIEW_ACK );
-      view_lock_ev.dest( lock_addr );
-      Send( view_lock_ev );
-    } /* else {
-    } */
+    stem::EventVoid view_lock_ev( VS_FLUSH_LOCK_VIEW_ACK );
+    view_lock_ev.dest( lock_addr );
+    Send( view_lock_ev );
   }
 }
 
@@ -1069,23 +1032,6 @@ void basic_vs::vs_flush_lock_view_ack( const stem::EventVoid& ev )
   }
 }
 
-void basic_vs::vs_flush_lock_view_nak( const stem::EventVoid& ev )
-{
-  if ( lock_addr == self_id() ) { // I'm owner of the lock
-    lock_addr = stem::badaddr;
-    lock_rsp.clear();
-    PopState( VS_ST_LOCKED );
-
-    rm_lock_safety();
-    while ( !de.empty() ) {
-      if ( basic_vs::vs( de.front() ) ) {
-        de.pop_back(); // event pushed back in vs() above, remove it
-        break;
-      }
-      de.pop_front();
-    }
-  }
-}
 
 void basic_vs::vs_flush( const xmt::uuid_type& id )
 {
@@ -1443,12 +1389,10 @@ DEFINE_RESPONSE_TABLE( basic_vs )
   EV_Event_base_T_( ST_NULL, VS_LOCK_VIEW, vs_lock_view, void )
   EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_VIEW, vs_lock_view_lk, void )
   EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_VIEW_ACK, vs_lock_view_ack, void )
-  EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_VIEW_NAK, vs_lock_view_nak, void )
 
   EV_Event_base_T_( ST_NULL, VS_FLUSH_LOCK_VIEW, vs_flush_lock_view, void )
   EV_Event_base_T_( VS_ST_LOCKED, VS_FLUSH_LOCK_VIEW, vs_flush_lock_view_lk, void )
   EV_Event_base_T_( VS_ST_LOCKED, VS_FLUSH_LOCK_VIEW_ACK, vs_flush_lock_view_ack, void )
-  EV_Event_base_T_( VS_ST_LOCKED, VS_FLUSH_LOCK_VIEW_NAK, vs_flush_lock_view_nak, void )
   EV_T_( VS_ST_LOCKED, VS_FLUSH_VIEW, vs_flush, xmt::uuid_type )
   EV_T_( ST_NULL, VS_FLUSH_VIEW_JOIN, vs_flush_wr, xmt::uuid_type )
   EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_SAFETY, vs_lock_safety, void )

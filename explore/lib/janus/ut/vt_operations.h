@@ -44,6 +44,9 @@ class vtime_operations
     int EXAM_DECL(leader);
     int EXAM_DECL(leader_fail);
 
+    int EXAM_DECL( double_flush );
+    int EXAM_DECL( flush_and_join );
+
   private:
     // xmt::shm_alloc<0> seg;
     // xmt::allocator_shm<xmt::__condition<true>,0> shm_cnd;
