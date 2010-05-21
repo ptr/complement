@@ -1,7 +1,7 @@
 BOOST_PY_SRC = ${BOOST_INCLUDE_DIR}/libs/python/src
 LIBNAME = boost_python
 MAJOR = 1
-MINOR = 42
+MINOR = 43
 PATCH = 0
 SRC_CPP = ${BOOST_PY_SRC}/numeric.cpp \
           ${BOOST_PY_SRC}/list.cpp \
