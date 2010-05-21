@@ -46,6 +46,7 @@ class vtime_operations
 
     int EXAM_DECL( double_flush );
     int EXAM_DECL( flush_and_join );
+    int EXAM_DECL( flush_and_exit );
 
   private:
     // xmt::shm_alloc<0> seg;

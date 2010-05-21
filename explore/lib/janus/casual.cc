@@ -1116,7 +1116,12 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
   }
 
   if ( lock_addr != self_id() ) {
-    cerr << __FILE__ << ':' << __LINE__ << ' ' << lock_addr << " (" << self_id() << ')' << ' ' << is_avail(lock_addr) << endl;
+    // cerr << __FILE__ << ':' << __LINE__ << ' ' << lock_addr << " (" << self_id() << ')' << ' ' << is_avail(lock_addr) << endl;
+    if ( !is_avail(lock_addr) ) {
+      lock_addr = stem::badaddr;
+      PopState( VS_ST_LOCKED );
+      lock_rsp.clear();
+    }
     // if ( is_avail(lock_addr) ) {
     return;
     // }

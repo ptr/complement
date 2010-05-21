@@ -764,7 +764,12 @@ int EXAM_IMPL(vtime_operations::double_flush)
     }
   }
 
-  EXAM_CHECK( a3.vs_group_size() == 4 ); 
+  EXAM_CHECK( a4.vs_group_size() == 4 ); 
+
+  unlink( "/tmp/a1" );
+  unlink( "/tmp/a2" );
+  unlink( "/tmp/a3" );
+  unlink( "/tmp/a4" );
 
   return EXAM_RESULT;
 }
@@ -800,6 +805,55 @@ int EXAM_IMPL(vtime_operations::flush_and_join)
   }
 
   EXAM_CHECK( (a3.vs_group_size() == 3) || (a1.flushed && a2.flushed) );
+
+  unlink( "/tmp/a1" );
+  unlink( "/tmp/a2" );
+  unlink( "/tmp/a3" );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(vtime_operations::flush_and_exit)
+{
+  VT_with_leader a2("/tmp/a2");
+
+  VT_with_leader a3("/tmp/a2");
+  {
+    VT_with_leader a1("/tmp/a1");
+
+    a1.vs_join( stem::badaddr );
+
+    EXAM_CHECK( a1.vs_group_size() == 1 );
+    a2.vs_join( a1.self_id() );
+
+    {
+      int i = 0;
+      while ( i < 100 && a2.vs_group_size() < 2 ) {
+        std::tr2::this_thread::sleep( std::tr2::milliseconds(100) );
+        ++i;
+      }
+    }
+
+    EXAM_CHECK( a2.vs_group_size() == 2 );
+    a1.vs_send_flush();
+  }
+  
+  std::tr2::this_thread::sleep( std::tr2::seconds(2) );
+
+  a3.vs_join( a2.self_id() );
+
+  {
+    int i = 0;
+    while ( i < 200 && !(a3.vs_group_size() == 2) ) {
+      std::tr2::this_thread::sleep( std::tr2::milliseconds(100) );
+      ++i;
+    }
+  }
+
+  EXAM_CHECK( a3.vs_group_size() == 2 );
+
+  unlink( "/tmp/a1" );
+  unlink( "/tmp/a2" );
 
   return EXAM_RESULT;
 }
