@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/21 14:16:23 ptr>
+// -*- C++ -*- Time-stamp: <10/05/21 19:30:55 ptr>
 
 /*
  *
@@ -951,6 +951,8 @@ void basic_vs::replay( const stem::Event& inc_ev )
 
 void basic_vs::vs_send_flush()
 {
+  lock_guard<recursive_mutex> lk( _theHistory_lock );
+
   if ( lock_addr == stem::badaddr ) {
     if ( vt.vt.size() > 1 ) {
       check_remotes(); // is anybody leave us?
