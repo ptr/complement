@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/19 17:02:49 ptr>
+// -*- C++ -*- Time-stamp: <10/05/21 21:05:38 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2010
@@ -35,49 +35,54 @@ Names     *EventHandler::_ns = 0;
 mutex _def_lock;
 addr_type _default_addr = xmt::nil_uuid;
 
-static int *_rcount = 0;
-#if 1 // depends where fork happens: in the EvManager loop (stack) or not.
+static int _rcount = 0;
+static mutex _mf_lock;
+
 void EventHandler::Init::__at_fork_prepare()
 {
+  _mf_lock.lock();
 }
 
 void EventHandler::Init::__at_fork_child()
 {
-  if ( *_rcount != 0 ) {
+  if ( _rcount != 0 ) {
     EventHandler::_mgr->~EvManager();
     EventHandler::_mgr = new( EventHandler::_mgr ) EvManager();
   }
+  _mf_lock.unlock();
 }
 
 void EventHandler::Init::__at_fork_parent()
 {
+  _mf_lock.unlock();
 }
-#endif
 
 void EventHandler::Init::_guard( int direction )
 {
   static recursive_mutex _init_lock;
+  static bool at_f = false;
 
   lock_guard<recursive_mutex> lk(_init_lock);
-  static int _count = 0;
 
   if ( direction ) {
-    if ( _count++ == 0 ) {
+    if ( _rcount++ == 0 ) {
 #ifdef _PTHREADS
-      _rcount = &_count;
-      pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child );
+      if ( !at_f ) {
+        pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child );
+        at_f = true;
+      }
 #endif
       EventHandler::_mgr = new EvManager();
       EventHandler::_ns = new Names( "ns" );
       EventHandler::_ns->enable();
     }
   } else {
-    --_count;
-    if ( _count == 1 ) {
+    --_rcount;
+    if ( _rcount == 1 ) {
       EventHandler::_ns->disable();
       delete EventHandler::_ns;
       EventHandler::_ns = 0;
-    } else if ( _count == 0 ) {
+    } else if ( _rcount == 0 ) {
       delete EventHandler::_mgr;
       EventHandler::_mgr = 0;
     }
