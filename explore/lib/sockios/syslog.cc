@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/21 15:22:47 ptr>
+// -*- C++ -*- Time-stamp: <10/05/21 23:03:54 ptr>
 
 /*
  * Copyright (c) 2009, 2010
@@ -283,7 +283,7 @@ ostream& xsyslog( int _level, int _facility )
 void close_syslog()
 {
   std::tr2::lock_guard<std::tr2::mutex> lk( detail::_heap_lock );
-  for ( detail::log_heap_type::iterator i = detail::slogs.begin(); i != detail::slogs.end(); ) {
+  for ( detail::log_heap_type::iterator i = detail::slogs.begin(); i != detail::slogs.end(); ++i ) {
     delete i->second;
   }
   detail::slogs.clear();
