@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/04/30 11:51:25 ptr>
+// -*- C++ -*- Time-stamp: <10/05/25 11:52:05 ptr>
 
 /*
  *
@@ -20,6 +20,7 @@
 
 #include <stdint.h>
 #include <string>
+#include <utility>
 
 struct mess :
     public stem::__pack_base
@@ -42,6 +43,8 @@ class Convert :
     public stem::EventHandler
 {
   public:
+    typedef std::pair<int32_t,std::string> compaund_type;
+
     Convert();
     Convert( stem::addr_type id );
     Convert( stem::addr_type id, const char *info );
@@ -53,6 +56,7 @@ class Convert :
     void handler3( const mess& );
     void handler4( const stem::EventVoid& );
     void handler5( const std::string& );
+    void handler6( const stem::Event_base<compaund_type>& );
 
     bool wait();
 
@@ -77,5 +81,6 @@ class Convert :
 #define CONV_EV3 0x90c
 #define CONV_EV4 0x90d
 #define CONV_EV5 0x90e
+#define CONV_EV6 0x90f
 
 #endif // __Convert_h

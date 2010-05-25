@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/04/30 11:50:51 ptr>
+// -*- C++ -*- Time-stamp: <10/05/25 11:46:48 ptr>
 
 /*
  *
@@ -97,6 +97,15 @@ void Convert::handler5( const std::string& m )
   cnd.notify_one();
 }
 
+void Convert::handler6( const stem::Event_base<Convert::compaund_type>& ev )
+{
+  lock_guard<mutex> lk( mtx );
+  v = ev.value().first;
+  m3 = ev.value().second;
+
+  cnd.notify_one();
+}
+
 bool Convert::wait()
 {
   unique_lock<mutex> lk( mtx );
@@ -110,4 +119,5 @@ DEFINE_RESPONSE_TABLE( Convert )
   EV_T_( ST_NULL, CONV_EV3, handler3, mess )
   EV_Event_base_T_( ST_NULL, CONV_EV4, handler4, void )
   EV_T_( ST_NULL, CONV_EV5, handler5, std::string )
+  EV_Event_base_T_( ST_NULL, CONV_EV6, handler6, compaund_type )
 END_RESPONSE_TABLE

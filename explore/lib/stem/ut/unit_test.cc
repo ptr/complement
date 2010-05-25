@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/08 16:49:14 ptr>
+// -*- C++ -*- Time-stamp: <10/05/25 11:56:13 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -1514,6 +1514,21 @@ int EXAM_IMPL(stem_test::convert)
 
   EXAM_CHECK( conv.v == -3 );
   EXAM_CHECK( conv.m3 == "\nMessage pass" );
+
+  conv.v = 0;
+
+  stem::Event_base<pair<int32_t,std::string> > ev6( CONV_EV6 );
+
+  ev6.dest( conv.self_id() );
+  ev6.value().first = 6;
+  ev6.value().second = "pair";
+
+  conv.Send( ev6 );
+
+  EXAM_CHECK( conv.wait() );
+
+  EXAM_CHECK( conv.v == 6 );
+  EXAM_CHECK( conv.m3 == "pair" );
 
   conv.v = 0;
 

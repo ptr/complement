@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/09/11 16:03:17 ptr>
+// -*- C++ -*- Time-stamp: <10/05/25 11:37:07 ptr>
 
 /*
  *
@@ -278,6 +278,66 @@ class __Event_base_aux<D,std::tr1::false_type> :
       {
         __Event_Base::swap( static_cast<__Event_Base&>(l) );
         std::swap( _data, l._data );
+      }
+
+  protected:
+    value_type _data;
+};
+
+template <class F, class S>
+class __Event_base_aux<std::pair<F,S>,std::tr1::false_type> :
+        public __Event_Base
+{
+  public:
+    typedef std::pair<F,S>         value_type;
+    typedef std::pair<F,S>&        reference;
+    typedef const std::pair<F,S>&  const_reference;
+    typedef std::pair<F,S>*        pointer;
+    typedef const std::pair<F,S>*  const_pointer;
+
+    __Event_base_aux() :
+        __Event_Base(),
+        _data()
+      { }
+
+    explicit __Event_base_aux( code_type c ) :
+        __Event_Base( c ),
+        _data()
+      { }
+
+    __Event_base_aux( code_type c, const_reference d ) :
+        __Event_Base( c ),
+        _data( d )
+      { }
+
+    __Event_base_aux( const __Event_Base& e, const_reference d ) :
+        __Event_Base( e ),
+        _data( d )
+      { }
+
+    const_reference value() const
+      { return _data; }
+    reference value()
+      { return _data; }
+    size_type value_size() const
+      { return sizeof(_data); }
+
+    void pack( std::ostream& __s ) const
+      {
+        __pack_base::__pack( __s, _data.first );
+        __pack_base::__pack( __s, _data.second );
+      }
+    void unpack( std::istream& __s )
+      {
+        __pack_base::__unpack( __s, _data.first );
+        __pack_base::__unpack( __s, _data.second );
+      }
+
+    void swap( __Event_base_aux<value_type,std::tr1::false_type>& l )
+      {
+        __Event_Base::swap( static_cast<__Event_Base&>(l) );
+        std::swap( _data.first, l._data.first );
+        std::swap( _data.second, l._data.second );
       }
 
   protected:
