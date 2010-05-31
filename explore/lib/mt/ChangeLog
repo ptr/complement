@@ -1,3 +1,10 @@
+2010-05-31  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* uid.cc: use sysctl instead of file operations
+	under /proc/sys/kernel/random/...;
+
+	* libxmt: release 2.1.6.
+
 2010-05-21  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* thread.cc: fix 'erase in unordered

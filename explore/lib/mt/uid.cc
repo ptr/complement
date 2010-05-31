@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/05/01 12:50:17 ptr>
+// -*- C++ -*- Time-stamp: <10/05/31 20:38:15 ptr>
 
 /*
- * Copyright (c) 2006, 2008, 2009
+ * Copyright (c) 2006, 2008-2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -9,15 +9,15 @@
  */
 
 #include <mt/uid.h>
-#include <mt/mutex>
 #include <sstream>
 #include <iomanip>
 #include <cstring>
-#include <unistd.h>
-#include <fcntl.h>
 #include <stdexcept>
 #include <mt/system_error>
 #include <misc/md5.h>
+
+#include <sys/sysctl.h>
+#include <linux/sysctl.h>
 
 #include <iostream>
 
@@ -167,84 +167,29 @@ namespace detail {
 
 using namespace std;
 using namespace xmt;
-using namespace std::tr2;
 
 struct __uid_init
 {
     __uid_init();
 
     static uuid_type _host_id;
-    char _host_id_str[48]; // 37 really
     int err;
 };
 
 uuid_type __uid_init::_host_id;
 
-static const char boot_id[] = "/proc/sys/kernel/random/boot_id";
-static const char uu_id[] = "/proc/sys/kernel/random/uuid";
-
 __uid_init::__uid_init() :
      err( 0 )
 {
-  int fd = ::open( boot_id, O_RDONLY );
+  static size_t n = sizeof(uuid_type);
+  static int mib[] = { CTL_KERN, KERN_RANDOM, RANDOM_BOOT_ID };
 
-  if ( (fd < 0) || (::read( fd, _host_id_str, 36 ) != 36 )) {
-    err = errno;
-    if ( fd >= 0 ) {
-      ::close( fd );
-    }
-  } else {
-    _host_id_str[36] = '\0';
-    ::close( fd );
-
-    stringstream s;
-    s << _host_id_str[0]  << _host_id_str[1]  << ' '  
-      << _host_id_str[2]  << _host_id_str[3]  << ' '
-      << _host_id_str[4]  << _host_id_str[5]  << ' '
-      << _host_id_str[6]  << _host_id_str[7]  << ' ' // -
-      << _host_id_str[9]  << _host_id_str[10] << ' '
-      << _host_id_str[11] << _host_id_str[12] << ' ' // -
-      << _host_id_str[14] << _host_id_str[15] << ' '
-      << _host_id_str[16] << _host_id_str[17] << ' ' // -
-      << _host_id_str[19] << _host_id_str[20] << ' '
-      << _host_id_str[21] << _host_id_str[22] << ' ' // -
-      << _host_id_str[24] << _host_id_str[25] << ' '
-      << _host_id_str[26] << _host_id_str[27] << ' '
-      << _host_id_str[28] << _host_id_str[29] << ' '
-      << _host_id_str[30] << _host_id_str[31] << ' '
-      << _host_id_str[32] << _host_id_str[33] << ' '
-      << _host_id_str[34] << _host_id_str[35];
-
-    s >> hex;
-
-    unsigned v[16];
-
-    s >> v[0] >> v[1] >> v[2]  >> v[3]  >> v[4]  >> v[5]  >> v[6]  >> v[7]
-      >> v[8] >> v[9] >> v[10] >> v[11] >> v[12] >> v[13] >> v[14] >> v[15];
-
-    _host_id.u.b[0] = v[0];
-    _host_id.u.b[1] = v[1];
-    _host_id.u.b[2] = v[2];
-    _host_id.u.b[3] = v[3];
-    _host_id.u.b[4] = v[4];
-    _host_id.u.b[5] = v[5];
-    _host_id.u.b[6] = v[6];
-    _host_id.u.b[7] = v[7];
-    _host_id.u.b[8] = v[8];
-    _host_id.u.b[9] = v[9];
-    _host_id.u.b[10] = v[10];
-    _host_id.u.b[11] = v[11];
-    _host_id.u.b[12] = v[12];
-    _host_id.u.b[13] = v[13];
-    _host_id.u.b[14] = v[14];
-    _host_id.u.b[15] = v[15];
-  }
+  err = sysctl( mib, sizeof(mib)/sizeof(mib[0]), &_host_id, &n, (void*)0, 0 );
 }
 
 } // namespace detail
 
 using namespace std;
-using namespace std::tr2;
 
 uuid_type::operator string() const
 {
@@ -257,83 +202,49 @@ uuid_type::operator string() const
 
 const char *hostid_str() throw (runtime_error)
 {
-  static detail::__uid_init _uid;
-  if ( _uid.err != 0 ) {
-    throw system_error( _uid.err, get_posix_category(), detail::boot_id );
+  static std::string _uid;
+
+  if ( _uid.size() == 0 ) {
+    stringstream s;
+    s << hostid();
+    _uid = s.str();
   }
-  return _uid._host_id_str;
+
+  return _uid.data();
 }
 
 const xmt::uuid_type& hostid() throw (runtime_error)
 {
-  hostid_str();
+  static detail::__uid_init _uid;
+
+  if ( _uid.err != 0 ) {
+    throw system_error( _uid.err, get_posix_category(), "boot_id" );
+  }
+
   return detail::__uid_init::_host_id;
 }
 
 std::string uid_str() throw (runtime_error)
 {
-  char buf[37];
+  stringstream s;
 
-  int fd = ::open( detail::uu_id, O_RDONLY );
-  if ( (fd < 0) || (::read( fd, buf, 37 ) != 37) ) {
-    system_error se( errno, get_posix_category(), string( "Can't generate UID; " ) + detail::uu_id );
-    if ( fd >= 0 ) {
-      ::close( fd );
-    }
-    throw se;
-    // return std::string();
-  }
-  ::close( fd );
+  s << uid();
 
-  return std::string( buf, 36 );
+  return s.str();
 }
 
 xmt::uuid_type uid() throw (runtime_error)
 {
-  string tmp = uid_str();
   uuid_type id;
+  static size_t n = sizeof(uuid_type);
 
-  stringstream s;
-  s << tmp[0]  << tmp[1]  << ' '  
-    << tmp[2]  << tmp[3]  << ' '
-    << tmp[4]  << tmp[5]  << ' '
-    << tmp[6]  << tmp[7]  << ' ' // -
-    << tmp[9]  << tmp[10] << ' '
-    << tmp[11] << tmp[12] << ' ' // -
-    << tmp[14] << tmp[15] << ' '
-    << tmp[16] << tmp[17] << ' ' // -
-    << tmp[19] << tmp[20] << ' '
-    << tmp[21] << tmp[22] << ' ' // -
-    << tmp[24] << tmp[25] << ' '
-    << tmp[26] << tmp[27] << ' '
-    << tmp[28] << tmp[29] << ' '
-    << tmp[30] << tmp[31] << ' '
-    << tmp[32] << tmp[33] << ' '
-    << tmp[34] << tmp[35];
-    
-  s >> hex;
+  static int mib[] = { CTL_KERN, KERN_RANDOM, RANDOM_UUID };
 
-  unsigned v[16];
+  int err = sysctl( mib, sizeof(mib)/sizeof(mib[0]), &id, &n, (void*)0, 0 );
 
-  s >> v[0] >> v[1] >> v[2]  >> v[3]  >> v[4]  >> v[5]  >> v[6]  >> v[7]
-    >> v[8] >> v[9] >> v[10] >> v[11] >> v[12] >> v[13] >> v[14] >> v[15];
-
-  id.u.b[0] = v[0];
-  id.u.b[1] = v[1];
-  id.u.b[2] = v[2];
-  id.u.b[3] = v[3];
-  id.u.b[4] = v[4];
-  id.u.b[5] = v[5];
-  id.u.b[6] = v[6];
-  id.u.b[7] = v[7];
-  id.u.b[8] = v[8];
-  id.u.b[9] = v[9];
-  id.u.b[10] = v[10];
-  id.u.b[11] = v[11];
-  id.u.b[12] = v[12];
-  id.u.b[13] = v[13];
-  id.u.b[14] = v[14];
-  id.u.b[15] = v[15];
+  if ( err ) {
+    throw system_error( err, get_posix_category(), "uuid" );
+  }
 
   return id;
 }
