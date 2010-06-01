@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/04/06 21:16:14 ptr>
+// -*- C++ -*- Time-stamp: <10/06/01 17:59:20 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -430,6 +430,16 @@ int EXAM_IMPL(uid_test_wg21::uid)
   xmt::uuid_type u2 = xmt::uid();
 
   EXAM_CHECK( u1 != u2 );
+
+  /* Check that UUID version is 4 */  
+  EXAM_CHECK( (u1.u.b[6] & 0xf0) == 0x40 );
+  /* Check the UUID variant for DCE */
+  EXAM_CHECK( (u1.u.b[8] & 0xc0) == 0x80 );
+
+  /* Check that UUID version is 4 */  
+  EXAM_CHECK( (u2.u.b[6] & 0xf0) == 0x40 );
+  /* Check the UUID variant for DCE */
+  EXAM_CHECK( (u2.u.b[8] & 0xc0) == 0x80 );
 
   return EXAM_RESULT;
 }
