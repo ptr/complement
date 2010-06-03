@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/16 17:27:07 ptr>
+// -*- C++ -*- Time-stamp: <10/06/03 12:59:58 ptr>
 
 /*
  * Copyright (c) 2007-2009
@@ -21,7 +21,6 @@ using namespace std;
 using namespace detail;
 using namespace std::tr2;
 
-
 int EXAM_IMPL(test_suite::_root_func)
 {
   throw init_exception();
@@ -30,10 +29,10 @@ int EXAM_IMPL(test_suite::_root_func)
 }
 
 test_suite::test_suite( const string& name, unsigned n ) :
+    local_logger( logger ),
     _count(0),
     _last_state( 0 ),
     _suite_name( name ),
-    local_logger( logger ),
     _iterations( n )
 {
   _vertices.push_back( std::make_pair( 0, 0 ) );
@@ -45,10 +44,10 @@ test_suite::test_suite( const string& name, unsigned n ) :
 }
 
 test_suite::test_suite( const char *name, unsigned n ) :
+    local_logger( logger ),
     _count(0),
     _last_state( 0 ),
     _suite_name( name ),
-    local_logger( logger ),
     _iterations( n )
 {
   _vertices.push_back( std::make_pair( 0, 0 ) );
@@ -84,18 +83,18 @@ int test_suite::girdle( test_suite::test_case_type start )
 
   sort( _vertices.begin(), _vertices.end(), vertices_compare );
 
-  vector<weight_t>::iterator from;
+  vector<weight_t>::iterator from = _vertices.end();
 
   _stat = base_logger::stat();
-  for( vector<weight_t>::iterator i = _vertices.begin(); i != _vertices.end(); ++i ) {
+  for ( vector<weight_t>::iterator i = _vertices.begin(); i != _vertices.end(); ++i ) {
     if ( i->first == start ) {
       from = i;
     }
     _test[i->first].state = 0;
   }
   local_logger->begin_ts();
-  for( vector<weight_t>::iterator i = from; i != _vertices.end(); ++i ) {
-    for( std::list<edge_t>::const_iterator j = _edges.begin(); j != _edges.end(); ++j ) {
+  for ( vector<weight_t>::iterator i = from; i != _vertices.end(); ++i ) {
+    for ( std::list<edge_t>::const_iterator j = _edges.begin(); j != _edges.end(); ++j ) {
       if ( j->second == i->first && _test[j->first].state != 0 ) {
         _test[j->second].state = skip;
       }
@@ -118,7 +117,7 @@ int test_suite::single( test_suite::test_case_type one )
   // sort( _vertices.begin(), _vertices.end(), vertices_compare );
 
   _stat = base_logger::stat();
-  for( vector<weight_t>::iterator i = _vertices.begin(); i != _vertices.end(); ++i ) {
+  for ( vector<weight_t>::iterator i = _vertices.begin(); i != _vertices.end(); ++i ) {
     if ( i->first == one ) {
       _test[i->first].state = 0;
       local_logger->begin_ts();
@@ -359,18 +358,18 @@ int test_suite::dry_girdle( test_suite::test_case_type start )
 
   sort( _vertices.begin(), _vertices.end(), vertices_compare );
 
-  vector<weight_t>::iterator from;
+  vector<weight_t>::iterator from = _vertices.end();
 
   _stat = base_logger::stat();
-  for( vector<weight_t>::iterator i = _vertices.begin(); i != _vertices.end(); ++i ) {
+  for ( vector<weight_t>::iterator i = _vertices.begin(); i != _vertices.end(); ++i ) {
     if ( i->first == start ) {
       from = i;
     }
     _test[i->first].state = 0;
   }
   local_logger->begin_ts();
-  for( vector<weight_t>::iterator i = from; i != _vertices.end(); ++i ) {
-    for( std::list<edge_t>::const_iterator j = _edges.begin(); j != _edges.end(); ++j ) {
+  for ( vector<weight_t>::iterator i = from; i != _vertices.end(); ++i ) {
+    for ( std::list<edge_t>::const_iterator j = _edges.begin(); j != _edges.end(); ++j ) {
       if ( j->second == i->first && _test[j->first].state != 0 ) {
         _test[j->second].state = skip;
       }
