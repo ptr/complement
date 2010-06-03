@@ -6,6 +6,7 @@ include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
 
 INCLUDES += -I$(SRCROOT)/include
+EXTRA_CXXFLAGS = -Wall
 
 check:	all-shared
 	$(MAKE) -C ut $@

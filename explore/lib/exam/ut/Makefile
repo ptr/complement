@@ -12,6 +12,8 @@ LIBEXAM_DIR = ${CoMT_DIR}/lib/exam
 LIBXMT_DIR = ${CoMT_DIR}/lib/mt
 LIBMISC_DIR = ${CoMT_DIR}/lib/misc
 
+EXTRA_CXXFLAGS = -Wall
+
 ifeq ($(OSNAME),linux)
 
 release-shared:	LDFLAGS += -L${LIBEXAM_DIR}/${OUTPUT_DIR} -L$(LIBXMT_DIR)/${OUTPUT_DIR} -Wl,--rpath=${LIBEXAM_DIR}/${OUTPUT_DIR}:$(LIBMISC_DIR)/${OUTPUT_DIR}:$(LIBXMT_DIR)/${OUTPUT_DIR}:${STLPORT_LIB_DIR}

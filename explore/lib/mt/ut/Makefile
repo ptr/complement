@@ -24,6 +24,7 @@ LIBMT_DIR = ${CoMT_DIR}/lib/mt
 LIBEXAM_DIR = ${CoMT_DIR}/lib/exam
 LIBMISC_DIR = ${CoMT_DIR}/lib/misc
 # LIBFS_DIR = ${CoMT_DIR}/../extern/custom/boost/libs/filesystem
+EXTRA_CXXFLAGS = -Wall
 
 ifeq ($(OSNAME),linux)
 
