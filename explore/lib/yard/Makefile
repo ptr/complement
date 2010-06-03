@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <10/04/01 12:12:36 ptr>
+# -*- Makefile -*- Time-stamp: <10/05/14 10:18:44 ptr>
 
 SRCROOT := ../..
 
@@ -6,6 +6,8 @@ include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
 
 INCLUDES += -I$(SRCROOT)/include
+#CXXFLAGS += -pg -fprofile-arcs -ftest-coverage
+#LDLIBS += -lgcov
 
 check:	all-shared
 	$(MAKE) -C ut $@

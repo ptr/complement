@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <10/04/01 11:53:21 ptr>
+# -*- Makefile -*- Time-stamp: <10/05/14 10:17:57 ptr>
 
 SRCROOT := ../../..
 
@@ -15,6 +15,8 @@ DEFS += -D__FIT_EXAM
 LIBMT_DIR = ${CoMT_DIR}/lib/mt
 LIBEXAM_DIR = ${CoMT_DIR}/lib/exam
 LIBMISC_DIR = ${CoMT_DIR}/lib/misc
+
+#CXXFLAGS += -pg -fprofile-arcs -ftest-coverage
 
 ifeq ($(OSNAME),linux)
 release-shared:	LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR} -L${LIBEXAM_DIR}/${OUTPUT_DIR} \
