@@ -1,6 +1,6 @@
-# Time-stamp: <07/05/31 01:07:37 ptr>
+# Time-stamp: <10/06/03 13:05:42 ptr>
 #
-# Copyright (c) 1997-1999, 2002, 2003, 2005-2008
+# Copyright (c) 1997-1999, 2002, 2003, 2005-2010
 # Petr Ovtchenkov
 #
 # Portion Copyright (c) 1999-2001
@@ -38,6 +38,9 @@ CPPFLAGS = $(DEFS) $(INCLUDES)
 
 CFLAGS = -Aa +z $(OPT)
 CXXFLAGS = -Aa +z -mt $(OPT)
+
+CXXFLAGS += ${EXTRA_CXXFLAGS}
+CFLAGS += ${EXTRA_CFLAGS}
 
 CDEPFLAGS = -E +Md
 CCDEPFLAGS = -E +Md

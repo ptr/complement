@@ -1,6 +1,6 @@
-# Time-stamp: <06/11/10 15:57:24 ptr>
+# Time-stamp: <10/06/03 13:19:02 ptr>
 #
-# Copyright (c) 1997-1999, 2002, 2003, 2005-2008
+# Copyright (c) 1997-1999, 2002, 2003, 2005-2010
 # Petr Ovtchenkov
 #
 # Portion Copyright (c) 1999-2001
@@ -37,9 +37,12 @@ LINK_OUTPUT_OPTION = ${OUTPUT_OPTION}
 CPPFLAGS = $(DEFS) $(INCLUDES)
 
 OPT += -mt +w2
-CCFLAGS = -erroff=doubunder -qoption ccfe -expand=1000 -library=no%Cstd,no%iostream,no%rwtools7-xildoff $(OPT) 
-CFLAGS = $(OPT)
-CXXFLAGS = -erroff=doubunder -qoption ccfe -expand=1000 -library=no%Cstd,no%iostream,no%rwtools7 -xildoff $(OPT)
+CFLAGS = -errtags -xildoff $(OPT)
+CXXFLAGS = -errtags -erroff=doubunder,diffenumtype,inllargeuse,reftotemp,notemsource -qoption ccfe -expand=1000 -library=no%Cstd,no%iostream,no%rwtools7 -xildoff $(OPT)
+
+CXXFLAGS += ${EXTRA_CXXFLAGS}
+CFLAGS += ${EXTRA_CFLAGS}
+
 CDEPFLAGS = -xM
 CCDEPFLAGS = -xM
 

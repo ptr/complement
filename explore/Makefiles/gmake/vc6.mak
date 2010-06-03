@@ -1,4 +1,4 @@
-# Time-stamp: <07/03/08 21:41:52 ptr>
+# Time-stamp: <10/06/03 13:09:43 ptr>
 #
 # Copyright (c) 1997-1999, 2002, 2003, 2005-2007
 # Petr Ovtchenkov
@@ -38,6 +38,9 @@ COMPILE.c = $(CC) $(CFLAGS) $(CPPFLAGS) $(TARGET_ARCH) /c
 COMPILE.cc = $(CXX) $(CXXFLAGS) $(CPPFLAGS) $(TARGET_ARCH) /c
 LINK.cc = $(LINK) /nologo $(LDFLAGS) $(TARGET_ARCH)
 COMPILE.rc = $(RC) $(RCFLAGS)
+
+CXXFLAGS += ${EXTRA_CXXFLAGS}
+CFLAGS += ${EXTRA_CFLAGS}
 
 CDEPFLAGS = /FD /E
 CCDEPFLAGS = /FD /E
