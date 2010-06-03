@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/12 15:19:13 ptr>
+// -*- C++ -*- Time-stamp: <10/06/03 07:45:50 ptr>
 
 /*
  * Copyright (c) 2006-2010
@@ -480,7 +480,7 @@ void shm_alloc<_Inst>::deallocate( pointer p, size_type n )
 {
   n = std::max( n + (__align - n % __align) % __align, sizeof(_fheader) );
   _master *m = reinterpret_cast<_master *>( _seg.address() );
-  if ( m != reinterpret_cast<_master *>(-1) && (reinterpret_cast<char *>(p) - reinterpret_cast<char *>(_seg.address())) < (_seg.max_size() + sizeof(_master) + sizeof(_aheader) ) ) {
+  if ( m != reinterpret_cast<_master *>(-1) && static_cast<size_t>(reinterpret_cast<char *>(p) - reinterpret_cast<char *>(_seg.address())) < (_seg.max_size() + sizeof(_master) + sizeof(_aheader) ) ) {
     std::tr2::lock_guard<std::tr2::mutex_ip> lk( m->_lock );
     _aheader *a = reinterpret_cast<_aheader *>( reinterpret_cast<char *>(p) - sizeof(_aheader) );
     size_type off = reinterpret_cast<char *>(p) - reinterpret_cast<char *>(_seg.address());
@@ -514,7 +514,7 @@ void shm_alloc<_Inst>::deallocate( pointer p, size_type n )
       }
       // before first free block or after last free block
       // Note, that list of free blocks not empty here!
-      if ( off > (reinterpret_cast<char *>(h) - reinterpret_cast<char *>(_seg.address())) ) { // become last free block
+      if ( off > static_cast<size_t>(reinterpret_cast<char *>(h) - reinterpret_cast<char *>(_seg.address())) ) { // become last free block
         if ( reinterpret_cast<pointer>(reinterpret_cast<char *>(h) + sizeof(_aheader) * 2 + h->_sz) == p ) {
           // glue with last free block
           h->_sz += a->_sz + sizeof(_aheader);
