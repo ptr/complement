@@ -66,7 +66,7 @@ class simple_us_mgr :
       {
         lock_guard<mutex> lk(lock);
         ++n_cnt;
-        size_t n = ::read( fd, buf, 1024 );
+        /* size_t n = */ ::read( fd, buf, 1024 );
         cnd.notify_one();
         return 0;
       }

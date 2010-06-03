@@ -189,8 +189,8 @@ class sock_processor_base :
       }
 
   private:
-    unsigned long _mode;  // open mode
-    unsigned long _state; // state flags
+    std::ios_base::openmode _mode;  // open mode
+    std::ios_base::iostate  _state; // state flags
 
   protected:
     std::tr2::mutex _fd_lck;
@@ -286,7 +286,8 @@ class connect_processor :
         //   cerr << __FILE__ << ":" << __LINE__ << " " << worker_pool.size() << endl;
         // }
 
-        ((Init *)Init_buf)->~Init();
+        Init* tmp = reinterpret_cast<Init*>(Init_buf);
+        tmp->~Init();
       }
 
     virtual void close()

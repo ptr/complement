@@ -239,7 +239,10 @@ class basic_socket
       { new( Init_buf ) Init(); }
 
     ~basic_socket()
-      { ((Init *)Init_buf)->~Init(); }
+      {
+        Init* tmp = reinterpret_cast<Init*>(Init_buf);
+        tmp->~Init();
+      }
 
     bool is_open_unsafe() const
       { return _fd != -1; }

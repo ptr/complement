@@ -225,12 +225,13 @@ void syslog_init::Init::__at_fork_parent()
 
 syslog_init::syslog_init()
 {
-  new(Init_buf) Init();
+  new (Init_buf) Init();
 }
 
 syslog_init::~syslog_init()
 {
-  ((Init *)Init_buf)->~Init();
+  Init* tmp = reinterpret_cast<Init*>(Init_buf);
+  tmp->~Init();
 }
 
 static syslog_init _slog_aux; // register fork handlers

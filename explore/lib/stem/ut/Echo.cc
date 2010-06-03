@@ -160,7 +160,7 @@ void UglyEchoClient::handler1( const stem::Event& ev )
   if (ev.value() != mess ) {
     failflag = true;
     cout << mess << "\n:\n" << ev.value() << endl;
-    for ( int i = 0; i < min(ev.value().size(), mess.size()); ++i ) {
+    for ( size_t i = 0; i < min(ev.value().size(), mess.size()); ++i ) {
       if ( ev.value()[i] != mess[i] ) {
         cout << i << endl;
         cout << mess.substr(i) << "\n\n" << ev.value().substr(i) << endl;

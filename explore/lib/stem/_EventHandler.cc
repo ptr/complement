@@ -272,7 +272,8 @@ __FIT_DECLSPEC
 EventHandler::~EventHandler()
 {
   EventHandler::solitary();
-  ((Init *)Init_buf)->~Init();
+  Init* tmp = reinterpret_cast<Init*>(Init_buf);
+  tmp->~Init();
 }
 
 __FIT_DECLSPEC

@@ -235,13 +235,17 @@ int EXAM_IMPL(stem_test::dl)
   int (*w)(void *);
   int (*v)(void *);
 
-  *(void **)(&f) = dlsym( lh, "create_NewNodeDL" );
+  // *(void **)(&f) = dlsym( lh, "create_NewNodeDL" );
+  f = reinterpret_cast<void *(*)(stem::addr_type)>(dlsym( lh, "create_NewNodeDL" ));
   EXAM_REQUIRE( f != NULL );
-  *(void **)(&g) = dlsym( lh, "destroy_NewNodeDL" );
+  // *(void **)(&g) = dlsym( lh, "destroy_NewNodeDL" );
+  g = reinterpret_cast<void (*)(void *)>(dlsym( lh, "destroy_NewNodeDL" ));
   EXAM_REQUIRE( g != NULL );
-  *(void **)(&w) = dlsym( lh, "wait_NewNodeDL" );
+  // *(void **)(&w) = dlsym( lh, "wait_NewNodeDL" );
+  w = reinterpret_cast<int (*)(void *)>(dlsym( lh, "wait_NewNodeDL" ));
   EXAM_REQUIRE( w != NULL );
-  *(void **)(&v) = dlsym( lh, "v_NewNodeDL" );
+  // *(void **)(&v) = dlsym( lh, "v_NewNodeDL" );
+  v = reinterpret_cast<int (*)(void *)>(dlsym( lh, "v_NewNodeDL" ));
   EXAM_REQUIRE( v != NULL );
 
   stem::addr_type addr = xmt::uid();

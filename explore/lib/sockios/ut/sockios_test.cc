@@ -1560,7 +1560,7 @@ class reader
         fill( buf, buf + sizeof(buf), 'c' );
         s.read( buf, sizeof(buf) );
 
-        EXAM_CHECK_ASYNC( count( buf, buf + sizeof(buf), ' ' ) == sizeof(buf) );
+        EXAM_CHECK_ASYNC( static_cast<size_t>(count( buf, buf + sizeof(buf), ' ' )) == sizeof(buf) );
         EXAM_CHECK_ASYNC( !s.fail() );
 
         lock_guard<mutex> lk( lock );
