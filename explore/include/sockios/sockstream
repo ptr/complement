@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <10/01/13 09:56:46 ptr>
+// -*- C++ -*- Time-stamp: <10/06/02 20:04:43 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2010
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -514,12 +514,12 @@ class basic_sockbuf :
   /*  */
       
     basic_sockbuf() :
-        rdready( *this ),
         _bbuf(0),
         _ebuf(0),
         _fl(0),
         _fr(0),
         _allocated( true ),
+        rdready( *this ),
 #if !defined(STLPORT) && defined(__GNUC__)
 #if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4))) // hmm, 3.3.6 
         _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) )
@@ -534,12 +534,12 @@ class basic_sockbuf :
     basic_sockbuf( const char *hostname, int port,
                    sock_base::stype type = sock_base::sock_stream,
                    sock_base::protocol prot = sock_base::inet ) :
-        rdready( *this ),
         _bbuf(0),
         _ebuf(0),
         _fl(0),
         _fr(0),
         _allocated( true ),
+        rdready( *this ),
 #if !defined(STLPORT) && defined(__GNUC__)
 #if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)))
         _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) )
@@ -554,12 +554,12 @@ class basic_sockbuf :
     template <class Duration>
     basic_sockbuf( const char *hostname, int port,
                    const Duration& timeout ) :
-        rdready( *this ),
         _bbuf(0),
         _ebuf(0),
         _fl(0),
         _fr(0),
         _allocated( true ),
+        rdready( *this ),
 #if !defined(STLPORT) && defined(__GNUC__)
 #if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)))
         _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) )
@@ -594,12 +594,12 @@ class basic_sockbuf :
     template <class Duration>
     basic_sockbuf( const in_addr& addr, int port,
                    const Duration& timeout ) :
-        rdready( *this ),
         _bbuf(0),
         _ebuf(0),
         _fl(0),
         _fr(0),
         _allocated( true ),
+        rdready( *this ),
 #if !defined(STLPORT) && defined(__GNUC__)
 #if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)))
         _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) )
