@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <10/01/13 10:49:11 ptr>
+// -*- C++ -*- Time-stamp: <10/06/05 09:48:57 ptr>
 
 /*
- * Copyright (c) 2008, 2009
+ * Copyright (c) 2008-2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -34,6 +34,7 @@
 
 #include <sockios/sockstream>
 #include <list>
+#include <vector>
 #include <functional>
 #include <exception>
 
@@ -250,9 +251,9 @@ class connect_processor :
 
   public:
     connect_processor() :
-         not_empty( *this ),
-         _in_work( true ),
-         ploop( loop, this )
+        not_empty( *this ),
+        _in_work( true ),
+        ploop( loop, this )
       { new( Init_buf ) Init(); /* base_t::_real_stop = &connect_processor::_xstop; */ }
 
     explicit connect_processor( int port ) :
@@ -297,6 +298,15 @@ class connect_processor :
 
     void wait()
       { if ( ploop.joinable() ) { ploop.join(); } }
+
+    typedef void (*at_func_type)( std::basic_sockstream<charT,traits,_Alloc>& );
+
+    void at_connect( at_func_type f )
+      { _at_connect.push_back( f ); }
+    void at_data( at_func_type f )
+      { _at_data.push_back( f ); }
+    void at_disconnect( at_func_type f )
+      { _at_disconnect.push_back( f ); }
 
   private:
     virtual typename base_t::sockbuf_t* operator ()( sock_base::socket_type fd, const sockaddr& );
@@ -414,6 +424,12 @@ class connect_processor :
     std::tr2::condition_variable cnd;
     std::tr2::condition_variable cnd_inwk;
     std::tr2::thread ploop;
+
+    typedef std::vector<at_func_type> at_container_type;
+
+    at_container_type _at_connect;
+    at_container_type _at_data;
+    at_container_type _at_disconnect;
 
     friend struct _not_empty;
 };

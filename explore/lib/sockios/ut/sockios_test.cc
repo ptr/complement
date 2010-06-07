@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/01/13 00:18:28 ptr>
+// -*- C++ -*- Time-stamp: <10/06/07 12:14:40 ptr>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005-2009
+ * Copyright (c) 2002, 2003, 2005-2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -1792,6 +1792,141 @@ int EXAM_IMPL(sockios_test::echo)
         s.read( const_cast<char*>(rcv.data()), rsz );
         EXAM_CHECK( s.good() );            
         EXAM_CHECK( rcv == mess );
+      }
+
+      kill( child.pid(), SIGINT );
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+    }
+
+    shm.deallocate( &b );
+
+    seg.deallocate();
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  
+  return EXAM_RESULT;
+}
+
+static in_addr_t last_conn = 0x0;
+static in_addr_t last_data = 0x0;
+static in_addr_t last_disconn = 0x0;
+
+void on_c( sockstream& s )
+{
+  try {
+    last_conn = s.rdbuf()->inet_addr();
+    // cerr << hex << s.rdbuf()->inet_addr() << ' ' << last_conn << dec << endl;
+  }
+  catch ( ... ) { // domain_error
+  }
+}
+
+void on_d( sockstream& s )
+{
+  try {
+    last_data = s.rdbuf()->inet_addr();
+    // cerr << hex << s.rdbuf()->inet_addr() << ' ' << last_conn << dec << endl;
+  }
+  catch ( ... ) { // domain_error
+  }
+}
+
+void on_dc( sockstream& s )
+{
+  try {
+    last_disconn = s.rdbuf()->inet_addr();
+    // cerr << hex << s.rdbuf()->inet_addr() << ' ' << last_conn << dec << endl;
+  }
+  catch ( ... ) { // domain_error
+  }
+}
+
+int EXAM_IMPL(sockios_test::at_funcs)
+{
+  try {
+    xmt::shm_alloc<0> seg;
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+    xmt::allocator_shm<barrier_ip,0> shm;
+
+    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+
+    try {
+      this_thread::fork();
+      int ret = 0;
+
+      try {
+        std::tr2::this_thread::block_signal( SIGINT );
+
+        connect_processor<echo_srv> srv( 2008 );
+
+        EXAM_CHECK_ASYNC_F( srv.good(), ret );
+        EXAM_CHECK_ASYNC_F( srv.is_open(), ret );
+        srv.at_connect( &on_c );
+        srv.at_data( &on_d );
+        srv.at_disconnect( &on_dc );
+
+        sigset_t signal_mask;
+
+        sigemptyset( &signal_mask );
+        sigaddset( &signal_mask, SIGINT );
+
+        b.wait();
+
+        int sig_caught;
+        sigwait( &signal_mask, &sig_caught );
+
+        EXAM_CHECK_ASYNC_F( last_conn == 0x7f000001, ret );
+        EXAM_CHECK_ASYNC_F( last_data == 0x7f000001, ret );
+        EXAM_CHECK_ASYNC_F( last_disconn == 0x7f000001, ret );
+      }
+      catch ( ... ) {
+        EXAM_ERROR_ASYNC_F( "unexpected exception", ret );
+      }
+
+      exit(ret);
+    }
+    catch ( std::tr2::fork_in_parent& child ) {
+      b.wait();
+      {     
+        sockstream s( "localhost", 2008 );
+        // EXAM_CHECK( s.good() );
+        
+        class SecretsTeller :
+              public basic_socket< char,char_traits<char>,allocator<char> >
+        {
+          public:
+            static int bufsize()
+              { return (default_mtu - 20 - 20) * 2; }
+        };
+        
+        // see _M_allocate_block in sockstream.cc,
+        // we want data to fit exactly internal buf size
+        std::string mess( SecretsTeller::bufsize() - sizeof(int), ' ' );
+        
+        int sz = mess.size();
+
+        s.write( (const char *)&sz, sizeof(sz) ).write( mess.data(), mess.size() ).flush();
+        // EXAM_CHECK( s.good() );
+        
+        string rcv;
+        int rsz = 0;
+        s.read( (char*)&rsz, sizeof(rsz) );
+        // EXAM_CHECK( s.good() );
+        // EXAM_CHECK( sz == rsz );
+        rcv.assign( rsz, ' ' );
+        s.read( const_cast<char*>(rcv.data()), rsz );
+        // EXAM_CHECK( s.good() );            
+        // EXAM_CHECK( rcv == mess );
       }
 
       kill( child.pid(), SIGINT );

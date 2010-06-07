@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <10/01/13 10:23:20 ptr>
+// -*- C++ -*- Time-stamp: <10/06/05 09:49:15 ptr>
 
 /*
- * Copyright (c) 2008, 2009
+ * Copyright (c) 2008-2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -262,6 +262,10 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
     return 0;
   }
 
+  for ( typename at_container_type::const_iterator i = _at_connect.begin(); i != _at_connect.end(); ++i ) {
+    (*i)( *s );
+  }
+
   Connect* c = new Connect( *s ); // bad point! I can't read from s in ctor indeed!
   processor tmp( c, s );
 
@@ -290,6 +294,9 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_bas
     if ( i != worker_pool.end() ) {
       p.swap( i->second );
       worker_pool.erase( i );
+      for ( typename at_container_type::const_iterator k = _at_disconnect.begin(); k != _at_disconnect.end(); ++k ) {
+        (*k)( *p.s );
+      }
       return;
     }
   }
@@ -300,6 +307,9 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_bas
     if ( j != ready_pool.end() ) {
       p.swap( *j );
       ready_pool.erase( j );
+      for ( typename at_container_type::const_iterator k = _at_disconnect.begin(); k != _at_disconnect.end(); ++k ) {
+        (*k)( *p.s );
+      }
     }
   }
 }
@@ -345,6 +355,9 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
         ready_pool.pop_front();
       }
       if ( p.s->rdbuf()->is_ready() ) {
+        for ( typename at_container_type::const_iterator i = _at_data.begin(); i != _at_data.end(); ++i ) {
+          (*i)( *p.s );
+        }
         (p.c->*C)( *p.s );
         if ( p.s->rdbuf()->is_ready() ) {
           // if ( p.s->is_open() ) {

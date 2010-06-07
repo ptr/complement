@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <09/10/06 15:06:18 ptr>
+// -*- C++ -*- Time-stamp: <10/06/05 10:00:00 ptr>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005-2009
+ * Copyright (c) 2002, 2003, 2005-2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -45,6 +45,7 @@ class sockios_test
     int EXAM_DECL(quants_reader);
     int EXAM_DECL(echo);
     int EXAM_DECL(ugly_echo);
+    int EXAM_DECL(at_funcs);
 };
 
 #endif // __sockios2_test_h

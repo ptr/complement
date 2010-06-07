@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/10/06 15:41:14 ptr>
+// -*- C++ -*- Time-stamp: <10/06/05 10:02:02 ptr>
 
 /*
  *
@@ -50,7 +50,7 @@ int main( int argc, const char** argv )
     return 0;
   }
 
-  exam::test_suite::test_case_type tc[6];
+  exam::test_suite::test_case_type tc[7];
 
   exam::test_suite t( "libsockios test" );
 
@@ -94,8 +94,9 @@ int main( int argc, const char** argv )
 
   
   t.add( &sockios_test::ugly_echo, test, "ugly echo service",
-    t.add( &sockios_test::echo, test, "echo service",
+    tc[6] = t.add( &sockios_test::echo, test, "echo service",
       t.add( &sockios_test::quants_reader, test, "read a few fixed-size data", extratc, extratc + 2 ) ) );
+  t.add( &sockios_test::at_funcs, test, "at_ functions", tc[6] );
 
   unix_sockios_test unx;
 
