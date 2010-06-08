@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/21 19:30:55 ptr>
+// -*- C++ -*- Time-stamp: <10/06/08 11:36:41 ptr>
 
 /*
  *
@@ -130,6 +130,11 @@ basic_vs::~basic_vs()
     delete *i;
   }
   remotes_.clear();
+}
+
+std::tr2::milliseconds basic_vs::vs_pub_lock_timeout() const
+{
+  return vs_lock_timeout;
 }
 
 int basic_vs::vs( const stem::Event& inc_ev )
@@ -1074,7 +1079,7 @@ void basic_vs::add_lock_safety()
   cr_ev.pack( cr.value().ev );
 
   cr.dest( _cron->self_id() );
-  cr.value().start = get_system_time() + vs_lock_timeout;
+  cr.value().start = get_system_time() + vs_pub_lock_timeout();
   cr.value().n = 1;
   cr.value().period = 0;
 

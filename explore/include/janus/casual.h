@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/18 19:00:07 ptr>
+// -*- C++ -*- Time-stamp: <10/06/08 11:34:42 ptr>
 
 /*
  *
@@ -133,6 +133,7 @@ class basic_vs :
   public:
     void vs_send_flush();
     size_type vs_group_size() const;
+    virtual std::tr2::milliseconds vs_pub_lock_timeout() const;
 
     void send_to_vsg( const stem::Event& ) const; // not VS!
 

@@ -1,3 +1,12 @@
+2010-06-08  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* casual.h, casual.cc: virtual function
+	vs_pub_lock_timeout() return lock timeout
+	in milliseconds; override it, if you need
+	timeout other then default;
+
+	* libjanus: revision 0.14.12.
+
 2010-05-21  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* casual.h, casual.cc: *_nak functions never
