@@ -1,3 +1,12 @@
+2010-06-09  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* torder.cc: if event delayed push it in
+	conformation containers even for leader;
+	otherwise leader may be changed and we
+	lost this event for former leader;
+	
+	* libjanus: revision 0.14.13.
+
 2010-06-08  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* casual.h, casual.cc: virtual function

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/03/10 19:44:06 ptr>
+// -*- C++ -*- Time-stamp: <10/06/09 11:24:23 ptr>
 
 /*
  *
@@ -61,6 +61,9 @@ int torder_vs::vs_torder( const stem::Event& inc_ev )
       ev.value().ev.setf( stem::__Event_Base::vs );
       this->vs_pub_tord_rec( ev.value().ev );
       torder_vs::sync_call( ev.value().ev );
+    } else {
+      conform_container_[ev.value().id] = ev.value().ev;
+      orig_order_container_.push_back( ev.value().id );
     }
   } else if ( conform_container_.size() > 0 ) {
     check_remotes();
@@ -100,7 +103,12 @@ int torder_vs::vs_torder_aux( const stem::Event& inc_ev )
   // don't forget process event on this node!
   int ret = basic_vs::vs_aux( ev );
 
-  if ( !is_leader_ && (conform_container_.size() > 3) ) {
+  if ( is_leader_ ) {
+    if ( ret != 0 ) {
+      conform_container_[ev.value().id] = ev.value().ev;
+      orig_order_container_.push_back( ev.value().id );
+    }
+  } else if ( conform_container_.size() > 0 ) {
     check_remotes();
 
     vtime::vtime_type::const_iterator i;
@@ -181,9 +189,8 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
   ev.value().ev.dest( ev.dest() );
   ev.value().ev.setf( stem::__Event_Base::vs );
 
-  if ( is_leader() ) {
-    // I'm leader; original event not from me;
-    // send conformation first ...
+  if ( is_leader() ) { // I'm leader
+    // send conformation first
     stem::Event_base<vs_event_total_order> cnf( VS_EVENT_TORDER );
 
     cnf.value().ev.code( VS_ORDER_CONF );
@@ -191,7 +198,7 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
     cnf.value().conform.push_back( ev.value().id );
     vs_aux( cnf );
 
-    // ... and then process
+    // process
     ev.value().ev.setf( stem::__Event_Base::vs );
     this->vs_pub_tord_rec( ev.value().ev );
     torder_vs::sync_call( ev.value().ev );
@@ -224,10 +231,16 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
       conform_container_[ev.value().id] = ev.value().ev;
       orig_order_container_.push_back( ev.value().id );
     } else if ( find( ev.value().conform.begin(), ev.value().conform.end(), ev.value().id ) != ev.value().conform.end() ) {
-      // event origin: leader; I see conformation in event
+      // event's origin is leader; I see conformation in event
       ev.value().ev.setf( stem::__Event_Base::vs );
       this->vs_pub_tord_rec( ev.value().ev );
       torder_vs::sync_call( ev.value().ev );
+      // it may be from me (if leader changed)
+      conform_container_.erase( ev.value().id );
+      orig_order_cnt_type::iterator j = find( orig_order_container_.begin(), orig_order_container_.end(), ev.value().id );
+      if ( j != orig_order_container_.end() ) {
+        orig_order_container_.erase( j );
+      }
     } else {
       // it's from me?
       for ( std::list<vs_event_total_order::id_type>::const_iterator i = ev.value().conform.begin();
