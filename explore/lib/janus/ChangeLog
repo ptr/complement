@@ -1,3 +1,10 @@
+2010-06-10  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* torder.cc: fix---keep departure order
+	for delayed events;
+	
+	* libjanus: revision 0.14.14.
+
 2010-06-09  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* torder.cc: if event delayed push it in

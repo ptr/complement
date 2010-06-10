@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/03 12:59:49 ptr>
+// -*- C++ -*- Time-stamp: <10/06/10 16:09:52 ptr>
 
 /*
  *
@@ -47,6 +47,7 @@ class vtime_operations
     int EXAM_DECL( double_flush );
     int EXAM_DECL( flush_and_join );
     int EXAM_DECL( flush_and_exit );
+    int EXAM_DECL( lock_and_torder );
 
   private:
     // xmt::shm_alloc<0> seg;

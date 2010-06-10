@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/08 11:36:41 ptr>
+// -*- C++ -*- Time-stamp: <10/06/10 22:28:39 ptr>
 
 /*
  *
@@ -142,10 +142,10 @@ int basic_vs::vs( const stem::Event& inc_ev )
   int ret = vs_aux( inc_ev );
 
   if ( ret == 0 ) {
-    // if ( inc_ev.src() == stem::badaddr ) {
-    inc_ev.src( self_id() );
-    inc_ev.dest( self_id() );
-      // }
+    stem::addr_type sid = self_id();
+
+    inc_ev.src( sid );
+    inc_ev.dest( sid );
     inc_ev.setf( stem::__Event_Base::vs );
     basic_vs::sync_call( inc_ev );
   }
@@ -155,23 +155,61 @@ int basic_vs::vs( const stem::Event& inc_ev )
 
 int basic_vs::vs_aux( const stem::Event& inc_ev )
 {
+  lock_guard<recursive_mutex> lk( _theHistory_lock );
+
   if ( /* vs_group_size() == 0 || */ /* lock_addr != stem::badaddr || */ isState(VS_ST_LOCKED) ) {
     de.push_back( inc_ev );
     return 1;
   }
 
   stem::Event_base<vs_event> ev( VS_EVENT );
+  stem::code_type code;
+  stem::addr_type sid = self_id();
+
+  while ( !de.empty() ) {
+    ev.value().view = view;
+    ev.value().ev = de.front();
+    de.pop_front();
+    ev.value().ev.setf( stem::__Event_Base::vs );
+    ev.src( sid );
+    ++vt[sid];
+
+    for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
+      if ( i->first != sid ) {
+        ev.dest( i->first );
+        ev.value().vt = vt;
+        Forward( ev );
+      }
+    }
+
+    code = ev.value().ev.code();
+
+    if ( (code != VS_UPDATE_VIEW) && (code != VS_LOCK_VIEW) && (code != VS_FLUSH_LOCK_VIEW ) ) {
+      this->vs_pub_rec( ev.value().ev );
+    }
+
+    ev.value().ev.src( sid );
+    ev.value().ev.dest( sid );
+
+    basic_vs::sync_call( ev.value().ev );
+
+    if ( isState(VS_ST_LOCKED) ) { // prev call push me in VS_ST_LOCKED
+      de.push_back( inc_ev );
+      return 1;
+    }
+  }
+
   ev.value().view = view;
   ev.value().ev = inc_ev;
 
-  ++vt[self_id()];
+  ++vt[sid];
 
-  const stem::code_type code = inc_ev.code();
+  code = inc_ev.code();
 
   ev.value().ev.setf( stem::__Event_Base::vs );
 
   for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-    if ( i->first != self_id() ) {
+    if ( i->first != sid ) {
       ev.dest( i->first );
       ev.value().vt = vt;
       Send( ev );
@@ -222,7 +260,9 @@ void basic_vs::vs_tcp_point( uint32_t addr, int port )
   uint16_t prt = stem::to_net( static_cast<uint32_t>(port) );
   memcpy( (void *)(d.data() + 4), (const void *)&prt, 2 );
 
-  pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = points.equal_range( self_id() );
+  stem::addr_type sid = self_id();
+
+  pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = points.equal_range( sid );
   for ( ; range.first != range.second; ++range.first ) {
     // hostid is equal: select by self_id()
     if ( (range.first->second.family == AF_INET) &&
@@ -232,7 +272,7 @@ void basic_vs::vs_tcp_point( uint32_t addr, int port )
     }
   }
 
-  vs_points::access_t& p = points.insert( make_pair(self_id(), vs_points::access_t()) )->second;
+  vs_points::access_t& p = points.insert( make_pair(sid, vs_points::access_t()) )->second;
 
   p.hostid = xmt::hostid();
   p.family = AF_INET;
@@ -255,7 +295,9 @@ void basic_vs::vs_tcp_point( const sockaddr_in& a )
     memcpy( (void *)d.data(), (const void *)&a.sin_addr, 4 );
     memcpy( (void *)(d.data() + 4), (const void *)&a.sin_port, 2 );
 
-    pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = points.equal_range( self_id() );
+    stem::addr_type sid = self_id();
+
+    pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = points.equal_range( sid );
     for ( ; range.first != range.second; ++range.first ) {
       // hostid is equal: select by self_id()
       if ( (range.first->second.family == AF_INET) &&
@@ -265,7 +307,7 @@ void basic_vs::vs_tcp_point( const sockaddr_in& a )
       }
     }
 
-    vs_points::access_t& p = points.insert( make_pair(self_id(), vs_points::access_t()) )->second;
+    vs_points::access_t& p = points.insert( make_pair(sid, vs_points::access_t()) )->second;
 
     p.hostid = xmt::hostid();
     p.family = AF_INET;
@@ -282,10 +324,11 @@ void basic_vs::vs_tcp_point( const sockaddr_in& a )
 
 void basic_vs::vs_copy_tcp_points( const basic_vs& orig )
 {
+  stem::addr_type sid = self_id();
   pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = orig.points.equal_range( orig.self_id() );
 
   for ( ; range.first != range.second; ++range.first ) {
-    vs_points::access_t& p = points.insert( make_pair(self_id(), vs_points::access_t()) )->second;
+    vs_points::access_t& p = points.insert( make_pair(sid, vs_points::access_t()) )->second;
     p = range.first->second;
   }
 }
@@ -317,12 +360,12 @@ int basic_vs::vs_join( const stem::addr_type& a )
   PopState( VS_ST_LOCKED );
 
   if ( a == stem::badaddr ) {
-    stem::addr_type sid = self_id();
-    vt[sid]; // make self-entry not empty (used in vs_group_size)
+    vt[self_id()]; // make self-entry not empty (used in vs_group_size)
 
     vs_pub_join();
     this->vs_pub_view_update();
 
+#if 0 // in vs_join de MUST be empty!
     while ( !de.empty() ) {
       if ( basic_vs::vs( de.front() ) ) {
         de.pop_back(); // event pushed back in vs() above, remove it
@@ -330,6 +373,7 @@ int basic_vs::vs_join( const stem::addr_type& a )
       }
       de.pop_front();
     }
+#endif
 
     return 0;
   }
@@ -573,6 +617,8 @@ void basic_vs::vs_join_request_lk( const stem::Event_base<vs_join_rq>& ev )
 
 void basic_vs::vs_group_points( const stem::Event_base<vs_points>& ev )
 {
+  stem::addr_type sid = self_id();
+
   for ( vs_points::points_type::const_iterator i = ev.value().points.begin(); i != ev.value().points.end(); ++i ) {
     if ( hostid() != i->second.hostid ) {
       if ( i->second.family == AF_INET ) {
@@ -598,7 +644,7 @@ void basic_vs::vs_group_points( const stem::Event_base<vs_points>& ev )
             stem::addr_type trial_node = remotes_.back()->open( sa );
             if ( remotes_.back()->is_open() && (trial_node != i->first) ) {
               remotes_.back()->add_route( i->first );
-              remotes_.back()->add_remote_route( EventHandler::self_id() );
+              remotes_.back()->add_remote_route( sid );
             }
           }
         }
@@ -624,7 +670,7 @@ void basic_vs::vs_group_points( const stem::Event_base<vs_points>& ev )
           stem::addr_type trial_node = remotes_.back()->open( sa );
           if ( remotes_.back()->is_open() && (trial_node != i->first) ) {
             remotes_.back()->add_route( i->first );
-            remotes_.back()->add_remote_route( EventHandler::self_id() );
+            remotes_.back()->add_remote_route( sid );
           }
         }
       }
@@ -655,14 +701,15 @@ void basic_vs::vs_lock_view_lk( const stem::EventVoid& ev )
 
 void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
 {
-  if ( lock_addr == self_id() ) { // I'm owner of the lock
+  stem::addr_type sid = self_id();
+  if ( lock_addr == sid ) { // I'm owner of the lock
     lock_rsp.insert( ev.src() );
     /* Below '>=' instead of '==', because of scenario 'one node exit,
        another node added'
      */
     if ( (lock_rsp.size() + 1) >= vt.vt.size() ) {
       for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-        if ( (i->first != self_id()) && (lock_rsp.find( i->first ) == lock_rsp.end()) ) {
+        if ( (i->first != sid) && (lock_rsp.find( i->first ) == lock_rsp.end()) ) {
           return;
         }
       }
@@ -858,6 +905,7 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
 
   basic_vs::sync_call( ev.value().ev );
 
+#if 0
   while ( !de.empty() ) {
     if ( basic_vs::vs( de.front() ) ) {
       de.pop_back(); // event pushed back in vs() above, remove it
@@ -869,6 +917,7 @@ void basic_vs::vs_process_lk( const stem::Event_base<vs_event>& ev )
   if ( !ove.empty() ) {
     process_delayed();
   }
+#endif
 }
 
 void basic_vs::process_delayed()
@@ -1006,14 +1055,16 @@ void basic_vs::vs_flush_lock_view_lk( const stem::EventVoid& ev )
 
 void basic_vs::vs_flush_lock_view_ack( const stem::EventVoid& ev )
 {
-  if ( lock_addr == self_id() ) { // I'm owner of the lock
+  stem::addr_type sid = self_id();
+
+  if ( lock_addr == sid ) { // I'm owner of the lock
     lock_rsp.insert( ev.src() );
     /* Below '>=' instead of '==', because of scenario 'one node exit,
        another node added'
      */
     if ( (lock_rsp.size() + 1) >= vt.vt.size() ) {
       for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-        if ( (i->first != self_id()) && (lock_rsp.find( i->first ) == lock_rsp.end()) ) {
+        if ( (i->first != sid) && (lock_rsp.find( i->first ) == lock_rsp.end()) ) {
           return;
         }
       }
@@ -1071,11 +1122,13 @@ void basic_vs::vs_flush_wr( const xmt::uuid_type& id )
 
 void basic_vs::add_lock_safety()
 {
+  stem::addr_type sid = self_id();
+
   // belay: avoid infinite lock
   Event_base<CronEntry> cr( EV_EDS_CRON_ADD );
   const stem::EventVoid cr_ev( VS_LOCK_SAFETY );
-  cr_ev.dest( self_id() );
-  cr_ev.src( self_id() );
+  cr_ev.dest( sid );
+  cr_ev.src( sid );
   cr_ev.pack( cr.value().ev );
 
   cr.dest( _cron->self_id() );
@@ -1088,11 +1141,13 @@ void basic_vs::add_lock_safety()
 
 void basic_vs::rm_lock_safety()
 {
+  stem::addr_type sid = self_id();
+
   // remove belay, passed
   Event_base<CronEntry> cr( EV_EDS_CRON_REMOVE );
   const stem::EventVoid cr_ev( VS_LOCK_SAFETY );
-  cr_ev.dest( self_id() );
-  cr_ev.src( self_id() );
+  cr_ev.dest( sid );
+  cr_ev.src( sid );
   cr_ev.pack( cr.value().ev );
 
   cr.dest( _cron->self_id() );
@@ -1102,7 +1157,9 @@ void basic_vs::rm_lock_safety()
 
 void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
 {
-  if ( ev.src() != self_id() ) {
+  stem::addr_type sid = self_id();
+
+  if ( ev.src() != sid ) {
     return;
   }
 
@@ -1120,7 +1177,7 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
     }
   }
 
-  if ( lock_addr != self_id() ) {
+  if ( lock_addr != sid ) {
     // cerr << __FILE__ << ':' << __LINE__ << ' ' << lock_addr << " (" << self_id() << ')' << ' ' << is_avail(lock_addr) << endl;
     if ( !is_avail(lock_addr) ) {
       lock_addr = stem::badaddr;
@@ -1140,7 +1197,7 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
     // who is in group, but not conform lock?
     list<janus::addr_type> trash;
     for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-      if ( (i->first != self_id()) && (lock_rsp.find( i->first ) == lock_rsp.end()) ) {
+      if ( (i->first != sid) && (lock_rsp.find( i->first ) == lock_rsp.end()) ) {
         points.erase( i->first );
         trash.push_back( i->first );
       }
@@ -1186,8 +1243,10 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
 
 void basic_vs::process_last_will( const stem::Event_base<janus::addr_type>& ev )
 {
+  stem::addr_type sid = self_id();
+
   // Don't check ev.src() here: it may be badaddr
-  if ( ev.value() == self_id() ) { // illegal usage
+  if ( ev.value() == sid ) { // illegal usage
     return; 
   }
 
@@ -1203,7 +1262,7 @@ void basic_vs::process_last_will( const stem::Event_base<janus::addr_type>& ev )
       stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
 
       basic_vs::vs_aux( view_lock_ev );
-      lock_addr = self_id(); // after vs_aux()!
+      lock_addr = sid; // after vs_aux()!
       PushState( VS_ST_LOCKED );
 
       add_lock_safety(); // belay: avoid infinite lock
@@ -1216,7 +1275,7 @@ void basic_vs::process_last_will( const stem::Event_base<janus::addr_type>& ev )
       this->vs_pub_view_update();
     }
   } else {
-    cerr << __FILE__ << ':' << __LINE__ << ' ' << self_id() << endl;
+    cerr << __FILE__ << ':' << __LINE__ << ' ' << sid << endl;
   }
 }
 
@@ -1322,7 +1381,9 @@ void basic_vs::pub_access_point()
 
 void basic_vs::access_points_refresh_pri( const stem::Event_base<janus::detail::access_points>& ev )
 {
-  if ( ev.src() == self_id() ) {
+  stem::addr_type sid = self_id();
+
+  if ( ev.src() == sid ) {
     return;
   }
 
@@ -1336,7 +1397,7 @@ void basic_vs::access_points_refresh_pri( const stem::Event_base<janus::detail::
 
   this->pub_access_point(); // user-defined
 
-  pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = points.equal_range( self_id() );
+  pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = points.equal_range( sid );
 
   stem::Event_base<janus::detail::access_points> my( VS_ACCESS_POINT_SEC );
 

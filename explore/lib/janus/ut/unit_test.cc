@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/03 13:20:42 ptr>
+// -*- C++ -*- Time-stamp: <10/06/10 16:12:21 ptr>
 
 /*
  *
@@ -67,11 +67,13 @@ int main( int argc, const char ** argv )
 
   t.add( &vtime_operations::VT_one_group_recover, vt_oper, "VT one group recover", tc[5] );
   t.add( &vtime_operations::leader_fail, vt_oper, "VT total order, leader fail",
-    t.add( &vtime_operations::leader, vt_oper, "VT total order, leader", tc[6] ) );
+    tc[7] = t.add( &vtime_operations::leader, vt_oper, "VT total order, leader", tc[6] ) );
 
   t.add( &vtime_operations::flush_and_exit, vt_oper, "VT flush and exit", 
     t.add( &vtime_operations::flush_and_join, vt_oper, "VT flush and join", 
       t.add( &vtime_operations::double_flush, vt_oper, "VT double flush", tc[6] ) ) );
+
+  t.add( &vtime_operations::lock_and_torder, vt_oper, "VT total order, lock", tc[7] );
 
   if ( opts.is_set( 'v' ) ) {
     t.flags( t.flags() | exam::base_logger::verbose );
