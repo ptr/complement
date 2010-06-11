@@ -23,7 +23,7 @@ dbg-shared:	LDLIBS = -lxmtg -lsockiosg -lstemg
 dbg-shared:	DEFS += -D__FIT_VS_TRACE
 
 ifndef WITHOUT_STLPORT
-dbg-shared: LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSOCK_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSTEM_DIR}/${OUTPUT_DIR_STLDBG}
+stldbg-shared: LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSOCK_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSTEM_DIR}/${OUTPUT_DIR_STLDBG}
 
 stldbg-shared:	LDLIBS = -lxmtstlg -lsockiosstlg -lstemstlg
 
