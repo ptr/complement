@@ -1,6 +1,6 @@
 2010-06-10  Petr Ovtchenkov  <ptr@void-ptr.info>
 
-	* torder.cc: fix---keep departure order
+	* casual.cc: fix---keep departure order
 	for delayed events;
 	
 	* libjanus: revision 0.14.14.
