@@ -81,16 +81,27 @@ class underground
     offset_type get_priv( const id_type&, std::string& ) throw (std::ios_base::failure, std::invalid_argument);
 
   private:
-    static const size_t first_hash_size;
     static const size_t block_size;
     static const size_t hash_block_n;
     static const size_t hash_block_id_off;
     static const size_t hash_block_off_off;
 
+#ifdef __USE_STLPORT_HASH
+    typedef std::hash_map<id_type,offset_type> hash_table_type;
+#endif
+#ifdef __USE_STD_HASH
+    typedef __gnu_cxx::hash_map<id_type,offset_type> hash_table_type;
+#endif
+#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+    typedef std::tr1::unordered_map<id_type,offset_type> hash_table_type;
+#endif
+
     std::fstream f;
     offset_type hoff;
     offset_type ds; // data section offset
+    size_type hsz;  // stored hash baskets size
     offset_type* block_offset;
+    // hash_table_type cache; // objects offset cache
 };
 
 class yard

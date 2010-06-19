@@ -26,7 +26,6 @@ namespace yard {
 
 using namespace std;
 
-const size_t underground::first_hash_size = 0x200; // 0x00 - 0x1ff
 const size_t underground::block_size = 4096;
 const size_t underground::hash_block_n = (underground::block_size - 2 * sizeof(uint64_t)) / (sizeof(id_type) + 2 * sizeof(uint64_t));
 const size_t underground::hash_block_id_off = 2 * sizeof(uint64_t);
@@ -36,7 +35,7 @@ const size_t underground::hash_block_off_off = underground::hash_block_id_off + 
 
 // struct block_basket
 // {
-//     off_t block_offset[first_hash_size];
+//     off_t block_offset[hsz];
 // };
 
 // uint64_t block_offset[256];
@@ -69,7 +68,8 @@ struct data_descr
 underground::underground( const char* path ) :
     f( path, ios_base::in | ios_base::out ),
     hoff( 0 ),
-    block_offset( new offset_type[first_hash_size] )
+    hsz( 0x200 ), // 0x00 - 0x1ff; must be 'all low bits zero'
+    block_offset( 0 )
 {
   if ( !f.is_open() ) {
     f.clear();
@@ -87,13 +87,13 @@ underground::underground( const char* path ) :
 
     v = 2;
     f.write( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
-    v = ds = hoff + first_hash_size * sizeof(uint64_t);
+    v = ds = hoff + hsz * sizeof(uint64_t);
     f.write( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
 
-    // size of hash (3) -> first_hash_size
+    // size of hash (3) -> hsz
     v = 3;
     f.write( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
-    v = first_hash_size;
+    v = hsz;
     f.write( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
 
     // end of sections
@@ -102,13 +102,10 @@ underground::underground( const char* path ) :
     v = 0;
     f.write( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
 
-    // ds = hoff + first_hash_size * sizeof(offset_type);
-    // if ( hoff != 0 ) {
-    //   f.seekp( hoff, ios_base::beg );
-    // }
+    block_offset = new offset_type[hsz];
 
     v = static_cast<offset_type>(-1);
-    for ( int i = 0; i < first_hash_size; ++i ) {
+    for ( int i = 0; i < hsz; ++i ) {
       block_offset[i] = static_cast<offset_type>(-1);
       f.write( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
       if ( f.fail() ) {
@@ -134,7 +131,7 @@ underground::underground( const char* path ) :
 	    ds = vv;
 	    break;
 	  case 3:
-            // first_hash_size = vv;
+            hsz = vv;
 	    break;
 	}
       }
@@ -142,13 +139,15 @@ underground::underground( const char* path ) :
 
     int i = 0;
 
-    ds = hoff + first_hash_size * sizeof(uint64_t);
+    ds = hoff + hsz * sizeof(uint64_t);
     
     if ( hoff != 0 ) {
       f.seekg( hoff, ios_base::beg );
     }
 
-    for ( offset_type off = 0; f.good() && (i < first_hash_size); ++i, off += sizeof(uint64_t) ) {
+    block_offset = new offset_type[hsz];
+
+    for ( offset_type off = 0; f.good() && (i < hsz); ++i, off += sizeof(uint64_t) ) {
       f.read( reinterpret_cast<char*>(&v), sizeof(uint64_t) );
       if ( f.fail() ) {
         f.close();
@@ -233,7 +232,7 @@ id_type underground::put_object( const id_type& id, const void* data, size_type 
     // re-write offset of data...
     f.seekp( off, ios_base::beg );
 
-    uint64_t v = off_data;
+    uint64_t v = off_data - ds;
     f.write( reinterpret_cast<const char *>(&v), sizeof(uint64_t) ); // offset
     // ... and data size
     v = obj.size() + sizeof(id_type);
@@ -250,7 +249,7 @@ id_type underground::put_object( const id_type& id, const void* data, size_type 
 
 void underground::put_raw( const id_type& id, const void* data, underground::size_type sz ) throw (std::ios_base::failure)
 {
-  int hv = 0x1ff & id.u.i[0];
+  int hv = (hsz - 1) & id.u.i[0]; // hsz: all low bits must be zero!
 
   if ( block_offset[hv] != static_cast<offset_type>(-1) ) {
     id_type rid;
@@ -355,7 +354,7 @@ void underground::put_raw( const id_type& id, const void* data, underground::siz
 std::string underground::get( const id_type& id ) throw (std::ios_base::failure, std::invalid_argument)
 {
 #if 0
-  int hv = 0x1ff & id.u.i[0];
+  int hv = (hsz - 1) & id.u.i[0];
   if ( block_offset[hv] != static_cast<offset_type>(-1) ) {
     id_type rid;
     uint64_t v = block_offset[hv];
@@ -421,7 +420,7 @@ std::string underground::get_object( const id_type& id ) throw (std::ios_base::f
 
 underground::offset_type underground::get_priv( const id_type& id, std::string& ret ) throw (std::ios_base::failure, std::invalid_argument)
 {
-  int hv = 0x1ff & id.u.i[0];
+  int hv = (hsz - 1) & id.u.i[0];
   if ( block_offset[hv] != static_cast<offset_type>(-1) ) {
     id_type rid;
     uint64_t v = block_offset[hv];
