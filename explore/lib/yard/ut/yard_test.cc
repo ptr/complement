@@ -31,7 +31,40 @@ int EXAM_IMPL(yard_test::create)
     EXAM_REQUIRE( f.is_open() );
     EXAM_REQUIRE( f.good() );
 
-    uint64_t v;
+    uint64_t v = 100, vv, hoff, hsz, ds;
+    bool hoff_section = false, ds_section = false, sz_hash = false, stop_rec = false;
+
+    for ( ; f.good() && v != 0; ) {
+      f.read( reinterpret_cast<char*>(&v), sizeof(v) );
+      f.read( reinterpret_cast<char*>(&vv), sizeof(vv) );
+      EXAM_REQUIRE( !f.fail() );
+      switch ( v ) {
+        case 0:
+          stop_rec = true;
+          break;
+        case 1:
+	  hoff_section = true;
+          hoff = vv;
+          break;
+        case 2:
+	  ds_section = true;
+          ds = vv;
+          break;
+        case 3:
+	  sz_hash = true;
+	  hsz = vv;
+          break;
+      }
+    }
+
+    EXAM_CHECK( hoff_section );
+    EXAM_CHECK( ds_section );
+    EXAM_CHECK( sz_hash );
+    EXAM_CHECK( stop_rec );
+
+    EXAM_CHECK( static_cast<uint64_t>(f.tellg()) == hoff );
+    EXAM_CHECK( hsz == hash_size );
+    EXAM_CHECK( ds == (hoff + hsz * sizeof(uint64_t)) );
 
     for ( int i = 0; i < hash_size; ++i ) {
       f.read( reinterpret_cast<char*>(&v), sizeof(v) );
@@ -53,7 +86,40 @@ int EXAM_IMPL(yard_test::create)
     EXAM_REQUIRE( f.is_open() );
     EXAM_REQUIRE( f.good() );
 
-    uint64_t v;
+    uint64_t v = 100, vv, hoff, hsz, ds;
+    bool hoff_section = false, ds_section = false, sz_hash = false, stop_rec = false;
+
+    for ( ; f.good() && v != 0; ) {
+      f.read( reinterpret_cast<char*>(&v), sizeof(v) );
+      f.read( reinterpret_cast<char*>(&vv), sizeof(vv) );
+      EXAM_REQUIRE( !f.fail() );
+      switch ( v ) {
+        case 0:
+          stop_rec = true;
+          break;
+        case 1:
+	  hoff_section = true;
+          hoff = vv;
+          break;
+        case 2:
+	  ds_section = true;
+          ds = vv;
+          break;
+        case 3:
+	  sz_hash = true;
+	  hsz = vv;
+          break;
+      }
+    }
+
+    EXAM_CHECK( hoff_section );
+    EXAM_CHECK( ds_section );
+    EXAM_CHECK( sz_hash );
+    EXAM_CHECK( stop_rec );
+
+    EXAM_CHECK( static_cast<uint64_t>(f.tellg()) == hoff );
+    EXAM_CHECK( hsz == hash_size );
+    EXAM_CHECK( ds == (hoff + hsz * sizeof(uint64_t)) );
 
     for ( int i = 0; i < hash_size; ++i ) {
       f.read( reinterpret_cast<char*>(&v), sizeof(v) );

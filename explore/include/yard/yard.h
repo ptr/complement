@@ -88,6 +88,8 @@ class underground
     static const size_t hash_block_off_off;
 
     std::fstream f;
+    offset_type hoff;
+    offset_type ds; // data section offset
     offset_type* block_offset;
 };
 
@@ -95,6 +97,7 @@ class yard
 {
   public:
     typedef size_t size_type;
+    typedef off_t offset_type;
 
     yard( const char* path );
     ~yard();
@@ -145,10 +148,12 @@ class yard
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
     typedef std::tr1::unordered_map<id_type,vertex::pointer_type> graph_type;
+    // typedef std::tr1::unordered_map<id_type,offset_type> hash_table_type;
 #endif
 
     graph_type g;
     underground* disc;
+    // hash_table_type ht;
 };
 
 #ifdef __USE_STLPORT_HASH

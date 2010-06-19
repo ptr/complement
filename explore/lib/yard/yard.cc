@@ -68,13 +68,46 @@ struct data_descr
 
 underground::underground( const char* path ) :
     f( path, ios_base::in | ios_base::out ),
+    hoff( 0 ),
     block_offset( new offset_type[first_hash_size] )
 {
   if ( !f.is_open() ) {
     f.clear();
     f.open( path, ios_base::in | ios_base::out | ios_base::trunc );
 
-    uint64_t v = static_cast<offset_type>(-1);
+    hoff = 8 * sizeof(uint64_t); // see below, 8 is a number of sections entries
+    uint64_t v = 1;
+
+    // section 1 (hash table) -> hoff
+    f.write( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
+    v = hoff;
+    f.write( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
+
+    // section 2 (objects/revisions) -> ...
+
+    v = 2;
+    f.write( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
+    v = ds = hoff + first_hash_size * sizeof(uint64_t);
+    f.write( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
+
+    // size of hash (3) -> first_hash_size
+    v = 3;
+    f.write( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
+    v = first_hash_size;
+    f.write( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
+
+    // end of sections
+    v = 0;
+    f.write( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
+    v = 0;
+    f.write( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
+
+    // ds = hoff + first_hash_size * sizeof(offset_type);
+    // if ( hoff != 0 ) {
+    //   f.seekp( hoff, ios_base::beg );
+    // }
+
+    v = static_cast<offset_type>(-1);
     for ( int i = 0; i < first_hash_size; ++i ) {
       block_offset[i] = static_cast<offset_type>(-1);
       f.write( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
@@ -85,8 +118,35 @@ underground::underground( const char* path ) :
     }
     f.flush();
   } else {
-    uint64_t v;
+    uint64_t v = 1, vv;
+
+    for ( ; f.good() && v != 0; ) {
+      f.read( reinterpret_cast<char*>(&v), sizeof(uint64_t) );
+      f.read( reinterpret_cast<char*>(&vv), sizeof(uint64_t) );
+      if ( !f.fail() ) {
+        switch ( v ) {
+          case 0:
+            break;
+          case 1:
+            hoff = vv;
+	    break;
+	  case 2:
+	    ds = vv;
+	    break;
+	  case 3:
+            // first_hash_size = vv;
+	    break;
+	}
+      }
+    }
+
     int i = 0;
+
+    ds = hoff + first_hash_size * sizeof(uint64_t);
+    
+    if ( hoff != 0 ) {
+      f.seekg( hoff, ios_base::beg );
+    }
 
     for ( offset_type off = 0; f.good() && (i < first_hash_size); ++i, off += sizeof(uint64_t) ) {
       f.read( reinterpret_cast<char*>(&v), sizeof(uint64_t) );
@@ -118,7 +178,7 @@ underground::offset_type underground::create_block( int hv ) throw (std::ios_bas
 {
   f.seekp( 0, ios_base::end );
 
-  offset_type off = f.tellp();
+  offset_type off = static_cast<offset_type>(f.tellp()) - ds;
 
   uint64_t v = 0;
   f.write( reinterpret_cast<const char *>(&v), sizeof(uint64_t) ); // count
@@ -198,7 +258,7 @@ void underground::put_raw( const id_type& id, const void* data, underground::siz
     int n;
     offset_type last_block_off;
     do {
-      last_block_off = v;
+      last_block_off = v + ds;
       f.seekg( last_block_off, ios_base::beg );
       f.read( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
       n = v;
@@ -228,7 +288,7 @@ void underground::put_raw( const id_type& id, const void* data, underground::siz
 
       // write offset of data...
       f.seekp( last_block_off + hash_block_off_off + n * 2 * sizeof(uint64_t), ios_base::beg );
-      v = off;
+      v = off - ds;
       f.write( reinterpret_cast<const char *>(&v), sizeof(uint64_t) ); // offset
       // ... and data size
       v = sz;
@@ -250,7 +310,7 @@ void underground::put_raw( const id_type& id, const void* data, underground::siz
 
       // write offset of data...
       f.seekp( off - block_size + hash_block_off_off, ios_base::beg );
-      v = off;
+      v = off - ds;
       f.write( reinterpret_cast<const char *>(&v), sizeof(uint64_t) ); // offset
       // ... and data size
       v = sz;
@@ -258,7 +318,7 @@ void underground::put_raw( const id_type& id, const void* data, underground::siz
 
       // write block offset into previous block in chain
       f.seekp( last_block_off + sizeof(uint64_t), ios_base::beg );
-      v = off - block_size;
+      v = off - block_size - ds;
       f.write( reinterpret_cast<const char *>(&v), sizeof(uint64_t) );
     }
   } else {
@@ -268,23 +328,23 @@ void underground::put_raw( const id_type& id, const void* data, underground::siz
     f.write( reinterpret_cast<const char *>(data), sz );
 
     // write counter, I know that it 1 (just create block)
-    f.seekp( block_offset[hv], ios_base::beg );
+    f.seekp( block_offset[hv] + ds, ios_base::beg );
     uint64_t v = 1;
     f.write( reinterpret_cast<const char *>(&v), sizeof(uint64_t) ); // count
 
     // write id
-    f.seekp( block_offset[hv] + hash_block_id_off, ios_base::beg );
+    f.seekp( block_offset[hv] + ds + hash_block_id_off, ios_base::beg );
     f.write( reinterpret_cast<const char *>(&id), sizeof(id_type) );
 
     // write offset of data...
-    f.seekp( block_offset[hv] + hash_block_off_off, ios_base::beg );
-    v = off;
+    f.seekp( block_offset[hv] + ds + hash_block_off_off, ios_base::beg );
+    v = off - ds;
     // ... and data size
     f.write( reinterpret_cast<const char *>(&v), sizeof(uint64_t) ); // offset
     v = sz;
     f.write( reinterpret_cast<const char *>(&v), sizeof(uint64_t) ); // size
     // write block offset into hash table
-    f.seekp( hv * sizeof(uint64_t), ios_base::beg );
+    f.seekp( hv * sizeof(uint64_t) + hoff, ios_base::beg );
     v = block_offset[hv];
     f.write( reinterpret_cast<const char *>(&v), sizeof(uint64_t) );
   }
@@ -302,7 +362,7 @@ std::string underground::get( const id_type& id ) throw (std::ios_base::failure,
     int n;
     offset_type last_block_off;
     do {
-      last_block_off = v;
+      last_block_off = v + ds;
       f.seekg( last_block_off, ios_base::beg );
       f.read( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
       n = v;
@@ -312,7 +372,7 @@ std::string underground::get( const id_type& id ) throw (std::ios_base::failure,
         if ( rid == id ) {
           f.seekg( last_block_off + hash_block_off_off + i * 2 * sizeof(uint64_t), ios_base::beg );
           f.read( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
-          offset_type d_off = v;
+          offset_type d_off = v + ds;
           f.read( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
           size_type sz = v;
           f.seekg( d_off, ios_base::beg );
@@ -368,7 +428,7 @@ underground::offset_type underground::get_priv( const id_type& id, std::string& 
     int n;
     offset_type last_block_off;
     do {
-      last_block_off = v;
+      last_block_off = v + ds;
       f.seekg( last_block_off, ios_base::beg );
       f.read( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
       n = v;
@@ -379,7 +439,7 @@ underground::offset_type underground::get_priv( const id_type& id, std::string& 
           offset_type ref_offset = last_block_off + hash_block_off_off + i * 2 * sizeof(uint64_t);
           f.seekg( ref_offset, ios_base::beg );
           f.read( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
-          offset_type d_off = v;
+          offset_type d_off = v + ds;
           f.read( reinterpret_cast<char *>(&v), sizeof(uint64_t) );
           size_type sz = v;
           f.seekg( d_off, ios_base::beg );
