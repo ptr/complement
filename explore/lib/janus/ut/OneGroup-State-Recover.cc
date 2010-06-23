@@ -31,6 +31,8 @@
 #include <mt/uid.h>
 #include <unistd.h>
 
+#include <sockios/syslog.h>
+
 namespace janus {
 
 using namespace std;
@@ -47,19 +49,30 @@ class VTM_one_group_recover :
     ~VTM_one_group_recover();
 
     template <class Duration>
-    bool wait( const Duration& rel_time )
+    bool wait_group_size( const Duration& rel_time, int _gsize )
       {
         std::tr2::unique_lock<std::tr2::mutex> lk( mtx );
-
-        return cnd.timed_wait( lk, rel_time, status );
+        
+        gsize = _gsize;
+        
+        return cnd.timed_wait( lk, rel_time, gs_status );
       }
 
     template <class Duration>
-    bool wait_view( const Duration& rel_time )
+    bool wait_msg( const Duration& rel_time, int _n_msg )
       {
-        std::tr2::unique_lock<std::tr2::mutex> lk( mtx_view );
+        std::tr2::unique_lock<std::tr2::mutex> lk( mtx );
+        
+        n_msg = _n_msg;
 
-        return cnd_view.timed_wait( lk, rel_time, status_view );
+        return cnd.timed_wait( lk, rel_time, msg_status );
+      }
+
+    template <class Duration>
+    bool wait_flush( const Duration& rel_time )
+      {
+        std::tr2::unique_lock<std::tr2::mutex> lk( mtx );
+        return cnd.timed_wait( lk, rel_time, flush_status );
       }
 
     vtime& vt()
@@ -73,10 +86,11 @@ class VTM_one_group_recover :
 
     std::string mess;
 
-    void reset()
-      { std::tr2::lock_guard<std::tr2::mutex> lk( mtx ); pass = false; }
-    void reset_view()
-      { std::tr2::lock_guard<std::tr2::mutex> lk( mtx_view ); pass_view = false; }
+    void reset_msg()
+      { std::tr2::lock_guard<std::tr2::mutex> lk( mtx ); msg = 0; }
+
+    void reset_flush()
+      { std::tr2::lock_guard<std::tr2::mutex> lk( mtx ); flushed = false; }
 
   private:
     void message( const stem::Event& );
@@ -84,32 +98,44 @@ class VTM_one_group_recover :
 
     std::tr2::mutex mtx;
     std::tr2::condition_variable cnd;
-    bool pass;
-    std::tr2::mutex mtx_view;
-    std::tr2::condition_variable cnd_view;
-    bool pass_view;
+    int n_msg;
+    int msg;
+    int gsize;
+    bool flushed;
 
-    struct _status
+    struct _gs_status
     {
-        _status( VTM_one_group_recover& m ) :
+        _gs_status( VTM_one_group_recover& m ) :
             me( m )
           { }
 
         bool operator()() const;
 
         VTM_one_group_recover& me;
-    } status;
+    } gs_status;    
 
-    struct _status_view
+    struct _msg_status
     {
-        _status_view( VTM_one_group_recover& m ) :
+        _msg_status( VTM_one_group_recover& m ) :
             me( m )
           { }
 
         bool operator()() const;
 
         VTM_one_group_recover& me;
-    } status_view;
+    } msg_status;
+
+    struct _flush_status
+    {
+        _flush_status( VTM_one_group_recover& m ) :
+            me( m )
+          { }
+
+        bool operator()() const;
+
+        VTM_one_group_recover& me;
+    } flush_status;
+
 
     std::fstream history;
 
@@ -118,10 +144,11 @@ class VTM_one_group_recover :
 
 VTM_one_group_recover::VTM_one_group_recover() :
     basic_vs(),
-    pass( false ),
-    pass_view( false ),
-    status( *this ),
-    status_view( *this )
+    msg_status( *this ),
+    gs_status( *this ),
+    flush_status( *this ),
+    msg(0),
+    flushed(false)
 {
   string nm( "/tmp/janus." );
   nm += std::string( self_id() );
@@ -139,10 +166,11 @@ VTM_one_group_recover::VTM_one_group_recover() :
 
 VTM_one_group_recover::VTM_one_group_recover( const stem::addr_type& id ) :
     basic_vs(),
-    pass( false ),
-    pass_view( false ),
-    status( *this ),
-    status_view( *this )
+    msg_status( *this ),
+    gs_status( *this ),
+    flush_status( *this ),
+    msg(0),
+    flushed(false)
 {
   string nm( "/tmp/janus." );
   nm += std::string( id );
@@ -161,6 +189,21 @@ VTM_one_group_recover::VTM_one_group_recover( const stem::addr_type& id ) :
 VTM_one_group_recover::~VTM_one_group_recover()
 {
   disable();
+}
+
+bool VTM_one_group_recover::_msg_status::operator()() const
+{
+  return me.msg == me.n_msg;
+}
+
+bool VTM_one_group_recover::_gs_status::operator()() const
+{
+  return me.vs_group_size() == me.gsize;
+}
+
+bool VTM_one_group_recover::_flush_status::operator()() const
+{
+  return me.flushed;
 }
 
 xmt::uuid_type VTM_one_group_recover::vs_pub_recover()
@@ -192,30 +235,20 @@ xmt::uuid_type VTM_one_group_recover::vs_pub_recover()
 
         if ( !history.fail() ) {
           if ( history.tellg() <= last_flush_off ) {
-            this->replay( ev );
             if ( ev.code() == basic_vs::VS_FLUSH_VIEW ) {
               stem::Event_base<xmt::uuid_type> fev;
               fev.unpack( ev );              
               flush_id = fev.value();
+            } else {
+              basic_vs::sync_call( ev );
             }
           } else {
-            // keep in mind, that last_flush_off may be 0 here
-            // i.e. no flush in history
-            history.seekp( max( last_flush_off, static_cast<uint64_t>(sizeof(last_flush_off)) ), ios_base::beg );
-            // replay from flush_id ...
-            // cerr << HERE << ' ' << flush_id << endl;
             break;
           }
         }
       }
-      if ( history.fail() ) {
-        history.clear();
-        // keep in mind, that last_flush_off may be 0 here
-        // i.e. no history yet
-        history.seekp( max( last_flush_off, static_cast<uint64_t>(sizeof(last_flush_off)) ), ios_base::beg );
-        // replay from flush_id ...
-        // cerr << HERE << ' ' << flush_id << endl;
-      }
+      history.clear();
+      history.seekp( max( last_flush_off, static_cast<uint64_t>(sizeof(last_flush_off)) ), ios_base::beg );
     } else { // can't recover offset after last flush
       history.clear();
       history.seekp( 0, ios_base::beg );
@@ -277,10 +310,9 @@ void VTM_one_group_recover::vs_resend_from( const xmt::uuid_type& from, const st
         // Change event, to avoid interference with
         // true VS_FLUSH_VIEW---it work with view lock,
         // but in this case I want to bypass locking
-        if ( ev.code() == basic_vs::VS_FLUSH_VIEW ) {
-          ev.code( basic_vs::VS_FLUSH_VIEW_JOIN );
+        if ( ev.code() != basic_vs::VS_FLUSH_VIEW ) {
+          Forward( ev ); // src was set above
         }
-        Forward( ev ); // src was set above
       }
     }
   }
@@ -291,9 +323,8 @@ void VTM_one_group_recover::vs_resend_from( const xmt::uuid_type& from, const st
 
 void VTM_one_group_recover::vs_pub_view_update()
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk( mtx_view );
-  pass_view = true;
-  cnd_view.notify_one();
+  std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
+  cnd.notify_one();
 }
 
 void VTM_one_group_recover::vs_pub_rec( const stem::Event& ev )
@@ -310,20 +341,12 @@ void VTM_one_group_recover::vs_pub_flush()
   stem::__pack_base::__pack( history, last_flush_off );
   history.seekp( 0, ios_base::end );
 
+  flushed = true;
+
   std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
-  pass = true;
   cnd.notify_one();
 }
 
-bool VTM_one_group_recover::_status::operator()() const
-{
-  return me.pass;
-}
-
-bool VTM_one_group_recover::_status_view::operator()() const
-{
-  return me.pass_view;
-}
 
 void VTM_one_group_recover::message( const stem::Event& ev )
 {
@@ -345,7 +368,7 @@ void VTM_one_group_recover::sync_message( const stem::Event& ev )
   }
 
   std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
-  pass = true;
+  ++msg;
   cnd.notify_one();
 }
 
@@ -360,159 +383,191 @@ int EXAM_IMPL(vtime_operations::VT_one_group_recover)
   stem::addr_type a2_stored;
   stem::addr_type a3_stored;
 
-  try {
-    VTM_one_group_recover a1;
-    VTM_one_group_recover a2;
+  VTM_one_group_recover a1;
+  VTM_one_group_recover a2;
 
-    a1_stored = a1.self_id();
+  a1_stored = a1.self_id();
 
-    // first, but join required for vs_pub_recover:
-    a1.vs_join( stem::badaddr );
+  // first, but join required for vs_pub_recover:
+  a1.vs_join( stem::badaddr );
 
-    a2_stored = a2.self_id();
+  a2_stored = a2.self_id();
+
+  a2.vs_join( a1.self_id() );
+
+  EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
+  EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
+
+  {
+    VTM_one_group_recover a3;
+
+    a3_stored = a3.self_id();
+
+    a3.vs_join( a1.self_id() );
+
+    EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 3 ) );
+    EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3 ) );
+    EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(500), 3 ) );
   
-    a2.vs_join( a1.self_id() );
+    stem::Event ev( EV_FREE );
+    ev.value() = "message";
+    ev.dest( a1.self_id() );
 
-    EXAM_CHECK( a2.wait_view( std::tr2::milliseconds(500) ) );
+    a1.Send( ev );
 
-    try {
-      VTM_one_group_recover a3;
+    EXAM_CHECK( a1.wait_msg( std::tr2::milliseconds(500), 1 ) );
+    EXAM_CHECK( a1.mess == "message" );
+    EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds(500), 1 ) );
+    EXAM_CHECK( a2.mess == "message" );
+    EXAM_CHECK( a3.wait_msg( std::tr2::milliseconds(500), 1 ) );
+    EXAM_CHECK( a3.mess == "message" );
 
-      a3_stored = a3.self_id();
+    a1.vs_send_flush();
 
-      a1.reset();
-      a2.reset();
-      a1.reset_view();
-      a2.reset_view();
+    EXAM_CHECK( a1.wait_flush( std::tr2::milliseconds(500) ) );
+    EXAM_CHECK( a2.wait_flush( std::tr2::milliseconds(500) ) );
+    EXAM_CHECK( a3.wait_flush( std::tr2::milliseconds(500) ) );
+  }
 
-      a3.vs_join( a1.self_id() );
+  {
+    EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
+    EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
 
-      EXAM_CHECK( a2.wait_view( std::tr2::milliseconds(500) ) );
-      EXAM_CHECK( a3.wait_view( std::tr2::milliseconds(500) ) );
-    
-      EXAM_CHECK( a1.vt()[a1.self_id()] == 3 );
-      EXAM_CHECK( a1.vt()[a2.self_id()] == 0 );
-      EXAM_CHECK( a1.vt()[a3.self_id()] == 0 );
-      
-      EXAM_CHECK( a2.vt()[a1.self_id()] == 3 );
-      EXAM_CHECK( a2.vt()[a2.self_id()] == 0 );
-      EXAM_CHECK( a2.vt()[a3.self_id()] == 0 );
-      
-      EXAM_CHECK( a3.vt()[a1.self_id()] == 3 );
-      EXAM_CHECK( a3.vt()[a2.self_id()] == 0 );
-      EXAM_CHECK( a3.vt()[a3.self_id()] == 0 );    
+    stem::Event ev( EV_FREE );
+    ev.value() = "extra message";
+    ev.dest( a1.self_id() );
 
-      a1.reset();
-      a2.reset();
-      a3.reset();
+    a1.Send( ev );
+
+    EXAM_CHECK( a1.wait_msg( std::tr2::milliseconds(500), 2 ) );
+    EXAM_CHECK( a1.mess == "extra message" );
+    EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds(500), 2 ) );
+    EXAM_CHECK( a2.mess == "extra message" );
+  }
+
+  {
+    VTM_one_group_recover a3( a3_stored );
+
+
+    a3.vs_join( a2.self_id() );
+
+    EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 3 ) );
+    EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3 ) );
+    EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(500), 3 ) );
+
+    EXAM_CHECK( a3.wait_msg( std::tr2::milliseconds(500), 2 ) );
+
+    EXAM_CHECK( a3.mess == "extra message" );
+  }
+
+  unlink( (std::string( "/tmp/janus." ) + std::string(a1_stored) ).c_str() );
+  unlink( (std::string( "/tmp/janus." ) + std::string(a2_stored) ).c_str() );
+  unlink( (std::string( "/tmp/janus." ) + std::string(a3_stored) ).c_str() );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(vtime_operations::VT_one_group_join_send)
+{
+  stem::addr_type a1_stored;
+  stem::addr_type a2_stored;
+  stem::addr_type a3_stored;
+
+  VTM_one_group_recover a1;
+  VTM_one_group_recover a2;
+
+  a1_stored = a1.self_id();
+
+  a1.vs_join( stem::badaddr );
+  EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 1 ) );
+
+  a2_stored = a2.self_id();
+
+  a2.vs_join( a1.self_id() );
+
+  EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
+  EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
+
+  {
+    VTM_one_group_recover a3;
+
+    a3_stored = a3.self_id();
+
+    stem::Event ev( EV_FREE );
+    ev.value() = "message";
+    ev.dest( a1.self_id() );
+
+
+    a3.vs_join( a2.self_id() );
+    a1.Send( ev );
+
+    EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 3 ) );
+    EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3 ) );
+    EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(500), 3 ) );
+
+    EXAM_CHECK( a1.wait_msg( std::tr2::milliseconds(500), 1 ) );
+    EXAM_CHECK( a1.mess == "message" );
+    EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds(500), 1 ) );
+    EXAM_CHECK( a2.mess == "message" );
+    EXAM_CHECK( a3.wait_msg( std::tr2::milliseconds(500), 1 ) );
+    EXAM_CHECK( a3.mess == "message" );
+
+    ev.value() = "another message";
+    a1.Send( ev );
+  }
+
+  EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
+  EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
+
+  EXAM_CHECK( a1.wait_msg( std::tr2::milliseconds(500), 2 ) );
+  EXAM_CHECK( a1.mess == "another message" );
+  EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds(500), 2 ) );
+  EXAM_CHECK( a2.mess == "another message" );
+
+  unlink( (std::string( "/tmp/janus." ) + std::string(a1_stored) ).c_str() );
+  unlink( (std::string( "/tmp/janus." ) + std::string(a2_stored) ).c_str() );
+  unlink( (std::string( "/tmp/janus." ) + std::string(a3_stored) ).c_str() );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(vtime_operations::VT_one_group_multiple_joins)
+{
+  const int n = 10;
+  vector< stem::addr_type > names(n);
+
+  try {
+    srand( time(NULL) );
+
+    vector< VTM_one_group_recover* > a(n);
+
+    for (int i = 0;i < n;++i) {
+      a[i] = new VTM_one_group_recover();
+      names[i] = a[i]->self_id();
+    }
+
+    a[0]->vs_join( stem::badaddr );
+
+    EXAM_CHECK( a[0]->vs_group_size() == 1 );
+
+    for (int i = 1;i < n;++i) {
+      int p = rand() % i;
+      int q = rand() % i;
 
       stem::Event ev( EV_FREE );
-      ev.value() = "message";
-      ev.dest( a1.self_id() );
+      stringstream ss;
+      ss << i;
+      ev.value() = ss.str();
+      ev.dest( a[p]->self_id() );
 
-      a1.Send( ev );
+      a[i]->vs_join( a[q]->self_id() );
+      a[p]->Send( ev );
 
-      EXAM_CHECK( a1.wait( std::tr2::milliseconds(500) ) );
-      EXAM_CHECK( a1.mess == "message" );
-      EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
-      EXAM_CHECK( a2.mess == "message" );
-      EXAM_CHECK( a3.wait( std::tr2::milliseconds(500) ) );
-      EXAM_CHECK( a3.mess == "message" );
-
-      a1.reset();
-      a2.reset();
-      a3.reset();
-
-      a1.vs_send_flush();
-
-      EXAM_CHECK( a1.wait( std::tr2::milliseconds(500) ) );
-      EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
-      EXAM_CHECK( a3.wait( std::tr2::milliseconds(500) ) );
-
-      a1.reset_view();
-      a2.reset_view();
-    }
-    catch ( const std::runtime_error& err ) {
-      EXAM_ERROR( err.what() );
-    }
-    catch ( std::exception& err ) {
-      EXAM_ERROR( err.what() );
-    }
-    catch ( ... ) {
-      EXAM_ERROR( "unknown exception" );
-    }
-
-    EXAM_CHECK( a1.wait_view( std::tr2::milliseconds(300) ) || a2.wait_view( std::tr2::milliseconds(300) ) );
-
-    a1.reset_view();
-    a2.reset_view();
-
-    {
-      a1.reset();
-      a2.reset();
-
-      stem::Event ev( EV_FREE );
-      ev.value() = "extra message";
-      ev.dest( a1.self_id() );
-
-      a1.Send( ev );
-
-      EXAM_CHECK( a1.wait( std::tr2::milliseconds(500) ) );
-      EXAM_CHECK( a1.mess == "extra message" );
-      EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
-      EXAM_CHECK( a2.mess == "extra message" );
-      
-      EXAM_CHECK( a1.vt()[a1.self_id()] >= 7 );
-      EXAM_CHECK( a1.vt()[a2.self_id()] >= 0 );
-
-      EXAM_CHECK( a2.vt()[a1.self_id()] >= 7 );
-      EXAM_CHECK( a2.vt()[a2.self_id()] >= 0 );
-      
-      a1.reset();
-      a2.reset();
-    }
-
-    try {
-
-      VTM_one_group_recover a3( a3_stored );
-
-      a3.vs_join( a2.self_id() );
-
-      EXAM_CHECK( a1.wait_view( std::tr2::milliseconds(500) ) );
-      // EXAM_CHECK( a2.wait( std::tr2::milliseconds(500) ) );
-      // a3 not only join, but replay too...
-      EXAM_CHECK( a3.wait_view( std::tr2::milliseconds(500) ) );
-      // so I can't just check a3's vtime...
-      
-      EXAM_CHECK( a1.vt()[a1.self_id()] >= 7 );
-      EXAM_CHECK( a1.vt()[a2.self_id()] >= 2 );
-      EXAM_CHECK( a1.vt()[a3.self_id()] == 0 );
-
-      EXAM_CHECK( a2.vt()[a1.self_id()] >= 7 );
-      EXAM_CHECK( a2.vt()[a2.self_id()] >= 2 );
-      EXAM_CHECK( a2.vt()[a3.self_id()] == 0 );
-
-      // a3 not only join, but replay too...
-      // so we may dalay here...
-      // std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
-      EXAM_CHECK( a3.wait( std::tr2::milliseconds(500) ) );
-
-      EXAM_CHECK( a3.vt()[a1.self_id()] >= 7 );
-      EXAM_CHECK( a3.vt()[a2.self_id()] >= 2 );
-      EXAM_CHECK( a3.vt()[a3.self_id()] == 0 );
-
-      EXAM_CHECK( a1.mess == "extra message" );
-      EXAM_CHECK( a2.mess == "extra message" );
-      EXAM_CHECK( a3.mess == "extra message" );
-    }
-    catch ( const std::runtime_error& err ) {
-      EXAM_ERROR( err.what() );
-    }
-    catch ( std::exception& err ) {
-      EXAM_ERROR( err.what() );
-    }
-    catch ( ... ) {
-      EXAM_ERROR( "unknown exception" );
+      for (int j = 0;j <= i;++j) {
+        EXAM_CHECK( a[j]->wait_group_size( std::tr2::milliseconds( (i + 1) * 200), i + 1 ) );
+        EXAM_CHECK( a[j]->wait_msg( std::tr2::milliseconds( (i + 1) * 200 ), i ) );
+        EXAM_CHECK( a[j]->mess == ss.str() );
+      }
     }
   }
   catch ( const std::runtime_error& err ) {
@@ -525,11 +580,12 @@ int EXAM_IMPL(vtime_operations::VT_one_group_recover)
     EXAM_ERROR( "unknown exception" );
   }
 
-  unlink( (std::string( "/tmp/janus." ) + std::string(a1_stored) ).c_str() );
-  unlink( (std::string( "/tmp/janus." ) + std::string(a2_stored) ).c_str() );
-  unlink( (std::string( "/tmp/janus." ) + std::string(a3_stored) ).c_str() );
+  for (int i = 0;i < n;++i) {
+    unlink( (std::string( "/tmp/janus." ) + std::string(names[i]) ).c_str() );
+  }
 
   return EXAM_RESULT;
 }
+
 
 } // namespace janus

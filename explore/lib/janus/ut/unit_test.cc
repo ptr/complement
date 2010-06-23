@@ -43,31 +43,37 @@ int main( int argc, const char ** argv )
 
   using namespace janus;
 
-  exam::test_suite::test_case_type tc[10];
+  exam::test_suite::test_case_type tc[6];
 
   exam::test_suite t( "virtual time operations" );
 
   janus::vtime_operations vt_oper;
 
-  tc[5] = t.add( &vtime_operations::VT_one_group_late_replay, vt_oper, "VT one group late replay",
-    t.add( &vtime_operations::VT_one_group_replay, vt_oper, "VT one group replay",
-      t.add( &vtime_operations::VT_one_group_send, vt_oper, "VT one group send",
-        t.add( &vtime_operations::VT_one_group_core3_sim, vt_oper, "VT one group add two members simultaneously",
-          t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
-            tc[4] = t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member" ) ) ) ) ) );
+  tc[0] = t.add( &vtime_operations::flush_and_exit, vt_oper, "VT flush and exit", 
+            t.add( &vtime_operations::flush_and_join, vt_oper, "VT flush and join", 
+              t.add( &vtime_operations::double_flush, vt_oper, "VT double flush",
+                t.add( &vtime_operations::VT_one_group_join_exit, vt_oper, "VT one group join and exit",
+                  t.add( &vtime_operations::VT_one_group_core3_sim, vt_oper, "VT one group add two members simultaneously",
+                    t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
+                      t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member" ) ) ) ) ) ) );
 
-  tc[6] = t.add( &vtime_operations::VT_one_group_access_point, vt_oper, "VT network access points",
-    t.add( &vtime_operations::VT_one_group_network, vt_oper, "VT over network", tc[4] ) );
+  tc[1] = t.add( &vtime_operations::VT_one_group_multiple_send, vt_oper, "VT one group multiple send",
+            t.add( &vtime_operations::VT_one_group_send, vt_oper, "VT one group send", tc[0] ) );
 
-  t.add( &vtime_operations::VT_one_group_recover, vt_oper, "VT one group recover", tc[5] );
-  t.add( &vtime_operations::leader_fail, vt_oper, "VT total order, leader fail",
-    tc[7] = t.add( &vtime_operations::leader, vt_oper, "VT total order, leader", tc[6] ) );
+  tc[2] = t.add( &vtime_operations::VT_one_group_late_replay, vt_oper, "VT one group late replay",
+            t.add( &vtime_operations::VT_one_group_replay, vt_oper, "VT one group replay", tc[1] ) );
 
-  t.add( &vtime_operations::flush_and_exit, vt_oper, "VT flush and exit", 
-    t.add( &vtime_operations::flush_and_join, vt_oper, "VT flush and join", 
-      t.add( &vtime_operations::double_flush, vt_oper, "VT double flush", tc[6] ) ) );
+  tc[3] = t.add( &vtime_operations::VT_one_group_recover, vt_oper, "VT one group recover",
+            t.add( &vtime_operations::VT_one_group_multiple_joins, vt_oper, "VT one group multiple joins",
+              t.add( &vtime_operations::VT_one_group_join_send, vt_oper, "VT one group join and send", tc[2] ) ) );
 
-  t.add( &vtime_operations::lock_and_torder, vt_oper, "VT total order, lock", tc[7] );
+  tc[4] = t.add( &vtime_operations::VT_one_group_access_point, vt_oper, "VT network access points",
+    t.add( &vtime_operations::VT_one_group_network, vt_oper, "VT over network", tc[1] ) );
+
+  tc[5] = t.add( &vtime_operations::leader_fail, vt_oper, "VT total order, leader fail",
+            t.add( &vtime_operations::leader, vt_oper, "VT total order, leader", tc[4] ) );
+
+  t.add( &vtime_operations::lock_and_torder, vt_oper, "VT total order, lock", tc[5] );
 
   if ( opts.is_set( 'v' ) ) {
     t.flags( t.flags() | exam::base_logger::verbose );

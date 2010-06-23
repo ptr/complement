@@ -23,6 +23,10 @@ class vtime_operations
     int EXAM_DECL(VT_one_group_core3);
     int EXAM_DECL(VT_one_group_core3_sim);
     int EXAM_DECL(VT_one_group_send);
+    int EXAM_DECL(VT_one_group_multiple_send);
+    int EXAM_DECL(VT_one_group_join_exit);
+    int EXAM_DECL(VT_one_group_join_send);
+    int EXAM_DECL(VT_one_group_multiple_joins);
     int EXAM_DECL(VT_one_group_replay);
     int EXAM_DECL(VT_one_group_late_replay);
 
@@ -31,8 +35,6 @@ class vtime_operations
 
     int EXAM_DECL(VT_one_group_recover);
 
-    int EXAM_DECL(gvt_add);
-
     int EXAM_DECL(leader);
     int EXAM_DECL(leader_fail);
 
@@ -40,12 +42,6 @@ class vtime_operations
     int EXAM_DECL( flush_and_join );
     int EXAM_DECL( flush_and_exit );
     int EXAM_DECL( lock_and_torder );
-
-  private:
-    // xmt::shm_alloc<0> seg;
-    // xmt::allocator_shm<xmt::__condition<true>,0> shm_cnd;
-    // xmt::allocator_shm<xmt::__barrier<true>,0>   shm_b;
-    // xmt::__barrier<true> *b2;
 };
 
 } // namespace janus
