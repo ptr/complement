@@ -19,14 +19,6 @@ namespace janus {
 class vtime_operations
 {
   public:
-    vtime_operations();
-    ~vtime_operations();
-
-    int EXAM_DECL(vt_compare);
-    int EXAM_DECL(vt_add);
-    int EXAM_DECL(vt_diff);
-    int EXAM_DECL(vt_max);
-
     int EXAM_DECL(VT_one_group_core);
     int EXAM_DECL(VT_one_group_core3);
     int EXAM_DECL(VT_one_group_core3_sim);

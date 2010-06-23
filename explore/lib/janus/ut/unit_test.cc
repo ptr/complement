@@ -49,18 +49,12 @@ int main( int argc, const char ** argv )
 
   janus::vtime_operations vt_oper;
 
-  tc[3] = t.add( &vtime_operations::vt_max, vt_oper, "Max",
-    tc[1] = t.add( &vtime_operations::vt_add, vt_oper, "Additions",
-      tc[0] = t.add( &vtime_operations::vt_compare, vt_oper, "Compare" ) ) );
-  t.add( &vtime_operations::vt_diff, vt_oper, "Differences", tc[0] );
-  tc[2] = t.add( &vtime_operations::gvt_add, vt_oper, "Grouped VT additions", tc[1] );
-
   tc[5] = t.add( &vtime_operations::VT_one_group_late_replay, vt_oper, "VT one group late replay",
     t.add( &vtime_operations::VT_one_group_replay, vt_oper, "VT one group replay",
       t.add( &vtime_operations::VT_one_group_send, vt_oper, "VT one group send",
         t.add( &vtime_operations::VT_one_group_core3_sim, vt_oper, "VT one group add two members simultaneously",
           t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
-            tc[4] = t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member", tc[3] ) ) ) ) ) );
+            tc[4] = t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member" ) ) ) ) ) );
 
   tc[6] = t.add( &vtime_operations::VT_one_group_access_point, vt_oper, "VT network access points",
     t.add( &vtime_operations::VT_one_group_network, vt_oper, "VT over network", tc[4] ) );
