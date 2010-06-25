@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/24 21:24:12 ptr>
+// -*- C++ -*- Time-stamp: <10/06/25 17:16:05 ptr>
 
 /*
  *
@@ -105,6 +105,8 @@ class basic_vs :
       { return basic_vs::vs( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
 
   public:
+    static xmt::uuid_type flush_id( const stem::Event& );
+
     void vs_send_flush();
     size_type vs_group_size() const;
     virtual std::tr2::milliseconds vs_pub_lock_timeout() const;

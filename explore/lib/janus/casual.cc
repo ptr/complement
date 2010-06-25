@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/24 21:33:42 ptr>
+// -*- C++ -*- Time-stamp: <10/06/25 17:18:30 ptr>
 
 /*
  *
@@ -1051,6 +1051,17 @@ void basic_vs::access_points_refresh_sec( const stem::Event_base<janus::detail::
     vs_points::access_t& p = points.insert( make_pair(ev.src(), vs_points::access_t()) )->second;
     p = range.first->second;
   }
+}
+
+xmt::uuid_type basic_vs::flush_id( const stem::Event& ev )
+{
+  if ( ev.code() == VS_FLUSH_RQ ) {
+    stem::Event_base<xmt::uuid_type> fev;
+    fev.unpack( ev );
+    return fev.value();
+  }
+
+  return xmt::nil_uuid;
 }
 
 const stem::state_type basic_vs::VS_ST_LOCKED = 0x10000;
