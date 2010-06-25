@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/08 11:34:42 ptr>
+// -*- C++ -*- Time-stamp: <10/06/24 21:24:12 ptr>
 
 /*
  *
@@ -69,25 +69,6 @@ class basic_vs :
   private:
     typedef std::set<stem::addr_type> group_members_type;
 
-    static const stem::code_type VS_EVENT;
-    static const stem::code_type VS_JOIN_RQ;
-    static const stem::code_type VS_JOIN_RS;
-    static const stem::code_type VS_LOCK_VIEW;
-    static const stem::code_type VS_LOCK_VIEW_ACK;
-    static const stem::code_type VS_LOCK_VIEW_NAK;
-    static const stem::code_type VS_UPDATE_VIEW;
-    static const stem::code_type VS_FLUSH_LOCK_VIEW;
-    static const stem::code_type VS_FLUSH_LOCK_VIEW_ACK;
-    static const stem::code_type VS_FLUSH_LOCK_VIEW_NAK;
-    static const stem::code_type VS_LOCK_SAFETY; // from cron, timeout
-    static const stem::code_type VS_LAST_WILL;
-    static const stem::code_type VS_ACCESS_POINT_PRI;
-    static const stem::code_type VS_ACCESS_POINT_SEC;
-
-  protected:
-    static const stem::code_type VS_FLUSH_VIEW;
-    static const stem::code_type VS_FLUSH_VIEW_JOIN;
-
   protected:
     static const stem::state_type VS_ST_LOCKED;
 
@@ -123,13 +104,6 @@ class basic_vs :
     int vs( const stem::Event_base<D>& e )
       { return basic_vs::vs( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
 
-  protected:
-    int vs_aux( const stem::Event& );
-
-    template <class D>
-    int vs_aux( const stem::Event_base<D>& e )
-      { return basic_vs::vs_aux( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
-
   public:
     void vs_send_flush();
     size_type vs_group_size() const;
@@ -150,7 +124,7 @@ class basic_vs :
     void access_points_refresh();
 
   protected:
-    void check_remotes();
+    bool check_remotes();
 
     vtime vt;
 
@@ -165,29 +139,34 @@ class basic_vs :
     void replay( const stem::Event& );
 
   private:
+    void repeat_request( const stem::Event& );
+
+  private:
     void vs_lock_view( const stem::EventVoid& );
     void vs_lock_view_lk( const stem::EventVoid& );
     void vs_lock_view_ack( const stem::EventVoid& );
+    void vs_update_view( const stem::Event_base<vs_event>& ev );
 
     void vs_process( const stem::Event_base<vs_event>& );
-    void vs_process_lk( const stem::Event_base<vs_event>& );
+
+    void vs_join_request_work( const stem::Event_base<vs_join_rq>& );
     void vs_join_request( const stem::Event_base<vs_join_rq>& );
     void vs_join_request_lk( const stem::Event_base<vs_join_rq>& );
+
     void vs_group_points( const stem::Event_base<vs_points>& );
 
-    void vs_flush_lock_view( const stem::EventVoid& );
-    void vs_flush_lock_view_lk( const stem::EventVoid& );
-    void vs_flush_lock_view_ack( const stem::EventVoid& );
-    void vs_flush( const xmt::uuid_type& );
-    void vs_flush_wr( const xmt::uuid_type& );
+    void vs_flush_request_work( const stem::Event_base< xmt::uuid_type >& ev );
+    void vs_flush_request( const stem::Event_base< xmt::uuid_type >& ev );
+    void vs_flush_request_lk( const stem::Event_base< xmt::uuid_type >& ev );
 
     void vs_lock_safety( const stem::EventVoid& ev );
 
     void process_delayed();
-
+    void process_out_of_order();
     void add_lock_safety();
-    void rm_lock_safety();
+    void check_lock_rsp();
 
+    void process_last_will_work( const stem::Event_base<janus::addr_type>& );
     void process_last_will( const stem::Event_base<janus::addr_type>& );
     void process_last_will_lk( const stem::Event_base<janus::addr_type>& );
 
@@ -217,11 +196,13 @@ class basic_vs :
     lock_rsp_type lock_rsp;
     stem::addr_type group_applicant;
     stem::addr_type group_applicant_ref;
-
   private:
     typedef std::list<stem::NetTransportMgr*> access_container_type;
 
     access_container_type remotes_;
+
+    typedef std::list< stem::Event > flush_container_type; 
+    flush_container_type fq;
 
     static class stem::Cron* _cron;
 

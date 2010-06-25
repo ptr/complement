@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/03/10 19:41:56 ptr>
+// -*- C++ -*- Time-stamp: <10/06/24 21:27:50 ptr>
 
 /*
  *
@@ -35,33 +35,16 @@ namespace janus {
 class torder_vs :
     public basic_vs
 {
-  private:
-    static const stem::code_type VS_EVENT_TORDER;
-    static const stem::code_type VS_ORDER_CONF;
-    static const stem::code_type VS_LEADER;
-
   public:
     torder_vs();
     torder_vs( const char* info );
-    ~torder_vs();
 
     int vs_torder( const stem::Event& );
 
     template <class D>
     int vs_torder( const stem::Event_base<D>& e )
       { return torder_vs::vs_torder( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
-    // void vs_send_flush();
 
-    void leave();
-
-  protected:
-    int vs_torder_aux( const stem::Event& );
-
-    template <class D>
-    int vs_torder_aux( const stem::Event_base<D>& e )
-      { return torder_vs::vs_torder_aux( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
-
-  public:
     bool is_leader() const
       { return is_leader_; }
 
@@ -73,6 +56,7 @@ class torder_vs :
   private:
     void vs_leader( const stem::EventVoid& );
     void next_leader_election();
+    void check_leader();
 
 #ifdef __USE_STLPORT_HASH
     typedef std::hash_map<vs_event_total_order::id_type,stem::Event> conf_cnt_t;

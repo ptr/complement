@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/04 19:05:18 ptr>
+// -*- C++ -*- Time-stamp: <10/06/24 22:08:06 ptr>
 
 /*
  *
@@ -32,6 +32,10 @@
 #include <unistd.h>
 
 #include <sockios/syslog.h>
+
+#ifndef VS_FLUSH_RQ
+# define VS_FLUSH_RQ 0x307 // see casual.cc
+#endif
 
 namespace janus {
 
@@ -235,7 +239,7 @@ xmt::uuid_type VTM_one_group_recover::vs_pub_recover()
 
         if ( !history.fail() ) {
           if ( history.tellg() <= last_flush_off ) {
-            if ( ev.code() == basic_vs::VS_FLUSH_VIEW ) {
+            if ( ev.code() == VS_FLUSH_RQ ) {
               stem::Event_base<xmt::uuid_type> fev;
               fev.unpack( ev );              
               flush_id = fev.value();
@@ -291,7 +295,7 @@ void VTM_one_group_recover::vs_resend_from( const xmt::uuid_type& from, const st
 
     if ( !history.fail() ) {
       if ( !ref_point_found ) {
-        if ( ev.code() == basic_vs::VS_FLUSH_VIEW ) {
+        if ( ev.code() == VS_FLUSH_RQ ) {
           stem::Event_base<xmt::uuid_type> fev;
           fev.unpack( ev );              
           if ( fev.value() == from ) {
@@ -310,7 +314,7 @@ void VTM_one_group_recover::vs_resend_from( const xmt::uuid_type& from, const st
         // Change event, to avoid interference with
         // true VS_FLUSH_VIEW---it work with view lock,
         // but in this case I want to bypass locking
-        if ( ev.code() != basic_vs::VS_FLUSH_VIEW ) {
+        if ( ev.code() != VS_FLUSH_RQ ) {
           Forward( ev ); // src was set above
         }
       }
@@ -497,7 +501,6 @@ int EXAM_IMPL(vtime_operations::VT_one_group_join_send)
     ev.value() = "message";
     ev.dest( a1.self_id() );
 
-
     a3.vs_join( a2.self_id() );
     a1.Send( ev );
 
@@ -539,9 +542,9 @@ int EXAM_IMPL(vtime_operations::VT_one_group_multiple_joins)
   try {
     srand( time(NULL) );
 
-    vector< VTM_one_group_recover* > a(n);
+    vector<VTM_one_group_recover*> a(n);
 
-    for (int i = 0;i < n;++i) {
+    for ( int i = 0; i < n; ++i ) {
       a[i] = new VTM_one_group_recover();
       names[i] = a[i]->self_id();
     }
@@ -550,7 +553,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_multiple_joins)
 
     EXAM_CHECK( a[0]->vs_group_size() == 1 );
 
-    for (int i = 1;i < n;++i) {
+    for ( int i = 1; i < n; ++i ) {
       int p = rand() % i;
       int q = rand() % i;
 
@@ -563,11 +566,15 @@ int EXAM_IMPL(vtime_operations::VT_one_group_multiple_joins)
       a[i]->vs_join( a[q]->self_id() );
       a[p]->Send( ev );
 
-      for (int j = 0;j <= i;++j) {
+      for (int j = 0; j <= i; ++j ) {
         EXAM_CHECK( a[j]->wait_group_size( std::tr2::milliseconds( (i + 1) * 200), i + 1 ) );
         EXAM_CHECK( a[j]->wait_msg( std::tr2::milliseconds( (i + 1) * 200 ), i ) );
         EXAM_CHECK( a[j]->mess == ss.str() );
       }
+    }
+
+    for ( int i = 0; i < n; ++i ) {
+      delete a[i];
     }
   }
   catch ( const std::runtime_error& err ) {
@@ -580,7 +587,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_multiple_joins)
     EXAM_ERROR( "unknown exception" );
   }
 
-  for (int i = 0;i < n;++i) {
+  for ( int i = 0; i < n; ++i ) {
     unlink( (std::string( "/tmp/janus." ) + std::string(names[i]) ).c_str() );
   }
 
