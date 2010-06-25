@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/25 17:18:30 ptr>
+// -*- C++ -*- Time-stamp: <10/06/25 21:27:22 ptr>
 
 /*
  *
@@ -104,7 +104,8 @@ basic_vs::Init::~Init()
 basic_vs::basic_vs() :
     EventHandler(),
     view( 0 ),
-    lock_addr( stem::badaddr )
+    lock_addr( stem::badaddr ),
+    group_applicant( stem::badaddr )
 {
   new( Init_buf ) Init();
 }
@@ -112,7 +113,8 @@ basic_vs::basic_vs() :
 basic_vs::basic_vs( const char* info ) :
     EventHandler( info ),
     view( 0 ),
-    lock_addr( stem::badaddr )
+    lock_addr( stem::badaddr ),
+    group_applicant( stem::badaddr )
 {
   new( Init_buf ) Init();
 }
@@ -157,6 +159,12 @@ int basic_vs::vs( const stem::Event& inc_ev )
     de.push_back( inc_ev );
     return 1;
   }
+
+  // if ( vt.vt.size() == 0 ) {
+  //   cerr << HERE << endl;
+  //   de.push_back( inc_ev ); // don't use before join group
+  //   return -1;
+  // }
 
   stem::Event_base<vs_event> ev( VS_EVENT );
 
@@ -660,7 +668,7 @@ void basic_vs::check_lock_rsp()
   if ( lock_rsp.size() >= vt.vt.size() ) {
     for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
       if ( (lock_rsp.find( i->first ) == lock_rsp.end()) ) {
-        misc::use_syslog<LOG_INFO,LOG_USER>() << __FILE__ << ':' << __LINE__ << ": unexpected" << endl;
+        misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << " unexpected" << endl;
         return;
       }
     }
