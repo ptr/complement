@@ -51,11 +51,12 @@ int main( int argc, const char ** argv )
 
   tc[0] = t.add( &vtime_operations::flush_and_exit, vt_oper, "VT flush and exit", 
             t.add( &vtime_operations::flush_and_join, vt_oper, "VT flush and join", 
-              t.add( &vtime_operations::double_flush, vt_oper, "VT double flush",
-                t.add( &vtime_operations::VT_one_group_join_exit, vt_oper, "VT one group join and exit",
-                  t.add( &vtime_operations::VT_one_group_core3_sim, vt_oper, "VT one group add two members simultaneously",
-                    t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
-                      t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member" ) ) ) ) ) ) );
+              t.add( &vtime_operations::double_exit, vt_oper, "VT double exit",
+                t.add( &vtime_operations::double_flush, vt_oper, "VT double flush",
+                  t.add( &vtime_operations::VT_one_group_join_exit, vt_oper, "VT one group join and exit",
+                    t.add( &vtime_operations::VT_one_group_core3_sim, vt_oper, "VT one group add two members simultaneously",
+                      t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
+                        t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member" ) ) ) ) ) ) ) );
 
   tc[1] = t.add( &vtime_operations::VT_one_group_multiple_send, vt_oper, "VT one group multiple send",
             t.add( &vtime_operations::VT_one_group_send, vt_oper, "VT one group send", tc[0] ) );

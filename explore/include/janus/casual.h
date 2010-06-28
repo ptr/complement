@@ -175,6 +175,13 @@ class basic_vs :
     void access_points_refresh_pri( const stem::Event_base<janus::detail::access_points>& );
     void access_points_refresh_sec( const stem::Event_base<janus::detail::access_points>& );
 
+    int vs_locked( const stem::Event& );
+
+    template <class D>
+    int vs_locked( const stem::Event_base<D>& e )
+      { return basic_vs::vs_locked( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
+
+
     // vs order violation events
     typedef std::list<stem::Event_base<vs_event> > ove_container_type;
     typedef std::list<stem::Event> delayed_container_type;

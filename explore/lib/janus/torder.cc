@@ -38,7 +38,8 @@ torder_vs::torder_vs( const char* info ) :
 
 void torder_vs::check_leader()
 {
-  if ( !check_remotes() || (vt.vt.find( leader_ ) == vt.vt.end()) ) {
+  check_remotes();
+  if ( vt.vt.find( leader_ ) == vt.vt.end() ) {
     next_leader_election();
   }
 }
@@ -123,6 +124,7 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
     this->vs_pub_tord_rec( ev.value().ev );
     torder_vs::sync_call( ev.value().ev );
   } else {
+    misc::use_syslog<LOG_INFO,LOG_USER>() << ':' << __FILE__ << ':' << __LINE__ << ':' << self_id() << endl;
     if ( !orig_order_container_.empty() ) {
       if ( *orig_order_container_.begin() == ev.value().id ) {
         orig_order_container_.pop_front();
@@ -180,8 +182,9 @@ void torder_vs::next_leader_election()
   if ( leader_ == badaddr || vs_group_size() < 2 ) {
     return;
   }
-
-  vector<stem::addr_type> basket( vs_group_size() );
+  
+  int n = vs_group_size();
+  vector<stem::addr_type> basket( n );
 
   int j = 0;
   for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i, ++j ) {
@@ -190,13 +193,7 @@ void torder_vs::next_leader_election()
 
   sort( basket.begin(), basket.end() );
 
-  vector< stem::addr_type >::iterator i = lower_bound( basket.begin(), basket.end(), leader_ );
-  if ( *i == leader_ ) {
-    ++i;
-    if ( i == basket.end() ) {
-      i = basket.begin();
-    }
-  }
+  vector< stem::addr_type >::iterator i = basket.begin() + view % n;
 
   stem::addr_type sid = self_id();
 

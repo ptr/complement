@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/28 19:12:53 ptr>
+// -*- C++ -*- Time-stamp: <10/06/10 22:29:15 ptr>
 
 /*
  *
@@ -36,11 +36,19 @@ namespace janus {
 
 using namespace std;
 
+#define EV_EXT_EV_SAMPLE      0x9010
+#define EV_VS_EV_SAMPLE       0x9011
+#define EV_VS_EV_SAMPLE2      0x9012
+
 VT_with_leader::VT_with_leader( const char* nm ) :
     torder_vs(),
     f( nm ),
     name( nm ),
-    flushed( false )
+    msg_status( *this ),
+    gs_status( *this ),
+    flush_status( *this ),
+    msg(0),
+    flushed(false)
 {
   enable();
 }
@@ -48,6 +56,21 @@ VT_with_leader::VT_with_leader( const char* nm ) :
 VT_with_leader::~VT_with_leader()
 {
   disable();
+}
+
+bool VT_with_leader::_msg_status::operator()() const
+{
+  return me.msg == me.n_msg;
+}
+
+bool VT_with_leader::_gs_status::operator()() const
+{
+  return me.vs_group_size() == me.gsize;
+}
+
+bool VT_with_leader::_flush_status::operator()() const
+{
+  return me.flushed;
 }
 
 xmt::uuid_type VT_with_leader::vs_pub_recover()
@@ -62,6 +85,8 @@ void VT_with_leader::vs_resend_from( const xmt::uuid_type&, const stem::addr_typ
 void VT_with_leader::vs_pub_view_update()
 {
   torder_vs::vs_pub_view_update();
+  std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
+  cnd.notify_one();
 }
 
 void VT_with_leader::vs_pub_rec( const stem::Event& )
@@ -72,6 +97,9 @@ void VT_with_leader::vs_pub_rec( const stem::Event& )
 void VT_with_leader::vs_pub_flush()
 {
   flushed = true;
+
+  std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
+  cnd.notify_one();
 }
 
 void VT_with_leader::vs_pub_tord_rec( const stem::Event& ev )
@@ -79,9 +107,12 @@ void VT_with_leader::vs_pub_tord_rec( const stem::Event& ev )
   f << ev.value() << '\n';
 }
 
-#define EV_EXT_EV_SAMPLE      0x9010
-#define EV_VS_EV_SAMPLE       0x9011
-#define EV_VS_EV_SAMPLE2      0x9012
+
+std::tr2::milliseconds VT_with_leader::vs_pub_lock_timeout() const {
+  return std::tr2::milliseconds(1000);
+}
+
+
 
 void VT_with_leader::message( const stem::Event& ev )
 {
@@ -97,7 +128,9 @@ void VT_with_leader::message( const stem::Event& ev )
 
 void VT_with_leader::sync_message( const stem::Event& ev )
 {
-  // f << ev.value() << '\n';
+  std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
+  ++msg;
+  cnd.notify_one();
 }
 
 DEFINE_RESPONSE_TABLE( VT_with_leader )
@@ -107,6 +140,7 @@ END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::leader)
 {
+  const int n_msg = 1000;
   try {
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
@@ -157,9 +191,7 @@ int EXAM_IMPL(vtime_operations::leader)
             if ( f->addr.any.sa_family == PF_INET ) {
               f->addr.inet.sin_port = stem::to_net( static_cast<short>(2009) );
               a1.vs_tcp_point( f->addr.inet );
-            }// else if ( f->addr.any.sa_family == PF_INET6 ) {
-            // refzone.inet6_point( f->addr.inet.sin_addr.s_addr );
-            // }
+            }
           }
         }
 
@@ -168,29 +200,20 @@ int EXAM_IMPL(vtime_operations::leader)
 
         b.wait();
 
-        int i;
-        for ( i = 0; i < 5; ++i ) {
-          if ( a1.vs_group_size() != 3 ) {
-            std::tr2::this_thread::sleep( std::tr2::milliseconds(100) );
-          } else {
-            break;
-          }
-        }
-
-        EXAM_CHECK_ASYNC_F( i < 5, res );
+        EXAM_CHECK_ASYNC_F( a1.wait_group_size( std::tr2::milliseconds(500), 3), res );
+        std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
 
         stem::Event ev( EV_EXT_EV_SAMPLE );
         ev.dest( a1.self_id() );
 
-        for ( int j = 0; j < 100; ++j ) {
+        for ( int j = 0; j < n_msg; ++j ) {
           stringstream v;
           v << j;
           ev.value() = v.str();
           a1.Send( ev );
-          // std::tr2::this_thread::sleep( std::tr2::milliseconds(20) );
         }
 
-        std::tr2::this_thread::sleep( std::tr2::milliseconds(1200) );
+        EXAM_CHECK_ASYNC_F( a1.wait_msg( std::tr2::milliseconds( max( 500, n_msg * 20) ), 3 * n_msg), res );
         b2.wait();
       }
       catch ( ... ) {
@@ -235,37 +258,25 @@ int EXAM_IMPL(vtime_operations::leader)
               if ( f->addr.any.sa_family == PF_INET ) {
                 f->addr.inet.sin_port = stem::to_net( static_cast<short>(2011) );
                 a3.vs_tcp_point( f->addr.inet );
-              }// else if ( f->addr.any.sa_family == PF_INET6 ) {
-              // refzone.inet6_point( f->addr.inet.sin_addr.s_addr );
-              // }
-            }
+              }            }
           }
 
           a3.vs_join( addr, "localhost", 2009 );
 
-          int i;
-          for ( i = 0; i < 5; ++i ) {
-            if ( a3.vs_group_size() != 3 ) {
-              std::tr2::this_thread::sleep( std::tr2::milliseconds(100) );
-            } else {
-              break;
-            }
-          }
-
-          EXAM_CHECK_ASYNC_F( i < 5, res );
+          EXAM_CHECK_ASYNC_F( a3.wait_group_size( std::tr2::milliseconds(500), 3), res );
+          std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
 
           stem::Event ev( EV_EXT_EV_SAMPLE );
           ev.dest( a3.self_id() );
 
-          for ( int j = 300; j < 400; ++j ) {
+          for ( int j = 2 * n_msg; j < 3 * n_msg; ++j ) {
             stringstream v;
             v << j;
             ev.value() = v.str();
             a3.Send( ev );
-            // std::tr2::this_thread::sleep( std::tr2::milliseconds(20) );
           }
 
-          std::tr2::this_thread::sleep( std::tr2::milliseconds(1200) );
+          EXAM_CHECK_ASYNC_F( a3.wait_msg( std::tr2::milliseconds( max( 500, n_msg * 20) ), 3 * n_msg), res );
           b2.wait();
         }
         catch ( ... ) {
@@ -304,49 +315,31 @@ int EXAM_IMPL(vtime_operations::leader)
               if ( f->addr.any.sa_family == PF_INET ) {
                 f->addr.inet.sin_port = stem::to_net( static_cast<short>(2010) );
                 a2.vs_tcp_point( f->addr.inet );
-              }// else if ( f->addr.any.sa_family == PF_INET6 ) {
-              // refzone.inet6_point( f->addr.inet.sin_addr.s_addr );
-              // }
+              }
             }
           }
 
           a2.vs_join( addr, "localhost", 2009 );
 
-          int i;
-          for ( i = 0; i < 5; ++i ) {
-            if ( a2.vs_group_size() != 2 ) {
-              std::tr2::this_thread::sleep( std::tr2::milliseconds(100) );
-            } else {
-              break;
-            }
-          }
-
-          EXAM_CHECK( i < 5 );
+          EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2) );
+          std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
 
           b3.wait();
 
-          for ( i = 0; i < 5; ++i ) {
-            if ( a2.vs_group_size() != 3 ) {
-              std::tr2::this_thread::sleep( std::tr2::milliseconds(100) );
-            } else {
-              break;
-            }
-          }
-
-          EXAM_CHECK( i < 5 );
+          EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3) );
+          std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
 
           stem::Event ev( EV_EXT_EV_SAMPLE );
           ev.dest( a2.self_id() );
 
-          for ( int j = 100; j < 200; ++j ) {
+          for ( int j = n_msg; j < 2 * n_msg; ++j ) {
             stringstream v;
             v << j;
             ev.value() = v.str();
             a2.Send( ev );
-            // std::tr2::this_thread::sleep( std::tr2::milliseconds(20) );
           }
 
-          std::tr2::this_thread::sleep( std::tr2::milliseconds(1200) );
+          EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds( max( 500, n_msg * 20) ), 3 * n_msg) );
           b2.wait();
         }
         catch ( ... ) {
@@ -382,6 +375,20 @@ int EXAM_IMPL(vtime_operations::leader)
 
   EXAM_CHECK( system( "diff -q /tmp/a1 /tmp/a2 && diff -q /tmp/a2 /tmp/a3" ) == 0 );
 
+  {
+    ifstream in( "/tmp/a1" );
+    vector<int> a;
+    int t;
+    while (in >> t) {
+      a.push_back(t);
+    }
+    sort( a.begin(), a.end() );
+    EXAM_CHECK( a.size() == 3 * n_msg ); 
+    for (int i = 0;i < a.size();++i) {
+      EXAM_CHECK( a[i] == i );
+    }
+  }
+
   unlink( "/tmp/a1" );
   unlink( "/tmp/a2" );
   unlink( "/tmp/a3" );
@@ -391,6 +398,8 @@ int EXAM_IMPL(vtime_operations::leader)
 
 int EXAM_IMPL(vtime_operations::leader_fail)
 {
+  const int n_msg1 = 100;
+  const int n_msg2 = 100;
   try {
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
@@ -438,9 +447,7 @@ int EXAM_IMPL(vtime_operations::leader_fail)
             if ( f->addr.any.sa_family == PF_INET ) {
               f->addr.inet.sin_port = stem::to_net( static_cast<short>(2009) );
               a1.vs_tcp_point( f->addr.inet );
-            }// else if ( f->addr.any.sa_family == PF_INET6 ) {
-            // refzone.inet6_point( f->addr.inet.sin_addr.s_addr );
-            // }
+            }
           }
         }
 
@@ -449,16 +456,8 @@ int EXAM_IMPL(vtime_operations::leader_fail)
 
         b.wait();
 
-        int i;
-        for ( i = 0; i < 5; ++i ) {
-          if ( a1.vs_group_size() != 3 ) {
-            std::tr2::this_thread::sleep( std::tr2::milliseconds(100) );
-          } else {
-            break;
-          }
-        }
-
-        EXAM_CHECK_ASYNC_F( i < 5, res );
+        EXAM_CHECK_ASYNC_F( a1.wait_group_size( std::tr2::milliseconds(500), 3), res );
+        std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
 
         b4.wait(); // group size 3
 
@@ -466,21 +465,24 @@ int EXAM_IMPL(vtime_operations::leader_fail)
         stem::Event ev( EV_EXT_EV_SAMPLE );
         ev.dest( a1.self_id() );
 
-        for ( int j = 0; j < 10; ++j ) {
+        for ( int j = 0; j < n_msg1; ++j ) {
           stringstream v;
           v << j;
           ev.value() = v.str();
           a1.Send( ev );
         }
 
+        EXAM_CHECK_ASYNC_F( a1.wait_msg( std::tr2::milliseconds( max( 500, 20 * n_msg1) ), 3 * n_msg1 ), res );
+
         b4.wait(); // group size 3, align with others
-        std::tr2::this_thread::sleep( std::tr2::milliseconds(520) );
+
       }
       catch ( ... ) {
         EXAM_ERROR_ASYNC_F( "unkown exception", res );
       }
 
       // std::tr2::this_thread::sleep( std::tr2::milliseconds(120) );
+
       b2.wait(); // should be here: after dtor of a1
 
       exit( res );
@@ -519,51 +521,43 @@ int EXAM_IMPL(vtime_operations::leader_fail)
               if ( f->addr.any.sa_family == PF_INET ) {
                 f->addr.inet.sin_port = stem::to_net( static_cast<short>(2011) );
                 a3.vs_tcp_point( f->addr.inet );
-              }// else if ( f->addr.any.sa_family == PF_INET6 ) {
-              // refzone.inet6_point( f->addr.inet.sin_addr.s_addr );
-              // }
+              }
             }
           }
 
           a3.vs_join( addr, "localhost", 2009 );
 
-          int i;
-          for ( i = 0; i < 5; ++i ) {
-            if ( a3.vs_group_size() != 3 ) {
-              std::tr2::this_thread::sleep( std::tr2::milliseconds(100) );
-            } else {
-              break;
-            }
-          }
-
-          EXAM_CHECK_ASYNC_F( i < 5, res );
+          EXAM_CHECK_ASYNC_F( a3.wait_group_size( std::tr2::milliseconds(500), 3), res );
+          std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
 
           b4.wait(); // group size 3
 
           stem::Event ev( EV_EXT_EV_SAMPLE );
           ev.dest( a3.self_id() );
 
-          for ( int j = 300; j < 310; ++j ) {
+          for ( int j = 2 * n_msg1; j < 3 * n_msg1; ++j ) {
             stringstream v;
             v << j;
             ev.value() = v.str();
             a3.Send( ev );
-            // std::tr2::this_thread::sleep( std::tr2::milliseconds(20) );
           }
 
+          EXAM_CHECK_ASYNC_F( a3.wait_msg( std::tr2::milliseconds( max( 500, 20 * n_msg1) ), 3 * n_msg1 ), res );
+
           b4.wait(); // group size 3, first 10 events with a1 group leader
+          std::tr2::this_thread::sleep( std::tr2::milliseconds(120) );
+
 
           // a1 go away, leader failure should be detected and new leader
           // should be elected
-          for ( int j = 310; j < 400; ++j ) {
+          for ( int j = 3 * n_msg1; j < 3 * n_msg1 + n_msg2; ++j ) {
             stringstream v;
             v << j;
             ev.value() = v.str();
             a3.Send( ev );
-            // std::tr2::this_thread::sleep( std::tr2::milliseconds(20) );
           }
 
-          std::tr2::this_thread::sleep( std::tr2::milliseconds(520) );
+          EXAM_CHECK_ASYNC_F( a3.wait_msg( std::tr2::milliseconds( max( 500, 20 * n_msg2 ) ), 3 * n_msg1 + 2 * n_msg2), res );
           b2.wait();
         }
         catch ( ... ) {
@@ -573,6 +567,7 @@ int EXAM_IMPL(vtime_operations::leader_fail)
         exit( res );
       }
       catch ( std::tr2::fork_in_parent& child2 ) {
+
         std::tr2::this_thread::block_signal( SIGINT );
         std::tr2::this_thread::block_signal( SIGQUIT );
         std::tr2::this_thread::block_signal( SIGILL );
@@ -599,67 +594,53 @@ int EXAM_IMPL(vtime_operations::leader_fail)
               if ( f->addr.any.sa_family == PF_INET ) {
                 f->addr.inet.sin_port = stem::to_net( static_cast<short>(2010) );
                 a2.vs_tcp_point( f->addr.inet );
-              }// else if ( f->addr.any.sa_family == PF_INET6 ) {
-              // refzone.inet6_point( f->addr.inet.sin_addr.s_addr );
-              // }
+              }
             }
           }
 
           a2.vs_join( addr, "localhost", 2009 );
 
-          int i;
-          for ( i = 0; i < 5; ++i ) {
-            if ( a2.vs_group_size() != 2 ) {
-              std::tr2::this_thread::sleep( std::tr2::milliseconds(100) );
-            } else {
-              break;
-            }
-          }
-
-          EXAM_CHECK( i < 5 );
+          EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2) );
+          std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
 
           b3.wait();
 
-          for ( i = 0; i < 5; ++i ) {
-            if ( a2.vs_group_size() != 3 ) {
-              std::tr2::this_thread::sleep( std::tr2::milliseconds(100) );
-            } else {
-              break;
-            }
-          }
-
-          EXAM_CHECK( i < 5 );
+          EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3) );
+          std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
 
           b4.wait(); // group size 3
 
           stem::Event ev( EV_EXT_EV_SAMPLE );
           ev.dest( a2.self_id() );
 
-          for ( int j = 100; j < 110; ++j ) {
+          for ( int j = n_msg1; j < 2 * n_msg1; ++j ) {
             stringstream v;
             v << j;
             ev.value() = v.str();
             a2.Send( ev );
-            // std::tr2::this_thread::sleep( std::tr2::milliseconds(20) );
           }
 
+          EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds( max( 500, 20 * n_msg1) ), 3 * n_msg1 ) );
+
           b4.wait(); // group size 3, first 10 events with a1 group leader
+          std::tr2::this_thread::sleep( std::tr2::milliseconds(120) );
+
 
           // a1 go away, leader failure should be detected and new leader
           // should be elected
-          for ( int j = 110; j < 200; ++j ) {
+          for ( int j = 3 * n_msg1 + n_msg2; j < 3 * n_msg1 + 2 * n_msg2; ++j ) {
             stringstream v;
             v << j;
             ev.value() = v.str();
             a2.Send( ev );
-            // std::tr2::this_thread::sleep( std::tr2::milliseconds(20) );
           }
 
-          std::tr2::this_thread::sleep( std::tr2::milliseconds(520) );
+          EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds( max( 500, 20 * n_msg2 ) ), 3 * n_msg1 + 2 * n_msg2) );
+
           b2.wait();
         }
         catch ( ... ) {
-          EXAM_ERROR( "unknown exception" );
+          EXAM_ERROR( "unkown exception" );
         }
 
         int stat = -1;
@@ -780,8 +761,7 @@ void TO_object::message2( const stem::Event& )
 
 int EXAM_IMPL(vtime_operations::lock_and_torder)
 {
-  throw exam::skip_exception(); // implementation changed,
-                                // this test can't pass
+  throw exam::skip_exception();
 
   TO_object a;
   TO_object b;
