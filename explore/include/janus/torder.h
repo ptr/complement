@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/24 21:27:50 ptr>
+// -*- C++ -*- Time-stamp: <10/06/28 18:31:49 ptr>
 
 /*
  *
@@ -54,6 +54,9 @@ class torder_vs :
     virtual void vs_pub_tord_rec( const stem::Event& ) = 0;
 
   private:
+    void vs_process_torder( const stem::Event_base<vs_event_total_order>& );
+    void vs_torder_conf( const stem::Event_base<vs_event_total_order::id_type>& );
+
     void vs_leader( const stem::EventVoid& );
     void next_leader_election();
     void check_leader();
@@ -73,8 +76,6 @@ class torder_vs :
     orig_order_cnt_type orig_order_container_;
     stem::addr_type leader_;
     bool is_leader_;
-
-    void vs_process_torder( const stem::Event_base<vs_event_total_order>& );
 
     DECLARE_RESPONSE_TABLE( torder_vs, basic_vs );
 };

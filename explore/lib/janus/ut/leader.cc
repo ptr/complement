@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/24 22:12:27 ptr>
+// -*- C++ -*- Time-stamp: <10/06/28 19:12:53 ptr>
 
 /*
  *
@@ -97,7 +97,7 @@ void VT_with_leader::message( const stem::Event& ev )
 
 void VT_with_leader::sync_message( const stem::Event& ev )
 {
-  f << ev.value() << '\n';
+  // f << ev.value() << '\n';
 }
 
 DEFINE_RESPONSE_TABLE( VT_with_leader )

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/24 21:34:31 ptr>
+// -*- C++ -*- Time-stamp: <10/06/28 19:13:22 ptr>
 
 /*
  *
@@ -38,7 +38,7 @@ torder_vs::torder_vs( const char* info ) :
 
 void torder_vs::check_leader()
 {
-  if ( !check_remotes() && vt.vt.find( leader_ ) == vt.vt.end() ) {
+  if ( !check_remotes() || (vt.vt.find( leader_ ) == vt.vt.end()) ) {
     next_leader_election();
   }
 }
@@ -70,10 +70,10 @@ void torder_vs::vs_pub_join()
 
 void torder_vs::vs_pub_view_update()
 {
-  misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << self_id() << endl;
+  // misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << self_id() << endl;
   if ( is_leader_ ) {
     if ( vs_group_size() > 1 ) {
-      misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << self_id() << endl;
+      // misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << self_id() << endl;
       EventVoid ev( VS_LEADER );
       send_to_vsg( ev );
     }
@@ -111,41 +111,67 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
 
   check_leader();
 
-  // confirmation event
-  if ( ev.value().id == xmt::nil_uuid ) {
-    misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << self_id() << ' ' << ev.value().ev.value() << endl;
-    // expected VS_ORDER_CONF and non-empty ev.value().conform here 
-    for ( std::list<vs_event_total_order::id_type>::const_iterator i = ev.value().conform.begin();
-          i != ev.value().conform.end(); ++i ) {
-      conf_cnt_type::iterator k = conform_container_.find( *i );
-      if ( k != conform_container_.end() ) {
-        misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << self_id() << ' ' << k->second.value() << endl;
-        k->second.setf( stem::__Event_Base::vs );
-        this->vs_pub_tord_rec( k->second );
-        torder_vs::sync_call( k->second );
-        conform_container_.erase( k );
-        orig_order_cnt_type::iterator j = find( orig_order_container_.begin(), orig_order_container_.end(), *i );
-        if ( j != orig_order_container_.end() ) {
-          orig_order_container_.erase( j );
-        }
-      }
-    }
+  if ( is_leader() ) { // I'm leader
+    // send conformation first
+    stem::Event_base<vs_event_total_order::id_type> cnf( VS_ORDER_CONF );
+
+    cnf.value() = ev.value().id; // xmt::nil_uuid;
+    send_to_vsg( cnf );
+
+    // process
+    ev.value().ev.setf( stem::__Event_Base::vs );
+    this->vs_pub_tord_rec( ev.value().ev );
+    torder_vs::sync_call( ev.value().ev );
   } else {
-    if ( ev.value().conform.empty() ) {
-      misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << self_id() << ' ' << ev.value().ev.value() << endl;
+    if ( !orig_order_container_.empty() ) {
+      if ( *orig_order_container_.begin() == ev.value().id ) {
+        orig_order_container_.pop_front();
+        ev.value().ev.setf( stem::__Event_Base::vs );
+        this->vs_pub_tord_rec( ev.value().ev );
+        torder_vs::sync_call( ev.value().ev );
+
+        orig_order_cnt_type::iterator i = orig_order_container_.begin();
+        for ( ; i != orig_order_container_.end(); ++i ) {
+          conf_cnt_type::iterator k = conform_container_.find( *i );
+          if ( k != conform_container_.end() ) {
+            k->second.setf( stem::__Event_Base::vs );
+            this->vs_pub_tord_rec( k->second );
+            torder_vs::sync_call( k->second );
+            conform_container_.erase( k );
+          } else {
+            break;
+          }
+        }
+        if ( i != orig_order_container_.begin() ) {
+          orig_order_container_.erase( orig_order_container_.begin(), i );
+        }
+      } else {
+        conform_container_[ev.value().id] = ev.value().ev;
+      }
+    } else {
       conform_container_[ev.value().id] = ev.value().ev;
-      orig_order_container_.push_back( ev.value().id );
     }
+  }
+}
 
-    if ( is_leader() ) { 
-      misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << self_id() << ' ' << ev.value().ev.value() << endl;
-      stem::Event_base<vs_event_total_order> cnf( VS_EVENT_TORDER );
+void torder_vs::vs_torder_conf( const stem::Event_base<vs_event_total_order::id_type>& ev )
+{
+  orig_order_container_.push_back( ev.value() );
 
-      cnf.value().ev.code( VS_ORDER_CONF );
-      cnf.value().id = xmt::nil_uuid;
-      cnf.value().conform.push_back( ev.value().id );
-      vs( cnf );
+  orig_order_cnt_type::iterator i = orig_order_container_.begin();
+  for ( ; i != orig_order_container_.end(); ++i ) {
+    conf_cnt_type::iterator k = conform_container_.find( *i );
+    if ( k != conform_container_.end() ) {
+      k->second.setf( stem::__Event_Base::vs );
+      this->vs_pub_tord_rec( k->second );
+      torder_vs::sync_call( k->second );
+      conform_container_.erase( k );
+    } else {
+      break;
     }
+  }
+  if ( i != orig_order_container_.begin() ) {
+    orig_order_container_.erase( orig_order_container_.begin(), i );
   }
 }
 
@@ -178,17 +204,32 @@ void torder_vs::next_leader_election()
     is_leader_ = true;
     leader_ = sid;
     vs_send_flush();
-    
-    stem::Event_base<vs_event_total_order> cnf( VS_EVENT_TORDER );
-    cnf.value().ev.code( VS_ORDER_CONF );
-    cnf.value().id = xmt::nil_uuid;
-    copy(orig_order_container_.begin(), orig_order_container_.end(), back_inserter(cnf.value().conform) );
-    vs( cnf );
+
+    stem::Event_base<vs_event_total_order::id_type> cnf( VS_ORDER_CONF );
+
+    conf_cnt_type::iterator k;
+
+    for ( orig_order_cnt_type::iterator j = orig_order_container_.begin(); j != orig_order_container_.end(); ) {
+      k = conform_container_.find( *j );
+      if ( k != conform_container_.end() ) {
+        // send conformation first
+        cnf.value() = *j;
+        send_to_vsg( cnf );
+
+        // process
+        k->second.setf( stem::__Event_Base::vs );
+        this->vs_pub_tord_rec( k->second );
+        torder_vs::sync_call( k->second );
+        conform_container_.erase( k );
+      }
+      orig_order_container_.erase( j++ );
+    }
   }
 }
 
 DEFINE_RESPONSE_TABLE( torder_vs )
   EV_Event_base_T_( ST_NULL, VS_EVENT_TORDER, vs_process_torder, vs_event_total_order )
+  EV_Event_base_T_( ST_NULL, VS_ORDER_CONF, vs_torder_conf, vs_event_total_order::id_type )
   EV_Event_base_T_( ST_NULL, VS_LEADER, vs_leader, void )
 END_RESPONSE_TABLE
 

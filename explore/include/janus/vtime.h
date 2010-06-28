@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/02/16 16:27:30 ptr>
+// -*- C++ -*- Time-stamp: <10/06/28 19:17:19 ptr>
 
 /*
  *
- * Copyright (c) 2008-2009
+ * Copyright (c) 2008-2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -226,7 +226,6 @@ struct vs_event_total_order :
       { }
     vs_event_total_order( const vs_event_total_order& e ) :
         id( e.id ),
-        conform( e.conform ),
         ev( e.ev )
       { }
 
@@ -236,7 +235,6 @@ struct vs_event_total_order :
     void swap( vs_event_total_order& );
 
     id_type id;
-    std::list<id_type> conform;
     stem::Event ev;
 };
 
