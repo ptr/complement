@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/04 19:04:27 ptr>
+// -*- C++ -*- Time-stamp: <10/06/29 12:10:36 ptr>
 
 /*
  *
@@ -261,6 +261,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3)
 
 int EXAM_IMPL(vtime_operations::VT_one_group_core3_sim)
 {
+  VTM_one_group_handler a0;
+
   for (int i = 0;i < 1000;++i) {
   VTM_one_group_handler a1;
   VTM_one_group_handler a2;
@@ -297,6 +299,9 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3_sim)
   EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3 ) );
   EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(500), 3 ) );  
   if ( EXAM_RESULT ) {
+    stringstream s;
+    s << "on iteration " << i;
+    EXAM_ERROR( s.str().c_str() );
     break;
   }
   }
