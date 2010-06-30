@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/29 12:10:36 ptr>
+// -*- C++ -*- Time-stamp: <10/06/29 18:35:58 ptr>
 
 /*
  *
@@ -192,7 +192,7 @@ bool VTM_one_group_handler::_msg_status::operator()() const
 
 bool VTM_one_group_handler::_gs_status::operator()() const
 {
-  return me.vs_group_size() == me.gsize;
+  return /* me.vs_group_size() */ me.vt().vt.size() == me.gsize;
 }
 
 void VTM_one_group_handler::message( const stem::Event& ev )
@@ -268,10 +268,10 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3_sim)
   VTM_one_group_handler a2;
   VTM_one_group_handler a3;
 
-  misc::use_syslog<LOG_INFO,LOG_USER>() << "-----------------" << endl;
-  misc::use_syslog<LOG_INFO,LOG_USER>() << "a1 = " << a1.self_id() << endl;
-  misc::use_syslog<LOG_INFO,LOG_USER>() << "a2 = " << a2.self_id() << endl;
-  misc::use_syslog<LOG_INFO,LOG_USER>() << "a3 = " << a3.self_id() << endl;
+  // misc::use_syslog<LOG_INFO,LOG_USER>() << "-----------------" << endl;
+  // misc::use_syslog<LOG_INFO,LOG_USER>() << "a1 = " << a1.self_id() << endl;
+  // misc::use_syslog<LOG_INFO,LOG_USER>() << "a2 = " << a2.self_id() << endl;
+  // misc::use_syslog<LOG_INFO,LOG_USER>() << "a3 = " << a3.self_id() << endl;
 
   a1.vs_join( stem::badaddr );
 

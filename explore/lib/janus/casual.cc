@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/25 21:27:22 ptr>
+// -*- C++ -*- Time-stamp: <10/06/29 16:37:22 ptr>
 
 /*
  *
@@ -263,7 +263,7 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
   }
 
   ev.value().ev.src( ev.src() );
-  ev.value().ev.dest( ev.dest() );
+  ev.value().ev.dest( sid );
 
   if ( (code != VS_UPDATE_VIEW) && (code != VS_LOCK_VIEW) ) {
     this->vs_pub_rec( ev.value().ev );
@@ -547,7 +547,8 @@ void basic_vs::vs_pub_join()
 }
 
 basic_vs::size_type basic_vs::vs_group_size() const
-{  
+{
+  lock_guard<recursive_mutex> lk( _theHistory_lock );
   return vt.vt.size();
 }
 
