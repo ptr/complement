@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/21 22:03:35 ptr>
+// -*- C++ -*- Time-stamp: <10/06/30 18:53:23 ptr>
 
 /*
  *
@@ -35,6 +35,8 @@ const addr_type& badaddr = xmt::nil_uuid;
 const code_type badcode  = 0xffffffff;
 
 std::string EvManager::inv_key_str( "invalid key" );
+
+static const string addr_unknown("address unknown");
 
 __FIT_DECLSPEC EvManager::EvManager() :
     not_empty( *this ),
@@ -260,10 +262,8 @@ void EvManager::_Dispatch_sub( nest_ref p )
   } while ( me.not_finished() );
 }
 
-__FIT_DECLSPEC
-void EvManager::Subscribe( const addr_type& id, EventHandler* object, int nice )
+void EvManager::unsafe_Subscribe( const addr_type& id, EventHandler* object, int nice )
 {
-  lock_guard<rw_mutex> lk( _lock_heap );
 #ifdef __FIT_STEM_TRACE
   try {
     lock_guard<mutex> lk(_lock_tr);
@@ -286,73 +286,10 @@ void EvManager::Subscribe( const addr_type& id, EventHandler* object, int nice )
   heap[id].push( make_pair( nice, make_pair(object->flags(),object)) );
 }
 
-__FIT_DECLSPEC
-void EvManager::Subscribe( const addr_type& id, EventHandler* object, const std::string& info, int nice )
+void EvManager::unsafe_Unsubscribe( const addr_type& id, EventHandler* obj )
 {
-  {
-    lock_guard<rw_mutex> lk( _lock_heap );
-#ifdef __FIT_STEM_TRACE
-    try {
-      lock_guard<mutex> lk(_lock_tr);
-      if ( _trs != 0 && _trs->good() && (_trflags & tracesubscr) ) {
-        ios_base::fmtflags f = _trs->flags( ios_base::showbase );
-        *_trs << "EvManager subscribe " << id << " nice " << nice << ' '
-              << object << " ("
-              << xmt::demangle( object->classtype().name() ) << "), "
-              << info << endl;
-#ifdef STLPORT
-        _trs->flags( f );
-#else
-        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
-#endif
-      }
-    }
-    catch ( ... ) {
-    }
-#endif // __FIT_STEM_TRACE
-
-    heap[id].push( make_pair( nice, make_pair(object->flags(),object)) );
-  }
-
-  annotate( id, info );
-}
-
-__FIT_DECLSPEC
-void EvManager::Subscribe( const addr_type& id, EventHandler* object, const char* info, int nice )
-{
-  {
-    lock_guard<rw_mutex> lk( _lock_heap );
-#ifdef __FIT_STEM_TRACE
-    try {
-      lock_guard<mutex> lk(_lock_tr);
-      if ( _trs != 0 && _trs->good() && (_trflags & tracesubscr) ) {
-        ios_base::fmtflags f = _trs->flags( ios_base::showbase );
-        *_trs << "EvManager subscribe " << id << " nice " << nice << ' '
-              << object << " ("
-              << xmt::demangle( object->classtype().name() ) << "), "
-              << info << endl;
-#ifdef STLPORT
-        _trs->flags( f );
-#else
-        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
-#endif
-      }
-    }
-    catch ( ... ) {
-    }
-#endif // __FIT_STEM_TRACE
-
-    heap[id].push( make_pair( nice, make_pair(object->flags(),object)) );
-  }
-  
-  annotate( id, info );
-}
-
-__FIT_DECLSPEC
-void EvManager::Unsubscribe( const addr_type& id, EventHandler* obj )
-{
-  {
-    lock_guard<rw_mutex> _x1( _lock_heap );
+  // {
+  //   lock_guard<rw_mutex> _x1( _lock_heap );
 
 #ifdef __FIT_STEM_TRACE
     try {
@@ -409,16 +346,16 @@ void EvManager::Unsubscribe( const addr_type& id, EventHandler* obj )
         heap.erase( i );
       }
     }
-  }
+  // }
 
-  {
-    std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
+  // {
+  //   std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
 
     list<info_heap_type::key_type> trash;
     for ( info_heap_type::iterator i = iheap.begin(); i != iheap.end(); ++i ) {
       for ( addr_collection_type::iterator j = i->second.begin(); j != i->second.end(); ++j ) {
         if ( *j == id ) {
-          basic_read_lock<rw_mutex> _x1( _lock_heap );
+          // basic_read_lock<rw_mutex> _x1( _lock_heap );
 
           if ( heap.find( id ) == heap.end() ) { // all objects with this addr removed
             i->second.erase( j );
@@ -434,7 +371,7 @@ void EvManager::Unsubscribe( const addr_type& id, EventHandler* obj )
     for ( list<info_heap_type::key_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
       iheap.erase( *i );
     }
-  }
+  // }
 }
 
 void EvManager::settrf( unsigned f )
@@ -514,7 +451,7 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
         // any object can't be removed from heap within lk scope
         local_heap_type::iterator i = heap.find( e.dest() );
         if ( i == heap.end() ) {
-          throw invalid_argument( string("address unknown") );
+          throw invalid_argument( addr_unknown );
         }
         if ( i->second.empty() ) { // object hasn't StEM address 
           return; // Unsubscribe in progress?
@@ -759,7 +696,7 @@ void EvManager::Send( const Event& e )
         // any object can't be removed from heap within lk scope
         local_heap_type::iterator i = heap.find( e.dest() );
         if ( i == heap.end() ) { // destination not found
-          throw invalid_argument( string("address unknown") );
+          throw invalid_argument( addr_unknown );
         }
         if ( i->second.empty() ) { // object hasn't StEM address 
           return; // Unsubscribe in progress?

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/21 21:50:45 ptr>
+// -*- C++ -*- Time-stamp: <10/06/30 18:51:15 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2010
@@ -117,10 +117,97 @@ class EvManager
     __FIT_DECLSPEC EvManager();
     __FIT_DECLSPEC ~EvManager();
 
-    __FIT_DECLSPEC void Subscribe( const addr_type& id, EventHandler* object, int nice = 0 );
-    __FIT_DECLSPEC void Subscribe( const addr_type& id, EventHandler* object, const std::string& info, int nice = 0 );
-    __FIT_DECLSPEC void Subscribe( const addr_type& id, EventHandler* object, const char* info, int nice = 0 );
-    __FIT_DECLSPEC void Unsubscribe( const addr_type& id, EventHandler* );
+    void Subscribe( const addr_type& id, EventHandler* object, int nice = 0 )
+      {
+        std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
+        unsafe_Subscribe( id, object, nice );
+      }
+
+    void Subscribe( const addr_type& id, EventHandler* object, const std::string& info, int nice = 0 )
+      {
+        std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
+        std::tr2::lock_guard<std::tr2::mutex> lk_( _lock_iheap );
+        unsafe_Subscribe( id, object, nice );
+        unsafe_annotate( id, info );
+      }
+
+    void Subscribe( const addr_type& id, EventHandler* object, const char* info, int nice = 0 )
+      {
+        std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
+        std::tr2::lock_guard<std::tr2::mutex> lk_( _lock_iheap );
+        unsafe_Subscribe( id, object, nice );
+
+        if ( info == 0 || info[0] == 0 ) {
+          return;
+        }
+        unsafe_annotate( id, std::string( info ) );
+      }
+
+    template <class Iterator>
+    void Subscribe( Iterator first, Iterator last, EventHandler* obj, int nice = 0 )
+      {
+        std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
+
+        while ( first != last ) {
+          unsafe_Subscribe( *first, obj, nice );
+          ++first;
+        }
+      }
+
+    template <class Iterator>
+    void Subscribe( Iterator first, Iterator last, EventHandler* obj, const std::string& info, int nice = 0 )
+      {
+        std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
+        std::tr2::lock_guard<std::tr2::mutex> lk_( _lock_iheap );
+
+        while ( first != last ) {
+          unsafe_Subscribe( *first, obj, nice );
+          unsafe_annotate( *first, info );
+          ++first;
+        }
+      }
+
+    template <class Iterator>
+    void Subscribe( Iterator first, Iterator last, EventHandler* obj, const char* info, int nice = 0 )
+      {
+        bool ann = (info == 0) || (info[0] == 0)? false : true;
+        std::string _info;
+        
+        if ( ann ) {
+          _info = info;
+        }
+
+        std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
+        std::tr2::lock_guard<std::tr2::mutex> lk_( _lock_iheap );
+
+        while ( first != last ) {
+          unsafe_Subscribe( *first, obj, nice );
+          if ( ann ) {
+            unsafe_annotate( *first, _info );
+          }
+          ++first;
+        }
+      }
+
+    void Unsubscribe( const addr_type& id, EventHandler* obj )
+      {
+        std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
+        std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
+
+        unsafe_Unsubscribe( id, obj );
+      }
+
+    template <class Iterator>
+    void Unsubscribe( Iterator first, Iterator last, EventHandler* obj )
+      {
+        std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
+        std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
+
+        while ( first != last ) {
+          unsafe_Unsubscribe( *first, obj );
+          ++first;
+        }
+      }
 
     bool is_avail( const addr_type& id ) const
       {
@@ -164,6 +251,9 @@ class EvManager
     void sync_call( EventHandler&, const Event& e );
 
   protected:
+    void unsafe_Subscribe( const addr_type& id, EventHandler* object, int nice = 0 );
+    void unsafe_Unsubscribe( const addr_type& id, EventHandler* );
+
     bool unsafe_is_avail( const addr_type& id ) const
       { return heap.find( id ) != heap.end(); }
 

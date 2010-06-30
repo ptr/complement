@@ -1,3 +1,10 @@
+2010-06-30  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* EvManager.h, EvManager.cc, _EventHandler.cc:
+	  don't lock object for enable();
+	
+	* libstem: revision 5.4.7.
+
 2010-05-25  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* Event.h: Event_base specialization

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/21 22:06:47 ptr>
+// -*- C++ -*- Time-stamp: <10/06/30 18:48:39 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2010
@@ -312,30 +312,20 @@ void EventHandler::solitary()
 {
   lock_guard<recursive_mutex> lk( _theHistory_lock );
 
-  for ( addr_container_type::iterator i = _ids.begin(); i != _ids.end(); ) {
-    _mgr->Unsubscribe( *i, this );
-    _ids.erase( i++ );
-  }
-
+  _mgr->Unsubscribe( _ids.begin(), _ids.end(), this );
   theHistory.clear();
 }
 
 void EventHandler::enable()
 {
-  lock_guard<recursive_mutex> lk( _theHistory_lock );
-
-  for ( addr_container_type::iterator i = _ids.begin(); i != _ids.end(); ++i ) {
-    _mgr->Subscribe( *i, this, _nice );
-  }
+  // lock_guard<recursive_mutex> lk( _theHistory_lock );
+  _mgr->Subscribe( _ids.begin(), _ids.end(), this, _nice );
 }
 
 void EventHandler::disable()
 {
   lock_guard<recursive_mutex> lk( _theHistory_lock );
-
-  for ( addr_container_type::iterator i = _ids.begin(); i != _ids.end(); ++i ) {
-    _mgr->Unsubscribe( *i, this );
-  }
+  _mgr->Unsubscribe( _ids.begin(), _ids.end(), this );
 }
 
 int EventHandler::flags() const
