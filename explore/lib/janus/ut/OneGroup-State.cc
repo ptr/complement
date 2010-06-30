@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/02/04 19:04:49 ptr>
+// -*- C++ -*- Time-stamp: <10/06/30 15:20:45 ptr>
 
 /*
  *
- * Copyright (c) 2009
+ * Copyright (c) 2009-2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -160,7 +160,7 @@ bool VTM_one_group_advanced_handler::_msg_status::operator()() const
 
 bool VTM_one_group_advanced_handler::_gs_status::operator()() const
 {
-  return me.vs_group_size() == me.gsize;
+  return /* me.vs_group_size() */ me.vt().vt.size() == me.gsize;
 }
 
 xmt::uuid_type VTM_one_group_advanced_handler::vs_pub_recover()

@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/06/24 22:08:06 ptr>
+// -*- C++ -*- Time-stamp: <10/06/30 15:20:35 ptr>
 
 /*
  *
- * Copyright (c) 2009
+ * Copyright (c) 2009-2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -202,7 +202,7 @@ bool VTM_one_group_recover::_msg_status::operator()() const
 
 bool VTM_one_group_recover::_gs_status::operator()() const
 {
-  return me.vs_group_size() == me.gsize;
+  return /* me.vs_group_size() */ me.vt().vt.size() == me.gsize;
 }
 
 bool VTM_one_group_recover::_flush_status::operator()() const

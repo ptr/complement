@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/06/29 18:35:58 ptr>
+// -*- C++ -*- Time-stamp: <10/06/30 15:19:18 ptr>
 
 /*
  *
- * Copyright (c) 2009
+ * Copyright (c) 2009-2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
