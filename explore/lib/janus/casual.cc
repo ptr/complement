@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/01 00:33:21 ptr>
+// -*- C++ -*- Time-stamp: <10/07/01 11:43:13 ptr>
 
 /*
  *
@@ -904,10 +904,12 @@ void basic_vs::process_out_of_order()
         if ( (i->first == k->src()) && (i->first != sid) ) {
           if ( (i->second + 1) != tmp[k->src()] ) {
             ++k;
+            _lock_vt.unlock();
             goto try_next;
           }
         } else if ( i->second < tmp[i->first] ) {
           ++k;
+          _lock_vt.unlock();
           goto try_next;
         }
       }
