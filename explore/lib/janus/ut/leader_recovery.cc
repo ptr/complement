@@ -260,9 +260,9 @@ END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::leader_recovery)
 {
-  const int n_msg1 = 100;
-  const int n_msg2 = 100;
-  const int n_msg3 = 100;
+  const int n_msg1 = 1000;
+  const int n_msg2 = 1000;
+  const int n_msg3 = 1000;
 
   try {
     xmt::shm_alloc<0> seg;

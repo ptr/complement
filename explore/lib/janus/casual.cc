@@ -936,19 +936,6 @@ void basic_vs::process_out_of_order()
   } while ( delayed_process );
 }
 
-void basic_vs::replay( const stem::Event& inc_ev )
-{
-  // here must be: vt[self_id()] <= _vt;
-  // another assume: replay called in correct order
-  // (vs_pub_rec produce correct order)
-#if 0
-  if ( inc_ev.code() != VS_FLUSH_VIEW ) {
-    basic_vs::sync_call( inc_ev );
-  }
-#endif
-}
-
-
 void basic_vs::add_lock_safety()
 {
   stem::addr_type sid = self_id();

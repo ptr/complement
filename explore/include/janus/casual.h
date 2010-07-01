@@ -139,8 +139,6 @@ class basic_vs :
     virtual void vs_pub_join();
     virtual void pub_access_point();
 
-    void replay( const stem::Event& );
-
   private:
     void repeat_request( const stem::Event& );
 
