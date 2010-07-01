@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/30 18:53:23 ptr>
+// -*- C++ -*- Time-stamp: <10/07/01 09:09:09 ptr>
 
 /*
  *
@@ -37,6 +37,7 @@ const code_type badcode  = 0xffffffff;
 std::string EvManager::inv_key_str( "invalid key" );
 
 static const string addr_unknown("address unknown");
+static const string no_catcher( "no catcher for event" );
 
 __FIT_DECLSPEC EvManager::EvManager() :
     not_empty( *this ),
@@ -102,6 +103,9 @@ void EvManager::_Dispatch( EvManager* p )
     threads.push_back( new thread(_Dispatch_sub, refs.back() ) );
   }
 
+  vector<int> nest_sz( refs.size() );
+  vector<int>::iterator m, k;
+
   while ( me.not_finished() ) {
     {
       unique_lock<mutex> lk( lq );
@@ -139,7 +143,9 @@ void EvManager::_Dispatch( EvManager* p )
         cycle ('while' above) requied: search for next event
         from first nest.
        */
-      for ( nests_type::iterator i = me.nests.begin(); i != me.nests.end() && !out_ev_queue.empty(); ++i ) {
+      fill( nest_sz.begin(), nest_sz.end(), 0 );
+      m = nest_sz.begin();
+      for ( nests_type::iterator i = me.nests.begin(); i != me.nests.end() && !out_ev_queue.empty(); ++i, ++m ) {
         lock_guard<mutex> lk( i->lock );
         for ( subqueue_type::const_iterator j = i->q.begin(); j != i->q.end(); ++j ) {
           if ( j->dest() == out_ev_queue.front().dest() ) {
@@ -149,16 +155,21 @@ void EvManager::_Dispatch( EvManager* p )
             goto next_event;
           }
         }
+        *m = i->q.size();
       }
 
-      for ( nests_type::iterator i = me.nests.begin(); i != me.nests.end() && !out_ev_queue.empty(); ++i ) {
-        lock_guard<mutex> lk( i->lock );
-        if ( i->q.empty() ) {
+      m = min_element( nest_sz.begin(), nest_sz.end() );
+
+      k = nest_sz.begin();
+
+      for ( nests_type::iterator i = me.nests.begin(); i != me.nests.end() && !out_ev_queue.empty(); ++i, ++k ) {
+        if ( m == k ) {
+          lock_guard<mutex> lk( i->lock );
           i->q.push_back( ev );
           swap( i->q.back(), out_ev_queue.front() );
           out_ev_queue.pop_front();
-          i->cnd.notify_one();
-          goto next_event;
+          i->cnd.notify_one();        
+          break;
         }
       }
 
@@ -175,6 +186,7 @@ void EvManager::_Dispatch( EvManager* p )
   for ( nests_type::iterator i = me.nests.begin(); i != me.nests.end(); ++i ) {
     lock_guard<mutex> lk(i->lock);
     i->stop = true;
+    i->q.clear(); // erase all unprocessed
     i->cnd.notify_one();
   }
 
@@ -517,7 +529,7 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
       }
 #endif // __FIT_STEM_TRACE
       if ( !object->Dispatch( e ) ) { // call dispatcher
-        throw std::logic_error( "no catcher for event" );
+        throw std::logic_error( no_catcher );
       }
     }
     catch ( std::logic_error& err ) {
@@ -623,7 +635,7 @@ void EvManager::sync_call( EventHandler& object, const Event& e )
       }
 #endif // __FIT_STEM_TRACE
       if ( !object.Dispatch( e ) ) { // call dispatcher
-        throw std::logic_error( "no catcher for event" );
+        throw std::logic_error( no_catcher );
       }
     }
     catch ( std::logic_error& err ) {
@@ -732,7 +744,7 @@ void EvManager::Send( const Event& e )
       }
 #endif // __FIT_STEM_TRACE
       if ( !object->Dispatch( e ) ) { // call dispatcher
-        throw std::logic_error( "no catcher for event" );
+        throw std::logic_error( no_catcher );
       }
     }
     catch ( std::logic_error& err ) {

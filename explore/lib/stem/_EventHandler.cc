@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/30 18:48:39 ptr>
+// -*- C++ -*- Time-stamp: <10/07/01 09:44:47 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2010
@@ -311,7 +311,6 @@ addr_type EventHandler::get_default()
 void EventHandler::solitary()
 {
   lock_guard<recursive_mutex> lk( _theHistory_lock );
-
   _mgr->Unsubscribe( _ids.begin(), _ids.end(), this );
   theHistory.clear();
 }
