@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/01 17:59:20 ptr>
+// -*- C++ -*- Time-stamp: <10/07/01 15:51:31 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -131,6 +131,45 @@ int EXAM_IMPL(mt_test_wg21::mutex_test)
   rlk.lock(); // shouldn't block here
   rlk.unlock();
   rlk.unlock();
+
+  return EXAM_RESULT;
+}
+
+namespace rw_mutex_ns {
+
+int n_threads = 3; 
+int n_times = 10000;
+int shared_res;
+std::tr2::rw_mutex _lock_heap;
+
+void run()
+{
+  for ( int i = 0; i < n_times; ++i ) {
+    if ( rand() % 2 ) {
+      std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
+      ++shared_res;
+    } else {
+      std::tr2::basic_read_lock<std::tr2::rw_mutex> lk(_lock_heap);
+      int tmp = shared_res;
+      ++tmp;
+    }
+  }
+}
+
+}
+
+int EXAM_IMPL(mt_test_wg21::mutex_rw_test)
+{
+  std::vector<std::tr2::thread*> thr(rw_mutex_ns::n_threads);
+
+  for ( int i = 0;i < rw_mutex_ns::n_threads; ++i ) {
+    thr[i] = new std::tr2::thread( rw_mutex_ns::run );
+  }
+
+  for ( int i = 0; i < rw_mutex_ns::n_threads; ++i ) {
+    thr[i]->join();
+    delete thr[i];
+  }
 
   return EXAM_RESULT;
 }

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/01 00:59:18 ptr>
+// -*- C++ -*- Time-stamp: <10/07/01 15:44:55 ptr>
 
 /*
  * Copyright (c) 2006-2009
@@ -85,7 +85,8 @@ int main( int argc, const char** argv )
 
   t.add( &mt_test_wg21::date_time, test_wg21, "mt_test_wg21::date_time" );
   t.add( &mt_test_wg21::thread_call, test_wg21, "mt_test_wg21::thread_call" );
-  t.add( &mt_test_wg21::mutex_test, test_wg21, "mt_test_wg21::mutex_test" );
+  t.add( &mt_test_wg21::mutex_rw_test, test_wg21, "rw mutex",
+    t.add( &mt_test_wg21::mutex_test, test_wg21, "mt_test_wg21::mutex_test" ) );
   t.add( &mt_test_wg21::barrier, test_wg21, "mt_test_wg21::barrier" );
   t.add( &mt_test_wg21::semaphore, test_wg21, "mt_test_wg21::semaphore" );
   t.add( &mt_test_wg21::condition_var, test_wg21, "mt_test_wg21::condition_variable" );
