@@ -75,7 +75,9 @@ int main( int argc, const char ** argv )
 
   tc[5] = t.add( &vtime_operations::leader_recovery, vt_oper, "VT total order, leader recovery",
             t.add( &vtime_operations::leader_fail, vt_oper, "VT total order, leader fail",
-              t.add( &vtime_operations::leader, vt_oper, "VT total order, leader", tc[4] ) ) );
+              t.add( &vtime_operations::leader_network, vt_oper, "VT total order, leader network",
+                t.add( &vtime_operations::leader_multiple_change, vt_oper, "VT total order, leader multiple change",
+                  t.add( &vtime_operations::leader_change, vt_oper, "VT total order, leader change", tc[4] ) ) ) ) );
 
   t.add( &vtime_operations::lock_and_torder, vt_oper, "VT total order, lock", tc[5] );
 

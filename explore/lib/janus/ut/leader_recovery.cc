@@ -258,6 +258,51 @@ DEFINE_RESPONSE_TABLE( VT_with_leader_recovery )
   EV_EDS( ST_NULL, EV_VS_EV_SAMPLE, sync_message )
 END_RESPONSE_TABLE
 
+int EXAM_IMPL(vtime_operations::leader_multiple_change)
+{
+  const int n = 10;
+  stem::Event ev( EV_EXT_EV_SAMPLE );
+
+  vector< string > names(n);
+  vector<VT_with_leader_recovery*> a(n);
+
+  for ( int i = 0; i < n; ++i ) {
+    names[i] = string("/tmp/janus.") + xmt::uid_str();
+    a[i] = new VT_with_leader_recovery( names[i].c_str() );
+  }
+
+  a[0]->vs_join( stem::badaddr );
+  EXAM_CHECK( a[0]->is_leader() );
+
+  int k = 0;
+  for ( int i = 1; i < n; ++i ) {
+    a[i]->vs_join( a[i - 1]->self_id() );
+    for (int j = 0;j < i;++j) {
+      ev.dest( a[j]->self_id() );
+      a[j]->Send( ev );
+    }
+    a[i - 1]->vs_send_flush();
+    k += i;
+    EXAM_CHECK( a[i]->wait_group_size( std::tr2::milliseconds(n * 200), i + 1 ) );
+    EXAM_CHECK( !a[i]->is_leader() );
+    EXAM_CHECK( a[i]->wait_msg( std::tr2::milliseconds(n * 200), k ) );
+    if ( EXAM_RESULT ) {
+      cout << i << ':' << k << ':' << a[i]->msg << endl;
+      break;
+    }
+  }
+
+  for ( int i = 0; i < n; ++i ) {
+    delete a[i];
+  }
+
+  for ( int i = 0; i < n; ++i ) {
+    unlink( names[i].c_str() );
+  }
+
+  return EXAM_RESULT;
+}
+
 int EXAM_IMPL(vtime_operations::leader_recovery)
 {
   const int n_msg1 = 1000;

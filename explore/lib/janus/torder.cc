@@ -121,7 +121,6 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
     this->vs_pub_tord_rec( ev.value().ev );
     torder_vs::sync_call( ev.value().ev );
   } else {
-    misc::use_syslog<LOG_INFO,LOG_USER>() << ':' << __FILE__ << ':' << __LINE__ << ':' << self_id() << endl;
     if ( !orig_order_container_.empty() ) {
       if ( *orig_order_container_.begin() == ev.value().id ) {
         orig_order_container_.pop_front();
@@ -176,21 +175,17 @@ void torder_vs::vs_torder_conf( const stem::Event_base<vs_event_total_order::id_
 
 void torder_vs::next_leader_election()
 {
-  unique_lock<recursive_mutex> lk( _lock_vt );
-
-  if ( leader_ == badaddr || vt.vt.size() < 2 ) {
-    return;
-  }
-  
   int n = vt.vt.size();
   vector<stem::addr_type> basket( n );
 
-  int j = 0;
-  for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i, ++j ) {
-    basket[j] = i->first;
-  }
+  {
+    unique_lock<recursive_mutex> lk( _lock_vt );
 
-  lk.unlock();
+    int j = 0;
+    for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i, ++j ) {
+      basket[j] = i->first;
+    }
+  }
 
   sort( basket.begin(), basket.end() );
 
@@ -199,8 +194,6 @@ void torder_vs::next_leader_election()
   stem::addr_type sid = self_id();
 
   leader_ = *i;
-
-  misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ':' << self_id() << ':' << leader_ << endl;
 
   if ( *i == sid ) {
     is_leader_ = true;

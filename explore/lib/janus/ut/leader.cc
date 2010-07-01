@@ -138,7 +138,59 @@ DEFINE_RESPONSE_TABLE( VT_with_leader )
   EV_EDS( ST_NULL, EV_VS_EV_SAMPLE, sync_message )
 END_RESPONSE_TABLE
 
-int EXAM_IMPL(vtime_operations::leader)
+int EXAM_IMPL(vtime_operations::leader_change)
+{
+  int n_msg = 100;
+  stem::Event ev( EV_EXT_EV_SAMPLE );
+
+  VT_with_leader a1( "/tmp/a1" );
+
+  {
+    VT_with_leader a2( "/tmp/a2" );
+    a2.vs_join( stem::badaddr );
+    a1.vs_join( a2.self_id() );
+
+    EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2) );
+    EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2) );
+    EXAM_CHECK( a2.is_leader() );
+
+    for ( int j = 0; j < n_msg; ++j ) {
+      stringstream v;
+      v << j;
+      ev.value() = v.str();
+      if ( j % 2 ) {
+        ev.dest( a2.self_id() );
+        a1.Send( ev );
+      } else {
+        ev.dest( a1.self_id() );
+        a2.Send( ev );
+      }
+    }
+
+    EXAM_CHECK( a1.wait_msg( std::tr2::milliseconds(n_msg * 20), n_msg ) );
+    EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds(n_msg * 20), n_msg ) );
+  }
+
+  for ( int j = n_msg; j < 2 * n_msg; ++j ) {
+    stringstream v;
+    v << j;
+    ev.value() = v.str();
+    ev.dest( a1.self_id() );
+    a1.Send( ev );
+  }
+
+  EXAM_CHECK( a1.wait_flush( std::tr2::milliseconds(500) ) );
+  EXAM_CHECK( a1.wait_msg( std::tr2::milliseconds(n_msg * 20), 2 * n_msg ) );
+  EXAM_CHECK( a1.is_leader() );
+
+  unlink( "/tmp/a1" );
+  unlink( "/tmp/a2" );
+
+  return EXAM_RESULT;
+}
+
+
+int EXAM_IMPL(vtime_operations::leader_network)
 {
   const int n_msg = 1000;
   try {
