@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/30 15:20:35 ptr>
+// -*- C++ -*- Time-stamp: <10/07/01 07:49:25 ptr>
 
 /*
  *
@@ -202,7 +202,7 @@ bool VTM_one_group_recover::_msg_status::operator()() const
 
 bool VTM_one_group_recover::_gs_status::operator()() const
 {
-  return /* me.vs_group_size() */ me.vt().vt.size() == me.gsize;
+  return me.vs_group_size() == me.gsize;
 }
 
 bool VTM_one_group_recover::_flush_status::operator()() const

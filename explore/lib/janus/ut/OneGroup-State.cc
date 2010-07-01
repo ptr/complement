@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/30 15:20:45 ptr>
+// -*- C++ -*- Time-stamp: <10/07/01 07:49:09 ptr>
 
 /*
  *
@@ -160,7 +160,7 @@ bool VTM_one_group_advanced_handler::_msg_status::operator()() const
 
 bool VTM_one_group_advanced_handler::_gs_status::operator()() const
 {
-  return /* me.vs_group_size() */ me.vt().vt.size() == me.gsize;
+  return me.vs_group_size() == me.gsize;
 }
 
 xmt::uuid_type VTM_one_group_advanced_handler::vs_pub_recover()

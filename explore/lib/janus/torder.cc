@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/28 19:13:22 ptr>
+// -*- C++ -*- Time-stamp: <10/07/01 00:28:54 ptr>
 
 /*
  *
@@ -38,6 +38,7 @@ torder_vs::torder_vs( const char* info ) :
 
 void torder_vs::check_leader()
 {
+  lock_guard<recursive_mutex> lk( _lock_vt );
   check_remotes();
   if ( vt.vt.find( leader_ ) == vt.vt.end() ) {
     next_leader_election();
@@ -92,7 +93,8 @@ void torder_vs::vs_pub_view_update()
 
 void torder_vs::vs_leader( const stem::EventVoid& ev )
 {
-  if ( vs_group_size() > 1 ) {
+  lock_guard<recursive_mutex> lk( _lock_vt );
+  if ( vt.vt.size() > 1 ) {
     vtime::vtime_type::const_iterator i;
     for ( i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
       if ( i->first == ev.src() ) {
@@ -179,17 +181,21 @@ void torder_vs::vs_torder_conf( const stem::Event_base<vs_event_total_order::id_
 
 void torder_vs::next_leader_election()
 {
-  if ( leader_ == badaddr || vs_group_size() < 2 ) {
+  unique_lock<recursive_mutex> lk( _lock_vt );
+
+  if ( leader_ == badaddr || vt.vt.size() < 2 ) {
     return;
   }
   
-  int n = vs_group_size();
+  int n = vt.vt.size();
   vector<stem::addr_type> basket( n );
 
   int j = 0;
   for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i, ++j ) {
     basket[j] = i->first;
   }
+
+  lk.unlock();
 
   sort( basket.begin(), basket.end() );
 

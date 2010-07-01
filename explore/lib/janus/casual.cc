@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/29 16:37:22 ptr>
+// -*- C++ -*- Time-stamp: <10/07/01 00:33:21 ptr>
 
 /*
  *
@@ -132,6 +132,8 @@ basic_vs::~basic_vs()
   sev.src( stem::badaddr );
   sev.value() = sid;
 
+  // lock_guard<recursive_mutex> lk( _lock_vt ); // not required, dtor after disable()
+
   for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
     if ( i->first != sid ) {
       sev.dest( i->first );
@@ -165,20 +167,23 @@ int basic_vs::vs( const stem::Event& inc_ev )
   //   de.push_back( inc_ev ); // don't use before join group
   //   return -1;
   // }
-
   stem::Event_base<vs_event> ev( VS_EVENT );
+  
+  {
+    lock_guard<recursive_mutex> lkv( _lock_vt );
 
-  ++vt[self_id()];
-  ev.value().view = view;
-  ev.value().ev = inc_ev;
-  ev.value().vt = vt;
-  ev.value().ev.setf( stem::__Event_Base::vs );
-  ev.src( self_id() );
+    ++vt[self_id()];
+    ev.value().view = view;
+    ev.value().ev = inc_ev;
+    ev.value().vt = vt;
+    ev.value().ev.setf( stem::__Event_Base::vs );
+    ev.src( self_id() );
 
-  for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-    if ( i->first != self_id() ) {
-      ev.dest( i->first );
-      Send( ev );
+    for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
+      if ( i->first != self_id() ) {
+        ev.dest( i->first );
+        Send( ev );
+      }
     }
   }
 
@@ -193,19 +198,24 @@ int basic_vs::vs_locked( const stem::Event& inc_ev )
 
   stem::Event_base<vs_event> ev( VS_EVENT );
 
-  ++vt[self_id()];
-  ev.value().view = view;
-  ev.value().ev = inc_ev;
-  ev.value().vt = vt;
-  ev.value().ev.setf( stem::__Event_Base::vs );
-  ev.src( self_id() );
+  {
+    lock_guard<recursive_mutex> lk( _lock_vt );
 
-  for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-    if ( i->first != self_id() ) {
-      ev.dest( i->first );
-      Send( ev );
+    ++vt[self_id()];
+    ev.value().view = view;
+    ev.value().ev = inc_ev;
+    ev.value().vt = vt;
+    ev.value().ev.setf( stem::__Event_Base::vs );
+    ev.src( self_id() );
+
+    for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
+      if ( i->first != self_id() ) {
+        ev.dest( i->first );
+        Send( ev );
+      }
     }
   }
+
   sync_call( ev );
 
   return 0;
@@ -224,50 +234,55 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
 
   stem::code_type code = ev.value().ev.code();
 
-  // check that first message is from join responsible member and is VS_UPDATE_VIEW
-  if ( vt.vt.empty() ) {
-    if ( ev.src() != lock_addr || code != VS_UPDATE_VIEW ) {
-      misc::use_syslog<LOG_INFO,LOG_USER>() << "ove.push_back" << ':' << __FILE__ << ':' << __LINE__ << ':' << self_id() << endl;
-      ove.push_back( ev );
-      return;
-    }
-  }
+  {
+    // check that first message is from join responsible member and is VS_UPDATE_VIEW
+    lock_guard<recursive_mutex> lk( _lock_vt );
 
-  vtime tmp = ev.value().vt;
-
-  stem::addr_type sid = self_id();
-
-  check_remotes();
-
-  for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-    if ( (i->first == ev.src()) && (i->first != sid) ) {
-      if ( (i->second + 1) != tmp[ev.src()] ) {
-        if ( (i->second + 1) < tmp[ev.src()] ) {
-          misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << sid << ' ' << ev.value().ev.code() << endl;
-          ove.push_back( ev ); // push event into delay queue
-        } else {
-          misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << sid << ' ' << ev.value().ev.code() << " unexpected" << endl;
-          // Ghost event from past: Drop? Error?
-        }
+    if ( vt.vt.empty() ) {
+      if ( ev.src() != lock_addr || code != VS_UPDATE_VIEW ) {
+        misc::use_syslog<LOG_INFO,LOG_USER>() << "ove.push_back" << ':' << __FILE__ << ':' << __LINE__ << ':' << self_id() << endl;
+        ove.push_back( ev );
         return;
       }
-    } else if ( i->second < tmp[i->first] ) {
-      misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << sid << ' ' << ev.value().ev.code() << endl;
-      ove.push_back( ev ); // push event into delay queue
-      return;
+    }
+
+    vtime tmp = ev.value().vt;
+
+    stem::addr_type sid = self_id();
+
+    check_remotes();
+
+    for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
+      if ( (i->first == ev.src()) && (i->first != sid) ) {
+        if ( (i->second + 1) != tmp[ev.src()] ) {
+          if ( (i->second + 1) < tmp[ev.src()] ) {
+            misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << sid << ' ' << ev.value().ev.code() << endl;
+            ove.push_back( ev ); // push event into delay queue
+          } else {
+            misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << sid << ' ' << ev.value().ev.code() << " unexpected" << endl;
+            // Ghost event from past: Drop? Error?
+          }
+          return;
+        }
+      } else if ( i->second < tmp[i->first] ) {
+        misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << sid << ' ' << ev.value().ev.code() << endl;
+        ove.push_back( ev ); // push event into delay queue
+        return;
+      }
+    }
+
+    if ( ev.src() != sid ) {
+      ++vt[ev.src()];
+    }
+
+    ev.value().ev.src( ev.src() );
+    ev.value().ev.dest( sid );
+
+    if ( (code != VS_UPDATE_VIEW) && (code != VS_LOCK_VIEW) ) {
+      this->vs_pub_rec( ev.value().ev );
     }
   }
 
-  if ( ev.src() != sid ) {
-    ++vt[ev.src()];
-  }
-
-  ev.value().ev.src( ev.src() );
-  ev.value().ev.dest( sid );
-
-  if ( (code != VS_UPDATE_VIEW) && (code != VS_LOCK_VIEW) ) {
-    this->vs_pub_rec( ev.value().ev );
-  }
   basic_vs::sync_call( ev.value().ev );
 
   // required even for event in right order
@@ -287,6 +302,8 @@ void basic_vs::forward_to_vsg( const stem::Event& ev ) const // not VS!
 {
   stem::Event sev = ev;
   stem::addr_type sid = self_id();
+
+  lock_guard<recursive_mutex> lk( _lock_vt );
 
   for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
     if ( i->first != sid ) {
@@ -405,7 +422,9 @@ int basic_vs::vs_join( const stem::addr_type& a )
   }
 
   if ( a == stem::badaddr ) {
+    _lock_vt.lock();
     vt[self_id()]; // make self-entry not empty (used in vs_group_size)
+    _lock_vt.unlock();
 
     vs_pub_join();
     this->vs_pub_view_update();
@@ -548,7 +567,7 @@ void basic_vs::vs_pub_join()
 
 basic_vs::size_type basic_vs::vs_group_size() const
 {
-  lock_guard<recursive_mutex> lk( _theHistory_lock );
+  lock_guard<recursive_mutex> lk( _lock_vt );
   return vt.vt.size();
 }
 
@@ -577,6 +596,8 @@ void basic_vs::vs_join_request_work( const stem::Event_base<vs_join_rq>& ev )
   group_applicant = ev.src();
   group_applicant_ref = ev.value().reference;
 
+  _lock_vt.lock();
+
   // check: group_applicant re-enter (fail was not detected yet)
   for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
     if ( i->first == group_applicant ) { // same address
@@ -587,6 +608,8 @@ void basic_vs::vs_join_request_work( const stem::Event_base<vs_join_rq>& ev )
   }
 
   check_remotes();
+
+  _lock_vt.unlock();
 
   lock_rsp.clear();
   stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
@@ -646,6 +669,8 @@ void basic_vs::process_last_will_work( const stem::Event_base<janus::addr_type>&
   }
 
   points.erase( ev.value() );
+
+  lock_guard<recursive_mutex> lk( _lock_vt );
   vt.vt.erase( ev.value() );
 
   group_applicant = stem::badaddr;
@@ -710,6 +735,7 @@ void basic_vs::vs_lock_view_lk( const stem::EventVoid& ev )
 void basic_vs::check_lock_rsp()
 {
   if ( !fq.empty() ) {
+    unique_lock<recursive_mutex> lk( _lock_vt );
     if ( lock_rsp.size() >= vt.vt.size() ) {
       for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
         if ( (lock_rsp.find( i->first ) == lock_rsp.end()) ) {
@@ -730,6 +756,7 @@ void basic_vs::check_lock_rsp()
       update_view_ev.value().vt = vt;
       update_view_ev.value().ev = fq.front();
 
+      lk.unlock();
       vs_locked( update_view_ev );
     }
   }
@@ -747,18 +774,24 @@ void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
   PopState( VS_ST_LOCKED );
 
   if ( ev.value().ev.code() == VS_JOIN_RQ ) {
+    _lock_vt.lock();
     if ( vt.vt.empty() ) {
+      _lock_vt.unlock();
       vs_pub_join();
+      _lock_vt.lock();
     } 
 
     view = ev.value().view + 1;
     vt = ev.value().vt;
 
+    _lock_vt.unlock();
     this->vs_pub_view_update();
   } else if ( ev.value().ev.code() == VS_LAST_WILL ) {
+    _lock_vt.lock();
     view = ev.value().view + 1;
     vt = ev.value().vt;
 
+    _lock_vt.unlock();
     this->vs_pub_view_update();
   } else if ( ev.value().ev.code() == VS_FLUSH_RQ ) {
     vs_pub_rec( ev.value().ev );
@@ -865,6 +898,8 @@ void basic_vs::process_out_of_order()
     for ( ove_container_type::iterator k = ove.begin(); k != ove.end(); ) {
       tmp = k->value().vt;
 
+      _lock_vt.lock();
+
       for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
         if ( (i->first == k->src()) && (i->first != sid) ) {
           if ( (i->second + 1) != tmp[k->src()] ) {
@@ -878,6 +913,7 @@ void basic_vs::process_out_of_order()
       }
 
       ++vt[k->src()];
+      _lock_vt.unlock();
 
       k->value().ev.src( k->src() );
       k->value().ev.dest( k->dest() );
@@ -933,6 +969,8 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
     return;
   }
   
+  lock_guard<recursive_mutex> lk( _lock_vt );
+
   check_remotes();
 
   if ( lock_addr != sid ) {
@@ -965,6 +1003,8 @@ bool basic_vs::check_remotes()
 
   bool drop = false;
   list<janus::addr_type> trash;
+
+  // lock_guard<recursive_mutex> lk( _lock_vt );
   for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
     if ( !is_avail( i->first ) ) {
       points.erase( i->first );
@@ -1011,10 +1051,14 @@ void basic_vs::access_points_refresh_pri( const stem::Event_base<janus::detail::
 
   // points.clear(); ?
 
-  vtime::vtime_type::const_iterator i = vt.vt.find( ev.src() );
+  {
+    lock_guard<recursive_mutex> lk( _lock_vt );
 
-  if ( i == vt.vt.end() ) {
-    return;
+    vtime::vtime_type::const_iterator i = vt.vt.find( ev.src() );
+
+    if ( i == vt.vt.end() ) {
+      return;
+    }
   }
 
   this->pub_access_point(); // user-defined
@@ -1042,10 +1086,14 @@ void basic_vs::access_points_refresh_sec( const stem::Event_base<janus::detail::
     return;
   }
 
-  vtime::vtime_type::const_iterator i = vt.vt.find( ev.src() );
+  {
+    lock_guard<recursive_mutex> lk( _lock_vt );
 
-  if ( i == vt.vt.end() ) {
-    return;
+    vtime::vtime_type::const_iterator i = vt.vt.find( ev.src() );
+
+    if ( i == vt.vt.end() ) {
+      return;
+    }
   }
 
   pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = ev.value().points.equal_range( ev.src() );

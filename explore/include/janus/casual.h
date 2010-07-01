@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/25 17:16:05 ptr>
+// -*- C++ -*- Time-stamp: <10/06/30 20:56:23 ptr>
 
 /*
  *
@@ -129,6 +129,7 @@ class basic_vs :
     bool check_remotes();
 
     vtime vt;
+    std::tr2::recursive_mutex _lock_vt;
 
     virtual xmt::uuid_type vs_pub_recover() = 0;
     virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& ) = 0;

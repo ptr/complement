@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/30 15:19:18 ptr>
+// -*- C++ -*- Time-stamp: <10/07/01 07:26:16 ptr>
 
 /*
  *
@@ -192,7 +192,7 @@ bool VTM_one_group_handler::_msg_status::operator()() const
 
 bool VTM_one_group_handler::_gs_status::operator()() const
 {
-  return /* me.vs_group_size() */ me.vt().vt.size() == me.gsize;
+  return me.vs_group_size() == me.gsize;
 }
 
 void VTM_one_group_handler::message( const stem::Event& ev )
@@ -263,47 +263,47 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3_sim)
 {
   VTM_one_group_handler a0;
 
-  for (int i = 0;i < 1000;++i) {
-  VTM_one_group_handler a1;
-  VTM_one_group_handler a2;
-  VTM_one_group_handler a3;
+  for ( int i = 0; i < 1000; ++i ) {
+    VTM_one_group_handler a1;
+    VTM_one_group_handler a2;
+    VTM_one_group_handler a3;
 
-  // misc::use_syslog<LOG_INFO,LOG_USER>() << "-----------------" << endl;
-  // misc::use_syslog<LOG_INFO,LOG_USER>() << "a1 = " << a1.self_id() << endl;
-  // misc::use_syslog<LOG_INFO,LOG_USER>() << "a2 = " << a2.self_id() << endl;
-  // misc::use_syslog<LOG_INFO,LOG_USER>() << "a3 = " << a3.self_id() << endl;
+    // misc::use_syslog<LOG_INFO,LOG_USER>() << "-----------------" << endl;
+    // misc::use_syslog<LOG_INFO,LOG_USER>() << "a1 = " << a1.self_id() << endl;
+    // misc::use_syslog<LOG_INFO,LOG_USER>() << "a2 = " << a2.self_id() << endl;
+    // misc::use_syslog<LOG_INFO,LOG_USER>() << "a3 = " << a3.self_id() << endl;
 
-  a1.vs_join( stem::badaddr );
+    a1.vs_join( stem::badaddr );
 
-  EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 1 ) );
+    EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 1 ) );
 
-  a2.vs_join( a1.self_id() );
-  a3.vs_join( a1.self_id() );
+    a2.vs_join( a1.self_id() );
+    a3.vs_join( a1.self_id() );
 
-  EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 3 ) );
-  EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3 ) );
-  EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(500), 3 ) );
+    EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 3 ) );
+    EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3 ) );
+    EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(500), 3 ) );
   
-  VTM_one_group_handler* a4 = new VTM_one_group_handler();
+    VTM_one_group_handler* a4 = new VTM_one_group_handler();
   
-  a4->vs_join( a3.self_id() );
+    a4->vs_join( a3.self_id() );
 
-  EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 4 ) );
-  EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 4 ) );
-  EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(500), 4 ) );
-  EXAM_CHECK( a4->wait_group_size( std::tr2::milliseconds(500), 4 ) );
+    EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 4 ) );
+    EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 4 ) );
+    EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(500), 4 ) );
+    EXAM_CHECK( a4->wait_group_size( std::tr2::milliseconds(500), 4 ) );
   
-  delete a4;
+    delete a4;
   
-  EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 3 ) );
-  EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3 ) );
-  EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(500), 3 ) );  
-  if ( EXAM_RESULT ) {
-    stringstream s;
-    s << "on iteration " << i;
-    EXAM_ERROR( s.str().c_str() );
-    break;
-  }
+    EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 3 ) );
+    EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3 ) );
+    EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(500), 3 ) );  
+    if ( EXAM_RESULT ) {
+      stringstream s;
+      s << "on iteration " << i;
+      EXAM_ERROR( s.str().c_str() );
+      break;
+    }
   }
   
   return EXAM_RESULT;
