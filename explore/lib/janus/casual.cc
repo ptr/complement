@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/01 16:37:29 ptr>
+// -*- C++ -*- Time-stamp: <10/07/01 17:46:22 ptr>
 
 /*
  *
@@ -751,10 +751,13 @@ void basic_vs::check_lock_rsp()
         group_applicant_ref = xmt::nil_uuid;
       }
         
+      stem::Event_base<stem::addr_type> iev( fq.front().code() );
+      iev.value() = fq.front().src();
+
       stem::Event_base<vs_event> update_view_ev( VS_UPDATE_VIEW );
       update_view_ev.value().view = view;
       update_view_ev.value().vt = vt;
-      update_view_ev.value().ev = fq.front();
+      update_view_ev.value().ev = stem::detail::convert<stem::Event_base<stem::addr_type>,stem::Event>()(iev);
 
       lk.unlock();
       vs_locked( update_view_ev );
@@ -773,29 +776,34 @@ void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
   lock_addr = stem::badaddr;
   PopState( VS_ST_LOCKED );
 
-  if ( ev.value().ev.code() == VS_JOIN_RQ ) {
+  stem::code_type code = ev.value().ev.code();
+  stem::addr_type origin = stem::detail::convert<stem::Event, stem::Event_base<stem::addr_type> >()(ev.value().ev).value();
+  stem::addr_type sid = self_id();
+
+  if ( code == VS_JOIN_RQ ) {
     _lock_vt.lock();
     view = ev.value().view + 1;
     vt = ev.value().vt;
 
     _lock_vt.unlock();
-    if ( ev.value().ev.src() == self_id() ) {
+
+    if ( origin == sid ) {
       vs_pub_join();
     } 
     this->vs_pub_view_update();
-  } else if ( ev.value().ev.code() == VS_LAST_WILL ) {
+  } else if ( code == VS_LAST_WILL ) {
     _lock_vt.lock();
     view = ev.value().view + 1;
     vt = ev.value().vt;
 
     _lock_vt.unlock();
     this->vs_pub_view_update();
-  } else if ( ev.value().ev.code() == VS_FLUSH_RQ ) {
+  } else if ( code == VS_FLUSH_RQ ) {
     vs_pub_rec( ev.value().ev );
     this->vs_pub_flush();
   }
 
-  if ( !fq.empty() && ev.src() == self_id() && fq.front().dest() == self_id() ) {
+  if ( !fq.empty() && (ev.src() == sid) && (fq.front().dest() == sid) ) {
     fq.pop_front();
   }
   
