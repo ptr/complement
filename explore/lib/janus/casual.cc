@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/01 11:43:13 ptr>
+// -*- C++ -*- Time-stamp: <10/07/01 16:37:29 ptr>
 
 /*
  *
@@ -775,16 +775,13 @@ void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
 
   if ( ev.value().ev.code() == VS_JOIN_RQ ) {
     _lock_vt.lock();
-    if ( vt.vt.empty() ) {
-      _lock_vt.unlock();
-      vs_pub_join();
-      _lock_vt.lock();
-    } 
-
     view = ev.value().view + 1;
     vt = ev.value().vt;
 
     _lock_vt.unlock();
+    if ( ev.value().ev.src() == self_id() ) {
+      vs_pub_join();
+    } 
     this->vs_pub_view_update();
   } else if ( ev.value().ev.code() == VS_LAST_WILL ) {
     _lock_vt.lock();
