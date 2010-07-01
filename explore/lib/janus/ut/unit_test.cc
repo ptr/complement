@@ -73,8 +73,9 @@ int main( int argc, const char ** argv )
   tc[4] = t.add( &vtime_operations::VT_one_group_access_point, vt_oper, "VT network access points",
     t.add( &vtime_operations::VT_one_group_network, vt_oper, "VT over network", tc[1] ) );
 
-  tc[5] = t.add( &vtime_operations::leader_fail, vt_oper, "VT total order, leader fail",
-            t.add( &vtime_operations::leader, vt_oper, "VT total order, leader", tc[4] ) );
+  tc[5] = t.add( &vtime_operations::leader_recovery, vt_oper, "VT total order, leader recovery",
+            t.add( &vtime_operations::leader_fail, vt_oper, "VT total order, leader fail",
+              t.add( &vtime_operations::leader, vt_oper, "VT total order, leader", tc[4] ) ) );
 
   t.add( &vtime_operations::lock_and_torder, vt_oper, "VT total order, lock", tc[5] );
 

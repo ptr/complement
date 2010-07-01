@@ -72,10 +72,8 @@ void torder_vs::vs_pub_join()
 
 void torder_vs::vs_pub_view_update()
 {
-  // misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << self_id() << endl;
   if ( is_leader_ ) {
     if ( vs_group_size() > 1 ) {
-      // misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << self_id() << endl;
       EventVoid ev( VS_LEADER );
       send_to_vsg( ev );
     }
@@ -86,9 +84,6 @@ void torder_vs::vs_pub_view_update()
     return;
   }
 
-#if 0
-  next_leader_election();
-#endif
 }
 
 void torder_vs::vs_leader( const stem::EventVoid& ev )
@@ -203,9 +198,12 @@ void torder_vs::next_leader_election()
 
   stem::addr_type sid = self_id();
 
+  leader_ = *i;
+
+  misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ':' << self_id() << ':' << leader_ << endl;
+
   if ( *i == sid ) {
     is_leader_ = true;
-    leader_ = sid;
     vs_send_flush();
 
     stem::Event_base<vs_event_total_order::id_type> cnf( VS_ORDER_CONF );

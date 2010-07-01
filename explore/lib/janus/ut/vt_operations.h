@@ -38,6 +38,7 @@ class vtime_operations
 
     int EXAM_DECL(leader);
     int EXAM_DECL(leader_fail);
+    int EXAM_DECL(leader_recovery);
 
     int EXAM_DECL( double_flush );
     int EXAM_DECL( double_exit );
