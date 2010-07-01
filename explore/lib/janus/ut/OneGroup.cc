@@ -447,6 +447,39 @@ int EXAM_IMPL(vtime_operations::flush_and_exit)
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(vtime_operations::join_flush_exit)
+{
+  for (int i = 0;i < 100;++i) {
+  VTM_one_group_handler a1;
+  VTM_one_group_handler a2;
+  VTM_one_group_handler a4;
+
+  {
+    VTM_one_group_handler a3;
+
+    a1.vs_join( stem::badaddr );
+    a2.vs_join( a1.self_id() );
+    a3.vs_join( a1.self_id() );
+
+    EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 3) );
+    EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3) );
+
+    a1.vs_send_flush();
+    a4.vs_join( a1.self_id() );
+  }
+  
+  EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 3) );
+  EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3) );
+  EXAM_CHECK( a4.wait_group_size( std::tr2::milliseconds(500), 3) );
+
+  EXAM_CHECK( a1.wait_flush( std::tr2::milliseconds(500), 1) );
+  EXAM_CHECK( a2.wait_flush( std::tr2::milliseconds(500), 1) );
+
+  }
+
+  return EXAM_RESULT;
+}
+
 int EXAM_IMPL(vtime_operations::VT_one_group_send)
 {
   for (int i = 0;i < 1000;++i) {

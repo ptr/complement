@@ -594,5 +594,59 @@ int EXAM_IMPL(vtime_operations::VT_one_group_multiple_joins)
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(vtime_operations::VT_one_group_multiple_join_send)
+{
+  const int n = 10;
+  vector< stem::addr_type > names(n);
+
+  try {
+    srand( time(NULL) );
+
+    vector<VTM_one_group_recover*> a(n);
+
+    for ( int i = 0; i < n; ++i ) {
+      a[i] = new VTM_one_group_recover();
+      names[i] = a[i]->self_id();
+    }
+
+    a[0]->vs_join( stem::badaddr );
+
+    EXAM_CHECK( a[0]->vs_group_size() == 1 );
+
+    int k = 0;
+    for ( int i = 1; i < n; ++i ) {
+      a[i]->vs_join( a[i - 1]->self_id() );
+      for (int j = 0;j < i;++j) {
+        stem::Event ev( EV_FREE );
+        ev.dest( a[j]->self_id() );
+        a[j]->Send( ev );
+      }
+      a[i - 1]->vs_send_flush();
+      k += i;
+      EXAM_CHECK( a[i]->wait_group_size( std::tr2::milliseconds(n * 200), i + 1 ) );
+      EXAM_CHECK( a[i]->wait_msg( std::tr2::milliseconds(n * 200), k ) );
+    }
+
+    for ( int i = 0; i < n; ++i ) {
+      delete a[i];
+    }
+  }
+  catch ( const std::runtime_error& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( std::exception& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( ... ) {
+    EXAM_ERROR( "unknown exception" );
+  }
+
+  for ( int i = 0; i < n; ++i ) {
+    unlink( (std::string( "/tmp/janus." ) + std::string(names[i]) ).c_str() );
+  }
+
+  return EXAM_RESULT;
+}
+
 
 } // namespace janus

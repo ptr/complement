@@ -49,14 +49,15 @@ int main( int argc, const char ** argv )
 
   janus::vtime_operations vt_oper;
 
-  tc[0] = t.add( &vtime_operations::flush_and_exit, vt_oper, "VT flush and exit", 
-            t.add( &vtime_operations::flush_and_join, vt_oper, "VT flush and join", 
-              t.add( &vtime_operations::double_exit, vt_oper, "VT double exit",
-                t.add( &vtime_operations::double_flush, vt_oper, "VT double flush",
-                  t.add( &vtime_operations::VT_one_group_join_exit, vt_oper, "VT one group join and exit",
-                    t.add( &vtime_operations::VT_one_group_core3_sim, vt_oper, "VT one group add two members simultaneously",
-                      t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
-                        t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member" ) ) ) ) ) ) ) );
+  tc[0] = t.add( &vtime_operations::join_flush_exit, vt_oper, "VT join/flush/exit", 
+            t.add( &vtime_operations::flush_and_exit, vt_oper, "VT flush and exit", 
+              t.add( &vtime_operations::flush_and_join, vt_oper, "VT flush and join", 
+                t.add( &vtime_operations::double_exit, vt_oper, "VT double exit",
+                  t.add( &vtime_operations::double_flush, vt_oper, "VT double flush",
+                    t.add( &vtime_operations::VT_one_group_join_exit, vt_oper, "VT one group join and exit",
+                      t.add( &vtime_operations::VT_one_group_core3_sim, vt_oper, "VT one group add two members simultaneously",
+                        t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
+                          t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member" ) ) ) ) ) ) ) ) );
 
   tc[1] = t.add( &vtime_operations::VT_one_group_multiple_send, vt_oper, "VT one group multiple send",
             t.add( &vtime_operations::VT_one_group_send, vt_oper, "VT one group send", tc[0] ) );
@@ -65,8 +66,9 @@ int main( int argc, const char ** argv )
             t.add( &vtime_operations::VT_one_group_replay, vt_oper, "VT one group replay", tc[1] ) );
 
   tc[3] = t.add( &vtime_operations::VT_one_group_recover, vt_oper, "VT one group recover",
-            t.add( &vtime_operations::VT_one_group_multiple_joins, vt_oper, "VT one group multiple joins",
-              t.add( &vtime_operations::VT_one_group_join_send, vt_oper, "VT one group join and send", tc[2] ) ) );
+            t.add( &vtime_operations::VT_one_group_multiple_join_send, vt_oper, "VT one group multiple join/send",
+              t.add( &vtime_operations::VT_one_group_multiple_joins, vt_oper, "VT one group multiple joins",
+                t.add( &vtime_operations::VT_one_group_join_send, vt_oper, "VT one group join and send", tc[2] ) ) ) );
 
   tc[4] = t.add( &vtime_operations::VT_one_group_access_point, vt_oper, "VT network access points",
     t.add( &vtime_operations::VT_one_group_network, vt_oper, "VT over network", tc[1] ) );
