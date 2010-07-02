@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/28 18:31:49 ptr>
+// -*- C++ -*- Time-stamp: <10/07/02 12:59:14 ptr>
 
 /*
  *
@@ -58,7 +58,6 @@ class torder_vs :
     void vs_torder_conf( const stem::Event_base<vs_event_total_order::id_type>& );
 
     void vs_leader( const stem::EventVoid& );
-    void next_leader_election();
     void check_leader();
 
 #ifdef __USE_STLPORT_HASH

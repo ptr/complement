@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/01 00:28:54 ptr>
+// -*- C++ -*- Time-stamp: <10/07/02 13:03:29 ptr>
 
 /*
  *
@@ -38,10 +38,52 @@ torder_vs::torder_vs( const char* info ) :
 
 void torder_vs::check_leader()
 {
-  lock_guard<recursive_mutex> lk( _lock_vt );
+  unique_lock<recursive_mutex> lk( _lock_vt );
   check_remotes();
   if ( vt.vt.find( leader_ ) == vt.vt.end() ) {
-    next_leader_election();
+    // next leader election process
+    int n = vt.vt.size();
+    vector<stem::addr_type> basket( n );
+
+    int j = 0;
+    for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i, ++j ) {
+      basket[j] = i->first;
+    }
+
+    lk.unlock();
+
+    sort( basket.begin(), basket.end() );
+
+    vector<stem::addr_type>::iterator i = basket.begin() + view % n;
+
+    stem::addr_type sid = self_id();
+
+    leader_ = *i;
+
+    if ( *i == sid ) {
+      is_leader_ = true;
+      vs_send_flush();
+
+      stem::Event_base<vs_event_total_order::id_type> cnf( VS_ORDER_CONF );
+
+      conf_cnt_type::iterator k;
+
+      for ( orig_order_cnt_type::iterator j = orig_order_container_.begin(); j != orig_order_container_.end(); ) {
+        k = conform_container_.find( *j );
+        if ( k != conform_container_.end() ) {
+          // send conformation first
+          cnf.value() = *j;
+          send_to_vsg( cnf );
+
+          // process
+          k->second.setf( stem::__Event_Base::vs );
+          this->vs_pub_tord_rec( k->second );
+          torder_vs::sync_call( k->second );
+          conform_container_.erase( k );
+        }
+        orig_order_container_.erase( j++ );
+      }
+    }
   }
 }
 
@@ -170,54 +212,6 @@ void torder_vs::vs_torder_conf( const stem::Event_base<vs_event_total_order::id_
   }
   if ( i != orig_order_container_.begin() ) {
     orig_order_container_.erase( orig_order_container_.begin(), i );
-  }
-}
-
-void torder_vs::next_leader_election()
-{
-  int n = vt.vt.size();
-  vector<stem::addr_type> basket( n );
-
-  {
-    unique_lock<recursive_mutex> lk( _lock_vt );
-
-    int j = 0;
-    for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i, ++j ) {
-      basket[j] = i->first;
-    }
-  }
-
-  sort( basket.begin(), basket.end() );
-
-  vector< stem::addr_type >::iterator i = basket.begin() + view % n;
-
-  stem::addr_type sid = self_id();
-
-  leader_ = *i;
-
-  if ( *i == sid ) {
-    is_leader_ = true;
-    vs_send_flush();
-
-    stem::Event_base<vs_event_total_order::id_type> cnf( VS_ORDER_CONF );
-
-    conf_cnt_type::iterator k;
-
-    for ( orig_order_cnt_type::iterator j = orig_order_container_.begin(); j != orig_order_container_.end(); ) {
-      k = conform_container_.find( *j );
-      if ( k != conform_container_.end() ) {
-        // send conformation first
-        cnf.value() = *j;
-        send_to_vsg( cnf );
-
-        // process
-        k->second.setf( stem::__Event_Base::vs );
-        this->vs_pub_tord_rec( k->second );
-        torder_vs::sync_call( k->second );
-        conform_container_.erase( k );
-      }
-      orig_order_container_.erase( j++ );
-    }
   }
 }
 
