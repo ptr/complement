@@ -40,7 +40,7 @@ void torder_vs::check_leader()
 {
   unique_lock<recursive_mutex> lk( _lock_vt );
   check_remotes();
-  if ( vt.vt.find( leader_ ) == vt.vt.end() ) {
+  if ( leader_ != stem::badaddr && vt.vt.find( leader_ ) == vt.vt.end() ) {
     // next leader election process
     int n = vt.vt.size();
     vector<stem::addr_type> basket( n );

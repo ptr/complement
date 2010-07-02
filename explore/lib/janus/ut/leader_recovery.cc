@@ -205,9 +205,13 @@ void VT_with_leader_recovery::vs_pub_view_update()
   cnd.notify_one();
 }
 
-void VT_with_leader_recovery::vs_pub_rec( const stem::Event& )
+void VT_with_leader_recovery::vs_pub_rec( const stem::Event& ev )
 {
-  // cerr << name << endl;
+  if ( ev.code() == VS_FLUSH_RQ ) {
+    stem::__pack_base::__pack( history, ev.code() );
+    stem::__pack_base::__pack( history, ev.flags() );
+    stem::__pack_base::__pack( history, ev.value() );
+  }
 }
 
 void VT_with_leader_recovery::vs_pub_flush()
@@ -229,7 +233,6 @@ void VT_with_leader_recovery::vs_pub_tord_rec( const stem::Event& ev )
   stem::__pack_base::__pack( history, ev.value() );
 }
 
-
 std::tr2::milliseconds VT_with_leader_recovery::vs_pub_lock_timeout() const {
   return std::tr2::milliseconds(1000);
 }
@@ -248,6 +251,9 @@ void VT_with_leader_recovery::message( const stem::Event& ev )
 
 void VT_with_leader_recovery::sync_message( const stem::Event& ev )
 {
+  if ( ev.flags() & stem::__Event_Base::vs_join ) {
+    vs_pub_tord_rec( ev );
+  }
   std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
   ++msg;
   cnd.notify_one();
@@ -260,7 +266,7 @@ END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::leader_multiple_change)
 {
-  const int n = 10;
+  const int n = 4;
   stem::Event ev( EV_EXT_EV_SAMPLE );
 
   vector< string > names(n);
@@ -278,16 +284,17 @@ int EXAM_IMPL(vtime_operations::leader_multiple_change)
   for ( int i = 1; i < n; ++i ) {
     a[i]->vs_join( a[i - 1]->self_id() );
     for (int j = 0;j < i;++j) {
+      stringstream ss;
+      ss << i << ' ' << j;
+      ev.value() = ss.str();
       ev.dest( a[j]->self_id() );
       a[j]->Send( ev );
     }
-    a[i - 1]->vs_send_flush();
     k += i;
     EXAM_CHECK( a[i]->wait_group_size( std::tr2::milliseconds(n * 200), i + 1 ) );
     EXAM_CHECK( !a[i]->is_leader() );
     EXAM_CHECK( a[i]->wait_msg( std::tr2::milliseconds(n * 200), k ) );
     if ( EXAM_RESULT ) {
-      cout << i << ':' << k << ':' << a[i]->msg << endl;
       break;
     }
   }
