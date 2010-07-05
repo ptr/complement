@@ -38,23 +38,29 @@ torder_vs::torder_vs( const char* info ) :
 
 void torder_vs::check_leader()
 {
-  unique_lock<recursive_mutex> lk( _lock_vt );
   check_remotes();
-  if ( leader_ != stem::badaddr && vt.vt.find( leader_ ) == vt.vt.end() ) {
+
+  bool leader_leave;
+  {
+    unique_lock<recursive_mutex> lk( _lock_vt );
+    leader_leave = ( vt.vt.find( leader_ ) == vt.vt.end() );
+  }
+
+  if ( leader_ != stem::badaddr && leader_leave) {
     // next leader election process
-    int n = vt.vt.size();
-    vector<stem::addr_type> basket( n );
-
-    int j = 0;
-    for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i, ++j ) {
-      basket[j] = i->first;
+    vector<stem::addr_type> basket;
+    {
+      unique_lock<recursive_mutex> lk( _lock_vt );
+      basket.resize( vt.vt.size() );
+      int j = 0;
+      for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i, ++j ) {
+        basket[j] = i->first;
+      }
     }
-
-    lk.unlock();
 
     sort( basket.begin(), basket.end() );
 
-    vector<stem::addr_type>::iterator i = basket.begin() + view % n;
+    vector<stem::addr_type>::iterator i = basket.begin() + view % basket.size();
 
     stem::addr_type sid = self_id();
 
@@ -63,25 +69,12 @@ void torder_vs::check_leader()
     if ( *i == sid ) {
       is_leader_ = true;
       vs_send_flush();
-
+        
       stem::Event_base<vs_event_total_order::id_type> cnf( VS_ORDER_CONF );
-
-      conf_cnt_type::iterator k;
-
-      for ( orig_order_cnt_type::iterator j = orig_order_container_.begin(); j != orig_order_container_.end(); ) {
-        k = conform_container_.find( *j );
-        if ( k != conform_container_.end() ) {
-          // send conformation first
-          cnf.value() = *j;
-          send_to_vsg( cnf );
-
-          // process
-          k->second.setf( stem::__Event_Base::vs );
-          this->vs_pub_tord_rec( k->second );
-          torder_vs::sync_call( k->second );
-          conform_container_.erase( k );
-        }
-        orig_order_container_.erase( j++ );
+      orig_order_cnt_type tmp( orig_order_container_.begin(), orig_order_container_.end() );
+      for ( orig_order_cnt_type::iterator j = tmp.begin(); j != tmp.end(); ++j) {
+        cnf.value() = *j;
+        vs( cnf );
       }
     }
   }
@@ -99,8 +92,6 @@ int torder_vs::vs_torder( const stem::Event& inc_ev )
 
   int ret = basic_vs::vs( ev );
 
-  check_leader();
-
   return ret;
 }
 
@@ -114,30 +105,26 @@ void torder_vs::vs_pub_join()
 
 void torder_vs::vs_pub_view_update()
 {
-  if ( is_leader_ ) {
+  if ( is_leader() ) {
     if ( vs_group_size() > 1 ) {
       EventVoid ev( VS_LEADER );
       send_to_vsg( ev );
     }
-    return;
   }
-
-  if ( leader_ == stem::badaddr ) {
-    return;
-  }
-
 }
 
 void torder_vs::vs_leader( const stem::EventVoid& ev )
 {
-  lock_guard<recursive_mutex> lk( _lock_vt );
-  if ( vt.vt.size() > 1 ) {
-    vtime::vtime_type::const_iterator i;
-    for ( i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-      if ( i->first == ev.src() ) {
-        leader_ = ev.src();
-        is_leader_ = false;
-        break;
+  {
+    lock_guard<recursive_mutex> lk( _lock_vt );
+    if ( vt.vt.size() > 1 ) {
+      vtime::vtime_type::const_iterator i;
+      for ( i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
+        if ( i->first == ev.src() ) {
+          leader_ = ev.src();
+          is_leader_ = false;
+          break;
+        }
       }
     }
   }
@@ -151,67 +138,29 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
 
   check_leader();
 
-  if ( is_leader() ) { // I'm leader
-    // send conformation first
+  conform_container_[ev.value().id] = ev.value().ev;
+  orig_order_container_.push_back( ev.value().id );
+
+  if ( is_leader() ) {
     stem::Event_base<vs_event_total_order::id_type> cnf( VS_ORDER_CONF );
-
-    cnf.value() = ev.value().id; // xmt::nil_uuid;
-    send_to_vsg( cnf );
-
-    // process
-    ev.value().ev.setf( stem::__Event_Base::vs );
-    this->vs_pub_tord_rec( ev.value().ev );
-    torder_vs::sync_call( ev.value().ev );
-  } else {
-    if ( !orig_order_container_.empty() ) {
-      if ( *orig_order_container_.begin() == ev.value().id ) {
-        orig_order_container_.pop_front();
-        ev.value().ev.setf( stem::__Event_Base::vs );
-        this->vs_pub_tord_rec( ev.value().ev );
-        torder_vs::sync_call( ev.value().ev );
-
-        orig_order_cnt_type::iterator i = orig_order_container_.begin();
-        for ( ; i != orig_order_container_.end(); ++i ) {
-          conf_cnt_type::iterator k = conform_container_.find( *i );
-          if ( k != conform_container_.end() ) {
-            k->second.setf( stem::__Event_Base::vs );
-            this->vs_pub_tord_rec( k->second );
-            torder_vs::sync_call( k->second );
-            conform_container_.erase( k );
-          } else {
-            break;
-          }
-        }
-        if ( i != orig_order_container_.begin() ) {
-          orig_order_container_.erase( orig_order_container_.begin(), i );
-        }
-      } else {
-        conform_container_[ev.value().id] = ev.value().ev;
-      }
-    } else {
-      conform_container_[ev.value().id] = ev.value().ev;
-    }
+    cnf.value() = ev.value().id;
+    vs( cnf );
   }
 }
 
 void torder_vs::vs_torder_conf( const stem::Event_base<vs_event_total_order::id_type>& ev )
 {
-  orig_order_container_.push_back( ev.value() );
-
-  orig_order_cnt_type::iterator i = orig_order_container_.begin();
-  for ( ; i != orig_order_container_.end(); ++i ) {
-    conf_cnt_type::iterator k = conform_container_.find( *i );
-    if ( k != conform_container_.end() ) {
-      k->second.setf( stem::__Event_Base::vs );
-      this->vs_pub_tord_rec( k->second );
-      torder_vs::sync_call( k->second );
-      conform_container_.erase( k );
-    } else {
-      break;
+  conf_cnt_type::iterator k = conform_container_.find( ev.value() );
+  if ( k != conform_container_.end() ) {
+    this->vs_pub_tord_rec( k->second );
+    torder_vs::sync_call( k->second );
+    conform_container_.erase( k );
+    orig_order_cnt_type::iterator j = find( orig_order_container_.begin(), orig_order_container_.end(), ev.value() );
+    if ( j != orig_order_container_.end() ) {
+      orig_order_container_.erase( j );
     }
-  }
-  if ( i != orig_order_container_.begin() ) {
-    orig_order_container_.erase( orig_order_container_.begin(), i );
+  } else {
+    misc::use_syslog<LOG_INFO,LOG_USER>() << HERE << ':' << self_id() << ':' << ev.value() << ':' << "unexpected" << endl;
   }
 }
 

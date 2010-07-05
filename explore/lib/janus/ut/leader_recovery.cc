@@ -44,6 +44,10 @@ using namespace std;
 # define VS_FLUSH_RQ 0x307 // see casual.cc
 #endif
 
+#ifndef VS_EVENT_TORDER
+# define VS_EVENT_TORDER 0x30c // see torder.cc
+#endif
+
 VT_with_leader_recovery::VT_with_leader_recovery( const char* nm ) :
     torder_vs(),
     msg_status( *this ),
@@ -154,6 +158,7 @@ void VT_with_leader_recovery::vs_resend_from( const xmt::uuid_type& from, const 
   uint32_t f;
   bool ref_point_found = (from == xmt::nil_uuid) ? true : false;
 
+
   ev.dest( addr );
   ev.src( self_id() );
 
@@ -194,8 +199,18 @@ void VT_with_leader_recovery::vs_resend_from( const xmt::uuid_type& from, const 
     }
   }
 
+  if ( !conform_container_.empty() ) {
+    for ( conf_cnt_type::const_iterator i = conform_container_.begin();i != conform_container_.end();++i) {
+      stem::Event_base<vs_event_total_order> ev( VS_EVENT_TORDER );
+      ev.value().ev = i->second;
+      ev.value().id = i->first;
+      ev.src( i->second.src() );
+      ev.dest( addr );
+      Forward( ev );
+    }
+  }
+
   history.clear();
-  // history.seekp( 0, ios_base::end );
 }
 
 void VT_with_leader_recovery::vs_pub_view_update()
@@ -234,7 +249,7 @@ void VT_with_leader_recovery::vs_pub_tord_rec( const stem::Event& ev )
 }
 
 std::tr2::milliseconds VT_with_leader_recovery::vs_pub_lock_timeout() const {
-  return std::tr2::milliseconds(1000);
+  return std::tr2::milliseconds(250);
 }
 
 void VT_with_leader_recovery::message( const stem::Event& ev )
@@ -266,7 +281,7 @@ END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::leader_multiple_change)
 {
-  const int n = 4;
+  const int n = 10;
   stem::Event ev( EV_EXT_EV_SAMPLE );
 
   vector< string > names(n);
@@ -292,14 +307,11 @@ int EXAM_IMPL(vtime_operations::leader_multiple_change)
     }
     k += i;
     EXAM_CHECK( a[i]->wait_group_size( std::tr2::milliseconds(n * 200), i + 1 ) );
-    EXAM_CHECK( !a[i]->is_leader() );
     EXAM_CHECK( a[i]->wait_msg( std::tr2::milliseconds(n * 200), k ) );
-    if ( EXAM_RESULT ) {
-      break;
-    }
   }
 
-  for ( int i = 0; i < n; ++i ) {
+
+  for (int i = 0;i < n;++i) {
     delete a[i];
   }
 
@@ -430,7 +442,7 @@ int EXAM_IMPL(vtime_operations::leader_recovery)
 
         b5.wait();
 
-        EXAM_CHECK_ASYNC_F( a1.wait_group_size( std::tr2::milliseconds(500), 3), res );
+        EXAM_CHECK_ASYNC_F( a1.wait_group_size( std::tr2::milliseconds( max(500, 20 * n_msg2)), 3), res );
         std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
 
         b6.wait();
@@ -632,7 +644,7 @@ int EXAM_IMPL(vtime_operations::leader_recovery)
 
           b5.wait();
 
-          EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3) );
+          EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds( max(500, 20 * n_msg2) ), 3) );
           std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
 
           b6.wait();

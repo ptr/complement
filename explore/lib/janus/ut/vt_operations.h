@@ -36,6 +36,7 @@ class vtime_operations
 
     int EXAM_DECL(VT_one_group_recover);
 
+    int EXAM_DECL(leader_local);
     int EXAM_DECL(leader_change);
     int EXAM_DECL(leader_multiple_change);
     int EXAM_DECL(leader_network);

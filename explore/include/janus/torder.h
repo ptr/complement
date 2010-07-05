@@ -53,7 +53,7 @@ class torder_vs :
     virtual void vs_pub_join();
     virtual void vs_pub_tord_rec( const stem::Event& ) = 0;
 
-  private:
+  protected:
     void vs_process_torder( const stem::Event_base<vs_event_total_order>& );
     void vs_torder_conf( const stem::Event_base<vs_event_total_order::id_type>& );
 
@@ -61,7 +61,7 @@ class torder_vs :
     void check_leader();
 
 #ifdef __USE_STLPORT_HASH
-    typedef std::hash_map<vs_event_total_order::id_type,stem::Event> conf_cnt_t;
+    typedef std::hash_map<vs_event_total_order::id_type,stem::Event> conf_cnt_type;
 #endif
 #ifdef __USE_STD_HASH
     typedef __gnu_cxx::hash_map<vs_event_total_order::id_type,stem::Event> conf_cnt_type;

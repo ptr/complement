@@ -256,16 +256,16 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
       if ( (i->first == ev.src()) && (i->first != sid) ) {
         if ( (i->second + 1) != tmp[ev.src()] ) {
           if ( (i->second + 1) < tmp[ev.src()] ) {
-            misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << sid << ' ' << ev.value().ev.code() << endl;
+            misc::use_syslog<LOG_DEBUG,LOG_USER>() << "ove.push_back" << ':' << HERE << ':' << sid << ':' << ev.src() << ':' << ev.value().ev.code() << endl;
             ove.push_back( ev ); // push event into delay queue
           } else {
-            misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << sid << ' ' << ev.value().ev.code() << " unexpected" << endl;
+            misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ':' << sid << ':' << ev.value().ev.code() << " unexpected" << endl;
             // Ghost event from past: Drop? Error?
           }
           return;
         }
       } else if ( i->second < tmp[i->first] ) {
-        misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ' ' << sid << ' ' << ev.value().ev.code() << endl;
+        misc::use_syslog<LOG_DEBUG,LOG_USER>() << "ove.push_back" << ':' << HERE << ':' << sid << ':' << ev.src() << ':' << ev.value().ev.code() << endl;
         ove.push_back( ev ); // push event into delay queue
         return;
       }
@@ -601,7 +601,6 @@ void basic_vs::vs_join_request_work( const stem::Event_base<vs_join_rq>& ev )
   // check: group_applicant re-enter (fail was not detected yet)
   for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
     if ( i->first == group_applicant ) { // same address
-      misc::use_syslog<LOG_INFO,LOG_USER>() << __FILE__ << ':' << __LINE__ << ':' << self_id() << ": unexpected" << endl;
       vt.vt.erase( i ); // ok, thanks to break below
       break;
     }
@@ -762,6 +761,8 @@ void basic_vs::check_lock_rsp()
       lk.unlock();
       vs_locked( update_view_ev );
     }
+  } else {
+    misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << " unexpected" << endl;
   }
 }
 
@@ -795,7 +796,6 @@ void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
     _lock_vt.lock();
     view = ev.value().view + 1;
     vt = ev.value().vt;
-
     _lock_vt.unlock();
     this->vs_pub_view_update();
   } else if ( code == VS_FLUSH_RQ ) {
@@ -897,6 +897,7 @@ void basic_vs::process_out_of_order()
   bool delayed_process;
   vtime tmp;
   stem::addr_type sid = self_id();
+  Event ev;
 
   do {
     delayed_process = false;
@@ -919,16 +920,22 @@ void basic_vs::process_out_of_order()
         }
       }
 
+      misc::use_syslog<LOG_INFO,LOG_USER>() << "ove.pop_back" << ':' << __FILE__ << ':' << __LINE__ << ':' << self_id() << ':' << k->value().ev.code() << endl;
+
       ++vt[k->src()];
       _lock_vt.unlock();
 
-      k->value().ev.src( k->src() );
-      k->value().ev.dest( k->dest() );
-      this->vs_pub_rec( k->value().ev );
-      basic_vs::sync_call( k->value().ev );
+      ev = k->value().ev;
+      ev.src( k->src() );
+      ev.dest( k->dest() );
 
       ove.erase( k++ );
+
+      this->vs_pub_rec( ev );
+      basic_vs::sync_call( ev );
+
       delayed_process = true;
+      break;
 
       try_next:
       ;
@@ -962,8 +969,6 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
   if ( ev.src() != sid ) {
     return;
   }
-  
-  lock_guard<recursive_mutex> lk( _lock_vt );
 
   check_remotes();
 
@@ -998,7 +1003,8 @@ bool basic_vs::check_remotes()
   bool drop = false;
   list<janus::addr_type> trash;
 
-  // lock_guard<recursive_mutex> lk( _lock_vt );
+  lock_guard<recursive_mutex> lk( _lock_vt );
+
   for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
     if ( !is_avail( i->first ) ) {
       points.erase( i->first );
@@ -1006,6 +1012,7 @@ bool basic_vs::check_remotes()
       drop = true;
     }
   }
+
   for ( list<janus::addr_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
     vt.vt.erase( *i );
   }

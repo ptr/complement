@@ -109,7 +109,7 @@ void VT_with_leader::vs_pub_tord_rec( const stem::Event& ev )
 
 
 std::tr2::milliseconds VT_with_leader::vs_pub_lock_timeout() const {
-  return std::tr2::milliseconds(1000);
+  return std::tr2::milliseconds(2000);
 }
 
 
@@ -138,6 +138,59 @@ DEFINE_RESPONSE_TABLE( VT_with_leader )
   EV_EDS( ST_NULL, EV_VS_EV_SAMPLE, sync_message )
 END_RESPONSE_TABLE
 
+int EXAM_IMPL(vtime_operations::leader_local)
+{
+  int n_msg = 100;
+  int n_obj = 3;
+  stem::Event ev( EV_EXT_EV_SAMPLE );
+
+  vector< string > names(n_obj);
+  vector<VT_with_leader*> a(n_obj);
+  vector<int> p(n_obj);
+
+  for ( int i = 0; i < n_obj; ++i ) {
+    names[i] = string("/tmp/janus.") + xmt::uid_str();
+    a[i] = new VT_with_leader( names[i].c_str() );
+    p[i] = i;
+  }
+
+  a[0]->vs_join( stem::badaddr );
+
+  for (int i = 1;i < n_obj;++i) {
+    a[i]->vs_join( a[0]->self_id() );
+  }
+
+  for (int i = 0;i < n_obj;++i) {
+    EXAM_CHECK( a[i]->wait_group_size( std::tr2::milliseconds( max( 500, n_obj * 100) ), n_obj) );
+  }
+
+
+  for ( int j = 0; j < n_msg; ++j ) {
+    random_shuffle( p.begin(), p.end() );
+    stringstream v;
+    v << j;
+    ev.value() = v.str();
+    for (int k = 0;k < n_obj;++k) {
+      ev.dest( a[p[k]]->self_id() ); 
+      a[p[k]]->Send( ev ); 
+    }
+  }
+
+  for (int i = 0;i < n_obj;++i) {
+    EXAM_CHECK( a[i]->wait_msg( std::tr2::milliseconds( max( 500, 5 * n_msg * n_obj) ), n_obj * n_msg) );
+  }
+
+  for (int i = 0;i < n_obj;++i) {
+    delete a[i];
+  }
+
+  for ( int i = 0; i < n_obj; ++i ) {
+    unlink( names[i].c_str() );
+  }
+
+  return EXAM_RESULT;
+}
+
 int EXAM_IMPL(vtime_operations::leader_change)
 {
   int n_msg = 100;
@@ -147,12 +200,16 @@ int EXAM_IMPL(vtime_operations::leader_change)
 
   {
     VT_with_leader a2( "/tmp/a2" );
+
     a2.vs_join( stem::badaddr );
     a1.vs_join( a2.self_id() );
 
     EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2) );
     EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2) );
-    EXAM_CHECK( a2.is_leader() );
+
+    std::tr2::this_thread::sleep( std::tr2::milliseconds(100) );
+
+    EXAM_CHECK( a1.is_leader() ^ a2.is_leader() );
 
     for ( int j = 0; j < n_msg; ++j ) {
       stringstream v;
@@ -167,8 +224,8 @@ int EXAM_IMPL(vtime_operations::leader_change)
       }
     }
 
-    EXAM_CHECK( a1.wait_msg( std::tr2::milliseconds(n_msg * 20), n_msg ) );
-    EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds(n_msg * 20), n_msg ) );
+    EXAM_CHECK( a1.wait_msg( std::tr2::milliseconds( max( 500, n_msg * 20) ), n_msg ) );
+    EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds( max( 500, n_msg * 20) ), n_msg ) );
   }
 
   for ( int j = n_msg; j < 2 * n_msg; ++j ) {
@@ -180,7 +237,7 @@ int EXAM_IMPL(vtime_operations::leader_change)
   }
 
   EXAM_CHECK( a1.wait_flush( std::tr2::milliseconds(500) ) );
-  EXAM_CHECK( a1.wait_msg( std::tr2::milliseconds(n_msg * 20), 2 * n_msg ) );
+  EXAM_CHECK( a1.wait_msg( std::tr2::milliseconds( max(500, n_msg * 20) ), 2 * n_msg ) );
   EXAM_CHECK( a1.is_leader() );
 
   unlink( "/tmp/a1" );
@@ -192,7 +249,7 @@ int EXAM_IMPL(vtime_operations::leader_change)
 
 int EXAM_IMPL(vtime_operations::leader_network)
 {
-  const int n_msg = 1000;
+  const int n_msg = 100;
   try {
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
@@ -313,7 +370,7 @@ int EXAM_IMPL(vtime_operations::leader_network)
               }            }
           }
 
-          a3.vs_join( addr, "localhost", 2009 );
+          EXAM_CHECK_ASYNC_F( a3.vs_join( addr, "localhost", 2009 ) == 0, res);
 
           EXAM_CHECK_ASYNC_F( a3.wait_group_size( std::tr2::milliseconds(500), 3), res );
           std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
@@ -371,7 +428,7 @@ int EXAM_IMPL(vtime_operations::leader_network)
             }
           }
 
-          a2.vs_join( addr, "localhost", 2009 );
+          EXAM_CHECK( a2.vs_join( addr, "localhost", 2009 ) == 0 );
 
           EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2) );
           std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
