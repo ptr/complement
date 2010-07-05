@@ -236,7 +236,6 @@ int EXAM_IMPL(vtime_operations::leader_change)
     a1.Send( ev );
   }
 
-  EXAM_CHECK( a1.wait_flush( std::tr2::milliseconds(500) ) );
   EXAM_CHECK( a1.wait_msg( std::tr2::milliseconds( max(500, n_msg * 20) ), 2 * n_msg ) );
   EXAM_CHECK( a1.is_leader() );
 

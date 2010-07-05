@@ -45,7 +45,7 @@ using namespace std;
 #endif
 
 #ifndef VS_EVENT_TORDER
-# define VS_EVENT_TORDER 0x30c // see torder.cc
+# define VS_EVENT_TORDER 0x30d // see torder.cc
 #endif
 
 VT_with_leader_recovery::VT_with_leader_recovery( const char* nm ) :
@@ -311,9 +311,28 @@ int EXAM_IMPL(vtime_operations::leader_multiple_change)
   }
 
 
-  for (int i = 0;i < n;++i) {
+  for ( int i = 0; i < n; ++i ) {
     delete a[i];
+    for (int j = i + 1;j < n;++j) {
+      stringstream ss;
+      ss << i << ' ' << j;
+      ev.value() = ss.str();
+      ev.dest( a[j]->self_id() );
+      a[j]->Send( ev );
+    }
+    k += n - i - 1;
+    for (int j = i + 1;j < n;++j) {
+      EXAM_CHECK( a[j]->wait_group_size( std::tr2::milliseconds(n * 300), n - i - 1 ) );
+      EXAM_CHECK( a[j]->wait_msg( std::tr2::milliseconds(n * 300), k ) );
+      if ( EXAM_RESULT ) {
+        cout << i << ' ' << j << ' ' << k << ' ' << a[j]->msg << endl;
+        goto park;
+      }
+    }
   }
+  
+  park:
+  ;
 
   for ( int i = 0; i < n; ++i ) {
     unlink( names[i].c_str() );

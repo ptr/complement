@@ -18,66 +18,19 @@ using namespace xmt;
 using namespace stem;
 using namespace std::tr2;
 
-#define VS_EVENT_TORDER 0x30c
-#define VS_ORDER_CONF   0x30d
-#define VS_LEADER       0x30e
+#define VS_EVENT_TORDER 0x30d
+#define VS_ORDER_CONF   0x30e
 
 torder_vs::torder_vs() :
     basic_vs(),
-    leader_( stem::badaddr ),
     is_leader_( false )
 {
 }
 
 torder_vs::torder_vs( const char* info ) :
     basic_vs( info ),
-    leader_( stem::badaddr ),
     is_leader_( false )
 {
-}
-
-void torder_vs::check_leader()
-{
-  check_remotes();
-
-  bool leader_leave;
-  {
-    unique_lock<recursive_mutex> lk( _lock_vt );
-    leader_leave = ( vt.vt.find( leader_ ) == vt.vt.end() );
-  }
-
-  if ( leader_ != stem::badaddr && leader_leave) {
-    // next leader election process
-    vector<stem::addr_type> basket;
-    {
-      unique_lock<recursive_mutex> lk( _lock_vt );
-      basket.resize( vt.vt.size() );
-      int j = 0;
-      for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i, ++j ) {
-        basket[j] = i->first;
-      }
-    }
-
-    sort( basket.begin(), basket.end() );
-
-    vector<stem::addr_type>::iterator i = basket.begin() + view % basket.size();
-
-    stem::addr_type sid = self_id();
-
-    leader_ = *i;
-
-    if ( *i == sid ) {
-      is_leader_ = true;
-      vs_send_flush();
-        
-      stem::Event_base<vs_event_total_order::id_type> cnf( VS_ORDER_CONF );
-      orig_order_cnt_type tmp( orig_order_container_.begin(), orig_order_container_.end() );
-      for ( orig_order_cnt_type::iterator j = tmp.begin(); j != tmp.end(); ++j) {
-        cnf.value() = *j;
-        vs( cnf );
-      }
-    }
-  }
 }
 
 int torder_vs::vs_torder( const stem::Event& inc_ev )
@@ -95,38 +48,34 @@ int torder_vs::vs_torder( const stem::Event& inc_ev )
   return ret;
 }
 
-void torder_vs::vs_pub_join()
-{
-  if ( vs_group_size() == 1 ) {
-    leader_ = self_id();
-    is_leader_ = true;
-  }
-}
-
 void torder_vs::vs_pub_view_update()
 {
-  if ( is_leader() ) {
-    if ( vs_group_size() > 1 ) {
-      EventVoid ev( VS_LEADER );
-      send_to_vsg( ev );
+  // next leader election process
+  vector<stem::addr_type> basket;
+  {
+    unique_lock<recursive_mutex> lk( _lock_vt );
+    basket.resize( vt.vt.size() );
+    int j = 0;
+    for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i, ++j ) {
+      basket[j] = i->first;
     }
   }
-}
 
-void torder_vs::vs_leader( const stem::EventVoid& ev )
-{
-  {
-    lock_guard<recursive_mutex> lk( _lock_vt );
-    if ( vt.vt.size() > 1 ) {
-      vtime::vtime_type::const_iterator i;
-      for ( i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-        if ( i->first == ev.src() ) {
-          leader_ = ev.src();
-          is_leader_ = false;
-          break;
-        }
-      }
+  sort( basket.begin(), basket.end() );
+
+  vector<stem::addr_type>::iterator i = basket.begin() + view % basket.size();
+
+  if ( *i == self_id() ) {
+    is_leader_ = true;
+      
+    stem::Event_base<vs_event_total_order::id_type> cnf( VS_ORDER_CONF );
+    orig_order_cnt_type tmp( orig_order_container_.begin(), orig_order_container_.end() );
+    for ( orig_order_cnt_type::iterator j = tmp.begin(); j != tmp.end(); ++j) {
+      cnf.value() = *j;
+      vs( cnf );
     }
+  } else {
+    is_leader_ = false;
   }
 }
 
@@ -135,8 +84,6 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
   ev.value().ev.src( ev.src() );
   ev.value().ev.dest( ev.dest() );
   ev.value().ev.setf( stem::__Event_Base::vs );
-
-  check_leader();
 
   conform_container_[ev.value().id] = ev.value().ev;
   orig_order_container_.push_back( ev.value().id );
@@ -167,7 +114,6 @@ void torder_vs::vs_torder_conf( const stem::Event_base<vs_event_total_order::id_
 DEFINE_RESPONSE_TABLE( torder_vs )
   EV_Event_base_T_( ST_NULL, VS_EVENT_TORDER, vs_process_torder, vs_event_total_order )
   EV_Event_base_T_( ST_NULL, VS_ORDER_CONF, vs_torder_conf, vs_event_total_order::id_type )
-  EV_Event_base_T_( ST_NULL, VS_LEADER, vs_leader, void )
 END_RESPONSE_TABLE
 
 } // namespace janus

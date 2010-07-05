@@ -173,6 +173,7 @@ class basic_vs :
 
     void access_points_refresh_pri( const stem::Event_base<janus::detail::access_points>& );
     void access_points_refresh_sec( const stem::Event_base<janus::detail::access_points>& );
+    void vs_access_point( const stem::Event_base<vs_points>& );
 
     int vs_locked( const stem::Event& );
 

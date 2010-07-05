@@ -50,7 +50,6 @@ class torder_vs :
 
   protected:
     virtual void vs_pub_view_update();
-    virtual void vs_pub_join();
     virtual void vs_pub_tord_rec( const stem::Event& ) = 0;
 
   protected:
@@ -73,7 +72,6 @@ class torder_vs :
 
     conf_cnt_type conform_container_;
     orig_order_cnt_type orig_order_container_;
-    stem::addr_type leader_;
     bool is_leader_;
 
     DECLARE_RESPONSE_TABLE( torder_vs, basic_vs );

@@ -41,6 +41,7 @@ using namespace std::tr2;
 #define VS_LAST_WILL        0x309
 #define VS_ACCESS_POINT_PRI 0x30a
 #define VS_ACCESS_POINT_SEC 0x30b
+#define VS_ACCESS_POINT     0x30c
 
 const janus::addr_type& nil_addr = xmt::nil_uuid;
 const gid_type& nil_gid = xmt::nil_uuid;
@@ -571,6 +572,7 @@ basic_vs::size_type basic_vs::vs_group_size() const
   return vt.vt.size();
 }
 
+
 void basic_vs::vs_join_request_work( const stem::Event_base<vs_join_rq>& ev )
 {
   stem::Event_base<vs_points> rsp( VS_JOIN_RS );
@@ -580,19 +582,13 @@ void basic_vs::vs_join_request_work( const stem::Event_base<vs_join_rq>& ev )
 
   Send( rsp );
 
-  for ( vs_points::points_type::const_iterator i = ev.value().points.begin(); i != ev.value().points.end(); ++i ) {
-    if ( hostid() != i->second.hostid ) {
-      if ( i->second.family == AF_INET ) {
-        // i.e. IP not 127.x.x.x
-        if ( *reinterpret_cast<const uint8_t*>(i->second.data.data()) != 127 ) {
-          points.insert( *i );
-        }
-      }
-    } else {
-      points.insert( *i );
-    }
+  {
+    stem::Event_base< vs_points > pev( VS_ACCESS_POINT );
+    pev.value().points = ev.value().points;
+    basic_vs::sync_call( pev );
+    send_to_vsg( pev );
   }
-
+  
   group_applicant = ev.src();
   group_applicant_ref = ev.value().reference;
 
@@ -613,6 +609,9 @@ void basic_vs::vs_join_request_work( const stem::Event_base<vs_join_rq>& ev )
   lock_rsp.clear();
   stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
   basic_vs::vs( view_lock_ev );
+
+  view_lock_ev.dest( group_applicant );
+  Send( view_lock_ev );
 }
 
 void basic_vs::vs_join_request( const stem::Event_base<vs_join_rq>& ev )
@@ -667,10 +666,14 @@ void basic_vs::process_last_will_work( const stem::Event_base<janus::addr_type>&
     return; 
   }
 
-  points.erase( ev.value() );
+  if ( ev.value() != stem::badaddr ) {
+    points.erase( ev.value() );
 
-  lock_guard<recursive_mutex> lk( _lock_vt );
-  vt.vt.erase( ev.value() );
+    {
+      lock_guard<recursive_mutex> lk( _lock_vt );
+      vt.vt.erase( ev.value() );
+    }
+  }
 
   group_applicant = stem::badaddr;
   lock_rsp.clear();
@@ -723,7 +726,7 @@ void basic_vs::vs_lock_view( const stem::EventVoid& ev )
 
 void basic_vs::vs_lock_view_lk( const stem::EventVoid& ev )
 {
-  if ( ev.src() < lock_addr ) {
+  if ( ev.src() <= lock_addr ) {
     lock_addr = ev.src();
     stem::EventVoid view_lock_ev( VS_LOCK_VIEW_ACK );
     view_lock_ev.dest( lock_addr );
@@ -735,7 +738,7 @@ void basic_vs::check_lock_rsp()
 {
   if ( !fq.empty() ) {
     unique_lock<recursive_mutex> lk( _lock_vt );
-    if ( lock_rsp.size() >= vt.vt.size() ) {
+    if ( lock_rsp.size() >= (vt.vt.size() + (fq.front().code() == VS_JOIN_RQ)) ) {
       for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
         if ( (lock_rsp.find( i->first ) == lock_rsp.end()) ) {
           misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << " unexpected" << endl;
@@ -805,6 +808,21 @@ void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
 
   if ( !fq.empty() && (ev.src() == sid) && (fq.front().dest() == sid) ) {
     fq.pop_front();
+  }
+
+  // remove expired
+  {
+    lock_guard<recursive_mutex> lkv( _lock_vt );
+    for ( flush_container_type::iterator i = fq.begin();i != fq.end();) {
+      if ( i->code() == VS_LAST_WILL ) {
+        stem::addr_type lost = stem::detail::convert<stem::Event, stem::Event_base<janus::addr_type> >()(*i).value();
+        if ( vt.vt.find( lost ) == vt.vt.end() ) {
+          fq.erase( i++ );
+          continue;
+        }
+      }
+      ++i;
+    }
   }
   
   process_delayed();
@@ -1017,6 +1035,13 @@ bool basic_vs::check_remotes()
     vt.vt.erase( *i );
   }
 
+  if ( drop ) {
+    Event_base< janus::addr_type > ev( VS_LAST_WILL );
+    ev.value() = stem::badaddr;
+    ev.dest( self_id() );
+    Forward( ev );
+  }
+
   return !drop;
 }
 
@@ -1104,6 +1129,22 @@ void basic_vs::access_points_refresh_sec( const stem::Event_base<janus::detail::
   }
 }
 
+void basic_vs::vs_access_point( const stem::Event_base< vs_points >& ev )
+{
+  for ( vs_points::points_type::const_iterator i = ev.value().points.begin(); i != ev.value().points.end(); ++i ) {
+    if ( hostid() != i->second.hostid ) {
+      if ( i->second.family == AF_INET ) {
+        // i.e. IP not 127.x.x.x
+        if ( *reinterpret_cast<const uint8_t*>(i->second.data.data()) != 127 ) {
+          points.insert( *i );
+        }
+      }
+    } else {
+      points.insert( *i );
+    }
+  }
+}
+
 xmt::uuid_type basic_vs::flush_id( const stem::Event& ev )
 {
   if ( ev.code() == VS_FLUSH_RQ ) {
@@ -1144,6 +1185,9 @@ DEFINE_RESPONSE_TABLE( basic_vs )
 
   EV_Event_base_T_( ST_NULL, VS_ACCESS_POINT_PRI, access_points_refresh_pri, janus::detail::access_points )
   EV_Event_base_T_( ST_NULL, VS_ACCESS_POINT_SEC, access_points_refresh_sec, janus::detail::access_points )
+
+  EV_Event_base_T_( ST_NULL, VS_ACCESS_POINT, vs_access_point, vs_points )
+  EV_Event_base_T_( VS_ST_LOCKED, VS_ACCESS_POINT, vs_access_point, vs_points )
 END_RESPONSE_TABLE
 
 } // namespace janus

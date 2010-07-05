@@ -308,9 +308,9 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3_sim)
   
     delete a4;
   
-    EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 3 ) );
-    EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3 ) );
-    EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(500), 3 ) );  
+    EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(5000), 3 ) );
+    EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(5000), 3 ) );
+    EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(5000), 3 ) );  
     if ( EXAM_RESULT ) {
       stringstream s;
       s << "on iteration " << i;
