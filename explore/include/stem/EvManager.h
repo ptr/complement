@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/30 18:51:15 ptr>
+// -*- C++ -*- Time-stamp: <10/07/05 14:14:11 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2010
@@ -262,19 +262,6 @@ class EvManager
     void start_queue();
 
   private:
-    struct _not_empty
-    {
-        _not_empty( EvManager& m ) :
-            me( m )
-          { }
-
-        bool operator()() const
-          { return !me.in_ev_queue.empty() || me._dispatch_stop; }
-
-        EvManager& me;
-    } not_empty;
-
-
     void Send( const Event& e );
 
     const xmt::uuid_type _id;
@@ -282,13 +269,7 @@ class EvManager
     local_heap_type heap;   // address -> EventHandler *
     info_heap_type  iheap;  // address -> info string (both local and external)
 
-    typedef std::deque< Event > queue_type;
     typedef std::list< Event > subqueue_type;
-
-    queue_type in_ev_queue;
-    queue_type out_ev_queue;
-
-    static void _Dispatch( EvManager* );
 
     struct subqueue_container
     {
@@ -332,6 +313,9 @@ class EvManager
         subqueue_container* q;
     };
 
+    std::list<nest_ref> refs;
+    std::list<std::tr2::thread*>  threads;
+
     static void _Dispatch_sub( nest_ref );
 
     bool not_finished();
@@ -348,8 +332,6 @@ class EvManager
     std::tr2::mutex _lock_tr;
     unsigned _trflags;
     std::ostream *_trs;
-
-    std::tr2::thread _ev_queue_thr;
 
     friend class Names;
     friend class NetTransportMgr;

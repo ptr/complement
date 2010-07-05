@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/01 09:09:09 ptr>
+// -*- C++ -*- Time-stamp: <10/07/05 13:57:52 ptr>
 
 /*
  *
@@ -40,15 +40,19 @@ static const string addr_unknown("address unknown");
 static const string no_catcher( "no catcher for event" );
 
 __FIT_DECLSPEC EvManager::EvManager() :
-    not_empty( *this ),
     _id( xmt::uid() ),
     _dispatch_stop( false ),
     _trflags( 0 ),
-    _trs( 0 ),
-    _ev_queue_thr( _Dispatch, this )
+    _trs( 0 )
 {
-  // _cnd_queue.set( false );
-  // _ev_queue_thr.launch( _Dispatch, this );
+  for ( int k = 0; k < 4; ++k ) {
+    nests.push_back( subqueue_container() );
+    refs.push_back( nest_ref() );
+    refs.back().mgr = this;
+    refs.back().q = &nests.back();
+
+    threads.push_back( new thread(_Dispatch_sub, refs.back() ) );
+  }
 }
 
 __FIT_DECLSPEC EvManager::~EvManager()
@@ -70,120 +74,7 @@ void EvManager::stop_queue()
     _cnd_queue.notify_all();
   }
 
-  _ev_queue_thr.join();
-}
-
-void EvManager::start_queue()
-{
-  if ( !_ev_queue_thr.joinable()  ) {
-    lock_guard<mutex> lk( _lock_queue );
-    _dispatch_stop = false;
-
-    (&_ev_queue_thr)->~thread();
-    new (&_ev_queue_thr) std::tr2::thread( _Dispatch, this );
-  }
-}
-
-void EvManager::_Dispatch( EvManager* p )
-{
-  EvManager& me = *p;
-  mutex& lq = me._lock_queue;
-  queue_type& in_ev_queue = me.in_ev_queue;
-  queue_type& out_ev_queue = me.out_ev_queue;
-
-  list<nest_ref> refs;
-  list<thread*>  threads;
-
-  for ( int k = 0; k < 4; ++k ) {
-    me.nests.push_back( subqueue_container() );
-    refs.push_back( nest_ref() );
-    refs.back().mgr = p;
-    refs.back().q = &me.nests.back();
-
-    threads.push_back( new thread(_Dispatch_sub, refs.back() ) );
-  }
-
-  vector<int> nest_sz( refs.size() );
-  vector<int>::iterator m, k;
-
-  while ( me.not_finished() ) {
-    {
-      unique_lock<mutex> lk( lq );
-      in_ev_queue.swap( out_ev_queue );
-#ifdef __FIT_STEM_TRACE
-      try {
-        lock_guard<mutex> lk(me._lock_tr);
-        if ( me._trs != 0 && me._trs->good() && (me._trflags & tracedispatch) ) {
-#ifdef STLPORT
-          ios_base::fmtflags f = me._trs->flags( 0 );
-#else
-          ios_base::fmtflags f = me._trs->flags( static_cast<std::_Ios_Fmtflags>(0) );
-#endif
-          *me._trs << "EvManager queues swapped" << endl;
-#ifdef STLPORT
-          me._trs->flags( f );
-#else
-          me._trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
-#endif
-        }
-      }
-      catch ( ... ) {
-      }
-#endif // __FIT_STEM_TRACE
-    }
-    
-    // cerr << out_ev_queue.size() << endl;
-
-    Event ev;
-
-    while ( !out_ev_queue.empty() ) {
-      /*
-        In next two cycles, if event extracted from out_ev_queue
-        and pushed to some nest, then jump next iteration of outer
-        cycle ('while' above) requied: search for next event
-        from first nest.
-       */
-      fill( nest_sz.begin(), nest_sz.end(), 0 );
-      m = nest_sz.begin();
-      for ( nests_type::iterator i = me.nests.begin(); i != me.nests.end() && !out_ev_queue.empty(); ++i, ++m ) {
-        lock_guard<mutex> lk( i->lock );
-        for ( subqueue_type::const_iterator j = i->q.begin(); j != i->q.end(); ++j ) {
-          if ( j->dest() == out_ev_queue.front().dest() ) {
-            i->q.push_back( ev );
-            swap( i->q.back(), out_ev_queue.front() );
-            out_ev_queue.pop_front();
-            goto next_event;
-          }
-        }
-        *m = i->q.size();
-      }
-
-      m = min_element( nest_sz.begin(), nest_sz.end() );
-
-      k = nest_sz.begin();
-
-      for ( nests_type::iterator i = me.nests.begin(); i != me.nests.end() && !out_ev_queue.empty(); ++i, ++k ) {
-        if ( m == k ) {
-          lock_guard<mutex> lk( i->lock );
-          i->q.push_back( ev );
-          swap( i->q.back(), out_ev_queue.front() );
-          out_ev_queue.pop_front();
-          i->cnd.notify_one();        
-          break;
-        }
-      }
-
-      next_event:
-      ;
-    }
-
-    {
-      unique_lock<mutex> lk( lq );
-      me._cnd_queue.wait( lk, me.not_empty );
-    }
-  }
-
-  for ( nests_type::iterator i = me.nests.begin(); i != me.nests.end(); ++i ) {
+  for ( nests_type::iterator i = nests.begin(); i != nests.end(); ++i ) {
     lock_guard<mutex> lk(i->lock);
     i->stop = true;
     i->q.clear(); // erase all unprocessed
@@ -195,58 +86,10 @@ void EvManager::_Dispatch( EvManager* p )
     delete *k;
     *k = 0;
   }
+}
 
-#ifdef __FIT_STEM_TRACE
-  try {
-    lock_guard<mutex> lk(me._lock_tr);
-    if ( me._trs != 0 && me._trs->good() && (me._trflags & tracedispatch) ) {
-#ifdef STLPORT
-      ios_base::fmtflags f = me._trs->flags( 0 );
-#else
-      ios_base::fmtflags f = me._trs->flags( static_cast<std::_Ios_Fmtflags>(0) );
-#endif
-      *me._trs << "EvManager Dispatch loop finished" << endl;
-#ifdef STLPORT
-      me._trs->flags( f );
-#else
-      me._trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
-#endif
-    }
-  }
-  catch ( ... ) {
-  }
-#endif // __FIT_STEM_TRACE
-
-  // try process the rest of queue, if not empty
-  {
-    unique_lock<mutex> lk( lq );
-    in_ev_queue.swap( out_ev_queue );
-  }
-  while ( !out_ev_queue.empty() ) {
-    me.Send( out_ev_queue.front() );
-    out_ev_queue.pop_front();
-  }
-
-#ifdef __FIT_STEM_TRACE
-  try {
-    lock_guard<mutex> lk(me._lock_tr);
-    if ( me._trs != 0 && me._trs->good() && (me._trflags & tracedispatch) ) {
-#ifdef STLPORT
-      ios_base::fmtflags f = me._trs->flags( 0 );
-#else
-      ios_base::fmtflags f = me._trs->flags( static_cast<std::_Ios_Fmtflags>(0) );
-#endif
-      *me._trs << "EvManager stop Dispatch" << endl;
-#ifdef STLPORT
-      me._trs->flags( f );
-#else
-      me._trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
-#endif
-    }
-  }
-  catch ( ... ) {
-  }
-#endif // __FIT_STEM_TRACE
+void EvManager::start_queue()
+{
 }
 
 void EvManager::_Dispatch_sub( nest_ref p )
@@ -428,29 +271,6 @@ std::ostream* EvManager::settrs( std::ostream* s )
 
 __FIT_DECLSPEC void EvManager::push( const Event& e )
 {
-#if 0
-  // any event pushed into queue
-  std::tr2::lock_guard<std::tr2::mutex> lk( _lock_queue );
-  in_ev_queue.push_back( e );
-  _cnd_queue.notify_one();
-#ifdef __FIT_STEM_TRACE
-  try {
-    lock_guard<mutex> lk(_lock_tr);
-    if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
-      ios_base::fmtflags f = _trs->flags( ios_base::hex | ios_base::showbase );
-      *_trs << "EvManager push event " << e.code() << " to queue" << endl;
-#ifdef STLPORT
-      _trs->flags( f );
-#else
-      _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
-#endif
-    }
-  }
-  catch ( ... ) {
-  }
-#endif // __FIT_STEM_TRACE
-
-#else // if 0
   // process events to 'remotes' here (on stack)
   // may lead t stalling, if send delay (can't deliver
   // packet immediately)
@@ -470,28 +290,36 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
         }
 
         if ( (i->second.top().second.first & (EvManager::remote | EvManager::nosend) ) == 0 ) {
-          // push event into queue
-          // throw int(0);  // low performance
+          vector<int> nest_sz( refs.size() );
+          vector<int>::iterator m, k;
 
-          std::tr2::lock_guard<std::tr2::mutex> lk( _lock_queue );
-          in_ev_queue.push_back( e );
-          _cnd_queue.notify_one();
-#ifdef __FIT_STEM_TRACE
-          try {
-            lock_guard<mutex> lk(_lock_tr);
-            if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
-              ios_base::fmtflags f = _trs->flags( ios_base::hex | ios_base::showbase );
-              *_trs << "EvManager push event " << e.code() << " to queue" << endl;
-#ifdef STLPORT
-              _trs->flags( f );
-#else
-              _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
-#endif
+          fill( nest_sz.begin(), nest_sz.end(), 0 );
+          m = nest_sz.begin();
+          for ( nests_type::iterator i = nests.begin(); i != nests.end(); ++i, ++m ) {
+            lock_guard<mutex> lk( i->lock );
+            for ( subqueue_type::const_iterator j = i->q.begin(); j != i->q.end(); ++j ) {
+              if ( j->dest() == e.dest() ) {
+                i->q.push_back( e );
+                i->cnd.notify_one();
+                return;
+              }
+            }
+            *m = i->q.size();
+          }
+
+          m = min_element( nest_sz.begin(), nest_sz.end() );
+
+          k = nest_sz.begin();
+
+          for ( nests_type::iterator i = nests.begin(); i != nests.end(); ++i, ++k ) {
+            if ( m == k ) {
+              lock_guard<mutex> lk( i->lock );
+              i->q.push_back( e );
+              i->cnd.notify_one();        
+              break;
             }
           }
-          catch ( ... ) {
-          }
-#endif // __FIT_STEM_TRACE
+
           return;
         }
 
@@ -559,29 +387,6 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
       }
     }      
   }
-#if 0 // low performance
-  catch ( int ) {
-    std::tr2::lock_guard<std::tr2::mutex> lk( _lock_queue );
-    in_ev_queue.push_back( e );
-    _cnd_queue.notify_one();
-#ifdef __FIT_STEM_TRACE
-    try {
-      lock_guard<mutex> lk(_lock_tr);
-      if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
-        ios_base::fmtflags f = _trs->flags( ios_base::hex | ios_base::showbase );
-        *_trs << "EvManager push event " << e.code() << " to queue" << endl;
-#ifdef STLPORT
-        _trs->flags( f );
-#else
-        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
-#endif
-      }
-    }
-    catch ( ... ) {
-    }
-#endif // __FIT_STEM_TRACE
-  }
-#endif // if 0
   catch ( std::logic_error& err ) {
     try {
       lock_guard<mutex> lk(_lock_tr);
@@ -612,7 +417,6 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
     catch ( ... ) {
     }
   }
-#endif // if 0
 }
 
 void EvManager::sync_call( EventHandler& object, const Event& e )
