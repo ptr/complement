@@ -164,7 +164,6 @@ int EXAM_IMPL(vtime_operations::leader_local)
     EXAM_CHECK( a[i]->wait_group_size( std::tr2::milliseconds( max( 500, n_obj * 100) ), n_obj) );
   }
 
-
   for ( int j = 0; j < n_msg; ++j ) {
     random_shuffle( p.begin(), p.end() );
     stringstream v;
@@ -177,13 +176,17 @@ int EXAM_IMPL(vtime_operations::leader_local)
   }
 
   for (int i = 0;i < n_obj;++i) {
-    EXAM_CHECK( a[i]->wait_msg( std::tr2::milliseconds( max( 500, 5 * n_msg * n_obj) ), n_obj * n_msg) );
+    EXAM_CHECK( a[i]->wait_msg( std::tr2::milliseconds( max( 500, n_msg) ), n_obj * n_msg) );
+  }
+
+  for (int i = 0;i < n_obj - 1;++i) {
+    EXAM_CHECK( system( (string("diff -q ") + names[i] + " " + names[i + 1]).c_str() ) == 0 );
   }
 
   for (int i = 0;i < n_obj;++i) {
     delete a[i];
   }
-
+  
   for ( int i = 0; i < n_obj; ++i ) {
     unlink( names[i].c_str() );
   }

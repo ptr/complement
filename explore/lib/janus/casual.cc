@@ -172,16 +172,17 @@ int basic_vs::vs( const stem::Event& inc_ev )
   
   {
     lock_guard<recursive_mutex> lkv( _lock_vt );
+    stem::addr_type sid = self_id();
 
-    ++vt[self_id()];
+    ++vt[sid];
     ev.value().view = view;
     ev.value().ev = inc_ev;
     ev.value().vt = vt;
     ev.value().ev.setf( stem::__Event_Base::vs );
-    ev.src( self_id() );
+    ev.src( sid );
 
     for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-      if ( i->first != self_id() ) {
+      if ( i->first != sid ) {
         ev.dest( i->first );
         Send( ev );
       }
@@ -201,16 +202,17 @@ int basic_vs::vs_locked( const stem::Event& inc_ev )
 
   {
     lock_guard<recursive_mutex> lk( _lock_vt );
+    stem::addr_type sid = self_id();
 
-    ++vt[self_id()];
+    ++vt[sid];
     ev.value().view = view;
     ev.value().ev = inc_ev;
     ev.value().vt = vt;
     ev.value().ev.setf( stem::__Event_Base::vs );
-    ev.src( self_id() );
+    ev.src( sid );
 
     for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-      if ( i->first != self_id() ) {
+      if ( i->first != sid ) {
         ev.dest( i->first );
         Send( ev );
       }
