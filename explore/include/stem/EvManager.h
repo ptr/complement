@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/05 14:14:11 ptr>
+// -*- C++ -*- Time-stamp: <10/07/06 07:26:07 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2010
@@ -77,6 +77,32 @@ struct less<stem::detail::weighted_handler_type>
 };
 
 } // namespace std
+
+#if defined(__USE_STLPORT_HASH) || defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+#  define __HASH_NAMESPACE std
+#endif
+#if defined(__USE_STD_HASH)
+#  define __HASH_NAMESPACE __gnu_cxx
+#endif
+
+namespace __HASH_NAMESPACE {
+
+#ifdef __USE_STD_TR1
+namespace tr1 {
+#endif
+
+template <>
+struct hash<stem::EventHandler*>
+{
+    size_t operator()(const stem::EventHandler* __x) const
+      { return reinterpret_cast<size_t>(__x); }
+};
+
+#ifdef __USE_STD_TR1
+}
+#endif
+
+} // namespace __HASH_NAMESPACE
 
 namespace stem {
 
@@ -250,6 +276,13 @@ class EvManager
 
     void sync_call( EventHandler&, const Event& e );
 
+    void cache_clear( EventHandler* obj )
+      {
+        std::tr2::lock_guard<std::tr2::mutex> plk(pheap_lock);
+        std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( obj->_theHistory_lock );
+        pheap.erase( obj );
+      }
+
   protected:
     void unsafe_Subscribe( const addr_type& id, EventHandler* object, int nice = 0 );
     void unsafe_Unsubscribe( const addr_type& id, EventHandler* );
@@ -262,70 +295,49 @@ class EvManager
     void start_queue();
 
   private:
-    void Send( const Event& e );
-
     const xmt::uuid_type _id;
 
     local_heap_type heap;   // address -> EventHandler *
     info_heap_type  iheap;  // address -> info string (both local and external)
 
-    typedef std::list< Event > subqueue_type;
+#ifdef __USE_STLPORT_HASH
+    typedef std::hash_map<EventHandler*,std::list<Event> > p_heap_type;
+#endif
+#ifdef __USE_STD_HASH
+    typedef __gnu_cxx::hash_map<EventHandler*,std::list<Event> > p_heap_type;
+#endif
+#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+    typedef std::tr1::unordered_map<EventHandler*,std::list<Event> > p_heap_type;
+#endif
 
-    struct subqueue_container
-    {
-        subqueue_container() :
-            stop( false )
-          { }
-
-        subqueue_container( const subqueue_container& ) :
-            stop( false )
-          { }
-
-        subqueue_container& operator =( const subqueue_container& )
-          { stop = false; return *this; }
-
-        std::tr2::mutex lock;
-        std::tr2::condition_variable cnd;
-        subqueue_type q;
-        bool stop;
-    };
+    p_heap_type pheap;
+    std::list<std::pair<EventHandler*,int> > plist;
+    std::tr2::mutex pheap_lock;
 
     class subqueue_condition
     {
       public:
-        subqueue_condition( subqueue_container& q ) :
-            sq( q )
+        subqueue_condition( EvManager& m ) :
+            mgr( m )
           { }
 
         bool operator()() const
-          { return !sq.q.empty() || sq.stop; }
+          { return !mgr.plist.empty() || mgr._dispatch_stop; }
 
       private:
-        subqueue_container& sq;
-    };
+        EvManager& mgr;
+    } not_empty;
 
-    typedef std::list<subqueue_container> nests_type;
-    nests_type nests;
+    const int n_threads;
+    std::list<std::tr2::thread*> threads;
 
-    struct nest_ref
-    {
-        EvManager* mgr;
-        subqueue_container* q;
-    };
-
-    std::list<nest_ref> refs;
-    std::list<std::tr2::thread*>  threads;
-
-    static void _Dispatch_sub( nest_ref );
-
-    bool not_finished();
+    static void _Dispatch_sub( EvManager* );
 
     bool _dispatch_stop;
 
     std::tr2::rw_mutex _lock_heap;
     std::tr2::mutex _lock_iheap;
 
-    std::tr2::mutex _lock_queue;
     std::tr2::condition_variable _cnd_queue;
 
     static std::string inv_key_str;
