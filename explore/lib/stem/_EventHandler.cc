@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/01 09:44:47 ptr>
+// -*- C++ -*- Time-stamp: <10/07/06 07:18:20 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2010
@@ -22,6 +22,7 @@
 #include <mt/mutex>
 #include <mt/thread>
 #include <mt/uid.h>
+#include <exam/defs.h>
 
 #include <unistd.h>
 
@@ -310,21 +311,20 @@ addr_type EventHandler::get_default()
 
 void EventHandler::solitary()
 {
-  lock_guard<recursive_mutex> lk( _theHistory_lock );
   _mgr->Unsubscribe( _ids.begin(), _ids.end(), this );
+  _mgr->cache_clear( this );
   theHistory.clear();
 }
 
 void EventHandler::enable()
 {
-  // lock_guard<recursive_mutex> lk( _theHistory_lock );
   _mgr->Subscribe( _ids.begin(), _ids.end(), this, _nice );
 }
 
 void EventHandler::disable()
 {
-  lock_guard<recursive_mutex> lk( _theHistory_lock );
   _mgr->Unsubscribe( _ids.begin(), _ids.end(), this );
+  _mgr->cache_clear( this );
 }
 
 int EventHandler::flags() const
