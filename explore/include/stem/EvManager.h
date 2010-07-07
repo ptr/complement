@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/06 07:26:07 ptr>
+// -*- C++ -*- Time-stamp: <10/07/07 20:54:18 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2010
@@ -132,7 +132,8 @@ class EvManager
       tracenet = 1,
       tracedispatch = 2,
       tracefault = 4,
-      tracesubscr = 8
+      tracesubscr = 8,
+      tracetime = 16
     };
 
     enum objectflags {
@@ -230,8 +231,7 @@ class EvManager
         std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
 
         while ( first != last ) {
-          unsafe_Unsubscribe( *first, obj );
-          ++first;
+          unsafe_Unsubscribe( *first++, obj );
         }
       }
 

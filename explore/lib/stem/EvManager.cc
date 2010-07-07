@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/06 07:20:25 ptr>
+// -*- C++ -*- Time-stamp: <10/07/07 21:02:42 ptr>
 
 /*
  *
@@ -114,6 +114,9 @@ void EvManager::_Dispatch_sub( EvManager* p )
             if ( me._trs != 0 && me._trs->good() && (me._trflags & tracedispatch) ) {
               *me._trs << xmt::demangle( obj->classtype().name() )
                        << " (" << obj << ")\n";
+              if ( (me._trflags & tracetime) ) {
+                *me._trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
+              }
               obj->DispatchTrace( ev.front(), *me._trs );
               *me._trs << endl;
             }
@@ -131,6 +134,9 @@ void EvManager::_Dispatch_sub( EvManager* p )
             if ( me._trs != 0 && me._trs->good() && (me._trflags & tracefault) ) {
               *me._trs << err.what() << "\n"
                        << xmt::demangle( obj->classtype().name() ) << " (" << obj << ")\n";
+              if ( (me._trflags & tracetime) ) {
+                *me._trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
+              }
               obj->DispatchTrace( ev.front(), *me._trs );
               *me._trs << endl;
             }
@@ -144,6 +150,9 @@ void EvManager::_Dispatch_sub( EvManager* p )
             if ( me._trs != 0 && me._trs->good() && (me._trflags & tracefault) ) {
               *me._trs << "Unknown, uncatched exception during process:\n"
                        << xmt::demangle( obj->classtype().name() ) << " (" << obj << ")\n";
+              if ( (me._trflags & tracetime) ) {
+                *me._trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
+              }
               obj->DispatchTrace( ev.front(), *me._trs );
               *me._trs << endl;
             }
@@ -372,6 +381,9 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
         if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
           *_trs << xmt::demangle( object->classtype().name() )
                 << " (" << object << ")\n";
+          if ( (_trflags & tracetime) ) {
+            *_trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
+          }
           object->DispatchTrace( e, *_trs );
           *_trs << endl;
         }
@@ -389,6 +401,9 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
           *_trs << err.what() << "\n"
                 << xmt::demangle( object->classtype().name() ) << " (" << object << ")\n";
+          if ( (_trflags & tracetime) ) {
+            *_trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
+          }
           object->DispatchTrace( e, *_trs );
           *_trs << endl;
         }
@@ -402,6 +417,9 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
           *_trs << "Unknown, uncatched exception during process:\n"
                 << xmt::demangle( object->classtype().name() ) << " (" << object << ")\n";
+          if ( (_trflags & tracetime) ) {
+            *_trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
+          }
           object->DispatchTrace( e, *_trs );
           *_trs << endl;
         }
@@ -454,6 +472,9 @@ void EvManager::sync_call( EventHandler& object, const Event& e )
         if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
           *_trs << xmt::demangle( object.classtype().name() )
                 << " (" << &object << ")\n";
+          if ( (_trflags & tracetime) ) {
+            *_trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
+          }
           object.DispatchTrace( e, *_trs );
           *_trs << endl;
         }
@@ -471,6 +492,9 @@ void EvManager::sync_call( EventHandler& object, const Event& e )
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
           *_trs << err.what() << "\n"
                 << xmt::demangle( object.classtype().name() ) << " (" << &object << ")\n";
+          if ( (_trflags & tracetime) ) {
+            *_trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
+          }
           object.DispatchTrace( e, *_trs );
           *_trs << endl;
         }
@@ -484,6 +508,9 @@ void EvManager::sync_call( EventHandler& object, const Event& e )
         if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
           *_trs << "Unknown, uncatched exception during process:\n"
                 << xmt::demangle( object.classtype().name() ) << " (" << &object << ")\n";
+          if ( (_trflags & tracetime) ) {
+            *_trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
+          }
           object.DispatchTrace( e, *_trs );
           *_trs << endl;
         }
