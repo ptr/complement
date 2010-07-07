@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/01 17:50:09 ptr>
+// -*- C++ -*- Time-stamp: <10/07/07 21:03:12 ptr>
 
 /*
  *
@@ -25,6 +25,8 @@
 #include <fstream>
 #include <mt/uid.h>
 #include <unistd.h>
+
+#include <stem/EvManager.h>
 
 namespace janus {
 
@@ -222,6 +224,9 @@ END_RESPONSE_TABLE
 int EXAM_IMPL(vtime_operations::VT_one_group_core)
 {
   VTM_one_group_handler a1;
+
+  a1.manager()->settrs( &cerr );
+  a1.manager()->settrf( stem::EvManager::tracedispatch | stem::EvManager::tracetime );
 
   EXAM_CHECK( a1.vs_group_size() == 0 );
 
