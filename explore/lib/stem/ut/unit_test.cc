@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/25 11:56:13 ptr>
+// -*- C++ -*- Time-stamp: <10/07/07 18:53:08 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -1598,6 +1598,8 @@ int EXAM_IMPL(stem_test::vf)
       obj.Send( ev );
     }
   }
+
+  EXAM_CHECK( VF::s >= 6 ); // number of processing threads
 
   return EXAM_RESULT;
 }
