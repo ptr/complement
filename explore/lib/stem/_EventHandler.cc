@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/06 07:18:20 ptr>
+// -*- C++ -*- Time-stamp: <10/07/07 20:29:45 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2010
@@ -125,7 +125,8 @@ void EventHandler::Forward( const Event& e ) const
 __FIT_DECLSPEC
 void EventHandler::sync_call( const Event& e )
 {
-  _mgr->sync_call( *this, e );
+  // _mgr->sync_call( *this, e );
+  _mgr->push( e );
 }
 
 __FIT_DECLSPEC
@@ -311,9 +312,13 @@ addr_type EventHandler::get_default()
 
 void EventHandler::solitary()
 {
-  _mgr->Unsubscribe( _ids.begin(), _ids.end(), this );
+  {
+    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( _theHistory_lock );
+
+    _mgr->Unsubscribe( _ids.begin(), _ids.end(), this );
+    theHistory.clear();
+  }
   _mgr->cache_clear( this );
-  theHistory.clear();
 }
 
 void EventHandler::enable()
@@ -323,7 +328,10 @@ void EventHandler::enable()
 
 void EventHandler::disable()
 {
-  _mgr->Unsubscribe( _ids.begin(), _ids.end(), this );
+  {
+    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( _theHistory_lock );
+    _mgr->Unsubscribe( _ids.begin(), _ids.end(), this );
+  }
   _mgr->cache_clear( this );
 }
 
