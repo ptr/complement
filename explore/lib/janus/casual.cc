@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/01 17:46:22 ptr>
+// -*- C++ -*- Time-stamp: <10/07/08 10:16:14 ptr>
 
 /*
  *
@@ -169,10 +169,12 @@ int basic_vs::vs( const stem::Event& inc_ev )
   //   return -1;
   // }
   stem::Event_base<vs_event> ev( VS_EVENT );
+  stem::addr_type sid = self_id();
+
+  ev.src( sid );
   
   {
     lock_guard<recursive_mutex> lkv( _lock_vt );
-    stem::addr_type sid = self_id();
 
     ++vt[sid];
     ev.value().view = view;
@@ -184,12 +186,12 @@ int basic_vs::vs( const stem::Event& inc_ev )
     for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
       if ( i->first != sid ) {
         ev.dest( i->first );
-        Send( ev );
+        Forward( ev );
       }
     }
   }
 
-  sync_call( ev );
+  vs_process( ev );
 
   return 0;
 }
@@ -197,12 +199,13 @@ int basic_vs::vs( const stem::Event& inc_ev )
 int basic_vs::vs_locked( const stem::Event& inc_ev )
 {
   lock_guard<recursive_mutex> lk( _theHistory_lock );
+  stem::addr_type sid = self_id();
 
   stem::Event_base<vs_event> ev( VS_EVENT );
+  ev.src( sid );
 
   {
     lock_guard<recursive_mutex> lk( _lock_vt );
-    stem::addr_type sid = self_id();
 
     ++vt[sid];
     ev.value().view = view;
@@ -214,12 +217,12 @@ int basic_vs::vs_locked( const stem::Event& inc_ev )
     for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
       if ( i->first != sid ) {
         ev.dest( i->first );
-        Send( ev );
+        Forward( ev );
       }
     }
   }
 
-  sync_call( ev );
+  vs_process( ev );
 
   return 0;
 }
@@ -286,7 +289,8 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
     }
   }
 
-  basic_vs::sync_call( ev.value().ev );
+  // basic_vs::sync_call( ev.value().ev );
+  this->Dispatch( ev.value().ev );
 
   // required even for event in right order
   process_out_of_order();
@@ -587,7 +591,7 @@ void basic_vs::vs_join_request_work( const stem::Event_base<vs_join_rq>& ev )
   {
     stem::Event_base< vs_points > pev( VS_ACCESS_POINT );
     pev.value().points = ev.value().points;
-    basic_vs::sync_call( pev );
+    vs_access_point( pev );
     send_to_vsg( pev );
   }
   
@@ -952,7 +956,8 @@ void basic_vs::process_out_of_order()
       ove.erase( k++ );
 
       this->vs_pub_rec( ev );
-      basic_vs::sync_call( ev );
+      // basic_vs::sync_call( ev );
+      this->Dispatch( ev );
 
       delayed_process = true;
       break;
@@ -1162,7 +1167,7 @@ const stem::state_type basic_vs::VS_ST_LOCKED = 0x10000;
 
 DEFINE_RESPONSE_TABLE( basic_vs )
   EV_Event_base_T_( ST_NULL, VS_EVENT, vs_process, vs_event )
-  EV_Event_base_T_( VS_ST_LOCKED, VS_EVENT, vs_process, vs_event )
+// EV_Event_base_T_( VS_ST_LOCKED, VS_EVENT, vs_process, vs_event )
 
   EV_Event_base_T_( ST_NULL, VS_JOIN_RQ, vs_join_request, vs_join_rq )
   EV_Event_base_T_( VS_ST_LOCKED, VS_JOIN_RQ, vs_join_request_lk, vs_join_rq )
@@ -1179,7 +1184,7 @@ DEFINE_RESPONSE_TABLE( basic_vs )
   EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_VIEW, vs_lock_view_lk, void )
 
   EV_Event_base_T_( ST_NULL, VS_LOCK_VIEW_ACK, vs_lock_view_ack, void )
-  EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_VIEW_ACK, vs_lock_view_ack, void )
+// EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_VIEW_ACK, vs_lock_view_ack, void )
 
   EV_Event_base_T_( VS_ST_LOCKED, VS_UPDATE_VIEW, vs_update_view, vs_event )
 
@@ -1189,7 +1194,7 @@ DEFINE_RESPONSE_TABLE( basic_vs )
   EV_Event_base_T_( ST_NULL, VS_ACCESS_POINT_SEC, access_points_refresh_sec, janus::detail::access_points )
 
   EV_Event_base_T_( ST_NULL, VS_ACCESS_POINT, vs_access_point, vs_points )
-  EV_Event_base_T_( VS_ST_LOCKED, VS_ACCESS_POINT, vs_access_point, vs_points )
+// EV_Event_base_T_( VS_ST_LOCKED, VS_ACCESS_POINT, vs_access_point, vs_points )
 END_RESPONSE_TABLE
 
 } // namespace janus
