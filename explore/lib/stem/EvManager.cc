@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/07 21:02:42 ptr>
+// -*- C++ -*- Time-stamp: <10/07/08 12:24:22 ptr>
 
 /*
  *
@@ -92,9 +92,14 @@ void EvManager::_Dispatch_sub( EvManager* p )
 
     obj = me.plist.front().first;
     n = me.plist.front().second;
-    me.plist.pop_front();
     p_heap_type::iterator i = me.pheap.find( obj );
     if ( i != me.pheap.end() ) {
+      if ( obj->_theHistory_lock.try_lock() ) {
+        me.plist.pop_front();
+      } else {
+        continue; // locked, unlock pheap and try again
+      }
+
       list<Event> ev;
       list<Event>::iterator r = i->second.begin();
       while ( n-- > 0 ) {
@@ -104,7 +109,6 @@ void EvManager::_Dispatch_sub( EvManager* p )
       if ( i->second.empty() ) {
         me.pheap.erase( i );
       }
-      obj->_theHistory_lock.lock();
       plk.unlock();
       while ( !ev.empty() ) {
         try {
@@ -163,6 +167,8 @@ void EvManager::_Dispatch_sub( EvManager* p )
         ev.pop_front();
       }
       obj->_theHistory_lock.unlock();
+    } else {
+      me.plist.pop_front();
     }
   }
 }
@@ -340,20 +346,35 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
 
       object = i->second.top().second.second; // target object
 
-      if ( (i->second.top().second.first & (EvManager::remote | EvManager::nosend) ) == 0 /* true */ ) {
-        lock_guard<mutex> plk(pheap_lock);
-        if ( plist.empty() || (plist.back().first != object) ) {
-          plist.push_back(make_pair(object,1));
-        } else {
-          ++plist.back().second;
-        }
-        pheap[object].push_back( e );
-        _cnd_queue.notify_all();
-        return;
+      if ( (i->second.top().second.first & (EvManager::remote | EvManager::nosend)) != 0 ) {
+        obj_locked = !object->_theHistory_lock.try_lock();
+      } else {
+        obj_locked = true;
       }
-
-      obj_locked = !object->_theHistory_lock.try_lock();
     }
+
+#ifdef __FIT_STEM_TRACE
+    try {
+      lock_guard<mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & tracesend) ) {
+        // it's target, not source
+        *_trs << xmt::demangle( object->classtype().name() )
+              << " (" << object << ") [target]\n";
+        if ( (_trflags & tracetime) ) {
+          *_trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
+        }
+        int f = _trs->flags();
+        *_trs << "\tSend " << std::hex << std::showbase << e.code() << std::dec << endl;
+#ifdef STLPORT
+        _trs->flags( f );
+#else
+        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+      }
+    }
+    catch ( ... ) {
+    }
+#endif // __FIT_STEM_TRACE
 
     if ( obj_locked ) {
       unique_lock<mutex> plk(pheap_lock);
@@ -431,8 +452,17 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
   catch ( std::logic_error& err ) {
     try {
       lock_guard<mutex> lk(_lock_tr);
-      if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-        *_trs << HERE << ' ' << err.what() << endl;
+      if ( _trs != 0 && _trs->good() && ((_trflags & (tracefault | tracesend)) == (tracefault | tracesend)) ) {
+        if ( (_trflags & tracetime) ) {
+          *_trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
+        }
+        int f = _trs->flags();
+        *_trs << "\tSend fail " << std::hex << std::showbase << e.code() << std::dec << endl;
+#ifdef STLPORT
+        _trs->flags( f );
+#else
+        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
       }
     }
     catch ( ... ) {

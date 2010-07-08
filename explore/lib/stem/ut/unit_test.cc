@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/07 18:53:08 ptr>
+// -*- C++ -*- Time-stamp: <10/07/08 11:06:58 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -1372,7 +1372,8 @@ int EXAM_IMPL(stem_test::boring_manager_more)
           ev.value() = "echo string";
 
           EchoClientTrivial node;
-          stem::stem_scope scope( node );
+          node.enable();
+          // stem::stem_scope scope( node );
 
           node.Send( ev );
 

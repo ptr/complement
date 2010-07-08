@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/07 20:54:18 ptr>
+// -*- C++ -*- Time-stamp: <10/07/08 12:07:05 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2010
@@ -133,7 +133,8 @@ class EvManager
       tracedispatch = 2,
       tracefault = 4,
       tracesubscr = 8,
-      tracetime = 16
+      tracetime = 16,
+      tracesend = 32
     };
 
     enum objectflags {
@@ -218,21 +219,31 @@ class EvManager
 
     void Unsubscribe( const addr_type& id, EventHandler* obj )
       {
-        std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
-        std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
+        {
+          std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
+          std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
 
-        unsafe_Unsubscribe( id, obj );
+          unsafe_Unsubscribe( id, obj );
+        }
+        std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( obj->_theHistory_lock );
+        std::tr2::lock_guard<std::tr2::mutex> plk(pheap_lock);
+        pheap.erase( obj );        
       }
 
     template <class Iterator>
     void Unsubscribe( Iterator first, Iterator last, EventHandler* obj )
       {
-        std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
-        std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
+        {
+          std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
+          std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
 
-        while ( first != last ) {
-          unsafe_Unsubscribe( *first++, obj );
+          while ( first != last ) {
+            unsafe_Unsubscribe( *first++, obj );
+          }
         }
+        std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( obj->_theHistory_lock );
+        std::tr2::lock_guard<std::tr2::mutex> plk(pheap_lock);
+        pheap.erase( obj );        
       }
 
     bool is_avail( const addr_type& id ) const
@@ -276,12 +287,12 @@ class EvManager
 
     void sync_call( EventHandler&, const Event& e );
 
-    void cache_clear( EventHandler* obj )
-      {
-        std::tr2::lock_guard<std::tr2::mutex> plk(pheap_lock);
-        std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( obj->_theHistory_lock );
-        pheap.erase( obj );
-      }
+    // void cache_clear( EventHandler* obj )
+    //  {
+    //    std::tr2::lock_guard<std::tr2::mutex> plk(pheap_lock);
+        // std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( obj->_theHistory_lock );
+    //     pheap.erase( obj );
+    //  }
 
   protected:
     void unsafe_Subscribe( const addr_type& id, EventHandler* object, int nice = 0 );
