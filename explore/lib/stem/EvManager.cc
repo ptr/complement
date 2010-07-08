@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/08 12:45:20 ptr>
+// -*- C++ -*- Time-stamp: <10/07/08 14:32:41 ptr>
 
 /*
  *
@@ -352,24 +352,23 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
   try {
     EventHandler* object = 0;
     bool obj_locked = false;
-    {
-      basic_read_lock<rw_mutex> lk(_lock_heap);
-      // any object can't be removed from heap within lk scope
-      local_heap_type::iterator i = heap.find( e.dest() );
-      if ( i == heap.end() ) {
-        throw invalid_argument( addr_unknown );
-      }
-      if ( i->second.empty() ) { // object hasn't StEM address 
-        return; // Unsubscribe in progress?
-      }
 
-      object = i->second.top().second.second; // target object
+    basic_read_lock<rw_mutex> lk(_lock_heap);
+    // any object can't be removed from heap within lk scope
+    local_heap_type::iterator i = heap.find( e.dest() );
+    if ( i == heap.end() ) {
+      throw invalid_argument( addr_unknown );
+    }
+    if ( i->second.empty() ) { // object hasn't StEM address 
+      return; // Unsubscribe in progress?
+    }
 
-      if ( (i->second.top().second.first & (EvManager::remote | EvManager::nosend)) != 0 ) {
-        obj_locked = !object->_theHistory_lock.try_lock();
-      } else {
-        obj_locked = true;
-      }
+    object = i->second.top().second.second; // target object
+
+    if ( (i->second.top().second.first & (EvManager::remote | EvManager::nosend)) != 0 ) {
+      obj_locked = !object->_theHistory_lock.try_lock();
+    } else {
+      obj_locked = true;
     }
 
 #ifdef __FIT_STEM_TRACE
@@ -412,7 +411,7 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
     // packet immediately)
 
     // object already locked here, see loop above:
-    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( object->_theHistory_lock, std::tr2::adopt_lock );
+    std::tr2::lock_guard<std::tr2::recursive_mutex> lkh( object->_theHistory_lock, std::tr2::adopt_lock );
 
     try {
 #ifdef __FIT_STEM_TRACE
