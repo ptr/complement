@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/08 12:24:22 ptr>
+// -*- C++ -*- Time-stamp: <10/07/08 12:45:20 ptr>
 
 /*
  *
@@ -97,7 +97,26 @@ void EvManager::_Dispatch_sub( EvManager* p )
       if ( obj->_theHistory_lock.try_lock() ) {
         me.plist.pop_front();
       } else {
-        continue; // locked, unlock pheap and try again
+        if ( me.plist.size() > 1 ) {
+          std::list<std::pair<EventHandler*,int> >::iterator j = me.plist.begin();
+          ++j;
+          obj = j->first;
+          n = j->second;
+          i = me.pheap.find( obj );
+          if ( i != me.pheap.end() ) {
+            if ( obj->_theHistory_lock.try_lock() ) {
+              me.plist.erase( j ); // ok, it ready
+            } else {
+              // may be check next in plist?
+              continue; // locked too, unlock pheap and try again
+            }
+          } else { // no object
+            me.plist.erase( j );
+            continue;
+          }
+        } else {
+          continue; // locked, unlock pheap and try again
+        }
       }
 
       list<Event> ev;
