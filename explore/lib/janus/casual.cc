@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/09 00:18:52 ptr>
+// -*- C++ -*- Time-stamp: <10/07/09 14:20:36 ptr>
 
 /*
  *
@@ -1006,7 +1006,6 @@ void basic_vs::add_lock_safety()
 
 void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
 {
-#if 0 // tmp
   stem::addr_type sid = self_id();
 
   if ( ev.src() != sid ) {
@@ -1029,7 +1028,6 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
 
   check_lock_rsp();
   add_lock_safety();
-#endif
 }
 
 
