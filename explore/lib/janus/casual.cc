@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/08 10:16:14 ptr>
+// -*- C++ -*- Time-stamp: <10/07/09 00:18:52 ptr>
 
 /*
  *
@@ -594,7 +594,7 @@ void basic_vs::vs_join_request_work( const stem::Event_base<vs_join_rq>& ev )
     vs_access_point( pev );
     send_to_vsg( pev );
   }
-  
+
   group_applicant = ev.src();
   group_applicant_ref = ev.value().reference;
 
@@ -725,6 +725,7 @@ void basic_vs::vs_lock_view( const stem::EventVoid& ev )
   lock_addr = ev.src();
   stem::EventVoid view_lock_ev( VS_LOCK_VIEW_ACK );
   view_lock_ev.dest( lock_addr );
+
   Send( view_lock_ev );
 
   add_lock_safety(); // belay: avoid infinite lock
@@ -786,9 +787,25 @@ void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
   lock_addr = stem::badaddr;
   PopState( VS_ST_LOCKED );
 
+  stem::addr_type sid = self_id();
+  {
+    // belay: avoid infinite lock
+    Event_base<CronEntry> cr( EV_EDS_CRON_REMOVE );
+    const stem::EventVoid cr_ev( VS_LOCK_SAFETY );
+    cr_ev.dest( sid );
+    cr_ev.src( sid );
+    cr_ev.pack( cr.value().ev );
+
+    cr.dest( _cron->self_id() );
+    // cr.value().start = get_system_time() + vs_pub_lock_timeout();
+    // cr.value().n = 1;
+    // cr.value().period = 0;
+
+    Send( cr );
+  }
+
   stem::code_type code = ev.value().ev.code();
   stem::addr_type origin = stem::detail::convert<stem::Event, stem::Event_base<stem::addr_type> >()(ev.value().ev).value();
-  stem::addr_type sid = self_id();
 
   if ( code == VS_JOIN_RQ ) {
     _lock_vt.lock();
@@ -989,6 +1006,7 @@ void basic_vs::add_lock_safety()
 
 void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
 {
+#if 0 // tmp
   stem::addr_type sid = self_id();
 
   if ( ev.src() != sid ) {
@@ -1011,6 +1029,7 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
 
   check_lock_rsp();
   add_lock_safety();
+#endif
 }
 
 

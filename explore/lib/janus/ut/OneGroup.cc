@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/08 12:54:32 ptr>
+// -*- C++ -*- Time-stamp: <10/07/09 00:17:40 ptr>
 
 /*
  *
@@ -279,8 +279,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3_sim)
 {
   VTM_one_group_handler a0;
 
-  a0.manager()->settrs( &cerr );
-  a0.manager()->settrf( stem::EvManager::tracedispatch | stem::EvManager::tracetime | stem::EvManager::tracefault | stem::EvManager::tracesend );
+  // a0.manager()->settrs( &cerr );
+  // a0.manager()->settrf( stem::EvManager::tracedispatch | stem::EvManager::tracetime | stem::EvManager::tracefault | stem::EvManager::tracesend );
 
   for ( int i = 0; i < 1000; ++i ) {
     VTM_one_group_handler a1;
@@ -304,7 +304,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3_sim)
     EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(500), 3 ) );
     EXAM_CHECK( a1.joined );
     EXAM_CHECK( a2.joined );
-  
+
     VTM_one_group_handler* a4 = new VTM_one_group_handler();
   
     a4->vs_join( a3.self_id() );
@@ -318,7 +318,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3_sim)
   
     EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(5000), 3 ) );
     EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(5000), 3 ) );
-    EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(5000), 3 ) );  
+    EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(5000), 3 ) );
+
     if ( EXAM_RESULT ) {
       stringstream s;
       s << "on iteration " << i;
