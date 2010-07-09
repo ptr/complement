@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/08 14:32:41 ptr>
+// -*- C++ -*- Time-stamp: <10/07/08 19:20:34 ptr>
 
 /*
  *
@@ -92,8 +92,14 @@ void EvManager::_Dispatch_sub( EvManager* p )
 
     obj = me.plist.front().first;
     n = me.plist.front().second;
+
     p_heap_type::iterator i = me.pheap.find( obj );
     if ( i != me.pheap.end() ) {
+      // {
+      //   lock_guard<mutex> lk(me._lock_tr);
+      //   cerr << HERE << ' ' << (void *)obj << ' ' << n << ' ' << hex
+      //        << i->second.front().code() << dec << endl;
+      /// }
       if ( obj->_theHistory_lock.try_lock() ) {
         me.plist.pop_front();
       } else {
@@ -121,7 +127,7 @@ void EvManager::_Dispatch_sub( EvManager* p )
 
       list<Event> ev;
       list<Event>::iterator r = i->second.begin();
-      while ( n-- > 0 ) {
+      while ( n-- > 0 && r != i->second.end() ) {
         ++r;
       }
       ev.splice( ev.begin(), i->second, i->second.begin(), r );
