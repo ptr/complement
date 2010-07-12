@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/12 12:51:34 ptr>
+// -*- C++ -*- Time-stamp: <10/07/12 22:00:57 ptr>
 
 /*
  *
@@ -369,14 +369,6 @@ void EvManager::unsafe_Unsubscribe( const addr_type& id, EventHandler* obj )
   }
   for ( list<info_heap_type::key_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
     iheap.erase( *i );
-  }
-
-  for ( EventHandler::addr_container_type::iterator i = obj->_ids.begin(); i != obj->_ids.end(); ) {
-    if ( *i == id ) {
-      obj->_ids.erase( i++ );
-    } else {
-      ++i;
-    }
   }
 }
 
