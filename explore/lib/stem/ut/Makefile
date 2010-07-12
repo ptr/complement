@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <08/06/30 11:54:35 yeti>
+# -*- Makefile -*- Time-stamp: <10/07/09 14:33:30 ptr>
 
 SRCROOT := ../../..
 
@@ -18,7 +18,7 @@ LIBSTEM_DIR = ${CoMT_DIR}/lib/stem
 LIBEXAM_DIR = ${CoMT_DIR}/lib/exam
 LIBMISC_DIR = ${CoMT_DIR}/lib/misc
 
-EXTRA_CXXFLAGS = -Wall
+# EXTRA_CXXFLAGS = -Wall
 
 ifeq ($(OSNAME),linux)
 

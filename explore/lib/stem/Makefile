@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <07/08/03 23:55:31 ptr>
+# -*- Makefile -*- Time-stamp: <10/07/09 14:33:05 ptr>
 
 SRCROOT := ../..
 
@@ -6,7 +6,7 @@ include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
 
 INCLUDES += -I$(SRCROOT)/include
-EXTRA_CXXFLAGS = -Wall
+# EXTRA_CXXFLAGS = -Wall
 
 dbg-shared:	DEFS += -D__FIT_STEM_TRACE=1
 
