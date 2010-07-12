@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/12 12:59:46 ptr>
+// -*- C++ -*- Time-stamp: <10/07/12 16:49:31 ptr>
 
 /*
  *
@@ -356,6 +356,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_join_exit)
 
     a2.vs_join( a1.self_id() );
   }
+
+  a1.vs_send_flush();
 
   EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
   EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
