@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/12 08:38:51 ptr>
+// -*- C++ -*- Time-stamp: <10/07/12 12:45:06 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2010
@@ -271,8 +271,6 @@ class EvManager
     // This is UUID, not address
     const xmt::uuid_type& self_id() const
       { return _id; }
-
-    void sync_call( EventHandler&, const Event& e );
 
   protected:
     void unsafe_Subscribe( const addr_type& id, EventHandler* object, int nice = 0 );

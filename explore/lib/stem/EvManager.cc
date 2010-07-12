@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/12 09:11:36 ptr>
+// -*- C++ -*- Time-stamp: <10/07/12 12:51:34 ptr>
 
 /*
  *
@@ -111,7 +111,9 @@ void EvManager::_Dispatch_sub( EvManager* p )
               // i->second.lock->lock(); // just wait
               // i->second.lock->unlock();
               // may be check next in plist?
-              cerr << HERE << endl;
+              // cerr << HERE << endl;
+              plk.unlock();
+              std::tr2::this_thread::yield();
               continue; // locked too, unlock pheap and try again
             }
           } else { // no object
@@ -122,8 +124,9 @@ void EvManager::_Dispatch_sub( EvManager* p )
           // plk.unlock();
           // i->second.lock->lock(); // just wait
           // i->second.lock->unlock();
-          // cerr << HERE << endl;
           // me.plist.pop_front();
+          plk.unlock();
+          std::tr2::this_thread::yield();
           continue; // locked, unlock pheap and try again
         }
       }
@@ -213,8 +216,6 @@ void EvManager::_Dispatch_sub( EvManager* p )
       } else {
         mlk->unlock(); // see cache_clear() for dtor
       }
-
-      // obj->_theHistory_lock.unlock();
     } else {
       me.plist.pop_front();
     }
@@ -234,7 +235,6 @@ void EvManager::Unsubscribe( const addr_type& id, EventHandler* obj )
 
 void EvManager::cache_clear( EventHandler* obj )
 {
-  // std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( obj->_theHistory_lock );
   if ( !obj->_ids.empty() ) {
     return;
   }
@@ -247,8 +247,13 @@ void EvManager::cache_clear( EventHandler* obj )
 
     std::swap( m, i->second.lock );
     pheap.erase( i );
-    if ( !plist.empty() && (plist.front().first == obj) ) {
-      plist.pop_front();
+
+    for ( std::list<std::pair<EventHandler*,int> >::iterator j = plist.begin(); j != plist.end(); ) {
+      if ( j->first == obj ) {
+        plist.erase( j++ );
+      } else {
+        ++j;
+      }
     }
 
     pheap_lock.unlock(); // before m->lock();
@@ -442,7 +447,6 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
         }
         mlk = pheap[object].lock;
         obj_locked = !mlk->try_lock();
-        // obj_locked = !object->_theHistory_lock.try_lock();
         // obj_locked = false;
       } else {
         obj_locked = true;
@@ -494,7 +498,7 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
     // packet immediately)
 
     // object already locked here, see loop above:
-    // std::tr2::lock_guard<std::tr2::recursive_mutex> lkh( object->_theHistory_lock, std::tr2::adopt_lock );
+    // mlk->try_lock();
 
     try {
 #ifdef __FIT_STEM_TRACE
@@ -581,97 +585,6 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
 #else
         _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
 #endif
-      }
-    }
-    catch ( ... ) {
-    }
-  }
-  catch ( std::runtime_error& err ) {
-    try {
-      lock_guard<mutex> lk(_lock_tr);
-      if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-        *_trs << HERE << ' ' << err.what() << endl;
-      }
-    }
-    catch ( ... ) {
-    }
-  }
-  catch ( ... ) {
-    try {
-      lock_guard<mutex> lk(_lock_tr);
-      if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-        *_trs << HERE << " unknown, uncatched exception" << endl;
-      }
-    }
-    catch ( ... ) {
-    }
-  }
-}
-
-void EvManager::sync_call( EventHandler& object, const Event& e )
-{
-  try {
-    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( object._theHistory_lock );
-
-    try {
-#ifdef __FIT_STEM_TRACE
-      try {
-        lock_guard<mutex> lk(_lock_tr);
-        if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
-          *_trs << xmt::demangle( object.classtype().name() )
-                << " (" << &object << ")\n";
-          if ( (_trflags & tracetime) ) {
-            *_trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
-          }
-          object.DispatchTrace( e, *_trs );
-          *_trs << endl;
-        }
-      }
-      catch ( ... ) {
-      }
-#endif // __FIT_STEM_TRACE
-      if ( !object.Dispatch( e ) ) { // call dispatcher
-        throw std::logic_error( no_catcher );
-      }
-    }
-    catch ( std::logic_error& err ) {
-      try {
-        lock_guard<mutex> lk(_lock_tr);
-        if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-          *_trs << err.what() << "\n"
-                << xmt::demangle( object.classtype().name() ) << " (" << &object << ")\n";
-          if ( (_trflags & tracetime) ) {
-            *_trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
-          }
-          object.DispatchTrace( e, *_trs );
-          *_trs << endl;
-        }
-      }
-      catch ( ... ) {
-      }
-    }
-    catch ( ... ) {
-      try {
-        lock_guard<mutex> lk(_lock_tr);
-        if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-          *_trs << "Unknown, uncatched exception during process:\n"
-                << xmt::demangle( object.classtype().name() ) << " (" << &object << ")\n";
-          if ( (_trflags & tracetime) ) {
-            *_trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
-          }
-          object.DispatchTrace( e, *_trs );
-          *_trs << endl;
-        }
-      }
-      catch ( ... ) {
-      }
-    }      
-  }
-  catch ( std::logic_error& err ) {
-    try {
-      lock_guard<mutex> lk(_lock_tr);
-      if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-        *_trs << HERE << ' ' << err.what() << endl;
       }
     }
     catch ( ... ) {
