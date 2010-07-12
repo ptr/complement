@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/01 09:40:43 ptr>
+// -*- C++ -*- Time-stamp: <10/07/09 14:32:26 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005-2010
@@ -603,7 +603,7 @@ class EventHandler
 
     const addr_type self_id() const
       {
-        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( _theHistory_lock );
+        // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( _theHistory_lock );
         return _ids.empty() ? stem::badaddr : _ids.front();
       }
     id_iterator self_ids_begin() const

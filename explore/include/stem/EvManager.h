@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/08 12:07:05 ptr>
+// -*- C++ -*- Time-stamp: <10/07/12 08:38:51 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2010
@@ -217,18 +217,7 @@ class EvManager
         }
       }
 
-    void Unsubscribe( const addr_type& id, EventHandler* obj )
-      {
-        {
-          std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
-          std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
-
-          unsafe_Unsubscribe( id, obj );
-        }
-        std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( obj->_theHistory_lock );
-        std::tr2::lock_guard<std::tr2::mutex> plk(pheap_lock);
-        pheap.erase( obj );        
-      }
+    void Unsubscribe( const addr_type& id, EventHandler* obj );
 
     template <class Iterator>
     void Unsubscribe( Iterator first, Iterator last, EventHandler* obj )
@@ -241,9 +230,7 @@ class EvManager
             unsafe_Unsubscribe( *first++, obj );
           }
         }
-        std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( obj->_theHistory_lock );
-        std::tr2::lock_guard<std::tr2::mutex> plk(pheap_lock);
-        pheap.erase( obj );        
+        cache_clear( obj );
       }
 
     bool is_avail( const addr_type& id ) const
@@ -287,16 +274,10 @@ class EvManager
 
     void sync_call( EventHandler&, const Event& e );
 
-    // void cache_clear( EventHandler* obj )
-    //  {
-    //    std::tr2::lock_guard<std::tr2::mutex> plk(pheap_lock);
-        // std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( obj->_theHistory_lock );
-    //     pheap.erase( obj );
-    //  }
-
   protected:
     void unsafe_Subscribe( const addr_type& id, EventHandler* object, int nice = 0 );
     void unsafe_Unsubscribe( const addr_type& id, EventHandler* );
+    void cache_clear( EventHandler* );
 
     bool unsafe_is_avail( const addr_type& id ) const
       { return heap.find( id ) != heap.end(); }
@@ -311,14 +292,31 @@ class EvManager
     local_heap_type heap;   // address -> EventHandler *
     info_heap_type  iheap;  // address -> info string (both local and external)
 
+    struct ev_queue
+    {
+        ev_queue() :
+            lock( 0 )
+          { }
+
+        ~ev_queue()
+          {
+            if ( lock != 0 ) {
+              delete lock;
+            }
+          }
+
+        std::tr2::mutex* lock;
+        std::list<Event> evs;
+    };
+
 #ifdef __USE_STLPORT_HASH
-    typedef std::hash_map<EventHandler*,std::list<Event> > p_heap_type;
+    typedef std::hash_map<EventHandler*,ev_queue> p_heap_type;
 #endif
 #ifdef __USE_STD_HASH
-    typedef __gnu_cxx::hash_map<EventHandler*,std::list<Event> > p_heap_type;
+    typedef __gnu_cxx::hash_map<EventHandler*,ev_queue> p_heap_type;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::tr1::unordered_map<EventHandler*,std::list<Event> > p_heap_type;
+    typedef std::tr1::unordered_map<EventHandler*,ev_queue> p_heap_type;
 #endif
 
     p_heap_type pheap;
