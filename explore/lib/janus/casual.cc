@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/09 14:20:36 ptr>
+// -*- C++ -*- Time-stamp: <10/07/12 14:09:34 ptr>
 
 /*
  *
@@ -38,7 +38,7 @@ using namespace std::tr2;
 #define VS_UPDATE_VIEW      0x306
 #define VS_FLUSH_RQ         0x307
 #define VS_LOCK_SAFETY      0x308 // from cron, timeout
-#define VS_LAST_WILL        0x309
+// #define VS_LAST_WILL        0x309
 #define VS_ACCESS_POINT_PRI 0x30a
 #define VS_ACCESS_POINT_SEC 0x30b
 #define VS_ACCESS_POINT     0x30c
@@ -126,27 +126,12 @@ basic_vs::~basic_vs()
 
   disable();
 
-  ((Init *)Init_buf)->~Init();
-
-  stem::Event_base<janus::addr_type> sev( VS_LAST_WILL );
-
-  sev.src( stem::badaddr );
-  sev.value() = sid;
-
-  // lock_guard<recursive_mutex> lk( _lock_vt ); // not required, dtor after disable()
-
-  for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-    if ( i->first != sid ) {
-      sev.dest( i->first );
-      Forward( sev );
-      break;
-    }
-  }
-
   for ( access_container_type::iterator i = remotes_.begin(); i != remotes_.end(); ++i ) {
     delete *i;
   }
   remotes_.clear();
+
+  ((Init *)Init_buf)->~Init();
 }
 
 std::tr2::milliseconds basic_vs::vs_pub_lock_timeout() const
@@ -173,6 +158,9 @@ int basic_vs::vs( const stem::Event& inc_ev )
 
   ev.src( sid );
   
+  // std::tr2::nanoseconds::tick_type st = std::tr2::get_system_time().nanoseconds_since_epoch().count();
+
+  // cout << HERE << ' ' << std::tr2::get_system_time().nanoseconds_since_epoch().count() << endl;
   {
     lock_guard<recursive_mutex> lkv( _lock_vt );
 
@@ -191,7 +179,12 @@ int basic_vs::vs( const stem::Event& inc_ev )
     }
   }
 
+  // std::tr2::nanoseconds::tick_type m1 = std::tr2::get_system_time().nanoseconds_since_epoch().count();
+  // cout << HERE << ' ' << (m1 - st) << endl;
+
   vs_process( ev );
+
+  // cout << HERE << ' ' << (std::tr2::get_system_time().nanoseconds_since_epoch().count() - m1) << endl;
 
   return 0;
 }
@@ -663,44 +656,6 @@ void basic_vs::vs_flush_request_lk( const stem::Event_base< xmt::uuid_type >& ev
   fq.push_back( stem::detail::convert<stem::Event_base<xmt::uuid_type>,stem::Event>()( ev ) );
 }
 
-void basic_vs::process_last_will_work( const stem::Event_base<janus::addr_type>& ev )
-{
-  stem::addr_type sid = self_id();
-
-  // Don't check ev.src() here: it may be badaddr
-  if ( ev.value() == sid ) { // illegal usage
-    return; 
-  }
-
-  if ( ev.value() != stem::badaddr ) {
-    points.erase( ev.value() );
-
-    {
-      lock_guard<recursive_mutex> lk( _lock_vt );
-      vt.vt.erase( ev.value() );
-    }
-  }
-
-  group_applicant = stem::badaddr;
-  lock_rsp.clear();
-  stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
-  basic_vs::vs( view_lock_ev );
-}
-
-void basic_vs::process_last_will( const stem::Event_base<janus::addr_type>& ev )
-{
-  fq.push_back( stem::detail::convert<stem::Event_base<janus::addr_type>,stem::Event>()(ev) );
-
-  if ( fq.size() == 1 ) {
-    process_last_will_work( ev );
-  }
-}
-
-void basic_vs::process_last_will_lk( const stem::Event_base<janus::addr_type>& ev )
-{
-  fq.push_back( stem::detail::convert<stem::Event_base<janus::addr_type>,stem::Event>()(ev) );
-}
-
 void basic_vs::repeat_request( const stem::Event& ev )
 {
   switch ( ev.code() ) {
@@ -709,9 +664,6 @@ void basic_vs::repeat_request( const stem::Event& ev )
       break;
     case VS_FLUSH_RQ:
       vs_flush_request_work( stem::detail::convert<stem::Event, stem::Event_base<xmt::uuid_type> >()(ev) );
-      break;
-    case VS_LAST_WILL:
-      process_last_will_work( stem::detail::convert<stem::Event,stem::Event_base<janus::addr_type> >()(ev) );
       break;
     default:
       // shouldn't happens
@@ -748,7 +700,7 @@ void basic_vs::check_lock_rsp()
     if ( lock_rsp.size() >= (vt.vt.size() + (fq.front().code() == VS_JOIN_RQ)) ) {
       for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
         if ( (lock_rsp.find( i->first ) == lock_rsp.end()) ) {
-          misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << " unexpected" << endl;
+          misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << " unexpected " << self_id() << ' ' << i->first << endl;
           return;
         }
       }
@@ -818,12 +770,6 @@ void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
       vs_pub_join();
     } 
     this->vs_pub_view_update();
-  } else if ( code == VS_LAST_WILL ) {
-    _lock_vt.lock();
-    view = ev.value().view + 1;
-    vt = ev.value().vt;
-    _lock_vt.unlock();
-    this->vs_pub_view_update();
   } else if ( code == VS_FLUSH_RQ ) {
     vs_pub_rec( ev.value().ev );
     this->vs_pub_flush();
@@ -833,21 +779,6 @@ void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
     fq.pop_front();
   }
 
-  // remove expired
-  {
-    lock_guard<recursive_mutex> lkv( _lock_vt );
-    for ( flush_container_type::iterator i = fq.begin();i != fq.end();) {
-      if ( i->code() == VS_LAST_WILL ) {
-        stem::addr_type lost = stem::detail::convert<stem::Event, stem::Event_base<janus::addr_type> >()(*i).value();
-        if ( vt.vt.find( lost ) == vt.vt.end() ) {
-          fq.erase( i++ );
-          continue;
-        }
-      }
-      ++i;
-    }
-  }
-  
   process_delayed();
 }
 
@@ -1059,12 +990,10 @@ bool basic_vs::check_remotes()
     vt.vt.erase( *i );
   }
 
-  if ( drop ) {
-    Event_base< janus::addr_type > ev( VS_LAST_WILL );
-    ev.value() = stem::badaddr;
-    ev.dest( self_id() );
-    Forward( ev );
-  }
+  // if ( drop ) {
+  //   stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
+  //   basic_vs::vs( view_lock_ev );
+  // }
 
   return !drop;
 }
@@ -1184,7 +1113,6 @@ const stem::state_type basic_vs::VS_ST_LOCKED = 0x10000;
 
 DEFINE_RESPONSE_TABLE( basic_vs )
   EV_Event_base_T_( ST_NULL, VS_EVENT, vs_process, vs_event )
-// EV_Event_base_T_( VS_ST_LOCKED, VS_EVENT, vs_process, vs_event )
 
   EV_Event_base_T_( ST_NULL, VS_JOIN_RQ, vs_join_request, vs_join_rq )
   EV_Event_base_T_( VS_ST_LOCKED, VS_JOIN_RQ, vs_join_request_lk, vs_join_rq )
@@ -1192,16 +1120,12 @@ DEFINE_RESPONSE_TABLE( basic_vs )
   EV_Event_base_T_( ST_NULL, VS_FLUSH_RQ, vs_flush_request, xmt::uuid_type )
   EV_Event_base_T_( VS_ST_LOCKED, VS_FLUSH_RQ, vs_flush_request_lk, xmt::uuid_type )
 
-  EV_Event_base_T_( ST_NULL, VS_LAST_WILL, process_last_will, janus::addr_type )
-  EV_Event_base_T_( VS_ST_LOCKED, VS_LAST_WILL, process_last_will_lk, janus::addr_type )
-
   EV_Event_base_T_( VS_ST_LOCKED, VS_JOIN_RS, vs_group_points, vs_points )
 
   EV_Event_base_T_( ST_NULL, VS_LOCK_VIEW, vs_lock_view, void )
   EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_VIEW, vs_lock_view_lk, void )
 
   EV_Event_base_T_( ST_NULL, VS_LOCK_VIEW_ACK, vs_lock_view_ack, void )
-// EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_VIEW_ACK, vs_lock_view_ack, void )
 
   EV_Event_base_T_( VS_ST_LOCKED, VS_UPDATE_VIEW, vs_update_view, vs_event )
 
@@ -1211,7 +1135,6 @@ DEFINE_RESPONSE_TABLE( basic_vs )
   EV_Event_base_T_( ST_NULL, VS_ACCESS_POINT_SEC, access_points_refresh_sec, janus::detail::access_points )
 
   EV_Event_base_T_( ST_NULL, VS_ACCESS_POINT, vs_access_point, vs_points )
-// EV_Event_base_T_( VS_ST_LOCKED, VS_ACCESS_POINT, vs_access_point, vs_points )
 END_RESPONSE_TABLE
 
 } // namespace janus

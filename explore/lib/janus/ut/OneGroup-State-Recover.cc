@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/01 07:49:25 ptr>
+// -*- C++ -*- Time-stamp: <10/07/12 12:07:17 ptr>
 
 /*
  *
@@ -216,6 +216,8 @@ xmt::uuid_type VTM_one_group_recover::vs_pub_recover()
   stem::code_type c;
   uint32_t f;
   xmt::uuid_type flush_id = xmt::nil_uuid;
+  ev.dest( self_id() );
+  ev.src( stem::badaddr );
 
   try {
     // Try to read serialized events and re-play history.
@@ -244,7 +246,8 @@ xmt::uuid_type VTM_one_group_recover::vs_pub_recover()
               fev.unpack( ev );              
               flush_id = fev.value();
             } else {
-              basic_vs::sync_call( ev );
+              // basic_vs::sync_call( ev );
+              this->Dispatch( ev );
             }
           } else {
             break;
@@ -433,6 +436,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_recover)
     EXAM_CHECK( a3.wait_flush( std::tr2::milliseconds(500) ) );
   }
 
+  a1.vs_send_flush();
+
   {
     EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
     EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
@@ -451,7 +456,6 @@ int EXAM_IMPL(vtime_operations::VT_one_group_recover)
 
   {
     VTM_one_group_recover a3( a3_stored );
-
 
     a3.vs_join( a2.self_id() );
 
@@ -518,6 +522,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_join_send)
     ev.value() = "another message";
     a1.Send( ev );
   }
+
+  a1.vs_send_flush();
 
   EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
   EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/01 07:49:09 ptr>
+// -*- C++ -*- Time-stamp: <10/07/12 11:38:19 ptr>
 
 /*
  *
@@ -169,6 +169,9 @@ xmt::uuid_type VTM_one_group_advanced_handler::vs_pub_recover()
   stem::code_type c;
   uint32_t f;
 
+  ev.dest( self_id() );
+  ev.src( stem::badaddr );
+
   try {
     // Try to read serialized events and re-play history.
     // Note: don't call this function from ctor,
@@ -186,7 +189,8 @@ xmt::uuid_type VTM_one_group_advanced_handler::vs_pub_recover()
       stem::__pack_base::__unpack( history, ev.value() );
 
       if ( !history.fail() ) {
-        basic_vs::sync_call( ev );
+        // basic_vs::sync_call( ev );
+        this->Dispatch( ev );
       }
     }
     history.clear();
@@ -284,11 +288,13 @@ int EXAM_IMPL(vtime_operations::VT_one_group_replay)
     EXAM_CHECK( a3.mess == "message" );
   }
 
+  a1.vs_send_flush();
+
   {
     EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
     EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
 
-    VTM_one_group_advanced_handler a3( /* super_spirit.back() */ a3_stored );
+    VTM_one_group_advanced_handler a3( a3_stored );
 
     a3.vs_join( a2.self_id() );
 
@@ -348,6 +354,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_late_replay)
     EXAM_CHECK( a3.mess == "message" );
   }
 
+  a1.vs_send_flush();
+
   {
     EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
     EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
@@ -365,7 +373,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_late_replay)
   }
 
   {
-    VTM_one_group_advanced_handler a3( /* super_spirit.back() */ a3_stored );
+    VTM_one_group_advanced_handler a3( a3_stored );
 
     a3.vs_join( a2.self_id() );
 

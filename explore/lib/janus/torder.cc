@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/02 13:03:29 ptr>
+// -*- C++ -*- Time-stamp: <10/07/12 12:32:57 ptr>
 
 /*
  *
@@ -100,7 +100,8 @@ void torder_vs::vs_torder_conf( const stem::Event_base<vs_event_total_order::id_
   conf_cnt_type::iterator k = conform_container_.find( ev.value() );
   if ( k != conform_container_.end() ) {
     this->vs_pub_tord_rec( k->second );
-    torder_vs::sync_call( k->second );
+    // torder_vs::sync_call( k->second );
+    this->Dispatch( k->second );
     conform_container_.erase( k );
     orig_order_cnt_type::iterator j = find( orig_order_container_.begin(), orig_order_container_.end(), ev.value() );
     if ( j != orig_order_container_.end() ) {

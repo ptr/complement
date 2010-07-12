@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/30 20:56:23 ptr>
+// -*- C++ -*- Time-stamp: <10/07/12 13:18:32 ptr>
 
 /*
  *
@@ -166,10 +166,6 @@ class basic_vs :
     void process_out_of_order();
     void add_lock_safety();
     void check_lock_rsp();
-
-    void process_last_will_work( const stem::Event_base<janus::addr_type>& );
-    void process_last_will( const stem::Event_base<janus::addr_type>& );
-    void process_last_will_lk( const stem::Event_base<janus::addr_type>& );
 
     void access_points_refresh_pri( const stem::Event_base<janus::detail::access_points>& );
     void access_points_refresh_sec( const stem::Event_base<janus::detail::access_points>& );

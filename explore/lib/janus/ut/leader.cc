@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/10 22:29:15 ptr>
+// -*- C++ -*- Time-stamp: <10/07/12 14:24:05 ptr>
 
 /*
  *
@@ -169,21 +169,21 @@ int EXAM_IMPL(vtime_operations::leader_local)
     stringstream v;
     v << j;
     ev.value() = v.str();
-    for (int k = 0;k < n_obj;++k) {
+    for ( int k = 0; k < n_obj; ++k ) {
       ev.dest( a[p[k]]->self_id() ); 
       a[p[k]]->Send( ev ); 
     }
   }
 
-  for (int i = 0;i < n_obj;++i) {
-    EXAM_CHECK( a[i]->wait_msg( std::tr2::milliseconds( max( 500, n_msg) ), n_obj * n_msg) );
+  for ( int i = 0; i < n_obj; ++i ) {
+    EXAM_CHECK( a[i]->wait_msg( std::tr2::milliseconds( max( 500, n_msg * 100) ), n_obj * n_msg) );
   }
 
-  for (int i = 0;i < n_obj - 1;++i) {
+  for ( int i = 0; i < n_obj - 1; ++i ) {
     EXAM_CHECK( system( (string("diff -q ") + names[i] + " " + names[i + 1]).c_str() ) == 0 );
   }
 
-  for (int i = 0;i < n_obj;++i) {
+  for ( int i = 0; i < n_obj; ++i ) {
     delete a[i];
   }
   
@@ -239,7 +239,7 @@ int EXAM_IMPL(vtime_operations::leader_change)
     a1.Send( ev );
   }
 
-  EXAM_CHECK( a1.wait_msg( std::tr2::milliseconds( max(500, n_msg * 20) ), 2 * n_msg ) );
+  EXAM_CHECK( a1.wait_msg( std::tr2::milliseconds( max(500, n_msg * 30) ), 2 * n_msg ) );
   EXAM_CHECK( a1.is_leader() );
 
   unlink( "/tmp/a1" );

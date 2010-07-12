@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/10 22:29:15 ptr>
+// -*- C++ -*- Time-stamp: <10/07/12 14:21:57 ptr>
 
 /*
  *
@@ -94,6 +94,9 @@ xmt::uuid_type VT_with_leader_recovery::vs_pub_recover()
   uint32_t f;
   xmt::uuid_type flush_id = xmt::nil_uuid;
 
+  ev.dest( self_id() );
+  ev.src( stem::badaddr );
+
   try {
     // Try to read serialized events and re-play history.
     // Note: don't call this function from ctor,
@@ -121,7 +124,8 @@ xmt::uuid_type VT_with_leader_recovery::vs_pub_recover()
               fev.unpack( ev );              
               flush_id = fev.value();
             } else {
-              basic_vs::sync_call( ev );
+              // basic_vs::sync_call( ev );
+              this->Dispatch( ev );
             }
           } else {
             break;
@@ -298,7 +302,7 @@ int EXAM_IMPL(vtime_operations::leader_multiple_change)
   int k = 0;
   for ( int i = 1; i < n; ++i ) {
     a[i]->vs_join( a[i - 1]->self_id() );
-    for (int j = 0;j < i;++j) {
+    for ( int j = 0; j < i; ++j ) {
       stringstream ss;
       ss << i << ' ' << j;
       ev.value() = ss.str();
@@ -313,7 +317,7 @@ int EXAM_IMPL(vtime_operations::leader_multiple_change)
 
   for ( int i = 0; i < n; ++i ) {
     delete a[i];
-    for (int j = i + 1;j < n;++j) {
+    for ( int j = i + 1; j < n; ++j ) {
       stringstream ss;
       ss << i << ' ' << j;
       ev.value() = ss.str();
@@ -321,7 +325,10 @@ int EXAM_IMPL(vtime_operations::leader_multiple_change)
       a[j]->Send( ev );
     }
     k += n - i - 1;
-    for (int j = i + 1;j < n;++j) {
+    if ( i + 1 < n ) {
+      a[i+1]->vs_send_flush();
+    }
+    for ( int j = i + 1; j < n; ++j ) {
       EXAM_CHECK( a[j]->wait_group_size( std::tr2::milliseconds(n * 300), n - i - 1 ) );
       EXAM_CHECK( a[j]->wait_msg( std::tr2::milliseconds(n * 300), k ) );
       if ( EXAM_RESULT ) {
