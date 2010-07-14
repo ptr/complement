@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/12 12:45:06 ptr>
+// -*- C++ -*- Time-stamp: <10/07/14 14:06:20 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2010
@@ -222,6 +222,7 @@ class EvManager
     template <class Iterator>
     void Unsubscribe( Iterator first, Iterator last, EventHandler* obj )
       {
+        Iterator tmp = first;
         {
           std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
           std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
@@ -230,6 +231,7 @@ class EvManager
             unsafe_Unsubscribe( *first++, obj );
           }
         }
+        obj->_ids.erase( tmp, last );
         cache_clear( obj );
       }
 

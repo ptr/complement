@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/12 21:59:20 ptr>
+// -*- C++ -*- Time-stamp: <10/07/14 14:05:40 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2010
@@ -316,7 +316,7 @@ void EventHandler::solitary()
 
   _mgr->Unsubscribe( _ids.begin(), _ids.end(), this );
   theHistory.clear();
-  _ids.clear();
+  // _ids.clear(); // must be empty here
   // _mgr->cache_clear( this );
 }
 

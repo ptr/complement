@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/12 22:00:57 ptr>
+// -*- C++ -*- Time-stamp: <10/07/14 14:10:14 ptr>
 
 /*
  *
@@ -117,7 +117,14 @@ void EvManager::_Dispatch_sub( EvManager* p )
               continue; // locked too, unlock pheap and try again
             }
           } else { // no object
-            me.plist.erase( j );
+            // me.plist.erase( j );
+            for ( std::list<std::pair<EventHandler*,int> >::iterator k = j; k != me.plist.end(); ) {
+              if ( k->first == obj ) {
+                me.plist.erase( k++ );
+              } else {
+                ++k;
+              }
+            }
             continue;
           }
         } else {
@@ -218,6 +225,14 @@ void EvManager::_Dispatch_sub( EvManager* p )
       }
     } else {
       me.plist.pop_front();
+
+      for ( std::list<std::pair<EventHandler*,int> >::iterator k = me.plist.begin(); k != me.plist.end(); ) {
+        if ( k->first == obj ) {
+          me.plist.erase( k++ );
+        } else {
+          ++k;
+        }
+      }
     }
   }
 }
@@ -230,6 +245,10 @@ void EvManager::Unsubscribe( const addr_type& id, EventHandler* obj )
 
     unsafe_Unsubscribe( id, obj );
   }
+
+  EventHandler::addr_container_type::iterator r = remove( obj->_ids.begin(), obj->_ids.end(), id );
+  obj->_ids.erase( r, obj->_ids.end() );
+
   cache_clear( obj );
 }
 
@@ -261,9 +280,16 @@ void EvManager::cache_clear( EventHandler* obj )
     m->lock();
     // This lock to be sure that only one owner remains: here
     m->unlock();
-    
     delete m;
   } else {
+    for ( std::list<std::pair<EventHandler*,int> >::iterator j = plist.begin(); j != plist.end(); ) {
+      if ( j->first == obj ) {
+        plist.erase( j++ );
+      } else {
+        ++j;
+      }
+    }
+
     pheap_lock.unlock();
   }
 }
