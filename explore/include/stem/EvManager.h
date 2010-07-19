@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/14 14:06:20 ptr>
+// -*- C++ -*- Time-stamp: <10/07/16 21:23:26 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2010
@@ -348,6 +348,7 @@ class EvManager
     std::tr2::mutex _lock_iheap;
 
     std::tr2::condition_variable _cnd_queue;
+    std::tr2::condition_variable _cnd_retry;
 
     static std::string inv_key_str;
     std::tr2::mutex _lock_tr;

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/14 14:10:14 ptr>
+// -*- C++ -*- Time-stamp: <10/07/19 21:27:49 ptr>
 
 /*
  *
@@ -63,6 +63,7 @@ void EvManager::stop_queue()
     lock_guard<mutex> lk( pheap_lock );
     _dispatch_stop = true;
     _cnd_queue.notify_all();
+    _cnd_retry.notify_all();
   }
 
   for ( list<thread*>::iterator k = threads.begin(); k != threads.end(); ++k ) {
@@ -111,9 +112,11 @@ void EvManager::_Dispatch_sub( EvManager* p )
               // i->second.lock->lock(); // just wait
               // i->second.lock->unlock();
               // may be check next in plist?
-              // cerr << HERE << endl;
+              // cerr << HERE << ' ' << xmt::demangle( obj->classtype().name() ) << endl;
+              // cerr << xmt::demangle( obj->classtype().name() ) << endl;
+              me._cnd_retry.wait( plk );
               plk.unlock();
-              std::tr2::this_thread::yield();
+              // std::tr2::this_thread::yield();
               continue; // locked too, unlock pheap and try again
             }
           } else { // no object
@@ -132,8 +135,18 @@ void EvManager::_Dispatch_sub( EvManager* p )
           // i->second.lock->lock(); // just wait
           // i->second.lock->unlock();
           // me.plist.pop_front();
+          // mutex* m = 0;
+
+          // m = i->second.lock;
+          // cerr << xmt::demangle( obj->classtype().name() ) << endl;
+
+          // cerr << HERE << ' ' << xmt::demangle( obj->classtype().name() ) << ' ' << me.pheap.size() << endl;
+          me._cnd_retry.wait( plk );
           plk.unlock();
-          std::tr2::this_thread::yield();
+          // m->lock();
+          // m->unlock();
+          // break;
+          // std::tr2::this_thread::yield();
           continue; // locked, unlock pheap and try again
         }
       }
@@ -141,9 +154,11 @@ void EvManager::_Dispatch_sub( EvManager* p )
       list<Event> ev;
       list<Event>::iterator r = /* i->second.evs.end(); */ i->second.evs.begin();
       while ( n-- > 0 && r != i->second.evs.end() ) {
-        ++r;
+        // ++r;
+        ev.push_back( *r );
+        i->second.evs.erase( r++ );
       }
-      ev.splice( ev.begin(), i->second.evs, i->second.evs.begin(), r );
+      // ev.splice( ev.begin(), i->second.evs, i->second.evs.begin(), r );
 
       mutex* mlk = i->second.lock; // it locked here
 
@@ -207,20 +222,26 @@ void EvManager::_Dispatch_sub( EvManager* p )
 
       plk.lock();
       i = me.pheap.find( obj );
-      if ( i != me.pheap.end() ) {
+      // object may be reallocated; to be sure that it's same
+      // object, check address of mutex, that locked here
+      // and not reallocated yet
+      if ( (i != me.pheap.end()) && (i->second.lock == mlk) ) {
         if ( i->second.evs.empty() ) {
           mutex* m = 0;
 
           swap( m, i->second.lock );
           me.pheap.erase( i );
+          // cerr << HERE << ' ' << xmt::demangle( obj->classtype().name() ) << endl;
           m->unlock();
 
-          plk.unlock();
+          // plk.unlock();
           delete m;
         } else {
+          // cerr << HERE << ' ' << xmt::demangle( obj->classtype().name() ) << endl;
           i->second.lock->unlock();
         }
       } else {
+        // cerr << HERE << ' ' << xmt::demangle( obj->classtype().name() ) << endl;
         mlk->unlock(); // see cache_clear() for dtor
       }
     } else {
@@ -234,6 +255,7 @@ void EvManager::_Dispatch_sub( EvManager* p )
         }
       }
     }
+    me._cnd_retry.notify_one();
   }
 }
 
@@ -281,6 +303,10 @@ void EvManager::cache_clear( EventHandler* obj )
     // This lock to be sure that only one owner remains: here
     m->unlock();
     delete m;
+
+    pheap_lock.lock();
+    _cnd_retry.notify_one();
+    pheap_lock.unlock();
   } else {
     for ( std::list<std::pair<EventHandler*,int> >::iterator j = plist.begin(); j != plist.end(); ) {
       if ( j->first == obj ) {
@@ -462,6 +488,7 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
         unique_lock<mutex> plk(pheap_lock);
         if ( pheap[object].lock == 0 ) {
           pheap[object].lock = new mutex();
+          // cerr << HERE << ' ' << (void*)pheap[object].lock << endl;
         }
         mlk = pheap[object].lock;
         obj_locked = !mlk->try_lock();
@@ -506,7 +533,8 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
         if ( pheap[object].lock == 0 ) {
           pheap[object].lock = new mutex();
         }
-        _cnd_queue.notify_all();
+        // _cnd_queue.notify_all();
+        _cnd_queue.notify_one();
         return;
       }
     }

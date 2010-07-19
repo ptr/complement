@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/01/18 20:48:29 ptr>
+// -*- C++ -*- Time-stamp: <10/07/19 21:30:05 ptr>
 
 /*
  * Copyright (c) 1998, 2002-2003, 2005-2006, 2008-2009
@@ -63,7 +63,7 @@ __FIT_DECLSPEC Cron::Cron( addr_type id, const char *info ) :
 
 __FIT_DECLSPEC Cron::~Cron()
 {
-  this->disable();
+  this->solitary();
 
   if ( _thr != 0 ) {
     {
