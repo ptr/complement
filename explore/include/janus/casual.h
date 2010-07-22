@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/12 13:18:32 ptr>
+// -*- C++ -*- Time-stamp: <10/07/20 23:29:52 ptr>
 
 /*
  *
@@ -107,6 +107,8 @@ class basic_vs :
   public:
     static xmt::uuid_type flush_id( const stem::Event& );
 
+    void dump_() const;
+
     void vs_send_flush();
     size_type vs_group_size() const;
     virtual std::tr2::milliseconds vs_pub_lock_timeout() const;
@@ -140,12 +142,13 @@ class basic_vs :
     virtual void pub_access_point();
 
   private:
-    void repeat_request( const stem::Event& );
+    // void repeat_request( const stem::Event& );
 
   private:
     void vs_lock_view( const stem::EventVoid& );
     void vs_lock_view_lk( const stem::EventVoid& );
     void vs_lock_view_ack( const stem::EventVoid& );
+    void vs_lock_view_ack_( const stem::EventVoid& );
     void vs_update_view( const stem::Event_base<vs_event>& ev );
 
     void vs_process( const stem::Event_base<vs_event>& );
@@ -156,27 +159,24 @@ class basic_vs :
 
     void vs_group_points( const stem::Event_base<vs_points>& );
 
-    void vs_flush_request_work( const stem::Event_base< xmt::uuid_type >& ev );
-    void vs_flush_request( const stem::Event_base< xmt::uuid_type >& ev );
-    void vs_flush_request_lk( const stem::Event_base< xmt::uuid_type >& ev );
+    // void vs_flush_request_work( const stem::Event_base< xmt::uuid_type >& ev );
+    // void vs_flush_request( const stem::Event_base< xmt::uuid_type >& ev );
+    // void vs_flush_request_lk( const stem::Event_base< xmt::uuid_type >& ev );
 
     void vs_lock_safety( const stem::EventVoid& ev );
 
     void process_delayed();
     void process_out_of_order();
     void add_lock_safety();
-    void check_lock_rsp();
+    int check_lock_rsp();
+
+    // void process_last_will_work( const stem::Event_base<janus::addr_type>& );
+    // void process_last_will( const stem::Event_base<janus::addr_type>& );
+    // void process_last_will_lk( const stem::Event_base<janus::addr_type>& );
 
     void access_points_refresh_pri( const stem::Event_base<janus::detail::access_points>& );
     void access_points_refresh_sec( const stem::Event_base<janus::detail::access_points>& );
     void vs_access_point( const stem::Event_base<vs_points>& );
-
-    int vs_locked( const stem::Event& );
-
-    template <class D>
-    int vs_locked( const stem::Event_base<D>& e )
-      { return basic_vs::vs_locked( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
-
 
     // vs order violation events
     typedef std::list<stem::Event_base<vs_event> > ove_container_type;
