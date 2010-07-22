@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/20 23:29:52 ptr>
+// -*- C++ -*- Time-stamp: <10/07/22 18:22:16 ptr>
 
 /*
  *
@@ -142,9 +142,6 @@ class basic_vs :
     virtual void pub_access_point();
 
   private:
-    // void repeat_request( const stem::Event& );
-
-  private:
     void vs_lock_view( const stem::EventVoid& );
     void vs_lock_view_lk( const stem::EventVoid& );
     void vs_lock_view_ack( const stem::EventVoid& );
@@ -159,20 +156,12 @@ class basic_vs :
 
     void vs_group_points( const stem::Event_base<vs_points>& );
 
-    // void vs_flush_request_work( const stem::Event_base< xmt::uuid_type >& ev );
-    // void vs_flush_request( const stem::Event_base< xmt::uuid_type >& ev );
-    // void vs_flush_request_lk( const stem::Event_base< xmt::uuid_type >& ev );
-
     void vs_lock_safety( const stem::EventVoid& ev );
 
     void process_delayed();
     void process_out_of_order();
     void add_lock_safety();
     int check_lock_rsp();
-
-    // void process_last_will_work( const stem::Event_base<janus::addr_type>& );
-    // void process_last_will( const stem::Event_base<janus::addr_type>& );
-    // void process_last_will_lk( const stem::Event_base<janus::addr_type>& );
 
     void access_points_refresh_pri( const stem::Event_base<janus::detail::access_points>& );
     void access_points_refresh_sec( const stem::Event_base<janus::detail::access_points>& );
