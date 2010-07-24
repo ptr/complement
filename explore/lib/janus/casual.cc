@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/22 18:21:12 ptr>
+// -*- C++ -*- Time-stamp: <10/07/23 21:41:16 ptr>
 
 /*
  *
@@ -163,6 +163,10 @@ int basic_vs::vs( const stem::Event& inc_ev )
   if ( isState(VS_ST_LOCKED) ) {
     lock_guard<recursive_mutex> lk( _theHistory_lock );
     // cerr << HERE << endl;
+    flglk.lock();
+    flg << HERE << ' ' << self_id() << endl;
+    flglk.unlock();
+
     de.push_back( inc_ev );
     return 1;
   }
@@ -594,6 +598,10 @@ void basic_vs::vs_join_request_work( const stem::Event_base<vs_join_rq>& ev )
 
   _lock_vt.unlock();
 
+  flglk.lock();
+  flg << HERE << ' ' << self_id() << endl;
+  flglk.unlock();
+
   stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
   basic_vs::vs( view_lock_ev );
 
@@ -680,7 +688,7 @@ void basic_vs::vs_lock_view( const stem::EventVoid& ev )
     flglk.unlock();
     // check_remotes(); // leave group?
     // cerr << HERE << ' ' << self_id() << endl;
-    if ( check_lock_rsp() ) { // don't do PopState(VS_ST_LOCKED)
+    if ( check_lock_rsp() ) { // don't do RemoveState(VS_ST_LOCKED)
       // cerr << HERE << ' ' << self_id() << endl;
       add_lock_safety(); // belay: avoid infinite lock
     }
@@ -703,6 +711,7 @@ void basic_vs::vs_lock_view_lk( const stem::EventVoid& ev )
   }
 
   // lock not changed, ack was departed, if equal
+#if 0
   if ( lock_addr != ev.src() ) {
     if ( ev.src() <= lock_addr ) { // re-lock?
       lock_addr = ev.src();
@@ -723,6 +732,54 @@ void basic_vs::vs_lock_view_lk( const stem::EventVoid& ev )
       }
     }
   }
+#else
+  // ack to all, just not to self
+  if ( ev.src() != sid ) {
+    flglk.lock();
+    flg << HERE << ' ' << sid << '/' << ev.src() << endl;
+    flglk.unlock();
+
+    if ( ev.src() <= lock_addr ) {
+      lock_addr = ev.src(); // re-lock?
+      flglk.lock();
+      flg << HERE << ' ' << sid << '/' << lock_addr << endl;
+      flglk.unlock();
+
+      PushState( VS_ST_LOCKED ); // second
+      stem::EventVoid view_lock_ev( VS_LOCK_VIEW_ACK );
+      view_lock_ev.dest( ev.src() );
+      Send( view_lock_ev );
+    } else if ( lock_addr != sid ) {
+      PushState( VS_ST_LOCKED ); // second
+
+      stem::EventVoid view_lock_ev( VS_LOCK_VIEW_ACK );
+      view_lock_ev.dest( ev.src() );
+      Send( view_lock_ev );
+    }
+  } else {
+    // if ( !lock_rsp.empty() ) {
+    flglk.lock();
+    flg << HERE << ' ' << lock_rsp.size() << endl;
+    flglk.unlock();
+
+    if ( ev.src() <= lock_addr ) {
+      lock_addr = ev.src(); // re-lock?
+      flglk.lock();
+      flg << HERE << ' ' << sid << '/' << lock_addr << endl;
+      flglk.unlock();
+      check_lock_rsp();
+    }
+
+    // }
+    // lock_rsp.clear();
+    // lockaddr != sid here
+    // !fq.empty() here
+  }
+
+  // if ( ev.src() <= lock_addr ) { // re-lock?
+  //   lock_addr = ev.src();
+  // }
+#endif
 }
 
 int basic_vs::check_lock_rsp()
@@ -732,6 +789,10 @@ int basic_vs::check_lock_rsp()
   if ( sid == stem::badaddr ) {
     cerr << HERE << endl;
     return 1;
+  }
+
+  if ( lock_addr != sid ) {
+    return 2;
   }
 
   unique_lock<recursive_mutex> lkh( _theHistory_lock );
@@ -786,7 +847,11 @@ int basic_vs::check_lock_rsp()
     // like vs_update_view, but it is known
     // that update origin is me
     lock_addr = stem::badaddr;
-    PopState( VS_ST_LOCKED );
+    RemoveState( VS_ST_LOCKED );
+
+    // while ( isState( VS_ST_LOCKED ) ) {
+    //   RemoveState( VS_ST_LOCKED );
+    // }
 
     flglk.lock();
     flg << HERE << ' ' << sid << ' ' << lock_rsp.size() << endl;
@@ -875,10 +940,14 @@ void basic_vs::vs_lock_view_ack_( const stem::EventVoid& ev )
 
 void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
 {
-  lock_addr = stem::badaddr;
-  PopState( VS_ST_LOCKED );
-
   stem::addr_type sid = self_id();
+
+  if ( lock_addr == sid ) {
+    lock_rsp.clear();
+  }
+
+  lock_addr = stem::badaddr;
+  RemoveState( VS_ST_LOCKED );
 
   if ( sid == stem::badaddr ) {
     cerr << HERE << ' ' << sid << endl;
@@ -943,6 +1012,13 @@ void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
     // basic_vs::vs( view_lock_ev );
     cerr << HERE << endl;
   }
+}
+
+void basic_vs::vs_update_view_( const Event_base<vs_event>& ev )
+{
+  flglk.lock();
+  flg << HERE << ' ' << self_id() << endl;
+  flglk.unlock();
 }
 
 void basic_vs::vs_group_points( const stem::Event_base<vs_points>& ev )
@@ -1020,13 +1096,51 @@ void basic_vs::process_delayed()
     return; // still locked
   }
 
-  lock_guard<recursive_mutex> lk( _theHistory_lock );
-  // cerr << HERE << ' ' << self_id() << endl;
   if ( self_id() == stem::badaddr ) {
     return;
   }
+
+  lock_guard<recursive_mutex> lk( _theHistory_lock );
+  // cerr << HERE << ' ' << self_id() << endl;
+
+  if ( !fq.empty() ) {
+    flglk.lock();
+    flg << HERE << ' ' << self_id() << ' ' << de.empty() << ' ' << hex << fq.front().code() << dec << endl;
+    flglk.unlock();
+
+    // if ( de.empty() ) {
+      switch ( fq.front().code() ) {
+        case VS_LAST_WILL:
+        case VS_FLUSH_RQ:
+          {
+            lock_rsp.clear();
+
+            flglk.lock();
+            flg << HERE << ' ' << self_id() << endl;
+            flglk.unlock();
+
+
+            if ( isState(VS_ST_LOCKED) ) {
+              cerr << HERE << endl;
+            }
+
+            stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
+            // cerr << HERE << endl;
+            basic_vs::vs( view_lock_ev );
+          // cerr << HERE << endl;
+          }
+          break;
+        case VS_JOIN_RQ:
+          vs_join_request_work( stem::detail::convert<stem::Event, stem::Event_base<vs_join_rq> >()(fq.front()) );
+          break;
+      }
+      // } else {
+//      repeat_request( fq.front() );
+      // }
+  }
+
   int ret = 0;
-  while ( !de.empty() ) {
+  while ( !de.empty() && !isState(VS_ST_LOCKED) ) {
     ret = basic_vs::vs( de.front() );
     if ( ret == 1 ) {
       // cerr << HERE << ' ' << self_id() << endl;
@@ -1042,31 +1156,12 @@ void basic_vs::process_delayed()
     }
   }
 
-  lock_guard<recursive_mutex> lkh( _theHistory_lock );
-  if ( !fq.empty() ) {
-    flglk.lock();
-    flg << HERE << ' ' << self_id() << ' ' << de.empty() << ' ' << hex << fq.front().code() << dec << endl;
-    flglk.unlock();
-
-    if ( de.empty() ) {
-      switch ( fq.front().code() ) {
-        case VS_LAST_WILL:
-        case VS_FLUSH_RQ:
-          {
-            stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
-            // cerr << HERE << endl;
-            basic_vs::vs( view_lock_ev );
-          // cerr << HERE << endl;
-          }
-          break;
-        case VS_JOIN_RQ:
-          vs_join_request_work( stem::detail::convert<stem::Event, stem::Event_base<vs_join_rq> >()(fq.front()) );
-          break;
-      }
-    } else {
-//      repeat_request( fq.front() );
-    }
+  if ( isState(VS_ST_LOCKED) ) {
+    cerr << HERE << endl;
+    return;
   }
+
+  // lock_guard<recursive_mutex> lkh( _theHistory_lock );
   // cerr << HERE << endl;
 }
 
@@ -1162,7 +1257,16 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
     if ( !is_avail(lock_addr) ) {
       // cerr << HERE << ' ' << sid << endl;
       lock_addr = stem::badaddr;
-      PopState( VS_ST_LOCKED );
+      RemoveState( VS_ST_LOCKED );
+
+      while ( isState( VS_ST_LOCKED ) ) {
+        RemoveState( VS_ST_LOCKED );
+      }
+
+      flglk.lock();
+      flg << HERE << ' ' << self_id() << endl;
+      flglk.unlock();
+
       lock_rsp.clear();
       process_delayed();
     } else {
@@ -1224,7 +1328,7 @@ bool basic_vs::check_remotes()
   if ( (lock_addr != stem::badaddr) && !is_avail(lock_addr) ) {
     cerr << HERE << endl;
     // lock_addr = stem::badaddr;
-    // PopState();
+    // RemoveState();
   }
 
   if ( drop ) {
@@ -1375,6 +1479,7 @@ DEFINE_RESPONSE_TABLE( basic_vs )
 // EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_VIEW_ACK, vs_lock_view_ack, void )
 
   EV_Event_base_T_( VS_ST_LOCKED, VS_UPDATE_VIEW, vs_update_view, vs_event )
+  EV_Event_base_T_( ST_NULL, VS_UPDATE_VIEW, vs_update_view_, vs_event )
 
   EV_Event_base_T_( VS_ST_LOCKED, VS_LOCK_SAFETY, vs_lock_safety, void )
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/21 15:53:24 ptr>
+// -*- C++ -*- Time-stamp: <10/07/23 12:43:08 ptr>
 
 /*
  *
@@ -492,11 +492,17 @@ int EXAM_IMPL(vtime_operations::double_flush)
     EXAM_CHECK( a2.wait_flush( std::tr2::milliseconds(1500), 2) );
     if ( a2.flush != 2 ) {
       cerr << HERE << ' ' << a2.flush << endl;
+      a1.dump_();
+      a2.dump_();
+      a3.dump_();
       return EXAM_RESULT;
     }
     EXAM_CHECK( a3.wait_flush( std::tr2::milliseconds(1500), 2) );
     if ( a3.flush != 2 ) {
       cerr << HERE << ' ' << a3.flush << endl;
+      a1.dump_();
+      a2.dump_();
+      a3.dump_();
       return EXAM_RESULT;
     }
 
