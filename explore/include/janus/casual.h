@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/23 18:20:16 ptr>
+// -*- C++ -*- Time-stamp: <10/07/26 16:19:42 ptr>
 
 /*
  *
@@ -187,7 +187,7 @@ class basic_vs :
     delayed_container_type de;
     vs_points::points_type points;
     unsigned view;
-    stem::addr_type lock_addr;
+    std::list<stem::addr_type> lock_addr;
     lock_rsp_type lock_rsp;
     stem::addr_type group_applicant;
     stem::addr_type group_applicant_ref;
