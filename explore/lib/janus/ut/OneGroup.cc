@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/23 12:43:08 ptr>
+// -*- C++ -*- Time-stamp: <10/07/27 17:21:17 ptr>
 
 /*
  *
@@ -295,6 +295,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core)
     a1.dump_();
   }
   EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 1 ) );
+
+  cerr << HERE << endl;
 
   return EXAM_RESULT;
 }
