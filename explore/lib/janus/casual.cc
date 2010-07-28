@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/27 22:59:15 ptr>
+// -*- C++ -*- Time-stamp: <10/07/28 12:26:23 ptr>
 
 /*
  *
@@ -909,8 +909,6 @@ int basic_vs::check_lock_rsp()
         break;
     }
 
-    process_delayed();
-
     {
       lock_guard<recursive_mutex> lk( _theHistory_lock );
 
@@ -919,11 +917,20 @@ int basic_vs::check_lock_rsp()
         flg << HERE << ' ' << self_id() << ' ' << de.empty() << ' ' << hex << fq.front().code() << dec << endl;
         flglk.unlock();
 
+        bool add_delay = true;
         // if ( de.empty() ) {
         switch ( fq.front().code() ) {
-          // case VS_FLUSH_RQ:
-          //  lock_rsp.clear();
-          //  break;
+          case VS_FLUSH_RQ:
+            for ( delayed_container_type::const_iterator i = de.begin(); i != de.end(); ++i ) {
+              if ( i->code() == VS_LOCK_VIEW ) {
+                add_delay = false; // to front?
+                break;
+              }
+            }
+            if ( add_delay ) {
+              de.push_front( stem::detail::convert<stem::EventVoid,stem::Event>()(stem::EventVoid(VS_LOCK_VIEW)) ); // with hi priority
+            }
+            break;
 #if 0
           case VS_LAST_WILL:
             // case VS_FLUSH_RQ:
@@ -951,6 +958,8 @@ int basic_vs::check_lock_rsp()
         }
       }
     }
+
+    process_delayed();
 
     if ( !fq.empty() ) {
       flglk.lock();
@@ -1365,7 +1374,7 @@ void basic_vs::process_delayed()
 
     // if ( de.front().code() == VS_LOCK_VIEW ) {
     flglk.lock();
-    flg << HERE << ' ' << self_id() << ' ' << hex << de.front().code() << dec<< endl;
+    flg << HERE << ' ' << self_id() << ' ' << hex << tmp.code() << dec<< endl;
     flglk.unlock();
 
     {
