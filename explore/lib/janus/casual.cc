@@ -122,10 +122,8 @@ basic_vs::basic_vs( const char* info ) :
 
 basic_vs::~basic_vs()
 {
-  stem::addr_type sid = self_id();
-
-  disable();
-
+  // stem::addr_type sid = self_id();
+  // disable();
   for ( access_container_type::iterator i = remotes_.begin(); i != remotes_.end(); ++i ) {
     delete *i;
   }
@@ -153,14 +151,16 @@ int basic_vs::vs( const stem::Event& inc_ev )
   //   de.push_back( inc_ev ); // don't use before join group
   //   return -1;
   // }
-  stem::Event_base<vs_event> ev( VS_EVENT );
   stem::addr_type sid = self_id();
+  
+  if ( sid == stem::badaddr ) {
+    return 1;
+  }
+
+  stem::Event_base<vs_event> ev( VS_EVENT );
 
   ev.src( sid );
   
-  // std::tr2::nanoseconds::tick_type st = std::tr2::get_system_time().nanoseconds_since_epoch().count();
-
-  // cout << HERE << ' ' << std::tr2::get_system_time().nanoseconds_since_epoch().count() << endl;
   {
     lock_guard<recursive_mutex> lkv( _lock_vt );
 
@@ -179,12 +179,7 @@ int basic_vs::vs( const stem::Event& inc_ev )
     }
   }
 
-  // std::tr2::nanoseconds::tick_type m1 = std::tr2::get_system_time().nanoseconds_since_epoch().count();
-  // cout << HERE << ' ' << (m1 - st) << endl;
-
   vs_process( ev );
-
-  // cout << HERE << ' ' << (std::tr2::get_system_time().nanoseconds_since_epoch().count() - m1) << endl;
 
   return 0;
 }
@@ -193,6 +188,10 @@ int basic_vs::vs_locked( const stem::Event& inc_ev )
 {
   lock_guard<recursive_mutex> lk( _theHistory_lock );
   stem::addr_type sid = self_id();
+
+  if ( sid == stem::badaddr ) {
+    return 1;
+  }
 
   stem::Event_base<vs_event> ev( VS_EVENT );
   ev.src( sid );
@@ -222,10 +221,16 @@ int basic_vs::vs_locked( const stem::Event& inc_ev )
 
 void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
 {
+  stem::addr_type sid = self_id();
+
+  if ( sid == stem::badaddr ) {
+    return;
+  }
+
   // check the view version first:
   if ( view != 0 && ev.value().view != view ) {
     if ( ev.value().view > view ) {
-      misc::use_syslog<LOG_INFO,LOG_USER>() << "ove.push_back" << ':' << __FILE__ << ':' << __LINE__ << ':' << self_id() << endl;
+      misc::use_syslog<LOG_INFO,LOG_USER>() << "ove.push_back" << ':' << __FILE__ << ':' << __LINE__ << ':' << sid << endl;
       ove.push_back( ev ); // push event into delay queue
     }
     return;
@@ -247,9 +252,10 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
 
     vtime tmp = ev.value().vt;
 
-    stem::addr_type sid = self_id();
-
-    check_remotes();
+    if ( !check_remotes() ) {
+      misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ':' << sid << ": somebody leave us" << endl;
+      vs_send_flush(); 
+    }
 
     for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
       if ( (i->first == ev.src()) && (i->first != sid) ) {
@@ -736,10 +742,14 @@ void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
 
 void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
 {
+  stem::addr_type sid = self_id();
+  if ( sid == stem::badaddr ) {
+    return;
+  }
+
   lock_addr = stem::badaddr;
   PopState( VS_ST_LOCKED );
 
-  stem::addr_type sid = self_id();
   {
     // belay: avoid infinite lock
     Event_base<CronEntry> cr( EV_EDS_CRON_REMOVE );
@@ -785,6 +795,9 @@ void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
 void basic_vs::vs_group_points( const stem::Event_base<vs_points>& ev )
 {
   stem::addr_type sid = self_id();
+  if ( sid == badaddr ) {
+    return;
+  }
 
   for ( vs_points::points_type::const_iterator i = ev.value().points.begin(); i != ev.value().points.end(); ++i ) {
     if ( hostid() != i->second.hostid ) {
@@ -866,9 +879,13 @@ void basic_vs::process_out_of_order()
     for each event in delay_queue try to process it;
     repeat procedure if any event from delay_queue was processed.
    */
+  stem::addr_type sid = self_id();
+  if ( sid == badaddr ) {
+    return;
+  }
+
   bool delayed_process;
   vtime tmp;
-  stem::addr_type sid = self_id();
   Event ev;
 
   do {
@@ -919,6 +936,9 @@ void basic_vs::process_out_of_order()
 void basic_vs::add_lock_safety()
 {
   stem::addr_type sid = self_id();
+  if ( sid == badaddr ) {
+    return;
+  }
 
   // belay: avoid infinite lock
   Event_base<CronEntry> cr( EV_EDS_CRON_ADD );
@@ -938,6 +958,9 @@ void basic_vs::add_lock_safety()
 void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
 {
   stem::addr_type sid = self_id();
+  if ( sid == badaddr ) {
+    return;
+  }
 
   if ( ev.src() != sid ) {
     return;

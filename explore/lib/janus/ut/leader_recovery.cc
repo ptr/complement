@@ -84,7 +84,7 @@ bool VT_with_leader_recovery::_gs_status::operator()() const
 
 bool VT_with_leader_recovery::_flush_status::operator()() const
 {
-  return me.flush == me.n_flush;
+  return me.flush >= me.n_flush;
 }
 
 xmt::uuid_type VT_with_leader_recovery::vs_pub_recover()
@@ -235,6 +235,7 @@ void VT_with_leader_recovery::vs_pub_rec( const stem::Event& ev )
 
 void VT_with_leader_recovery::vs_pub_flush()
 {
+  torder_vs::vs_pub_flush();
   uint64_t last_flush_off = history.tellp();
   history.seekp( 0, ios_base::beg );
   stem::__pack_base::__pack( history, last_flush_off );
@@ -285,6 +286,7 @@ END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::leader_multiple_change)
 {
+  for (int p = 0;p < 10;++p) {
   const int n = 10;
   stem::Event ev( EV_EXT_EV_SAMPLE );
 
@@ -314,7 +316,7 @@ int EXAM_IMPL(vtime_operations::leader_multiple_change)
     EXAM_CHECK( a[i]->wait_msg( std::tr2::milliseconds(n * 200), k ) );
   }
 
-
+#if 0
   for ( int i = 0; i < n; ++i ) {
     delete a[i];
     for ( int j = i + 1; j < n; ++j ) {
@@ -332,7 +334,7 @@ int EXAM_IMPL(vtime_operations::leader_multiple_change)
       EXAM_CHECK( a[j]->wait_group_size( std::tr2::milliseconds(n * 300), n - i - 1 ) );
       EXAM_CHECK( a[j]->wait_msg( std::tr2::milliseconds(n * 300), k ) );
       if ( EXAM_RESULT ) {
-        cout << i << ' ' << j << ' ' << k << ' ' << a[j]->msg << endl;
+        cout << i << ' ' << j << ' ' << k << ' ' << a[j]->msg << ' ' << a[j]->self_id() << endl;
         goto park;
       }
     }
@@ -340,9 +342,16 @@ int EXAM_IMPL(vtime_operations::leader_multiple_change)
   
   park:
   ;
+#endif
 
   for ( int i = 0; i < n; ++i ) {
+    delete a[i];
     unlink( names[i].c_str() );
+  }
+
+  if ( EXAM_RESULT ) {
+    break;
+  }
   }
 
   return EXAM_RESULT;
@@ -665,7 +674,6 @@ int EXAM_IMPL(vtime_operations::leader_recovery)
 
           EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds( max( 500, 20 * n_msg2 ) ), 3 * n_msg1 + 2 * n_msg2) );
 
-
           b2.wait();
 
           b5.wait();
@@ -723,9 +731,11 @@ int EXAM_IMPL(vtime_operations::leader_recovery)
   EXAM_CHECK( system( "[ -s /tmp/a3 ]" ) == 0 );
   EXAM_CHECK( system( "diff -q /tmp/a2 /tmp/a3" ) == 0 );
 
+#if 0
   unlink( "/tmp/a1" );
   unlink( "/tmp/a2" );
   unlink( "/tmp/a3" );
+#endif
 
   return EXAM_RESULT;
 }

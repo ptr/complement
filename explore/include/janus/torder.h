@@ -50,6 +50,7 @@ class torder_vs :
 
   protected:
     virtual void vs_pub_view_update();
+    virtual void vs_pub_flush();
     virtual void vs_pub_tord_rec( const stem::Event& ) = 0;
 
   protected:

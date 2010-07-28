@@ -55,6 +55,7 @@ VT_with_leader::VT_with_leader( const char* nm ) :
 
 VT_with_leader::~VT_with_leader()
 {
+  misc::use_syslog<LOG_INFO,LOG_USER>() << "~VT_with_leader:" << self_id() << endl;
   disable();
 }
 
@@ -96,6 +97,7 @@ void VT_with_leader::vs_pub_rec( const stem::Event& )
 
 void VT_with_leader::vs_pub_flush()
 {
+  torder_vs::vs_pub_flush();
   flushed = true;
 
   std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
@@ -196,6 +198,7 @@ int EXAM_IMPL(vtime_operations::leader_local)
 
 int EXAM_IMPL(vtime_operations::leader_change)
 {
+  for (int i = 0;i < 100;++i) {
   int n_msg = 100;
   stem::Event ev( EV_EXT_EV_SAMPLE );
 
@@ -244,6 +247,7 @@ int EXAM_IMPL(vtime_operations::leader_change)
 
   unlink( "/tmp/a1" );
   unlink( "/tmp/a2" );
+  }
 
   return EXAM_RESULT;
 }
@@ -657,6 +661,7 @@ int EXAM_IMPL(vtime_operations::leader_fail)
 
           b4.wait(); // group size 3, first 10 events with a1 group leader
           std::tr2::this_thread::sleep( std::tr2::milliseconds(120) );
+          a3.vs_send_flush();
 
 
           // a1 go away, leader failure should be detected and new leader

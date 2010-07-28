@@ -36,20 +36,30 @@ torder_vs::torder_vs( const char* info ) :
 int torder_vs::vs_torder( const stem::Event& inc_ev )
 {
   stem::Event_base<vs_event_total_order> ev( VS_EVENT_TORDER );
-  stem::addr_type me = self_id();
+  stem::addr_type sid = self_id();
 
   ev.value().ev = inc_ev;
   ev.value().id = xmt::uid();
-  ev.value().ev.src( me );
-  ev.value().ev.dest( me );
+  ev.value().ev.src( sid );
+  ev.value().ev.dest( sid );
 
   int ret = basic_vs::vs( ev );
 
   return ret;
 }
 
+void torder_vs::vs_pub_flush()
+{
+  torder_vs::vs_pub_view_update();
+}
+
 void torder_vs::vs_pub_view_update()
 {
+  stem::addr_type sid = self_id();
+  if ( sid == badaddr ) {
+    return;
+  }
+
   // next leader election process
   vector<stem::addr_type> basket;
   {
@@ -65,12 +75,13 @@ void torder_vs::vs_pub_view_update()
 
   vector<stem::addr_type>::iterator i = basket.begin() + view % basket.size();
 
-  if ( *i == self_id() ) {
+  if ( *i == sid ) {
     is_leader_ = true;
       
     stem::Event_base<vs_event_total_order::id_type> cnf( VS_ORDER_CONF );
     orig_order_cnt_type tmp( orig_order_container_.begin(), orig_order_container_.end() );
     for ( orig_order_cnt_type::iterator j = tmp.begin(); j != tmp.end(); ++j) {
+      misc::use_syslog<LOG_INFO,LOG_USER>() << HERE << ':' << sid << ':' << *j << endl;
       cnf.value() = *j;
       vs( cnf );
     }

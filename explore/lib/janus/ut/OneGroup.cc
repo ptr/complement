@@ -69,6 +69,13 @@ class VTM_one_group_handler :
         return cnd.timed_wait( lk, rel_time, flush_status );
       }
 
+    template <class Duration>
+    bool wait_join( const Duration& rel_time )
+      {
+        std::tr2::unique_lock<std::tr2::mutex> lk( mtx );
+        return cnd.timed_wait( lk, rel_time, join_status );
+      }
+
     vtime& vt()
       { return basic_vs::vt; }
     
@@ -91,8 +98,6 @@ class VTM_one_group_handler :
     void reset_flush()
       { std::tr2::lock_guard<std::tr2::mutex> lk( mtx ); flush = 0; }
 
-    bool joined;
-
   private:
     void message( const stem::Event& );
 
@@ -105,6 +110,7 @@ class VTM_one_group_handler :
     int n_flush;
     int flush;
     int gsize;
+    bool joined;
 
     struct _gs_status
     {
@@ -139,6 +145,17 @@ class VTM_one_group_handler :
         VTM_one_group_handler& me;
     } flush_status;
 
+    struct _join_status
+    {
+        _join_status( VTM_one_group_handler& m ) :
+            me( m )
+          { }
+
+        bool operator()() const;
+
+        VTM_one_group_handler& me;
+    } join_status;
+
     DECLARE_RESPONSE_TABLE( VTM_one_group_handler, janus::basic_vs );
 };
 
@@ -149,6 +166,7 @@ VTM_one_group_handler::VTM_one_group_handler() :
     msg_status( *this ),
     gs_status( *this ),
     flush_status( *this ),
+    join_status( *this ),
     msg(0),
     flush(0),
     joined(false)
@@ -189,12 +207,19 @@ void VTM_one_group_handler::vs_pub_flush()
 
 void VTM_one_group_handler::vs_pub_join()
 {
+  std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
   joined = true;
+  cnd.notify_one();
+}
+
+bool VTM_one_group_handler::_join_status::operator()() const
+{
+  return me.joined;
 }
 
 bool VTM_one_group_handler::_flush_status::operator()() const
 {
-  return me.flush == me.n_flush;
+  return me.flush >= me.n_flush;
 }
 
 bool VTM_one_group_handler::_msg_status::operator()() const
@@ -225,6 +250,7 @@ END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::VT_one_group_core)
 {
+  for (int i = 0;i < 1000;++i) {
   VTM_one_group_handler a1;
 
   // a1.manager()->settrs( &cerr );
@@ -241,12 +267,12 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core)
 
   {
     VTM_one_group_handler a2;
-  
+
     a2.vs_join( a1.self_id() );
 
     EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
     EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
-    EXAM_CHECK( a2.joined );
+    EXAM_CHECK( a2.wait_join( std::tr2::milliseconds(500) ) );
   }
 
   // we can detect that a2 leave group after event (with delay)
@@ -254,12 +280,14 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core)
   a1.vs_send_flush();
 
   EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 1 ) );
+  }
 
   return EXAM_RESULT;
 }
 
 int EXAM_IMPL(vtime_operations::VT_one_group_core3)
 {
+  for (int i = 0;i < 1000;++i) {
   VTM_one_group_handler a1;
   VTM_one_group_handler a2;
   VTM_one_group_handler a3;
@@ -269,14 +297,18 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3)
   
   EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
   EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
-  EXAM_CHECK( a2.joined );
+  EXAM_CHECK( a2.wait_join( std::tr2::milliseconds(500)) );
 
   a3.vs_join( a2.self_id() );
 
   EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 3 ) );
   EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3 ) );
   EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(500), 3 ) );
-  EXAM_CHECK( a3.joined );
+  EXAM_CHECK( a3.wait_join( std::tr2::milliseconds(500)) );
+  if ( EXAM_RESULT ) {
+    break;
+  }
+  }
   
   return EXAM_RESULT;
 }
@@ -308,8 +340,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3_sim)
     EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 3 ) );
     EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3 ) );
     EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(500), 3 ) );
-    EXAM_CHECK( a1.joined );
-    EXAM_CHECK( a2.joined );
+    EXAM_CHECK( a1.wait_join( std::tr2::milliseconds(500) ) );
+    EXAM_CHECK( a2.wait_join( std::tr2::milliseconds(500) ) );
 
     VTM_one_group_handler* a4 = new VTM_one_group_handler();
   
@@ -342,6 +374,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3_sim)
 
 int EXAM_IMPL(vtime_operations::VT_one_group_join_exit)
 {
+  for (int i = 0;i < 1000;++i) {
   VTM_one_group_handler a1;
   VTM_one_group_handler a2;
 
@@ -361,6 +394,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_join_exit)
 
   EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
   EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
+  }
 
   return EXAM_RESULT;
 }
@@ -460,7 +494,7 @@ int EXAM_IMPL(vtime_operations::flush_and_exit)
 {
   VTM_one_group_handler a0;
 
-  for ( int i = 0; i < 100; ++i ) {
+  for ( int i = 0; i < 1000; ++i ) {
     VTM_one_group_handler a2;
     VTM_one_group_handler a3;
 
@@ -497,6 +531,11 @@ int EXAM_IMPL(vtime_operations::join_flush_exit)
 
     {
       VTM_one_group_handler a3;
+      misc::use_syslog<LOG_INFO,LOG_USER>() << "-----------------" << endl;
+      misc::use_syslog<LOG_INFO,LOG_USER>() << "a1 = " << a1.self_id() << endl;
+      misc::use_syslog<LOG_INFO,LOG_USER>() << "a2 = " << a2.self_id() << endl;
+      misc::use_syslog<LOG_INFO,LOG_USER>() << "a3 = " << a3.self_id() << endl;
+      misc::use_syslog<LOG_INFO,LOG_USER>() << "a4 = " << a4.self_id() << endl;
 
       a1.vs_join( stem::badaddr );
       a2.vs_join( a1.self_id() );
@@ -516,6 +555,9 @@ int EXAM_IMPL(vtime_operations::join_flush_exit)
 
     EXAM_CHECK( a1.wait_flush( std::tr2::milliseconds(500), 2) );
     EXAM_CHECK( a2.wait_flush( std::tr2::milliseconds(500), 2) );
+    if ( EXAM_RESULT ) {
+      break;
+    }
   }
 
   return EXAM_RESULT;
