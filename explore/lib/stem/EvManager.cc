@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/19 21:27:49 ptr>
+// -*- C++ -*- Time-stamp: <10/07/30 14:23:52 ptr>
 
 /*
  *
@@ -268,16 +268,23 @@ void EvManager::Unsubscribe( const addr_type& id, EventHandler* obj )
     unsafe_Unsubscribe( id, obj );
   }
 
-  EventHandler::addr_container_type::iterator r = remove( obj->_ids.begin(), obj->_ids.end(), id );
-  obj->_ids.erase( r, obj->_ids.end() );
+  {
+    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( obj->_theHistory_lock );
+    EventHandler::addr_container_type::iterator r = remove( obj->_ids.begin(), obj->_ids.end(), id );
+    obj->_ids.erase( r, obj->_ids.end() );
+  }
 
   cache_clear( obj );
 }
 
 void EvManager::cache_clear( EventHandler* obj )
 {
-  if ( !obj->_ids.empty() ) {
-    return;
+
+  {
+    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( obj->_theHistory_lock );
+    if ( !obj->_ids.empty() ) {
+      return;
+    }
   }
 
   pheap_lock.lock();
