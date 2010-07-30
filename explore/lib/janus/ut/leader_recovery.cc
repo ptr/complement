@@ -740,8 +740,8 @@ int EXAM_IMPL(vtime_operations::leader_recovery)
 
 namespace leader_mt_test {
 
-const int n_obj = 3;
-const int n_msg = 3;
+const int n_obj = 5;
+const int n_msg = 10;
 std::tr2::thread* thr[n_obj];
 string names[n_obj];
 stem::addr_type addr; 

@@ -561,6 +561,7 @@ basic_vs::size_type basic_vs::vs_group_size() const
 
 void basic_vs::vs_join_request_work( const stem::Event_base<vs_join_rq>& ev )
 {
+  lock_guard<recursive_mutex> lk( _theHistory_lock );
   stem::Event_base<vs_points> rsp( VS_JOIN_RS );
 
   rsp.value().points = points;
@@ -629,6 +630,7 @@ void basic_vs::vs_send_flush()
 
 void basic_vs::vs_flush_request_work( const stem::Event_base< xmt::uuid_type >& ev )
 {
+  lock_guard<recursive_mutex> lk( _theHistory_lock );
   // misc::use_syslog<LOG_INFO,LOG_USER>() << "vs_flush_request_work:" << sid << endl;
   lock_rsp.clear();
   stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
@@ -666,6 +668,7 @@ void basic_vs::repeat_request( const stem::Event& ev )
 
 void basic_vs::vs_lock_view( const stem::EventVoid& ev )
 {
+  lock_guard<recursive_mutex> lk( _theHistory_lock );
   PushState( VS_ST_LOCKED );
   lock_addr = ev.src();
   // misc::use_syslog<LOG_INFO,LOG_USER>() << "vs_lock_view:" << sid << ':' << lock_addr << endl;
@@ -680,6 +683,7 @@ void basic_vs::vs_lock_view( const stem::EventVoid& ev )
 
 void basic_vs::vs_lock_view_lk( const stem::EventVoid& ev )
 {
+  lock_guard<recursive_mutex> lk( _theHistory_lock );
   // misc::use_syslog<LOG_INFO,LOG_USER>() << "vs_lock_view_lk1:" << sid << ':' << lock_addr << endl;
   if ( ev.src() <= lock_addr ) {
     // misc::use_syslog<LOG_INFO,LOG_USER>() << "vs_lock_view_lk2:" << sid << ':' << lock_addr << endl;
@@ -729,12 +733,14 @@ void basic_vs::check_lock_rsp()
 
 void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
 {
+  lock_guard<recursive_mutex> lk( _theHistory_lock );
   lock_rsp.insert( ev.src() );
   check_lock_rsp();
 }
 
 void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
 {
+  lock_guard<recursive_mutex> lk( _theHistory_lock );
   lock_addr = stem::badaddr;
   PopState( VS_ST_LOCKED );
 
@@ -935,6 +941,7 @@ void basic_vs::add_lock_safety()
 
 void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
 {
+  lock_guard<recursive_mutex> lk( _theHistory_lock );
   if ( ev.src() != sid ) {
     return;
   }

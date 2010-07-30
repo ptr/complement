@@ -672,8 +672,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_multiple_send)
 
 namespace mt_operation {
 
-const int n_obj = 3;
-const int n_msg = 3;
+const int n_obj = 5;
+const int n_msg = 10;
 std::tr2::thread* thr[n_obj];
 stem::addr_type addr; 
 
@@ -699,7 +699,7 @@ void run()
 
 int EXAM_IMPL(vtime_operations::VT_mt_operation)
 {
-  for (int i = 0;i < 1000;++i) {
+  for (int i = 0;i < 100;++i) {
   VTM_one_group_handler a;
   mt_operation::addr = a.self_id();
 

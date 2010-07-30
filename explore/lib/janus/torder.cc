@@ -59,6 +59,11 @@ void torder_vs::vs_pub_view_update()
   vector<stem::addr_type> basket;
   {
     unique_lock<recursive_mutex> lk( _lock_vt );
+    
+    if ( vt.vt.empty() ) {
+      return;
+    }
+
     basket.resize( vt.vt.size() );
     int j = 0;
     for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i, ++j ) {
