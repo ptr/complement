@@ -142,6 +142,7 @@ END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::leader_local)
 {
+  for (int t = 0;t < 100;++t) {
   int n_msg = 100;
   int n_obj = 3;
   stem::Event ev( EV_EXT_EV_SAMPLE );
@@ -191,6 +192,7 @@ int EXAM_IMPL(vtime_operations::leader_local)
   
   for ( int i = 0; i < n_obj; ++i ) {
     unlink( names[i].c_str() );
+  }
   }
 
   return EXAM_RESULT;

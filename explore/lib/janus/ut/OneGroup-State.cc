@@ -319,6 +319,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_replay)
 
 int EXAM_IMPL(vtime_operations::VT_one_group_late_replay)
 {
+  for (int i = 0;i < 1000;++i) {
   stem::addr_type a1_stored;
   stem::addr_type a2_stored;
   stem::addr_type a3_stored;
@@ -392,6 +393,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_late_replay)
   unlink( (std::string( "/tmp/janus." ) + std::string(a1_stored) ).c_str() );
   unlink( (std::string( "/tmp/janus." ) + std::string(a2_stored) ).c_str() );
   unlink( (std::string( "/tmp/janus." ) + std::string(a3_stored) ).c_str() );
+  }
 
   return EXAM_RESULT;
 }

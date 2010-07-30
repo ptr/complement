@@ -55,11 +55,6 @@ void torder_vs::vs_pub_flush()
 
 void torder_vs::vs_pub_view_update()
 {
-  stem::addr_type sid = self_id();
-  if ( sid == badaddr ) {
-    return;
-  }
-
   // next leader election process
   vector<stem::addr_type> basket;
   {
@@ -119,7 +114,7 @@ void torder_vs::vs_torder_conf( const stem::Event_base<vs_event_total_order::id_
       orig_order_container_.erase( j );
     }
   } else {
-    misc::use_syslog<LOG_INFO,LOG_USER>() << HERE << ':' << self_id() << ':' << ev.value() << ':' << "unexpected" << endl;
+    misc::use_syslog<LOG_INFO,LOG_USER>() << HERE << ':' << sid << ':' << ev.value() << ':' << "unexpected" << endl;
   }
 }
 

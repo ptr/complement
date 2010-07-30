@@ -201,6 +201,7 @@ class basic_vs :
     lock_rsp_type lock_rsp;
     stem::addr_type group_applicant;
     stem::addr_type group_applicant_ref;
+    stem::addr_type sid;
   private:
     typedef std::list<stem::NetTransportMgr*> access_container_type;
 

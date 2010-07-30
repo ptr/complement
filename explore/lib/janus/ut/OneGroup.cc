@@ -244,6 +244,7 @@ void VTM_one_group_handler::message( const stem::Event& ev )
   cnd.notify_one();
 }
 
+
 DEFINE_RESPONSE_TABLE( VTM_one_group_handler )
   EV_EDS( ST_NULL, EV_FREE, message )
 END_RESPONSE_TABLE
@@ -668,5 +669,62 @@ int EXAM_IMPL(vtime_operations::VT_one_group_multiple_send)
 
   return EXAM_RESULT;
 }
+
+namespace mt_operation {
+
+const int n_obj = 3;
+const int n_msg = 3;
+std::tr2::thread* thr[n_obj];
+stem::addr_type addr; 
+
+void run()
+{
+  VTM_one_group_handler a;
+  a.vs_join( addr );
+  EXAM_CHECK_ASYNC( a.wait_group_size( std::tr2::milliseconds( max(500, n_obj * 200)), n_obj + 1 ) );
+
+  stem::Event ev( EV_FREE );
+  ev.value() = "message";
+
+  for (int i = 0;i < n_msg;++i) {
+    a.vs( ev );
+  }
+  a.vs_send_flush();
+
+  EXAM_CHECK_ASYNC( a.wait_msg( std::tr2::milliseconds( max(500, n_msg * n_obj * 20)), n_obj * n_msg ) );
+  EXAM_CHECK_ASYNC( a.wait_flush( std::tr2::milliseconds( max(500, n_obj * 200)), n_obj ) );
+}
+
+};
+
+int EXAM_IMPL(vtime_operations::VT_mt_operation)
+{
+  for (int i = 0;i < 1000;++i) {
+  VTM_one_group_handler a;
+  mt_operation::addr = a.self_id();
+
+  // misc::use_syslog<LOG_INFO,LOG_USER>() << "----------------- " << mt_operation::addr << endl;
+
+  a.vs_join( stem::badaddr );
+
+  for (int i = 0;i < mt_operation::n_obj;++i) {
+    mt_operation::thr[i] = new std::tr2::thread( mt_operation::run );
+  }
+
+  for (int i = 0;i < mt_operation::n_obj;++i) {
+    mt_operation::thr[i]->join();
+    delete mt_operation::thr[i];
+  }
+
+  EXAM_CHECK( a.wait_msg( std::tr2::milliseconds( max(500, mt_operation::n_msg * mt_operation::n_obj * 20)), mt_operation::n_obj * mt_operation::n_msg ) );
+  EXAM_CHECK( a.wait_flush( std::tr2::milliseconds( max(500, mt_operation::n_obj * 200)), mt_operation::n_obj ) );
+  if ( EXAM_RESULT ) {
+    break;
+  }
+  }
+
+  return EXAM_RESULT;
+}
+
 
 } // namespace janus

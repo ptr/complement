@@ -731,11 +731,69 @@ int EXAM_IMPL(vtime_operations::leader_recovery)
   EXAM_CHECK( system( "[ -s /tmp/a3 ]" ) == 0 );
   EXAM_CHECK( system( "diff -q /tmp/a2 /tmp/a3" ) == 0 );
 
-#if 0
   unlink( "/tmp/a1" );
   unlink( "/tmp/a2" );
   unlink( "/tmp/a3" );
-#endif
+
+  return EXAM_RESULT;
+}
+
+namespace leader_mt_test {
+
+const int n_obj = 3;
+const int n_msg = 3;
+std::tr2::thread* thr[n_obj];
+string names[n_obj];
+stem::addr_type addr; 
+
+void run(int i)
+{
+  VT_with_leader_recovery a( names[i].c_str() );
+  a.vs_join( addr );
+
+  EXAM_CHECK_ASYNC( a.wait_group_size( std::tr2::milliseconds( max(500, n_obj * 200)), n_obj + 1 ) );
+
+  stem::Event ev( EV_EXT_EV_SAMPLE );
+  ev.dest( a.self_id() );
+
+  for ( int j = 0; j < n_msg; ++j ) {
+    stringstream v;
+    v << j;
+    ev.value() = v.str();
+    a.Send( ev );
+  }
+
+  a.vs_send_flush();
+
+  EXAM_CHECK_ASYNC( a.wait_msg( std::tr2::milliseconds( max(500, n_msg * n_obj * 20)), n_obj * n_msg ) );
+}
+
+};
+
+int EXAM_IMPL(vtime_operations::leader_mt)
+{
+  for (int t = 0;t < 100;++t) {
+  string name = string("/tmp/janus.") + xmt::uid_str();
+  VT_with_leader_recovery a( name.c_str() );
+  leader_mt_test::addr = a.self_id();
+
+  a.vs_join( stem::badaddr );
+
+  for (int i = 0;i < leader_mt_test::n_obj;++i) {
+    leader_mt_test::names[i] = string("/tmp/janus.") + xmt::uid_str();
+    leader_mt_test::thr[i] = new std::tr2::thread( leader_mt_test::run, i );
+  }
+
+  for (int i = 0;i < leader_mt_test::n_obj;++i) {
+    leader_mt_test::thr[i]->join();
+    delete leader_mt_test::thr[i];
+    unlink( leader_mt_test::names[i].c_str() );
+  }
+
+  EXAM_CHECK( a.wait_msg( std::tr2::milliseconds( max(500, leader_mt_test::n_msg * leader_mt_test::n_obj * 20)), leader_mt_test::n_obj * leader_mt_test::n_msg ) );
+
+  unlink( name.c_str() );
+  }
 
   return EXAM_RESULT;
 }
