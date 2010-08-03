@@ -318,6 +318,7 @@ void VTM_one_group_recover::vs_resend_from( const xmt::uuid_type& from, const st
         // true VS_FLUSH_VIEW---it work with view lock,
         // but in this case I want to bypass locking
         if ( ev.code() != VS_FLUSH_RQ ) {
+          misc::use_syslog<LOG_INFO,LOG_USER>() << "resend " << ev.src() << "->" << ev.dest() << ":" << ev.code() << endl;
           Forward( ev ); // src was set above
         }
       }
@@ -603,6 +604,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_multiple_joins)
 int EXAM_IMPL(vtime_operations::VT_one_group_multiple_join_send)
 {
   const int n = 10;
+  for (int t = 0;t < 10;++t) {
   vector< stem::addr_type > names(n);
 
   try {
@@ -629,8 +631,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_multiple_join_send)
       }
       a[i - 1]->vs_send_flush();
       k += i;
-      EXAM_CHECK( a[i]->wait_group_size( std::tr2::milliseconds(n * 200), i + 1 ) );
-      EXAM_CHECK( a[i]->wait_msg( std::tr2::milliseconds(n * 200), k ) );
+      EXAM_CHECK( a[i]->wait_group_size( std::tr2::milliseconds(n * 2000), i + 1 ) );
+      EXAM_CHECK( a[i]->wait_msg( std::tr2::milliseconds(n * 2000), k ) );
     }
 
     for ( int i = 0; i < n; ++i ) {
@@ -649,6 +651,10 @@ int EXAM_IMPL(vtime_operations::VT_one_group_multiple_join_send)
 
   for ( int i = 0; i < n; ++i ) {
     unlink( (std::string( "/tmp/janus." ) + std::string(names[i]) ).c_str() );
+  }
+  if ( EXAM_RESULT ) {
+    break;
+  }
   }
 
   return EXAM_RESULT;

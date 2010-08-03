@@ -363,6 +363,8 @@ int EXAM_IMPL(vtime_operations::leader_recovery)
   const int n_msg2 = 1000;
   const int n_msg3 = 1000;
 
+  const int t_msg = 100;
+
   try {
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
@@ -441,8 +443,8 @@ int EXAM_IMPL(vtime_operations::leader_recovery)
 
         a1.vs_send_flush();
 
-        EXAM_CHECK_ASYNC_F( a1.wait_msg( std::tr2::milliseconds( max( 500, 20 * n_msg1) ), 3 * n_msg1 ), res );
-        EXAM_CHECK_ASYNC_F( a1.wait_flush( std::tr2::milliseconds( max( 500, 20 * n_msg1) ), 1 ), res );
+        EXAM_CHECK_ASYNC_F( a1.wait_msg( std::tr2::milliseconds( max( 500, t_msg * n_msg1) ), 3 * n_msg1 ), res );
+        EXAM_CHECK_ASYNC_F( a1.wait_flush( std::tr2::milliseconds( max( 500, t_msg * n_msg1) ), 1 ), res );
 
         b4.wait(); // group size 3, align with others
       }
@@ -477,7 +479,7 @@ int EXAM_IMPL(vtime_operations::leader_recovery)
 
         b5.wait();
 
-        EXAM_CHECK_ASYNC_F( a1.wait_group_size( std::tr2::milliseconds( max(500, 20 * n_msg2)), 3), res );
+        EXAM_CHECK_ASYNC_F( a1.wait_group_size( std::tr2::milliseconds( max(500, t_msg * n_msg2)), 3), res );
         std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
 
         b6.wait();
@@ -492,7 +494,7 @@ int EXAM_IMPL(vtime_operations::leader_recovery)
           a1.Send( ev );
         }
 
-        EXAM_CHECK_ASYNC_F( a1.wait_msg( std::tr2::milliseconds( max( 500, 20 * n_msg1) ), 3 * n_msg1 + 2 * n_msg2 + 3 * n_msg3 ), res );
+        EXAM_CHECK_ASYNC_F( a1.wait_msg( std::tr2::milliseconds( max( 500, t_msg * n_msg1) ), 3 * n_msg1 + 2 * n_msg2 + 3 * n_msg3 ), res );
 
         b7.wait(); 
       }
@@ -559,8 +561,8 @@ int EXAM_IMPL(vtime_operations::leader_recovery)
             a3.Send( ev );
           }
 
-          EXAM_CHECK_ASYNC_F( a3.wait_msg( std::tr2::milliseconds( max( 500, 20 * n_msg1) ), 3 * n_msg1 ), res );
-          EXAM_CHECK_ASYNC_F( a3.wait_flush( std::tr2::milliseconds( max( 500, 20 * n_msg1) ), 1 ), res );
+          EXAM_CHECK_ASYNC_F( a3.wait_msg( std::tr2::milliseconds( max( 500, t_msg * n_msg1) ), 3 * n_msg1 ), res );
+          EXAM_CHECK_ASYNC_F( a3.wait_flush( std::tr2::milliseconds( max( 500, t_msg * n_msg1) ), 1 ), res );
 
           b4.wait(); // group size 3, first 10 events with a1 group leader
           std::tr2::this_thread::sleep( std::tr2::milliseconds(120) );
@@ -574,7 +576,7 @@ int EXAM_IMPL(vtime_operations::leader_recovery)
             a3.Send( ev );
           }
 
-          EXAM_CHECK_ASYNC_F( a3.wait_msg( std::tr2::milliseconds( max( 500, 20 * n_msg2 ) ), 3 * n_msg1 + 2 * n_msg2), res );
+          EXAM_CHECK_ASYNC_F( a3.wait_msg( std::tr2::milliseconds( max( 500, t_msg * n_msg2 ) ), 3 * n_msg1 + 2 * n_msg2), res );
 
           b2.wait();
 
@@ -592,7 +594,7 @@ int EXAM_IMPL(vtime_operations::leader_recovery)
             a3.Send( ev );
           }
 
-          EXAM_CHECK_ASYNC_F( a3.wait_msg( std::tr2::milliseconds( max( 500, 20 * n_msg2 ) ), 3 * n_msg1 + 2 * n_msg2 + 3 * n_msg3), res );
+          EXAM_CHECK_ASYNC_F( a3.wait_msg( std::tr2::milliseconds( max( 500, t_msg * n_msg2 ) ), 3 * n_msg1 + 2 * n_msg2 + 3 * n_msg3), res );
 
           b7.wait();
         }
@@ -657,8 +659,8 @@ int EXAM_IMPL(vtime_operations::leader_recovery)
             a2.Send( ev );
           }
 
-          EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds( max( 500, 20 * n_msg1) ), 3 * n_msg1 ) );
-          EXAM_CHECK( a2.wait_flush( std::tr2::milliseconds( max( 500, 20 * n_msg1) ), 1 ) );
+          EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds( max( 500, t_msg * n_msg1) ), 3 * n_msg1 ) );
+          EXAM_CHECK( a2.wait_flush( std::tr2::milliseconds( max( 500, t_msg * n_msg1) ), 1 ) );
 
           b4.wait(); // group size 3, first 10 events with a1 group leader
           std::tr2::this_thread::sleep( std::tr2::milliseconds(120) );
@@ -672,13 +674,13 @@ int EXAM_IMPL(vtime_operations::leader_recovery)
             a2.Send( ev );
           }
 
-          EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds( max( 500, 20 * n_msg2 ) ), 3 * n_msg1 + 2 * n_msg2) );
+          EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds( max( 500, t_msg * n_msg2 ) ), 3 * n_msg1 + 2 * n_msg2) );
 
           b2.wait();
 
           b5.wait();
 
-          EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds( max(500, 20 * n_msg2) ), 3) );
+          EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds( max(500, t_msg * n_msg2) ), 3) );
           std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
 
           b6.wait();
@@ -691,7 +693,7 @@ int EXAM_IMPL(vtime_operations::leader_recovery)
             a2.Send( ev );
           }
 
-          EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds( max( 500, 20 * n_msg2 ) ), 3 * n_msg1 + 2 * n_msg2 + 3 * n_msg3) );
+          EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds( max( 500, t_msg * n_msg2 ) ), 3 * n_msg1 + 2 * n_msg2 + 3 * n_msg3) );
 
           b7.wait();
         }
@@ -740,10 +742,11 @@ int EXAM_IMPL(vtime_operations::leader_recovery)
 
 namespace leader_mt_test {
 
-const int n_obj = 5;
+const int n_obj = 2;
 const int n_msg = 10;
 std::tr2::thread* thr[n_obj];
 string names[n_obj];
+int res[n_obj];
 stem::addr_type addr; 
 
 void run(int i)
@@ -765,7 +768,8 @@ void run(int i)
 
   a.vs_send_flush();
 
-  EXAM_CHECK_ASYNC( a.wait_msg( std::tr2::milliseconds( max(500, n_msg * n_obj * 20)), n_obj * n_msg ) );
+  EXAM_CHECK_ASYNC_F( a.wait_msg( std::tr2::milliseconds( max(3000, n_msg * n_obj * 100)), n_obj * n_msg ), res[i] );
+  misc::use_syslog<LOG_INFO,LOG_USER>() << "!! " << i << endl;
 }
 
 };
@@ -773,6 +777,7 @@ void run(int i)
 int EXAM_IMPL(vtime_operations::leader_mt)
 {
   for (int t = 0;t < 100;++t) {
+  misc::use_syslog<LOG_INFO,LOG_USER>() << "----------" << endl;
   string name = string("/tmp/janus.") + xmt::uid_str();
   VT_with_leader_recovery a( name.c_str() );
   leader_mt_test::addr = a.self_id();
@@ -788,11 +793,15 @@ int EXAM_IMPL(vtime_operations::leader_mt)
     leader_mt_test::thr[i]->join();
     delete leader_mt_test::thr[i];
     unlink( leader_mt_test::names[i].c_str() );
+    EXAM_CHECK( leader_mt_test::res[i] == 0 );
   }
 
-  EXAM_CHECK( a.wait_msg( std::tr2::milliseconds( max(500, leader_mt_test::n_msg * leader_mt_test::n_obj * 20)), leader_mt_test::n_obj * leader_mt_test::n_msg ) );
+  EXAM_CHECK( a.wait_msg( std::tr2::milliseconds( max(3000, leader_mt_test::n_msg * leader_mt_test::n_obj * 100)), leader_mt_test::n_obj * leader_mt_test::n_msg ) );
 
   unlink( name.c_str() );
+  if ( EXAM_RESULT ) {
+    break;
+  }
   }
 
   return EXAM_RESULT;

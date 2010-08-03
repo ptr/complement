@@ -252,6 +252,7 @@ END_RESPONSE_TABLE
 int EXAM_IMPL(vtime_operations::VT_one_group_core)
 {
   for (int i = 0;i < 1000;++i) {
+    // misc::use_syslog<LOG_INFO,LOG_USER>() << "-----------------" << endl;
   VTM_one_group_handler a1;
 
   // a1.manager()->settrs( &cerr );
@@ -281,6 +282,9 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core)
   a1.vs_send_flush();
 
   EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 1 ) );
+  if ( EXAM_RESULT ) {
+    break;
+  }
   }
 
   return EXAM_RESULT;
@@ -567,6 +571,7 @@ int EXAM_IMPL(vtime_operations::join_flush_exit)
 int EXAM_IMPL(vtime_operations::VT_one_group_send)
 {
   for ( int i = 0; i < 1000; ++i ) {
+    misc::use_syslog<LOG_INFO,LOG_USER>() << "------------ " << endl;
     VTM_one_group_handler a1;
     VTM_one_group_handler a2;
 
@@ -605,6 +610,9 @@ int EXAM_IMPL(vtime_operations::VT_one_group_send)
     EXAM_CHECK( a1.mess == "another message" );
     EXAM_CHECK( a2.mess == "another message" );
     EXAM_CHECK( a3.mess == "another message" );
+    if ( EXAM_RESULT ) {
+      break;
+    }
   }
 
   return EXAM_RESULT;
@@ -672,12 +680,13 @@ int EXAM_IMPL(vtime_operations::VT_one_group_multiple_send)
 
 namespace mt_operation {
 
-const int n_obj = 5;
-const int n_msg = 10;
+const int n_obj = 4;
+const int n_msg = 1;
 std::tr2::thread* thr[n_obj];
+int res[n_obj];
 stem::addr_type addr; 
 
-void run()
+void run(int k)
 {
   VTM_one_group_handler a;
   a.vs_join( addr );
@@ -691,8 +700,8 @@ void run()
   }
   a.vs_send_flush();
 
-  EXAM_CHECK_ASYNC( a.wait_msg( std::tr2::milliseconds( max(500, n_msg * n_obj * 20)), n_obj * n_msg ) );
-  EXAM_CHECK_ASYNC( a.wait_flush( std::tr2::milliseconds( max(500, n_obj * 200)), n_obj ) );
+  EXAM_CHECK_ASYNC_F( a.wait_msg( std::tr2::milliseconds( max(500, n_msg * n_obj * 20)), n_obj * n_msg ), res[k] );
+  EXAM_CHECK_ASYNC_F( a.wait_flush( std::tr2::milliseconds( max(500, n_obj * 200)), n_obj ), res[k] );
 }
 
 };
@@ -703,17 +712,18 @@ int EXAM_IMPL(vtime_operations::VT_mt_operation)
   VTM_one_group_handler a;
   mt_operation::addr = a.self_id();
 
-  // misc::use_syslog<LOG_INFO,LOG_USER>() << "----------------- " << mt_operation::addr << endl;
+  misc::use_syslog<LOG_INFO,LOG_USER>() << "----------------- " << mt_operation::addr << endl;
 
   a.vs_join( stem::badaddr );
 
   for (int i = 0;i < mt_operation::n_obj;++i) {
-    mt_operation::thr[i] = new std::tr2::thread( mt_operation::run );
+    mt_operation::thr[i] = new std::tr2::thread( mt_operation::run, i );
   }
 
   for (int i = 0;i < mt_operation::n_obj;++i) {
     mt_operation::thr[i]->join();
     delete mt_operation::thr[i];
+    EXAM_CHECK( mt_operation::res[i] == 0 );
   }
 
   EXAM_CHECK( a.wait_msg( std::tr2::milliseconds( max(500, mt_operation::n_msg * mt_operation::n_obj * 20)), mt_operation::n_obj * mt_operation::n_msg ) );

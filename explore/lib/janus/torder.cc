@@ -18,8 +18,8 @@ using namespace xmt;
 using namespace stem;
 using namespace std::tr2;
 
-#define VS_EVENT_TORDER 0x30d
-#define VS_ORDER_CONF   0x30e
+#define VS_EVENT_TORDER 0x30c
+#define VS_ORDER_CONF   0x30d
 
 torder_vs::torder_vs() :
     basic_vs(),
@@ -81,9 +81,13 @@ void torder_vs::vs_pub_view_update()
     stem::Event_base<vs_event_total_order::id_type> cnf( VS_ORDER_CONF );
     orig_order_cnt_type tmp( orig_order_container_.begin(), orig_order_container_.end() );
     for ( orig_order_cnt_type::iterator j = tmp.begin(); j != tmp.end(); ++j) {
-      misc::use_syslog<LOG_INFO,LOG_USER>() << HERE << ':' << sid << ':' << *j << endl;
       cnf.value() = *j;
-      vs( cnf );
+      if ( vs( cnf ) ) {
+        // in the middle of flush
+        // new leader(possibly me) will send confirmations
+        // misc::use_syslog<LOG_INFO,LOG_USER>() << "de.pop_back() " << sid << ':' << ev.value().id << endl;
+        de.pop_back();
+      }
     }
   } else {
     is_leader_ = false;
@@ -102,7 +106,13 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
   if ( is_leader() ) {
     stem::Event_base<vs_event_total_order::id_type> cnf( VS_ORDER_CONF );
     cnf.value() = ev.value().id;
-    vs( cnf );
+
+    if ( vs( cnf ) == 1 ) {
+      // in the middle of flush
+      // new leader(possibly me) will send confirmations
+      // misc::use_syslog<LOG_INFO,LOG_USER>() << "de.pop_back() " << sid << ':' << ev.value().id << endl;
+      de.pop_back();
+    }
   }
 }
 
@@ -118,8 +128,6 @@ void torder_vs::vs_torder_conf( const stem::Event_base<vs_event_total_order::id_
     if ( j != orig_order_container_.end() ) {
       orig_order_container_.erase( j );
     }
-  } else {
-    misc::use_syslog<LOG_INFO,LOG_USER>() << HERE << ':' << sid << ':' << ev.value() << ':' << "unexpected" << endl;
   }
 }
 

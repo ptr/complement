@@ -202,6 +202,7 @@ class basic_vs :
     stem::addr_type group_applicant;
     stem::addr_type group_applicant_ref;
     stem::addr_type sid;
+    int self_events;
   private:
     typedef std::list<stem::NetTransportMgr*> access_container_type;
 
