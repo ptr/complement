@@ -94,6 +94,18 @@ void torder_vs::vs_pub_view_update()
   }
 }
 
+void torder_vs::vs_resend_from( const xmt::uuid_type& from, const stem::addr_type& addr)
+{
+  for ( conf_cnt_type::const_iterator i = conform_container_.begin();i != conform_container_.end();++i) {
+    stem::Event_base<vs_event_total_order> ev( VS_EVENT_TORDER );
+    ev.value().ev = i->second;
+    ev.value().id = i->first;
+    ev.src( i->second.src() );
+    ev.dest( addr );
+    Forward( ev );
+  }
+}
+
 void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>& ev )
 {
   ev.value().ev.src( ev.src() );

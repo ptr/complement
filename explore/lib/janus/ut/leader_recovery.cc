@@ -44,10 +44,6 @@ using namespace std;
 # define VS_FLUSH_RQ 0x307 // see casual.cc
 #endif
 
-#ifndef VS_EVENT_TORDER
-# define VS_EVENT_TORDER 0x30d // see torder.cc
-#endif
-
 VT_with_leader_recovery::VT_with_leader_recovery( const char* nm ) :
     torder_vs(),
     msg_status( *this ),
@@ -203,18 +199,8 @@ void VT_with_leader_recovery::vs_resend_from( const xmt::uuid_type& from, const 
     }
   }
 
-  if ( !conform_container_.empty() ) {
-    for ( conf_cnt_type::const_iterator i = conform_container_.begin();i != conform_container_.end();++i) {
-      stem::Event_base<vs_event_total_order> ev( VS_EVENT_TORDER );
-      ev.value().ev = i->second;
-      ev.value().id = i->first;
-      ev.src( i->second.src() );
-      ev.dest( addr );
-      Forward( ev );
-    }
-  }
-
   history.clear();
+  torder_vs::vs_resend_from( from, addr );
 }
 
 void VT_with_leader_recovery::vs_pub_view_update()
@@ -286,7 +272,8 @@ END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::leader_multiple_change)
 {
-  for (int p = 0;p < 10;++p) {
+  for (int p = 0;p < 100;++p) {
+  misc::use_syslog<LOG_INFO,LOG_USER>() << "----------" << endl;
   const int n = 10;
   stem::Event ev( EV_EXT_EV_SAMPLE );
 
@@ -742,7 +729,7 @@ int EXAM_IMPL(vtime_operations::leader_recovery)
 
 namespace leader_mt_test {
 
-const int n_obj = 2;
+const int n_obj = 5;
 const int n_msg = 10;
 std::tr2::thread* thr[n_obj];
 string names[n_obj];
@@ -769,6 +756,7 @@ void run(int i)
   a.vs_send_flush();
 
   EXAM_CHECK_ASYNC_F( a.wait_msg( std::tr2::milliseconds( max(3000, n_msg * n_obj * 100)), n_obj * n_msg ), res[i] );
+  EXAM_CHECK_ASYNC_F( a.wait_flush( std::tr2::milliseconds( max(500, n_obj * 200)), n_obj ), res[i] );
   misc::use_syslog<LOG_INFO,LOG_USER>() << "!! " << i << endl;
 }
 
