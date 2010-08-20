@@ -224,7 +224,7 @@ void Opts::parse( int& ac, const char** av )
       (*p)->pos.push_back(++q);
     } else if ( is_flag_group(av[i]) ) {
       string optgroup = av[i];
-      for ( int j = 1; j < optgroup.size(); j++ ) {
+      for ( unsigned int j = 1; j < optgroup.size(); j++ ) {
         options_container_type::const_iterator p = get_opt_index(string("-") + optgroup[j]);
         if ( p == storage.end() ) {
           throw unknown_option( "-" + string(1,optgroup[j]) );
