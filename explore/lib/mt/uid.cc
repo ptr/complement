@@ -161,7 +161,7 @@ std::istream& operator >>( std::istream& s, xmt::uuid_type& uid )
 
 namespace xmt {
 
-const uuid_type nil_uuid = { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } }; // NIL UUID
+const uuid_type nil_uuid = { { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } } }; // NIL UUID
 
 namespace detail {
 
