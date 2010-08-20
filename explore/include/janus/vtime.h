@@ -88,7 +88,7 @@ struct vtime :
       { }
 
     vtime& operator =( const vtime& _vt )
-      { vt = _vt.vt; }
+      { vt = _vt.vt; return *this; }
 
     vtime_type::mapped_type& operator[]( const vtime_type::key_type& k )
       { return vt[k]; }
