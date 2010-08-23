@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/30 14:23:52 ptr>
+// -*- C++ -*- Time-stamp: <10/08/19 20:12:12 ptr>
 
 /*
  *
@@ -19,6 +19,7 @@
 #include <config/feature.h>
 #include "stem/EvManager.h"
 #include "stem/NetTransport.h"
+#include "stem/EDSEv.h"
 #include <iomanip>
 #include <mt/mutex>
 
@@ -677,6 +678,31 @@ void EvManager::unsafe_annotate( const addr_type& id, const std::string& info )
       }
     }
     i->second.push_back( id );
+  }
+}
+
+/*
+ * for all objects with flag 'remote', try to annotate l
+ * on remote side and ask to annotate r on local side
+ * (if r is available on remote, annotate it on local side)
+ */
+void EvManager::annotate_remotes( const addr_type& l, const addr_type& r )
+{
+  Event ev( EV_STEM_ANNOTATION );
+
+  ev.dest( badaddr ); // special: no destination
+  ev.src( l );        // will be annotated in NetTransport::connect
+                      // or NetTransportMgr::_loop
+
+  // NetTransport_base::Dispatch( ev );
+
+  basic_read_lock<rw_mutex> lk(_lock_heap);
+  for ( local_heap_type::const_iterator i = heap.begin(); i != heap.end(); ++i ) {
+    if ( !i->second.empty() ) {
+      if ( (i->second.top().second.first & EvManager::remote) != 0 ) {
+        i->second.top().second.second->Dispatch( ev );
+      }
+    }
   }
 }
 

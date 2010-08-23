@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/16 21:23:26 ptr>
+// -*- C++ -*- Time-stamp: <10/08/19 20:00:15 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2010
@@ -258,6 +258,8 @@ class EvManager
         std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
         unsafe_annotate( id, std::string( info ) );
       }
+
+    void annotate_remotes( const addr_type&, const addr_type& );
 
     __FIT_DECLSPEC void push( const Event& e );
 
