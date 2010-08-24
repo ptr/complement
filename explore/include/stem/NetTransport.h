@@ -125,7 +125,7 @@ class NetTransportMgr :
       { }
 
     ~NetTransportMgr()
-      { NetTransport_base::_close(); join(); }
+      { net.close(); join(); }
 
     bool fail() const
       { return std::sockstream::fail(); }
