@@ -33,6 +33,7 @@ class vtime_operations
 
     int EXAM_DECL(VT_one_group_network);
     int EXAM_DECL(VT_one_group_access_point);
+    int EXAM_DECL(VT_one_group_access_point_ex);
 
     int EXAM_DECL(VT_one_group_recover);
 

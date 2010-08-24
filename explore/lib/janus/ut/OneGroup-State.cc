@@ -471,6 +471,134 @@ int EXAM_IMPL(vtime_operations::VT_one_group_network)
 
 int EXAM_IMPL(vtime_operations::VT_one_group_access_point)
 {
+  for (int p = 0;p < 100;++p) {
+    try {
+      xmt::shm_alloc<0> seg;
+      seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+      xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+      xmt::allocator_shm<stem::addr_type,0> shm_a;
+
+      std::tr2::barrier_ip& b = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
+      std::tr2::barrier_ip& b2 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
+      std::tr2::barrier_ip& b3 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
+      stem::addr_type& addr1 = *new ( shm_a.allocate( 1 ) ) stem::addr_type();
+
+      try {
+        tr2::this_thread::fork();
+        int res = 0;
+
+        stem::addr_type me;
+
+        {
+          VTM_one_group_advanced_handler a1;
+
+          a1.vs_join( stem::badaddr );
+
+          connect_processor<stem::NetTransport> srv( 2009 );
+
+          EXAM_CHECK_ASYNC_F( srv.is_open(), res );
+
+          list<net_iface> ifaces;
+
+          get_ifaces( back_inserter(ifaces) );
+
+          if ( !ifaces.empty() ) {
+            for ( list<net_iface>::iterator f = ifaces.begin(); f != ifaces.end(); ++f ) {
+              if ( f->addr.any.sa_family == PF_INET ) {
+                f->addr.inet.sin_port = stem::to_net( static_cast<short>(2009) );
+                a1.vs_tcp_point( f->addr.inet );
+              }
+            }
+          }
+
+          a1.vs_join( stem::badaddr );
+
+          a1.set_default();
+
+          addr1 = a1.self_id();
+          me = a1.self_id();
+
+          b.wait();
+          b2.wait();
+
+          EXAM_CHECK_ASYNC_F( a1.wait_group_size( std::tr2::milliseconds(500), 2 ), res );
+
+          EXAM_CHECK_ASYNC_F( a1.wait_msg( std::tr2::milliseconds(500), 1 ), res );
+          EXAM_CHECK_ASYNC_F( a1.mess == "message", res );
+
+          b3.wait();
+        }
+
+        unlink( (std::string( "/tmp/janus." ) + std::string(me) ).c_str() );
+
+        exit( res );
+      }
+      catch ( std::tr2::fork_in_parent& child ) {
+        b.wait();
+
+        stem::addr_type me;
+        {
+          VTM_one_group_advanced_handler a2;
+          me = a2.self_id();
+          connect_processor<stem::NetTransport> srv( 2010 );
+
+          list<net_iface> ifaces;
+
+          get_ifaces( back_inserter(ifaces) );
+
+          if ( !ifaces.empty() ) {
+            for ( list<net_iface>::iterator f = ifaces.begin(); f != ifaces.end(); ++f ) {
+              if ( f->addr.any.sa_family == PF_INET ) {
+                f->addr.inet.sin_port = stem::to_net( static_cast<short>(2010) );
+                a2.vs_tcp_point( f->addr.inet );
+              }
+            }
+          }
+
+          a2.vs_join( addr1, "localhost", 2009 );
+          b2.wait();
+
+          EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
+
+          stem::Event ev( EV_FREE );
+          ev.value() = "message";
+          ev.dest( a2.self_id() );
+
+          a2.Send( ev ); // simulate outer event
+
+          EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds(500), 1 ) );
+          EXAM_CHECK( a2.mess == "message" );
+
+          b3.wait();
+        }
+
+        int stat = -1;
+        EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+        if ( WIFEXITED(stat) ) {
+          EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+        } else {
+          EXAM_ERROR( "child interrupted" );
+        }
+
+        unlink( (std::string( "/tmp/janus." ) + std::string(me) ).c_str() );
+      }
+      shm.deallocate( &b );
+      shm.deallocate( &b2 );
+      shm.deallocate( &b3 );
+      shm_a.deallocate( &addr1 );
+      seg.deallocate();
+    }
+    catch ( xmt::shm_bad_alloc& err ) {
+      EXAM_ERROR( err.what() );
+    }
+  }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(vtime_operations::VT_one_group_access_point_ex)
+{
   try {
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );

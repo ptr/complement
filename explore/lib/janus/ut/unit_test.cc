@@ -70,8 +70,9 @@ int main( int argc, const char ** argv )
               t.add( &vtime_operations::VT_one_group_multiple_joins, vt_oper, "VT one group multiple joins",
                 t.add( &vtime_operations::VT_one_group_join_send, vt_oper, "VT one group join and send", tc[2] ) ) ) );
 
-  tc[4] = t.add( &vtime_operations::VT_one_group_access_point, vt_oper, "VT network access points",
-    t.add( &vtime_operations::VT_one_group_network, vt_oper, "VT over network", tc[1] ) );
+  tc[4] = t.add( &vtime_operations::VT_one_group_access_point_ex, vt_oper, "VT network access points extended",
+    t.add( &vtime_operations::VT_one_group_access_point, vt_oper, "VT network access points", 
+      t.add( &vtime_operations::VT_one_group_network, vt_oper, "VT over network", tc[1] ) ) );
 
   tc[5] = t.add( &vtime_operations::leader_recovery, vt_oper, "VT total order, leader recovery",
             t.add( &vtime_operations::leader_fail, vt_oper, "VT total order, leader fail",
