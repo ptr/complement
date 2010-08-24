@@ -82,6 +82,8 @@ class stem_test
     int EXAM_DECL(route_to_net);
     int EXAM_DECL(route_from_net);
 
+    int EXAM_DECL(echo_mt);
+
     static void thr1();
     static void thr1new();
 
@@ -1910,6 +1912,118 @@ int EXAM_IMPL(stem_test::route_from_net)
   return EXAM_RESULT;
 }
 
+namespace echo_mt_test {
+
+stem::addr_type addr;
+const int n_obj = 10;
+const int n_msg = 10;
+
+std::tr2::thread* thr[n_obj];
+int res[n_obj];
+
+void run(int i)
+{
+  for (int j = 0;j < n_msg;++j) {
+    EchoClient node;
+
+    stem::stem_scope scope( node );
+
+    stem::Event ev( NODE_EV_ECHO );
+    ev.dest( addr );
+
+    ev.value() = node.mess;
+    node.Send( ev );
+
+    EXAM_CHECK_ASYNC_F( node.wait(), res[i] );
+    if ( res[i] ) {
+      break;
+    }
+  }
+}
+
+};
+
+int EXAM_IMPL(stem_test::echo_mt)
+{
+  try {
+    barrier_ip& b = *new ( shm_b.allocate( 1 ) ) barrier_ip();
+    condition_event_ip& c = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+
+    try {
+      std::tr2::this_thread::fork();
+
+      int eflag = 0;
+      // server part
+      {
+        connect_processor<stem::NetTransport> srv( 6995 );
+        StEMecho echo( "echo service" );
+
+        stem::stem_scope scope( echo );
+
+        echo.set_default(); // become default object
+
+        // echo.manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch );
+        // echo.manager()->settrs( &std::cerr );
+
+        EXAM_CHECK_ASYNC_F( srv.good(), eflag );
+        c.notify_one(); // ok, server listen
+
+        b.wait(); // server may go away
+
+        srv.close();
+        srv.wait();
+      }
+
+      exit( eflag );
+    }
+    catch ( std::tr2::fork_in_parent& child ) {
+      // client part
+      {
+        stem::NetTransportMgr mgr;
+        // mgr.manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+        // mgr.manager()->settrs( &std::cerr );
+
+        EXAM_CHECK( c.timed_wait( std::tr2::milliseconds( 800 ) ) ); // wait server start
+
+        echo_mt_test::addr = mgr.open( "localhost", 6995 );
+
+        EXAM_REQUIRE( mgr.good() );
+        EXAM_REQUIRE( echo_mt_test::addr != stem::badaddr );
+
+        for (int i = 0;i < echo_mt_test::n_obj;++i) {
+          echo_mt_test::thr[i] = new std::tr2::thread( echo_mt_test::run, i );
+        }
+
+        for (int i = 0;i < echo_mt_test::n_obj;++i) {
+          echo_mt_test::thr[i]->join();
+          delete echo_mt_test::thr[i];
+          EXAM_CHECK( echo_mt_test::res[i] == 0 );
+        }
+      }
+
+      b.wait(); // server may go away
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+    }
+
+    (&c)->~condition_event_ip();
+    shm_cnd.deallocate( &c, 1 );
+    (&b)->~barrier_ip();
+    shm_b.deallocate( &b, 1 );
+  }
+  catch (  xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  return EXAM_RESULT;
+}
+
 int main( int argc, const char** argv )
 {
   exam::test_suite::test_case_type tc[7];
@@ -1955,6 +2069,7 @@ int main( int argc, const char** argv )
   cases_next[3] = t.add( &stem_test::vf, test, "dtor when come event", tc[6] );
   t.add( &stem_test::vf1, test, "dtor when come event - resource control", cases_next[3] );
   t.add( &stem_test::command_mgr, test, "command mgr", cases_next + 2, cases_next + 4 );
+  t.add( &stem_test::echo_mt, test, "echo multithreaded", cases_next[3] );
 
   Opts opts;
 
