@@ -2,7 +2,7 @@
 
 LIBNAME = xmt
 MAJOR = 2
-MINOR = 1
-PATCH = 6
-SRC_CC = thr_mgr.cc time.cc uid.cc shm.cc callstack.cc system_error.cc thread.cc \
+MINOR = 2
+PATCH = 0
+SRC_CC = time.cc uid.cc shm.cc callstack.cc system_error.cc thread.cc \
          date_time.cc lfstream.cc demangle.cc
