@@ -1,3 +1,9 @@
+2010-08-25  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* thread: native_handle function added;
+	
+	* libxmt: release 2.2.0.
+
 2010-05-31  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* uid.cc: use sysctl instead of file operations
