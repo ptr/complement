@@ -10,7 +10,7 @@
 
 #include "mt_test.h"
 
-#include <mt/xmt.h>
+// #include <mt/xmt.h>
 #include <mt/shm.h>
 #include <mt/thr_mgr.h>
 #include <mt/callstack.h>

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/01 15:44:55 ptr>
+// -*- C++ -*- Time-stamp: <10/08/25 18:26:30 ptr>
 
 /*
  * Copyright (c) 2006-2009
@@ -58,14 +58,15 @@ int main( int argc, const char** argv )
   exam::test_suite t( "libxmt test" );
   sys_err_test sys_err;
 
+  t.add( signal_1_test, "signal_1_test" );
+  t.add( signal_3_test, "signal_3_test" );
+
 #if 0
   t.add( timespec_diff, "timespec_diff" );
-  t.add( signal_1_test, "signal_1_test" );
   // You can't throw exception from signal handler
   // (stack saved/restored, that confuse stack unwind);
   // by this reason next test is commented:
   // t.add( signal_2_test, "signal_2_test" );
-  t.add( signal_3_test, "signal_3_test" );
 #endif
 
   exam::test_suite::test_case_type tc[3];
