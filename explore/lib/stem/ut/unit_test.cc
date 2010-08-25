@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/08 11:06:58 ptr>
+// -*- C++ -*- Time-stamp: <10/08/25 19:33:40 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -1923,7 +1923,7 @@ int res[n_obj];
 
 void run(int i)
 {
-  for (int j = 0;j < n_msg;++j) {
+  for ( int j = 0; j < n_msg; ++j ) {
     EchoClient node;
 
     stem::stem_scope scope( node );
@@ -1936,6 +1936,10 @@ void run(int i)
 
     EXAM_CHECK_ASYNC_F( node.wait(), res[i] );
     if ( res[i] ) {
+      stringstream s;
+      s << "thread index: " << i << ", message " << j << endl;
+      // cerr << HERE << ' ' << s.str() << endl;
+      EXAM_ERROR_ASYNC( s.str().c_str() );
       break;
     }
   }
@@ -1946,6 +1950,9 @@ void run(int i)
 int EXAM_IMPL(stem_test::echo_mt)
 {
   try {
+    fill( echo_mt_test::res, echo_mt_test::res + echo_mt_test::n_obj, 0 );
+    fill( echo_mt_test::thr, echo_mt_test::thr + echo_mt_test::n_obj, (std::tr2::thread*)(0) );
+
     barrier_ip& b = *new ( shm_b.allocate( 1 ) ) barrier_ip();
     condition_event_ip& c = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
 
@@ -1990,11 +1997,11 @@ int EXAM_IMPL(stem_test::echo_mt)
         EXAM_REQUIRE( mgr.good() );
         EXAM_REQUIRE( echo_mt_test::addr != stem::badaddr );
 
-        for (int i = 0;i < echo_mt_test::n_obj;++i) {
+        for ( int i = 0; i < echo_mt_test::n_obj; ++i ) {
           echo_mt_test::thr[i] = new std::tr2::thread( echo_mt_test::run, i );
         }
 
-        for (int i = 0;i < echo_mt_test::n_obj;++i) {
+        for ( int i = 0; i < echo_mt_test::n_obj; ++i ) {
           echo_mt_test::thr[i]->join();
           delete echo_mt_test::thr[i];
           EXAM_CHECK( echo_mt_test::res[i] == 0 );
