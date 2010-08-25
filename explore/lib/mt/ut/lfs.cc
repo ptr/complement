@@ -14,7 +14,7 @@
 #include <exam/suite.h>
 
 #include "mt/lfstream.h"
-#include <mt/xmt.h>
+// #include <mt/xmt.h>
 
 #include <sys/file.h>
 #include <unistd.h>

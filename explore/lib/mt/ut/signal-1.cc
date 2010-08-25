@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/09/05 00:03:41 ptr>
+// -*- C++ -*- Time-stamp: <10/08/25 18:25:54 ptr>
 
 /*
- * Copyright (c) 2003, 2006, 2007
+ * Copyright (c) 2003, 2006, 2007, 2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -10,10 +10,8 @@
 
 #include <exam/suite.h>
 
-#include <mt/xmt.h>
-
-using namespace xmt;
-
+#include <mt/thread>
+#include <mt/condition_variable>
 
 /* 
  * thread 2:  v = 1; create thread 1 ----------------------------------- join; v == 4?
@@ -23,22 +21,28 @@ using namespace xmt;
  * handler (within thread 1):                         v == 1?; v = 4
  */
 
-static Thread::ret_t thread_one( void * );
-static Thread::ret_t thread_two( void * );
+static void thread_one();
+static void thread_two();
 
-static Thread *th_one = 0;
-static Thread *th_two = 0;
+static std::tr2::thread* th_one = 0;
+static std::tr2::thread* th_two = 0;
 
 static int v = 0;
 
-static condition cnd;
+struct true_val
+{
+    bool operator()() const
+      { return (v == 2); }
+};
+
+static std::tr2::mutex cond_mtx;
+static std::tr2::condition_variable cnd;
 
 extern "C" {
   static void handler( int );
 
   void handler( int )
   {
-    EXAM_CHECK_ASYNC( v == 1 );
     v = 4;
     /*
      Note: you have very restricted list of system calls that you can use here
@@ -54,44 +58,47 @@ extern "C" {
   }
 }
 
-Thread::ret_t thread_one( void * )
+void thread_one()
 {
-  xmt::unblock_signal( SIGINT ); // we wait this signal
+  std::tr2::this_thread::unblock_signal( SIGINT ); // we wait this signal
   // Default handler make exit() call:
   //   Thread::signal_handler( SIGINT, SIG_DFL );
   // That's why I set own handler:
-  xmt::signal_handler( SIGINT, handler );
+  std::tr2::this_thread::signal_handler( SIGINT, handler );
 
-  EXAM_CHECK_ASYNC( v == 1 );
+  {
+    std::tr2::unique_lock<std::tr2::mutex> lk( cond_mtx );
 
-  cnd.try_wait();
+    cnd.wait( lk, true_val() );
+  }
 
-  th_one->kill( SIGINT ); // send signal SIGINT to self
-
-  return 0;
+  pthread_kill( th_one->native_handle(), SIGINT ); // send signal SIGINT to self
 }
 
-Thread::ret_t thread_two( void * )
+void thread_two()
 {
-  cnd.set( false );
+  {
+    std::tr2::unique_lock<std::tr2::mutex> lk( cond_mtx );
+    v = 1;
+  }
 
-  v = 1;
-
-  Thread t( thread_one ); // start thread_one
+  std::tr2::thread t( thread_one ); // start thread_one
   th_one = &t;            // store address to be called from thread_one
 
-  cnd.set( true );
+  {
+    std::tr2::unique_lock<std::tr2::mutex> lk( cond_mtx );
+    v = 2;
+    cnd.notify_one();
+  }
 
   t.join();
 
   EXAM_CHECK_ASYNC( v == 4 );
-
-  return 0;
 }
 
 int EXAM_IMPL(signal_1_test)
 {
-  Thread t( thread_two );
+  std::tr2::thread t( thread_two );
 
   t.join();
 
