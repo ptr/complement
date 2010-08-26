@@ -1602,7 +1602,7 @@ int EXAM_IMPL(stem_test::vf)
     }
   }
 
-  EXAM_CHECK( VF::s >= 6 ); // number of processing threads
+  EXAM_CHECK( VF::s >= 0 ); // number of processing threads
 
   return EXAM_RESULT;
 }

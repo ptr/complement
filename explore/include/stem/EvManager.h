@@ -222,17 +222,12 @@ class EvManager
     template <class Iterator>
     void Unsubscribe( Iterator first, Iterator last, EventHandler* obj )
       {
-        Iterator tmp = first;
-        {
-          std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
-          std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
+        std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
+        std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
 
-          while ( first != last ) {
-            unsafe_Unsubscribe( *first++, obj );
-          }
+        while ( first != last ) {
+          unsafe_Unsubscribe( *first++, obj );
         }
-        obj->_ids.erase( tmp, last );
-        cache_clear( obj );
       }
 
     bool is_avail( const addr_type& id ) const
@@ -274,17 +269,18 @@ class EvManager
     const xmt::uuid_type& self_id() const
       { return _id; }
 
+    static void start_queue() { };
+    static void stop_queue() { };
+
   protected:
     void unsafe_Subscribe( const addr_type& id, EventHandler* object, int nice = 0 );
     void unsafe_Unsubscribe( const addr_type& id, EventHandler* );
-    void cache_clear( EventHandler* );
+    // void cache_clear( EventHandler* );
 
     bool unsafe_is_avail( const addr_type& id ) const
       { return heap.find( id ) != heap.end(); }
 
     void unsafe_annotate( const addr_type& id, const std::string& info );
-    void stop_queue();
-    void start_queue();
 
   private:
     const xmt::uuid_type _id;
@@ -292,68 +288,57 @@ class EvManager
     local_heap_type heap;   // address -> EventHandler *
     info_heap_type  iheap;  // address -> info string (both local and external)
 
-    struct ev_queue
+    struct worker
     {
-        ev_queue() :
-            lock( 0 )
-          { }
+      worker( EvManager* _mgr ) :
+          mgr( _mgr ),
+          not_empty( *this ),
+          thr( new std::tr2::thread( worker::_loop, this ) )
+        { }
 
-        ~ev_queue()
-          {
-            if ( lock != 0 ) {
-              delete lock;
-            }
-          }
+      ~worker() {
+        if ( thr != NULL ) {
+          thr->join();
+          delete thr;
+        }
+      }
 
-        std::tr2::mutex* lock;
-        std::list<Event> evs;
+      class queue_condition {
+        public:
+          queue_condition( worker& _w ) :
+              w( _w )
+            { }
+
+          bool operator()() const
+            { return !w.events.empty() || w.mgr->_dispatch_stop; }
+
+        private:
+          worker& w;
+      } not_empty;
+
+      std::list<Event> events;
+      EvManager* mgr;
+
+      std::tr2::mutex lock;
+      std::tr2::condition_variable cnd;
+      std::tr2::thread* thr;
+
+      static void _loop( worker* );
     };
 
-#ifdef __USE_STLPORT_HASH
-    typedef std::hash_map<EventHandler*,ev_queue> p_heap_type;
-#endif
-#ifdef __USE_STD_HASH
-    typedef __gnu_cxx::hash_map<EventHandler*,ev_queue> p_heap_type;
-#endif
-#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::tr1::unordered_map<EventHandler*,ev_queue> p_heap_type;
-#endif
-
-    p_heap_type pheap;
-    std::list<std::pair<EventHandler*,int> > plist;
-    std::tr2::mutex pheap_lock;
-
-    class subqueue_condition
-    {
-      public:
-        subqueue_condition( EvManager& m ) :
-            mgr( m )
-          { }
-
-        bool operator()() const
-          { return !mgr.plist.empty() || mgr._dispatch_stop; }
-
-      private:
-        EvManager& mgr;
-    } not_empty;
-
-    const int n_threads;
-    std::list<std::tr2::thread*> threads;
-
-    static void _Dispatch_sub( EvManager* );
 
     bool _dispatch_stop;
 
     std::tr2::rw_mutex _lock_heap;
     std::tr2::mutex _lock_iheap;
 
-    std::tr2::condition_variable _cnd_queue;
-    std::tr2::condition_variable _cnd_retry;
-
     static std::string inv_key_str;
     std::tr2::mutex _lock_tr;
     unsigned _trflags;
     std::ostream *_trs;
+
+    const int n_threads;
+    std::vector< worker* > workers;
 
     friend class Names;
     friend class NetTransportMgr;

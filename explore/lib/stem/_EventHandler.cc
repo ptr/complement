@@ -312,12 +312,12 @@ addr_type EventHandler::get_default()
 
 void EventHandler::solitary()
 {
-  // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( _theHistory_lock );
-
   _mgr->Unsubscribe( _ids.begin(), _ids.end(), this );
+  {
+    std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( _theHistory_lock );
+    _ids.clear();
+  }
   theHistory.clear();
-  // _ids.clear(); // must be empty here
-  // _mgr->cache_clear( this );
 }
 
 void EventHandler::enable()
@@ -327,9 +327,11 @@ void EventHandler::enable()
 
 void EventHandler::disable()
 {
-  // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( _theHistory_lock );
   _mgr->Unsubscribe( _ids.begin(), _ids.end(), this );
-  // _mgr->cache_clear( this );
+  {
+    std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( _theHistory_lock );
+    _ids.clear();
+  }
 }
 
 int EventHandler::flags() const
