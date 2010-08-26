@@ -285,7 +285,7 @@ void janus_perf::run(int i)
 
   a.vs_send_flush();
 
-  EXAM_CHECK_ASYNC_F( a.wait_msg( std::tr2::milliseconds(n_msg * n_obj * 100), n_obj * n_msg ), res[i] );
-  EXAM_CHECK_ASYNC_F( a.wait_flush( std::tr2::milliseconds(n_obj * 200), n_obj ), res[i] );
+  EXAM_CHECK_ASYNC_F( a.wait_msg( std::tr2::milliseconds(n_msg * (n_obj + 1) * 100), (n_obj + 1) * n_msg ), res[i] );
+  EXAM_CHECK_ASYNC_F( a.wait_flush( std::tr2::milliseconds((n_obj + 1) * 200), n_obj + 1 ), res[i] );
 }
 

@@ -52,10 +52,10 @@ int main( int argc, const char** argv )
 
   janus_perf p;
 
-  t.add( &janus_perf::group_send_mt<4,1000>, p, "group send mt: 4 users, 1000 msgs each",
-    t.add( &janus_perf::group_send_mt<3,1000>, p, "group send mt: 3 users, 1000 msgs each",
-      t.add( &janus_perf::group_send_mt<2,1000>, p, "group send mt: 2 users, 1000 msgs each",
-        t.add( &janus_perf::group_send_mt<1,1000>, p, "group send mt: 1 users, 1000 msgs each" ) ) ) );
+  t.add( &janus_perf::group_send_mt<4,250>, p, "group send mt: 4 users, 1000 msgs total",
+    t.add( &janus_perf::group_send_mt<3,333>, p, "group send mt: 3 users, 1000 msgs total",
+      t.add( &janus_perf::group_send_mt<2,500>, p, "group send mt: 2 users, 1000 msgs total",
+        t.add( &janus_perf::group_send_mt<1,1000>, p, "group send mt: 1 users, 1000 msgs total" ) ) ) );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );

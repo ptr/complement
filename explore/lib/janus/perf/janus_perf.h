@@ -108,6 +108,7 @@ class VT_with_leader_recovery :
 
 
     int msg;
+    int flush;
   private:
     void message( const stem::Event& );
     void sync_message( const stem::Event& );
@@ -116,7 +117,6 @@ class VT_with_leader_recovery :
     std::tr2::condition_variable cnd;
     int n_msg;
     int gsize;
-    int flush;
     int n_flush;
 
     std::fstream history;
@@ -178,12 +178,7 @@ int EXAM_IMPL( janus_perf::group_send_mt )
     res[i] = 0;
   }
 
-  for (int i = 0;i < n_obj;++i) {
-    thr[i]->join();
-    delete thr[i];
-    unlink( names[i].c_str() );
-    EXAM_CHECK( res[i] == 0 );
-  }
+  EXAM_CHECK( a.wait_group_size( std::tr2::milliseconds(N_user * 200), N_user ) );
 
   {
     stem::Event ev( EV_EXT_EV_SAMPLE );
@@ -200,6 +195,14 @@ int EXAM_IMPL( janus_perf::group_send_mt )
   }
 
   EXAM_CHECK( a.wait_msg( std::tr2::milliseconds(N_user * N_msg * 100), N_user * N_msg ) );
+  EXAM_CHECK( a.wait_flush( std::tr2::milliseconds(N_user * 200), N_user ) );
+
+  for (int i = 0;i < n_obj;++i) {
+    thr[i]->join();
+    delete thr[i];
+    unlink( names[i].c_str() );
+    EXAM_CHECK( res[i] == 0 );
+  }
 
   unlink( name.c_str() );
 
