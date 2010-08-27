@@ -39,12 +39,14 @@ std::string EvManager::inv_key_str( "invalid key" );
 static const string addr_unknown("address unknown");
 static const string no_catcher( "no catcher for event" );
 
+unsigned int EvManager::working_threads = 2;
+
 __FIT_DECLSPEC EvManager::EvManager() :
     _id( xmt::uid() ),
     _dispatch_stop( false ),
     _trflags( 0 ),
     _trs( 0 ),
-    n_threads( 2 ), // must be power of 2
+    n_threads( working_threads ),
     workers( n_threads )
 {
   for ( unsigned int i = 0; i < n_threads; ++i ) {
