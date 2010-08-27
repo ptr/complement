@@ -228,7 +228,7 @@ void VT_with_leader_recovery::vs_pub_tord_rec( const stem::Event& ev )
 }
 
 std::tr2::milliseconds VT_with_leader_recovery::vs_pub_lock_timeout() const {
-  return std::tr2::milliseconds(250);
+  return std::tr2::milliseconds(2500);
 }
 
 void VT_with_leader_recovery::message( const stem::Event& ev )

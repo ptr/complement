@@ -45,7 +45,7 @@ int main( int argc, const char** argv )
   }
 
   exam::trivial_time_logger tlogger( std::cout );
-  exam::test_suite t( "janus performance test suite 0", 3 );
+  exam::test_suite t( "janus performance test suite 0", 20 );
   t.set_logger( &tlogger );
 
   exam::test_suite::test_case_type tc[30];
