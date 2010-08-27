@@ -272,6 +272,8 @@ class EvManager
     static void start_queue() { };
     static void stop_queue() { };
 
+    static unsigned int working_threads;
+
   protected:
     void unsafe_Subscribe( const addr_type& id, EventHandler* object, int nice = 0 );
     void unsafe_Unsubscribe( const addr_type& id, EventHandler* );
@@ -337,7 +339,7 @@ class EvManager
     unsigned _trflags;
     std::ostream *_trs;
 
-    const int n_threads;
+    unsigned int n_threads;
     std::vector< worker* > workers;
 
     friend class Names;
