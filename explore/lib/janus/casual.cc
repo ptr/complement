@@ -144,7 +144,7 @@ int basic_vs::vs( const stem::Event& inc_ev )
   lock_guard<recursive_mutex> hlk( _theHistory_lock );
 
   if ( isState(VS_ST_LOCKED) ) {
-    misc::use_syslog<LOG_INFO,LOG_USER>() << "de.push_back()" << ':' << HERE << ':' << sid << ':' << inc_ev.code() << endl;
+    // misc::use_syslog<LOG_INFO,LOG_USER>() << "de.push_back()" << ':' << HERE << ':' << sid << ':' << inc_ev.code() << endl;
     de.push_back( inc_ev );
     return 1;
   }
@@ -204,7 +204,7 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
   // check the view version first:
   if ( view != 0 && ev.value().view != view ) {
     if ( ev.value().view > view ) {
-      misc::use_syslog<LOG_INFO,LOG_USER>() << "ove.push_back" << ':' << HERE << ':' << sid << ':' << ev.value().ev.code() << endl;
+      // misc::use_syslog<LOG_INFO,LOG_USER>() << "ove.push_back" << ':' << HERE << ':' << sid << ':' << ev.value().ev.code() << endl;
       ove.push_back( ev ); // push event into delay queue
     } else {
       misc::use_syslog<LOG_INFO,LOG_USER>() << HERE << ':' << sid << ":unexpected" << endl;
@@ -221,14 +221,14 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
 
     if ( vt.vt.empty() ) {
       if ( ev.src() != lock_addr || code != VS_UPDATE_VIEW ) {
-        misc::use_syslog<LOG_INFO,LOG_USER>() << "ove.push_back" << ':' << __FILE__ << ':' << __LINE__ << ':' << sid << ':' << ev.value().ev.code() << endl;
+        // misc::use_syslog<LOG_INFO,LOG_USER>() << "ove.push_back" << ':' << __FILE__ << ':' << __LINE__ << ':' << sid << ':' << ev.value().ev.code() << endl;
         ove.push_back( ev );
         return;
       }
     }
 
     if ( self_events && ev.src() != sid ) {
-      misc::use_syslog<LOG_INFO,LOG_USER>() << "ove.push_back" << ':' << __FILE__ << ':' << __LINE__ << ':' << sid << ':' << ev.value().ev.code() << endl;
+      // misc::use_syslog<LOG_INFO,LOG_USER>() << "ove.push_back" << ':' << __FILE__ << ':' << __LINE__ << ':' << sid << ':' << ev.value().ev.code() << endl;
       ove.push_back( ev );
       return;
     }
@@ -243,7 +243,7 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
       if ( (i->first == ev.src()) && (i->first != sid) ) {
         if ( (i->second + 1) != tmp[ev.src()] ) {
           if ( (i->second + 1) < tmp[ev.src()] ) {
-            misc::use_syslog<LOG_DEBUG,LOG_USER>() << "ove.push_back" << ':' << HERE << ':' << sid << ':' << ev.src() << ':' << ev.value().ev.code() << endl;
+            // misc::use_syslog<LOG_DEBUG,LOG_USER>() << "ove.push_back" << ':' << HERE << ':' << sid << ':' << ev.src() << ':' << ev.value().ev.code() << endl;
             ove.push_back( ev ); // push event into delay queue
           } else {
             misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ':' << sid << ':' << ev.value().ev.code() << " unexpected" << endl;
@@ -252,7 +252,7 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
           return;
         }
       } else if ( i->second < tmp[i->first] ) {
-        misc::use_syslog<LOG_DEBUG,LOG_USER>() << "ove.push_back" << ':' << HERE << ':' << sid << ':' << ev.src() << ':' << ev.value().ev.code() << endl;
+        // misc::use_syslog<LOG_DEBUG,LOG_USER>() << "ove.push_back" << ':' << HERE << ':' << sid << ':' << ev.src() << ':' << ev.value().ev.code() << endl;
         ove.push_back( ev ); // push event into delay queue
         return;
       }
@@ -850,7 +850,7 @@ void basic_vs::process_delayed()
       de.pop_back(); // event pushed back in vs() above, remove it
       break;
     }
-    misc::use_syslog<LOG_INFO,LOG_USER>() << "de.pop_front()" << ':' << HERE << ':' << sid << ':' << de.front().code() << endl;
+    // misc::use_syslog<LOG_INFO,LOG_USER>() << "de.pop_front()" << ':' << HERE << ':' << sid << ':' << de.front().code() << endl;
     de.pop_front();
   }
 
@@ -897,7 +897,7 @@ void basic_vs::process_out_of_order()
         }
       }
 
-      misc::use_syslog<LOG_INFO,LOG_USER>() << "ove.pop_back" << ':' << __FILE__ << ':' << __LINE__ << ':' << sid << ':' << k->value().ev.code() << endl;
+      // misc::use_syslog<LOG_INFO,LOG_USER>() << "ove.pop_back" << ':' << __FILE__ << ':' << __LINE__ << ':' << sid << ':' << k->value().ev.code() << endl;
 
       ++vt[k->src()];
       _lock_vt.unlock();
@@ -993,7 +993,7 @@ bool basic_vs::check_remotes()
   }
 
   for ( list<janus::addr_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
-    misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ':' << sid << ':' << *i <<  " leave us" << endl;
+    // misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ':' << sid << ':' << *i <<  " leave us" << endl;
     vt.vt.erase( *i );
     drop = true;
   }

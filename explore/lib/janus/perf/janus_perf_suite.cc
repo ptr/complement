@@ -52,10 +52,16 @@ int main( int argc, const char** argv )
 
   janus_perf p;
 
-  t.add( &janus_perf::group_send_mt<4,250>, p, "group send mt: 4 users, 1000 msgs total",
-    t.add( &janus_perf::group_send_mt<3,333>, p, "group send mt: 3 users, 1000 msgs total",
-      t.add( &janus_perf::group_send_mt<2,500>, p, "group send mt: 2 users, 1000 msgs total",
-        t.add( &janus_perf::group_send_mt<1,1000>, p, "group send mt: 1 users, 1000 msgs total" ) ) ) );
+  t.add( &janus_perf::group_send_mt<10,100>, p, "group send mt: 10 users, 1000 msgs total",
+    t.add( &janus_perf::group_send_mt<9,111>, p, "group send mt: 9 users, 1000 msgs total",
+      t.add( &janus_perf::group_send_mt<8,125>, p, "group send mt: 8 users, 1000 msgs total",
+        t.add( &janus_perf::group_send_mt<7,142>, p, "group send mt: 7 users, 1000 msgs total",
+          t.add( &janus_perf::group_send_mt<6,166>, p, "group send mt: 6 users, 1000 msgs total",
+            t.add( &janus_perf::group_send_mt<5,200>, p, "group send mt: 5 users, 1000 msgs total",
+              t.add( &janus_perf::group_send_mt<4,250>, p, "group send mt: 4 users, 1000 msgs total",
+                t.add( &janus_perf::group_send_mt<3,333>, p, "group send mt: 3 users, 1000 msgs total",
+                  t.add( &janus_perf::group_send_mt<2,500>, p, "group send mt: 2 users, 1000 msgs total",
+                    t.add( &janus_perf::group_send_mt<1,1000>, p, "group send mt: 1 users, 1000 msgs total" ) ) ) ) ) ) ) ) ) );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );
