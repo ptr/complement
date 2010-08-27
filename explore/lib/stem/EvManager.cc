@@ -196,7 +196,6 @@ void EvManager::unsafe_Unsubscribe( const addr_type& id, EventHandler* obj )
       return;
     }
   } else {
-    misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << endl;
     handlers_type tmp;
     swap( i->second, tmp );
     while ( !tmp.empty() ) {

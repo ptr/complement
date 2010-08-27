@@ -178,7 +178,7 @@ int EXAM_IMPL( janus_perf::group_send_mt )
     res[i] = 0;
   }
 
-  EXAM_CHECK( a.wait_group_size( std::tr2::milliseconds(N_user * 200), N_user ) );
+  EXAM_CHECK( a.wait_group_size( std::tr2::milliseconds(N_user * 2000), N_user ) );
 
   {
     stem::Event ev( EV_EXT_EV_SAMPLE );
@@ -195,7 +195,7 @@ int EXAM_IMPL( janus_perf::group_send_mt )
   }
 
   EXAM_CHECK( a.wait_msg( std::tr2::milliseconds(N_user * N_msg * 100), N_user * N_msg ) );
-  EXAM_CHECK( a.wait_flush( std::tr2::milliseconds(N_user * 200), N_user ) );
+  EXAM_CHECK( a.wait_flush( std::tr2::milliseconds(N_user * 2000), N_user ) );
 
   for (int i = 0;i < n_obj;++i) {
     thr[i]->join();

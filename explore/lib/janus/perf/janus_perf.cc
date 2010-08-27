@@ -271,7 +271,7 @@ void janus_perf::run(int i)
   VT_with_leader_recovery a( names[i].c_str() );
   a.vs_join( addr );
 
-  EXAM_CHECK_ASYNC( a.wait_group_size( std::tr2::milliseconds(n_obj * 200), n_obj + 1 ) );
+  EXAM_CHECK_ASYNC( a.wait_group_size( std::tr2::milliseconds(n_obj * 2000), n_obj + 1 ) );
 
   stem::Event ev( EV_EXT_EV_SAMPLE );
   ev.dest( a.self_id() );
@@ -286,6 +286,6 @@ void janus_perf::run(int i)
   a.vs_send_flush();
 
   EXAM_CHECK_ASYNC_F( a.wait_msg( std::tr2::milliseconds(n_msg * (n_obj + 1) * 100), (n_obj + 1) * n_msg ), res[i] );
-  EXAM_CHECK_ASYNC_F( a.wait_flush( std::tr2::milliseconds((n_obj + 1) * 200), n_obj + 1 ), res[i] );
+  EXAM_CHECK_ASYNC_F( a.wait_flush( std::tr2::milliseconds((n_obj + 1) * 2000), n_obj + 1 ), res[i] );
 }
 
