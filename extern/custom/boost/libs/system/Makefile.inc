@@ -3,6 +3,6 @@
 BOOST_S_SRC = ${BOOST_INCLUDE_DIR}/libs/system/src
 LIBNAME = boost_system
 MAJOR = 1
-MINOR = 44
+MINOR = 43
 PATCH = 0
 SRC_CPP = ${BOOST_S_SRC}/error_code.cpp

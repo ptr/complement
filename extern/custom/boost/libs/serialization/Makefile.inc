@@ -4,7 +4,7 @@ BOOST_SR_SRC = ${BOOST_INCLUDE_DIR}/libs/serialization/src
 #BOOST_SR_SRC = src
 LIBNAME = boost_serialization
 MAJOR = 1
-MINOR = 44
+MINOR = 43
 PATCH = 0
 SRC_CPP = ${BOOST_SR_SRC}/basic_archive.cpp \
           ${BOOST_SR_SRC}/basic_iarchive.cpp \
