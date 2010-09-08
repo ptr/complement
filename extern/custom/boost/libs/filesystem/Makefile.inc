@@ -9,14 +9,6 @@ PATCH = 0
 SRC_CPP = ${BOOST_FS_SRC}/v2/src/v2_operations.cpp \
           ${BOOST_FS_SRC}/v2/src/v2_path.cpp \
           ${BOOST_FS_SRC}/v2/src/v2_portability.cpp \
-          ${BOOST_FS_SRC}/v3/src/operations.cpp \
-          ${BOOST_FS_SRC}/v3/src/path.cpp \
-          ${BOOST_FS_SRC}/v3/src/portability.cpp \
-          ${BOOST_FS_SRC}/v3/src/utf8_codecvt_facet.cpp \
-          ${BOOST_FS_SRC}/v3/src/codecvt_error_category.cpp \
-          ${BOOST_FS_SRC}/v3/src/path_traits.cpp \
-          ${BOOST_FS_SRC}/v3/src/unique_path.cpp \
-          ${BOOST_FS_SRC}/v3/src/windows_file_codecvt.cpp \
           ${BOOST_INCLUDE_DIR}/libs/system/src/error_code.cpp
 
 #${BOOST_FS_SRC}/operations.cpp \
