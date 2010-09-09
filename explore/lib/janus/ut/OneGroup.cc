@@ -79,7 +79,7 @@ class VTM_one_group_handler :
     vtime& vt()
       { return basic_vs::vt; }
     
-    virtual xmt::uuid_type vs_pub_recover();
+    virtual xmt::uuid_type vs_pub_recover( bool is_fouder );
     virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& );
     virtual void vs_pub_view_update();
     virtual void vs_pub_rec( const stem::Event& );
@@ -179,7 +179,7 @@ VTM_one_group_handler::~VTM_one_group_handler()
   disable();
 }
 
-xmt::uuid_type VTM_one_group_handler::vs_pub_recover()
+xmt::uuid_type VTM_one_group_handler::vs_pub_recover( bool is_founder )
 {
   return xmt::nil_uuid;
 }

@@ -55,11 +55,11 @@ class VT_with_leader_recovery :
         return cnd.timed_wait( lk, rel_time, flush_status );
       }
 
-    xmt::uuid_type vs_pub_recover();
-    void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& );
-    void vs_pub_view_update();
-    void vs_pub_rec( const stem::Event& );
-    void vs_pub_flush();
+    virtual xmt::uuid_type vs_pub_recover( bool is_founder );
+    virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& );
+    virtual void vs_pub_view_update();
+    virtual void vs_pub_rec( const stem::Event& );
+    virtual void vs_pub_flush();
     virtual void vs_pub_tord_rec( const stem::Event& );
     virtual std::tr2::milliseconds vs_pub_lock_timeout() const;
 
