@@ -385,6 +385,17 @@ int basic_vs::vs_join( const stem::addr_type& a )
     return 1; // join to self prohibited
   }
 
+  if ( a == stem::badaddr ) {
+    this->vs_pub_recover( true );
+    _lock_vt.lock();
+    vt[sid]; // make self-entry not empty (used in vs_group_size)
+    _lock_vt.unlock();
+
+    vs_pub_join();
+    this->vs_pub_view_update();
+
+    return 0;
+  }
 
   if ( is_avail( a ) ) {
     xmt::uuid_type ref = this->vs_pub_recover( false );
@@ -401,18 +412,6 @@ int basic_vs::vs_join( const stem::addr_type& a )
     Send( ev );
 
     add_lock_safety();  // belay: avoid infinite lock
-
-    return 0;
-  }
-
-  if ( a == stem::badaddr ) {
-    this->vs_pub_recover( true );
-    _lock_vt.lock();
-    vt[sid]; // make self-entry not empty (used in vs_group_size)
-    _lock_vt.unlock();
-
-    vs_pub_join();
-    this->vs_pub_view_update();
 
     return 0;
   }
@@ -628,6 +627,7 @@ void basic_vs::vs_send_flush()
 void basic_vs::vs_flush_request_work( const stem::Event_base< xmt::uuid_type >& ev )
 {
   // misc::use_syslog<LOG_INFO,LOG_USER>() << "vs_flush_request_work:" << sid << endl;
+  
   lock_rsp.clear();
   stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
   basic_vs::vs( view_lock_ev );
@@ -709,13 +709,16 @@ void basic_vs::check_lock_rsp()
         group_applicant_ref = xmt::nil_uuid;
       }
         
-      stem::Event_base<stem::addr_type> iev( fq.front().code() );
-      iev.value() = fq.front().src();
+      stem::Event_base< pair< stem::addr_type, string > > iev( fq.front().code() );
+      iev.value().first = fq.front().src();
+      if ( fq.front().code() == VS_FLUSH_RQ ) {
+        iev.value().second = fq.front().value();
+      }
 
       stem::Event_base<vs_event> update_view_ev( VS_UPDATE_VIEW );
       update_view_ev.value().view = view;
       update_view_ev.value().vt = vt;
-      update_view_ev.value().ev = stem::detail::convert<stem::Event_base<stem::addr_type>,stem::Event>()(iev);
+      update_view_ev.value().ev = stem::detail::convert<stem::Event_base< pair< stem::addr_type, string > >, stem::Event>()(iev);
 
       lk.unlock();
       vs_locked( update_view_ev );
@@ -756,7 +759,8 @@ void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
   }
 
   stem::code_type code = ev.value().ev.code();
-  stem::addr_type origin = stem::detail::convert<stem::Event, stem::Event_base<stem::addr_type> >()(ev.value().ev).value();
+  stem::Event_base< pair< stem::addr_type, string > > origin_event = stem::detail::convert< stem::Event, stem::Event_base< pair< stem::addr_type, string > > >()(ev.value().ev);
+  stem::addr_type origin = origin_event.value().first;
 
   if ( code == VS_JOIN_RQ ) {
     _lock_vt.lock();
@@ -771,8 +775,9 @@ void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
     // misc::use_syslog<LOG_INFO,LOG_USER>() << "vs_pub_update_view:" << sid << endl;
     this->vs_pub_view_update();
   } else if ( code == VS_FLUSH_RQ ) {
-    // misc::use_syslog<LOG_INFO,LOG_USER>() << "vs_pub_flush:" << sid << endl;
-    vs_pub_rec( ev.value().ev );
+    Event tmp_ev( code );
+    tmp_ev.value() = origin_event.value().second;
+    vs_pub_rec( tmp_ev );
     this->vs_pub_flush();
   }
 
