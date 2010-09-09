@@ -386,9 +386,9 @@ int basic_vs::vs_join( const stem::addr_type& a )
   }
 
 
-  xmt::uuid_type ref = this->vs_pub_recover();
-
   if ( is_avail( a ) ) {
+    xmt::uuid_type ref = this->vs_pub_recover( false );
+
     PushState( VS_ST_LOCKED );
     lock_addr = a;
 
@@ -406,6 +406,7 @@ int basic_vs::vs_join( const stem::addr_type& a )
   }
 
   if ( a == stem::badaddr ) {
+    this->vs_pub_recover( true );
     _lock_vt.lock();
     vt[sid]; // make self-entry not empty (used in vs_group_size)
     _lock_vt.unlock();
