@@ -558,6 +558,8 @@ basic_vs::size_type basic_vs::vs_group_size() const
 
 void basic_vs::vs_join_request_work( const stem::Event_base<vs_join_rq>& ev )
 {
+  check_remotes();
+
   stem::Event_base<vs_points> rsp( VS_JOIN_RS );
 
   rsp.value().points = points;
@@ -585,8 +587,6 @@ void basic_vs::vs_join_request_work( const stem::Event_base<vs_join_rq>& ev )
       break;
     }
   }
-
-  check_remotes();
 
   _lock_vt.unlock();
 
@@ -627,6 +627,7 @@ void basic_vs::vs_send_flush()
 void basic_vs::vs_flush_request_work( const stem::Event_base< xmt::uuid_type >& ev )
 {
   // misc::use_syslog<LOG_INFO,LOG_USER>() << "vs_flush_request_work:" << sid << endl;
+  check_remotes();
   
   lock_rsp.clear();
   stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
@@ -986,22 +987,18 @@ bool basic_vs::check_remotes()
     }
   }
 
-  bool drop = false;
-  list<janus::addr_type> trash;
-
   lock_guard<recursive_mutex> lk( _lock_vt );
 
-  for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
+  bool drop = false;
+
+  for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
     if ( !is_avail( i->first ) ) {
       points.erase( i->first );
-      trash.push_back( i->first );
+      vt.vt.erase( i++ );
+      drop = true;
+    } else {
+      ++i;
     }
-  }
-
-  for ( list<janus::addr_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
-    // misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ':' << sid << ':' << *i <<  " leave us" << endl;
-    vt.vt.erase( *i );
-    drop = true;
   }
 
   return !drop;
