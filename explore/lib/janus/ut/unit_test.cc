@@ -83,8 +83,6 @@ int main( int argc, const char ** argv )
                     t.add( &vtime_operations::leader_change, vt_oper, "VT total order, leader change",
                       t.add( &vtime_operations::leader_local, vt_oper, "VT total order, leader local", tc[4] ) ) ) ) ) ) );
 
-  t.add( &vtime_operations::lock_and_torder, vt_oper, "VT total order, lock", tc[5] );
-
   if ( opts.is_set( 'v' ) ) {
     t.flags( t.flags() | exam::base_logger::verbose );
   }

@@ -83,7 +83,7 @@ bool VT_with_leader_recovery::_flush_status::operator()() const
   return me.flush >= me.n_flush;
 }
 
-xmt::uuid_type VT_with_leader_recovery::vs_pub_recover()
+xmt::uuid_type VT_with_leader_recovery::vs_pub_recover( bool is_founder )
 {
   stem::Event ev;
   stem::code_type c;

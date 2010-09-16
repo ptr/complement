@@ -131,7 +131,7 @@ class basic_vs :
     vtime vt;
     std::tr2::recursive_mutex _lock_vt;
 
-    virtual xmt::uuid_type vs_pub_recover() = 0;
+    virtual xmt::uuid_type vs_pub_recover( bool is_founder ) = 0;
     virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& ) = 0;
     virtual void vs_pub_view_update() = 0;
     virtual void vs_pub_rec( const stem::Event& ) = 0;

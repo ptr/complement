@@ -72,7 +72,7 @@ class VTM_one_group_advanced_handler :
     vtime& vt()
       { return basic_vs::vt; }
 
-    virtual xmt::uuid_type vs_pub_recover();
+    virtual xmt::uuid_type vs_pub_recover( bool is_founder );
     virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& );
     virtual void vs_pub_view_update();
     virtual void vs_pub_rec( const stem::Event& );
@@ -163,7 +163,7 @@ bool VTM_one_group_advanced_handler::_gs_status::operator()() const
   return me.vs_group_size() == me.gsize;
 }
 
-xmt::uuid_type VTM_one_group_advanced_handler::vs_pub_recover()
+xmt::uuid_type VTM_one_group_advanced_handler::vs_pub_recover( bool is_founder )
 {
   stem::Event ev;
   stem::code_type c;
