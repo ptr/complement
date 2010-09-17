@@ -52,6 +52,8 @@ Cron* basic_vs::_cron = 0;
 
 static int *_rcount = 0;
 
+const int basic_vs::max_vs_lock_safety_sequental_attempts = 100;
+
 #if 1 // depends where fork happens: in the EvManager loop (stack) or not.
 void basic_vs::Init::__at_fork_prepare()
 {
@@ -108,7 +110,8 @@ basic_vs::basic_vs() :
     lock_addr( stem::badaddr ),
     group_applicant( stem::badaddr ),
     sid( self_id() ),
-    self_events( 0 )
+    self_events( 0 ),
+    vs_lock_safety_sequental_attempts( 0 )
 {
   new( Init_buf ) Init();
 }
@@ -119,7 +122,8 @@ basic_vs::basic_vs( const char* info ) :
     lock_addr( stem::badaddr ),
     group_applicant( stem::badaddr ),
     sid( self_id() ),
-    self_events( 0 )
+    self_events( 0 ),
+    vs_lock_safety_sequental_attempts( 0 )
 {
   new( Init_buf ) Init();
 }
@@ -740,6 +744,7 @@ void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
   lock_guard<recursive_mutex> hlk( _theHistory_lock );
 
   lock_addr = stem::badaddr;
+  vs_lock_safety_sequental_attempts = 0;
   RemoveState( VS_ST_LOCKED );
 
   {
@@ -960,6 +965,7 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
   if ( lock_addr != sid ) {
     if ( !is_avail(lock_addr) ) {
       lock_addr = stem::badaddr;
+      vs_lock_safety_sequental_attempts = 0;
       RemoveState( VS_ST_LOCKED );
       lock_rsp.clear();
       process_delayed();
@@ -970,9 +976,19 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
   }
 
   // misc::use_syslog<LOG_INFO,LOG_USER>() << "vs_lock_safety2:" << sid << endl;
-
+  
   check_lock_rsp();
-  add_lock_safety();
+
+  if ( vs_lock_safety_sequental_attempts++ < max_vs_lock_safety_sequental_attempts ) {
+    add_lock_safety();
+  } else {
+    lock_addr = stem::badaddr;
+    vs_lock_safety_sequental_attempts = 0;
+    RemoveState( VS_ST_LOCKED );
+    lock_rsp.clear();
+    process_delayed();
+    misc::use_syslog<LOG_INFO,LOG_USER>() << "unexpected: " << sid << " too long wait in locked state" << endl;
+  }
 }
 
 

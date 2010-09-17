@@ -125,6 +125,8 @@ class basic_vs :
 
     void access_points_refresh();
 
+    static const int max_vs_lock_safety_sequental_attempts;
+
   protected:
     bool check_remotes();
 
@@ -203,6 +205,7 @@ class basic_vs :
     stem::addr_type group_applicant_ref;
     stem::addr_type sid;
     int self_events;
+    int vs_lock_safety_sequental_attempts;
   private:
     typedef std::list<stem::NetTransportMgr*> access_container_type;
 
