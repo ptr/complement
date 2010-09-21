@@ -173,6 +173,7 @@ bool NetTransport_base::pop( Event& _rs )
   using namespace std;
 
   if ( !net.read( (char *)&header.magic, sizeof(uint32_t) ).good() ) {
+    net.close();
     return false;
   }
 
@@ -302,6 +303,10 @@ bool NetTransport_base::pop( Event& _rs )
   catch ( ... ) {
   }
 #endif // __FIT_STEM_TRACE
+
+  if ( !net.good() ) {
+    net.close();
+  }
 
   return net.good();
 }
