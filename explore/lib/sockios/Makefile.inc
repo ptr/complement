@@ -3,7 +3,7 @@
 LIBNAME = sockios
 MAJOR = 2
 MINOR = 6
-PATCH = 10
+PATCH = 11
 SRC_CC = _sockstream.cc _sockmgr.cc netinfo.cc syslog.cc
 SRC_C = freebsd/getaddrinfo.c \
         freebsd/ns_parse.c \
