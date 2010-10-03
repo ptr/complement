@@ -64,7 +64,7 @@ void EvManager::stop_queue()
     lock_guard<mutex> lk( pheap_lock );
     _dispatch_stop = true;
     _cnd_queue.notify_all();
-    _cnd_retry.notify_all();
+    // _cnd_retry.notify_all();
   }
 
   for ( list<thread*>::iterator k = threads.begin(); k != threads.end(); ++k ) {
@@ -84,7 +84,10 @@ void EvManager::_Dispatch_sub( EvManager* p )
   EventHandler* obj = 0;
   int n = 0;
 
+  EventHandler* next = 0;
+
   for ( ; ; ) {
+    // cerr << '*';
     unique_lock<mutex> plk(me.pheap_lock);
     me._cnd_queue.wait( plk, me.not_empty );
 
@@ -92,171 +95,118 @@ void EvManager::_Dispatch_sub( EvManager* p )
       return;
     }
 
-    obj = me.plist.front().first;
-    n = me.plist.front().second;
+    p_heap_type::iterator i = me.pheap.find( next );
 
-    p_heap_type::iterator i = me.pheap.find( obj );
-    if ( i != me.pheap.end() ) {
-      if ( i->second.lock->try_lock() ) {
-        me.plist.pop_front();
-      } else {
-        if ( me.plist.size() > 1 ) {
-          std::list<std::pair<EventHandler*,int> >::iterator j = me.plist.begin();
-          ++j;
-          obj = j->first;
-          n = j->second;
-          i = me.pheap.find( obj );
-          if ( i != me.pheap.end() ) {
-            if ( i->second.lock->try_lock() ) {
-              me.plist.erase( j ); // ok, it ready
-            } else {
-              // i->second.lock->lock(); // just wait
-              // i->second.lock->unlock();
-              // may be check next in plist?
-              // cerr << HERE << ' ' << xmt::demangle( obj->classtype().name() ) << endl;
-              // cerr << xmt::demangle( obj->classtype().name() ) << endl;
-              me._cnd_retry.wait( plk );
-              plk.unlock();
-              // std::tr2::this_thread::yield();
-              continue; // locked too, unlock pheap and try again
-            }
-          } else { // no object
-            // me.plist.erase( j );
-            for ( std::list<std::pair<EventHandler*,int> >::iterator k = j; k != me.plist.end(); ) {
-              if ( k->first == obj ) {
-                me.plist.erase( k++ );
-              } else {
-                ++k;
-              }
-            }
-            continue;
-          }
-        } else {
-          // plk.unlock();
-          // i->second.lock->lock(); // just wait
-          // i->second.lock->unlock();
-          // me.plist.pop_front();
-          // mutex* m = 0;
+    if ( i == me.pheap.end() ) {
+      if ( me.pheap.empty() ) {
+        continue;
+      }
+      
+      i = me.pheap.begin();
+      next = i->first;
+    }
 
-          // m = i->second.lock;
-          // cerr << xmt::demangle( obj->classtype().name() ) << endl;
-
-          // cerr << HERE << ' ' << xmt::demangle( obj->classtype().name() ) << ' ' << me.pheap.size() << endl;
-          me._cnd_retry.wait( plk );
-          plk.unlock();
-          // m->lock();
-          // m->unlock();
-          // break;
-          // std::tr2::this_thread::yield();
-          continue; // locked, unlock pheap and try again
-        }
+    // if ( i->second.lock == 0 ) {
+    //   abort();
+    // }
+    
+    while ( !i->second.lock->try_lock() ) {
+      // cerr << '.';
+      ++i;
+      if ( i == me.pheap.end() ) {
+        i = me.pheap.begin();
+      }
+      if ( (i == me.pheap.end()) || (i->first == next) ) {
+        // cerr << '~';
+        goto repeate; // .... next iteration in outer loop
       }
 
-      list<Event> ev;
-      list<Event>::iterator r = /* i->second.evs.end(); */ i->second.evs.begin();
-      while ( n-- > 0 && r != i->second.evs.end() ) {
-        // ++r;
-        ev.push_back( *r );
-        i->second.evs.erase( r++ );
+      if ( i->second.lock == 0 ) {
+        // cerr << '!';
+        abort();
       }
-      // ev.splice( ev.begin(), i->second.evs, i->second.evs.begin(), r );
+    }
 
-      mutex* mlk = i->second.lock; // it locked here
+    {
+      Event ev;
+
+      swap( ev, i->second.evs.front() );
+      i->second.evs.pop();
+      obj = i->first;
 
       plk.unlock();
-      while ( !ev.empty() ) {
-        try {
+
+      try {
 #ifdef __FIT_STEM_TRACE
-          try {
-            lock_guard<mutex> lk(me._lock_tr);
-            if ( me._trs != 0 && me._trs->good() && (me._trflags & tracedispatch) ) {
-              *me._trs << xmt::demangle( obj->classtype().name() )
-                       << " (" << obj << ")\n";
-              if ( (me._trflags & tracetime) ) {
-                *me._trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
-              }
-              obj->DispatchTrace( ev.front(), *me._trs );
-              *me._trs << endl;
+        try {
+          lock_guard<mutex> lk(me._lock_tr);
+          if ( me._trs != 0 && me._trs->good() && (me._trflags & tracedispatch) ) {
+            *me._trs << xmt::demangle( obj->classtype().name() )
+                     << " (" << obj << ")\n";
+            if ( (me._trflags & tracetime) ) {
+              *me._trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
             }
-          }
-          catch ( ... ) {
-          }
-#endif // __FIT_STEM_TRACE
-          if ( !obj->Dispatch( ev.front() ) ) {
-            throw std::logic_error( no_catcher );
-          }
-        }
-        catch ( std::logic_error& err ) {
-          try {
-            lock_guard<mutex> lk(me._lock_tr);
-            if ( me._trs != 0 && me._trs->good() && (me._trflags & tracefault) ) {
-              *me._trs << err.what() << "\n"
-                       << xmt::demangle( obj->classtype().name() ) << " (" << obj << ")\n";
-              if ( (me._trflags & tracetime) ) {
-                *me._trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
-              }
-              obj->DispatchTrace( ev.front(), *me._trs );
-              *me._trs << endl;
-            }
-          }
-          catch ( ... ) {
+            obj->DispatchTrace( ev, *me._trs );
+            *me._trs << endl;
           }
         }
         catch ( ... ) {
-          try {
-            lock_guard<mutex> lk(me._lock_tr);
-            if ( me._trs != 0 && me._trs->good() && (me._trflags & tracefault) ) {
-              *me._trs << "Unknown, uncatched exception during process:\n"
-                       << xmt::demangle( obj->classtype().name() ) << " (" << obj << ")\n";
-              if ( (me._trflags & tracetime) ) {
-                *me._trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
-              }
-              obj->DispatchTrace( ev.front(), *me._trs );
-              *me._trs << endl;
+        }
+#endif // __FIT_STEM_TRACE
+        if ( !obj->Dispatch( ev ) ) {
+          throw std::logic_error( no_catcher );
+        }
+      }
+      catch ( std::logic_error& err ) {
+        try {
+          lock_guard<mutex> lk(me._lock_tr);
+          if ( me._trs != 0 && me._trs->good() && (me._trflags & tracefault) ) {
+            *me._trs << err.what() << "\n"
+                     << xmt::demangle( obj->classtype().name() ) << " (" << obj << ")\n";
+            if ( (me._trflags & tracetime) ) {
+              *me._trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
             }
-          }
-          catch ( ... ) {
+            obj->DispatchTrace( ev, *me._trs );
+            *me._trs << endl;
           }
         }
-        ev.pop_front();
-      }
-
-      plk.lock();
-      i = me.pheap.find( obj );
-      // object may be reallocated; to be sure that it's same
-      // object, check address of mutex, that locked here
-      // and not reallocated yet
-      if ( (i != me.pheap.end()) && (i->second.lock == mlk) ) {
-        if ( i->second.evs.empty() ) {
-          mutex* m = 0;
-
-          swap( m, i->second.lock );
-          me.pheap.erase( i );
-          // cerr << HERE << ' ' << xmt::demangle( obj->classtype().name() ) << endl;
-          m->unlock();
-
-          // plk.unlock();
-          delete m;
-        } else {
-          // cerr << HERE << ' ' << xmt::demangle( obj->classtype().name() ) << endl;
-          i->second.lock->unlock();
+        catch ( ... ) {
         }
-      } else {
-        // cerr << HERE << ' ' << xmt::demangle( obj->classtype().name() ) << endl;
-        mlk->unlock(); // see cache_clear() for dtor
       }
-    } else {
-      me.plist.pop_front();
-
-      for ( std::list<std::pair<EventHandler*,int> >::iterator k = me.plist.begin(); k != me.plist.end(); ) {
-        if ( k->first == obj ) {
-          me.plist.erase( k++ );
-        } else {
-          ++k;
+      catch ( ... ) {
+        try {
+          lock_guard<mutex> lk(me._lock_tr);
+          if ( me._trs != 0 && me._trs->good() && (me._trflags & tracefault) ) {
+            *me._trs << "Unknown, uncatched exception during process:\n"
+                     << xmt::demangle( obj->classtype().name() ) << " (" << obj << ")\n";
+            if ( (me._trflags & tracetime) ) {
+              *me._trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
+            }
+            obj->DispatchTrace( ev, *me._trs );
+            *me._trs << endl;
+          }
+        }
+        catch ( ... ) {
         }
       }
     }
-    me._cnd_retry.notify_one();
+
+    plk.lock();
+    if ( i->second.evs.empty() ) {
+      mutex* m = 0;
+      swap( m, i->second.lock );
+      me.pheap.erase( i++ );
+      m->unlock();
+      delete m;
+    } else {
+      (i++)->second.lock->unlock();
+    }
+
+    next = (i == me.pheap.end()) ? 0 : i->first;
+
+    repeate:
+     ;
+    // me._cnd_retry.notify_one();
   }
 }
 
@@ -288,43 +238,26 @@ void EvManager::cache_clear( EventHandler* obj )
     }
   }
 
-  pheap_lock.lock();
+  for ( ; ; ) {
+    lock_guard<mutex> lk(pheap_lock);
 
-  p_heap_type::iterator i = pheap.find( obj );
-  if ( i != pheap.end() ) {
+    p_heap_type::iterator i = pheap.find( obj );
+    if ( i == pheap.end() ) {
+      break;
+    }
+    
+    if ( !i->second.lock->try_lock() ) {
+      continue;
+    }
+      
     std::tr2::mutex* m = 0;
-
     std::swap( m, i->second.lock );
     pheap.erase( i );
 
-    for ( std::list<std::pair<EventHandler*,int> >::iterator j = plist.begin(); j != plist.end(); ) {
-      if ( j->first == obj ) {
-        plist.erase( j++ );
-      } else {
-        ++j;
-      }
-    }
-
-    pheap_lock.unlock(); // before m->lock();
-
-    m->lock();
-    // This lock to be sure that only one owner remains: here
     m->unlock();
+    // _cnd_retry.notify_one();
     delete m;
-
-    pheap_lock.lock();
-    _cnd_retry.notify_one();
-    pheap_lock.unlock();
-  } else {
-    for ( std::list<std::pair<EventHandler*,int> >::iterator j = plist.begin(); j != plist.end(); ) {
-      if ( j->first == obj ) {
-        plist.erase( j++ );
-      } else {
-        ++j;
-      }
-    }
-
-    pheap_lock.unlock();
+    break;
   }
 }
 
@@ -479,151 +412,61 @@ __FIT_DECLSPEC void EvManager::push( const Event& e )
     bool obj_locked = false;
     mutex* mlk = 0;
 
-    {
-      basic_read_lock<rw_mutex> lk(_lock_heap);
-      // any object can't be removed from heap within lk scope
-      local_heap_type::iterator i = heap.find( e.dest() );
-      if ( i == heap.end() ) {
-        throw invalid_argument( addr_unknown );
-      }
-      if ( i->second.empty() ) { // object hasn't StEM address 
-        return; // Unsubscribe in progress?
-      }
-
-      object = i->second.top().second.second; // target object
-
-      if ( (i->second.top().second.first & (EvManager::remote | EvManager::nosend)) != 0 ) {
-        unique_lock<mutex> plk(pheap_lock);
-        if ( pheap[object].lock == 0 ) {
-          pheap[object].lock = new mutex();
-          // cerr << HERE << ' ' << (void*)pheap[object].lock << endl;
-        }
-        mlk = pheap[object].lock;
-        obj_locked = !mlk->try_lock();
-        // obj_locked = false;
-      } else {
-        obj_locked = true;
-      }
-
-#ifdef __FIT_STEM_TRACE
-      try {
-        lock_guard<mutex> lk(_lock_tr);
-        if ( _trs != 0 && _trs->good() && (_trflags & tracesend) ) {
-          // it's target, not source
-          // object-> commented, because usage of object's methods
-          // unsafe here
-          *_trs /* << xmt::demangle( object->classtype().name() ) */
-                << " (" << object << ") [target]\n";
-          if ( (_trflags & tracetime) ) {
-            *_trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
-          }
-          int f = _trs->flags();
-          *_trs << "\tSend " << std::hex << std::showbase << e.code() << std::dec << endl;
-#ifdef STLPORT
-          _trs->flags( f );
-#else
-          _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
-#endif
-        }
-      }
-      catch ( ... ) {
-      }
-#endif // __FIT_STEM_TRACE
-
-      if ( obj_locked ) {
-        lock_guard<mutex> plk(pheap_lock);
-        if ( plist.empty() || (plist.back().first != object) ) {
-          plist.push_back(make_pair(object,1));
-        } else {
-          ++plist.back().second;
-        }
-        pheap[object].evs.push_back( e );
-        if ( pheap[object].lock == 0 ) {
-          pheap[object].lock = new mutex();
-        }
-        // _cnd_queue.notify_all();
-        _cnd_queue.notify_one();
-        return;
-      }
+    basic_read_lock<rw_mutex> lk(_lock_heap);
+    // any object can't be removed from heap within lk scope
+    local_heap_type::iterator i = heap.find( e.dest() );
+    if ( i == heap.end() ) {
+      throw invalid_argument( addr_unknown );
+    }
+    if ( i->second.empty() ) { // object hasn't StEM address 
+      return; // Unsubscribe in progress?
     }
 
-    // process events to 'remotes' here (on stack)
-    // may lead to stalling, if send delay (can't deliver
-    // packet immediately)
+    object = i->second.top().second.second; // target object
 
-    // object already locked here, see loop above:
-    // mlk->try_lock();
+    unique_lock<mutex> plk(pheap_lock);
 
+    ev_queue& q = pheap[object];
+    if ( q.lock == 0 ) {
+      q.lock = new mutex;
+    }
+    
+    q.evs.push( e );
+
+    _cnd_queue.notify_one(); // condition ?!
+
+    // (i->second.top().second.first & (EvManager::remote | EvManager::nosend)) != 0
+      
+#ifdef __FIT_STEM_TRACE
     try {
-#ifdef __FIT_STEM_TRACE
-      try {
-        lock_guard<mutex> lk(_lock_tr);
-        if ( _trs != 0 && _trs->good() && (_trflags & tracedispatch) ) {
-          *_trs << xmt::demangle( object->classtype().name() )
-                << " (" << object << ")\n";
-          if ( (_trflags & tracetime) ) {
-            *_trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
-          }
-          object->DispatchTrace( e, *_trs );
-          *_trs << endl;
+      lock_guard<mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & tracesend) ) {
+        // it's target, not source
+        // object-> commented, because usage of object's methods
+        // unsafe here
+        *_trs /* << xmt::demangle( object->classtype().name() ) */
+          << " (" << object << ") [target]\n";
+        if ( (_trflags & tracetime) ) {
+          *_trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
         }
-      }
-      catch ( ... ) {
-      }
-#endif // __FIT_STEM_TRACE
-      if ( !object->Dispatch( e ) ) { // call dispatcher
-        throw std::logic_error( no_catcher );
-      }
-    }
-    catch ( std::logic_error& err ) {
-      try {
-        lock_guard<mutex> lk(_lock_tr);
-        if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-          *_trs << err.what() << "\n"
-                << xmt::demangle( object->classtype().name() ) << " (" << object << ")\n";
-          if ( (_trflags & tracetime) ) {
-            *_trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
-          }
-          object->DispatchTrace( e, *_trs );
-          *_trs << endl;
-        }
-      }
-      catch ( ... ) {
+        int f = _trs->flags();
+        *_trs << "\tSend " << std::hex << std::showbase << e.code() << std::dec << endl;
+#ifdef STLPORT
+        _trs->flags( f );
+#else
+        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
       }
     }
     catch ( ... ) {
-      try {
-        lock_guard<mutex> lk(_lock_tr);
-        if ( _trs != 0 && _trs->good() && (_trflags & tracefault) ) {
-          *_trs << "Unknown, uncatched exception during process:\n"
-                << xmt::demangle( object->classtype().name() ) << " (" << object << ")\n";
-          if ( (_trflags & tracetime) ) {
-            *_trs << std::tr2::get_system_time().nanoseconds_since_epoch().count();
-          }
-          object->DispatchTrace( e, *_trs );
-          *_trs << endl;
-        }
-      }
-      catch ( ... ) {
-      }
     }
+#endif // __FIT_STEM_TRACE
 
-    lock_guard<mutex> plk(pheap_lock);
-    p_heap_type::iterator i = pheap.find( object );
-    if ( i != pheap.end() ) {
-      if ( i->second.evs.empty() ) {
-        mutex* m = 0;
-
-        swap( m, i->second.lock );
-        pheap.erase( i );
-        m->unlock();
-        delete m;
-      } else {
-        i->second.lock->unlock();
-      }
-    } else {
-      mlk->unlock();
-    }
+#if 0
+    // process events to 'remotes' here (on stack)
+    // may lead to stalling, if send delay (can't deliver
+    // packet immediately)
+#endif // 0
   }
   catch ( std::logic_error& err ) {
     try {

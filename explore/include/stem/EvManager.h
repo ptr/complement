@@ -21,7 +21,7 @@
 #include <stdint.h>
 
 #include <string>
-// #include <map>
+#include <map>
 #include <deque>
 #include <list>
 #include <vector>
@@ -95,7 +95,7 @@ template <>
 struct hash<stem::EventHandler*>
 {
     size_t operator()(const stem::EventHandler* __x) const
-      { return reinterpret_cast<size_t>(__x); }
+      { return hash<void*>()(reinterpret_cast<const void*>(__x)); }
 };
 
 #ifdef __USE_STD_TR1
@@ -300,17 +300,18 @@ class EvManager
             lock( 0 )
           { }
 
-        ~ev_queue()
-          {
-            if ( lock != 0 ) {
-              delete lock;
-            }
-          }
+        // ~ev_queue()
+        //   {
+        //     if ( lock != 0 ) {
+        //       delete lock;
+        //     }
+        //   }
 
-        std::tr2::mutex* lock;
-        std::list<Event> evs;
+        std::tr2::mutex* lock; // lock dispatch
+        std::queue<Event,std::list<Event> > evs;
     };
 
+#if 0
 #ifdef __USE_STLPORT_HASH
     typedef std::hash_map<EventHandler*,ev_queue> p_heap_type;
 #endif
@@ -320,9 +321,11 @@ class EvManager
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
     typedef std::tr1::unordered_map<EventHandler*,ev_queue> p_heap_type;
 #endif
+#else
+    typedef std::map<EventHandler*,ev_queue> p_heap_type;
+#endif
 
     p_heap_type pheap;
-    std::list<std::pair<EventHandler*,int> > plist;
     std::tr2::mutex pheap_lock;
 
     class subqueue_condition
@@ -333,7 +336,24 @@ class EvManager
           { }
 
         bool operator()() const
-          { return !mgr.plist.empty() || mgr._dispatch_stop; }
+          {
+            if ( mgr._dispatch_stop ) {
+              return true;
+            }
+
+            if ( mgr.pheap.empty() ) {
+              return false;
+            }
+
+            if ( mgr.pheap.size() == 1 ) {
+              if ( mgr.pheap.begin()->second.lock->try_lock() ) {
+                mgr.pheap.begin()->second.lock->unlock();
+                return true;
+              }
+            }
+            return false;
+            // return !mgr.pheap.empty() || mgr._dispatch_stop;
+          }
 
       private:
         EvManager& mgr;
@@ -350,7 +370,7 @@ class EvManager
     std::tr2::mutex _lock_iheap;
 
     std::tr2::condition_variable _cnd_queue;
-    std::tr2::condition_variable _cnd_retry;
+    // std::tr2::condition_variable _cnd_retry;
 
     static std::string inv_key_str;
     std::tr2::mutex _lock_tr;
