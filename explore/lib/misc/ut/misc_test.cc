@@ -539,7 +539,9 @@ int EXAM_IMPL(misc_test::type_traits_is_pod_compiler_supp)
   throw exam::skip_exception();
 #endif
 
-  EXAM_CHECK( std::tr1::is_pod<NT>::value == true );
+  EXAM_CHECK( std::tr1::is_pod<NT>::value == false );
+  EXAM_CHECK( std::tr1::is_standard_layout<NT>::value == true );
+  EXAM_CHECK( std::tr1::is_trivial<NT>::value == false );
   EXAM_CHECK( std::tr1::is_pod<POD>::value == true );
 
   return EXAM_RESULT;
