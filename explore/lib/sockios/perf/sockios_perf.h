@@ -398,11 +398,14 @@ class SrvRW
   public:
     SrvRW( std::sockstream& s )
       {
-        if ( ND ) {
-          s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
-        }
+        try {
+          if ( ND ) {
+            s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
+          }
 
-        fill( buf, buf + S, 'b' );
+          fill( buf, buf + S, 'b' );
+        } catch(...) {
+        }
       }
 
     ~SrvRW()
