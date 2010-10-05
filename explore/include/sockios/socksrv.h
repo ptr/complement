@@ -35,6 +35,7 @@
 #include <sockios/sockstream>
 #include <list>
 #include <vector>
+#include <queue>
 #include <functional>
 #include <exception>
 
@@ -92,9 +93,6 @@ class sock_processor_base :
 
         std::tr2::unique_lock<std::tr2::mutex> lk(_cnt_lck);
         _cnt_cnd.wait( lk, _chk );
-        // if ( !_cnt_cnd.timed_wait( lk, std::tr2::seconds(1), _chk ) ) { // <-- debug
-        //   std::cerr << __FILE__ << ":" << __LINE__ << " " << _rcount << std::endl;
-        // }
       }
 
     void addref()
@@ -142,18 +140,12 @@ class sock_processor_base :
     virtual void stop()
       { }
 
-#if 0
-    virtual sockbuf_t* operator ()( sock_base::socket_type, const sockaddr& ) = 0;
-    virtual void operator ()( sock_base::socket_type, const adopt_close_t& ) = 0;
-    virtual void operator ()( sock_base::socket_type ) = 0;
-#else
     virtual sockbuf_t* operator ()( sock_base::socket_type, const sockaddr& )
       { abort(); return 0; }
     virtual void operator ()( sock_base::socket_type, const adopt_close_t& )
       { abort(); }
     virtual void operator ()( sock_base::socket_type )
       { abort(); }
-#endif
   private:
     sock_processor_base( const sock_processor_base& );
     sock_processor_base& operator =( const sock_processor_base& ); 
@@ -170,8 +162,6 @@ class sock_processor_base :
       }
 
     void _close();
-
-    // void (sock_processor_base::*_real_stop)();
 
   public:
     bool is_open() const
@@ -227,7 +217,6 @@ class connect_processor :
 {
   private:
     typedef sock_processor_base<charT,traits,_Alloc> base_t;
-    // typedef typename std::detail::processor<Connect,charT,traits,_Alloc> processor;
 
     class Init
     {
@@ -252,40 +241,37 @@ class connect_processor :
   public:
     connect_processor() :
         not_empty( *this ),
-        _in_work( true ),
-        ploop( loop, this )
-      { new( Init_buf ) Init(); /* base_t::_real_stop = &connect_processor::_xstop; */ }
+        _in_work( true )
+      { 
+        new( Init_buf ) Init();
+        ploop = new std::tr2::thread( loop, this );
+      }
 
     explicit connect_processor( int port ) :
         base_t( port, sock_base::sock_stream ),
         not_empty( *this ),
-        _in_work( true ),
-        ploop( loop, this )
-      { new( Init_buf ) Init(); /* base_t::_real_stop = &connect_processor::_xstop; */ }
+        _in_work( true )
+      { 
+        new( Init_buf ) Init();   
+        ploop = new std::tr2::thread( loop, this );
+      }
 
     explicit connect_processor( const char* path ) :
         base_t( path, sock_base::sock_stream ),
         not_empty( *this ),
-        _in_work( true ),
-        ploop( loop, this )
-      { new( Init_buf ) Init(); /* base_t::_real_stop = &connect_processor::_xstop; */ }
+        _in_work( true )
+      { 
+        new( Init_buf ) Init();
+        ploop = new std::tr2::thread( loop, this );
+      }
 
     virtual ~connect_processor()
       {
         connect_processor::_close();
 
-        // _stop();
         connect_processor::wait();
 
-        // {
-        //   std::tr2::lock_guard<std::tr2::mutex> lk2( rdlock );
-        //   cerr << __FILE__ << ":" << __LINE__ << " " << ready_pool.size() << endl; 
-        // }
-
-        // {
-        //   std::tr2::lock_guard<std::tr2::mutex> lk2( wklock );
-        //   cerr << __FILE__ << ":" << __LINE__ << " " << worker_pool.size() << endl;
-        // }
+        delete ploop;
 
         Init* tmp = reinterpret_cast<Init*>(Init_buf);
         tmp->~Init();
@@ -297,7 +283,7 @@ class connect_processor :
       { connect_processor::_stop(); }
 
     void wait()
-      { if ( ploop.joinable() ) { ploop.join(); } }
+      { if ( ploop->joinable() ) { ploop->join(); } }
 
     typedef void (*at_func_type)( std::basic_sockstream<charT,traits,_Alloc>& );
 
@@ -327,66 +313,51 @@ class connect_processor :
     connect_processor( const connect_processor& )
       { }
 
-    connect_processor& operator =( const connect_processor& )
+    connect_processor& operator=( const connect_processor& )
       { return *this; }
 
-    class processor
+    struct processor
     {
-      public:
-        processor() :
-            c(0),
-            s(0)
-          { }
-        processor( Connect* __c, typename sock_processor_base<charT,traits,_Alloc>::sockstream_t* __s ) :
-            c(__c),
-            s(__s)
-          { }
+      processor( Connect* __c = 0, typename base_t::sockstream_t* __s = 0 ) :
+          c(__c),
+          s(__s)
+        { }
 
-      private:
-        processor( /* const */ processor& p ) // :
-        // c( p.c ),
-        // s( p.s )
-          { this->swap( p ); }
+      Connect* c;
+      typename base_t::sockstream_t* s;
+    };
 
-      public:
-        processor( const processor& ) :
-            c( 0 ),
-            s( 0 )
-          { }
+    enum socket_operation_type {
+      socket_open = 0,
+      socket_read,
+      socket_close
+    };
 
-        ~processor()
-          {
-            delete c;
-            delete s;
-          }
+    struct request_t
+    {
+      socket_operation_type operation_type;
+      sock_base::socket_type fd;
+      processor p;
 
-      public:
-        void swap( processor& p )
-          { std::swap(c, p.c); std::swap(s, p.s); }
+      request_t() :
+          fd( -1 ),
+          p()
+        { }
 
-      private:
-        processor& operator =( const processor& p )
-          { c = p.c; s = p.s; return *this; }
+      request_t( socket_operation_type _operation_type,
+                 sock_base::socket_type _fd ) :
+          operation_type( _operation_type ),
+          fd( _fd ),
+          p()
+        { }
 
-      public:
-        Connect* c;
-        typename sock_processor_base<charT,traits,_Alloc>::sockstream_t* s;
-
-        // bool operator ==( const processor& p ) const
-        //   { return s == p.s; }
-        // bool operator ==( const typename sock_processor_base<charT,traits,_Alloc>::sockstream_t* st ) const
-        //   { return const_cast<const typename sock_processor_base<charT,traits,_Alloc>::sockstream_t*>(s) == st; }
-        bool operator ==( sock_base::socket_type fd ) const
-          { return s == 0 ? (fd == -1) : (s->rdbuf()->fd() == fd); }
-
-/*
-       struct equal_to :
-       public std::binary_function<processor, typename sock_processor_base<charT,traits,_Alloc>::sockstream_t*, bool>
-       {
-          bool operator()(const processor& __x, const typename sock_processor_base<charT,traits,_Alloc>::sockstream_t* __y) const
-            { return __x == __y; }
-       };
-*/
+      request_t( socket_operation_type _operation_type,
+                 sock_base::socket_type _fd,
+                 const processor& _p ) :
+          operation_type( _operation_type ),
+          fd( _fd ),
+          p( _p )
+        { }
     };
 
     void _close()
@@ -394,15 +365,20 @@ class connect_processor :
     void _stop();
 
 #ifdef __USE_STLPORT_HASH
-    typedef std::hash_map<sock_base::socket_type, processor> worker_pool_t;
+    typedef std::hash_map< sock_base::socket_type, processor > opened_pool_t;
 #endif
 #ifdef __USE_STD_HASH
-    typedef __gnu_cxx::hash_map<sock_base::socket_type, processor> worker_pool_t;
+    typedef __gnu_cxx::hash_map< sock_base::socket_type, processor > opened_pool_t;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::tr1::unordered_map<sock_base::socket_type, processor> worker_pool_t;
+    typedef std::tr1::unordered_map< sock_base::socket_type, processor > opened_pool_t;
 #endif
-    typedef std::list<processor> ready_pool_t;
+    
+    typedef std::queue< request_t > ready_queue_t;
+
+    void process_request( const request_t& request );
+    void feed_data_to_processor( processor& p );
+    void clear_opened_pool();
 
     struct _not_empty
     {
@@ -411,19 +387,17 @@ class connect_processor :
         { }
 
       bool operator()() const
-        { return !me.ready_pool.empty() || !me._in_work; }
+        { return !me.ready_queue.empty() || !me._in_work; }
 
       connect_processor& me;
     } not_empty;
 
-    worker_pool_t worker_pool;
-    ready_pool_t ready_pool;
-    bool _in_work;
-    std::tr2::mutex wklock;
-    std::tr2::mutex rdlock;
-    std::tr2::condition_variable cnd;
-    std::tr2::condition_variable cnd_inwk;
-    std::tr2::thread ploop;
+
+    opened_pool_t opened_pool;
+
+    ready_queue_t ready_queue;
+    std::tr2::mutex ready_lock;
+    std::tr2::condition_variable ready_cnd;
 
     typedef std::vector<at_func_type> at_container_type;
 
@@ -431,7 +405,8 @@ class connect_processor :
     at_container_type _at_data;
     at_container_type _at_disconnect;
 
-    friend struct _not_empty;
+    bool _in_work;
+    std::tr2::thread* ploop;
 };
 
 } // namesapce std
