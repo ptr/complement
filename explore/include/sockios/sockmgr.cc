@@ -215,7 +215,8 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
 {
   epoll_event ev[ n_ret ];
 
-  std::tr2::this_thread::block_signal( SIGPIPE );
+  std::tr2::this_thread::signal_handler( SIGPIPE, SIG_IGN );
+
   memset( ev, 0, n_ret * sizeof(epoll_event) );
 
   try {
