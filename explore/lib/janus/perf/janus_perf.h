@@ -92,7 +92,7 @@ class VT_with_leader_recovery :
         return cnd.timed_wait( lk, rel_time, flush_status );
       }
 
-    xmt::uuid_type vs_pub_recover();
+    xmt::uuid_type vs_pub_recover( bool );
     void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& );
     void vs_pub_view_update();
     void vs_pub_rec( const stem::Event& );
