@@ -59,55 +59,19 @@ class simple_mgr :
   public:
     simple_mgr() :
         sock_basic_processor()
-      { }
+      { 
+        n_cnt = 0;
+        c_cnt = 0;
+        d_cnt = 0;
+      }
 
     simple_mgr( int port, sock_base::stype t = sock_base::sock_stream ) :
         sock_basic_processor( port, t )
-      { }
-
-    ~simple_mgr()
-      { /* cerr << "In destructor\n"; */ }
-
-  protected:
-    virtual sock_basic_processor::sockbuf_t* operator ()( sock_base::socket_type, const sockaddr& )
-      { lock_guard<mutex> lk(lock); ++n_cnt; cnd.notify_one(); return 0; }
-    virtual void operator ()( sock_base::socket_type, const adopt_close_t& )
-      { lock_guard<mutex> lk(lock); ++c_cnt; cnd.notify_one(); }
-    virtual void operator ()( sock_base::socket_type )
-      { lock_guard<mutex> lk(lock); ++d_cnt; cnd.notify_one(); }
-
-  public:
-    static mutex lock;
-    static int n_cnt;
-    static int c_cnt;
-    static int d_cnt;
-    static condition_variable cnd;
-
-    static bool n_cnt_check()
-      { return n_cnt == 1; }
-    static bool c_cnt_check()
-      { return c_cnt == 1; }
-    static bool d_cnt_check()
-      { return d_cnt == 1; }
-};
-
-mutex simple_mgr::lock;
-int simple_mgr::n_cnt = 0;
-int simple_mgr::c_cnt = 0;
-int simple_mgr::d_cnt = 0;
-condition_variable simple_mgr::cnd;
-
-class simple_mgr2 :
-    public sock_basic_processor
-{
-  public:
-    simple_mgr2() :
-        sock_basic_processor()
-      { }
-
-    simple_mgr2( int port, sock_base::stype t = sock_base::sock_stream ) :
-        sock_basic_processor( port, t )
-      { }
+      { 
+        n_cnt = 0;
+        c_cnt = 0;
+        d_cnt = 0;
+      }
 
   protected:
     virtual sock_basic_processor::sockbuf_t* operator ()( sock_base::socket_type fd, const sockaddr& addr )
@@ -125,6 +89,7 @@ class simple_mgr2 :
     virtual void operator ()( sock_base::socket_type fd, const adopt_close_t& )
       {
         lock_guard<mutex> lk(lock);
+        // misc::use_syslog<LOG_DEBUG,LOG_USER>() << "create" << endl;
         ++c_cnt;
         cnd.notify_one();
         delete cons[fd];
@@ -136,9 +101,6 @@ class simple_mgr2 :
         lock_guard<mutex> lk(lock);
         ++d_cnt;
         cnd.notify_one();
-        // string str;
-        // getline( *cons[fd], str ); // map fd -> s
-        // EXAM_CHECK_ASYNC( str == "Hello" );
       }
 
   public:
@@ -170,30 +132,37 @@ class simple_mgr2 :
     fd_container_type cons;
 };
 
-mutex simple_mgr2::lock;
-int simple_mgr2::n_cnt = 0;
-int simple_mgr2::c_cnt = 0;
-int simple_mgr2::d_cnt = 0;
-condition_variable simple_mgr2::cnd;
+mutex simple_mgr::lock;
+int simple_mgr::n_cnt = 0;
+int simple_mgr::c_cnt = 0;
+int simple_mgr::d_cnt = 0;
+condition_variable simple_mgr::cnd;
 
+const int test_count = 1000;
 
 int EXAM_IMPL(sockios_test::srv_core)
 {
-  simple_mgr srv( 2008 );
+  for ( int test = 0; test < test_count; ++test ) {
+    simple_mgr srv( 2008 );
 
-  EXAM_CHECK( srv.is_open() );
-  EXAM_CHECK( srv.good() );
+    EXAM_CHECK( srv.is_open() );
+    EXAM_CHECK( srv.good() );
 
-  srv.close();
+    srv.close();
 
-  EXAM_CHECK( !srv.is_open() );
+    EXAM_CHECK( !srv.is_open() );
+
+    if ( EXAM_RESULT ) {
+      break;
+    }
+  }
 
   return EXAM_RESULT;
 }
 
 int EXAM_IMPL(sockios_test::connect_disconnect)
 {
-  {
+  for ( int test = 0; test < test_count; ++test ) {
     simple_mgr srv( 2008 );
 
     EXAM_CHECK( srv.is_open() );
@@ -207,51 +176,24 @@ int EXAM_IMPL(sockios_test::connect_disconnect)
 
       {
         unique_lock<mutex> lk( simple_mgr::lock );
-
         EXAM_CHECK( simple_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_mgr::n_cnt_check ) );
-      }
-      {
-        lock_guard<mutex> lk(simple_mgr::lock);
-        EXAM_CHECK( simple_mgr::d_cnt == 0 );
-      }
-      {
-        lock_guard<mutex> lk(simple_mgr::lock);
-        EXAM_CHECK( simple_mgr::c_cnt == 0 );
-      }
-    }
-    
-    unique_lock<mutex> lk( simple_mgr::lock );
-
-    EXAM_CHECK( simple_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_mgr::c_cnt_check ) );
-    EXAM_CHECK( simple_mgr::d_cnt == 0 );
-  }
-
-  {
-    simple_mgr2 srv( 2008 );
-
-    EXAM_CHECK( srv.is_open() );
-    EXAM_CHECK( srv.good() );
-    {
-      sockstream s( "localhost", 2008 );
-
-      EXAM_CHECK( s.is_open() );
-      EXAM_CHECK( s.good() );
-
-      {
-        unique_lock<mutex> lk( simple_mgr2::lock );
-        EXAM_CHECK( simple_mgr2::cnd.timed_wait( lk, milliseconds( 500 ), simple_mgr2::n_cnt_check ) );
       }
       {
         s << "Hello" << endl;
         EXAM_CHECK( s.good() );
-        unique_lock<mutex> lk( simple_mgr2::lock );
-        EXAM_CHECK( simple_mgr2::cnd.timed_wait( lk, milliseconds( 500 ), simple_mgr2::d_cnt_check ) );
+        unique_lock<mutex> lk( simple_mgr::lock );
+        EXAM_CHECK( simple_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_mgr::d_cnt_check ) );
       }
       s.close();
       {
-        unique_lock<mutex> lk( simple_mgr2::lock );
-        EXAM_CHECK( simple_mgr2::cnd.timed_wait( lk, milliseconds( 500 ), simple_mgr2::c_cnt_check ) );
+        unique_lock<mutex> lk( simple_mgr::lock );
+        EXAM_CHECK( simple_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_mgr::c_cnt_check ) );
       }
+    }
+
+    if ( EXAM_RESULT ) {
+      cerr << "failed on iteration " << test << endl;
+      break;
     }
   }
 
@@ -262,30 +204,35 @@ class worker
 {
   public:
     worker( sockstream& )
-      { lock_guard<mutex> lk(lock); ++cnt; ++visits; cnd.notify_one(); }
+      { 
+        lock_guard<mutex> lk(lock);
+        ++cnt;
+        ++visits;
+        cnd.notify_one();
+      }
 
     ~worker()
-      { lock_guard<mutex> lk(lock); --cnt; cnd.notify_one(); }
+      { 
+        lock_guard<mutex> lk(lock);
+        --cnt;
+        cnd.notify_one();
+      }
 
     void connect( sockstream& s )
       {
         lock_guard<mutex> lk(lock);
         getline( s, line );
-        // cerr << __FILE__ << ":" << __LINE__ << " " << s.good() << " "
-        //      << s.rdbuf()->in_avail() << endl;
+
         ++rd;
         line_cnd.notify_one();
       }
-
-//     void close()
-//      { }
 
     static int get_visits()
       { lock_guard<mutex> lk(lock); return visits; }
 
     static mutex lock;
     static int cnt;
-    static /* volatile */ int visits;
+    static int visits;
     static condition_variable cnd;
     static string line;
     static condition_variable line_cnd;
@@ -312,264 +259,266 @@ string worker::line;
 condition_variable worker::line_cnd;
 int worker::rd = 0;
 
-// barrier worker::b;
-
-// void stopper( connect_processor<worker>* prss )
-// {
-//   b.wait();
-//   prss->close();
-// }
 
 int EXAM_IMPL(sockios_test::processor_core_one_local)
 {
-  connect_processor<worker> prss( 2008 );
-
-  EXAM_CHECK( prss.good() );
-  EXAM_CHECK( prss.is_open() );
-
-  {
-    sockstream s( "localhost", 2008 );
-
-    EXAM_CHECK( s.good() );
-    EXAM_CHECK( s.is_open() );
-
-//      for ( int i = 0; i < 64; ++i ) { // give chance to process it
-//        std::tr2::this_thread::yield();
-//      }
-
-    unique_lock<mutex> lk( worker::lock );
-
-    // worker's ctor visited once:
-    EXAM_CHECK( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter1 ) );      
+  for ( int test = 0; test < test_count; ++test ) {
+    worker::cnt = 0;
     worker::visits = 0;
+    worker::rd = 0;
+    worker::line.clear();
+
+    connect_processor< worker > prss( 2008 );
+
+    EXAM_CHECK( prss.good() );
+    EXAM_CHECK( prss.is_open() );
+
+    {
+      sockstream s( "localhost", 2008 );
+
+      EXAM_CHECK( s.good() );
+      EXAM_CHECK( s.is_open() );
+
+      unique_lock<mutex> lk( worker::lock );
+
+      // worker's ctor visited once:
+      EXAM_CHECK( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter1 ) );      
+    }
+
+
+    unique_lock<mutex> lksrv( worker::lock );
+    // worker's dtor pass, no worker's objects left
+    EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
+
+    if ( EXAM_RESULT ) {
+      cerr << "failed on iteration " << test << endl;
+      break;
+    }
   }
-
-  // for ( int i = 0; i < 64; ++i ) { // give chance for system
-  //   std::tr2::this_thread::yield();
-  // }
-
-  unique_lock<mutex> lksrv( worker::lock );
-  // worker's dtor pass, no worker's objects left
-  EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
 
   return EXAM_RESULT;
 }
 
 int EXAM_IMPL(sockios_test::processor_core_two_local)
 {
-  {
-    // check precondition
-    lock_guard<mutex> lk( worker::lock );
-    EXAM_CHECK( worker::cnt == 0 );
-  }
-
-  connect_processor<worker> prss( 2008 );
-
-  EXAM_CHECK( prss.good() );
-  EXAM_CHECK( prss.is_open() );
-
-  {
-    sockstream s1( "localhost", 2008 );
-
-    EXAM_CHECK( s1.good() );
-    EXAM_CHECK( s1.is_open() );
-
-    sockstream s2( "localhost", 2008 );
-
-    EXAM_CHECK( s2.good() );
-    EXAM_CHECK( s2.is_open() );
-
-//      for ( int i = 0; i < 1024; ++i ) { // give chance to process it
-//        std::tr2::this_thread::yield();
-//      }
-
-    unique_lock<mutex> lk( worker::lock );
-
-    // two worker's ctors visited (two connects)
-    EXAM_CHECK( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter2 ) );
+  for ( int test = 0; test < test_count; ++test ) {
+    worker::cnt = 0;
     worker::visits = 0;
-  }
+    worker::rd = 0;
+    worker::line.clear();
 
-  // for ( int i = 0; i < 64; ++i ) { // give chance for system
-  //   std::tr2::this_thread::yield();
-  // }
-  unique_lock<mutex> lksrv( worker::lock );
-  // both worker's dtors pass, no worker's objects left
-  EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
+    connect_processor<worker> prss( 2008 );
+
+    EXAM_CHECK( prss.good() );
+    EXAM_CHECK( prss.is_open() );
+
+    {
+      sockstream s1( "localhost", 2008 );
+
+      EXAM_CHECK( s1.good() );
+      EXAM_CHECK( s1.is_open() );
+
+      sockstream s2( "localhost", 2008 );
+
+      EXAM_CHECK( s2.good() );
+      EXAM_CHECK( s2.is_open() );
+
+      unique_lock<mutex> lk( worker::lock );
+
+      // two worker's ctors visited (two connects)
+      EXAM_CHECK( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter2 ) );
+      worker::visits = 0;
+    }
+
+    unique_lock<mutex> lksrv( worker::lock );
+    // both worker's dtors pass, no worker's objects left
+    EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
+
+    if ( EXAM_RESULT ) {
+      cerr << "failed on iteration " << test << endl;
+      break;
+    }
+  }
 
   return EXAM_RESULT;
+}
+
+std::string get_random_line(int n)
+{
+  string res(n, '0');
+  for ( int i = 0; i < n; ++i ) {
+    res[i] += rand() % 10;
+  }
+  
+  return res;
 }
 
 int EXAM_IMPL(sockios_test::processor_core_getline)
 {
-  {
-    // check precondition
-    lock_guard<mutex> lk( worker::lock );
-    EXAM_CHECK( worker::cnt == 0 );
-  }
-
-  // check income data before sockstream was closed
-  connect_processor<worker> prss( 2008 );
-
-  EXAM_CHECK( prss.good() );
-  EXAM_CHECK( prss.is_open() );
-
-  {
-    sockstream s1( "localhost", 2008 );
-
-    EXAM_CHECK( s1.good() );
-    EXAM_CHECK( s1.is_open() );
-
-    s1 << "Hello, world!" << endl;
-
-    unique_lock<mutex> lk( worker::lock );
-    EXAM_CHECK( worker::line_cnd.timed_wait( lk, milliseconds( 500 ), worker::rd_counter1 ) );
-
-    // cerr << worker::line << endl;
-    EXAM_CHECK( worker::line == "Hello, world!" );
-    worker::line = "";
+  for ( int test = 0; test < test_count; ++test ) {
+    worker::cnt = 0;
+    worker::visits = 0;
     worker::rd = 0;
+    worker::line.clear();
+
+    connect_processor<worker> prss( 2008 );
+
+    EXAM_CHECK( prss.good() );
+    EXAM_CHECK( prss.is_open() );
+
+    {
+      sockstream s1( "localhost", 2008 );
+
+      EXAM_CHECK( s1.good() );
+      EXAM_CHECK( s1.is_open() );
+
+      string line = get_random_line( test + 1 );
+
+      s1 << line << endl;
+
+      unique_lock<mutex> lk( worker::lock );
+      EXAM_CHECK( worker::line_cnd.timed_wait( lk, milliseconds( 500 ), worker::rd_counter1 ) );
+
+      EXAM_CHECK( worker::line == line );
+    }
+
+    unique_lock<mutex> lksrv( worker::lock );
+    EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
+    if ( EXAM_RESULT ) {
+      cerr << "failed on iteration " << test << endl;
+      break;
+    } 
   }
-
-  // for ( int i = 0; i < 64; ++i ) { // give chance for system
-  //   std::tr2::this_thread::yield();
-  // }
-
-  unique_lock<mutex> lksrv( worker::lock );
-  // worker's dtor pass, no worker's objects left
-  EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
 
   return EXAM_RESULT;
 }
 
 
-/*
- * If server and client both in the same process (sure?), server can
- * see signal about close client socket _before_ it receive the rest of data
- * (tcp stack implemenation dependent?).
- * So sockios2_test::processor_core_income_data may not fill line
- * with "Hello, world!".
- * 
- * But if server and client situated in different processes, server will see
- * FYN _after_ it read all data.
- *
- * Tests processor_core_income_data and income_data (below) are the same,
- * except first has client and server in the same process, while second
- * has server in child process. See commented line:
- *   // EXAM_CHECK( worker::line == "Hello, world!" ); // <-- may fail
- * in the first test.
- *
- * Good text above. But wrong.
- */
-
+// check after sockstream was closed, i.e. ensure, that all data available
 int EXAM_IMPL(sockios_test::processor_core_income_data)
-{
-  // check after sockstream was closed, i.e. ensure, that all data available
-  connect_processor<worker> prss( 2008 );
+{  
+  for ( int test = 0; test < test_count; ++test ) {
+    worker::cnt = 0;
+    worker::visits = 0;
+    worker::rd = 0;
+    worker::line.clear();
 
-  EXAM_CHECK( prss.good() );
-  EXAM_CHECK( prss.is_open() );
+    connect_processor<worker> prss( 2008 );
 
-  {
-    sockstream s1( "localhost", 2008 );
+    EXAM_CHECK( prss.good() );
+    EXAM_CHECK( prss.is_open() );
 
-    EXAM_CHECK( s1.good() );
-    EXAM_CHECK( s1.is_open() );
+    string line = get_random_line( test + 1 );
 
-    s1 << "Hello, world!" << endl;
+    {
+      sockstream s1( "localhost", 2008 );
+
+      EXAM_CHECK( s1.good() );
+      EXAM_CHECK( s1.is_open() );
+
+      s1 << line << endl;
+    }
+
+    {
+      unique_lock<mutex> lk( worker::lock );
+      EXAM_CHECK( worker::line_cnd.timed_wait( lk, milliseconds( 5000 ), worker::rd_counter1 ) );
+    }
+
+    {
+      unique_lock<mutex> lksrv( worker::lock );
+      EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
+    }
+
+    EXAM_CHECK( worker::line == line );
+
+    if ( EXAM_RESULT ) {
+      cerr << "failed on iteration " << test << endl;
+      break;
+    } 
   }
-
-  {
-    unique_lock<mutex> lk( worker::lock );
-    EXAM_CHECK( worker::line_cnd.timed_wait( lk, milliseconds( 500 ), worker::rd_counter1 ) );
-  }
-
-  {
-    unique_lock<mutex> lksrv( worker::lock );
-    EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
-  }
-
-  // EXAM_CHECK( worker::line == "Hello, world!" ); // <-- may fail
-  worker::line = "";
-  worker::rd = 0;
 
   return EXAM_RESULT;
 }
 
 int EXAM_IMPL(sockios_test::income_data)
 {
-  // worker::lock.lock();
-  worker::visits = 0;
-  worker::line = "";
-  worker::rd = 0;
-  // worker::lock.unlock();
-
-  try {
-    xmt::shm_alloc<0> seg;
-    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
-
-    xmt::allocator_shm<barrier_ip,0> shm;
-    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+  for ( int test = 0; test < min( 100, test_count ); ++test ) {
+    worker::visits = 0;
+    worker::line.clear();
+    worker::rd = 0;
 
     try {
+      xmt::shm_alloc<0> seg;
+      seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-      EXAM_CHECK( worker::visits == 0 );
+      xmt::allocator_shm<barrier_ip,0> shm;
+      barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
 
-      this_thread::fork();
+      try {
 
-      int res = 0;
-      {
-        connect_processor<worker> prss( 2008 );
+        EXAM_CHECK( worker::visits == 0 );
 
-        EXAM_CHECK_ASYNC_F( worker::visits == 0, res );
+        this_thread::fork();
 
+        int res = 0;
+        {
+          connect_processor<worker> prss( 2008 );
+
+          EXAM_CHECK_ASYNC_F( worker::visits == 0, res );
+
+          b.wait(); // -- align here
+
+          EXAM_CHECK_ASYNC_F( prss.good(), res );
+          EXAM_CHECK_ASYNC_F( prss.is_open(), res );
+
+          {
+            unique_lock<mutex> lk( worker::lock );
+            EXAM_CHECK_ASYNC_F( worker::line_cnd.timed_wait( lk, milliseconds( 500 ), worker::rd_counter1 ), res );
+          }
+
+          {
+            unique_lock<mutex> lksrv( worker::lock );
+            EXAM_CHECK_ASYNC_F( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ), res );
+          }
+
+          EXAM_CHECK_ASYNC_F( worker::line == "Hello, world!", res ); 
+        }
+
+        exit( res );
+      }
+      catch ( std::tr2::fork_in_parent& child ) {
         b.wait(); // -- align here
 
-        EXAM_CHECK_ASYNC_F( prss.good(), res );
-        EXAM_CHECK_ASYNC_F( prss.is_open(), res );
-
         {
-          unique_lock<mutex> lk( worker::lock );
-          EXAM_CHECK_ASYNC_F( worker::line_cnd.timed_wait( lk, milliseconds( 500 ), worker::rd_counter1 ), res );
+          sockstream s1( "localhost", 2008 );
+
+          EXAM_CHECK( s1.good() );
+          EXAM_CHECK( s1.is_open() );
+
+          s1 << "Hello, world!" << endl;
         }
 
-        {
-          unique_lock<mutex> lksrv( worker::lock );
-          EXAM_CHECK_ASYNC_F( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ), res );
+        int stat = -1;
+        EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+        if ( WIFEXITED(stat) ) {
+          EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+        } else {
+          EXAM_ERROR( "child interrupted" );
         }
 
-        EXAM_CHECK_ASYNC_F( worker::line == "Hello, world!", res ); // <-- may fail
+        EXAM_CHECK( worker::visits == 0 );
       }
-
-      exit( res );
+      shm.deallocate( &b );
+      seg.deallocate();
     }
-    catch ( std::tr2::fork_in_parent& child ) {
-      b.wait(); // -- align here
-
-      {
-        sockstream s1( "localhost", 2008 );
-
-        EXAM_CHECK( s1.good() );
-        EXAM_CHECK( s1.is_open() );
-
-        s1 << "Hello, world!" << endl;
-      }
-
-      int stat = -1;
-      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
-      if ( WIFEXITED(stat) ) {
-        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
-      } else {
-        EXAM_ERROR( "child interrupted" );
-      }
-
-      EXAM_CHECK( worker::visits == 0 );
+    catch ( xmt::shm_bad_alloc& err ) {
+      EXAM_ERROR( err.what() );
     }
-    shm.deallocate( &b );
-    seg.deallocate();
-  }
-  catch ( xmt::shm_bad_alloc& err ) {
-    EXAM_ERROR( err.what() );
+
+    if ( EXAM_RESULT ) {
+      cerr << "failed on iteration " << test << endl;
+      break;
+    } 
   }
 
   return EXAM_RESULT;
@@ -895,8 +844,6 @@ int EXAM_IMPL(sockios_test::disconnect_rawclnt)
 
 int EXAM_IMPL(sockios_test::disconnect)
 {
-  // throw exam::skip_exception();
-
   xmt::shm_alloc<0> seg;
 
   try {
@@ -929,6 +876,7 @@ int EXAM_IMPL(sockios_test::disconnect)
       b.wait();
 
       EXAM_CHECK_ASYNC_F( srv_reader::cnd.timed_wait( milliseconds( 800 ) ), res );
+      std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
       // srv_reader::cnd.wait();
     }
 
@@ -969,78 +917,79 @@ int EXAM_IMPL(sockios_test::fork)
      Here I create sockstream, but without connection (it check that io processing
      loop in underlying sockmgr finish and restart smoothly in child process).
    */
-  sockstream s;
+  for (int test = 0; test < test_count; ++test ) {
+    sockstream s;
 
-  // worker::lock.lock();
-  worker::visits = 0;
-  // worker::lock.unlock();
-
-  try {
-    xmt::shm_alloc<0> seg;
-    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
-
-    xmt::allocator_shm<barrier_ip,0> shm;
-    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+    worker::visits = 0;
 
     try {
+      xmt::shm_alloc<0> seg;
+      seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-      EXAM_CHECK( worker::visits == 0 );
+      xmt::allocator_shm<barrier_ip,0> shm;
+      barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
 
-      this_thread::fork();
+      try {
 
-      int res = 0;
-      {
-        connect_processor<worker> prss( 2008 );
+        EXAM_CHECK( worker::visits == 0 );
 
-        EXAM_CHECK_ASYNC_F( worker::visits == 0, res );
+        this_thread::fork();
 
+        int res = 0;
+        {
+          connect_processor<worker> prss( 2008 );
+
+          EXAM_CHECK_ASYNC_F( worker::visits == 0, res );
+
+          b.wait(); // -- align here
+
+          EXAM_CHECK_ASYNC_F( prss.good(), res );
+          EXAM_CHECK_ASYNC_F( prss.is_open(), res );
+
+          {
+            unique_lock<mutex> lk( worker::lock );
+            EXAM_CHECK_ASYNC_F( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter1 ) , res );
+          }
+
+          {
+            unique_lock<mutex> lksrv( worker::lock );
+            EXAM_CHECK_ASYNC_F( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ), res );
+          }
+        }
+
+        exit( res );
+      }
+      catch ( std::tr2::fork_in_parent& child ) {
         b.wait(); // -- align here
 
-        EXAM_CHECK_ASYNC_F( prss.good(), res );
-        EXAM_CHECK_ASYNC_F( prss.is_open(), res );
+        s.open( "localhost", 2008 );
 
-        {
-          unique_lock<mutex> lk( worker::lock );
-          EXAM_CHECK_ASYNC_F( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter1 ) , res );
+        EXAM_CHECK( s.good() );
+        EXAM_CHECK( s.is_open() );
+
+        s.close();
+
+        int stat = -1;
+        EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+        if ( WIFEXITED(stat) ) {
+          EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+        } else {
+          EXAM_ERROR( "child interrupted" );
         }
 
-        // for ( int i = 0; i < 64; ++i ) { // give chance for system
-        //   std::tr2::this_thread::yield();
-        // }
-
-        {
-          unique_lock<mutex> lksrv( worker::lock );
-          EXAM_CHECK_ASYNC_F( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ), res );
-        }
+        EXAM_CHECK( worker::visits == 0 );
       }
-
-      exit( res );
+      shm.deallocate( &b );
+      seg.deallocate();
     }
-    catch ( std::tr2::fork_in_parent& child ) {
-      b.wait(); // -- align here
-
-      s.open( "localhost", 2008 );
-
-      EXAM_CHECK( s.good() );
-      EXAM_CHECK( s.is_open() );
-
-      s.close();
-
-      int stat = -1;
-      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
-      if ( WIFEXITED(stat) ) {
-        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
-      } else {
-        EXAM_ERROR( "child interrupted" );
-      }
-
-      EXAM_CHECK( worker::visits == 0 );
+    catch ( xmt::shm_bad_alloc& err ) {
+      EXAM_ERROR( err.what() );
     }
-    shm.deallocate( &b );
-    seg.deallocate();
-  }
-  catch ( xmt::shm_bad_alloc& err ) {
-    EXAM_ERROR( err.what() );
+
+    if ( EXAM_RESULT ) {
+      cerr << "failed on iteration " << test << endl;
+      break;
+    }
   }
 
   return EXAM_RESULT;
@@ -1102,85 +1051,87 @@ class stream_reader
 
 int EXAM_IMPL(sockios_test::srv_sigpipe)
 {
-  // throw exam::skip_exception();
-
-  try {
-    xmt::shm_alloc<0> seg;
-    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
-
-    xmt::allocator_shm<barrier_ip,0> shm;
-    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+  for ( int test = 0; test < min( 100, test_count); ++test ) {
     try {
-      this_thread::fork();
+      xmt::shm_alloc<0> seg;
+      seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
+      xmt::allocator_shm<barrier_ip,0> shm;
+      barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
       try {
-        b.wait();
-        /*
-         * This process will be killed,
-         * so I don't care about safe termination.
-         */
+        this_thread::fork();
 
-        const int b_count = 10;
-        barrier bb( b_count );
+        try {
+          b.wait();
+          /*
+           * This process will be killed,
+           * so I don't care about safe termination.
+           */
 
-        thread* th1 = new thread( stream_reader::load_generator, &bb );
+          const int b_count = 1;
+          barrier bb( b_count );
 
-        for ( int i = 0; i < (b_count - 1); ++i ) {
-          new thread( stream_reader::load_generator, &bb );
+          thread* th1 = new thread( stream_reader::load_generator, &bb );
+
+          for ( int i = 0; i < (b_count - 1); ++i ) {
+            new thread( stream_reader::load_generator, &bb );
+          }
+
+          this_thread::sleep( milliseconds( 100 ) );
+
+          b.wait();
+
+          th1->join(); // Will be interrupted!
+        }
+        catch ( ... ) {
+          EXAM_ERROR( "unknown exception" );
         }
 
-        this_thread::sleep( milliseconds( 100 ) );
+        exit( 0 );
+      }
+      catch ( std::tr2::fork_in_parent& child ) {
+        try {
+        connect_processor<stream_reader> r( 2008 );
+
+        EXAM_CHECK( r.good() );
+        EXAM_CHECK( r.is_open() );
 
         b.wait();
+        b.wait();
 
-        th1->join(); // Will be interrupted!
-      }
-      catch ( ... ) {
-        EXAM_ERROR( "unknown exception" );
-      }
+        kill( child.pid(), SIGTERM );
 
-      exit( 0 );
+        int stat = -1;
+        EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+        if ( WIFEXITED(stat) ) {
+          // EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+          EXAM_ERROR( "child should be interrupted" );
+        } else {
+          EXAM_MESSAGE( "child interrupted" );
+        }
+
+        EXAM_CHECK( r.good() );
+        EXAM_CHECK( r.is_open() );
+        //cerr << HERE << endl;
+        }
+        catch ( ... ) {
+          EXAM_ERROR( "unkown exception" );
+        }
+      }
+      shm.deallocate( &b );
+      seg.deallocate();
     }
-    catch ( std::tr2::fork_in_parent& child ) {
-      try {
-      connect_processor<stream_reader> r( 2008 );
-
-      EXAM_CHECK( r.good() );
-      EXAM_CHECK( r.is_open() );
-
-      b.wait();
-      b.wait();
-
-      kill( child.pid(), SIGTERM );
-
-      int stat = -1;
-      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
-      if ( WIFEXITED(stat) ) {
-        // EXAM_CHECK( WEXITSTATUS(stat) == 0 );
-        EXAM_ERROR( "child should be interrupted" );
-      } else {
-        EXAM_MESSAGE( "child interrupted" );
-      }
-
-      EXAM_CHECK( r.good() );
-      EXAM_CHECK( r.is_open() );
-
-      // for ( int i = 0; i < 64; ++i ) { // give chance for system
-      //   std::tr2::this_thread::yield();
-      // }
-      }
-      catch ( ... ) {
-        EXAM_ERROR( "unkown exception" );
-      }
+    catch ( xmt::shm_bad_alloc& err ) {
+      EXAM_ERROR( err.what() );
     }
-    shm.deallocate( &b );
-    seg.deallocate();
-  }
-  catch ( xmt::shm_bad_alloc& err ) {
-    EXAM_ERROR( err.what() );
-  }
-  catch ( ... ) {
-    EXAM_ERROR( "unknown exception" );
+    catch ( ... ) {
+      EXAM_ERROR( "unknown exception" );
+    }
+
+    if ( EXAM_RESULT ) {
+      cerr << "failed on iteration " << test << endl;
+      break;
+    }
   }
 
   return EXAM_RESULT;
@@ -1196,16 +1147,14 @@ class interrupted_writer
 
         int n = 1;
 
-        // cerr << "align 3\n";
-        bb->wait();  // <-- align 3
+        bb->wait();  
 
-        // cerr << "align 3 pass\n";
         s.write( (const char *)&n, sizeof( int ) ).flush();
         EXAM_CHECK_ASYNC( s.good() );
       }
 
     ~interrupted_writer()
-      { /* cerr << "~~\n"; */ }
+      { }
 
     void connect( sockstream& s )
       { }
@@ -1215,16 +1164,14 @@ class interrupted_writer
       sockstream s( "localhost", 2008 );
 
       int buff = 0;
-      // cerr << "align 2" << endl;
 
       EXAM_CHECK_ASYNC( s.good() );
       EXAM_CHECK_ASYNC( s.is_open() );
 
-      b->wait(); // <-- align 2
-      // cerr << "align 2 pass" << endl;
+      b->wait(); 
 
       EXAM_CHECK_ASYNC( s.read( (char *)&buff, sizeof(int) ).good() ); // <---- key line
-      // cerr << "read pass" << endl;
+
       EXAM_CHECK_ASYNC( buff == 1 );
     }
 
@@ -1235,66 +1182,67 @@ barrier_ip* interrupted_writer::bb = 0;
 
 int EXAM_IMPL(sockios_test::read0)
 {
-  try {
-    xmt::shm_alloc<0> seg;
-    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
-
-    xmt::allocator_shm<barrier_ip,0> shm;
-    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
-    barrier_ip& bnew = *new ( shm.allocate( 1 ) ) barrier_ip();
-    interrupted_writer::bb = &bnew;
-
+  for ( int test = 0; test < min( 100, test_count); ++test ) {
     try {
-      this_thread::fork();
+      xmt::shm_alloc<0> seg;
+      seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-      b.wait();  // <-- align 1
+      xmt::allocator_shm<barrier_ip,0> shm;
+      barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+      barrier_ip& bnew = *new ( shm.allocate( 1 ) ) barrier_ip();
+      interrupted_writer::bb = &bnew;
 
-      barrier bb;
+      try {
+        this_thread::fork();
 
-      thread t( interrupted_writer::read_generator, &bb );
+        b.wait();  
 
-      bb.wait();  // <-- align 2
+        barrier bb;
 
-      // cerr << "system" << endl;
-      system( "echo > /dev/null" );  // <------ key line
-      // cerr << "after system" << endl;
+        thread t( interrupted_writer::read_generator, &bb );
 
-      bnew.wait();  // <-- align 3
-      // cerr << "after align 3" << endl;
+        bb.wait(); 
 
-      t.join();
+        system( "echo > /dev/null" );  // <------ key line
 
-      exit( 0 );
-    }
-    catch ( std::tr2::fork_in_parent& child ) {
-      connect_processor<interrupted_writer> r( 2008 );
+        bnew.wait();  
+        
+        t.join();
 
-      EXAM_CHECK( r.good() );
-      EXAM_CHECK( r.is_open() );
-
-      b.wait();  // <-- align 1
-
-      int stat = -1;
-      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
-      if ( WIFEXITED(stat) ) {
-        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
-      } else {
-        EXAM_ERROR( "child interrupted" );
+        exit( 0 );
       }
+      catch ( std::tr2::fork_in_parent& child ) {
+        connect_processor<interrupted_writer> r( 2008 );
 
-      EXAM_CHECK( r.good() );
-      EXAM_CHECK( r.is_open() );
+        EXAM_CHECK( r.good() );
+        EXAM_CHECK( r.is_open() );
 
-      // for ( int i = 0; i < 64; ++i ) { // give chance for system
-      //   std::tr2::this_thread::yield();
-      // }
+        b.wait();
+
+        int stat = -1;
+        EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+        if ( WIFEXITED(stat) ) {
+          EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+        } else {
+          EXAM_ERROR( "child interrupted" );
+        }
+
+        EXAM_CHECK( r.good() );
+        EXAM_CHECK( r.is_open() );
+
+      }
+      shm.deallocate( &bnew );
+      shm.deallocate( &b );
+      seg.deallocate();
     }
-    shm.deallocate( &bnew );
-    shm.deallocate( &b );
-    seg.deallocate();
-  }
-  catch ( xmt::shm_bad_alloc& err ) {
-    EXAM_ERROR( err.what() );
+    catch ( xmt::shm_bad_alloc& err ) {
+      EXAM_ERROR( err.what() );
+    }
+
+    if ( EXAM_RESULT ) {
+      cerr << "failed on iteration " << test << endl;
+      break;
+    }
   }
 
   return EXAM_RESULT;
@@ -1323,18 +1271,7 @@ class byte_cnt
 
         s.read( buf, sizeof(buf) );
 
-        EXAM_CHECK_ASYNC( /* s.good() */ !s.fail() );
-        // static int j = 0;
-        // ++j;
-        // for ( int i = 0; i < bsz; ++i ) {
-        //   if ( buf[i] == 0 ) {
-        //     cerr << "***** " << i << ' ' << j << endl;
-        //   }
-        // }
-        // if ( s.fail() ) {
-        //   cerr << count( buf, buf + sizeof(buf), 1 ) << ' ' << (j-1) << endl;
-          // xmt::callstack( cerr );
-        // }
+        EXAM_CHECK_ASYNC( !s.fail() );
 
         lock_guard<mutex> lk( lock );
         r += count( buf, buf + sizeof(buf), 1 );
@@ -1344,7 +1281,6 @@ class byte_cnt
           cnd.notify_one();
         } else if ( r > sz * bsz ) { // What it is? Ghost bytes?
           cnd.notify_one();
-          // exit(-1);
         }
       }
 
@@ -1376,19 +1312,23 @@ int EXAM_IMPL(sockios_test::few_packets)
     EXAM_CHECK( prss.good() );
     EXAM_CHECK( prss.is_open() );
 
-    sockstream s( "localhost", 2008 );
+    {
+      sockstream s( "localhost", 2008 );
 
-    EXAM_CHECK( s.is_open() );
-    EXAM_CHECK( s.good() );
+      EXAM_CHECK( s.is_open() );
+      EXAM_CHECK( s.good() );
 
-    s.write( buf, sizeof(buf) );
+      s.write( buf, sizeof(buf) );
 
-    EXAM_CHECK( s.good() );
+      EXAM_CHECK( s.good() );
 
-    s.flush();
+      s.flush();
 
-    unique_lock<mutex> lk( byte_cnt::lock );
-    EXAM_CHECK( byte_cnt::cnd.timed_wait( lk, milliseconds(800), byte_cnt_predicate() ) );
+      unique_lock<mutex> lk( byte_cnt::lock );
+      EXAM_CHECK( byte_cnt::cnd.timed_wait( lk, milliseconds(800), byte_cnt_predicate() ) );
+    }
+
+    std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
   }
 
   EXAM_CHECK( byte_cnt::r == (byte_cnt::bsz * byte_cnt::sz) );
@@ -1425,6 +1365,8 @@ int EXAM_IMPL(sockios_test::few_packets_loop)
 
     unique_lock<mutex> lk( byte_cnt::lock );
     EXAM_CHECK( byte_cnt::cnd.timed_wait( lk, milliseconds(500), byte_cnt_predicate() ) );
+
+    std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
   }
 
   EXAM_CHECK( byte_cnt::r == (byte_cnt::bsz * byte_cnt::sz) );
@@ -1442,9 +1384,9 @@ int EXAM_IMPL(sockios_test::two_ports)
     EXAM_CHECK( prss2.good() );
 
     prss1.close();
-    prss1.wait();
+    // prss1.wait();
     prss2.close();
-    prss2.wait();
+    // prss2.wait();
   }
   
   return EXAM_RESULT;
@@ -1571,7 +1513,6 @@ class reader
           cnd.notify_one();
         } else if ( r > sz * bsz ) { // What it is? Ghost bytes?
           cnd.notify_one();
-          // exit(-1);
         }
       }
 
@@ -1583,7 +1524,7 @@ class reader
     // static int visits;
 };
 
-const int reader::sz = 64;
+const int reader::sz = 64; 
 const int reader::bsz = 1024;
 int reader::r = 0;
 mutex reader::lock;
@@ -1629,18 +1570,14 @@ int EXAM_IMPL(sockios_test::quants_reader)
 
         if ( sig_caught == SIGINT ) {
           EXAM_MESSAGE_ASYNC( "catch INT signal" );
-          // this_thread::sleep( milliseconds( 500 ) ); // chance to process the rest
           unique_lock<mutex> lk( reader::lock );
-          EXAM_CHECK_ASYNC_F( reader::cnd.timed_wait( lk, milliseconds(800), reader_cnt_predicate() ), ret );
+          EXAM_CHECK_ASYNC_F( reader::cnd.timed_wait( lk, milliseconds(8000), reader_cnt_predicate() ), ret );
           srv.close();
         } else {
           EXAM_ERROR_ASYNC_F( "catch of INT signal expected", ret );
         }
 
         EXAM_CHECK_ASYNC_F( reader::r == (reader::bsz * reader::sz), ret );
-        // if ( reader::r != (reader::bsz * reader::sz) ) {
-        //   cerr << __FILE__ << ':' << __LINE__ << ' ' << reader::r << endl;
-        // }
       }
       catch ( ... ) {
         EXAM_ERROR_ASYNC_F( "unexpected exception", ret );
@@ -1657,17 +1594,14 @@ int EXAM_IMPL(sockios_test::quants_reader)
         fill( buf, buf + sizeof(buf), ' ' );
 
         EXAM_CHECK( s.good() );
+        EXAM_CHECK( s.is_open() );
 
         for ( int i = 0; (i < reader::bsz) && s.good(); ++i ) {
           s.write( buf, sizeof(buf) ).flush();
           EXAM_CHECK( s.good() );
-          // if ( !s.good() ) {
-          //   cerr << __FILE__ << ':' << __LINE__ << ' ' << i << endl;
-          // }
+          EXAM_CHECK( s.is_open() );
         }
       }
-
-      // this_thread::sleep( milliseconds( 500 ) );
 
       kill( child.pid(), SIGINT );
 
@@ -1884,6 +1818,8 @@ int EXAM_IMPL(sockios_test::at_funcs)
 
         int sig_caught;
         sigwait( &signal_mask, &sig_caught );
+
+        std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
 
         EXAM_CHECK_ASYNC_F( last_conn == 0x7f000001, ret );
         EXAM_CHECK_ASYNC_F( last_data == 0x7f000001, ret );
