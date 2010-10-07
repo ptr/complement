@@ -295,10 +295,11 @@ template <class Connect, class charT, class traits, class _Alloc, void (Connect:
 void connect_processor<Connect, charT, traits, _Alloc, C>::feed_data_to_processor( processor& p )
 {
   try {
-    while ( p.s->rdbuf()->is_ready() ) { 
-      for ( typename at_container_type::const_iterator i = _at_data.begin(); i != _at_data.end(); ++i ) {
-        (*i)( *p.s );
-      }
+    for ( typename at_container_type::const_iterator i = _at_data.begin(); i != _at_data.end(); ++i ) {
+      (*i)( *p.s );
+    }
+
+    while ( p.s->rdbuf()->is_ready() && p.s->good() ) { 
       (p.c->*C)( *p.s );
     }
 
