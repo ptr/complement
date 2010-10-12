@@ -341,8 +341,10 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
         p.c = new Connect( *p.s ); 
       } catch( const std::exception& e ) {
         misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ":exception from Connect::ctor " << e.what() << endl;
+        return;
       } catch( ... ) {
         misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ":exception from Connect::ctor unknown" << endl;
+        return;
       }
 
       opened_pool[request.fd] = p;

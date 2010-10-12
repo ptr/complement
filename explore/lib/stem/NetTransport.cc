@@ -406,7 +406,7 @@ int NetTransport_base::flags() const
 
 __FIT_DECLSPEC
 NetTransport::NetTransport( std::sockstream& s ) :
-    NetTransport_base( s, "stem::NetTransport" ),
+    NetTransport_base( s ),
     exchange( false )
 {
   try {
