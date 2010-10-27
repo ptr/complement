@@ -31,9 +31,6 @@
 #ifdef STLPORT
 #  include <unordered_map>
 #  include <unordered_set>
-// #  include <hash_map>
-// #  include <hash_set>
-// #  define __USE_STLPORT_HASH
 #  define __USE_STLPORT_TR1
 #else
 #  if defined(__GNUC__) && (__GNUC__ < 4)
@@ -50,8 +47,6 @@
 #include <sockios/sockstream>
 #include <deque>
 #include <functional>
-
-// #include <boost/shared_ptr.hpp>
 
 namespace std {
 

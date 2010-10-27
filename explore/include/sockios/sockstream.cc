@@ -61,9 +61,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port,
   try {
     _mode = ios_base::in | ios_base::out;
     _type = type;
-#ifdef WIN32
-    WSASetLastError( 0 );
-#endif
+
     if ( prot == sock_base::inet ) {
       basic_socket_t::_fd = socket( PF_INET, type, 0 );
       if ( basic_socket_t::_fd == -1 ) {
@@ -121,12 +119,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port,
   }
   catch ( std::system_error& ) {
     if ( basic_socket_t::_fd != -1 ) {
-#ifdef WIN32
-      // _errno = WSAGetLastError();
-      ::closesocket( basic_socket_t::_fd );
-#else
       ::close( basic_socket_t::_fd );
-#endif
       basic_socket_t::_fd = -1;
     }
    
@@ -136,20 +129,11 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port,
     return 0;
   }
   catch ( std::length_error& ) {
-#ifdef WIN32
-    ::closesocket( basic_socket_t::_fd );
-#else
     ::close( basic_socket_t::_fd );
-#endif
     basic_socket_t::_fd = -1;
-
     return 0;
   }
   catch ( std::runtime_error& ) {
-#ifdef WIN32
-    // _errno = WSAGetLastError();
-#else
-#endif
     return 0;
   }
   catch ( std::invalid_argument& ) {
@@ -170,9 +154,6 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port, const std:
   try {
     _mode = ios_base::in | ios_base::out;
     _type = sock_base::sock_stream;
-#ifdef WIN32
-    WSASetLastError( 0 );
-#endif
 
     basic_socket_t::_fd = socket( PF_INET, sock_base::sock_stream, 0 );
     if ( basic_socket_t::_fd == -1 ) {
@@ -251,12 +232,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port, const std:
   }
   catch ( std::system_error& ) {
     if ( basic_socket_t::_fd != -1 ) {
-#ifdef WIN32
-      // _errno = WSAGetLastError();
-      ::closesocket( basic_socket_t::_fd );
-#else
       ::close( basic_socket_t::_fd );
-#endif
       basic_socket_t::_fd = -1;
     }
    
@@ -266,20 +242,11 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port, const std:
     return 0;
   }
   catch ( std::length_error& ) {
-#ifdef WIN32
-    ::closesocket( basic_socket_t::_fd );
-#else
     ::close( basic_socket_t::_fd );
-#endif
     basic_socket_t::_fd = -1;
-
     return 0;
   }
   catch ( std::runtime_error& ) {
-#ifdef WIN32
-    // _errno = WSAGetLastError();
-#else
-#endif
     return 0;
   }
   catch ( std::invalid_argument& ) {
@@ -299,9 +266,6 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, sock_base::stype t
   try {
     _mode = ios_base::in | ios_base::out;
     _type = type;
-#ifdef WIN32
-    WSASetLastError( 0 );
-#endif
     basic_socket_t::_fd = socket( PF_UNIX, type, 0 );
     if ( basic_socket_t::_fd == -1 ) {
       throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
@@ -343,12 +307,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, sock_base::stype t
   }
   catch ( std::system_error& ) {
     if ( basic_socket_t::_fd != -1 ) {
-#ifdef WIN32
-      // _errno = WSAGetLastError();
-      ::closesocket( basic_socket_t::_fd );
-#else
       ::close( basic_socket_t::_fd );
-#endif
       basic_socket_t::_fd = -1;
     }
    
@@ -358,20 +317,11 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, sock_base::stype t
     return 0;
   }
   catch ( std::length_error& ) {
-#ifdef WIN32
-    ::closesocket( basic_socket_t::_fd );
-#else
     ::close( basic_socket_t::_fd );
-#endif
     basic_socket_t::_fd = -1;
-
     return 0;
   }
   catch ( std::runtime_error& ) {
-#ifdef WIN32
-    // _errno = WSAGetLastError();
-#else
-#endif
     return 0;
   }
   catch ( std::invalid_argument& ) {
@@ -391,9 +341,6 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, const std::tr2::na
   try {
     _mode = ios_base::in | ios_base::out;
     _type = type;
-#ifdef WIN32
-    WSASetLastError( 0 );
-#endif
     basic_socket_t::_fd = socket( PF_UNIX, type, 0 );
     if ( basic_socket_t::_fd == -1 ) {
       throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
@@ -464,12 +411,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, const std::tr2::na
   }
   catch ( std::system_error& ) {
     if ( basic_socket_t::_fd != -1 ) {
-#ifdef WIN32
-      // _errno = WSAGetLastError();
-      ::closesocket( basic_socket_t::_fd );
-#else
       ::close( basic_socket_t::_fd );
-#endif
       basic_socket_t::_fd = -1;
     }
    
@@ -479,20 +421,12 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, const std::tr2::na
     return 0;
   }
   catch ( std::length_error& ) {
-#ifdef WIN32
-    ::closesocket( basic_socket_t::_fd );
-#else
     ::close( basic_socket_t::_fd );
-#endif
     basic_socket_t::_fd = -1;
 
     return 0;
   }
   catch ( std::runtime_error& ) {
-#ifdef WIN32
-    // _errno = WSAGetLastError();
-#else
-#endif
     return 0;
   }
   catch ( std::invalid_argument& ) {
@@ -513,9 +447,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
   try {
     _mode = ios_base::in | ios_base::out;
     _type = type;
-#ifdef WIN32
-    WSASetLastError( 0 );
-#endif
+
     if ( addr.sin_family == AF_INET ) {
       basic_socket_t::_fd = socket( PF_INET, type, 0 );
       if ( basic_socket_t::_fd == -1 ) {
@@ -560,12 +492,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
   }
   catch ( std::system_error& ) {
     if ( basic_socket_t::_fd != -1 ) {
-#ifdef WIN32
-      // _errno = WSAGetLastError();
-      ::closesocket( basic_socket_t::_fd );
-#else
       ::close( basic_socket_t::_fd );
-#endif
       basic_socket_t::_fd = -1;
     }
    
@@ -575,20 +502,11 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
     return 0;
   }
   catch ( std::length_error& ) {
-#ifdef WIN32
-    ::closesocket( basic_socket_t::_fd );
-#else
     ::close( basic_socket_t::_fd );
-#endif
     basic_socket_t::_fd = -1;
-
     return 0;
   }
   catch ( std::runtime_error& ) {
-#ifdef WIN32
-    // _errno = WSAGetLastError();
-#else
-#endif
     return 0;
   }
   catch ( std::invalid_argument& ) {
@@ -610,9 +528,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
   try {
     _mode = ios_base::in | ios_base::out;
     _type = type;
-#ifdef WIN32
-    WSASetLastError( 0 );
-#endif
+
     if ( addr.sin_family == AF_INET ) {
       basic_socket_t::_fd = socket( PF_INET, type, 0 );
       if ( basic_socket_t::_fd == -1 ) {
@@ -686,12 +602,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
   }
   catch ( std::system_error& ) {
     if ( basic_socket_t::_fd != -1 ) {
-#ifdef WIN32
-      // _errno = WSAGetLastError();
-      ::closesocket( basic_socket_t::_fd );
-#else
       ::close( basic_socket_t::_fd );
-#endif
       basic_socket_t::_fd = -1;
     }
    
@@ -701,20 +612,12 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
     return 0;
   }
   catch ( std::length_error& ) {
-#ifdef WIN32
-    ::closesocket( basic_socket_t::_fd );
-#else
     ::close( basic_socket_t::_fd );
-#endif
     basic_socket_t::_fd = -1;
 
     return 0;
   }
   catch ( std::runtime_error& ) {
-#ifdef WIN32
-    // _errno = WSAGetLastError();
-#else
-#endif
     return 0;
   }
   catch ( std::invalid_argument& ) {
@@ -728,7 +631,7 @@ template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
 basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, sock_base::stype t )
 {
-  if ( /* basic_socket_t:: */ is_open() || s == -1 ) {
+  if ( is_open() || s == -1 ) {
     return 0;
   }
 
@@ -807,9 +710,7 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
   memcpy( (void *)&basic_socket_t::_address.any, (const void *)&addr, sizeof(sockaddr) );
   _mode = ios_base::in | ios_base::out;
   _type = t;
-#ifdef WIN32
-  WSASetLastError( 0 );
-#endif
+
   if ( t == sock_base::sock_stream ) {
     _xwrite = &_Self_type::write;
     _xread = &_Self_type::read;
@@ -836,11 +737,7 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
   }
 
   if ( _bbuf == 0 ) {
-#ifdef WIN32
-    ::closesocket( basic_socket_t::_fd );
-#else
     ::close( basic_socket_t::_fd );
-#endif
     basic_socket_t::_fd = -1;
 
     return 0;
@@ -1093,7 +990,7 @@ int basic_sockbuf<charT, traits, _Alloc>::sync()
 template<class charT, class traits, class _Alloc>
 streamsize basic_sockbuf<charT, traits, _Alloc>::xsputn( const char_type *s, streamsize n )
 {
-  if ( !/* basic_socket_t:: */ is_open() || s == 0 || n == 0 ) {
+  if ( !is_open() || s == 0 || n == 0 ) {
     return 0;
   }
 

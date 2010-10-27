@@ -26,9 +26,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int po
   }
   _mode = ios_base::in | ios_base::out;
   _state = ios_base::goodbit;
-#ifdef WIN32
-  ::WSASetLastError( 0 );
-#endif
+
   if ( prot == sock_base::inet ) {
     basic_socket_t::_fd = socket( PF_INET, type, 0 );
     if ( basic_socket_t::_fd == -1 ) {
@@ -47,11 +45,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int po
 
     if ( ::bind( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof(basic_socket_t::_address) ) == -1 ) {
       _state |= ios_base::failbit;
-#ifdef WIN32
-      ::closesocket( basic_socket_t::_fd );
-#else
       ::close( basic_socket_t::_fd );
-#endif
       basic_socket_t::_fd = -1;
       return;
     }
@@ -80,9 +74,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const char* path, sock_base
   }
   _mode = ios_base::in | ios_base::out;
   _state = ios_base::goodbit;
-#ifdef WIN32
-  ::WSASetLastError( 0 );
-#endif
+
   basic_socket_t::_fd = socket( PF_UNIX, type, 0 );
   if ( basic_socket_t::_fd == -1 ) {
     _state |= ios_base::failbit | ios_base::badbit;
@@ -94,11 +86,8 @@ void sock_processor_base<charT,traits,_Alloc>::open( const char* path, sock_base
 
   if ( ::bind( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof(basic_socket_t::_address.unx.sun_family) + strlen(basic_socket_t::_address.unx.sun_path) ) == -1 ) {
     _state |= ios_base::failbit;
-#ifdef WIN32
-    ::closesocket( basic_socket_t::_fd );
-#else
     ::close( basic_socket_t::_fd );
-#endif
+
     basic_socket_t::_fd = -1;
     return;
   }
@@ -121,8 +110,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const char* path, sock_base
 template<class charT, class traits, class _Alloc>
 void sock_processor_base<charT,traits,_Alloc>::_close()
 {
-  // std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
-  if ( ! /* basic_socket_t:: */ is_open() ) {
+  if ( !is_open() ) {
     return;
   }
 
@@ -137,12 +125,6 @@ void sock_processor_base<charT,traits,_Alloc>::_close()
   std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
 
   ::shutdown( basic_socket_t::_fd, 0 );
-
-  // basic_socket<charT,traits,_Alloc>::mgr->pop( *this, basic_socket_t::_fd );
-
-  // ::close( basic_socket_t::_fd );
-
-  // No need wait here because join() in dtor
 
   basic_socket_t::_fd = -1;
 

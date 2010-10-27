@@ -39,10 +39,6 @@
 #include <functional>
 #include <exception>
 
-// #include <boost/shared_ptr.hpp>
-
-#include <mt/callstack.h>
-
 namespace std {
 
 template <class charT, class traits, class _Alloc> class basic_sockbuf;
@@ -106,12 +102,6 @@ class sock_processor_base :
         std::tr2::lock_guard<std::tr2::mutex> lk(_cnt_lck);
         if ( --_rcount == 0 ) {
           _cnt_cnd.notify_one();
-        }
-        if ( _rcount < 0 ) { // <-- debug
-          std::tr2::lock_guard<std::tr2::mutex> lk(std::detail::_se_lock);
-          if ( std::detail::_se_stream != 0 ) {
-            xmt::callstack( *std::detail::_se_stream );
-          }
         }
       }
 

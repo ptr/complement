@@ -33,13 +33,11 @@ sockmgr<charT,traits,_Alloc>::sockmgr( int hint, int ret ) :
     efd = -1;
     throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>" ) );
   }
-  // cfd = pipefd[1];
 
   epoll_event ev_add;
   ev_add.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP;
-#if 1
   ev_add.data.u64 = 0ULL;
-#endif
+
   ev_add.data.fd = pipefd[0];
   if ( epoll_ctl( efd, EPOLL_CTL_ADD, pipefd[0], &ev_add ) < 0 ) {
     ::close( efd );
@@ -52,11 +50,6 @@ sockmgr<charT,traits,_Alloc>::sockmgr( int hint, int ret ) :
   }
 
   _worker = new std::tr2::thread( _loop, this );
-
-  // ctl _ctl;
-  // _ctl.cmd = rqstart;
-
-  // write( pipefd[1], &_ctl, sizeof(ctl) );
 }
 
 template<class charT, class traits, class _Alloc>
@@ -366,9 +359,6 @@ template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
 {
   epoll_event ev_add;
-#if 0
-  memset( &ev_add, 0, sizeof(epoll_event) );
-#endif
 
   ctl _ctl;
 
@@ -390,9 +380,8 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
   switch ( _ctl.cmd ) {
     case listener:
       ev_add.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-#if 1
       ev_add.data.u64 = 0ULL;
-#endif
+
       ev_add.data.fd = static_cast<socks_processor_t*>(_ctl.data.ptr)->fd();
       if ( ev_add.data.fd >= 0 ) {
         if ( fcntl( ev_add.data.fd, F_SETFL, fcntl( ev_add.data.fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
@@ -435,9 +424,8 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
       break;
     case tcp_buffer:
       ev_add.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-#if 1
       ev_add.data.u64 = 0ULL;
-#endif
+
       ev_add.data.fd = static_cast<sockbuf_t*>(_ctl.data.ptr)->fd();
       if ( ev_add.data.fd >= 0 ) {
         if ( epoll_ctl( efd, EPOLL_CTL_ADD, ev_add.data.fd, &ev_add ) < 0 ) {
@@ -464,9 +452,8 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
     case tcp_buffer_back:
       // return back to epoll
       ev_add.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-#if 1
       ev_add.data.u64 = 0ULL;
-#endif
+
       ev_add.data.fd = _ctl.data.fd;
       if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev_add.data.fd, &ev_add ) < 0 ) {
         return; // already closed?
@@ -474,9 +461,8 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
       break;
     case dgram_proc:
       ev_add.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-#if 1
       ev_add.data.u64 = 0ULL;
-#endif
+
       ev_add.data.fd = static_cast<socks_processor_t*>(_ctl.data.ptr)->fd();
       if ( ev_add.data.fd >= 0 ) {
         if ( fcntl( ev_add.data.fd, F_SETFL, fcntl( ev_add.data.fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
@@ -579,9 +565,8 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
         errno = 0;
         epoll_event xev;
         xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-#if 1
         xev.data.u64 = 0ULL;
-#endif
+
         xev.data.fd = ev.data.fd;
         if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) == 0 ) {
           return; // normal flow, back to epoll
@@ -593,9 +578,8 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
         errno = 0;
         epoll_event xev;
         xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-#if 1
         xev.data.u64 = 0ULL;
-#endif
+
         xev.data.fd = ev.data.fd;
         if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) == 0 ) {
           throw std::system_error( save_errno, std::get_posix_category(), std::string( __PRETTY_FUNCTION__ ) );
@@ -640,9 +624,8 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
     try {
       epoll_event ev_add;
       ev_add.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-#if 1
       ev_add.data.u64 = 0ULL;
-#endif
+
       ev_add.data.fd = fd;
 
       if ( epoll_ctl( efd, EPOLL_CTL_ADD, fd, &ev_add ) < 0 ) {
@@ -704,9 +687,8 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
   // then try to return listener back to epoll
   epoll_event xev;
   xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-#if 1
   xev.data.u64 = 0ULL;
-#endif
+
   xev.data.fd = ev.data.fd;
   if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) == 0 ) {
     return; // normal flow, back to epoll
@@ -860,9 +842,8 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
           // return back to epoll
           epoll_event xev; // local var, don't modify ev
           xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-#if 1
           xev.data.u64 = 0ULL;
-#endif
+
           xev.data.fd = b._fd;
 
           if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
@@ -881,9 +862,8 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
           if ( b._type == std::sock_base::sock_stream ) {
             epoll_event xev; // local var, don't modify ev
             xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-#if 1
             xev.data.u64 = 0ULL;
-#endif
+
             xev.data.fd = b._fd;
 
             if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
@@ -908,9 +888,8 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
             // return back to epoll
             epoll_event xev; // local var, don't modify ev
             xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-#if 1
             xev.data.u64 = 0ULL;
-#endif
+
             xev.data.fd = b._fd;
 
             if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
@@ -928,9 +907,8 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
             if ( b._type == std::sock_base::sock_stream ) {
               epoll_event xev; // local var, don't modify ev
               xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-#if 1
               xev.data.u64 = 0ULL;
-#endif
+
               xev.data.fd = b._fd;
               if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
                 throw fdclose(); // hmm, unexpected here; closed?
@@ -952,9 +930,8 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
     // return back to epoll
     epoll_event xev; // local var, don't modify ev
     xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-#if 1
     xev.data.u64 = 0ULL;
-#endif
+
     xev.data.fd = b._fd;
 
     if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
