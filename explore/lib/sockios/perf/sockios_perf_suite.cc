@@ -166,14 +166,14 @@ int main( int argc, const char** argv )
   sockios_syslog_perf syslog_perf;
 
   t.add( &sockios_syslog_perf::syslog_mt<1000, 80, 8, sockios_syslog_perf::syslog_classic_worker>,
-         syslog_perf, "syslog classic, 10000 messages, 80 length, 8 thread",
+         syslog_perf, "syslog classic, 1000 messages, 80 length, 8 thread",
     t.add( &sockios_syslog_perf::syslog_mt<1000, 80, 1, sockios_syslog_perf::syslog_classic_worker>,
-           syslog_perf, "syslog classic, 10000 messages, 80 length, 1 thread" ) );
+           syslog_perf, "syslog classic, 1000 messages, 80 length, 1 thread" ) );
 
   t.add( &sockios_syslog_perf::syslog_mt<1000, 80, 8, sockios_syslog_perf::syslog_dgram_worker>,
-         syslog_perf, "syslog dgram, 10000 messages, 80 length, 8 thread",
+         syslog_perf, "syslog dgram, 1000 messages, 80 length, 8 thread",
     t.add( &sockios_syslog_perf::syslog_mt<1000, 80, 1, sockios_syslog_perf::syslog_dgram_worker>,
-           syslog_perf, "syslog dgram, 10000 messages, 80 length, 1 thread" ) );
+           syslog_perf, "syslog dgram, 1000 messages, 80 length, 1 thread" ) );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );
