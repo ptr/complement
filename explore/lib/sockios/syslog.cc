@@ -48,6 +48,10 @@ closelog();
 #endif
 
 namespace misc {
+
+std::ostream& use_syslog()
+{ return detail::xsyslog(); }
+
 namespace detail {
 #ifdef __USE_STLPORT_HASH
 typedef std::hash_map<std::tr2::thread_base::id,std::sockstream*> log_heap_type;
@@ -236,6 +240,9 @@ syslog_init::~syslog_init()
 
 static syslog_init _slog_aux; // register fork handlers
 
+int default_log_level = LOG_ERR;
+int default_log_facility = LOG_USER;
+
 ostream& xsyslog( int _level, int _facility )
 {
   if ( LOG_PRI(_level) == 0 ) {
@@ -279,7 +286,27 @@ ostream& xsyslog( int _level, int _facility )
   return slog;
 }
 
+ostream& xsyslog( int _level )
+{
+  return xsyslog( _level, default_log_facility );
+}
+
+ostream& xsyslog()
+{
+  return xsyslog( default_log_level, default_log_facility );
+}
+
 } // namespace detail
+
+void set_default_log_level(int log_level)
+{
+  detail::default_log_level = log_level;
+}
+
+void set_default_log_facility(int log_facility)
+{
+  detail::default_log_facility = log_facility;
+}
 
 void close_syslog()
 {
