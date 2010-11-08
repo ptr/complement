@@ -268,7 +268,14 @@ ostream& xsyslog( int _level, int _facility )
   // time_t t = std::tr2::get_system_time().seconds_since_epoch();
   // localtime_r( &t, &ts );
 
+  if ( slog.fail() ) {
+    slog.clear();
+    slog.close();
+    slog.open("/dev/log", sock_base::sock_dgram);
+  }
+
   slog << '<' << (LOG_PRI(_level) | (_facility & LOG_FACMASK)) << '>';
+
   /*
    Jun 23 14:56:32
    0123456789012345
