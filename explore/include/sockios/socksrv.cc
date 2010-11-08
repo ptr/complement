@@ -244,7 +244,7 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
     // 0 is dangerous as return value and is unexpected,
     // because the object by this pointer may be accessed
     // later in some cases
-    misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ":unexpected" << endl;
+    misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
     return 0;
   }
 
@@ -289,9 +289,9 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::feed_data_to_processo
       p.s->rdbuf()->pubrewind(); // worry about free space in income buffer
     }
   } catch( const std::exception& e ) {
-    misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ":exception from Connect::ctor " << e.what() << endl;
+    misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor " << e.what() << endl;
   } catch( ... ) {
-    misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ":exception from Connect::ctor unknown" << endl;
+    misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor unknown" << endl;
   }
 }
 
@@ -303,12 +303,12 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
       typename opened_pool_t::iterator opened_processor_iterator = opened_pool.find( request.fd );
 
       if ( opened_processor_iterator != opened_pool.end() ) {
-        misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ":unexpected" << endl;
+        misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
         return;
       }
 
       if ( request.p.s == 0 ) {
-        misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ":unexpected" << endl;
+        misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
         return;
       }
 
@@ -322,10 +322,10 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
       try {
         p.c = new Connect( *p.s ); 
       } catch( const std::exception& e ) {
-        misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ":exception from Connect::ctor " << e.what() << endl;
+        misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor " << e.what() << endl;
         return;
       } catch( ... ) {
-        misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ":exception from Connect::ctor unknown" << endl;
+        misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor unknown" << endl;
         return;
       }
 
@@ -336,7 +336,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
       typename opened_pool_t::iterator opened_processor_iterator = opened_pool.find( request.fd );
 
       if ( opened_processor_iterator == opened_pool.end() ) {
-        misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ":unexpected" << endl;
+        misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
         return;
       }
 
@@ -345,7 +345,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
       typename opened_pool_t::iterator opened_processor_iterator = opened_pool.find( request.fd );
 
       if ( opened_processor_iterator == opened_pool.end() ) {
-        misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ":unexpected" << endl;
+        misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
         return;
       }
 
@@ -362,13 +362,13 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
       delete p.c;
       delete p.s;
     } else {
-      misc::use_syslog<LOG_DEBUG,LOG_USER>() << "unexpected request operation type: " << request.operation_type << endl;
+      misc::use_syslog<LOG_DEBUG>() << "unexpected request operation type: " << request.operation_type << endl;
     }
   } catch( const std::exception& e ) {
-    misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ":unexpected " << e.what() << endl;
+    misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected " << e.what() << endl;
   }
   catch(...) {
-    misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ":unexpected unknown" << endl;
+    misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected unknown" << endl;
   }
 }
 

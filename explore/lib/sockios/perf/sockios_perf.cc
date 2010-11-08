@@ -302,7 +302,7 @@ void sockios_syslog_perf::syslog_dgram_worker()
 {
   srand(42);
   for (int i = 0; i < message_count; ++i) {
-    misc::use_syslog<LOG_ERR,LOG_USER>() << random_string(message_size) << std::endl;
+    misc::use_syslog<LOG_ERR>() << random_string(message_size) << std::endl;
   }
 }
 

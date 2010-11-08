@@ -148,7 +148,7 @@ int basic_vs::vs( const stem::Event& inc_ev )
   lock_guard<recursive_mutex> hlk( _theHistory_lock );
 
   if ( isState(VS_ST_LOCKED) ) {
-    // misc::use_syslog<LOG_INFO,LOG_USER>() << "de.push_back()" << ':' << HERE << ':' << sid << ':' << inc_ev.code() << endl;
+    // misc::use_syslog<LOG_DEBUG>() << "de.push_back()" << ':' << HERE << ':' << sid << ':' << inc_ev.code() << endl;
     de.push_back( inc_ev );
     return 1;
   }
@@ -208,10 +208,10 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
   // check the view version first:
   if ( view != 0 && ev.value().view != view ) {
     if ( ev.value().view > view ) {
-      // misc::use_syslog<LOG_INFO,LOG_USER>() << "ove.push_back" << ':' << HERE << ':' << sid << ':' << ev.value().ev.code() << endl;
+      // misc::use_syslog<LOG_DEBUG>() << "ove.push_back" << ':' << HERE << ':' << sid << ':' << ev.value().ev.code() << endl;
       ove.push_back( ev ); // push event into delay queue
     } else {
-      misc::use_syslog<LOG_INFO,LOG_USER>() << HERE << ':' << sid << ":unexpected" << endl;
+      misc::use_syslog<LOG_DEBUG>() << HERE << ':' << sid << ":unexpected" << endl;
     }
 
     return;
@@ -225,14 +225,14 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
 
     if ( vt.vt.empty() ) {
       if ( ev.src() != lock_addr || code != VS_UPDATE_VIEW ) {
-        // misc::use_syslog<LOG_INFO,LOG_USER>() << "ove.push_back" << ':' << __FILE__ << ':' << __LINE__ << ':' << sid << ':' << ev.value().ev.code() << endl;
+        // misc::use_syslog<LOG_DEBUG>() << "ove.push_back" << ':' << __FILE__ << ':' << __LINE__ << ':' << sid << ':' << ev.value().ev.code() << endl;
         ove.push_back( ev );
         return;
       }
     }
 
     if ( self_events && ev.src() != sid ) {
-      // misc::use_syslog<LOG_INFO,LOG_USER>() << "ove.push_back" << ':' << __FILE__ << ':' << __LINE__ << ':' << sid << ':' << ev.value().ev.code() << endl;
+      // misc::use_syslog<LOG_DEBUG>() << "ove.push_back" << ':' << __FILE__ << ':' << __LINE__ << ':' << sid << ':' << ev.value().ev.code() << endl;
       ove.push_back( ev );
       return;
     }
@@ -247,16 +247,16 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
       if ( (i->first == ev.src()) && (i->first != sid) ) {
         if ( (i->second + 1) != tmp[ev.src()] ) {
           if ( (i->second + 1) < tmp[ev.src()] ) {
-            // misc::use_syslog<LOG_DEBUG,LOG_USER>() << "ove.push_back" << ':' << HERE << ':' << sid << ':' << ev.src() << ':' << ev.value().ev.code() << endl;
+            // misc::use_syslog<LOG_DEBUG>() << "ove.push_back" << ':' << HERE << ':' << sid << ':' << ev.src() << ':' << ev.value().ev.code() << endl;
             ove.push_back( ev ); // push event into delay queue
           } else {
-            misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ':' << sid << ':' << ev.value().ev.code() << " unexpected" << endl;
+            misc::use_syslog<LOG_DEBUG>() << HERE << ':' << sid << ':' << ev.value().ev.code() << ":unexpected" << endl;
             // Ghost event from past: Drop? Error?
           }
           return;
         }
       } else if ( i->second < tmp[i->first] ) {
-        // misc::use_syslog<LOG_DEBUG,LOG_USER>() << "ove.push_back" << ':' << HERE << ':' << sid << ':' << ev.src() << ':' << ev.value().ev.code() << endl;
+        // misc::use_syslog<LOG_DEBUG>() << "ove.push_back" << ':' << HERE << ':' << sid << ':' << ev.src() << ':' << ev.value().ev.code() << endl;
         ove.push_back( ev ); // push event into delay queue
         return;
       }
@@ -594,7 +594,7 @@ void basic_vs::vs_join_request_work( const stem::Event_base<vs_join_rq>& ev )
 
   _lock_vt.unlock();
 
-  // misc::use_syslog<LOG_INFO,LOG_USER>() << "vs_join_request_work:" << sid << ':' << group_applicant << endl;
+  // misc::use_syslog<LOG_DEBUG>() << "vs_join_request_work:" << sid << ':' << group_applicant << endl;
 
   lock_rsp.clear();
   stem::EventVoid view_lock_ev( VS_LOCK_VIEW );
@@ -630,7 +630,7 @@ void basic_vs::vs_send_flush()
 
 void basic_vs::vs_flush_request_work( const stem::Event_base< xmt::uuid_type >& ev )
 {
-  // misc::use_syslog<LOG_INFO,LOG_USER>() << "vs_flush_request_work:" << sid << endl;
+  // misc::use_syslog<LOG_DEBUG>() << "vs_flush_request_work:" << sid << endl;
   check_remotes();
   
   lock_rsp.clear();
@@ -671,7 +671,7 @@ void basic_vs::vs_lock_view( const stem::EventVoid& ev )
 {
   PushState( VS_ST_LOCKED );
   lock_addr = ev.src();
-  // misc::use_syslog<LOG_INFO,LOG_USER>() << "vs_lock_view:" << sid << ':' << lock_addr << endl;
+  // misc::use_syslog<LOG_DEBUG>() << "vs_lock_view:" << sid << ':' << lock_addr << endl;
   stem::EventVoid view_lock_ev( VS_LOCK_VIEW_ACK );
   view_lock_ev.dest( lock_addr );
 
@@ -683,10 +683,10 @@ void basic_vs::vs_lock_view( const stem::EventVoid& ev )
 
 void basic_vs::vs_lock_view_lk( const stem::EventVoid& ev )
 {
-  // misc::use_syslog<LOG_INFO,LOG_USER>() << "vs_lock_view_lk1:" << sid << ':' << lock_addr << endl;
+  // misc::use_syslog<LOG_DEBUG>() << "vs_lock_view_lk1:" << sid << ':' << lock_addr << endl;
   if ( ev.src() <= lock_addr ) {
     lock_addr = ev.src();
-    // misc::use_syslog<LOG_INFO,LOG_USER>() << "vs_lock_view_lk2:" << sid << ':' << lock_addr << endl;
+    // misc::use_syslog<LOG_DEBUG>() << "vs_lock_view_lk2:" << sid << ':' << lock_addr << endl;
     stem::EventVoid view_lock_ev( VS_LOCK_VIEW_ACK );
     view_lock_ev.dest( lock_addr );
     view_lock_ev.src( sid );
@@ -698,11 +698,11 @@ void basic_vs::check_lock_rsp()
 {
   if ( !fq.empty() ) {
     unique_lock<recursive_mutex> lk( _lock_vt );
-    // misc::use_syslog<LOG_INFO,LOG_USER>() << "check_lock_rsp:" << sid << ':' << lock_rsp.size() << ':' << vt.vt.size() << ':' << (fq.front().code() == VS_JOIN_RQ) << endl;
+    // misc::use_syslog<LOG_DEBUG>() << "check_lock_rsp:" << sid << ':' << lock_rsp.size() << ':' << vt.vt.size() << ':' << (fq.front().code() == VS_JOIN_RQ) << endl;
     if ( lock_rsp.size() >= (vt.vt.size() + (fq.front().code() == VS_JOIN_RQ)) ) {
       for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
         if ( (lock_rsp.find( i->first ) == lock_rsp.end()) ) {
-          // misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << " unexpected " << sid << ' ' << i->first << endl;
+          // misc::use_syslog<LOG_DEBUG>() << HERE << " unexpected " << sid << ' ' << i->first << endl;
           return;
         }
       }
@@ -729,7 +729,7 @@ void basic_vs::check_lock_rsp()
       vs_locked( update_view_ev );
     }
   } else {
-    misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << " unexpected" << endl;
+    misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
   }
 }
 
@@ -987,7 +987,7 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
     RemoveState( VS_ST_LOCKED );
     lock_rsp.clear();
     process_delayed();
-    misc::use_syslog<LOG_INFO,LOG_USER>() << "unexpected: " << sid << " too long wait in locked state" << endl;
+    misc::use_syslog<LOG_INFO,LOG_USER>() << HERE << ":unexpected: " << sid << " too long wait in locked state" << endl;
   }
 }
 
