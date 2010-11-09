@@ -30,6 +30,7 @@ using namespace std::tr2;
 // std::tr2::mutex server_conn::lock;
 // std::tr2::condition_variable server_conn::cnd;
 
+
 int EXAM_IMPL(sockios_perf_conn::connect)
 {
   int flag = 0;
@@ -283,5 +284,33 @@ sockios_perf_SrvRW::sockios_perf_SrvRW()
 
 sockios_perf_SrvRW::~sockios_perf_SrvRW()
 {
+}
+
+std::string sockios_syslog_perf::random_string(int S)
+{
+  std::string res(S, '0');
+  for (int i = 0; i < S; ++i) {
+    res[i] += rand() % 10;
+  }
+  return res;
+}
+
+int sockios_syslog_perf::message_count = 0;
+int sockios_syslog_perf::message_size = 0;
+
+void sockios_syslog_perf::syslog_dgram_worker()
+{
+  srand(42);
+  for (int i = 0; i < message_count; ++i) {
+    misc::use_syslog<LOG_ERR>() << random_string(message_size) << std::endl;
+  }
+}
+
+void sockios_syslog_perf::syslog_classic_worker()
+{
+  srand(42);
+  for (int i = 0; i < message_count; ++i) {
+    syslog( LOG_ERR | LOG_USER, random_string(message_size).c_str() );
+  }
 }
 

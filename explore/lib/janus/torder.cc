@@ -85,7 +85,7 @@ void torder_vs::vs_pub_view_update()
       if ( vs( cnf ) ) {
         // in the middle of flush
         // new leader(possibly me) will send confirmations
-        // misc::use_syslog<LOG_INFO,LOG_USER>() << "de.pop_back() " << sid << ':' << ev.value().id << endl;
+        // misc::use_syslog<LOG_DEBUG>() << "de.pop_back() " << sid << ':' << ev.value().id << endl;
         de.pop_back();
       }
     }
@@ -122,7 +122,7 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
     if ( vs( cnf ) == 1 ) {
       // in the middle of flush
       // new leader(possibly me) will send confirmations
-      // misc::use_syslog<LOG_INFO,LOG_USER>() << "de.pop_back() " << sid << ':' << ev.value().id << endl;
+      // misc::use_syslog<LOG_DEBUG>() << "de.pop_back() " << sid << ':' << ev.value().id << endl;
       de.pop_back();
     }
   }

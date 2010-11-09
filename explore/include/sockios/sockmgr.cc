@@ -95,6 +95,7 @@ sockmgr<charT,traits,_Alloc>::~sockmgr()
       (*i->second.p)( i->first, typename socks_processor_t::adopt_close_t() );
     }
   }
+
   for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
     if ( (i->second.flags & fd_info::listener) != 0 ) {
       ::close( i->first );
@@ -530,6 +531,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
         trash.push_back( i->first );
       }
     }
+
     for ( typename std::list<typename fd_container_type::key_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
       descr.erase( *i );
     }
