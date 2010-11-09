@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/05 09:49:15 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-09 15:43:47 ptr>
 
 /*
  * Copyright (c) 2008-2010
@@ -244,7 +244,24 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
     // 0 is dangerous as return value and is unexpected,
     // because the object by this pointer may be accessed
     // later in some cases
-    misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
+    // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
+// #ifdef __FIT_STEM_TRACE
+    try {
+      std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+        ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+        *_trs << HERE << ":unexpected";
+#ifdef STLPORT
+        _trs->flags( f );
+#else
+        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+      }
+    }
+    catch ( ... ) {
+    }
+// #endif // __FIT_STEM_TRACE
+
     return 0;
   }
 
@@ -288,10 +305,44 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::feed_data_to_processo
     if ( p.s->is_open() ) {
       p.s->rdbuf()->pubrewind(); // worry about free space in income buffer
     }
-  } catch( const std::exception& e ) {
-    misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor " << e.what() << endl;
-  } catch( ... ) {
-    misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor unknown" << endl;
+  }
+  catch ( const std::exception& e ) {
+    // misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor " << e.what() << endl;
+// #ifdef __FIT_STEM_TRACE
+    try {
+      std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+        ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+        *_trs << HERE << ":exception from Connect::ctor " << e.what() << endl;
+#ifdef STLPORT
+        _trs->flags( f );
+#else
+        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+      }
+    }
+    catch ( ... ) {
+    }
+// #endif // __FIT_STEM_TRACE
+  }
+  catch ( ... ) {
+    // misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor unknown" << endl;
+// #ifdef __FIT_STEM_TRACE
+    try {
+      std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+        ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+        *_trs << HERE << ":exception from Connect::ctor unknown" << endl;
+#ifdef STLPORT
+        _trs->flags( f );
+#else
+        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+      }
+    }
+    catch ( ... ) {
+    }
+// #endif // __FIT_STEM_TRACE
   }
 }
 
@@ -303,12 +354,44 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
       typename opened_pool_t::iterator opened_processor_iterator = opened_pool.find( request.fd );
 
       if ( opened_processor_iterator != opened_pool.end() ) {
-        misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
+        // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
+// #ifdef __FIT_STEM_TRACE
+        try {
+          std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+            ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+            *_trs << HERE << ":unexpected" << endl;
+#ifdef STLPORT
+            _trs->flags( f );
+#else
+            _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+          }
+        }
+        catch ( ... ) {
+        }
+// #endif // __FIT_STEM_TRACE
         return;
       }
 
       if ( request.p.s == 0 ) {
-        misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
+        // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
+// #ifdef __FIT_STEM_TRACE
+        try {
+          std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+            ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+            *_trs << HERE << ":unexpected" << endl;
+#ifdef STLPORT
+            _trs->flags( f );
+#else
+            _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+          }
+        }
+        catch ( ... ) {
+        }
+// #endif // __FIT_STEM_TRACE
         return;
       }
 
@@ -321,11 +404,45 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
 
       try {
         p.c = new Connect( *p.s ); 
-      } catch( const std::exception& e ) {
-        misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor " << e.what() << endl;
-        return;
-      } catch( ... ) {
-        misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor unknown" << endl;
+      }
+      catch ( const std::exception& e ) {
+        // misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor " << e.what() << endl;
+ // #ifdef __FIT_STEM_TRACE
+        try {
+          std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+            ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+            *_trs << HERE << ":exception from Connect::ctor " << e.what() << endl;
+#ifdef STLPORT
+            _trs->flags( f );
+#else
+            _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+          }
+        }
+        catch ( ... ) {
+        }
+// #endif // __FIT_STEM_TRACE
+       return;
+      }
+      catch ( ... ) {
+        // misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor unknown" << endl;
+// #ifdef __FIT_STEM_TRACE
+        try {
+          std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+            ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+            *_trs << HERE << ":exception from Connect::ctor unknown" << endl;
+#ifdef STLPORT
+            _trs->flags( f );
+#else
+            _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+          }
+        }
+        catch ( ... ) {
+        }
+// #endif // __FIT_STEM_TRACE
         return;
       }
 
@@ -336,7 +453,23 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
       typename opened_pool_t::iterator opened_processor_iterator = opened_pool.find( request.fd );
 
       if ( opened_processor_iterator == opened_pool.end() ) {
-        misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
+        // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
+// #ifdef __FIT_STEM_TRACE
+        try {
+          std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+            ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+            *_trs << HERE << ":unexpected" << endl;
+#ifdef STLPORT
+            _trs->flags( f );
+#else
+            _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+          }
+        }
+        catch ( ... ) {
+        }
+// #endif // __FIT_STEM_TRACE
         return;
       }
 
@@ -345,7 +478,23 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
       typename opened_pool_t::iterator opened_processor_iterator = opened_pool.find( request.fd );
 
       if ( opened_processor_iterator == opened_pool.end() ) {
-        misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
+        // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
+// #ifdef __FIT_STEM_TRACE
+        try {
+          std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+            ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+            *_trs << HERE << ":unexpected" << endl;
+#ifdef STLPORT
+            _trs->flags( f );
+#else
+            _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+          }
+        }
+        catch ( ... ) {
+        }
+// #endif // __FIT_STEM_TRACE
         return;
       }
 
@@ -362,13 +511,62 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
       delete p.c;
       delete p.s;
     } else {
-      misc::use_syslog<LOG_DEBUG>() << "unexpected request operation type: " << request.operation_type << endl;
+      // misc::use_syslog<LOG_DEBUG>() << "unexpected request operation type: " << request.operation_type << endl;
+// #ifdef __FIT_STEM_TRACE
+      try {
+        std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+        if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+          ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+          *_trs << HERE << "unexpected request operation type: " << request.operation_type << endl;
+#ifdef STLPORT
+          _trs->flags( f );
+#else
+          _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+        }
+      }
+      catch ( ... ) {
+      }
+// #endif // __FIT_STEM_TRACE
     }
-  } catch( const std::exception& e ) {
-    misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected " << e.what() << endl;
   }
-  catch(...) {
-    misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected unknown" << endl;
+  catch ( const std::exception& e ) {
+    // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected " << e.what() << endl;
+// #ifdef __FIT_STEM_TRACE
+    try {
+      std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+        ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+        *_trs << HERE << ":unexpected " << e.what() << endl;
+#ifdef STLPORT
+        _trs->flags( f );
+#else
+        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+      }
+    }
+    catch ( ... ) {
+    }
+// #endif // __FIT_STEM_TRACE
+  }
+  catch (...) {
+    // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected unknown" << endl;
+// #ifdef __FIT_STEM_TRACE
+    try {
+      std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+        ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+        *_trs << HERE << ":unexpected unknown" << endl;
+#ifdef STLPORT
+        _trs->flags( f );
+#else
+        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+      }
+    }
+    catch ( ... ) {
+    }
+// #endif // __FIT_STEM_TRACE
   }
 }
 
@@ -450,5 +648,24 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::_stop()
   _in_work = false;
   ready_cnd.notify_one();
 }
+
+template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
+std::ostream* connect_processor<Connect, charT, traits, _Alloc, C>::settrs( std::ostream* s )
+{
+  std::tr2::lock_guard<std::tr2::mutex> _x1( _lock_tr );
+  std::ostream* tmp = _trs;
+  _trs = s;
+
+  return tmp;
+}
+
+template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
+std::tr2::mutex connect_processor<Connect, charT, traits, _Alloc, C>::_lock_tr;
+
+template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
+unsigned connect_processor<Connect, charT, traits, _Alloc, C>::_trflags = 0;
+
+template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
+std::ostream* connect_processor<Connect, charT, traits, _Alloc, C>::_trs = 0;
 
 } // namespace std

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/05 09:48:57 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-09 15:27:02 ptr>
 
 /*
  * Copyright (c) 2008-2010
@@ -136,6 +136,12 @@ class sock_processor_base :
       { abort(); }
     virtual void operator ()( sock_base::socket_type )
       { abort(); }
+
+    enum traceflags {
+      notrace = 0,
+      tracefault = 1
+    };
+
   private:
     sock_processor_base( const sock_processor_base& );
     sock_processor_base& operator =( const sock_processor_base& ); 
@@ -284,6 +290,8 @@ class connect_processor :
     void at_disconnect( at_func_type f )
       { _at_disconnect.push_back( f ); }
 
+    static std::ostream* settrs( std::ostream* );
+
   private:
     virtual typename base_t::sockbuf_t* operator ()( sock_base::socket_type fd, const sockaddr& );
     virtual void operator ()( sock_base::socket_type fd, const typename base_t::adopt_close_t& );
@@ -397,6 +405,10 @@ class connect_processor :
 
     bool _in_work;
     std::tr2::thread* ploop;
+
+    static std::tr2::mutex _lock_tr;
+    static unsigned _trflags;
+    static std::ostream* _trs;
 };
 
 } // namesapce std
