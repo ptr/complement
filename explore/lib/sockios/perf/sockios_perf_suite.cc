@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2010-11-02 15:00:26 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-09 16:24:13 ptr>
 
 /*
  *
- * Copyright (c) 2007, 2009
+ * Copyright (c) 2007, 2009, 2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -11,6 +11,7 @@
 
 #include "sockios_perf_suite.h"
 #include "sockios_perf.h"
+#include "syslog_perf.h"
 
 #include <exam/suite.h>
 #include <iostream>

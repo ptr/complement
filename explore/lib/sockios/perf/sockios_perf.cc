@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/29 17:18:24 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-09 16:03:43 ptr>
 
 /*
  *
@@ -285,32 +285,3 @@ sockios_perf_SrvRW::sockios_perf_SrvRW()
 sockios_perf_SrvRW::~sockios_perf_SrvRW()
 {
 }
-
-std::string sockios_syslog_perf::random_string(int S)
-{
-  std::string res(S, '0');
-  for (int i = 0; i < S; ++i) {
-    res[i] += rand() % 10;
-  }
-  return res;
-}
-
-int sockios_syslog_perf::message_count = 0;
-int sockios_syslog_perf::message_size = 0;
-
-void sockios_syslog_perf::syslog_dgram_worker()
-{
-  srand(42);
-  for (int i = 0; i < message_count; ++i) {
-    misc::use_syslog<LOG_ERR>() << random_string(message_size) << std::endl;
-  }
-}
-
-void sockios_syslog_perf::syslog_classic_worker()
-{
-  srand(42);
-  for (int i = 0; i < message_count; ++i) {
-    syslog( LOG_ERR | LOG_USER, random_string(message_size).c_str() );
-  }
-}
-

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/29 14:09:36 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-09 16:01:03 ptr>
 
 /*
  *
@@ -543,41 +543,6 @@ int block_read_write()
   }
 
   return flag;
-}
-
-class sockios_syslog_perf
-{
-  public:
-    template <int N, int S, int T, void (*worker)()>
-    int EXAM_DECL(syslog_mt);
-
-    static void syslog_dgram_worker();
-    static void syslog_classic_worker();
-  private:
-    static std::string random_string(int S);
-
-    static int message_count;
-    static int message_size;
-};
-
-template <int N, int S, int T, void (*worker)()>
-int EXAM_IMPL(sockios_syslog_perf::syslog_mt)
-{
-  std::vector< std::tr2::thread* > threads(T);
-
-  message_count = N;
-  message_size = S;
-
-  for (int thread_index = 0; thread_index < T; ++thread_index) {
-    threads[thread_index] = new std::tr2::thread( worker );
-  }
-
-  for (int thread_index = 0; thread_index < T; ++thread_index) {
-    threads[thread_index]->join();
-    delete threads[thread_index];
-  }
-  
-  return EXAM_RESULT;
 }
 
 #endif // __sockios_perf_h
