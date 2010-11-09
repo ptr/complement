@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/29 14:08:55 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-02 15:00:26 ptr>
 
 /*
  *
@@ -132,7 +132,7 @@ int main( int argc, const char** argv )
   tc[64] = t.add( &sockios_perf_SrvW::rx<1024,51200,6480,1>, pw, "client read 1024 51200 bytes blocks TCP_NODELAY", tc[63] );
   tc[65] = t.add( &sockios_perf_SrvW::rx<4096,12800,6480,1>, pw, "client read 4096 12800 bytes blocks TCP_NODELAY", tc[64] );
   tc[66] = t.add( &sockios_perf_SrvW::rx<6400,8192,6480,1>, pw, "client read 6400 8192 bytes blocks TCP_NODELAY", tc[65] );
-  tc[67] = t.add( &sockios_perf_SrvW::rx<12800,4096,6480,1>, pw, "client read 12800 4096 bytes blocks", tc[66] );
+  tc[67] = t.add( &sockios_perf_SrvW::rx<12800,4096,6480,1>, pw, "client read 12800 4096 bytes blocks TCP_NODELAY", tc[66] );
   tc[68] = t.add( &sockios_perf_SrvW::rx<25600,2048,6480,1>, pw, "client read 25600 2048 bytes blocks TCP_NODELAY", tc[67] );
   tc[69] = t.add( &sockios_perf_SrvW::rx<51200,1024,6480,1>, pw, "client read 51200 1024 bytes blocks TCP_NODELAY", tc[68] );
   tc[70] = t.add( &sockios_perf_SrvW::rx<102400,512,6480,1>, pw, "client read 102400 512 bytes blocks TCP_NODELAY", tc[69] );
