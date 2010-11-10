@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/08/25 18:26:30 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-10 15:36:11 ptr>
 
 /*
  * Copyright (c) 2006-2009
@@ -91,7 +91,8 @@ int main( int argc, const char** argv )
   t.add( &mt_test_wg21::barrier, test_wg21, "mt_test_wg21::barrier" );
   t.add( &mt_test_wg21::semaphore, test_wg21, "mt_test_wg21::semaphore" );
   t.add( &mt_test_wg21::condition_var, test_wg21, "mt_test_wg21::condition_variable" );
-  t.add( &mt_test_wg21::fork, test_wg21, "mt_test_wg21::fork" );
+  t.add( &mt_test_wg21::pid, test_wg21, "mt_test_wg21::pid",
+         t.add( &mt_test_wg21::fork, test_wg21, "mt_test_wg21::fork" ) );
 
   uid_test_wg21 test_wg21_uid;
 

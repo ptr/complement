@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/01 15:51:31 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-10 17:07:32 ptr>
 
 /*
  * Copyright (c) 2006-2008
@@ -530,6 +530,75 @@ int EXAM_IMPL(uid_test_wg21::uid_stream)
   EXAM_CHECK( !s.fail() );
   EXAM_CHECK( u2 == r2 );
   EXAM_CHECK( u3 == r3 );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(mt_test_wg21::pid)
+{
+  shmid_ds ds;
+  int id = shmget( 5000, 1024, IPC_CREAT | IPC_EXCL | 0600 );
+  EXAM_REQUIRE( id != -1 );
+  // if ( id == -1 ) {
+  //   cerr << "Error on shmget" << endl;
+  // }
+  EXAM_REQUIRE( shmctl( id, IPC_STAT, &ds ) != -1 );
+  // if ( shmctl( id, IPC_STAT, &ds ) == -1 ) {
+  //   cerr << "Error on shmctl" << endl;
+  // }
+  void *buf = shmat( id, 0, 0 );
+  EXAM_REQUIRE( buf != reinterpret_cast<void *>(-1) );
+  // if ( buf == reinterpret_cast<void *>(-1) ) {
+  //   cerr << "Error on shmat" << endl;
+  // }
+
+  std::tr2::condition_event_ip& fcnd = *new( buf ) std::tr2::condition_event_ip();
+  pid_t my_pid = std::tr2::getpid();
+
+  try {
+    std::tr2::this_thread::fork();
+
+    int flag = 0;
+
+    try {
+
+      // Child code 
+      EXAM_CHECK_ASYNC_F( my_pid == std::tr2::getppid(), flag );
+      *reinterpret_cast<pid_t *>(static_cast<char *>(buf) + sizeof(std::tr2::condition_event_ip)) = std::tr2::getpid();
+
+      fcnd.notify_one();
+    }
+    catch ( ... ) {
+    }
+
+    exit( flag );
+  }
+  catch ( std::tr2::fork_in_parent& child ) {
+    try {
+      EXAM_CHECK( child.pid() > 0 );
+
+      fcnd.wait();
+
+      EXAM_CHECK( *reinterpret_cast<pid_t *>(static_cast<char *>(buf) + sizeof(std::tr2::condition_event_ip)) == child.pid() );
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+    }
+    catch ( ... ) {
+    }
+  }
+  catch ( ... ) {
+  }
+
+  (&fcnd)->~__condition_event<true>();
+
+  shmdt( buf );
+  shmctl( id, IPC_RMID, &ds );
 
   return EXAM_RESULT;
 }
