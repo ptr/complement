@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-11-09 16:24:13 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-11 14:49:32 ptr>
 
 /*
  *
@@ -166,15 +166,15 @@ int main( int argc, const char** argv )
 
   sockios_syslog_perf syslog_perf;
 
-  t.add( &sockios_syslog_perf::syslog_mt<1000, 80, 8, sockios_syslog_perf::syslog_classic_worker>,
-         syslog_perf, "syslog classic, 1000 messages, 80 length, 8 thread",
-    t.add( &sockios_syslog_perf::syslog_mt<1000, 80, 1, sockios_syslog_perf::syslog_classic_worker>,
-           syslog_perf, "syslog classic, 1000 messages, 80 length, 1 thread" ) );
+  t.add( &sockios_syslog_perf::syslog_mt<1000, 8, sockios_syslog_perf::syslog_classic_worker>,
+         syslog_perf, "syslog classic, 1000 messages, 8 threads",
+    t.add( &sockios_syslog_perf::syslog_mt<1000, 1, sockios_syslog_perf::syslog_classic_worker>,
+           syslog_perf, "syslog classic, 1000 messages, 1 thread" ) );
 
-  t.add( &sockios_syslog_perf::syslog_mt<1000, 80, 8, sockios_syslog_perf::syslog_dgram_worker>,
-         syslog_perf, "syslog dgram, 1000 messages, 80 length, 8 thread",
-    t.add( &sockios_syslog_perf::syslog_mt<1000, 80, 1, sockios_syslog_perf::syslog_dgram_worker>,
-           syslog_perf, "syslog dgram, 1000 messages, 80 length, 1 thread" ) );
+  t.add( &sockios_syslog_perf::syslog_mt<1000, 8, sockios_syslog_perf::syslog_dgram_worker>,
+         syslog_perf, "syslog dgram, 1000 messages, 8 threads",
+    t.add( &sockios_syslog_perf::syslog_mt<1000, 1, sockios_syslog_perf::syslog_dgram_worker>,
+           syslog_perf, "syslog dgram, 1000 messages, 1 thread" ) );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );

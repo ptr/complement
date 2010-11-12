@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-11-09 16:26:38 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-11 14:42:56 ptr>
 
 /*
  *
@@ -34,7 +34,7 @@
 class sockios_syslog_perf
 {
   public:
-    template <int N, int S, int T, void (*worker)()>
+    template <int N, int T, void (*worker)()>
     int EXAM_DECL(syslog_mt);
 
     static void syslog_dgram_worker();
@@ -42,16 +42,14 @@ class sockios_syslog_perf
 
   private:
     static int message_count;
-    static int message_size;
 };
 
-template <int N, int S, int T, void (*worker)()>
+template <int N, int T, void (*worker)()>
 int EXAM_IMPL(sockios_syslog_perf::syslog_mt)
 {
   std::vector< std::tr2::thread* > threads(T);
 
   message_count = N;
-  message_size = S;
 
   for (int thread_index = 0; thread_index < T; ++thread_index) {
     threads[thread_index] = new std::tr2::thread( worker );

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-11-09 18:08:00 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-11 14:43:55 ptr>
 
 /*
  *
@@ -16,7 +16,6 @@ using namespace std;
 using namespace std::tr2;
 
 int sockios_syslog_perf::message_count = 0;
-int sockios_syslog_perf::message_size = 0;
 
 void sockios_syslog_perf::syslog_dgram_worker()
 {
@@ -24,7 +23,7 @@ void sockios_syslog_perf::syslog_dgram_worker()
   // std::ostream& l = misc::use_syslog<LOG_ERR,LOG_USER>();
 
   for ( int i = 0; i < message_count; ++i ) {
-    misc::use_syslog<LOG_ERR,LOG_USER>() << /* res */ i << std::endl;
+    misc::use_syslog<LOG_ERR,LOG_USER>() << /* res */ 0 << std::endl;
   }
 }
 
@@ -37,7 +36,7 @@ void sockios_syslog_perf::syslog_classic_worker()
   openlog( __progname, LOG_PID, LOG_USER );
 
   for (int i = 0; i < message_count; ++i) {
-    syslog( LOG_ERR, "%d" /* res.c_str() */, i );
+    syslog( LOG_ERR, "%d" /* res.c_str() */, 0 );
   }
 
   closelog();
