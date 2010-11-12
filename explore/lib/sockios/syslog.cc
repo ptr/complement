@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/21 23:03:54 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-11 13:46:55 ptr>
 
 /*
  * Copyright (c) 2009, 2010
@@ -25,6 +25,7 @@ closelog();
 #include <config/feature.h>
 #endif
 
+#include <sstream>
 #include <mt/thread>
 #include <sockios/sockstream>
 
@@ -166,6 +167,7 @@ std::tr2::mutex syslog_init::Init::_init_lock;
 bool syslog_init::Init::_at_fork = false;
 std::tr2::mutex _heap_lock;
 // static string exename;
+static string prefix;
 
 void syslog_init::Init::_guard( int direction )
 {
@@ -173,10 +175,14 @@ void syslog_init::Init::_guard( int direction )
     std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
     if ( _count++ == 0 ) {
       if ( !_at_fork ) { // call only once
-//        if ( pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child ) ) {
+        if ( pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child ) ) {
           // throw system_error
-//        }
+        }
         _at_fork = true;
+        stringstream s;
+
+        s << detail::timeline << __progname << '[' << std::tr2::getpid() << "]: ";
+        prefix = s.str();
       }
 #if 0
       if ( exename.empty() ) {
@@ -217,6 +223,11 @@ void syslog_init::Init::__at_fork_child()
 {
   // if ( _count != 0 ) {
   // }
+  stringstream s;
+
+  s << detail::timeline << __progname << '[' << std::tr2::getpid() << "]: ";
+  prefix = s.str();
+
   _init_lock.unlock();
 }
 
@@ -287,8 +298,8 @@ ostream& xsyslog( int _level, int _facility )
    
    */
   // tmp.put( *detail::_slog, *detail::_slog, ' ', &ts, detail::format, detail::format + sizeof(detail::format) );
-  slog << detail::timeline
-       << __progname << '[' << std::tr2::getpid() << "]: ";
+  slog << prefix /* detail::timeline
+             << __progname << '[' << std::tr2::getpid() << "]: " */;
   
   return slog;
 }
