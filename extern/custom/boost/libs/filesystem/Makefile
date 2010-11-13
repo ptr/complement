@@ -15,16 +15,16 @@ endif
 INCLUDES += -I${BOOST_INCLUDE_DIR}
 
 check:	all
-	${MAKE} -C test check
+	${MAKE} -C test-v2 check
 
 check-release-shared:	release-shared
-	${MAKE} -C test check-release-shared
+	${MAKE} -C test-v2 check-release-shared
 
 check-dbg-shared:	dbg-shared
-	${MAKE} -C test check-dbg-shared
+	${MAKE} -C test-v2 check-dbg-shared
 
 ifndef WITHOUT_STLPORT
 check-stldbg-shared:	stldbg-shared
-	${MAKE} -C test check-stldbg-shared
+	${MAKE} -C test-v2 check-stldbg-shared
 endif
 
