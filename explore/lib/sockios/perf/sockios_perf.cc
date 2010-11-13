@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/29 17:18:24 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-09 16:03:43 ptr>
 
 /*
  *
@@ -29,6 +29,7 @@ using namespace std::tr2;
 
 // std::tr2::mutex server_conn::lock;
 // std::tr2::condition_variable server_conn::cnd;
+
 
 int EXAM_IMPL(sockios_perf_conn::connect)
 {
@@ -284,4 +285,3 @@ sockios_perf_SrvRW::sockios_perf_SrvRW()
 sockios_perf_SrvRW::~sockios_perf_SrvRW()
 {
 }
-

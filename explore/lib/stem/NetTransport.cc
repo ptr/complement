@@ -173,6 +173,8 @@ bool NetTransport_base::pop( Event& _rs )
   using namespace std;
 
   if ( !net.read( (char *)&header.magic, sizeof(uint32_t) ).good() ) {
+    net.close();
+    net.setstate( ios_base::failbit );
     return false;
   }
 
@@ -199,13 +201,16 @@ bool NetTransport_base::pop( Event& _rs )
     }
 
     net.close();
+    net.setstate( ios_base::failbit );
     return false;
   }
 
   if ( !net.read( (char *)&header.code, sizeof(msg_hdr) - sizeof(uint32_t) ).good() ) {
     net.close();
+    net.setstate( ios_base::failbit );
     return false;
   }
+
   _rs.code( from_net( header.code ) );
   addr_type dst;
   dst.u.i[0] = header.dst[0];
@@ -247,6 +252,7 @@ bool NetTransport_base::pop( Event& _rs )
     catch ( ... ) {
     }
     net.close();
+    net.setstate( ios_base::failbit );
     return false;
   }
 
@@ -273,6 +279,7 @@ bool NetTransport_base::pop( Event& _rs )
     catch ( ... ) {
     }
     net.close();
+    net.setstate( ios_base::failbit );
     return false;
   }
 
@@ -302,6 +309,11 @@ bool NetTransport_base::pop( Event& _rs )
   catch ( ... ) {
   }
 #endif // __FIT_STEM_TRACE
+
+  if ( !net.good() ) {
+    net.close();
+    net.setstate( ios_base::failbit );
+  }
 
   return net.good();
 }
@@ -394,7 +406,7 @@ int NetTransport_base::flags() const
 
 __FIT_DECLSPEC
 NetTransport::NetTransport( std::sockstream& s ) :
-    NetTransport_base( s, "stem::NetTransport" ),
+    NetTransport_base( s ),
     exchange( false )
 {
   try {

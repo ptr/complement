@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/09 11:24:23 ptr>
+// -*- C++ -*- Time-stamp: <10/07/12 12:32:57 ptr>
 
 /*
  *
@@ -18,170 +18,93 @@ using namespace xmt;
 using namespace stem;
 using namespace std::tr2;
 
+#define VS_EVENT_TORDER 0x30c
+#define VS_ORDER_CONF   0x30d
+
 torder_vs::torder_vs() :
     basic_vs(),
-    leader_( stem::badaddr ),
     is_leader_( false )
 {
 }
 
 torder_vs::torder_vs( const char* info ) :
     basic_vs( info ),
-    leader_( stem::badaddr ),
     is_leader_( false )
 {
-}
-
-torder_vs::~torder_vs()
-{
-  leave();
 }
 
 int torder_vs::vs_torder( const stem::Event& inc_ev )
 {
   stem::Event_base<vs_event_total_order> ev( VS_EVENT_TORDER );
-  stem::addr_type me = self_id();
+  stem::addr_type sid = self_id();
 
   ev.value().ev = inc_ev;
   ev.value().id = xmt::uid();
-  ev.value().ev.src( me );
-  ev.value().ev.dest( me );
+  ev.value().ev.src( sid );
+  ev.value().ev.dest( sid );
 
-  if ( is_leader() ) {
-    ev.value().conform.push_back( ev.value().id );
-  } else {
-    conform_container_[ev.value().id] = ev.value().ev;
-    orig_order_container_.push_back( ev.value().id );
-  }
-
-  int ret = basic_vs::vs_aux( ev );
-
-  if ( is_leader_ ) {
-    if ( ret == 0 ) {
-      ev.value().ev.setf( stem::__Event_Base::vs );
-      this->vs_pub_tord_rec( ev.value().ev );
-      torder_vs::sync_call( ev.value().ev );
-    } else {
-      conform_container_[ev.value().id] = ev.value().ev;
-      orig_order_container_.push_back( ev.value().id );
-    }
-  } else if ( conform_container_.size() > 0 ) {
-    check_remotes();
-
-    vtime::vtime_type::const_iterator i;
-    for ( i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-      if ( i->first == leader_ ) {
-        break;
-      }
-    }
-
-    if ( i == vt.vt.end() ) { // leader leave us, and not in vt already
-      next_leader_election();
-    }
-  }
+  int ret = basic_vs::vs( ev );
 
   return ret;
 }
 
-int torder_vs::vs_torder_aux( const stem::Event& inc_ev )
+void torder_vs::vs_pub_flush()
 {
-  stem::Event_base<vs_event_total_order> ev( VS_EVENT_TORDER );
-  stem::addr_type me = self_id();
-
-  ev.value().ev = inc_ev;
-  ev.value().id = xmt::uid();
-  ev.value().ev.src( me );
-  ev.value().ev.dest( me );
-
-  if ( is_leader() ) {
-    ev.value().conform.push_back( ev.value().id );
-  } else {
-    conform_container_[ev.value().id] = ev.value().ev;
-    orig_order_container_.push_back( ev.value().id );
-  }
-
-  // don't forget process event on this node!
-  int ret = basic_vs::vs_aux( ev );
-
-  if ( is_leader_ ) {
-    if ( ret != 0 ) {
-      conform_container_[ev.value().id] = ev.value().ev;
-      orig_order_container_.push_back( ev.value().id );
-    }
-  } else if ( conform_container_.size() > 0 ) {
-    check_remotes();
-
-    vtime::vtime_type::const_iterator i;
-    for ( i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-      if ( i->first == leader_ ) {
-        break;
-      }
-    }
-    if ( i == vt.vt.end() ) {
-      next_leader_election();
-    }
-  }
-
-  return ret;
-}
-
-void torder_vs::vs_pub_join()
-{
-  if ( vs_group_size() == 1 ) {
-    leader_ = self_id();
-    is_leader_ = true;
-  }
+  torder_vs::vs_pub_view_update();
 }
 
 void torder_vs::vs_pub_view_update()
 {
-  if ( is_leader_ ) {
-    if ( vs_group_size() > 1 ) {
-      EventVoid ev( VS_LEADER );
-      send_to_vsg( ev );
+  // next leader election process
+  vector<stem::addr_type> basket;
+  {
+    unique_lock<recursive_mutex> lk( _lock_vt );
+    
+    if ( vt.vt.empty() ) {
+      return;
     }
-    return;
+
+    basket.resize( vt.vt.size() );
+    int j = 0;
+    for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ++i, ++j ) {
+      basket[j] = i->first;
+    }
   }
 
-  if ( leader_ == stem::badaddr ) {
-    return;
-  }
+  sort( basket.begin(), basket.end() );
 
-  next_leader_election();
-}
+  vector<stem::addr_type>::iterator i = basket.begin() + view % basket.size();
 
-void torder_vs::vs_leader( const stem::EventVoid& ev )
-{
-  // if ( is_leader_ ) {
-  //   cerr << HERE << endl;
-  // }
-
-  if ( vs_group_size() > 1 ) {
-    vtime::vtime_type::const_iterator i;
-    for ( i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-      if ( i->first == ev.src() ) {
-        leader_ = ev.src();
-        is_leader_ = false;
-        break;
+  if ( *i == sid ) {
+    is_leader_ = true;
+      
+    stem::Event_base<vs_event_total_order::id_type> cnf( VS_ORDER_CONF );
+    orig_order_cnt_type tmp( orig_order_container_.begin(), orig_order_container_.end() );
+    for ( orig_order_cnt_type::iterator j = tmp.begin(); j != tmp.end(); ++j) {
+      cnf.value() = *j;
+      if ( vs( cnf ) ) {
+        // in the middle of flush
+        // new leader(possibly me) will send confirmations
+        // misc::use_syslog<LOG_DEBUG>() << "de.pop_back() " << sid << ':' << ev.value().id << endl;
+        de.pop_back();
       }
     }
-
-    // if ( i == vt.vt.end() ) {
-      // who is here? who is event author?
-    //   cerr << HERE << endl;
-    // }
-
-    // leader_ = ev.src();
-    // is_leader_ = false;
   } else {
-    // become leader...?
-    // cerr << HERE << endl;
+    is_leader_ = false;
   }
 }
 
-// void torder_vs::vs_send_flush()
-// {
-// }
+void torder_vs::vs_resend_from( const xmt::uuid_type& from, const stem::addr_type& addr)
+{
+  for ( conf_cnt_type::const_iterator i = conform_container_.begin();i != conform_container_.end();++i) {
+    stem::Event_base<vs_event_total_order> ev( VS_EVENT_TORDER );
+    ev.value().ev = i->second;
+    ev.value().id = i->first;
+    ev.src( i->second.src() );
+    ev.dest( addr );
+    Forward( ev );
+  }
+}
 
 void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>& ev )
 {
@@ -189,159 +112,40 @@ void torder_vs::vs_process_torder( const stem::Event_base<vs_event_total_order>&
   ev.value().ev.dest( ev.dest() );
   ev.value().ev.setf( stem::__Event_Base::vs );
 
-  if ( is_leader() ) { // I'm leader
-    // send conformation first
-    stem::Event_base<vs_event_total_order> cnf( VS_EVENT_TORDER );
+  conform_container_[ev.value().id] = ev.value().ev;
+  orig_order_container_.push_back( ev.value().id );
 
-    cnf.value().ev.code( VS_ORDER_CONF );
-    cnf.value().id = xmt::nil_uuid;
-    cnf.value().conform.push_back( ev.value().id );
-    vs_aux( cnf );
+  if ( is_leader() ) {
+    stem::Event_base<vs_event_total_order::id_type> cnf( VS_ORDER_CONF );
+    cnf.value() = ev.value().id;
 
-    // process
-    ev.value().ev.setf( stem::__Event_Base::vs );
-    this->vs_pub_tord_rec( ev.value().ev );
-    torder_vs::sync_call( ev.value().ev );
-  } else {
-    if ( ev.value().id == xmt::nil_uuid ) {
-      // expected VS_ORDER_CONF and non-empty ev.value().conform here
-      for ( std::list<vs_event_total_order::id_type>::const_iterator i = ev.value().conform.begin();
-            i != ev.value().conform.end(); ++i ) {
-        conf_cnt_type::iterator k = conform_container_.find( *i );
-        if ( k != conform_container_.end() ) {
-          k->second.setf( stem::__Event_Base::vs );
-          // this->vs_pub_tord_rec( ev.value().ev ); // conformation
-          this->vs_pub_tord_rec( k->second );
-          torder_vs::sync_call( k->second );
-          conform_container_.erase( k );
-          orig_order_cnt_type::iterator j = find( orig_order_container_.begin(), orig_order_container_.end(), *i );
-          if ( j != orig_order_container_.end() ) {
-            orig_order_container_.erase( j );
-          }
-        } // else {
-          /* I see conformation, but no event [yet]?
-             Because it _after_ casual order processing,
-             this shouldn't happens.
-           */
-          //   cerr << HERE << endl;
-        // }
-      }
-    } else if ( ev.value().conform.empty() ) {
-      // I'm not a leader, no conformations in event
-      conform_container_[ev.value().id] = ev.value().ev;
-      orig_order_container_.push_back( ev.value().id );
-    } else if ( find( ev.value().conform.begin(), ev.value().conform.end(), ev.value().id ) != ev.value().conform.end() ) {
-      // event's origin is leader; I see conformation in event
-      ev.value().ev.setf( stem::__Event_Base::vs );
-      this->vs_pub_tord_rec( ev.value().ev );
-      torder_vs::sync_call( ev.value().ev );
-      // it may be from me (if leader changed)
-      conform_container_.erase( ev.value().id );
-      orig_order_cnt_type::iterator j = find( orig_order_container_.begin(), orig_order_container_.end(), ev.value().id );
-      if ( j != orig_order_container_.end() ) {
-        orig_order_container_.erase( j );
-      }
-    } else {
-      // it's from me?
-      for ( std::list<vs_event_total_order::id_type>::const_iterator i = ev.value().conform.begin();
-            i != ev.value().conform.end(); ++i ) {
-        conf_cnt_type::iterator k = conform_container_.find( *i );
-        if ( k != conform_container_.end() ) {
-          k->second.setf( stem::__Event_Base::vs );
-          this->vs_pub_tord_rec( ev.value().ev ); // may be k->second?
-          torder_vs::sync_call( k->second );
-          conform_container_.erase( k );
-          orig_order_cnt_type::iterator j = find( orig_order_container_.begin(), orig_order_container_.end(), *i );
-          if ( j != orig_order_container_.end() ) {
-            orig_order_container_.erase( j );
-          }
-        } // else {
-          /* I see conformation, but no event [yet]?
-             Because it _after_ casual order processing,
-             this shouldn't happens.
-           */
-        //  cerr << HERE << ' ' << ev.value().id << endl;
-        //  conform_container_[ev.value().id] = ev.value().ev;
-        // }
-      }
+    if ( vs( cnf ) == 1 ) {
+      // in the middle of flush
+      // new leader(possibly me) will send confirmations
+      // misc::use_syslog<LOG_DEBUG>() << "de.pop_back() " << sid << ':' << ev.value().id << endl;
+      de.pop_back();
     }
   }
 }
 
-void torder_vs::next_leader_election()
+void torder_vs::vs_torder_conf( const stem::Event_base<vs_event_total_order::id_type>& ev )
 {
-  // requirements here: leader_ != badaddr
-
-  vector<stem::addr_type> basket;
-
-  basket.reserve( vs_group_size() + 1 );
-
-  for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-    if ( i->first != leader_ ) {
-      basket.push_back( i->first );
-    }
-  }
-
-  if ( basket.size() == vs_group_size() ) { // leader leave us
-    basket.push_back( leader_ );
-    sort( basket.begin(), basket.end() );
-    for ( vector<stem::addr_type>::const_iterator i = basket.begin(); i != basket.end(); ++i ) {
-      if ( *i == leader_ ) {
-        ++i;
-        if ( i == basket.end() ) {
-          i = basket.begin();
-        }
-        leader_ = *i;
-        if ( *i == self_id() ) {
-          is_leader_ = true;
-          stem::Event_base<vs_event_total_order> cnf( VS_EVENT_TORDER );
-          cnf.value().ev.code( VS_ORDER_CONF );
-          cnf.value().id = xmt::nil_uuid;
-
-          // I'm leader now;
-          // send conformation first ...
-          copy(orig_order_container_.begin(), orig_order_container_.end(), back_inserter(cnf.value().conform) );
-          vs_aux( cnf );
-
-          conf_cnt_type::iterator k;
-
-          // ... and then process
-          for ( orig_order_cnt_type::iterator j = orig_order_container_.begin(); j != orig_order_container_.end(); ) {
-            k = conform_container_.find( *j );
-            if ( k != conform_container_.end() ) {
-              k->second.setf( stem::__Event_Base::vs );
-
-              this->vs_pub_tord_rec( k->second );
-              torder_vs::sync_call( k->second );
-              conform_container_.erase( k );
-            }
-            orig_order_container_.erase( j++ );
-          }
-          // EventVoid ev( VS_LEADER );
-          // send_to_vsg( ev );
-        }
-        break;
-      }
+  conf_cnt_type::iterator k = conform_container_.find( ev.value() );
+  if ( k != conform_container_.end() ) {
+    this->vs_pub_tord_rec( k->second );
+    // torder_vs::sync_call( k->second );
+    this->Dispatch( k->second );
+    conform_container_.erase( k );
+    orig_order_cnt_type::iterator j = find( orig_order_container_.begin(), orig_order_container_.end(), ev.value() );
+    if ( j != orig_order_container_.end() ) {
+      orig_order_container_.erase( j );
     }
   }
 }
-
-void torder_vs::leave()
-{
-  if ( is_leader_ ) {
-    if ( vs_group_size() > 1 ) {
-      next_leader_election();
-    }
-  }
-}
-
-const stem::code_type torder_vs::VS_EVENT_TORDER = 0x301;
-const stem::code_type torder_vs::VS_ORDER_CONF   = 0x303;
-const stem::code_type torder_vs::VS_LEADER       = 0x300;
 
 DEFINE_RESPONSE_TABLE( torder_vs )
   EV_Event_base_T_( ST_NULL, VS_EVENT_TORDER, vs_process_torder, vs_event_total_order )
-  EV_Event_base_T_( ST_NULL, VS_LEADER, vs_leader, void )
+  EV_Event_base_T_( ST_NULL, VS_ORDER_CONF, vs_torder_conf, vs_event_total_order::id_type )
 END_RESPONSE_TABLE
 
 } // namespace janus

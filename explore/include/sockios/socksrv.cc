@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/05 09:49:15 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-09 15:43:47 ptr>
 
 /*
  * Copyright (c) 2008-2010
@@ -26,9 +26,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int po
   }
   _mode = ios_base::in | ios_base::out;
   _state = ios_base::goodbit;
-#ifdef WIN32
-  ::WSASetLastError( 0 );
-#endif
+
   if ( prot == sock_base::inet ) {
     basic_socket_t::_fd = socket( PF_INET, type, 0 );
     if ( basic_socket_t::_fd == -1 ) {
@@ -47,11 +45,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int po
 
     if ( ::bind( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof(basic_socket_t::_address) ) == -1 ) {
       _state |= ios_base::failbit;
-#ifdef WIN32
-      ::closesocket( basic_socket_t::_fd );
-#else
       ::close( basic_socket_t::_fd );
-#endif
       basic_socket_t::_fd = -1;
       return;
     }
@@ -61,7 +55,6 @@ void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int po
       // so don't check return code from listen
       ::listen( basic_socket_t::_fd, SOMAXCONN );
       basic_socket_t::mgr->push( *this );
-      // std::cerr << __FILE__ << ":" << __LINE__ << " " << count() << std::endl;
     }
   } else {
     throw domain_error( "socket not belongs to inet type" );
@@ -81,9 +74,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const char* path, sock_base
   }
   _mode = ios_base::in | ios_base::out;
   _state = ios_base::goodbit;
-#ifdef WIN32
-  ::WSASetLastError( 0 );
-#endif
+
   basic_socket_t::_fd = socket( PF_UNIX, type, 0 );
   if ( basic_socket_t::_fd == -1 ) {
     _state |= ios_base::failbit | ios_base::badbit;
@@ -95,11 +86,8 @@ void sock_processor_base<charT,traits,_Alloc>::open( const char* path, sock_base
 
   if ( ::bind( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof(basic_socket_t::_address.unx.sun_family) + strlen(basic_socket_t::_address.unx.sun_path) ) == -1 ) {
     _state |= ios_base::failbit;
-#ifdef WIN32
-    ::closesocket( basic_socket_t::_fd );
-#else
     ::close( basic_socket_t::_fd );
-#endif
+
     basic_socket_t::_fd = -1;
     return;
   }
@@ -122,8 +110,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const char* path, sock_base
 template<class charT, class traits, class _Alloc>
 void sock_processor_base<charT,traits,_Alloc>::_close()
 {
-  // std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
-  if ( ! /* basic_socket_t:: */ is_open() ) {
+  if ( !is_open() ) {
     return;
   }
 
@@ -138,12 +125,6 @@ void sock_processor_base<charT,traits,_Alloc>::_close()
   std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
 
   ::shutdown( basic_socket_t::_fd, 0 );
-
-  // basic_socket<charT,traits,_Alloc>::mgr->pop( *this, basic_socket_t::_fd );
-
-  // ::close( basic_socket_t::_fd );
-
-  // No need wait here because join() in dtor
 
   basic_socket_t::_fd = -1;
 
@@ -254,86 +235,362 @@ template<class Connect, class charT, class traits, class _Alloc, void (Connect::
 char connect_processor<Connect, charT, traits, _Alloc, C>::Init_buf[128];
 
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
-typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t* connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_base::socket_type fd, const sockaddr& addr )
+typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t* connect_processor<Connect, charT, traits, _Alloc, C>::operator()( sock_base::socket_type fd, const sockaddr& addr )
 {
-  typename base_t::sockstream_t* s = base_t::create_stream( fd, addr );
+  processor p;
+  p.s = base_t::create_stream( fd, addr );
 
-  if ( s == 0 ) {
+  if ( p.s == 0 ) {
+    // 0 is dangerous as return value and is unexpected,
+    // because the object by this pointer may be accessed
+    // later in some cases
+    // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
+// #ifdef __FIT_STEM_TRACE
+    try {
+      std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+        ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+        *_trs << HERE << ":unexpected";
+#ifdef STLPORT
+        _trs->flags( f );
+#else
+        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+      }
+    }
+    catch ( ... ) {
+    }
+// #endif // __FIT_STEM_TRACE
+
     return 0;
   }
 
-  for ( typename at_container_type::const_iterator i = _at_connect.begin(); i != _at_connect.end(); ++i ) {
-    (*i)( *s );
-  }
-
-  Connect* c = new Connect( *s ); // bad point! I can't read from s in ctor indeed!
-  processor tmp( c, s );
-
-  if ( s->rdbuf()->is_ready() ) {
-    std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
-    processor empty;
-    ready_pool.push_back( empty );
-    ready_pool.back().swap( tmp );
-    cnd.notify_one();
-  } else {
-    std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-    // worker_pool.insert( std::make_pair( fd, processor( c, s ) ) );
-    worker_pool[fd].swap( tmp );
-  }
-
-  return s->rdbuf();
-}
-
-template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
-void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_base::socket_type fd, const typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::adopt_close_t& )
-{
-  processor p;
   {
-    std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-    typename worker_pool_t::iterator i = worker_pool.find( fd );
-    if ( i != worker_pool.end() ) {
-      p.swap( i->second );
-      worker_pool.erase( i );
-      for ( typename at_container_type::const_iterator k = _at_disconnect.begin(); k != _at_disconnect.end(); ++k ) {
-        (*k)( *p.s );
-      }
-      return;
-    }
+    std::tr2::lock_guard<std::tr2::mutex> lk( ready_lock );
+    ready_queue.push( request_t( socket_open, fd, p ) );
+    ready_cnd.notify_one();
   }
 
-  {
-    std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
-    typename ready_pool_t::iterator j = std::find( ready_pool.begin(), ready_pool.end(), /* std::bind2nd( typename processor::equal_to(), &s ) */ fd );
-    if ( j != ready_pool.end() ) {
-      p.swap( *j );
-      ready_pool.erase( j );
-      for ( typename at_container_type::const_iterator k = _at_disconnect.begin(); k != _at_disconnect.end(); ++k ) {
-        (*k)( *p.s );
-      }
-    }
-  }
+  return p.s->rdbuf();
 }
 
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_base::socket_type fd )
 {
-  processor p;
+  std::tr2::lock_guard<std::tr2::mutex> lk( ready_lock );
+  ready_queue.push( request_t( socket_read, fd ) );
+  ready_cnd.notify_one();
+}
 
-  {
-    std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-    typename worker_pool_t::iterator i = worker_pool.find( fd );
-    if ( i == worker_pool.end() ) {
-      return;
+template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
+void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_base::socket_type fd, const typename base_t::adopt_close_t& )
+{
+  std::tr2::lock_guard<std::tr2::mutex> lk( ready_lock );
+  ready_queue.push( request_t( socket_close, fd ) );
+  ready_cnd.notify_one();
+}
+
+template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
+void connect_processor<Connect, charT, traits, _Alloc, C>::feed_data_to_processor( processor& p )
+{
+  try {
+    for ( typename at_container_type::const_iterator i = _at_data.begin(); i != _at_data.end(); ++i ) {
+      (*i)( *p.s );
     }
-    p.swap( i->second );
-    worker_pool.erase( i );
-  }
 
-  std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
-  processor empty;
-  ready_pool.push_back( empty );
-  ready_pool.back().swap( p );
-  cnd.notify_one();
+    while ( p.s->rdbuf()->is_ready() && p.s->good() ) { 
+      (p.c->*C)( *p.s );
+    }
+
+    if ( p.s->is_open() ) {
+      p.s->rdbuf()->pubrewind(); // worry about free space in income buffer
+    }
+  }
+  catch ( const std::exception& e ) {
+    // misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor " << e.what() << endl;
+// #ifdef __FIT_STEM_TRACE
+    try {
+      std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+        ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+        *_trs << HERE << ":exception from Connect::ctor " << e.what() << endl;
+#ifdef STLPORT
+        _trs->flags( f );
+#else
+        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+      }
+    }
+    catch ( ... ) {
+    }
+// #endif // __FIT_STEM_TRACE
+  }
+  catch ( ... ) {
+    // misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor unknown" << endl;
+// #ifdef __FIT_STEM_TRACE
+    try {
+      std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+        ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+        *_trs << HERE << ":exception from Connect::ctor unknown" << endl;
+#ifdef STLPORT
+        _trs->flags( f );
+#else
+        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+      }
+    }
+    catch ( ... ) {
+    }
+// #endif // __FIT_STEM_TRACE
+  }
+}
+
+template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
+void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( const request_t& request )
+{
+  try {
+    if ( request.operation_type == socket_open ) {
+      typename opened_pool_t::iterator opened_processor_iterator = opened_pool.find( request.fd );
+
+      if ( opened_processor_iterator != opened_pool.end() ) {
+        // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
+// #ifdef __FIT_STEM_TRACE
+        try {
+          std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+            ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+            *_trs << HERE << ":unexpected" << endl;
+#ifdef STLPORT
+            _trs->flags( f );
+#else
+            _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+          }
+        }
+        catch ( ... ) {
+        }
+// #endif // __FIT_STEM_TRACE
+        return;
+      }
+
+      if ( request.p.s == 0 ) {
+        // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
+// #ifdef __FIT_STEM_TRACE
+        try {
+          std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+            ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+            *_trs << HERE << ":unexpected" << endl;
+#ifdef STLPORT
+            _trs->flags( f );
+#else
+            _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+          }
+        }
+        catch ( ... ) {
+        }
+// #endif // __FIT_STEM_TRACE
+        return;
+      }
+
+      for ( typename at_container_type::const_iterator i = _at_connect.begin(); i != _at_connect.end(); ++i ) {
+        (*i)( *request.p.s );
+      }
+
+      processor p;
+      p.s = request.p.s;
+
+      try {
+        p.c = new Connect( *p.s ); 
+      }
+      catch ( const std::exception& e ) {
+        // misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor " << e.what() << endl;
+ // #ifdef __FIT_STEM_TRACE
+        try {
+          std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+            ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+            *_trs << HERE << ":exception from Connect::ctor " << e.what() << endl;
+#ifdef STLPORT
+            _trs->flags( f );
+#else
+            _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+          }
+        }
+        catch ( ... ) {
+        }
+// #endif // __FIT_STEM_TRACE
+       return;
+      }
+      catch ( ... ) {
+        // misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor unknown" << endl;
+// #ifdef __FIT_STEM_TRACE
+        try {
+          std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+            ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+            *_trs << HERE << ":exception from Connect::ctor unknown" << endl;
+#ifdef STLPORT
+            _trs->flags( f );
+#else
+            _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+          }
+        }
+        catch ( ... ) {
+        }
+// #endif // __FIT_STEM_TRACE
+        return;
+      }
+
+      opened_pool[request.fd] = p;
+
+      feed_data_to_processor( p );
+    } else if ( request.operation_type == socket_read ) {
+      typename opened_pool_t::iterator opened_processor_iterator = opened_pool.find( request.fd );
+
+      if ( opened_processor_iterator == opened_pool.end() ) {
+        // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
+// #ifdef __FIT_STEM_TRACE
+        try {
+          std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+            ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+            *_trs << HERE << ":unexpected" << endl;
+#ifdef STLPORT
+            _trs->flags( f );
+#else
+            _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+          }
+        }
+        catch ( ... ) {
+        }
+// #endif // __FIT_STEM_TRACE
+        return;
+      }
+
+      feed_data_to_processor( opened_processor_iterator->second );
+    } else if ( request.operation_type == socket_close ) {
+      typename opened_pool_t::iterator opened_processor_iterator = opened_pool.find( request.fd );
+
+      if ( opened_processor_iterator == opened_pool.end() ) {
+        // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
+// #ifdef __FIT_STEM_TRACE
+        try {
+          std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+          if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+            ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+            *_trs << HERE << ":unexpected" << endl;
+#ifdef STLPORT
+            _trs->flags( f );
+#else
+            _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+          }
+        }
+        catch ( ... ) {
+        }
+// #endif // __FIT_STEM_TRACE
+        return;
+      }
+
+      processor p = opened_processor_iterator->second;
+
+      feed_data_to_processor( p );
+
+      for ( typename at_container_type::const_iterator k = _at_disconnect.begin(); k != _at_disconnect.end(); ++k ) {
+        (*k)( *p.s );
+      }
+
+      opened_pool.erase( opened_processor_iterator );
+
+      delete p.c;
+      delete p.s;
+    } else {
+      // misc::use_syslog<LOG_DEBUG>() << "unexpected request operation type: " << request.operation_type << endl;
+// #ifdef __FIT_STEM_TRACE
+      try {
+        std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+        if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+          ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+          *_trs << HERE << "unexpected request operation type: " << request.operation_type << endl;
+#ifdef STLPORT
+          _trs->flags( f );
+#else
+          _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+        }
+      }
+      catch ( ... ) {
+      }
+// #endif // __FIT_STEM_TRACE
+    }
+  }
+  catch ( const std::exception& e ) {
+    // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected " << e.what() << endl;
+// #ifdef __FIT_STEM_TRACE
+    try {
+      std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+        ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+        *_trs << HERE << ":unexpected " << e.what() << endl;
+#ifdef STLPORT
+        _trs->flags( f );
+#else
+        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+      }
+    }
+    catch ( ... ) {
+    }
+// #endif // __FIT_STEM_TRACE
+  }
+  catch (...) {
+    // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected unknown" << endl;
+// #ifdef __FIT_STEM_TRACE
+    try {
+      std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+      if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
+        ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+        *_trs << HERE << ":unexpected unknown" << endl;
+#ifdef STLPORT
+        _trs->flags( f );
+#else
+        _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+      }
+    }
+    catch ( ... ) {
+    }
+// #endif // __FIT_STEM_TRACE
+  }
+}
+
+template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
+void connect_processor<Connect, charT, traits, _Alloc, C>::clear_opened_pool()
+{
+  try { 
+    if ( !opened_pool.empty() ) {
+      std::tr2::lock_guard<std::tr2::mutex> lk(std::detail::_se_lock);
+      if ( std::detail::_se_stream != 0 ) {
+        *std::detail::_se_stream << HERE << " worker pool not empty, remains "
+                    << opened_pool.size() << std::endl;
+      }
+
+#if 0
+      for( typename opened_pool_t::iterator i = opened_pool.begin();i != opened_pool.end();++i) {
+        delete i->second.s;
+        delete i->second.c;
+      }
+#endif
+    }
+  }
+  catch ( ... ) {
+  }
 }
 
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
@@ -343,51 +600,23 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
     std::tr2::this_thread::signal_handler( SIGPIPE, SIG_IGN );
 
     for ( ; ; ) {
-      processor p; // keep it in loop, it dtor significant, and should be in loop!
+      request_t request; 
       {
-        std::tr2::unique_lock<std::tr2::mutex> lk( rdlock );
+        std::tr2::unique_lock<std::tr2::mutex> lk( ready_lock );
 
-        cnd.wait( lk, not_empty );
-        if ( ready_pool.empty() ) { // check empty, not in_work: allow process the rest
+        ready_cnd.wait( lk, not_empty );
+        if ( ready_queue.empty() ) {
           throw finish();
         }
-        p.swap( ready_pool.front() );
-        ready_pool.pop_front();
+        request = ready_queue.front();
+        ready_queue.pop();
       }
-      if ( p.s->rdbuf()->is_ready() ) {
-        for ( typename at_container_type::const_iterator i = _at_data.begin(); i != _at_data.end(); ++i ) {
-          (*i)( *p.s );
-        }
-        (p.c->*C)( *p.s );
-        if ( p.s->rdbuf()->is_ready() ) {
-          // if ( p.s->is_open() ) {
-            std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
-            processor empty;
-            ready_pool.push_back( empty );
-            ready_pool.back().swap( p );
-          // }
-        } else if ( p.s->is_open() ) {
-          p.s->rdbuf()->pubrewind(); // worry about free space in income buffer
-          std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-          //if ( worker_pool.find(p.s->rdbuf()->fd()) != worker_pool.end() ) {
-          //  cerr << __FILE__ << ':' << __LINE__ << endl;
-          //}
-          worker_pool[p.s->rdbuf()->fd()].swap( p );
-        }
-      } else if ( p.s->is_open() ) {
-        p.s->rdbuf()->pubrewind(); // worry about free space in income buffer
-        std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-        worker_pool[p.s->rdbuf()->fd()].swap( p );
-      }
+
+      process_request( request );
     }
   }
-  catch ( const finish& ) {
-    try {
-      std::tr2::unique_lock<std::tr2::mutex> lk( rdlock );
-      cnd.notify_all(); // release all waiting workers
-    }
-    catch ( ... ) {
-    }
+  catch ( const finish& ) { 
+    // clear_opened_pool();
   }
   catch ( const std::exception& e ) {
     try {
@@ -409,33 +638,34 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
     catch ( ... ) {
     }
   }
-
-  try {
-    std::tr2::lock_guard<std::tr2::mutex> lk( wklock );
-    if ( !worker_pool.empty() ) {
-      std::tr2::lock_guard<std::tr2::mutex> lk(std::detail::_se_lock);
-      if ( std::detail::_se_stream != 0 ) {
-        *std::detail::_se_stream << HERE << " worker pool not empty, remains "
-                    << worker_pool.size() << std::endl;
-      }
-    }
-  }
-  catch ( ... ) {
-  }
-
-//  {
-//    std::tr2::lock_guard<std::tr2::mutex> lk( rdlock );
-//    std::cerr << __FILE__ << ":" << __LINE__ << " " << ready_pool.size() << std::endl;
-//  }
 }
 
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::_stop()
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk2( rdlock );
+  std::tr2::lock_guard<std::tr2::mutex> lk( ready_lock );
 
   _in_work = false;
-  cnd.notify_one();
+  ready_cnd.notify_one();
 }
+
+template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
+std::ostream* connect_processor<Connect, charT, traits, _Alloc, C>::settrs( std::ostream* s )
+{
+  std::tr2::lock_guard<std::tr2::mutex> _x1( _lock_tr );
+  std::ostream* tmp = _trs;
+  _trs = s;
+
+  return tmp;
+}
+
+template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
+std::tr2::mutex connect_processor<Connect, charT, traits, _Alloc, C>::_lock_tr;
+
+template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
+unsigned connect_processor<Connect, charT, traits, _Alloc, C>::_trflags = 0;
+
+template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
+std::ostream* connect_processor<Connect, charT, traits, _Alloc, C>::_trs = 0;
 
 } // namespace std

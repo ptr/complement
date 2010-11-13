@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/05 00:43:34 ptr>
+// -*- C++ -*- Time-stamp: <10/07/07 18:48:57 ptr>
 
 /*
  *
@@ -27,6 +27,7 @@ class VF :
     virtual bool Dispatch( const stem::Event& );
 
     // int v;
+    static int s;
 
   private:
 #if 0
@@ -45,7 +46,6 @@ class VF :
       VF& me;
     };
 #endif
-    std::string s;
 };
 
 class VF1 :

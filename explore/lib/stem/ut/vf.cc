@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/25 21:10:31 ptr>
+// -*- C++ -*- Time-stamp: <10/07/07 18:49:33 ptr>
 
 /*
  *
@@ -30,12 +30,11 @@ VF::~VF()
   this_thread::sleep( milliseconds(500) );
 }
 
+int VF::s = 0;
+
 bool VF::Dispatch( const stem::Event& )
 {
-  // cerr << '.';
-  this_thread::sleep( milliseconds(100) );
-
-  s += '.';
+  ++s;
 
   return true;
 }

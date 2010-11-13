@@ -18,16 +18,27 @@ namespace misc {
 
 namespace detail {
 
-std::ostream& xsyslog( int, int );
+std::ostream& xsyslog( int level, int facility);
+std::ostream& xsyslog( int level);
+std::ostream& xsyslog();
 
 } // namespace detail
 
 inline void open_syslog() {}
 void close_syslog();
 
+void set_default_log_level(int log_level);
+void set_default_log_facility(int log_facility);
+
 template <int L, int F>
 std::ostream& use_syslog()
 { return detail::xsyslog( L, F ); }
+
+template <int L>
+std::ostream& use_syslog()
+{ return detail::xsyslog(L); }
+
+std::ostream& use_syslog();
 
 } // namespace misc
 

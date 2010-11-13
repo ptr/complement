@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/02/04 19:04:49 ptr>
+// -*- C++ -*- Time-stamp: <10/07/12 11:38:19 ptr>
 
 /*
  *
- * Copyright (c) 2009
+ * Copyright (c) 2009-2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -72,7 +72,7 @@ class VTM_one_group_advanced_handler :
     vtime& vt()
       { return basic_vs::vt; }
 
-    virtual xmt::uuid_type vs_pub_recover();
+    virtual xmt::uuid_type vs_pub_recover( bool is_founder );
     virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& );
     virtual void vs_pub_view_update();
     virtual void vs_pub_rec( const stem::Event& );
@@ -163,11 +163,14 @@ bool VTM_one_group_advanced_handler::_gs_status::operator()() const
   return me.vs_group_size() == me.gsize;
 }
 
-xmt::uuid_type VTM_one_group_advanced_handler::vs_pub_recover()
+xmt::uuid_type VTM_one_group_advanced_handler::vs_pub_recover( bool is_founder )
 {
   stem::Event ev;
   stem::code_type c;
   uint32_t f;
+
+  ev.dest( self_id() );
+  ev.src( stem::badaddr );
 
   try {
     // Try to read serialized events and re-play history.
@@ -186,7 +189,8 @@ xmt::uuid_type VTM_one_group_advanced_handler::vs_pub_recover()
       stem::__pack_base::__unpack( history, ev.value() );
 
       if ( !history.fail() ) {
-        basic_vs::sync_call( ev );
+        // basic_vs::sync_call( ev );
+        this->Dispatch( ev );
       }
     }
     history.clear();
@@ -219,6 +223,8 @@ void VTM_one_group_advanced_handler::vs_pub_rec( const stem::Event& ev )
 
 void VTM_one_group_advanced_handler::vs_pub_flush()
 {
+  std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
+  cnd.notify_one();
 }
 
 void VTM_one_group_advanced_handler::message( const stem::Event& ev )
@@ -245,6 +251,7 @@ END_RESPONSE_TABLE
 
 int EXAM_IMPL(vtime_operations::VT_one_group_replay)
 {
+  for (int i = 0;i < 1000;++i) {
   stem::addr_type a1_stored;
   stem::addr_type a2_stored;
   stem::addr_type a3_stored;
@@ -284,11 +291,13 @@ int EXAM_IMPL(vtime_operations::VT_one_group_replay)
     EXAM_CHECK( a3.mess == "message" );
   }
 
+  a1.vs_send_flush();
+
   {
     EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
     EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
 
-    VTM_one_group_advanced_handler a3( /* super_spirit.back() */ a3_stored );
+    VTM_one_group_advanced_handler a3( a3_stored );
 
     a3.vs_join( a2.self_id() );
 
@@ -303,12 +312,17 @@ int EXAM_IMPL(vtime_operations::VT_one_group_replay)
   unlink( (std::string( "/tmp/janus." ) + std::string(a1_stored) ).c_str() );
   unlink( (std::string( "/tmp/janus." ) + std::string(a2_stored) ).c_str() );
   unlink( (std::string( "/tmp/janus." ) + std::string(a3_stored) ).c_str() );
+  if ( EXAM_RESULT ) {
+    break;
+  }
+  }
 
   return EXAM_RESULT;
 }
 
 int EXAM_IMPL(vtime_operations::VT_one_group_late_replay)
 {
+  for (int i = 0;i < 1000;++i) {
   stem::addr_type a1_stored;
   stem::addr_type a2_stored;
   stem::addr_type a3_stored;
@@ -347,6 +361,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_late_replay)
     EXAM_CHECK( a3.wait_msg( std::tr2::milliseconds(500), 1 ) );
     EXAM_CHECK( a3.mess == "message" );
   }
+
+  a1.vs_send_flush();
 
   {
     EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
@@ -365,7 +381,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_late_replay)
   }
 
   {
-    VTM_one_group_advanced_handler a3( /* super_spirit.back() */ a3_stored );
+    VTM_one_group_advanced_handler a3( a3_stored );
 
     a3.vs_join( a2.self_id() );
 
@@ -380,6 +396,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_late_replay)
   unlink( (std::string( "/tmp/janus." ) + std::string(a1_stored) ).c_str() );
   unlink( (std::string( "/tmp/janus." ) + std::string(a2_stored) ).c_str() );
   unlink( (std::string( "/tmp/janus." ) + std::string(a3_stored) ).c_str() );
+  }
 
   return EXAM_RESULT;
 }
@@ -463,6 +480,134 @@ int EXAM_IMPL(vtime_operations::VT_one_group_network)
 
 int EXAM_IMPL(vtime_operations::VT_one_group_access_point)
 {
+  for (int p = 0;p < 100;++p) {
+    try {
+      xmt::shm_alloc<0> seg;
+      seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+      xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+      xmt::allocator_shm<stem::addr_type,0> shm_a;
+
+      std::tr2::barrier_ip& b = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
+      std::tr2::barrier_ip& b2 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
+      std::tr2::barrier_ip& b3 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
+      stem::addr_type& addr1 = *new ( shm_a.allocate( 1 ) ) stem::addr_type();
+
+      try {
+        tr2::this_thread::fork();
+        int res = 0;
+
+        stem::addr_type me;
+
+        {
+          VTM_one_group_advanced_handler a1;
+
+          a1.vs_join( stem::badaddr );
+
+          connect_processor<stem::NetTransport> srv( 2009 );
+
+          EXAM_CHECK_ASYNC_F( srv.is_open(), res );
+
+          list<net_iface> ifaces;
+
+          get_ifaces( back_inserter(ifaces) );
+
+          if ( !ifaces.empty() ) {
+            for ( list<net_iface>::iterator f = ifaces.begin(); f != ifaces.end(); ++f ) {
+              if ( f->addr.any.sa_family == PF_INET ) {
+                f->addr.inet.sin_port = stem::to_net( static_cast<short>(2009) );
+                a1.vs_tcp_point( f->addr.inet );
+              }
+            }
+          }
+
+          a1.vs_join( stem::badaddr );
+
+          a1.set_default();
+
+          addr1 = a1.self_id();
+          me = a1.self_id();
+
+          b.wait();
+          b2.wait();
+
+          EXAM_CHECK_ASYNC_F( a1.wait_group_size( std::tr2::milliseconds(500), 2 ), res );
+
+          EXAM_CHECK_ASYNC_F( a1.wait_msg( std::tr2::milliseconds(500), 1 ), res );
+          EXAM_CHECK_ASYNC_F( a1.mess == "message", res );
+
+          b3.wait();
+        }
+
+        unlink( (std::string( "/tmp/janus." ) + std::string(me) ).c_str() );
+
+        exit( res );
+      }
+      catch ( std::tr2::fork_in_parent& child ) {
+        b.wait();
+
+        stem::addr_type me;
+        {
+          VTM_one_group_advanced_handler a2;
+          me = a2.self_id();
+          connect_processor<stem::NetTransport> srv( 2010 );
+
+          list<net_iface> ifaces;
+
+          get_ifaces( back_inserter(ifaces) );
+
+          if ( !ifaces.empty() ) {
+            for ( list<net_iface>::iterator f = ifaces.begin(); f != ifaces.end(); ++f ) {
+              if ( f->addr.any.sa_family == PF_INET ) {
+                f->addr.inet.sin_port = stem::to_net( static_cast<short>(2010) );
+                a2.vs_tcp_point( f->addr.inet );
+              }
+            }
+          }
+
+          a2.vs_join( addr1, "localhost", 2009 );
+          b2.wait();
+
+          EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
+
+          stem::Event ev( EV_FREE );
+          ev.value() = "message";
+          ev.dest( a2.self_id() );
+
+          a2.Send( ev ); // simulate outer event
+
+          EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds(500), 1 ) );
+          EXAM_CHECK( a2.mess == "message" );
+
+          b3.wait();
+        }
+
+        int stat = -1;
+        EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+        if ( WIFEXITED(stat) ) {
+          EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+        } else {
+          EXAM_ERROR( "child interrupted" );
+        }
+
+        unlink( (std::string( "/tmp/janus." ) + std::string(me) ).c_str() );
+      }
+      shm.deallocate( &b );
+      shm.deallocate( &b2 );
+      shm.deallocate( &b3 );
+      shm_a.deallocate( &addr1 );
+      seg.deallocate();
+    }
+    catch ( xmt::shm_bad_alloc& err ) {
+      EXAM_ERROR( err.what() );
+    }
+  }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(vtime_operations::VT_one_group_access_point_ex)
+{
   try {
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
@@ -474,12 +619,16 @@ int EXAM_IMPL(vtime_operations::VT_one_group_access_point)
     std::tr2::barrier_ip& b2 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip( 3 );
     std::tr2::barrier_ip& b3 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
     std::tr2::barrier_ip& b4 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip( 3 );
-    std::tr2::barrier_ip& b5 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
-    stem::addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::addr_type();
+    std::tr2::barrier_ip& b5 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip( 4 );
+    std::tr2::barrier_ip& b6 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip( 4 );
+    std::tr2::barrier_ip& b7 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip( 4 );
+    std::tr2::barrier_ip& b8 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip( 4 );
+    std::tr2::barrier_ip& b9 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip( 4 );
+    stem::addr_type& addr1 = *new ( shm_a.allocate( 1 ) ) stem::addr_type();
+    stem::addr_type& addr2 = *new ( shm_a.allocate( 1 ) ) stem::addr_type();
+    stem::addr_type& addr3 = *new ( shm_a.allocate( 1 ) ) stem::addr_type();
+    stem::addr_type& addr4 = *new ( shm_a.allocate( 1 ) ) stem::addr_type();
 
-    addr = stem::badaddr;
-
-    stem::addr_type a_stored;
 
     try {
       tr2::this_thread::fork();
@@ -498,9 +647,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_access_point)
       try { // establish group: first member
         VTM_one_group_advanced_handler a1;
 
-        a_stored = a1.self_id();
-
-        addr = a1.self_id();
+        addr1 = a1.self_id();
 
         connect_processor<stem::NetTransport> srv( 2009 );
 
@@ -515,29 +662,32 @@ int EXAM_IMPL(vtime_operations::VT_one_group_access_point)
             if ( f->addr.any.sa_family == PF_INET ) {
               f->addr.inet.sin_port = stem::to_net( static_cast<short>(2009) );
               a1.vs_tcp_point( f->addr.inet );
-            }// else if ( f->addr.any.sa_family == PF_INET6 ) {
-            // refzone.inet6_point( f->addr.inet.sin_addr.s_addr );
-            // }
+            }
           }
         }
 
-        // a1.set_default();
         a1.vs_join( stem::badaddr );
 
         b.wait();
 
         b4.wait();
+        EXAM_CHECK_ASYNC_F( a1.wait_group_size( std::tr2::milliseconds(500), 3 ), res );
+        b5.wait();
 
+        b6.wait();
+        EXAM_CHECK_ASYNC_F( a1.wait_group_size( std::tr2::milliseconds(500), 4 ), res );
+        b7.wait();
+
+        b8.wait();
         EXAM_CHECK_ASYNC_F( a1.wait_msg( std::tr2::milliseconds(500), 1 ), res );
         EXAM_CHECK_ASYNC_F( a1.mess == "message", res );
-
-        b2.wait();
+        b9.wait();
       }
       catch ( ... ) {
         EXAM_ERROR_ASYNC_F( "unkown exception", res );
       }
 
-      unlink( (std::string( "/tmp/janus." ) + std::string(a_stored) ).c_str() );
+      unlink( (std::string( "/tmp/janus." ) + std::string(addr1) ).c_str() );
 
       exit( res );
     }
@@ -560,13 +710,11 @@ int EXAM_IMPL(vtime_operations::VT_one_group_access_point)
         try { // the third member
           VTM_one_group_advanced_handler a3;
 
-          a_stored = a3.self_id();
+          addr3 = a3.self_id();
 
           connect_processor<stem::NetTransport> srv( 2011 );
 
           EXAM_CHECK_ASYNC_F( srv.is_open(), res );
-
-          EXAM_CHECK_ASYNC_F( addr != stem::badaddr, res );
 
           list<net_iface> ifaces;
 
@@ -577,104 +725,170 @@ int EXAM_IMPL(vtime_operations::VT_one_group_access_point)
               if ( f->addr.any.sa_family == PF_INET ) {
                 f->addr.inet.sin_port = stem::to_net( static_cast<short>(2011) );
                 a3.vs_tcp_point( f->addr.inet );
-              }// else if ( f->addr.any.sa_family == PF_INET6 ) {
-              // refzone.inet6_point( f->addr.inet.sin_addr.s_addr );
-              // }
+              }
             }
           }
 
-          a3.vs_join( addr, "localhost", 2009 );
-
-          EXAM_CHECK_ASYNC_F( a3.wait_group_size( std::tr2::milliseconds(500), 3 ), res );
-
-          stem::Event ev( EV_FREE );
-          ev.value() = "message";
-          ev.dest( a3.self_id() );
-
-          a3.Send( ev ); // simulate outer event
-
-          EXAM_CHECK_ASYNC_F( a3.wait_msg( std::tr2::milliseconds(500), 1 ), res );
-          EXAM_CHECK_ASYNC_F( a3.mess == "message", res );
+          a3.vs_join( addr1, "localhost", 2009 );
 
           b4.wait();
+          EXAM_CHECK_ASYNC_F( a3.wait_group_size( std::tr2::milliseconds(500), 3 ), res );
           b5.wait();
-          b2.wait();
+
+          b6.wait();
+          EXAM_CHECK_ASYNC_F( a3.wait_group_size( std::tr2::milliseconds(500), 4 ), res );
+          b7.wait();
+
+          b8.wait();
+          EXAM_CHECK_ASYNC_F( a3.wait_msg( std::tr2::milliseconds(500), 1 ), res );
+          EXAM_CHECK_ASYNC_F( a3.mess == "message", res );
+          b9.wait();
+
         }
         catch ( ... ) {
           EXAM_ERROR_ASYNC_F( "unkown exception", res );
         }
 
-        unlink( (std::string( "/tmp/janus." ) + std::string(a_stored) ).c_str() );
+        unlink( (std::string( "/tmp/janus." ) + std::string(addr3) ).c_str() );
 
         exit( res );
       }
-      catch ( std::tr2::fork_in_parent& child2 ) {
-
-        std::tr2::this_thread::block_signal( SIGINT );
-        std::tr2::this_thread::block_signal( SIGQUIT );
-        std::tr2::this_thread::block_signal( SIGILL );
-        std::tr2::this_thread::block_signal( SIGABRT );
-        std::tr2::this_thread::block_signal( SIGFPE );
-        std::tr2::this_thread::block_signal( SIGSEGV );
-        std::tr2::this_thread::block_signal( SIGTERM );
-        std::tr2::this_thread::block_signal( SIGPIPE );
-
-        b.wait(); // wait first memeber
+      catch ( std::tr2::fork_in_parent& child3 ) {
         try {
-          VTM_one_group_advanced_handler a2;
+          tr2::this_thread::fork();
 
-          a_stored = a2.self_id();
+          std::tr2::this_thread::block_signal( SIGINT );
+          std::tr2::this_thread::block_signal( SIGQUIT );
+          std::tr2::this_thread::block_signal( SIGILL );
+          std::tr2::this_thread::block_signal( SIGABRT );
+          std::tr2::this_thread::block_signal( SIGFPE );
+          std::tr2::this_thread::block_signal( SIGSEGV );
+          std::tr2::this_thread::block_signal( SIGTERM );
+          std::tr2::this_thread::block_signal( SIGPIPE );
 
-          connect_processor<stem::NetTransport> srv( 2010 );
-
-          EXAM_CHECK( addr != stem::badaddr );
-        
-          list<net_iface> ifaces;
-
-          get_ifaces( back_inserter(ifaces) );
-
-          if ( !ifaces.empty() ) {
-            for ( list<net_iface>::iterator f = ifaces.begin(); f != ifaces.end(); ++f ) {
-              if ( f->addr.any.sa_family == PF_INET ) {
-                f->addr.inet.sin_port = stem::to_net( static_cast<short>(2010) );
-                a2.vs_tcp_point( f->addr.inet );
-              }// else if ( f->addr.any.sa_family == PF_INET6 ) {
-              // refzone.inet6_point( f->addr.inet.sin_addr.s_addr );
-              // }
-            }
-          }
-
-          a2.vs_join( addr, "localhost", 2009 );
-
-          // a2 join to group:
-          EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
-
-          b3.wait();
-          // a3 join to group:
-          EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3 ) );
-
-          b4.wait();
-
-          EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds(500), 1 ) );
-
-          EXAM_CHECK( a2.mess == "message" );
+          int res = 0;
 
           b5.wait();
-          b2.wait();
-        }
-        catch ( ... ) {
-          EXAM_ERROR( "unkown exception" );
+          try { 
+            VTM_one_group_advanced_handler a4;
+
+            addr4 = a4.self_id();
+
+            connect_processor<stem::NetTransport> srv( 2012 );
+
+            EXAM_CHECK_ASYNC_F( srv.is_open(), res );
+
+            list<net_iface> ifaces;
+
+            get_ifaces( back_inserter(ifaces) );
+
+            if ( !ifaces.empty() ) {
+              for ( list<net_iface>::iterator f = ifaces.begin(); f != ifaces.end(); ++f ) {
+                if ( f->addr.any.sa_family == PF_INET ) {
+                  f->addr.inet.sin_port = stem::to_net( static_cast<short>(2012) );
+                  a4.vs_tcp_point( f->addr.inet );
+                }
+              }
+            }
+
+            a4.vs_join( addr2, "localhost", 2010 );
+
+            b6.wait();
+            EXAM_CHECK_ASYNC_F( a4.wait_group_size( std::tr2::milliseconds(500), 4 ), res );
+            b7.wait();
+
+            stem::Event ev( EV_FREE );
+            ev.value() = "message";
+            ev.dest( a4.self_id() );
+
+            a4.Send( ev ); // simulate outer event
+
+            b8.wait();
+            EXAM_CHECK_ASYNC_F( a4.wait_msg( std::tr2::milliseconds(500), 1 ), res );
+            EXAM_CHECK_ASYNC_F( a4.mess == "message", res );
+            b9.wait();
+
+          }
+          catch ( ... ) {
+            EXAM_ERROR_ASYNC_F( "unkown exception", res );
+          }
+
+          unlink( (std::string( "/tmp/janus." ) + std::string(addr4) ).c_str() );
+
+          exit( res );
+        } catch ( std::tr2::fork_in_parent& child2 ) {
+
+          std::tr2::this_thread::block_signal( SIGINT );
+          std::tr2::this_thread::block_signal( SIGQUIT );
+          std::tr2::this_thread::block_signal( SIGILL );
+          std::tr2::this_thread::block_signal( SIGABRT );
+          std::tr2::this_thread::block_signal( SIGFPE );
+          std::tr2::this_thread::block_signal( SIGSEGV );
+          std::tr2::this_thread::block_signal( SIGTERM );
+          std::tr2::this_thread::block_signal( SIGPIPE );
+
+          b.wait(); // wait first memeber
+          try {
+            VTM_one_group_advanced_handler a2;
+
+            addr2 = a2.self_id();
+
+            connect_processor<stem::NetTransport> srv( 2010 );
+
+            list<net_iface> ifaces;
+
+            get_ifaces( back_inserter(ifaces) );
+
+            if ( !ifaces.empty() ) {
+              for ( list<net_iface>::iterator f = ifaces.begin(); f != ifaces.end(); ++f ) {
+                if ( f->addr.any.sa_family == PF_INET ) {
+                  f->addr.inet.sin_port = stem::to_net( static_cast<short>(2010) );
+                  a2.vs_tcp_point( f->addr.inet );
+                }
+              }
+            }
+
+            a2.vs_join( addr1, "localhost", 2009 );
+
+            // a2 join to group:
+            EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
+
+            b3.wait();
+            // a3 join to group:
+            b4.wait();
+            EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3 ) );
+            b5.wait();
+
+            b6.wait();
+            EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 4 ) );
+            b7.wait();
+
+            b8.wait();
+            EXAM_CHECK( a2.wait_msg( std::tr2::milliseconds(500), 1 ) );
+            EXAM_CHECK( a2.mess == "message" );
+            b9.wait();
+          }
+          catch ( ... ) {
+            EXAM_ERROR( "unkown exception" );
+          }
+
+          int stat = -1;
+          EXAM_CHECK( waitpid( child2.pid(), &stat, 0 ) == child2.pid() );
+          if ( WIFEXITED(stat) ) {
+            EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+          } else {
+            EXAM_ERROR( "child interrupted" );
+          }
         }
 
         int stat = -1;
-        EXAM_CHECK( waitpid( child2.pid(), &stat, 0 ) == child2.pid() );
+        EXAM_CHECK( waitpid( child3.pid(), &stat, 0 ) == child3.pid() );
         if ( WIFEXITED(stat) ) {
           EXAM_CHECK( WEXITSTATUS(stat) == 0 );
         } else {
           EXAM_ERROR( "child interrupted" );
         }
       }
-
       int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
       if ( WIFEXITED(stat) ) {
@@ -683,14 +897,22 @@ int EXAM_IMPL(vtime_operations::VT_one_group_access_point)
         EXAM_ERROR( "child interrupted" );
       }
 
-      unlink( (std::string( "/tmp/janus." ) + std::string(a_stored) ).c_str() );
+      unlink( (std::string( "/tmp/janus." ) + std::string(addr2) ).c_str() );
     }
+
     shm.deallocate( &b );
     shm.deallocate( &b2 );
     shm.deallocate( &b3 );
     shm.deallocate( &b4 );
     shm.deallocate( &b5 );
-    shm_a.deallocate( &addr );
+    shm.deallocate( &b6 );
+    shm.deallocate( &b7 );
+    shm.deallocate( &b8 );
+    shm.deallocate( &b9 );
+    shm_a.deallocate( &addr1 );
+    shm_a.deallocate( &addr2 );
+    shm_a.deallocate( &addr3 );
+    shm_a.deallocate( &addr4 );
     seg.deallocate();
   }
   catch ( xmt::shm_bad_alloc& err ) {

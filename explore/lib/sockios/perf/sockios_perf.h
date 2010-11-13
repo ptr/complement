@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/07/29 14:09:36 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-09 16:01:03 ptr>
 
 /*
  *
@@ -23,9 +23,12 @@
 #include <signal.h>
 #include <algorithm>
 
+#include <mt/thread>
 #include <mt/mutex>
 #include <mt/condition_variable>
 #include <mt/date_time>
+
+#include <sockios/syslog.h>
 
 class server_conn
 {
@@ -398,11 +401,14 @@ class SrvRW
   public:
     SrvRW( std::sockstream& s )
       {
-        if ( ND ) {
-          s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
-        }
+        try {
+          if ( ND ) {
+            s.rdbuf()->setoptions( std::sock_base::so_tcp_nodelay );
+          }
 
-        fill( buf, buf + S, 'b' );
+          fill( buf, buf + S, 'b' );
+        } catch(...) {
+        }
       }
 
     ~SrvRW()

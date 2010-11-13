@@ -1,4 +1,4 @@
-/* Time-stamp: <08/02/20 09:57:38 ptr> */
+/* Time-stamp: <2010-11-10 14:42:52 ptr> */
 
 /*
  *
@@ -90,5 +90,13 @@
 #ifndef __FIT_DISABLE_BFD
 #  define __FIT_PRESENT_BFD
 #endif
+
+/*
+ * Modern Linux treat syscall as deprecated
+ */
+
+/*
+#define __FIT_SYSCALL
+*/
 
 #endif /* __config__linux_h */

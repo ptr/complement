@@ -1,7 +1,7 @@
 /* Time-stamp: <07/03/12 20:17:03 ptr> */
 
 /*
- * Copyright (c) 1999, 2002-2007
+ * Copyright (c) 1999, 2002-2010
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -113,7 +113,7 @@
 #endif /* __FIT_NEED_TYPENAME_IN_ARGS_BUG */
 
 /*
- Store information about stack before create thread in xmt::Thread;
+ Store information about stack before create thread in std::tr2::thread;
  useful for debugging. Real implementation require BFD.
 */
 
@@ -126,7 +126,7 @@
  impossible without BFD (Binary File Descriptor).
 */
 
-// #define __FIT_DISABLE_BFD
+/* #define __FIT_DISABLE_BFD */
 
 #ifdef __FIT_DISABLE_BFD
 #  ifdef __FIT_PRESENT_BFD
@@ -139,5 +139,11 @@
 #  endif
 #endif
 #endif
+
+/*
+ Constructions from C++ 0x draft
+ */
+
+#define __FIT_CPP_0X
 
 #endif /* __config_feature_h */

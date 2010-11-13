@@ -49,13 +49,15 @@ int main( int argc, const char ** argv )
 
   janus::vtime_operations vt_oper;
 
-  tc[0] = t.add( &vtime_operations::flush_and_exit, vt_oper, "VT flush and exit", 
-            t.add( &vtime_operations::flush_and_join, vt_oper, "VT flush and join", 
-              t.add( &vtime_operations::double_flush, vt_oper, "VT double flush",
-                t.add( &vtime_operations::VT_one_group_join_exit, vt_oper, "VT one group join and exit",
-                  t.add( &vtime_operations::VT_one_group_core3_sim, vt_oper, "VT one group add two members simultaneously",
-                    t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
-                      t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member" ) ) ) ) ) ) );
+  tc[0] = t.add( &vtime_operations::join_flush_exit, vt_oper, "VT join/flush/exit", 
+            t.add( &vtime_operations::flush_and_exit, vt_oper, "VT flush and exit", 
+              t.add( &vtime_operations::flush_and_join, vt_oper, "VT flush and join", 
+                t.add( &vtime_operations::double_exit, vt_oper, "VT double exit",
+                  t.add( &vtime_operations::double_flush, vt_oper, "VT double flush",
+                    t.add( &vtime_operations::VT_one_group_join_exit, vt_oper, "VT one group join and exit",
+                      t.add( &vtime_operations::VT_one_group_core3_sim, vt_oper, "VT one group add two members simultaneously",
+                        t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
+                          t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member" ) ) ) ) ) ) ) ) );
 
   tc[1] = t.add( &vtime_operations::VT_one_group_multiple_send, vt_oper, "VT one group multiple send",
             t.add( &vtime_operations::VT_one_group_send, vt_oper, "VT one group send", tc[0] ) );
@@ -64,16 +66,22 @@ int main( int argc, const char ** argv )
             t.add( &vtime_operations::VT_one_group_replay, vt_oper, "VT one group replay", tc[1] ) );
 
   tc[3] = t.add( &vtime_operations::VT_one_group_recover, vt_oper, "VT one group recover",
-            t.add( &vtime_operations::VT_one_group_multiple_joins, vt_oper, "VT one group multiple joins",
-              t.add( &vtime_operations::VT_one_group_join_send, vt_oper, "VT one group join and send", tc[2] ) ) );
+            t.add( &vtime_operations::VT_mt_operation, vt_oper, "VT one group multithreaded operation",
+              t.add( &vtime_operations::VT_one_group_multiple_join_send, vt_oper, "VT one group multiple join/send",
+                t.add( &vtime_operations::VT_one_group_multiple_joins, vt_oper, "VT one group multiple joins",
+                  t.add( &vtime_operations::VT_one_group_join_send, vt_oper, "VT one group join and send", tc[2] ) ) ) ) );
 
-  tc[4] = t.add( &vtime_operations::VT_one_group_access_point, vt_oper, "VT network access points",
-    t.add( &vtime_operations::VT_one_group_network, vt_oper, "VT over network", tc[1] ) );
+  tc[4] = t.add( &vtime_operations::VT_one_group_access_point_ex, vt_oper, "VT network access points extended",
+    t.add( &vtime_operations::VT_one_group_access_point, vt_oper, "VT network access points", 
+      t.add( &vtime_operations::VT_one_group_network, vt_oper, "VT over network", tc[1] ) ) );
 
-  tc[5] = t.add( &vtime_operations::leader_fail, vt_oper, "VT total order, leader fail",
-            t.add( &vtime_operations::leader, vt_oper, "VT total order, leader", tc[4] ) );
-
-  t.add( &vtime_operations::lock_and_torder, vt_oper, "VT total order, lock", tc[5] );
+  tc[5] = t.add( &vtime_operations::leader_mt, vt_oper, "VT total order, leader multithreaded test",
+            t.add( &vtime_operations::leader_recovery, vt_oper, "VT total order, leader recovery",
+              t.add( &vtime_operations::leader_fail, vt_oper, "VT total order, leader fail",
+                t.add( &vtime_operations::leader_network, vt_oper, "VT total order, leader network",
+                  t.add( &vtime_operations::leader_multiple_change, vt_oper, "VT total order, leader multiple change",
+                    t.add( &vtime_operations::leader_change, vt_oper, "VT total order, leader change",
+                      t.add( &vtime_operations::leader_local, vt_oper, "VT total order, leader local", tc[4] ) ) ) ) ) ) );
 
   if ( opts.is_set( 'v' ) ) {
     t.flags( t.flags() | exam::base_logger::verbose );

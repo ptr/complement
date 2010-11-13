@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/21 22:06:47 ptr>
+// -*- C++ -*- Time-stamp: <10/07/14 14:05:40 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2010
@@ -22,6 +22,7 @@
 #include <mt/mutex>
 #include <mt/thread>
 #include <mt/uid.h>
+#include <exam/defs.h>
 
 #include <unistd.h>
 
@@ -124,7 +125,8 @@ void EventHandler::Forward( const Event& e ) const
 __FIT_DECLSPEC
 void EventHandler::sync_call( const Event& e )
 {
-  _mgr->sync_call( *this, e );
+  // _mgr->sync_call( *this, e );
+  _mgr->push( e );
 }
 
 __FIT_DECLSPEC
@@ -310,31 +312,25 @@ addr_type EventHandler::get_default()
 
 void EventHandler::solitary()
 {
-  lock_guard<recursive_mutex> lk( _theHistory_lock );
-
-  for ( addr_container_type::iterator i = _ids.begin(); i != _ids.end(); ) {
-    _mgr->Unsubscribe( *i, this );
-    _ids.erase( i++ );
+  _mgr->Unsubscribe( _ids.begin(), _ids.end(), this );
+  {
+    std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( _theHistory_lock );
+    _ids.clear();
   }
-
   theHistory.clear();
 }
 
 void EventHandler::enable()
 {
-  lock_guard<recursive_mutex> lk( _theHistory_lock );
-
-  for ( addr_container_type::iterator i = _ids.begin(); i != _ids.end(); ++i ) {
-    _mgr->Subscribe( *i, this, _nice );
-  }
+  _mgr->Subscribe( _ids.begin(), _ids.end(), this, _nice );
 }
 
 void EventHandler::disable()
 {
-  lock_guard<recursive_mutex> lk( _theHistory_lock );
-
-  for ( addr_container_type::iterator i = _ids.begin(); i != _ids.end(); ++i ) {
-    _mgr->Unsubscribe( *i, this );
+  _mgr->Unsubscribe( _ids.begin(), _ids.end(), this );
+  {
+    std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( _theHistory_lock );
+    _ids.clear();
   }
 }
 

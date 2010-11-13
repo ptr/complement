@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/02/04 19:05:18 ptr>
+// -*- C++ -*- Time-stamp: <10/07/12 12:07:17 ptr>
 
 /*
  *
- * Copyright (c) 2009
+ * Copyright (c) 2009-2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -32,6 +32,10 @@
 #include <unistd.h>
 
 #include <sockios/syslog.h>
+
+#ifndef VS_FLUSH_RQ
+# define VS_FLUSH_RQ 0x307 // see casual.cc
+#endif
 
 namespace janus {
 
@@ -78,7 +82,7 @@ class VTM_one_group_recover :
     vtime& vt()
       { return basic_vs::vt; }
 
-    virtual xmt::uuid_type vs_pub_recover();
+    virtual xmt::uuid_type vs_pub_recover( bool is_founder );
     virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& );
     virtual void vs_pub_view_update();
     virtual void vs_pub_rec( const stem::Event& );
@@ -206,12 +210,14 @@ bool VTM_one_group_recover::_flush_status::operator()() const
   return me.flushed;
 }
 
-xmt::uuid_type VTM_one_group_recover::vs_pub_recover()
+xmt::uuid_type VTM_one_group_recover::vs_pub_recover( bool is_founder )
 {
   stem::Event ev;
   stem::code_type c;
   uint32_t f;
   xmt::uuid_type flush_id = xmt::nil_uuid;
+  ev.dest( self_id() );
+  ev.src( stem::badaddr );
 
   try {
     // Try to read serialized events and re-play history.
@@ -235,12 +241,13 @@ xmt::uuid_type VTM_one_group_recover::vs_pub_recover()
 
         if ( !history.fail() ) {
           if ( history.tellg() <= last_flush_off ) {
-            if ( ev.code() == basic_vs::VS_FLUSH_VIEW ) {
+            if ( ev.code() == VS_FLUSH_RQ ) {
               stem::Event_base<xmt::uuid_type> fev;
               fev.unpack( ev );              
               flush_id = fev.value();
             } else {
-              basic_vs::sync_call( ev );
+              // basic_vs::sync_call( ev );
+              this->Dispatch( ev );
             }
           } else {
             break;
@@ -291,7 +298,7 @@ void VTM_one_group_recover::vs_resend_from( const xmt::uuid_type& from, const st
 
     if ( !history.fail() ) {
       if ( !ref_point_found ) {
-        if ( ev.code() == basic_vs::VS_FLUSH_VIEW ) {
+        if ( ev.code() == VS_FLUSH_RQ ) {
           stem::Event_base<xmt::uuid_type> fev;
           fev.unpack( ev );              
           if ( fev.value() == from ) {
@@ -310,7 +317,8 @@ void VTM_one_group_recover::vs_resend_from( const xmt::uuid_type& from, const st
         // Change event, to avoid interference with
         // true VS_FLUSH_VIEW---it work with view lock,
         // but in this case I want to bypass locking
-        if ( ev.code() != basic_vs::VS_FLUSH_VIEW ) {
+        if ( ev.code() != VS_FLUSH_RQ ) {
+          misc::use_syslog<LOG_INFO,LOG_USER>() << "resend " << ev.src() << "->" << ev.dest() << ":" << ev.code() << endl;
           Forward( ev ); // src was set above
         }
       }
@@ -429,6 +437,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_recover)
     EXAM_CHECK( a3.wait_flush( std::tr2::milliseconds(500) ) );
   }
 
+  a1.vs_send_flush();
+
   {
     EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
     EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
@@ -447,7 +457,6 @@ int EXAM_IMPL(vtime_operations::VT_one_group_recover)
 
   {
     VTM_one_group_recover a3( a3_stored );
-
 
     a3.vs_join( a2.self_id() );
 
@@ -497,7 +506,6 @@ int EXAM_IMPL(vtime_operations::VT_one_group_join_send)
     ev.value() = "message";
     ev.dest( a1.self_id() );
 
-
     a3.vs_join( a2.self_id() );
     a1.Send( ev );
 
@@ -515,6 +523,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_join_send)
     ev.value() = "another message";
     a1.Send( ev );
   }
+
+  a1.vs_send_flush();
 
   EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
   EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
@@ -539,9 +549,9 @@ int EXAM_IMPL(vtime_operations::VT_one_group_multiple_joins)
   try {
     srand( time(NULL) );
 
-    vector< VTM_one_group_recover* > a(n);
+    vector<VTM_one_group_recover*> a(n);
 
-    for (int i = 0;i < n;++i) {
+    for ( int i = 0; i < n; ++i ) {
       a[i] = new VTM_one_group_recover();
       names[i] = a[i]->self_id();
     }
@@ -550,7 +560,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_multiple_joins)
 
     EXAM_CHECK( a[0]->vs_group_size() == 1 );
 
-    for (int i = 1;i < n;++i) {
+    for ( int i = 1; i < n; ++i ) {
       int p = rand() % i;
       int q = rand() % i;
 
@@ -563,11 +573,15 @@ int EXAM_IMPL(vtime_operations::VT_one_group_multiple_joins)
       a[i]->vs_join( a[q]->self_id() );
       a[p]->Send( ev );
 
-      for (int j = 0;j <= i;++j) {
+      for (int j = 0; j <= i; ++j ) {
         EXAM_CHECK( a[j]->wait_group_size( std::tr2::milliseconds( (i + 1) * 200), i + 1 ) );
         EXAM_CHECK( a[j]->wait_msg( std::tr2::milliseconds( (i + 1) * 200 ), i ) );
         EXAM_CHECK( a[j]->mess == ss.str() );
       }
+    }
+
+    for ( int i = 0; i < n; ++i ) {
+      delete a[i];
     }
   }
   catch ( const std::runtime_error& err ) {
@@ -580,8 +594,67 @@ int EXAM_IMPL(vtime_operations::VT_one_group_multiple_joins)
     EXAM_ERROR( "unknown exception" );
   }
 
-  for (int i = 0;i < n;++i) {
+  for ( int i = 0; i < n; ++i ) {
     unlink( (std::string( "/tmp/janus." ) + std::string(names[i]) ).c_str() );
+  }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(vtime_operations::VT_one_group_multiple_join_send)
+{
+  const int n = 10;
+  for (int t = 0;t < 10;++t) {
+  vector< stem::addr_type > names(n);
+
+  try {
+    srand( time(NULL) );
+
+    vector<VTM_one_group_recover*> a(n);
+
+    for ( int i = 0; i < n; ++i ) {
+      a[i] = new VTM_one_group_recover();
+      names[i] = a[i]->self_id();
+    }
+
+    a[0]->vs_join( stem::badaddr );
+
+    EXAM_CHECK( a[0]->vs_group_size() == 1 );
+
+    int k = 0;
+    for ( int i = 1; i < n; ++i ) {
+      a[i]->vs_join( a[i - 1]->self_id() );
+      for (int j = 0;j < i;++j) {
+        stem::Event ev( EV_FREE );
+        ev.dest( a[j]->self_id() );
+        a[j]->Send( ev );
+      }
+      a[i - 1]->vs_send_flush();
+      k += i;
+      EXAM_CHECK( a[i]->wait_group_size( std::tr2::milliseconds(n * 2000), i + 1 ) );
+      EXAM_CHECK( a[i]->wait_msg( std::tr2::milliseconds(n * 2000), k ) );
+    }
+
+    for ( int i = 0; i < n; ++i ) {
+      delete a[i];
+    }
+  }
+  catch ( const std::runtime_error& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( std::exception& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( ... ) {
+    EXAM_ERROR( "unknown exception" );
+  }
+
+  for ( int i = 0; i < n; ++i ) {
+    unlink( (std::string( "/tmp/janus." ) + std::string(names[i]) ).c_str() );
+  }
+  if ( EXAM_RESULT ) {
+    break;
+  }
   }
 
   return EXAM_RESULT;

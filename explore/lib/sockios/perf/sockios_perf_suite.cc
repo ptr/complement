@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <09/07/29 14:08:55 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-11 14:49:32 ptr>
 
 /*
  *
- * Copyright (c) 2007, 2009
+ * Copyright (c) 2007, 2009, 2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -11,6 +11,7 @@
 
 #include "sockios_perf_suite.h"
 #include "sockios_perf.h"
+#include "syslog_perf.h"
 
 #include <exam/suite.h>
 #include <iostream>
@@ -81,7 +82,6 @@ int main( int argc, const char** argv )
   tc[22] = t.add( &sockios_perf_SrvW::rx<409600,128,6480,0>, pw, "client read 409600 128 bytes blocks", tc[21] );
   tc[23] = t.add( &sockios_perf_SrvW::rx<819200,64,6480,0>, pw, "client read 819200 64 bytes blocks", tc[22] );
 
-#if 1
   tc[36] = t.add( &sockios_perf_SrvR::rx<100,64,6480,0>, p, "client write 100 64 bytes blocks", tc[23] );
   tc[37] = t.add( &sockios_perf_SrvR::rx<100,128,6480,0>, p, "client write 100 128 bytes blocks", tc[36]  );
   tc[38] = t.add( &sockios_perf_SrvR::rx<100,256,6480,0>, p, "client write 100 256 bytes blocks", tc[37] );
@@ -95,7 +95,6 @@ int main( int argc, const char** argv )
   tc[46] = t.add( &sockios_perf_SrvR::rx<100,65536,6480,0>, p, "client write 100 65536 bytes blocks", tc[45] );
   tc[47] = t.add( &sockios_perf_SrvR::rx<100,131072,6480,0>, p, "client write 100 131072 bytes blocks", tc[46] );
   tc[48] = t.add( &sockios_perf_SrvR::rx<100,262144,6480,0>, p, "client write 100 262144 bytes blocks", tc[47] );
-#endif
 
   sockios_perf_SrvRW prw;
 
@@ -134,7 +133,7 @@ int main( int argc, const char** argv )
   tc[64] = t.add( &sockios_perf_SrvW::rx<1024,51200,6480,1>, pw, "client read 1024 51200 bytes blocks TCP_NODELAY", tc[63] );
   tc[65] = t.add( &sockios_perf_SrvW::rx<4096,12800,6480,1>, pw, "client read 4096 12800 bytes blocks TCP_NODELAY", tc[64] );
   tc[66] = t.add( &sockios_perf_SrvW::rx<6400,8192,6480,1>, pw, "client read 6400 8192 bytes blocks TCP_NODELAY", tc[65] );
-  tc[67] = t.add( &sockios_perf_SrvW::rx<12800,4096,6480,1>, pw, "client read 12800 4096 bytes blocks", tc[66] );
+  tc[67] = t.add( &sockios_perf_SrvW::rx<12800,4096,6480,1>, pw, "client read 12800 4096 bytes blocks TCP_NODELAY", tc[66] );
   tc[68] = t.add( &sockios_perf_SrvW::rx<25600,2048,6480,1>, pw, "client read 25600 2048 bytes blocks TCP_NODELAY", tc[67] );
   tc[69] = t.add( &sockios_perf_SrvW::rx<51200,1024,6480,1>, pw, "client read 51200 1024 bytes blocks TCP_NODELAY", tc[68] );
   tc[70] = t.add( &sockios_perf_SrvW::rx<102400,512,6480,1>, pw, "client read 102400 512 bytes blocks TCP_NODELAY", tc[69] );
@@ -142,7 +141,6 @@ int main( int argc, const char** argv )
   tc[72] = t.add( &sockios_perf_SrvW::rx<409600,128,6480,1>, pw, "client read 409600 128 bytes blocks TCP_NODELAY", tc[71] );
   tc[73] = t.add( &sockios_perf_SrvW::rx<819200,64,6480,1>, pw, "client read 819200 64 bytes blocks TCP_NODELAY", tc[72] );
 
-#if 1
   tc[76] = t.add( &sockios_perf_SrvR::rx<100,64,6480,1>, p, "client write 100 64 bytes blocks TCP_NODELAY", tc[73] );
   tc[77] = t.add( &sockios_perf_SrvR::rx<100,128,6480,1>, p, "client write 100 128 bytes blocks TCP_NODELAY", tc[76]  );
   tc[78] = t.add( &sockios_perf_SrvR::rx<100,256,6480,1>, p, "client write 100 256 bytes blocks TCP_NODELAY", tc[77] );
@@ -156,9 +154,8 @@ int main( int argc, const char** argv )
   tc[86] = t.add( &sockios_perf_SrvR::rx<100,65536,6480,1>, p, "client write 100 65536 bytes blocks TCP_NODELAY", tc[85] );
   tc[87] = t.add( &sockios_perf_SrvR::rx<100,131072,6480,1>, p, "client write 100 131072 bytes blocks TCP_NODELAY", tc[86] );
   tc[88] = t.add( &sockios_perf_SrvR::rx<100,262144,6480,1>, p, "client write 100 262144 bytes blocks TCP_NODELAY", tc[87] );
-#endif
 
-  tc[89] = t.add( &sockios_perf_SrvRW::rx<1,1,6480,1>, prw, "client write/read 1 1 bytes blocks (reference) TCP_NODELAY", tc[88] );
+  tc[89] = t.add( &sockios_perf_SrvRW::rx<1,1,6480,1>, prw, "client write/read 1 1 bytes blocks (reference) TCP_NODELAY" , tc[88] );
   tc[90] = t.add( &sockios_perf_SrvRW::rx<32,1638400,6480,1>, prw, "client write/read 32 1638400 bytes blocks TCP_NODELAY", tc[89] );
   tc[91] = t.add( &sockios_perf_SrvRW::rx<1024,51200,6480,1>, prw, "client write/read 1024 51200 bytes blocks TCP_NODELAY", tc[90] );
 
@@ -166,6 +163,18 @@ int main( int argc, const char** argv )
 
   t.add( &sockios_perf_conn::connect, conn, "connect" );
   t.add( &sockios_perf_conn::connect_basic, conn, "connect basic" );
+
+  sockios_syslog_perf syslog_perf;
+
+  t.add( &sockios_syslog_perf::syslog_mt<1000, 8, sockios_syslog_perf::syslog_classic_worker>,
+         syslog_perf, "syslog classic, 1000 messages, 8 threads",
+    t.add( &sockios_syslog_perf::syslog_mt<1000, 1, sockios_syslog_perf::syslog_classic_worker>,
+           syslog_perf, "syslog classic, 1000 messages, 1 thread" ) );
+
+  t.add( &sockios_syslog_perf::syslog_mt<1000, 8, sockios_syslog_perf::syslog_dgram_worker>,
+         syslog_perf, "syslog dgram, 1000 messages, 8 threads",
+    t.add( &sockios_syslog_perf::syslog_mt<1000, 1, sockios_syslog_perf::syslog_dgram_worker>,
+           syslog_perf, "syslog dgram, 1000 messages, 1 thread" ) );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );

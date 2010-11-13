@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/02/16 16:43:30 ptr>
+// -*- C++ -*- Time-stamp: <10/06/28 19:18:38 ptr>
 
 /*
  *
@@ -197,10 +197,6 @@ void vs_event_total_order::pack( std::ostream& s ) const
 {
   // basic_event::pack( s );
   __pack( s, id );
-  __pack( s, static_cast<uint32_t>(conform.size()) );
-  for ( list<uuid_type>::const_iterator i = conform.begin(); i != conform.end(); ++i ) {
-    __pack( s, *i );
-  }
   __pack( s, ev.code() );
   __pack( s, ev.flags() );
   __pack( s, ev.value() );
@@ -210,14 +206,6 @@ void vs_event_total_order::unpack( std::istream& s )
 {
   // basic_event::unpack( s );
   __unpack( s, id );
-  uint32_t sz = 0;
-  uuid_type tmp;
-  __unpack( s, sz );
-  while ( sz > 0 ) {
-    __unpack( s, tmp );
-    conform.push_back( tmp );
-    --sz;
-  }
 
   stem::code_type c;
   __unpack( s, c );
@@ -234,7 +222,6 @@ void vs_event_total_order::swap( vs_event_total_order& r )
 {
   // std::swap( vt, r.vt );
   std::swap( id, r.id );
-  std::swap( conform, r.conform );
   std::swap( ev, r.ev );
 }
 

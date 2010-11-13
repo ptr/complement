@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/06/05 10:02:02 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-10 14:12:44 ptr>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005-2009
+ * Copyright (c) 2002, 2003, 2005-2010
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -12,6 +12,7 @@
 #include "names.h"
 #include "sockios_test.h"
 #include "unix_socket.h"
+#include "syslog_test.h"
 
 #include <exam/suite.h>
 
@@ -82,7 +83,7 @@ int main( int argc, const char** argv )
   t.add( &sockios_test::few_packets_loop, test, "packets boundary, loop", 
     t.add( &sockios_test::few_packets, test, "packets boundary", tc[3] ) );
 
-  exam::test_suite::test_case_type extratc[5];
+  exam::test_suite::test_case_type extratc[6];
 
   extratc[0] = tc[5];
 
@@ -100,7 +101,7 @@ int main( int argc, const char** argv )
 
   unix_sockios_test unx;
 
-  t.add( &unix_sockios_test::core_write_test, unx, "core unix dgram socket write",
+  extratc[5] = t.add( &unix_sockios_test::core_write_test, unx, "core unix dgram socket write",
     t.add( &unix_sockios_test::core_test, unx, "core unix dgram socket", tc[0] ) );
 
   extratc[2] = t.add( &unix_sockios_test::processor_core_income_data, unx, "all data available after sockstream was closed, unix socket",
@@ -113,6 +114,10 @@ int main( int argc, const char** argv )
   extratc[3] = tc[4];
   t.add( &unix_sockios_test::income_data, unx, "all data available after sockstream was closed, different processes, unix socket", extratc + 2, extratc + 4 );
   t.add( &unix_sockios_test::open_timeout, unx, "open timeout, unix socket", extratc[4] );
+
+  syslog_test sl;
+
+  t.add( &syslog_test::core_test, sl, "syslog via unix socket", extratc[5] );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( cerr );

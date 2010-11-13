@@ -27,20 +27,30 @@ class vtime_operations
     int EXAM_DECL(VT_one_group_join_exit);
     int EXAM_DECL(VT_one_group_join_send);
     int EXAM_DECL(VT_one_group_multiple_joins);
+    int EXAM_DECL(VT_one_group_multiple_join_send);
+    int EXAM_DECL(VT_mt_operation);
     int EXAM_DECL(VT_one_group_replay);
     int EXAM_DECL(VT_one_group_late_replay);
 
     int EXAM_DECL(VT_one_group_network);
     int EXAM_DECL(VT_one_group_access_point);
+    int EXAM_DECL(VT_one_group_access_point_ex);
 
     int EXAM_DECL(VT_one_group_recover);
 
-    int EXAM_DECL(leader);
+    int EXAM_DECL(leader_local);
+    int EXAM_DECL(leader_change);
+    int EXAM_DECL(leader_multiple_change);
+    int EXAM_DECL(leader_network);
     int EXAM_DECL(leader_fail);
+    int EXAM_DECL(leader_recovery);
+    int EXAM_DECL(leader_mt);
 
     int EXAM_DECL( double_flush );
+    int EXAM_DECL( double_exit );
     int EXAM_DECL( flush_and_join );
     int EXAM_DECL( flush_and_exit );
+    int EXAM_DECL( join_flush_exit );
     int EXAM_DECL( lock_and_torder );
 };
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/21 23:03:54 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-11 13:46:55 ptr>
 
 /*
  * Copyright (c) 2009, 2010
@@ -25,6 +25,7 @@ closelog();
 #include <config/feature.h>
 #endif
 
+#include <sstream>
 #include <mt/thread>
 #include <sockios/sockstream>
 
@@ -48,6 +49,10 @@ closelog();
 #endif
 
 namespace misc {
+
+std::ostream& use_syslog()
+{ return detail::xsyslog(); }
+
 namespace detail {
 #ifdef __USE_STLPORT_HASH
 typedef std::hash_map<std::tr2::thread_base::id,std::sockstream*> log_heap_type;
@@ -162,6 +167,7 @@ std::tr2::mutex syslog_init::Init::_init_lock;
 bool syslog_init::Init::_at_fork = false;
 std::tr2::mutex _heap_lock;
 // static string exename;
+static string prefix;
 
 void syslog_init::Init::_guard( int direction )
 {
@@ -169,10 +175,14 @@ void syslog_init::Init::_guard( int direction )
     std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
     if ( _count++ == 0 ) {
       if ( !_at_fork ) { // call only once
-//        if ( pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child ) ) {
+        if ( pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child ) ) {
           // throw system_error
-//        }
+        }
         _at_fork = true;
+        stringstream s;
+
+        s << detail::timeline << __progname << '[' << std::tr2::getpid() << "]: ";
+        prefix = s.str();
       }
 #if 0
       if ( exename.empty() ) {
@@ -213,6 +223,11 @@ void syslog_init::Init::__at_fork_child()
 {
   // if ( _count != 0 ) {
   // }
+  stringstream s;
+
+  s << detail::timeline << __progname << '[' << std::tr2::getpid() << "]: ";
+  prefix = s.str();
+
   _init_lock.unlock();
 }
 
@@ -235,6 +250,9 @@ syslog_init::~syslog_init()
 }
 
 static syslog_init _slog_aux; // register fork handlers
+
+int default_log_level = LOG_ERR;
+int default_log_facility = LOG_USER;
 
 ostream& xsyslog( int _level, int _facility )
 {
@@ -261,7 +279,14 @@ ostream& xsyslog( int _level, int _facility )
   // time_t t = std::tr2::get_system_time().seconds_since_epoch();
   // localtime_r( &t, &ts );
 
+  if ( slog.fail() ) {
+    slog.clear();
+    slog.close();
+    slog.open("/dev/log", sock_base::sock_dgram);
+  }
+
   slog << '<' << (LOG_PRI(_level) | (_facility & LOG_FACMASK)) << '>';
+
   /*
    Jun 23 14:56:32
    0123456789012345
@@ -273,13 +298,33 @@ ostream& xsyslog( int _level, int _facility )
    
    */
   // tmp.put( *detail::_slog, *detail::_slog, ' ', &ts, detail::format, detail::format + sizeof(detail::format) );
-  slog << detail::timeline
-       << __progname << '[' << std::tr2::getpid() << "]: ";
+  slog << prefix /* detail::timeline
+             << __progname << '[' << std::tr2::getpid() << "]: " */;
   
   return slog;
 }
 
+ostream& xsyslog( int _level )
+{
+  return xsyslog( _level, default_log_facility );
+}
+
+ostream& xsyslog()
+{
+  return xsyslog( default_log_level, default_log_facility );
+}
+
 } // namespace detail
+
+void set_default_log_level(int log_level)
+{
+  detail::default_log_level = log_level;
+}
+
+void set_default_log_facility(int log_facility)
+{
+  detail::default_log_facility = log_facility;
+}
 
 void close_syslog()
 {

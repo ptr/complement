@@ -1,3 +1,22 @@
+2010-07-06  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* EvManager.h, EvManager.cc: intermediate queues
+	removed; dispatch thread for intermediate queues
+	removed; search target object only once; lock
+	object for series of events once, if possible;
+
+	* _EventHandler.cc: reduce lock on removing from
+	StEM;
+	
+	* libstem: revision 5.5.0.
+
+2010-06-30  Petr Ovtchenkov  <ptr@void-ptr.info>
+
+	* EvManager.h, EvManager.cc, _EventHandler.cc:
+	  don't lock object for enable();
+	
+	* libstem: revision 5.4.7.
+
 2010-05-25  Petr Ovtchenkov  <ptr@void-ptr.info>
 
 	* Event.h: Event_base specialization

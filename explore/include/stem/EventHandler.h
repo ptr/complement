@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/19 17:03:56 ptr>
+// -*- C++ -*- Time-stamp: <10/07/30 14:24:51 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005-2010
@@ -601,8 +601,11 @@ class EventHandler
     void sync_call( const stem::Event_base<D>& e )
       { EventHandler::sync_call( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
 
-    const addr_type& self_id() const
-      { return _ids.empty() ? stem::badaddr : _ids.front(); }
+    const addr_type self_id() const
+      {
+        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( _theHistory_lock );
+        return _ids.empty() ? stem::badaddr : _ids.front();
+      }
     id_iterator self_ids_begin() const
       { return _ids.begin(); }
     id_iterator self_ids_end() const

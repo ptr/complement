@@ -630,7 +630,8 @@ using tr2::get_id;
 inline void yield()
 {
 #ifdef __FIT_PTHREADS
-  sched_yield();
+  // sched_yield();
+  pthread_yield();
 #endif
 }
 
