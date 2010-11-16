@@ -78,6 +78,8 @@ Available options:
   --with-sigcxx=<dir>   use sigc++ sources in catalog <dir>
   --with-glibmm=<dir>   use glibmm sources in catalog <dir> (require sigc++)
   --with-libxmlxx=<dir> use libxml++ sources in catalog <dir> (require sigc++, glibmm)
+  --python-version=<x.x> 
+                        version of python to use with boost python(default - 2.6)
 
 Environment variables:
 
@@ -163,6 +165,9 @@ do
       ;;
     --with-boost=*)
       write_option "$option" BOOST_DIR
+      ;;
+    --python-version=*)
+      write_option "$option" PYTHON_VERSION
       ;;
     --with-boostlog=*)
       write_option "$option" BOOST_LOG_DIR

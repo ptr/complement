@@ -6,7 +6,9 @@ COMPILER_NAME := gcc
 include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
 
-INCLUDES += -I${BOOST_INCLUDE_DIR} -I/usr/include/python2.6
+PYTHON_VERSION ?= 2.6
+
+INCLUDES += -I${BOOST_INCLUDE_DIR} -I/usr/include/python${PYTHON_VERSION}
 
 ifndef WITHOUT_STLPORT
 
