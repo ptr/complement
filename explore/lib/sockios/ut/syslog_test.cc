@@ -87,3 +87,20 @@ int EXAM_IMPL(syslog_test::core_test)
 
   return EXAM_RESULT;
 }
+
+int EXAM_IMPL(syslog_test::level_facility_conversions)
+{
+  EXAM_CHECK(misc::convert_log_level(LOG_ERR) == "err");
+  EXAM_CHECK(misc::convert_log_level(-1) == std::string());
+
+  EXAM_CHECK(misc::convert_log_level("err") == LOG_ERR);
+  EXAM_CHECK(misc::convert_log_level("") == -1);
+
+  EXAM_CHECK(misc::convert_log_facility(LOG_USER) == "user");
+  EXAM_CHECK(misc::convert_log_facility(-1) == std::string());
+
+  EXAM_CHECK(misc::convert_log_facility("user") == LOG_USER);
+  EXAM_CHECK(misc::convert_log_facility("") == -1);
+
+  return EXAM_RESULT;
+}
