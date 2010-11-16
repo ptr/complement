@@ -25,8 +25,6 @@ closelog();
 #include <config/feature.h>
 #endif
 
-#define SYSLOG_NAMES
-
 #include <sstream>
 #include <mt/thread>
 #include <sockios/sockstream>
@@ -326,50 +324,6 @@ void set_default_log_level(int log_level)
 void set_default_log_facility(int log_facility)
 {
   detail::default_log_facility = log_facility;
-}
-
-std::string convert_log_level(int log_level)
-{
-  for (int i = 0; prioritynames[i].c_name != NULL; ++i) {
-    if (prioritynames[i].c_val == log_level) {
-      return prioritynames[i].c_name;
-    }
-  }
-
-  return std::string();
-}
-
-int convert_log_level(const std::string& log_level)
-{
-  for (int i = 0; prioritynames[i].c_name != NULL; ++i) {
-    if (prioritynames[i].c_name == log_level) {
-      return prioritynames[i].c_val;
-    }
-  }
-
-  return -1;
-}
-
-std::string convert_log_facility(int log_facility)
-{
-  for (int i = 0; facilitynames[i].c_name != NULL; ++i) {
-    if (facilitynames[i].c_val == log_facility) {
-      return facilitynames[i].c_name;
-    }
-  }
-
-  return std::string();
-}
-
-int convert_log_facility(const std::string& log_facility)
-{
-  for (int i = 0; facilitynames[i].c_name != NULL; ++i) {
-    if (facilitynames[i].c_name == log_facility) {
-      return facilitynames[i].c_val;
-    }
-  }
-
-  return -1;
 }
 
 void close_syslog()

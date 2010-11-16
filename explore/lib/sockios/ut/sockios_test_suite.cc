@@ -117,9 +117,7 @@ int main( int argc, const char** argv )
 
   syslog_test sl;
 
-  
-  t.add( &syslog_test::level_facility_conversions, sl, "syslog log level, log facility conversions",
-    t.add( &syslog_test::core_test, sl, "syslog via unix socket", extratc[5] ) );
+  t.add( &syslog_test::core_test, sl, "syslog via unix socket", extratc[5] );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( cerr );

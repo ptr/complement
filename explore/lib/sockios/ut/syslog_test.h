@@ -17,7 +17,6 @@
 struct syslog_test
 {
     int EXAM_DECL(core_test);
-    int EXAM_DECL(level_facility_conversions);
 };
 
 #endif // __syslog_test_h
