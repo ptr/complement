@@ -16,6 +16,28 @@ namespace std {
 namespace detail {
 
 template<class charT, class traits, class _Alloc>
+bool sockmgr<charT,traits,_Alloc>::epoll_push(int fd, int events)
+{
+  epoll_event ev_add;
+  ev_add.data.u64 = 0ULL;
+  ev_add.events = events;
+  ev_add.data.fd = fd;
+
+  return epoll_ctl(efd, EPOLL_CTL_ADD, fd, &ev_add) == 0;
+}
+
+template<class charT, class traits, class _Alloc>
+bool sockmgr<charT,traits,_Alloc>::epoll_restore(int fd, int events)
+{
+  epoll_event ev_mod;
+  ev_mod.data.u64 = 0ULL;
+  ev_mod.events = events;
+  ev_mod.data.fd = fd;
+
+  return epoll_ctl(efd, EPOLL_CTL_MOD, fd, &ev_mod) == 0;
+}
+
+template<class charT, class traits, class _Alloc>
 sockmgr<charT,traits,_Alloc>::sockmgr(int _fd_count_hint, int _maxevents) :
     efd( -1 ),
     _worker( 0 ),
@@ -35,12 +57,7 @@ sockmgr<charT,traits,_Alloc>::sockmgr(int _fd_count_hint, int _maxevents) :
     throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>" ) );
   }
 
-  epoll_event ev_add;
-  ev_add.events = EPOLLIN | EPOLLERR | EPOLLHUP;
-  ev_add.data.u64 = 0ULL;
-
-  ev_add.data.fd = pipefd[0];
-  if ( epoll_ctl( efd, EPOLL_CTL_ADD, pipefd[0], &ev_add ) < 0 ) {
+  if (!epoll_push(pipefd[0], EPOLLIN | EPOLLERR | EPOLLHUP)) {
     ::close( efd );
     efd = -1;
     ::close( pipefd[1] );
@@ -360,8 +377,6 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
 template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
 {
-  epoll_event ev_add;
-
   ctl _ctl;
 
   int ret = 0;
@@ -378,20 +393,20 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
       throw runtime_error( "Read pipe return 0" );
     }
   } while ( ret != sizeof(ctl) );
-
+  
   switch ( _ctl.cmd ) {
     case listener:
-      ev_add.events = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-      ev_add.data.u64 = 0ULL;
+    {
+      int listener_fd = static_cast<socks_processor_t*>(_ctl.data.ptr)->fd();
 
-      ev_add.data.fd = static_cast<socks_processor_t*>(_ctl.data.ptr)->fd();
-      if ( ev_add.data.fd >= 0 ) {
-        if ( fcntl( ev_add.data.fd, F_SETFL, fcntl( ev_add.data.fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
+      if (listener_fd >= 0) {
+        if ( fcntl( listener_fd, F_SETFL, fcntl( listener_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
           static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
           throw std::runtime_error( "can't establish nonblock mode on listener" );
         }
-        if ( descr.find( ev_add.data.fd ) != descr.end() ) { // reuse?
-          if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev_add.data.fd, &ev_add ) < 0 ) {
+        
+        if ( descr.find(listener_fd) != descr.end() ) { // reuse?
+          if (!epoll_restore(listener_fd)) {
             extern std::tr2::mutex _se_lock;
             extern std::ostream* _se_stream;
 
@@ -406,7 +421,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
             return;
           }
         } else {
-          if ( epoll_ctl( efd, EPOLL_CTL_ADD, ev_add.data.fd, &ev_add ) < 0 ) {
+          if (!epoll_push(listener_fd)) {
             extern std::tr2::mutex _se_lock;
             extern std::ostream* _se_stream;
 
@@ -420,17 +435,19 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
             return;
           }
         }
-        descr[ev_add.data.fd] = fd_info( static_cast<socks_processor_t*>(_ctl.data.ptr) );
+
+        descr[listener_fd] = fd_info( static_cast<socks_processor_t*>(_ctl.data.ptr) );
       }
+
       static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
       break;
+    }
     case tcp_buffer:
-      ev_add.events = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-      ev_add.data.u64 = 0ULL;
+    {
+      int tcp_buffer_fd = static_cast<sockbuf_t*>(_ctl.data.ptr)->fd();
 
-      ev_add.data.fd = static_cast<sockbuf_t*>(_ctl.data.ptr)->fd();
-      if ( ev_add.data.fd >= 0 ) {
-        if ( epoll_ctl( efd, EPOLL_CTL_ADD, ev_add.data.fd, &ev_add ) < 0 ) {
+      if ( tcp_buffer_fd >= 0 ) {
+        if (!epoll_push(tcp_buffer_fd)) {
           extern std::tr2::mutex _se_lock;
           extern std::ostream* _se_stream;
 
@@ -441,38 +458,34 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
                         << std::endl;
           }
 
-          descr.erase( ev_add.data.fd );
+          descr.erase( tcp_buffer_fd );
 
           return; // already closed?
         }
-        descr[ev_add.data.fd] = fd_info( static_cast<sockbuf_t*>(_ctl.data.ptr) );
+        descr[tcp_buffer_fd] = fd_info( static_cast<sockbuf_t*>(_ctl.data.ptr) );
       }
       break;
+    }
     case rqstop:
+    {
       throw std::detail::stop_request();
-      // break;
+    }
     case tcp_buffer_back:
+    {
       // return back to epoll
-      ev_add.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-      ev_add.data.u64 = 0ULL;
-
-      ev_add.data.fd = _ctl.data.fd;
-      if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev_add.data.fd, &ev_add ) < 0 ) {
-        return; // already closed?
-      }
+      epoll_restore(_ctl.data.fd);
       break;
+    }
     case dgram_proc:
-      ev_add.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-      ev_add.data.u64 = 0ULL;
-
-      ev_add.data.fd = static_cast<socks_processor_t*>(_ctl.data.ptr)->fd();
-      if ( ev_add.data.fd >= 0 ) {
-        if ( fcntl( ev_add.data.fd, F_SETFL, fcntl( ev_add.data.fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
+    {
+      int dgram_proc_fd = static_cast<socks_processor_t*>(_ctl.data.ptr)->fd();
+      if ( dgram_proc_fd >= 0 ) {
+        if ( fcntl( dgram_proc_fd, F_SETFL, fcntl( dgram_proc_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
           static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
           throw std::runtime_error( "can't establish nonblock mode on listener" );
         }
-        if ( descr.find( ev_add.data.fd ) != descr.end() ) { // reuse?
-          if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev_add.data.fd, &ev_add ) < 0 ) {
+        if ( descr.find( dgram_proc_fd ) != descr.end() ) { // reuse?
+          if (!epoll_restore(dgram_proc_fd)) {
             extern std::tr2::mutex _se_lock;
             extern std::ostream* _se_stream;
 
@@ -488,7 +501,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
             return;
           }
         } else {
-          if ( epoll_ctl( efd, EPOLL_CTL_ADD, ev_add.data.fd, &ev_add ) < 0 ) {
+          if (!epoll_push(dgram_proc_fd)) {
             extern std::tr2::mutex _se_lock;
             extern std::ostream* _se_stream;
 
@@ -502,10 +515,11 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
             return;
           }
         }
-        descr[ev_add.data.fd] = fd_info( fd_info::dgram_proc, 0, static_cast<socks_processor_t*>(_ctl.data.ptr) );
+        descr[dgram_proc_fd] = fd_info( fd_info::dgram_proc, 0, static_cast<socks_processor_t*>(_ctl.data.ptr) );
       }
       static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
       break;
+    }
   }
 }
 template<class charT, class traits, class _Alloc>
@@ -562,35 +576,20 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
   for ( int i = 0; i < acc_lim; ++i ) {
     int fd = accept( ev.data.fd, &addr, &sz );
     if ( fd < 0 ) {
-      // if i == 0, then suspect that listener closed
       if ( i > 0 && ((errno == EAGAIN) || (errno == EINTR) || (errno == ECONNABORTED)) ) { // EWOULDBLOCK == EAGAIN
-        // back to listen
         errno = 0;
-        epoll_event xev;
-        xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-        xev.data.u64 = 0ULL;
-
-        xev.data.fd = ev.data.fd;
-        if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) == 0 ) {
+        if (epoll_restore(ev.data.fd)) {
           return; // normal flow, back to epoll
         }
-        // closed?
       } else if ( (errno == EMFILE) || (errno == ENFILE) ) {
         // back to listen
         int save_errno = errno;
         errno = 0;
-        epoll_event xev;
-        xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-        xev.data.u64 = 0ULL;
-
-        xev.data.fd = ev.data.fd;
-        if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) == 0 ) {
+        if (epoll_restore(ev.data.fd)) {
           throw std::system_error( save_errno, std::get_posix_category(), std::string( __PRETTY_FUNCTION__ ) );
         }
-        // closed?
       }
 
-      // close listener:
       close_listener(ifd);
       return;
     }
@@ -601,17 +600,10 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
     }
       
     try {
-      epoll_event ev_add;
-      ev_add.events = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-      ev_add.data.u64 = 0ULL;
-
-      ev_add.data.fd = fd;
-
-      if ( epoll_ctl( efd, EPOLL_CTL_ADD, fd, &ev_add ) < 0 ) {
+      if (!epoll_push(fd)) {
         ::close( fd );
         throw std::system_error( errno, std::get_posix_category(), std::string( __PRETTY_FUNCTION__ ) );
-        // return;
-      }      
+      }
 
       sockbuf_t* b = (*info.p)( fd, addr );
       descr[fd] = fd_info( b, info.p );
@@ -633,16 +625,9 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
 
   // restricted accept, acc_lim reached;
   // then try to return listener back to epoll
-  epoll_event xev;
-  xev.events = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-  xev.data.u64 = 0ULL;
-
-  xev.data.fd = ev.data.fd;
-  if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) == 0 ) {
-    return; // normal flow, back to epoll
+  if (!epoll_restore(ev.data.fd)) {
+    close_listener(ifd);
   }
-
-  close_listener(ifd);
 }
 
 template<class charT, class traits, class _Alloc>
@@ -687,43 +672,7 @@ void sockmgr<charT,traits,_Alloc>::process_dgram_srv( const epoll_event& ev, typ
     return;
   }
 
-  // cerr << HERE << endl;
-  // (*info.p)( ifd->first );
-  /* sockbuf_t* b = */ (*info.p)( ifd->first, addr );
-
-#if 0
-  try {
-    /*
-      Here b may be 0, if processor don't delegate control
-      under sockbuf_t to sockmgr, but want to see notifications;
-      see 'if ( b == 0 )' in process_regular below.
-    */
-    descr[fd] = fd_info( b, info.p );
-  }
-  catch ( ... ) {
-    extern std::tr2::mutex _se_lock;
-    extern std::ostream* _se_stream;
-
-    {
-      std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
-      if ( _se_stream != 0 ) {
-        *_se_stream << HERE << std::endl;
-      }
-    }
-    try {
-      descr.erase( fd );
-      {
-        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
-        ::close( b->_fd );
-        b->_fd = -1;
-        b->ucnd.notify_all();
-      }
-      (*info.p)( fd, typename socks_processor_t::adopt_close_t() );
-    }
-    catch ( ... ) {
-    }
-  }
-#endif
+  (*info.p)( ifd->first, addr );
 }
 
 template<class charT, class traits, class _Alloc>
@@ -737,13 +686,7 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
         b._fr += offset / sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
         if ( (b._fr < b._ebuf) || (b._fl < b.gptr()) ) { // free space available?
           // return back to epoll
-          epoll_event xev; // local var, don't modify ev
-          xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-          xev.data.u64 = 0ULL;
-
-          xev.data.fd = b._fd;
-
-          if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
+          if (!epoll_restore(b._fd)) {
             throw fdclose(); // closed?
           }
         }
@@ -757,13 +700,7 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
           errno = 0;
           // return back to epoll
           if ( b._type == std::sock_base::sock_stream ) {
-            epoll_event xev; // local var, don't modify ev
-            xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-            xev.data.u64 = 0ULL;
-
-            xev.data.fd = b._fd;
-
-            if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
+            if (!epoll_restore(b._fd)) {
               throw fdclose(); // closed?
             }
           } else if ( b._type == std::sock_base::sock_dgram ) {
@@ -783,13 +720,7 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
           b._fl += offset / sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
           if ( b._fl < gptr ) { // free space available?
             // return back to epoll
-            epoll_event xev; // local var, don't modify ev
-            xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-            xev.data.u64 = 0ULL;
-
-            xev.data.fd = b._fd;
-
-            if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
+            if (!epoll_restore(b._fd)) {
               throw fdclose(); // closed?
             }
           }
@@ -802,13 +733,8 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
             // no more ready data available; return back to epoll.
             errno = 0;
             if ( b._type == std::sock_base::sock_stream ) {
-              epoll_event xev; // local var, don't modify ev
-              xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-              xev.data.u64 = 0ULL;
-
-              xev.data.fd = b._fd;
-              if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
-                throw fdclose(); // hmm, unexpected here; closed?
+              if (!epoll_restore(b._fd)) {
+                throw fdclose(); // closed?
               }
             } else if ( b._type == std::sock_base::sock_dgram ) {
               throw fdclose();
@@ -825,13 +751,7 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
     }
   } else { // it locked someware; let's return to this descriptor later
     // return back to epoll
-    epoll_event xev; // local var, don't modify ev
-    xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-    xev.data.u64 = 0ULL;
-
-    xev.data.fd = b._fd;
-
-    if ( epoll_ctl( efd, EPOLL_CTL_MOD, xev.data.fd, &xev ) < 0 ) {
+    if (!epoll_restore(b._fd)) {
       extern std::tr2::mutex _se_lock;
       extern std::ostream* _se_stream;
 
@@ -925,21 +845,6 @@ void sockmgr<charT,traits,_Alloc>::process_regular( const epoll_event& ev, typen
     if ( (ev.events & (/* EPOLLRDHUP | */ EPOLLHUP | EPOLLERR) ) != 0 ) {
       throw fdclose(); // closed connection
     }
-#if 0
-    // Never see here: raw socket?
-    if ( ev.events & EPOLLPRI ) {
-      std::cerr << "Poll PRI" << std::endl;
-    }
-    if ( ev.events & EPOLLRDNORM ) {
-      std::cerr << "Poll RDNORM" << std::endl;
-    }
-    if ( ev.events & EPOLLRDBAND ) {
-      std::cerr << "Poll RDBAND" << std::endl;
-    }
-    if ( ev.events & EPOLLMSG ) {
-      std::cerr << "Poll MSG" << std::endl;
-    }
-#endif
   }
   catch ( const fdclose& ) {
     errno = 0;

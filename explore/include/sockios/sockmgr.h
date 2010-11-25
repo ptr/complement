@@ -192,6 +192,8 @@ class sockmgr
     void process_regular( const epoll_event&, typename fd_container_type::iterator );
 
     void close_listener( typename fd_container_type::iterator );
+    bool epoll_push(int fd, int flags = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT);
+    bool epoll_restore(int fd, int flags = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT);
 
     int efd;
     int pipefd[2];
