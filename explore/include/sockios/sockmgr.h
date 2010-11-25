@@ -144,7 +144,7 @@ class sockmgr
       { me->io_worker(); }
 
   public:
-    sockmgr( int hint = 1024, int ret = 1024 );
+    sockmgr( int _fd_count_hint = 1024, int _maxevents = 1024 );
 
     ~sockmgr();
 
@@ -191,10 +191,12 @@ class sockmgr
     void process_dgram_srv( const epoll_event&, typename fd_container_type::iterator );
     void process_regular( const epoll_event&, typename fd_container_type::iterator );
 
+    void close_listener( typename fd_container_type::iterator );
+
     int efd;
     int pipefd[2];
     std::tr2::thread* _worker;
-    const int n_ret;
+    const int maxevents;
     fd_container_type descr;
 
     friend class std::basic_socket<charT,traits,_Alloc>;

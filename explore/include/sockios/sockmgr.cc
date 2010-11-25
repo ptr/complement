@@ -16,26 +16,27 @@ namespace std {
 namespace detail {
 
 template<class charT, class traits, class _Alloc>
-sockmgr<charT,traits,_Alloc>::sockmgr( int hint, int ret ) :
+sockmgr<charT,traits,_Alloc>::sockmgr(int _fd_count_hint, int _maxevents) :
     efd( -1 ),
     _worker( 0 ),
-    n_ret( ret )
+    maxevents( _maxevents )
 {
   pipefd[0] = -1;
   pipefd[1] = -1;
 
-  efd = epoll_create( hint );
+  efd = epoll_create(_fd_count_hint);
   if ( efd < 0 ) {
     throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>" ) );
   }
-  if ( pipe( pipefd ) < 0 ) { // check err
+
+  if ( pipe( pipefd ) < 0 ) {
     ::close( efd );
     efd = -1;
     throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>" ) );
   }
 
   epoll_event ev_add;
-  ev_add.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP;
+  ev_add.events = EPOLLIN | EPOLLERR | EPOLLHUP;
   ev_add.data.u64 = 0ULL;
 
   ev_add.data.fd = pipefd[0];
@@ -126,7 +127,7 @@ void sockmgr<charT,traits,_Alloc>::push( socks_processor_t& p )
       }
     }
     r += ret;
-  } while ( (r != sizeof(ctl)) /* || (ret != 0) */ );
+  } while ( (r != sizeof(ctl)) );
 }
 
 template<class charT, class traits, class _Alloc>
@@ -151,7 +152,7 @@ void sockmgr<charT,traits,_Alloc>::push_dp( socks_processor_t& p )
       }
     }
     r += ret;
-  } while ( (r != sizeof(ctl)) /* || (ret != 0) */ );
+  } while ( (r != sizeof(ctl)) );
 }
 
 template<class charT, class traits, class _Alloc>
@@ -176,7 +177,7 @@ void sockmgr<charT,traits,_Alloc>::push( sockbuf_t& s )
       }
     }
     r += ret;
-  } while ( (r != sizeof(ctl)) /* || (ret != 0) */ );
+  } while ( (r != sizeof(ctl)));
 }
 
 template<class charT, class traits, class _Alloc>
@@ -201,21 +202,21 @@ void sockmgr<charT,traits,_Alloc>::restore( sockbuf_t& s )
       }
     }
     r += ret;
-  } while ( (r != sizeof(ctl)) /* || (ret != 0) */ );
+  } while ( (r != sizeof(ctl)));
 }
 
 template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::io_worker()
 {
-  epoll_event ev[ n_ret ];
+  epoll_event ev[maxevents];
 
   std::tr2::this_thread::signal_handler( SIGPIPE, SIG_IGN );
 
-  memset( ev, 0, n_ret * sizeof(epoll_event) );
+  memset( ev, 0, maxevents * sizeof(epoll_event) );
 
   try {
     for ( ; ; ) {
-      int n = epoll_wait( efd, &ev[0], n_ret, -1 );
+      int n = epoll_wait( efd, &ev[0], maxevents, -1 );
 
       if ( n < 0 ) {
         if ( errno == EINTR ) {
@@ -380,7 +381,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
 
   switch ( _ctl.cmd ) {
     case listener:
-      ev_add.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+      ev_add.events = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
       ev_add.data.u64 = 0ULL;
 
       ev_add.data.fd = static_cast<socks_processor_t*>(_ctl.data.ptr)->fd();
@@ -424,7 +425,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
       static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
       break;
     case tcp_buffer:
-      ev_add.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+      ev_add.events = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
       ev_add.data.u64 = 0ULL;
 
       ev_add.data.fd = static_cast<sockbuf_t*>(_ctl.data.ptr)->fd();
@@ -507,39 +508,43 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
       break;
   }
 }
+template<class charT, class traits, class _Alloc>
+void sockmgr<charT,traits,_Alloc>::close_listener(typename sockmgr<charT,traits,_Alloc>::fd_container_type::iterator ifd)
+{
+  int listener_fd = ifd->first;
+  fd_info info = ifd->second;
+
+  std::list<typename fd_container_type::key_type> trash;
+  for ( typename fd_container_type::const_iterator i = descr.begin(); i != descr.end(); ++i ) {
+    if ( i->second.p == info.p ) {
+      if ( (i->second.flags & fd_info::listener) == 0 ) { // it's not me!
+        sockbuf_t* b = i->second.b;
+        {
+          std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
+          ::close( b->_fd );
+          b->_fd = -1;
+          b->ucnd.notify_all();
+        }
+        (*info.p)( i->first, typename socks_processor_t::adopt_close_t() );
+      }
+      trash.push_back( i->first );
+    }
+  }
+
+  for ( typename std::list<typename fd_container_type::key_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
+    descr.erase( *i );
+  }
+
+  // no more connection with this listener
+  info.p->stop();
+  ::close( listener_fd ); 
+}
 
 template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, typename sockmgr<charT,traits,_Alloc>::fd_container_type::iterator ifd )
 {
-  if ( ev.events & (/* EPOLLRDHUP | */ EPOLLHUP | EPOLLERR) ) {
-    // close listener:
-    fd_info info = ifd->second;
-
-    std::list<typename fd_container_type::key_type> trash;
-    for ( typename fd_container_type::const_iterator i = descr.begin(); i != descr.end(); ++i ) {
-      if ( i->second.p == info.p ) {
-        if ( (i->second.flags & fd_info::listener) == 0 ) { // it's not me!
-          sockbuf_t* b = i->second.b;
-          {
-            std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
-            ::close( b->_fd );
-            b->_fd = -1;
-            b->ucnd.notify_all();
-          }
-          (*info.p)( i->first, typename socks_processor_t::adopt_close_t() );
-        }
-        trash.push_back( i->first );
-      }
-    }
-
-    for ( typename std::list<typename fd_container_type::key_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
-      descr.erase( *i );
-    }
-
-    // no more connection with this listener
-    info.p->stop();
-    ::close( ev.data.fd );
-
+  if ( ev.events & (EPOLLHUP | EPOLLERR) ) {
+    close_listener(ifd);
     return;
   }
 
@@ -557,10 +562,6 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
   for ( int i = 0; i < acc_lim; ++i ) {
     int fd = accept( ev.data.fd, &addr, &sz );
     if ( fd < 0 ) {
-      // if ( (errno == EINTR) || (errno == ECONNABORTED) /* || (errno == ERESTARTSYS) */ ) {
-      //  errno = 0;
-      //  continue;
-      // }
       // if i == 0, then suspect that listener closed
       if ( i > 0 && ((errno == EAGAIN) || (errno == EINTR) || (errno == ECONNABORTED)) ) { // EWOULDBLOCK == EAGAIN
         // back to listen
@@ -590,31 +591,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
       }
 
       // close listener:
-
-      std::list<typename fd_container_type::key_type> trash;
-      for ( typename fd_container_type::const_iterator i = descr.begin(); i != descr.end(); ++i ) {
-        if ( i->second.p == info.p ) {
-          if ( (i->second.flags & fd_info::listener) == 0 ) { // it's not me!
-            sockbuf_t* b = i->second.b;
-            {
-              std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
-              ::close( b->_fd );
-              b->_fd = -1;
-              b->ucnd.notify_all();
-            }
-            (*info.p)( i->first, typename socks_processor_t::adopt_close_t() );
-          }
-          trash.push_back( i->first );
-        }
-      }
-      for ( typename std::list<typename fd_container_type::key_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
-        descr.erase( *i );
-      }
-
-      // no more connection with this listener
-      info.p->stop();
-      ::close( ev.data.fd );
-
+      close_listener(ifd);
       return;
     }
 
@@ -625,7 +602,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
       
     try {
       epoll_event ev_add;
-      ev_add.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+      ev_add.events = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
       ev_add.data.u64 = 0ULL;
 
       ev_add.data.fd = fd;
@@ -637,38 +614,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
       }      
 
       sockbuf_t* b = (*info.p)( fd, addr );
-
-      try {
-        /*
-          Here b may be 0, if processor don't delegate control
-          under sockbuf_t to sockmgr, but want to see notifications;
-          see 'if ( b == 0 )' in process_regular below.
-        */
-        descr[fd] = fd_info( b, info.p );
-      }
-      catch ( ... ) {
-        extern std::tr2::mutex _se_lock;
-        extern std::ostream* _se_stream;
-
-        {
-          std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
-          if ( _se_stream != 0 ) {
-            *_se_stream << HERE << std::endl;
-          }
-        }
-        try {
-          descr.erase( fd );
-          {
-            std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
-            ::close( b->_fd );
-            b->_fd = -1;
-            b->ucnd.notify_all();
-          }
-          (*info.p)( fd, typename socks_processor_t::adopt_close_t() );
-        }
-        catch ( ... ) {
-        }
-      }
+      descr[fd] = fd_info( b, info.p );
     }
     catch ( ... ) {
       extern std::tr2::mutex _se_lock;
@@ -688,73 +634,22 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
   // restricted accept, acc_lim reached;
   // then try to return listener back to epoll
   epoll_event xev;
-  xev.events = EPOLLIN | /* EPOLLRDHUP | */ EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+  xev.events = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT;
   xev.data.u64 = 0ULL;
 
   xev.data.fd = ev.data.fd;
   if ( epoll_ctl( efd, EPOLL_CTL_MOD, ev.data.fd, &xev ) == 0 ) {
     return; // normal flow, back to epoll
   }
-  // listener closed?
 
-  // do procedure when listener closed:
-  std::list<typename fd_container_type::key_type> trash;
-  for ( typename fd_container_type::const_iterator i = descr.begin(); i != descr.end(); ++i ) {
-    if ( i->second.p == info.p ) {
-      if ( (i->second.flags & fd_info::listener) == 0 ) { // it's not me!
-        sockbuf_t* b = i->second.b;
-        {
-          std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
-          ::close( b->_fd );
-          b->_fd = -1;
-          b->ucnd.notify_all();
-        }
-        (*info.p)( i->first, typename socks_processor_t::adopt_close_t() );
-      }
-      trash.push_back( i->first );
-    }
-  }
-  for ( typename std::list<typename fd_container_type::key_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
-    descr.erase( *i );
-  }
-
-  // no more connection with this listener
-  info.p->stop();
-  ::close( ev.data.fd );
+  close_listener(ifd);
 }
 
 template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::process_dgram_srv( const epoll_event& ev, typename sockmgr<charT,traits,_Alloc>::fd_container_type::iterator ifd )
 {
-  if ( ev.events & (/* EPOLLRDHUP | */ EPOLLHUP | EPOLLERR) ) {
-    // close listener:
-    fd_info info = ifd->second;
-
-    std::list<typename fd_container_type::key_type> trash;
-    for ( typename fd_container_type::const_iterator i = descr.begin(); i != descr.end(); ++i ) {
-      if ( i->second.p == info.p ) {
-        if ( (i->second.flags & fd_info::dgram_proc) == 0 ) { // it's not me!
-          sockbuf_t* b = i->second.b;
-          {
-            std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
-            ::close( b->_fd );
-            b->_fd = -1;
-            b->ucnd.notify_all();
-          }
-          // possible problem, because of it may happen in dtor of info.p(...):
-          (*info.p)( i->first, typename socks_processor_t::adopt_close_t() );
-        }
-        trash.push_back( i->first );
-      }
-    }
-    for ( typename std::list<typename fd_container_type::key_type>::const_iterator i = trash.begin(); i != trash.end(); ++i ) {
-      descr.erase( *i );
-    }
-
-    // no more connection with this processor
-    info.p->stop();
-    ::close( ev.data.fd );
-
+  if ( ev.events & (EPOLLHUP | EPOLLERR) ) {
+    close_listener(ifd);
     return;
   }
 

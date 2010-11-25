@@ -86,9 +86,6 @@ class sock_processor_base :
     virtual ~sock_processor_base()
       {        
         sock_processor_base::_close();
-
-        std::tr2::unique_lock<std::tr2::mutex> lk(_cnt_lck);
-        _cnt_cnd.wait( lk, _chk );
       }
 
     void addref()
