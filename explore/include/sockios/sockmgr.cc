@@ -198,31 +198,6 @@ void sockmgr<charT,traits,_Alloc>::push( sockbuf_t& s )
 }
 
 template<class charT, class traits, class _Alloc>
-void sockmgr<charT,traits,_Alloc>::restore( sockbuf_t& s )
-{
-  ctl _ctl;
-  _ctl.cmd = tcp_buffer_back;
-  _ctl.data.fd = s._fd;
-
-  errno = 0;
-
-  int r = 0;
-  int ret = 0;
-  do {
-    ret = ::write( pipefd[1], &_ctl, sizeof(ctl) );
-    if ( ret < 0 ) {
-      switch ( errno ) {
-        case EINTR:
-          continue;
-        default:
-          throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>::restore( sockbuf_t& s )" ) );
-      }
-    }
-    r += ret;
-  } while ( (r != sizeof(ctl)));
-}
-
-template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::io_worker()
 {
   epoll_event ev[maxevents];
@@ -416,7 +391,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
                           << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
                           << std::endl;
             }
-            // descr.erase( ev_add.data.fd );
+            // descr.erase(listener_fd);
             static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
             return;
           }
@@ -469,12 +444,6 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
     case rqstop:
     {
       throw std::detail::stop_request();
-    }
-    case tcp_buffer_back:
-    {
-      // return back to epoll
-      epoll_restore(_ctl.data.fd);
-      break;
     }
     case dgram_proc:
     {
@@ -554,6 +523,7 @@ void sockmgr<charT,traits,_Alloc>::close_listener(typename sockmgr<charT,traits,
   ::close( listener_fd ); 
 }
 
+
 template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, typename sockmgr<charT,traits,_Alloc>::fd_container_type::iterator ifd )
 {
@@ -618,8 +588,6 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
           *_se_stream << HERE << ' ' << fd << std::endl;
         }
       }
-      ::close( fd );
-      (*info.p)( fd, typename socks_processor_t::adopt_close_t() );
     }
   }
 

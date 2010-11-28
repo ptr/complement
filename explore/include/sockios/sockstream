@@ -312,16 +312,11 @@ class basic_socket
     void wrtimeout() // infinite
       { _use_wrtimeout = false; }
 
-    // sock_base::socket_type fd() const
-    //   { return _fd; }
-    // bool is_open() const
-    //   { return _fd != -1; }
-
     family_type family() const
-      { return /* is_open() ? */ _address.any.sa_family /* : 0 */; }
+      { return  _address.any.sa_family; }
 
     int port() const
-      { return /* is_open() && */ _address.any.sa_family == AF_INET ?
+      { return _address.any.sa_family == AF_INET ?
 #       ifdef __LITTLE_ENDIAN
           (((_address.inet.sin_port >> 8) & 0xff) | ((_address.inet.sin_port & 0xff) << 8))
 #       elif defined(__BIG_ENDIAN)
@@ -333,7 +328,7 @@ class basic_socket
       }
 
     in_addr_t inet_addr() const
-      { return /* is_open() && */ _address.any.sa_family == AF_INET ?
+      { return _address.any.sa_family == AF_INET ?
 #       ifdef __LITTLE_ENDIAN
           (((_address.inet.sin_addr.s_addr >> 24) & 0xff) | ((_address.inet.sin_addr.s_addr & 0xff) << 24) | ((_address.inet.sin_addr.s_addr & 0xff00) << 8) | ((_address.inet.sin_addr.s_addr >> 8) & 0xff00))
 #       elif defined(__BIG_ENDIAN)
@@ -349,7 +344,7 @@ class basic_socket
         if ( _address.any.sa_family != AF_INET ) {
           throw domain_error( "socket not belongs to inet type" );
         }
-        return /* is_open() && */ _address.inet;
+        return _address.inet;
       }
 
   protected:
@@ -909,12 +904,6 @@ class basic_sockstream :
 	public basic_iostream<charT,traits>
 {
   public:
-    /* Inherited from basic_iostream
-    typedef charT                     char_type;
-    typedef typename traits::int_type int_type;
-    typedef typename traits::pos_type pos_type;
-    typedef typename traits::off_type off_type;
-    */
     basic_sockstream() :
         sock_base(),
         basic_iostream<charT,traits>( 0 )

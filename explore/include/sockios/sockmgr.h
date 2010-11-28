@@ -54,9 +54,6 @@ template <class charT, class traits, class _Alloc> class basic_sockbuf;
 template <class charT, class traits, class _Alloc> class basic_sockstream;
 template <class charT, class traits, class _Alloc> class sock_processor_base;
 
-
-template <class charT, class traits, class _Alloc> class basic_sockbuf;
-
 namespace detail {
 
 class stop_request :
@@ -79,7 +76,6 @@ class sockmgr
       listener,
       tcp_buffer,
       rqstop,
-      tcp_buffer_back,
       dgram_proc
     };
 
@@ -151,8 +147,9 @@ class sockmgr
     void push( socks_processor_t& p );
     void push_dp( socks_processor_t& p );
     void push( sockbuf_t& s );
-    void restore( sockbuf_t& s );
 
+    bool epoll_push(int fd, int flags = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT);
+    bool epoll_restore(int fd, int flags = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT);
   private:
     sockmgr( const sockmgr& )
       { }
@@ -192,8 +189,6 @@ class sockmgr
     void process_regular( const epoll_event&, typename fd_container_type::iterator );
 
     void close_listener( typename fd_container_type::iterator );
-    bool epoll_push(int fd, int flags = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT);
-    bool epoll_restore(int fd, int flags = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT);
 
     int efd;
     int pipefd[2];

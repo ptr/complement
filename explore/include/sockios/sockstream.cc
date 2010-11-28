@@ -803,7 +803,7 @@ void basic_sockbuf<charT, traits, _Alloc>::rewind()
 
   if ( this->is_open_unsafe() && ((this->_fr < this->_ebuf) || (this->_fl < this->gptr())) ) {
     // restore descriptor in epoll vector, free space in buffer available
-    basic_socket_t::mgr->restore( *this );
+    basic_socket_t::mgr->epoll_restore( this->fd_unsafe() );
   }
 }
 
