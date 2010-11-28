@@ -312,12 +312,11 @@ addr_type EventHandler::get_default()
 
 void EventHandler::solitary()
 {
-  _mgr->Unsubscribe( _ids.begin(), _ids.end(), this );
+  disable();
   {
-    std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( _theHistory_lock );
-    _ids.clear();
+    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( _theHistory_lock );
+    theHistory.clear();
   }
-  theHistory.clear();
 }
 
 void EventHandler::enable()
@@ -327,11 +326,13 @@ void EventHandler::enable()
 
 void EventHandler::disable()
 {
-  _mgr->Unsubscribe( _ids.begin(), _ids.end(), this );
+  addr_container_type ids_copy;
   {
     std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( _theHistory_lock );
+    std::copy(_ids.begin(), _ids.end(), std::back_inserter(ids_copy));
     _ids.clear();
   }
+  _mgr->Unsubscribe( ids_copy.begin(), ids_copy.end(), this );
 }
 
 int EventHandler::flags() const
