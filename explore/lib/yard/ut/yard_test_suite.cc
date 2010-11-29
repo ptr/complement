@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/04/20 16:16:37 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-29 20:06:59 ptr>
 
 /*
  * Copyright (c) 2010
@@ -26,6 +26,11 @@ int main( int argc, const char** argv )
     t.add( &yard_test::put_object, test, "put object",
       t.add( &yard_test::put, test, "put revision",
         t.add( &yard_test::create, test, "create hash" ) ) ) );
+
+  t.add( &yard_test::linear_commits_neg, test, "non-linear commits in yard ng",
+    t.add( &yard_test::linear_commits, test, "linear commits in yard ng",
+      t.add( &yard_test::access, test, "access to yard ng",
+        t.add( &yard_test::revision_in_memory, test, "revision in memory, yard ng" ) ) ) );
 
   Opts opts;
 

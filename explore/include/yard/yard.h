@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/13 08:47:18 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-29 19:31:38 ptr>
 
 /*
  *
@@ -34,7 +34,98 @@
 #  endif
 #endif
 
+#include <vector>
+#include <memory>
+#include <map>
+#include <set>
+
 namespace yard {
+
+typedef xmt::uuid_type revision_id_type;
+typedef revision_id_type manifest_id_type;
+typedef xmt::uuid_type commit_id_type;
+typedef xmt::uuid_type meta_id_type;
+typedef std::map<std::string,revision_id_type> manifest_type;
+
+class metainfo
+{
+  public:
+    void set( int, const std::string& );
+    bool is_set( int );
+    const std::string& get( int );
+
+  private:
+    typedef std::pair<uint8_t,std::string> record_type;
+    typedef std::list<record_type> container_type;
+
+    container_type rec;
+};
+
+struct revision_node
+{
+    enum 
+    {
+      mod = 0x1,
+      meta_loaded = 0x2
+    };
+
+    int flags;
+    std::string content;
+    meta_id_type mid;
+};
+
+class revision
+{
+  public:
+    revision_id_type push( const void*, size_t );
+    revision_id_type push( const std::string& data )
+      { return revision::push( data.data(), data.length() ); }
+    revision_id_type push( const manifest_type& );
+    const std::string& get( const revision_id_type& ) throw( std::invalid_argument );
+
+  private:
+    typedef std::map<revision_id_type,revision_node> revisions_container_type;
+
+    revisions_container_type r;
+};
+
+class yard_ng
+{
+  public:
+    yard_ng();
+
+    /* manifest id generated on client side instead of within this db,
+       because of potential distributed nature of db (id should be same
+       on every node of group).
+     */
+    void open_commit_delta( const commit_id_type& base, const commit_id_type& id );
+    void close_commit_delta( const commit_id_type& id );
+
+    void add( const commit_id_type&, const std::string&, const void*, size_t );
+    void add( const commit_id_type& id, const std::string& name, const std::string& data )
+      { add( id, name, data.data(), data.length() ); }
+    void del( const commit_id_type&, const std::string& );
+
+    std::string get( const commit_id_type&, const std::string& ) throw( std::invalid_argument, std::logic_error );
+    std::string get( const std::string& ) throw( std::invalid_argument, std::logic_error );
+
+  private:
+    typedef std::map<commit_id_type,manifest_id_type> commit_container_type;
+    typedef std::pair<commit_id_type,commit_id_type> commit_edge_type;
+    typedef std::list<commit_edge_type> commit_graph_type;
+    typedef std::list<commit_id_type> leafs_container_type;
+    typedef std::map<commit_id_type,std::pair<commit_id_type,manifest_type> > cache_container_type;
+    typedef std::map<manifest_id_type,manifest_type> cached_manifest_type;
+    typedef std::map<meta_id_type,std::pair<bool,metainfo> > meta_container_type;
+
+    revision r;
+    commit_container_type c;
+    commit_graph_type g;
+    leafs_container_type leaf;
+    cache_container_type cache;
+    cached_manifest_type cached_manifest;
+    meta_container_type meta;
+};
 
 typedef xmt::uuid_type id_type;
 

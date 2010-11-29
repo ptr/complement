@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/13 10:39:44 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-29 19:35:36 ptr>
 
 /*
  *
@@ -20,11 +20,209 @@
 #include <sstream>
 #include <iomanip>
 #include <functional>
+#include <misc/md5.h>
 #include <exam/defs.h>
+
+#include <algorithm>
+#include <functional>
 
 namespace yard {
 
 using namespace std;
+
+void metainfo::set( int key, const std::string& val )
+{
+  container_type::iterator i = find_if( rec.begin(), rec.end(),
+                                        compose1( bind2nd( equal_to<int>(), key ),
+                                                  select1st<container_type::value_type>() ) );
+  if ( i != rec.end() ) {
+    i->second = val;
+  } else {
+    rec.push_back( make_pair( key, val ) );
+  }
+}
+
+bool metainfo::is_set( int key )
+{
+  return find_if( rec.begin(), rec.end(),
+                  compose1( bind2nd( equal_to<int>(), key ),
+                            select1st<container_type::value_type>() ) ) != rec.end();
+}
+
+const std::string& metainfo::get( int key )
+{
+  static const string empty;
+
+  container_type::const_iterator i = find_if( rec.begin(), rec.end(),
+                                              compose1( bind2nd( equal_to<int>(), key ),
+                                                        select1st<container_type::value_type>() ) );
+
+  return i != rec.end() ? i->second : empty;
+}
+
+revision_id_type revision::push( const void* data, size_t sz )
+{
+  MD5_CTX ctx;
+  revision_id_type rid;
+
+  MD5Init( &ctx );
+  MD5Update( &ctx, reinterpret_cast<const uint8_t*>(data), sz );
+  MD5Final( rid.u.b, &ctx );
+
+  if ( r.find( rid ) != r.end() ) {
+    return rid;
+  }
+
+  revision_node& node = r[rid];
+
+  node.flags |= revision_node::mod;
+  node.content.assign( static_cast<const char*>(data), sz );
+
+  return rid;
+}
+
+revision_id_type revision::push( const manifest_type& m )
+{
+  stringstream s;
+
+  uint32_t sz;
+
+  for ( manifest_type::const_iterator i = m.begin(); i != m.end(); ++i ) {
+    sz = i->first.length();
+    s.write( reinterpret_cast<const char*>(&sz), sizeof(uint32_t) );
+    s.write( i->first.data(), i->first.length() );
+    s.write( reinterpret_cast<const char*>(i->second.u.b), sizeof(revision_id_type) );
+  }
+
+  return push( s.str() );
+}
+
+const std::string& revision::get( const revision_id_type& rid ) throw( std::invalid_argument )
+{
+  revisions_container_type::iterator i = r.find( rid );
+
+  if ( i == r.end() ) {
+    throw std::invalid_argument( "invalid revision" );
+  }
+
+  return i->second.content;
+}
+
+yard_ng::yard_ng()
+{
+  manifest_type m;
+  
+  manifest_id_type mid = r.push( m ); // ToDo: clear mod flag in r
+
+  cached_manifest[mid]; // = m;
+  c[xmt::nil_uuid] = mid;
+}
+
+void yard_ng::open_commit_delta( const commit_id_type& base, const commit_id_type& m )
+{
+  commit_container_type::const_iterator i = c.find( base );
+
+  if ( i == c.end() ) {
+    // ToDo: try to upload from disc
+    // throw invalid_argument
+    return;
+  }
+
+  cache[m].first = base;
+  cached_manifest_type::const_iterator j = cached_manifest.find( i->second );
+  if ( j != cached_manifest.end() ) {
+    cache[m].second = j->second; // oh, copy whole manifest...
+  } else {
+    // cache[m].second = ; extract manifest from r.get(i->second)
+  }
+}
+
+void yard_ng::close_commit_delta( const commit_id_type& m )
+{
+  cache_container_type::iterator i = cache.find( m );
+
+  if ( i == cache.end() ) {
+    return;
+  }
+
+  revision_id_type rid = r.push( i->second.second );
+  swap( cached_manifest[rid], i->second.second );
+  c[i->first] = rid;
+  g.push_back( make_pair(i->second.first, i->first) );
+
+  leafs_container_type::iterator j = find( leaf.begin(), leaf.end(), i->second.first );
+  if ( j != leaf.end() ) {
+    leaf.erase( j );
+  }
+  leaf.push_back( i->first );
+  cache.erase( i );
+}
+
+void yard_ng::add( const commit_id_type& id, const std::string& name, const void* data, size_t sz )
+{
+  cache_container_type::iterator i = cache.find( id );
+
+  if ( i == cache.end() ) {
+    return;
+  }
+
+  revision_id_type rid = r.push( data, sz );
+
+  i->second.second[name] = rid;
+}
+
+void yard_ng::del( const commit_id_type& id, const std::string& name )
+{
+  cache_container_type::iterator i = cache.find( id );
+
+  if ( i == cache.end() ) {
+    return;
+  }
+
+  i->second.second.erase( name );
+}
+
+std::string yard_ng::get( const commit_id_type& id, const std::string& name ) throw( std::invalid_argument, std::logic_error )
+{
+  commit_container_type::const_iterator i = c.find( id );
+
+  if ( i == c.end() ) {
+    // ToDo: try to upload from disc
+    throw std::invalid_argument( "invalid commit" );
+  }
+
+  cached_manifest_type::const_iterator j = cached_manifest.find( i->second );
+
+  if ( j != cached_manifest.end() ) {
+    manifest_type::const_iterator k = j->second.find( name );
+
+    if ( k == j->second.end()  ) {
+      throw std::invalid_argument( "invalid name" );
+    }
+
+    try {
+      return r.get( k->second );
+    }
+    catch ( const std::invalid_argument& ) {
+      throw std::logic_error( "no such revision" );
+    }
+  } else {
+    // deserialise from r.get( i->second ).content;
+    cerr << HERE << endl;
+  }
+}
+
+std::string yard_ng::get( const std::string& name ) throw( std::invalid_argument, std::logic_error )
+{
+  if ( leaf.size() != 1 ) {
+    if ( leaf.empty() ) {
+      throw std::logic_error( "empty commits graph" );
+    }
+    throw std::logic_error( "more then one head" );
+  }
+
+  return get( leaf.front(), name );
+}
 
 const size_t underground::block_size = 4096;
 const size_t underground::hash_block_n = (underground::block_size - 2 * sizeof(uint64_t)) / (sizeof(id_type) + 2 * sizeof(uint64_t));

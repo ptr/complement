@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/13 10:42:57 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-29 20:05:59 ptr>
 
 /*
  * Copyright (c) 2010
@@ -18,6 +18,152 @@
 
 // using namespace yard;
 using namespace std;
+
+int EXAM_IMPL(yard_test::revision_in_memory)
+{
+  yard::revision rev;
+  string content0( "01234567890123456789" );
+  string content1( "012345678901234567890" );
+
+  try {
+    yard::revision_id_type r0 = rev.push( content0 );
+    yard::revision_id_type r1 = rev.push( content1 );
+
+    EXAM_CHECK( rev.get( r0 ) == content0 );
+    EXAM_CHECK( rev.get( r1 ) == content1 );
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::access)
+{
+  yard::yard_ng db;
+  string content0( "01234567890123456789" );
+  string content1( "012345678901234567890" );
+
+  try {
+    yard::commit_id_type cid = xmt::uid();
+
+    db.open_commit_delta( xmt::nil_uuid, cid );
+    db.add( cid, "/one", content0 );
+    db.add( cid, "/two", content1 );
+    db.close_commit_delta( cid );
+
+    EXAM_CHECK( db.get( cid, "/one" ) == content0 );
+    EXAM_CHECK( db.get( cid, "/two" ) == content1 );
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::logic_error& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::linear_commits)
+{
+  yard::yard_ng db;
+  string content0( "01234567890123456789" );
+  string content1( "012345678901234567890" );
+
+  try {
+    yard::commit_id_type cid = xmt::uid();
+
+    db.open_commit_delta( xmt::nil_uuid, cid );
+    db.add( cid, "/one", content0 );
+    db.add( cid, "/two", content1 );
+    db.close_commit_delta( cid );
+
+    EXAM_CHECK( db.get( cid, "/one" ) == content0 );
+    EXAM_CHECK( db.get( cid, "/two" ) == content1 );
+
+    yard::commit_id_type cid2 = xmt::uid();
+    
+    db.open_commit_delta( cid, cid2 );
+    string content2( "2" );
+
+    db.add( cid2, "/one", content2 );
+
+    db.close_commit_delta( cid2 );
+
+    EXAM_CHECK( db.get( cid, "/one" ) == content0 );
+    EXAM_CHECK( db.get( "/one" ) == content2 );
+    EXAM_CHECK( db.get( cid2, "/one" ) == content2 );
+
+    yard::commit_id_type cid3 = xmt::uid();
+    
+    db.open_commit_delta( cid2, cid3 );
+    string content3( "3" );
+
+    db.add( cid3, "/two", content3 );
+
+    db.close_commit_delta( cid3 );
+
+    EXAM_CHECK( db.get( cid, "/one" ) == content0 );
+    EXAM_CHECK( db.get( "/one" ) == content2 );
+    EXAM_CHECK( db.get( cid2, "/one" ) == content2 );
+    EXAM_CHECK( db.get( cid3, "/one" ) == content2 );
+
+    EXAM_CHECK( db.get( cid, "/two" ) == content1 );
+    EXAM_CHECK( db.get( "/two" ) == content3 );
+    EXAM_CHECK( db.get( cid2, "/two" ) == content1 );
+    EXAM_CHECK( db.get( cid3, "/two" ) == content3 );
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::logic_error& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::linear_commits_neg)
+{
+  yard::yard_ng db;
+  string content0( "01234567890123456789" );
+  string content1( "012345678901234567890" );
+
+  try {
+    yard::commit_id_type cid = xmt::uid();
+
+    db.open_commit_delta( xmt::nil_uuid, cid );
+    db.add( cid, "/one", content0 );
+    db.add( cid, "/two", content1 );
+    db.close_commit_delta( cid );
+
+    EXAM_CHECK( db.get( cid, "/one" ) == content0 );
+    EXAM_CHECK( db.get( cid, "/two" ) == content1 );
+
+    yard::commit_id_type cid2 = xmt::uid();
+    
+    db.open_commit_delta( xmt::nil_uuid, cid2 );
+    string content2( "2" );
+
+    db.add( cid2, "/one", content2 );
+
+    db.close_commit_delta( cid2 );
+
+    db.get( "/one" ); // throw
+
+    EXAM_ERROR( "more then one head: logic_error exception expected" );
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::logic_error& err ) {
+    // EXAM_ERROR( err.what() );
+  }
+
+  return EXAM_RESULT;
+}
 
 int EXAM_IMPL(yard_test::create)
 {
