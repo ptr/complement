@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-11-29 20:05:59 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-30 15:17:37 ptr>
 
 /*
  * Copyright (c) 2010
@@ -160,6 +160,85 @@ int EXAM_IMPL(yard_test::linear_commits_neg)
   }
   catch ( const std::logic_error& err ) {
     // EXAM_ERROR( err.what() );
+  }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::diff)
+{
+  yard::yard_ng db;
+  string content0( "01234567890123456789" );
+  string content1( "012345678901234567890" );
+
+  try {
+    yard::commit_id_type cid = xmt::uid();
+
+    db.open_commit_delta( xmt::nil_uuid, cid );
+    db.add( cid, "/one", content0 );
+    db.add( cid, "/two", content1 );
+    db.close_commit_delta( cid );
+
+    EXAM_CHECK( db.get( cid, "/one" ) == content0 );
+    EXAM_CHECK( db.get( cid, "/two" ) == content1 );
+
+    yard::commit_id_type cid2 = xmt::uid();
+    
+    db.open_commit_delta( cid, cid2 );
+    string content2( "2" );
+
+    db.add( cid2, "/one", content2 );
+
+    db.close_commit_delta( cid2 );
+
+    EXAM_CHECK( db.get( cid, "/one" ) == content0 );
+    EXAM_CHECK( db.get( "/one" ) == content2 );
+    EXAM_CHECK( db.get( cid2, "/one" ) == content2 );
+
+    yard::commit_id_type cid3 = xmt::uid();
+    
+    db.open_commit_delta( cid2, cid3 );
+    string content3( "3" );
+
+    db.add( cid3, "/two", content3 );
+
+    db.close_commit_delta( cid3 );
+
+    yard::diff_type delta = db.diff( cid, cid3 );
+
+    EXAM_CHECK( delta.first.size() == 2 );
+    EXAM_CHECK( delta.second.size() == 2 );
+
+    for ( yard::manifest_type::const_iterator i = delta.first.begin(); i != delta.first.end(); ++i ) {
+      if ( i->first == "/one" ) {
+        EXAM_CHECK( db.get( i->second ) == content0 );
+      } else if ( i->first == "/two" ) {
+        EXAM_CHECK( db.get( i->second ) == content1 );
+      } else {
+        EXAM_ERROR( "unexpected" );
+      }
+
+      // cerr << '-' << i->first << ' ' << i->second << endl;
+    }
+
+    for ( yard::manifest_type::const_iterator i = delta.second.begin(); i != delta.second.end(); ++i ) {
+      if ( i->first == "/one" ) {
+        EXAM_CHECK( db.get( i->second ) == content2 );
+      } else if ( i->first == "/two" ) {
+        EXAM_CHECK( db.get( i->second ) == content3 );
+      } else {
+        EXAM_ERROR( "unexpected" );
+      }
+
+      // cerr << '+' << i->first << ' ' << i->second << endl;
+    }
+
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::logic_error& err ) {
+    EXAM_ERROR( err.what() );
   }
 
   return EXAM_RESULT;

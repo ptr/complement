@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-11-29 19:31:38 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-30 15:12:13 ptr>
 
 /*
  *
@@ -46,6 +46,7 @@ typedef revision_id_type manifest_id_type;
 typedef xmt::uuid_type commit_id_type;
 typedef xmt::uuid_type meta_id_type;
 typedef std::map<std::string,revision_id_type> manifest_type;
+typedef std::pair<manifest_type,manifest_type> diff_type;
 
 class metainfo
 {
@@ -106,8 +107,12 @@ class yard_ng
       { add( id, name, data.data(), data.length() ); }
     void del( const commit_id_type&, const std::string& );
 
-    std::string get( const commit_id_type&, const std::string& ) throw( std::invalid_argument, std::logic_error );
-    std::string get( const std::string& ) throw( std::invalid_argument, std::logic_error );
+    const std::string& get( const commit_id_type&, const std::string& ) throw( std::invalid_argument, std::logic_error );
+    const std::string& get( const std::string& ) throw( std::invalid_argument, std::logic_error );
+    const std::string& get( const revision_id_type& id ) throw( std::invalid_argument )
+      { return r.get( id ); }
+
+    diff_type diff( const commit_id_type&, const commit_id_type& );
 
   private:
     typedef std::map<commit_id_type,manifest_id_type> commit_container_type;

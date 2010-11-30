@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-11-29 19:35:36 ptr>
+// -*- C++ -*- Time-stamp: <2010-11-30 15:09:26 ptr>
 
 /*
  *
@@ -182,7 +182,7 @@ void yard_ng::del( const commit_id_type& id, const std::string& name )
   i->second.second.erase( name );
 }
 
-std::string yard_ng::get( const commit_id_type& id, const std::string& name ) throw( std::invalid_argument, std::logic_error )
+const std::string& yard_ng::get( const commit_id_type& id, const std::string& name ) throw( std::invalid_argument, std::logic_error )
 {
   commit_container_type::const_iterator i = c.find( id );
 
@@ -212,7 +212,7 @@ std::string yard_ng::get( const commit_id_type& id, const std::string& name ) th
   }
 }
 
-std::string yard_ng::get( const std::string& name ) throw( std::invalid_argument, std::logic_error )
+const std::string& yard_ng::get( const std::string& name ) throw( std::invalid_argument, std::logic_error )
 {
   if ( leaf.size() != 1 ) {
     if ( leaf.empty() ) {
@@ -222,6 +222,57 @@ std::string yard_ng::get( const std::string& name ) throw( std::invalid_argument
   }
 
   return get( leaf.front(), name );
+}
+
+diff_type yard_ng::diff( const commit_id_type& from, const commit_id_type& to )
+{
+  commit_container_type::const_iterator i = c.find( from );
+
+  if ( i == c.end() ) {
+    // ToDo: try to upload from disc
+    throw std::invalid_argument( "invalid commit id" );
+  }
+
+  commit_container_type::const_iterator j = c.find( to );
+
+  if ( j == c.end() ) {
+    // ToDo: try to upload from disc
+    throw std::invalid_argument( "invalid commit id" );
+  }
+
+  cached_manifest_type::const_iterator mf = cached_manifest.find( i->second );
+
+  if ( mf == cached_manifest.end() ) {
+    cerr << HERE << endl;
+  }
+
+  cached_manifest_type::const_iterator mt = cached_manifest.find( j->second );
+
+  if ( mt == cached_manifest.end() ) {
+    cerr << HERE << endl;
+  }
+
+  diff_type delta;
+  manifest_type::const_iterator l;
+
+  for ( manifest_type::const_iterator k = mf->second.begin(); k != mf->second.end(); ++k ) {
+    l = mt->second.find( k->first );
+    if ( l == mt->second.end() ) { // removed
+      delta.first[k->first] = k->second;
+    } else if ( l->second != k->second ) { // changed
+      delta.first[k->first] = k->second;
+      delta.second[k->first] = l->second; // k->first == l->first here
+    }
+  }
+
+  for ( manifest_type::const_iterator k = mt->second.begin(); k != mt->second.end(); ++k ) {
+    l = mf->second.find( k->first );
+    if ( l == mf->second.end() ) { // added
+      delta.second[k->first] = k->second;
+    }
+  }
+
+  return delta;
 }
 
 const size_t underground::block_size = 4096;
