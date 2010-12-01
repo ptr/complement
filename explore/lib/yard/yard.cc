@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-11-30 15:09:26 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-01 15:10:57 ptr>
 
 /*
  *
@@ -273,6 +273,105 @@ diff_type yard_ng::diff( const commit_id_type& from, const commit_id_type& to )
   }
 
   return delta;
+}
+
+commit_id_type yard_ng::common_ancestor( const commit_id_type&, const commit_id_type& )
+{
+  // not implemented yet
+  return xmt::nil_uuid; // in any case, it common ancestor ;)
+}
+
+int yard_ng::fast_merge( const commit_id_type& merge, const commit_id_type& left, const commit_id_type& right )
+{
+  commit_id_type ancestor = common_ancestor( left, right );
+
+  if ( ancestor == left ) {
+    return 2;
+  }
+
+  if ( ancestor == right ) {
+    return 1;
+  }
+
+  diff_type ld = diff( ancestor, left );
+  diff_type rd = diff( ancestor, right );
+
+  for ( manifest_type::iterator i = ld.second.begin(); i != ld.second.end(); ) {
+    manifest_type::iterator j = rd.second.find( i->first );
+    if ( j != rd.second.end() ) {
+      if ( j->second != i->second ) {
+        return 3; // can't do fast merge
+      }
+      ld.second.erase( i++ );
+      rd.second.erase( j );
+    } else {
+      ++i;
+    }
+  }
+
+  for ( manifest_type::iterator i = ld.first.begin(); i != ld.first.end(); ) {
+    manifest_type::iterator j = rd.first.find( i->first );
+    if ( j != rd.first.end() ) {
+      if ( j->second != i->second ) {
+        return 4; // unexpected: shouldn't happen!
+      }
+      if ( rd.second.find( i->first ) != rd.second.end() ) { // erased in left, changed in right
+        return 3; // can't do fast merge
+      }
+      if ( ld.second.find( i->first ) != ld.second.end() ) { // erased in right, changed in left
+        return 3; // can't do fast merge
+      }
+      ld.first.erase( i++ );
+      rd.first.erase( j );
+    } else {
+      ++i;
+    }
+  }
+
+  commit_container_type::const_iterator k = c.find( left );
+
+  if ( k == c.end() ) {
+    // ToDo: try to upload from disc
+    // throw invalid_argument
+    // return;
+  }
+
+  cache[merge].first = merge;
+
+  cache_container_type::iterator cc = cache.find( merge );
+  cc->second.first = left;
+  cached_manifest_type::const_iterator m = cached_manifest.find( k->second );
+  if ( m != cached_manifest.end() ) {
+    cc->second.second = m->second; // oh, copy whole manifest...
+  } else {
+    // cc->second.second = ; extract manifest from r.get(k->second)
+  }
+
+  for ( manifest_type::iterator i = rd.first.begin(); i != rd.first.end(); ++i ) {
+    cc->second.second.erase( i->first );
+  }
+  for ( manifest_type::iterator i = rd.second.begin(); i != rd.second.end(); ++i ) {
+    cc->second.second[i->first] = i->second;
+  }
+
+  revision_id_type rid = r.push( cc->second.second );
+  swap( cached_manifest[rid], cc->second.second );
+  c[merge] = rid;
+  g.push_back( make_pair(left, merge) );
+  g.push_back( make_pair(right, merge) );
+
+  leafs_container_type::iterator l = find( leaf.begin(), leaf.end(), left );
+  if ( l != leaf.end() ) {
+    leaf.erase( l );
+  }
+  l = find( leaf.begin(), leaf.end(), right );
+  if ( l != leaf.end() ) {
+    leaf.erase( l );
+  }
+  leaf.push_back( merge );
+  cache.erase( merge );
+
+  return 0;
 }
 
 const size_t underground::block_size = 4096;

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-11-30 14:58:27 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-01 15:48:45 ptr>
 
 /*
  * Copyright (c) 2010
@@ -32,7 +32,12 @@ int main( int argc, const char** argv )
       t.add( &yard_test::access, test, "access to yard ng",
         t.add( &yard_test::revision_in_memory, test, "revision in memory, yard ng" ) ) ) );
 
-  t.add( &yard_test::diff, test, "diff between commits in yard ng", tc[0] );
+  t.add( &yard_test::fast_merge3, test, "fast merge right add yard ng",
+    t.add( &yard_test::fast_merge2, test, "fast merge left add in yard ng",
+      t.add( &yard_test::fast_merge1, test, "fast merge add different in yard ng",
+        tc[1] = t.add( &yard_test::diff, test, "diff between commits in yard ng", tc[0] ) ) ) );
+
+  t.add( &yard_test::fast_merge_conflict1, test, "fast merge conflict in add yard ng", tc[1] );
 
   Opts opts;
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-11-30 15:12:13 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-01 13:11:17 ptr>
 
 /*
  *
@@ -95,7 +95,7 @@ class yard_ng
   public:
     yard_ng();
 
-    /* manifest id generated on client side instead of within this db,
+    /* commit id generated on client side instead of within yard_ng,
        because of potential distributed nature of db (id should be same
        on every node of group).
      */
@@ -114,6 +114,12 @@ class yard_ng
 
     diff_type diff( const commit_id_type&, const commit_id_type& );
 
+    /* again, commit id generated on client side instead of within yard_ng,
+       because of potential distributed nature of db (id should be same
+       on every node of group).
+     */
+    int fast_merge( const commit_id_type& merge, const commit_id_type& left, const commit_id_type& right );
+
   private:
     typedef std::map<commit_id_type,manifest_id_type> commit_container_type;
     typedef std::pair<commit_id_type,commit_id_type> commit_edge_type;
@@ -122,6 +128,8 @@ class yard_ng
     typedef std::map<commit_id_type,std::pair<commit_id_type,manifest_type> > cache_container_type;
     typedef std::map<manifest_id_type,manifest_type> cached_manifest_type;
     typedef std::map<meta_id_type,std::pair<bool,metainfo> > meta_container_type;
+
+    commit_id_type common_ancestor( const commit_id_type&, const commit_id_type& );
 
     revision r;
     commit_container_type c;
