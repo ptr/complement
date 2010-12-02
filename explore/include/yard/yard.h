@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-01 13:11:17 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-02 20:17:37 ptr>
 
 /*
  *
@@ -121,9 +121,21 @@ class yard_ng
     int fast_merge( const commit_id_type& merge, const commit_id_type& left, const commit_id_type& right );
 
   private:
-    typedef std::map<commit_id_type,manifest_id_type> commit_container_type;
-    typedef std::pair<commit_id_type,commit_id_type> commit_edge_type;
-    typedef std::list<commit_edge_type> commit_graph_type;
+    struct commit_node
+    {
+        manifest_id_type mid;
+        enum {
+          white = 0,
+          gray,
+          black
+        } color;
+
+        typedef std::list<commit_id_type> edge_container_type;
+        edge_container_type edge_in;
+        edge_container_type edge_out;
+    };
+
+    typedef std::map<commit_id_type,commit_node> commit_container_type;
     typedef std::list<commit_id_type> leafs_container_type;
     typedef std::map<commit_id_type,std::pair<commit_id_type,manifest_type> > cache_container_type;
     typedef std::map<manifest_id_type,manifest_type> cached_manifest_type;
@@ -133,7 +145,6 @@ class yard_ng
 
     revision r;
     commit_container_type c;
-    commit_graph_type g;
     leafs_container_type leaf;
     cache_container_type cache;
     cached_manifest_type cached_manifest;

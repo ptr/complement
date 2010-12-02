@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-01 15:10:57 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-02 20:17:11 ptr>
 
 /*
  *
@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <queue>
 
 namespace yard {
 
@@ -115,7 +116,7 @@ yard_ng::yard_ng()
   manifest_id_type mid = r.push( m ); // ToDo: clear mod flag in r
 
   cached_manifest[mid]; // = m;
-  c[xmt::nil_uuid] = mid;
+  c[xmt::nil_uuid].mid = mid; // root
 }
 
 void yard_ng::open_commit_delta( const commit_id_type& base, const commit_id_type& m )
@@ -129,7 +130,7 @@ void yard_ng::open_commit_delta( const commit_id_type& base, const commit_id_typ
   }
 
   cache[m].first = base;
-  cached_manifest_type::const_iterator j = cached_manifest.find( i->second );
+  cached_manifest_type::const_iterator j = cached_manifest.find( i->second.mid );
   if ( j != cached_manifest.end() ) {
     cache[m].second = j->second; // oh, copy whole manifest...
   } else {
@@ -147,8 +148,9 @@ void yard_ng::close_commit_delta( const commit_id_type& m )
 
   revision_id_type rid = r.push( i->second.second );
   swap( cached_manifest[rid], i->second.second );
-  c[i->first] = rid;
-  g.push_back( make_pair(i->second.first, i->first) );
+  c[i->first].mid = rid;
+  c[i->first].edge_in.push_back( i->second.first );
+  c[i->second.first].edge_out.push_back( i->first );
 
   leafs_container_type::iterator j = find( leaf.begin(), leaf.end(), i->second.first );
   if ( j != leaf.end() ) {
@@ -191,7 +193,7 @@ const std::string& yard_ng::get( const commit_id_type& id, const std::string& na
     throw std::invalid_argument( "invalid commit" );
   }
 
-  cached_manifest_type::const_iterator j = cached_manifest.find( i->second );
+  cached_manifest_type::const_iterator j = cached_manifest.find( i->second.mid );
 
   if ( j != cached_manifest.end() ) {
     manifest_type::const_iterator k = j->second.find( name );
@@ -240,13 +242,13 @@ diff_type yard_ng::diff( const commit_id_type& from, const commit_id_type& to )
     throw std::invalid_argument( "invalid commit id" );
   }
 
-  cached_manifest_type::const_iterator mf = cached_manifest.find( i->second );
+  cached_manifest_type::const_iterator mf = cached_manifest.find( i->second.mid );
 
   if ( mf == cached_manifest.end() ) {
     cerr << HERE << endl;
   }
 
-  cached_manifest_type::const_iterator mt = cached_manifest.find( j->second );
+  cached_manifest_type::const_iterator mt = cached_manifest.find( j->second.mid );
 
   if ( mt == cached_manifest.end() ) {
     cerr << HERE << endl;
@@ -275,10 +277,83 @@ diff_type yard_ng::diff( const commit_id_type& from, const commit_id_type& to )
   return delta;
 }
 
-commit_id_type yard_ng::common_ancestor( const commit_id_type&, const commit_id_type& )
+commit_id_type yard_ng::common_ancestor( const commit_id_type& left, const commit_id_type& right )
 {
-  // not implemented yet
-  return xmt::nil_uuid; // in any case, it common ancestor ;)
+  commit_container_type::iterator l = c.find( left );
+
+  if ( l == c.end() ) {
+    throw invalid_argument( "no such commit" );
+  }
+
+  commit_container_type::iterator r = c.find( right );
+
+  if ( r == c.end() ) {
+    throw invalid_argument( "no such commit" );
+  }
+
+  if ( left == right ) {
+    return left;
+  }
+
+  std::list<commit_id_type> colored;
+
+  l->second.color = commit_node::black;
+  r->second.color = commit_node::gray;
+
+  colored.push_back( left );
+  colored.push_back( right );
+
+  std::queue<commit_id_type,std::list<commit_id_type> > st_left;
+  std::queue<commit_id_type,std::list<commit_id_type> > st_right;
+
+  for ( ; ; ) {
+    /* This is not infinite loop: graph has single root,
+       so at least root is common ancestor
+     */
+    if ( l != c.end() ) {
+      for ( commit_node::edge_container_type::iterator i = l->second.edge_in.begin(); i != l->second.edge_in.end(); ++i ) {
+        if ( c[*i].color == commit_node::gray ) { // see right's color
+          // clear colors, before return
+          for ( std::list<commit_id_type>::const_iterator j = colored.begin(); j != colored.end(); ++j ) {
+            c[*j].color = commit_node::white;
+          }
+          return *i;
+        } else if ( c[*i].color == commit_node::white ) {
+          c[*i].color = commit_node::black;
+          st_left.push( *i );
+          colored.push_back( *i );
+        } // else already looks here, skip it
+      }
+      if ( !st_left.empty() ) {
+        l = c.find( st_left.front() );
+        st_left.pop();
+      } else { // root
+        l = c.end();
+      }
+    }
+
+    if ( r != c.end() ) {
+      for ( commit_node::edge_container_type::iterator i = r->second.edge_in.begin(); i != r->second.edge_in.end(); ++i ) {
+        if ( c[*i].color == commit_node::black ) { // see left's color
+          // clear colors, before return
+          for ( std::list<commit_id_type>::const_iterator j = colored.begin(); j != colored.end(); ++j ) {
+            c[*j].color = commit_node::white;
+          }
+          return *i;
+        } else if ( c[*i].color == commit_node::white ) {
+          c[*i].color = commit_node::gray;
+          st_right.push( *i );
+          colored.push_back( *i );
+        } // else already looks here, skip it
+      }
+      if ( !st_right.empty() ) {
+        r = c.find( st_right.front() );
+        st_right.pop();
+      } else { // root
+        r = c.end();
+      }
+    }
+  }
 }
 
 int yard_ng::fast_merge( const commit_id_type& merge, const commit_id_type& left, const commit_id_type& right )
@@ -340,7 +415,7 @@ int yard_ng::fast_merge( const commit_id_type& merge, const commit_id_type& left
 
   cache_container_type::iterator cc = cache.find( merge );
   cc->second.first = left;
-  cached_manifest_type::const_iterator m = cached_manifest.find( k->second );
+  cached_manifest_type::const_iterator m = cached_manifest.find( k->second.mid );
   if ( m != cached_manifest.end() ) {
     cc->second.second = m->second; // oh, copy whole manifest...
   } else {
@@ -356,9 +431,11 @@ int yard_ng::fast_merge( const commit_id_type& merge, const commit_id_type& left
 
   revision_id_type rid = r.push( cc->second.second );
   swap( cached_manifest[rid], cc->second.second );
-  c[merge] = rid;
-  g.push_back( make_pair(left, merge) );
-  g.push_back( make_pair(right, merge) );
+  c[merge].mid = rid;
+  c[merge].edge_in.push_back( left );
+  c[merge].edge_in.push_back( right );
+  c[left].edge_out.push_back( merge );
+  c[right].edge_out.push_back( merge );
 
   leafs_container_type::iterator l = find( leaf.begin(), leaf.end(), left );
   if ( l != leaf.end() ) {

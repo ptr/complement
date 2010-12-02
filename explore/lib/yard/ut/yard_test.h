@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-01 15:47:09 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-02 20:00:01 ptr>
 
 /*
  * Copyright (c) 2010
@@ -22,6 +22,7 @@ class yard_test
     int EXAM_DECL(fast_merge1);
     int EXAM_DECL(fast_merge2);
     int EXAM_DECL(fast_merge3);
+    int EXAM_DECL(fast_merge4);
     int EXAM_DECL(fast_merge_conflict1);
 
     // initial yard
