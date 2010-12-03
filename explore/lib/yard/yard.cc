@@ -25,11 +25,18 @@
 
 #include <algorithm>
 #include <functional>
+# if defined(__GNUC__)
+    #include <ext/functional>
+#endif
 #include <queue>
 
 namespace yard {
 
 using namespace std;
+
+# if defined(__GNUC__)
+    using __gnu_cxx::select1st;
+#endif
 
 void metainfo::set( int key, const std::string& val )
 {
