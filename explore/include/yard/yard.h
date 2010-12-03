@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-02 20:17:37 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-03 13:16:39 ptr>
 
 /*
  *
@@ -119,6 +119,10 @@ class yard_ng
        on every node of group).
      */
     int fast_merge( const commit_id_type& merge, const commit_id_type& left, const commit_id_type& right );
+
+    template <class BackInsertIterator>
+    void heads( BackInsertIterator bi )
+      { std::copy( leaf.begin(), leaf.end(), bi ); }
 
   private:
     struct commit_node

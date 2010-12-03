@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-02 20:09:11 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-03 13:15:47 ptr>
 
 /*
  * Copyright (c) 2010
@@ -30,7 +30,7 @@ int main( int argc, const char** argv )
   t.add( &yard_test::linear_commits_neg, test, "non-linear commits in yard ng",
     tc[0] = t.add( &yard_test::linear_commits, test, "linear commits in yard ng",
       t.add( &yard_test::access, test, "access to yard ng",
-        t.add( &yard_test::revision_in_memory, test, "revision in memory, yard ng" ) ) ) );
+        tc[2] = t.add( &yard_test::revision_in_memory, test, "revision in memory, yard ng" ) ) ) );
 
   t.add( &yard_test::fast_merge4, test, "fast merge with common ancestor in yard ng",
     t.add( &yard_test::fast_merge3, test, "fast merge right add yard ng",
@@ -38,7 +38,8 @@ int main( int argc, const char** argv )
         t.add( &yard_test::fast_merge1, test, "fast merge add different in yard ng",
           tc[1] = t.add( &yard_test::diff, test, "diff between commits in yard ng", tc[0] ) ) ) ) );
 
-  t.add( &yard_test::fast_merge_conflict1, test, "fast merge conflict in add yard ng", tc[1] );
+  t.add( &yard_test::fast_merge_conflict1, test, "fast merge conflict in yard ng", tc[1] );
+  t.add( &yard_test::heads, test, "heads of commits graph in yard ng", tc[2] );
 
   Opts opts;
 
