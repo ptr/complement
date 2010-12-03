@@ -39,6 +39,7 @@ class yard_perf
     int EXAM_DECL(put_mess);
 
     int EXAM_DECL(mess);
+    int EXAM_DECL(put_revisions);
 };
 
 #endif // __yard_perf_h

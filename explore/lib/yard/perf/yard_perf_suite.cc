@@ -62,6 +62,7 @@ int main( int argc, const char** argv )
 
   t.add( &yard_perf::put_mess, p, "put message 1024" );
   t.add( &yard_perf::mess, p, "put message 1024 yard ng" );
+  t.add( &yard_perf::put_revisions, p, "put blob 1024 [revision] ng" );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );
