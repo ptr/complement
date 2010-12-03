@@ -255,6 +255,35 @@ int EXAM_IMPL(yard_perf::put_mess)
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(yard_perf::put_revisions)
+{
+    yard::revision revs;
+    try
+    {
+        const int countOfBlocks = 1000;
+        const size_t blockSize = 2*1000;
+
+        const size_t sz = (blockSize / sizeof(xmt::uuid_type)) * sizeof(xmt::uuid_type);
+        string random_content( sz, 0 );
+        for (int i = 0; i < countOfBlocks; ++i)
+        {
+            for (int j = 0; j < sz; j+= sizeof(xmt::uuid_type))
+            {
+              xmt::uuid_type b = xmt::uid();
+              uninitialized_copy( b.u.b, b.u.b + sizeof(xmt::uuid_type), const_cast<char*>(random_content.data()) + i );
+            }
+            revs.push(random_content);
+        }
+    } catch(const std::invalid_argument& err)
+    {
+        EXAM_ERROR(err.what());
+    } catch (const std::logic_error& err)
+    {
+        EXAM_ERROR(err.what());
+    }
+    return EXAM_RESULT;
+}
+
 int EXAM_IMPL(yard_perf::mess)
 {
   yard::yard_ng db;
