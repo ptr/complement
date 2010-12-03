@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/13 11:30:04 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-03 13:41:08 ptr>
 
 /*
  *
@@ -37,6 +37,8 @@ class yard_perf
     int EXAM_DECL(put_object);
     int EXAM_DECL(put_object_r2);
     int EXAM_DECL(put_mess);
+
+    int EXAM_DECL(mess);
 };
 
 #endif // __yard_perf_h

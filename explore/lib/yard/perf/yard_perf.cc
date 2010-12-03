@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/14 10:19:49 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-03 16:05:42 ptr>
 
 /*
  * Copyright (c) 2010
@@ -251,6 +251,43 @@ int EXAM_IMPL(yard_perf::put_mess)
   }
 
   unlink( "/tmp/yard" );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_perf::mess)
+{
+  yard::yard_ng db;
+
+  try {
+    yard::commit_id_type cid = xmt::nil_uuid;
+    yard::commit_id_type cid2 = xmt::uid();
+    string base_name( "/mess/" );
+    const size_t sz = (2*1024 / sizeof(xmt::uuid_type)) * sizeof(xmt::uuid_type);
+    string random_content( sz, 0 );
+
+    for ( int count = 0; count < 1000; ++count ) {
+      db.open_commit_delta( cid, cid2 );
+
+      for ( int k = 0; k < 3; ++k ) {
+        for ( int i = 0; i < sz; i += sizeof(xmt::uuid_type) ) {
+          xmt::uuid_type b = xmt::uid();
+          uninitialized_copy( b.u.b, b.u.b + sizeof(xmt::uuid_type), const_cast<char*>(random_content.data()) + i );
+        }
+        db.add( cid2, base_name + xmt::uid_str(), random_content );
+      }
+
+      db.close_commit_delta( cid2 );
+      cid = cid2;
+      cid2 = xmt::uid();
+    }
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::logic_error& err ) {
+    EXAM_ERROR( err.what() );
+  }
 
   return EXAM_RESULT;
 }

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/13 11:31:27 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-03 14:00:04 ptr>
 
 /*
  *
@@ -61,6 +61,7 @@ int main( int argc, const char** argv )
     t.add( &yard_perf::put_object, p, "put object-1024", tc[0] ) );
 
   t.add( &yard_perf::put_mess, p, "put message 1024" );
+  t.add( &yard_perf::mess, p, "put message 1024 yard ng" );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );
