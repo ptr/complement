@@ -35,31 +35,24 @@ extern "C" int x_res_init(void);
 #include <string>
 #include <stdexcept>
 
-#ifdef WIN32
-#  include <winsock2.h>
-#else // WIN32
-#  include <unistd.h>
-#  include <sys/types.h>
-#  if defined(__hpux) && !defined(_INCLUDE_XOPEN_SOURCE_EXTENDED)
-#    define _INCLUDE_XOPEN_SOURCE_EXTENDED
-#  endif
-#  include <sys/socket.h>
-#  if !defined(__UCLIBC__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__)
-#   include <stropts.h>
-#  endif
-#  ifdef __sun
-#    include <sys/conf.h>
-#  endif
-#  include <netinet/in.h>
-#  include <arpa/inet.h>
-#  include <netdb.h>
-#  ifdef __hpux
-// #    ifndef socklen_t // HP-UX 10.01
-// typedef int socklen_t;
-// #    endif
-#  endif
-#  include <cerrno>
-#endif // !WIN32
+#include <unistd.h>
+#include <sys/types.h>
+#if defined(__hpux) && !defined(_INCLUDE_XOPEN_SOURCE_EXTENDED)
+#  define _INCLUDE_XOPEN_SOURCE_EXTENDED
+#endif
+#include <sys/socket.h>
+#if !defined(__UCLIBC__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__)
+#include <stropts.h>
+#endif
+#ifdef __sun
+#  include <sys/conf.h>
+#endif
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#ifdef __hpux
+#endif
+#include <cerrno>
 
 #include <cstdlib>
 #include <cstring>
@@ -107,30 +100,6 @@ void gethostaddr( const char *hostname, BackInsertIterator bi )
 #  endif // __linux __hpux __sun
 #else // __FIT_GETHOSTBYADDR
   hostent *host = gethostbyname( hostname );
-#  ifdef WIN32
-  if ( host == 0 ) {
-    _errno = WSAGetLastError();
-
-    // specific to Wins only:
-    // cool M$ can't resolve IP address in gethostbyname, try once more
-    // via inet_addr() and gethostbyaddr()
-    // Returned _errno depend upon WinSock version, and applied patches,
-    // with some of it even gethostbyname may be succeed.
-    if ( _errno == WSAHOST_NOT_FOUND || _errno == WSATRY_AGAIN ) {
-      unsigned long ipaddr = ::inet_addr( hostname );
-      if ( ipaddr != INADDR_NONE ) {
-        host = gethostbyaddr( (const char *)&ipaddr, sizeof(ipaddr), AF_INET );
-        if ( host != 0 ) { // Oh, that's was IP indeed...
-          memcpy( (char *)&inet, (char *)host->h_addr, host->h_length );
-          WSASetLastError( 0 ); // clear error
-          _errno = 0;
-        } else {
-          _errno = WSAGetLastError();
-        }
-      }
-    }
-  }
-#  endif // WIN32
 #endif // __FIT_GETHOSTBYADDR
 
   if ( host != 0 && host->h_length == sizeof(in_addr) ) {

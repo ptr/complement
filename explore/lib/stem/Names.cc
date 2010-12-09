@@ -11,10 +11,6 @@
  *
  */
 
-#ifdef _MSC_VER
-#pragma warning( disable : 4804 )
-#endif
-
 #include <config/feature.h>
 
 #include <unistd.h>
@@ -30,26 +26,26 @@ namespace stem {
 
 using namespace std;
 
-__FIT_DECLSPEC Names::Names() :
+Names::Names() :
     EventHandler()
 {
 }
 
-__FIT_DECLSPEC Names::Names( const char *info ) :
+Names::Names( const char *info ) :
     EventHandler( info )
 {
 }
 
-__FIT_DECLSPEC Names::Names( addr_type id, const char *info ) :
+Names::Names( addr_type id, const char *info ) :
     EventHandler( id, info )
 {
 }
 
-__FIT_DECLSPEC Names::~Names()
+Names::~Names()
 {
 }
 
-void __FIT_DECLSPEC Names::ns_list( const Event& rq )
+void Names::ns_list( const Event& rq )
 {
   typedef NameRecords<addr_type,string> Seq;
   Event_base<Seq> rs( EV_STEM_NS_LIST );
@@ -67,7 +63,7 @@ void __FIT_DECLSPEC Names::ns_list( const Event& rq )
   Send( rs );
 }
 
-void __FIT_DECLSPEC Names::ns_name( const Event& rq )
+void Names::ns_name( const Event& rq )
 {
   typedef NameRecords<addr_type,string> Seq;
   Event_base<Seq> rs( EV_STEM_NS_NAME );
@@ -91,14 +87,13 @@ DEFINE_RESPONSE_TABLE( Names )
   EV_EDS(ST_NULL,EV_STEM_GET_NS_NAME,ns_name)
 END_RESPONSE_TABLE
 
-__FIT_DECLSPEC
+
 void NameRecord::pack( std::ostream& s ) const
 {
   __pack( s, addr );
   __pack( s, record );
 }
 
-__FIT_DECLSPEC
 void NameRecord::unpack( std::istream& s )
 {
   __unpack( s, addr );

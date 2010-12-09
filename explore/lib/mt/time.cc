@@ -13,39 +13,21 @@
 #include <cmath>
 #include <sys/time.h>
 
-#ifdef _WIN32
-xmt::mutex _l;
-#endif
-
 std::string calendar_time( time_t t )
 {
-#ifndef _WIN32
   char buff[32];
-// #ifdef __sun
 #if (_POSIX_C_SOURCE - 0 >= 199506L) || defined(_POSIX_PTHREAD_SEMANTICS) || defined(N_PLAT_NLM) || \
     defined(__FreeBSD__) || defined(__OpenBSD__)
   ctime_r( &t, buff );
 #else
   ctime_r( &t, buff, 32 );
 #endif
-// #endif
-// #ifdef __linux
-//  ctime_r( &t, buff );
-// #endif
-// #if !defined(__sun) && !defined(__linux)
-// #  error( "Fix me!" )
-// #endif
 
-  // buff[24] = 0; // null terminate
   std::string s;
 
   s.assign( buff, 24 );
 
   return s;
-#else // _WIN32
-  MT_REENTRANT( _l, _1 );
-  return std::string( ctime( &t ) );
-#endif
 }
 
 timespec operator +( const timespec& a, const timespec& b )
@@ -106,38 +88,24 @@ timespec operator /( const timespec& a, unsigned long b )
 timespec operator *( const timespec& a, unsigned b )
 {
   timespec c;
-#if 0
-  double d = a.tv_sec + 1.0e-9 * a.tv_nsec;
-  d *= b;
-
-  c.tv_nsec = static_cast<time_t>(1.0e9 * modf( d, &d ) + 0.5);
-  c.tv_sec = static_cast<long>(d);
-#else
   c.tv_sec = a.tv_sec * b;
   unsigned long long _tmp = c.tv_nsec;
   _tmp *= b;
   c.tv_sec += static_cast<time_t>(_tmp / 1000000000UL);
   c.tv_nsec = static_cast<long>(_tmp % 1000000000UL);
-#endif
+
   return c;
 }
 
 timespec operator *( const timespec& a, unsigned long b )
 {
   timespec c;
-#if 0
-  double d = a.tv_sec + 1.0e-9 * a.tv_nsec;
-  d *= b;
-
-  c.tv_nsec = static_cast<time_t>(1.0e9 * modf( d, &d ) + 0.5);
-  c.tv_sec = static_cast<long>(d);
-#else
   c.tv_sec = a.tv_sec * b;
   unsigned long long _tmp = c.tv_nsec;
   _tmp *= b;
   c.tv_sec += static_cast<time_t>(_tmp / 1000000000UL);
   c.tv_nsec = static_cast<long>(_tmp % 1000000000UL);
-#endif
+
   return c;
 }
 
@@ -292,16 +260,6 @@ void delay( const ::timespec& interval, ::timespec& remain )
 #ifdef __unix
   nanosleep( &interval, &remain );
 #endif
-#ifdef WIN32
-  Sleep( interval.tv_sec * 1000 + interval.tv_nsec / 1000000 );
-  remain.tv_sec = 0;
-  remain.tv_nsec = 0;
-#endif
-#ifdef __FIT_NETWARE
-  ::delay( interval.tv_sec * 1000 + interval.tv_nsec / 1000000 );
-  remain.tv_sec = 0;
-  remain.tv_nsec = 0;
-#endif
 }
 
 __FIT_DECLSPEC
@@ -309,12 +267,6 @@ void delay( const ::timespec& interval )
 {
 #ifdef __unix
   nanosleep( &interval, 0 );
-#endif
-#ifdef WIN32
-  Sleep( interval.tv_sec * 1000 + interval.tv_nsec / 1000000 );
-#endif
-#ifdef __FIT_NETWARE
-  ::delay( interval.tv_sec * 1000 + interval.tv_nsec / 1000000 );
 #endif
 }
 
@@ -335,23 +287,6 @@ void sleep( const ::timespec& abstime, ::timespec& real_time )
     real_time.tv_nsec = ct.tv_nsec;
   }
 #endif
-#ifdef WIN32
-  time_t ct = time( 0 );
-  time_t _conv = abstime.tv_sec * 1000 + abstime.tv_nsec / 1000000;
-
-  Sleep( _conv >= ct ? _conv - ct : 1 );
-  real_time.tv_sec = abstime.tv_sec;
-  real_time.tv_nsec = abstime.tv_nsec;
-#endif
-#ifdef __FIT_NETWARE
-  time_t ct = time( 0 );
-  time_t _conv = abstime.tv_sec * 1000 + abstime.tv_nsec / 1000000;
-
-  ::delay( _conv >= ct ? _conv - ct : 1 );
-  // Novell not return elapsed time interval
-  real_time.tv_sec = abstime.tv_sec;
-  real_time.tv_nsec = abstime.tv_nsec;
-#endif
 }
 
 __FIT_DECLSPEC
@@ -366,18 +301,6 @@ void sleep( const ::timespec& abstime )
     st -= ct;
     nanosleep( static_cast<const ::timespec *>(&st), 0 );
   }
-#endif
-#ifdef WIN32
-  time_t ct = time( 0 );
-  time_t _conv = abstime.tv_sec * 1000 + abstime.tv_nsec / 1000000;
-
-  Sleep( _conv >= ct ? _conv - ct : 1 );
-#endif
-#ifdef __FIT_NETWARE
-  time_t ct = time( 0 );
-  time_t _conv = abstime.tv_sec * 1000 + abstime.tv_nsec / 1000000;
-
-  ::delay( _conv >= ct ? _conv - ct : 1 );
 #endif
 }
 

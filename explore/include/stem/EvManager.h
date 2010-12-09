@@ -14,14 +14,11 @@
 #ifndef __stem_EvManager_h
 #define __stem_EvManager_h
 
-#ifndef __config_feature_h
 #include <config/feature.h>
-#endif
 
 #include <stdint.h>
 
 #include <string>
-// #include <map>
 #include <deque>
 #include <list>
 #include <vector>
@@ -41,9 +38,6 @@
 #ifdef STLPORT
 #  include <unordered_map>
 #  include <unordered_set>
-// #  include <hash_map>
-// #  include <hash_set>
-// #  define __USE_STLPORT_HASH
 #  define __USE_STLPORT_TR1
 #else
 #  if defined(__GNUC__) && (__GNUC__ < 4)

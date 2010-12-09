@@ -31,9 +31,7 @@
 #  endif
 #endif
 
-#ifndef __config_feature_h
 #include <config/feature.h>
-#endif
 
 #include <cstdlib>
 #include <stdint.h>

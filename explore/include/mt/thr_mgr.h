@@ -14,9 +14,7 @@
 #ifndef __THR_MGR_H
 #define __THR_MGR_H
 
-#ifndef __config_feature_h
 #include <config/feature.h>
-#endif
 
 #ifndef __XMT_H
 #include <mt/xmt.h>

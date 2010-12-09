@@ -11,10 +11,6 @@
  *
  */
 
-#ifdef _MSC_VER
-#pragma warning( disable : 4804 )
-#endif
-
 #include <config/feature.h>
 #include <cerrno>
 #include <sockios/sockstream>

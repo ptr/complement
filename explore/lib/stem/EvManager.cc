@@ -12,17 +12,12 @@
  *
  */
 
-#ifdef _MSC_VER
-#pragma warning( disable : 4804 )
-#endif
-
 #include <config/feature.h>
 #include "stem/EvManager.h"
 #include "stem/NetTransport.h"
 #include <iomanip>
 #include <mt/mutex>
 
-// #include <typeinfo>
 #include <exam/defs.h>
 #include <mt/callstack.h>
 
@@ -69,7 +64,6 @@ __FIT_DECLSPEC EvManager::~EvManager()
 
 __FIT_DECLSPEC void EvManager::push( const Event& e )
 {
-  // misc::use_syslog<LOG_DEBUG,LOG_USER>() << HERE << ':' << e.code() << endl;
   unsigned int i = e.dest().u.i[0] & (n_threads - 1);
   std::tr2::lock_guard<std::tr2::mutex> lock( workers[i]->lock );
   workers[i]->events.push_back( e );
@@ -98,7 +92,6 @@ void EvManager::worker::_loop( worker* p )
           local_heap_type::iterator k = me.mgr->heap.find( ev.dest() );
           obj = (k != me.mgr->heap.end()) ? k->second.top().second.second : 0;
           if ( obj == 0 ) {
-            // cerr << "unknown addr " << ev.dest() << endl; 
             continue;
           }
 
@@ -154,6 +147,21 @@ void EvManager::unsafe_Subscribe( const addr_type& id, EventHandler* object, int
 #endif // __FIT_STEM_TRACE
 
   heap[id].push( make_pair( nice, make_pair(object->flags(),object)) );
+}
+
+void EvManager::unsafe_annotate( const addr_type& id, const std::string& info )
+{
+  info_heap_type::iterator i = iheap.find( info );
+  if ( i == iheap.end() ) {
+    iheap[info].push_back( id );
+  } else {
+    for ( addr_collection_type::const_iterator j = i->second.begin(); j != i->second.end(); ++j ) {
+      if ( *j == id ) {
+        return;
+      }
+    }
+    i->second.push_back( id );
+  }
 }
 
 void EvManager::unsafe_Unsubscribe( const addr_type& id, EventHandler* obj )
@@ -218,8 +226,6 @@ void EvManager::unsafe_Unsubscribe( const addr_type& id, EventHandler* obj )
   for ( info_heap_type::iterator i = iheap.begin(); i != iheap.end(); ++i ) {
     for ( addr_collection_type::iterator j = i->second.begin(); j != i->second.end(); ++j ) {
       if ( *j == id ) {
-        // basic_read_lock<rw_mutex> _x1( _lock_heap );
-
         if ( heap.find( id ) == heap.end() ) { // all objects with this addr removed
           i->second.erase( j );
         }
@@ -263,7 +269,6 @@ void EvManager::cleantrf()
 unsigned EvManager::trflags() const
 {
   lock_guard<mutex> _x1( _lock_tr );
-
   return _trflags;
 }
 
@@ -274,21 +279,6 @@ std::ostream* EvManager::settrs( std::ostream* s )
   _trs = s;
 
   return tmp;
-}
-
-void EvManager::unsafe_annotate( const addr_type& id, const std::string& info )
-{
-  info_heap_type::iterator i = iheap.find( info );
-  if ( i == iheap.end() ) {
-    iheap[info].push_back( id );
-  } else {
-    for ( addr_collection_type::const_iterator j = i->second.begin(); j != i->second.end(); ++j ) {
-      if ( *j == id ) {
-        return;
-      }
-    }
-    i->second.push_back( id );
-  }
 }
 
 __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
@@ -304,7 +294,7 @@ __FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
     }
   }
 
-  s << '\n'; // "\nInfo map:\n";
+  s << '\n';
   {
     lock_guard<mutex> lk( _lock_iheap );
 

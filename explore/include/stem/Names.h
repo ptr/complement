@@ -14,21 +14,15 @@
 #ifndef __stem_Names_h
 #define __stem_Names_h
 
-#ifndef __config_feature_h
 #include <config/feature.h>
-#endif
 
 #include <string>
 #include <iosfwd>
 #include <stdint.h>
 
-#ifndef __stem_EventHandler_h
 #include <stem/EventHandler.h>
-#endif
 
-#ifndef __stem_EvPack_h
 #include <stem/EvPack.h>
-#endif
 
 namespace stem {
 
@@ -36,13 +30,13 @@ class Names :
     public EventHandler
 {
   public:
-    __FIT_DECLSPEC Names();
-    explicit __FIT_DECLSPEC Names( const char * );
-    explicit __FIT_DECLSPEC Names( addr_type id, const char *info = 0 );
-    __FIT_DECLSPEC ~Names();
+    Names();
+    explicit Names( const char * );
+    explicit Names( addr_type id, const char *info = 0 );
+    ~Names();
 
-    __FIT_DECLSPEC void ns_list( const Event& );
-    __FIT_DECLSPEC void ns_name( const Event& );
+    void ns_list( const Event& );
+    void ns_name( const Event& );
 
   private:
     DECLARE_RESPONSE_TABLE( Names, EventHandler );
@@ -74,14 +68,8 @@ struct NameRecord :
 inline bool operator == ( const NameRecord& nr, const std::string& s )
 { return nr.record == s; }
 
-// bool operator == ( const std::string& s, const NameRecord& nr )
-// { return nr.record == s; }
-
 inline bool operator == ( const NameRecord& nr, const addr_type& a )
 { return nr.addr == a; }
-
-// bool operator == ( addr_type a, const NameRecord& nr )
-// { return nr.addr == a; }
 
 template <class Addr, class Info, class Sequence = std::list< std::pair<Addr, Info> > >
 struct NameRecords :
@@ -111,7 +99,6 @@ void NameRecords<Addr,Info,Sequence>::pack( std::ostream& s ) const
 {
   __pack( s, static_cast<uint32_t>(container.size()) );
   for ( const_iterator i = container.begin(); i != container.end(); ++i ) {
-    // __net_pack( s, i->first );
     __pack( s, i->first );
     __pack( s, i->second );
   }
@@ -124,12 +111,10 @@ void NameRecords<Addr,Info,Sequence>::unpack( std::istream& s )
   container.clear();
 
   __unpack( s, sz );
-  // container.reserve( sz );
   Addr a;
   Info i;
 
   while ( sz-- > 0 ) {
-    // __net_unpack( s, a );
     __unpack( s, a );
     __unpack( s, i );
     container.push_back( std::make_pair(a, i) );

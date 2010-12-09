@@ -15,9 +15,7 @@
 #ifndef __stem_Event_h
 #define __stem_Event_h
 
-#ifndef __config_feature_h
 #include <config/feature.h>
-#endif
 
 #include <string>
 #include <istream>
@@ -34,9 +32,6 @@
 #ifdef STLPORT
 #  include <unordered_map>
 #  include <unordered_set>
-// #  include <hash_map>
-// #  include <hash_set>
-// #  define __USE_STLPORT_HASH
 #  define __USE_STLPORT_TR1
 #else
 #  if defined(__GNUC__) && (__GNUC__ < 4)
@@ -77,7 +72,7 @@ class __Event_Base
         _flags( 0 )
       { }
 
-    /* explicit */ __Event_Base( const __Event_Base& e ) :
+    __Event_Base( const __Event_Base& e ) :
         _code( e._code ),
         _dst( e._dst ),
         _src( e._src ),
@@ -479,9 +474,6 @@ class __Event_base_aux<void,std::tr1::true_type> :
       { }
     void unpack( std::istream& __s )
       { }
-
-    // void swap( __Event_base_aux<void,std::tr1::true_type>& l )
-    //   { __Event_Base::swap( static_cast<__Event_Base&>(l) ); }
 };
 
 template <class D>

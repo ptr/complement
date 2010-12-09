@@ -14,9 +14,7 @@
 #ifndef __EventHandler_h
 #define __EventHandler_h
 
-#ifndef __config_feature_h
 #include <config/feature.h>
-#endif
 
 #ifndef __stem_Event_h
 #include <stem/Event.h>
@@ -40,10 +38,6 @@
 #endif
 
 #include <mt/mutex>
-
-#ifdef _MSC_VER
-#pragma warning( disable : 4786 )
-#endif
 
 namespace stem {
 
@@ -85,10 +79,6 @@ typedef unsigned state_type;
 #define EV_T_(state,event,handler,T) \
    RESPONSE_TABLE_ENTRY(state,event,handler,__D_T(ThisCls,T)::dispatch)
 
-/*
-#define EV_CALL(state,event,handler) \
-  RESPONSE_TABLE_ENTRY(state,event,handler,D3(ThisCls)::dispatch)
-*/
 
 class EventHandler;
 class EvManager;
@@ -659,11 +649,6 @@ void __EvTableLoader( EventHandler::table_type *table, Handler * )
   __EvTableLoader( table, (typename Handler::ParentThisCls *)0 );
   const typename Handler::evtable_decl_type *__e = Handler::get_ev_table_decl();
   while ( __e->func.dpmf != 0 ) {
-//    if ( !__e->func.valid ) {
-//      std::cerr << "Function type mismatch: " << typeid(Handler).name() << "::"
-//                << __e->func.pmf_name << std::endl;
-//      abort();
-//    }
     table->append( __e->code, __e->st, (__AnyPMFentry *)&__e->func );
     ++__e;
   }

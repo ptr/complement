@@ -14,9 +14,7 @@
 #ifndef __NETTRANSPORT_H
 #define __NETTRANSPORT_H
 
-#ifndef __config_feature_h
 #include <config/feature.h>
-#endif
 
 #include <sockios/sockstream>
 
@@ -45,7 +43,6 @@ class NetTransport_base :
         uint32_t flags;
         uint32_t sz;
         uint32_t crc;
-        // char buf[0]; // message itself
     };
 
   protected:

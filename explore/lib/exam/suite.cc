@@ -114,8 +114,6 @@ int test_suite::single( test_suite::test_case_type one )
     throw std::logic_error( "bad test case" );
   }
   
-  // sort( _vertices.begin(), _vertices.end(), vertices_compare );
-
   _stat = base_logger::stat();
   for ( vector<weight_t>::iterator i = _vertices.begin(); i != _vertices.end(); ++i ) {
     if ( i->first == one ) {
@@ -141,7 +139,6 @@ test_suite::test_case_type test_suite::add( test_suite::func_type f, const strin
   _test[v].tc = detail::make_test_case( detail::call( f ) );
   _test[v].state = 0;
   _test[v].name = name;
-  // ++_stat.total;
 
   return v;
 }
@@ -157,7 +154,6 @@ test_suite::test_case_type test_suite::add( test_suite::func_type f, const strin
   _test[v].tc = detail::make_test_case( detail::call( f ) );
   _test[v].state = 0;
   _test[v].name = name;
-  // ++_stat.total;
 
   return v;
 }
@@ -317,7 +313,6 @@ void test_suite::dry_run_test_case( test_suite::vertex_t v, unsigned n, int inde
       _lock_ll.lock();
       local_logger->tc_pre();
       _lock_ll.unlock();
-      // res = (*_test[v].tc)( this, 0 );
       _lock_ll.lock();
       local_logger->tc_post();
       _lock_ll.unlock();
@@ -336,7 +331,6 @@ void test_suite::dry_run_test_case( test_suite::vertex_t v, unsigned n, int inde
   }
   catch ( init_exception& ) {
     _lock_ll.lock();
-    // local_logger->tc_break();
     local_logger->tc( base_logger::dry, _test[v].name, indent );
     _lock_ll.unlock();
     --_stat.total;

@@ -11,11 +11,6 @@
  * 
  */
 
-#ifdef _MSC_VER
-#pragma warning( disable : 4804 )
-#pragma warning( disable : 4800 )
-#endif
-
 #include <config/feature.h>
 #include "stem/Cron.h"
 #include "stem/EvManager.h"
@@ -28,7 +23,7 @@ namespace stem {
 using namespace std;
 using namespace std::tr2;
 
-__FIT_DECLSPEC Cron::Cron() :
+Cron::Cron() :
     EventHandler(),
     running( *this ),
     ready( *this ),
@@ -39,7 +34,7 @@ __FIT_DECLSPEC Cron::Cron() :
   this->enable();
 }
 
-__FIT_DECLSPEC Cron::Cron( const char *info ) :
+Cron::Cron( const char *info ) :
     EventHandler( info ),
     running( *this ),
     ready( *this ),
@@ -50,7 +45,7 @@ __FIT_DECLSPEC Cron::Cron( const char *info ) :
   this->enable();
 }
 
-__FIT_DECLSPEC Cron::Cron( addr_type id, const char *info ) :
+Cron::Cron( addr_type id, const char *info ) :
     EventHandler( id, info ),
     running( *this ),
     ready( *this ),
@@ -61,7 +56,7 @@ __FIT_DECLSPEC Cron::Cron( addr_type id, const char *info ) :
   this->enable();
 }
 
-__FIT_DECLSPEC Cron::~Cron()
+Cron::~Cron()
 {
   this->solitary();
 
@@ -78,7 +73,7 @@ __FIT_DECLSPEC Cron::~Cron()
   }
 }
 
-void __FIT_DECLSPEC Cron::AddFirst( const Event_base<CronEntry>& entry )
+void Cron::AddFirst( const Event_base<CronEntry>& entry )
 {
   Add( entry );
 
@@ -93,7 +88,7 @@ void __FIT_DECLSPEC Cron::AddFirst( const Event_base<CronEntry>& entry )
   PushState( CRON_ST_STARTED );
 }
 
-void __FIT_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
+void Cron::Add( const Event_base<CronEntry>& entry )
 {
   const CronEntry& ne = entry.value();
   __CronEntry en;
@@ -132,7 +127,7 @@ void __FIT_DECLSPEC Cron::Add( const Event_base<CronEntry>& entry )
 }
 
 // Remove cron entry if recipient address and event code match to request
-void __FIT_DECLSPEC Cron::Remove( const Event_base<CronEntry>& entry )
+void Cron::Remove( const Event_base<CronEntry>& entry )
 {
   lock_guard<mutex> _x1( _M_l );
 
@@ -160,7 +155,7 @@ void __FIT_DECLSPEC Cron::Remove( const Event_base<CronEntry>& entry )
 
 // Remove cron entry if recipient address and event code match to request
 // and arg the same
-void __FIT_DECLSPEC Cron::RemoveArg( const Event_base<CronEntry>& entry )
+void Cron::RemoveArg( const Event_base<CronEntry>& entry )
 {
   lock_guard<mutex> _x1( _M_l );
 
@@ -303,9 +298,7 @@ void CronEntry::unpack( std::istream& s )
   uint32_t f;
   __unpack( s, f );
   ev.resetf( f );
-  // string d;
   __unpack( s, ev.value() );
-  // std::swap( d, ev.value() );
 }
 
 void CronEntry::swap( CronEntry& e )

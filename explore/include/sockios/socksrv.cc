@@ -171,7 +171,6 @@ void sock_processor_base<charT,traits,_Alloc>::setoptions_unsafe( sock_base::so_
         throw std::invalid_argument( "bad socket option" );
     }
   } else {
-    // _state |= ios_base::failbit;
     throw std::invalid_argument( "socket is closed" );
   }
 #endif // __unix
@@ -201,7 +200,6 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::Init::_guard( int dir
         _at_fork = true;
       }
 #endif
-//       _sock_processor_base::_idx = std::tr2::this_thread::xalloc();
     }
   } else {
     std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
@@ -221,10 +219,8 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::Init::__at_fork_child
   _init_lock.unlock();
 
   if ( _count != 0 ) {
-    // std::cerr << "SHOULD NEVER HAPPEN!!!!\n";
     throw std::logic_error( "Fork while connect_processor working may has unexpected behaviour in child process" );
   }
-  // _sock_processor_base::_idx =  std::tr2::this_thread::xalloc();
 }
 
 template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>

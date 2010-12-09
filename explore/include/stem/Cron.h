@@ -14,9 +14,7 @@
 #ifndef __stem_Cron_h
 #define __stem_Cron_h
 
-#ifndef __config_feature_h
 #include <config/feature.h>
-#endif
 
 #include <iosfwd>
 

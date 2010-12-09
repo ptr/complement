@@ -11,17 +11,7 @@
 #ifndef __mt_time_h
 #define __mt_time_h
 
-#ifndef __config_feature_h
 #include <config/feature.h>
-#endif
-
-#ifdef WIN32
-# include <windows.h>
-# include <memory>
-# include <ctime>
-# include <limits>
-# pragma warning( disable : 4290)
-#endif // WIN32
 
 #include <string>
 #include <ctime>
@@ -29,17 +19,6 @@
 #ifdef N_PLAT_NLM
 # include <sys/time.h> // timespec, timespec_t
 #endif
-
-#ifdef _WIN32
-extern "C" {
-
-typedef struct  timespec {              /* definition per POSIX.4 */
-        time_t          tv_sec;         /* seconds */
-        long            tv_nsec;        /* and nanoseconds */
-} timespec_t;
-
-} // extern "C"
-#endif // _WIN32
 
 #if defined(_WIN32) || defined(N_PLAT_NLM)
 extern "C" {

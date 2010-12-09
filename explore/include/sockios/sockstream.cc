@@ -123,9 +123,6 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port,
       basic_socket_t::_fd = -1;
     }
    
-    // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
-    // ucnd.notify_all();
-
     return 0;
   }
   catch ( std::length_error& ) {
@@ -236,9 +233,6 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port, const std:
       basic_socket_t::_fd = -1;
     }
    
-    // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
-    // ucnd.notify_all();
-
     return 0;
   }
   catch ( std::length_error& ) {
@@ -311,9 +305,6 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, sock_base::stype t
       basic_socket_t::_fd = -1;
     }
    
-    // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
-    // ucnd.notify_all();
-
     return 0;
   }
   catch ( std::length_error& ) {
@@ -415,9 +406,6 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, const std::tr2::na
       basic_socket_t::_fd = -1;
     }
    
-    // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
-    // ucnd.notify_all();
-
     return 0;
   }
   catch ( std::length_error& ) {
@@ -496,9 +484,6 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
       basic_socket_t::_fd = -1;
     }
    
-    // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
-    // ucnd.notify_all();
-
     return 0;
   }
   catch ( std::length_error& ) {

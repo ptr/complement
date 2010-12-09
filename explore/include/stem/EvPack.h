@@ -15,9 +15,7 @@
 #ifndef __stem_EvPack_h
 #define __stem_EvPack_h
 
-#ifndef __config_feature_h
 #include <config/feature.h>
-#endif
 
 #ifdef _LITTLE_ENDIAN
 #  include <algorithm>
@@ -25,10 +23,6 @@
 
 #include <iostream>
 #include <mt/uid.h>
-
-#ifdef WIN32
-#include <winsock.h>
-#endif
 
 namespace stem {
 
@@ -75,13 +69,6 @@ class __net_converter
         __swapper _sw;
         _sw.value = x;
         __byte_swapper<sizeof(T)>::__byte_swap( _sw.byte );
-/*
-        int i = 0;
-        int j = sizeof(T) - 1;
-        while ( i < j ) {
-          swap( _sw.byte[i++], _sw.byte[j--] );          
-        }
-*/
         return _sw.value;
 #else
         return x;
@@ -94,13 +81,6 @@ class __net_converter
         __swapper _sw;
         _sw.value = x;
         __byte_swapper<sizeof(T)>::__byte_swap( _sw.byte );
-/*
-        int i = 0;
-        int j = sizeof(T) - 1;
-        while ( i < j ) {
-          swap( _sw.byte[i++], _sw.byte[j--] );          
-        }
-*/
         return _sw.value;
 #else
         return x;

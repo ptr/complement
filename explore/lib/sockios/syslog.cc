@@ -32,9 +32,6 @@ closelog();
 #ifdef STLPORT
 #  include <unordered_map>
 #  include <unordered_set>
-// #  include <hash_map>
-// #  include <hash_set>
-// #  define __USE_STLPORT_HASH
 #  define __USE_STLPORT_TR1
 #else
 #  if defined(__GNUC__) && (__GNUC__ < 4)
@@ -166,7 +163,6 @@ int syslog_init::Init::_count = 0;
 std::tr2::mutex syslog_init::Init::_init_lock;
 bool syslog_init::Init::_at_fork = false;
 std::tr2::mutex _heap_lock;
-// static string exename;
 static string prefix;
 
 void syslog_init::Init::_guard( int direction )
@@ -184,29 +180,10 @@ void syslog_init::Init::_guard( int direction )
         s << detail::timeline << __progname << '[' << std::tr2::getpid() << "]: ";
         prefix = s.str();
       }
-#if 0
-      if ( exename.empty() ) {
-        stringstream exe;
-        exe << "/proc/" << std::tr2::getpid() << "/exe";
-
-        char b[1024];
-
-        ssize_t sz = readlink( exe.str().c_str(), b, sizeof(b) );
-        if ( sz >= 0 ) {
-          // check errno?
-          b[sz] = 0;
-          exename = find( reverse_iterator<char*>( b + sz ), reverse_iterator<char*>(b), '/' ).base();
-        }
-      }
-
-      openlog( exename.c_str(), LOG_PID, LOG_USER );
-#endif
     }
   } else {
     std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
     --_count;
-    // if ( --_count == 0 ) {
-    // }
   }
 }
 

@@ -12,10 +12,6 @@
  *
  */
 
-#ifdef _MSC_VER
-#pragma warning( disable : 4804 )
-#endif
-
 #include <config/feature.h>
 #include <iterator>
 #include <iomanip>
@@ -48,7 +44,6 @@ static const uint32_t EDS_MAGIC = 0x534445c2U;
 extern mutex _def_lock;
 extern addr_type _default_addr;
 
-__FIT_DECLSPEC
 void dump( std::ostream& o, const EDS::Event& e )
 {
   o << setiosflags(ios_base::showbase) << hex
@@ -353,8 +348,6 @@ bool NetTransport_base::Dispatch( const Event& _rs )
 
   msg_hdr header;
 
-  // fill( (char *)&header, (char *)&header + sizeof(msg_hdr), 0U );
-
   header.magic = EDS_MAGIC;
   header.code = to_net( _rs.code() );
 
@@ -381,9 +374,6 @@ bool NetTransport_base::Dispatch( const Event& _rs )
       net.write( _rs.value().data(), _rs.value().size() );
     }
 
-    // copy( _rs.value().begin(), _rs.value().end(),
-    //      ostream_iterator<char,char,char_traits<char> >(net) );
-
     net.flush();
     if ( !net.good() ) {
       throw ios_base::failure( "net not good" );
@@ -404,13 +394,12 @@ int NetTransport_base::flags() const
   return EvManager::remote;
 }
 
-__FIT_DECLSPEC
 NetTransport::NetTransport( std::sockstream& s ) :
     NetTransport_base( s ),
     exchange( false )
 {
   try {
-    if ( s.rdbuf()->family() == AF_INET /* and TCP */ ) {
+    if ( s.rdbuf()->family() == AF_INET) {
       s.rdbuf()->setoptions( sock_base::so_tcp_nodelay );
     }
 
@@ -425,7 +414,6 @@ NetTransport::NetTransport( std::sockstream& s ) :
   }
 }
 
-__FIT_DECLSPEC
 void NetTransport::connect( sockstream& s )
 {
   try {
@@ -526,8 +514,6 @@ void NetTransport::connect( sockstream& s )
     s.close();
   }
 }
-
-// connect initiator (client) function
 
 addr_type NetTransportMgr::open( const char* hostname, int port,
                                  std::sock_base::stype stype,
@@ -744,7 +730,6 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
     catch ( ... ) {
     }
 #endif // __FIT_STEM_TRACE
-    // throw;
   }
 }
 
@@ -756,6 +741,5 @@ void NetTransportMgr::join()
     _thr = 0;
   }
 }
-
 
 } // namespace stem

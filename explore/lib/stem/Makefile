@@ -6,7 +6,6 @@ include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
 
 INCLUDES += -I$(SRCROOT)/include
-# EXTRA_CXXFLAGS = -Wall
 
 dbg-shared:	DEFS += -D__FIT_STEM_TRACE=1
 

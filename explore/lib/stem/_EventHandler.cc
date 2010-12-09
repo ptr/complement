@@ -11,10 +11,6 @@
  *
  */
 
-#ifdef _MSC_VER
-#pragma warning( disable : 4804 )
-#endif
-
 #include <config/feature.h>
 #include "stem/EventHandler.h"
 #include "stem/EvManager.h"
@@ -50,8 +46,6 @@ void EventHandler::Init::__at_fork_prepare()
 void EventHandler::Init::__at_fork_child()
 {
   if ( _rcount != 0 ) {
-    // EventHandler::_mgr->~EvManager();
-    // EventHandler::_mgr = new( EventHandler::_mgr ) EvManager();
     EventHandler::_mgr->start_queue();
   }
   _mf_lock.unlock();
@@ -103,33 +97,27 @@ EventHandler::Init::Init()
 EventHandler::Init::~Init()
 { _guard( 0 ); }
 
-__FIT_DECLSPEC
 bool EventHandler::is_avail( const addr_type& id ) const
 {
   return _mgr->is_avail( id );
 }
 
-__FIT_DECLSPEC
 void EventHandler::Send( const Event& e ) const
 {
   e.src( _ids.front() );
   _mgr->push( e );
 }
 
-__FIT_DECLSPEC
 void EventHandler::Forward( const Event& e ) const
 {
   _mgr->push( e );
 }
 
-__FIT_DECLSPEC
 void EventHandler::sync_call( const Event& e )
 {
-  // _mgr->sync_call( *this, e );
   _mgr->push( e );
 }
 
-__FIT_DECLSPEC
 void EventHandler::PushState( state_type state )
 {
   RemoveState( state );
@@ -137,7 +125,6 @@ void EventHandler::PushState( state_type state )
   theHistory.push_front( state );
 }
 
-__FIT_DECLSPEC
 state_type EventHandler::State() const
 {
   lock_guard<recursive_mutex> lk( _theHistory_lock );
@@ -148,7 +135,6 @@ state_type EventHandler::State() const
   return top;
 }
 
-__FIT_DECLSPEC
 void EventHandler::PushTState( state_type state )
 {
   lock_guard<recursive_mutex> lk( _theHistory_lock );
@@ -156,7 +142,6 @@ void EventHandler::PushTState( state_type state )
   theHistory.push_front( state );
 }
 
-__FIT_DECLSPEC
 void EventHandler::PopState()
 {
   lock_guard<recursive_mutex> lk( _theHistory_lock );
@@ -169,7 +154,6 @@ void EventHandler::PopState()
   }
 }
 
-__FIT_DECLSPEC
 void EventHandler::PopState( state_type state )
 {
   lock_guard<recursive_mutex> lk( _theHistory_lock );
@@ -179,7 +163,6 @@ void EventHandler::PopState( state_type state )
   }
 }
 
-__FIT_DECLSPEC
 void EventHandler::RemoveState( state_type state )
 {
   lock_guard<recursive_mutex> lk( _theHistory_lock );
@@ -192,7 +175,6 @@ void EventHandler::RemoveState( state_type state )
   }
 }
 
-__FIT_DECLSPEC
 bool EventHandler::isState( state_type state ) const
 {
   lock_guard<recursive_mutex> lk( _theHistory_lock );
@@ -232,7 +214,6 @@ const_h_iterator EventHandler::__find( state_type state ) const
   return hst_i;
 }
 
-__FIT_DECLSPEC
 EventHandler::EventHandler() :
     _nice( 0 )
 {
@@ -241,7 +222,6 @@ EventHandler::EventHandler() :
   _ids.push_back( xmt::uid() );
 }
 
-__FIT_DECLSPEC
 EventHandler::EventHandler( const char* info ) :
     _nice( 0 )
 {
@@ -251,7 +231,6 @@ EventHandler::EventHandler( const char* info ) :
   _mgr->annotate( _ids.back(), info );
 }
 
-__FIT_DECLSPEC
 EventHandler::EventHandler( const addr_type& id, int nice ) :
     _nice( nice )
 {
@@ -260,7 +239,6 @@ EventHandler::EventHandler( const addr_type& id, int nice ) :
   _ids.push_back( id );
 }
 
-__FIT_DECLSPEC
 EventHandler::EventHandler( const addr_type& id, const char* info ) :
     _nice( 0 )
 {
@@ -270,7 +248,6 @@ EventHandler::EventHandler( const addr_type& id, const char* info ) :
   _mgr->annotate( id, info );
 }
 
-__FIT_DECLSPEC
 EventHandler::~EventHandler()
 {
   EventHandler::solitary();
@@ -278,7 +255,6 @@ EventHandler::~EventHandler()
   tmp->~Init();
 }
 
-__FIT_DECLSPEC
 void EventHandler::TraceStack( ostream& out ) const
 {
   std::tr2::lock_guard<std::tr2::recursive_mutex> lk( _theHistory_lock );

@@ -13,12 +13,6 @@
 
 #include <sys/epoll.h>
 
-/*
-#ifndef EPOLLRDHUP
-#  define EPOLLRDHUP 0x2000
-#endif
-*/
-
 #include <fcntl.h>
 
 #include <cerrno>

@@ -25,7 +25,6 @@ namespace stem {
 
 using namespace std;
 
-__FIT_DECLSPEC
 void __pack_base::__unpack( istream& s, string& str )
 {
   uint32_t sz;
@@ -40,7 +39,6 @@ void __pack_base::__unpack( istream& s, string& str )
   }
 }
 
-__FIT_DECLSPEC
 void __pack_base::__pack( ostream& s, const string& str )
 {
   uint32_t sz = static_cast<uint32_t>( str.size() );
@@ -51,13 +49,11 @@ void __pack_base::__pack( ostream& s, const string& str )
   }
 }
 
-__FIT_DECLSPEC
 void __pack_base::__unpack( std::istream& s, xmt::uuid_type& u )
 {
   s.read( reinterpret_cast<char*>(u.u.b), sizeof(u.u.b) );
 }
 
-__FIT_DECLSPEC
 void __pack_base::__pack( std::ostream& s, const xmt::uuid_type& u )
 {
   s.write( reinterpret_cast<const char*>(u.u.b), sizeof(u.u.b) );

@@ -79,8 +79,6 @@ sockmgr<charT,traits,_Alloc>::~sockmgr()
     _ctl.data.ptr = 0;
 
     ::write( pipefd[1], &_ctl, sizeof(ctl) );
-
-    // _worker->join();
   }
 
   delete _worker;
@@ -619,8 +617,7 @@ void sockmgr<charT,traits,_Alloc>::process_dgram_srv( const epoll_event& ev, typ
   char c;
   ssize_t len = ::recvfrom( ifd->first, &c, 1, MSG_PEEK, &addr, &sz );
 
-  if ( /* len <= 0 */ len < 0 ) { // epoll notified, no data
-    // cerr << HERE << ' ' << len << ' ' << errno << ' ' << std::system_error( errno, std::get_posix_category() ).what() << endl;
+  if ( len < 0 ) { // epoll notified, no data
     switch ( errno ) {
       default:
         // case EAGAIN: // <---
