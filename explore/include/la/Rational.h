@@ -2,8 +2,6 @@
 #ifndef __LA_Rational_h
 #define __LA_Rational_h
 
-#ident "%Z% $Date$ $Revision$ $RCSfile$ %Q%"
-
 #ifndef __GNUC__
 #ifndef BOOL_H
 #include <stl/bool.h>

@@ -195,9 +195,6 @@ class la_int
         t.a.hi = hi >> 1;
         t.a.lo = lo | (hi << shift_first_to_hi);
       }
-
-    //friend std::ostream& operator <<( std::ostream&, const la_int& );
-    //friend std::istream& operator >>( std::istream&, la_int& );
 };
 
 template <int P, class T>

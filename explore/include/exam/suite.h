@@ -106,7 +106,6 @@ class call
 
     int operator()( test_suite *ts, int count = 0 )
       { call_impl* tmp = reinterpret_cast<call_impl*>(&_buf[0]); return tmp->invoke( ts, count ); }
-      // { return reinterpret_cast<call_impl *>(&_buf[0])->invoke( ts, count ); }
 
   private:
     char _buf[((sizeof(call_impl_t<method_invoker<dummy> >)+64) / 64) << 6];
@@ -251,7 +250,6 @@ test_suite::test_case_type test_suite::add( int (TC::*f)( test_suite *, int ), T
   _test[v].tc = detail::make_test_case( f, instance );
   _test[v].state = 0;
   _test[v].name = name;
-  // ++_stat.total;
 
   return v;
 }
@@ -272,7 +270,6 @@ test_suite::test_case_type test_suite::add( test_suite::func_type f, const std::
   _test[v].tc = detail::make_test_case( detail::call( f ) );
   _test[v].state = 0;
   _test[v].name = name;
-  // ++_stat.total;
 
   return v;
 }
@@ -289,7 +286,6 @@ test_suite::test_case_type test_suite::add( int (TC::*f)( test_suite *, int ), T
   _test[v].tc = detail::make_test_case( f, instance );
   _test[v].state = 0;
   _test[v].name = name;
-  // ++_stat.total;
 
   return v;
 }
@@ -310,7 +306,6 @@ test_suite::test_case_type test_suite::add( int (TC::*f)( test_suite *, int ), T
   _test[v].tc = detail::make_test_case( f, instance );
   _test[v].state = 0;
   _test[v].name = name;
-  // ++_stat.total;
 
   return v;
 }

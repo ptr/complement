@@ -36,7 +36,7 @@ static const string no_catcher( "no catcher for event" );
 
 unsigned int EvManager::working_threads = 2;
 
-__FIT_DECLSPEC EvManager::EvManager() :
+EvManager::EvManager() :
     _id( xmt::uid() ),
     _dispatch_stop( false ),
     _trflags( 0 ),
@@ -49,7 +49,7 @@ __FIT_DECLSPEC EvManager::EvManager() :
   }
 }
 
-__FIT_DECLSPEC EvManager::~EvManager()
+EvManager::~EvManager()
 {
   _dispatch_stop = true;
 
@@ -62,7 +62,7 @@ __FIT_DECLSPEC EvManager::~EvManager()
   }
 }
 
-__FIT_DECLSPEC void EvManager::push( const Event& e )
+void EvManager::push( const Event& e )
 {
   unsigned int i = e.dest().u.i[0] & (n_threads - 1);
   std::tr2::lock_guard<std::tr2::mutex> lock( workers[i]->lock );
@@ -281,7 +281,7 @@ std::ostream* EvManager::settrs( std::ostream* s )
   return tmp;
 }
 
-__FIT_DECLSPEC std::ostream& EvManager::dump( std::ostream& s ) const
+std::ostream& EvManager::dump( std::ostream& s ) const
 {
   ios_base::fmtflags f = s.flags( ios_base::showbase );
 

@@ -190,16 +190,11 @@ void syslog_init::Init::_guard( int direction )
 void syslog_init::Init::__at_fork_prepare()
 {
   _init_lock.lock();
-  // if ( _count != 0 ) {
   close_syslog();
-  //  _count = 0;
-  // }
 }
 
 void syslog_init::Init::__at_fork_child()
 {
-  // if ( _count != 0 ) {
-  // }
   stringstream s;
 
   s << detail::timeline << __progname << '[' << std::tr2::getpid() << "]: ";
@@ -210,8 +205,6 @@ void syslog_init::Init::__at_fork_child()
 
 void syslog_init::Init::__at_fork_parent()
 {
-  // if ( _count != 0 ) {
-  // }
   _init_lock.unlock();
 }
 

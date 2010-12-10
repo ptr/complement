@@ -620,11 +620,6 @@ void sockmgr<charT,traits,_Alloc>::process_dgram_srv( const epoll_event& ev, typ
   if ( len < 0 ) { // epoll notified, no data
     switch ( errno ) {
       default:
-        // case EAGAIN: // <---
-        // case EBADF:
-        // case ECONNREFUSED:
-        // case ENOMEM:
-        // case ENOTCONN:
         descr.erase( ifd );
         // may be in dtor of info.p!
         // no more connection with this processor
@@ -807,7 +802,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( const epoll_event& ev, typen
       }
     }
 
-    if ( (ev.events & (/* EPOLLRDHUP | */ EPOLLHUP | EPOLLERR) ) != 0 ) {
+    if ( (ev.events & (EPOLLHUP | EPOLLERR) ) != 0 ) {
       throw fdclose(); // closed connection
     }
   }
@@ -838,7 +833,6 @@ void sockmgr<charT,traits,_Alloc>::process_regular( const epoll_event& ev, typen
       b->_fd = -1;
       b->ucnd.notify_all();
     }
-    // dump_descr();
   }
   catch ( const no_ready_data& ) {
   }
