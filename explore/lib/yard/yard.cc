@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-16 14:17:35 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-16 16:24:13 ptr>
 
 /*
  *
@@ -138,7 +138,7 @@ void yard_ng::open_commit_delta( const commit_id_type& base, const commit_id_typ
     return;
   }
 
-  cache[m].first = base;
+  cache[m].first = make_pair( base, base );
   cached_manifest_type::const_iterator j = cached_manifest.find( i->second.mid );
   if ( j != cached_manifest.end() ) {
     cache[m].second = j->second; // oh, copy whole manifest...
@@ -158,13 +158,23 @@ void yard_ng::close_commit_delta( const commit_id_type& m )
   revision_id_type rid = r.push( i->second.second );
   swap( cached_manifest[rid], i->second.second );
   c[i->first].mid = rid;
-  c[i->first].edge_in.push_back( i->second.first );
-  c[i->second.first].edge_out.push_back( i->first );
+  c[i->first].edge_in.push_back( i->second.first.first );
+  c[i->second.first.first].edge_out.push_back( i->first );
 
-  leafs_container_type::iterator j = find( leaf.begin(), leaf.end(), i->second.first );
+  leafs_container_type::iterator j = find( leaf.begin(), leaf.end(), i->second.first.first );
   if ( j != leaf.end() ) {
     leaf.erase( j );
   }
+
+  if ( i->second.first.first != i->second.first.second ) {
+    c[i->first].edge_in.push_back( i->second.first.second );
+    c[i->second.first.second].edge_out.push_back( i->first );
+    j = find( leaf.begin(), leaf.end(), i->second.first.second );
+    if ( j != leaf.end() ) {
+      leaf.erase( j );
+    }
+  }
+
   leaf.push_back( i->first );
   cache.erase( i );
 }
@@ -420,10 +430,10 @@ int yard_ng::fast_merge( const commit_id_type& merge, const commit_id_type& left
     // return;
   }
 
-  cache[merge].first = merge;
+  cache[merge];
 
   cache_container_type::iterator cc = cache.find( merge );
-  cc->second.first = left;
+  cc->second.first = make_pair( left, right );
   cached_manifest_type::const_iterator m = cached_manifest.find( k->second.mid );
   if ( m != cached_manifest.end() ) {
     cc->second.second = m->second; // oh, copy whole manifest...

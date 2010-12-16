@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-03 13:16:39 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-16 15:52:55 ptr>
 
 /*
  *
@@ -47,6 +47,7 @@ typedef xmt::uuid_type commit_id_type;
 typedef xmt::uuid_type meta_id_type;
 typedef std::map<std::string,revision_id_type> manifest_type;
 typedef std::pair<manifest_type,manifest_type> diff_type;
+typedef std::list<std::string,std::pair<revision_id_type,revision_id_type> > conflicts_list_type;
 
 class metainfo
 {
@@ -141,7 +142,7 @@ class yard_ng
 
     typedef std::map<commit_id_type,commit_node> commit_container_type;
     typedef std::list<commit_id_type> leafs_container_type;
-    typedef std::map<commit_id_type,std::pair<commit_id_type,manifest_type> > cache_container_type;
+    typedef std::map<commit_id_type,std::pair<std::pair<commit_id_type,commit_id_type>,manifest_type> > cache_container_type;
     typedef std::map<manifest_id_type,manifest_type> cached_manifest_type;
     typedef std::map<meta_id_type,std::pair<bool,metainfo> > meta_container_type;
 
