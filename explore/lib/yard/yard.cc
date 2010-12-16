@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-02 20:17:11 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-16 14:17:35 ptr>
 
 /*
  *
@@ -25,17 +25,19 @@
 
 #include <algorithm>
 #include <functional>
-# if defined(__GNUC__)
-    #include <ext/functional>
+
+#if !defined(STLPORT) && defined(__GNUC__)
+#  include <ext/functional>
 #endif
+
 #include <queue>
 
 namespace yard {
 
 using namespace std;
 
-# if defined(__GNUC__)
-    using __gnu_cxx::select1st;
+#if !defined(STLPORT) && defined(__GNUC__)
+using __gnu_cxx::select1st;
 #endif
 
 void metainfo::set( int key, const std::string& val )
