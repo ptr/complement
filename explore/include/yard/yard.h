@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-16 15:52:55 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-20 13:13:08 ptr>
 
 /*
  *
@@ -47,7 +47,7 @@ typedef xmt::uuid_type commit_id_type;
 typedef xmt::uuid_type meta_id_type;
 typedef std::map<std::string,revision_id_type> manifest_type;
 typedef std::pair<manifest_type,manifest_type> diff_type;
-typedef std::list<std::string,std::pair<revision_id_type,revision_id_type> > conflicts_list_type;
+typedef std::list<std::pair<std::string,std::pair<revision_id_type,revision_id_type> > > conflicts_list_type;
 
 class metainfo
 {
@@ -120,6 +120,7 @@ class yard_ng
        on every node of group).
      */
     int fast_merge( const commit_id_type& merge, const commit_id_type& left, const commit_id_type& right );
+    int merge( const commit_id_type& merge, const commit_id_type& left, const commit_id_type& right, conflicts_list_type& );
 
     template <class BackInsertIterator>
     void heads( BackInsertIterator bi )
