@@ -70,6 +70,28 @@ const std::string& metainfo::get( int key )
   return i != rec.end() ? i->second : empty;
 }
 
+file_address_type append_data(std::fstream& file, const char* data, unsigned int size)
+{
+    file.seekp(0, ios_base::end);
+    file_address_type address = file.tellp();
+
+    file.write(data, size);
+
+    return address;
+}
+
+void write_data(std::fstream& file, file_address_type address, const char* data, unsigned int size)
+{
+    file.seekp(address);
+    file.write(data, size);
+}
+
+void get_data(std::fstream& file, file_address_type address, char* data, unsigned int size)
+{
+    file.seekg(address);
+    file.read(data, size);
+}
+
 revision_id_type revision::push( const void* data, size_t sz )
 {
   MD5_CTX ctx;

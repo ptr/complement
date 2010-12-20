@@ -63,6 +63,12 @@ class metainfo
     container_type rec;
 };
 
+typedef unsigned int file_address_type;
+
+file_address_type append_data(std::fstream& file, const char* data, unsigned int size);
+void write_data(std::fstream& file, file_address_type address, const char* data, unsigned int size);
+void get_data(std::fstream& file, file_address_type address, char* data, unsigned int size);
+
 struct revision_node
 {
     enum 

@@ -22,6 +22,8 @@ int main( int argc, const char** argv )
   exam::test_suite t( "libyard test suite" );
   yard_test test;
 
+  t.add( &yard_test::append_get, test, "append-get");
+
   t.add( &yard_test::manifest, test, "manifest",
     t.add( &yard_test::put_object, test, "put object",
       t.add( &yard_test::put, test, "put revision",
