@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-02 20:17:11 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-20 13:23:18 ptr>
 
 /*
  *
@@ -25,17 +25,19 @@
 
 #include <algorithm>
 #include <functional>
-# if defined(__GNUC__)
-    #include <ext/functional>
+
+#if !defined(STLPORT) && defined(__GNUC__)
+#  include <ext/functional>
 #endif
+
 #include <queue>
 
 namespace yard {
 
 using namespace std;
 
-# if defined(__GNUC__)
-    using __gnu_cxx::select1st;
+#if !defined(STLPORT) && defined(__GNUC__)
+using __gnu_cxx::select1st;
 #endif
 
 void metainfo::set( int key, const std::string& val )
@@ -136,7 +138,7 @@ void yard_ng::open_commit_delta( const commit_id_type& base, const commit_id_typ
     return;
   }
 
-  cache[m].first = base;
+  cache[m].first = make_pair( base, base );
   cached_manifest_type::const_iterator j = cached_manifest.find( i->second.mid );
   if ( j != cached_manifest.end() ) {
     cache[m].second = j->second; // oh, copy whole manifest...
@@ -156,13 +158,23 @@ void yard_ng::close_commit_delta( const commit_id_type& m )
   revision_id_type rid = r.push( i->second.second );
   swap( cached_manifest[rid], i->second.second );
   c[i->first].mid = rid;
-  c[i->first].edge_in.push_back( i->second.first );
-  c[i->second.first].edge_out.push_back( i->first );
+  c[i->first].edge_in.push_back( i->second.first.first );
+  c[i->second.first.first].edge_out.push_back( i->first );
 
-  leafs_container_type::iterator j = find( leaf.begin(), leaf.end(), i->second.first );
+  leafs_container_type::iterator j = find( leaf.begin(), leaf.end(), i->second.first.first );
   if ( j != leaf.end() ) {
     leaf.erase( j );
   }
+
+  if ( i->second.first.first != i->second.first.second ) {
+    c[i->first].edge_in.push_back( i->second.first.second );
+    c[i->second.first.second].edge_out.push_back( i->first );
+    j = find( leaf.begin(), leaf.end(), i->second.first.second );
+    if ( j != leaf.end() ) {
+      leaf.erase( j );
+    }
+  }
+
   leaf.push_back( i->first );
   cache.erase( i );
 }
@@ -418,10 +430,10 @@ int yard_ng::fast_merge( const commit_id_type& merge, const commit_id_type& left
     // return;
   }
 
-  cache[merge].first = merge;
+  cache[merge];
 
   cache_container_type::iterator cc = cache.find( merge );
-  cc->second.first = left;
+  cc->second.first = make_pair( left, right );
   cached_manifest_type::const_iterator m = cached_manifest.find( k->second.mid );
   if ( m != cached_manifest.end() ) {
     cc->second.second = m->second; // oh, copy whole manifest...
@@ -454,6 +466,81 @@ int yard_ng::fast_merge( const commit_id_type& merge, const commit_id_type& left
   }
   leaf.push_back( merge );
   cache.erase( merge );
+
+  return 0;
+}
+
+int yard_ng::merge( const commit_id_type& merge_, const commit_id_type& left, const commit_id_type& right, conflicts_list_type& cnf )
+{
+  commit_id_type ancestor = common_ancestor( left, right );
+
+  if ( ancestor == left ) {
+    return 2;
+  }
+
+  if ( ancestor == right ) {
+    return 1;
+  }
+
+  diff_type ld = diff( ancestor, left );
+  diff_type rd = diff( ancestor, right );
+
+  for ( manifest_type::iterator i = ld.second.begin(); i != ld.second.end(); ) {
+    manifest_type::iterator j = rd.second.find( i->first );
+    if ( j != rd.second.end() ) {
+      if ( j->second != i->second ) { // can't do fast merge
+        cnf.push_back( make_pair( i->first, make_pair(i->second,j->second) ) );
+      }
+      ld.second.erase( i++ );
+      rd.second.erase( j );
+    } else {
+      ++i;
+    }
+  }
+
+  for ( manifest_type::iterator i = ld.first.begin(); i != ld.first.end(); ) {
+    manifest_type::iterator j = rd.first.find( i->first );
+    if ( j != rd.first.end() ) {
+      if ( j->second != i->second ) {
+        return 4; // unexpected: shouldn't happen!
+      }
+      if ( rd.second.find( i->first ) != rd.second.end() ) { // erased in left, changed in right
+        cnf.push_back( make_pair( i->first, make_pair(xmt::nil_uuid,j->second) ) );
+      } else if ( ld.second.find( i->first ) != ld.second.end() ) { // erased in right, changed in left
+        cnf.push_back( make_pair( i->first, make_pair(i->second,xmt::nil_uuid) ) );
+      }
+      ld.first.erase( i++ );
+      rd.first.erase( j );
+    } else {
+      ++i;
+    }
+  }
+
+  commit_container_type::const_iterator k = c.find( left );
+
+  if ( k == c.end() ) {
+    // ToDo: try to upload from disc
+    // throw invalid_argument
+    // return;
+  }
+
+  cache[merge_];
+
+  cache_container_type::iterator cc = cache.find( merge_ );
+  cc->second.first = make_pair( left, right );
+  cached_manifest_type::const_iterator m = cached_manifest.find( k->second.mid );
+  if ( m != cached_manifest.end() ) {
+    cc->second.second = m->second; // oh, copy whole manifest...
+  } else {
+    // cc->second.second = ; extract manifest from r.get(k->second)
+  }
+
+  for ( manifest_type::iterator i = rd.first.begin(); i != rd.first.end(); ++i ) {
+    cc->second.second.erase( i->first );
+  }
+  for ( manifest_type::iterator i = rd.second.begin(); i != rd.second.end(); ++i ) {
+    cc->second.second[i->first] = i->second;
+  }
 
   return 0;
 }

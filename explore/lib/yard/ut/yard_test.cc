@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-03 13:11:37 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-20 13:44:28 ptr>
 
 /*
  * Copyright (c) 2010
@@ -531,6 +531,59 @@ int EXAM_IMPL(yard_test::heads)
     EXAM_CHECK( (h.front() == cid3) || (h.front() == cid4) );
     EXAM_CHECK( (h.back() == cid3) || (h.back() == cid4) );
     EXAM_CHECK( h.front() !=  h.back() );
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::logic_error& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::merge1)
+{
+  yard::yard_ng db;
+
+  try {
+    yard::commit_id_type cid1 = xmt::uid();
+
+    db.open_commit_delta( xmt::nil_uuid, cid1 );
+
+    string content1( "1" );
+    string content1_2( "3" );
+
+    db.add( cid1, "/one", content1 );
+    db.add( cid1, "/two", content1_2 );
+    db.close_commit_delta( cid1 );
+
+    yard::commit_id_type cid2 = xmt::uid();
+    
+    db.open_commit_delta( xmt::nil_uuid, cid2 );
+
+    string content2( "2" );
+    string content2_2( "4" );
+
+    db.add( cid2, "/one", content2_2 );
+    db.add( cid2, "/two", content2 );
+
+    db.close_commit_delta( cid2 );
+
+    yard::commit_id_type cid3 = xmt::uid();
+    yard::conflicts_list_type cnf;
+    EXAM_CHECK( db.merge( cid3, cid1, cid2, cnf ) == 0 );
+    EXAM_CHECK( cnf.size() == 2 );
+
+    db.add( cid3, "/one", content1 );
+    db.add( cid3, "/two", content2 );
+    db.close_commit_delta( cid3 );
+
+    EXAM_CHECK( db.get( cid3, "/one" ) == content1 );
+    EXAM_CHECK( db.get( cid3, "/two" ) == content2 );
+
+    EXAM_CHECK( db.get( "/one" ) == content1 );
+    EXAM_CHECK( db.get( "/two" ) == content2 );
   }
   catch ( const std::invalid_argument& err ) {
     EXAM_ERROR( err.what() );

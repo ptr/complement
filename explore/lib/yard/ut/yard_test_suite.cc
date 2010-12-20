@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-03 13:15:47 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-20 13:41:38 ptr>
 
 /*
  * Copyright (c) 2010
@@ -40,6 +40,7 @@ int main( int argc, const char** argv )
 
   t.add( &yard_test::fast_merge_conflict1, test, "fast merge conflict in yard ng", tc[1] );
   t.add( &yard_test::heads, test, "heads of commits graph in yard ng", tc[2] );
+  t.add( &yard_test::merge1, test, "merge with conflict in yard ng", tc[1] );
 
   Opts opts;
 
