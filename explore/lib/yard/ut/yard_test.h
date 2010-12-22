@@ -15,6 +15,8 @@ class yard_test
   public:
     // get_data/append_data test
     int EXAM_DECL(append_get);
+    int EXAM_DECL(data_block);
+    int EXAM_DECL(index_block);
     // yard ng
     int EXAM_DECL(revision_in_memory);
     int EXAM_DECL(access);

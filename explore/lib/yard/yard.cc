@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <cassert>
 
 #if !defined(STLPORT) && defined(__GNUC__)
 #  include <ext/functional>
@@ -90,6 +91,164 @@ void get_data(std::fstream& file, file_address_type address, char* data, unsigne
 {
     file.seekg(address);
     file.read(data, size);
+}
+
+const unsigned int block_type::root_node = 1;
+const unsigned int block_type::leaf_node = 2;
+
+const unsigned int block_type::index_node_nsize = 100;
+const unsigned int block_type::data_node_nsize = 84;
+
+block_type::block_type()
+{
+    size_ = 0;
+    flags_ = 0;
+    memset(data_, 0, 4096 - 2*sizeof(unsigned int));
+}
+
+bool block_type::is_root() const
+{
+    return ((flags_ & root_node) == root_node);
+}
+
+bool block_type::is_leaf() const
+{
+    return ((flags_ & leaf_node) == leaf_node);
+}
+
+bool block_type::is_overfilled() const
+{
+    if (is_leaf())
+        return (size_ >= 2 * data_node_nsize + 1);
+    else
+        return (size_ >= 2 * index_node_nsize + 1);
+}
+
+void block_type::insert_index(const index_node_entry& entry)
+{
+    assert(!is_leaf());
+    assert(!is_overfilled());
+
+    index_node_entry * const begin = (index_node_entry*)data_;
+    index_node_entry * const end = ((index_node_entry*)data_) + size_;
+    index_node_entry * const new_end = end + 1;
+
+    index_node_entry * insert_place = find_if(begin, end,
+        bind2nd(greater<index_node_entry>(), entry));
+
+    copy_backward(insert_place, end, new_end);
+
+    *insert_place = entry;
+    ++size_;
+}
+
+void block_type::insert_data(const data_node_entry& entry)
+{
+    assert(is_leaf());
+    assert(!is_overfilled());
+
+    data_node_entry * const begin = (data_node_entry*)data_;
+    data_node_entry * const end = ((data_node_entry*)data_) + size_;
+    data_node_entry * const new_end = end + 1;
+
+    data_node_entry * insert_place = find_if(begin, end,
+        bind2nd(greater<data_node_entry>(), entry));
+
+    copy_backward(insert_place, end, new_end);
+
+    *insert_place = entry;
+    ++size_;
+}
+
+void block_type::divide(block_type& other)
+{
+    assert(is_overfilled());
+
+    int entry_size = is_leaf() ? sizeof(data_node_entry) : sizeof(index_node_entry);
+    char * const middle = data_ + entry_size * (size_ / 2);
+    char * const end = data_ + entry_size * size_;
+
+    copy(middle, end, other.data_);
+    other.size_ = size_ - (size_ / 2);
+    size_ = (size_ / 2);
+
+    if (is_root())
+    {
+        flags_ = flags_ ^ root_node;
+    }
+
+    other.flags_ = flags_;
+}
+
+namespace
+{
+    struct key_equal
+    {
+        const xmt::uuid_type& key;
+
+        key_equal(const xmt::uuid_type& a_key):
+            key(a_key)
+        {}
+
+        bool operator()(const data_node_entry& node)
+        {
+            return node.get_key() == key;
+        }
+    };
+}
+
+const data_node_entry* block_type::lookup(xmt::uuid_type key) const
+{
+    key_equal predicate(key);
+
+    const data_node_entry * const begin = (data_node_entry*)data_;
+    const data_node_entry * const end = ((data_node_entry*)data_) + size_;
+    const data_node_entry * result = find_if(begin, end, predicate);
+    return result;
+}
+
+namespace
+{
+    struct key_greater
+    {
+        const xmt::uuid_type& key;
+
+        key_greater(const xmt::uuid_type& a_key):
+            key(a_key)
+        {}
+
+        bool operator()(const index_node_entry& node)
+        {
+            return node.get_key() > key;
+        }
+    };
+}
+
+const index_node_entry* block_type::route(xmt::uuid_type key) const
+{
+    assert(!is_leaf());
+    assert(size_ > 0);
+
+    index_node_entry * const begin = (index_node_entry*)data_;
+    index_node_entry * const end = ((index_node_entry*)data_) + size_;
+    index_node_entry * result = find_if(begin, end,
+        key_greater(key));
+    return (result - 1);
+}
+
+char* block_type::raw_data()
+{
+    return (char*)this;
+}
+
+unsigned int block_type::raw_data_size() const
+{
+    return sizeof(block_type);
+}
+
+void block_type::set_flags(unsigned int flags)
+{
+    flags_ = flags;
 }
 
 revision_id_type revision::push( const void* data, size_t sz )

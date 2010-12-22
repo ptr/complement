@@ -38,6 +38,7 @@
 #include <memory>
 #include <map>
 #include <set>
+#include <stack>
 
 namespace yard {
 
@@ -68,6 +69,88 @@ typedef unsigned int file_address_type;
 file_address_type append_data(std::fstream& file, const char* data, unsigned int size);
 void write_data(std::fstream& file, file_address_type address, const char* data, unsigned int size);
 void get_data(std::fstream& file, file_address_type address, char* data, unsigned int size);
+
+struct index_node_entry
+{
+    xmt::uuid_type key;
+    file_address_type pointer;
+
+    xmt::uuid_type get_key() const
+    {
+        return key;
+    }
+
+    file_address_type get_pointer() const
+    {
+        return pointer;
+    }
+
+    bool operator>(const index_node_entry& right) const
+    {
+        return (key > right.key);
+    }
+};
+
+struct data_node_entry
+{
+    xmt::uuid_type key;
+    file_address_type address_of_value;
+    unsigned int size;
+
+    xmt::uuid_type get_key() const
+    {
+        return key;
+    }
+
+    file_address_type get_address_of_value() const
+    {
+        return address_of_value;
+    }
+
+    unsigned int get_size() const
+    {
+        return size;
+    }
+
+    bool operator>(const data_node_entry& right) const
+    {
+        return (key > right.key);
+    }
+};
+
+class block_type
+{
+public:
+    static const unsigned int root_node;
+    static const unsigned int leaf_node;
+
+    bool is_root() const;
+    bool is_leaf() const;
+
+    void set_flags(unsigned int flags);
+
+    void insert_index(const index_node_entry& entry);
+    void insert_data(const data_node_entry& entry);
+
+    const data_node_entry* lookup(xmt::uuid_type key) const;
+    const index_node_entry* route(xmt::uuid_type key) const;
+
+    bool is_overfilled() const;
+
+    void divide(block_type& other);
+
+    char* raw_data();
+    unsigned int raw_data_size() const;
+
+    block_type();
+private:
+    static const unsigned int index_node_nsize;
+    static const unsigned int data_node_nsize;
+
+    unsigned int flags_;
+    unsigned int size_;
+    char data_[4096 - 2*sizeof(unsigned int)];
+};
 
 struct revision_node
 {

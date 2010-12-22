@@ -73,6 +73,66 @@ int EXAM_IMPL(yard_test::append_get)
     return EXAM_RESULT;
 }
 
+int EXAM_IMPL(yard_test::data_block)
+{
+    using namespace yard;
+    block_type block;
+    block.set_flags(block_type::root_node | block_type::leaf_node);
+
+    for (int i = 0; i < 10; ++i)
+    {
+        data_node_entry entry;
+        entry.key.u.l[0] = 2*i;
+        entry.key.u.l[1] = 0;
+
+        block.insert_data(entry);
+    }
+
+    for (int i = 0; i < 10; ++i)
+    {
+        xmt::uuid_type key;
+        key.u.l[0] = 2*i;
+        key.u.l[1] = 0;
+
+        const data_node_entry* node = block.lookup(key);
+        EXAM_CHECK(node->key == key);
+    }
+
+    return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::index_block)
+{
+    using namespace yard;
+    block_type block;
+    block.set_flags(block_type::root_node);
+
+    for (int i = 0; i < 10; ++i)
+    {
+        index_node_entry entry;
+        entry.key.u.l[0] = 2*i;
+        entry.key.u.l[1] = 0;
+
+        block.insert_index(entry);
+    }
+
+    for (int i = 0; i < 10; ++i)
+    {
+        xmt::uuid_type key;
+        key.u.l[0] = 2*i + 1;
+        key.u.l[1] = 0;
+
+        xmt::uuid_type left_key;
+        left_key.u.l[0] = 2*i;
+        left_key.u.l[1] = 0;
+
+        const index_node_entry* node = block.route(key);
+        EXAM_CHECK(node->key == left_key);
+    }
+
+    return EXAM_RESULT;
+}
+
 int EXAM_IMPL(yard_test::revision_in_memory)
 {
   yard::revision rev;
