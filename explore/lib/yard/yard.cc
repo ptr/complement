@@ -116,6 +116,18 @@ bool block_type::is_leaf() const
     return ((flags_ & leaf_node) == leaf_node);
 }
 
+block_type::key_iterator block_type::key_begin() const
+{
+    return key_iterator(data_, is_leaf()? key_iterator::data :
+                                               key_iterator::index);
+}
+
+block_type::key_iterator block_type::key_end() const
+{
+    unsigned int entry_size = is_leaf() ? sizeof(data_node_entry) : sizeof(index_node_entry);
+    return key_iterator(data_ + size_ * entry_size, is_leaf()? key_iterator::data : key_iterator::index);
+}
+
 block_type::data_iterator block_type::data_begin()
 {
     return (data_iterator)data_;
@@ -251,48 +263,11 @@ pair<xmt::uuid_type, xmt::uuid_type> block_type::divide(block_type& other)
     return result;
 }
 
-namespace
-{
-    struct key_equal
-    {
-        const xmt::uuid_type& key;
-
-        key_equal(const xmt::uuid_type& a_key):
-            key(a_key)
-        {}
-
-        bool operator()(const data_node_entry& node)
-        {
-            return node.get_key() == key;
-        }
-    };
-}
-
 const data_node_entry* block_type::lookup(xmt::uuid_type key) const
 {
-    key_equal predicate(key);
-
-    const data_node_entry * const begin = data_begin();
-    const data_node_entry * const end = data_end();
-    const data_node_entry * result = find_if(begin, end, predicate);
-    return result;
-}
-
-namespace
-{
-    struct key_greater
-    {
-        const xmt::uuid_type& key;
-
-        key_greater(const xmt::uuid_type& a_key):
-            key(a_key)
-        {}
-
-        bool operator()(const index_node_entry& node)
-        {
-            return node.get_key() > key;
-        }
-    };
+    key_iterator entry = find_if(key_begin(), key_end(),
+        bind2nd(equal_to<xmt::uuid_type>(), key));
+    return entry.get<data_node_entry>();
 }
 
 const index_node_entry* block_type::route(xmt::uuid_type key) const
@@ -300,11 +275,13 @@ const index_node_entry* block_type::route(xmt::uuid_type key) const
     assert(!is_leaf());
     assert(size_ > 0);
 
-    const index_node_entry * const begin = index_begin();
-    const index_node_entry * const end = index_end();
-    const index_node_entry * result = find_if(begin, end,
-        key_greater(key));
-    return (result - 1);
+    if (key_begin() == key_end())
+        return key_end().get<index_node_entry>();
+
+    key_iterator entry = find_if(++key_begin(), key_end(),
+        bind2nd(greater<xmt::uuid_type>(), key));
+
+    return (--entry).get<index_node_entry>();
 }
 
 char* block_type::raw_data()
@@ -312,6 +289,10 @@ char* block_type::raw_data()
     return (char*)this;
 }
 
+const char* block_type::raw_data() const
+{
+    return (const char*)this;
+}
 unsigned int block_type::raw_data_size() const
 {
     return sizeof(block_type);

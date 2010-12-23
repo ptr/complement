@@ -124,6 +124,77 @@ public:
     static const unsigned int root_node;
     static const unsigned int leaf_node;
 
+    class key_iterator : public std::iterator<std::input_iterator_tag, xmt::uuid_type>
+    {
+    private:
+        const char* raw_;
+        unsigned int type_;
+    public:
+        enum
+        {
+            index = 0,
+            data = 1
+        };
+
+        key_iterator(const char* raw, unsigned int type):
+            raw_(raw),
+            type_(type)
+        {}
+
+        unsigned int entry_size() const
+        {
+            if (type_ == 0)
+                return sizeof(index_node_entry);
+            else
+                return sizeof(data_node_entry);
+        }
+
+        template <typename T>
+        const T* get() const
+        {
+            return (const T*)raw_;
+        }
+
+        key_iterator& operator++()
+        {
+            raw_ += entry_size();
+            return *this;
+        }
+
+        key_iterator& operator--()
+        {
+            raw_ -= entry_size();
+            return *this;
+        }
+
+        key_iterator operator++(int)
+        {
+            key_iterator tmp(*this);
+            operator++();
+            return tmp;
+        }
+
+        bool operator==(const key_iterator& rhs) const
+        {
+            if (type_ != rhs.type_)
+                return false;
+            return (raw_ == rhs.raw_);
+        }
+
+        bool operator!=(const key_iterator& rhs) const
+        {
+            return !(operator==(rhs));
+        }
+
+        xmt::uuid_type operator*()
+        {
+            if (type_ == 0)
+                return ((const index_node_entry*)raw_)->get_key();
+            else
+                return ((const data_node_entry*)raw_)->get_key();
+        }
+    };
+
     typedef data_node_entry* data_iterator;
     typedef index_node_entry* index_iterator;
     typedef const data_node_entry* data_const_iterator;
@@ -131,6 +202,9 @@ public:
 
     bool is_root() const;
     bool is_leaf() const;
+
+    key_iterator key_begin() const;
+    key_iterator key_end() const;
 
     data_iterator data_begin();
     data_iterator data_end();
@@ -155,6 +229,7 @@ public:
     std::pair<xmt::uuid_type, xmt::uuid_type> divide(block_type& other);
 
     char* raw_data();
+    const char* raw_data() const;
     unsigned int raw_data_size() const;
 
     block_type();
