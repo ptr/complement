@@ -124,20 +124,35 @@ public:
     static const unsigned int root_node;
     static const unsigned int leaf_node;
 
+    typedef data_node_entry* data_iterator;
+    typedef index_node_entry* index_iterator;
+    typedef const data_node_entry* data_const_iterator;
+    typedef const index_node_entry* index_const_iterator;
+
     bool is_root() const;
     bool is_leaf() const;
+
+    data_iterator data_begin();
+    data_iterator data_end();
+    data_const_iterator data_begin() const;
+    data_const_iterator data_end() const;
+
+    index_iterator index_begin();
+    index_iterator index_end();
+    index_const_iterator index_begin() const;
+    index_const_iterator index_end() const;
 
     void set_flags(unsigned int flags);
 
     void insert_index(const index_node_entry& entry);
     void insert_data(const data_node_entry& entry);
 
-    const data_node_entry* lookup(xmt::uuid_type key) const;
-    const index_node_entry* route(xmt::uuid_type key) const;
+    data_const_iterator lookup(xmt::uuid_type key) const;
+    index_const_iterator route(xmt::uuid_type key) const;
 
     bool is_overfilled() const;
 
-    void divide(block_type& other);
+    std::pair<xmt::uuid_type, xmt::uuid_type> divide(block_type& other);
 
     char* raw_data();
     unsigned int raw_data_size() const;
@@ -146,6 +161,9 @@ public:
 private:
     static const unsigned int index_node_nsize;
     static const unsigned int data_node_nsize;
+
+    xmt::uuid_type min() const;
+    xmt::uuid_type max() const;
 
     unsigned int flags_;
     unsigned int size_;

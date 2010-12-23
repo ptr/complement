@@ -116,6 +116,46 @@ bool block_type::is_leaf() const
     return ((flags_ & leaf_node) == leaf_node);
 }
 
+block_type::data_iterator block_type::data_begin()
+{
+    return (data_iterator)data_;
+}
+
+block_type::data_iterator block_type::data_end()
+{
+    return (data_iterator)data_ + size_;
+}
+
+block_type::data_const_iterator block_type::data_begin() const
+{
+    return (data_const_iterator)data_;
+}
+
+block_type::data_const_iterator block_type::data_end() const
+{
+    return (data_const_iterator)data_ + size_;
+}
+
+block_type::index_iterator block_type::index_begin()
+{
+    return (index_iterator)data_;
+}
+
+block_type::index_iterator block_type::index_end()
+{
+    return (index_iterator)data_ + size_;
+}
+
+block_type::index_const_iterator block_type::index_begin() const
+{
+    return (index_const_iterator)data_;
+}
+
+block_type::index_const_iterator block_type::index_end() const
+{
+    return (index_const_iterator)data_ + size_;
+}
+
 bool block_type::is_overfilled() const
 {
     if (is_leaf())
@@ -129,8 +169,8 @@ void block_type::insert_index(const index_node_entry& entry)
     assert(!is_leaf());
     assert(!is_overfilled());
 
-    index_node_entry * const begin = (index_node_entry*)data_;
-    index_node_entry * const end = ((index_node_entry*)data_) + size_;
+    index_node_entry * const begin = index_begin();
+    index_node_entry * const end = index_end();
     index_node_entry * const new_end = end + 1;
 
     index_node_entry * insert_place = find_if(begin, end,
@@ -147,8 +187,8 @@ void block_type::insert_data(const data_node_entry& entry)
     assert(is_leaf());
     assert(!is_overfilled());
 
-    data_node_entry * const begin = (data_node_entry*)data_;
-    data_node_entry * const end = ((data_node_entry*)data_) + size_;
+    data_node_entry * const begin = data_begin();
+    data_node_entry * const end = data_end();
     data_node_entry * const new_end = end + 1;
 
     data_node_entry * insert_place = find_if(begin, end,
@@ -160,7 +200,27 @@ void block_type::insert_data(const data_node_entry& entry)
     ++size_;
 }
 
-void block_type::divide(block_type& other)
+xmt::uuid_type block_type::min() const
+{
+    assert(size_ > 0);
+
+    if (is_leaf())
+        return ((data_node_entry*)data_)->get_key();
+    else
+        return ((index_node_entry*)data_)->get_key();
+}
+
+xmt::uuid_type block_type::max() const
+{
+    assert(size_ > 0);
+
+    if (is_leaf())
+        return ((data_node_entry*)data_ + (size_ - 1))->get_key();
+    else
+        return ((index_node_entry*)data_ + (size_ - 1))->get_key();
+}
+
+pair<xmt::uuid_type, xmt::uuid_type> block_type::divide(block_type& other)
 {
     assert(is_overfilled());
 
@@ -176,8 +236,19 @@ void block_type::divide(block_type& other)
     {
         flags_ = flags_ ^ root_node;
     }
-
     other.flags_ = flags_;
+
+    pair<xmt::uuid_type, xmt::uuid_type> result;
+    result.first = max();
+    result.second = other.min();
+
+    if (!other.is_leaf())
+    {
+        xmt::uuid_type& key = other.index_begin()->key;
+        key.u.l[0] = 0;
+        key.u.l[1] = 0;
+    }
+    return result;
 }
 
 namespace
@@ -201,8 +272,8 @@ const data_node_entry* block_type::lookup(xmt::uuid_type key) const
 {
     key_equal predicate(key);
 
-    const data_node_entry * const begin = (data_node_entry*)data_;
-    const data_node_entry * const end = ((data_node_entry*)data_) + size_;
+    const data_node_entry * const begin = data_begin();
+    const data_node_entry * const end = data_end();
     const data_node_entry * result = find_if(begin, end, predicate);
     return result;
 }
@@ -229,9 +300,9 @@ const index_node_entry* block_type::route(xmt::uuid_type key) const
     assert(!is_leaf());
     assert(size_ > 0);
 
-    index_node_entry * const begin = (index_node_entry*)data_;
-    index_node_entry * const end = ((index_node_entry*)data_) + size_;
-    index_node_entry * result = find_if(begin, end,
+    const index_node_entry * const begin = index_begin();
+    const index_node_entry * const end = index_end();
+    const index_node_entry * result = find_if(begin, end,
         key_greater(key));
     return (result - 1);
 }
