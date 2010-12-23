@@ -133,6 +133,42 @@ int EXAM_IMPL(yard_test::index_block)
     return EXAM_RESULT;
 }
 
+int EXAM_IMPL(yard_test::btree_basic)
+{
+    using namespace yard;
+    BTree tree;
+    tree.init_empty("/tmp/btree");
+
+    const int count = 4000;
+    for (int i = 0; i < count; ++i)
+    {
+        data_node_entry entry;
+        entry.key.u.l[0] = 3*i;
+        entry.key.u.l[1] = 0;
+
+        BTree::coordinate_type coordinate = tree.lookup(entry.key);
+
+        entry.address_of_value = i;
+        tree.insert(coordinate, entry);
+    }
+
+    for (int i = 0; i < count; ++i)
+    {
+        xmt::uuid_type key;
+        key.u.l[0] = 3*i;
+        key.u.l[1] = 0;
+
+        BTree::coordinate_type coordinate = tree.lookup(key);
+
+        const block_type& block = tree.get(coordinate);
+        block_type::data_const_iterator node = block.lookup(key);
+
+        EXAM_CHECK(node->address_of_value == i);
+    }
+
+    return EXAM_RESULT;
+}
+
 int EXAM_IMPL(yard_test::revision_in_memory)
 {
   yard::revision rev;

@@ -322,6 +322,139 @@ void block_type::set_flags(unsigned int flags)
     flags_ = flags;
 }
 
+void BTree::lookup(coordinate_type& path, xmt::uuid_type key)
+{
+    while (true)
+    {
+        block_type& new_block = cache_[path.top()];
+        get_data(file_, path.top(), new_block.raw_data(), new_block.raw_data_size());
+
+        if (new_block.is_leaf())
+            return;
+
+        const index_node_entry* right_direction = new_block.route(key);
+        path.push(right_direction->get_pointer());
+    }
+}
+
+BTree::coordinate_type BTree::lookup(xmt::uuid_type key)
+{
+    coordinate_type path;
+    path.push(0);
+
+    lookup(path, key);
+
+    return path;
+}
+
+void BTree::insert(coordinate_type path, const data_node_entry& data)
+{
+    block_type& block = cache_[path.top()];
+    block.insert_data(data);
+    if (block.is_overfilled())
+    {
+        block_type new_block;
+        pair<xmt::uuid_type, xmt::uuid_type> delimiter = block.divide(new_block);
+
+        write_data(file_, path.top(), block.raw_data(), block.raw_data_size());
+        file_address_type address_of_new_block = append_data(file_, new_block.raw_data(), new_block.raw_data_size());
+        cache_[address_of_new_block] = new_block;
+
+        index_node_entry entry;
+        entry.key = delimiter.second;
+        entry.pointer = address_of_new_block;
+
+        path.pop();
+
+        if (path.empty())
+        {
+            block_type new_root;
+            new_root.set_flags(block_type::root_node);
+
+            {
+                index_node_entry zero_entry;
+                zero_entry.key.u.l[0] = zero_entry.key.u.l[1] = 0;
+                zero_entry.pointer = append_data(file_, block.raw_data(), block.raw_data_size());
+
+                new_root.insert_index(zero_entry);
+
+                cache_[zero_entry.pointer] = block;
+            }
+            new_root.insert_index(entry);
+            cache_[0] = new_root;
+            write_data(file_, 0, new_root.raw_data(), new_root.raw_data_size());
+        }
+        else
+            insert(path, entry);
+    }
+    else
+        write_data(file_, path.top(), block.raw_data(), block.raw_data_size());
+}
+
+const block_type& BTree::get(const coordinate_type& coordinate)
+{
+    return cache_[coordinate.top()];
+}
+
+void BTree::insert(coordinate_type path, const index_node_entry& data)
+{
+    index_node_entry entry = data;
+    do
+    {
+        block_type& block = cache_[path.top()];
+        block.insert_index(data);
+        if (!block.is_overfilled())
+        {
+            write_data(file_, path.top(), block.raw_data(), block.raw_data_size());
+            break;
+        }
+
+        block_type new_block;
+        pair<xmt::uuid_type, xmt::uuid_type> delimiter = block.divide(new_block);
+
+        write_data(file_, path.top(), block.raw_data(), block.raw_data_size());
+
+        file_address_type address_of_new_block = append_data(file_, new_block.raw_data(), new_block.raw_data_size());
+        cache_[address_of_new_block] = new_block;
+
+        entry.key = delimiter.second;
+        entry.pointer = address_of_new_block;
+
+        path.pop();
+        if (path.empty())
+        {
+            block_type new_root;
+            new_root.set_flags(block_type::root_node);
+
+            {
+                index_node_entry zero_entry;
+                zero_entry.key.u.l[0] = zero_entry.key.u.l[1] = 0;
+                zero_entry.pointer = append_data(file_, block.raw_data(), block.raw_data_size());
+
+                new_root.insert_index(zero_entry);
+
+                cache_[zero_entry.pointer] = block;
+            }
+            new_root.insert_index(entry);
+            cache_[0] = new_root;
+            write_data(file_, 0, new_root.raw_data(), new_root.raw_data_size());
+            break;
+        }
+    } while (true);
+}
+
+void BTree::init_empty(const char* filename)
+{
+    file_.open(filename, ios_base::in | ios_base::out | ios_base::binary | ios_base::trunc);
+
+    block_type root;
+    root.set_flags(block_type::root_node | block_type::leaf_node);
+
+    file_address_type address = append_data(file_, root.raw_data(), root.raw_data_size());
+
+    assert(address == 0);
+}
+
 revision_id_type revision::push( const void* data, size_t sz )
 {
   MD5_CTX ctx;

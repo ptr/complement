@@ -170,6 +170,23 @@ private:
     char data_[4096 - 2*sizeof(unsigned int)];
 };
 
+class BTree
+{
+public:
+    typedef std::stack<file_address_type> coordinate_type;
+    coordinate_type lookup(xmt::uuid_type key);
+    const block_type& get(const coordinate_type& coordinate);
+    void insert(coordinate_type path, const data_node_entry& data);
+
+    void init_empty(const char* filename);
+private:
+    void lookup(coordinate_type& path, xmt::uuid_type key);
+    void insert(coordinate_type path, const index_node_entry& data);
+
+    std::fstream file_;
+    std::map<file_address_type, block_type> cache_;
+};
+
 struct revision_node
 {
     enum 
