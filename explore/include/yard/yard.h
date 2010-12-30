@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-20 13:13:08 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-21 14:29:32 ptr>
 
 /*
  *
@@ -130,6 +130,8 @@ class yard_ng
     struct commit_node
     {
         manifest_id_type mid;
+        diff_type* delta;
+        int dref;
         enum {
           white = 0,
           gray,
@@ -143,11 +145,12 @@ class yard_ng
 
     typedef std::map<commit_id_type,commit_node> commit_container_type;
     typedef std::list<commit_id_type> leafs_container_type;
-    typedef std::map<commit_id_type,std::pair<std::pair<commit_id_type,commit_id_type>,manifest_type> > cache_container_type;
+    typedef std::map<commit_id_type,std::pair<std::pair<commit_id_type,commit_id_type>,diff_type> > cache_container_type;
     typedef std::map<manifest_id_type,manifest_type> cached_manifest_type;
     typedef std::map<meta_id_type,std::pair<bool,metainfo> > meta_container_type;
 
     commit_id_type common_ancestor( const commit_id_type&, const commit_id_type& );
+    manifest_id_type aggregate_delta( const commit_id_type&, diff_type& );
 
     revision r;
     commit_container_type c;

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-20 13:23:18 ptr>
+// -*- C++ -*- Time-stamp: <2010-12-30 17:06:27 ptr>
 
 /*
  *
@@ -126,6 +126,8 @@ yard_ng::yard_ng()
 
   cached_manifest[mid]; // = m;
   c[xmt::nil_uuid].mid = mid; // root
+  c[xmt::nil_uuid].delta = 0; // root
+  c[xmt::nil_uuid].dref = -1;
 }
 
 void yard_ng::open_commit_delta( const commit_id_type& base, const commit_id_type& m )
@@ -141,7 +143,7 @@ void yard_ng::open_commit_delta( const commit_id_type& base, const commit_id_typ
   cache[m].first = make_pair( base, base );
   cached_manifest_type::const_iterator j = cached_manifest.find( i->second.mid );
   if ( j != cached_manifest.end() ) {
-    cache[m].second = j->second; // oh, copy whole manifest...
+    // cache[m].second = j->second; // oh, copy whole manifest...
   } else {
     // cache[m].second = ; extract manifest from r.get(i->second)
   }
@@ -155,11 +157,58 @@ void yard_ng::close_commit_delta( const commit_id_type& m )
     return;
   }
 
-  revision_id_type rid = r.push( i->second.second );
-  swap( cached_manifest[rid], i->second.second );
-  c[i->first].mid = rid;
-  c[i->first].edge_in.push_back( i->second.first.first );
-  c[i->second.first.first].edge_out.push_back( i->first );
+  if ( (i->second.first.first != i->second.first.second) /* ||
+                                                            !c[i->second.first.first].edge_out.empty() */ ) {
+    diff_type diff;
+    manifest_id_type mid = aggregate_delta( i->second.first.first, diff );
+    for ( manifest_type::const_iterator k = i->second.second.first.begin(); k != i->second.second.first.end(); ++k ) {
+      diff.second.erase( k->first );
+    }
+    for ( manifest_type::const_iterator k = i->second.second.second.begin(); k != i->second.second.second.end(); ++k ) {
+      diff.second[k->first] = k->second;
+    }
+
+    manifest_type manifest( cached_manifest[mid] );
+    for ( manifest_type::const_iterator k = diff.first.begin(); k != diff.first.end(); ++k ) {
+      manifest.erase( k->first );
+    }
+    for ( manifest_type::const_iterator k = diff.second.begin(); k != diff.second.end(); ++k ) {
+      manifest[k->first] = k->second;
+    }
+    
+    revision_id_type rid = r.push( manifest );
+    c[m].mid = rid;
+    c[m].delta = 0;
+    c[m].dref = -1;
+
+    swap( cached_manifest[rid], manifest );
+    c[m].edge_in.push_back( i->second.first.first );
+    c[m].edge_in.push_back( i->second.first.second );
+    c[i->second.first.first].edge_out.push_back( m );
+    c[i->second.first.second].edge_out.push_back( m );
+  } else if ( i->second.first.first != xmt::nil_uuid ) {
+    c[m].mid = c[i->second.first.first].mid; // check that it present?
+    c[m].delta = new diff_type;
+    swap( *c[m].delta, i->second.second );
+    c[m].edge_in.push_back( i->second.first.first );
+    c[m].dref = c[m].edge_in.size() - 1;
+    c[i->second.first.first].edge_out.push_back( m );
+  } else { // ab ovo
+    manifest_type manifest;
+
+    // maninfest empty, so erase not applied here; start from 'add' section:
+    for ( manifest_type::const_iterator k = i->second.second.second.begin(); k != i->second.second.second.end(); ++k ) {
+      manifest[k->first] = k->second;
+    }
+
+    revision_id_type rid = r.push( manifest );
+    c[m].mid = rid;
+    c[m].delta = 0;
+    c[m].dref = -1;
+    swap( cached_manifest[rid], manifest );
+    c[m].edge_in.push_back( i->second.first.first );
+    c[i->second.first.first].edge_out.push_back( m );
+  }
 
   leafs_container_type::iterator j = find( leaf.begin(), leaf.end(), i->second.first.first );
   if ( j != leaf.end() ) {
@@ -167,8 +216,6 @@ void yard_ng::close_commit_delta( const commit_id_type& m )
   }
 
   if ( i->second.first.first != i->second.first.second ) {
-    c[i->first].edge_in.push_back( i->second.first.second );
-    c[i->second.first.second].edge_out.push_back( i->first );
     j = find( leaf.begin(), leaf.end(), i->second.first.second );
     if ( j != leaf.end() ) {
       leaf.erase( j );
@@ -177,6 +224,31 @@ void yard_ng::close_commit_delta( const commit_id_type& m )
 
   leaf.push_back( i->first );
   cache.erase( i );
+}
+
+manifest_id_type yard_ng::aggregate_delta( const commit_id_type& f, diff_type& diff )
+{
+  if ( c[f].delta != 0 ) {
+    if ( c[f].dref >= 0 && !c[f].edge_in.empty() ) {
+      commit_node::edge_container_type::const_iterator ee = c[f].edge_in.begin();
+      advance( ee, c[f].dref );
+      aggregate_delta( *ee, diff );
+      for ( manifest_type::const_iterator k = c[f].delta->first.begin(); k != c[f].delta->first.end(); ++k ) {
+        diff.second.erase( k->first );
+      }
+      for ( manifest_type::const_iterator k = c[f].delta->second.begin(); k != c[f].delta->second.end(); ++k ) {
+        diff.first.erase( k->first );
+      }
+      for ( manifest_type::const_iterator k = c[f].delta->first.begin(); k != c[f].delta->first.end(); ++k ) {
+        diff.first[k->first] = k->second;
+      }
+      for ( manifest_type::const_iterator k = c[f].delta->second.begin(); k != c[f].delta->second.end(); ++k ) {
+        diff.second[k->first] = k->second;
+      }
+    }
+  }
+
+  return c[f].mid;
 }
 
 void yard_ng::add( const commit_id_type& id, const std::string& name, const void* data, size_t sz )
@@ -189,7 +261,7 @@ void yard_ng::add( const commit_id_type& id, const std::string& name, const void
 
   revision_id_type rid = r.push( data, sz );
 
-  i->second.second[name] = rid;
+  i->second.second.second[name] = rid;
 }
 
 void yard_ng::del( const commit_id_type& id, const std::string& name )
@@ -200,7 +272,8 @@ void yard_ng::del( const commit_id_type& id, const std::string& name )
     return;
   }
 
-  i->second.second.erase( name );
+  i->second.second.second.erase( name );
+  i->second.second.first[name];
 }
 
 const std::string& yard_ng::get( const commit_id_type& id, const std::string& name ) throw( std::invalid_argument, std::logic_error )
@@ -212,12 +285,46 @@ const std::string& yard_ng::get( const commit_id_type& id, const std::string& na
     throw std::invalid_argument( "invalid commit" );
   }
 
+  if ( i->second.dref != -1 ) {
+    diff_type diff;
+    manifest_id_type mid = aggregate_delta( id, diff );
+    cached_manifest_type::const_iterator j = cached_manifest.find( mid );
+    if ( j != cached_manifest.end() ) {
+      manifest_type::const_iterator k = diff.second.find( name );
+      if ( k != diff.second.end() ) { // in add part
+        try {
+          return r.get( k->second );
+        }
+        catch ( const std::invalid_argument& ) {
+          throw std::logic_error( "no such revision" );
+        }
+      }
+      k = diff.first.find( name );
+      if ( k != diff.first.end() ) { // in del part
+        throw std::invalid_argument( "invalid name" );
+      }
+      k = j->second.find( name );
+      if ( k == j->second.end() ) { // absent in manifest
+        throw std::invalid_argument( "invalid name" );
+      }
+      try {
+        return r.get( k->second ); // in base manifest
+      }
+      catch ( const std::invalid_argument& ) {
+        throw std::logic_error( "no such revision" );
+      }
+    } else {
+      // deserialise from r.get( i->second ).content;
+      cerr << HERE << endl;
+    }
+  }
+
   cached_manifest_type::const_iterator j = cached_manifest.find( i->second.mid );
 
   if ( j != cached_manifest.end() ) {
     manifest_type::const_iterator k = j->second.find( name );
 
-    if ( k == j->second.end()  ) {
+    if ( k == j->second.end() ) {
       throw std::invalid_argument( "invalid name" );
     }
 
@@ -273,8 +380,58 @@ diff_type yard_ng::diff( const commit_id_type& from, const commit_id_type& to )
     cerr << HERE << endl;
   }
 
-  diff_type delta;
+  diff_type df, dt, delta;
   manifest_type::const_iterator l;
+
+  if ( mf == mt ) { // or i->second.mid == j->second.mid, same base
+    /* manifest_id_type mfrom = */ aggregate_delta( from, df );
+    /* manifest_id_type mto = */   aggregate_delta( to, dt );
+    /*
+    cerr << HERE << ' '
+         << df.first.size() << ' '
+         << df.second.size() << ' '
+         << dt.first.size() << ' '
+         << dt.second.size() << endl;
+    */
+    for ( manifest_type::const_iterator k = df.second.begin(); k != df.second.end(); ++k ) {
+      l = dt.second.find( k->first );
+      if ( l == dt.second.end() ) { // not added == removed
+        delta.first[k->first] = k->second;
+      } else if ( l->second != k->second ) { // changed
+        delta.first[k->first] = k->second;
+        delta.second[k->first] = l->second; // k->first == l->first here
+      }
+    }
+    for ( manifest_type::const_iterator k = df.first.begin(); k != df.first.end(); ++k ) {
+      l = dt.first.find( k->first );
+      if ( l == dt.first.end() ) { // not removed == added
+        delta.second[k->first] = k->second;
+      }
+    }
+    for ( manifest_type::const_iterator k = dt.first.begin(); k != dt.first.end(); ++k ) {
+      l = df.first.find( k->first );
+      if ( l == df.first.end() ) { // removed
+        delta.first[k->first] = k->second;
+      }
+    }
+    for ( manifest_type::const_iterator k = dt.second.begin(); k != dt.second.end(); ++k ) {
+      l = df.second.find( k->first );
+      if ( l != df.second.end() ) { // added
+        if ( l->second != k->second ) {
+          delta.first[k->first] = l->second;
+          delta.second[k->first] = k->second;
+        }
+      } else {
+        l = mt->second.find( k->first );
+        if ( l != mt->second.end() ) {
+          delta.first[k->first] = l->second;
+        }
+        delta.second[k->first] = k->second;
+      }
+    }
+
+    return delta;
+  }
 
   for ( manifest_type::const_iterator k = mf->second.begin(); k != mf->second.end(); ++k ) {
     l = mt->second.find( k->first );
@@ -290,6 +447,90 @@ diff_type yard_ng::diff( const commit_id_type& from, const commit_id_type& to )
     l = mf->second.find( k->first );
     if ( l == mf->second.end() ) { // added
       delta.second[k->first] = k->second;
+    }
+  }
+
+  /* manifest_id_type mfrom = */ aggregate_delta( from, df );
+  /* manifest_id_type mto = */   aggregate_delta( to, dt );
+  for ( manifest_type::const_iterator k = df.first.begin(); k != df.first.end(); ++k ) {
+    l = dt.first.find( k->first );
+    if ( l != dt.first.end() ) { // removed both left and right
+      delta.first.erase( k->first );
+    } else {
+      l = mt->second.find( k->first );
+      if ( l != mt->second.end() ) { // removed in left, present in right
+        delta.second[k->first] = l->second;
+      }
+    }
+  }
+
+  for ( manifest_type::const_iterator k = dt.first.begin(); k != dt.first.end(); ++k ) {
+    l = df.first.find( k->first );
+    if ( l == df.first.end() ) { // not erased in left
+      l = mt->second.find( k->first );
+      if ( l != mt->second.end() ) { // was in base manifest in right
+        delta.first[k->first] = l->second; // mark as erased
+      }
+    }
+    l = df.second.find( k->first );
+    if ( l != df.second.end() ) { // added in left
+      delta.first[k->first] = l->second; // mark as erased
+    }
+  }
+
+  for ( manifest_type::const_iterator k = df.second.begin(); k != df.second.end(); ++k ) {
+    l = dt.first.find( k->first );
+    if ( l != dt.first.end() ) { // added in left, erased in right
+      delta.first[k->first] = l->second; // mark as erased
+    }
+    l = dt.second.find( k->first );
+    if ( l != dt.second.end() ) { // 
+      if ( l->second != k->second ) {
+        delta.first[k->first] = k->second;
+        delta.second[k->first] = l->second;
+      } else {
+        delta.first.erase( k->first );
+        delta.second.erase( k->first );
+      }
+    } else {
+      l = mt->second.find( k->first );
+      if ( l != mt->second.end() ) {
+        if ( l->second != k->second ) {
+          delta.first[k->first] = k->second;
+          delta.second[k->first] = l->second;
+        } else {
+          delta.first.erase( k->first );
+          delta.second.erase( k->first );
+        }
+      } else {
+        delta.first[k->first] = k->second;
+      }
+    }
+  }
+
+  for ( manifest_type::const_iterator k = dt.second.begin(); k != dt.second.end(); ++k ) {
+    l = df.second.find( k->first );
+    if ( l != df.second.end() ) {
+      if ( l->second == k->second ) {
+        delta.first.erase( k->first );
+        delta.second.erase( k->first );
+      } else {
+        delta.first[k->first] = l->second;
+        delta.second[k->first] = k->second;
+      }
+    } else {
+      l = mf->second.find( k->first );
+      if ( l != mf->second.end() ) {
+        if ( l->second != k->second ) {
+          delta.first[k->first] = l->second;
+          delta.second[k->first] = k->second;
+        } else {
+          delta.first.erase( k->first );
+          delta.second.erase( k->first );
+        }
+      } else {
+        delta.second[k->first] = k->second;
+      }
     }
   }
 
@@ -430,42 +671,8 @@ int yard_ng::fast_merge( const commit_id_type& merge, const commit_id_type& left
     // return;
   }
 
-  cache[merge];
-
-  cache_container_type::iterator cc = cache.find( merge );
-  cc->second.first = make_pair( left, right );
-  cached_manifest_type::const_iterator m = cached_manifest.find( k->second.mid );
-  if ( m != cached_manifest.end() ) {
-    cc->second.second = m->second; // oh, copy whole manifest...
-  } else {
-    // cc->second.second = ; extract manifest from r.get(k->second)
-  }
-
-  for ( manifest_type::iterator i = rd.first.begin(); i != rd.first.end(); ++i ) {
-    cc->second.second.erase( i->first );
-  }
-  for ( manifest_type::iterator i = rd.second.begin(); i != rd.second.end(); ++i ) {
-    cc->second.second[i->first] = i->second;
-  }
-
-  revision_id_type rid = r.push( cc->second.second );
-  swap( cached_manifest[rid], cc->second.second );
-  c[merge].mid = rid;
-  c[merge].edge_in.push_back( left );
-  c[merge].edge_in.push_back( right );
-  c[left].edge_out.push_back( merge );
-  c[right].edge_out.push_back( merge );
-
-  leafs_container_type::iterator l = find( leaf.begin(), leaf.end(), left );
-  if ( l != leaf.end() ) {
-    leaf.erase( l );
-  }
-  l = find( leaf.begin(), leaf.end(), right );
-  if ( l != leaf.end() ) {
-    leaf.erase( l );
-  }
-  leaf.push_back( merge );
-  cache.erase( merge );
+  cache.insert( make_pair( merge, make_pair( make_pair( left, right ), rd ) ) );
+  close_commit_delta( merge );
 
   return 0;
 }
@@ -524,23 +731,15 @@ int yard_ng::merge( const commit_id_type& merge_, const commit_id_type& left, co
     // return;
   }
 
-  cache[merge_];
-
-  cache_container_type::iterator cc = cache.find( merge_ );
-  cc->second.first = make_pair( left, right );
-  cached_manifest_type::const_iterator m = cached_manifest.find( k->second.mid );
-  if ( m != cached_manifest.end() ) {
-    cc->second.second = m->second; // oh, copy whole manifest...
-  } else {
-    // cc->second.second = ; extract manifest from r.get(k->second)
-  }
-
   for ( manifest_type::iterator i = rd.first.begin(); i != rd.first.end(); ++i ) {
-    cc->second.second.erase( i->first );
+    ld.first[i->first] = i->second;
   }
+
   for ( manifest_type::iterator i = rd.second.begin(); i != rd.second.end(); ++i ) {
-    cc->second.second[i->first] = i->second;
+    ld.second[i->first] = i->second;
   }
+
+  cache.insert( make_pair( merge_, make_pair( make_pair( left, right ), ld ) ) );
 
   return 0;
 }
