@@ -383,7 +383,7 @@ void BTree::insert(coordinate_type path, const index_node_entry& data)
     do
     {
         block_type& block = cache_[path.top()];
-        block.insert_index(data);
+        block.insert_index(entry);
         if (!block.is_overfilled())
         {
             write_data(file_, path.top(), block.raw_data(), block.raw_data_size());
