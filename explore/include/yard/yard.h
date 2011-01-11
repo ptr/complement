@@ -254,6 +254,7 @@ public:
     void insert(coordinate_type path, const data_node_entry& data);
 
     void init_empty(const char* filename);
+    void init_existed(const char* filename);
 private:
     void lookup(coordinate_type& path, xmt::uuid_type key);
     void insert(coordinate_type path, const index_node_entry& data);

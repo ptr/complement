@@ -436,6 +436,11 @@ void BTree::init_empty(const char* filename)
     assert(address == 0);
 }
 
+void BTree::init_existed(const char* filename)
+{
+    file_.open(filename, ios_base::in | ios_base::out | ios_base::binary);
+}
+
 revision_id_type revision::push( const void* data, size_t sz )
 {
   MD5_CTX ctx;
