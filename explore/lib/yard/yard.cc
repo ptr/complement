@@ -116,56 +116,42 @@ bool block_type::is_leaf() const
     return ((flags_ & leaf_node) == leaf_node);
 }
 
-block_type::key_iterator block_type::key_begin() const
-{
-    return key_iterator(data_, is_leaf()? key_iterator::data :
-                                               key_iterator::index);
-}
-
-block_type::key_iterator block_type::key_end() const
+block_type::key_iterator block_type::key_begin()
 {
     unsigned int entry_size = is_leaf() ? sizeof(data_node_entry) : sizeof(index_node_entry);
-    return key_iterator(data_ + size_ * entry_size, is_leaf()? key_iterator::data : key_iterator::index);
+    return key_iterator(key_readable<char*>(data_, is_leaf()?
+                                            const_key_iterator::data :
+                                            const_key_iterator::index),
+                            entry_size);
 }
 
-block_type::data_iterator block_type::data_begin()
+block_type::key_iterator block_type::key_end()
 {
-    return (data_iterator)data_;
+    unsigned int entry_size = is_leaf() ? sizeof(data_node_entry) : sizeof(index_node_entry);
+    return key_iterator(key_readable<char*>(data_ + size_ * entry_size,
+                                     is_leaf()?
+                                     const_key_iterator::data :
+                                     const_key_iterator::index),
+                            entry_size);
 }
 
-block_type::data_iterator block_type::data_end()
+block_type::const_key_iterator block_type::key_begin() const
 {
-    return (data_iterator)data_ + size_;
+    unsigned int entry_size = is_leaf() ? sizeof(data_node_entry) : sizeof(index_node_entry);
+    return const_key_iterator(key_readable<const char*>(data_, is_leaf()?
+                                            const_key_iterator::data :
+                                            const_key_iterator::index),
+                            entry_size);
 }
 
-block_type::data_const_iterator block_type::data_begin() const
+block_type::const_key_iterator block_type::key_end() const
 {
-    return (data_const_iterator)data_;
-}
-
-block_type::data_const_iterator block_type::data_end() const
-{
-    return (data_const_iterator)data_ + size_;
-}
-
-block_type::index_iterator block_type::index_begin()
-{
-    return (index_iterator)data_;
-}
-
-block_type::index_iterator block_type::index_end()
-{
-    return (index_iterator)data_ + size_;
-}
-
-block_type::index_const_iterator block_type::index_begin() const
-{
-    return (index_const_iterator)data_;
-}
-
-block_type::index_const_iterator block_type::index_end() const
-{
-    return (index_const_iterator)data_ + size_;
+    unsigned int entry_size = is_leaf() ? sizeof(data_node_entry) : sizeof(index_node_entry);
+    return const_key_iterator(key_readable<const char*>(data_ + size_ * entry_size,
+                                     is_leaf()?
+                                     const_key_iterator::data :
+                                     const_key_iterator::index),
+                            entry_size);
 }
 
 bool block_type::is_overfilled() const
@@ -180,17 +166,16 @@ void block_type::insert_index(const index_node_entry& entry)
 {
     assert(!is_leaf());
     assert(!is_overfilled());
+    typedef index_node_entry entry_type;
 
-    index_node_entry * const begin = index_begin();
-    index_node_entry * const end = index_end();
-    index_node_entry * const new_end = end + 1;
+    key_iterator insert_place = find_if(key_begin(), key_end(),
+        bind2nd(greater<xmt::uuid_type>(), entry.get_key()));
 
-    index_node_entry * insert_place = find_if(begin, end,
-        bind2nd(greater<index_node_entry>(), entry));
+    copy_backward(get_entry<entry_type>(insert_place),
+                  get_entry<entry_type>(key_end()),
+                  get_entry<entry_type>(key_end() + 1));
 
-    copy_backward(insert_place, end, new_end);
-
-    *insert_place = entry;
+    *get_entry<entry_type>(insert_place) = entry;
     ++size_;
 }
 
@@ -198,17 +183,16 @@ void block_type::insert_data(const data_node_entry& entry)
 {
     assert(is_leaf());
     assert(!is_overfilled());
+    typedef data_node_entry entry_type;
 
-    data_node_entry * const begin = data_begin();
-    data_node_entry * const end = data_end();
-    data_node_entry * const new_end = end + 1;
+    key_iterator insert_place = find_if(key_begin(), key_end(),
+        bind2nd(greater<xmt::uuid_type>(), entry.get_key()));
 
-    data_node_entry * insert_place = find_if(begin, end,
-        bind2nd(greater<data_node_entry>(), entry));
+    copy_backward(get_entry<entry_type>(insert_place),
+                  get_entry<entry_type>(key_end()),
+                  get_entry<entry_type>(key_end() + 1));
 
-    copy_backward(insert_place, end, new_end);
-
-    *insert_place = entry;
+    *get_entry<entry_type>(insert_place) = entry;
     ++size_;
 }
 
@@ -256,7 +240,7 @@ pair<xmt::uuid_type, xmt::uuid_type> block_type::divide(block_type& other)
 
     if (!other.is_leaf())
     {
-        xmt::uuid_type& key = other.index_begin()->key;
+        xmt::uuid_type& key = other.get_entry<index_node_entry>(other.key_begin())->key;
         key.u.l[0] = 0;
         key.u.l[1] = 0;
     }
@@ -265,9 +249,9 @@ pair<xmt::uuid_type, xmt::uuid_type> block_type::divide(block_type& other)
 
 const data_node_entry* block_type::lookup(xmt::uuid_type key) const
 {
-    key_iterator entry = find_if(key_begin(), key_end(),
+    const_key_iterator entry = find_if(key_begin(), key_end(),
         bind2nd(equal_to<xmt::uuid_type>(), key));
-    return entry.get<data_node_entry>();
+    return get_entry<data_node_entry>(entry);
 }
 
 const index_node_entry* block_type::route(xmt::uuid_type key) const
@@ -276,12 +260,12 @@ const index_node_entry* block_type::route(xmt::uuid_type key) const
     assert(size_ > 0);
 
     if (key_begin() == key_end())
-        return key_end().get<index_node_entry>();
+        return get_entry<index_node_entry>(key_end());
 
-    key_iterator entry = find_if(++key_begin(), key_end(),
+    const_key_iterator entry = find_if(++key_begin(), key_end(),
         bind2nd(greater<xmt::uuid_type>(), key));
 
-    return (--entry).get<index_node_entry>();
+    return get_entry<index_node_entry>(--entry);
 }
 
 char* block_type::raw_data()

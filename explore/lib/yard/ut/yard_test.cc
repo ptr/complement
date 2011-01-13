@@ -267,7 +267,7 @@ int EXAM_IMPL(yard_test::btree_random)
 
         const block_type& block = tree.get(coordinate);
         block_type::data_const_iterator data = block.lookup(entry_iterator->key);
-        EXAM_REQUIRE(data != block.data_end());
+        EXAM_REQUIRE(data != block.get_entry<data_node_entry>(block.key_end()));
         EXAM_CHECK(data->get_key() == entry_iterator->key);
         EXAM_CHECK(data->get_address_of_value() == entry_iterator->address_of_value);
         EXAM_CHECK(data->get_size() == entry_iterator->size);
@@ -317,7 +317,7 @@ int EXAM_IMPL(yard_test::btree_init_existed)
 
             const block_type& block = tree.get(coordinate);
             block_type::data_const_iterator data = block.lookup(entry_iterator->key);
-            EXAM_REQUIRE(data != block.data_end());
+            EXAM_REQUIRE(data != block.get_entry<data_node_entry>(block.key_end()));
             EXAM_CHECK(data->get_key() == entry_iterator->key);
             EXAM_CHECK(data->get_address_of_value() == entry_iterator->address_of_value);
             EXAM_CHECK(data->get_size() == entry_iterator->size);

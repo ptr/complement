@@ -34,6 +34,7 @@
 #  endif
 #endif
 
+#include <yard/iterator.h>
 #include <vector>
 #include <memory>
 #include <map>
@@ -124,10 +125,11 @@ public:
     static const unsigned int root_node;
     static const unsigned int leaf_node;
 
-    class key_iterator : public std::iterator<std::input_iterator_tag, xmt::uuid_type>
+    template <typename T>
+    class key_readable : public std::iterator<std::input_iterator_tag, xmt::uuid_type>
     {
-    private:
-        const char* raw_;
+    protected:
+        T pointer_;
         unsigned int type_;
     public:
         enum
@@ -136,64 +138,27 @@ public:
             data = 1
         };
 
-        key_iterator(const char* raw, unsigned int type):
-            raw_(raw),
+        key_readable(T pointer, unsigned int type):
+            pointer_(pointer),
             type_(type)
         {}
 
-        unsigned int entry_size() const
+        T get() const
         {
-            if (type_ == 0)
-                return sizeof(index_node_entry);
-            else
-                return sizeof(data_node_entry);
-        }
-
-        template <typename T>
-        const T* get() const
-        {
-            return (const T*)raw_;
-        }
-
-        key_iterator& operator++()
-        {
-            raw_ += entry_size();
-            return *this;
-        }
-
-        key_iterator& operator--()
-        {
-            raw_ -= entry_size();
-            return *this;
-        }
-
-        key_iterator operator++(int)
-        {
-            key_iterator tmp(*this);
-            operator++();
-            return tmp;
-        }
-
-        bool operator==(const key_iterator& rhs) const
-        {
-            if (type_ != rhs.type_)
-                return false;
-            return (raw_ == rhs.raw_);
-        }
-
-        bool operator!=(const key_iterator& rhs) const
-        {
-            return !(operator==(rhs));
+            return pointer_;
         }
 
         xmt::uuid_type operator*()
         {
             if (type_ == 0)
-                return ((const index_node_entry*)raw_)->get_key();
+                return ((const index_node_entry*)pointer_)->get_key();
             else
-                return ((const data_node_entry*)raw_)->get_key();
+                return ((const data_node_entry*)pointer_)->get_key();
         }
     };
+
+    typedef array_iterator<key_readable<const char*> > const_key_iterator;
+    typedef array_iterator<key_readable<char*> > key_iterator;
 
     typedef data_node_entry* data_iterator;
     typedef index_node_entry* index_iterator;
@@ -203,18 +168,22 @@ public:
     bool is_root() const;
     bool is_leaf() const;
 
-    key_iterator key_begin() const;
-    key_iterator key_end() const;
+    const_key_iterator key_begin() const;
+    const_key_iterator key_end() const;
+    key_iterator key_begin();
+    key_iterator key_end();
 
-    data_iterator data_begin();
-    data_iterator data_end();
-    data_const_iterator data_begin() const;
-    data_const_iterator data_end() const;
+    template <typename T>
+    const T* get_entry(const const_key_iterator& coordinate) const
+    {
+        return (const T*)(coordinate.get());
+    }
 
-    index_iterator index_begin();
-    index_iterator index_end();
-    index_const_iterator index_begin() const;
-    index_const_iterator index_end() const;
+    template <typename T>
+    T* get_entry(const key_iterator& coordinate)
+    {
+        return (T*)(coordinate.get());
+    }
 
     void set_flags(unsigned int flags);
 
