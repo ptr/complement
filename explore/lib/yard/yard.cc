@@ -310,7 +310,7 @@ void BTree::lookup(coordinate_type& path, xmt::uuid_type key)
 BTree::coordinate_type BTree::lookup(xmt::uuid_type key)
 {
     coordinate_type path;
-    path.push(0);
+    path.push(root_address_);
 
     lookup(path, key);
 
@@ -351,8 +351,8 @@ void BTree::insert(coordinate_type path, const data_node_entry& data)
                 cache_[zero_entry.pointer] = block;
             }
             new_root.insert_index(entry);
-            cache_[0] = new_root;
-            write_data(file_, 0, new_root.raw_data(), new_root.raw_data_size());
+            cache_[root_address_] = new_root;
+            write_data(file_, root_address_, new_root.raw_data(), new_root.raw_data_size());
         }
         else
             insert(path, entry);
@@ -406,8 +406,8 @@ void BTree::insert(coordinate_type path, const index_node_entry& data)
                 cache_[zero_entry.pointer] = block;
             }
             new_root.insert_index(entry);
-            cache_[0] = new_root;
-            write_data(file_, 0, new_root.raw_data(), new_root.raw_data_size());
+            cache_[root_address_] = new_root;
+            write_data(file_, root_address_, new_root.raw_data(), new_root.raw_data_size());
             break;
         }
     } while (true);
@@ -420,9 +420,7 @@ void BTree::init_empty(const char* filename)
     block_type root;
     root.set_flags(block_type::root_node | block_type::leaf_node);
 
-    file_address_type address = append_data(file_, root.raw_data(), root.raw_data_size());
-
-    assert(address == 0);
+    root_address_ = append_data(file_, root.raw_data(), root.raw_data_size());
 }
 
 void BTree::init_existed(const char* filename)

@@ -232,6 +232,7 @@ private:
 
     std::fstream file_;
     std::map<file_address_type, block_type> cache_;
+    file_address_type root_address_;
 };
 
 struct revision_node
