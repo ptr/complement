@@ -287,6 +287,11 @@ void block_type::set_flags(unsigned int flags)
     flags_ = flags;
 }
 
+file_address_type BTree::add_value(const char* data, unsigned int size)
+{
+    return append_data(file_, data, size);
+}
+
 void BTree::lookup(coordinate_type& path, xmt::uuid_type key)
 {
     while (true)

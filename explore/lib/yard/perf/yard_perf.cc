@@ -26,6 +26,164 @@ yard_perf::~yard_perf()
 {
 }
 
+int EXAM_IMPL(yard_perf::consecutive_insert)
+{
+    using namespace yard;
+
+    BTree tree;
+    tree.init_empty("/tmp/btree_consecutive");
+
+    const int count = 100000;
+    for (int i = 0; i < count; ++i)
+    {
+        data_node_entry entry;
+        entry.key.u.l[0] = 3*i;
+        entry.key.u.l[1] = 0;
+
+        BTree::coordinate_type coordinate = tree.lookup(entry.key);
+
+        entry.address_of_value = i;
+        tree.insert(coordinate, entry);
+    }
+    return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_perf::random_insert)
+{
+    using namespace yard;
+    BTree tree;
+    tree.init_empty("/tmp/btree_random");
+
+    const int count = 100000;
+
+    for (int i = 0; i < count; ++i)
+    {
+        data_node_entry entry;
+        entry.key.u.l[0] = rand();
+        entry.key.u.l[1] = 0;
+
+        entry.address_of_value = rand();
+        entry.size = rand();
+
+        BTree::coordinate_type coordinate = tree.lookup(entry.key);
+
+        entry.address_of_value = i;
+        tree.insert(coordinate, entry);
+    }
+
+    return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_perf::consecutive_insert_with_data)
+{
+    using namespace yard;
+
+    const int data_size = 4096;
+    char data[data_size];
+    for (int i = 0; i < data_size; ++i)
+        data[i] = (char)(rand() % 256);
+
+    BTree tree;
+    tree.init_empty("/tmp/btree_consecutive_with_data");
+
+    const int count = 40000;
+    for (int i = 0; i < count; ++i)
+    {
+        data_node_entry entry;
+        entry.key.u.l[0] = 3*i;
+        entry.key.u.l[1] = 0;
+
+        BTree::coordinate_type coordinate = tree.lookup(entry.key);
+
+        entry.address_of_value = tree.add_value(data, data_size);
+        tree.insert(coordinate, entry);
+    }
+    return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_perf::random_insert_with_data)
+{
+    using namespace yard;
+
+    const int data_size = 4096;
+    char data[data_size];
+    for (int i = 0; i < data_size; ++i)
+        data[i] = (char)(rand() % 256);
+
+    BTree tree;
+    tree.init_empty("/tmp/btree_random_with_data");
+
+    const int count = 40000;
+    for (int i = 0; i < count; ++i)
+    {
+        data_node_entry entry;
+        entry.key.u.l[0] = rand();
+        entry.key.u.l[1] = 0;
+
+        BTree::coordinate_type coordinate = tree.lookup(entry.key);
+
+        entry.address_of_value = tree.add_value(data, data_size);
+        tree.insert(coordinate, entry);
+    }
+    return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_perf::multiple_files)
+{
+    using namespace yard;
+
+    const int data_size = 4096;
+    char data[data_size];
+    for (int i = 0; i < data_size; ++i)
+        data[i] = (char)(rand() % 256);
+
+    const int file_count = 8;
+    BTree trees[file_count];
+
+    for (int i = 0; i < file_count; ++i)
+    {
+        stringstream ss("/tmp/btree_", ios_base::ate | ios_base::out);
+        ss << i;
+        trees[i].init_empty(ss.str().c_str());
+    }
+
+    const int count = 5000;
+    for (int k = 0; k < count; ++k)
+    {
+        for (int i = 0; i < file_count; ++i)
+        {
+            data_node_entry entry;
+            entry.key.u.l[0] = rand();
+            entry.key.u.l[1] = 0;
+
+            BTree::coordinate_type coordinate = trees[i].lookup(entry.key);
+
+            entry.address_of_value = trees[i].add_value(data, data_size);
+            trees[i].insert(coordinate, entry);
+        }
+    }
+    return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_perf::random_lookup)
+{
+    using namespace yard;
+
+    BTree tree;
+    tree.init_existed("/tmp/btree_consecutive");
+
+    const int count = 10000;
+    for (int i = 0; i < count; ++i)
+    {
+        data_node_entry entry;
+        entry.key.u.l[0] = 3*(rand() % 40000);
+        entry.key.u.l[1] = 0;
+
+        BTree::coordinate_type coordinate = tree.lookup(entry.key);
+    }
+    return EXAM_RESULT;
+}
+
 int EXAM_IMPL(yard_perf::put)
 {
   const int nn = 1024;

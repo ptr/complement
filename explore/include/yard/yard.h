@@ -224,6 +224,8 @@ public:
 
     void init_empty(const char* filename);
     void init_existed(const char* filename);
+
+    file_address_type add_value(const char* data, unsigned int size);
 private:
     void lookup(coordinate_type& path, xmt::uuid_type key);
     void insert(coordinate_type path, const index_node_entry& data);

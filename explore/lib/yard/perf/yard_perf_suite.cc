@@ -52,6 +52,13 @@ int main( int argc, const char** argv )
 
   yard_perf p;
 
+  t.add(&yard_perf::consecutive_insert, p, "consecutive insert (k entires)");
+  t.add(&yard_perf::random_insert, p, "random insert (k entires)");
+  t.add(&yard_perf::consecutive_insert_with_data, p, "consecutive insert with data (n entires)");
+  t.add(&yard_perf::random_insert_with_data, p, "random insert with data (n entires)");
+  t.add(&yard_perf::multiple_files, p, "multiple files");
+  t.add(&yard_perf::random_lookup, p, "random lookup");
+
   tc[1] = t.add( &yard_perf::put_more_more, p, "put-102400",
     t.add( &yard_perf::put_more, p, "put-10240",
       tc[0] = t.add( &yard_perf::put, p, "put-1024" ) ) );
