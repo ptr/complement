@@ -68,6 +68,7 @@ class metainfo
 typedef unsigned int file_address_type;
 
 file_address_type append_data(std::fstream& file, const char* data, unsigned int size);
+file_address_type get_append_address(std::fstream& file, unsigned int size);
 void write_data(std::fstream& file, file_address_type address, const char* data, unsigned int size);
 void get_data(std::fstream& file, file_address_type address, char* data, unsigned int size);
 
@@ -226,6 +227,7 @@ public:
     void init_existed(const char* filename);
 
     file_address_type add_value(const char* data, unsigned int size);
+    void clear_cache();
 private:
     void lookup(coordinate_type& path, xmt::uuid_type key);
     void insert(coordinate_type path, const index_node_entry& data);

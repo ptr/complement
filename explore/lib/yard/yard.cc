@@ -73,10 +73,16 @@ const std::string& metainfo::get( int key )
 
 file_address_type append_data(std::fstream& file, const char* data, unsigned int size)
 {
+    file_address_type address = get_append_address(file, size);
+    write_data(file, address, data, size);
+
+    return address;
+}
+
+file_address_type get_append_address(std::fstream& file, unsigned int size)
+{
     file.seekp(0, ios_base::end);
     file_address_type address = file.tellp();
-
-    file.write(data, size);
 
     return address;
 }
@@ -426,6 +432,11 @@ void BTree::init_empty(const char* filename)
 void BTree::init_existed(const char* filename)
 {
     file_.open(filename, ios_base::in | ios_base::out | ios_base::binary);
+}
+
+void BTree::clear_cache()
+{
+    cache_.clear();
 }
 
 revision_id_type revision::push( const void* data, size_t sz )
