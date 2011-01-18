@@ -67,10 +67,7 @@ class metainfo
 
 typedef unsigned int file_address_type;
 
-file_address_type append_data(std::fstream& file, const char* data, unsigned int size);
-file_address_type get_append_address(std::fstream& file, unsigned int size);
-void write_data(std::fstream& file, file_address_type address, const char* data, unsigned int size);
-void get_data(std::fstream& file, file_address_type address, char* data, unsigned int size);
+file_address_type seek_to_end(std::fstream& file, unsigned int size);
 
 struct index_node_entry
 {
@@ -198,9 +195,10 @@ public:
 
     std::pair<xmt::uuid_type, xmt::uuid_type> divide(block_type& other);
 
-    char* raw_data();
-    const char* raw_data() const;
-    unsigned int raw_data_size() const;
+    void pack(std::ostream& s) const;
+    void unpack(std::istream& s);
+
+    static unsigned int disk_block_size();
 
     block_type();
 private:

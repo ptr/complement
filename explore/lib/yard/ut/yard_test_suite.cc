@@ -26,8 +26,7 @@ int main( int argc, const char** argv )
     t.add( &yard_test::btree_basic, test, "BTree test",
       t.add( &yard_test::divide, test, "Block divide",
           t.add( &yard_test::index_block, test, "insert into and route using the index block",
-              t.add( &yard_test::data_block, test, "insert into and lookup from the data block",
-                  t.add( &yard_test::append_get, test, "append-get") ) ) ) ) );
+              t.add( &yard_test::data_block, test, "insert into and lookup from the data block") ) ) ) );
 
   t.add( &yard_test::btree_init_existed, test, "Btree init existed test");
 

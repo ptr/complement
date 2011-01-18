@@ -12,6 +12,8 @@
 // #include "yard.h"
 #include <yard/yard.h>
 
+#include <stem/EvPack.h>
+
 #include <inttypes.h>
 #include <mt/uid.h>
 #include <fstream>
@@ -71,15 +73,21 @@ const std::string& metainfo::get( int key )
   return i != rec.end() ? i->second : empty;
 }
 
+void write_data(std::fstream& file, file_address_type address, const char* data, unsigned int size)
+{
+    file.seekp(address);
+    file.write(data, size);
+}
+
 file_address_type append_data(std::fstream& file, const char* data, unsigned int size)
 {
-    file_address_type address = get_append_address(file, size);
+    file_address_type address = seek_to_end(file, size);
     write_data(file, address, data, size);
 
     return address;
 }
 
-file_address_type get_append_address(std::fstream& file, unsigned int size)
+file_address_type seek_to_end(std::fstream& file, unsigned int size)
 {
     file.seekp(0, ios_base::end);
     file_address_type address = file.tellp();
@@ -87,11 +95,6 @@ file_address_type get_append_address(std::fstream& file, unsigned int size)
     return address;
 }
 
-void write_data(std::fstream& file, file_address_type address, const char* data, unsigned int size)
-{
-    file.seekp(address);
-    file.write(data, size);
-}
 
 void get_data(std::fstream& file, file_address_type address, char* data, unsigned int size)
 {
@@ -274,18 +277,27 @@ const index_node_entry* block_type::route(xmt::uuid_type key) const
     return get_entry<index_node_entry>(--entry);
 }
 
-char* block_type::raw_data()
+void block_type::pack(std::ostream& s) const
 {
-    return (char*)this;
+//    s.write((const char*)this, block_type::disk_block_size());
+
+    stem::__pack_base::__pack(s, flags_);
+    stem::__pack_base::__pack(s, size_);
+    s.write(data_, 4096 - 2 * sizeof(unsigned int));
 }
 
-const char* block_type::raw_data() const
+void block_type::unpack(std::istream& s)
 {
-    return (const char*)this;
+//    s.read((char*)this, block_type::disk_block_size());
+
+    stem::__pack_base::__unpack(s, flags_);
+    stem::__pack_base::__unpack(s, size_);
+    s.read(data_, 4096 - 2 * sizeof(unsigned int));
 }
-unsigned int block_type::raw_data_size() const
+
+unsigned int block_type::disk_block_size()
 {
-    return sizeof(block_type);
+    return 4096;
 }
 
 void block_type::set_flags(unsigned int flags)
@@ -303,7 +315,8 @@ void BTree::lookup(coordinate_type& path, xmt::uuid_type key)
     while (true)
     {
         block_type& new_block = cache_[path.top()];
-        get_data(file_, path.top(), new_block.raw_data(), new_block.raw_data_size());
+        file_.seekg(path.top());
+        new_block.unpack(file_);
 
         if (new_block.is_leaf())
             return;
@@ -332,8 +345,10 @@ void BTree::insert(coordinate_type path, const data_node_entry& data)
         block_type new_block;
         pair<xmt::uuid_type, xmt::uuid_type> delimiter = block.divide(new_block);
 
-        write_data(file_, path.top(), block.raw_data(), block.raw_data_size());
-        file_address_type address_of_new_block = append_data(file_, new_block.raw_data(), new_block.raw_data_size());
+        file_.seekp(path.top());
+        block.pack(file_);
+        file_address_type address_of_new_block = seek_to_end(file_, block_type::disk_block_size()); 
+        new_block.pack(file_);
         cache_[address_of_new_block] = new_block;
 
         index_node_entry entry;
@@ -350,7 +365,8 @@ void BTree::insert(coordinate_type path, const data_node_entry& data)
             {
                 index_node_entry zero_entry;
                 zero_entry.key.u.l[0] = zero_entry.key.u.l[1] = 0;
-                zero_entry.pointer = append_data(file_, block.raw_data(), block.raw_data_size());
+                zero_entry.pointer = seek_to_end(file_, block_type::disk_block_size());
+                block.pack(file_);
 
                 new_root.insert_index(zero_entry);
 
@@ -358,13 +374,17 @@ void BTree::insert(coordinate_type path, const data_node_entry& data)
             }
             new_root.insert_index(entry);
             cache_[root_address_] = new_root;
-            write_data(file_, root_address_, new_root.raw_data(), new_root.raw_data_size());
+            file_.seekp(root_address_);
+            new_root.pack(file_);
         }
         else
             insert(path, entry);
     }
     else
-        write_data(file_, path.top(), block.raw_data(), block.raw_data_size());
+    {
+        file_.seekp(path.top());
+        block.pack(file_);
+    }
 }
 
 const block_type& BTree::get(const coordinate_type& coordinate)
@@ -381,16 +401,19 @@ void BTree::insert(coordinate_type path, const index_node_entry& data)
         block.insert_index(entry);
         if (!block.is_overfilled())
         {
-            write_data(file_, path.top(), block.raw_data(), block.raw_data_size());
+            file_.seekp(path.top());
+            block.pack(file_);
             break;
         }
 
         block_type new_block;
         pair<xmt::uuid_type, xmt::uuid_type> delimiter = block.divide(new_block);
 
-        write_data(file_, path.top(), block.raw_data(), block.raw_data_size());
+        file_.seekp(path.top());
+        block.pack(file_);
 
-        file_address_type address_of_new_block = append_data(file_, new_block.raw_data(), new_block.raw_data_size());
+        file_address_type address_of_new_block = seek_to_end(file_, block_type::disk_block_size());
+        new_block.pack(file_);
         cache_[address_of_new_block] = new_block;
 
         entry.key = delimiter.second;
@@ -405,7 +428,8 @@ void BTree::insert(coordinate_type path, const index_node_entry& data)
             {
                 index_node_entry zero_entry;
                 zero_entry.key.u.l[0] = zero_entry.key.u.l[1] = 0;
-                zero_entry.pointer = append_data(file_, block.raw_data(), block.raw_data_size());
+                zero_entry.pointer = seek_to_end(file_, block_type::disk_block_size());
+                block.pack(file_);
 
                 new_root.insert_index(zero_entry);
 
@@ -413,7 +437,8 @@ void BTree::insert(coordinate_type path, const index_node_entry& data)
             }
             new_root.insert_index(entry);
             cache_[root_address_] = new_root;
-            write_data(file_, root_address_, new_root.raw_data(), new_root.raw_data_size());
+            file_.seekp(root_address_);
+            new_root.pack(file_);
             break;
         }
     } while (true);
@@ -426,7 +451,8 @@ void BTree::init_empty(const char* filename)
     block_type root;
     root.set_flags(block_type::root_node | block_type::leaf_node);
 
-    root_address_ = append_data(file_, root.raw_data(), root.raw_data_size());
+    root_address_ = seek_to_end(file_, block_type::disk_block_size());
+    root.pack(file_);
 }
 
 void BTree::init_existed(const char* filename)

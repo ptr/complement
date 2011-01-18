@@ -19,60 +19,6 @@
 // using namespace yard;
 using namespace std;
 
-int EXAM_IMPL(yard_test::append_get)
-{
-    using namespace yard;
-    string content1("1234567890");
-    string content2("qwertyuiop");
-
-    EXAM_REQUIRE(content1.size() == content2.size());
-    string::size_type size = content1.size();
-
-    fstream file("/tmp/some_storage", ios_base::in | ios_base::out | ios_base::binary | ios_base::trunc);
-
-    EXAM_REQUIRE(!file.fail());
-
-    file_address_type addr1 = append_data(file, content1.data(), size);
-    EXAM_REQUIRE(!file.bad());
-
-    file_address_type addr2 = append_data(file, content2.data(), size);
-    EXAM_REQUIRE(!file.bad());
-
-    vector<char> data;
-    data.resize(100);
-
-    {
-        get_data(file, addr1, &data[0], size);
-
-        EXAM_REQUIRE(!file.bad());
-
-        for (unsigned int i = 0; i < size; ++i)
-            EXAM_CHECK(data[i] == content1[i]);
-    }
-    {
-        get_data(file, addr2, &data[0], size);
-
-        EXAM_REQUIRE(!file.bad());
-
-        for (unsigned int i = 0; i < size; ++i)
-            EXAM_CHECK(data[i] == content2[i]);
-    }
-
-    write_data(file, addr1, content2.data(), size);
-    {
-        get_data(file, addr1, &data[0], size);
-
-        EXAM_REQUIRE(!file.bad());
-
-        for (unsigned int i = 0; i < size; ++i)
-            EXAM_CHECK(data[i] == content2[i]);
-    }
-
-    file.close();
-
-    return EXAM_RESULT;
-}
-
 int EXAM_IMPL(yard_test::data_block)
 {
     using namespace yard;
