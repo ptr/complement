@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-30 17:06:27 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-18 16:11:57 ptr>
 
 /*
  *
@@ -31,6 +31,8 @@
 #endif
 
 #include <queue>
+#include <stack>
+#include <list>
 
 namespace yard {
 
@@ -228,27 +230,42 @@ void yard_ng::close_commit_delta( const commit_id_type& m )
 
 manifest_id_type yard_ng::aggregate_delta( const commit_id_type& f, diff_type& diff )
 {
-  if ( c[f].delta != 0 ) {
-    if ( c[f].dref >= 0 && !c[f].edge_in.empty() ) {
-      commit_node::edge_container_type::const_iterator ee = c[f].edge_in.begin();
-      advance( ee, c[f].dref );
-      aggregate_delta( *ee, diff );
-      for ( manifest_type::const_iterator k = c[f].delta->first.begin(); k != c[f].delta->first.end(); ++k ) {
+  const commit_node* comm = &(c.find( f ))->second;
+  const commit_node* orig = comm;
+
+  if ( (comm->delta != 0) && (comm->dref >= 0) && !comm->edge_in.empty() ) {
+    stack<const commit_node*, list<const commit_node*> > path;
+    commit_node::edge_container_type::const_iterator ee;
+
+    do {
+      path.push( comm );
+
+      ee = comm->edge_in.begin();
+      advance( ee, comm->dref );
+      comm = &(c.find( *ee ))->second;
+    } while ( (comm->delta != 0) && (comm->dref >= 0) && !comm->edge_in.empty() );
+
+    while ( !path.empty() ) {
+      comm = path.top();
+
+      for ( manifest_type::const_iterator k = comm->delta->first.begin(); k != comm->delta->first.end(); ++k ) {
         diff.second.erase( k->first );
       }
-      for ( manifest_type::const_iterator k = c[f].delta->second.begin(); k != c[f].delta->second.end(); ++k ) {
+      for ( manifest_type::const_iterator k = comm->delta->second.begin(); k != comm->delta->second.end(); ++k ) {
         diff.first.erase( k->first );
       }
-      for ( manifest_type::const_iterator k = c[f].delta->first.begin(); k != c[f].delta->first.end(); ++k ) {
+      for ( manifest_type::const_iterator k = comm->delta->first.begin(); k != comm->delta->first.end(); ++k ) {
         diff.first[k->first] = k->second;
       }
-      for ( manifest_type::const_iterator k = c[f].delta->second.begin(); k != c[f].delta->second.end(); ++k ) {
+      for ( manifest_type::const_iterator k = comm->delta->second.begin(); k != comm->delta->second.end(); ++k ) {
         diff.second[k->first] = k->second;
       }
+
+      path.pop();
     }
   }
 
-  return c[f].mid;
+  return orig->mid;
 }
 
 void yard_ng::add( const commit_id_type& id, const std::string& name, const void* data, size_t sz )
