@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-21 14:29:32 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-19 20:26:08 ptr>
 
 /*
  *
@@ -83,7 +83,11 @@ class revision
     revision_id_type push( const std::string& data )
       { return revision::push( data.data(), data.length() ); }
     revision_id_type push( const manifest_type& );
+    revision_id_type push( const diff_type& );
     const std::string& get( const revision_id_type& ) throw( std::invalid_argument );
+
+    void get_manifest( manifest_type&, const revision_id_type& ) throw( std::invalid_argument );
+    void get_diff( diff_type&, const revision_id_type& ) throw( std::invalid_argument );
 
   private:
     typedef std::map<revision_id_type,revision_node> revisions_container_type;

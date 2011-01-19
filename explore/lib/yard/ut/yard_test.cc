@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-20 13:44:28 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-19 20:42:40 ptr>
 
 /*
  * Copyright (c) 2010
@@ -36,6 +36,71 @@ int EXAM_IMPL(yard_test::revision_in_memory)
     EXAM_ERROR( err.what() );
   }
   
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::manifest_from_revision)
+{
+  yard::revision rev;
+
+  yard::manifest_type m;
+  yard::revision_id_type rid1 = xmt::uid();
+  yard::revision_id_type rid2 = xmt::uid();
+
+  m["/1"] = rid1;
+  m["/2"] = rid2;
+
+  try {
+    yard::revision_id_type r0 = rev.push( m );
+
+    yard::manifest_type m_get;
+
+    rev.get_manifest( m_get, r0 );
+
+    EXAM_CHECK( m_get.size() == 2 );
+    EXAM_CHECK( m_get["/1"] == m["/1"] );
+    EXAM_CHECK( m_get["/2"] == m["/2"] );
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::diff_from_revision)
+{
+  yard::revision rev;
+
+  yard::diff_type d;
+  yard::revision_id_type rid1 = xmt::uid();
+  yard::revision_id_type rid2 = xmt::uid();
+  yard::revision_id_type rid3 = xmt::uid();
+  yard::revision_id_type rid4 = xmt::uid();
+
+  d.first["/1"] = rid1;
+  d.first["/3"] = rid3;
+  d.second["/2"] = rid2;
+  d.second["/4"] = rid4;
+
+  try {
+    yard::revision_id_type r0 = rev.push( d );
+
+    yard::diff_type d_get;
+
+    rev.get_diff( d_get, r0 );
+
+    EXAM_CHECK( d_get.first.size() == 2 );
+    EXAM_CHECK( d_get.second.size() == 2 );
+    EXAM_CHECK( d_get.first["/1"] == d.first["/1"] );
+    EXAM_CHECK( d_get.first["/3"] == d.first["/3"] );
+    EXAM_CHECK( d_get.second["/2"] == d.second["/2"] );
+    EXAM_CHECK( d_get.second["/4"] == d.second["/4"] );
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
   return EXAM_RESULT;
 }
 

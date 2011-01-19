@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-20 13:34:40 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-19 20:35:19 ptr>
 
 /*
  * Copyright (c) 2010
@@ -15,6 +15,8 @@ class yard_test
   public:
     // yard ng
     int EXAM_DECL(revision_in_memory);
+    int EXAM_DECL(manifest_from_revision);
+    int EXAM_DECL(diff_from_revision);
     int EXAM_DECL(access);
     int EXAM_DECL(linear_commits);
     int EXAM_DECL(linear_commits_neg);

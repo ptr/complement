@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-18 16:11:57 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-19 20:32:18 ptr>
 
 /*
  *
@@ -109,6 +109,33 @@ revision_id_type revision::push( const manifest_type& m )
   return push( s.str() );
 }
 
+revision_id_type revision::push( const diff_type& d )
+{
+  stringstream s;
+
+  uint32_t sz;
+
+  for ( manifest_type::const_iterator i = d.first.begin(); i != d.first.end(); ++i ) {
+    sz = i->first.length();
+    s.write( reinterpret_cast<const char*>(&sz), sizeof(uint32_t) );
+    s.write( i->first.data(), i->first.length() );
+    s.write( reinterpret_cast<const char*>(i->second.u.b), sizeof(revision_id_type) );
+  }
+
+  // delimiter: based on knowledge that no key of length 0 in manifest
+  sz = 0;
+  s.write( reinterpret_cast<const char*>(&sz), sizeof(uint32_t) );
+
+  for ( manifest_type::const_iterator i = d.second.begin(); i != d.second.end(); ++i ) {
+    sz = i->first.length();
+    s.write( reinterpret_cast<const char*>(&sz), sizeof(uint32_t) );
+    s.write( i->first.data(), i->first.length() );
+    s.write( reinterpret_cast<const char*>(i->second.u.b), sizeof(revision_id_type) );
+  }
+
+  return push( s.str() );
+}
+
 const std::string& revision::get( const revision_id_type& rid ) throw( std::invalid_argument )
 {
   revisions_container_type::iterator i = r.find( rid );
@@ -118,6 +145,86 @@ const std::string& revision::get( const revision_id_type& rid ) throw( std::inva
   }
 
   return i->second.content;
+}
+
+void revision::get_manifest( manifest_type& m, const revision_id_type& rid ) throw( std::invalid_argument )
+{
+  revisions_container_type::iterator i = r.find( rid );
+
+  if ( i == r.end() ) {
+    throw std::invalid_argument( "invalid revision" );
+  }
+
+  istringstream s( i->second.content );
+
+  uint32_t sz;
+  string str;
+  revision_id_type rev;
+
+  m.clear();
+
+  do {
+    s.read( reinterpret_cast<char*>(&sz), sizeof(uint32_t) );
+    if ( s.fail() ) { // to avoid str.resize() for bad sz
+      break;
+    }
+    str.resize( sz );
+    s.read( const_cast<char*>(str.data()), sz );
+    s.read( reinterpret_cast<char*>(rev.u.b), sizeof(revision_id_type) );
+    if ( s.fail() ) {
+      break;
+    }
+    m[str] = rev;
+  } while ( s.good() );
+}
+
+void revision::get_diff( diff_type& d, const revision_id_type& rid ) throw( std::invalid_argument )
+{
+  revisions_container_type::iterator i = r.find( rid );
+
+  if ( i == r.end() ) {
+    throw std::invalid_argument( "invalid revision" );
+  }
+
+  istringstream s( i->second.content );
+
+  uint32_t sz;
+  string str;
+  revision_id_type rev;
+
+  d.first.clear();
+  d.second.clear();
+
+  do {
+    s.read( reinterpret_cast<char*>(&sz), sizeof(uint32_t) );
+    if ( s.fail() ) { // to avoid str.resize() for bad sz
+      break;
+    }
+    if ( sz == 0 ) {
+      break;
+    }
+    str.resize( sz );
+    s.read( const_cast<char*>(str.data()), sz );
+    s.read( reinterpret_cast<char*>(rev.u.b), sizeof(revision_id_type) );
+    if ( s.fail() ) {
+      break;
+    }
+    d.first[str] = rev;
+  } while ( s.good() );
+
+  do {
+    s.read( reinterpret_cast<char*>(&sz), sizeof(uint32_t) );
+    if ( s.fail() ) { // to avoid str.resize() for bad sz
+      break;
+    }
+    str.resize( sz );
+    s.read( const_cast<char*>(str.data()), sz );
+    s.read( reinterpret_cast<char*>(rev.u.b), sizeof(revision_id_type) );
+    if ( s.fail() ) {
+      break;
+    }
+    d.second[str] = rev;
+  } while ( s.good() );
 }
 
 yard_ng::yard_ng()
