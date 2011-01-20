@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-19 20:32:18 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-20 17:21:20 ptr>
 
 /*
  *
@@ -251,10 +251,14 @@ void yard_ng::open_commit_delta( const commit_id_type& base, const commit_id_typ
 
   cache[m].first = make_pair( base, base );
   cached_manifest_type::const_iterator j = cached_manifest.find( i->second.mid );
-  if ( j != cached_manifest.end() ) {
-    // cache[m].second = j->second; // oh, copy whole manifest...
-  } else {
-    // cache[m].second = ; extract manifest from r.get(i->second)
+  if ( j == cached_manifest.end() ) {
+    try {
+      r.get_manifest( cached_manifest[i->second.mid], i->second.mid );
+    }
+    catch ( std::invalid_argument& ) {
+      // ToDo: try to upload from disc
+      // throw runtime_error( "no such manifest" )
+    }
   }
 }
 
@@ -409,58 +413,74 @@ const std::string& yard_ng::get( const commit_id_type& id, const std::string& na
     throw std::invalid_argument( "invalid commit" );
   }
 
-  if ( i->second.dref != -1 ) {
+  if ( i->second.dref != -1 ) { // this is a delta
     diff_type diff;
-    manifest_id_type mid = aggregate_delta( id, diff );
+    manifest_id_type mid = aggregate_delta( id, diff ); // base manifest id
     cached_manifest_type::const_iterator j = cached_manifest.find( mid );
-    if ( j != cached_manifest.end() ) {
-      manifest_type::const_iterator k = diff.second.find( name );
-      if ( k != diff.second.end() ) { // in add part
-        try {
-          return r.get( k->second );
-        }
-        catch ( const std::invalid_argument& ) {
-          throw std::logic_error( "no such revision" );
-        }
-      }
-      k = diff.first.find( name );
-      if ( k != diff.first.end() ) { // in del part
-        throw std::invalid_argument( "invalid name" );
-      }
-      k = j->second.find( name );
-      if ( k == j->second.end() ) { // absent in manifest
-        throw std::invalid_argument( "invalid name" );
-      }
+    if ( j == cached_manifest.end() ) {
       try {
-        return r.get( k->second ); // in base manifest
+        r.get_manifest( cached_manifest[mid], mid );
+      }
+      catch ( std::invalid_argument& ) {
+        // ToDo: try to upload from disc
+        throw std::runtime_error( "no such manifest" );
+      }
+
+      j = cached_manifest.find( mid ); // != cached_manifest.end(), from above
+    }
+    // j != cached_manifest.end() here
+    manifest_type::const_iterator k = diff.second.find( name );
+    if ( k != diff.second.end() ) { // in add part
+      try {
+        return r.get( k->second );
       }
       catch ( const std::invalid_argument& ) {
         throw std::logic_error( "no such revision" );
       }
-    } else {
-      // deserialise from r.get( i->second ).content;
-      cerr << HERE << endl;
     }
-  }
-
-  cached_manifest_type::const_iterator j = cached_manifest.find( i->second.mid );
-
-  if ( j != cached_manifest.end() ) {
-    manifest_type::const_iterator k = j->second.find( name );
-
-    if ( k == j->second.end() ) {
+    k = diff.first.find( name );
+    if ( k != diff.first.end() ) { // in del part
       throw std::invalid_argument( "invalid name" );
     }
-
+    k = j->second.find( name );
+    if ( k == j->second.end() ) { // absent in manifest
+      throw std::invalid_argument( "invalid name" );
+    }
     try {
-      return r.get( k->second );
+      return r.get( k->second ); // in base manifest
     }
     catch ( const std::invalid_argument& ) {
       throw std::logic_error( "no such revision" );
     }
-  } else {
-    // deserialise from r.get( i->second ).content;
-    cerr << HERE << endl;
+  }
+
+  // this is manifest without deltas
+
+  cached_manifest_type::const_iterator j = cached_manifest.find( i->second.mid );
+
+  if ( j == cached_manifest.end() ) {
+    try {
+      r.get_manifest( cached_manifest[i->second.mid], i->second.mid );
+    }
+    catch ( std::invalid_argument& ) {
+      // ToDo: try to upload from disc
+      throw std::runtime_error( "no such manifest" );
+    }
+
+    j = cached_manifest.find( i->second.mid ); // != cached_manifest.end(), from above
+  }
+  // j != cached_manifest.end() here
+  manifest_type::const_iterator k = j->second.find( name );
+
+  if ( k == j->second.end() ) {
+    throw std::invalid_argument( "invalid name" );
+  }
+
+  try {
+    return r.get( k->second );
+  }
+  catch ( const std::invalid_argument& ) {
+    throw std::logic_error( "no such revision" );
   }
 }
 
@@ -496,12 +516,30 @@ diff_type yard_ng::diff( const commit_id_type& from, const commit_id_type& to )
 
   if ( mf == cached_manifest.end() ) {
     cerr << HERE << endl;
+    try {
+      r.get_manifest( cached_manifest[i->second.mid], i->second.mid );
+    }
+    catch ( std::invalid_argument& ) {
+      // ToDo: try to upload from disc
+      throw std::runtime_error( "no such manifest" );
+    }
+
+    mf = cached_manifest.find( i->second.mid ); // != cached_manifest.end(), from above
   }
 
   cached_manifest_type::const_iterator mt = cached_manifest.find( j->second.mid );
 
   if ( mt == cached_manifest.end() ) {
     cerr << HERE << endl;
+    try {
+      r.get_manifest( cached_manifest[j->second.mid], j->second.mid );
+    }
+    catch ( std::invalid_argument& ) {
+      // ToDo: try to upload from disc
+      throw std::runtime_error( "no such manifest" );
+    }
+
+    mt = cached_manifest.find( j->second.mid ); // != cached_manifest.end(), from above
   }
 
   diff_type df, dt, delta;
