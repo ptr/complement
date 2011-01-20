@@ -34,7 +34,6 @@
 #  endif
 #endif
 
-#include <yard/iterator.h>
 #include <vector>
 #include <memory>
 #include <map>
@@ -69,131 +68,38 @@ typedef unsigned int file_address_type;
 
 file_address_type seek_to_end(std::fstream& file, unsigned int size);
 
-struct index_node_entry
+struct block_coordinate
 {
-    xmt::uuid_type key;
-    file_address_type pointer;
-
-    xmt::uuid_type get_key() const
-    {
-        return key;
-    }
-
-    file_address_type get_pointer() const
-    {
-        return pointer;
-    }
-
-    bool operator>(const index_node_entry& right) const
-    {
-        return (key > right.key);
-    }
-};
-
-struct data_node_entry
-{
-    xmt::uuid_type key;
-    file_address_type address_of_value;
-    unsigned int size;
-
-    xmt::uuid_type get_key() const
-    {
-        return key;
-    }
-
-    file_address_type get_address_of_value() const
-    {
-        return address_of_value;
-    }
-
-    unsigned int get_size() const
-    {
-        return size;
-    }
-
-    bool operator>(const data_node_entry& right) const
-    {
-        return (key > right.key);
-    }
+    file_address_type address;
+    size_t size;
 };
 
 class block_type
 {
 public:
+    typedef xmt::uuid_type key_type;
+    typedef std::map<key_type, block_coordinate> body_type;
+    typedef body_type::const_iterator const_iterator;
+
     static const unsigned int root_node;
     static const unsigned int leaf_node;
-
-    template <typename T>
-    class key_readable : public std::iterator<std::input_iterator_tag, xmt::uuid_type>
-    {
-    protected:
-        T pointer_;
-        unsigned int type_;
-    public:
-        enum
-        {
-            index = 0,
-            data = 1
-        };
-
-        key_readable(T pointer, unsigned int type):
-            pointer_(pointer),
-            type_(type)
-        {}
-
-        T get() const
-        {
-            return pointer_;
-        }
-
-        xmt::uuid_type operator*()
-        {
-            if (type_ == 0)
-                return ((const index_node_entry*)pointer_)->get_key();
-            else
-                return ((const data_node_entry*)pointer_)->get_key();
-        }
-    };
-
-    typedef array_iterator<key_readable<const char*> > const_key_iterator;
-    typedef array_iterator<key_readable<char*> > key_iterator;
-
-    typedef data_node_entry* data_iterator;
-    typedef index_node_entry* index_iterator;
-    typedef const data_node_entry* data_const_iterator;
-    typedef const index_node_entry* index_const_iterator;
 
     bool is_root() const;
     bool is_leaf() const;
 
-    const_key_iterator key_begin() const;
-    const_key_iterator key_end() const;
-    key_iterator key_begin();
-    key_iterator key_end();
-
-    template <typename T>
-    const T* get_entry(const const_key_iterator& coordinate) const
-    {
-        return (const T*)(coordinate.get());
-    }
-
-    template <typename T>
-    T* get_entry(const key_iterator& coordinate)
-    {
-        return (T*)(coordinate.get());
-    }
-
     void set_flags(unsigned int flags);
 
-    void insert_index(const index_node_entry& entry);
-    void insert_data(const data_node_entry& entry);
+    void insert(const key_type& key, const block_coordinate& coordinate);
 
-    data_const_iterator lookup(xmt::uuid_type key) const;
-    index_const_iterator route(xmt::uuid_type key) const;
+    const_iterator begin() const;
+    const_iterator end() const;
+
+    const_iterator lookup(const key_type& key) const;
+    const_iterator route(const key_type& key) const;
 
     bool is_overfilled() const;
 
-    std::pair<xmt::uuid_type, xmt::uuid_type> divide(block_type& other);
+    std::pair<key_type, key_type> divide(block_type& other);
 
     void pack(std::ostream& s) const;
     void unpack(std::istream& s);
@@ -205,21 +111,22 @@ private:
     static const unsigned int index_node_nsize;
     static const unsigned int data_node_nsize;
 
-    xmt::uuid_type min() const;
-    xmt::uuid_type max() const;
+    key_type min() const;
+    key_type max() const;
 
     unsigned int flags_;
-    unsigned int size_;
-    char data_[4096 - 2*sizeof(unsigned int)];
+    body_type body_;
 };
 
 class BTree
 {
 public:
+    typedef block_type::key_type key_type;
     typedef std::stack<file_address_type> coordinate_type;
-    coordinate_type lookup(xmt::uuid_type key);
+
+    coordinate_type lookup(const key_type& key);
     const block_type& get(const coordinate_type& coordinate);
-    void insert(coordinate_type path, const data_node_entry& data);
+    void insert(coordinate_type path, const key_type& key, const block_coordinate& coord);
 
     void init_empty(const char* filename);
     void init_existed(const char* filename);
@@ -227,8 +134,7 @@ public:
     file_address_type add_value(const char* data, unsigned int size);
     void clear_cache();
 private:
-    void lookup(coordinate_type& path, xmt::uuid_type key);
-    void insert(coordinate_type path, const index_node_entry& data);
+    void lookup(coordinate_type& path, const key_type& key);
 
     std::fstream file_;
     std::map<file_address_type, block_type> cache_;

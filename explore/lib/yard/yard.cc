@@ -92,7 +92,14 @@ file_address_type seek_to_end(std::fstream& file, unsigned int size)
     file.seekp(0, ios_base::end);
     file_address_type address = file.tellp();
 
-    return address;
+    int delta = 0;
+    int over = address % block_type::disk_block_size();
+    if (over != 0)
+        delta = block_type::disk_block_size() - over;
+
+    file.seekp(delta, ios_base::end);
+
+    return address + delta;
 }
 
 
@@ -110,9 +117,7 @@ const unsigned int block_type::data_node_nsize = 84;
 
 block_type::block_type()
 {
-    size_ = 0;
     flags_ = 0;
-    memset(data_, 0, 4096 - 2*sizeof(unsigned int));
 }
 
 bool block_type::is_root() const
@@ -125,117 +130,34 @@ bool block_type::is_leaf() const
     return ((flags_ & leaf_node) == leaf_node);
 }
 
-block_type::key_iterator block_type::key_begin()
-{
-    unsigned int entry_size = is_leaf() ? sizeof(data_node_entry) : sizeof(index_node_entry);
-    return key_iterator(key_readable<char*>(data_, is_leaf()?
-                                            const_key_iterator::data :
-                                            const_key_iterator::index),
-                            entry_size);
-}
-
-block_type::key_iterator block_type::key_end()
-{
-    unsigned int entry_size = is_leaf() ? sizeof(data_node_entry) : sizeof(index_node_entry);
-    return key_iterator(key_readable<char*>(data_ + size_ * entry_size,
-                                     is_leaf()?
-                                     const_key_iterator::data :
-                                     const_key_iterator::index),
-                            entry_size);
-}
-
-block_type::const_key_iterator block_type::key_begin() const
-{
-    unsigned int entry_size = is_leaf() ? sizeof(data_node_entry) : sizeof(index_node_entry);
-    return const_key_iterator(key_readable<const char*>(data_, is_leaf()?
-                                            const_key_iterator::data :
-                                            const_key_iterator::index),
-                            entry_size);
-}
-
-block_type::const_key_iterator block_type::key_end() const
-{
-    unsigned int entry_size = is_leaf() ? sizeof(data_node_entry) : sizeof(index_node_entry);
-    return const_key_iterator(key_readable<const char*>(data_ + size_ * entry_size,
-                                     is_leaf()?
-                                     const_key_iterator::data :
-                                     const_key_iterator::index),
-                            entry_size);
-}
-
 bool block_type::is_overfilled() const
 {
     if (is_leaf())
-        return (size_ >= 2 * data_node_nsize + 1);
+        return (body_.size() >= 2 * data_node_nsize + 1);
     else
-        return (size_ >= 2 * index_node_nsize + 1);
+        return (body_.size() >= 2 * index_node_nsize + 1);
 }
 
-void block_type::insert_index(const index_node_entry& entry)
+void block_type::insert(const key_type& key, const block_coordinate& coordinate)
 {
-    assert(!is_leaf());
-    assert(!is_overfilled());
-    typedef index_node_entry entry_type;
-
-    key_iterator insert_place = find_if(key_begin(), key_end(),
-        bind2nd(greater<xmt::uuid_type>(), entry.get_key()));
-
-    copy_backward(get_entry<entry_type>(insert_place),
-                  get_entry<entry_type>(key_end()),
-                  get_entry<entry_type>(key_end() + 1));
-
-    *get_entry<entry_type>(insert_place) = entry;
-    ++size_;
-}
-
-void block_type::insert_data(const data_node_entry& entry)
-{
-    assert(is_leaf());
-    assert(!is_overfilled());
-    typedef data_node_entry entry_type;
-
-    key_iterator insert_place = find_if(key_begin(), key_end(),
-        bind2nd(greater<xmt::uuid_type>(), entry.get_key()));
-
-    copy_backward(get_entry<entry_type>(insert_place),
-                  get_entry<entry_type>(key_end()),
-                  get_entry<entry_type>(key_end() + 1));
-
-    *get_entry<entry_type>(insert_place) = entry;
-    ++size_;
+    body_[key] = coordinate;
 }
 
 xmt::uuid_type block_type::min() const
 {
-    assert(size_ > 0);
-
-    if (is_leaf())
-        return ((data_node_entry*)data_)->get_key();
-    else
-        return ((index_node_entry*)data_)->get_key();
+    assert(!body_.empty());
+    return body_.begin()->first;
 }
 
 xmt::uuid_type block_type::max() const
 {
-    assert(size_ > 0);
-
-    if (is_leaf())
-        return ((data_node_entry*)data_ + (size_ - 1))->get_key();
-    else
-        return ((index_node_entry*)data_ + (size_ - 1))->get_key();
+    assert(!body_.empty());
+    return (--body_.end())->first;
 }
 
 pair<xmt::uuid_type, xmt::uuid_type> block_type::divide(block_type& other)
 {
     assert(is_overfilled());
-
-    int entry_size = is_leaf() ? sizeof(data_node_entry) : sizeof(index_node_entry);
-    char * const middle = data_ + entry_size * (size_ / 2);
-    char * const end = data_ + entry_size * size_;
-
-    copy(middle, end, other.data_);
-    other.size_ = size_ - (size_ / 2);
-    size_ = (size_ / 2);
 
     if (is_root())
     {
@@ -243,56 +165,93 @@ pair<xmt::uuid_type, xmt::uuid_type> block_type::divide(block_type& other)
     }
     other.flags_ = flags_;
 
-    pair<xmt::uuid_type, xmt::uuid_type> result;
+    body_type::iterator middle = body_.begin();
+    std::advance(middle, body_.size() / 2);
+
+    other.body_.insert(middle, body_.end());
+    body_.erase(middle, body_.end());
+
+    pair<key_type, key_type> result;
     result.first = max();
     result.second = other.min();
 
     if (!other.is_leaf())
     {
-        xmt::uuid_type& key = other.get_entry<index_node_entry>(other.key_begin())->key;
-        key.u.l[0] = 0;
-        key.u.l[1] = 0;
+        //add erasing of the first key in the other
     }
     return result;
 }
 
-const data_node_entry* block_type::lookup(xmt::uuid_type key) const
+block_type::const_iterator block_type::begin() const
 {
-    const_key_iterator entry = find_if(key_begin(), key_end(),
-        bind2nd(equal_to<xmt::uuid_type>(), key));
-    return get_entry<data_node_entry>(entry);
+    return body_.begin();
 }
 
-const index_node_entry* block_type::route(xmt::uuid_type key) const
+block_type::const_iterator block_type::end() const
+{
+    return body_.end();
+}
+
+block_type::const_iterator block_type::lookup(const key_type& key) const
+{
+    return body_.find(key);
+}
+
+block_type::const_iterator block_type::route(const key_type& key) const
 {
     assert(!is_leaf());
-    assert(size_ > 0);
+    assert(!body_.empty());
 
-    if (key_begin() == key_end())
-        return get_entry<index_node_entry>(key_end());
+    if (body_.empty())
+        return body_.end();
 
-    const_key_iterator entry = find_if(++key_begin(), key_end(),
-        bind2nd(greater<xmt::uuid_type>(), key));
+    for (const_iterator it = ++body_.begin();
+         it != body_.end();
+         ++it)
+    {
+        if (it->first > key)
+            return --it;
+    }
 
-    return get_entry<index_node_entry>(--entry);
+    return --body_.end();
 }
 
 void block_type::pack(std::ostream& s) const
 {
-//    s.write((const char*)this, block_type::disk_block_size());
-
     stem::__pack_base::__pack(s, flags_);
-    stem::__pack_base::__pack(s, size_);
-    s.write(data_, 4096 - 2 * sizeof(unsigned int));
+    stem::__pack_base::__pack(s, body_.size());
+    for (const_iterator it = body_.begin();
+         it != body_.end();
+         ++it)
+    {
+        stem::__pack_base::__pack(s, it->first);
+        stem::__pack_base::__pack(s, it->second.address);
+        if (is_leaf())
+        {
+            stem::__pack_base::__pack(s, it->second.size);
+        }
+    }
 }
 
 void block_type::unpack(std::istream& s)
 {
-//    s.read((char*)this, block_type::disk_block_size());
-
     stem::__pack_base::__unpack(s, flags_);
-    stem::__pack_base::__unpack(s, size_);
-    s.read(data_, 4096 - 2 * sizeof(unsigned int));
+    body_type::size_type size;
+    stem::__pack_base::__unpack(s, size);
+    for (body_type::size_type i = 0; i < size; ++i)
+    {
+        key_type key;
+        block_coordinate coordinate;
+        stem::__pack_base::__unpack(s, key);
+        stem::__pack_base::__unpack(s, coordinate.address);
+        if (is_leaf())
+        {
+            stem::__pack_base::__unpack(s, coordinate.size);
+        }
+        else
+            coordinate.size = disk_block_size();
+        insert(key, coordinate);
+    }
 }
 
 unsigned int block_type::disk_block_size()
@@ -310,7 +269,7 @@ file_address_type BTree::add_value(const char* data, unsigned int size)
     return append_data(file_, data, size);
 }
 
-void BTree::lookup(coordinate_type& path, xmt::uuid_type key)
+void BTree::lookup(coordinate_type& path, const key_type& key)
 {
     while (true)
     {
@@ -321,12 +280,12 @@ void BTree::lookup(coordinate_type& path, xmt::uuid_type key)
         if (new_block.is_leaf())
             return;
 
-        const index_node_entry* right_direction = new_block.route(key);
-        path.push(right_direction->get_pointer());
+        block_type::const_iterator next_block = new_block.route(key);
+        path.push(next_block->second.address);
     }
 }
 
-BTree::coordinate_type BTree::lookup(xmt::uuid_type key)
+BTree::coordinate_type BTree::lookup(const key_type& key)
 {
     coordinate_type path;
     path.push(root_address_);
@@ -336,10 +295,10 @@ BTree::coordinate_type BTree::lookup(xmt::uuid_type key)
     return path;
 }
 
-void BTree::insert(coordinate_type path, const data_node_entry& data)
+void BTree::insert(coordinate_type path, const key_type& key, const block_coordinate& coord)
 {
     block_type& block = cache_[path.top()];
-    block.insert_data(data);
+    block.insert(key, coord);
     if (block.is_overfilled())
     {
         block_type new_block;
@@ -351,9 +310,10 @@ void BTree::insert(coordinate_type path, const data_node_entry& data)
         new_block.pack(file_);
         cache_[address_of_new_block] = new_block;
 
-        index_node_entry entry;
-        entry.key = delimiter.second;
-        entry.pointer = address_of_new_block;
+        key_type new_key = delimiter.second;
+        block_coordinate new_coord;
+        new_coord.address = address_of_new_block;
+        new_coord.size = block_type::disk_block_size();
 
         path.pop();
 
@@ -363,22 +323,26 @@ void BTree::insert(coordinate_type path, const data_node_entry& data)
             new_root.set_flags(block_type::root_node);
 
             {
-                index_node_entry zero_entry;
-                zero_entry.key.u.l[0] = zero_entry.key.u.l[1] = 0;
-                zero_entry.pointer = seek_to_end(file_, block_type::disk_block_size());
+                key_type zero_key;
+                zero_key.u.l[0] = zero_key.u.l[1] = 0;
+
+                block_coordinate zero_coord;
+                zero_coord.address = seek_to_end(file_, block_type::disk_block_size());
+                zero_coord.size = block_type::disk_block_size();
+
                 block.pack(file_);
 
-                new_root.insert_index(zero_entry);
+                new_root.insert(zero_key, zero_coord);
 
-                cache_[zero_entry.pointer] = block;
+                cache_[zero_coord.address] = block;
             }
-            new_root.insert_index(entry);
+            new_root.insert(new_key, new_coord);
             cache_[root_address_] = new_root;
             file_.seekp(root_address_);
             new_root.pack(file_);
         }
         else
-            insert(path, entry);
+            insert(path, new_key, new_coord);
     }
     else
     {
@@ -390,58 +354,6 @@ void BTree::insert(coordinate_type path, const data_node_entry& data)
 const block_type& BTree::get(const coordinate_type& coordinate)
 {
     return cache_[coordinate.top()];
-}
-
-void BTree::insert(coordinate_type path, const index_node_entry& data)
-{
-    index_node_entry entry = data;
-    do
-    {
-        block_type& block = cache_[path.top()];
-        block.insert_index(entry);
-        if (!block.is_overfilled())
-        {
-            file_.seekp(path.top());
-            block.pack(file_);
-            break;
-        }
-
-        block_type new_block;
-        pair<xmt::uuid_type, xmt::uuid_type> delimiter = block.divide(new_block);
-
-        file_.seekp(path.top());
-        block.pack(file_);
-
-        file_address_type address_of_new_block = seek_to_end(file_, block_type::disk_block_size());
-        new_block.pack(file_);
-        cache_[address_of_new_block] = new_block;
-
-        entry.key = delimiter.second;
-        entry.pointer = address_of_new_block;
-
-        path.pop();
-        if (path.empty())
-        {
-            block_type new_root;
-            new_root.set_flags(block_type::root_node);
-
-            {
-                index_node_entry zero_entry;
-                zero_entry.key.u.l[0] = zero_entry.key.u.l[1] = 0;
-                zero_entry.pointer = seek_to_end(file_, block_type::disk_block_size());
-                block.pack(file_);
-
-                new_root.insert_index(zero_entry);
-
-                cache_[zero_entry.pointer] = block;
-            }
-            new_root.insert_index(entry);
-            cache_[root_address_] = new_root;
-            file_.seekp(root_address_);
-            new_root.pack(file_);
-            break;
-        }
-    } while (true);
 }
 
 void BTree::init_empty(const char* filename)
@@ -458,6 +370,7 @@ void BTree::init_empty(const char* filename)
 void BTree::init_existed(const char* filename)
 {
     file_.open(filename, ios_base::in | ios_base::out | ios_base::binary);
+    root_address_ = 0;
 }
 
 void BTree::clear_cache()
