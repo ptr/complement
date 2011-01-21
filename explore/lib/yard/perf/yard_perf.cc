@@ -36,14 +36,17 @@ int EXAM_IMPL(yard_perf::consecutive_insert)
     const int count = 100000;
     for (int i = 0; i < count; ++i)
     {
-        data_node_entry entry;
-        entry.key.u.l[0] = 3*i;
-        entry.key.u.l[1] = 0;
+        block_type::key_type key;
+        key.u.l[0] = 3*i;
+        key.u.l[1] = 0;
 
-        BTree::coordinate_type coordinate = tree.lookup(entry.key);
+        block_coordinate coord; 
+        coord.address = i;
+        coord.size = 2*i;
 
-        entry.address_of_value = i;
-        tree.insert(coordinate, entry);
+        BTree::coordinate_type coordinate = tree.lookup(key);
+
+        tree.insert(coordinate, key, coord);
     }
     return EXAM_RESULT;
 }
@@ -58,17 +61,17 @@ int EXAM_IMPL(yard_perf::random_insert)
 
     for (int i = 0; i < count; ++i)
     {
-        data_node_entry entry;
-        entry.key.u.l[0] = rand();
-        entry.key.u.l[1] = 0;
+        block_type::key_type key;
+        key.u.l[0] = rand();
+        key.u.l[1] = 0;
 
-        entry.address_of_value = rand();
-        entry.size = rand();
+        block_coordinate coord;
+        coord.address = rand();
+        coord.size = rand();
 
-        BTree::coordinate_type coordinate = tree.lookup(entry.key);
+        BTree::coordinate_type coordinate = tree.lookup(key);
 
-        entry.address_of_value = i;
-        tree.insert(coordinate, entry);
+        tree.insert(coordinate, key, coord);
     }
 
     return EXAM_RESULT;
@@ -89,14 +92,16 @@ int EXAM_IMPL(yard_perf::consecutive_insert_with_data)
     const int count = 40000;
     for (int i = 0; i < count; ++i)
     {
-        data_node_entry entry;
-        entry.key.u.l[0] = 3*i;
-        entry.key.u.l[1] = 0;
+        block_type::key_type key;
+        key.u.l[0] = 3*i;
+        key.u.l[1] = 0;
 
-        BTree::coordinate_type coordinate = tree.lookup(entry.key);
+        BTree::coordinate_type coordinate = tree.lookup(key);
 
-        entry.address_of_value = tree.add_value(data, data_size);
-        tree.insert(coordinate, entry);
+        block_coordinate coord;
+        coord.address = tree.add_value(data, data_size);
+        coord.size = data_size;
+        tree.insert(coordinate, key, coord);
     }
     return EXAM_RESULT;
 }
@@ -116,14 +121,16 @@ int EXAM_IMPL(yard_perf::random_insert_with_data)
     const int count = 40000;
     for (int i = 0; i < count; ++i)
     {
-        data_node_entry entry;
-        entry.key.u.l[0] = rand();
-        entry.key.u.l[1] = 0;
+        block_type::key_type key;
+        key.u.l[0] = rand();
+        key.u.l[1] = 0;
 
-        BTree::coordinate_type coordinate = tree.lookup(entry.key);
+        BTree::coordinate_type coordinate = tree.lookup(key);
 
-        entry.address_of_value = tree.add_value(data, data_size);
-        tree.insert(coordinate, entry);
+        block_coordinate coord;
+        coord.address = tree.add_value(data, data_size);
+        coord.size = data_size;
+        tree.insert(coordinate, key, coord);
     }
     return EXAM_RESULT;
 }
@@ -152,14 +159,16 @@ int EXAM_IMPL(yard_perf::multiple_files)
     {
         for (int i = 0; i < file_count; ++i)
         {
-            data_node_entry entry;
-            entry.key.u.l[0] = rand();
-            entry.key.u.l[1] = 0;
+            block_type::key_type key;
+            key.u.l[0] = rand();
+            key.u.l[1] = 0;
 
-            BTree::coordinate_type coordinate = trees[i].lookup(entry.key);
+            BTree::coordinate_type coordinate = trees[i].lookup(key);
 
-            entry.address_of_value = trees[i].add_value(data, data_size);
-            trees[i].insert(coordinate, entry);
+            block_coordinate coord;
+            coord.address = trees[i].add_value(data, data_size);
+            coord.size = data_size;
+            trees[i].insert(coordinate, key, coord);
         }
     }
     return EXAM_RESULT;
@@ -175,11 +184,11 @@ int EXAM_IMPL(yard_perf::random_lookup)
     const int count = 10000;
     for (int i = 0; i < count; ++i)
     {
-        data_node_entry entry;
-        entry.key.u.l[0] = 3*(rand() % 40000);
-        entry.key.u.l[1] = 0;
+        block_type::key_type key;
+        key.u.l[0] = 3*(rand() % 40000);
+        key.u.l[1] = 0;
 
-        BTree::coordinate_type coordinate = tree.lookup(entry.key);
+        BTree::coordinate_type coordinate = tree.lookup(key);
     }
     return EXAM_RESULT;
 }
