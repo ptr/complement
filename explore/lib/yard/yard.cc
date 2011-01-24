@@ -218,6 +218,8 @@ block_type::const_iterator block_type::route(const key_type& key) const
 
 void block_type::pack(std::ostream& s) const
 {
+    std::ostream::streampos begin_pos = s.tellp();
+
     stem::__pack_base::__pack(s, flags_);
     stem::__pack_base::__pack(s, body_.size());
     for (const_iterator it = body_.begin();
@@ -230,6 +232,16 @@ void block_type::pack(std::ostream& s) const
         {
             stem::__pack_base::__pack(s, it->second.size);
         }
+    }
+
+    std::ostream::streampos end_pos = s.tellp();
+    assert(end_pos - begin_pos <= disk_block_size());
+
+    unsigned int size = end_pos - begin_pos;
+    while (size != disk_block_size())
+    {
+        s.put(0);
+        ++size;
     }
 }
 
