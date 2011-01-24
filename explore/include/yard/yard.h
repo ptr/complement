@@ -109,9 +109,6 @@ public:
 
     block_type();
 private:
-    static const unsigned int index_node_nsize;
-    static const unsigned int data_node_nsize;
-
     key_type min() const;
     key_type max() const;
 

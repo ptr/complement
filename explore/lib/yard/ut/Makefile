@@ -11,8 +11,6 @@ DEFS += -D__FIT_EXAM
 LIBMT_DIR = ${CoMT_DIR}/lib/mt
 LIBEXAM_DIR = ${CoMT_DIR}/lib/exam
 LIBMISC_DIR = ${CoMT_DIR}/lib/misc
-LIBSTEM_DIR = ${CoMT_DIR}/lib/stem
-LIBSOCKIOS_DIR = ${CoMT_DIR}/lib/sockios
 
 ifeq ($(OSNAME),linux)
 
@@ -40,10 +38,10 @@ endif
 
 endif
 
-release-shared : LDLIBS = -lyard -lxmt -lexam -lmisc -lstem -lsockios
-dbg-shared     : LDLIBS = -lyardg -lxmtg -lexamg -lmiscg -lstem -lsockios
+release-shared : LDLIBS = -lyard -lxmt -lexam -lmisc
+dbg-shared     : LDLIBS = -lyardg -lxmtg -lexamg -lmiscg
 ifndef WITHOUT_STLPORT
-stldbg-shared  : LDLIBS = -lyardstlg -lxmtstlg -lexamstlg -lmiscstlg -lstem
+stldbg-shared  : LDLIBS = -lyardstlg -lxmtstlg -lexamstlg -lmiscstlg
 endif
 
 check-release-shared:	release-shared

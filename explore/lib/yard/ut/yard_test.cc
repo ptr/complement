@@ -113,7 +113,8 @@ int EXAM_IMPL(yard_test::block_type_divide)
     typedef vector<pair<block_type::key_type, block_coordinate> > data_type;
     data_type data;
 
-    for (int i = 0; i < 201; ++i)
+    int i = 0;
+    while (!block.is_overfilled())
     {
         block_type::key_type key;
         key.u.l[0] = 3*i;
@@ -125,6 +126,8 @@ int EXAM_IMPL(yard_test::block_type_divide)
 
         data.push_back(make_pair(key, coord));
         block.insert(key, coord);
+
+        ++i;
     }
 
     block_type new_block;

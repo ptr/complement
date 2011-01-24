@@ -12,7 +12,7 @@
 // #include "yard.h"
 #include <yard/yard.h>
 
-#include <stem/EvPack.h>
+#include <yard/pack.h>
 
 #include <inttypes.h>
 #include <mt/uid.h>
@@ -114,9 +114,6 @@ void get_data(std::fstream& file, file_address_type address, char* data, unsigne
 const unsigned int block_type::root_node = 1;
 const unsigned int block_type::leaf_node = 2;
 
-const unsigned int block_type::index_node_nsize = 100;
-const unsigned int block_type::data_node_nsize = 84;
-
 block_type::block_type()
 {
     flags_ = 0;
@@ -144,10 +141,29 @@ bool block_type::is_leaf() const
 
 bool block_type::is_overfilled() const
 {
+    int data_node_size = (
+        block_size_ -
+        2 * packer_traits<unsigned int, std_packer>::max_size()
+                         ) /
+                         (
+        packer_traits<key_type, std_packer>::max_size() +
+        packer_traits<file_address_type, std_packer>::max_size() +
+        packer_traits<size_t, std_packer>::max_size()
+                         );
+
+    int index_node_size = (
+        block_size_ -
+        2 * packer_traits<unsigned int, std_packer>::max_size()
+                         ) /
+                         (
+        packer_traits<key_type, std_packer>::max_size() +
+        packer_traits<file_address_type, std_packer>::max_size()
+                         );
+
     if (is_leaf())
-        return (body_.size() >= 2 * data_node_nsize + 1);
+        return (body_.size() >= data_node_size);
     else
-        return (body_.size() >= 2 * index_node_nsize + 1);
+        return (body_.size() >= index_node_size);
 }
 
 void block_type::insert(const key_type& key, const block_coordinate& coordinate)
@@ -234,9 +250,9 @@ void header_type::pack(std::ostream& s) const
     const unsigned int header_size = 4096;
     std::ostream::streampos begin_pos = s.tellp();
 
-    stem::__pack_base::__pack(s, version);
-    stem::__pack_base::__pack(s, block_size);
-    stem::__pack_base::__pack(s, address_of_the_root);
+    std_packer::pack(s, version);
+    std_packer::pack(s, block_size);
+    std_packer::pack(s, address_of_the_root);
 
     std::ostream::streampos end_pos = s.tellp();
     assert(end_pos - begin_pos <= header_size);
@@ -251,26 +267,26 @@ void header_type::pack(std::ostream& s) const
 
 void header_type::unpack(std::istream& s)
 {
-    stem::__pack_base::__unpack(s, version);
-    stem::__pack_base::__unpack(s, block_size);
-    stem::__pack_base::__unpack(s, address_of_the_root);
+    std_packer::unpack(s, version);
+    std_packer::unpack(s, block_size);
+    std_packer::unpack(s, address_of_the_root);
 }
 
 void block_type::pack(std::ostream& s) const
 {
     std::ostream::streampos begin_pos = s.tellp();
 
-    stem::__pack_base::__pack(s, flags_);
-    stem::__pack_base::__pack(s, body_.size());
+    std_packer::pack(s, flags_);
+    std_packer::pack(s, body_.size());
     for (const_iterator it = body_.begin();
          it != body_.end();
          ++it)
     {
-        stem::__pack_base::__pack(s, it->first);
-        stem::__pack_base::__pack(s, it->second.address);
+        std_packer::pack(s, it->first);
+        std_packer::pack(s, it->second.address);
         if (is_leaf())
         {
-            stem::__pack_base::__pack(s, it->second.size);
+            std_packer::pack(s, it->second.size);
         }
     }
 
@@ -287,18 +303,18 @@ void block_type::pack(std::ostream& s) const
 
 void block_type::unpack(std::istream& s)
 {
-    stem::__pack_base::__unpack(s, flags_);
+    std_packer::unpack(s, flags_);
     body_type::size_type size;
-    stem::__pack_base::__unpack(s, size);
+    std_packer::unpack(s, size);
     for (body_type::size_type i = 0; i < size; ++i)
     {
         key_type key;
         block_coordinate coordinate;
-        stem::__pack_base::__unpack(s, key);
-        stem::__pack_base::__unpack(s, coordinate.address);
+        std_packer::unpack(s, key);
+        std_packer::unpack(s, coordinate.address);
         if (is_leaf())
         {
-            stem::__pack_base::__unpack(s, coordinate.size);
+            std_packer::unpack(s, coordinate.size);
         }
         else
             coordinate.size = get_block_size();
