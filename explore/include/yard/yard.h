@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-19 20:26:08 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-24 19:42:11 ptr>
 
 /*
  *
@@ -49,6 +49,22 @@ typedef std::map<std::string,revision_id_type> manifest_type;
 typedef std::pair<manifest_type,manifest_type> diff_type;
 typedef std::list<std::pair<std::string,std::pair<revision_id_type,revision_id_type> > > conflicts_list_type;
 
+struct commit_node
+{
+    manifest_id_type mid;
+    diff_type* delta;
+    int dref;
+    enum {
+      white = 0,
+      gray,
+      black
+    } color;
+
+    typedef std::list<commit_id_type> edge_container_type;
+    edge_container_type edge_in;
+    edge_container_type edge_out;
+};
+
 class metainfo
 {
   public:
@@ -84,10 +100,12 @@ class revision
       { return revision::push( data.data(), data.length() ); }
     revision_id_type push( const manifest_type& );
     revision_id_type push( const diff_type& );
+    revision_id_type push( const commit_node&, const commit_id_type& );
     const std::string& get( const revision_id_type& ) throw( std::invalid_argument );
 
     void get_manifest( manifest_type&, const revision_id_type& ) throw( std::invalid_argument );
     void get_diff( diff_type&, const revision_id_type& ) throw( std::invalid_argument );
+    void get_commit( commit_node&, const revision_id_type& ) throw( std::invalid_argument );
 
   private:
     typedef std::map<revision_id_type,revision_node> revisions_container_type;
@@ -131,22 +149,6 @@ class yard_ng
       { std::copy( leaf.begin(), leaf.end(), bi ); }
 
   private:
-    struct commit_node
-    {
-        manifest_id_type mid;
-        diff_type* delta;
-        int dref;
-        enum {
-          white = 0,
-          gray,
-          black
-        } color;
-
-        typedef std::list<commit_id_type> edge_container_type;
-        edge_container_type edge_in;
-        edge_container_type edge_out;
-    };
-
     typedef std::map<commit_id_type,commit_node> commit_container_type;
     typedef std::list<commit_id_type> leafs_container_type;
     typedef std::map<commit_id_type,std::pair<std::pair<commit_id_type,commit_id_type>,diff_type> > cache_container_type;

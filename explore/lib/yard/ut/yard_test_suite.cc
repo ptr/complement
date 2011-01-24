@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-19 20:40:25 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-24 20:27:32 ptr>
 
 /*
  * Copyright (c) 2010
@@ -32,8 +32,11 @@ int main( int argc, const char** argv )
       t.add( &yard_test::access, test, "access to yard ng",
         tc[2] = t.add( &yard_test::revision_in_memory, test, "revision in memory, yard ng" ) ) ) );
 
-  t.add( &yard_test::diff_from_revision, test, "recover delta from revision, yard ng",
+  tc[3] = t.add( &yard_test::diff_from_revision, test, "recover delta from revision, yard ng",
     t.add( &yard_test::manifest_from_revision, test, "recover manifest from revision, yard ng", tc[2] ) );
+
+  t.add( &yard_test::commit_from_revision1, test, "recover commit node from revision (manifest), yard ng", tc[2] );
+  t.add( &yard_test::commit_from_revision2, test, "recover commit node from revision (delta), yard ng", tc[3] );
 
   t.add( &yard_test::fast_merge4, test, "fast merge with common ancestor in yard ng",
     t.add( &yard_test::fast_merge3, test, "fast merge right add yard ng",

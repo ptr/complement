@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-20 17:21:20 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-24 20:02:04 ptr>
 
 /*
  *
@@ -136,6 +136,40 @@ revision_id_type revision::push( const diff_type& d )
   return push( s.str() );
 }
 
+revision_id_type revision::push( const commit_node& c, const commit_id_type& cid )
+{
+  if ( r.find( cid ) != r.end() ) {
+    return cid;
+  }
+
+  stringstream s;
+
+  int16_t dr = static_cast<uint16_t>(c.dref);
+  uint16_t len = static_cast<uint16_t>(c.edge_in.size());
+
+  s.write( reinterpret_cast<const char*>(&dr), sizeof(int16_t) );
+
+  if ( c.dref != -1 ) {
+    revision_id_type rid = push( *c.delta );
+    s.write( reinterpret_cast<const char*>(rid.u.b), sizeof(revision_id_type) );
+  } else {
+    s.write( reinterpret_cast<const char*>(c.mid.u.b), sizeof(manifest_id_type) );
+  }
+
+  s.write( reinterpret_cast<const char*>(&len), sizeof(uint16_t) );
+
+  for ( commit_node::edge_container_type::const_iterator i = c.edge_in.begin(); i != c.edge_in.end(); ++i ) {
+    s.write( reinterpret_cast<const char*>(i->u.b), sizeof(commit_id_type) );
+  }
+
+  revision_node& node = r[cid];
+
+  node.flags |= revision_node::mod;
+  node.content.assign( s.str() );
+
+  return cid;
+}
+
 const std::string& revision::get( const revision_id_type& rid ) throw( std::invalid_argument )
 {
   revisions_container_type::iterator i = r.find( rid );
@@ -225,6 +259,45 @@ void revision::get_diff( diff_type& d, const revision_id_type& rid ) throw( std:
     }
     d.second[str] = rev;
   } while ( s.good() );
+}
+
+void revision::get_commit( commit_node& c, const revision_id_type& rid ) throw( std::invalid_argument )
+{
+  revisions_container_type::iterator i = r.find( rid );
+
+  if ( i == r.end() ) {
+    throw std::invalid_argument( "invalid revision" );
+  }
+
+  istringstream s( i->second.content );
+
+  int16_t dr;
+
+  s.read( reinterpret_cast<char*>(&dr), sizeof(int16_t) );
+
+  if ( !s.fail() ) {
+    c.dref = static_cast<int>(dr);
+
+    revision_id_type rid2;
+    s.read( reinterpret_cast<char*>(rid2.u.b), sizeof(revision_id_type) );
+
+    if ( c.dref != -1 ) {
+      c.delta = new diff_type;
+      get_diff( *c.delta, rid2 );
+    } else {
+      c.mid = rid2;
+    }
+
+    uint16_t len;
+    s.read( reinterpret_cast<char*>(&len), sizeof(uint16_t) );
+    size_t sz = static_cast<size_t>(len);
+    while ( !s.fail() && sz-- > 0 ) {
+      s.read( reinterpret_cast<char*>(rid2.u.b), sizeof(commit_id_type) );
+      if ( !s.fail() ) {
+        c.edge_in.push_back( rid2 );
+      }
+    }
+  }
 }
 
 yard_ng::yard_ng()

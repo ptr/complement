@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-19 20:35:19 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-24 20:17:34 ptr>
 
 /*
  * Copyright (c) 2010
@@ -17,6 +17,8 @@ class yard_test
     int EXAM_DECL(revision_in_memory);
     int EXAM_DECL(manifest_from_revision);
     int EXAM_DECL(diff_from_revision);
+    int EXAM_DECL(commit_from_revision1);
+    int EXAM_DECL(commit_from_revision2);
     int EXAM_DECL(access);
     int EXAM_DECL(linear_commits);
     int EXAM_DECL(linear_commits_neg);

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-19 20:42:40 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-24 20:28:46 ptr>
 
 /*
  * Copyright (c) 2010
@@ -100,6 +100,85 @@ int EXAM_IMPL(yard_test::diff_from_revision)
   catch ( const std::invalid_argument& err ) {
     EXAM_ERROR( err.what() );
   }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::commit_from_revision1)
+{
+  yard::revision rev;
+  yard::commit_id_type cid = xmt::uid();
+
+  yard::commit_node c;
+
+  c.dref = -1;
+  c.mid = xmt::uid();
+
+  try {
+    yard::revision_id_type r0 = rev.push( c, cid );
+
+    yard::commit_node c_get;
+
+    rev.get_commit( c_get, cid );
+
+    EXAM_CHECK( c_get.dref == -1 );
+    EXAM_CHECK( c_get.mid == c.mid );
+    EXAM_CHECK( c_get.edge_in.size() == 0 );
+    EXAM_CHECK( c_get.edge_out.size() == 0 );
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::commit_from_revision2)
+{
+  yard::revision rev;
+  yard::commit_id_type cid = xmt::uid();
+  yard::commit_id_type cid1 = xmt::uid();
+
+  yard::commit_node c;
+
+  c.dref = 0;
+  // c.mid = xmt::uid();
+  c.delta = new yard::diff_type;
+
+  yard::revision_id_type rid1 = xmt::uid();
+  yard::revision_id_type rid2 = xmt::uid();
+  yard::revision_id_type rid3 = xmt::uid();
+  yard::revision_id_type rid4 = xmt::uid();
+
+  c.delta->first["/1"] = rid1;
+  c.delta->first["/3"] = rid3;
+  c.delta->second["/2"] = rid2;
+  c.delta->second["/4"] = rid4;
+
+  c.edge_in.push_back( xmt::uid() );
+
+  try {
+    yard::revision_id_type r0 = rev.push( c, cid );
+
+    yard::commit_node c_get;
+
+    rev.get_commit( c_get, cid );
+
+    EXAM_CHECK( c_get.dref == 0 );
+    // EXAM_CHECK( c_get.mid == c.mid );
+    EXAM_CHECK( c_get.edge_in.size() == 1 );
+    EXAM_CHECK( c_get.edge_out.size() == 0 );
+    EXAM_CHECK( c_get.delta != 0 );
+    EXAM_CHECK( c_get.delta->first["/1"] == c.delta->first["/1"] );
+    EXAM_CHECK( c_get.delta->first["/3"] == c.delta->first["/3"] );
+    EXAM_CHECK( c_get.delta->second["/2"] == c.delta->second["/2"] );
+    EXAM_CHECK( c_get.delta->second["/4"] == c.delta->second["/4"] );
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  delete c.delta;
 
   return EXAM_RESULT;
 }
