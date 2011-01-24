@@ -89,13 +89,15 @@ file_address_type append_data(std::fstream& file, const char* data, unsigned int
 
 file_address_type seek_to_end(std::fstream& file, unsigned int size)
 {
+    const unsigned int alignment = 4096;
+
     file.seekp(0, ios_base::end);
     file_address_type address = file.tellp();
 
     int delta = 0;
-    int over = address % block_type::disk_block_size();
+    int over = address % alignment;
     if (over != 0)
-        delta = block_type::disk_block_size() - over;
+        delta = alignment - over;
 
     file.seekp(delta, ios_base::end);
 
@@ -118,6 +120,16 @@ const unsigned int block_type::data_node_nsize = 84;
 block_type::block_type()
 {
     flags_ = 0;
+}
+
+void block_type::set_block_size(unsigned int block_size)
+{
+    block_size_ = block_size;
+}
+
+unsigned int block_type::get_block_size() const
+{
+    return block_size_;
 }
 
 bool block_type::is_root() const
@@ -164,6 +176,7 @@ pair<xmt::uuid_type, xmt::uuid_type> block_type::divide(block_type& other)
         flags_ = flags_ ^ root_node;
     }
     other.flags_ = flags_;
+    other.block_size_ = block_size_;
 
     body_type::iterator middle = body_.begin();
     std::advance(middle, body_.size() / 2);
@@ -216,6 +229,33 @@ block_type::const_iterator block_type::route(const key_type& key) const
     return --body_.end();
 }
 
+void header_type::pack(std::ostream& s) const
+{
+    const unsigned int header_size = 4096;
+    std::ostream::streampos begin_pos = s.tellp();
+
+    stem::__pack_base::__pack(s, version);
+    stem::__pack_base::__pack(s, block_size);
+    stem::__pack_base::__pack(s, address_of_the_root);
+
+    std::ostream::streampos end_pos = s.tellp();
+    assert(end_pos - begin_pos <= header_size);
+
+    unsigned int size = end_pos - begin_pos;
+    while (size != header_size)
+    {
+        s.put(0);
+        ++size;
+    }
+}
+
+void header_type::unpack(std::istream& s)
+{
+    stem::__pack_base::__unpack(s, version);
+    stem::__pack_base::__unpack(s, block_size);
+    stem::__pack_base::__unpack(s, address_of_the_root);
+}
+
 void block_type::pack(std::ostream& s) const
 {
     std::ostream::streampos begin_pos = s.tellp();
@@ -235,10 +275,10 @@ void block_type::pack(std::ostream& s) const
     }
 
     std::ostream::streampos end_pos = s.tellp();
-    assert(end_pos - begin_pos <= disk_block_size());
+    assert(end_pos - begin_pos <= get_block_size());
 
     unsigned int size = end_pos - begin_pos;
-    while (size != disk_block_size())
+    while (size != get_block_size())
     {
         s.put(0);
         ++size;
@@ -261,14 +301,9 @@ void block_type::unpack(std::istream& s)
             stem::__pack_base::__unpack(s, coordinate.size);
         }
         else
-            coordinate.size = disk_block_size();
+            coordinate.size = get_block_size();
         insert(key, coordinate);
     }
-}
-
-unsigned int block_type::disk_block_size()
-{
-    return 4096;
 }
 
 void block_type::set_flags(unsigned int flags)
@@ -286,6 +321,7 @@ void BTree::lookup(coordinate_type& path, const key_type& key)
     while (true)
     {
         block_type& new_block = cache_[path.top()];
+        new_block.set_block_size(header_.block_size);
         file_.seekg(path.top());
         new_block.unpack(file_);
 
@@ -300,7 +336,7 @@ void BTree::lookup(coordinate_type& path, const key_type& key)
 BTree::coordinate_type BTree::lookup(const key_type& key)
 {
     coordinate_type path;
-    path.push(root_address_);
+    path.push(header_.address_of_the_root);
 
     lookup(path, key);
 
@@ -318,20 +354,21 @@ void BTree::insert(coordinate_type path, const key_type& key, const block_coordi
 
         file_.seekp(path.top());
         block.pack(file_);
-        file_address_type address_of_new_block = seek_to_end(file_, block_type::disk_block_size()); 
+        file_address_type address_of_new_block = seek_to_end(file_, header_.block_size);
         new_block.pack(file_);
         cache_[address_of_new_block] = new_block;
 
         key_type new_key = delimiter.second;
         block_coordinate new_coord;
         new_coord.address = address_of_new_block;
-        new_coord.size = block_type::disk_block_size();
+        new_coord.size = header_.block_size;
 
         path.pop();
 
         if (path.empty())
         {
             block_type new_root;
+            new_root.set_block_size(header_.block_size);
             new_root.set_flags(block_type::root_node);
 
             {
@@ -339,8 +376,8 @@ void BTree::insert(coordinate_type path, const key_type& key, const block_coordi
                 zero_key.u.l[0] = zero_key.u.l[1] = 0;
 
                 block_coordinate zero_coord;
-                zero_coord.address = seek_to_end(file_, block_type::disk_block_size());
-                zero_coord.size = block_type::disk_block_size();
+                zero_coord.address = seek_to_end(file_, header_.block_size);
+                zero_coord.size = header_.block_size;
 
                 block.pack(file_);
 
@@ -349,8 +386,8 @@ void BTree::insert(coordinate_type path, const key_type& key, const block_coordi
                 cache_[zero_coord.address] = block;
             }
             new_root.insert(new_key, new_coord);
-            cache_[root_address_] = new_root;
-            file_.seekp(root_address_);
+            cache_[header_.address_of_the_root] = new_root;
+            file_.seekp(header_.address_of_the_root);
             new_root.pack(file_);
         }
         else
@@ -372,17 +409,24 @@ void BTree::init_empty(const char* filename)
 {
     file_.open(filename, ios_base::in | ios_base::out | ios_base::binary | ios_base::trunc);
 
+    header_.version = 0;
+    header_.block_size = 4096;
+    header_.address_of_the_root = 4096;
+    header_.pack(file_);
+
     block_type root;
+    root.set_block_size(header_.block_size);
     root.set_flags(block_type::root_node | block_type::leaf_node);
 
-    root_address_ = seek_to_end(file_, block_type::disk_block_size());
+    unsigned int root_address = seek_to_end(file_, header_.block_size);
+    assert(root_address == header_.address_of_the_root);
     root.pack(file_);
 }
 
 void BTree::init_existed(const char* filename)
 {
     file_.open(filename, ios_base::in | ios_base::out | ios_base::binary);
-    root_address_ = 0;
+    header_.unpack(file_);
 }
 
 void BTree::clear_cache()

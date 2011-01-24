@@ -104,7 +104,8 @@ public:
     void pack(std::ostream& s) const;
     void unpack(std::istream& s);
 
-    static unsigned int disk_block_size();
+    void set_block_size(unsigned int block_size);
+    unsigned int get_block_size() const;
 
     block_type();
 private:
@@ -114,8 +115,19 @@ private:
     key_type min() const;
     key_type max() const;
 
+    unsigned int block_size_;
     unsigned int flags_;
     body_type body_;
+};
+
+struct header_type
+{
+    uint32_t version;
+    uint32_t block_size;
+    uint32_t address_of_the_root;
+
+    void pack(std::ostream& s) const;
+    void unpack(std::istream& s);
 };
 
 class BTree
@@ -138,7 +150,7 @@ private:
 
     std::fstream file_;
     std::map<file_address_type, block_type> cache_;
-    file_address_type root_address_;
+    header_type header_;
 };
 
 struct revision_node

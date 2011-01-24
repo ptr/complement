@@ -198,6 +198,9 @@ int EXAM_IMPL(yard_test::pack_unpack)
     using namespace yard;
 
     block_type block[4];
+    for (int i = 0; i < 4; ++i)
+        block[i].set_block_size(4096);
+
     block[0].set_flags(block_type::leaf_node);
     block[1].set_flags(block_type::leaf_node | block_type::root_node);
     block[2].set_flags(block_type::root_node);
@@ -222,6 +225,7 @@ int EXAM_IMPL(yard_test::pack_unpack)
         block[k].pack(ss);
 
         block_type new_block;
+        new_block.set_block_size(4096);
         ss.seekg(0, ios_base::beg);
         new_block.unpack(ss);
 
