@@ -112,8 +112,9 @@ private:
     key_type min() const;
     key_type max() const;
 
-    unsigned int block_size_;
-    unsigned int flags_;
+    uint32_t block_size_;
+    uint32_t flags_;
+
     body_type body_;
 };
 

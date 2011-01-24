@@ -143,7 +143,7 @@ bool block_type::is_overfilled() const
 {
     int data_node_size = (
         block_size_ -
-        2 * packer_traits<unsigned int, std_packer>::max_size()
+        3 * packer_traits<uint32_t, std_packer>::max_size()
                          ) /
                          (
         packer_traits<key_type, std_packer>::max_size() +
@@ -153,7 +153,7 @@ bool block_type::is_overfilled() const
 
     int index_node_size = (
         block_size_ -
-        2 * packer_traits<unsigned int, std_packer>::max_size()
+        3 * packer_traits<uint32_t, std_packer>::max_size()
                          ) /
                          (
         packer_traits<key_type, std_packer>::max_size() +
@@ -276,6 +276,7 @@ void block_type::pack(std::ostream& s) const
 {
     std::ostream::streampos begin_pos = s.tellp();
 
+    std_packer::pack<uint32_t>(s, 0);
     std_packer::pack(s, flags_);
     std_packer::pack(s, body_.size());
     for (const_iterator it = body_.begin();
@@ -303,6 +304,10 @@ void block_type::pack(std::ostream& s) const
 
 void block_type::unpack(std::istream& s)
 {
+    uint32_t version;
+    std_packer::unpack(s, version);
+    assert(version == 0);
+
     std_packer::unpack(s, flags_);
     body_type::size_type size;
     std_packer::unpack(s, size);
