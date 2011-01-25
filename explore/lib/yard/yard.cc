@@ -426,12 +426,12 @@ const block_type& BTree::get(const coordinate_type& coordinate)
     return cache_[coordinate.top()];
 }
 
-void BTree::init_empty(const char* filename)
+void BTree::init_empty(const char* filename, unsigned int block_size)
 {
     file_.open(filename, ios_base::in | ios_base::out | ios_base::binary | ios_base::trunc);
 
     header_.version = 0;
-    header_.block_size = 4096;
+    header_.block_size = block_size;
     header_.address_of_the_root = 4096;
     header_.pack(file_);
 

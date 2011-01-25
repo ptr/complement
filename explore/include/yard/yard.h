@@ -138,7 +138,7 @@ public:
     const block_type& get(const coordinate_type& coordinate);
     void insert(coordinate_type path, const key_type& key, const block_coordinate& coord);
 
-    void init_empty(const char* filename);
+    void init_empty(const char* filename, unsigned int block_size);
     void init_existed(const char* filename);
 
     file_address_type add_value(const char* data, unsigned int size);
