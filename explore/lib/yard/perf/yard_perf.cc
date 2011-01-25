@@ -26,14 +26,9 @@ yard_perf::~yard_perf()
 {
 }
 
-int EXAM_IMPL(yard_perf::consecutive_insert)
+void fill_consecutive(yard::BTree& tree, int count)
 {
     using namespace yard;
-
-    BTree tree;
-    tree.init_empty("/tmp/btree_consecutive");
-
-    const int count = 100000;
     for (int i = 0; i < count; ++i)
     {
         block_type::key_type key;
@@ -48,16 +43,37 @@ int EXAM_IMPL(yard_perf::consecutive_insert)
 
         tree.insert(coordinate, key, coord);
     }
+}
+
+int EXAM_IMPL(yard_perf::consecutive_insert)
+{
+    using namespace yard;
+
+    BTree tree;
+    tree.init_empty("/tmp/btree_consecutive", 4096);
+
+    fill_consecutive(tree, 10000);
     return EXAM_RESULT;
 }
 
-int EXAM_IMPL(yard_perf::random_insert)
+int EXAM_IMPL(yard_perf::consecutive_insert_big)
+{
+    using namespace yard;
+
+    BTree tree;
+    tree.init_empty("/tmp/btree_consecutive", 4096);
+
+    fill_consecutive(tree, 1000000);
+    return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_perf::random_insert_big)
 {
     using namespace yard;
     BTree tree;
-    tree.init_empty("/tmp/btree_random");
+    tree.init_empty("/tmp/btree_random", 4096);
 
-    const int count = 100000;
+    const int count = 1000000;
 
     for (int i = 0; i < count; ++i)
     {
@@ -87,7 +103,7 @@ int EXAM_IMPL(yard_perf::consecutive_insert_with_data)
         data[i] = (char)(rand() % 256);
 
     BTree tree;
-    tree.init_empty("/tmp/btree_consecutive_with_data");
+    tree.init_empty("/tmp/btree_consecutive_with_data", 4096);
 
     const int count = 40000;
     for (int i = 0; i < count; ++i)
@@ -116,7 +132,7 @@ int EXAM_IMPL(yard_perf::random_insert_with_data)
         data[i] = (char)(rand() % 256);
 
     BTree tree;
-    tree.init_empty("/tmp/btree_random_with_data");
+    tree.init_empty("/tmp/btree_random_with_data", 4096);
 
     const int count = 40000;
     for (int i = 0; i < count; ++i)
@@ -151,7 +167,7 @@ int EXAM_IMPL(yard_perf::multiple_files)
     {
         stringstream ss("/tmp/btree_", ios_base::ate | ios_base::out);
         ss << i;
-        trees[i].init_empty(ss.str().c_str());
+        trees[i].init_empty(ss.str().c_str(), 4096);
     }
 
     const int count = 5000;
