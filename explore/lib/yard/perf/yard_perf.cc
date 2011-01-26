@@ -66,6 +66,7 @@ int EXAM_IMPL(yard_perf::unpacking)
     const int count = 10000;
     for (int i = 0; i < count; ++i)
     {
+        file.seekg(i* 4096, ios_base::beg);
         block.unpack(file);
     }
 
