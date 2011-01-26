@@ -295,10 +295,10 @@ void block_type::pack(std::ostream& s) const
     assert(end_pos - begin_pos <= get_block_size());
 
     unsigned int size = end_pos - begin_pos;
-    while (size != get_block_size())
+    if (size != get_block_size())
     {
-        s.put(0);
-        ++size;
+        vector<char> buffer(get_block_size() - size);
+        s.write(&buffer[0], buffer.size());
     }
 }
 
