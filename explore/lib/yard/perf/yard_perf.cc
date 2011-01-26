@@ -55,6 +55,23 @@ int EXAM_IMPL(yard_perf::packing)
     return EXAM_RESULT;
 }
 
+int EXAM_IMPL(yard_perf::unpacking)
+{
+    using namespace yard;
+    std::ifstream file("/tmp/pack_unpack", ios_base::in);
+
+    block_type block;
+    block.set_block_size(4096);
+
+    const int count = 10000;
+    for (int i = 0; i < count; ++i)
+    {
+        block.unpack(file);
+    }
+
+    return EXAM_RESULT;
+}
+
 void fill_consecutive(yard::BTree& tree, int count)
 {
     using namespace yard;

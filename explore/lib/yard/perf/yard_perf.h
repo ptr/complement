@@ -31,6 +31,7 @@ class yard_perf
     ~yard_perf();
 
     int EXAM_DECL(packing);
+    int EXAM_DECL(unpacking);
 
     int EXAM_DECL(consecutive_insert);
     int EXAM_DECL(consecutive_insert_big);
