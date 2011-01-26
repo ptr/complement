@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <09/10/05 17:14:48 ptr>
+# -*- Makefile -*- Time-stamp: <2011-01-26 14:00:06 ptr>
 
 SRCROOT := ../..
 COMPILER_NAME := gcc
@@ -54,6 +54,12 @@ endif
 
 depend::
 	$(MAKE) -C ut depend
+
+clean::
+	$(MAKE) -C ut clean
+
+distclean::
+	$(MAKE) -C ut distclean
 
 # dbg-shared:	DEFS += -DDEBUG
 
