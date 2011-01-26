@@ -108,6 +108,7 @@ int EXAM_IMPL(yard_test::block_type_divide)
     using namespace yard;
 
     block_type block;
+    block.set_block_size(4096);
     block.set_flags(block_type::leaf_node);
 
     typedef vector<pair<block_type::key_type, block_coordinate> > data_type;
