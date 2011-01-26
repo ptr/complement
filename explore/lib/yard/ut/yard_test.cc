@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-24 20:28:46 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-26 14:29:32 ptr>
 
 /*
  * Copyright (c) 2010
@@ -124,7 +124,6 @@ int EXAM_IMPL(yard_test::commit_from_revision1)
     EXAM_CHECK( c_get.dref == -1 );
     EXAM_CHECK( c_get.mid == c.mid );
     EXAM_CHECK( c_get.edge_in.size() == 0 );
-    EXAM_CHECK( c_get.edge_out.size() == 0 );
   }
   catch ( const std::invalid_argument& err ) {
     EXAM_ERROR( err.what() );
@@ -167,7 +166,6 @@ int EXAM_IMPL(yard_test::commit_from_revision2)
     EXAM_CHECK( c_get.dref == 0 );
     // EXAM_CHECK( c_get.mid == c.mid );
     EXAM_CHECK( c_get.edge_in.size() == 1 );
-    EXAM_CHECK( c_get.edge_out.size() == 0 );
     EXAM_CHECK( c_get.delta != 0 );
     EXAM_CHECK( c_get.delta->first["/1"] == c.delta->first["/1"] );
     EXAM_CHECK( c_get.delta->first["/3"] == c.delta->first["/3"] );

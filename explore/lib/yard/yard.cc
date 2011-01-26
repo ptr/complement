@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-24 20:02:04 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-26 14:32:28 ptr>
 
 /*
  *
@@ -175,6 +175,7 @@ const std::string& revision::get( const revision_id_type& rid ) throw( std::inva
   revisions_container_type::iterator i = r.find( rid );
 
   if ( i == r.end() ) {
+    // Try to upload from disk
     throw std::invalid_argument( "invalid revision" );
   }
 
@@ -186,6 +187,7 @@ void revision::get_manifest( manifest_type& m, const revision_id_type& rid ) thr
   revisions_container_type::iterator i = r.find( rid );
 
   if ( i == r.end() ) {
+    // Try to upload from disk
     throw std::invalid_argument( "invalid revision" );
   }
 
@@ -217,6 +219,7 @@ void revision::get_diff( diff_type& d, const revision_id_type& rid ) throw( std:
   revisions_container_type::iterator i = r.find( rid );
 
   if ( i == r.end() ) {
+    // Try to upload from disk
     throw std::invalid_argument( "invalid revision" );
   }
 
@@ -266,6 +269,7 @@ void revision::get_commit( commit_node& c, const revision_id_type& rid ) throw( 
   revisions_container_type::iterator i = r.find( rid );
 
   if ( i == r.end() ) {
+    // Try to upload from disk
     throw std::invalid_argument( "invalid revision" );
   }
 
@@ -317,21 +321,29 @@ void yard_ng::open_commit_delta( const commit_id_type& base, const commit_id_typ
   commit_container_type::const_iterator i = c.find( base );
 
   if ( i == c.end() ) {
-    // ToDo: try to upload from disc
-    // throw invalid_argument
-    return;
+    try {
+      commit_container_type::iterator k;
+      commit_node& node = c[base];
+      r.get_commit( node, base );
+    }
+    catch ( const invalid_argument& ) {
+      c.erase( base );
+      // throw invalid_argument
+      return;
+    }
+    i = c.find( base );
   }
 
-  cache[m].first = make_pair( base, base );
-  cached_manifest_type::const_iterator j = cached_manifest.find( i->second.mid );
-  if ( j == cached_manifest.end() ) {
-    try {
+  try {
+    if ( cached_manifest.find( i->second.mid ) == cached_manifest.end() ) {
       r.get_manifest( cached_manifest[i->second.mid], i->second.mid );
     }
-    catch ( std::invalid_argument& ) {
-      // ToDo: try to upload from disc
-      // throw runtime_error( "no such manifest" )
-    }
+    cache[m].first = make_pair( base, base );
+  }
+  catch ( std::invalid_argument& ) {
+    cached_manifest.erase( i->second.mid );
+    c.erase( base );
+    // throw runtime_error( "no such manifest" )
   }
 }
 
@@ -343,8 +355,7 @@ void yard_ng::close_commit_delta( const commit_id_type& m )
     return;
   }
 
-  if ( (i->second.first.first != i->second.first.second) /* ||
-                                                            !c[i->second.first.first].edge_out.empty() */ ) {
+  if ( (i->second.first.first != i->second.first.second) ) {
     diff_type diff;
     manifest_id_type mid = aggregate_delta( i->second.first.first, diff );
     for ( manifest_type::const_iterator k = i->second.second.first.begin(); k != i->second.second.first.end(); ++k ) {
@@ -370,15 +381,12 @@ void yard_ng::close_commit_delta( const commit_id_type& m )
     swap( cached_manifest[rid], manifest );
     c[m].edge_in.push_back( i->second.first.first );
     c[m].edge_in.push_back( i->second.first.second );
-    c[i->second.first.first].edge_out.push_back( m );
-    c[i->second.first.second].edge_out.push_back( m );
   } else if ( i->second.first.first != xmt::nil_uuid ) {
     c[m].mid = c[i->second.first.first].mid; // check that it present?
     c[m].delta = new diff_type;
     swap( *c[m].delta, i->second.second );
     c[m].edge_in.push_back( i->second.first.first );
     c[m].dref = c[m].edge_in.size() - 1;
-    c[i->second.first.first].edge_out.push_back( m );
   } else { // ab ovo
     manifest_type manifest;
 
@@ -393,7 +401,6 @@ void yard_ng::close_commit_delta( const commit_id_type& m )
     c[m].dref = -1;
     swap( cached_manifest[rid], manifest );
     c[m].edge_in.push_back( i->second.first.first );
-    c[i->second.first.first].edge_out.push_back( m );
   }
 
   leafs_container_type::iterator j = find( leaf.begin(), leaf.end(), i->second.first.first );
@@ -482,8 +489,16 @@ const std::string& yard_ng::get( const commit_id_type& id, const std::string& na
   commit_container_type::const_iterator i = c.find( id );
 
   if ( i == c.end() ) {
-    // ToDo: try to upload from disc
-    throw std::invalid_argument( "invalid commit" );
+    try {
+      commit_container_type::iterator k;
+      commit_node& node = c[id];
+      r.get_commit( node, id );
+    }
+    catch ( const invalid_argument& ) {
+      c.erase( id );
+      throw std::invalid_argument( "invalid commit" );
+    }
+    i = c.find( id );
   }
 
   if ( i->second.dref != -1 ) { // this is a delta
@@ -495,7 +510,7 @@ const std::string& yard_ng::get( const commit_id_type& id, const std::string& na
         r.get_manifest( cached_manifest[mid], mid );
       }
       catch ( std::invalid_argument& ) {
-        // ToDo: try to upload from disc
+        cached_manifest.erase( mid );
         throw std::runtime_error( "no such manifest" );
       }
 
@@ -536,7 +551,7 @@ const std::string& yard_ng::get( const commit_id_type& id, const std::string& na
       r.get_manifest( cached_manifest[i->second.mid], i->second.mid );
     }
     catch ( std::invalid_argument& ) {
-      // ToDo: try to upload from disc
+      cached_manifest.erase( i->second.mid );
       throw std::runtime_error( "no such manifest" );
     }
 
@@ -574,26 +589,41 @@ diff_type yard_ng::diff( const commit_id_type& from, const commit_id_type& to )
   commit_container_type::const_iterator i = c.find( from );
 
   if ( i == c.end() ) {
-    // ToDo: try to upload from disc
-    throw std::invalid_argument( "invalid commit id" );
+    try {
+      commit_container_type::iterator k;
+      commit_node& node = c[from];
+      r.get_commit( node, from );
+    }
+    catch ( const invalid_argument& ) {
+      c.erase( from );
+      throw std::invalid_argument( "invalid commit id" );
+    }
+    i = c.find( from );
   }
 
   commit_container_type::const_iterator j = c.find( to );
 
   if ( j == c.end() ) {
-    // ToDo: try to upload from disc
-    throw std::invalid_argument( "invalid commit id" );
+    try {
+      commit_container_type::iterator k;
+      commit_node& node = c[to];
+      r.get_commit( node, to );
+    }
+    catch ( const invalid_argument& ) {
+      c.erase( to );
+      throw std::invalid_argument( "invalid commit id" );
+    }
+    j = c.find( to );
   }
 
   cached_manifest_type::const_iterator mf = cached_manifest.find( i->second.mid );
 
   if ( mf == cached_manifest.end() ) {
-    cerr << HERE << endl;
     try {
       r.get_manifest( cached_manifest[i->second.mid], i->second.mid );
     }
     catch ( std::invalid_argument& ) {
-      // ToDo: try to upload from disc
+      cached_manifest.erase( i->second.mid );
       throw std::runtime_error( "no such manifest" );
     }
 
@@ -603,12 +633,11 @@ diff_type yard_ng::diff( const commit_id_type& from, const commit_id_type& to )
   cached_manifest_type::const_iterator mt = cached_manifest.find( j->second.mid );
 
   if ( mt == cached_manifest.end() ) {
-    cerr << HERE << endl;
     try {
       r.get_manifest( cached_manifest[j->second.mid], j->second.mid );
     }
     catch ( std::invalid_argument& ) {
-      // ToDo: try to upload from disc
+      cached_manifest.erase( j->second.mid );
       throw std::runtime_error( "no such manifest" );
     }
 
@@ -777,13 +806,31 @@ commit_id_type yard_ng::common_ancestor( const commit_id_type& left, const commi
   commit_container_type::iterator l = c.find( left );
 
   if ( l == c.end() ) {
-    throw invalid_argument( "no such commit" );
+    try {
+      commit_container_type::iterator k;
+      commit_node& node = c[left];
+      r.get_commit( node, left );
+    }
+    catch ( const invalid_argument& ) {
+      c.erase(left);
+      throw invalid_argument( "no such commit" );
+    }
+    l = c.find( left );
   }
 
   commit_container_type::iterator r = c.find( right );
 
   if ( r == c.end() ) {
-    throw invalid_argument( "no such commit" );
+    try {
+      commit_container_type::iterator k;
+      commit_node& node = c[right];
+      yard_ng::r.get_commit( node, right );
+    }
+    catch ( const invalid_argument& ) {
+      c.erase(right);
+      throw invalid_argument( "no such commit" );
+    }
+    r = c.find( right );
   }
 
   if ( left == right ) {
@@ -961,9 +1008,16 @@ int yard_ng::merge( const commit_id_type& merge_, const commit_id_type& left, co
   commit_container_type::const_iterator k = c.find( left );
 
   if ( k == c.end() ) {
-    // ToDo: try to upload from disc
-    // throw invalid_argument
-    // return;
+    try {
+      commit_container_type::iterator p;
+      commit_node& node = c[left];
+      r.get_commit( node, left );
+    }
+    catch ( const invalid_argument& ) {
+      c.erase( left );
+      throw runtime_error( "no commit" );
+    }
+    k = c.find( left );
   }
 
   for ( manifest_type::iterator i = rd.first.begin(); i != rd.first.end(); ++i ) {

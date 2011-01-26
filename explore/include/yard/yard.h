@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-24 19:42:11 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-26 14:29:38 ptr>
 
 /*
  *
@@ -62,7 +62,6 @@ struct commit_node
 
     typedef std::list<commit_id_type> edge_container_type;
     edge_container_type edge_in;
-    edge_container_type edge_out;
 };
 
 class metainfo
