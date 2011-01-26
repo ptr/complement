@@ -52,7 +52,9 @@ int main( int argc, const char** argv )
 
   yard_perf p;
 
-  t.add(&yard_perf::consecutive_insert, p, "consecutive insert (10^4 entires)");
+  t.add(&yard_perf::packing, p, "save to file a block 10^4 times");
+
+  t.add(&yard_perf::consecutive_insert, p, "consecutive insert (10^5 entires)");
   t.add(&yard_perf::consecutive_insert_big, p, "consecutive insert (10^6 entires)");
   t.add(&yard_perf::random_insert_big, p, "random insert (10^6 entires)");
   t.add(&yard_perf::consecutive_insert_with_data, p, "consecutive insert with data (n entires)");

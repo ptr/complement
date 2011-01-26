@@ -26,6 +26,35 @@ yard_perf::~yard_perf()
 {
 }
 
+int EXAM_IMPL(yard_perf::packing)
+{
+    using namespace yard;
+    std::ofstream file("/tmp/pack_unpack", ios_base::out | ios_base::trunc);
+
+    block_type block;
+    block.set_block_size(4096);
+    block.set_flags(block_type::leaf_node);
+
+    for (int i = 0; i < 50; ++i)
+    {
+        block_type::key_type key;
+        key.u.l[0] = 3*i;
+        key.u.l[1] = 0;
+
+        block_coordinate coord;
+        coord.address = i;
+        coord.size = 2*i;
+
+        block.insert(key, coord);
+    }
+
+    const int count = 10000;
+    for (int i = 0; i < count; ++i)
+        block.pack(file);
+
+    return EXAM_RESULT;
+}
+
 void fill_consecutive(yard::BTree& tree, int count)
 {
     using namespace yard;
@@ -52,7 +81,7 @@ int EXAM_IMPL(yard_perf::consecutive_insert)
     BTree tree;
     tree.init_empty("/tmp/btree_consecutive", 4096);
 
-    fill_consecutive(tree, 10000);
+    fill_consecutive(tree, 100000);
     return EXAM_RESULT;
 }
 
