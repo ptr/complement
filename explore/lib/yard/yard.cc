@@ -12,6 +12,8 @@
 // #include "yard.h"
 #include <yard/yard.h>
 
+#include <yard/pack.h>
+
 #include <inttypes.h>
 #include <mt/uid.h>
 #include <fstream>
@@ -25,6 +27,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <cassert>
 
 #if !defined(STLPORT) && defined(__GNUC__)
 #  include <ext/functional>
@@ -70,6 +73,388 @@ const std::string& metainfo::get( int key )
                                                         select1st<container_type::value_type>() ) );
 
   return i != rec.end() ? i->second : empty;
+}
+
+void write_data(std::fstream& file, file_address_type address, const char* data, unsigned int size)
+{
+    file.seekp(address);
+    file.write(data, size);
+}
+
+file_address_type append_data(std::fstream& file, const char* data, unsigned int size)
+{
+    file_address_type address = seek_to_end(file, size);
+    write_data(file, address, data, size);
+
+    return address;
+}
+
+file_address_type seek_to_end(std::fstream& file, unsigned int size)
+{
+    const unsigned int alignment = 4096;
+
+    file.seekp(0, ios_base::end);
+    file_address_type address = file.tellp();
+
+    int delta = 0;
+    int over = address % alignment;
+    if (over != 0)
+        delta = alignment - over;
+
+    file.seekp(delta, ios_base::end);
+
+    return address + delta;
+}
+
+
+void get_data(std::fstream& file, file_address_type address, char* data, unsigned int size)
+{
+    file.seekg(address);
+    file.read(data, size);
+}
+
+const unsigned int block_type::root_node = 1;
+const unsigned int block_type::leaf_node = 2;
+
+block_type::block_type()
+{
+    flags_ = 0;
+}
+
+void block_type::set_block_size(unsigned int block_size)
+{
+    block_size_ = block_size;
+}
+
+unsigned int block_type::get_block_size() const
+{
+    return block_size_;
+}
+
+bool block_type::is_root() const
+{
+    return ((flags_ & root_node) == root_node);
+}
+
+bool block_type::is_leaf() const
+{
+    return ((flags_ & leaf_node) == leaf_node);
+}
+
+bool block_type::is_overfilled() const
+{
+    int data_node_size = (
+        block_size_ -
+        3 * packer_traits<uint32_t, std_packer>::max_size()
+                         ) /
+                         (
+        packer_traits<key_type, std_packer>::max_size() +
+        packer_traits<file_address_type, std_packer>::max_size() +
+        packer_traits<size_t, std_packer>::max_size()
+                         );
+
+    int index_node_size = (
+        block_size_ -
+        3 * packer_traits<uint32_t, std_packer>::max_size()
+                         ) /
+                         (
+        packer_traits<key_type, std_packer>::max_size() +
+        packer_traits<file_address_type, std_packer>::max_size()
+                         );
+
+    if (is_leaf())
+        return (body_.size() >= data_node_size);
+    else
+        return (body_.size() >= index_node_size);
+}
+
+void block_type::insert(const key_type& key, const block_coordinate& coordinate)
+{
+    body_[key] = coordinate;
+}
+
+xmt::uuid_type block_type::min() const
+{
+    assert(!body_.empty());
+    return body_.begin()->first;
+}
+
+xmt::uuid_type block_type::max() const
+{
+    assert(!body_.empty());
+    return (--body_.end())->first;
+}
+
+pair<xmt::uuid_type, xmt::uuid_type> block_type::divide(block_type& other)
+{
+    assert(is_overfilled());
+
+    if (is_root())
+    {
+        flags_ = flags_ ^ root_node;
+    }
+    other.flags_ = flags_;
+    other.block_size_ = block_size_;
+
+    body_type::iterator middle = body_.begin();
+    std::advance(middle, body_.size() / 2);
+
+    other.body_.insert(middle, body_.end());
+    body_.erase(middle, body_.end());
+
+    pair<key_type, key_type> result;
+    result.first = max();
+    result.second = other.min();
+
+    if (!other.is_leaf())
+    {
+        //add erasing of the first key in the other
+    }
+    return result;
+}
+
+block_type::const_iterator block_type::begin() const
+{
+    return body_.begin();
+}
+
+block_type::const_iterator block_type::end() const
+{
+    return body_.end();
+}
+
+block_type::const_iterator block_type::lookup(const key_type& key) const
+{
+    return body_.find(key);
+}
+
+block_type::const_iterator block_type::route(const key_type& key) const
+{
+    assert(!is_leaf());
+    assert(!body_.empty());
+
+    if (body_.empty())
+        return body_.end();
+
+    for (const_iterator it = ++body_.begin();
+         it != body_.end();
+         ++it)
+    {
+        if (it->first > key)
+            return --it;
+    }
+
+    return --body_.end();
+}
+
+void header_type::pack(std::ostream& s) const
+{
+    const unsigned int header_size = 4096;
+    std::ostream::streampos begin_pos = s.tellp();
+
+    std_packer::pack(s, version);
+    std_packer::pack(s, block_size);
+    std_packer::pack(s, address_of_the_root);
+
+    std::ostream::streampos end_pos = s.tellp();
+    assert(end_pos - begin_pos <= header_size);
+
+    unsigned int size = end_pos - begin_pos;
+    while (size != header_size)
+    {
+        s.put(0);
+        ++size;
+    }
+}
+
+void header_type::unpack(std::istream& s)
+{
+    std_packer::unpack(s, version);
+    std_packer::unpack(s, block_size);
+    std_packer::unpack(s, address_of_the_root);
+}
+
+void block_type::pack(std::ostream& s) const
+{
+    std::ostream::streampos begin_pos = s.tellp();
+
+    std_packer::pack<uint32_t>(s, 0);
+    std_packer::pack(s, flags_);
+    std_packer::pack(s, body_.size());
+    for (const_iterator it = body_.begin();
+         it != body_.end();
+         ++it)
+    {
+        std_packer::pack(s, it->first);
+        std_packer::pack(s, it->second.address);
+        if (is_leaf())
+        {
+            std_packer::pack(s, it->second.size);
+        }
+    }
+
+    std::ostream::streampos end_pos = s.tellp();
+    assert(end_pos - begin_pos <= get_block_size());
+
+    unsigned int size = end_pos - begin_pos;
+    if (size != get_block_size())
+    {
+        vector<char> buffer(get_block_size() - size);
+        s.write(&buffer[0], buffer.size());
+    }
+}
+
+void block_type::unpack(std::istream& s)
+{
+    uint32_t version;
+    std_packer::unpack(s, version);
+    assert(version == 0);
+
+    std_packer::unpack(s, flags_);
+    body_type::size_type size;
+    std_packer::unpack(s, size);
+    for (body_type::size_type i = 0; i < size; ++i)
+    {
+        key_type key;
+        block_coordinate coordinate;
+        std_packer::unpack(s, key);
+        std_packer::unpack(s, coordinate.address);
+        if (is_leaf())
+        {
+            std_packer::unpack(s, coordinate.size);
+        }
+        else
+            coordinate.size = get_block_size();
+        insert(key, coordinate);
+    }
+}
+
+void block_type::set_flags(unsigned int flags)
+{
+    flags_ = flags;
+}
+
+file_address_type BTree::add_value(const char* data, unsigned int size)
+{
+    return append_data(file_, data, size);
+}
+
+void BTree::lookup(coordinate_type& path, const key_type& key)
+{
+    while (true)
+    {
+        block_type& new_block = cache_[path.top()];
+        new_block.set_block_size(header_.block_size);
+        file_.seekg(path.top());
+        new_block.unpack(file_);
+
+        if (new_block.is_leaf())
+            return;
+
+        block_type::const_iterator next_block = new_block.route(key);
+        path.push(next_block->second.address);
+    }
+}
+
+BTree::coordinate_type BTree::lookup(const key_type& key)
+{
+    coordinate_type path;
+    path.push(header_.address_of_the_root);
+
+    lookup(path, key);
+
+    return path;
+}
+
+void BTree::insert(coordinate_type path, const key_type& key, const block_coordinate& coord)
+{
+    block_type& block = cache_[path.top()];
+    block.insert(key, coord);
+    if (block.is_overfilled())
+    {
+        block_type new_block;
+        pair<xmt::uuid_type, xmt::uuid_type> delimiter = block.divide(new_block);
+
+        file_.seekp(path.top());
+        block.pack(file_);
+        file_address_type address_of_new_block = seek_to_end(file_, header_.block_size);
+        new_block.pack(file_);
+        cache_[address_of_new_block] = new_block;
+
+        key_type new_key = delimiter.second;
+        block_coordinate new_coord;
+        new_coord.address = address_of_new_block;
+        new_coord.size = header_.block_size;
+
+        path.pop();
+
+        if (path.empty())
+        {
+            block_type new_root;
+            new_root.set_block_size(header_.block_size);
+            new_root.set_flags(block_type::root_node);
+
+            {
+                key_type zero_key;
+                zero_key.u.l[0] = zero_key.u.l[1] = 0;
+
+                block_coordinate zero_coord;
+                zero_coord.address = seek_to_end(file_, header_.block_size);
+                zero_coord.size = header_.block_size;
+
+                block.pack(file_);
+
+                new_root.insert(zero_key, zero_coord);
+
+                cache_[zero_coord.address] = block;
+            }
+            new_root.insert(new_key, new_coord);
+            cache_[header_.address_of_the_root] = new_root;
+            file_.seekp(header_.address_of_the_root);
+            new_root.pack(file_);
+        }
+        else
+            insert(path, new_key, new_coord);
+    }
+    else
+    {
+        file_.seekp(path.top());
+        block.pack(file_);
+    }
+}
+
+const block_type& BTree::get(const coordinate_type& coordinate)
+{
+    return cache_[coordinate.top()];
+}
+
+void BTree::init_empty(const char* filename, unsigned int block_size)
+{
+    file_.open(filename, ios_base::in | ios_base::out | ios_base::binary | ios_base::trunc);
+
+    header_.version = 0;
+    header_.block_size = block_size;
+    header_.address_of_the_root = 4096;
+    header_.pack(file_);
+
+    block_type root;
+    root.set_block_size(header_.block_size);
+    root.set_flags(block_type::root_node | block_type::leaf_node);
+
+    unsigned int root_address = seek_to_end(file_, header_.block_size);
+    assert(root_address == header_.address_of_the_root);
+    root.pack(file_);
+}
+
+void BTree::init_existed(const char* filename)
+{
+    file_.open(filename, ios_base::in | ios_base::out | ios_base::binary);
+    header_.unpack(file_);
+}
+
+void BTree::clear_cache()
+{
+    cache_.clear();
 }
 
 revision_id_type revision::push( const void* data, size_t sz )

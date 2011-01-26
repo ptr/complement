@@ -38,6 +38,7 @@
 #include <memory>
 #include <map>
 #include <set>
+#include <stack>
 
 namespace yard {
 
@@ -76,6 +77,93 @@ class metainfo
     typedef std::list<record_type> container_type;
 
     container_type rec;
+};
+
+typedef unsigned int file_address_type;
+
+file_address_type seek_to_end(std::fstream& file, unsigned int size);
+
+struct block_coordinate
+{
+    file_address_type address;
+    size_t size;
+};
+
+class block_type
+{
+public:
+    typedef xmt::uuid_type key_type;
+    typedef std::map<key_type, block_coordinate> body_type;
+    typedef body_type::const_iterator const_iterator;
+
+    static const unsigned int root_node;
+    static const unsigned int leaf_node;
+
+    bool is_root() const;
+    bool is_leaf() const;
+
+    void set_flags(unsigned int flags);
+
+    void insert(const key_type& key, const block_coordinate& coordinate);
+
+    const_iterator begin() const;
+    const_iterator end() const;
+
+    const_iterator lookup(const key_type& key) const;
+    const_iterator route(const key_type& key) const;
+
+    bool is_overfilled() const;
+
+    std::pair<key_type, key_type> divide(block_type& other);
+
+    void pack(std::ostream& s) const;
+    void unpack(std::istream& s);
+
+    void set_block_size(unsigned int block_size);
+    unsigned int get_block_size() const;
+
+    block_type();
+private:
+    key_type min() const;
+    key_type max() const;
+
+    uint32_t block_size_;
+    uint32_t flags_;
+
+    body_type body_;
+};
+
+struct header_type
+{
+    uint32_t version;
+    uint32_t block_size;
+    uint32_t address_of_the_root;
+
+    void pack(std::ostream& s) const;
+    void unpack(std::istream& s);
+};
+
+class BTree
+{
+public:
+    typedef block_type::key_type key_type;
+    typedef std::stack<file_address_type> coordinate_type;
+
+    coordinate_type lookup(const key_type& key);
+    const block_type& get(const coordinate_type& coordinate);
+    void insert(coordinate_type path, const key_type& key, const block_coordinate& coord);
+
+    void init_empty(const char* filename, unsigned int block_size);
+    void init_existed(const char* filename);
+
+    file_address_type add_value(const char* data, unsigned int size);
+    void clear_cache();
+private:
+    void lookup(coordinate_type& path, const key_type& key);
+
+    std::fstream file_;
+    std::map<file_address_type, block_type> cache_;
+    header_type header_;
 };
 
 struct revision_node

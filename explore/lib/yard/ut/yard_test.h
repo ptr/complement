@@ -13,6 +13,14 @@
 class yard_test
 {
   public:
+    int EXAM_DECL(block_type_lookup);
+    int EXAM_DECL(block_type_route);
+    int EXAM_DECL(block_type_divide);
+    int EXAM_DECL(pack_unpack);
+
+    int EXAM_DECL(btree_basic);
+    int EXAM_DECL(btree_random);
+    int EXAM_DECL(btree_init_existed);
     // yard ng
     int EXAM_DECL(revision_in_memory);
     int EXAM_DECL(manifest_from_revision);

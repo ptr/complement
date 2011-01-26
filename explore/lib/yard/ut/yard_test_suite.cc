@@ -22,6 +22,17 @@ int main( int argc, const char** argv )
   exam::test_suite t( "libyard test suite" );
   yard_test test;
 
+  t.add( &yard_test::pack_unpack, test, "pack-unpack test",
+    t.add( &yard_test::block_type_divide, test, "block route divide test",
+      t.add( &yard_test::block_type_route, test, "block route test",
+        t.add( &yard_test::block_type_lookup, test, "block lookup test"
+    ) ) ) );
+
+  t.add( &yard_test::btree_random, test, "Btree random test",
+    t.add( &yard_test::btree_basic, test, "BTree test" ) );
+
+  t.add( &yard_test::btree_init_existed, test, "Btree init existed test");
+
   t.add( &yard_test::manifest, test, "manifest",
     t.add( &yard_test::put_object, test, "put object",
       t.add( &yard_test::put, test, "put revision",

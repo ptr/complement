@@ -19,6 +19,382 @@
 // using namespace yard;
 using namespace std;
 
+int EXAM_IMPL(yard_test::block_type_lookup)
+{
+    using namespace yard;
+
+    block_type block;
+    block.set_flags(block_type::leaf_node);
+
+    for (int i = 0; i < 50; ++i)
+    {
+        block_type::key_type key;
+        key.u.l[0] = 3*i;
+        key.u.l[1] = 0;
+
+        block_coordinate coord;
+        coord.address = i;
+        coord.size = 2*i;
+
+        block.insert(key, coord);
+    }
+
+    for (int i = 0; i < 50; ++i)
+    {
+        block_type::key_type key;
+        key.u.l[0] = 3*i;
+        key.u.l[1] = 0;
+
+        block_type::const_iterator it = block.lookup(key);
+
+        EXAM_REQUIRE(it != block.end());
+        EXAM_CHECK(it->first == key);
+        EXAM_CHECK(it->second.address == i);
+        EXAM_CHECK(it->second.size == 2*i);
+    }
+
+    for (int i = 0; i < 50; ++i)
+    {
+        block_type::key_type key;
+        key.u.l[0] = 3*i + 1;
+        key.u.l[1] = 0;
+
+        block_type::const_iterator it = block.lookup(key);
+
+        EXAM_REQUIRE(it == block.end());
+    }
+
+    return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::block_type_route)
+{
+    using namespace yard;
+
+    block_type block;
+
+    for (int i = 0; i < 50; ++i)
+    {
+        block_type::key_type key;
+        key.u.l[0] = 3*i;
+        key.u.l[1] = 0;
+
+        block_coordinate coord;
+        coord.address = i;
+        coord.size = 2*i;
+
+        block.insert(key, coord);
+    }
+
+    for (int i = 0; i < 50; ++i)
+    {
+        block_type::key_type key;
+        key.u.l[0] = 3*i + 1;
+        key.u.l[1] = 0;
+
+        block_type::const_iterator it = block.route(key);
+
+        EXAM_REQUIRE(it != block.end());
+        EXAM_CHECK(it->first <= key);
+        if (++it != block.end())
+            EXAM_CHECK((++it)->first > key);
+    }
+
+    return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::block_type_divide)
+{
+    using namespace yard;
+
+    block_type block;
+    block.set_block_size(4096);
+    block.set_flags(block_type::leaf_node);
+
+    typedef vector<pair<block_type::key_type, block_coordinate> > data_type;
+    data_type data;
+
+    int i = 0;
+    while (!block.is_overfilled())
+    {
+        block_type::key_type key;
+        key.u.l[0] = 3*i;
+        key.u.l[1] = 0;
+
+        block_coordinate coord;
+        coord.address = i;
+        coord.size = 2*i;
+
+        data.push_back(make_pair(key, coord));
+        block.insert(key, coord);
+
+        ++i;
+    }
+
+    block_type new_block;
+    pair<block_type::key_type, block_type::key_type> delimiters = block.divide(new_block);
+    EXAM_REQUIRE(delimiters.first < delimiters.second);
+
+    for (data_type::const_iterator it = data.begin();
+         it != data.end(); ++it)
+    {
+        EXAM_REQUIRE((it->first <= delimiters.first) || (it->first >= delimiters.second));
+
+        block_type::const_iterator result;
+        block_type::const_iterator none;
+
+        if (it->first <= delimiters.first)
+        {
+            result = block.lookup(it->first);
+            none = block.end();
+        }
+
+        if (it->first >= delimiters.second)
+        {
+            result = new_block.lookup(it->first);
+            none = new_block.end();
+        }
+
+        EXAM_REQUIRE(result != none);
+        EXAM_CHECK(result->first == it->first);
+        EXAM_CHECK(result->second.address == it->second.address);
+        EXAM_CHECK(result->second.size == it->second.size);
+    }
+
+    return EXAM_RESULT;
+}
+
+bool block_equal(const yard::block_type& left, const yard::block_type& right)
+{
+    using namespace yard;
+
+    if (left.is_root() != right.is_root())
+        return false;
+    if (left.is_leaf() != right.is_leaf())
+        return false;
+
+    block_type::const_iterator l = left.begin();
+    block_type::const_iterator r = right.begin();
+
+    while ((l != left.end()) && (r != right.end()))
+    {
+        if (l->first != r->first)
+            return false;
+
+        if (l->second.address != r->second.address)
+            return false;
+
+        if ((left.is_leaf()) && (l->second.size != r->second.size))
+            return false;
+
+        ++l;
+        ++r;
+    }
+
+    if ((l == left.end()) && (r == right.end()))
+        return true;
+    else
+        return false;
+}
+
+int EXAM_IMPL(yard_test::pack_unpack)
+{
+    using namespace yard;
+
+    block_type block[4];
+    for (int i = 0; i < 4; ++i)
+        block[i].set_block_size(4096);
+
+    block[0].set_flags(block_type::leaf_node);
+    block[1].set_flags(block_type::leaf_node | block_type::root_node);
+    block[2].set_flags(block_type::root_node);
+
+    for (int i = 0; i < 50; ++i)
+    {
+        block_type::key_type key;
+        key.u.l[0] = 3*i;
+        key.u.l[1] = 0;
+
+        block_coordinate coord;
+        coord.address = i;
+        coord.size = 2*i;
+
+        for (int k = 0; k < 4; ++k)
+            block[k].insert(key, coord);
+    }
+
+    for (int k = 0; k < 4; ++k)
+    {
+        stringstream ss(ios_base::out|ios_base::in);
+        block[k].pack(ss);
+
+        block_type new_block;
+        new_block.set_block_size(4096);
+        ss.seekg(0, ios_base::beg);
+        new_block.unpack(ss);
+
+        EXAM_REQUIRE(block_equal(block[k], new_block));
+    }
+
+    return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::btree_basic)
+{
+    using namespace yard;
+
+    int sizes[3];
+    sizes[0] = 4096;
+    sizes[1] = 759;
+    sizes[2] = 4*4096;
+
+    for (int k = 0; k < 3; ++k)
+    {
+        BTree tree;
+        tree.init_empty("/tmp/btree", sizes[k]);
+
+        const int count = 4000;
+        for (int i = 0; i < count; ++i)
+        {
+            BTree::key_type key;
+            key.u.l[0] = 3*i;
+            key.u.l[1] = 0;
+
+            block_coordinate coord;
+
+            BTree::coordinate_type coordinate = tree.lookup(key);
+
+            coord.address = i;
+            tree.insert(coordinate, key, coord);
+            tree.clear_cache();
+        }
+
+        for (int i = 0; i < count; ++i)
+        {
+            BTree::key_type key;
+            key.u.l[0] = 3*i;
+            key.u.l[1] = 0;
+
+            BTree::coordinate_type coordinate = tree.lookup(key);
+
+            const block_type& block = tree.get(coordinate);
+            block_type::const_iterator node = block.lookup(key);
+
+            EXAM_CHECK(node->second.address == i);
+        }
+    }
+
+    return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::btree_random)
+{
+    using namespace yard;
+
+    int sizes[1];
+    sizes[0] = 4 * 4096;
+
+    for (int k = 0; k < 1; ++k)
+    {
+        BTree tree;
+        tree.init_empty("/tmp/btree", sizes[k]);
+
+        const int count = 200000;
+
+        vector<pair<BTree::key_type, block_coordinate> > added_entries;
+        for (int i = 0; i < count; ++i)
+        {
+            BTree::key_type key = xmt::uid();
+
+            block_coordinate coord;
+            coord.address= rand();
+            coord.size = rand();
+
+            BTree::coordinate_type coordinate = tree.lookup(key);
+
+            tree.insert(coordinate, key, coord);
+
+            added_entries.push_back(make_pair(key, coord));
+        }
+
+        int i = 0;
+        for (vector<pair<BTree::key_type, block_coordinate> >::const_iterator entry_iterator = added_entries.begin();
+             entry_iterator != added_entries.end();
+             ++entry_iterator)
+        {
+            BTree::coordinate_type coordinate = tree.lookup(entry_iterator->first);
+
+            const block_type& block = tree.get(coordinate);
+            block_type::const_iterator data= block.lookup(entry_iterator->first);
+            EXAM_CHECK(data->second.address == entry_iterator->second.address);
+            EXAM_CHECK(data->second.size == entry_iterator->second.size);
+
+            ++i;
+        }
+    }
+    return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::btree_init_existed)
+{
+    const int count = 200000;
+    using namespace yard;
+
+    int sizes[1];
+    sizes[0] = 4*4096;
+
+    for (int k = 0; k < 1; ++k)
+    {
+        vector<block_coordinate> added_entries;
+        {
+            BTree tree;
+            tree.init_empty("/tmp/btree", sizes[k]);
+
+            for (int i = 0; i < count; ++i)
+            {
+                BTree::key_type key;
+                key.u.l[0] = 3*i;
+                key.u.l[1] = 0;
+
+                block_coordinate coord;
+                coord.address= rand();
+                coord.size = rand();
+
+                BTree::coordinate_type coordinate = tree.lookup(key);
+
+                tree.insert(coordinate, key, coord);
+
+                added_entries.push_back(coord);
+            }
+        }
+
+        {
+            BTree tree;
+            tree.init_existed("/tmp/btree");
+
+            int i = 0;
+            for (vector<block_coordinate>::const_iterator entry_iterator = added_entries.begin();
+                 entry_iterator != added_entries.end();
+                 ++entry_iterator)
+            {
+                BTree::key_type key;
+                key.u.l[0] = 3*i;
+                key.u.l[1] = 0;
+                BTree::coordinate_type coordinate = tree.lookup(key);
+
+                const block_type& block = tree.get(coordinate);
+                block_type::const_iterator data= block.lookup(key);
+                EXAM_CHECK(data->second.address == entry_iterator->address);
+                EXAM_CHECK(data->second.size == entry_iterator->size);
+
+                ++i;
+            }
+        }
+    }
+
+    return EXAM_RESULT;
+}
+
 int EXAM_IMPL(yard_test::revision_in_memory)
 {
   yard::revision rev;
