@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <10/04/01 11:47:58 ptr>
+# -*- Makefile -*- Time-stamp: <2011-01-26 18:54:42 ptr>
 
 SRCROOT := ../../..
 
@@ -15,22 +15,16 @@ LIBMISC_DIR = ${CoMT_DIR}/lib/misc
 ifeq ($(OSNAME),linux)
 
 release-shared:	LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR} -L${LIBEXAM_DIR}/${OUTPUT_DIR} \
-						   -L${LIBSTEM_DIR}/${OUTPUT_DIR} \
-						   -L${LIBSOCKIOS_DIR}/${OUTPUT_DIR} \
                            -L${LIBMISC_DIR}/${OUTPUT_DIR} -L../${OUTPUT_DIR} \
                            -Wl,--rpath=${LIBMT_DIR}/${OUTPUT_DIR}:${LIBEXAM_DIR}/${OUTPUT_DIR}:${LIBMISC_DIR}/${OUTPUT_DIR}:../${OUTPUT_DIR}:${STLPORT_LIB_DIR}
 
 dbg-shared:     LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR_DBG} -L${LIBEXAM_DIR}/${OUTPUT_DIR_DBG} \
-						   -L${LIBSTEM_DIR}/${OUTPUT_DIR} \
-						   -L${LIBSOCKIOS_DIR}/${OUTPUT_DIR} \
                            -L${LIBMISC_DIR}/${OUTPUT_DIR_DBG} -L../${OUTPUT_DIR_DBG} \
                            -Wl,--rpath=${LIBMT_DIR}/${OUTPUT_DIR_DBG}:${LIBEXAM_DIR}/${OUTPUT_DIR_DBG}:${LIBMISC_DIR}/${OUTPUT_DIR_DBG}:../${OUTPUT_DIR_DBG}:${STLPORT_LIB_DIR}
 
 ifndef WITHOUT_STLPORT
 
 stldbg-shared:  LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBEXAM_DIR}/${OUTPUT_DIR_STLDBG} \
-						   -L${LIBSTEM_DIR}/${OUTPUT_DIR} \
-						   -L${LIBSOCKIOS_DIR}/${OUTPUT_DIR} \
                            -L${LIBMISC_DIR}/${OUTPUT_DIR_STLDBG} -L../${OUTPUT_DIR_STLDBG} \
                            -Wl,--rpath=${LIBMT_DIR}/${OUTPUT_DIR_STLDBG}:${LIBEXAM_DIR}/${OUTPUT_DIR_STLDBG}:${LIBMISC_DIR}/${OUTPUT_DIR_STLDBG}:../${OUTPUT_DIR_STLDBG}:${STLPORT_LIB_DIR}
 
