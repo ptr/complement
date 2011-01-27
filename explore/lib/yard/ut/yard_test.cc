@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-26 14:29:32 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-27 20:11:46 ptr>
 
 /*
  * Copyright (c) 2010
@@ -96,8 +96,9 @@ int EXAM_IMPL(yard_test::block_type_route)
 
         EXAM_REQUIRE(it != block.end());
         EXAM_CHECK(it->first <= key);
-        if (++it != block.end())
-            EXAM_CHECK((++it)->first > key);
+        if ( ++it != block.end() ) {
+          EXAM_CHECK(it->first > key);
+        }
     }
 
     return EXAM_RESULT;
