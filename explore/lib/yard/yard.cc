@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-26 14:32:28 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-27 20:03:16 ptr>
 
 /*
  *
@@ -12,7 +12,7 @@
 // #include "yard.h"
 #include <yard/yard.h>
 
-#include <yard/pack.h>
+#include "pack.h"
 
 #include <inttypes.h>
 #include <mt/uid.h>
