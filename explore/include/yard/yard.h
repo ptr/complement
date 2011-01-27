@@ -109,11 +109,14 @@ public:
 
     block_type();
 private:
+    void calculate_size();
+
     key_type min() const;
     key_type max() const;
 
     uint32_t block_size_;
     uint32_t flags_;
+    int size_of_packed_;
 
     body_type body_;
 };

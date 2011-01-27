@@ -117,6 +117,7 @@ const unsigned int block_type::leaf_node = 2;
 block_type::block_type()
 {
     flags_ = 0;
+    size_of_packed_ = 3 * packer_traits<uint32_t, std_packer>::max_size();
 }
 
 void block_type::set_block_size(unsigned int block_size)
@@ -141,34 +142,29 @@ bool block_type::is_leaf() const
 
 bool block_type::is_overfilled() const
 {
-    int data_node_size = (
-        block_size_ -
-        3 * packer_traits<uint32_t, std_packer>::max_size()
-                         ) /
-                         (
-        packer_traits<key_type, std_packer>::max_size() +
-        packer_traits<file_address_type, std_packer>::max_size() +
-        packer_traits<size_t, std_packer>::max_size()
-                         );
-
-    int index_node_size = (
-        block_size_ -
-        3 * packer_traits<uint32_t, std_packer>::max_size()
-                         ) /
-                         (
-        packer_traits<key_type, std_packer>::max_size() +
-        packer_traits<file_address_type, std_packer>::max_size()
-                         );
-
-    if (is_leaf())
-        return (body_.size() >= data_node_size);
-    else
-        return (body_.size() >= index_node_size);
+    return (size_of_packed_ > get_block_size());
 }
 
 void block_type::insert(const key_type& key, const block_coordinate& coordinate)
 {
-    body_[key] = coordinate;
+    pair<body_type::iterator, bool> result = body_.insert(body_type::value_type(key, coordinate));
+
+    if (result.second)
+    {
+        if (is_leaf())
+        {
+            size_of_packed_ +=
+                packer_traits<key_type, std_packer>::max_size() +
+                packer_traits<file_address_type, std_packer>::max_size() +
+                packer_traits<size_t, std_packer>::max_size();
+        }
+        else
+        {
+            size_of_packed_ +=
+                packer_traits<key_type, std_packer>::max_size() +
+                packer_traits<file_address_type, std_packer>::max_size();
+        }
+    }
 }
 
 xmt::uuid_type block_type::min() const
@@ -181,6 +177,28 @@ xmt::uuid_type block_type::max() const
 {
     assert(!body_.empty());
     return (--body_.end())->first;
+}
+
+void block_type::calculate_size()
+{
+    int entry_size;
+    if (is_leaf())
+    {
+        entry_size =
+            packer_traits<key_type, std_packer>::max_size() +
+            packer_traits<file_address_type, std_packer>::max_size() +
+            packer_traits<size_t, std_packer>::max_size();
+    }
+    else
+    {
+        entry_size =
+            packer_traits<key_type, std_packer>::max_size() +
+            packer_traits<file_address_type, std_packer>::max_size();
+    }
+
+    size_of_packed_ =
+        3 * packer_traits<uint32_t, std_packer>::max_size() +
+        entry_size * body_.size();
 }
 
 pair<xmt::uuid_type, xmt::uuid_type> block_type::divide(block_type& other)
@@ -208,6 +226,10 @@ pair<xmt::uuid_type, xmt::uuid_type> block_type::divide(block_type& other)
     {
         //add erasing of the first key in the other
     }
+
+    other.calculate_size();
+    calculate_size();
+
     return result;
 }
 
