@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-12-03 14:00:04 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-28 18:09:46 ptr>
 
 /*
  *
@@ -71,7 +71,6 @@ int main( int argc, const char** argv )
   t.add( &yard_perf::put_object_r2, p, "put object-1024 r2",
     t.add( &yard_perf::put_object, p, "put object-1024", tc[0] ) );
 
-  t.add( &yard_perf::put_mess, p, "put message 1024" );
   t.add( &yard_perf::mess, p, "put message 1024 yard ng" );
   t.add( &yard_perf::put_revisions, p, "put blob 1024 [revision] ng" );
 

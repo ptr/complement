@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-26 14:29:38 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-28 18:01:52 ptr>
 
 /*
  *
@@ -319,69 +319,6 @@ class underground
     size_type hsz;  // stored hash baskets size
     offset_type* block_offset;
     // hash_table_type cache; // objects offset cache
-};
-
-class yard
-{
-  public:
-    typedef size_t size_type;
-    typedef off_t offset_type;
-
-    yard( const char* path );
-    ~yard();
-
-    void add_manifest( const id_type& );
-    void add_manifest( const id_type&, const id_type& );
-    void add_leaf( const id_type&, const void*, size_type );
-    void add_leaf( const id_type& id, const std::string& s )
-      { yard::add_leaf( id, s.data(), s.size() ); }
-    void add_leaf( const id_type&, const id_type&, const void*, size_type );
-    void add_leaf( const id_type& mid, const id_type& id, const std::string& s )
-      { yard::add_leaf( mid, id, s.data(), s.size() ); }
-
-    std::string get( const id_type& );
-
-    template <class BackInsertIterator>
-    void get_revisions( const id_type& id, BackInsertIterator bi )
-      { disc->get_object_revisions( id, bi ); }
-
-    void flush();
-
-  private:
-
-    enum {
-      unknown = 0,
-      manifest = 1,
-      leaf = 2
-    };
-
-    struct vertex
-    {
-        typedef vertex* pointer_type;
-        typedef std::list<std::pair<pointer_type,uint32_t> > adj_list_type;
-
-        int type;
-        id_type id;
-        id_type rid;
-        std::string blob;
-        bool mod_flag;
-        adj_list_type adj_list;
-    };
-
-#ifdef __USE_STLPORT_HASH
-    typedef std::hash_map<id_type,vertex::pointer_type> graph_type;
-#endif
-#ifdef __USE_STD_HASH
-    typedef __gnu_cxx::hash_map<id_type,vertex::pointer_type> graph_type;
-#endif
-#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::tr1::unordered_map<id_type,vertex::pointer_type> graph_type;
-    // typedef std::tr1::unordered_map<id_type,offset_type> hash_table_type;
-#endif
-
-    graph_type g;
-    underground* disc;
-    // hash_table_type ht;
 };
 
 #ifdef __USE_STLPORT_HASH

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-24 20:27:32 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-28 18:06:22 ptr>
 
 /*
  * Copyright (c) 2010
@@ -33,10 +33,9 @@ int main( int argc, const char** argv )
 
   t.add( &yard_test::btree_init_existed, test, "Btree init existed test");
 
-  t.add( &yard_test::manifest, test, "manifest",
-    t.add( &yard_test::put_object, test, "put object",
-      t.add( &yard_test::put, test, "put revision",
-        t.add( &yard_test::create, test, "create hash" ) ) ) );
+  t.add( &yard_test::put_object, test, "put object",
+    t.add( &yard_test::put, test, "put revision",
+      t.add( &yard_test::create, test, "create hash" ) ) );
 
   t.add( &yard_test::linear_commits_neg, test, "non-linear commits in yard ng",
     tc[0] = t.add( &yard_test::linear_commits, test, "linear commits in yard ng",

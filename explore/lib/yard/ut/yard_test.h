@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-24 20:17:34 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-28 18:05:30 ptr>
 
 /*
  * Copyright (c) 2010
@@ -43,8 +43,4 @@ class yard_test
     int EXAM_DECL(create);
     int EXAM_DECL(put);
     int EXAM_DECL(put_object);
-
-    int EXAM_DECL(manifest);
-
-    // int EXAM_DECL(manifest_check);
 };
