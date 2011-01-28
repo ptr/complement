@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-28 18:13:47 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-28 18:31:54 ptr>
 
 /*
  *
@@ -707,9 +707,7 @@ void yard::open_commit_delta( const commit_id_type& base, const commit_id_type& 
 
   if ( i == c.end() ) {
     try {
-      commit_container_type::iterator k;
-      commit_node& node = c[base];
-      r.get_commit( node, base );
+      r.get_commit( c[base], base );
     }
     catch ( const invalid_argument& ) {
       c.erase( base );
@@ -875,9 +873,7 @@ const std::string& yard::get( const commit_id_type& id, const std::string& name 
 
   if ( i == c.end() ) {
     try {
-      commit_container_type::iterator k;
-      commit_node& node = c[id];
-      r.get_commit( node, id );
+      r.get_commit( c[id], id );
     }
     catch ( const invalid_argument& ) {
       c.erase( id );
@@ -975,9 +971,7 @@ diff_type yard::diff( const commit_id_type& from, const commit_id_type& to )
 
   if ( i == c.end() ) {
     try {
-      commit_container_type::iterator k;
-      commit_node& node = c[from];
-      r.get_commit( node, from );
+      r.get_commit( c[from], from );
     }
     catch ( const invalid_argument& ) {
       c.erase( from );
@@ -990,9 +984,7 @@ diff_type yard::diff( const commit_id_type& from, const commit_id_type& to )
 
   if ( j == c.end() ) {
     try {
-      commit_container_type::iterator k;
-      commit_node& node = c[to];
-      r.get_commit( node, to );
+      r.get_commit( c[to], to );
     }
     catch ( const invalid_argument& ) {
       c.erase( to );
@@ -1192,9 +1184,7 @@ commit_id_type yard::common_ancestor( const commit_id_type& left, const commit_i
 
   if ( l == c.end() ) {
     try {
-      commit_container_type::iterator k;
-      commit_node& node = c[left];
-      r.get_commit( node, left );
+      r.get_commit( c[left], left );
     }
     catch ( const invalid_argument& ) {
       c.erase(left);
@@ -1207,9 +1197,7 @@ commit_id_type yard::common_ancestor( const commit_id_type& left, const commit_i
 
   if ( r == c.end() ) {
     try {
-      commit_container_type::iterator k;
-      commit_node& node = c[right];
-      yard::r.get_commit( node, right );
+      yard::r.get_commit( c[right], right );
     }
     catch ( const invalid_argument& ) {
       c.erase(right);
@@ -1333,9 +1321,14 @@ int yard::fast_merge( const commit_id_type& merge, const commit_id_type& left, c
   commit_container_type::const_iterator k = c.find( left );
 
   if ( k == c.end() ) {
-    // ToDo: try to upload from disc
-    // throw invalid_argument
-    // return;
+    try {
+      r.get_commit( c[left], left );
+    }
+    catch ( const invalid_argument& ) {
+      c.erase(left);
+      throw invalid_argument( "no such commit" );
+    }
+    k = c.find( left );
   }
 
   cache.insert( make_pair( merge, make_pair( make_pair( left, right ), rd ) ) );
