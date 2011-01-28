@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-28 18:01:52 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-28 18:12:43 ptr>
 
 /*
  *
@@ -200,10 +200,10 @@ class revision
     revisions_container_type r;
 };
 
-class yard_ng
+class yard
 {
   public:
-    yard_ng();
+    yard();
 
     /* commit id generated on client side instead of within yard_ng,
        because of potential distributed nature of db (id should be same

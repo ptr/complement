@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-28 18:05:11 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-28 18:17:51 ptr>
 
 /*
  * Copyright (c) 2010
@@ -560,7 +560,7 @@ int EXAM_IMPL(yard_test::commit_from_revision2)
 
 int EXAM_IMPL(yard_test::access)
 {
-  yard::yard_ng db;
+  yard::yard db;
   string content0( "01234567890123456789" );
   string content1( "012345678901234567890" );
 
@@ -587,7 +587,7 @@ int EXAM_IMPL(yard_test::access)
 
 int EXAM_IMPL(yard_test::linear_commits)
 {
-  yard::yard_ng db;
+  yard::yard db;
   string content0( "01234567890123456789" );
   string content1( "012345678901234567890" );
 
@@ -646,7 +646,7 @@ int EXAM_IMPL(yard_test::linear_commits)
 
 int EXAM_IMPL(yard_test::linear_commits_neg)
 {
-  yard::yard_ng db;
+  yard::yard db;
   string content0( "01234567890123456789" );
   string content1( "012345678901234567890" );
 
@@ -686,7 +686,7 @@ int EXAM_IMPL(yard_test::linear_commits_neg)
 
 int EXAM_IMPL(yard_test::diff)
 {
-  yard::yard_ng db;
+  yard::yard db;
   string content0( "01234567890123456789" );
   string content1( "012345678901234567890" );
 
@@ -765,7 +765,7 @@ int EXAM_IMPL(yard_test::diff)
 
 int EXAM_IMPL(yard_test::fast_merge1)
 {
-  yard::yard_ng db;
+  yard::yard db;
 
   try {
     yard::commit_id_type cid1 = xmt::uid();
@@ -808,7 +808,7 @@ int EXAM_IMPL(yard_test::fast_merge1)
 
 int EXAM_IMPL(yard_test::fast_merge2)
 {
-  yard::yard_ng db;
+  yard::yard db;
 
   try {
     yard::commit_id_type cid1 = xmt::uid();
@@ -852,7 +852,7 @@ int EXAM_IMPL(yard_test::fast_merge2)
 
 int EXAM_IMPL(yard_test::fast_merge3)
 {
-  yard::yard_ng db;
+  yard::yard db;
 
   try {
     yard::commit_id_type cid1 = xmt::uid();
@@ -896,7 +896,7 @@ int EXAM_IMPL(yard_test::fast_merge3)
 
 int EXAM_IMPL(yard_test::fast_merge4)
 {
-  yard::yard_ng db;
+  yard::yard db;
 
   try {
     yard::commit_id_type cid1 = xmt::uid();
@@ -960,7 +960,7 @@ int EXAM_IMPL(yard_test::fast_merge4)
 
 int EXAM_IMPL(yard_test::fast_merge_conflict1)
 {
-  yard::yard_ng db;
+  yard::yard db;
 
   try {
     yard::commit_id_type cid1 = xmt::uid();
@@ -997,7 +997,7 @@ int EXAM_IMPL(yard_test::fast_merge_conflict1)
 
 int EXAM_IMPL(yard_test::heads)
 {
-  yard::yard_ng db;
+  yard::yard db;
 
   try {
     yard::commit_id_type cid1 = xmt::uid();
@@ -1063,7 +1063,7 @@ int EXAM_IMPL(yard_test::heads)
 
 int EXAM_IMPL(yard_test::merge1)
 {
-  yard::yard_ng db;
+  yard::yard db;
 
   try {
     yard::commit_id_type cid1 = xmt::uid();

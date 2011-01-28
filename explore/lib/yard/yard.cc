@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-28 18:03:24 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-28 18:13:47 ptr>
 
 /*
  *
@@ -689,7 +689,7 @@ void revision::get_commit( commit_node& c, const revision_id_type& rid ) throw( 
   }
 }
 
-yard_ng::yard_ng()
+yard::yard()
 {
   manifest_type m;
   
@@ -701,7 +701,7 @@ yard_ng::yard_ng()
   c[xmt::nil_uuid].dref = -1;
 }
 
-void yard_ng::open_commit_delta( const commit_id_type& base, const commit_id_type& m )
+void yard::open_commit_delta( const commit_id_type& base, const commit_id_type& m )
 {
   commit_container_type::const_iterator i = c.find( base );
 
@@ -732,7 +732,7 @@ void yard_ng::open_commit_delta( const commit_id_type& base, const commit_id_typ
   }
 }
 
-void yard_ng::close_commit_delta( const commit_id_type& m )
+void yard::close_commit_delta( const commit_id_type& m )
 {
   cache_container_type::iterator i = cache.find( m );
 
@@ -804,7 +804,7 @@ void yard_ng::close_commit_delta( const commit_id_type& m )
   cache.erase( i );
 }
 
-manifest_id_type yard_ng::aggregate_delta( const commit_id_type& f, diff_type& diff )
+manifest_id_type yard::aggregate_delta( const commit_id_type& f, diff_type& diff )
 {
   const commit_node* comm = &(c.find( f ))->second;
   const commit_node* orig = comm;
@@ -844,7 +844,7 @@ manifest_id_type yard_ng::aggregate_delta( const commit_id_type& f, diff_type& d
   return orig->mid;
 }
 
-void yard_ng::add( const commit_id_type& id, const std::string& name, const void* data, size_t sz )
+void yard::add( const commit_id_type& id, const std::string& name, const void* data, size_t sz )
 {
   cache_container_type::iterator i = cache.find( id );
 
@@ -857,7 +857,7 @@ void yard_ng::add( const commit_id_type& id, const std::string& name, const void
   i->second.second.second[name] = rid;
 }
 
-void yard_ng::del( const commit_id_type& id, const std::string& name )
+void yard::del( const commit_id_type& id, const std::string& name )
 {
   cache_container_type::iterator i = cache.find( id );
 
@@ -869,7 +869,7 @@ void yard_ng::del( const commit_id_type& id, const std::string& name )
   i->second.second.first[name];
 }
 
-const std::string& yard_ng::get( const commit_id_type& id, const std::string& name ) throw( std::invalid_argument, std::logic_error )
+const std::string& yard::get( const commit_id_type& id, const std::string& name ) throw( std::invalid_argument, std::logic_error )
 {
   commit_container_type::const_iterator i = c.find( id );
 
@@ -957,7 +957,7 @@ const std::string& yard_ng::get( const commit_id_type& id, const std::string& na
   }
 }
 
-const std::string& yard_ng::get( const std::string& name ) throw( std::invalid_argument, std::logic_error )
+const std::string& yard::get( const std::string& name ) throw( std::invalid_argument, std::logic_error )
 {
   if ( leaf.size() != 1 ) {
     if ( leaf.empty() ) {
@@ -969,7 +969,7 @@ const std::string& yard_ng::get( const std::string& name ) throw( std::invalid_a
   return get( leaf.front(), name );
 }
 
-diff_type yard_ng::diff( const commit_id_type& from, const commit_id_type& to )
+diff_type yard::diff( const commit_id_type& from, const commit_id_type& to )
 {
   commit_container_type::const_iterator i = c.find( from );
 
@@ -1186,7 +1186,7 @@ diff_type yard_ng::diff( const commit_id_type& from, const commit_id_type& to )
   return delta;
 }
 
-commit_id_type yard_ng::common_ancestor( const commit_id_type& left, const commit_id_type& right )
+commit_id_type yard::common_ancestor( const commit_id_type& left, const commit_id_type& right )
 {
   commit_container_type::iterator l = c.find( left );
 
@@ -1209,7 +1209,7 @@ commit_id_type yard_ng::common_ancestor( const commit_id_type& left, const commi
     try {
       commit_container_type::iterator k;
       commit_node& node = c[right];
-      yard_ng::r.get_commit( node, right );
+      yard::r.get_commit( node, right );
     }
     catch ( const invalid_argument& ) {
       c.erase(right);
@@ -1283,7 +1283,7 @@ commit_id_type yard_ng::common_ancestor( const commit_id_type& left, const commi
   }
 }
 
-int yard_ng::fast_merge( const commit_id_type& merge, const commit_id_type& left, const commit_id_type& right )
+int yard::fast_merge( const commit_id_type& merge, const commit_id_type& left, const commit_id_type& right )
 {
   commit_id_type ancestor = common_ancestor( left, right );
 
@@ -1344,7 +1344,7 @@ int yard_ng::fast_merge( const commit_id_type& merge, const commit_id_type& left
   return 0;
 }
 
-int yard_ng::merge( const commit_id_type& merge_, const commit_id_type& left, const commit_id_type& right, conflicts_list_type& cnf )
+int yard::merge( const commit_id_type& merge_, const commit_id_type& left, const commit_id_type& right, conflicts_list_type& cnf )
 {
   commit_id_type ancestor = common_ancestor( left, right );
 

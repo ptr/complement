@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-28 18:08:52 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-28 18:18:29 ptr>
 
 /*
  * Copyright (c) 2010
@@ -470,7 +470,7 @@ int EXAM_IMPL(yard_perf::put_revisions)
 
 int EXAM_IMPL(yard_perf::mess)
 {
-  yard::yard_ng db;
+  yard::yard db;
 
   try {
     yard::commit_id_type cid = xmt::nil_uuid;

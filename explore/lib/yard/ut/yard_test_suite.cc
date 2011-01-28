@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-28 18:06:22 ptr>
+// -*- C++ -*- Time-stamp: <2011-01-28 18:17:10 ptr>
 
 /*
  * Copyright (c) 2010
@@ -37,26 +37,26 @@ int main( int argc, const char** argv )
     t.add( &yard_test::put, test, "put revision",
       t.add( &yard_test::create, test, "create hash" ) ) );
 
-  t.add( &yard_test::linear_commits_neg, test, "non-linear commits in yard ng",
-    tc[0] = t.add( &yard_test::linear_commits, test, "linear commits in yard ng",
-      t.add( &yard_test::access, test, "access to yard ng",
-        tc[2] = t.add( &yard_test::revision_in_memory, test, "revision in memory, yard ng" ) ) ) );
+  t.add( &yard_test::linear_commits_neg, test, "non-linear commits",
+    tc[0] = t.add( &yard_test::linear_commits, test, "linear commits",
+      t.add( &yard_test::access, test, "access",
+        tc[2] = t.add( &yard_test::revision_in_memory, test, "revision in memory" ) ) ) );
 
-  tc[3] = t.add( &yard_test::diff_from_revision, test, "recover delta from revision, yard ng",
-    t.add( &yard_test::manifest_from_revision, test, "recover manifest from revision, yard ng", tc[2] ) );
+  tc[3] = t.add( &yard_test::diff_from_revision, test, "recover delta from revision",
+    t.add( &yard_test::manifest_from_revision, test, "recover manifest from revision", tc[2] ) );
 
-  t.add( &yard_test::commit_from_revision1, test, "recover commit node from revision (manifest), yard ng", tc[2] );
-  t.add( &yard_test::commit_from_revision2, test, "recover commit node from revision (delta), yard ng", tc[3] );
+  t.add( &yard_test::commit_from_revision1, test, "recover commit node from revision (manifest)", tc[2] );
+  t.add( &yard_test::commit_from_revision2, test, "recover commit node from revision (delta)", tc[3] );
 
-  t.add( &yard_test::fast_merge4, test, "fast merge with common ancestor in yard ng",
-    t.add( &yard_test::fast_merge3, test, "fast merge right add yard ng",
-      t.add( &yard_test::fast_merge2, test, "fast merge left add in yard ng",
-        t.add( &yard_test::fast_merge1, test, "fast merge add different in yard ng",
-          tc[1] = t.add( &yard_test::diff, test, "diff between commits in yard ng", tc[0] ) ) ) ) );
+  t.add( &yard_test::fast_merge4, test, "fast merge with common ancestor",
+    t.add( &yard_test::fast_merge3, test, "fast merge right add",
+      t.add( &yard_test::fast_merge2, test, "fast merge left add",
+        t.add( &yard_test::fast_merge1, test, "fast merge add different",
+          tc[1] = t.add( &yard_test::diff, test, "diff between commits", tc[0] ) ) ) ) );
 
-  t.add( &yard_test::fast_merge_conflict1, test, "fast merge conflict in yard ng", tc[1] );
-  t.add( &yard_test::heads, test, "heads of commits graph in yard ng", tc[2] );
-  t.add( &yard_test::merge1, test, "merge with conflict in yard ng", tc[1] );
+  t.add( &yard_test::fast_merge_conflict1, test, "fast merge conflict", tc[1] );
+  t.add( &yard_test::heads, test, "heads of commits graph", tc[2] );
+  t.add( &yard_test::merge1, test, "merge with conflict", tc[1] );
 
   Opts opts;
 
