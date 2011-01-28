@@ -97,7 +97,7 @@ int EXAM_IMPL(yard_test::block_type_route)
         EXAM_REQUIRE(it != block.end());
         EXAM_CHECK(it->first <= key);
         if (++it != block.end())
-            EXAM_CHECK((++it)->first > key);
+            EXAM_CHECK((it)->first > key);
     }
 
     return EXAM_RESULT;
