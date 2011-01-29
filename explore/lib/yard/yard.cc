@@ -520,6 +520,8 @@ void BTree::insert(coordinate_type path, const key_type& key, const block_coordi
             cache_[header_.address_of_the_root] = new_root;
             file_.seekp(header_.address_of_the_root);
             new_root.pack(file_);
+
+            ++delta_height_;
         }
         else
             insert(path, new_key, new_coord);
@@ -539,6 +541,7 @@ const block_type& BTree::get(const coordinate_type& coordinate)
 void BTree::init_empty(const char* filename, unsigned int block_size)
 {
     file_.open(filename, ios_base::in | ios_base::out | ios_base::binary | ios_base::trunc);
+    delta_height_ = 0;
 
     header_.version = 0;
     header_.block_size = block_size;
