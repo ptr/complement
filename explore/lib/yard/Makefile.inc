@@ -4,4 +4,4 @@ LIBNAME = yard
 MAJOR = 0
 MINOR = 2
 PATCH = 0
-SRC_CC = yard.cc
+SRC_CC = pack.cc yard.cc

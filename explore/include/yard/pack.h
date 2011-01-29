@@ -13,6 +13,9 @@
 #ifndef __yard_pack_h
 #define __yard_pack_h
 
+#include <mt/uid.h>
+#include <sstream>
+
 namespace yard {
 
 #ifndef _MSC_VER
@@ -206,7 +209,12 @@ struct packer_traits
 {
     static unsigned int min_size();
     static unsigned int max_size();
-    static unsigned int size(const T& value);
+    static unsigned int size(const T& value)
+    {
+        std::stringstream ss;
+        Packer::pack(ss, value);
+        return ss.tellp();
+    }
     static bool have_max_size();
 };
 
@@ -232,6 +240,15 @@ struct packer_traits<T, std_packer>
     {
         return true;
     }
+};
+
+void uuid_to_long_number(const xmt::uuid_type& u, uint8_t* long_number);
+void long_number_to_uuid(const uint8_t* long_number, xmt::uuid_type& u);
+
+struct uuid_packer_exp
+{
+    static __FIT_DECLSPEC void unpack( std::istream& s, xmt::uuid_type& u );
+    static __FIT_DECLSPEC void pack( std::ostream& s, const xmt::uuid_type& u );
 };
 
 }

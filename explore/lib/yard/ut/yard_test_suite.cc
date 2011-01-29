@@ -22,6 +22,8 @@ int main( int argc, const char** argv )
   exam::test_suite t( "libyard test suite" );
   yard_test test;
 
+  t.add( &yard_test::pack_test, test, "pack test");
+
   t.add( &yard_test::pack_unpack, test, "pack-unpack test",
     t.add( &yard_test::block_type_divide, test, "block route divide test",
       t.add( &yard_test::block_type_route, test, "block route test",

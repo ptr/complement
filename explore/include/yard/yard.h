@@ -99,7 +99,7 @@ public:
 
     bool is_overfilled() const;
 
-    std::pair<key_type, key_type> divide(block_type& other);
+    void divide(block_type& other);
 
     void pack(std::ostream& s) const;
     void unpack(std::istream& s);
@@ -148,6 +148,9 @@ public:
     void clear_cache();
 private:
     void lookup(coordinate_type& path, const key_type& key);
+
+    key_type min_in_subtree(file_address_type block_address);
+    key_type max_in_subtree(file_address_type block_address);
 
     std::fstream file_;
     std::map<file_address_type, block_type> cache_;

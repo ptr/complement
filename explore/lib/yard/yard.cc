@@ -154,14 +154,14 @@ void block_type::insert(const key_type& key, const block_coordinate& coordinate)
         if (is_leaf())
         {
             size_of_packed_ +=
-                packer_traits<key_type, std_packer>::max_size() +
+                packer_traits<key_type, std_packer>::size(key) +
                 packer_traits<file_address_type, std_packer>::max_size() +
                 packer_traits<size_t, std_packer>::max_size();
         }
         else
         {
             size_of_packed_ +=
-                packer_traits<key_type, std_packer>::max_size() +
+                packer_traits<key_type, uuid_packer_exp>::size(key) +
                 packer_traits<file_address_type, std_packer>::max_size();
         }
     }
@@ -181,27 +181,28 @@ xmt::uuid_type block_type::max() const
 
 void block_type::calculate_size()
 {
-    int entry_size;
-    if (is_leaf())
-    {
-        entry_size =
-            packer_traits<key_type, std_packer>::max_size() +
-            packer_traits<file_address_type, std_packer>::max_size() +
-            packer_traits<size_t, std_packer>::max_size();
-    }
-    else
-    {
-        entry_size =
-            packer_traits<key_type, std_packer>::max_size() +
-            packer_traits<file_address_type, std_packer>::max_size();
-    }
+    size_of_packed_ = 3 * packer_traits<uint32_t, std_packer>::max_size();
 
-    size_of_packed_ =
-        3 * packer_traits<uint32_t, std_packer>::max_size() +
-        entry_size * body_.size();
+    for (body_type::iterator it = body_.begin();
+         it != body_.end(); ++it)
+    {
+        if (is_leaf())
+        {
+            size_of_packed_ += packer_traits<key_type, std_packer>::size(it->first);
+        }
+        else
+        {
+            size_of_packed_ += packer_traits<key_type, uuid_packer_exp>::size(it->first);
+        }
+        size_of_packed_ += packer_traits<file_address_type, std_packer>::max_size();
+        if (is_leaf())
+        {
+            size_of_packed_ += packer_traits<size_t, std_packer>::max_size();
+        }
+    }
 }
 
-pair<xmt::uuid_type, xmt::uuid_type> block_type::divide(block_type& other)
+void block_type::divide(block_type& other)
 {
     assert(is_overfilled());
 
@@ -218,10 +219,6 @@ pair<xmt::uuid_type, xmt::uuid_type> block_type::divide(block_type& other)
     other.body_.insert(middle, body_.end());
     body_.erase(middle, body_.end());
 
-    pair<key_type, key_type> result;
-    result.first = max();
-    result.second = other.min();
-
     if (!other.is_leaf())
     {
         //add erasing of the first key in the other
@@ -230,7 +227,8 @@ pair<xmt::uuid_type, xmt::uuid_type> block_type::divide(block_type& other)
     other.calculate_size();
     calculate_size();
 
-    return result;
+    assert(begin() != end());
+    assert(other.begin() != other.end());
 }
 
 block_type::const_iterator block_type::begin() const
@@ -296,6 +294,8 @@ void header_type::unpack(std::istream& s)
 
 void block_type::pack(std::ostream& s) const
 {
+    assert(get_block_size() > 0);
+
     std::ostream::streampos begin_pos = s.tellp();
 
     std_packer::pack<uint32_t>(s, 0);
@@ -305,7 +305,14 @@ void block_type::pack(std::ostream& s) const
          it != body_.end();
          ++it)
     {
-        std_packer::pack(s, it->first);
+        if (is_leaf())
+        {
+            std_packer::pack(s, it->first);
+        }
+        else
+        {
+            uuid_packer_exp::pack(s, it->first);
+        }
         std_packer::pack(s, it->second.address);
         if (is_leaf())
         {
@@ -337,7 +344,14 @@ void block_type::unpack(std::istream& s)
     {
         key_type key;
         block_coordinate coordinate;
-        std_packer::unpack(s, key);
+        if (is_leaf())
+        {
+            std_packer::unpack(s, key);
+        }
+        else
+        {
+            uuid_packer_exp::unpack(s, key);
+        }
         std_packer::unpack(s, coordinate.address);
         if (is_leaf())
         {
@@ -353,6 +367,45 @@ void block_type::set_flags(unsigned int flags)
 {
     flags_ = flags;
 }
+
+BTree::key_type BTree::min_in_subtree(file_address_type block_address)
+{
+    block_type& block = cache_[block_address];
+    block.set_block_size(header_.block_size);
+    file_.seekg(block_address);
+    block.unpack(file_);
+
+    assert(block.begin() != block.end());
+    if (block.is_leaf())
+    {
+        return block.begin()->first;
+    }
+    else
+    {
+        file_address_type address_of_new_block = block.begin()->second.address;
+        return min_in_subtree(address_of_new_block);
+    }
+}
+
+BTree::key_type BTree::max_in_subtree(file_address_type block_address)
+{
+    block_type& block = cache_[block_address];
+    block.set_block_size(header_.block_size);
+    file_.seekg(block_address);
+    block.unpack(file_);
+
+    assert(block.begin() != block.end());
+    if (block.is_leaf())
+    {
+        return (--block.end())->first;
+    }
+    else
+    {
+        file_address_type address_of_new_block = (--block.end())->second.address;
+        return max_in_subtree(address_of_new_block);
+    }
+}
+
 
 file_address_type BTree::add_value(const char* data, unsigned int size)
 {
@@ -393,7 +446,19 @@ void BTree::insert(coordinate_type path, const key_type& key, const block_coordi
     if (block.is_overfilled())
     {
         block_type new_block;
-        pair<xmt::uuid_type, xmt::uuid_type> delimiter = block.divide(new_block);
+        block.divide(new_block);
+
+        pair<xmt::uuid_type, xmt::uuid_type> delimiter;
+        if (block.is_leaf())
+        {
+            delimiter.first = (--block.end())->first;
+            delimiter.second = new_block.begin()->first;
+        }
+        else
+        {
+            delimiter.first = max_in_subtree((--block.end())->second.address);
+            delimiter.second = min_in_subtree(new_block.begin()->second.address);
+        }
 
         file_.seekp(path.top());
         block.pack(file_);
@@ -401,7 +466,30 @@ void BTree::insert(coordinate_type path, const key_type& key, const block_coordi
         new_block.pack(file_);
         cache_[address_of_new_block] = new_block;
 
-        key_type new_key = delimiter.second;
+        //chose the key with most zeros at the end
+        uint8_t first[16];
+        uint8_t second[16];
+        uuid_to_long_number(delimiter.first, first);
+        uuid_to_long_number(delimiter.second, second);
+
+        uint8_t result[16];
+        for (int i = 0; i < 16; ++i)
+        {
+            result[i] = 0;
+        }
+
+        for (int i = 15; i >= 0; --i)
+        {
+            result[i] = second[i];
+            if (second[i] > first[i])
+                break;
+        }
+
+        key_type new_key;
+        long_number_to_uuid(result, new_key);
+        assert(new_key <= delimiter.second);
+        assert(new_key > delimiter.first);
+
         block_coordinate new_coord;
         new_coord.address = address_of_new_block;
         new_coord.size = header_.block_size;
