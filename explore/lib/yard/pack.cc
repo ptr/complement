@@ -77,4 +77,35 @@ void uuid_packer_exp::pack( std::ostream& s, const xmt::uuid_type& u )
         s.write((char*)(number + exp), 16 - exp);
 }
 
+__FIT_DECLSPEC void varint_packer::unpack( std::istream& s, uint32_t& num )
+{
+    uint32_t result = 0;
+    char current = 0;
+    int count = 0;
+    do
+    {
+        assert(count <= 4);
+
+        s.get(current);
+        result += (current & 127) << (7 * count);
+        ++count;
+    } while (current < 0);
+    num = result;
+}
+
+__FIT_DECLSPEC void varint_packer::pack( std::ostream& s, const uint32_t& num )
+{
+    uint32_t num_to_pack = num;
+    do
+    {
+        char current = num_to_pack % 128;
+        num_to_pack = num_to_pack / 128;
+        if (num_to_pack != 0)
+            current += 128;
+
+        s.put(current);
+    }
+    while (num_to_pack != 0);
+}
+
 }

@@ -251,6 +251,12 @@ struct uuid_packer_exp
     static __FIT_DECLSPEC void pack( std::ostream& s, const xmt::uuid_type& u );
 };
 
+struct varint_packer
+{
+    static __FIT_DECLSPEC void unpack( std::istream& s, uint32_t& num );
+    static __FIT_DECLSPEC void pack( std::ostream& s, const uint32_t& num );
+};
+
 }
 
 #endif

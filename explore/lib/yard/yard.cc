@@ -162,7 +162,7 @@ void block_type::insert(const key_type& key, const block_coordinate& coordinate)
         {
             size_of_packed_ +=
                 packer_traits<key_type, uuid_packer_exp>::size(key) +
-                packer_traits<file_address_type, std_packer>::max_size();
+                packer_traits<file_address_type, varint_packer>::size(coordinate.address);
         }
     }
 }
@@ -189,15 +189,13 @@ void block_type::calculate_size()
         if (is_leaf())
         {
             size_of_packed_ += packer_traits<key_type, std_packer>::size(it->first);
+            size_of_packed_ += packer_traits<file_address_type, std_packer>::max_size();
+            size_of_packed_ += packer_traits<size_t, std_packer>::max_size();
         }
         else
         {
             size_of_packed_ += packer_traits<key_type, uuid_packer_exp>::size(it->first);
-        }
-        size_of_packed_ += packer_traits<file_address_type, std_packer>::max_size();
-        if (is_leaf())
-        {
-            size_of_packed_ += packer_traits<size_t, std_packer>::max_size();
+            size_of_packed_ += packer_traits<file_address_type, varint_packer>::size(it->second.address);
         }
     }
 }
@@ -308,15 +306,13 @@ void block_type::pack(std::ostream& s) const
         if (is_leaf())
         {
             std_packer::pack(s, it->first);
+            std_packer::pack(s, it->second.address);
+            std_packer::pack(s, it->second.size);
         }
         else
         {
             uuid_packer_exp::pack(s, it->first);
-        }
-        std_packer::pack(s, it->second.address);
-        if (is_leaf())
-        {
-            std_packer::pack(s, it->second.size);
+            varint_packer::pack(s, it->second.address);
         }
     }
 
@@ -347,18 +343,16 @@ void block_type::unpack(std::istream& s)
         if (is_leaf())
         {
             std_packer::unpack(s, key);
+            std_packer::unpack(s, coordinate.address);
+            std_packer::unpack(s, coordinate.size);
         }
         else
         {
             uuid_packer_exp::unpack(s, key);
-        }
-        std_packer::unpack(s, coordinate.address);
-        if (is_leaf())
-        {
-            std_packer::unpack(s, coordinate.size);
-        }
-        else
+            varint_packer::unpack(s, coordinate.address);
             coordinate.size = get_block_size();
+        }
+
         insert(key, coordinate);
     }
 }

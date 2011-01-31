@@ -72,6 +72,21 @@ int EXAM_IMPL(yard_test::pack_test)
         EXAM_REQUIRE(before == after);
     }
 
+    for (int i = 0; i < count; ++i)
+    {
+        stringstream ss;
+        uint32_t before = rand();
+
+        variant_packer::pack(ss, before);
+
+        uint32_t after;
+
+        ss.seekg(0, ios_base::beg);
+        variant_packer::unpack(ss, after);
+
+        EXAM_REQUIRE(before == after);
+    }
+
     return EXAM_RESULT;
 }
 
@@ -288,7 +303,7 @@ int EXAM_IMPL(yard_test::pack_unpack)
         key.u.l[1] = 0;
 
         block_coordinate coord;
-        coord.address = i;
+        coord.address = i * 4096;
         coord.size = 2*i;
 
         for (int k = 0; k < 4; ++k)
