@@ -114,7 +114,7 @@ public:
 
     bool is_overfilled() const;
 
-    std::pair<key_type, key_type> divide(block_type& other);
+    void divide(block_type& other);
 
     void pack(std::ostream& s) const;
     void unpack(std::istream& s);
@@ -124,11 +124,14 @@ public:
 
     block_type();
 private:
+    void calculate_size();
+
     key_type min() const;
     key_type max() const;
 
     uint32_t block_size_;
     uint32_t flags_;
+    int size_of_packed_;
 
     body_type body_;
 };
@@ -161,9 +164,18 @@ public:
 private:
     void lookup(coordinate_type& path, const key_type& key);
 
+    key_type min_in_subtree(file_address_type block_address);
+    key_type max_in_subtree(file_address_type block_address);
+
     std::fstream file_;
     std::map<file_address_type, block_type> cache_;
     header_type header_;
+    int delta_height_;
+public:
+    int get_delta_height() const
+    {
+        return delta_height_;
+    }
 };
 
 struct revision_node

@@ -13,6 +13,8 @@
 class yard_test
 {
   public:
+    int EXAM_DECL(pack_test);
+
     int EXAM_DECL(block_type_lookup);
     int EXAM_DECL(block_type_route);
     int EXAM_DECL(block_type_divide);
