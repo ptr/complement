@@ -10,8 +10,8 @@ int main()
     tree.init_empty("/tmp/btree_sizes", 4096);
 
     int i = 0;
-    int last_delta_height = tree.get_delta_height();
-    while ((1 + tree.get_delta_height()) <= 2)
+    int last_delta_height = 1;
+    while (last_delta_height <= 2)
     {
         BTree::key_type key = xmt::uid();
 
@@ -20,16 +20,17 @@ int main()
         coord.size = rand();
 
         BTree::coordinate_type coordinate = tree.lookup(key);
+        int height = coordinate.size();
 
         tree.insert(coordinate, key, coord);
 
-        if (last_delta_height != tree.get_delta_height())
+        if (last_delta_height != height)
         {
-            std::cout << i << std::endl;
+            std::cout << (i - 1) << std::endl;
+            last_delta_height = height;
         }
 
         ++i;
-        last_delta_height = tree.get_delta_height();
     }
 
     return 0;

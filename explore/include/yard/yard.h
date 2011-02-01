@@ -170,12 +170,6 @@ private:
     std::fstream file_;
     std::map<file_address_type, block_type> cache_;
     header_type header_;
-    int delta_height_;
-public:
-    int get_delta_height() const
-    {
-        return delta_height_;
-    }
 };
 
 struct revision_node
