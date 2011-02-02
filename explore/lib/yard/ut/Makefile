@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <2011-01-26 18:54:42 ptr>
+# -*- Makefile -*- Time-stamp: <2011-02-02 16:06:06 ptr>
 
 SRCROOT := ../../..
 
@@ -6,7 +6,7 @@ include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
 
 INCLUDES += -I$(SRCROOT)/include
-DEFS += -D__FIT_EXAM
+DEFS += -D__FIT_EXAM -D__FIT_YARD_UT
 
 LIBMT_DIR = ${CoMT_DIR}/lib/mt
 LIBEXAM_DIR = ${CoMT_DIR}/lib/exam

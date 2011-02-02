@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-28 18:12:43 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-02 19:10:50 ptr>
 
 /*
  *
@@ -79,63 +79,6 @@ class metainfo
     container_type rec;
 };
 
-typedef unsigned int file_address_type;
-
-file_address_type seek_to_end(std::fstream& file, unsigned int size);
-
-struct block_coordinate
-{
-    file_address_type address;
-    size_t size;
-};
-
-class block_type
-{
-public:
-    typedef xmt::uuid_type key_type;
-    typedef std::map<key_type, block_coordinate> body_type;
-    typedef body_type::const_iterator const_iterator;
-
-    static const unsigned int root_node;
-    static const unsigned int leaf_node;
-
-    bool is_root() const;
-    bool is_leaf() const;
-
-    void set_flags(unsigned int flags);
-
-    void insert(const key_type& key, const block_coordinate& coordinate);
-
-    const_iterator begin() const;
-    const_iterator end() const;
-
-    const_iterator lookup(const key_type& key) const;
-    const_iterator route(const key_type& key) const;
-
-    bool is_overfilled() const;
-
-    void divide(block_type& other);
-
-    void pack(std::ostream& s) const;
-    void unpack(std::istream& s);
-
-    void set_block_size(unsigned int block_size);
-    unsigned int get_block_size() const;
-
-    block_type();
-private:
-    void calculate_size();
-
-    key_type min() const;
-    key_type max() const;
-
-    uint32_t block_size_;
-    uint32_t flags_;
-    int size_of_packed_;
-
-    body_type body_;
-};
-
 struct header_type
 {
     uint32_t version;
@@ -148,27 +91,94 @@ struct header_type
 
 class BTree
 {
-public:
-    typedef block_type::key_type key_type;
-    typedef std::stack<file_address_type> coordinate_type;
+  public:
+    typedef std::streambuf::off_type off_type;
+    typedef xmt::uuid_type key_type;
+
+  public:
+    struct block_coordinate
+    {
+        off_type address;
+        std::streamsize size;
+    };
+
+#ifndef __FIT_YARD_UT
+  private:
+#else
+  public:
+#endif
+    class block_type
+    {
+      private:
+        typedef std::map<key_type, block_coordinate> body_type;
+
+      public:
+        typedef body_type::const_iterator const_iterator;
+
+        enum {
+          root_node = 1,
+          leaf_node = 2
+        };
+
+        bool is_root() const;
+        bool is_leaf() const;
+
+        void set_flags(unsigned int flags);
+
+        void insert(const key_type& key, const block_coordinate& coordinate);
+
+        const_iterator begin() const;
+        const_iterator end() const;
+
+        const_iterator lookup(const key_type& key) const;
+        const_iterator route(const key_type& key) const;
+
+        bool is_overfilled() const;
+
+        void divide(block_type& other);
+
+        void pack(std::ostream& s) const;
+        void unpack(std::istream& s);
+
+        void set_block_size( std::streamsize block_size );
+        std::streamsize get_block_size() const;
+
+        block_type();
+
+      private:
+        void calculate_size();
+
+        key_type min() const;
+        key_type max() const;
+
+        std::streamsize block_size_;
+        unsigned flags_;
+        std::streamsize size_of_packed_;
+
+        body_type body_;
+    };
+
+  public:
+    typedef std::stack<off_type> coordinate_type;
 
     coordinate_type lookup(const key_type& key);
     const block_type& get(const coordinate_type& coordinate);
     void insert(coordinate_type path, const key_type& key, const block_coordinate& coord);
 
-    void init_empty(const char* filename, unsigned int block_size);
+    void init_empty( const char* filename, std::streamsize block_size );
     void init_existed(const char* filename);
 
-    file_address_type add_value(const char* data, unsigned int size);
+    off_type add_value( const char* data, std::streamsize size );
     void clear_cache();
-private:
+
+  private:
     void lookup(coordinate_type& path, const key_type& key);
 
-    key_type min_in_subtree(file_address_type block_address);
-    key_type max_in_subtree(file_address_type block_address);
+    key_type min_in_subtree( off_type block_address );
+    key_type max_in_subtree( off_type block_address );
 
     std::fstream file_;
-    std::map<file_address_type, block_type> cache_;
+    std::map<off_type, block_type> cache_;
     header_type header_;
 };
 

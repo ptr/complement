@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <10/05/14 10:17:57 ptr>
+# -*- Makefile -*- Time-stamp: <2011-02-02 16:27:27 ptr>
 
 SRCROOT := ../../..
 
@@ -10,7 +10,7 @@ INCLUDES += -I$(SRCROOT)/include
 ifdef BOOST_DIR
 INCLUDES += -I$(BOOST_INCLUDE_DIR)
 endif
-DEFS += -D__FIT_EXAM
+DEFS += -D__FIT_EXAM -D__FIT_YARD_UT
 
 LIBMT_DIR = ${CoMT_DIR}/lib/mt
 LIBEXAM_DIR = ${CoMT_DIR}/lib/exam

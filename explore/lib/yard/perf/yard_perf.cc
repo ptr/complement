@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-28 18:18:29 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-02 18:24:14 ptr>
 
 /*
  * Copyright (c) 2010
@@ -31,17 +31,18 @@ int EXAM_IMPL(yard_perf::packing)
     using namespace yard;
     std::ofstream file("/tmp/pack_unpack", ios_base::out | ios_base::trunc);
 
-    block_type block;
+    BTree::block_type block;
     block.set_block_size(4096);
-    block.set_flags(block_type::leaf_node);
+    block.set_flags(BTree::block_type::leaf_node);
+
+    BTree::key_type key;
+    BTree::block_coordinate coord;
 
     for (int i = 0; i < 50; ++i)
     {
-        block_type::key_type key;
         key.u.l[0] = 3*i;
         key.u.l[1] = 0;
 
-        block_coordinate coord;
         coord.address = i;
         coord.size = 2*i;
 
@@ -60,7 +61,7 @@ int EXAM_IMPL(yard_perf::unpacking)
     using namespace yard;
     std::ifstream file("/tmp/pack_unpack", ios_base::in);
 
-    block_type block;
+    BTree::block_type block;
     block.set_block_size(4096);
 
     const int count = 10000;
@@ -76,13 +77,14 @@ int EXAM_IMPL(yard_perf::unpacking)
 void fill_consecutive(yard::BTree& tree, int count)
 {
     using namespace yard;
+    BTree::key_type key;
+    BTree::block_coordinate coord;
+
     for (int i = 0; i < count; ++i)
     {
-        block_type::key_type key;
         key.u.l[0] = 3*i;
         key.u.l[1] = 0;
 
-        block_coordinate coord; 
         coord.address = i;
         coord.size = 2*i;
 
@@ -122,13 +124,14 @@ int EXAM_IMPL(yard_perf::random_insert_big)
 
     const int count = 1000000;
 
+    BTree::key_type key;
+    BTree::block_coordinate coord;
+
     for (int i = 0; i < count; ++i)
     {
-        block_type::key_type key;
         key.u.l[0] = rand();
         key.u.l[1] = 0;
 
-        block_coordinate coord;
         coord.address = rand();
         coord.size = rand();
 
@@ -153,15 +156,16 @@ int EXAM_IMPL(yard_perf::consecutive_insert_with_data)
     tree.init_empty("/tmp/btree_consecutive_with_data", 4096);
 
     const int count = 40000;
+    BTree::key_type key;
+    BTree::block_coordinate coord;
+
     for (int i = 0; i < count; ++i)
     {
-        block_type::key_type key;
         key.u.l[0] = 3*i;
         key.u.l[1] = 0;
 
         BTree::coordinate_type coordinate = tree.lookup(key);
 
-        block_coordinate coord;
         coord.address = tree.add_value(data, data_size);
         coord.size = data_size;
         tree.insert(coordinate, key, coord);
@@ -182,15 +186,16 @@ int EXAM_IMPL(yard_perf::random_insert_with_data)
     tree.init_empty("/tmp/btree_random_with_data", 4096);
 
     const int count = 40000;
+    BTree::key_type key;
+    BTree::block_coordinate coord;
+
     for (int i = 0; i < count; ++i)
     {
-        block_type::key_type key;
         key.u.l[0] = rand();
         key.u.l[1] = 0;
 
         BTree::coordinate_type coordinate = tree.lookup(key);
 
-        block_coordinate coord;
         coord.address = tree.add_value(data, data_size);
         coord.size = data_size;
         tree.insert(coordinate, key, coord);
@@ -218,17 +223,18 @@ int EXAM_IMPL(yard_perf::multiple_files)
     }
 
     const int count = 5000;
+    BTree::key_type key;
+    BTree::block_coordinate coord;
+
     for (int k = 0; k < count; ++k)
     {
         for (int i = 0; i < file_count; ++i)
         {
-            block_type::key_type key;
             key.u.l[0] = rand();
             key.u.l[1] = 0;
 
             BTree::coordinate_type coordinate = trees[i].lookup(key);
 
-            block_coordinate coord;
             coord.address = trees[i].add_value(data, data_size);
             coord.size = data_size;
             trees[i].insert(coordinate, key, coord);
@@ -245,9 +251,10 @@ int EXAM_IMPL(yard_perf::random_lookup)
     tree.init_existed("/tmp/btree_consecutive");
 
     const int count = 10000;
+    BTree::key_type key;
+
     for (int i = 0; i < count; ++i)
     {
-        block_type::key_type key;
         key.u.l[0] = 3*(rand() % 40000);
         key.u.l[1] = 0;
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-28 18:31:54 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-02 18:51:31 ptr>
 
 /*
  *
@@ -75,79 +75,72 @@ const std::string& metainfo::get( int key )
   return i != rec.end() ? i->second : empty;
 }
 
-void write_data(std::fstream& file, file_address_type address, const char* data, unsigned int size)
+void write_data( std::fstream& file, BTree::off_type address, const char* data, std::streamsize size )
 {
-    file.seekp(address);
-    file.write(data, size);
+  file.seekp( address );
+  file.write( data, size );
 }
 
-file_address_type append_data(std::fstream& file, const char* data, unsigned int size)
+BTree::off_type seek_to_end( std::fstream& file, std::streamsize size )
 {
-    file_address_type address = seek_to_end(file, size);
-    write_data(file, address, data, size);
+  const unsigned int alignment = 4096;
 
-    return address;
+  file.seekp( 0, ios_base::end );
+  BTree::off_type address = file.tellp();
+
+  int over = address % alignment;
+  BTree::off_type delta = over ? alignment - over : 0;
+  file.seekp( delta, ios_base::end );
+
+  return address + delta;
 }
 
-file_address_type seek_to_end(std::fstream& file, unsigned int size)
+BTree::off_type append_data( std::fstream& file, const char* data, std::streamsize size )
 {
-    const unsigned int alignment = 4096;
+  BTree::off_type address = seek_to_end( file, size );
+  write_data( file, address, data, size );
 
-    file.seekp(0, ios_base::end);
-    file_address_type address = file.tellp();
-
-    int delta = 0;
-    int over = address % alignment;
-    if (over != 0)
-        delta = alignment - over;
-
-    file.seekp(delta, ios_base::end);
-
-    return address + delta;
+  return address;
 }
 
-
-void get_data(std::fstream& file, file_address_type address, char* data, unsigned int size)
+void get_data( std::fstream& file, BTree::off_type address, char* data, std::streamsize size )
 {
-    file.seekg(address);
-    file.read(data, size);
+  file.seekg( address );
+  file.read( data, size );
 }
 
-const unsigned int block_type::root_node = 1;
-const unsigned int block_type::leaf_node = 2;
-
-block_type::block_type()
+BTree::block_type::block_type()
 {
-    flags_ = 0;
-    size_of_packed_ = 3 * packer_traits<uint32_t, std_packer>::max_size();
+  flags_ = 0;
+  size_of_packed_ = 3 * packer_traits<uint32_t, std_packer>::max_size();
 }
 
-void block_type::set_block_size(unsigned int block_size)
+void BTree::block_type::set_block_size( streamsize block_size )
 {
-    block_size_ = block_size;
+  block_size_ = block_size;
 }
 
-unsigned int block_type::get_block_size() const
+std::streamsize BTree::block_type::get_block_size() const
 {
-    return block_size_;
+  return block_size_;
 }
 
-bool block_type::is_root() const
+bool BTree::block_type::is_root() const
 {
-    return ((flags_ & root_node) == root_node);
+  return ((flags_ & root_node) == root_node);
 }
 
-bool block_type::is_leaf() const
+bool BTree::block_type::is_leaf() const
 {
-    return ((flags_ & leaf_node) == leaf_node);
+  return ((flags_ & leaf_node) == leaf_node);
 }
 
-bool block_type::is_overfilled() const
+bool BTree::block_type::is_overfilled() const
 {
-    return (size_of_packed_ > get_block_size());
+  return (size_of_packed_ > get_block_size());
 }
 
-void block_type::insert(const key_type& key, const block_coordinate& coordinate)
+void BTree::block_type::insert(const key_type& key, const block_coordinate& coordinate)
 {
     pair<body_type::iterator, bool> result = body_.insert(body_type::value_type(key, coordinate));
 
@@ -155,33 +148,37 @@ void block_type::insert(const key_type& key, const block_coordinate& coordinate)
     {
         if (is_leaf())
         {
+          // suspected place:
+          // calculated size may not correspont to really written bytes
             size_of_packed_ +=
                 packer_traits<key_type, std_packer>::size(key) +
-                packer_traits<file_address_type, std_packer>::max_size() +
-                packer_traits<size_t, std_packer>::max_size();
+                packer_traits<uint32_t, std_packer>::max_size() +
+                packer_traits<uint32_t, std_packer>::max_size();
         }
         else
         {
-            size_of_packed_ +=
+          // suspected place:
+          // calculated size may not correspont to really written bytes
+           size_of_packed_ +=
                 packer_traits<key_type, uuid_packer_exp>::size(key) +
-                packer_traits<file_address_type, varint_packer>::size(coordinate.address);
+                packer_traits<uint32_t, varint_packer>::size(coordinate.address);
         }
     }
 }
 
-xmt::uuid_type block_type::min() const
+xmt::uuid_type BTree::block_type::min() const
 {
     assert(!body_.empty());
     return body_.begin()->first;
 }
 
-xmt::uuid_type block_type::max() const
+xmt::uuid_type BTree::block_type::max() const
 {
     assert(!body_.empty());
     return (--body_.end())->first;
 }
 
-void block_type::calculate_size()
+void BTree::block_type::calculate_size()
 {
     size_of_packed_ = 3 * packer_traits<uint32_t, std_packer>::max_size();
 
@@ -190,19 +187,23 @@ void block_type::calculate_size()
     {
         if (is_leaf())
         {
+          // suspected place:
+          // calculated size may not correspont to really written bytes
             size_of_packed_ += packer_traits<key_type, std_packer>::size(it->first);
-            size_of_packed_ += packer_traits<file_address_type, std_packer>::max_size();
-            size_of_packed_ += packer_traits<size_t, std_packer>::max_size();
+            size_of_packed_ += packer_traits<uint32_t, std_packer>::max_size();
+            size_of_packed_ += packer_traits<uint32_t, std_packer>::max_size();
         }
         else
         {
+          // suspected place:
+          // calculated size may not correspont to really written bytes
             size_of_packed_ += packer_traits<key_type, uuid_packer_exp>::size(it->first);
-            size_of_packed_ += packer_traits<file_address_type, varint_packer>::size(it->second.address);
+            size_of_packed_ += packer_traits<uint32_t, varint_packer>::size(it->second.address);
         }
     }
 }
 
-void block_type::divide(block_type& other)
+void BTree::block_type::divide(block_type& other)
 {
     assert(is_overfilled());
 
@@ -231,22 +232,22 @@ void block_type::divide(block_type& other)
     assert(other.begin() != other.end());
 }
 
-block_type::const_iterator block_type::begin() const
+BTree::block_type::const_iterator BTree::block_type::begin() const
 {
-    return body_.begin();
+  return body_.begin();
 }
 
-block_type::const_iterator block_type::end() const
+BTree::block_type::const_iterator BTree::block_type::end() const
 {
-    return body_.end();
+  return body_.end();
 }
 
-block_type::const_iterator block_type::lookup(const key_type& key) const
+BTree::block_type::const_iterator BTree::block_type::lookup(const key_type& key) const
 {
-    return body_.find(key);
+  return body_.find(key);
 }
 
-block_type::const_iterator block_type::route(const key_type& key) const
+BTree::block_type::const_iterator BTree::block_type::route(const key_type& key) const
 {
     assert(!is_leaf());
     assert(!body_.empty());
@@ -292,79 +293,75 @@ void header_type::unpack(std::istream& s)
     std_packer::unpack(s, address_of_the_root);
 }
 
-void block_type::pack(std::ostream& s) const
+void BTree::block_type::pack( std::ostream& s ) const
 {
-    assert(get_block_size() > 0);
+  assert(get_block_size() > 0);
 
-    std::ostream::streampos begin_pos = s.tellp();
+  std::ostream::streampos begin_pos = s.tellp();
 
-    std_packer::pack<uint32_t>(s, 0);
-    std_packer::pack(s, flags_);
-    std_packer::pack(s, body_.size());
-    for (const_iterator it = body_.begin();
-         it != body_.end();
-         ++it)
-    {
-        if (is_leaf())
-        {
-            std_packer::pack(s, it->first);
-            std_packer::pack(s, it->second.address);
-            std_packer::pack(s, it->second.size);
-        }
-        else
-        {
-            uuid_packer_exp::pack(s, it->first);
-            varint_packer::pack(s, it->second.address);
-        }
+  std_packer::pack<uint32_t>(s, 0);
+  std_packer::pack(s, static_cast<uint32_t>(flags_) );
+  std_packer::pack(s, static_cast<uint32_t>(body_.size()) );
+  for ( const_iterator it = body_.begin(); it != body_.end(); ++it ) {
+    if ( is_leaf() ) {
+      std_packer::pack( s, it->first);
+      std_packer::pack( s, static_cast<uint32_t>(it->second.address) );
+      std_packer::pack( s, static_cast<uint32_t>(it->second.size) );
+    } else {
+      uuid_packer_exp::pack( s, it->first );
+      varint_packer::pack( s, static_cast<uint32_t>(it->second.address) );
     }
+  }
+  
+  std::ostream::streampos end_pos = s.tellp();
+  assert(end_pos - begin_pos <= get_block_size());
 
-    std::ostream::streampos end_pos = s.tellp();
-    assert(end_pos - begin_pos <= get_block_size());
-
-    unsigned int size = end_pos - begin_pos;
-    if (size != get_block_size())
-    {
-        vector<char> buffer(get_block_size() - size);
-        s.write(&buffer[0], buffer.size());
-    }
+  streamsize size = end_pos - begin_pos;
+  if ( size != get_block_size() ) {
+    vector<char> buffer( get_block_size() - size );
+    s.write( &buffer[0], buffer.size() );
+  }
 }
 
-void block_type::unpack(std::istream& s)
+void BTree::block_type::unpack( std::istream& s )
 {
-    uint32_t version;
-    std_packer::unpack(s, version);
-    assert(version == 0);
+  uint32_t version;
+  std_packer::unpack(s, version);
+  assert( version == 0 );
 
-    std_packer::unpack(s, flags_);
-    body_type::size_type size;
-    std_packer::unpack(s, size);
-    for (body_type::size_type i = 0; i < size; ++i)
-    {
-        key_type key;
-        block_coordinate coordinate;
-        if (is_leaf())
-        {
-            std_packer::unpack(s, key);
-            std_packer::unpack(s, coordinate.address);
-            std_packer::unpack(s, coordinate.size);
-        }
-        else
-        {
-            uuid_packer_exp::unpack(s, key);
-            varint_packer::unpack(s, coordinate.address);
-            coordinate.size = get_block_size();
-        }
+  uint32_t tmp;
+  std_packer::unpack(s, tmp );
+  flags_ = static_cast<unsigned>(tmp);
+  std_packer::unpack(s, tmp );
+  body_type::size_type size = static_cast<body_type::size_type>(tmp);
 
-        insert(key, coordinate);
+  key_type key;
+  block_coordinate coordinate;
+
+  for ( body_type::size_type i = 0; i < size; ++i ) {
+    if ( is_leaf() ) {
+      std_packer::unpack( s, key );
+      std_packer::unpack( s, tmp );
+      coordinate.address = static_cast<off_type>(tmp);
+      std_packer::unpack( s, tmp );
+      coordinate.size = static_cast<size_t>(tmp);
+    } else {
+      uuid_packer_exp::unpack( s, key );
+      varint_packer::unpack( s, tmp );
+      coordinate.address = static_cast<off_type>(tmp);
+      coordinate.size = get_block_size();
     }
+
+    insert( key, coordinate );
+  }
 }
 
-void block_type::set_flags(unsigned int flags)
+void BTree::block_type::set_flags( unsigned int flags )
 {
-    flags_ = flags;
+  flags_ = flags;
 }
 
-BTree::key_type BTree::min_in_subtree(file_address_type block_address)
+BTree::key_type BTree::min_in_subtree( off_type block_address )
 {
     block_type& block = cache_[block_address];
     block.set_block_size(header_.block_size);
@@ -378,12 +375,12 @@ BTree::key_type BTree::min_in_subtree(file_address_type block_address)
     }
     else
     {
-        file_address_type address_of_new_block = block.begin()->second.address;
+        off_type address_of_new_block = block.begin()->second.address;
         return min_in_subtree(address_of_new_block);
     }
 }
 
-BTree::key_type BTree::max_in_subtree(file_address_type block_address)
+BTree::key_type BTree::max_in_subtree( off_type block_address )
 {
     block_type& block = cache_[block_address];
     block.set_block_size(header_.block_size);
@@ -397,13 +394,13 @@ BTree::key_type BTree::max_in_subtree(file_address_type block_address)
     }
     else
     {
-        file_address_type address_of_new_block = (--block.end())->second.address;
+        off_type address_of_new_block = (--block.end())->second.address;
         return max_in_subtree(address_of_new_block);
     }
 }
 
 
-file_address_type BTree::add_value(const char* data, unsigned int size)
+BTree::off_type BTree::add_value( const char* data, streamsize size )
 {
     return append_data(file_, data, size);
 }
@@ -458,7 +455,7 @@ void BTree::insert(coordinate_type path, const key_type& key, const block_coordi
 
         file_.seekp(path.top());
         block.pack(file_);
-        file_address_type address_of_new_block = seek_to_end(file_, header_.block_size);
+        off_type address_of_new_block = seek_to_end(file_, header_.block_size);
         new_block.pack(file_);
         cache_[address_of_new_block] = new_block;
 
@@ -527,12 +524,12 @@ void BTree::insert(coordinate_type path, const key_type& key, const block_coordi
     }
 }
 
-const block_type& BTree::get(const coordinate_type& coordinate)
+const BTree::block_type& BTree::get(const coordinate_type& coordinate)
 {
-    return cache_[coordinate.top()];
+  return cache_[coordinate.top()];
 }
 
-void BTree::init_empty(const char* filename, unsigned int block_size)
+void BTree::init_empty( const char* filename, streamsize block_size )
 {
     file_.open(filename, ios_base::in | ios_base::out | ios_base::binary | ios_base::trunc);
 
