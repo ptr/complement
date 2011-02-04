@@ -36,6 +36,8 @@
 #include <queue>
 #include <stack>
 #include <list>
+#include <limits>
+#include <iterator>
 
 namespace yard {
 
@@ -242,7 +244,12 @@ BTree::block_type::const_iterator BTree::block_type::end() const
   return body_.end();
 }
 
-BTree::block_type::const_iterator BTree::block_type::lookup(const key_type& key) const
+BTree::block_type::iterator BTree::block_type::find(const key_type& key)
+{
+  return body_.find(key);
+}
+
+BTree::block_type::const_iterator BTree::block_type::find(const key_type& key) const
 {
   return body_.find(key);
 }
@@ -424,24 +431,45 @@ BTree::off_type BTree::add_value( const char* data, streamsize size )
 
 void BTree::lookup(coordinate_type& path, const key_type& key)
 {
+    key_type max_uuid;
+    max_uuid.u.l[0] = numeric_limits<uint64_t>::max();
+    max_uuid.u.l[1] = numeric_limits<uint64_t>::max();
+
     while (true)
     {
-        block_type& new_block = cache_[path.top()];
+        block_type& new_block = cache_[path.top().first];
         new_block.set_block_size(header_.block_size);
-        load(path.top(), new_block);
+        load(path.top().first, new_block);
 
         if (new_block.is_leaf())
             return;
 
+        std::pair<key_type, key_type> interval;
+
         block_type::const_iterator next_block = new_block.route(key);
-        path.push(next_block->second.address);
+        interval.first = next_block->first;
+
+        block_type::const_iterator next_next_block = next_block;
+        advance(next_next_block, 1);
+
+        interval.second = next_next_block == new_block.end() ? max_uuid : next_next_block->first;
+
+        path.push(make_pair(next_block->second.address, interval));
     }
 }
 
 BTree::coordinate_type BTree::lookup(const key_type& key)
 {
+    key_type max_uuid, min_uuid;
+
+    max_uuid.u.l[0] = numeric_limits<uint64_t>::max();
+    max_uuid.u.l[1] = numeric_limits<uint64_t>::max();
+
+    min_uuid.u.l[0] = 0;
+    min_uuid.u.l[1] = 0;
+
     coordinate_type path;
-    path.push(header_.address_of_the_root);
+    path.push(make_pair(header_.address_of_the_root, make_pair(min_uuid, max_uuid)));
 
     lookup(path, key);
 
@@ -450,6 +478,7 @@ BTree::coordinate_type BTree::lookup(const key_type& key)
 
 BTree::key_type BTree::get_shortest_key(const key_type& first_key, const key_type& second_key)
 {
+    assert(second_key > first_key);
     //chose the key with most zeros at the end
     uint8_t first[16];
     uint8_t second[16];
@@ -479,7 +508,9 @@ BTree::key_type BTree::get_shortest_key(const key_type& first_key, const key_typ
 
 void BTree::insert(coordinate_type path, const key_type& key, const block_coordinate& coord)
 {
-    block_type& block = cache_[path.top()];
+    const block_desc& desc = path.top();
+
+    block_type& block = cache_[desc.first];
     block.insert(key, coord);
     if (block.is_overfilled())
     {
@@ -498,9 +529,10 @@ void BTree::insert(coordinate_type path, const key_type& key, const block_coordi
             delimiter.second = min_in_subtree(new_block.begin()->second.address);
         }
 
-        save(path.top(), block);
+        off_type address_of_block = append(block);
         off_type address_of_new_block = append(new_block);
 
+        cache_[address_of_block] = block;
         cache_[address_of_new_block] = new_block;
 
         key_type new_key = get_shortest_key(delimiter.first, delimiter.second);
@@ -508,6 +540,8 @@ void BTree::insert(coordinate_type path, const key_type& key, const block_coordi
         block_coordinate new_coord;
         new_coord.address = address_of_new_block;
         new_coord.size = header_.block_size;
+
+        key_type key_to_update = desc.second.first;
 
         path.pop();
 
@@ -522,12 +556,10 @@ void BTree::insert(coordinate_type path, const key_type& key, const block_coordi
                 zero_key.u.l[0] = zero_key.u.l[1] = 0;
 
                 block_coordinate zero_coord;
-                zero_coord.address = append(block);
+                zero_coord.address = address_of_block;
                 zero_coord.size = header_.block_size;
 
                 new_root.insert(zero_key, zero_coord);
-
-                cache_[zero_coord.address] = block;
             }
             new_root.insert(new_key, new_coord);
             cache_[header_.address_of_the_root] = new_root;
@@ -535,17 +567,25 @@ void BTree::insert(coordinate_type path, const key_type& key, const block_coordi
             save(header_.address_of_the_root, new_root);
         }
         else
+        {
+            block_type& parent_block = cache_[path.top().first];
+            block_type::iterator entry = parent_block.find(key_to_update);
+            assert(entry != parent_block.end());
+
+            entry->second.address = address_of_block;
+
             insert(path, new_key, new_coord);
+        }
     }
     else
     {
-        save(path.top(), block);
+        save(path.top().first, block);
     }
 }
 
 const BTree::block_type& BTree::get(const coordinate_type& coordinate)
 {
-  return cache_[coordinate.top()];
+  return cache_[coordinate.top().first];
 }
 
 void BTree::open( const char* filename, std::ios_base::openmode mode, uint32_t block_size)

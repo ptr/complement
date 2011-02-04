@@ -115,7 +115,7 @@ int EXAM_IMPL(yard_test::block_type_lookup)
         key.u.l[0] = 3*i;
         key.u.l[1] = 0;
 
-        BTree::block_type::const_iterator it = block.lookup(key);
+        BTree::block_type::const_iterator it = block.find(key);
 
         EXAM_REQUIRE(it != block.end());
         EXAM_CHECK(it->first == key);
@@ -128,7 +128,7 @@ int EXAM_IMPL(yard_test::block_type_lookup)
         key.u.l[0] = 3*i + 1;
         key.u.l[1] = 0;
 
-        BTree::block_type::const_iterator it = block.lookup(key);
+        BTree::block_type::const_iterator it = block.find(key);
 
         EXAM_REQUIRE(it == block.end());
     }
@@ -229,13 +229,13 @@ int EXAM_IMPL(yard_test::block_type_divide)
 
             if (it->first <= delimiters.first)
             {
-                result = block.lookup(it->first);
+                result = block.find(it->first);
                 none = block.end();
             }
 
             if (it->first >= delimiters.second)
             {
-                result = new_block.lookup(it->first);
+                result = new_block.find(it->first);
                 none = new_block.end();
             }
 
@@ -363,7 +363,7 @@ int EXAM_IMPL(yard_test::btree_basic)
             BTree::coordinate_type coordinate = tree.lookup(key);
 
             const BTree::block_type& block = tree.get(coordinate);
-            BTree::block_type::const_iterator node = block.lookup(key);
+            BTree::block_type::const_iterator node = block.find(key);
 
             EXAM_REQUIRE(node != block.end());
             EXAM_CHECK(node->first == key);
@@ -414,7 +414,7 @@ int EXAM_IMPL(yard_test::btree_random)
             BTree::coordinate_type coordinate = tree.lookup(entry_iterator->first);
 
             const BTree::block_type& block = tree.get(coordinate);
-            BTree::block_type::const_iterator data= block.lookup(entry_iterator->first);
+            BTree::block_type::const_iterator data= block.find(entry_iterator->first);
             EXAM_CHECK(data->second.address == entry_iterator->second.address);
             EXAM_CHECK(data->second.size == entry_iterator->second.size);
 
@@ -472,7 +472,7 @@ int EXAM_IMPL(yard_test::btree_init_existed)
                 BTree::coordinate_type coordinate = tree.lookup(key);
 
                 const BTree::block_type& block = tree.get(coordinate);
-                BTree::block_type::const_iterator data= block.lookup(key);
+                BTree::block_type::const_iterator data= block.find(key);
                 EXAM_CHECK(data->second.address == entry_iterator->address);
                 EXAM_CHECK(data->second.size == entry_iterator->size);
 

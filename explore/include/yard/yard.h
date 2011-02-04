@@ -114,6 +114,7 @@ class BTree
 
       public:
         typedef body_type::const_iterator const_iterator;
+        typedef body_type::iterator iterator;
 
         enum {
           root_node = 1,
@@ -125,12 +126,14 @@ class BTree
 
         void set_flags(unsigned int flags);
 
+        iterator find(const key_type& key);
+        const_iterator find(const key_type& key) const;
+
         void insert(const key_type& key, const block_coordinate& coordinate);
 
         const_iterator begin() const;
         const_iterator end() const;
 
-        const_iterator lookup(const key_type& key) const;
         const_iterator route(const key_type& key) const;
 
         bool is_overfilled() const;
@@ -159,7 +162,8 @@ class BTree
     };
 
   public:
-    typedef std::stack<off_type> coordinate_type;
+    typedef std::pair<off_type, std::pair<key_type, key_type> > block_desc;
+    typedef std::stack<block_desc> coordinate_type;
 
     coordinate_type lookup(const key_type& key);
     const block_type& get(const coordinate_type& coordinate);
