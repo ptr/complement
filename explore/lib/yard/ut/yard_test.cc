@@ -77,12 +77,12 @@ int EXAM_IMPL(yard_test::pack_test)
         stringstream ss;
         uint32_t before = rand();
 
-        yard::varint_packer::pack(ss, before);
+        varint_packer::pack(ss, before);
 
         uint32_t after;
 
         ss.seekg(0, ios_base::beg);
-        yard::varint_packer::unpack(ss, after);
+        varint_packer::unpack(ss, after);
 
         EXAM_REQUIRE(before == after);
     }
@@ -336,7 +336,7 @@ int EXAM_IMPL(yard_test::btree_basic)
     for (int k = 0; k < 3; ++k)
     {
         BTree tree;
-        tree.init_empty("/tmp/btree", sizes[k]);
+        tree.open("/tmp/btree", ios_base::in | ios_base::out | ios_base::trunc, sizes[k]);
 
         const int count = 1050;
         BTree::block_coordinate coord;
@@ -384,7 +384,7 @@ int EXAM_IMPL(yard_test::btree_random)
     for (int k = 0; k < 1; ++k)
     {
         BTree tree;
-        tree.init_empty("/tmp/btree", sizes[k]);
+        tree.open("/tmp/btree", ios_base::in | ios_base::out | ios_base::trunc, sizes[k]);
 
         const int count = 200000;
 
@@ -437,7 +437,7 @@ int EXAM_IMPL(yard_test::btree_init_existed)
       vector<BTree::block_coordinate> added_entries;
         {
             BTree tree;
-            tree.init_empty("/tmp/btree", sizes[k]);
+            tree.open("/tmp/btree", ios_base::in | ios_base::out | ios_base::binary | ios_base::trunc, sizes[k]);
             BTree::key_type key;
             BTree::block_coordinate coord;
 
@@ -459,7 +459,7 @@ int EXAM_IMPL(yard_test::btree_init_existed)
 
         {
             BTree tree;
-            tree.init_existed("/tmp/btree");
+            tree.open("/tmp/btree", ios_base::in | ios_base::out | ios_base::binary);
 
             int i = 0;
             BTree::key_type key;

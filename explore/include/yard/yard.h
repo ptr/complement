@@ -165,8 +165,8 @@ class BTree
     const block_type& get(const coordinate_type& coordinate);
     void insert(coordinate_type path, const key_type& key, const block_coordinate& coord);
 
-    void init_empty( const char* filename, std::streamsize block_size );
-    void init_existed(const char* filename);
+    void open( const char* filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out, uint32_t block_size = 4096);
+    void close();
 
     off_type add_value( const char* data, std::streamsize size );
     void clear_cache();

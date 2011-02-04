@@ -529,28 +529,29 @@ const BTree::block_type& BTree::get(const coordinate_type& coordinate)
   return cache_[coordinate.top()];
 }
 
-void BTree::init_empty( const char* filename, streamsize block_size )
+void BTree::open( const char* filename, std::ios_base::openmode mode, uint32_t block_size)
 {
-    file_.open(filename, ios_base::in | ios_base::out | ios_base::binary | ios_base::trunc);
+    if ((mode & std::ios_base::trunc) == std::ios_base::trunc)
+    {
+        file_.open(filename, std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
+        header_.version = 0;
+        header_.block_size = block_size;
+        header_.address_of_the_root = 4096;
+        header_.pack(file_);
 
-    header_.version = 0;
-    header_.block_size = block_size;
-    header_.address_of_the_root = 4096;
-    header_.pack(file_);
+        block_type root;
+        root.set_block_size(header_.block_size);
+        root.set_flags(block_type::root_node | block_type::leaf_node);
 
-    block_type root;
-    root.set_block_size(header_.block_size);
-    root.set_flags(block_type::root_node | block_type::leaf_node);
-
-    unsigned int root_address = seek_to_end(file_, header_.block_size);
-    assert(root_address == header_.address_of_the_root);
-    root.pack(file_);
-}
-
-void BTree::init_existed(const char* filename)
-{
-    file_.open(filename, ios_base::in | ios_base::out | ios_base::binary);
-    header_.unpack(file_);
+        unsigned int root_address = seek_to_end(file_, header_.block_size);
+        assert(root_address == header_.address_of_the_root);
+        root.pack(file_);
+    }
+    else
+    {
+        file_.open(filename, std::ios_base::in | std::ios_base::out);
+        header_.unpack(file_);
+    }
 }
 
 void BTree::clear_cache()
