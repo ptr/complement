@@ -173,6 +173,11 @@ class BTree
 
   private:
     void lookup(coordinate_type& path, const key_type& key);
+    key_type get_shortest_key(const key_type& first, const key_type& second);
+
+    off_type append(const block_type& block);
+    void save(off_type offset, const block_type& block);
+    void load(off_type offset, block_type& block);
 
     key_type min_in_subtree( off_type block_address );
     key_type max_in_subtree( off_type block_address );
