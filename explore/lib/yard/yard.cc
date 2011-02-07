@@ -195,6 +195,7 @@ bool BTree::block_type::insert(const key_type& key, const block_coordinate& coor
                 packer_traits<uint32_t, varint_packer>::size(coordinate.address);
         }
     }
+
     return result.second;
 }
 
@@ -370,6 +371,8 @@ void BTree::block_type::unpack( std::istream& s )
   key_type key;
   block_coordinate coordinate;
 
+  assert(body_.empty());
+
   for ( body_type::size_type i = 0; i < size; ++i ) {
     if ( is_leaf() ) {
       std_packer::unpack( s, key );
@@ -431,8 +434,6 @@ BTree::block_type& BTree::get_block(off_type offset)
 BTree::key_type BTree::min_in_subtree( off_type block_address )
 {
     block_type& block = get_block(block_address);
-    block.set_block_size(header_.block_size);
-    load(block_address, block);
 
     assert(block.begin() != block.end());
     if (block.is_leaf())
@@ -449,8 +450,6 @@ BTree::key_type BTree::min_in_subtree( off_type block_address )
 BTree::key_type BTree::max_in_subtree( off_type block_address )
 {
     block_type& block = get_block(block_address);
-    block.set_block_size(header_.block_size);
-    load(block_address, block);
 
     assert(block.begin() != block.end());
     if (block.is_leaf())
@@ -581,7 +580,9 @@ BTree::coordinate_type BTree::insert(coordinate_type path, const key_type& key, 
     const block_desc& desc = path.top();
 
     block_type& block = get_block(desc.first);
-    block.insert(key, coord);
+    bool result = block.insert(key, coord);
+    assert(result);
+
     if (block.is_overfilled())
     {
         block_type new_block;
@@ -631,9 +632,12 @@ BTree::coordinate_type BTree::insert(coordinate_type path, const key_type& key, 
                 zero_coord.address = address_of_block;
                 zero_coord.size = header_.block_size;
 
-                new_root.insert(zero_key, zero_coord);
+                bool result = new_root.insert(zero_key, zero_coord);
+                assert(result);
             }
-            new_root.insert(new_key, new_coord);
+
+            bool result = new_root.insert(new_key, new_coord);
+            assert(result);
             cache_[header_.address_of_the_root] = new_root;
 
             save(header_.address_of_the_root, new_root);
@@ -649,7 +653,8 @@ BTree::coordinate_type BTree::insert(coordinate_type path, const key_type& key, 
             coord.address = address_of_block;
             coord.size = header_.block_size;
 
-            parent_block.insert(key_to_update, coord);
+            bool result = parent_block.insert(key_to_update, coord);
+            assert(result);
 
             return insert(path, new_key, new_coord);
         }
