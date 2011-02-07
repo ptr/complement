@@ -126,10 +126,10 @@ class BTree
 
         void set_flags(unsigned int flags);
 
-        iterator find(const key_type& key);
         const_iterator find(const key_type& key) const;
 
-        void insert(const key_type& key, const block_coordinate& coordinate);
+        bool insert(const key_type& key, const block_coordinate& coordinate);
+        int erase(const key_type& key);
 
         const_iterator begin() const;
         const_iterator end() const;
@@ -166,8 +166,9 @@ class BTree
     typedef std::stack<block_desc> coordinate_type;
 
     coordinate_type lookup(const key_type& key);
+    coordinate_type lookup(const coordinate_type& start, const key_type& key);
     const block_type& get(const coordinate_type& coordinate);
-    void insert(coordinate_type path, const key_type& key, const block_coordinate& coord);
+    coordinate_type insert(coordinate_type path, const key_type& key, const block_coordinate& coord);
 
     void open( const char* filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out, uint32_t block_size = 4096);
     void close();
@@ -176,7 +177,9 @@ class BTree
     void clear_cache();
 
   private:
-    void lookup(coordinate_type& path, const key_type& key);
+    block_type& get_block(off_type offset);
+
+    void lookup_down(coordinate_type& path, const key_type& key);
     key_type get_shortest_key(const key_type& first, const key_type& second);
 
     off_type append(const block_type& block);

@@ -340,6 +340,7 @@ int EXAM_IMPL(yard_test::btree_basic)
 
         const int count = 1050;
         BTree::block_coordinate coord;
+        BTree::coordinate_type coordinate;
 
         for (int i = 0; i < count; ++i)
         {
@@ -347,10 +348,10 @@ int EXAM_IMPL(yard_test::btree_basic)
             key.u.l[0] = 3*i;
             key.u.l[1] = 0;
 
-            BTree::coordinate_type coordinate = tree.lookup(key);
+            coordinate = tree.lookup(coordinate, key);
 
             coord.address = i;
-            tree.insert(coordinate, key, coord);
+            coordinate = tree.insert(coordinate, key, coord);
             tree.clear_cache();
         }
 
@@ -379,14 +380,14 @@ int EXAM_IMPL(yard_test::btree_random)
     using namespace yard;
 
     int sizes[1];
-    sizes[0] = 4 * 4096;
+    sizes[0] = 800;
 
     for (int k = 0; k < 1; ++k)
     {
         BTree tree;
         tree.open("/tmp/btree", ios_base::in | ios_base::out | ios_base::trunc, sizes[k]);
 
-        const int count = 200000;
+        const int count = 20000;
 
         vector<pair<BTree::key_type, BTree::block_coordinate> > added_entries;
         BTree::block_coordinate coord;
