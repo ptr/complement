@@ -149,6 +149,7 @@ class BTree
         block_type();
 
       private:
+        std::streamsize size_of_packed_entry(const_iterator it);
         void calculate_size();
 
         key_type min() const;

@@ -145,6 +145,25 @@ bool BTree::block_type::is_overfilled() const
   return (size_of_packed_ > get_block_size());
 }
 
+std::streamsize BTree::block_type::size_of_packed_entry(const_iterator it)
+{
+    std::streamsize result = 0;
+    if (is_leaf())
+    {
+        result =
+            packer_traits<key_type, std_packer>::size(it->first) +
+            packer_traits<uint32_t, std_packer>::size(it->second.address) +
+            packer_traits<uint32_t, std_packer>::size(it->second.size);
+    }
+    else
+    {
+        result =
+            packer_traits<key_type, index_key_packer>::size(it->first) +
+            packer_traits<uint32_t, index_address_packer>::size(it->second.address);
+    }
+    return result;
+}
+
 int BTree::block_type::erase(const key_type& key)
 {
     iterator it = body_.find(key);
@@ -152,23 +171,7 @@ int BTree::block_type::erase(const key_type& key)
         return 0;
     else
     {
-        if (is_leaf())
-        {
-          // suspected place:
-          // calculated size may not correspont to really written bytes
-            size_of_packed_ -=
-                packer_traits<key_type, std_packer>::size(it->first) +
-                packer_traits<uint32_t, std_packer>::size(it->second.address) +
-                packer_traits<uint32_t, std_packer>::size(it->second.size);
-        }
-        else
-        {
-          // suspected place:
-          // calculated size may not correspont to really written bytes
-           size_of_packed_ -=
-                packer_traits<key_type, index_key_packer>::size(it->first) +
-                packer_traits<uint32_t, index_address_packer>::size(it->second.address);
-        }
+        size_of_packed_ -= size_of_packed_entry(it);
         body_.erase(it);
         return 1;
     }
@@ -180,23 +183,7 @@ bool BTree::block_type::insert(const key_type& key, const block_coordinate& coor
 
     if (result.second)
     {
-        if (is_leaf())
-        {
-          // suspected place:
-          // calculated size may not correspont to really written bytes
-            size_of_packed_ +=
-                packer_traits<key_type, std_packer>::size(key) +
-                packer_traits<uint32_t, std_packer>::size(coordinate.address) +
-                packer_traits<uint32_t, std_packer>::size(coordinate.size);
-        }
-        else
-        {
-          // suspected place:
-          // calculated size may not correspont to really written bytes
-           size_of_packed_ +=
-                packer_traits<key_type, index_key_packer>::size(key) +
-                packer_traits<uint32_t, index_address_packer>::size(coordinate.address);
-        }
+        size_of_packed_ += size_of_packed_entry(result.first);
     }
 
     return result.second;
