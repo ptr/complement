@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-09 19:31:14 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-09 20:20:50 ptr>
 
 /*
  *
@@ -368,6 +368,30 @@ void BTree::block_type::set_flags( unsigned int flags )
 {
   flags_ = flags;
 }
+
+
+BTree::BTree()
+{
+}
+
+BTree::BTree( const char* filename, std::ios_base::openmode mode, std::streamsize block_size )
+{
+  BTree::open( filename, mode, block_size );
+}
+
+BTree::~BTree()
+{
+  BTree::close();
+}
+
+bool BTree::is_open()
+{ return file_.is_open(); }
+
+bool BTree::good() const
+{ return file_.good(); }
+
+bool BTree::bad() const
+{ return file_.bad(); }
 
 BTree::off_type BTree::append(const block_type& block)
 {
@@ -750,6 +774,13 @@ void BTree::open( const char* filename, std::ios_base::openmode mode, std::strea
 void BTree::clear_cache()
 {
     cache_.clear();
+}
+
+void BTree::close()
+{
+  // dump all unwritten
+  // fill/dump control structs
+  file_.close();
 }
 
 revision_id_type revision::push( const void* data, size_t sz )

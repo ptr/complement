@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-09 18:56:58 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-09 20:02:00 ptr>
 
 /*
  *
@@ -164,6 +164,14 @@ class BTree
   public:
     typedef std::pair<off_type, std::pair<key_type, key_type> > block_desc;
     typedef std::stack<block_desc> coordinate_type;
+
+    BTree();
+    BTree( const char* filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out, std::streamsize block_size = 4096 );
+    ~BTree();
+
+    bool is_open();
+    bool good() const;
+    bool bad() const;
 
     coordinate_type lookup(const key_type& key);
     coordinate_type lookup(const coordinate_type& start, const key_type& key);
