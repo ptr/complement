@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-02 19:10:50 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-09 18:56:58 ptr>
 
 /*
  *
@@ -79,21 +79,21 @@ class metainfo
     container_type rec;
 };
 
-struct header_type
-{
-    uint32_t version;
-    uint32_t block_size;
-    uint32_t address_of_the_root;
-
-    void pack(std::ostream& s) const;
-    void unpack(std::istream& s);
-};
-
 class BTree
 {
   public:
     typedef std::streambuf::off_type off_type;
     typedef xmt::uuid_type key_type;
+
+  private:
+    enum {
+      magic = 0,      // magic number
+      cgleaf_off = 1, // offset of commits ids graph leafs list
+      ver = 2,        // version of file format
+      defbsz = 3,     // default block size
+      rb_off = 4,     // offset of root
+      toc_reserve = 5 // reserved space for toc
+    };
 
   public:
     struct block_coordinate
@@ -170,7 +170,7 @@ class BTree
     const block_type& get(const coordinate_type& coordinate);
     coordinate_type insert(coordinate_type path, const key_type& key, const block_coordinate& coord);
 
-    void open( const char* filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out, uint32_t block_size = 4096);
+    void open( const char* filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out, std::streamsize block_size = 4096);
     void close();
 
     off_type add_value( const char* data, std::streamsize size );
@@ -191,7 +191,10 @@ class BTree
 
     std::fstream file_;
     std::map<off_type, block_type> cache_;
-    header_type header_;
+
+    std::streamsize bsz; // default block size
+    off_type root_block_off;
+    int format_ver;
 };
 
 struct revision_node

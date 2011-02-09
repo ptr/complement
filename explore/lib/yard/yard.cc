@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-02 18:51:31 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-09 19:31:14 ptr>
 
 /*
  *
@@ -299,33 +299,6 @@ BTree::block_type::const_iterator BTree::block_type::route(const key_type& key) 
     return --body_.end();
 }
 
-void header_type::pack(std::ostream& s) const
-{
-    const unsigned int header_size = 4096;
-    std::ostream::streampos begin_pos = s.tellp();
-
-    std_packer::pack(s, version);
-    std_packer::pack(s, block_size);
-    std_packer::pack(s, address_of_the_root);
-
-    std::ostream::streampos end_pos = s.tellp();
-    assert(end_pos - begin_pos <= header_size);
-
-    unsigned int size = end_pos - begin_pos;
-    while (size != header_size)
-    {
-        s.put(0);
-        ++size;
-    }
-}
-
-void header_type::unpack(std::istream& s)
-{
-    std_packer::unpack(s, version);
-    std_packer::unpack(s, block_size);
-    std_packer::unpack(s, address_of_the_root);
-}
-
 void BTree::block_type::pack( std::ostream& s ) const
 {
   assert(get_block_size() > 0);
@@ -398,9 +371,9 @@ void BTree::block_type::set_flags( unsigned int flags )
 
 BTree::off_type BTree::append(const block_type& block)
 {
-    off_type address = seek_to_end(file_, header_.block_size);
-    block.pack(file_);
-    return address;
+  off_type address = seek_to_end(file_, bsz );
+  block.pack(file_);
+  return address;
 }
 
 void BTree::save(off_type offset, const block_type& block)
@@ -421,7 +394,7 @@ BTree::block_type& BTree::get_block(off_type offset)
     if (it == cache_.end())
     {
         block_type& result = cache_[offset];
-        result.set_block_size(header_.block_size);
+        result.set_block_size( bsz );
         load(offset, result);
         return result;
     }
@@ -538,7 +511,7 @@ BTree::coordinate_type BTree::lookup(const key_type& key)
     min_uuid.u.l[1] = 0;
 
     coordinate_type path;
-    path.push(make_pair(header_.address_of_the_root, make_pair(min_uuid, max_uuid)));
+    path.push(make_pair( root_block_off, make_pair(min_uuid, max_uuid)));
 
     lookup_down(path, key);
 
@@ -612,7 +585,7 @@ BTree::coordinate_type BTree::insert(coordinate_type path, const key_type& key, 
 
         block_coordinate new_coord;
         new_coord.address = address_of_new_block;
-        new_coord.size = header_.block_size;
+        new_coord.size = bsz;
 
         key_type key_to_update = desc.second.first;
 
@@ -621,7 +594,7 @@ BTree::coordinate_type BTree::insert(coordinate_type path, const key_type& key, 
         if (path.empty())
         {
             block_type new_root;
-            new_root.set_block_size(header_.block_size);
+            new_root.set_block_size( bsz );
             new_root.set_flags(block_type::root_node);
 
             {
@@ -630,7 +603,7 @@ BTree::coordinate_type BTree::insert(coordinate_type path, const key_type& key, 
 
                 block_coordinate zero_coord;
                 zero_coord.address = address_of_block;
-                zero_coord.size = header_.block_size;
+                zero_coord.size = bsz;
 
                 bool result = new_root.insert(zero_key, zero_coord);
                 assert(result);
@@ -638,9 +611,9 @@ BTree::coordinate_type BTree::insert(coordinate_type path, const key_type& key, 
 
             bool result = new_root.insert(new_key, new_coord);
             assert(result);
-            cache_[header_.address_of_the_root] = new_root;
+            cache_[ root_block_off ] = new_root;
 
-            save(header_.address_of_the_root, new_root);
+            save( root_block_off, new_root);
         }
         else
         {
@@ -651,7 +624,7 @@ BTree::coordinate_type BTree::insert(coordinate_type path, const key_type& key, 
 
             block_coordinate coord;
             coord.address = address_of_block;
-            coord.size = header_.block_size;
+            coord.size = bsz;
 
             bool result = parent_block.insert(key_to_update, coord);
             assert(result);
@@ -672,28 +645,106 @@ const BTree::block_type& BTree::get(const coordinate_type& coordinate)
   return get_block(coordinate.top().first);
 }
 
-void BTree::open( const char* filename, std::ios_base::openmode mode, uint32_t block_size)
+void BTree::open( const char* filename, std::ios_base::openmode mode, std::streamsize block_size )
 {
-    if ((mode & std::ios_base::trunc) == std::ios_base::trunc)
-    {
-        file_.open(filename, std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
-        header_.version = 0;
-        header_.block_size = block_size;
-        header_.address_of_the_root = 4096;
-        header_.pack(file_);
+  if ( (mode & std::ios_base::trunc) ) {
+    file_.open(filename, std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
 
-        block_type root;
-        root.set_block_size(header_.block_size);
-        root.set_flags(block_type::root_node | block_type::leaf_node);
+    format_ver = 0;
+    bsz = block_size;
+    root_block_off = 4096;
 
-        unsigned int root_address = append(root);
-        assert(root_address == header_.address_of_the_root);
+    uint8_t  toc_key   = magic;
+    uint64_t toc_value = 0x81a5c36900000000LL;
+    file_.write( reinterpret_cast<const char*>(&toc_key), sizeof(toc_key) );
+    file_.write( reinterpret_cast<const char*>(&toc_value), sizeof(toc_value) );
+
+    toc_key = cgleaf_off;
+    toc_value = 0ULL;
+    file_.write( reinterpret_cast<const char*>(&toc_key), sizeof(toc_key) );
+    file_.write( reinterpret_cast<const char*>(&toc_value), sizeof(toc_value) );
+
+    toc_key = ver;
+    toc_value = format_ver;
+    file_.write( reinterpret_cast<const char*>(&toc_key), sizeof(toc_key) );
+    file_.write( reinterpret_cast<const char*>(&toc_value), sizeof(toc_value) );
+
+    toc_key = defbsz;
+    toc_value = block_size;
+    file_.write( reinterpret_cast<const char*>(&toc_key), sizeof(toc_key) );
+    file_.write( reinterpret_cast<const char*>(&toc_value), sizeof(toc_value) );
+
+    toc_key = rb_off;
+    toc_value = root_block_off;
+    file_.write( reinterpret_cast<const char*>(&toc_key), sizeof(toc_key) );
+    file_.write( reinterpret_cast<const char*>(&toc_value), sizeof(toc_value) );
+
+    toc_key = toc_reserve;
+    toc_value = (std::max)(static_cast<std::streambuf::off_type>(static_cast<std::streambuf::off_type>(file_.tellp()) + (sizeof(toc_key) + sizeof(toc_value)) * 2), static_cast<std::streambuf::off_type>(128) );
+    file_.write( reinterpret_cast<const char*>(&toc_key), sizeof(toc_key) );
+    file_.write( reinterpret_cast<const char*>(&toc_value), sizeof(toc_value) );
+
+    toc_key = 0;
+    toc_value = 0ULL;
+    file_.write( reinterpret_cast<const char*>(&toc_key), sizeof(toc_key) );
+    file_.write( reinterpret_cast<const char*>(&toc_value), sizeof(toc_value) );
+
+    block_type root;
+    root.set_block_size( bsz );
+    root.set_flags(block_type::root_node | block_type::leaf_node);
+
+    unsigned int root_address = append(root);
+    assert(root_address == root_block_off );
+  } else {
+    file_.open(filename, std::ios_base::in | std::ios_base::out);
+    uint8_t toc_key;
+    uint64_t toc_value;
+
+    file_.read( reinterpret_cast<char*>(&toc_key), sizeof(toc_key) );
+    file_.read( reinterpret_cast<char*>(&toc_value), sizeof(toc_value) );
+
+    if ( file_.fail() || (toc_key != magic) || (toc_value != 0x81a5c36900000000LL) ) {
+      return; // signal about fail: bad file format
     }
-    else
-    {
-        file_.open(filename, std::ios_base::in | std::ios_base::out);
-        header_.unpack(file_);
+
+    off_type reserve = 0;
+
+    for ( ; ; ) {
+      file_.read( reinterpret_cast<char*>(&toc_key), sizeof(toc_key) );
+      file_.read( reinterpret_cast<char*>(&toc_value), sizeof(toc_value) );
+      if ( file_.fail() ) {
+        return; // signal about fail: bad file format
+      }
+
+      switch ( toc_key ) {
+        case cgleaf_off:
+          break;
+        case ver:
+          format_ver = toc_value;
+          break;
+        case defbsz:
+          bsz = toc_value;
+          break;
+        case rb_off:
+          root_block_off = toc_value;
+          break;
+        case toc_reserve:
+          reserve = toc_value;
+          break;
+        case 0:
+          if ( toc_value == 0ULL ) {
+            if ( reserve != 0 ) {
+              file_.seekp( reserve, ios_base::beg );
+              file_.seekg( reserve, ios_base::beg );
+            }
+            return; // ok, end of toc
+          }
+          break;
+        default:
+          break;
+      }
     }
+  }
 }
 
 void BTree::clear_cache()
