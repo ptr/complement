@@ -41,6 +41,9 @@
 
 namespace yard {
 
+typedef uuid_packer_exp index_key_packer;
+typedef varint_packer index_address_packer;
+
 using namespace std;
 
 #if !defined(STLPORT) && defined(__GNUC__)
@@ -155,16 +158,16 @@ int BTree::block_type::erase(const key_type& key)
           // calculated size may not correspont to really written bytes
             size_of_packed_ -=
                 packer_traits<key_type, std_packer>::size(it->first) +
-                packer_traits<uint32_t, std_packer>::max_size() +
-                packer_traits<uint32_t, std_packer>::max_size();
+                packer_traits<uint32_t, std_packer>::size(it->second.address) +
+                packer_traits<uint32_t, std_packer>::size(it->second.size);
         }
         else
         {
           // suspected place:
           // calculated size may not correspont to really written bytes
            size_of_packed_ -=
-                packer_traits<key_type, uuid_packer_exp>::size(it->first) +
-                packer_traits<uint32_t, varint_packer>::size(it->second.address);
+                packer_traits<key_type, index_key_packer>::size(it->first) +
+                packer_traits<uint32_t, index_address_packer>::size(it->second.address);
         }
         body_.erase(it);
         return 1;
@@ -183,16 +186,16 @@ bool BTree::block_type::insert(const key_type& key, const block_coordinate& coor
           // calculated size may not correspont to really written bytes
             size_of_packed_ +=
                 packer_traits<key_type, std_packer>::size(key) +
-                packer_traits<uint32_t, std_packer>::max_size() +
-                packer_traits<uint32_t, std_packer>::max_size();
+                packer_traits<uint32_t, std_packer>::size(coordinate.address) +
+                packer_traits<uint32_t, std_packer>::size(coordinate.size);
         }
         else
         {
           // suspected place:
           // calculated size may not correspont to really written bytes
            size_of_packed_ +=
-                packer_traits<key_type, uuid_packer_exp>::size(key) +
-                packer_traits<uint32_t, varint_packer>::size(coordinate.address);
+                packer_traits<key_type, index_key_packer>::size(key) +
+                packer_traits<uint32_t, index_address_packer>::size(coordinate.address);
         }
     }
 
@@ -223,15 +226,15 @@ void BTree::block_type::calculate_size()
           // suspected place:
           // calculated size may not correspont to really written bytes
             size_of_packed_ += packer_traits<key_type, std_packer>::size(it->first);
-            size_of_packed_ += packer_traits<uint32_t, std_packer>::max_size();
-            size_of_packed_ += packer_traits<uint32_t, std_packer>::max_size();
+            size_of_packed_ += packer_traits<uint32_t, std_packer>::size(it->second.address);
+            size_of_packed_ += packer_traits<uint32_t, std_packer>::size(it->second.size);
         }
         else
         {
           // suspected place:
           // calculated size may not correspont to really written bytes
-            size_of_packed_ += packer_traits<key_type, uuid_packer_exp>::size(it->first);
-            size_of_packed_ += packer_traits<uint32_t, varint_packer>::size(it->second.address);
+            size_of_packed_ += packer_traits<key_type, index_key_packer>::size(it->first);
+            size_of_packed_ += packer_traits<uint32_t, index_address_packer>::size(it->second.address);
         }
     }
 }
@@ -314,8 +317,8 @@ void BTree::block_type::pack( std::ostream& s ) const
       std_packer::pack( s, static_cast<uint32_t>(it->second.address) );
       std_packer::pack( s, static_cast<uint32_t>(it->second.size) );
     } else {
-      uuid_packer_exp::pack( s, it->first );
-      varint_packer::pack( s, static_cast<uint32_t>(it->second.address) );
+      index_key_packer::pack( s, it->first );
+      index_address_packer::pack( s, static_cast<uint32_t>(it->second.address) );
     }
   }
   
@@ -354,8 +357,8 @@ void BTree::block_type::unpack( std::istream& s )
       std_packer::unpack( s, tmp );
       coordinate.size = static_cast<size_t>(tmp);
     } else {
-      uuid_packer_exp::unpack( s, key );
-      varint_packer::unpack( s, tmp );
+      index_key_packer::unpack( s, key );
+      index_address_packer::unpack( s, tmp );
       coordinate.address = static_cast<off_type>(tmp);
       coordinate.size = get_block_size();
     }
