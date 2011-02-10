@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-09 20:02:00 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-10 16:22:44 ptr>
 
 /*
  *
@@ -173,6 +173,8 @@ class BTree
     bool is_open();
     bool good() const;
     bool bad() const;
+
+    void flush();
 
     coordinate_type lookup(const key_type& key);
     coordinate_type lookup(const coordinate_type& start, const key_type& key);

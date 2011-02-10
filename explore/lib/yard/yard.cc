@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-09 20:20:50 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-10 16:25:26 ptr>
 
 /*
  *
@@ -785,6 +785,14 @@ void BTree::close()
   // dump all unwritten
   // fill/dump control structs
   file_.close();
+}
+
+void BTree::flush()
+{
+  // write all info to file,
+  // ...
+  // and flush file
+  file_.flush();
 }
 
 revision_id_type revision::push( const void* data, size_t sz )
