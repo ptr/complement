@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-01-28 18:05:30 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-10 16:34:02 ptr>
 
 /*
- * Copyright (c) 2010
+ * Copyright (c) 2010-2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -23,7 +23,7 @@ class yard_test
     int EXAM_DECL(btree_basic);
     int EXAM_DECL(btree_random);
     int EXAM_DECL(btree_init_existed);
-    // yard ng
+    // yard interface
     int EXAM_DECL(revision_in_memory);
     int EXAM_DECL(manifest_from_revision);
     int EXAM_DECL(diff_from_revision);
@@ -40,9 +40,4 @@ class yard_test
     int EXAM_DECL(fast_merge_conflict1);
     int EXAM_DECL(heads);
     int EXAM_DECL(merge1);
-
-    // initial yard
-    int EXAM_DECL(create);
-    int EXAM_DECL(put);
-    int EXAM_DECL(put_object);
 };

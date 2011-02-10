@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-28 18:09:46 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-10 16:40:47 ptr>
 
 /*
  *
@@ -52,8 +52,8 @@ int main( int argc, const char** argv )
 
   yard_perf p;
 
-  t.add(&yard_perf::packing, p, "save to file a block 10^4 times");
-  t.add(&yard_perf::unpacking, p, "load from file a block 10^4 times");
+  t.add( &yard_perf::unpacking, p, "load from file a block 10^4 times",
+    t.add( &yard_perf::packing, p, "save to file a block 10^4 times") );
 
   t.add(&yard_perf::consecutive_insert, p, "consecutive insert (10^5 entires)");
   t.add(&yard_perf::consecutive_insert_big, p, "consecutive insert (10^6 entires)");

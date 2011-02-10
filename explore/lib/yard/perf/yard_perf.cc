@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-02-02 18:24:14 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-10 16:54:46 ptr>
 
 /*
- * Copyright (c) 2010
+ * Copyright (c) 2010-2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -50,8 +50,13 @@ int EXAM_IMPL(yard_perf::packing)
     }
 
     const int count = 10000;
-    for (int i = 0; i < count; ++i)
+    for ( int i = 0; i < count; ++i ) {
         block.pack(file);
+    }
+
+    // file.close();
+
+    // unlink( "/tmp/pack_unpack" );
 
     return EXAM_RESULT;
 }
@@ -70,6 +75,10 @@ int EXAM_IMPL(yard_perf::unpacking)
         file.seekg(i* 4096, ios_base::beg);
         block.unpack(file);
     }
+
+    // file.close();
+
+    // unlink( "/tmp/pack_unpack" );
 
     return EXAM_RESULT;
 }
@@ -96,29 +105,41 @@ void fill_consecutive(yard::BTree& tree, int count)
 
 int EXAM_IMPL(yard_perf::consecutive_insert)
 {
-    using namespace yard;
+  using namespace yard;
 
+  {
     BTree tree;
     tree.init_empty("/tmp/btree_consecutive", 4096);
 
     fill_consecutive(tree, 100000);
-    return EXAM_RESULT;
+  }
+
+  // unlink( "/tmp/btree_consecutive" );
+
+  return EXAM_RESULT;
 }
 
 int EXAM_IMPL(yard_perf::consecutive_insert_big)
 {
-    using namespace yard;
+  using namespace yard;
 
+  {
     BTree tree;
     tree.init_empty("/tmp/btree_consecutive", 4096);
 
     fill_consecutive(tree, 1000000);
-    return EXAM_RESULT;
+  }
+
+  // unlink( "/tmp/btree_consecutive" );
+
+  return EXAM_RESULT;
 }
 
 int EXAM_IMPL(yard_perf::random_insert_big)
 {
-    using namespace yard;
+  using namespace yard;
+  
+  {  
     BTree tree;
     tree.init_empty("/tmp/btree_random", 4096);
 
@@ -139,19 +160,24 @@ int EXAM_IMPL(yard_perf::random_insert_big)
 
         tree.insert(coordinate, key, coord);
     }
+  }
 
-    return EXAM_RESULT;
+  // unlink( "/tmp/btree_random" );
+
+  return EXAM_RESULT;
 }
 
 int EXAM_IMPL(yard_perf::consecutive_insert_with_data)
 {
-    using namespace yard;
+  using namespace yard;
 
-    const int data_size = 4096;
-    char data[data_size];
-    for (int i = 0; i < data_size; ++i)
-        data[i] = (char)(rand() % 256);
+  const int data_size = 4096;
+  char data[data_size];
+  for ( int i = 0; i < data_size; ++i ) {
+    data[i] = (char)(rand() % 256);
+  }
 
+  {
     BTree tree;
     tree.init_empty("/tmp/btree_consecutive_with_data", 4096);
 
@@ -170,18 +196,24 @@ int EXAM_IMPL(yard_perf::consecutive_insert_with_data)
         coord.size = data_size;
         tree.insert(coordinate, key, coord);
     }
-    return EXAM_RESULT;
+  }
+
+  // unlink( "/tmp/btree_consecutive_with_data" );
+
+  return EXAM_RESULT;
 }
 
 int EXAM_IMPL(yard_perf::random_insert_with_data)
 {
-    using namespace yard;
+  using namespace yard;
 
-    const int data_size = 4096;
-    char data[data_size];
-    for (int i = 0; i < data_size; ++i)
-        data[i] = (char)(rand() % 256);
+  const int data_size = 4096;
+  char data[data_size];
+  for ( int i = 0; i < data_size; ++i ) {
+    data[i] = (char)(rand() % 256);
+  }
 
+  {
     BTree tree;
     tree.init_empty("/tmp/btree_random_with_data", 4096);
 
@@ -200,19 +232,26 @@ int EXAM_IMPL(yard_perf::random_insert_with_data)
         coord.size = data_size;
         tree.insert(coordinate, key, coord);
     }
-    return EXAM_RESULT;
+  }
+
+  // unlink( "/tmp/btree_random_with_data" );
+
+  return EXAM_RESULT;
 }
 
 int EXAM_IMPL(yard_perf::multiple_files)
 {
-    using namespace yard;
+  using namespace yard;
 
-    const int data_size = 4096;
-    char data[data_size];
-    for (int i = 0; i < data_size; ++i)
-        data[i] = (char)(rand() % 256);
+  const int data_size = 4096;
+  char data[data_size];
+  for (int i = 0; i < data_size; ++i) {
+    data[i] = (char)(rand() % 256);
+  }
 
-    const int file_count = 8;
+  const int file_count = 8;
+
+  {
     BTree trees[file_count];
 
     for (int i = 0; i < file_count; ++i)
@@ -240,13 +279,23 @@ int EXAM_IMPL(yard_perf::multiple_files)
             trees[i].insert(coordinate, key, coord);
         }
     }
-    return EXAM_RESULT;
+  }
+
+  for (int i = 0; i < file_count; ++i)
+  {
+    stringstream ss("/tmp/btree_", ios_base::ate | ios_base::out);
+    ss << i;
+    // unlink( ss.str().c_str() );
+  }
+
+  return EXAM_RESULT;
 }
 
 int EXAM_IMPL(yard_perf::random_lookup)
 {
-    using namespace yard;
+  using namespace yard;
 
+  {
     BTree tree;
     tree.init_existed("/tmp/btree_consecutive");
 
@@ -260,188 +309,9 @@ int EXAM_IMPL(yard_perf::random_lookup)
 
         BTree::coordinate_type coordinate = tree.lookup(key);
     }
-    return EXAM_RESULT;
-}
-
-int EXAM_IMPL(yard_perf::put)
-{
-  const int nn = 1024;
-
-  try {
-    yard::underground db( "/tmp/yard" );
-
-    xmt::uuid_type gen;
-
-    for ( int i = 0; i < nn; ++i ) {
-      gen = xmt::uid();
-      db.put_revision( &gen, sizeof(xmt::uuid_type) );
-    }
-  }
-  catch ( const std::ios_base::failure& err ) {
-    EXAM_ERROR( err.what() );
-  }
-  catch ( const std::invalid_argument& err ) {
-    EXAM_ERROR( err.what() );
   }
 
-  unlink( "/tmp/yard" );
-
-  return EXAM_RESULT;
-}
-
-int EXAM_IMPL(yard_perf::put_get)
-{
-  const int nn = 1024;
-
-  vector<yard::id_type> data_key;
-
-  data_key.reserve( nn );
-
-  try {
-    yard::underground db( "/tmp/yard" );
-
-    xmt::uuid_type gen;
-
-    for ( int i = 0; i < nn; ++i ) {
-      gen = xmt::uid();
-      data_key.push_back( db.put_revision( &gen, sizeof(xmt::uuid_type) ) );
-    }
-
-    std::string tmp;
-
-    for ( int i = 0; i < nn; ++i ) {
-      tmp = db.get( data_key[i] );
-
-      // cerr << i << ' ' << std::string(*reinterpret_cast<const xmt::uuid_type*>(tmp.data())) << ' ' << std::string(data_put[i]) << endl;
-      // EXAM_CHECK( db.get( data_key[i] ) == std::string( reinterpret_cast<char*>(&data_put[i].u.b[0]), sizeof(xmt::uuid_type) ) );
-    }
-  }
-  catch ( const std::ios_base::failure& err ) {
-    EXAM_ERROR( err.what() );
-  }
-  catch ( const std::invalid_argument& err ) {
-    EXAM_ERROR( err.what() );
-  }
-
-  unlink( "/tmp/yard" );
-
-  return EXAM_RESULT;
-}
-
-int EXAM_IMPL(yard_perf::put_more)
-{
-  const int nn = 10240;
-
-  try {
-    yard::underground db( "/tmp/yard" );
-
-    xmt::uuid_type gen;
-
-    for ( int i = 0; i < nn; ++i ) {
-      gen = xmt::uid();
-      db.put_revision( &gen, sizeof(xmt::uuid_type) );
-    }
-  }
-  catch ( const std::ios_base::failure& err ) {
-    EXAM_ERROR( err.what() );
-  }
-  catch ( const std::invalid_argument& err ) {
-    EXAM_ERROR( err.what() );
-  }
-
-  unlink( "/tmp/yard" );
-
-  return EXAM_RESULT;
-}
-
-int EXAM_IMPL(yard_perf::put_more_more)
-{
-  const int nn = 102400;
-
-  try {
-    yard::underground db( "/tmp/yard" );
-
-    xmt::uuid_type gen;
-
-    for ( int i = 0; i < nn; ++i ) {
-      gen = xmt::uid();
-      db.put_revision( &gen, sizeof(xmt::uuid_type) );
-    }
-  }
-  catch ( const std::ios_base::failure& err ) {
-    EXAM_ERROR( err.what() );
-  }
-  catch ( const std::invalid_argument& err ) {
-    EXAM_ERROR( err.what() );
-  }
-
-  unlink( "/tmp/yard" );
-
-  return EXAM_RESULT;
-}
-
-int EXAM_IMPL(yard_perf::put_object)
-{
-  const int nn = 1024;
-
-  try {
-    yard::underground db( "/tmp/yard" );
-
-    xmt::uuid_type gen;
-    xmt::uuid_type id;
-
-    for ( int i = 0; i < nn; ++i ) {
-      gen = xmt::uid();
-      id = xmt::uid();
-      db.put_object( id, &gen, sizeof(xmt::uuid_type) );
-    }
-  }
-  catch ( const std::ios_base::failure& err ) {
-    EXAM_ERROR( err.what() );
-  }
-  catch ( const std::invalid_argument& err ) {
-    EXAM_ERROR( err.what() );
-  }
-
-  unlink( "/tmp/yard" );
-
-  return EXAM_RESULT;
-}
-
-int EXAM_IMPL(yard_perf::put_object_r2)
-{
-  const int nn = 1024;
-
-  try {
-    yard::underground db( "/tmp/yard" );
-
-    xmt::uuid_type gen;
-    xmt::uuid_type id;
-
-    vector<yard::id_type> data_key;
-
-    data_key.reserve( nn );
-
-    for ( int i = 0; i < nn; ++i ) {
-      gen = xmt::uid();
-      id = xmt::uid();
-      data_key.push_back( id );
-      db.put_object( id, &gen, sizeof(xmt::uuid_type) );
-    }
-
-    for ( int i = 0; i < nn; ++i ) {
-      gen = xmt::uid();
-      db.put_object( data_key[i], &gen, sizeof(xmt::uuid_type) );
-    }
-  }
-  catch ( const std::ios_base::failure& err ) {
-    EXAM_ERROR( err.what() );
-  }
-  catch ( const std::invalid_argument& err ) {
-    EXAM_ERROR( err.what() );
-  }
-
-  unlink( "/tmp/yard" );
+  // unlink( "/tmp/btree_consecutive" ); ?
 
   return EXAM_RESULT;
 }

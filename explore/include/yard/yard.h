@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2011-02-10 16:22:44 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-10 16:33:53 ptr>
 
 /*
  *
- * Copyright (c) 2010
+ * Copyright (c) 2010-2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -293,74 +293,6 @@ class yard
     cache_container_type cache;
     cached_manifest_type cached_manifest;
     meta_container_type meta;
-};
-
-typedef xmt::uuid_type id_type;
-
-class underground
-{
-  public:
-    typedef size_t size_type;
-    typedef off_t  offset_type;
-
-    underground( const char* path );
-    ~underground();
-
-    id_type put_revision( const void*, size_type ) throw (std::ios_base::failure);
-    id_type put_revision( const std::string& s ) throw (std::ios_base::failure)
-      { return put_revision( s.data(), s.length() ); }
-
-    id_type put_object( const id_type&, const void*, size_type ) throw (std::ios_base::failure);
-    id_type put_object( const id_type& id, const std::string& s ) throw (std::ios_base::failure)
-      { return put_object( id, s.data(), s.length() ); }
-
-    std::string get( const id_type& ) throw (std::ios_base::failure, std::invalid_argument);
-    std::string get_object( const id_type& ) throw (std::ios_base::failure, std::invalid_argument);
-    std::pair<std::string,id_type> get_object_r( const id_type& ) throw (std::ios_base::failure, std::invalid_argument);
-
-    template <class BackInsertIterator>
-    void get_object_revisions( const id_type& id, BackInsertIterator bi ) throw (std::ios_base::failure, std::invalid_argument)
-      {
-        std::string rev;
-        get_priv( id, rev ); // object's revisions
-
-        // extract revisions
-        if ( rev.size() >= sizeof(id_type) ) {
-          for ( const char* p = rev.data(); p < (rev.data() + rev.size()); p += sizeof(id_type) ) {
-            *bi++ = *reinterpret_cast<const id_type*>(p);
-          }
-        }
-      }
-
-    void flush();
-
-  private:
-    offset_type create_block( int ) throw (std::ios_base::failure);
-    void put_raw( const id_type&, const void*, size_type ) throw (std::ios_base::failure);
-    offset_type get_priv( const id_type&, std::string& ) throw (std::ios_base::failure, std::invalid_argument);
-
-  private:
-    static const size_t block_size;
-    static const size_t hash_block_n;
-    static const size_t hash_block_id_off;
-    static const size_t hash_block_off_off;
-
-#ifdef __USE_STLPORT_HASH
-    typedef std::hash_map<id_type,offset_type> hash_table_type;
-#endif
-#ifdef __USE_STD_HASH
-    typedef __gnu_cxx::hash_map<id_type,offset_type> hash_table_type;
-#endif
-#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::tr1::unordered_map<id_type,offset_type> hash_table_type;
-#endif
-
-    std::fstream f;
-    offset_type hoff;
-    offset_type ds; // data section offset
-    size_type hsz;  // stored hash baskets size
-    offset_type* block_offset;
-    // hash_table_type cache; // objects offset cache
 };
 
 #ifdef __USE_STLPORT_HASH

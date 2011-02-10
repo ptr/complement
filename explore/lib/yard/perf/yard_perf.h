@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-01-28 18:09:31 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-10 16:37:41 ptr>
 
 /*
  *
@@ -40,13 +40,6 @@ class yard_perf
     int EXAM_DECL(random_insert_with_data);
     int EXAM_DECL(multiple_files);
     int EXAM_DECL(random_lookup);
-
-    int EXAM_DECL(put);
-    int EXAM_DECL(put_more);
-    int EXAM_DECL(put_more_more);
-    int EXAM_DECL(put_get);
-    int EXAM_DECL(put_object);
-    int EXAM_DECL(put_object_r2);
 
     int EXAM_DECL(mess);
     int EXAM_DECL(put_revisions);

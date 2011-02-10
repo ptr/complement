@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-01-28 18:17:10 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-10 16:33:46 ptr>
 
 /*
- * Copyright (c) 2010
+ * Copyright (c) 2010-2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -34,10 +34,6 @@ int main( int argc, const char** argv )
     t.add( &yard_test::btree_basic, test, "BTree test" ) );
 
   t.add( &yard_test::btree_init_existed, test, "Btree init existed test");
-
-  t.add( &yard_test::put_object, test, "put object",
-    t.add( &yard_test::put, test, "put revision",
-      t.add( &yard_test::create, test, "create hash" ) ) );
 
   t.add( &yard_test::linear_commits_neg, test, "non-linear commits",
     tc[0] = t.add( &yard_test::linear_commits, test, "linear commits",

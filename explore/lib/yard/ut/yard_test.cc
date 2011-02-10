@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-02-02 18:21:09 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-10 16:59:21 ptr>
 
 /*
- * Copyright (c) 2010
+ * Copyright (c) 2010-2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -372,6 +372,8 @@ int EXAM_IMPL(yard_test::btree_basic)
         }
     }
 
+    unlink( "/tmp/btree" );
+
     return EXAM_RESULT;
 }
 
@@ -422,6 +424,9 @@ int EXAM_IMPL(yard_test::btree_random)
             ++i;
         }
     }
+
+    unlink( "/tmp/btree" );
+
     return EXAM_RESULT;
 }
 
@@ -481,6 +486,8 @@ int EXAM_IMPL(yard_test::btree_init_existed)
             }
         }
     }
+
+    unlink( "/tmp/btree" );
 
     return EXAM_RESULT;
 }
@@ -1199,238 +1206,6 @@ int EXAM_IMPL(yard_test::merge1)
   catch ( const std::logic_error& err ) {
     EXAM_ERROR( err.what() );
   }
-
-  return EXAM_RESULT;
-}
-
-int EXAM_IMPL(yard_test::create)
-{
-  const int hash_size = 0x200;
-
-  try {
-    yard::underground db( "/tmp/yard" );
-
-    fstream f( "/tmp/yard" );
-
-    EXAM_REQUIRE( f.is_open() );
-    EXAM_REQUIRE( f.good() );
-
-    uint64_t v = 100, vv, hoff, hsz, ds;
-    bool hoff_section = false, ds_section = false, sz_hash = false, stop_rec = false;
-
-    for ( ; f.good() && v != 0; ) {
-      f.read( reinterpret_cast<char*>(&v), sizeof(v) );
-      f.read( reinterpret_cast<char*>(&vv), sizeof(vv) );
-      EXAM_REQUIRE( !f.fail() );
-      switch ( v ) {
-        case 0:
-          stop_rec = true;
-          break;
-        case 1:
-	  hoff_section = true;
-          hoff = vv;
-          break;
-        case 2:
-	  ds_section = true;
-          ds = vv;
-          break;
-        case 3:
-	  sz_hash = true;
-	  hsz = vv;
-          break;
-      }
-    }
-
-    EXAM_CHECK( hoff_section );
-    EXAM_CHECK( ds_section );
-    EXAM_CHECK( sz_hash );
-    EXAM_CHECK( stop_rec );
-
-    EXAM_CHECK( static_cast<uint64_t>(f.tellg()) == hoff );
-    EXAM_CHECK( hsz == hash_size );
-    EXAM_CHECK( ds == (hoff + hsz * sizeof(uint64_t)) );
-
-    for ( int i = 0; i < hash_size; ++i ) {
-      f.read( reinterpret_cast<char*>(&v), sizeof(v) );
-      EXAM_REQUIRE( !f.fail() );
-      EXAM_REQUIRE( v == static_cast<uint64_t>(-1) );
-      v = 0;
-    }
-  }
-  catch ( const std::ios_base::failure& err ) {
-    EXAM_ERROR( err.what() );
-  }
-
-  try {
-    // assume that it run after "create" above
-    yard::underground db( "/tmp/yard" );
-
-    fstream f( "/tmp/yard" );
-
-    EXAM_REQUIRE( f.is_open() );
-    EXAM_REQUIRE( f.good() );
-
-    uint64_t v = 100, vv, hoff, hsz, ds;
-    bool hoff_section = false, ds_section = false, sz_hash = false, stop_rec = false;
-
-    for ( ; f.good() && v != 0; ) {
-      f.read( reinterpret_cast<char*>(&v), sizeof(v) );
-      f.read( reinterpret_cast<char*>(&vv), sizeof(vv) );
-      EXAM_REQUIRE( !f.fail() );
-      switch ( v ) {
-        case 0:
-          stop_rec = true;
-          break;
-        case 1:
-	  hoff_section = true;
-          hoff = vv;
-          break;
-        case 2:
-	  ds_section = true;
-          ds = vv;
-          break;
-        case 3:
-	  sz_hash = true;
-	  hsz = vv;
-          break;
-      }
-    }
-
-    EXAM_CHECK( hoff_section );
-    EXAM_CHECK( ds_section );
-    EXAM_CHECK( sz_hash );
-    EXAM_CHECK( stop_rec );
-
-    EXAM_CHECK( static_cast<uint64_t>(f.tellg()) == hoff );
-    EXAM_CHECK( hsz == hash_size );
-    EXAM_CHECK( ds == (hoff + hsz * sizeof(uint64_t)) );
-
-    for ( int i = 0; i < hash_size; ++i ) {
-      f.read( reinterpret_cast<char*>(&v), sizeof(v) );
-      EXAM_REQUIRE( !f.fail() );
-      EXAM_REQUIRE( v == static_cast<uint64_t>(-1) );
-      v = 0;
-    }
-  }
-  catch ( const std::ios_base::failure& err ) {
-    EXAM_ERROR( err.what() );
-  }
-
-  unlink( "/tmp/yard" );
-
-  return EXAM_RESULT;
-}
-
-int EXAM_IMPL(yard_test::put)
-{
-  const int nn = 102400;
-
-  vector<xmt::uuid_type> data_put;
-  vector<yard::id_type>  data_key;
-
-  data_put.reserve( nn );
-  data_key.reserve( nn );
-
-  try {
-    yard::underground db( "/tmp/yard" );
-
-    char data[] = "Hello, world!";
-
-    yard::id_type id = db.put_revision( data, sizeof(data) );
-
-    yard::id_type id2 = db.put_revision( data, sizeof(data) );
-
-    EXAM_CHECK( id == id2 );
-
-    xmt::uuid_type gen;
-
-    for ( int i = 0; i < nn; ++i ) {
-      // cerr << i << endl;
-      gen = xmt::uid();
-      data_put.push_back( gen );
-      data_key.push_back( db.put_revision( &gen, sizeof(xmt::uuid_type) ) );
-
-      // for ( int j = 0; j <= i; ++j ) {
-      //   cerr << ' ' << j << endl;
-      //   EXAM_CHECK( db.get( data_key[j] ) == std::string( reinterpret_cast<char*>(&data_put[j].u.b[0]), sizeof(xmt::uuid_type) ) );
-      // }
-    }
-
-    std::string tmp;
-
-    for ( int i = 0; i < nn; ++i ) {
-      tmp = db.get( data_key[i] );
-
-      // cerr << i << ' ' << std::string(*reinterpret_cast<const xmt::uuid_type*>(tmp.data())) << ' ' << std::string(data_put[i]) << endl;
-      EXAM_CHECK( db.get( data_key[i] ) == std::string( reinterpret_cast<char*>(&data_put[i].u.b[0]), sizeof(xmt::uuid_type) ) );
-    }
-  }
-  catch ( const std::ios_base::failure& err ) {
-    EXAM_ERROR( err.what() );
-  }
-  catch ( const std::invalid_argument& err ) {
-    EXAM_ERROR( err.what() );
-  }
-
-  unlink( "/tmp/yard" );
-
-  return EXAM_RESULT;
-}
-
-int EXAM_IMPL(yard_test::put_object)
-{
-  const int nn = 10240;
-
-  vector<xmt::uuid_type> data_put;
-  vector<yard::id_type>  data_key;
-
-  data_put.reserve( nn );
-  data_key.reserve( nn );
-
-  try {
-    yard::underground db( "/tmp/yard" );
-
-    xmt::uuid_type gen;
-
-    for ( int i = 0; i < nn; ++i ) {
-      // cerr << i << endl;
-      gen = xmt::uid();
-      data_put.push_back( gen );
-      data_key.push_back( db.put_revision( &gen, sizeof(xmt::uuid_type) ) );
-
-      // for ( int j = 0; j <= i; ++j ) {
-      //   cerr << ' ' << j << endl;
-      //   EXAM_CHECK( db.get( data_key[j] ) == std::string( reinterpret_cast<char*>(&data_put[j].u.b[0]), sizeof(xmt::uuid_type) ) );
-      // }
-    }
-
-    xmt::uuid_type id;
-
-    for ( int i = 0; i < nn; ++i ) {
-      gen = xmt::uid();
-      id = xmt::uid();
-      db.put_object( id, &gen, sizeof(xmt::uuid_type) );
-      gen = xmt::uid();
-      db.put_object( id, &gen, sizeof(xmt::uuid_type) );
-    }
-
-    std::string tmp;
-
-    for ( int i = 0; i < nn; ++i ) {
-      tmp = db.get( data_key[i] );
-
-      // cerr << i << ' ' << std::string(*reinterpret_cast<const xmt::uuid_type*>(tmp.data())) << ' ' << std::string(data_put[i]) << endl;
-      EXAM_CHECK( db.get( data_key[i] ) == std::string( reinterpret_cast<char*>(&data_put[i].u.b[0]), sizeof(xmt::uuid_type) ) );
-    }
-  }
-  catch ( const std::ios_base::failure& err ) {
-    EXAM_ERROR( err.what() );
-  }
-  catch ( const std::invalid_argument& err ) {
-    EXAM_ERROR( err.what() );
-  }
-
-  unlink( "/tmp/yard" );
 
   return EXAM_RESULT;
 }
