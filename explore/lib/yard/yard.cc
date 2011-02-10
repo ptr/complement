@@ -237,8 +237,16 @@ void BTree::block_type::divide(block_type& other)
     other.flags_ = flags_;
     other.block_size_ = block_size_;
 
-    body_type::iterator middle = body_.begin();
-    std::advance(middle, body_.size() / 2);
+    std::streamsize size_of_new_body = 0;
+    iterator it = body_.begin();
+    while ((it != body_.end()) && (size_of_new_body < size_of_packed_ / 2))
+    {
+        size_of_new_body += size_of_packed_entry(it);
+        ++it;
+    }
+    assert(it != body_.end());
+
+    const iterator middle = it;
 
     other.body_.insert(middle, body_.end());
     body_.erase(middle, body_.end());
@@ -248,8 +256,14 @@ void BTree::block_type::divide(block_type& other)
         //add erasing of the first key in the other
     }
 
-    other.calculate_size();
+    other.size_of_packed_ = size_of_packed_ - size_of_new_body;
+    size_of_packed_ = 3 * packer_traits<uint32_t, std_packer>::max_size() + size_of_new_body;
+
     calculate_size();
+    other.calculate_size();
+
+    assert(size_of_packed_ <= block_size_);
+    assert(other.size_of_packed_ <= other.block_size_);
 
     assert(begin() != end());
     assert(other.begin() != other.end());
