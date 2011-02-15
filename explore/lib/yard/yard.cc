@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-10 16:34:18 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-14 14:59:56 ptr>
 
 /*
  *
@@ -793,6 +793,36 @@ void BTree::flush()
   // ...
   // and flush file
   file_.flush();
+}
+
+revision::revision()
+{
+}
+
+revision::revision( const char* filename, std::ios_base::openmode mode, std::streamsize block_size ) :
+    db( filename, mode, block_size )
+{
+}
+
+revision::~revision()
+{
+  if ( db.is_open() ) {
+    flush();
+  }
+}
+
+void revision::open( const char* filename, std::ios_base::openmode mode, std::streamsize block_size )
+{
+  if ( !db.is_open() ) {
+    // Required: r.empty()
+    db.open( filename, mode, block_size );
+  }
+}
+
+void revision::flush()
+{
+  // walk through r, write modified ...
+  db.flush();
 }
 
 revision_id_type revision::push( const void* data, size_t sz )

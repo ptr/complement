@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-10 16:33:53 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-14 14:57:02 ptr>
 
 /*
  *
@@ -224,6 +224,21 @@ struct revision_node
 class revision
 {
   public:
+    revision();
+    revision( const char* filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out, std::streamsize block_size = 4096 );
+    ~revision();
+
+    void open( const char* filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out, std::streamsize block_size = 4096);
+
+    bool is_open()
+      { return db.is_open(); }
+    bool good() const
+      { return db.good(); }
+    bool bad() const
+      { return db.bad(); }
+
+    void flush();
+
     revision_id_type push( const void*, size_t );
     revision_id_type push( const std::string& data )
       { return revision::push( data.data(), data.length() ); }
@@ -240,6 +255,7 @@ class revision
     typedef std::map<revision_id_type,revision_node> revisions_container_type;
 
     revisions_container_type r;
+    BTree db;
 };
 
 class yard
