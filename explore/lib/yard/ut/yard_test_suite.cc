@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-10 16:33:46 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-15 14:03:40 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -20,20 +20,21 @@ int main( int argc, const char** argv )
   exam::test_suite::test_case_type tc[7];
 
   exam::test_suite t( "libyard test suite" );
+  yard_block_test block_test;
+  yard_btree_test btree_test;
   yard_test test;
 
-  t.add( &yard_test::pack_test, test, "pack test");
+  tc[4] = t.add( &yard_test::pack_test, test, "pack test");
 
-  t.add( &yard_test::pack_unpack, test, "pack-unpack test",
-    t.add( &yard_test::block_type_divide, test, "block route divide test",
-      t.add( &yard_test::block_type_route, test, "block route test",
-        t.add( &yard_test::block_type_lookup, test, "block lookup test"
-    ) ) ) );
+  tc[5] = t.add( &yard_block_test::pack_unpack, block_test, "pack-unpack test",
+    t.add( &yard_block_test::block_type_divide, block_test, "block route divide test",
+      t.add( &yard_block_test::block_type_route, block_test, "block route test",
+        t.add( &yard_block_test::block_type_lookup, block_test, "block lookup test", tc[4] ))));
 
-  t.add( &yard_test::btree_random, test, "Btree random test",
-    t.add( &yard_test::btree_basic, test, "BTree test" ) );
+  t.add( &yard_btree_test::btree_random, btree_test, "Btree random test",
+    t.add( &yard_btree_test::btree_basic, btree_test, "BTree test", tc[5] ) );
 
-  t.add( &yard_test::btree_init_existed, test, "Btree init existed test");
+  t.add( &yard_btree_test::btree_init_existed, btree_test, "Btree init existed test");
 
   t.add( &yard_test::linear_commits_neg, test, "non-linear commits",
     tc[0] = t.add( &yard_test::linear_commits, test, "linear commits",
