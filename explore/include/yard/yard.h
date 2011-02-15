@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-14 14:57:02 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-15 14:22:35 ptr>
 
 /*
  *
@@ -79,6 +79,76 @@ class metainfo
     container_type rec;
 };
 
+namespace detail {
+
+struct block_coordinate
+{
+    typedef std::streambuf::off_type off_type;
+
+    off_type address;
+    std::streamsize size;
+};
+
+class block_type
+{
+  public:
+    typedef xmt::uuid_type key_type;
+
+  private:
+    typedef std::map<key_type, block_coordinate> body_type;
+
+  public:
+    typedef body_type::const_iterator const_iterator;
+    typedef body_type::iterator iterator;
+
+    enum {
+      root_node = 1,
+      leaf_node = 2
+    };
+
+    block_type();
+
+    bool is_root() const;
+    bool is_leaf() const;
+
+    void set_flags(unsigned int flags);
+
+    const_iterator find(const key_type& key) const;
+
+    bool insert(const key_type& key, const block_coordinate& coordinate);
+    int erase(const key_type& key);
+
+    const_iterator begin() const;
+    const_iterator end() const;
+
+    const_iterator route(const key_type& key) const;
+
+    bool is_overfilled() const;
+
+    void divide(block_type& other);
+
+    void pack(std::ostream& s) const;
+    void unpack(std::istream& s);
+
+    void set_block_size( std::streamsize block_size );
+    std::streamsize get_block_size() const;
+
+  private:
+    std::streamsize size_of_packed_entry(const_iterator it);
+    void calculate_size();
+
+    key_type min() const;
+    key_type max() const;
+
+    std::streamsize block_size_;
+    unsigned flags_;
+    std::streamsize size_of_packed_;
+
+    body_type body_;
+};
+
+} // namespace detail
+
 class BTree
 {
   public:
@@ -96,71 +166,6 @@ class BTree
     };
 
   public:
-    struct block_coordinate
-    {
-        off_type address;
-        std::streamsize size;
-    };
-
-#ifndef __FIT_YARD_UT
-  private:
-#else
-  public:
-#endif
-    class block_type
-    {
-      private:
-        typedef std::map<key_type, block_coordinate> body_type;
-
-      public:
-        typedef body_type::const_iterator const_iterator;
-        typedef body_type::iterator iterator;
-
-        enum {
-          root_node = 1,
-          leaf_node = 2
-        };
-
-        bool is_root() const;
-        bool is_leaf() const;
-
-        void set_flags(unsigned int flags);
-
-        const_iterator find(const key_type& key) const;
-
-        bool insert(const key_type& key, const block_coordinate& coordinate);
-        int erase(const key_type& key);
-
-        const_iterator begin() const;
-        const_iterator end() const;
-
-        const_iterator route(const key_type& key) const;
-
-        bool is_overfilled() const;
-
-        void divide(block_type& other);
-
-        void pack(std::ostream& s) const;
-        void unpack(std::istream& s);
-
-        void set_block_size( std::streamsize block_size );
-        std::streamsize get_block_size() const;
-
-        block_type();
-
-      private:
-        std::streamsize size_of_packed_entry(const_iterator it);
-        void calculate_size();
-
-        key_type min() const;
-        key_type max() const;
-
-        std::streamsize block_size_;
-        unsigned flags_;
-        std::streamsize size_of_packed_;
-
-        body_type body_;
-    };
 
   public:
     typedef std::pair<off_type, std::pair<key_type, key_type> > block_desc;
@@ -178,8 +183,8 @@ class BTree
 
     coordinate_type lookup(const key_type& key);
     coordinate_type lookup(const coordinate_type& start, const key_type& key);
-    const block_type& get(const coordinate_type& coordinate);
-    coordinate_type insert(coordinate_type path, const key_type& key, const block_coordinate& coord);
+    const detail::block_type& get(const coordinate_type& coordinate);
+    coordinate_type insert(coordinate_type path, const key_type& key, const detail::block_coordinate& coord);
 
     void open( const char* filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out, std::streamsize block_size = 4096);
     void close();
@@ -188,20 +193,20 @@ class BTree
     void clear_cache();
 
   private:
-    block_type& get_block(off_type offset);
+    detail::block_type& get_block(off_type offset);
 
     void lookup_down(coordinate_type& path, const key_type& key);
     key_type get_shortest_key(const key_type& first, const key_type& second);
 
-    off_type append(const block_type& block);
-    void save(off_type offset, const block_type& block);
-    void load(off_type offset, block_type& block);
+    off_type append(const detail::block_type& block);
+    void save(off_type offset, const detail::block_type& block);
+    void load(off_type offset, detail::block_type& block);
 
     key_type min_in_subtree( off_type block_address );
     key_type max_in_subtree( off_type block_address );
 
     std::fstream file_;
-    std::map<off_type, block_type> cache_;
+    std::map<off_type, detail::block_type> cache_;
 
     std::streamsize bsz; // default block size
     off_type root_block_off;

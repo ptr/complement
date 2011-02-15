@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2011-02-10 16:40:47 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-15 15:28:49 ptr>
 
 /*
  *
- * Copyright (c) 2010
+ * Copyright (c) 2010-2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -62,14 +62,6 @@ int main( int argc, const char** argv )
   t.add(&yard_perf::random_insert_with_data, p, "random insert with data (n entires)");
   t.add(&yard_perf::multiple_files, p, "multiple files");
   t.add(&yard_perf::random_lookup, p, "random lookup");
-
-  tc[1] = t.add( &yard_perf::put_more_more, p, "put-102400",
-    t.add( &yard_perf::put_more, p, "put-10240",
-      tc[0] = t.add( &yard_perf::put, p, "put-1024" ) ) );
-
-  t.add( &yard_perf::put_get, p, "put/get-1024", tc[0] );
-  t.add( &yard_perf::put_object_r2, p, "put object-1024 r2",
-    t.add( &yard_perf::put_object, p, "put object-1024", tc[0] ) );
 
   t.add( &yard_perf::mess, p, "put message 1024 yard ng" );
   t.add( &yard_perf::put_revisions, p, "put blob 1024 [revision] ng" );
