@@ -1,7 +1,7 @@
-# -*- Makefile -*- Time-stamp: <2010-11-26 13:38:19 ptr>
+# -*- Makefile -*- Time-stamp: <2011-02-15 16:29:10 ptr>
 
 LIBNAME = yard
 MAJOR = 0
 MINOR = 2
 PATCH = 0
-SRC_CC = pack.cc yard.cc
+SRC_CC = pack.cc yard.cc block.cc btree.cc

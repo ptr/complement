@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-15 14:22:35 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-15 16:06:39 ptr>
 
 /*
  *
@@ -180,6 +180,8 @@ class BTree
     bool bad() const;
 
     void flush();
+
+    // std::string&& operator []( const key_type& key );
 
     coordinate_type lookup(const key_type& key);
     coordinate_type lookup(const coordinate_type& start, const key_type& key);
