@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-15 14:03:40 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-16 17:39:16 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -31,8 +31,12 @@ int main( int argc, const char** argv )
       t.add( &yard_block_test::block_type_route, block_test, "block route test",
         t.add( &yard_block_test::block_type_lookup, block_test, "block lookup test", tc[4] ))));
 
-  t.add( &yard_btree_test::btree_random, btree_test, "Btree random test",
-    t.add( &yard_btree_test::btree_basic, btree_test, "BTree test", tc[5] ) );
+  t.add( &yard_btree_test::bad_key, btree_test, "Btree bad key",
+    t.add( &yard_btree_test::insert_extract, btree_test, "Btree extract",
+      t.add( &yard_btree_test::btree_random, btree_test, "Btree random test",
+        t.add( &yard_btree_test::btree_basic, btree_test, "BTree test", tc[5] ) ) ) );
+
+  t.add( &yard_btree_test::open_modes, btree_test, "Btree open modes", tc[5] );
 
   t.add( &yard_btree_test::btree_init_existed, btree_test, "Btree init existed test");
 

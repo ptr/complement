@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-15 16:30:02 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-15 19:28:21 ptr>
 
 /*
  *
@@ -9,7 +9,6 @@
  *
  */
 
-// #include "yard.h"
 #include <yard/yard.h>
 
 #include "pack.h"
@@ -34,9 +33,7 @@
 #endif
 
 #include <queue>
-#include <stack>
 #include <list>
-#include <limits>
 #include <iterator>
 
 namespace yard {

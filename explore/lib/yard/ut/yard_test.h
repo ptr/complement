@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-15 14:02:25 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-16 17:39:45 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -23,6 +23,10 @@ struct yard_btree_test
     int EXAM_DECL(btree_basic);
     int EXAM_DECL(btree_random);
     int EXAM_DECL(btree_init_existed);
+
+    int EXAM_DECL(insert_extract);
+    int EXAM_DECL(bad_key);
+    int EXAM_DECL(open_modes);
 };
 
 class yard_test

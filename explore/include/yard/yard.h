@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-15 16:06:39 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-16 17:44:09 ptr>
 
 /*
  *
@@ -175,44 +175,57 @@ class BTree
     BTree( const char* filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out, std::streamsize block_size = 4096 );
     ~BTree();
 
-    bool is_open();
-    bool good() const;
-    bool bad() const;
+    bool is_open()
+      { return file_.is_open(); }
+    bool good() const
+      { return file_.good(); }
+    bool bad() const
+      { return file_.bad(); }
+    bool fail() const
+      { return file_.fail(); }
 
     void flush();
 
-    // std::string&& operator []( const key_type& key );
+    std::string operator []( const key_type& key ) const throw(std::invalid_argument, std::runtime_error, std::bad_alloc);
+    void insert( const key_type& key, const std::string& value );
 
-    coordinate_type lookup(const key_type& key);
+    coordinate_type lookup( const key_type& key ) const;
     coordinate_type lookup(const coordinate_type& start, const key_type& key);
-    const detail::block_type& get(const coordinate_type& coordinate);
+    const detail::block_type& get( const coordinate_type& coordinate ) const
+      { return get_block(coordinate.top().first); }
     coordinate_type insert(coordinate_type path, const key_type& key, const detail::block_coordinate& coord);
 
     void open( const char* filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out, std::streamsize block_size = 4096);
     void close();
 
     off_type add_value( const char* data, std::streamsize size );
+
     void clear_cache();
 
   private:
-    detail::block_type& get_block(off_type offset);
+    const detail::block_type& get_block( off_type offset ) const;
 
-    void lookup_down(coordinate_type& path, const key_type& key);
+    void lookup_down( coordinate_type& path, const key_type& key ) const;
     key_type get_shortest_key(const key_type& first, const key_type& second);
 
     off_type append(const detail::block_type& block);
     void save(off_type offset, const detail::block_type& block);
-    void load(off_type offset, detail::block_type& block);
+    void load( off_type offset, detail::block_type& block ) const;
 
-    key_type min_in_subtree( off_type block_address );
-    key_type max_in_subtree( off_type block_address );
+    key_type min_in_subtree( off_type block_address ) const;
+    key_type max_in_subtree( off_type block_address ) const;
 
-    std::fstream file_;
-    std::map<off_type, detail::block_type> cache_;
+    mutable std::fstream file_;
+    mutable std::map<off_type, detail::block_type> cache_;
 
     std::streamsize bsz; // default block size
     off_type root_block_off;
     int format_ver;
+
+    static const key_type upper_key_bound;
+    static const key_type lower_key_bound;
+    static const std::pair<key_type,key_type> keys_range;
+    static const key_type zero_key;
 };
 
 struct revision_node

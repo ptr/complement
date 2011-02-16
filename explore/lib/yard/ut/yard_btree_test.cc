@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-15 15:26:10 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-16 17:45:19 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -177,6 +177,131 @@ int EXAM_IMPL(yard_btree_test::btree_init_existed)
         ++i;
       }
     }
+  }
+
+  unlink( "/tmp/btree" );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_btree_test::insert_extract)
+{
+  using namespace yard;
+
+  BTree db( "/tmp/btree", std::ios_base::trunc );
+
+  EXAM_REQUIRE( db.is_open() );
+  EXAM_REQUIRE( db.good() );
+
+  const int n = 1000;
+
+  vector<xmt::uuid_type> id;
+  vector<std::string> data;
+  std::string s( sizeof(int), '\0' );
+
+  // fill reference data:
+
+  id.reserve( n );
+  data.reserve( n );
+
+  for ( int i = 0; i < n; ++i ) {
+    id.push_back( xmt::uid() );
+
+    s[0] = static_cast<char>( i % 0xff );
+    s[1] = static_cast<char>( (i >> 8) % 0xff );
+    s[2] = static_cast<char>( (i >> 16) % 0xff );
+    s[3] = static_cast<char>( (i >> 24) % 0xff );
+
+    data.push_back( s );
+  }
+
+  EXAM_REQUIRE( id.size() == n );
+  EXAM_REQUIRE( data.size() == n );
+
+  // write into db:
+
+  for ( int i = 0; i < n; ++i ) {
+    db.insert( id[i], data[i] );
+  }
+
+  EXAM_REQUIRE( db.good() );
+
+  // extract from db and compare with reference:
+
+  for ( int i = 0; i < n; ++i ) {
+    EXAM_CHECK( db[id[i]] == data[i] );
+  }
+
+  db.close();
+
+  unlink( "/tmp/btree" );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_btree_test::bad_key)
+{
+  using namespace yard;
+
+  BTree db( "/tmp/btree", std::ios_base::trunc );
+
+  EXAM_REQUIRE( db.is_open() );
+  EXAM_REQUIRE( db.good() );
+
+  try {
+    db[xmt::uid()];
+    EXAM_ERROR( "std::invalid_argument exception expected" );
+  }
+  catch ( const std::invalid_argument& ) {
+    EXAM_MESSAGE( "std::invalid_argument exception, as expected" );
+  }
+
+  db.close();
+
+  unlink( "/tmp/btree" );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_btree_test::open_modes)
+{
+  using namespace yard;
+
+  { // create, if not exist; truncate if exist
+    BTree db( "/tmp/btree", std::ios_base::trunc );
+
+    EXAM_CHECK( db.is_open() );
+    EXAM_CHECK( db.good() );
+  }
+
+  unlink( "/tmp/btree" );
+
+  { // existed expected
+    BTree db( "/tmp/btree" );
+
+    EXAM_CHECK( !db.is_open() );
+    // EXAM_CHECK( db.bad() ); // no operations, not opened, undefined flags
+  }
+
+  { // std::ios_base::in has no effect
+    BTree db( "/tmp/btree", std::ios_base::in | std::ios_base::out | std::ios_base::trunc );
+
+    EXAM_CHECK( db.is_open() );
+    EXAM_CHECK( db.good() );
+  }
+
+  { // std::ios_base::in has no effect
+    BTree db( "/tmp/btree", std::ios_base::in | std::ios_base::out );
+
+    EXAM_CHECK( db.is_open() );
+    EXAM_CHECK( db.good() );
+  }
+
+  {
+    BTree db( "/tmp/btree" );
+
+    EXAM_CHECK( db.is_open() );
+    EXAM_CHECK( db.good() );
   }
 
   unlink( "/tmp/btree" );

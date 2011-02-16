@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-15 16:28:44 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-16 19:35:18 ptr>
 
 /*
  *
@@ -9,7 +9,6 @@
  *
  */
 
-// #include "yard.h"
 #include <yard/yard.h>
 
 #include "pack.h"
@@ -22,7 +21,6 @@
 #include <sstream>
 #include <iomanip>
 #include <functional>
-#include <misc/md5.h>
 #include <exam/defs.h>
 
 #include <algorithm>
@@ -33,11 +31,9 @@
 #  include <ext/functional>
 #endif
 
-#include <queue>
-#include <stack>
-#include <list>
-#include <limits>
 #include <iterator>
+
+#include <stdexcept>
 
 namespace yard {
 
@@ -77,6 +73,11 @@ void get_data( std::fstream& file, BTree::off_type address, char* data, std::str
   file.read( data, size );
 }
 
+const BTree::key_type BTree::upper_key_bound = { {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff} };
+const BTree::key_type BTree::lower_key_bound = { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0} };
+const std::pair<BTree::key_type,BTree::key_type> BTree::keys_range = { BTree::lower_key_bound, BTree::upper_key_bound };
+const BTree::key_type BTree::zero_key = { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0} };
+
 BTree::BTree()
 {
 }
@@ -91,15 +92,6 @@ BTree::~BTree()
   BTree::close();
 }
 
-bool BTree::is_open()
-{ return file_.is_open(); }
-
-bool BTree::good() const
-{ return file_.good(); }
-
-bool BTree::bad() const
-{ return file_.bad(); }
-
 BTree::off_type BTree::append(const detail::block_type& block)
 {
   off_type address = seek_to_end(file_, bsz );
@@ -113,140 +105,116 @@ void BTree::save(off_type offset, const detail::block_type& block)
     block.pack(file_);
 }
 
-void BTree::load(off_type offset, detail::block_type& block)
+void BTree::load( off_type offset, detail::block_type& block ) const
 {
-    file_.seekg(offset, ios_base::beg);
-    block.unpack(file_);
+  file_.seekg( offset, ios_base::beg );
+  block.unpack(file_);
 }
 
-detail::block_type& BTree::get_block(off_type offset)
+const detail::block_type& BTree::get_block( off_type offset ) const
 {
-  map<off_type, detail::block_type>::iterator it = cache_.find(offset);
-    if (it == cache_.end())
-    {
-      detail::block_type& result = cache_[offset];
-        result.set_block_size( bsz );
-        load(offset, result);
-        return result;
-    }
-    else
-    {
-        return it->second;
-    }
+  map<off_type, detail::block_type>::const_iterator it = cache_.find(offset);
+
+  if ( it == cache_.end() ) {
+    detail::block_type& result = cache_[offset];
+    result.set_block_size( bsz );
+    load(offset, result);
+    return result;
+  }
+
+  return it->second;
 }
 
-BTree::key_type BTree::min_in_subtree( off_type block_address )
+BTree::key_type BTree::min_in_subtree( off_type block_address ) const
 {
-  detail::block_type& block = get_block(block_address);
+  const detail::block_type& block = get_block( block_address );
 
-    assert(block.begin() != block.end());
-    if (block.is_leaf())
-    {
-        return block.begin()->first;
-    }
-    else
-    {
-        off_type address_of_new_block = block.begin()->second.address;
-        return min_in_subtree(address_of_new_block);
-    }
+  assert(block.begin() != block.end());
+
+  if ( block.is_leaf() ) {
+    return block.begin()->first;
+  }
+
+  return min_in_subtree( block.begin()->second.address );
 }
 
-BTree::key_type BTree::max_in_subtree( off_type block_address )
+BTree::key_type BTree::max_in_subtree( off_type block_address ) const
 {
-  detail::block_type& block = get_block(block_address);
+  const detail::block_type& block = get_block( block_address );
 
-    assert(block.begin() != block.end());
-    if (block.is_leaf())
-    {
-        return (--block.end())->first;
-    }
-    else
-    {
-        off_type address_of_new_block = (--block.end())->second.address;
-        return max_in_subtree(address_of_new_block);
-    }
-}
+  assert(block.begin() != block.end());
 
+  if ( block.is_leaf() ) {
+    return (--block.end())->first;
+  }
 
-BTree::off_type BTree::add_value( const char* data, streamsize size )
-{
-    return append_data(file_, data, size);
+  return max_in_subtree( (--block.end())->second.address );
 }
 
 BTree::coordinate_type BTree::lookup(const coordinate_type& start, const key_type& key)
 {
-    if (start.empty())
-        return lookup(key);
+  if ( start.empty() ) {
+    return lookup(key);
+  }
 
-    coordinate_type result = start;
-    pair<key_type, key_type>& segment = result.top().second;
+  coordinate_type result = start;
+  pair<key_type, key_type>& segment = result.top().second;
 
-    while ((segment.first > key) || (segment.second < key))
-    {
-        result.pop();
+  while ( (segment.first > key) || (segment.second < key) ) {
+    result.pop();
 
-        assert(!result.empty());
-        segment = result.top().second;
-    }
+    assert(!result.empty());
+    segment = result.top().second;
+  }
 
-    lookup_down(result, key);
-    return result;
+  lookup_down(result, key);
+  return result;
 }
 
+/*
 BTree::key_type prev_uuid(BTree::key_type key)
 {
-    assert(!((key.u.l[0] == 0) && (key.u.l[1] == 0)));
+  if (key.u.l[1] == 0)
+    --key.u.l[0];
 
-    if (key.u.l[1] == 0)
-        --key.u.l[0];
-
-    --key.u.l[1];
-    return key;
+  --key.u.l[1];
+  return key;
 }
+*/
 
-void BTree::lookup_down(coordinate_type& path, const key_type& key)
+void BTree::lookup_down( coordinate_type& path, const key_type& key ) const
 {
-    key_type max_uuid;
-    max_uuid.u.l[0] = numeric_limits<uint64_t>::max();
-    max_uuid.u.l[1] = numeric_limits<uint64_t>::max();
+  auto prev_uuid = []( key_type key ) { if ( key.u.l[1]-- == 0 ) { --key.u.l[0]; } return key; };
 
-    while (true)
-    {
-      detail::block_type& new_block = get_block(path.top().first);
+  for ( ; ;  ) {
+    const detail::block_type& new_block = get_block( path.top().first );
 
-        if (new_block.is_leaf())
-            return;
-
-        std::pair<key_type, key_type> segment;
-
-        detail::block_type::const_iterator next_block = new_block.route(key);
-        segment.first = next_block->first;
-
-        detail::block_type::const_iterator next_next_block = next_block;
-        advance(next_next_block, 1);
-
-        segment.second = next_next_block == new_block.end() ? max_uuid : prev_uuid(next_next_block->first);
-
-        path.push(make_pair(next_block->second.address, segment));
+    if ( new_block.is_leaf() ) {
+      return;
     }
+
+    std::pair<key_type, key_type> segment;
+
+    detail::block_type::const_iterator next_block = new_block.route(key);
+    segment.first = next_block->first;
+
+    detail::block_type::const_iterator next_next_block = next_block;
+    advance(next_next_block, 1);
+
+    segment.second = next_next_block == new_block.end() ? upper_key_bound : prev_uuid(next_next_block->first);
+
+    path.push(make_pair(next_block->second.address, segment));
+  }
 }
 
-BTree::coordinate_type BTree::lookup(const key_type& key)
+BTree::coordinate_type BTree::lookup( const key_type& key ) const
 {
-    key_type max_uuid, min_uuid;
+  coordinate_type path;
+  path.push( make_pair( root_block_off, keys_range ) );
 
-    max_uuid.u.l[0] = numeric_limits<uint64_t>::max();
-    max_uuid.u.l[1] = numeric_limits<uint64_t>::max();
+  lookup_down( path, key );
 
-    min_uuid.u.l[0] = 0;
-    min_uuid.u.l[1] = 0;
-
-    coordinate_type path;
-    path.push(make_pair( root_block_off, make_pair(min_uuid, max_uuid)));
-
-    lookup_down(path, key);
-
-    return path;
+  return path;
 }
 
 BTree::key_type BTree::get_shortest_key(const key_type& first_key, const key_type& second_key)
@@ -283,7 +251,7 @@ BTree::coordinate_type BTree::insert(coordinate_type path, const key_type& key, 
 {
   const block_desc& desc = path.top();
 
-  detail::block_type& block = get_block(desc.first);
+  detail::block_type& block = const_cast<detail::block_type&>( get_block( desc.first ) );
   bool result = block.insert(key, coord);
   assert(result);
 
@@ -323,7 +291,7 @@ BTree::coordinate_type BTree::insert(coordinate_type path, const key_type& key, 
   path.pop();
 
   if ( !path.empty() ) {
-    detail::block_type& parent_block = get_block(path.top().first);
+    detail::block_type& parent_block = const_cast<detail::block_type&>( get_block( path.top().first ) );
 
     int count = parent_block.erase(key_to_update);
     assert(count == 1);
@@ -343,14 +311,11 @@ BTree::coordinate_type BTree::insert(coordinate_type path, const key_type& key, 
   new_root.set_flags(detail::block_type::root_node);
 
   {
-    key_type zero_key;
-    zero_key.u.l[0] = zero_key.u.l[1] = 0;
+    // detail::block_coordinate zero_coord;
+    // zero_coord.address = address_of_block;
+    // zero_coord.size = bsz;
 
-    detail::block_coordinate zero_coord;
-    zero_coord.address = address_of_block;
-    zero_coord.size = bsz;
-
-    bool result = new_root.insert(zero_key, zero_coord);
+    bool result = new_root.insert(zero_key, /* zero_coord */ detail::block_coordinate{address_of_block, bsz} );
     assert(result);
   }
 
@@ -361,11 +326,6 @@ BTree::coordinate_type BTree::insert(coordinate_type path, const key_type& key, 
   save( root_block_off, new_root);
 
   return path;
-}
-
-const detail::block_type& BTree::get(const coordinate_type& coordinate)
-{
-  return get_block(coordinate.top().first);
 }
 
 void BTree::open( const char* filename, std::ios_base::openmode mode, std::streamsize block_size )
@@ -488,6 +448,47 @@ void BTree::flush()
   // ...
   // and flush file
   file_.flush();
+}
+
+BTree::off_type BTree::add_value( const char* data, std::streamsize size )
+{
+  return append_data(file_, data, size);
+}
+
+std::string BTree::operator []( const key_type& key ) const throw(std::invalid_argument, std::runtime_error, std::bad_alloc)
+{
+  coordinate_type c = lookup( key );
+
+  const detail::block_type& b = get( c );
+
+  detail::block_type::const_iterator i = b.find( key );
+
+  if ( i == b.end() ) {
+    throw std::invalid_argument( "bad key" );
+  }
+
+  std::string s( i->second.size, '\0' );
+
+  file_.seekg( i->second.address );
+  file_.read( const_cast<char*>(s.data()), i->second.size );
+
+  if ( file_.fail() ) {
+    throw std::runtime_error( "file reading error" );
+  }
+
+  return s;
+}
+
+void BTree::insert( const key_type& key, const std::string& value )
+{
+  detail::block_coordinate addr;
+
+  addr.address = add_value( value.data(), value.size() );
+  addr.size = value.size();
+
+  coordinate_type c = lookup( key );
+
+  insert( c, key, addr );
 }
 
 } // namespace yard
