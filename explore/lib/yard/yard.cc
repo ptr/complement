@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-15 19:28:21 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-17 18:12:34 ptr>
 
 /*
  *
@@ -207,8 +207,19 @@ const std::string& revision::get( const revision_id_type& rid ) throw( std::inva
   revisions_container_type::iterator i = r.find( rid );
 
   if ( i == r.end() ) {
-    // Try to upload from disk
-    throw std::invalid_argument( "invalid revision" );
+    try {
+      // Try to upload from disk
+      // string tmp( db[rid] );
+
+      // revision_node& node = r[rid];
+      // node.content.swap( tmp );
+      i = r.insert( make_pair(rid, revision_node{ 0, db[rid], xmt::nil_uuid } ) ).first;
+      // i = r.find( rid );
+    }
+    catch ( const std::invalid_argument& err ) {
+      // r.erase( rid );
+      throw std::invalid_argument( "invalid revision" );
+    }
   }
 
   return i->second.content;
@@ -219,8 +230,17 @@ void revision::get_manifest( manifest_type& m, const revision_id_type& rid ) thr
   revisions_container_type::iterator i = r.find( rid );
 
   if ( i == r.end() ) {
-    // Try to upload from disk
-    throw std::invalid_argument( "invalid revision" );
+    try {
+      // Try to upload from disk
+      // revision_node& node = r[rid];
+      // node.content = db[rid];
+      i = r.insert( make_pair(rid, revision_node{ 0, db[rid], xmt::nil_uuid } ) ).first;
+      // i = r.find( rid );
+    }
+    catch ( const std::invalid_argument& err ) {
+      // r.erase( rid );
+      throw std::invalid_argument( "invalid revision" );
+    }
   }
 
   istringstream s( i->second.content );
@@ -244,6 +264,10 @@ void revision::get_manifest( manifest_type& m, const revision_id_type& rid ) thr
     }
     m[str] = rev;
   } while ( s.good() );
+
+  if ( (i->second.flags & revision_node::mod) == 0 ) {
+    r.erase( i );
+  }
 }
 
 void revision::get_diff( diff_type& d, const revision_id_type& rid ) throw( std::invalid_argument )
@@ -251,8 +275,17 @@ void revision::get_diff( diff_type& d, const revision_id_type& rid ) throw( std:
   revisions_container_type::iterator i = r.find( rid );
 
   if ( i == r.end() ) {
-    // Try to upload from disk
-    throw std::invalid_argument( "invalid revision" );
+    try {
+      // Try to upload from disk
+      // revision_node& node = r[rid];
+      // node.content = db[rid];
+      i = r.insert( make_pair(rid, revision_node{ 0, db[rid], xmt::nil_uuid } ) ).first;
+      // i = r.find( rid );
+    }
+    catch ( const std::invalid_argument& err ) {
+      // r.erase( rid );
+      throw std::invalid_argument( "invalid revision" );
+    }
   }
 
   istringstream s( i->second.content );
@@ -294,6 +327,10 @@ void revision::get_diff( diff_type& d, const revision_id_type& rid ) throw( std:
     }
     d.second[str] = rev;
   } while ( s.good() );
+
+  if ( (i->second.flags & revision_node::mod) == 0 ) {
+    r.erase( i );
+  }
 }
 
 void revision::get_commit( commit_node& c, const revision_id_type& rid ) throw( std::invalid_argument )
@@ -301,8 +338,17 @@ void revision::get_commit( commit_node& c, const revision_id_type& rid ) throw( 
   revisions_container_type::iterator i = r.find( rid );
 
   if ( i == r.end() ) {
-    // Try to upload from disk
-    throw std::invalid_argument( "invalid revision" );
+    try {
+      // Try to upload from disk
+      // revision_node& node = r[rid];
+      // node.content = db[rid];
+      i = r.insert( make_pair(rid, revision_node{ 0, db[rid], xmt::nil_uuid } ) ).first;
+      // i = r.find( rid );
+    }
+    catch ( const std::invalid_argument& err ) {
+      // r.erase( rid );
+      throw std::invalid_argument( "invalid revision" );
+    }
   }
 
   istringstream s( i->second.content );
@@ -333,6 +379,10 @@ void revision::get_commit( commit_node& c, const revision_id_type& rid ) throw( 
         c.edge_in.push_back( rid2 );
       }
     }
+  }
+
+  if ( (i->second.flags & revision_node::mod) == 0 ) {
+    r.erase( i );
   }
 }
 
