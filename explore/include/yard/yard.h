@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-16 17:44:09 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-17 19:02:54 ptr>
 
 /*
  *
@@ -282,6 +282,19 @@ class yard
 {
   public:
     yard();
+    yard( const char* filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out, std::streamsize block_size = 4096 );
+    ~yard();
+
+    void open( const char* filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out, std::streamsize block_size = 4096);
+
+    bool is_open()
+      { return r.is_open(); }
+    bool good() const
+      { return r.good(); }
+    bool bad() const
+      { return r.bad(); }
+
+    void flush();
 
     /* commit id generated on client side instead of within yard_ng,
        because of potential distributed nature of db (id should be same

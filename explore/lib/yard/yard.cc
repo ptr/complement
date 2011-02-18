@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-17 18:12:34 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-18 00:31:59 ptr>
 
 /*
  *
@@ -101,6 +101,11 @@ void revision::open( const char* filename, std::ios_base::openmode mode, std::st
 void revision::flush()
 {
   // walk through r, write modified ...
+  for ( auto i = r.begin(); i != r.end(); ++i ) {
+    if ( (i->second.flags & revision_node::mod) != 0 ) {
+      db.insert( i->first, i->second.content );
+    }
+  }
   db.flush();
 }
 
@@ -396,6 +401,38 @@ yard::yard()
   c[xmt::nil_uuid].mid = mid; // root
   c[xmt::nil_uuid].delta = 0; // root
   c[xmt::nil_uuid].dref = -1;
+}
+
+yard::yard( const char* filename, std::ios_base::openmode mode, std::streamsize block_size ) :
+    r( filename, mode, block_size )
+{
+  // r.open( filename, mode, block_size );
+
+  manifest_type m;
+  
+  manifest_id_type mid = r.push( m ); // ToDo: clear mod flag in r
+
+  cached_manifest[mid]; // = m;
+  c[xmt::nil_uuid].mid = mid; // root
+  c[xmt::nil_uuid].delta = 0; // root
+  c[xmt::nil_uuid].dref = -1;
+}
+
+yard::~yard()
+{
+  if ( r.is_open() ) {
+    r.flush();
+  }
+}
+
+void yard::open( const char* filename, std::ios_base::openmode mode, std::streamsize block_size )
+{
+  r.open( filename, mode, block_size );
+}
+
+void yard::flush()
+{
+  r.flush();
 }
 
 void yard::open_commit_delta( const commit_id_type& base, const commit_id_type& m )
