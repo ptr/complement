@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-17 19:02:54 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-23 13:53:21 ptr>
 
 /*
  *
@@ -263,6 +263,7 @@ class revision
     revision_id_type push( const std::string& data )
       { return revision::push( data.data(), data.length() ); }
     revision_id_type push( const manifest_type& );
+    revision_id_type push( bool clear_mod = false );
     revision_id_type push( const diff_type& );
     revision_id_type push( const commit_node&, const commit_id_type& );
     const std::string& get( const revision_id_type& ) throw( std::invalid_argument );

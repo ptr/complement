@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-18 00:31:59 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-27 10:19:24 ptr>
 
 /*
  *
@@ -100,10 +100,13 @@ void revision::open( const char* filename, std::ios_base::openmode mode, std::st
 
 void revision::flush()
 {
+  cerr << HERE << endl;
   // walk through r, write modified ...
   for ( auto i = r.begin(); i != r.end(); ++i ) {
     if ( (i->second.flags & revision_node::mod) != 0 ) {
+      cerr << HERE << ' ' << i->first << endl;
       db.insert( i->first, i->second.content );
+      i->second.flags &= ~revision_node::mod;
     }
   }
   db.flush();
@@ -146,6 +149,31 @@ revision_id_type revision::push( const manifest_type& m )
   return push( s.str() );
 }
 
+revision_id_type revision::push( bool clear_mod )
+{
+  MD5_CTX ctx;
+  revision_id_type rid;
+  const uint8_t* data = 0;
+
+  MD5Init( &ctx );
+  MD5Update( &ctx, data, 0 );
+  MD5Final( rid.u.b, &ctx );
+
+  if ( r.find( rid ) != r.end() ) {
+    return rid;
+  }
+
+  revision_node& node = r[rid];
+
+  if ( !clear_mod ) {
+    node.flags |= revision_node::mod;
+  }
+  // node.content.assign( static_cast<const char*>(data), sz );
+
+  return rid;
+
+}
+
 revision_id_type revision::push( const diff_type& d )
 {
   stringstream s;
@@ -175,6 +203,8 @@ revision_id_type revision::push( const diff_type& d )
 
 revision_id_type revision::push( const commit_node& c, const commit_id_type& cid )
 {
+  cerr << HERE << endl;
+
   if ( r.find( cid ) != r.end() ) {
     return cid;
   }
@@ -347,6 +377,7 @@ void revision::get_commit( commit_node& c, const revision_id_type& rid ) throw( 
       // Try to upload from disk
       // revision_node& node = r[rid];
       // node.content = db[rid];
+      cerr << HERE << endl;
       i = r.insert( make_pair(rid, revision_node{ 0, db[rid], xmt::nil_uuid } ) ).first;
       // i = r.find( rid );
     }
@@ -391,11 +422,17 @@ void revision::get_commit( commit_node& c, const revision_id_type& rid ) throw( 
   }
 }
 
+// this is just md5 of zero-length string; it same as mid
+// of manifest of root of commits tree
+static manifest_id_type root_mid = 
+{ {0xd4, 0x1d, 0x8c, 0xd9, 0x8f, 0x00, 0xb2, 0x04,
+   0xe9, 0x80, 0x09, 0x98, 0xec, 0xf8, 0x42, 0x7e} };
+
 yard::yard()
 {
-  manifest_type m;
+  // manifest_type m;
   
-  manifest_id_type mid = r.push( m ); // ToDo: clear mod flag in r
+  manifest_id_type mid = root_mid; // r.push( true ); // ToDo: clear mod flag in r
 
   cached_manifest[mid]; // = m;
   c[xmt::nil_uuid].mid = mid; // root
@@ -408,9 +445,9 @@ yard::yard( const char* filename, std::ios_base::openmode mode, std::streamsize 
 {
   // r.open( filename, mode, block_size );
 
-  manifest_type m;
+  // manifest_type m;
   
-  manifest_id_type mid = r.push( m ); // ToDo: clear mod flag in r
+  manifest_id_type mid = root_mid; // r.push( true ); // ToDo: clear mod flag in r
 
   cached_manifest[mid]; // = m;
   c[xmt::nil_uuid].mid = mid; // root
