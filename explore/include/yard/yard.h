@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-23 13:53:21 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-28 19:05:11 ptr>
 
 /*
  *
@@ -263,7 +263,6 @@ class revision
     revision_id_type push( const std::string& data )
       { return revision::push( data.data(), data.length() ); }
     revision_id_type push( const manifest_type& );
-    revision_id_type push( bool clear_mod = false );
     revision_id_type push( const diff_type& );
     revision_id_type push( const commit_node&, const commit_id_type& );
     const std::string& get( const revision_id_type& ) throw( std::invalid_argument );
@@ -343,6 +342,8 @@ class yard
     cache_container_type cache;
     cached_manifest_type cached_manifest;
     meta_container_type meta;
+
+    static manifest_id_type root_mid;
 };
 
 #ifdef __USE_STLPORT_HASH
