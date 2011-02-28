@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-18 01:27:34 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-28 20:26:43 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -35,7 +35,7 @@ class yard_test
     int EXAM_DECL(pack_test);
 
     // yard interface
-    int EXAM_DECL(revision_in_memory);
+    int EXAM_DECL(revision);
     int EXAM_DECL(manifest_from_revision);
     int EXAM_DECL(diff_from_revision);
     int EXAM_DECL(commit_from_revision1);
@@ -53,5 +53,6 @@ class yard_test
     int EXAM_DECL(merge1);
 
     // yard on disk
-    int EXAM_DECL(open);
+    int EXAM_DECL(core_life_cycle);
+    int EXAM_DECL(clear_mod_flag);
 };

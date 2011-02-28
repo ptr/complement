@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-28 19:05:26 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-28 19:28:51 ptr>
 
 /*
  *
@@ -100,11 +100,9 @@ void revision::open( const char* filename, std::ios_base::openmode mode, std::st
 
 void revision::flush()
 {
-  cerr << HERE << endl;
   // walk through r, write modified ...
   for ( auto i = r.begin(); i != r.end(); ++i ) {
     if ( (i->second.flags & revision_node::mod) != 0 ) {
-      cerr << HERE << ' ' << i->first << endl;
       db.insert( i->first, i->second.content );
       i->second.flags &= ~revision_node::mod;
     }
@@ -178,8 +176,6 @@ revision_id_type revision::push( const diff_type& d )
 
 revision_id_type revision::push( const commit_node& c, const commit_id_type& cid )
 {
-  cerr << HERE << endl;
-
   if ( r.find( cid ) != r.end() ) {
     return cid;
   }
@@ -352,7 +348,6 @@ void revision::get_commit( commit_node& c, const revision_id_type& rid ) throw( 
       // Try to upload from disk
       // revision_node& node = r[rid];
       // node.content = db[rid];
-      cerr << HERE << endl;
       i = r.insert( make_pair(rid, revision_node{ 0, db[rid], xmt::nil_uuid } ) ).first;
       // i = r.find( rid );
     }
@@ -536,6 +531,8 @@ void yard::close_commit_delta( const commit_id_type& m )
 
   leaf.push_back( i->first );
   cache.erase( i );
+
+  r.push( c[m], m );
 }
 
 manifest_id_type yard::aggregate_delta( const commit_id_type& f, diff_type& diff )

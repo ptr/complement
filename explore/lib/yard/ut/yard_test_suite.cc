@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-19 23:13:32 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-28 20:33:37 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -27,14 +27,14 @@ int main( int argc, const char** argv )
   tc[4] = t.add( &yard_test::pack_test, test, "pack test");
 
   tc[5] = t.add( &yard_block_test::pack_unpack, block_test, "pack-unpack test",
-    t.add( &yard_block_test::block_type_divide, block_test, "block route divide test",
-      t.add( &yard_block_test::block_type_route, block_test, "block route test",
-        t.add( &yard_block_test::block_type_lookup, block_test, "block lookup test", tc[4] ))));
+    t.add( &yard_block_test::block_type_divide, block_test, "block divide",
+      t.add( &yard_block_test::block_type_route, block_test, "block route",
+        t.add( &yard_block_test::block_type_lookup, block_test, "block lookup", tc[4] ))));
 
   tc[6] = t.add( &yard_btree_test::bad_key, btree_test, "Btree bad key",
-    t.add( &yard_btree_test::insert_extract, btree_test, "Btree extract",
-      t.add( &yard_btree_test::btree_random, btree_test, "Btree random test",
-        t.add( &yard_btree_test::btree_basic, btree_test, "BTree test", tc[5] ) ) ) );
+    t.add( &yard_btree_test::insert_extract, btree_test, "Btree insert/extract",
+      t.add( &yard_btree_test::btree_random, btree_test, "Btree random",
+        t.add( &yard_btree_test::btree_basic, btree_test, "Btree basic", tc[5] ) ) ) );
 
   t.add( &yard_btree_test::open_modes, btree_test, "Btree open modes", tc[5] );
 
@@ -42,8 +42,8 @@ int main( int argc, const char** argv )
 
   t.add( &yard_test::linear_commits_neg, test, "non-linear commits",
     tc[0] = t.add( &yard_test::linear_commits, test, "linear commits",
-      t.add( &yard_test::access, test, "access",
-        tc[2] = t.add( &yard_test::revision_in_memory, test, "revision in memory" ) ) ) );
+      t.add( &yard_test::access, test, "core commit",
+        tc[2] = t.add( &yard_test::revision, test, "core revision" ) ) ) );
 
   tc[3] = t.add( &yard_test::diff_from_revision, test, "recover delta from revision",
     t.add( &yard_test::manifest_from_revision, test, "recover manifest from revision", tc[2] ) );
@@ -61,7 +61,8 @@ int main( int argc, const char** argv )
   t.add( &yard_test::heads, test, "heads of commits graph", tc[2] );
   t.add( &yard_test::merge1, test, "merge with conflict", tc[1] );
 
-  t.add( &yard_test::open, test, "open db on disk", tc + 6, tc + 8 );
+  t.add( &yard_test::core_life_cycle, test, "basic life cycle with known commit id", tc + 6, tc + 8 );
+  t.add( &yard_test::clear_mod_flag, test, "clear mod flag on flush", tc + 6, tc + 8 );
 
   Opts opts;
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-28 19:05:11 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-28 19:19:53 ptr>
 
 /*
  *
@@ -296,7 +296,7 @@ class yard
 
     void flush();
 
-    /* commit id generated on client side instead of within yard_ng,
+    /* commit id generated on client side instead of within yard,
        because of potential distributed nature of db (id should be same
        on every node of group).
      */
