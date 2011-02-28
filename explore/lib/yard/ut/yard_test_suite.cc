@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-16 17:39:16 ptr>
+// -*- C++ -*- Time-stamp: <2011-02-19 23:13:32 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -17,7 +17,7 @@ using namespace std::tr2;
 
 int main( int argc, const char** argv )
 {
-  exam::test_suite::test_case_type tc[7];
+  exam::test_suite::test_case_type tc[10];
 
   exam::test_suite t( "libyard test suite" );
   yard_block_test block_test;
@@ -31,7 +31,7 @@ int main( int argc, const char** argv )
       t.add( &yard_block_test::block_type_route, block_test, "block route test",
         t.add( &yard_block_test::block_type_lookup, block_test, "block lookup test", tc[4] ))));
 
-  t.add( &yard_btree_test::bad_key, btree_test, "Btree bad key",
+  tc[6] = t.add( &yard_btree_test::bad_key, btree_test, "Btree bad key",
     t.add( &yard_btree_test::insert_extract, btree_test, "Btree extract",
       t.add( &yard_btree_test::btree_random, btree_test, "Btree random test",
         t.add( &yard_btree_test::btree_basic, btree_test, "BTree test", tc[5] ) ) ) );
@@ -48,7 +48,7 @@ int main( int argc, const char** argv )
   tc[3] = t.add( &yard_test::diff_from_revision, test, "recover delta from revision",
     t.add( &yard_test::manifest_from_revision, test, "recover manifest from revision", tc[2] ) );
 
-  t.add( &yard_test::commit_from_revision1, test, "recover commit node from revision (manifest)", tc[2] );
+  tc[7] = t.add( &yard_test::commit_from_revision1, test, "recover commit node from revision (manifest)", tc[2] );
   t.add( &yard_test::commit_from_revision2, test, "recover commit node from revision (delta)", tc[3] );
 
   t.add( &yard_test::fast_merge4, test, "fast merge with common ancestor",
@@ -60,6 +60,8 @@ int main( int argc, const char** argv )
   t.add( &yard_test::fast_merge_conflict1, test, "fast merge conflict", tc[1] );
   t.add( &yard_test::heads, test, "heads of commits graph", tc[2] );
   t.add( &yard_test::merge1, test, "merge with conflict", tc[1] );
+
+  t.add( &yard_test::open, test, "open db on disk", tc + 6, tc + 8 );
 
   Opts opts;
 
