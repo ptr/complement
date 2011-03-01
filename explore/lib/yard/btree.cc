@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-16 19:35:18 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-01 19:12:10 ptr>
 
 /*
  *
@@ -45,28 +45,6 @@ void write_data( std::fstream& file, BTree::off_type address, const char* data, 
   file.write( data, size );
 }
 
-BTree::off_type seek_to_end( std::fstream& file, std::streamsize size )
-{
-  const unsigned int alignment = 4096;
-
-  file.seekp( 0, ios_base::end );
-  BTree::off_type address = file.tellp();
-
-  int over = address % alignment;
-  BTree::off_type delta = over ? alignment - over : 0;
-  file.seekp( delta, ios_base::end );
-
-  return address + delta;
-}
-
-BTree::off_type append_data( std::fstream& file, const char* data, std::streamsize size )
-{
-  BTree::off_type address = seek_to_end( file, size );
-  write_data( file, address, data, size );
-
-  return address;
-}
-
 void get_data( std::fstream& file, BTree::off_type address, char* data, std::streamsize size )
 {
   file.seekg( address );
@@ -77,6 +55,8 @@ const BTree::key_type BTree::upper_key_bound = { {0xff,0xff,0xff,0xff,0xff,0xff,
 const BTree::key_type BTree::lower_key_bound = { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0} };
 const std::pair<BTree::key_type,BTree::key_type> BTree::keys_range = { BTree::lower_key_bound, BTree::upper_key_bound };
 const BTree::key_type BTree::zero_key = { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0} };
+const uint64_t BTree::magic_id = 0x81a5c36900000000LL; // fix: LSB/MSB
+const std::streamsize BTree::alignment = 4096;
 
 BTree::BTree()
 {
@@ -92,9 +72,29 @@ BTree::~BTree()
   BTree::close();
 }
 
+BTree::off_type BTree::seek_to_end()
+{
+  file_.seekp( 0, ios_base::end );
+  BTree::off_type address = file_.tellp();
+
+  int over = address % alignment;
+  BTree::off_type delta = over ? alignment - over : 0;
+  file_.seekp( delta, ios_base::end );
+
+  return address + delta;
+}
+
+BTree::off_type BTree::append_data( const char* data, std::streamsize size )
+{
+  off_type address = seek_to_end();
+  write_data( file_, address, data, size );
+
+  return address;
+}
+
 BTree::off_type BTree::append(const detail::block_type& block)
 {
-  off_type address = seek_to_end(file_, bsz );
+  off_type address = seek_to_end();
   block.pack(file_);
   return address;
 }
@@ -335,15 +335,10 @@ void BTree::open( const char* filename, std::ios_base::openmode mode, std::strea
 
     format_ver = 0;
     bsz = block_size;
-    root_block_off = 4096;
+    root_block_off = alignment;
 
     uint8_t  toc_key   = magic;
-    uint64_t toc_value = 0x81a5c36900000000LL;
-    file_.write( reinterpret_cast<const char*>(&toc_key), sizeof(toc_key) );
-    file_.write( reinterpret_cast<const char*>(&toc_value), sizeof(toc_value) );
-
-    toc_key = cgleaf_off;
-    toc_value = 0ULL;
+    uint64_t toc_value = magic_id;
     file_.write( reinterpret_cast<const char*>(&toc_key), sizeof(toc_key) );
     file_.write( reinterpret_cast<const char*>(&toc_value), sizeof(toc_value) );
 
@@ -363,10 +358,21 @@ void BTree::open( const char* filename, std::ios_base::openmode mode, std::strea
     file_.write( reinterpret_cast<const char*>(&toc_value), sizeof(toc_value) );
 
     toc_key = toc_reserve;
-    toc_value = (std::max)(static_cast<std::streambuf::off_type>(static_cast<std::streambuf::off_type>(file_.tellp()) + (sizeof(toc_key) + sizeof(toc_value)) * 2), static_cast<std::streambuf::off_type>(128) );
+    toc_value = cglbuf_beg = (std::max)(static_cast<std::streambuf::off_type>(static_cast<std::streambuf::off_type>(file_.tellp()) + (sizeof(toc_key) + sizeof(toc_value)) * 4), static_cast<std::streambuf::off_type>(128) );
     file_.write( reinterpret_cast<const char*>(&toc_key), sizeof(toc_key) );
     file_.write( reinterpret_cast<const char*>(&toc_value), sizeof(toc_value) );
 
+    toc_key = cgleaf_off;
+    // toc_value = 0ULL; // equal to prev, i.e. to value of toc_reserve
+    file_.write( reinterpret_cast<const char*>(&toc_key), sizeof(toc_key) );
+    file_.write( reinterpret_cast<const char*>(&toc_value), sizeof(toc_value) );
+
+    toc_key = cgleaf_off_end;
+    toc_value = cglbuf_end = root_block_off; // limited by first block
+    file_.write( reinterpret_cast<const char*>(&toc_key), sizeof(toc_key) );
+    file_.write( reinterpret_cast<const char*>(&toc_value), sizeof(toc_value) );
+
+    // end of toc:
     toc_key = 0;
     toc_value = 0ULL;
     file_.write( reinterpret_cast<const char*>(&toc_key), sizeof(toc_key) );
@@ -386,7 +392,7 @@ void BTree::open( const char* filename, std::ios_base::openmode mode, std::strea
     file_.read( reinterpret_cast<char*>(&toc_key), sizeof(toc_key) );
     file_.read( reinterpret_cast<char*>(&toc_value), sizeof(toc_value) );
 
-    if ( file_.fail() || (toc_key != magic) || (toc_value != 0x81a5c36900000000LL) ) {
+    if ( file_.fail() || (toc_key != magic) || (toc_value != magic_id) ) {
       return; // signal about fail: bad file format
     }
 
@@ -401,6 +407,10 @@ void BTree::open( const char* filename, std::ios_base::openmode mode, std::strea
 
       switch ( toc_key ) {
         case cgleaf_off:
+          cglbuf_beg = toc_value;
+          break;
+        case cgleaf_off_end:
+          cglbuf_end = toc_value;
           break;
         case ver:
           format_ver = toc_value;
@@ -432,27 +442,22 @@ void BTree::open( const char* filename, std::ios_base::openmode mode, std::strea
 
 void BTree::clear_cache()
 {
-    cache_.clear();
+  cache_.clear();
 }
 
 void BTree::close()
 {
+  // commits graph leafs not written to file here,
+  // and may be lost; see/use BTree::flush.
+
   // dump all unwritten
   // fill/dump control structs
   file_.close();
 }
 
-void BTree::flush()
-{
-  // write all info to file,
-  // ...
-  // and flush file
-  file_.flush();
-}
-
 BTree::off_type BTree::add_value( const char* data, std::streamsize size )
 {
-  return append_data(file_, data, size);
+  return append_data( data, size );
 }
 
 std::string BTree::operator []( const key_type& key ) const throw(std::invalid_argument, std::runtime_error, std::bad_alloc)

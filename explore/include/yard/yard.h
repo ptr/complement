@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-28 19:19:53 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-01 19:05:54 ptr>
 
 /*
  *
@@ -158,14 +158,13 @@ class BTree
   private:
     enum {
       magic = 0,      // magic number
-      cgleaf_off = 1, // offset of commits ids graph leafs list
+      cgleaf_off = 1, // offset: commits graph leafs array space start
       ver = 2,        // version of file format
       defbsz = 3,     // default block size
       rb_off = 4,     // offset of root
-      toc_reserve = 5 // reserved space for toc
+      toc_reserve = 5,// reserved space for toc
+      cgleaf_off_end = 6 // offset: commits graph leafs array space end
     };
-
-  public:
 
   public:
     typedef std::pair<off_type, std::pair<key_type, key_type> > block_desc;
@@ -184,7 +183,11 @@ class BTree
     bool fail() const
       { return file_.fail(); }
 
-    void flush();
+    template <class ForwardIterator>
+    void flush( ForwardIterator leaf_start, ForwardIterator leaf_end );
+
+    template <class BackInsertIterator>
+    void cg_leafs( BackInsertIterator );
 
     std::string operator []( const key_type& key ) const throw(std::invalid_argument, std::runtime_error, std::bad_alloc);
     void insert( const key_type& key, const std::string& value );
@@ -215,18 +218,73 @@ class BTree
     key_type min_in_subtree( off_type block_address ) const;
     key_type max_in_subtree( off_type block_address ) const;
 
+    off_type seek_to_end();
+    off_type append_data( const char* data, std::streamsize size );
+
     mutable std::fstream file_;
     mutable std::map<off_type, detail::block_type> cache_;
 
     std::streamsize bsz; // default block size
     off_type root_block_off;
+    off_type cglbuf_beg;
+    off_type cglbuf_end;
     int format_ver;
 
     static const key_type upper_key_bound;
     static const key_type lower_key_bound;
     static const std::pair<key_type,key_type> keys_range;
     static const key_type zero_key;
+    static const uint64_t magic_id;
+    static const std::streamsize alignment;
 };
+
+template <class ForwardIterator>
+void BTree::flush( ForwardIterator leaf_start, ForwardIterator leaf_end )
+{
+  static_assert( std::is_convertible<typename std::iterator_traits<ForwardIterator>::iterator_category, typename std::forward_iterator_tag>::value, "forward iterator expected" );
+  static_assert( std::is_same<typename std::iterator_traits<ForwardIterator>::value_type,key_type>::value, "BTree::key_type expected" );
+
+  // write commits graph leafs into file:
+  file_.seekp( cglbuf_beg, std::ios_base::beg );
+  key_type tmp;
+  off_type cur = cglbuf_beg;
+  while ( (leaf_start != leaf_end) && (cur < cglbuf_end) ) {
+    tmp = *(leaf_start++);
+    file_.write( reinterpret_cast<const char*>(&tmp), sizeof(key_type) );
+    cur += sizeof(key_type);
+  }
+  if ( cur < cglbuf_end ) {
+    file_.write( reinterpret_cast<const char*>(&xmt::nil_uuid), sizeof(key_type) );
+  }
+  /* If leaf_start != leaf_end here, then not enough room for leafs in db.
+     Possible reasons:
+       - too many leafs: merge required
+       - toc too long
+       - alignment too small
+       - other data in start section (now not implemented)
+   */
+
+  file_.flush(); // and flush file
+}
+
+template <class BackInsertIterator>
+void BTree::cg_leafs( BackInsertIterator bi )
+{
+  static_assert( std::is_convertible<typename std::iterator_traits<BackInsertIterator>::iterator_category, typename std::output_iterator_tag>::value, "back insert iterator expected" );
+  static_assert( std::is_same<typename BackInsertIterator::container_type::value_type,key_type>::value, "BTree::key_type expected" );
+
+  file_.seekg( cglbuf_beg, std::ios_base::beg );
+  key_type tmp;
+  off_type cur = cglbuf_beg;
+  while ( cur < cglbuf_end ) {
+    file_.read( reinterpret_cast<char*>(&tmp), sizeof(key_type) );
+    if ( file_.fail() || (tmp == xmt::nil_uuid) ) {
+      break;      
+    }
+    *bi++ = tmp;
+    cur += sizeof(key_type);
+  }
+}
 
 struct revision_node
 {
@@ -249,6 +307,7 @@ class revision
     ~revision();
 
     void open( const char* filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out, std::streamsize block_size = 4096);
+    void close();
 
     bool is_open()
       { return db.is_open(); }
@@ -257,7 +316,11 @@ class revision
     bool bad() const
       { return db.bad(); }
 
-    void flush();
+    template <class ForwardIterator>
+    void flush( ForwardIterator leaf_start, ForwardIterator leaf_end );
+
+    template <class BackInsertIterator>
+    void cg_leafs( BackInsertIterator );
 
     revision_id_type push( const void*, size_t );
     revision_id_type push( const std::string& data )
@@ -278,6 +341,34 @@ class revision
     BTree db;
 };
 
+template <class ForwardIterator>
+void revision::flush( ForwardIterator leaf_start, ForwardIterator leaf_end )
+{
+  static_assert( std::is_convertible<typename std::iterator_traits<ForwardIterator>::iterator_category, typename std::forward_iterator_tag>::value, "forward iterator expected" );
+  static_assert( std::is_same<typename std::iterator_traits<ForwardIterator>::value_type,typename BTree::key_type>::value, "BTree::key_type expected" );
+
+  if ( !db.is_open() ) {
+    return; // don't do insert and don't clear mod flag
+  }
+
+  // walk through r, write modified ...
+  for ( auto i = r.begin(); i != r.end(); ++i ) {
+    if ( (i->second.flags & revision_node::mod) != 0 ) {
+      db.insert( i->first, i->second.content );
+      i->second.flags &= ~revision_node::mod;
+    }
+  }
+  db.flush( leaf_start, leaf_end );
+}
+
+template <class BackInsertIterator>
+void revision::cg_leafs( BackInsertIterator bi )
+{
+  static_assert( std::is_convertible<typename std::iterator_traits<BackInsertIterator>::iterator_category, typename std::output_iterator_tag>::value, "back insert iterator expected" );
+  static_assert( std::is_same<typename BackInsertIterator::container_type::value_type,typename BTree::key_type>::value, "BTree::key_type expected" );
+  db.cg_leafs( bi );
+}
+
 class yard
 {
   public:
@@ -286,6 +377,7 @@ class yard
     ~yard();
 
     void open( const char* filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out, std::streamsize block_size = 4096);
+    void close();
 
     bool is_open()
       { return r.is_open(); }

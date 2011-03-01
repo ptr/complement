@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-28 20:31:45 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-01 18:07:10 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -906,6 +906,47 @@ int EXAM_IMPL(yard_test::clear_mod_flag)
 
     EXAM_CHECK( db.get( cid1, "/one" ) == content1 );
     EXAM_CHECK( db.get( cid1, "/two" ) == content2 );
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::logic_error& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  unlink( fn );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::core_life_cycle_single_leaf)
+{
+  const char fn[] = "/tmp/btree";
+
+  string content1( "1" );
+  string content2( "2" );
+
+  try {
+    yard::yard db( fn, std::ios_base::trunc );
+    yard::commit_id_type cid1 = xmt::uid();
+
+    db.open_commit_delta( xmt::nil_uuid, cid1 );
+
+    db.add( cid1, "/one", content1 );
+    db.add( cid1, "/two", content2 );
+    db.close_commit_delta( cid1 );
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::logic_error& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  EXAM_MESSAGE( "dump db" );
+  try {
+    yard::yard db( fn );
+    EXAM_CHECK( db.get( "/one" ) == content1 );
+    EXAM_CHECK( db.get( "/two" ) == content2 );
   }
   catch ( const std::invalid_argument& err ) {
     EXAM_ERROR( err.what() );

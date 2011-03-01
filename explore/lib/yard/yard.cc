@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-28 19:28:51 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-01 19:07:32 ptr>
 
 /*
  *
@@ -85,9 +85,6 @@ revision::revision( const char* filename, std::ios_base::openmode mode, std::str
 
 revision::~revision()
 {
-  if ( db.is_open() ) {
-    flush();
-  }
 }
 
 void revision::open( const char* filename, std::ios_base::openmode mode, std::streamsize block_size )
@@ -98,16 +95,11 @@ void revision::open( const char* filename, std::ios_base::openmode mode, std::st
   }
 }
 
-void revision::flush()
+void revision::close()
 {
-  // walk through r, write modified ...
-  for ( auto i = r.begin(); i != r.end(); ++i ) {
-    if ( (i->second.flags & revision_node::mod) != 0 ) {
-      db.insert( i->first, i->second.content );
-      i->second.flags &= ~revision_node::mod;
-    }
+  if ( db.is_open() ) {
+    db.close();
   }
-  db.flush();
 }
 
 revision_id_type revision::push( const void* data, size_t sz )
@@ -404,6 +396,8 @@ yard::yard()
   c[xmt::nil_uuid].mid = root_mid; // root
   c[xmt::nil_uuid].delta = 0; // root
   c[xmt::nil_uuid].dref = -1;
+
+  leaf.push_back( xmt::nil_uuid ); // root is leaf
 }
 
 yard::yard( const char* filename, std::ios_base::openmode mode, std::streamsize block_size ) :
@@ -413,23 +407,39 @@ yard::yard( const char* filename, std::ios_base::openmode mode, std::streamsize 
   c[xmt::nil_uuid].mid = root_mid; // root
   c[xmt::nil_uuid].delta = 0; // root
   c[xmt::nil_uuid].dref = -1;
+
+  r.cg_leafs( std::back_inserter( leaf ) );
+
+  if ( leaf.empty() ) {
+    leaf.push_back( xmt::nil_uuid ); // root is leaf
+  }
 }
 
 yard::~yard()
 {
-  if ( r.is_open() ) {
-    r.flush();
-  }
+  r.flush( leaf.begin(), leaf.end() );
 }
 
 void yard::open( const char* filename, std::ios_base::openmode mode, std::streamsize block_size )
 {
   r.open( filename, mode, block_size );
+  leaf.clear();
+  r.cg_leafs( std::back_inserter( leaf ) );
+
+  if ( leaf.empty() ) {
+    leaf.push_back( xmt::nil_uuid ); // root is leaf
+  }
 }
 
 void yard::flush()
 {
-  r.flush();
+  r.flush( leaf.begin(), leaf.end() );
+}
+
+void yard::close()
+{
+  yard::flush();
+  r.close();
 }
 
 void yard::open_commit_delta( const commit_id_type& base, const commit_id_type& m )
