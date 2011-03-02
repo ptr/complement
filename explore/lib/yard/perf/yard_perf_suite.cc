@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-15 15:28:49 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-03 01:14:15 ptr>
 
 /*
  *
@@ -63,8 +63,9 @@ int main( int argc, const char** argv )
   t.add(&yard_perf::multiple_files, p, "multiple files");
   t.add(&yard_perf::random_lookup, p, "random lookup");
 
-  t.add( &yard_perf::mess, p, "put message 1024 yard ng" );
-  t.add( &yard_perf::put_revisions, p, "put blob 1024 [revision] ng" );
+  t.add( &yard_perf::mess, p, "put message 1024" );
+  t.add( &yard_perf::put_revisions, p, "put blob 1024 [revision]" );
+  t.add( &yard_perf::mess_insert, p, "put 10000 new messages" );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );

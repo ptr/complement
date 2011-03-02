@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-15 15:43:05 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-03 01:13:39 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -372,6 +372,58 @@ int EXAM_IMPL(yard_perf::mess)
   catch ( const std::logic_error& err ) {
     EXAM_ERROR( err.what() );
   }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_perf::mess_insert)
+{
+  const char fn[] = "./btree";
+
+  string content( 1024, 'a' );
+  string name( "/aaaaaa" );
+
+  try {
+    yard::commit_id_type cid0;
+    yard::commit_id_type cid1 = xmt::nil_uuid;
+
+    for ( int i = 0; i < 10000; ++i ) {
+      yard::yard db( fn );
+
+      if ( !db.is_open() /* || !db.good() */ ) {
+        db.clear();
+        db.open( fn, ios_base::trunc );
+      }
+
+      content[512] += i % 0x3f;
+      content[513] += (i >> 6) % 0x3f;
+      content[514] += (i >> 12) % 0x3f;
+
+      name[1] += i % 0x3f;
+      name[2] += (i >> 6) % 0x3f;
+      name[3] += (i >> 12) % 0x3f;
+
+      cid0 = cid1;
+      cid1 = xmt::uid();
+
+      db.open_commit_delta( cid0, cid1 );
+
+      db.add( cid1, name, content );
+
+      db.close_commit_delta( cid1 );
+    }
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::logic_error& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::ios_base::failure& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  unlink( fn );
 
   return EXAM_RESULT;
 }
