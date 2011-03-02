@@ -423,6 +423,6 @@ class connect_processor :
 #  undef __USE_STD_TR1
 #endif
 
-#include <sockios/socksrv.cc>
+#include <sockios/socksrv-impl.h>
 
 #endif /* __SOCKIOS_SOCKSRV_H */

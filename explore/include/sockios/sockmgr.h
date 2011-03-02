@@ -250,6 +250,6 @@ struct hash<void *>
 #  undef __USE_STD_TR1
 #endif
 
-#include <sockios/sockmgr.cc>
+#include <sockios/sockmgr-impl.h>
 
 #endif /* __SOCKIOS_SOCKMGR_H */
