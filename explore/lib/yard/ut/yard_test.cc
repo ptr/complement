@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-01 18:07:10 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-02 21:37:40 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -953,6 +953,54 @@ int EXAM_IMPL(yard_test::core_life_cycle_single_leaf)
   }
   catch ( const std::logic_error& err ) {
     EXAM_ERROR( err.what() );
+  }
+
+  unlink( fn );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::not_open_bug1)
+{
+  const char fn[] = "/tmp/btree";
+
+  string content( 1024, 'a' );
+  string name( "/aaaaaa" );
+
+  try {
+    yard::commit_id_type cid0 = xmt::nil_uuid;
+    yard::commit_id_type cid1 = xmt::uid();
+
+    {
+      // Next line indeed not open db, because fn not exist:
+      yard::yard db( fn );
+
+      EXAM_CHECK( !db.is_open() );
+
+      cid0 = cid1;
+      cid1 = xmt::uid();
+
+      /* Bug: if db not open, block lookup achieve infinite recursion;
+         should be std::ios_base::failure exception
+       */
+
+      db.open_commit_delta( cid0, cid1 ); // bad: no cid0 commit!
+
+      EXAM_ERROR( "std::ios_base::failure expected" );
+
+      db.add( cid1, name, content );
+
+      db.close_commit_delta( cid1 );
+    }
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::logic_error& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::ios_base::failure& err ) {
+    EXAM_MESSAGE( "std::ios_base::failure as expected" );
   }
 
   unlink( fn );

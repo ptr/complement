@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-01 19:05:54 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-02 21:51:37 ptr>
 
 /*
  *
@@ -174,7 +174,7 @@ class BTree
     BTree( const char* filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out, std::streamsize block_size = 4096 );
     ~BTree();
 
-    bool is_open()
+    bool is_open() const
       { return file_.is_open(); }
     bool good() const
       { return file_.good(); }
@@ -189,11 +189,11 @@ class BTree
     template <class BackInsertIterator>
     void cg_leafs( BackInsertIterator );
 
-    std::string operator []( const key_type& key ) const throw(std::invalid_argument, std::runtime_error, std::bad_alloc);
+    std::string operator []( const key_type& key ) const throw(std::invalid_argument, std::runtime_error, std::bad_alloc, std::ios_base::failure);
     void insert( const key_type& key, const std::string& value );
 
     coordinate_type lookup( const key_type& key ) const;
-    coordinate_type lookup(const coordinate_type& start, const key_type& key);
+    coordinate_type lookup(const coordinate_type& start, const key_type& key) const;
     const detail::block_type& get( const coordinate_type& coordinate ) const
       { return get_block(coordinate.top().first); }
     coordinate_type insert(coordinate_type path, const key_type& key, const detail::block_coordinate& coord);
@@ -309,7 +309,7 @@ class revision
     void open( const char* filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out, std::streamsize block_size = 4096);
     void close();
 
-    bool is_open()
+    bool is_open() const
       { return db.is_open(); }
     bool good() const
       { return db.good(); }
@@ -328,11 +328,11 @@ class revision
     revision_id_type push( const manifest_type& );
     revision_id_type push( const diff_type& );
     revision_id_type push( const commit_node&, const commit_id_type& );
-    const std::string& get( const revision_id_type& ) throw( std::invalid_argument );
+    const std::string& get( const revision_id_type& ) throw( std::invalid_argument, std::ios_base::failure );
 
-    void get_manifest( manifest_type&, const revision_id_type& ) throw( std::invalid_argument );
-    void get_diff( diff_type&, const revision_id_type& ) throw( std::invalid_argument );
-    void get_commit( commit_node&, const revision_id_type& ) throw( std::invalid_argument );
+    void get_manifest( manifest_type&, const revision_id_type& ) throw( std::invalid_argument, std::ios_base::failure );
+    void get_diff( diff_type&, const revision_id_type& ) throw( std::invalid_argument, std::ios_base::failure );
+    void get_commit( commit_node&, const revision_id_type& ) throw( std::invalid_argument, std::ios_base::failure );
 
   private:
     typedef std::map<revision_id_type,revision_node> revisions_container_type;
@@ -379,7 +379,7 @@ class yard
     void open( const char* filename, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out, std::streamsize block_size = 4096);
     void close();
 
-    bool is_open()
+    bool is_open() const
       { return r.is_open(); }
     bool good() const
       { return r.good(); }
@@ -400,8 +400,8 @@ class yard
       { add( id, name, data.data(), data.length() ); }
     void del( const commit_id_type&, const std::string& );
 
-    const std::string& get( const commit_id_type&, const std::string& ) throw( std::invalid_argument, std::logic_error );
-    const std::string& get( const std::string& ) throw( std::invalid_argument, std::logic_error );
+    const std::string& get( const commit_id_type&, const std::string& ) throw( std::invalid_argument, std::logic_error, std::ios_base::failure );
+    const std::string& get( const std::string& ) throw( std::invalid_argument, std::logic_error, std::ios_base::failure );
     const std::string& get( const revision_id_type& id ) throw( std::invalid_argument )
       { return r.get( id ); }
 

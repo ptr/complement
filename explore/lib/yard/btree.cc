@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-01 19:12:10 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-02 21:52:33 ptr>
 
 /*
  *
@@ -101,8 +101,8 @@ BTree::off_type BTree::append(const detail::block_type& block)
 
 void BTree::save(off_type offset, const detail::block_type& block)
 {
-    file_.seekp(offset, ios_base::beg);
-    block.pack(file_);
+  file_.seekp(offset, ios_base::beg);
+  block.pack(file_);
 }
 
 void BTree::load( off_type offset, detail::block_type& block ) const
@@ -151,8 +151,12 @@ BTree::key_type BTree::max_in_subtree( off_type block_address ) const
   return max_in_subtree( (--block.end())->second.address );
 }
 
-BTree::coordinate_type BTree::lookup(const coordinate_type& start, const key_type& key)
+BTree::coordinate_type BTree::lookup(const coordinate_type& start, const key_type& key) const
 {
+  if ( !is_open() || fail() ) {
+    throw ios_base::failure( "BTree io operation fail" );
+  }
+
   if ( start.empty() ) {
     return lookup(key);
   }
@@ -209,6 +213,10 @@ void BTree::lookup_down( coordinate_type& path, const key_type& key ) const
 
 BTree::coordinate_type BTree::lookup( const key_type& key ) const
 {
+  if ( !is_open() || fail() ) {
+    throw ios_base::failure( "BTree io operation fail" );
+  }
+
   coordinate_type path;
   path.push( make_pair( root_block_off, keys_range ) );
 
@@ -460,7 +468,7 @@ BTree::off_type BTree::add_value( const char* data, std::streamsize size )
   return append_data( data, size );
 }
 
-std::string BTree::operator []( const key_type& key ) const throw(std::invalid_argument, std::runtime_error, std::bad_alloc)
+std::string BTree::operator []( const key_type& key ) const throw(std::invalid_argument, std::runtime_error, std::bad_alloc, std::ios_base::failure )
 {
   coordinate_type c = lookup( key );
 
@@ -478,7 +486,7 @@ std::string BTree::operator []( const key_type& key ) const throw(std::invalid_a
   file_.read( const_cast<char*>(s.data()), i->second.size );
 
   if ( file_.fail() ) {
-    throw std::runtime_error( "file reading error" );
+    throw ios_base::failure( "BTree io operation fail" );
   }
 
   return s;

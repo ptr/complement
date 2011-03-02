@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-01 19:07:32 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-02 21:52:55 ptr>
 
 /*
  *
@@ -200,7 +200,7 @@ revision_id_type revision::push( const commit_node& c, const commit_id_type& cid
   return cid;
 }
 
-const std::string& revision::get( const revision_id_type& rid ) throw( std::invalid_argument )
+const std::string& revision::get( const revision_id_type& rid ) throw( std::invalid_argument, std::ios_base::failure )
 {
   revisions_container_type::iterator i = r.find( rid );
 
@@ -223,7 +223,7 @@ const std::string& revision::get( const revision_id_type& rid ) throw( std::inva
   return i->second.content;
 }
 
-void revision::get_manifest( manifest_type& m, const revision_id_type& rid ) throw( std::invalid_argument )
+void revision::get_manifest( manifest_type& m, const revision_id_type& rid ) throw( std::invalid_argument, std::ios_base::failure )
 {
   revisions_container_type::iterator i = r.find( rid );
 
@@ -268,7 +268,7 @@ void revision::get_manifest( manifest_type& m, const revision_id_type& rid ) thr
   }
 }
 
-void revision::get_diff( diff_type& d, const revision_id_type& rid ) throw( std::invalid_argument )
+void revision::get_diff( diff_type& d, const revision_id_type& rid ) throw( std::invalid_argument, std::ios_base::failure )
 {
   revisions_container_type::iterator i = r.find( rid );
 
@@ -331,7 +331,7 @@ void revision::get_diff( diff_type& d, const revision_id_type& rid ) throw( std:
   }
 }
 
-void revision::get_commit( commit_node& c, const revision_id_type& rid ) throw( std::invalid_argument )
+void revision::get_commit( commit_node& c, const revision_id_type& rid ) throw( std::invalid_argument, std::ios_base::failure )
 {
   revisions_container_type::iterator i = r.find( rid );
 
@@ -455,6 +455,10 @@ void yard::open_commit_delta( const commit_id_type& base, const commit_id_type& 
       // throw invalid_argument
       return;
     }
+    catch ( const std::ios_base::failure& err ) {
+      c.erase( base );
+      throw err;
+    }
     i = c.find( base );
   }
 
@@ -468,6 +472,11 @@ void yard::open_commit_delta( const commit_id_type& base, const commit_id_type& 
     cached_manifest.erase( i->second.mid );
     c.erase( base );
     // throw runtime_error( "no such manifest" )
+  }
+  catch ( const ios_base::failure& err ) {
+    cached_manifest.erase( i->second.mid );   
+    c.erase( base );
+    throw err;
   }
 }
 
@@ -610,7 +619,7 @@ void yard::del( const commit_id_type& id, const std::string& name )
   i->second.second.first[name];
 }
 
-const std::string& yard::get( const commit_id_type& id, const std::string& name ) throw( std::invalid_argument, std::logic_error )
+const std::string& yard::get( const commit_id_type& id, const std::string& name ) throw( std::invalid_argument, std::logic_error, std::ios_base::failure )
 {
   commit_container_type::const_iterator i = c.find( id );
 
@@ -621,6 +630,10 @@ const std::string& yard::get( const commit_id_type& id, const std::string& name 
     catch ( const invalid_argument& ) {
       c.erase( id );
       throw std::invalid_argument( "invalid commit" );
+    }
+    catch ( const ios_base::failure& err ) {
+      c.erase( id );
+      throw err;
     }
     i = c.find( id );
   }
@@ -636,6 +649,10 @@ const std::string& yard::get( const commit_id_type& id, const std::string& name 
       catch ( std::invalid_argument& ) {
         cached_manifest.erase( mid );
         throw std::runtime_error( "no such manifest" );
+      }
+      catch ( const ios_base::failure& err ) {
+        cached_manifest.erase( mid );
+        throw err;
       }
 
       j = cached_manifest.find( mid ); // != cached_manifest.end(), from above
@@ -678,6 +695,10 @@ const std::string& yard::get( const commit_id_type& id, const std::string& name 
       cached_manifest.erase( i->second.mid );
       throw std::runtime_error( "no such manifest" );
     }
+    catch ( const ios_base::failure& err ) {
+      cached_manifest.erase( i->second.mid );
+      throw err;
+    }
 
     j = cached_manifest.find( i->second.mid ); // != cached_manifest.end(), from above
   }
@@ -696,7 +717,7 @@ const std::string& yard::get( const commit_id_type& id, const std::string& name 
   }
 }
 
-const std::string& yard::get( const std::string& name ) throw( std::invalid_argument, std::logic_error )
+const std::string& yard::get( const std::string& name ) throw( std::invalid_argument, std::logic_error, std::ios_base::failure )
 {
   if ( leaf.size() != 1 ) {
     if ( leaf.empty() ) {
@@ -720,6 +741,10 @@ diff_type yard::diff( const commit_id_type& from, const commit_id_type& to )
       c.erase( from );
       throw std::invalid_argument( "invalid commit id" );
     }
+    catch ( const ios_base::failure& err ) {
+      c.erase( from );
+      throw err;
+    }
     i = c.find( from );
   }
 
@@ -732,6 +757,10 @@ diff_type yard::diff( const commit_id_type& from, const commit_id_type& to )
     catch ( const invalid_argument& ) {
       c.erase( to );
       throw std::invalid_argument( "invalid commit id" );
+    }
+    catch ( const ios_base::failure& err ) {
+      c.erase( to );
+      throw err;
     }
     j = c.find( to );
   }
@@ -746,6 +775,10 @@ diff_type yard::diff( const commit_id_type& from, const commit_id_type& to )
       cached_manifest.erase( i->second.mid );
       throw std::runtime_error( "no such manifest" );
     }
+    catch ( const ios_base::failure& err ) {
+      cached_manifest.erase( i->second.mid );
+      throw err;
+    }
 
     mf = cached_manifest.find( i->second.mid ); // != cached_manifest.end(), from above
   }
@@ -759,6 +792,10 @@ diff_type yard::diff( const commit_id_type& from, const commit_id_type& to )
     catch ( std::invalid_argument& ) {
       cached_manifest.erase( j->second.mid );
       throw std::runtime_error( "no such manifest" );
+    }
+    catch ( const ios_base::failure& err ) {
+      cached_manifest.erase( j->second.mid );
+      throw err;
     }
 
     mt = cached_manifest.find( j->second.mid ); // != cached_manifest.end(), from above
@@ -933,6 +970,10 @@ commit_id_type yard::common_ancestor( const commit_id_type& left, const commit_i
       c.erase(left);
       throw invalid_argument( "no such commit" );
     }
+    catch ( const ios_base::failure& err ) {
+      c.erase(left);
+      throw err;
+    }
     l = c.find( left );
   }
 
@@ -945,6 +986,10 @@ commit_id_type yard::common_ancestor( const commit_id_type& left, const commit_i
     catch ( const invalid_argument& ) {
       c.erase(right);
       throw invalid_argument( "no such commit" );
+    }
+    catch ( const ios_base::failure& err ) {
+      c.erase(right);
+      throw err;
     }
     r = c.find( right );
   }
@@ -1071,6 +1116,10 @@ int yard::fast_merge( const commit_id_type& merge, const commit_id_type& left, c
       c.erase(left);
       throw invalid_argument( "no such commit" );
     }
+    catch ( const ios_base::failure& err ) {
+      c.erase(left);
+      throw err;
+    }
     k = c.find( left );
   }
 
@@ -1137,6 +1186,10 @@ int yard::merge( const commit_id_type& merge_, const commit_id_type& left, const
     catch ( const invalid_argument& ) {
       c.erase( left );
       throw runtime_error( "no commit" );
+    }
+    catch ( const ios_base::failure& err ) {
+      c.erase( left );
+      throw err;
     }
     k = c.find( left );
   }
