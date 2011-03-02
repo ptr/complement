@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-02 21:18:06 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-03 00:44:04 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -56,6 +56,7 @@ class yard_test
     int EXAM_DECL(core_life_cycle);
     int EXAM_DECL(clear_mod_flag);
     int EXAM_DECL(core_life_cycle_single_leaf);
+    int EXAM_DECL(create);
 
     int EXAM_DECL(not_open_bug1);
 };

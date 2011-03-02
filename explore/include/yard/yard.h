@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-02 21:51:37 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-03 00:36:21 ptr>
 
 /*
  *
@@ -183,6 +183,9 @@ class BTree
     bool fail() const
       { return file_.fail(); }
 
+    void clear( std::ios::iostate state = std::ios::goodbit )
+      { file_.clear( state ); }
+
     template <class ForwardIterator>
     void flush( ForwardIterator leaf_start, ForwardIterator leaf_end );
 
@@ -316,6 +319,9 @@ class revision
     bool bad() const
       { return db.bad(); }
 
+    void clear( std::ios::iostate state = std::ios::goodbit )
+      { db.clear( state ); }
+
     template <class ForwardIterator>
     void flush( ForwardIterator leaf_start, ForwardIterator leaf_end );
 
@@ -385,6 +391,9 @@ class yard
       { return r.good(); }
     bool bad() const
       { return r.bad(); }
+
+    void clear( std::ios::iostate state = std::ios::goodbit )
+      { r.clear( state ); }
 
     void flush();
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-02 21:37:40 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-03 00:43:08 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -1001,6 +1001,40 @@ int EXAM_IMPL(yard_test::not_open_bug1)
   }
   catch ( const std::ios_base::failure& err ) {
     EXAM_MESSAGE( "std::ios_base::failure as expected" );
+  }
+
+  unlink( fn );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::create)
+{
+  const char fn[] = "/tmp/btree";
+
+  /* This is a example of use-case:
+     "open database; if not existed, create one and open"
+   */
+
+  try {
+    yard::yard db( fn );
+
+    if ( !db.is_open() /* || !db.good() */ ) {
+      db.clear();
+      db.open( fn, ios_base::trunc );
+    }
+
+    EXAM_CHECK( db.is_open() );
+    EXAM_CHECK( db.good() );
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::logic_error& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::ios_base::failure& err ) {
+    EXAM_ERROR( err.what() );
   }
 
   unlink( fn );

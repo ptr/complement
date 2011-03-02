@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-02 21:52:33 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-03 01:10:30 ptr>
 
 /*
  *
@@ -393,7 +393,7 @@ void BTree::open( const char* filename, std::ios_base::openmode mode, std::strea
     unsigned int root_address = append(root);
     assert(root_address == root_block_off );
   } else {
-    file_.open(filename, std::ios_base::in | std::ios_base::out);
+    file_.open(filename, (mode & std::ios_base::out) ? std::ios_base::in | std::ios_base::out : std::ios_base::in );
     uint8_t toc_key;
     uint64_t toc_value;
 
@@ -434,10 +434,6 @@ void BTree::open( const char* filename, std::ios_base::openmode mode, std::strea
           break;
         case 0:
           if ( toc_value == 0ULL ) {
-            if ( reserve != 0 ) {
-              file_.seekp( reserve, ios_base::beg );
-              file_.seekg( reserve, ios_base::beg );
-            }
             return; // ok, end of toc
           }
           break;
@@ -460,6 +456,7 @@ void BTree::close()
 
   // dump all unwritten
   // fill/dump control structs
+  file_.clear();
   file_.close();
 }
 

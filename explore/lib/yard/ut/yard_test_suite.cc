@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-02 21:17:12 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-03 00:45:18 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -65,6 +65,7 @@ int main( int argc, const char** argv )
     t.add( &yard_test::core_life_cycle_single_leaf, test, "single leaf in commits graph",
       t.add( &yard_test::core_life_cycle, test, "basic life cycle with known commit id", tc + 6, tc + 8 ) ) );
   t.add( &yard_test::clear_mod_flag, test, "clear mod flag on flush", tc + 6, tc + 8 );
+  t.add( &yard_test::create, test, "open or create and open", tc + 6, tc + 8 );
 
   Opts opts;
 
