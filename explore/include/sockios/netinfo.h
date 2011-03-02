@@ -41,9 +41,6 @@ extern "C" int x_res_init(void);
 #  define _INCLUDE_XOPEN_SOURCE_EXTENDED
 #endif
 #include <sys/socket.h>
-#if !defined(__UCLIBC__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__)
-#include <stropts.h>
-#endif
 #ifdef __sun
 #  include <sys/conf.h>
 #endif

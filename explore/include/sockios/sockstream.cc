@@ -12,11 +12,6 @@
  */
 
 #include <sockios/netinfo.h>
-
-#if defined(__unix) && !defined(__UCLIBC__) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__)
-# include <stropts.h> // for ioctl() call
-#endif
-
 #include <fcntl.h>
 
 #ifdef STLPORT
