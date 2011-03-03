@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-03 00:43:08 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-03 20:42:12 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -1026,6 +1026,71 @@ int EXAM_IMPL(yard_test::create)
 
     EXAM_CHECK( db.is_open() );
     EXAM_CHECK( db.good() );
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::logic_error& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::ios_base::failure& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  unlink( fn );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::commits_chain)
+{
+  const char fn[] = "/tmp/btree";
+
+  /* Bug: first and second itarations are fine,
+     but second don't push some info into BTree
+     (i.e. into file on disk), so third iteration
+     fail on open_commit_delta.
+
+     Reason: commits chain with diffs was not rollout
+     up to full manifest, so id of base manifest
+     remains unknown.
+   */
+
+  string content( 1024, 'a' );
+  string name( "/aaaaaa" );
+
+  try {
+    yard::commit_id_type cid0;
+    yard::commit_id_type cid1 = xmt::nil_uuid;
+
+    for ( int i = 0; i < 3; ++i ) {
+      yard::yard db( fn );
+
+      if ( !db.is_open() /* || !db.good() */ ) {
+        db.clear();
+        db.open( fn, ios_base::trunc );
+      }
+
+      content[512] = 'a' + (i % 0x3f);
+      content[513] = 'a' + (i >> 6) % 0x3f;
+      content[514] = 'a' + (i >> 12) % 0x3f;
+
+      name[1] = 'a' + (i % 0x3f);
+      name[2] = 'a' + (i >> 6) % 0x3f;
+      name[3] = 'a' + (i >> 12) % 0x3f;
+
+      cid0 = cid1;
+      cid1 = xmt::uid();
+
+      db.open_commit_delta( cid0, cid1 );
+
+      db.add( cid1, name, content );
+
+      db.close_commit_delta( cid1 );
+
+      EXAM_CHECK( db.is_open() );
+      EXAM_CHECK( db.good() );
+    }
   }
   catch ( const std::invalid_argument& err ) {
     EXAM_ERROR( err.what() );

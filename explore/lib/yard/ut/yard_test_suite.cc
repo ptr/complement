@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-03 00:45:18 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-03 20:38:45 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -61,9 +61,10 @@ int main( int argc, const char** argv )
   t.add( &yard_test::heads, test, "heads of commits graph", tc[2] );
   t.add( &yard_test::merge1, test, "merge with conflict", tc[1] );
 
-  t.add( &yard_test::not_open_bug1, test, "infinit recursion on not opened db bug",
-    t.add( &yard_test::core_life_cycle_single_leaf, test, "single leaf in commits graph",
-      t.add( &yard_test::core_life_cycle, test, "basic life cycle with known commit id", tc + 6, tc + 8 ) ) );
+  t.add( &yard_test::commits_chain, test, "rollout commits chain with diffs",
+    t.add( &yard_test::not_open_bug1, test, "infinit recursion on not opened db bug",
+      t.add( &yard_test::core_life_cycle_single_leaf, test, "single leaf in commits graph",
+        t.add( &yard_test::core_life_cycle, test, "basic life cycle with known commit id", tc + 6, tc + 8 ) ) ) );
   t.add( &yard_test::clear_mod_flag, test, "clear mod flag on flush", tc + 6, tc + 8 );
   t.add( &yard_test::create, test, "open or create and open", tc + 6, tc + 8 );
 

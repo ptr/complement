@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-02 21:52:55 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-03 20:46:33 ptr>
 
 /*
  *
@@ -450,10 +450,9 @@ void yard::open_commit_delta( const commit_id_type& base, const commit_id_type& 
     try {
       r.get_commit( c[base], base );
     }
-    catch ( const invalid_argument& ) {
+    catch ( const invalid_argument& err ) {
       c.erase( base );
-      // throw invalid_argument
-      return;
+      throw err;
     }
     catch ( const std::ios_base::failure& err ) {
       c.erase( base );
@@ -462,20 +461,39 @@ void yard::open_commit_delta( const commit_id_type& base, const commit_id_type& 
     i = c.find( base );
   }
 
+  auto rollback_mid = i->second.mid;
+
   try {
-    if ( cached_manifest.find( i->second.mid ) == cached_manifest.end() ) {
-      r.get_manifest( cached_manifest[i->second.mid], i->second.mid );
+    if ( i->second.dref != -1 ) {
+      // rollout commits chain with diffs, up to manifest
+      commit_node::edge_container_type::const_iterator ee;
+      const commit_node* comm = &i->second;
+      commit_container_type::const_iterator j;
+
+      do {
+        ee = comm->edge_in.begin();
+        advance( ee, comm->dref );
+        if ( (j = c.find( *ee )) == c.end() ) {
+          r.get_commit( c[*ee], *ee );
+          j = c.find( *ee ); // != c.end(), if we reach this place
+        }
+        comm = &j->second;
+      } while ( (comm->delta != 0) && (comm->dref >= 0) && !comm->edge_in.empty() );
+
+      rollback_mid = comm->mid;
+    }
+
+    if ( cached_manifest.find( rollback_mid ) == cached_manifest.end() ) {
+      r.get_manifest( cached_manifest[rollback_mid], rollback_mid );
     }
     cache[m].first = make_pair( base, base );
   }
-  catch ( std::invalid_argument& ) {
-    cached_manifest.erase( i->second.mid );
-    c.erase( base );
-    // throw runtime_error( "no such manifest" )
+  catch ( const std::invalid_argument& err ) {
+    cached_manifest.erase( rollback_mid );
+    throw err;
   }
   catch ( const ios_base::failure& err ) {
-    cached_manifest.erase( i->second.mid );   
-    c.erase( base );
+    cached_manifest.erase( rollback_mid );
     throw err;
   }
 }
