@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-03 20:42:12 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-04 11:51:55 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -1091,6 +1091,73 @@ int EXAM_IMPL(yard_test::commits_chain)
       EXAM_CHECK( db.is_open() );
       EXAM_CHECK( db.good() );
     }
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::logic_error& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::ios_base::failure& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  unlink( fn );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_test::same_content)
+{
+  const char fn[] = "/tmp/btree";
+
+  /* Bug: can't write into db content, that already present
+     in the db. From concepts, no duplicate content in db,
+     but attempt to write same content is legal and should
+     be successful even if content already present.
+   */
+
+  string content( 1024, 'a' );
+
+  try {
+    yard::commit_id_type cid0;
+    yard::commit_id_type cid1 = xmt::nil_uuid;
+
+    {
+      yard::yard db( fn, ios_base::trunc );
+
+      cid0 = cid1;
+      cid1 = xmt::uid();
+
+      db.open_commit_delta( cid0, cid1 );
+
+      db.add( cid1, "/name1", content );
+
+      db.close_commit_delta( cid1 );
+
+      EXAM_CHECK( db.is_open() );
+      EXAM_CHECK( db.good() );
+    }
+
+    EXAM_MESSAGE( "content in db" );
+
+    {
+      yard::yard db( fn );
+
+      cid0 = cid1;
+      cid1 = xmt::uid();
+
+      db.open_commit_delta( cid0, cid1 );
+
+      db.add( cid1, "/name2", content ); // <<-- same content
+
+      db.close_commit_delta( cid1 );
+
+      EXAM_CHECK( db.is_open() );
+      EXAM_CHECK( db.good() );
+    }
+
+    EXAM_MESSAGE( "content already in db, ok" );
   }
   catch ( const std::invalid_argument& err ) {
     EXAM_ERROR( err.what() );

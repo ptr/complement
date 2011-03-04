@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-03 20:39:14 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-04 11:45:09 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -58,6 +58,8 @@ class yard_test
     int EXAM_DECL(core_life_cycle_single_leaf);
     int EXAM_DECL(create);
 
+    // bugs
     int EXAM_DECL(not_open_bug1);
     int EXAM_DECL(commits_chain);
+    int EXAM_DECL(same_content);
 };

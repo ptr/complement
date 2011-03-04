@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-03 01:10:30 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-04 16:26:43 ptr>
 
 /*
  *
@@ -260,8 +260,10 @@ BTree::coordinate_type BTree::insert(coordinate_type path, const key_type& key, 
   const block_desc& desc = path.top();
 
   detail::block_type& block = const_cast<detail::block_type&>( get_block( desc.first ) );
-  bool result = block.insert(key, coord);
-  assert(result);
+
+  if ( !block.insert(key, coord) ) {
+    return path; // key already present
+  }
 
   if ( !block.is_overfilled() ) {
     save(path.top().first, block);
@@ -327,7 +329,7 @@ BTree::coordinate_type BTree::insert(coordinate_type path, const key_type& key, 
     assert(result);
   }
 
-  result = new_root.insert(new_key, new_coord);
+  bool result = new_root.insert(new_key, new_coord);
   assert(result);
   cache_[ root_block_off ] = new_root;
 
