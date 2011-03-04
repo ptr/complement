@@ -41,7 +41,7 @@ using namespace std;
 #define EV_VS_EV_SAMPLE2      0x9012
 
 #ifndef VS_FLUSH_RQ
-# define VS_FLUSH_RQ 0x307 // see casual.cc
+# define VS_FLUSH_RQ 0x307 // see causal.cc
 #endif
 
 VT_with_leader_recovery::VT_with_leader_recovery( const char* nm ) :

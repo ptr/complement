@@ -13,7 +13,7 @@
 #define __janus_torder_h
 
 #include <janus/vtime.h>
-#include <janus/casual.h>
+#include <janus/causal.h>
 
 #include <list>
 

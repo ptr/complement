@@ -9,7 +9,7 @@
  *
  */
 
-#include <janus/casual.h>
+#include <janus/causal.h>
 
 #include <stdint.h>
 

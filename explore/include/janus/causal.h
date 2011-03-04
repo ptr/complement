@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef __casual_h
-#define __casual_h
+#ifndef __causal_h
+#define __causal_h
 
 #include <janus/vtime.h>
 
@@ -236,4 +236,4 @@ class basic_vs :
 
 } // namespace janus
 
-#endif // __casual_h
+#endif // __causal_h

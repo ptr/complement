@@ -12,7 +12,7 @@
 #include "vt_operations.h"
 
 #include <iostream>
-#include <janus/casual.h>
+#include <janus/causal.h>
 
 #include <mt/mutex>
 #include <mt/condition_variable>

@@ -12,7 +12,7 @@
 #include "vt_operations.h"
 
 #include <iostream>
-#include <janus/casual.h>
+#include <janus/causal.h>
 
 #include <mt/mutex>
 #include <mt/condition_variable>
@@ -34,7 +34,7 @@
 #include <sockios/syslog.h>
 
 #ifndef VS_FLUSH_RQ
-# define VS_FLUSH_RQ 0x307 // see casual.cc
+# define VS_FLUSH_RQ 0x307 // see causal.cc
 #endif
 
 namespace janus {
