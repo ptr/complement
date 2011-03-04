@@ -1912,17 +1912,22 @@ int EXAM_IMPL(stem_test::route_from_net)
   return EXAM_RESULT;
 }
 
+
 namespace echo_mt_test {
 
-stem::addr_type addr;
-const int n_obj = 10;
-const int n_msg = 10;
+const int n_obj = 2;
+const int n_msg = 100;
 
 std::tr2::thread* thr[n_obj];
 int res[n_obj];
 
 void run(int i)
 {
+  stem::NetTransportMgr mgr;
+  stem::addr_type addr = mgr.open( "localhost", 6995 );
+  EXAM_CHECK_ASYNC_F(mgr.good(), res[i]);
+  EXAM_CHECK_ASYNC_F(addr != stem::badaddr, res[i]);
+
   for ( int j = 0; j < n_msg; ++j ) {
     EchoClient node;
 
@@ -1938,7 +1943,6 @@ void run(int i)
     if ( res[i] ) {
       stringstream s;
       s << "thread index: " << i << ", message " << j << endl;
-      // cerr << HERE << ' ' << s.str() << endl;
       EXAM_ERROR_ASYNC( s.str().c_str() );
       break;
     }
@@ -1947,85 +1951,90 @@ void run(int i)
 
 };
 
+// Test description:
+// There is one echo server and multiple echo clients, each client in its own thread.
+// Each client tries to create it's own connection to server. Address of the
+// oject at the remote server is the same, so the following mapping in the
+// EvManager is created:
+// remote_addr -> NetTransportMgr1, NetTransportMgr2
+// The problem is that when sending to remote_addr arbitrary NetTransportMgr will
+// be choosen, cause they have equal priorities. So the bad case is when both 
+// clients choose the same NetTransportMgr, say NetTransportMgr1. Then when 
+// client1 destroys him, while client2 have already sended the message throu this
+// NetTransportMgr1. client2 waits for responce, but never acquires it - because
+// NetTransportMgr1 object is already destroyed.
 int EXAM_IMPL(stem_test::echo_mt)
 {
-  try {
-    fill( echo_mt_test::res, echo_mt_test::res + echo_mt_test::n_obj, 0 );
-    fill( echo_mt_test::thr, echo_mt_test::thr + echo_mt_test::n_obj, (std::tr2::thread*)(0) );
-
-    barrier_ip& b = *new ( shm_b.allocate( 1 ) ) barrier_ip();
-    condition_event_ip& c = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
-
+  for (int attempt = 0; attempt < 10; ++attempt) {
     try {
-      std::tr2::this_thread::fork();
+      fill( echo_mt_test::res, echo_mt_test::res + echo_mt_test::n_obj, 0 );
+      fill( echo_mt_test::thr, echo_mt_test::thr + echo_mt_test::n_obj, (std::tr2::thread*)(0) );
 
-      int eflag = 0;
-      // server part
-      {
-        connect_processor<stem::NetTransport> srv( 6995 );
-        StEMecho echo( "echo service" );
+      barrier_ip& b = *new ( shm_b.allocate( 1 ) ) barrier_ip();
+      condition_event_ip& c = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
 
-        stem::stem_scope scope( echo );
+      try {
+        std::tr2::this_thread::fork();
 
-        echo.set_default(); // become default object
+        int eflag = 0;
+        // server part
+        {
+          connect_processor<stem::NetTransport> srv( 6995 );
+          StEMecho echo( "echo service" );
 
-        // echo.manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch );
-        // echo.manager()->settrs( &std::cerr );
+          stem::stem_scope scope( echo );
 
-        EXAM_CHECK_ASYNC_F( srv.good(), eflag );
-        c.notify_one(); // ok, server listen
+          echo.set_default(); // become default object
+
+          EXAM_CHECK_ASYNC_F( srv.good(), eflag );
+          c.notify_one(); // ok, server listen
+
+          b.wait(); // server may go away
+
+          srv.close();
+          srv.wait();
+        }
+
+        exit( eflag );
+      }
+      catch ( std::tr2::fork_in_parent& child ) {
+        // client part
+        {
+          EXAM_CHECK( c.timed_wait( std::tr2::milliseconds( 800 ) ) ); // wait server start
+
+          for ( int i = 0; i < echo_mt_test::n_obj; ++i ) {
+            echo_mt_test::thr[i] = new std::tr2::thread( echo_mt_test::run, i );
+          }
+
+          for ( int i = 0; i < echo_mt_test::n_obj; ++i ) {
+            echo_mt_test::thr[i]->join();
+            delete echo_mt_test::thr[i];
+            EXAM_CHECK( echo_mt_test::res[i] == 0 );
+          }
+        }
 
         b.wait(); // server may go away
 
-        srv.close();
-        srv.wait();
-      }
-
-      exit( eflag );
-    }
-    catch ( std::tr2::fork_in_parent& child ) {
-      // client part
-      {
-        stem::NetTransportMgr mgr;
-        // mgr.manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
-        // mgr.manager()->settrs( &std::cerr );
-
-        EXAM_CHECK( c.timed_wait( std::tr2::milliseconds( 800 ) ) ); // wait server start
-
-        echo_mt_test::addr = mgr.open( "localhost", 6995 );
-
-        EXAM_REQUIRE( mgr.good() );
-        EXAM_REQUIRE( echo_mt_test::addr != stem::badaddr );
-
-        for ( int i = 0; i < echo_mt_test::n_obj; ++i ) {
-          echo_mt_test::thr[i] = new std::tr2::thread( echo_mt_test::run, i );
-        }
-
-        for ( int i = 0; i < echo_mt_test::n_obj; ++i ) {
-          echo_mt_test::thr[i]->join();
-          delete echo_mt_test::thr[i];
-          EXAM_CHECK( echo_mt_test::res[i] == 0 );
+        int stat = -1;
+        EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+        if ( WIFEXITED(stat) ) {
+          EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+        } else {
+          EXAM_ERROR( "child interrupted" );
         }
       }
 
-      b.wait(); // server may go away
-
-      int stat = -1;
-      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
-      if ( WIFEXITED(stat) ) {
-        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
-      } else {
-        EXAM_ERROR( "child interrupted" );
-      }
+      (&c)->~condition_event_ip();
+      shm_cnd.deallocate( &c, 1 );
+      (&b)->~barrier_ip();
+      shm_b.deallocate( &b, 1 );
     }
-
-    (&c)->~condition_event_ip();
-    shm_cnd.deallocate( &c, 1 );
-    (&b)->~barrier_ip();
-    shm_b.deallocate( &b, 1 );
-  }
-  catch (  xmt::shm_bad_alloc& err ) {
-    EXAM_ERROR( err.what() );
+    catch (  xmt::shm_bad_alloc& err ) {
+      EXAM_ERROR( err.what() );
+    }
+    if (EXAM_RESULT != 0) {
+      break;
+    }
   }
 
   return EXAM_RESULT;
