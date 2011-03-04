@@ -12,7 +12,7 @@ LIBEXAM_DIR = ${CoMT_DIR}/lib/exam
 LIBXMT_DIR = ${CoMT_DIR}/lib/mt
 LIBMISC_DIR = ${CoMT_DIR}/lib/misc
 
-EXTRA_CXXFLAGS = -Wall
+CXXFLAGS += -Wall
 
 ifeq ($(OSNAME),linux)
 

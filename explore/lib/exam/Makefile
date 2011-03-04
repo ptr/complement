@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <07/08/03 23:56:16 ptr>
+# -*- Makefile -*- Time-stamp: <2011-01-18 00:01:05 ptr>
 
 SRCROOT := ../..
 
@@ -6,7 +6,7 @@ include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
 
 INCLUDES += -I$(SRCROOT)/include
-EXTRA_CXXFLAGS = -Wall
+CXXFLAGS += -Wall
 
 check:	all-shared
 	$(MAKE) -C ./ut $@
