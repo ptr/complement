@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-03 01:14:15 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-04 18:47:29 ptr>
 
 /*
  *
@@ -65,7 +65,8 @@ int main( int argc, const char** argv )
 
   t.add( &yard_perf::mess, p, "put message 1024" );
   t.add( &yard_perf::put_revisions, p, "put blob 1024 [revision]" );
-  t.add( &yard_perf::mess_insert, p, "put 10000 new messages" );
+  t.add( &yard_perf::mess_insert, p, "put 1000 new messages" );
+  t.add( &yard_perf::mess_insert_single_commit, p, "put 1000 new messages in one transaction" );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );

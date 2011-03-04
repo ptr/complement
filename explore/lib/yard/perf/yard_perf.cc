@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-03 01:13:39 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-04 18:51:13 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -380,14 +380,14 @@ int EXAM_IMPL(yard_perf::mess_insert)
 {
   const char fn[] = "./btree";
 
-  string content( 1024, 'a' );
-  string name( "/aaaaaa" );
+  string content( 1024, 'A' );
+  string name( "/AAAAAA" );
 
   try {
     yard::commit_id_type cid0;
-    yard::commit_id_type cid1 = xmt::nil_uuid;
+    yard::commit_id_type cid1;
 
-    for ( int i = 0; i < 10000; ++i ) {
+    for ( int i = 0; i < 1000; ++i ) {
       yard::yard db( fn );
 
       if ( !db.is_open() /* || !db.good() */ ) {
@@ -395,15 +395,27 @@ int EXAM_IMPL(yard_perf::mess_insert)
         db.open( fn, ios_base::trunc );
       }
 
-      content[512] += i % 0x3f;
-      content[513] += (i >> 6) % 0x3f;
-      content[514] += (i >> 12) % 0x3f;
+      content[512] = 'A' + (i % 0x40);
+      content[513] = 'A' + (i >> 6) % 0x40;
+      content[514] = 'A' + (i >> 12) % 0x40;
 
-      name[1] += i % 0x3f;
-      name[2] += (i >> 6) % 0x3f;
-      name[3] += (i >> 12) % 0x3f;
+      name[1] = 'A' + (i % 0x40);
+      name[2] = 'A' + (i >> 6) % 0x40;
+      name[3] = 'A' + (i >> 12) % 0x40;
 
-      cid0 = cid1;
+      if ( i == 0 ) {
+        cid0 = xmt::nil_uuid;
+      } else {
+        std::list<yard::commit_id_type> h;
+
+        db.heads( back_inserter(h) );
+        if ( !h.empty() ) {
+          cid0 = h.front();
+        } else {
+          EXAM_ERROR( "no leafs in commits graph?" );
+        }
+      }
+
       cid1 = xmt::uid();
 
       db.open_commit_delta( cid0, cid1 );
@@ -411,7 +423,57 @@ int EXAM_IMPL(yard_perf::mess_insert)
       db.add( cid1, name, content );
 
       db.close_commit_delta( cid1 );
+
+      EXAM_CHECK( db.is_open() );
+      EXAM_CHECK( db.good() );
     }
+  }
+  catch ( const std::invalid_argument& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::logic_error& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( const std::ios_base::failure& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  unlink( fn );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_perf::mess_insert_single_commit)
+{
+  const char fn[] = "./btree";
+
+  string content( 1024, 'A' );
+  string name( "/AAAAAA" );
+
+  try {
+    yard::commit_id_type cid0 = xmt::nil_uuid;
+    yard::commit_id_type cid1 = xmt::uid();
+
+    yard::yard db( fn, ios_base::trunc );
+
+    db.open_commit_delta( cid0, cid1 );
+
+    for ( int i = 0; i < 1000; ++i ) {
+      content[512] = 'A' + (i % 0x40);
+      content[513] = 'A' + (i >> 6) % 0x40;
+      content[514] = 'A' + (i >> 12) % 0x40;
+
+      name[1] = 'A' + (i % 0x40);
+      name[2] = 'A' + (i >> 6) % 0x40;
+      name[3] = 'A' + (i >> 12) % 0x40;
+
+      db.add( cid1, name, content );
+
+      EXAM_CHECK( db.is_open() );
+      EXAM_CHECK( db.good() );
+    }
+
+    db.close_commit_delta( cid1 );
   }
   catch ( const std::invalid_argument& err ) {
     EXAM_ERROR( err.what() );
