@@ -72,13 +72,16 @@ BTree::~BTree()
   BTree::close();
 }
 
-BTree::off_type BTree::seek_to_end()
+BTree::off_type BTree::seek_to_end(std::streamsize current_alignment = alignment)
 {
   file_.seekp( 0, ios_base::end );
   BTree::off_type address = file_.tellp();
 
-  int over = address % alignment;
-  BTree::off_type delta = over ? alignment - over : 0;
+  if (current_alignment == 0)
+      return address;
+
+  int over = address % current_alignment;
+  BTree::off_type delta = over ? current_alignment - over : 0;
   file_.seekp( delta, ios_base::end );
 
   return address + delta;
@@ -86,7 +89,7 @@ BTree::off_type BTree::seek_to_end()
 
 BTree::off_type BTree::append_data( const char* data, std::streamsize size )
 {
-  off_type address = seek_to_end();
+  off_type address = seek_to_end(0);
   write_data( file_, address, data, size );
 
   return address;
