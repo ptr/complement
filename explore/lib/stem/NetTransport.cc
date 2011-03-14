@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/03/08 13:24:54 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-14 17:16:11 ptr>
 
 /*
  *
@@ -281,8 +281,9 @@ bool NetTransport_base::pop( Event& _rs )
   string& str = _rs.value();
 
   str.erase();
-  str.resize( sz );
-  net.read( const_cast<char*>(str.data()), sz );
+  str.reserve( sz );
+  copy_n( istreambuf_iterator<char>(net), sz, back_inserter(str) );
+
 #ifdef __FIT_STEM_TRACE
   try {
     lock_guard<mutex> lk(manager()->_lock_tr);

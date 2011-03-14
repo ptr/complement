@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-03 20:46:33 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-14 17:25:31 ptr>
 
 /*
  *
@@ -254,8 +254,10 @@ void revision::get_manifest( manifest_type& m, const revision_id_type& rid ) thr
     if ( s.fail() ) { // to avoid str.resize() for bad sz
       break;
     }
-    str.resize( sz );
-    s.read( const_cast<char*>(str.data()), sz );
+    str.erase();
+    str.reserve( sz );
+    copy_n( istreambuf_iterator<char>(s), sz, back_inserter(str) );
+
     s.read( reinterpret_cast<char*>(rev.u.b), sizeof(revision_id_type) );
     if ( s.fail() ) {
       break;
@@ -303,8 +305,9 @@ void revision::get_diff( diff_type& d, const revision_id_type& rid ) throw( std:
     if ( sz == 0 ) {
       break;
     }
-    str.resize( sz );
-    s.read( const_cast<char*>(str.data()), sz );
+    str.erase();
+    str.reserve( sz );
+    copy_n( istreambuf_iterator<char>(s), sz, back_inserter(str) );
     s.read( reinterpret_cast<char*>(rev.u.b), sizeof(revision_id_type) );
     if ( s.fail() ) {
       break;
@@ -317,8 +320,9 @@ void revision::get_diff( diff_type& d, const revision_id_type& rid ) throw( std:
     if ( s.fail() ) { // to avoid str.resize() for bad sz
       break;
     }
-    str.resize( sz );
-    s.read( const_cast<char*>(str.data()), sz );
+    str.erase();
+    str.reserve( sz );
+    copy_n( istreambuf_iterator<char>(s), sz, back_inserter(str) );
     s.read( reinterpret_cast<char*>(rev.u.b), sizeof(revision_id_type) );
     if ( s.fail() ) {
       break;
