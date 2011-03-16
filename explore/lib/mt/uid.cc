@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-16 12:03:55 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-16 17:23:56 ptr>
 
 /*
  * Copyright (c) 2006, 2008-2011
@@ -8,8 +8,15 @@
  *
  */
 
+#include <config/feature.h>
+
 #include <algorithm>
 #include <iterator>
+
+#if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+// for copy_n
+# include <ext/algorithm>
+#endif
 
 #include <mt/uid.h>
 #include <sstream>
@@ -25,6 +32,10 @@
 #include <iostream>
 
 namespace std {
+
+#if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+using __gnu_cxx::copy_n;
+#endif
 
 std::ostream& operator <<( std::ostream& s, const xmt::uuid_type& uid )
 {
@@ -137,10 +148,10 @@ std::istream& operator >>( std::istream& s, xmt::uuid_type& uid )
   }
 
   stringstream ss;
-  
-  std::copy_n( istreambuf_iterator<char>(s), 4, ostreambuf_iterator<char>(ss) );
+
+  copy_n( istreambuf_iterator<char>(s), 4, ostreambuf_iterator<char>(ss) );
   ss.put( ' ' );
-  std::copy_n( istreambuf_iterator<char>(s), 8, ostreambuf_iterator<char>(ss) );
+  copy_n( istreambuf_iterator<char>(s), 8, ostreambuf_iterator<char>(ss) );
 
   ss >> hex >> uid.u.s[5];
 #ifdef _LITTLE_ENDIAN

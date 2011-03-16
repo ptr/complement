@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-14 19:18:16 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-16 17:25:22 ptr>
 
 /*
  *
@@ -24,6 +24,10 @@
 #include <exam/defs.h>
 
 #include <algorithm>
+#if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+// for copy_n
+# include <ext/algorithm>
+#endif
 #include <functional>
 #include <cassert>
 
@@ -38,6 +42,10 @@
 namespace yard {
 
 using namespace std;
+
+#if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+using __gnu_cxx::copy_n;
+#endif
 
 void write_data( std::fstream& file, BTree::off_type address, const char* data, std::streamsize size )
 {
