@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/06/07 12:14:40 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-16 12:33:57 ptr>
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005-2010
+ * Copyright (c) 2002, 2003, 2005-2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -1717,15 +1717,16 @@ int EXAM_IMPL(sockios_test::echo)
         s.write( (const char *)&sz, sizeof(sz) ).write( mess.data(), mess.size() ).flush();
         EXAM_CHECK( s.good() );
         
-        string rcv;
         int rsz = 0;
         s.read( (char*)&rsz, sizeof(rsz) );
         EXAM_CHECK( s.good() );
         EXAM_CHECK( sz == rsz );
-        rcv.assign( rsz, ' ' );
-        s.read( const_cast<char*>(rcv.data()), rsz );
+
+        char* rcv = new char [rsz];
+        s.read( rcv, rsz );
         EXAM_CHECK( s.good() );            
         EXAM_CHECK( rcv == mess );
+        delete [] rcv;
       }
 
       kill( child.pid(), SIGINT );
@@ -1854,15 +1855,15 @@ int EXAM_IMPL(sockios_test::at_funcs)
         s.write( (const char *)&sz, sizeof(sz) ).write( mess.data(), mess.size() ).flush();
         // EXAM_CHECK( s.good() );
         
-        string rcv;
         int rsz = 0;
         s.read( (char*)&rsz, sizeof(rsz) );
         // EXAM_CHECK( s.good() );
         // EXAM_CHECK( sz == rsz );
-        rcv.assign( rsz, ' ' );
-        s.read( const_cast<char*>(rcv.data()), rsz );
+        char* rcv = new char [rsz];
+        s.read( rcv, rsz );
         // EXAM_CHECK( s.good() );            
         // EXAM_CHECK( rcv == mess );
+        delete [] rcv;
       }
 
       kill( child.pid(), SIGINT );
@@ -1976,15 +1977,21 @@ int EXAM_IMPL(sockios_test::ugly_echo)
           EXAM_CHECK( s.good() );
           
           for ( int j = 0; j < 8; ++j ) {
-            string rcv;
             int rsz = 0;
             s.read( (char*)&rsz, sizeof(rsz) );
             EXAM_CHECK( s.good() );
             EXAM_CHECK( sz == rsz );
-            rcv.assign( rsz, ' ' );
-            s.read( const_cast<char*>(rcv.data()), rsz );
+            char* rcv = new char [rsz];
+            s.read( rcv, rsz );
             EXAM_CHECK( s.good() );            
             EXAM_CHECK( rcv == mess );
+
+            if ( rcv != mess ) { // test fail, no sense in continuation
+              delete [] rcv;
+              i = 101; // terminate outer loop
+              break; // terminate this loop
+            }
+            delete [] rcv;
           }
         }
       }

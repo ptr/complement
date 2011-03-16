@@ -1,12 +1,15 @@
-// -*- C++ -*- Time-stamp: <10/05/31 20:38:15 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-16 12:03:55 ptr>
 
 /*
- * Copyright (c) 2006, 2008-2010
+ * Copyright (c) 2006, 2008-2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
  *
  */
+
+#include <algorithm>
+#include <iterator>
 
 #include <mt/uid.h>
 #include <sstream>
@@ -133,14 +136,11 @@ std::istream& operator >>( std::istream& s, xmt::uuid_type& uid )
     return s;
   }
 
-  string buf;
-
-  buf.resize( 13, ' ' );
-
-  s.read( const_cast<char*>(buf.data()), 4 );
-  s.read( const_cast<char*>(buf.data()) + 5, 8 );
-
-  stringstream ss( buf );
+  stringstream ss;
+  
+  std::copy_n( istreambuf_iterator<char>(s), 4, ostreambuf_iterator<char>(ss) );
+  ss.put( ' ' );
+  std::copy_n( istreambuf_iterator<char>(s), 8, ostreambuf_iterator<char>(ss) );
 
   ss >> hex >> uid.u.s[5];
 #ifdef _LITTLE_ENDIAN
