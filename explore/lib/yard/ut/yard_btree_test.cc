@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-02-16 17:45:19 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-14 19:14:28 ptr>
 
 /*
  * Copyright (c) 2010-2011
@@ -197,7 +197,7 @@ int EXAM_IMPL(yard_btree_test::insert_extract)
 
   vector<xmt::uuid_type> id;
   vector<std::string> data;
-  std::string s( sizeof(int), '\0' );
+  std::string s( 4, '\0' );
 
   // fill reference data:
 
@@ -207,10 +207,10 @@ int EXAM_IMPL(yard_btree_test::insert_extract)
   for ( int i = 0; i < n; ++i ) {
     id.push_back( xmt::uid() );
 
-    s[0] = static_cast<char>( i % 0xff );
-    s[1] = static_cast<char>( (i >> 8) % 0xff );
-    s[2] = static_cast<char>( (i >> 16) % 0xff );
-    s[3] = static_cast<char>( (i >> 24) % 0xff );
+    s[0] = static_cast<char>( i % 0x100 );
+    s[1] = static_cast<char>( (i >> 8) % 0x100 );
+    s[2] = static_cast<char>( (i >> 16) % 0x100 );
+    s[3] = static_cast<char>( (i >> 24) % 0x100 );
 
     data.push_back( s );
   }

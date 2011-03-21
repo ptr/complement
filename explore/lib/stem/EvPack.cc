@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/09/18 09:19:59 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-16 17:24:05 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2009
+ * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2011
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -12,18 +12,27 @@
  */
 
 #include <config/feature.h>
+
 #include "stem/Event.h"
 #include <iterator>
 #include <iostream>
 #include <iomanip>
 #include <string>
 #include <algorithm>
+#if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+// for copy_n
+# include <ext/algorithm>
+#endif
 #include <stdint.h>
 #include <cstring>
 
 namespace stem {
 
 using namespace std;
+
+#if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+using __gnu_cxx::copy_n;
+#endif
 
 void __pack_base::__unpack( istream& s, string& str )
 {
@@ -33,8 +42,8 @@ void __pack_base::__unpack( istream& s, string& str )
     sz = from_net( sz );
     str.erase();
     if ( sz > 0 ) {
-      str.resize( sz );
-      s.read( const_cast<char*>(str.data()), sz );
+      str.reserve( sz );
+      copy_n( istreambuf_iterator<char>(s), sz, back_inserter(str) );
     }
   }
 }

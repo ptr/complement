@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <08/07/02 09:15:45 ptr>
+# -*- Makefile -*- Time-stamp: <2011-03-16 12:28:58 ptr>
 
 SRCROOT := ../../..
 
@@ -24,7 +24,7 @@ LIBMT_DIR = ${CoMT_DIR}/lib/mt
 LIBEXAM_DIR = ${CoMT_DIR}/lib/exam
 LIBMISC_DIR = ${CoMT_DIR}/lib/misc
 # LIBFS_DIR = ${CoMT_DIR}/../extern/custom/boost/libs/filesystem
-EXTRA_CXXFLAGS = -Wall
+CXXFLAGS += -Wall
 
 ifeq ($(OSNAME),linux)
 

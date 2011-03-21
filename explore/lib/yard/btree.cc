@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-04 16:26:43 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-16 17:25:22 ptr>
 
 /*
  *
@@ -24,6 +24,10 @@
 #include <exam/defs.h>
 
 #include <algorithm>
+#if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+// for copy_n
+# include <ext/algorithm>
+#endif
 #include <functional>
 #include <cassert>
 
@@ -39,16 +43,14 @@ namespace yard {
 
 using namespace std;
 
+#if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+using __gnu_cxx::copy_n;
+#endif
+
 void write_data( std::fstream& file, BTree::off_type address, const char* data, std::streamsize size )
 {
   file.seekp( address );
   file.write( data, size );
-}
-
-void get_data( std::fstream& file, BTree::off_type address, char* data, std::streamsize size )
-{
-  file.seekg( address );
-  file.read( data, size );
 }
 
 const BTree::key_type BTree::upper_key_bound = { {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff} };
@@ -482,10 +484,11 @@ std::string BTree::operator []( const key_type& key ) const throw(std::invalid_a
     throw std::invalid_argument( "bad key" );
   }
 
-  std::string s( i->second.size, '\0' );
+  std::string s;
 
+  s.reserve( i->second.size );
   file_.seekg( i->second.address );
-  file_.read( const_cast<char*>(s.data()), i->second.size );
+  copy_n( istreambuf_iterator<char>(file_), i->second.size, back_inserter(s) );
 
   if ( file_.fail() ) {
     throw ios_base::failure( "BTree io operation fail" );

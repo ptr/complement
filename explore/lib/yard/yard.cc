@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-03 20:46:33 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-16 17:23:10 ptr>
 
 /*
  *
@@ -25,6 +25,10 @@
 #include <exam/defs.h>
 
 #include <algorithm>
+#if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+// for copy_n
+# include <ext/algorithm>
+#endif
 #include <functional>
 #include <cassert>
 
@@ -42,6 +46,10 @@ using namespace std;
 
 #if !defined(STLPORT) && defined(__GNUC__)
 using __gnu_cxx::select1st;
+#endif
+
+#if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+using __gnu_cxx::copy_n;
 #endif
 
 void metainfo::set( int key, const std::string& val )
@@ -254,8 +262,10 @@ void revision::get_manifest( manifest_type& m, const revision_id_type& rid ) thr
     if ( s.fail() ) { // to avoid str.resize() for bad sz
       break;
     }
-    str.resize( sz );
-    s.read( const_cast<char*>(str.data()), sz );
+    str.erase();
+    str.reserve( sz );
+    copy_n( istreambuf_iterator<char>(s), sz, back_inserter(str) );
+
     s.read( reinterpret_cast<char*>(rev.u.b), sizeof(revision_id_type) );
     if ( s.fail() ) {
       break;
@@ -303,8 +313,9 @@ void revision::get_diff( diff_type& d, const revision_id_type& rid ) throw( std:
     if ( sz == 0 ) {
       break;
     }
-    str.resize( sz );
-    s.read( const_cast<char*>(str.data()), sz );
+    str.erase();
+    str.reserve( sz );
+    copy_n( istreambuf_iterator<char>(s), sz, back_inserter(str) );
     s.read( reinterpret_cast<char*>(rev.u.b), sizeof(revision_id_type) );
     if ( s.fail() ) {
       break;
@@ -317,8 +328,9 @@ void revision::get_diff( diff_type& d, const revision_id_type& rid ) throw( std:
     if ( s.fail() ) { // to avoid str.resize() for bad sz
       break;
     }
-    str.resize( sz );
-    s.read( const_cast<char*>(str.data()), sz );
+    str.erase();
+    str.reserve( sz );
+    copy_n( istreambuf_iterator<char>(s), sz, back_inserter(str) );
     s.read( reinterpret_cast<char*>(rev.u.b), sizeof(revision_id_type) );
     if ( s.fail() ) {
       break;
