@@ -2,7 +2,7 @@
 
 BOOST_FS_SRC = ${BOOST_INCLUDE_DIR}/libs/filesystem
 #BOOST_FS_SRC = src
-LIBNAME = boost_fs
+LIBNAME = boost_filesystem
 MAJOR = 1
 MINOR = 44
 PATCH = 0
