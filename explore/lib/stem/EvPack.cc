@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-14 17:14:48 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-16 17:24:05 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2011
@@ -12,18 +12,27 @@
  */
 
 #include <config/feature.h>
+
 #include "stem/Event.h"
 #include <iterator>
 #include <iostream>
 #include <iomanip>
 #include <string>
 #include <algorithm>
+#if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+// for copy_n
+# include <ext/algorithm>
+#endif
 #include <stdint.h>
 #include <cstring>
 
 namespace stem {
 
 using namespace std;
+
+#if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+using __gnu_cxx::copy_n;
+#endif
 
 void __pack_base::__unpack( istream& s, string& str )
 {

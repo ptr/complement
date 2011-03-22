@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2011-03-14 17:16:11 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-16 17:24:13 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999, 2002-2003, 2005-2009
+ * Copyright (c) 1997-1999, 2002-2003, 2005-2011
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -26,12 +26,21 @@
 
 #include <exam/defs.h>
 
+#if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+// for copy_n
+# include <ext/algorithm>
+#endif
+
 const uint32_t EDS_MSG_LIMIT = 0x400000; // 4MB
 
 namespace stem {
 
 using namespace std;
 using namespace std::tr2;
+
+#if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+using __gnu_cxx::copy_n;
+#endif
 
 #ifdef _BIG_ENDIAN
 static const uint32_t EDS_MAGIC = 0xc2454453U;

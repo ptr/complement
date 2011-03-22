@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-14 19:18:16 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-16 17:25:22 ptr>
 
 /*
  *
@@ -24,6 +24,10 @@
 #include <exam/defs.h>
 
 #include <algorithm>
+#if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+// for copy_n
+# include <ext/algorithm>
+#endif
 #include <functional>
 #include <cassert>
 
@@ -38,6 +42,10 @@
 namespace yard {
 
 using namespace std;
+
+#if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+using __gnu_cxx::copy_n;
+#endif
 
 void write_data( std::fstream& file, BTree::off_type address, const char* data, std::streamsize size )
 {
@@ -66,13 +74,16 @@ BTree::~BTree()
   BTree::close();
 }
 
-BTree::off_type BTree::seek_to_end()
+BTree::off_type BTree::seek_to_end(std::streamsize current_alignment = alignment)
 {
   file_.seekp( 0, ios_base::end );
   BTree::off_type address = file_.tellp();
 
-  int over = address % alignment;
-  BTree::off_type delta = over ? alignment - over : 0;
+  if (current_alignment == 0)
+      return address;
+
+  int over = address % current_alignment;
+  BTree::off_type delta = over ? current_alignment - over : 0;
   file_.seekp( delta, ios_base::end );
 
   return address + delta;
@@ -80,7 +91,7 @@ BTree::off_type BTree::seek_to_end()
 
 BTree::off_type BTree::append_data( const char* data, std::streamsize size )
 {
-  off_type address = seek_to_end();
+  off_type address = seek_to_end(0);
   write_data( file_, address, data, size );
 
   return address;

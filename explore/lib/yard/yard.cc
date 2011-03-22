@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-14 17:25:31 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-16 17:23:10 ptr>
 
 /*
  *
@@ -25,6 +25,10 @@
 #include <exam/defs.h>
 
 #include <algorithm>
+#if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+// for copy_n
+# include <ext/algorithm>
+#endif
 #include <functional>
 #include <cassert>
 
@@ -42,6 +46,10 @@ using namespace std;
 
 #if !defined(STLPORT) && defined(__GNUC__)
 using __gnu_cxx::select1st;
+#endif
+
+#if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+using __gnu_cxx::copy_n;
 #endif
 
 void metainfo::set( int key, const std::string& val )

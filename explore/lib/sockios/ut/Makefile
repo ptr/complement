@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <08/07/01 12:27:54 yeti>
+# -*- Makefile -*- Time-stamp: <2011-03-16 12:28:43 ptr>
 
 SRCROOT := ../../..
 
@@ -17,7 +17,7 @@ LIBSOCK_DIR = ${CoMT_DIR}/lib/sockios
 LIBEXAM_DIR = ${CoMT_DIR}/lib/exam
 LIBMISC_DIR = ${CoMT_DIR}/lib/misc
 
-EXTRA_CXXFLAGS = -Wall
+CXXFLAGS += -Wall
 
 ifeq ($(OSNAME),linux)
 

@@ -221,7 +221,7 @@ class BTree
     key_type min_in_subtree( off_type block_address ) const;
     key_type max_in_subtree( off_type block_address ) const;
 
-    off_type seek_to_end();
+    off_type seek_to_end(std::streamsize current_alignment);
     off_type append_data( const char* data, std::streamsize size );
 
     mutable std::fstream file_;
