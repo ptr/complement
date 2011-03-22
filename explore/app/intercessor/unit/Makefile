@@ -33,10 +33,10 @@ endif
 
 INCLUDES += -I${CoMT_INCLUDE_DIR} -I${BOOST_INCLUDE_DIR} -I..
 
-release-shared: PROJECT_LIBS = -lxmt -lsockios -lNet -lstem -lboost_regex -lboost_fs -lexam
-dbg-shared:	PROJECT_LIBS = -lxmtg -lsockiosg -lNetg -lstemg -lboost_regexg -lboost_fsg -lexamg
+release-shared: PROJECT_LIBS = -lxmt -lsockios -lNet -lstem -lboost_regex -lboost_filesystem -lexam
+dbg-shared:	PROJECT_LIBS = -lxmtg -lsockiosg -lNetg -lstemg -lboost_regexg -lboost_filesystemg -lexamg
 ifndef WITHOUT_STLPORT
-stldbg-shared:	PROJECT_LIBS = -lxmtstlg -lsockiosstlg -lNetstlg -lstemstlg -lboost_regexstlg -lboost_fsstlg -lexamstlg
+stldbg-shared:	PROJECT_LIBS = -lxmtstlg -lsockiosstlg -lNetstlg -lstemstlg -lboost_regexstlg -lboost_filesystemstlg -lexamstlg
 endif
 
 LDLIBS = ${PROJECT_LIBS}

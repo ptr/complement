@@ -14,10 +14,10 @@ ifndef WITHOUT_STLPORT
 stldbg-shared:	LDFLAGS += -L../${OUTPUT_DIR_STLDBG} -Wl,-rpath=../${OUTPUT_DIR_STLDBG}
 endif
 
-release-shared:	LDLIBS = -lboost_fs
-dbg-shared:	LDLIBS = -lboost_fsg
+release-shared:	LDLIBS = -lboost_filesystem
+dbg-shared:	LDLIBS = -lboost_filesystemg
 ifndef WITHOUT_STLPORT
-stldbg-shared:	LDLIBS = -lboost_fsstlg
+stldbg-shared:	LDLIBS = -lboost_filesystemstlg
 endif
 
 check:	all

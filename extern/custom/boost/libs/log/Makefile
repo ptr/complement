@@ -16,10 +16,10 @@ ifdef USE_SYSTEM_BOOST
 release-shared:	LDLIBS = -lboost_date_time -lboost_filesystem -lboost_system -lboost_thread
 dbg-shared:	LDLIBS = -lboost_date_time -lboost_filesystem -lboost_system -lboost_thread
 else
-release-shared:	LDLIBS = -L../date_time/${OUTPUT_DIR} -L../filesystem/${OUTPUT_DIR} -L../system/${OUTPUT_DIR} -L../thread/${OUTPUT_DIR} -lboost_dt -lboost_fs -lboost_system -lboost_thread
-dbg-shared:	LDLIBS = -L../date_time/${OUTPUT_DIR_DBG} -L../filesystem/${OUTPUT_DIR_DBG} -L../system/${OUTPUT_DIR_DBG} -L../thread/${OUTPUT_DIR_DBG} -lboost_dtg -lboost_fsg -lboost_systemg -lboost_threadg
+release-shared:	LDLIBS = -L../date_time/${OUTPUT_DIR} -L../filesystem/${OUTPUT_DIR} -L../system/${OUTPUT_DIR} -L../thread/${OUTPUT_DIR} -lboost_dt -lboost_filesystem -lboost_system -lboost_thread
+dbg-shared:	LDLIBS = -L../date_time/${OUTPUT_DIR_DBG} -L../filesystem/${OUTPUT_DIR_DBG} -L../system/${OUTPUT_DIR_DBG} -L../thread/${OUTPUT_DIR_DBG} -lboost_dtg -lboost_filesystemg -lboost_systemg -lboost_threadg
 ifndef WITHOUT_STLPORT
-stldbg-shared:	LDLIBS = -L../date_time/${OUTPUT_DIR_STLDBG} -L../filesystem/${OUTPUT_DIR_STLDBG} -L../system/${OUTPUT_DIR_STLDBG} -L../thread/${OUTPUT_DIR_STLDBG} -lboost_dtstlg -lboost_fsstlg -lboost_systemstlg -lboost_threadstlg
+stldbg-shared:	LDLIBS = -L../date_time/${OUTPUT_DIR_STLDBG} -L../filesystem/${OUTPUT_DIR_STLDBG} -L../system/${OUTPUT_DIR_STLDBG} -L../thread/${OUTPUT_DIR_STLDBG} -lboost_dtstlg -lboost_filesystemstlg -lboost_systemstlg -lboost_threadstlg
 endif
 endif
 
