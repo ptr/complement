@@ -6,27 +6,8 @@
 #include <config/feature.h>
 #endif
 
-#if !defined(STLPORT) || (_STLPORT_VERSION < 0x520)
-
-# if defined(__GNUC__) && ((__GNUC__ < 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ < 3)))
-#  include <stdint.h>
-# else
-#  include <cstdint>
-# endif
-// libstdc++ v3, timestamp 20050519 (3.4.4) has __type_traits,
-// libstdc++ v3, timestamp 20060306 (3.4.6) has __type_traits,
-// while libstdc++ v3, 20050921 (4.0.2) not; use libstdc++ instead
-# if defined(STLPORT) || (defined(__GNUC__) && (__GNUC__ < 4) ) /* !defined(__GLIBCXX__) || (defined(__GNUC__) && (__GNUC__ < 4)) */
-#  include <misc/type_traits.h>
-# elif defined(__GNUC__) && ((__GNUC__ > 4) || (((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))))
-#  include <type_traits>
-namespace std::tr1 = std;
-# endif
-#else // STLPORT
-# include <cstdint>
-# include <type_traits>
-#endif
-
+#include <stdint.h>
+#include <tr1/type_traits>
 #include <string>
 #include <iostream>
 #include <algorithm>
@@ -56,6 +37,152 @@ struct make_extended<signed long>
     typedef long long type;
 };
 
+// copy-paste from STLport
+
+// [20.5.6.3] sign modifications
+
+template <class _Tp>
+struct make_signed
+{
+};
+
+template <>
+struct make_signed<char>
+{
+    typedef signed char type;
+};
+
+template <>
+struct make_signed<signed char>
+{
+    typedef signed char type;
+};
+
+template <>
+struct make_signed<unsigned char>
+{
+    typedef signed char type;
+};
+
+template <>
+struct make_signed<short>
+{
+    typedef short type;
+};
+
+template <>
+struct make_signed<unsigned short>
+{
+    typedef short type;
+};
+
+template <>
+struct make_signed<int>
+{
+    typedef int type;
+};
+
+template <>
+struct make_signed<unsigned int>
+{
+    typedef int type;
+};
+
+template <>
+struct make_signed<long>
+{
+    typedef long type;
+};
+
+template <>
+struct make_signed<unsigned long>
+{
+    typedef long type;
+};
+
+template <>
+struct make_signed<long long>
+{
+    typedef long long type;
+};
+
+template <>
+struct make_signed<unsigned long long>
+{
+    typedef long long type;
+};
+
+template <class _Tp>
+struct make_unsigned
+{
+};
+
+template <>
+struct make_unsigned<char>
+{
+    typedef unsigned char type;
+};
+
+template <>
+struct make_unsigned<signed char>
+{
+    typedef unsigned char type;
+};
+
+template <>
+struct make_unsigned<unsigned char>
+{
+    typedef unsigned char type;
+};
+
+template <>
+struct make_unsigned<short>
+{
+    typedef unsigned short type;
+};
+
+template <>
+struct make_unsigned<unsigned short>
+{
+    typedef unsigned short type;
+};
+
+template <>
+struct make_unsigned<int>
+{
+    typedef unsigned int type;
+};
+
+template <>
+struct make_unsigned<unsigned int>
+{
+    typedef unsigned int type;
+};
+
+template <>
+struct make_unsigned<long>
+{
+    typedef unsigned long type;
+};
+
+template <>
+struct make_unsigned<unsigned long>
+{
+    typedef unsigned long type;
+};
+
+template <>
+struct make_unsigned<long long>
+{
+    typedef unsigned long long type;
+};
+
+template <>
+struct make_unsigned<unsigned long long>
+{
+    typedef unsigned long long type;
+};
+
 }
 
 template <int P, class T > class la_int;
@@ -65,8 +192,8 @@ template <int P, class T>
 class la_int
 {
   public:
-    typedef typename std::tr1::make_signed<T>::type base_type;
-    typedef typename std::tr1::make_unsigned<base_type>::type ubase_type;
+    typedef typename detail::make_signed<T>::type base_type;
+    typedef typename detail::make_unsigned<base_type>::type ubase_type;
     typedef typename detail::make_extended<base_type>::type long_base_type;
         
     la_int()
