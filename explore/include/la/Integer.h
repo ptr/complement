@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <97/01/16 14:42:23 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-23 17:14:51 ptr>
 #ifndef __LA_Integer_h
 #define __LA_Integer_h
 
@@ -8,19 +8,12 @@
 
 #if !defined(STLPORT) || (_STLPORT_VERSION < 0x520)
 
-# if defined(__GNUC__) && ((__GNUC__ < 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ < 3)))
+# if defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
 #  include <stdint.h>
+#  include <misc/type_traits.h>
 # else
 #  include <cstdint>
-# endif
-// libstdc++ v3, timestamp 20050519 (3.4.4) has __type_traits,
-// libstdc++ v3, timestamp 20060306 (3.4.6) has __type_traits,
-// while libstdc++ v3, 20050921 (4.0.2) not; use libstdc++ instead
-# if defined(STLPORT) || (defined(__GNUC__) && (__GNUC__ < 4) ) /* !defined(__GLIBCXX__) || (defined(__GNUC__) && (__GNUC__ < 4)) */
-#  include <misc/type_traits.h>
-# elif defined(__GNUC__) && ((__GNUC__ > 4) || (((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))))
 #  include <type_traits>
-namespace std::tr1 = std;
 # endif
 #else // STLPORT
 # include <cstdint>
@@ -65,8 +58,8 @@ template <int P, class T>
 class la_int
 {
   public:
-    typedef typename std::tr1::make_signed<T>::type base_type;
-    typedef typename std::tr1::make_unsigned<base_type>::type ubase_type;
+    typedef typename std::make_signed<T>::type base_type;
+    typedef typename std::make_unsigned<base_type>::type ubase_type;
     typedef typename detail::make_extended<base_type>::type long_base_type;
         
     la_int()

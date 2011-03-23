@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/02/25 13:08:13 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-23 16:28:58 ptr>
 
 /*
  * Copyright (c) 2002, 2006-2008
@@ -42,84 +42,84 @@ typedef unsigned long long unsigned_tick_type; // uint64_t
 
 template <class _Tp1, class _Tp2>
 struct __is_more_precise :
-    public std::tr1::false_type
+    public std::false_type
 {
   typedef _Tp2 finest_type;
 };
 
 template <class _Tp>
 struct __is_more_precise<std::tr2::nanoseconds,_Tp> :
-    public std::tr1::true_type
+    public std::true_type
 {
   typedef std::tr2::nanoseconds finest_type;
 };
 
 template <>
 struct __is_more_precise<std::tr2::microseconds,milliseconds> :
-    public std::tr1::true_type
+    public std::true_type
 {
   typedef std::tr2::microseconds finest_type;
 };
 
 template <>
 struct __is_more_precise<std::tr2::microseconds,seconds> :
-    public std::tr1::true_type
+    public std::true_type
 {
   typedef std::tr2::microseconds finest_type;
 };
 
 template <>
 struct __is_more_precise<std::tr2::microseconds,minutes> :
-    public std::tr1::true_type
+    public std::true_type
 {
   typedef std::tr2::microseconds finest_type;
 };
 
 template <>
 struct __is_more_precise<std::tr2::microseconds,hours> :
-    public std::tr1::true_type
+    public std::true_type
 {
   typedef std::tr2::microseconds finest_type;
 };
 
 template <>
 struct __is_more_precise<std::tr2::milliseconds,seconds> :
-    public std::tr1::true_type
+    public std::true_type
 {
   typedef std::tr2::milliseconds finest_type;
 };
 
 template <>
 struct __is_more_precise<std::tr2::milliseconds,minutes> :
-    public std::tr1::true_type
+    public std::true_type
 {
   typedef std::tr2::milliseconds finest_type;
 };
 
 template <>
 struct __is_more_precise<std::tr2::milliseconds,hours> :
-    public std::tr1::true_type
+    public std::true_type
 {
   typedef std::tr2::milliseconds finest_type;
 };
 
 template <>
 struct __is_more_precise<std::tr2::seconds,minutes> :
-    public std::tr1::true_type
+    public std::true_type
 {
   typedef std::tr2::seconds finest_type;
 };
 
 template <>
 struct __is_more_precise<std::tr2::seconds,hours> :
-    public std::tr1::true_type
+    public std::true_type
 {
   typedef std::tr2::seconds finest_type;
 };
 
 template <>
 struct __is_more_precise<std::tr2::minutes,hours> :
-    public std::tr1::true_type
+    public std::true_type
 {
   typedef std::tr2::minutes finest_type;
 };

@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <10/02/15 19:08:31 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-23 16:49:38 ptr>
 
 /*
- * Copyright (c) 2006, 2008-2010
+ * Copyright (c) 2006, 2008-2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -27,7 +27,7 @@
 #include <ostream>
 #include <cstring>
 
-#if defined(STLPORT) && ((_STLPORT_MAJOR > 5) || ((_STLPORT_MAJOR == 5) && (_STLPORT_MINOR > 1)))
+#if (defined(STLPORT) && ((_STLPORT_MAJOR > 5) || ((_STLPORT_MAJOR == 5) && (_STLPORT_MINOR > 1)))) || (defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))) && defined(__GXX_EXPERIMENTAL_CXX0X__))
 # include <type_traits>
 #else
 # include <misc/type_traits.h>
@@ -123,7 +123,9 @@ namespace std {
 std::ostream& operator <<( std::ostream&, const xmt::uuid_type& );
 std::istream& operator >>( std::istream&, xmt::uuid_type& );
 
+# if (defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)) || defined(STLPORT)
 namespace tr1 {
+# endif
 
 template <>
 struct is_trivial<xmt::uuid_type> :
@@ -140,7 +142,9 @@ struct is_pod<xmt::uuid_type> :
     public integral_constant<bool, true>
 { };
 
+# if (defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)) || defined(STLPORT)
 } // namespace tr1
+# endif
 
 template <>
 inline void swap( xmt::uuid_type& l, xmt::uuid_type& r )

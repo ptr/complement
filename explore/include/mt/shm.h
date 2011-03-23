@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <10/06/03 07:45:50 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-23 16:33:34 ptr>
 
 /*
- * Copyright (c) 2006-2010
+ * Copyright (c) 2006-2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -21,7 +21,7 @@
 #include <stdexcept>
 #include <algorithm>
 
-#if defined(STLPORT) && ((_STLPORT_MAJOR > 5) || ((_STLPORT_MAJOR == 5) && (_STLPORT_MINOR > 1)))
+#if (defined(STLPORT) && ((_STLPORT_MAJOR > 5) || ((_STLPORT_MAJOR == 5) && (_STLPORT_MINOR > 1)))) || (defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))) && defined(__GXX_EXPERIMENTAL_CXX0X__))
 # include <type_traits>
 #else
 # include <misc/type_traits.h>
@@ -70,13 +70,13 @@ class shm_bad_alloc :
 
 template <class T>
 struct is_ipc_sharable :
-    public std::tr1::integral_constant<bool,std::tr1::is_pod<T>::value>
+    public std::integral_constant<bool,std::is_pod<T>::value>
 { };
 
 #define  __SPEC_(C,T,B)               \
 template <>                           \
 struct C<T > :                        \
-    public std::tr1::integral_constant<bool, B> \
+    public std::integral_constant<bool, B> \
 { }
 
 #define __SPEC_FULL(C,T,B) \
@@ -579,7 +579,7 @@ class __allocator_shm
 };
 
 template <>
-class __allocator_shm<std::tr1::false_type>
+class __allocator_shm<std::false_type>
 {
   private:
     __allocator_shm()
@@ -587,7 +587,7 @@ class __allocator_shm<std::tr1::false_type>
 };
 
 template <>
-class __allocator_shm<std::tr1::true_type>
+class __allocator_shm<std::true_type>
 {
   public:
     __allocator_shm()
@@ -601,11 +601,11 @@ inline void __destroy_aux(_Tp *p, const TRD& /* has_trivial_destructor */)
 { }
 
 template <class _Tp>
-inline void __destroy_aux(_Tp *p, const std::tr1::false_type& /* has_trivial_destructor */)
+inline void __destroy_aux(_Tp *p, const std::false_type& /* has_trivial_destructor */)
 { p->~_Tp(); }
 
 template <class _Tp>
-inline void __destroy_aux(_Tp *p, const std::tr1::true_type& /* has_trivial_destructor */)
+inline void __destroy_aux(_Tp *p, const std::true_type& /* has_trivial_destructor */)
 { }
 
 #endif // !STLPORT
@@ -698,7 +698,7 @@ class allocator_shm :
 #ifdef STLPORT
         _STLP_STD::_Destroy(__p);
 #else
-        detail::__destroy_aux(__p,std::tr1::has_trivial_destructor<value_type>::value);
+        detail::__destroy_aux(__p,std::has_trivial_destructor<value_type>::value);
 #endif
       }
 
