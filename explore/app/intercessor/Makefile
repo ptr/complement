@@ -9,9 +9,9 @@ include ${SRCROOT}/Makefiles/gmake/top.mak
 INCLUDES += -I${CoMT_INCLUDE_DIR} -I${BOOST_INCLUDE_DIR}
 LDFLAGS += -L${INSTALL_LIB_DIR} -Wl,-rpath=${INSTALL_LIB_DIR}
 
-release-shared: LDLIBS = -lxmt -lsockios -lNet -lstem -lboost_regex -lboost_filesystem -lboost_program_options
-dbg-shared:	LDLIBS = -lxmtg -lsockiosg -lNetg -lstemg -lboost_regexg -lboost_filesystemg -lboost_program_optionsg
-stldbg-shared:	LDLIBS = -lxmtstlg -lsockiosstlg -lNetstlg -lstemstlg -lboost_regexstlg  -lboost_filesystemstlg -lboost_program_optionsstlg
+release-shared: LDLIBS = -lxmt -lsockios -lNet -lstem -lboost_regex -lboost_fs -lboost_program_options
+dbg-shared:	LDLIBS = -lxmtg -lsockiosg -lNetg -lstemg -lboost_regexg -lboost_fsg -lboost_program_optionsg
+stldbg-shared:	LDLIBS = -lxmtstlg -lsockiosstlg -lNetstlg -lstemstlg -lboost_regexstlg  -lboost_fsstlg -lboost_program_optionsstlg
 
 check-shared:	all-shared
 	$(MAKE) -C unit check || exit 1

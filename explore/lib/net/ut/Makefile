@@ -34,10 +34,10 @@ endif
 
 INCLUDES += -I${CoMT_INCLUDE_DIR} -I${BOOST_INCLUDE_DIR}
 
-release-shared: PROJECT_LIBS = -lNet -lboost_filesystem -lexam
-dbg-shared:	PROJECT_LIBS = -lNetg -lboost_filesystemg -lexamg
+release-shared: PROJECT_LIBS = -lNet -lboost_fs -lexam
+dbg-shared:	PROJECT_LIBS = -lNetg -lboost_fsg -lexamg
 ifndef WITHOUT_STLPORT
-stldbg-shared:	PROJECT_LIBS = -lNetstlg -lboost_filesystemstlg -lexamstlg
+stldbg-shared:	PROJECT_LIBS = -lNetstlg -lboost_fsstlg -lexamstlg
 endif
 
 LDLIBS = ${PROJECT_LIBS}
