@@ -59,7 +59,12 @@ int main( int argc, const char** argv )
   t.add(&yard_perf::consecutive_insert_big, p, "consecutive insert (10^6 entires)");
   t.add(&yard_perf::random_insert_big, p, "random insert (10^6 entires)");
   t.add(&yard_perf::consecutive_insert_with_data, p, "consecutive insert with data (n entires)");
-  t.add(&yard_perf::random_insert_with_data, p, "random insert with data (n entires)");
+
+  t.add(&yard_perf::random_insert_with_data_100000, p, "random insert with data (100000 entires)", 
+    t.add(&yard_perf::random_insert_with_data_20000, p, "random insert with data (20000 entires)",
+      t.add(&yard_perf::random_insert_with_data_4000, p, "random insert with data (4000 entires)",
+        t.add(&yard_perf::random_insert_with_data_1000, p, "random insert with data (1000 entires)"))));
+
   t.add(&yard_perf::multiple_files, p, "multiple files");
   t.add(&yard_perf::random_lookup, p, "random lookup");
 

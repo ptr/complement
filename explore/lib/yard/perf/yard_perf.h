@@ -37,7 +37,10 @@ class yard_perf
     int EXAM_DECL(consecutive_insert_big);
     int EXAM_DECL(random_insert_big);
     int EXAM_DECL(consecutive_insert_with_data);
-    int EXAM_DECL(random_insert_with_data);
+    int EXAM_DECL(random_insert_with_data_1000);
+    int EXAM_DECL(random_insert_with_data_4000);
+    int EXAM_DECL(random_insert_with_data_20000);
+    int EXAM_DECL(random_insert_with_data_100000);
     int EXAM_DECL(multiple_files);
     int EXAM_DECL(random_lookup);
 
@@ -45,6 +48,8 @@ class yard_perf
     int EXAM_DECL(put_revisions);
     int EXAM_DECL(mess_insert);
     int EXAM_DECL(mess_insert_single_commit);
+
+    void gen_random_insert_with_data(int count);
 };
 
 #endif // __yard_perf_h

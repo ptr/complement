@@ -205,7 +205,7 @@ int EXAM_IMPL(yard_perf::consecutive_insert_with_data)
   return EXAM_RESULT;
 }
 
-int EXAM_IMPL(yard_perf::random_insert_with_data)
+void yard_perf::gen_random_insert_with_data(int count)
 {
   using namespace yard;
   using yard::detail::block_coordinate;
@@ -219,13 +219,11 @@ int EXAM_IMPL(yard_perf::random_insert_with_data)
   {
     BTree tree( "/tmp/btree_random_with_data", std::ios_base::in | std::ios_base::out | std::ios_base::trunc, 4096 );
 
-    const int count = 40000;
     BTree::key_type key;
     block_coordinate coord;
 
     for ( int i = 0; i < count; ++i ) {
-      key.u.l[0] = rand();
-      key.u.l[1] = 0;
+      key = xmt::uid();
 
       BTree::coordinate_type coordinate = tree.lookup(key);
 
@@ -236,9 +234,36 @@ int EXAM_IMPL(yard_perf::random_insert_with_data)
   }
 
   // unlink( "/tmp/btree_random_with_data" );
+}
+
+int EXAM_IMPL(yard_perf::random_insert_with_data_100000)
+{
+  gen_random_insert_with_data(100*1000);
 
   return EXAM_RESULT;
 }
+
+int EXAM_IMPL(yard_perf::random_insert_with_data_20000)
+{
+  gen_random_insert_with_data(20*1000);
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_perf::random_insert_with_data_4000)
+{
+  gen_random_insert_with_data(4*1000);
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_perf::random_insert_with_data_1000)
+{
+  gen_random_insert_with_data(1*1000);
+
+  return EXAM_RESULT;
+}
+
 
 int EXAM_IMPL(yard_perf::multiple_files)
 {
