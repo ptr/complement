@@ -1,6 +1,6 @@
-# Time-stamp: <07/12/21 18:40:54 yeti>
+# Time-stamp: <2011-04-12 12:37:24 ptr>
 #
-# Copyright (c) 1997-1999, 2002, 2003, 2005-2007
+# Copyright (c) 1997-1999, 2002, 2003, 2005-2011
 # Petr Ovtchenkov
 #
 # Portion Copyright (c) 1999-2001
@@ -9,7 +9,7 @@
 # Licensed under the Academic Free License version 3.0
 #
 
-INSTALL := /usr/bin/install
+INSTALL := $(shell if [ -e /usr/bin/install ]; then echo -n "/usr/bin/install"; else if [ -e /bin/install ]; then echo -n "/bin/install"; fi fi )
 
 STRIP := /usr/bin/strip
 
