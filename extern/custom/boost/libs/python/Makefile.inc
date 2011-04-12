@@ -1,5 +1,5 @@
 BOOST_PY_SRC = ${BOOST_INCLUDE_DIR}/libs/python/src
-LIBNAME = boost_python
+LIBNAME = boost_py
 MAJOR = 1
 MINOR = 44
 PATCH = 0
