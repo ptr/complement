@@ -73,6 +73,11 @@ int main( int argc, const char** argv )
   t.add( &yard_perf::mess_insert, p, "put 1000 new messages" );
   t.add( &yard_perf::mess_insert_single_commit, p, "put 1000 new messages in one transaction" );
 
+  t.add( &yard_perf::insert_20000_transactions, p, "put 20000 new messages (transaction per message)",
+    t.add( &yard_perf::insert_4000_transactions, p, "put 4000 new messages (transaction per message)",
+      t.add( &yard_perf::insert_1000_transactions, p, "put 1000 new messages (transaction per message)")));
+
+
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );
     return 0;

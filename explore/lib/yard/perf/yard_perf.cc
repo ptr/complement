@@ -514,3 +514,74 @@ int EXAM_IMPL(yard_perf::mess_insert_single_commit)
 
   return EXAM_RESULT;
 }
+
+int yard_perf::gen_insert_with_history(int count)
+{
+  const char fn[] = "./btree";
+
+  string content( 4*1024, 'A' );
+  string name( "/AAAAAA" );
+
+    yard::commit_id_type cid0;
+    yard::commit_id_type cid1;
+
+    yard::yard db( fn );
+    db.clear();
+    db.open( fn, ios_base::trunc );
+
+    for ( int i = 0; i < count; ++i ) {
+
+      content[512] = 'A' + (i % 0x40);
+      content[513] = 'A' + (i >> 6) % 0x40;
+      content[514] = 'A' + (i >> 12) % 0x40;
+
+      name[1] = 'A' + (i % 0x40);
+      name[2] = 'A' + (i >> 6) % 0x40;
+      name[3] = 'A' + (i >> 12) % 0x40;
+
+      if ( i == 0 ) {
+        cid0 = xmt::nil_uuid;
+      } else {
+        std::list<yard::commit_id_type> h;
+
+        db.heads( back_inserter(h) );
+        if ( !h.empty() ) {
+          cid0 = h.front();
+        } else {
+          throw( "no leafs in commits graph?" );
+        }
+      }
+
+      cid1 = xmt::uid();
+
+      db.open_commit_delta( cid0, cid1 );
+
+      db.add( cid1, name, content );
+
+      db.close_commit_delta( cid1 );
+
+      if ( !db.is_open() )
+        return -1; 
+      if ( !db.good() )
+        return -1;
+    }
+
+  unlink( fn );
+
+  return 0;
+}
+
+int EXAM_IMPL(yard_perf::insert_1000_transactions)
+{
+  return gen_insert_with_history(1000);
+}
+
+int EXAM_IMPL(yard_perf::insert_4000_transactions)
+{
+  return gen_insert_with_history(4000);
+}
+
+int EXAM_IMPL(yard_perf::insert_20000_transactions)
+{
+  return gen_insert_with_history(20000);
+}

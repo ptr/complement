@@ -49,7 +49,12 @@ class yard_perf
     int EXAM_DECL(mess_insert);
     int EXAM_DECL(mess_insert_single_commit);
 
+    int EXAM_DECL(insert_1000_transactions);
+    int EXAM_DECL(insert_4000_transactions);
+    int EXAM_DECL(insert_20000_transactions);
+
     void gen_random_insert_with_data(int count);
+    int gen_insert_with_history(int count);
 };
 
 #endif // __yard_perf_h
