@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-16 12:33:57 ptr>
+// -*- C++ -*- Time-stamp: <2011-04-13 11:51:37 ptr>
 
 /*
  *
@@ -1722,8 +1722,9 @@ int EXAM_IMPL(sockios_test::echo)
         EXAM_CHECK( s.good() );
         EXAM_CHECK( sz == rsz );
 
-        char* rcv = new char [rsz];
+        char* rcv = new char [rsz + 1];
         s.read( rcv, rsz );
+        rcv[rsz] = 0;
         EXAM_CHECK( s.good() );            
         EXAM_CHECK( rcv == mess );
         delete [] rcv;
@@ -1859,8 +1860,9 @@ int EXAM_IMPL(sockios_test::at_funcs)
         s.read( (char*)&rsz, sizeof(rsz) );
         // EXAM_CHECK( s.good() );
         // EXAM_CHECK( sz == rsz );
-        char* rcv = new char [rsz];
+        char* rcv = new char [rsz + 1];
         s.read( rcv, rsz );
+        rcv[rsz] = 0;
         // EXAM_CHECK( s.good() );            
         // EXAM_CHECK( rcv == mess );
         delete [] rcv;
@@ -1981,8 +1983,9 @@ int EXAM_IMPL(sockios_test::ugly_echo)
             s.read( (char*)&rsz, sizeof(rsz) );
             EXAM_CHECK( s.good() );
             EXAM_CHECK( sz == rsz );
-            char* rcv = new char [rsz];
+            char* rcv = new char [rsz + 1];
             s.read( rcv, rsz );
+            rcv[rsz] = 0;
             EXAM_CHECK( s.good() );            
             EXAM_CHECK( rcv == mess );
 
