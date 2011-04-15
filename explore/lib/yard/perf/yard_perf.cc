@@ -515,7 +515,7 @@ int EXAM_IMPL(yard_perf::mess_insert_single_commit)
   return EXAM_RESULT;
 }
 
-int yard_perf::gen_insert_with_history(int count)
+void yard_perf::gen_insert_with_history(int count)
 {
   const char fn[] = "./btree";
 
@@ -561,27 +561,46 @@ int yard_perf::gen_insert_with_history(int count)
       db.close_commit_delta( cid1 );
 
       if ( !db.is_open() )
-        return -1; 
+        throw "The database is not open";
       if ( !db.good() )
-        return -1;
+        throw "The database is not good";
     }
 
   unlink( fn );
-
-  return 0;
 }
 
 int EXAM_IMPL(yard_perf::insert_1000_transactions)
 {
-  return gen_insert_with_history(1000);
+  try
+  {
+    gen_insert_with_history(1000);
+  } catch (const char* str)
+  {
+    EXAM_ERROR(str);
+  }
+  return EXAM_RESULT;
 }
 
 int EXAM_IMPL(yard_perf::insert_4000_transactions)
 {
-  return gen_insert_with_history(4000);
+  try
+  {
+    gen_insert_with_history(4000);
+  } catch (const char* str)
+  {
+    EXAM_ERROR(str);
+  }
+  return EXAM_RESULT;
 }
 
 int EXAM_IMPL(yard_perf::insert_20000_transactions)
 {
-  return gen_insert_with_history(20000);
+  try
+  {
+    gen_insert_with_history(20000);
+  } catch (const char* str)
+  {
+    EXAM_ERROR(str);
+  }
+  return EXAM_RESULT;
 }

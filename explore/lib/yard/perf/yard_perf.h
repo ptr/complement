@@ -54,7 +54,7 @@ class yard_perf
     int EXAM_DECL(insert_20000_transactions);
 
     void gen_random_insert_with_data(int count);
-    int gen_insert_with_history(int count);
+    void gen_insert_with_history(int count);
 };
 
 #endif // __yard_perf_h
