@@ -20,6 +20,35 @@ using namespace std;
 
 yard_perf::yard_perf()
 {
+  using namespace yard;
+  using yard::detail::block_coordinate;
+
+  vector<char> data(4096);
+  for (int i = 0; i < data.size(); ++i)
+  {
+    data[i] = rand() % 256;
+  }
+
+  {
+    BTree tree( "/tmp/btree_for_lookup_test", std::ios_base::in | std::ios_base::out | std::ios_base::trunc, 4096 );
+
+    const int count = 20*1000;
+
+    BTree::key_type key;
+    block_coordinate coord;
+
+    for ( int i = 0; i < count; ++i ) {
+      key = xmt::uid();
+
+      coord.address = tree.add_value(&data[0], data.size());
+      coord.size = data.size();
+
+      BTree::coordinate_type coordinate = tree.lookup(key);
+
+      tree.insert(coordinate, key, coord);
+    }
+  }
+
 }
 
 yard_perf::~yard_perf()
@@ -319,20 +348,17 @@ int EXAM_IMPL(yard_perf::random_lookup)
   using namespace yard;
 
   {
-    BTree tree( "/tmp/btree_consecutive" );
+    BTree tree( "/tmp/btree_for_lookup_test" );
 
     const int count = 10000;
     BTree::key_type key;
 
     for ( int i = 0; i < count; ++i ) {
-      key.u.l[0] = 3*(rand() % 40000);
-      key.u.l[1] = 0;
+      key = xmt::uid();
 
       BTree::coordinate_type coordinate = tree.lookup(key);
     }
   }
-
-  // unlink( "/tmp/btree_consecutive" ); ?
 
   return EXAM_RESULT;
 }
