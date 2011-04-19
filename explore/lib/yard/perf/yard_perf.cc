@@ -38,6 +38,9 @@ yard_perf::yard_perf()
     block_coordinate coord;
 
     for ( int i = 0; i < count; ++i ) {
+      data[0] = i % 256;
+      data[1] = (i / 256) % 256;
+
       key = xmt::uid();
 
       coord.address = tree.add_value(&data[0], data.size());
@@ -375,9 +378,13 @@ int EXAM_IMPL(yard_perf::lookup_existed_keys)
     BTree::key_type key;
 
     for ( int i = 0; i < count; ++i ) {
-      key = inserted_keys[rand() % inserted_keys.size()];
+      int index = rand() % inserted_keys.size();
 
-      string value = tree[key];
+      string value = tree[inserted_keys[index]];
+
+      EXAM_REQUIRE(value.size() >= 2);
+      EXAM_CHECK(value[0] == (char)(index % 256));
+      EXAM_CHECK(value[1] == (char)((index / 256) % 256));
     }
   }
 
