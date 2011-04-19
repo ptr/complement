@@ -46,6 +46,7 @@ yard_perf::yard_perf()
       BTree::coordinate_type coordinate = tree.lookup(key);
 
       tree.insert(coordinate, key, coord);
+      inserted_keys.push_back(key);
     }
   }
 
@@ -357,6 +358,26 @@ int EXAM_IMPL(yard_perf::random_lookup)
       key = xmt::uid();
 
       BTree::coordinate_type coordinate = tree.lookup(key);
+    }
+  }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_perf::lookup_existed_keys)
+{
+  using namespace yard;
+
+  {
+    BTree tree( "/tmp/btree_for_lookup_test" );
+
+    const int count = 10000;
+    BTree::key_type key;
+
+    for ( int i = 0; i < count; ++i ) {
+      key = inserted_keys[rand() % inserted_keys.size()];
+
+      string value = tree[key];
     }
   }
 

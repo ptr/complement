@@ -23,6 +23,7 @@
 #include <mt/mutex>
 #include <mt/condition_variable>
 #include <mt/date_time>
+#include <mt/uid.h>
 
 class yard_perf
 {
@@ -43,6 +44,7 @@ class yard_perf
     int EXAM_DECL(random_insert_with_data_100000);
     int EXAM_DECL(multiple_files);
     int EXAM_DECL(random_lookup);
+    int EXAM_DECL(lookup_existed_keys);
 
     int EXAM_DECL(mess);
     int EXAM_DECL(put_revisions);
@@ -55,6 +57,8 @@ class yard_perf
 
     void gen_random_insert_with_data(int count);
     void gen_insert_with_history(int count);
+  private:
+    std::vector<xmt::uuid_type> inserted_keys;
 };
 
 #endif // __yard_perf_h
