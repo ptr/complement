@@ -55,10 +55,13 @@ class yard_perf
     int EXAM_DECL(insert_4000_transactions);
     int EXAM_DECL(insert_20000_transactions);
 
+    int EXAM_DECL(drop_caches);
+
     void gen_random_insert_with_data(int count);
     void gen_insert_with_history(int count);
   private:
     std::vector<xmt::uuid_type> inserted_keys;
+    std::vector<std::string> created_files;
 };
 
 #endif // __yard_perf_h

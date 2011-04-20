@@ -52,11 +52,14 @@ yard_perf::yard_perf()
       inserted_keys.push_back(key);
     }
   }
-
 }
 
 yard_perf::~yard_perf()
 {
+  for (vector<string>::const_iterator it = created_files.begin(); it != created_files.end(); ++it)
+  {
+    unlink(it->c_str());
+  }
 }
 
 int EXAM_IMPL(yard_perf::packing)
@@ -386,6 +389,26 @@ int EXAM_IMPL(yard_perf::lookup_existed_keys)
       EXAM_CHECK(value[0] == (char)(index % 256));
       EXAM_CHECK(value[1] == (char)((index / 256) % 256));
     }
+  }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_perf::drop_caches)
+{
+  vector<char> data(4096);
+  for (int i = 0; i < data.size(); ++i)
+  {
+    data[i] = rand() % 256;
+  }
+
+  string filename = xmt::uid_str();
+  created_files.push_back(filename);
+  ofstream f(filename.c_str(), ofstream::trunc);
+
+  for (int i = 0; i < 100 * 1000; ++i)
+  {
+    f.write(&data[0], data.size());
   }
 
   return EXAM_RESULT;

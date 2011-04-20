@@ -78,6 +78,8 @@ int main( int argc, const char** argv )
     t.add( &yard_perf::insert_4000_transactions, p, "put 4000 new messages (transaction per message)",
       t.add( &yard_perf::insert_1000_transactions, p, "put 1000 new messages (transaction per message)")));
 
+  t.add( &yard_perf::drop_caches, p, "write a big file (400 Mb)" );
+
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );
