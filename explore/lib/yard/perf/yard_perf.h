@@ -25,6 +25,8 @@
 #include <mt/date_time>
 #include <mt/uid.h>
 
+#include <stack>
+
 class yard_perf
 {
   public:
@@ -43,6 +45,8 @@ class yard_perf
     int EXAM_DECL(random_insert_with_data_20000);
     int EXAM_DECL(random_insert_with_data_100000);
     int EXAM_DECL(multiple_files);
+
+    int EXAM_DECL(prepare_lookup_tests);
     int EXAM_DECL(random_lookup);
     int EXAM_DECL(lookup_existed_keys);
 
@@ -60,8 +64,11 @@ class yard_perf
     void gen_random_insert_with_data(int count);
     void gen_insert_with_history(int count);
   private:
-    std::vector<xmt::uuid_type> inserted_keys;
+    std::map<std::string, std::vector<xmt::uuid_type> > inserted_keys;
     std::vector<std::string> created_files;
+
+    std::stack<std::string> random_lookup_files;
+    std::stack<std::string> lookup_existed_files;
 };
 
 #endif // __yard_perf_h
