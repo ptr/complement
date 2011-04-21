@@ -59,14 +59,32 @@ int main( int argc, const char** argv )
   t.add(&yard_perf::consecutive_insert_big, p, "consecutive insert (10^6 entires)");
   t.add(&yard_perf::random_insert_big, p, "random insert (10^6 entires)");
   t.add(&yard_perf::consecutive_insert_with_data, p, "consecutive insert with data (n entires)");
-  t.add(&yard_perf::random_insert_with_data, p, "random insert with data (n entires)");
+
+  t.add(&yard_perf::random_insert_with_data_100000, p, "random insert with data (100000 entires)", 
+    t.add(&yard_perf::random_insert_with_data_20000, p, "random insert with data (20000 entires)",
+      t.add(&yard_perf::random_insert_with_data_4000, p, "random insert with data (4000 entires)",
+        t.add(&yard_perf::random_insert_with_data_1000, p, "random insert with data (1000 entires)"))));
+
   t.add(&yard_perf::multiple_files, p, "multiple files");
-  t.add(&yard_perf::random_lookup, p, "random lookup");
+
+  tc[0] = t.add(&yard_perf::prepare_lookup_tests, p, "prepare lookup test");
+  t.add(&yard_perf::random_lookup, p, "random lookup", tc[0]);
+  t.add(&yard_perf::lookup_existed_keys, p, "lookup existed keys", tc[0]);
+
+  t.add(&yard_perf::random_lookup_small, p, "small random lookup", tc[0]);
+  t.add(&yard_perf::lookup_existed_keys_small, p, "small lookup existed keys", tc[0]);
 
   t.add( &yard_perf::mess, p, "put message 1024" );
   t.add( &yard_perf::put_revisions, p, "put blob 1024 [revision]" );
   t.add( &yard_perf::mess_insert, p, "put 1000 new messages" );
   t.add( &yard_perf::mess_insert_single_commit, p, "put 1000 new messages in one transaction" );
+
+  t.add( &yard_perf::insert_20000_transactions, p, "put 20000 new messages (transaction per message)",
+    t.add( &yard_perf::insert_4000_transactions, p, "put 4000 new messages (transaction per message)",
+      t.add( &yard_perf::insert_1000_transactions, p, "put 1000 new messages (transaction per message)")));
+
+  t.add( &yard_perf::drop_caches, p, "write a big file (400 Mb)" );
+
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );
