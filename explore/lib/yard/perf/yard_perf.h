@@ -49,6 +49,8 @@ class yard_perf
     int EXAM_DECL(prepare_lookup_tests);
     int EXAM_DECL(random_lookup);
     int EXAM_DECL(lookup_existed_keys);
+    int EXAM_DECL(random_lookup_small);
+    int EXAM_DECL(lookup_existed_keys_small);
 
     int EXAM_DECL(mess);
     int EXAM_DECL(put_revisions);
@@ -69,6 +71,9 @@ class yard_perf
 
     std::stack<std::string> random_lookup_files;
     std::stack<std::string> lookup_existed_files;
+
+    std::stack<std::string> random_lookup_files_small;
+    std::stack<std::string> lookup_existed_files_small;
 };
 
 #endif // __yard_perf_h

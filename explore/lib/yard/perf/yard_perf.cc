@@ -334,6 +334,9 @@ int EXAM_IMPL(yard_perf::prepare_lookup_tests)
     random_lookup_files.push(random_filename);
     lookup_existed_files.push(random_filename);
 
+    random_lookup_files_small.push(random_filename);
+    lookup_existed_files_small.push(random_filename);
+
     created_files.push_back(random_filename);
 
     BTree tree( random_filename.c_str(), std::ios_base::in | std::ios_base::out | std::ios_base::trunc, 4096 );
@@ -407,6 +410,57 @@ int EXAM_IMPL(yard_perf::lookup_existed_keys)
     }
 
     lookup_existed_files.pop();
+  }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_perf::random_lookup_small)
+{
+  using namespace yard;
+
+  {
+    EXAM_REQUIRE(!random_lookup_files_small.empty());
+    BTree tree( random_lookup_files_small.top().c_str() );
+
+    const int count = 100;
+    BTree::key_type key;
+
+    for ( int i = 0; i < count; ++i ) {
+      key = xmt::uid();
+
+      BTree::coordinate_type coordinate = tree.lookup(key);
+    }
+
+    random_lookup_files_small.pop();
+  }
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(yard_perf::lookup_existed_keys_small)
+{
+  using namespace yard;
+
+  {
+    EXAM_REQUIRE(!lookup_existed_files_small.empty());
+    const string filename = lookup_existed_files_small.top();
+    BTree tree( filename.c_str() );
+
+    const int count = 100;
+    BTree::key_type key;
+
+    for ( int i = 0; i < count; ++i ) {
+      int index = rand() % inserted_keys[filename].size();
+
+      string value = tree[inserted_keys[filename][index]];
+
+      EXAM_REQUIRE(value.size() >= 2);
+      EXAM_CHECK(value[0] == (char)(index % 256));
+      EXAM_CHECK(value[1] == (char)((index / 256) % 256));
+    }
+
+    lookup_existed_files_small.pop();
   }
 
   return EXAM_RESULT;

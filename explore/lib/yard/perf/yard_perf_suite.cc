@@ -71,6 +71,9 @@ int main( int argc, const char** argv )
   t.add(&yard_perf::random_lookup, p, "random lookup", tc[0]);
   t.add(&yard_perf::lookup_existed_keys, p, "lookup existed keys", tc[0]);
 
+  t.add(&yard_perf::random_lookup_small, p, "small random lookup", tc[0]);
+  t.add(&yard_perf::lookup_existed_keys_small, p, "small lookup existed keys", tc[0]);
+
   t.add( &yard_perf::mess, p, "put message 1024" );
   t.add( &yard_perf::put_revisions, p, "put blob 1024 [revision]" );
   t.add( &yard_perf::mess_insert, p, "put 1000 new messages" );
