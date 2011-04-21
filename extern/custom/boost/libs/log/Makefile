@@ -13,8 +13,8 @@ INCLUDES += -I${BOOST_INCLUDE_DIR} -I${BOOST_LOG_INCLUDE_DIR}
 DEFS += -DBOOST_LOG_DLL -DBOOST_LOG_BUILDING_THE_LIB=1 -DBOOST_LOG_USE_NATIVE_SYSLOG=1
 
 ifdef USE_SYSTEM_BOOST
-release-shared:	LDLIBS = -lboost_date_time -lboost_filesystem -lboost_system -lboost_thread
-dbg-shared:	LDLIBS = -lboost_date_time -lboost_filesystem -lboost_system -lboost_thread
+release-shared:	LDLIBS = -lboost_date_time -lboost_fs -lboost_system -lboost_thread
+dbg-shared:	LDLIBS = -lboost_date_time -lboost_fs -lboost_system -lboost_thread
 else
 release-shared:	LDLIBS = -L../date_time/${OUTPUT_DIR} -L../filesystem/${OUTPUT_DIR} -L../system/${OUTPUT_DIR} -L../thread/${OUTPUT_DIR} -lboost_dt -lboost_fs -lboost_system -lboost_thread
 dbg-shared:	LDLIBS = -L../date_time/${OUTPUT_DIR_DBG} -L../filesystem/${OUTPUT_DIR_DBG} -L../system/${OUTPUT_DIR_DBG} -L../thread/${OUTPUT_DIR_DBG} -lboost_dtg -lboost_fsg -lboost_systemg -lboost_threadg

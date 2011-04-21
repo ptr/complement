@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/11/21 10:25:38 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-23 17:00:41 ptr>
 
 /*
- * Copyright (c) 2007, 2008
+ * Copyright (c) 2007-2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -956,7 +956,7 @@ struct conditional<true,_Tp1,_Tp2>
 } // namespace std
 
 # else // __GLIBCXX__ && (__GNUC__ >= 4) && !STLPORT
-#  if defined(__GNUC__) && ((__GNUC__ == 4) /* && (__GNUC_MINOR__ < 3) */ )
+#  if defined(__GNUC__) && ((__GNUC__ == 4) && !defined(__GXX_EXPERIMENTAL_CXX0X__) /* && (__GNUC_MINOR__ < 3) */ )
 #    include <tr1/type_traits>
 namespace std {
 
@@ -1001,12 +1001,216 @@ struct add_lvalue_reference<_Tp&>
     typedef _Tp& type;
 };
 
+template <class _Tp>
+struct make_signed
+{
+};
+
+template <>
+struct make_signed<char>
+{
+    typedef signed char type;
+};
+
+template <>
+struct make_signed<signed char>
+{
+    typedef signed char type;
+};
+
+template <>
+struct make_signed<unsigned char>
+{
+    typedef signed char type;
+};
+
+template <>
+struct make_signed<short>
+{
+    typedef short type;
+};
+
+template <>
+struct make_signed<unsigned short>
+{
+    typedef short type;
+};
+
+template <>
+struct make_signed<int>
+{
+    typedef int type;
+};
+
+template <>
+struct make_signed<unsigned int>
+{
+    typedef int type;
+};
+
+template <>
+struct make_signed<long>
+{
+    typedef long type;
+};
+
+template <>
+struct make_signed<unsigned long>
+{
+    typedef long type;
+};
+
+template <>
+struct make_signed<long long>
+{
+    typedef long long type;
+};
+
+template <>
+struct make_signed<unsigned long long>
+{
+    typedef long long type;
+};
+
+template <class _Tp>
+struct make_unsigned
+{
+};
+
+template <>
+struct make_unsigned<char>
+{
+    typedef unsigned char type;
+};
+
+template <>
+struct make_unsigned<signed char>
+{
+    typedef unsigned char type;
+};
+
+template <>
+struct make_unsigned<unsigned char>
+{
+    typedef unsigned char type;
+};
+
+template <>
+struct make_unsigned<short>
+{
+    typedef unsigned short type;
+};
+
+template <>
+struct make_unsigned<unsigned short>
+{
+    typedef unsigned short type;
+};
+
+template <>
+struct make_unsigned<int>
+{
+    typedef unsigned int type;
+};
+
+template <>
+struct make_unsigned<unsigned int>
+{
+    typedef unsigned int type;
+};
+
+template <>
+struct make_unsigned<long>
+{
+    typedef unsigned long type;
+};
+
+template <>
+struct make_unsigned<unsigned long>
+{
+    typedef unsigned long type;
+};
+
+template <>
+struct make_unsigned<long long>
+{
+    typedef unsigned long long type;
+};
+
+template <>
+struct make_unsigned<unsigned long long>
+{
+    typedef unsigned long long type;
+};
+
+namespace detail {
+
+template <bool,class _U1>
+struct _decay_aux2
+{
+    typedef typename remove_cv<_U1>::type type;
+};
+
+template <class _U1>
+struct _decay_aux2<true,_U1>
+{
+    typedef typename add_pointer<_U1>::type type;
+};
+
+template <bool, class _U1>
+struct _decay_aux1
+{
+    typedef typename _decay_aux2<is_function<_U1>::value,_U1>::type type;
+};
+
+template <class _U1>
+struct _decay_aux1<true,_U1>
+{
+    typedef typename remove_extent<_U1>::type* type;
+};
+
+} // namespace detail
+
+template <class _Tp>
+class decay
+{
+  private:
+    typedef typename remove_reference<_Tp>::type _U1;
+
+  public:
+    typedef typename detail::_decay_aux1<is_array<_U1>::value,_U1>::type type;
+};
+
+template <bool, class _Tp = void>
+struct enable_if
+{
+};
+
+template <class _Tp>
+struct enable_if<true,_Tp>
+{
+    typedef _Tp type;
+};
+
+template <bool, class _Tp1, class _Tp2>
+struct conditional
+{
+    typedef _Tp2 type;
+};
+
+template <class _Tp1, class _Tp2>
+struct conditional<true,_Tp1,_Tp2>
+{
+    typedef _Tp1 type;
+};
+
 } // namespace tr1
 
+using namespace tr1;
+
 } // namespace std
-#  elif defined(__GNUC__) && ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))
-#    include <type_traits>
-namespace std::tr1 = std;
+#  else
+#   include <type_traits>
 #  endif
 # endif
 
@@ -1015,4 +1219,3 @@ namespace std::tr1 = std;
 #endif
 
 #endif // __misc_type_traits_h
-

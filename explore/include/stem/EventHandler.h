@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/30 14:24:51 ptr>
+// -*- C++ -*- Time-stamp: <2011-03-23 17:27:20 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005-2010
@@ -170,10 +170,10 @@ template <class T, class Arg>
 struct __member_function
 {
     typedef Arg argument_type;
-    typedef typename std::tr1::add_lvalue_reference<typename std::tr1::add_const<typename std::tr1::remove_reference<Arg>::type>::type>::type const_reference_argument_type;
-    typedef typename std::tr1::add_pointer<typename std::tr1::remove_pointer<T>::type>::type pointer_class_type;
+    typedef typename std::add_lvalue_reference<typename std::add_const<typename std::remove_reference<Arg>::type>::type>::type const_reference_argument_type;
+    typedef typename std::add_pointer<typename std::remove_pointer<T>::type>::type pointer_class_type;
     typedef void (T::*pmf_type)( const_reference_argument_type );
-    typedef void (*dpmf_type)( typename std::tr1::add_const<typename std::tr1::add_pointer<typename std::tr1::remove_pointer<T>::type>::type>::type, pmf_type,
+    typedef void (*dpmf_type)( typename std::add_const<typename std::add_pointer<typename std::remove_pointer<T>::type>::type>::type, pmf_type,
 			       const_reference_argument_type arg );
 };
 
@@ -181,9 +181,9 @@ template <class T>
 struct __member_function<T,void>
 {
     typedef void argument_type;
-    typedef typename std::tr1::add_pointer<typename std::tr1::remove_pointer<T>::type>::type pointer_class_type;
+    typedef typename std::add_pointer<typename std::remove_pointer<T>::type>::type pointer_class_type;
     typedef void (T::*pmf_type)();
-    typedef void (*dpmf_type)( typename std::tr1::add_const<typename std::tr1::add_pointer<typename std::tr1::remove_pointer<T>::type>::type>::type, pmf_type,
+    typedef void (*dpmf_type)( typename std::add_const<typename std::add_pointer<typename std::remove_pointer<T>::type>::type>::type, pmf_type,
 			       void * );
 };
 

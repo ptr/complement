@@ -1,7 +1,7 @@
-/* Time-stamp: <07/03/12 20:17:03 ptr> */
+/* Time-stamp: <2011-03-23 17:31:37 ptr> */
 
 /*
- * Copyright (c) 1999, 2002-2010
+ * Copyright (c) 1999, 2002-2011
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -143,7 +143,8 @@
 /*
  Constructions from C++ 0x draft
  */
-
-#define __FIT_CPP_0X
+#if defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__)
+#  define __FIT_CPP_0X
+#endif
 
 #endif /* __config_feature_h */
