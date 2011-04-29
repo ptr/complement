@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/07/02 12:59:14 ptr>
+// -*- C++ -*- Time-stamp: <2011-04-29 19:40:48 ptr>
 
 /*
  *
- * Copyright (c) 2010
+ * Copyright (c) 2010-2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -17,7 +17,7 @@
 
 #include <list>
 
-#ifdef STLPORT
+#if defined(STLPORT) || defined(__FIT_CPP_0X)
 #  include <unordered_map>
 #  define __USE_STLPORT_TR1
 #else
@@ -68,7 +68,7 @@ class torder_vs :
     typedef __gnu_cxx::hash_map<vs_event_total_order::id_type,stem::Event> conf_cnt_type;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::tr1::unordered_map<vs_event_total_order::id_type,stem::Event> conf_cnt_type;
+    typedef std::unordered_map<vs_event_total_order::id_type,stem::Event> conf_cnt_type;
 #endif
     typedef std::list<vs_event_total_order::id_type> orig_order_cnt_type;
 

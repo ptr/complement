@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-23 17:00:41 ptr>
+// -*- C++ -*- Time-stamp: <2011-04-29 19:45:34 ptr>
 
 /*
  * Copyright (c) 2007-2011
@@ -25,8 +25,6 @@
 # if /* defined(STLPORT) || */ !defined(__GNUC__) || (defined(__GNUC__) && (__GNUC__ < 4) ) /* !defined(__GLIBCXX__) || (defined(__GNUC__) && (__GNUC__ < 4)) */
 
 namespace std {
-
-namespace tr1 {
 
 namespace detail {
 
@@ -943,6 +941,30 @@ struct conditional<true,_Tp1,_Tp2>
 };
 
 // template <class... _Tp> struct common_type;
+#ifdef __FIT_CPP_0X
+
+template <class... _Tp>
+struct common_type;
+
+template <class _Tp>
+struct common_type<_Tp>
+{
+    typedef _Tp type;
+};
+
+template <class _T1, class _T2>
+struct common_type<_T1,_T2>
+{
+    typedef decltype( true ? declval<_T1>() : declval<_T2>() ) type;
+};
+
+template <class _T1, class _T2, class... _T3>
+struct common_type<_T1,_T2,_T3...>
+{
+    typedef typename common_type<typename common_type<_T1,_T2>::type,_T3...>::type type;
+};
+
+#endif // __FIT_CPP_0X
 
 #undef __CV_SPEC
 #undef __SPEC_
@@ -951,12 +973,10 @@ struct conditional<true,_Tp1,_Tp2>
 #undef __CV_SPEC_2
 #undef __SPEC_2
 
-} // namespace tr1
-
 } // namespace std
 
 # else // __GLIBCXX__ && (__GNUC__ >= 4) && !STLPORT
-#  if defined(__GNUC__) && ((__GNUC__ == 4) && !defined(__GXX_EXPERIMENTAL_CXX0X__) /* && (__GNUC_MINOR__ < 3) */ )
+#  if defined(__GNUC__) && ((__GNUC__ == 4) && !defined(__FIT_CPP_0X) /* && (__GNUC_MINOR__ < 3) */ )
 #    include <tr1/type_traits>
 namespace std {
 
@@ -1203,6 +1223,40 @@ struct conditional<true,_Tp1,_Tp2>
 {
     typedef _Tp1 type;
 };
+
+// #ifdef __FIT_CPP_0X  // <--- fix
+
+//template <class _Tp>
+//struct common_type<_Tp>
+//{
+//    typedef _Tp type;
+//};
+
+template <class _T1, class _T2>
+struct common_type
+{
+    // typedef _Tp type;
+};
+
+template <class _T1>
+struct common_type<_T1,_T1>
+{
+    typedef _T1 type;
+};
+
+// template <class _T1, class _T2>
+//struct common_type<_T1,_T2>
+//{
+//    typedef decltype( true ? declval<_T1>() : declval<_T2>() ) type;
+//};
+
+//template <class _T1, class _T2, class... _T3>
+//struct common_type<_T1,_T2,_T3...>
+//{
+//    typedef typename common_type<typename common_type<_T1,_T2>::type,_T3...>::type type;
+//};
+
+// #endif // __FIT_CPP_0X
 
 } // namespace tr1
 

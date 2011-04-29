@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <10/07/16 21:23:26 ptr>
+// -*- C++ -*- Time-stamp: <2011-04-29 19:27:42 ptr>
 
 /*
- * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2010
+ * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2011
  * Petr Ovtchenkov
  * 
  * Copyright (c) 1999-2001
@@ -35,7 +35,7 @@
 #include <stem/EventHandler.h>
 #include <ostream>
 
-#ifdef STLPORT
+#if defined(STLPORT) || defined(__FIT_CPP_0X)
 #  include <unordered_map>
 #  include <unordered_set>
 #  define __USE_STLPORT_TR1
@@ -115,8 +115,8 @@ class EvManager
     typedef __gnu_cxx::hash_map<std::string,addr_collection_type> info_heap_type;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::tr1::unordered_map<addr_type,handlers_type> local_heap_type;
-    typedef std::tr1::unordered_map<std::string,addr_collection_type> info_heap_type;
+    typedef std::unordered_map<addr_type,handlers_type> local_heap_type;
+    typedef std::unordered_map<std::string,addr_collection_type> info_heap_type;
 #endif
 
   public:

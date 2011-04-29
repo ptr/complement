@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-04-21 16:36:51 ptr>
+// -*- C++ -*- Time-stamp: <2011-04-29 16:11:53 ptr>
 
 /*
  * Copyright (c) 2009-2011
@@ -7,7 +7,7 @@
  * Licensed under the Academic Free License version 3.0
  *
  * See JTC1/SC22/WG21 working draft
- * [http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3126.pdf]
+ * [http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2011/n3291.pdf]
  */
 
 #ifndef __MISC_RATIO
@@ -19,18 +19,18 @@
 
 #if !defined(STLPORT) || (_STLPORT_VERSION < 0x520)
 
-# if defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
+//# if defined(__GNUC__) && !defined(__FIT_CPP_0X)
+//#  include <stdint.h>
+//#  include <misc/type_traits.h>
+//# else
+//#  include <cstdint>
+//#  include <type_traits>
+//# endif
+
+# ifndef __FIT_CPP_0X
+
 #  include <stdint.h>
 #  include <misc/type_traits.h>
-# else
-#  include <cstdint>
-#  include <type_traits>
-# endif
-#else // STLPORT
-# include <cstdint>
-# include <type_traits>
-#endif
-
 
 namespace std {
 
@@ -83,25 +83,25 @@ namespace detail {
 
 template <intmax_t R>
 struct __select_sign :
-    public std::tr1::integral_constant<intmax_t,(R>=0) ? 1LL : -1LL>
+    public std::integral_constant<intmax_t,(R>=0) ? 1LL : -1LL>
 {
 };
 
 template <intmax_t R>
 struct __select_abs :
-    public std::tr1::integral_constant<intmax_t,(R>=0) ? R : -R>
+    public std::integral_constant<intmax_t,(R>=0) ? R : -R>
 {
 };
 
 template <intmax_t U, intmax_t V>
 struct __gcd :
-    public std::tr1::integral_constant<intmax_t,__gcd<__select_abs<V>::value,__select_abs<U>::value % __select_abs<V>::value>::value>
+    public std::integral_constant<intmax_t,__gcd<__select_abs<V>::value,__select_abs<U>::value % __select_abs<V>::value>::value>
 {
 };
 
 template <intmax_t U>
 struct __gcd<U, 0LL> :
-    public std::tr1::integral_constant<intmax_t,__select_abs<U>::value>
+    public std::integral_constant<intmax_t,__select_abs<U>::value>
 {
 };
 
@@ -196,7 +196,7 @@ struct ratio_divide : // ratio<R1::num * R2::den, R2::num * R1::den>
 
 template <class R1, class R2>
 struct ratio_equal :
-    public tr1::integral_constant<bool, (R1::num == R2::num) && (R1::den == R2::den)>
+    public integral_constant<bool, (R1::num == R2::num) && (R1::den == R2::den)>
 {
 #ifdef __FIT_CPP_0X
     static_assert( std::detail::__is_ratio<R1>::value && std::detail::__is_ratio<R2>::value, "paramers must be a ratio" );
@@ -205,35 +205,43 @@ struct ratio_equal :
 
 template <class R1, class R2>
 struct ratio_not_equal :
-    public tr1::integral_constant<bool, !ratio_equal<R1, R2>::value>
+    public integral_constant<bool, !ratio_equal<R1, R2>::value>
 {
 };
 
 template <class R1, class R2>
 struct ratio_less :
-    // public tr1::integral_constant<bool, (R1::num * R2::den) < (R2::num * R1::den)>
-    public tr1::integral_constant<bool, (ratio_divide<R1,R2>::num < ratio_divide<R1,R2>::den)>
+    // public integral_constant<bool, (R1::num * R2::den) < (R2::num * R1::den)>
+    public integral_constant<bool, (ratio_divide<R1,R2>::num < ratio_divide<R1,R2>::den)>
 {
 };
 
 template <class R1, class R2>
 struct ratio_less_equal :
-    public tr1::integral_constant<bool, !ratio_less<R2, R1>::value>
+    public integral_constant<bool, !ratio_less<R2, R1>::value>
 {
 };
 
 template <class R1, class R2>
 struct ratio_greater :
-    public tr1::integral_constant<bool, ratio_less<R2, R1>::value>
+    public integral_constant<bool, ratio_less<R2, R1>::value>
 {
 };
 
 template <class R1, class R2>
 struct ratio_greater_equal :
-    public tr1::integral_constant<bool, !ratio_less<R1, R2>::value>
+    public integral_constant<bool, !ratio_less<R1, R2>::value>
 {
 };
 
 } // namespace std
+
+# else // __FIT_CPP_0X
+#  include <ratio>
+# endif // __FIT_CPP_0X
+
+#else // STLPORT
+# include <ratio>
+#endif
 
 #endif // __MISC_RATIO

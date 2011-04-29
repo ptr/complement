@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/18 06:14:45 ptr>
+// -*- C++ -*- Time-stamp: <2011-04-29 19:30:19 ptr>
 
 /*
  * Copyright (c) 2008, 2009
@@ -22,7 +22,7 @@
 
 #include <sockios/socksrv.h>
 
-#ifdef STLPORT
+#if defined(STLPORT) || defined(__FIT_CPP_0X)
 #  include <unordered_map>
 #  include <unordered_set>
 #  define __USE_STLPORT_TR1
@@ -172,7 +172,7 @@ class sockmgr
     typedef __gnu_cxx::hash_map<sock_base::socket_type, fd_info> fd_container_type;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::tr1::unordered_map<sock_base::socket_type, fd_info> fd_container_type;
+    typedef std::unordered_map<sock_base::socket_type, fd_info> fd_container_type;
 #endif
 
     void io_worker();

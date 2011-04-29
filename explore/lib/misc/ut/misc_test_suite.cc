@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/08/13 23:30:15 ptr>
+// -*- C++ -*- Time-stamp: <2011-04-21 13:36:49 ptr>
 
 /*
  * Copyright (c) 2007, 2008
@@ -52,4 +52,12 @@ void misc_test_suite_init( exam::test_suite& t, misc_test& test )
   t.add( &misc_test::type_traits_is_empty, test, "is_empty", tc[0] );
 
   t.add( &misc_test::ratio, test, "ratio", tc[0] );
+}
+
+void chrono_test_suite_init( exam::test_suite& t, chrono_test& chr )
+{
+  exam::test_suite::test_case_type tc[10];
+
+  tc[0] = t.add( &chrono_test::duration_ctor, chr, "duration ctors" );
+  tc[1] = t.add( &chrono_test::duration_arithmetic, chr, "duration arithmetic", tc[0] );
 }

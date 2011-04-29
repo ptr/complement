@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/08/13 23:25:06 ptr>
+// -*- C++ -*- Time-stamp: <2011-04-21 13:36:28 ptr>
 
 /*
  * Copyright (c) 2007, 2008
@@ -57,6 +57,17 @@ class misc_test
     int EXAM_DECL(type_traits_has_x_ctor);
 
     int EXAM_DECL(ratio);
+
+    // chrono
+    int EXAM_DECL(chrono_dummy);
+};
+
+class chrono_test
+{
+  public:
+    // chrono
+    int EXAM_DECL(duration_ctor);
+    int EXAM_DECL(duration_arithmetic);
 };
 
 #endif // __MISC_TEST_H

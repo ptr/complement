@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2010-11-09 15:27:02 ptr>
+// -*- C++ -*- Time-stamp: <2011-04-29 19:29:09 ptr>
 
 /*
- * Copyright (c) 2008-2010
+ * Copyright (c) 2008-2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -16,7 +16,7 @@
 #include <mt/mutex>
 #include <mt/condition_variable>
 
-#ifdef STLPORT
+#if defined(STLPORT) || defined(__FIT_CPP_0X)
 #  include <unordered_map>
 #  include <unordered_set>
 #  define __USE_STLPORT_TR1
@@ -366,7 +366,7 @@ class connect_processor :
     typedef __gnu_cxx::hash_map< sock_base::socket_type, processor > opened_pool_t;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::tr1::unordered_map< sock_base::socket_type, processor > opened_pool_t;
+    typedef std::unordered_map< sock_base::socket_type, processor > opened_pool_t;
 #endif
     
     typedef std::queue< request_t > ready_queue_t;

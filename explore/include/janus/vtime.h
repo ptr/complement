@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/06/28 19:17:19 ptr>
+// -*- C++ -*- Time-stamp: <2011-04-29 19:39:01 ptr>
 
 /*
  *
- * Copyright (c) 2008-2010
+ * Copyright (c) 2008-2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -30,12 +30,9 @@
 #include <mt/uid.h>
 #include <mt/uidhash.h>
 
-#ifdef STLPORT
+#if defined(STLPORT) || defined(__FIT_CPP_0X)
 #  include <unordered_map>
 #  include <unordered_set>
-// #  include <hash_map>
-// #  include <hash_set>
-// #  define __USE_STLPORT_HASH
 #  define __USE_STLPORT_TR1
 #else
 #  if defined(__GNUC__) && (__GNUC__ < 4)
@@ -67,7 +64,7 @@ struct vtime :
     typedef __gnu_cxx::hash_map<addr_type, vtime_unit_type> vtime_type;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::tr1::unordered_map<addr_type, vtime_unit_type> vtime_type;
+    typedef std::unordered_map<addr_type, vtime_unit_type> vtime_type;
 #endif
 
     void pack( std::ostream& s ) const;
@@ -173,7 +170,7 @@ struct vs_points :
     typedef __gnu_cxx::hash_multimap<addr_type,access_t> points_type;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::tr1::unordered_multimap<addr_type,access_t> points_type;
+    typedef std::unordered_multimap<addr_type,access_t> points_type;
 #endif
     points_type points;
 };

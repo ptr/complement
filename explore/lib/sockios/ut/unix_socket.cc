@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <09/10/06 15:45:58 ptr>
+// -*- C++ -*- Time-stamp: <2011-04-29 19:34:56 ptr>
 
 /*
  *
- * Copyright (c) 2009
+ * Copyright (c) 2009-2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -24,12 +24,9 @@
 // #include <sockios/syslog.h>
 // #include <locale>
 
-#ifdef STLPORT
+#if defined(STLPORT) || defined(__FIT_CPP_0X)
 #  include <unordered_map>
 #  include <unordered_set>
-// #  include <hash_map>
-// #  include <hash_set>
-// #  define __USE_STLPORT_HASH
 #  define __USE_STLPORT_TR1
 #else
 #  if defined(__GNUC__) && (__GNUC__ < 4)
@@ -326,7 +323,7 @@ class simple_us_mgr2 :
     typedef __gnu_cxx::hash_map<sock_base::socket_type, sockstream_t*> fd_container_type;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::tr1::unordered_map<sock_base::socket_type, sockstream_t*> fd_container_type;
+    typedef std::unordered_map<sock_base::socket_type, sockstream_t*> fd_container_type;
 #endif
 
     fd_container_type cons;

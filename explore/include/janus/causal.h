@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/12 13:18:32 ptr>
+// -*- C++ -*- Time-stamp: <2011-04-29 19:39:56 ptr>
 
 /*
  *
@@ -32,12 +32,9 @@
 #include <mt/uid.h>
 #include <mt/uidhash.h>
 
-#ifdef STLPORT
+#if defined(STLPORT) || defined(__FIT_CPP_0X)
 #  include <unordered_map>
 #  include <unordered_set>
-// #  include <hash_map>
-// #  include <hash_set>
-// #  define __USE_STLPORT_HASH
 #  define __USE_STLPORT_TR1
 #else
 #  if defined(__GNUC__) && (__GNUC__ < 4)
@@ -192,7 +189,7 @@ class basic_vs :
     typedef __gnu_cxx::hash_set<addr_type> lock_rsp_type;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::tr1::unordered_set<addr_type> lock_rsp_type;
+    typedef std::unordered_set<addr_type> lock_rsp_type;
 #endif
 
     ove_container_type ove;

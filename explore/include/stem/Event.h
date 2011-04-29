@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/05/25 11:37:07 ptr>
+// -*- C++ -*- Time-stamp: <2011-04-29 19:26:15 ptr>
 
 /*
  *
- * Copyright (c) 1995-1999, 2002, 2003, 2005-2009
+ * Copyright (c) 1995-1999, 2002, 2003, 2005-2011x
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -29,7 +29,7 @@
 #include <mt/uid.h>
 #include <mt/thread>
 
-#ifdef STLPORT
+#if defined(STLPORT) || defined(__FIT_CPP_0X)
 #  include <unordered_map>
 #  include <unordered_set>
 #  define __USE_STLPORT_TR1
@@ -129,8 +129,8 @@ class __Event_Base
 // Forward declarations
 
 template <class D, class POD > class __Event_base_aux;
-template <class D> class __Event_base_aux<D,std::tr1::true_type>;
-template <class D> class __Event_base_aux<D,std::tr1::false_type>;
+template <class D> class __Event_base_aux<D,std::true_type>;
+template <class D> class __Event_base_aux<D,std::false_type>;
 
 template <class D> class Event_base;
 
@@ -174,7 +174,7 @@ class __Event_base_aux :
 };
 
 template <class D>
-class __Event_base_aux<D,std::tr1::true_type> :
+class __Event_base_aux<D,std::true_type> :
         public __Event_Base
 {
   public:
@@ -216,7 +216,7 @@ class __Event_base_aux<D,std::tr1::true_type> :
     void unpack( std::istream& __s )
       { __pack_base::__unpack( __s, _data ); }
 
-    void swap( __Event_base_aux<D,std::tr1::true_type>& l )
+    void swap( __Event_base_aux<D,std::true_type>& l )
       {
         __Event_Base::swap( static_cast<__Event_Base&>(l) );
         std::swap( _data, l._data );
@@ -227,7 +227,7 @@ class __Event_base_aux<D,std::tr1::true_type> :
 };
 
 template <class D>
-class __Event_base_aux<D,std::tr1::false_type> :
+class __Event_base_aux<D,std::false_type> :
         public __Event_Base
 {
   public:
@@ -269,7 +269,7 @@ class __Event_base_aux<D,std::tr1::false_type> :
     void unpack( std::istream& __s )
       { _data.unpack( __s ); }
 
-    void swap( __Event_base_aux<D,std::tr1::false_type>& l )
+    void swap( __Event_base_aux<D,std::false_type>& l )
       {
         __Event_Base::swap( static_cast<__Event_Base&>(l) );
         std::swap( _data, l._data );
@@ -280,7 +280,7 @@ class __Event_base_aux<D,std::tr1::false_type> :
 };
 
 template <class F, class S>
-class __Event_base_aux<std::pair<F,S>,std::tr1::false_type> :
+class __Event_base_aux<std::pair<F,S>,std::false_type> :
         public __Event_Base
 {
   public:
@@ -328,7 +328,7 @@ class __Event_base_aux<std::pair<F,S>,std::tr1::false_type> :
         __pack_base::__unpack( __s, _data.second );
       }
 
-    void swap( __Event_base_aux<value_type,std::tr1::false_type>& l )
+    void swap( __Event_base_aux<value_type,std::false_type>& l )
       {
         __Event_Base::swap( static_cast<__Event_Base&>(l) );
         std::swap( _data.first, l._data.first );
@@ -340,7 +340,7 @@ class __Event_base_aux<std::pair<F,S>,std::tr1::false_type> :
 };
 
 template <>
-class __Event_base_aux<std::string,std::tr1::false_type> :
+class __Event_base_aux<std::string,std::false_type> :
         public __Event_Base
 {
   public:
@@ -382,7 +382,7 @@ class __Event_base_aux<std::string,std::tr1::false_type> :
     void unpack( std::istream& __s )
       { __pack_base::__unpack( __s, _data ); }
 
-    void swap( __Event_base_aux<std::string,std::tr1::false_type>& l )
+    void swap( __Event_base_aux<std::string,std::false_type>& l )
       {
         __Event_Base::swap( static_cast<__Event_Base&>(l) );
         std::swap( _data, l._data );
@@ -393,7 +393,7 @@ class __Event_base_aux<std::string,std::tr1::false_type> :
 };
 
 template <>
-class __Event_base_aux<xmt::uuid_type,std::tr1::false_type> :
+class __Event_base_aux<xmt::uuid_type,std::false_type> :
         public __Event_Base
 {
   public:
@@ -435,7 +435,7 @@ class __Event_base_aux<xmt::uuid_type,std::tr1::false_type> :
     void unpack( std::istream& __s )
       { __pack_base::__unpack( __s, _data ); }
 
-    void swap( __Event_base_aux<xmt::uuid_type,std::tr1::false_type>& l )
+    void swap( __Event_base_aux<xmt::uuid_type,std::false_type>& l )
       {
         __Event_Base::swap( static_cast<__Event_Base&>(l) );
         std::swap( _data, l._data );
@@ -446,7 +446,7 @@ class __Event_base_aux<xmt::uuid_type,std::tr1::false_type> :
 };
 
 template <>
-class __Event_base_aux<void,std::tr1::true_type> :
+class __Event_base_aux<void,std::true_type> :
         public __Event_Base
 {
   public:
@@ -478,26 +478,26 @@ class __Event_base_aux<void,std::tr1::true_type> :
 
 template <class D>
 class Event_base :
-    public __Event_base_aux<D,typename std::tr1::is_pod<D>::type>
+    public __Event_base_aux<D,typename std::is_pod<D>::type>
 {
   private:
-    typedef __Event_base_aux<D,typename std::tr1::is_pod<D>::type> _Base;
+    typedef __Event_base_aux<D,typename std::is_pod<D>::type> _Base;
 
   public:
     Event_base() :
-        __Event_base_aux<D,typename std::tr1::is_pod<D>::type>()
+        __Event_base_aux<D,typename std::is_pod<D>::type>()
       { }
 
     explicit Event_base( code_type c ) :
-        __Event_base_aux<D,typename std::tr1::is_pod<D>::type>( c )
+        __Event_base_aux<D,typename std::is_pod<D>::type>( c )
       { }
 
     Event_base( code_type c, const D& d ) :
-        __Event_base_aux<D,typename std::tr1::is_pod<D>::type>( c, d )
+        __Event_base_aux<D,typename std::is_pod<D>::type>( c, d )
       { }
 
     Event_base( const Event_base& e ) :
-        __Event_base_aux<D,typename std::tr1::is_pod<D>::type>( e, e._data )
+        __Event_base_aux<D,typename std::is_pod<D>::type>( e, e._data )
       { }
 
     void pack( Event& s ) const;
@@ -507,26 +507,26 @@ class Event_base :
 
 template <>
 class Event_base<std::string> :
-    public __Event_base_aux<std::string,std::tr1::false_type>
+    public __Event_base_aux<std::string,std::false_type>
 {
   private:
-    typedef __Event_base_aux<std::string,std::tr1::false_type> _Base;
+    typedef __Event_base_aux<std::string,std::false_type> _Base;
 
   public:
     Event_base() :
-        __Event_base_aux<std::string,std::tr1::false_type>()
+        __Event_base_aux<std::string,std::false_type>()
       { }
 
     explicit Event_base( code_type c ) :
-        __Event_base_aux<std::string,std::tr1::false_type>( c )
+        __Event_base_aux<std::string,std::false_type>( c )
       { }
 
     Event_base( code_type c, const std::string& d ) :
-        __Event_base_aux<std::string,std::tr1::false_type>( c, d )
+        __Event_base_aux<std::string,std::false_type>( c, d )
       { }
 
     Event_base( const Event_base& e ) :
-        __Event_base_aux<std::string,std::tr1::false_type>( e, e._data )
+        __Event_base_aux<std::string,std::false_type>( e, e._data )
       { }
 
     void pack( Event& s ) const
@@ -573,23 +573,23 @@ void Event_base<D>::unpack( const Event& s )
 
 template <>
 class Event_base<void> :
-    public __Event_base_aux<void,std::tr1::true_type>
+    public __Event_base_aux<void,std::true_type>
 {
   private:
-    typedef __Event_base_aux<void,std::tr1::true_type> _Base;
+    typedef __Event_base_aux<void,std::true_type> _Base;
 
   public:
 
     Event_base() :
-        __Event_base_aux<void,std::tr1::true_type>()
+        __Event_base_aux<void,std::true_type>()
       { }
 
     explicit Event_base( code_type c ) :
-        __Event_base_aux<void,std::tr1::true_type>( c )
+        __Event_base_aux<void,std::true_type>( c )
       { }
 
     Event_base( const Event_base& e ) :
-        __Event_base_aux<void,std::tr1::true_type>( e )
+        __Event_base_aux<void,std::true_type>( e )
       { }
 
     void pack( Event& s ) const

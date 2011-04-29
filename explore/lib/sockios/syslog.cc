@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2010-11-11 13:46:55 ptr>
+// -*- C++ -*- Time-stamp: <2011-04-29 19:32:01 ptr>
 
 /*
- * Copyright (c) 2009, 2010
+ * Copyright (c) 2009-2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -29,7 +29,7 @@ closelog();
 #include <mt/thread>
 #include <sockios/sockstream>
 
-#ifdef STLPORT
+#if defined(STLPORT) || defined(__FIT_CPP_0X)
 #  include <unordered_map>
 #  include <unordered_set>
 #  define __USE_STLPORT_TR1
@@ -58,7 +58,7 @@ typedef std::hash_map<std::tr2::thread_base::id,std::sockstream*> log_heap_type;
 typedef __gnu_cxx::hash_map<std::tr2::thread_base::id,std::sockstream*> log_heap_type;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-typedef std::tr1::unordered_map<std::tr2::thread_base::id,std::sockstream*> log_heap_type;
+typedef std::unordered_map<std::tr2::thread_base::id,std::sockstream*> log_heap_type;
 #endif
 } // namespace detail
 } // namespce misc

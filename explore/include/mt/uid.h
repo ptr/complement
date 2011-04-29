@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-23 16:49:38 ptr>
+// -*- C++ -*- Time-stamp: <2011-04-29 18:16:23 ptr>
 
 /*
  * Copyright (c) 2006, 2008-2011
@@ -123,7 +123,7 @@ namespace std {
 std::ostream& operator <<( std::ostream&, const xmt::uuid_type& );
 std::istream& operator >>( std::istream&, xmt::uuid_type& );
 
-# if (defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)) || defined(STLPORT)
+# if (defined(__GNUC__) && !defined(__FIT_CPP_0X))
 namespace tr1 {
 # endif
 
@@ -142,7 +142,7 @@ struct is_pod<xmt::uuid_type> :
     public integral_constant<bool, true>
 { };
 
-# if (defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)) || defined(STLPORT)
+# if (defined(__GNUC__) && !defined(__FIT_CPP_0X))
 } // namespace tr1
 # endif
 
