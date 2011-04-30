@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-04-21 13:36:49 ptr>
+// -*- C++ -*- Time-stamp: <2011-04-30 23:04:54 ptr>
 
 /*
  * Copyright (c) 2007, 2008
@@ -60,4 +60,5 @@ void chrono_test_suite_init( exam::test_suite& t, chrono_test& chr )
 
   tc[0] = t.add( &chrono_test::duration_ctor, chr, "duration ctors" );
   tc[1] = t.add( &chrono_test::duration_arithmetic, chr, "duration arithmetic", tc[0] );
+  tc[2] = t.add( &chrono_test::system_clock, chr, "system_clock", tc[1] );
 }

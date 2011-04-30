@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-04-21 13:36:28 ptr>
+// -*- C++ -*- Time-stamp: <2011-04-30 23:02:22 ptr>
 
 /*
  * Copyright (c) 2007, 2008
@@ -68,6 +68,7 @@ class chrono_test
     // chrono
     int EXAM_DECL(duration_ctor);
     int EXAM_DECL(duration_arithmetic);
+    int EXAM_DECL(system_clock);
 };
 
 #endif // __MISC_TEST_H

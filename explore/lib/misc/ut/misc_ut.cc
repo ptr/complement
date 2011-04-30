@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/05/21 12:33:01 yeti>
+// -*- C++ -*- Time-stamp: <2011-04-21 13:18:52 ptr>
 
 /*
- * Copyright (c) 2007, 2008
+ * Copyright (c) 2007, 2008, 2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -15,6 +15,7 @@
 #include <misc/opts.h>
 
 extern void misc_test_suite_init( exam::test_suite&, misc_test& );
+extern void chrono_test_suite_init( exam::test_suite&, chrono_test& );
 
 int main( int argc, const char** argv )
 {
@@ -45,8 +46,10 @@ int main( int argc, const char** argv )
   exam::test_suite t( "libmisc type_traits test" );
 
   misc_test test;
+  chrono_test chr;
 
   misc_test_suite_init( t, test );
+  chrono_test_suite_init( t, chr );
 
   if ( opts.is_set( 'l' ) ) {
     t.print_graph( std::cerr );
