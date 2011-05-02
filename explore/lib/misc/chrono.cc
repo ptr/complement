@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-04-30 22:39:32 ptr>
+// -*- C++ -*- Time-stamp: <2011-05-02 17:40:13 ptr>
 
 /*
  * Copyright (c) 2002, 2006-2011
@@ -14,7 +14,8 @@
 
 #include <misc/chrono>
 
-// #if !defined(STLPORT) || (_STLPORT_VERSION < 0x520) && !defined(__FIT_CPP_0X)
+#if !((defined(STLPORT) && (_STLPORT_VERSION < 0x520)) || \
+      (defined(__GNUC__) && defined(__FIT_CPP_0X)))
 
 namespace std {
 
@@ -85,4 +86,4 @@ steady_clock::time_point steady_clock::now() /* nothrow */ throw()
 
 } // namespace std
 
-// #endif // !STLPORT && !__FIT_CPP_0X
+#endif // !STLPORT && !__FIT_CPP_0X

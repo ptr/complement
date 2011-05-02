@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-04-30 23:57:51 ptr>
+// -*- C++ -*- Time-stamp: <2011-05-02 18:20:47 ptr>
 
 /*
  * Copyright (c) 2007-2011
@@ -1239,10 +1239,34 @@ struct common_type
     // typedef _Tp type;
 };
 
-template <class _T1>
-struct common_type<_T1,_T1>
+//template <class _T1>
+//struct common_type<_T1,_T1>
+//{
+//    typedef _T1 type;
+//};
+
+template <>
+struct common_type<int64_t,int64_t>
 {
-    typedef _T1 type;
+    typedef int64_t type;
+};
+
+template <>
+struct common_type<int32_t,int32_t>
+{
+    typedef int32_t type;
+};
+
+template <>
+struct common_type<int32_t,int64_t>
+{
+    typedef int64_t type;
+};
+
+template <>
+struct common_type<int64_t,int32_t>
+{
+    typedef int64_t type;
 };
 
 // template <class _T1, class _T2>

@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2010-11-10 17:07:32 ptr>
+// -*- C++ -*- Time-stamp: <2011-05-02 17:53:56 ptr>
 
 /*
- * Copyright (c) 2006-2008
+ * Copyright (c) 2006-2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -35,8 +35,8 @@ int EXAM_IMPL(mt_test_wg21::date_time)
   // using namespace std::tr2;
 
   // check core of implementation
-  EXAM_CHECK( (std::tr1::is_same<std::tr2::nanoseconds,std::tr2::detail::__is_more_precise<std::tr2::nanoseconds,std::tr2::microseconds>::finest_type>::value) );
-  EXAM_CHECK( (std::tr1::is_same<std::tr2::nanoseconds,std::tr2::detail::__is_more_precise<std::tr2::microseconds,std::tr2::nanoseconds>::finest_type>::value) );
+  EXAM_CHECK( (std::is_same<std::tr2::nanoseconds,std::tr2::detail::__is_more_precise<std::tr2::nanoseconds,std::tr2::microseconds>::finest_type>::value) );
+  EXAM_CHECK( (std::is_same<std::tr2::nanoseconds,std::tr2::detail::__is_more_precise<std::tr2::microseconds,std::tr2::nanoseconds>::finest_type>::value) );
 
   // the same, just with typeid
   EXAM_CHECK( typeid(std::tr2::nanoseconds) == typeid(std::tr2::detail::__is_more_precise<std::tr2::nanoseconds,std::tr2::microseconds>::finest_type) );

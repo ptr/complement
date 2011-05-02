@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-04-29 16:22:54 ptr>
+// -*- C++ -*- Time-stamp: <2011-05-02 17:43:45 ptr>
 
 /*
  * Copyright (c) 2007, 2009, 2011
@@ -594,45 +594,6 @@ int EXAM_IMPL(misc_test::type_traits_is_empty)
 
   return EXAM_RESULT;
 }
-
-struct X
-{
-};
-
-struct Y
-{
-    Y()
-      { }
-    Y( const X& )
-      { }
-};
-
-#if defined(STLPORT) || (defined(__GNUC__) && (__GNUC__ < 4))
-template <class T>
-struct __ctor_aux : // union or class
-    public std::detail::__select_types
-{
-  private:
-    template <class _Up>
-    static __t1 __test( int (_Up::*)() );
-
-    template <class>
-    static __t2 __test(...);
-    
-  public:
-#ifdef __FIT_NO_INLINE_TEMPLATE_STATIC_INITIALISATION
-    static const bool __value;
-#else
-    static const bool __value = sizeof(__test<T>(0)) == sizeof(std::detail::__select_types::__t1);
-#endif
-};
-
-#ifdef __FIT_NO_INLINE_TEMPLATE_STATIC_INITIALISATION
-template <class T>
-const bool __ctor_aux<T>::__value = sizeof(__ctor_aux<T>::__test<T>(0)) == sizeof(std::detail::__select_types::__t1);
-#endif
-
-#endif // used misc/type_traits.h or STLport's implementation (it's same)
 
 int EXAM_IMPL(type_traits_has_x_ctor)
 {
