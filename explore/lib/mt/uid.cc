@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-16 17:23:56 ptr>
+// -*- C++ -*- Time-stamp: <2011-05-24 11:04:23 ptr>
 
 /*
  * Copyright (c) 2006, 2008-2011
@@ -20,6 +20,7 @@
 
 #include <mt/uid.h>
 #include <sstream>
+#include <fstream>
 #include <iomanip>
 #include <cstring>
 #include <stdexcept>
@@ -28,6 +29,7 @@
 
 #include <sys/sysctl.h>
 #include <linux/sysctl.h>
+#include <uuid/uuid.h>
 
 #include <iostream>
 
@@ -39,6 +41,13 @@ using __gnu_cxx::copy_n;
 
 std::ostream& operator <<( std::ostream& s, const xmt::uuid_type& uid )
 {
+  char b[37];
+
+  uuid_unparse_lower( uid.u.b, b );
+
+  return s << b;
+
+/*
 #ifdef STLPORT
   std::ios_base::fmtflags f = s.flags( 0 );
 #else // i.e. libstdc++
@@ -64,6 +73,7 @@ std::ostream& operator <<( std::ostream& s, const xmt::uuid_type& uid )
   s.flags( f );
 
   return s;
+*/
 }
 
 std::istream& operator >>( std::istream& s, xmt::uuid_type& uid )
@@ -192,10 +202,16 @@ uuid_type __uid_init::_host_id;
 __uid_init::__uid_init() :
      err( 0 )
 {
-  static size_t n = sizeof(uuid_type);
-  static int mib[] = { CTL_KERN, KERN_RANDOM, RANDOM_BOOT_ID };
+  ifstream boot_id( "/proc/sys/kernel/random/boot_id" );
 
-  err = sysctl( mib, sizeof(mib)/sizeof(mib[0]), &_host_id, &n, (void*)0, 0 );
+  if ( boot_id.is_open() && boot_id.good() ) {
+    boot_id >> _host_id;
+  } else {
+    static size_t n = sizeof(uuid_type);
+    static int mib[] = { CTL_KERN, KERN_RANDOM, RANDOM_BOOT_ID };
+
+    err = sysctl( mib, sizeof(mib)/sizeof(mib[0]), &_host_id, &n, (void*)0, 0 );
+  }
 }
 
 } // namespace detail
@@ -213,15 +229,13 @@ uuid_type::operator string() const
 
 const char *hostid_str() throw (runtime_error)
 {
-  static std::string _uid;
+  static char b[37] = "";
 
-  if ( _uid.size() == 0 ) {
-    stringstream s;
-    s << hostid();
-    _uid = s.str();
+  if ( b[0] == 0 ) {
+    uuid_unparse_lower( hostid().u.b, b );
   }
 
-  return _uid.data();
+  return b;
 }
 
 const xmt::uuid_type& hostid() throw (runtime_error)
@@ -237,28 +251,27 @@ const xmt::uuid_type& hostid() throw (runtime_error)
 
 std::string uid_str() throw (runtime_error)
 {
-  stringstream s;
+  char b[37];
+  uuid_type id;
 
-  s << uid();
+  uuid_generate_random( id.u.b );
+  uuid_unparse_lower( id.u.b, b );
 
-  return s.str();
+  return std::string( b, 36 );
 }
 
 xmt::uuid_type uid() throw (runtime_error)
 {
   uuid_type id;
-  static size_t n = sizeof(uuid_type);
 
-  static int mib[] = { CTL_KERN, KERN_RANDOM, RANDOM_UUID };
-
-  int err = sysctl( mib, sizeof(mib)/sizeof(mib[0]), &id, &n, (void*)0, 0 );
-
-  if ( err ) {
-    throw system_error( err, get_posix_category(), "uuid" );
-  }
+  uuid_generate_random( id.u.b );
 
   return id;
 }
+
+const uuid_type ns_url  = { { { 0x6b, 0xa7, 0xb8, 0x11, 0x9d, 0xad, 0x11, 0xd1, 0x80, 0xb4, 0x00, 0xc0, 0x4f, 0xd4, 0x30, 0xc8 } } }; // UUID namespace URL
+const uuid_type ns_oid  = { { { 0x6b, 0xa7, 0xb8, 0x12, 0x9d, 0xad, 0x11, 0xd1, 0x80, 0xb4, 0x00, 0xc0, 0x4f, 0xd4, 0x30, 0xc8 } } }; // UUID namespace ISO OID
+const uuid_type ns_x500 = { { { 0x6b, 0xa7, 0xb8, 0x14, 0x9d, 0xad, 0x11, 0xd1, 0x80, 0xb4, 0x00, 0xc0, 0x4f, 0xd4, 0x30, 0xc8 } } }; // UUID namespace X.500 DN
 
 xmt::uuid_type uid_md5( const void* s, size_t n )
 {
@@ -267,10 +280,26 @@ xmt::uuid_type uid_md5( const void* s, size_t n )
   MD5_CTX context;
 
   MD5Init( &context );
+  MD5Update( &context, ns_oid.u.b, 16 ); // namespace ISO OID
   MD5Update( &context, reinterpret_cast<const uint8_t*>(s), n );
   MD5Final( id.u.b, &context );
 
+  id.u.b[6] &= 0x0f;
+  id.u.b[6] |= 0x30; // UUID version 3
+  id.u.b[8] &= 0x3f;
+  id.u.b[8] |= 0x80; // UUID variant DCE
+
   return id;
+}
+
+int uid_version( const xmt::uuid_type& id )
+{
+  return static_cast<int>(id.u.b[6] >> 4);
+}
+
+int uid_variant( const xmt::uuid_type& id )
+{
+  return static_cast<int>(id.u.b[8] >> 6);
 }
 
 } // namespace xmt

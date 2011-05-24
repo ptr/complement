@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-05-02 17:53:56 ptr>
+// -*- C++ -*- Time-stamp: <2011-05-24 11:14:42 ptr>
 
 /*
  * Copyright (c) 2006-2011
@@ -530,6 +530,21 @@ int EXAM_IMPL(uid_test_wg21::uid_stream)
   EXAM_CHECK( !s.fail() );
   EXAM_CHECK( u2 == r2 );
   EXAM_CHECK( u3 == r3 );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(uid_test_wg21::version)
+{
+  xmt::uuid_type u = xmt::uid();
+
+  EXAM_CHECK( xmt::uid_version( u ) == 4 );
+  EXAM_CHECK( xmt::uid_variant( u ) == 2 );
+
+  xmt::uuid_type umd5 = xmt::uid_md5( u.u.b, 16 );
+
+  EXAM_CHECK( xmt::uid_version( umd5 ) == 3 );
+  EXAM_CHECK( xmt::uid_variant( umd5 ) == 2 );
 
   return EXAM_RESULT;
 }

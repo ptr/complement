@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-11-10 15:36:11 ptr>
+// -*- C++ -*- Time-stamp: <2011-05-24 11:08:59 ptr>
 
 /*
  * Copyright (c) 2006-2009
@@ -98,12 +98,14 @@ int main( int argc, const char** argv )
 
   exam::test_suite::test_case_type uidtc[3];
 
-  t.add( &uid_test_wg21::uid, test_wg21_uid, "uid_test_wg21::uid",
+  uidtc[1] = t.add( &uid_test_wg21::uid, test_wg21_uid, "uid_test_wg21::uid",
          uidtc[0] = t.add( &uid_test_wg21::uidstr, test_wg21_uid, "uid_test_wg21::uidstr" ) );
   t.add( &uid_test_wg21::uid_stream, test_wg21_uid, "uid_test_wg21::uid_stream",
     t.add( &uid_test_wg21::uidconv, test_wg21_uid, "uid_test_wg21::uidconv",
       t.add( &uid_test_wg21::hostid, test_wg21_uid, "uid_test_wg21::hostid",
         t.add( &uid_test_wg21::hostidstr, test_wg21_uid, "uid_test_wg21::hostidstr" ) ) ) );
+
+  t.add( &uid_test_wg21::version, test_wg21_uid, "uid version", uidtc[1] );
 
   flock_test flock;
 

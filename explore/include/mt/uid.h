@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-04-29 18:16:23 ptr>
+// -*- C++ -*- Time-stamp: <2011-05-24 10:56:38 ptr>
 
 /*
  * Copyright (c) 2006, 2008-2011
@@ -56,29 +56,33 @@ struct uuid_type
 //      }
 
     uuid_type& operator =( const uuid_type& uid )
-      { u.l[0] = uid.u.l[0]; u.l[1] = uid.u.l[1]; return *this; }
+      { u.l[0] = uid.u.l[0]; u.l[1] = uid.u.l[1]; /* uuid_copy( u.b, uid.u.b ); */ return *this; }
 
     bool operator ==( const uuid_type& uid ) const
       {
         // return u.i[0] == uid.u.i[0] && u.i[1] == uid.u.i[1] && u.i[2] == uid.u.i[2] && u.i[3] == uid.u.i[3];
         return u.l[0] == uid.u.l[0] && u.l[1] == uid.u.l[1];
+        // return uuid_compare( u.b, uid.u.b ) == 0;
       }
     
     bool operator !=( const uuid_type& uid ) const
       {
         // return u.i[0] != uid.u.i[0] || u.i[1] != uid.u.i[1] || u.i[2] != uid.u.i[2] || u.i[3] != uid.u.i[3];
         return u.l[0] != uid.u.l[0] || u.l[1] != uid.u.l[1];
+        // return uuid_compare( u.b, uid.u.b ) != 0;
       }
 
     bool operator <( const uuid_type& uid ) const
       {
         // return std::lexicographical_compare( u.i, u.i + 4, uid.u.i, uid.u.i + 4 );
         return u.l[0] < uid.u.l[0] ? true : u.l[0] > uid.u.l[0] ? false : (u.l[1] < uid.u.l[1]);
+        // return uuid_compare( u.b, uid.u.b ) < 0;
       }
 
     bool operator >( const uuid_type& uid ) const
       {
         return u.l[0] > uid.u.l[0] ? true : u.l[0] < uid.u.l[0] ? false : (u.l[1] > uid.u.l[1]);
+        // return uuid_compare( u.b, uid.u.b ) > 0;
       }
 
     operator std::string() const;
@@ -115,6 +119,11 @@ inline xmt::uuid_type uid_md5( const char* s )
 { return xmt::uid_md5( s, strlen(s) ); }
 inline xmt::uuid_type uid_md5( const std::string& s )
 { return xmt::uid_md5( s.data(), s.size() ); }
+
+// UUID version
+
+int uid_version( const xmt::uuid_type& );
+int uid_variant( const xmt::uuid_type& );
 
 } // namespace xmt
 

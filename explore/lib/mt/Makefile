@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <09/05/13 18:57:31 ptr>
+# -*- Makefile -*- Time-stamp: <2011-05-23 20:47:47 ptr>
 
 SRCROOT := ../..
 
@@ -18,10 +18,10 @@ ifndef WITHOUT_STLPORT
 stldbg-shared:	LDFLAGS += -L$(SRCROOT)/lib/misc/${OUTPUT_DIR_STLDBG}
 endif
 
-release-shared:	LDLIBS += -lmisc
-dbg-shared:	LDLIBS += -lmiscg
+release-shared:	LDLIBS += -luuid -lmisc
+dbg-shared:	LDLIBS += -luuid -lmiscg
 ifndef WITHOUT_STLPORT
-stldbg-shared:	LDLIBS += -lmiscstlg
+stldbg-shared:	LDLIBS += -luuid -lmiscstlg
 endif
 
 LDLIBS += -ldl 
