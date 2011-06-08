@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-08 20:33:56 ptr>
+// -*- C++ -*- Time-stamp: <2011-06-08 21:13:57 ptr>
 
 /*
  *
@@ -37,7 +37,7 @@ static const string no_catcher( "no catcher for event" );
 unsigned int EvManager::working_threads = 2;
 
 EvManager::EvManager() :
-    _dispatch_stop( false ),
+    _dispatch_stop( true ),
     _trflags( 0 ),
     _trs( 0 ),
     n_threads( working_threads ),
