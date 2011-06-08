@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/04/30 11:20:43 ptr>
+// -*- C++ -*- Time-stamp: <2011-06-06 18:44:50 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2009
@@ -51,13 +51,13 @@ void Names::ns_list( const Event& rq )
   Event_base<Seq> rs( EV_STEM_NS_LIST );
   Seq::container_type& lst = rs.value().container;
 
-  manager()->_lock_iheap.lock();
-  for ( EvManager::info_heap_type::const_iterator i = manager()->iheap.begin(); i != manager()->iheap.end(); ++i ) {
+  manager()._lock_iheap.lock();
+  for ( EvManager::info_heap_type::const_iterator i = manager().iheap.begin(); i != manager().iheap.end(); ++i ) {
     for ( std::list<addr_type>::const_iterator j = i->second.begin(); j != i->second.end(); ++j ) {
       lst.push_back( make_pair( *j, i->first ) );
     }
   }
-  manager()->_lock_iheap.unlock();
+  manager()._lock_iheap.unlock();
 
   rs.dest( rq.src() );
   Send( rs );
@@ -69,14 +69,14 @@ void Names::ns_name( const Event& rq )
   Event_base<Seq> rs( EV_STEM_NS_NAME );
   Seq::container_type& lst = rs.value().container;
 
-  manager()->_lock_iheap.lock();
-  EvManager::info_heap_type::const_iterator i = manager()->iheap.find( rq.value() );
-  if ( i != manager()->iheap.end() ) {
+  manager()._lock_iheap.lock();
+  EvManager::info_heap_type::const_iterator i = manager().iheap.find( rq.value() );
+  if ( i != manager().iheap.end() ) {
     for ( std::list<addr_type>::const_iterator j = i->second.begin(); j != i->second.end(); ++j ) {
       lst.push_back( make_pair( *j, i->first ) );
     }
   }
-  manager()->_lock_iheap.unlock();
+  manager()._lock_iheap.unlock();
 
   rs.dest( rq.src() );
   Send( rs );

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-23 17:27:20 ptr>
+// -*- C++ -*- Time-stamp: <2011-06-06 18:29:28 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005-2010
@@ -536,15 +536,10 @@ class EventHandler
     typedef EventHandler ThisCls;
 
   protected:
-    typedef std::list<addr_type> addr_container_type;
-
     // See comment near EventHandler::EventHandler() implementation
     // HistoryContainer& theHistory;
     HistoryContainer theHistory;
     std::tr2::recursive_mutex _theHistory_lock;
-
-  public:
-    typedef addr_container_type::const_iterator id_iterator;
 
   public:
 
@@ -570,9 +565,9 @@ class EventHandler
     void disable();
 
     __FIT_DECLSPEC bool is_avail( const addr_type& id ) const;
-    static EvManager* manager()
-      { return _mgr; }
+    static EvManager& manager();
     static addr_type ns();
+    static const domain_type& domain();
     addr_type set_default() const; // become default object
     static addr_type get_default(); // default object
     __FIT_DECLSPEC void Send( const Event& e ) const;
@@ -594,12 +589,8 @@ class EventHandler
     const addr_type self_id() const
       {
         std::tr2::lock_guard<std::tr2::recursive_mutex> lk( _theHistory_lock );
-        return _ids.empty() ? stem::badaddr : _ids.front();
+        return _id;
       }
-    id_iterator self_ids_begin() const
-      { return _ids.begin(); }
-    id_iterator self_ids_end() const
-      { return _ids.end(); }
     void solitary();
 
     void State( state_type state )
@@ -633,10 +624,9 @@ class EventHandler
     int _nice;
 
   protected:
-    addr_container_type _ids;
+    addr_type _id;
 
   private:
-    static class EvManager *_mgr;
     static class Names     *_ns;
 
     friend class Init;

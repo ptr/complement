@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <10/03/10 19:13:45 ptr>
+// -*- C++ -*- Time-stamp: <2011-06-08 20:32:19 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2010
+ * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2011
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -25,14 +25,13 @@
 #include <map>
 
 #include <stem/Event.h>
-#include <stem/EventHandler.h>
+#include <stem/EvManager.h>
 
 namespace stem {
 
 extern __FIT_DECLSPEC void dump( std::ostream&, const stem::Event& );
 
-class NetTransport_base :
-    public EventHandler // to avoid dependence from creation order
+class NetTransport_base
 {
   protected:
     struct msg_hdr {
@@ -47,12 +46,13 @@ class NetTransport_base :
 
   protected:
     NetTransport_base( std::sockstream& s ) :
-        net( s )
+        net( s ),
+        _id( xmt::nil_uuid )
       { }
 
     NetTransport_base( std::sockstream& s, const char *info ) :
-        EventHandler( info ),
-        net( s )
+        net( s ),
+        _id( xmt::nil_uuid )
       { }
 
     virtual const std::type_info& classtype() const
@@ -61,8 +61,13 @@ class NetTransport_base :
     virtual int flags() const;
 
   private:
+#ifdef __FIT_CPP_0X
+    NetTransport_base( NetTransport_base& ) = delete;
+    NetTransport_base operator =( const NetTransport_base& ) = delete;
+#else
     NetTransport_base( NetTransport_base& );
     NetTransport_base operator =( const NetTransport_base& );
+#endif
 
   public:
     void close()
@@ -70,18 +75,21 @@ class NetTransport_base :
 
     bool Dispatch( const Event& );
 
+#if 0
     addr_type ns_remote() const;
 
     void add_route( const addr_type& );
     void rm_route( const addr_type& );
     void add_remote_route( const addr_type& );
     void rm_remote_route( const addr_type& );
+#endif
 
   protected:
     bool pop( Event& );
     __FIT_DECLSPEC void _close();
 
     std::sockstream& net;
+    stem::EvManager::edge_id_type _id;
 };
 
 class NetTransport :
@@ -182,9 +190,14 @@ class NetTransportMgr :
     virtual const std::type_info& classtype() const
        { return typeid(NetTransportMgr); }
 
+#ifdef __FIT_CPP_0X
+    NetTransportMgr( const NetTransportMgr& ) = delete;
+    NetTransportMgr& operator =( const NetTransportMgr& ) = delete;
+#else
   private:
     NetTransportMgr( const NetTransportMgr& );
     NetTransportMgr& operator =( const NetTransportMgr& );
+#endif
 
   private:
     addr_type discovery( const std::tr2::nanoseconds& timeout = std::tr2::nanoseconds() );

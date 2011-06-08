@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-04-29 19:27:42 ptr>
+// -*- C++ -*- Time-stamp: <2011-06-08 20:27:53 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2011
@@ -51,27 +51,6 @@
 #  endif
 #endif
 
-namespace stem {
-namespace detail {
-
-typedef std::pair<int,std::pair<int,EventHandler*> > weighted_handler_type;
-
-} // namespace detail
-} // namespace stem
-
-namespace std {
-
-// for priority_queue
-
-template<>
-struct less<stem::detail::weighted_handler_type>
-{
-    bool operator()(const stem::detail::weighted_handler_type& __x, const stem::detail::weighted_handler_type& __y) const
-      { return __x.first > __y.first; }
-};
-
-} // namespace std
-
 #if defined(__USE_STLPORT_HASH) || defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
 #  define __HASH_NAMESPACE std
 #endif
@@ -100,11 +79,18 @@ struct hash<stem::EventHandler*>
 
 namespace stem {
 
+class NetTransport_base;
+
 class EvManager
 {
   private:
-    typedef stem::detail::weighted_handler_type weighted_handler_type;
-    typedef std::priority_queue<weighted_handler_type> handlers_type;
+    typedef xmt::uuid_type edge_id_type;
+
+    union target_type {
+        void* object;
+        domain_type domain;
+    };
+
     typedef std::list<addr_type> addr_collection_type;
 #ifdef __USE_STLPORT_HASH
     typedef std::hash_map<addr_type,handlers_type> local_heap_type;
@@ -115,8 +101,12 @@ class EvManager
     typedef __gnu_cxx::hash_map<std::string,addr_collection_type> info_heap_type;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::unordered_map<addr_type,handlers_type> local_heap_type;
+    typedef std::unordered_map<addr_type,target_type> local_heap_type;
     typedef std::unordered_map<std::string,addr_collection_type> info_heap_type;
+    typedef std::unordered_map<domain_type,std::list<edge_id_type> > vertex_container_type;
+    typedef std::unordered_map<edge_id_type,std::pair<std::pair<domain_type,domain_type>,unsigned> > edge_container_type;
+    typedef std::unordered_map<edge_id_type,void*> bridge_container_type;
+    typedef std::unordered_map<domain_type,edge_id_type> pi_type;
 #endif
 
   public:
@@ -138,6 +128,17 @@ class EvManager
 
     __FIT_DECLSPEC EvManager();
     __FIT_DECLSPEC ~EvManager();
+
+#ifdef __FIT_CPP_0X
+    EvManager( const EvManager& ) = delete;
+    EvManager& operator =( const EvManager& ) = delete;
+#else
+  private:
+    EvManager( const EvManager& );
+    EvManager& operator =( const EvManager& );
+
+  public:
+#endif
 
     void Subscribe( const addr_type& id, EventHandler* object, int nice = 0 )
       {
@@ -259,19 +260,14 @@ class EvManager
     unsigned trflags() const;
     std::ostream* settrs( std::ostream* );
 
-    // This is UUID, not address
-    const xmt::uuid_type& self_id() const
-      { return _id; }
-
-    static void start_queue() { };
-    static void stop_queue() { };
+    void start_queue();
+    void stop_queue();
 
     static unsigned int working_threads;
 
   protected:
     void unsafe_Subscribe( const addr_type& id, EventHandler* object, int nice = 0 );
     void unsafe_Unsubscribe( const addr_type& id, EventHandler* );
-    // void cache_clear( EventHandler* );
 
     bool unsafe_is_avail( const addr_type& id ) const
       { return heap.find( id ) != heap.end(); }
@@ -279,10 +275,12 @@ class EvManager
     void unsafe_annotate( const addr_type& id, const std::string& info );
 
   private:
-    const xmt::uuid_type _id;
-
     local_heap_type heap;   // address -> EventHandler *
     info_heap_type  iheap;  // address -> info string (both local and external)
+    vertex_container_type vertices;
+    edge_container_type edges;
+    bridge_container_type bridges;
+    pi_type gate; // predecessors
 
     struct worker
     {
@@ -341,6 +339,13 @@ class EvManager
     friend class NetTransport_base;
     friend class NetTransport;
     friend class EventHandler::Init;
+
+  protected:
+    EvManager::edge_id_type bridge( NetTransport_base*, const domain_type& );
+    void connectivity( const edge_id_type& eid, const domain_type& u, const domain_type& v, unsigned w, NetTransport_base* b );
+
+  private:
+    void route_calc();
 };
 
 } // namespace stem

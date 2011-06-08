@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-04-29 19:26:15 ptr>
+// -*- C++ -*- Time-stamp: <2011-06-03 20:33:51 ptr>
 
 /*
  *
@@ -49,6 +49,7 @@ namespace stem {
 
 typedef xmt::uuid_type addr_type;
 typedef uint32_t code_type;
+typedef xmt::uuid_type domain_type;
 
 extern const addr_type& badaddr;
 extern const code_type badcode;

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/26 18:01:52 ptr>
+// -*- C++ -*- Time-stamp: <2011-06-08 15:04:15 ptr>
 
 /*
  * Copyright (c) 2006, 2007
@@ -54,7 +54,7 @@ void StEMecho::echo( const Event& ev )
 void StEMecho::regme( const stem::Event& ev )
 {
   // cerr << "Echo\n";
-  manager()->annotate( ev.src(), ev.value() );
+  manager().annotate( ev.src(), ev.value() );
 
   cnd.notify_one();
 }

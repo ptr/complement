@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/14 14:05:40 ptr>
+// -*- C++ -*- Time-stamp: <2011-06-08 16:50:09 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2010
@@ -27,7 +27,8 @@ namespace stem {
 using namespace std::tr2;
 
 char *Init_buf[128];
-EvManager *EventHandler::_mgr = 0;
+static domain_type _domain = xmt::uid();
+static EvManager _mgr;
 Names     *EventHandler::_ns = 0;
 mutex _def_lock;
 addr_type _default_addr = xmt::nil_uuid;
@@ -39,14 +40,15 @@ void EventHandler::Init::__at_fork_prepare()
 {
   _mf_lock.lock();
   if ( _rcount != 0 ) {
-    EventHandler::_mgr->stop_queue();
+    _mgr.stop_queue();
   }
 }
 
 void EventHandler::Init::__at_fork_child()
 {
+  _domain = xmt::uid();
   if ( _rcount != 0 ) {
-    EventHandler::_mgr->start_queue();
+    _mgr.start_queue();
   }
   _mf_lock.unlock();
 }
@@ -54,9 +56,14 @@ void EventHandler::Init::__at_fork_child()
 void EventHandler::Init::__at_fork_parent()
 {
   if ( _rcount != 0 ) {
-    EventHandler::_mgr->start_queue();
+    _mgr.start_queue();
   }
   _mf_lock.unlock();
+}
+
+static void sq()
+{
+  _mgr.stop_queue();
 }
 
 void EventHandler::Init::_guard( int direction )
@@ -68,25 +75,31 @@ void EventHandler::Init::_guard( int direction )
 
   if ( direction ) {
     if ( _rcount++ == 0 ) {
-#ifdef _PTHREADS
       if ( !at_f ) {
+        // cerr << HERE << endl;
+        atexit( &sq );
         pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child );
         at_f = true;
+
+        _mgr.start_queue();
+        EventHandler::_ns = new Names( "ns" );
+        EventHandler::_ns->enable();
+      } else if ( EventHandler::_ns == 0 ) {
+        EventHandler::_ns = new Names( "ns" );
+        EventHandler::_ns->enable();
       }
-#endif
-      EventHandler::_mgr = new EvManager();
-      EventHandler::_ns = new Names( "ns" );
-      EventHandler::_ns->enable();
     }
   } else {
     --_rcount;
+    // cerr << HERE << ' ' << _rcount << endl;
     if ( _rcount == 1 ) {
       EventHandler::_ns->disable();
       delete EventHandler::_ns;
       EventHandler::_ns = 0;
+      // cerr << HERE << endl;
     } else if ( _rcount == 0 ) {
-      delete EventHandler::_mgr;
-      EventHandler::_mgr = 0;
+      // _mgr.stop_queue();
+      // cerr << HERE << endl;
     }
   }
 }
@@ -97,25 +110,28 @@ EventHandler::Init::Init()
 EventHandler::Init::~Init()
 { _guard( 0 ); }
 
+EvManager& EventHandler::manager()
+{ return _mgr; }
+
 bool EventHandler::is_avail( const addr_type& id ) const
 {
-  return _mgr->is_avail( id );
+  return _mgr.is_avail( id );
 }
 
 void EventHandler::Send( const Event& e ) const
 {
-  e.src( _ids.front() );
-  _mgr->push( e );
+  e.src( _id );
+  _mgr.push( e );
 }
 
 void EventHandler::Forward( const Event& e ) const
 {
-  _mgr->push( e );
+  _mgr.push( e );
 }
 
 void EventHandler::sync_call( const Event& e )
 {
-  _mgr->push( e );
+  _mgr.push( e );
 }
 
 void EventHandler::PushState( state_type state )
@@ -215,37 +231,37 @@ const_h_iterator EventHandler::__find( state_type state ) const
 }
 
 EventHandler::EventHandler() :
-    _nice( 0 )
+    _nice( 0 ),
+    _id( xmt::uid() )
 {
   new( Init_buf ) Init();
   theHistory.push_front( ST_NULL );  // State( ST_NULL );
-  _ids.push_back( xmt::uid() );
 }
 
 EventHandler::EventHandler( const char* info ) :
-    _nice( 0 )
+    _nice( 0 ),
+    _id( xmt::uid() )
 {
   new( Init_buf ) Init();
   theHistory.push_front( ST_NULL );  // State( ST_NULL );
-  _ids.push_back( xmt::uid() );
-  _mgr->annotate( _ids.back(), info );
+  _mgr.annotate( _id, info );
 }
 
 EventHandler::EventHandler( const addr_type& id, int nice ) :
-    _nice( nice )
+    _nice( nice ),
+    _id( id )
 {
   new( Init_buf ) Init();
   theHistory.push_front( ST_NULL );  // State( ST_NULL );
-  _ids.push_back( id );
 }
 
 EventHandler::EventHandler( const addr_type& id, const char* info ) :
-    _nice( 0 )
+    _nice( 0 ),
+    _id( id )
 {
   new( Init_buf ) Init();
   theHistory.push_front( ST_NULL );  // State( ST_NULL );
-  _ids.push_back( id );
-  _mgr->annotate( id, info );
+  _mgr.annotate( _id, info );
 }
 
 EventHandler::~EventHandler()
@@ -269,11 +285,14 @@ void EventHandler::TraceStack( ostream& out ) const
 addr_type EventHandler::ns()
 { return _ns->self_id(); }
 
+const domain_type& EventHandler::domain()
+{ return _domain; }
+
 addr_type EventHandler::set_default() const
 {
   lock_guard<mutex> lk( _def_lock );
   addr_type tmp = _default_addr;
-  _default_addr = _ids.front();
+  _default_addr = _id;
 
   return tmp;
 }
@@ -288,25 +307,25 @@ addr_type EventHandler::get_default()
 
 void EventHandler::solitary()
 {
-  _mgr->Unsubscribe( _ids.begin(), _ids.end(), this );
+  _mgr.Unsubscribe( _id, this );
   {
     std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( _theHistory_lock );
-    _ids.clear();
+    _id = badaddr;
   }
   theHistory.clear();
 }
 
 void EventHandler::enable()
 {
-  _mgr->Subscribe( _ids.begin(), _ids.end(), this, _nice );
+  _mgr.Subscribe( _id, this, _nice );
 }
 
 void EventHandler::disable()
 {
-  _mgr->Unsubscribe( _ids.begin(), _ids.end(), this );
+  _mgr.Unsubscribe( _id, this );
   {
     std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( _theHistory_lock );
-    _ids.clear();
+    _id = badaddr;
   }
 }
 
