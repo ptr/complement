@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-05-24 10:56:38 ptr>
+// -*- C++ -*- Time-stamp: <2011-05-24 14:45:06 ptr>
 
 /*
  * Copyright (c) 2006, 2008-2011
@@ -55,8 +55,17 @@ struct uuid_type
 //        u.l[0] = uid.u.l[0]; u.l[1] = uid.u.l[1];
 //      }
 
-    uuid_type& operator =( const uuid_type& uid )
-      { u.l[0] = uid.u.l[0]; u.l[1] = uid.u.l[1]; /* uuid_copy( u.b, uid.u.b ); */ return *this; }
+    // uuid_type& operator =( const uuid_type& uid )
+    //   { u.l[0] = uid.u.l[0]; u.l[1] = uid.u.l[1]; /* uuid_copy( u.b, uid.u.b ); */ return *this; }
+
+#ifdef __FIT_CPP_0X
+    uuid_type() = default;
+    uuid_type( const uuid_type& uid ) = default;
+    ~uuid_type() = default;
+
+    uuid_type& operator =( const uuid_type& uid ) = default;
+#endif // __FIT_CPP_0X
+
 
     bool operator ==( const uuid_type& uid ) const
       {
