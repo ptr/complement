@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-08 20:27:53 ptr>
+// -*- C++ -*- Time-stamp: <2011-06-09 14:03:39 yeti>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2011
@@ -166,64 +166,7 @@ class EvManager
         unsafe_annotate( id, std::string( info ) );
       }
 
-    template <class Iterator>
-    void Subscribe( Iterator first, Iterator last, EventHandler* obj, int nice = 0 )
-      {
-        std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
-
-        while ( first != last ) {
-          unsafe_Subscribe( *first, obj, nice );
-          ++first;
-        }
-      }
-
-    template <class Iterator>
-    void Subscribe( Iterator first, Iterator last, EventHandler* obj, const std::string& info, int nice = 0 )
-      {
-        std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
-        std::tr2::lock_guard<std::tr2::mutex> lk_( _lock_iheap );
-
-        while ( first != last ) {
-          unsafe_Subscribe( *first, obj, nice );
-          unsafe_annotate( *first, info );
-          ++first;
-        }
-      }
-
-    template <class Iterator>
-    void Subscribe( Iterator first, Iterator last, EventHandler* obj, const char* info, int nice = 0 )
-      {
-        bool ann = (info == 0) || (info[0] == 0)? false : true;
-        std::string _info;
-        
-        if ( ann ) {
-          _info = info;
-        }
-
-        std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
-        std::tr2::lock_guard<std::tr2::mutex> lk_( _lock_iheap );
-
-        while ( first != last ) {
-          unsafe_Subscribe( *first, obj, nice );
-          if ( ann ) {
-            unsafe_annotate( *first, _info );
-          }
-          ++first;
-        }
-      }
-
     void Unsubscribe( const addr_type& id, EventHandler* obj );
-
-    template <class Iterator>
-    void Unsubscribe( Iterator first, Iterator last, EventHandler* obj )
-      {
-        std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
-        std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
-
-        while ( first != last ) {
-          unsafe_Unsubscribe( *first++, obj );
-        }
-      }
 
     bool is_avail( const addr_type& id ) const
       {
