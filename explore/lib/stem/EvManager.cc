@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-10 14:50:40 yeti>
+// -*- C++ -*- Time-stamp: <2011-06-10 15:42:36 yeti>
 
 /*
  *
@@ -129,13 +129,10 @@ void EvManager::worker::_loop( worker* p )
             continue;
           }
 
-          int _ver = xmt::uid_version( k->second.domain );
-          int _var = xmt::uid_variant( k->second.domain );
-
-          if ( (_ver > 2) && (_ver < 6) && (_var == 2) ) {
+          if ( me.mgr->is_domain( k->second.domain ) ) { // is it domain indeed?
             std::tr2::basic_read_lock<std::tr2::rw_mutex> elock( me.mgr->_lock_edges );
             std::tr2::basic_read_lock<std::tr2::rw_mutex> glock( me.mgr->_lock_gate );
-            // it domain indeed!
+
             auto eid = me.mgr->gate.find( k->second.domain );
             if ( eid != me.mgr->gate.end() ) {
               auto bid = me.mgr->bridges.find( eid->second );
@@ -254,10 +251,7 @@ void EvManager::unsafe_Unsubscribe( const addr_type& id )
       ios_base::fmtflags f = _trs->flags( ios_base::showbase );
       *_trs << "EvManager unsubscribe " << id << ' ';
 
-      int _ver = xmt::uid_version( k->second.domain );
-      int _var = xmt::uid_variant( k->second.domain );
-
-      if ( (_ver > 2) && (_ver < 6) && (_var == 2) ) {
+      if ( is_domain( k->second.domain ) ) {
         *_trs << k->second.domain;
       } else {
         const EventHandler* obj = reinterpret_cast<const EventHandler*>(k->second.object);
@@ -336,6 +330,25 @@ std::ostream* EvManager::settrs( std::ostream* s )
   return tmp;
 }
 
+bool EvManager::unsafe_is_local( const addr_type& id ) const
+{
+  local_heap_type::const_iterator k = heap.find( id );
+
+  if ( k == heap.end() ) {
+    return false;
+  }
+
+  return !is_domain( k->second.domain );
+}
+
+bool EvManager::is_domain( const domain_type& d ) const
+{
+  int _ver = xmt::uid_version( d );
+  int _var = xmt::uid_variant( d );
+
+  return ((_ver > 2) && (_ver < 6) && (_var == 2));
+}
+
 std::ostream& EvManager::dump( std::ostream& s ) const
 {
   ios_base::fmtflags f = s.flags( ios_base::showbase );
@@ -346,10 +359,7 @@ std::ostream& EvManager::dump( std::ostream& s ) const
     for ( local_heap_type::const_iterator i = heap.begin(); i != heap.end(); ++i ) {
       s << i->first << " => ";
 
-      int _ver = xmt::uid_version( i->second.domain );
-      int _var = xmt::uid_variant( i->second.domain );
-
-      if ( (_ver > 2) && (_ver < 6) && (_var == 2) ) {
+      if ( is_domain(i->second.domain) ) {
         // it domain indeed!
         s << i->second.domain;
       } else {

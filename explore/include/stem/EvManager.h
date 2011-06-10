@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-09 18:33:54 yeti>
+// -*- C++ -*- Time-stamp: <2011-06-10 15:33:48 yeti>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2011
@@ -200,6 +200,12 @@ class EvManager
         return unsafe_is_avail( id );
       }
 
+    bool is_local( const addr_type& id ) const
+      {
+        std::tr2::basic_read_lock<std::tr2::rw_mutex> lk( _lock_heap );
+        return unsafe_is_local( id );
+      }
+
     void annotate( const addr_type& id, const std::string& info )
       {
         if ( info.empty() ) {
@@ -241,6 +247,9 @@ class EvManager
 
     bool unsafe_is_avail( const addr_type& id ) const
       { return heap.find( id ) != heap.end(); }
+
+    bool unsafe_is_local( const addr_type& id ) const;
+    bool is_domain( const domain_type& d ) const;
 
     void unsafe_annotate( const addr_type& id, const std::string& info );
 
