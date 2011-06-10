@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-08 21:13:57 ptr>
+// -*- C++ -*- Time-stamp: <2011-06-10 14:50:40 yeti>
 
 /*
  *
@@ -72,11 +72,9 @@ EvManager::~EvManager()
 /* Oversimplified start_queue, review later */
 void EvManager::start_queue()
 {
-  // cerr << HERE << endl;
   _dispatch_stop = false;
   for ( unsigned int i = 0; i < n_threads; ++i ) {
     workers[i] = new worker( this );
-    // cerr << HERE << endl;
   }
 }
 
@@ -87,14 +85,12 @@ void EvManager::stop_queue()
     return;
   }
    
-  // cerr << HERE << endl;
   _dispatch_stop = true;
 
   for ( unsigned int i = 0; i < n_threads; ++i ) {
     {
       std::tr2::unique_lock<std::tr2::mutex> lock( workers[i]->lock );
       workers[i]->cnd.notify_one();
-      // cerr << HERE << endl;
     }
     delete workers[i];
   }
@@ -137,8 +133,16 @@ void EvManager::worker::_loop( worker* p )
           int _var = xmt::uid_variant( k->second.domain );
 
           if ( (_ver > 2) && (_ver < 6) && (_var == 2) ) {
+            std::tr2::basic_read_lock<std::tr2::rw_mutex> elock( me.mgr->_lock_edges );
+            std::tr2::basic_read_lock<std::tr2::rw_mutex> glock( me.mgr->_lock_gate );
             // it domain indeed!
-            cerr << HERE << endl;
+            auto eid = me.mgr->gate.find( k->second.domain );
+            if ( eid != me.mgr->gate.end() ) {
+              auto bid = me.mgr->bridges.find( eid->second );
+              if ( bid != me.mgr->bridges.end() ) {
+                reinterpret_cast<NetTransport_base*>(bid->second)->Dispatch( ev );
+              }
+            }
             continue;
           }
 
@@ -160,29 +164,28 @@ void EvManager::worker::_loop( worker* p )
         obj->_theHistory_lock.try_lock();
         obj->_theHistory_lock.unlock();
       }
-      cerr << HERE << ':' << "unexpected" << endl;
     }
   }
 }
 
-void EvManager::Unsubscribe( const addr_type& id, EventHandler* obj )
+void EvManager::Unsubscribe( const addr_type& id )
 {
   {
     std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
     std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
 
-    unsafe_Unsubscribe( id, obj );
+    unsafe_Unsubscribe( id );
   }
 }
 
-void EvManager::unsafe_Subscribe( const addr_type& id, EventHandler* object, int nice )
+void EvManager::unsafe_Subscribe( const addr_type& id, EventHandler* object )
 {
 #ifdef __FIT_STEM_TRACE
   try {
     lock_guard<mutex> lk(_lock_tr);
     if ( _trs != 0 && _trs->good() && (_trflags & tracesubscr) ) {
       ios_base::fmtflags f = _trs->flags( ios_base::showbase );
-      *_trs << "EvManager subscribe " << id << " nice " << nice << ' '
+      *_trs << "EvManager subscribe " << id << ' '
             << object << " ("
             << xmt::demangle( object->classtype().name() ) << ")" << endl;
 #ifdef STLPORT
@@ -197,6 +200,28 @@ void EvManager::unsafe_Subscribe( const addr_type& id, EventHandler* object, int
 #endif // __FIT_STEM_TRACE
 
   heap[id].object = object;
+}
+
+void EvManager::unsafe_Subscribe( const addr_type& id, const domain_type& d )
+{
+#ifdef __FIT_STEM_TRACE
+  try {
+    lock_guard<mutex> lk(_lock_tr);
+    if ( _trs != 0 && _trs->good() && (_trflags & tracesubscr) ) {
+      ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+      *_trs << "EvManager subscribe " << id << ' ' << d << endl;
+#ifdef STLPORT
+      _trs->flags( f );
+#else
+      _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+    }
+  }
+  catch ( ... ) {
+  }
+#endif // __FIT_STEM_TRACE
+
+  heap[id].domain = d;
 }
 
 void EvManager::unsafe_annotate( const addr_type& id, const std::string& info )
@@ -214,16 +239,33 @@ void EvManager::unsafe_annotate( const addr_type& id, const std::string& info )
   }
 }
 
-void EvManager::unsafe_Unsubscribe( const addr_type& id, EventHandler* obj )
+void EvManager::unsafe_Unsubscribe( const addr_type& id )
 {
+  auto k = heap.find( id );
+
+  if ( k == heap.end() ) {
+    return;
+  }
+
 #ifdef __FIT_STEM_TRACE
   try {
     lock_guard<mutex> lk(_lock_tr);
     if ( _trs != 0 && _trs->good() && (_trflags & tracesubscr) ) {
       ios_base::fmtflags f = _trs->flags( ios_base::showbase );
-      *_trs << "EvManager unsubscribe " << id << ' '
-            << obj << " ("
-            << xmt::demangle( obj->classtype().name() ) << ')' << endl;
+      *_trs << "EvManager unsubscribe " << id << ' ';
+
+      int _ver = xmt::uid_version( k->second.domain );
+      int _var = xmt::uid_variant( k->second.domain );
+
+      if ( (_ver > 2) && (_ver < 6) && (_var == 2) ) {
+        *_trs << k->second.domain;
+      } else {
+        const EventHandler* obj = reinterpret_cast<const EventHandler*>(k->second.object);
+        *_trs << obj << " ("
+              << xmt::demangle( obj->classtype().name() ) << ')';
+      }
+      *_trs << endl;
+
 #ifdef STLPORT
       _trs->flags( f );
 #else
@@ -235,7 +277,7 @@ void EvManager::unsafe_Unsubscribe( const addr_type& id, EventHandler* obj )
   }
 #endif // __FIT_STEM_TRACE
 
-  heap.erase( id );
+  heap.erase( k );
 
   list<info_heap_type::key_type> trash;
   for ( info_heap_type::iterator i = iheap.begin(); i != iheap.end(); ++i ) {
@@ -348,6 +390,8 @@ EvManager::edge_id_type EvManager::bridge( NetTransport_base* b, const domain_ty
 {
   edge_id_type ne = xmt::uid();
 
+  std::tr2::lock_guard<std::tr2::rw_mutex> lock( _lock_edges );
+
   edges.insert( make_pair( ne, make_pair( make_pair(EventHandler::domain(),domain), 1000) ) );
   vertices[EventHandler::domain()].push_back( ne );
   bridges[ne] = b;
@@ -357,6 +401,8 @@ EvManager::edge_id_type EvManager::bridge( NetTransport_base* b, const domain_ty
 
 void EvManager::connectivity( const edge_id_type& eid, const domain_type& u, const domain_type& v, unsigned w, NetTransport_base* b )
 {
+  std::tr2::lock_guard<std::tr2::rw_mutex> lock( _lock_edges );
+
   if ( edges.insert( make_pair( eid, make_pair( make_pair(u,v), w) ) ).second ) {
     vertices[u].push_back( eid );
     vertices[v];
@@ -403,6 +449,8 @@ void EvManager::route_calc()
   d_type d; // destination weights
   q_type Q; // heap, d[Q[0]] is minimal in d
 
+  basic_read_lock<rw_mutex> lk( _lock_edges );
+
   Q.reserve( vertices.size() );
 
   for ( auto i = vertices.begin(); i != vertices.end(); ++i ) {
@@ -434,7 +482,7 @@ void EvManager::route_calc()
     // iterate through edges (u,v)
     for ( auto j = vi->second.begin(); j != vi->second.end(); ++j ) {
       ei = edges.find( *j );
-      w = path_w +ei->second.second; // w(path to u) + w(u,v)
+      w = path_w + ei->second.second; // w(path to u) + w(u,v)
       if ( w < d[ei->second.first.second] ) { // relax
         d[ei->second.first.second] = w;
         pi[ei->second.first.second] = *j;
@@ -453,6 +501,7 @@ void EvManager::route_calc()
     }
   }
 
+  lock_guard<rw_mutex> glk( _lock_gate );
   pi.swap( gate );
 }
 

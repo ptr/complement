@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-09 14:03:39 yeti>
+// -*- C++ -*- Time-stamp: <2011-06-09 18:33:54 yeti>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2011
@@ -140,25 +140,39 @@ class EvManager
   public:
 #endif
 
-    void Subscribe( const addr_type& id, EventHandler* object, int nice = 0 )
+    void Subscribe( const addr_type& id, EventHandler* object )
       {
         std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
-        unsafe_Subscribe( id, object, nice );
+        unsafe_Subscribe( id, object );
       }
 
-    void Subscribe( const addr_type& id, EventHandler* object, const std::string& info, int nice = 0 )
+    void Subscribe( const addr_type& id, const domain_type& domain )
+      {
+        std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
+        unsafe_Subscribe( id, domain );
+      }
+
+    void Subscribe( const addr_type& id, EventHandler* object, const std::string& info )
       {
         std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
         std::tr2::lock_guard<std::tr2::mutex> lk_( _lock_iheap );
-        unsafe_Subscribe( id, object, nice );
+        unsafe_Subscribe( id, object );
         unsafe_annotate( id, info );
       }
 
-    void Subscribe( const addr_type& id, EventHandler* object, const char* info, int nice = 0 )
+    void Subscribe( const addr_type& id, const domain_type& domain, const std::string& info )
       {
         std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
         std::tr2::lock_guard<std::tr2::mutex> lk_( _lock_iheap );
-        unsafe_Subscribe( id, object, nice );
+        unsafe_Subscribe( id, domain );
+        unsafe_annotate( id, info );
+      }
+
+    void Subscribe( const addr_type& id, EventHandler* object, const char* info )
+      {
+        std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
+        std::tr2::lock_guard<std::tr2::mutex> lk_( _lock_iheap );
+        unsafe_Subscribe( id, object );
 
         if ( info == 0 || info[0] == 0 ) {
           return;
@@ -166,7 +180,19 @@ class EvManager
         unsafe_annotate( id, std::string( info ) );
       }
 
-    void Unsubscribe( const addr_type& id, EventHandler* obj );
+    void Subscribe( const addr_type& id, const domain_type& domain, const char* info )
+      {
+        std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
+        std::tr2::lock_guard<std::tr2::mutex> lk_( _lock_iheap );
+        unsafe_Subscribe( id, domain );
+
+        if ( info == 0 || info[0] == 0 ) {
+          return;
+        }
+        unsafe_annotate( id, std::string( info ) );
+      }
+
+    void Unsubscribe( const addr_type& id );
 
     bool is_avail( const addr_type& id ) const
       {
@@ -209,8 +235,9 @@ class EvManager
     static unsigned int working_threads;
 
   protected:
-    void unsafe_Subscribe( const addr_type& id, EventHandler* object, int nice = 0 );
-    void unsafe_Unsubscribe( const addr_type& id, EventHandler* );
+    void unsafe_Subscribe( const addr_type& id, EventHandler* object );
+    void unsafe_Unsubscribe( const addr_type& id );
+    void unsafe_Subscribe( const addr_type& id, const domain_type& d );
 
     bool unsafe_is_avail( const addr_type& id ) const
       { return heap.find( id ) != heap.end(); }
@@ -222,8 +249,10 @@ class EvManager
     info_heap_type  iheap;  // address -> info string (both local and external)
     vertex_container_type vertices;
     edge_container_type edges;
+    std::tr2::rw_mutex _lock_edges;
     bridge_container_type bridges;
     pi_type gate; // predecessors
+    std::tr2::rw_mutex _lock_gate;
 
     struct worker
     {

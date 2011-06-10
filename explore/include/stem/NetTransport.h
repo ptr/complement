@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-08 20:32:19 ptr>
+// -*- C++ -*- Time-stamp: <2011-06-10 13:27:40 yeti>
 
 /*
  * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2011
@@ -74,6 +74,7 @@ class NetTransport_base
       { NetTransport_base::_close(); }
 
     bool Dispatch( const Event& );
+    domain_type domain() const;
 
 #if 0
     addr_type ns_remote() const;

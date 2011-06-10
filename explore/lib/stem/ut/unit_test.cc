@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-08 20:15:57 ptr>
+// -*- C++ -*- Time-stamp: <2011-06-10 14:00:15 yeti>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -447,12 +447,13 @@ int EXAM_IMPL(stem_test::echo_net)
 
       EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
 
-      stem::addr_type def_object = mgr.open( "localhost", 6995 );
+      stem::domain_type domain = mgr.open( "localhost", 6995 );
 
-      EXAM_CHECK_ASYNC_F( def_object != stem::badaddr, eflag );
-      EXAM_CHECK_ASYNC_F( def_object == addr, eflag );
+      EXAM_CHECK_ASYNC_F( domain != stem::badaddr, eflag );
+      EXAM_CHECK_ASYNC_F( addr != stem::badaddr, eflag );
 
       EchoClient node;
+      stem::EventHandler::manager().Subscribe( addr, /* mgr.domain() */ domain );
       {
         stem::stem_scope scope( node );
     

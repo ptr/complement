@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/05/05 09:34:44 ptr>
+// -*- C++ -*- Time-stamp: <2011-06-09 18:28:37 yeti>
 
 /*
  *
@@ -22,7 +22,6 @@ class Node :
   public:
     Node();
     Node( stem::addr_type id );
-    Node( stem::addr_type id, int );
     Node( stem::addr_type id, const char *info );
     ~Node();
 

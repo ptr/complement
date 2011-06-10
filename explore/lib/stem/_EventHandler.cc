@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-08 16:50:09 ptr>
+// -*- C++ -*- Time-stamp: <2011-06-09 19:49:34 yeti>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2010
@@ -36,6 +36,17 @@ addr_type _default_addr = xmt::nil_uuid;
 static int _rcount = 0;
 static mutex _mf_lock;
 
+/* _domain must be change in any case --- even before
+   call of EventHandler::Init::_guard (i.e. if fork
+   happens before any EventHandler was born).
+ */
+static void change_domain()
+{
+  _domain = xmt::uid();
+}
+
+static int dummy = pthread_atfork( 0, 0, &change_domain );
+
 void EventHandler::Init::__at_fork_prepare()
 {
   _mf_lock.lock();
@@ -46,7 +57,6 @@ void EventHandler::Init::__at_fork_prepare()
 
 void EventHandler::Init::__at_fork_child()
 {
-  _domain = xmt::uid();
   if ( _rcount != 0 ) {
     _mgr.start_queue();
   }
@@ -231,7 +241,6 @@ const_h_iterator EventHandler::__find( state_type state ) const
 }
 
 EventHandler::EventHandler() :
-    _nice( 0 ),
     _id( xmt::uid() )
 {
   new( Init_buf ) Init();
@@ -239,7 +248,6 @@ EventHandler::EventHandler() :
 }
 
 EventHandler::EventHandler( const char* info ) :
-    _nice( 0 ),
     _id( xmt::uid() )
 {
   new( Init_buf ) Init();
@@ -247,8 +255,7 @@ EventHandler::EventHandler( const char* info ) :
   _mgr.annotate( _id, info );
 }
 
-EventHandler::EventHandler( const addr_type& id, int nice ) :
-    _nice( nice ),
+EventHandler::EventHandler( const addr_type& id ) :
     _id( id )
 {
   new( Init_buf ) Init();
@@ -256,7 +263,6 @@ EventHandler::EventHandler( const addr_type& id, int nice ) :
 }
 
 EventHandler::EventHandler( const addr_type& id, const char* info ) :
-    _nice( 0 ),
     _id( id )
 {
   new( Init_buf ) Init();
@@ -307,7 +313,7 @@ addr_type EventHandler::get_default()
 
 void EventHandler::solitary()
 {
-  _mgr.Unsubscribe( _id, this );
+  _mgr.Unsubscribe( _id );
   {
     std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( _theHistory_lock );
     _id = badaddr;
@@ -317,12 +323,12 @@ void EventHandler::solitary()
 
 void EventHandler::enable()
 {
-  _mgr.Subscribe( _id, this, _nice );
+  _mgr.Subscribe( _id, this );
 }
 
 void EventHandler::disable()
 {
-  _mgr.Unsubscribe( _id, this );
+  _mgr.Unsubscribe( _id );
   {
     std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( _theHistory_lock );
     _id = badaddr;

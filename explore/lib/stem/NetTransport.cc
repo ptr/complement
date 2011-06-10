@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-08 19:50:11 ptr>
+// -*- C++ -*- Time-stamp: <2011-06-10 14:49:19 yeti>
 
 /*
  *
@@ -405,6 +405,23 @@ bool NetTransport_base::Dispatch( const Event& _rs )
   return net.good();
 }
 
+domain_type NetTransport_base::domain() const
+{
+  if ( _id == xmt::nil_uuid ) {
+    return xmt::nil_uuid;
+  }
+
+  basic_read_lock<rw_mutex> lk( EventHandler::manager()._lock_edges );
+
+  auto eid =  EventHandler::manager().edges.find( _id );
+ 
+  if ( eid == EventHandler::manager().edges.end() ) {
+    return xmt::nil_uuid;
+  }
+
+  return eid->second.first.second; // peer's domain
+}
+
 int NetTransport_base::flags() const
 {
   return EvManager::remote;
@@ -435,13 +452,16 @@ void NetTransport::connect( sockstream& s )
       s.read( reinterpret_cast<char*>(&magic), sizeof(EDS_MAGIC) );
 
       if ( s.fail() || magic != EDS_MAGIC ) {
-        s.close();
-        return;
+        throw ios_base::failure( "EDS_MAGIC fail" );
       }
 
       domain_type domain;
 
       __pack_base::__unpack( s, domain );
+
+      if ( s.fail() || (domain == xmt::nil_uuid) ) {
+        throw ios_base::failure( "bad peer's domain" );
+      }
 
       EvManager::edge_id_type eid;
       domain_type u;
@@ -450,49 +470,51 @@ void NetTransport::connect( sockstream& s )
 
       for ( ; ; ) {
         __pack_base::__unpack( s, eid );
-        if ( s.fail() || (eid == xmt::nil_uuid) ) {
-          break;
+        if ( s.fail() ) {
+          throw ios_base::failure( "domains exchange fail" );
+        } else if ( eid == xmt::nil_uuid ) {
+          break; // finish of edges list
         }
         __pack_base::__unpack( s, u );
         __pack_base::__unpack( s, v );
         __pack_base::__unpack( s, w );
 
-        if ( !s.fail() ) {
-          EventHandler::manager().connectivity( eid, u, v, w, 0 );
-        } else {
-          s.close();
-          return;
+        if ( s.fail() ) {
+          throw ios_base::failure( "domains exchange fail" );
         }
+
+        EventHandler::manager().connectivity( eid, u, v, w, 0 );
       }
+
 
       // edges, that come from peer will be returned too,
       // but it ok; __unpack (above) should be before __pack (below),
       // otherwise stalling possible (if my graph or graph from peer
       // exceeds n*MTU---see sockstream's buffer).
 
-      if ( !s.fail() && (domain != xmt::nil_uuid) ) {
-        _id = EventHandler::manager().bridge( this, domain );
-        // exchange = true;
-        EvManager::edge_id_type other_eid = xmt::uid(); // create it for peer
-        EventHandler::manager().connectivity( other_eid, domain, EventHandler::domain(), 1000, 0 );
-        __pack_base::__pack( s, other_eid );
-        __pack_base::__pack( s, domain );
-        __pack_base::__pack( s, EventHandler::domain() );
-        __pack_base::__pack( s, 1000 );
+      _id = EventHandler::manager().bridge( this, domain );
 
-        for ( auto i = EventHandler::manager().edges.begin(); i != EventHandler::manager().edges.end(); ++i ) {
-          if ( i->first != other_eid ) {
-            __pack_base::__pack( s, i->first );
-            __pack_base::__pack( s, i->second.first.first );
-            __pack_base::__pack( s, i->second.first.second );
-            __pack_base::__pack( s, static_cast<uint32_t>(i->second.second) );
-          }
+      EvManager::edge_id_type other_eid = xmt::uid(); // create it for peer
+      EventHandler::manager().connectivity( other_eid, domain, EventHandler::domain(), 1000, 0 );
+      __pack_base::__pack( s, other_eid );
+      __pack_base::__pack( s, domain );
+      __pack_base::__pack( s, EventHandler::domain() );
+      __pack_base::__pack( s, 1000 );
+
+      basic_read_lock<rw_mutex> lk( EventHandler::manager()._lock_edges );
+
+      for ( auto i = EventHandler::manager().edges.begin(); i != EventHandler::manager().edges.end(); ++i ) {
+        if ( i->first != other_eid ) {
+          __pack_base::__pack( s, i->first );
+          __pack_base::__pack( s, i->second.first.first );
+          __pack_base::__pack( s, i->second.first.second );
+          __pack_base::__pack( s, static_cast<uint32_t>(i->second.second) );
         }
-        __pack_base::__pack( s, xmt::nil_uuid );
-        s.flush();
-      } else {
-        return;
       }
+      __pack_base::__pack( s, xmt::nil_uuid );
+      s.flush();
+
+      EventHandler::manager().route_calc();
 
       exchange = true;
 
@@ -526,13 +548,20 @@ void NetTransport::connect( sockstream& s )
 
       if ( !EventHandler::manager().is_avail( ev.src() ) ) {
         // _ids.push_back( ev.src() );
-        // EventHandler::manager()->Subscribe( ev.src(), this, 1000 );
+        /* ev.src() may be not hosted in peer's domain,
+           but we don't know it native domain. At least
+           peer's domain know more about this object...
+
+           Should be fixed.
+         */
+        EventHandler::manager().Subscribe( ev.src(), domain() );
       }
 
       EventHandler::manager().push( ev );
     }
   }
   catch ( ios_base::failure& ex ) {
+    s.close();
     try {
       lock_guard<mutex> lk(EventHandler::manager()._lock_tr);
       if ( EventHandler::manager()._trs != 0 && EventHandler::manager()._trs->good() && (EventHandler::manager()._trflags & EvManager::tracefault) ) {
@@ -693,11 +722,15 @@ stem::addr_type NetTransportMgr::discovery( const std::tr2::nanoseconds& timeout
     return stem::badaddr;
   }
 
-  for ( auto i = EventHandler::manager().edges.begin(); i != EventHandler::manager().edges.end(); ++i ) {
-    __pack_base::__pack( *this, i->first );
-    __pack_base::__pack( *this, i->second.first.first );
-    __pack_base::__pack( *this, i->second.first.second );
-    __pack_base::__pack( *this, static_cast<uint32_t>(i->second.second) );
+  {
+    basic_read_lock<rw_mutex> lk( EventHandler::manager()._lock_edges );
+
+    for ( auto i = EventHandler::manager().edges.begin(); i != EventHandler::manager().edges.end(); ++i ) {
+      __pack_base::__pack( *this, i->first );
+      __pack_base::__pack( *this, i->second.first.first );
+      __pack_base::__pack( *this, i->second.first.second );
+      __pack_base::__pack( *this, static_cast<uint32_t>(i->second.second) );
+    }
   }
   __pack_base::__pack( *this, xmt::nil_uuid );
   this->flush();
@@ -712,29 +745,32 @@ stem::addr_type NetTransportMgr::discovery( const std::tr2::nanoseconds& timeout
 
   for ( ; ; ) {
     __pack_base::__unpack( *this, eid );
-    if ( this->fail() || (eid == xmt::nil_uuid) ) {
-     break;
+    if ( this->fail()  ) {
+      return stem::badaddr;
+    }
+    if ( eid == xmt::nil_uuid ) {
+      break; // finish of edges list
     }
     __pack_base::__unpack( *this, u );
     __pack_base::__unpack( *this, v );
     __pack_base::__unpack( *this, w );
 
-    if ( !this->fail() ) {
-      if ( first ) {
-        EventHandler::manager().connectivity( eid, u, v, w, this );
-        domain = v; // u == EventHandler::manager()->_id;
-        _id = eid;
-        first = false;
-      } else {
-        EventHandler::manager().connectivity( eid, u, v, w, 0 );
-      }
-    } else {
+    if ( this->fail() ) {
       return stem::badaddr;
+    }
+
+    if ( first ) {
+      EventHandler::manager().connectivity( eid, u, v, w, this );
+      domain = v; // u == EventHandler::manager()->_id;
+      _id = eid;
+      first = false;
+    } else {
+      EventHandler::manager().connectivity( eid, u, v, w, 0 );
     }
   }  
 
   if ( !this->fail() && (domain != xmt::nil_uuid) ) {
-    // _id = EventHandler::manager()->bridge( this, domain );
+    EventHandler::manager().route_calc();
     _thr = new std::tr2::thread( _loop, this );
     return domain;
   }

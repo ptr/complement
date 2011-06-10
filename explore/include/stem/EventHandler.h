@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-06 18:29:28 ptr>
+// -*- C++ -*- Time-stamp: <2011-06-09 18:23:43 yeti>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005-2010
@@ -557,7 +557,7 @@ class EventHandler
 
     __FIT_DECLSPEC EventHandler();
     explicit __FIT_DECLSPEC EventHandler( const char* info );
-    explicit __FIT_DECLSPEC EventHandler( const addr_type& id, int nice = 0 );
+    explicit __FIT_DECLSPEC EventHandler( const addr_type& id );
     explicit __FIT_DECLSPEC EventHandler( const addr_type& id, const char* info );
     virtual __FIT_DECLSPEC ~EventHandler();
 
@@ -621,7 +621,6 @@ class EventHandler
 
     h_iterator __find( state_type );
     const_h_iterator __find( state_type ) const;
-    int _nice;
 
   protected:
     addr_type _id;

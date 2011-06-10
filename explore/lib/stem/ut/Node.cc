@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/26 16:19:25 ptr>
+// -*- C++ -*- Time-stamp: <2011-06-09 18:28:27 yeti>
 
 /*
  *
@@ -25,12 +25,6 @@ Node::Node() :
 
 Node::Node( stem::addr_type id ) :
     EventHandler( id ),
-    v( 0 )
-{
-}
-
-Node::Node( stem::addr_type id, int nice ) :
-    EventHandler( id, nice ),
     v( 0 )
 {
 }
