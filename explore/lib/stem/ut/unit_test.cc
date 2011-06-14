@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-10 14:00:15 yeti>
+// -*- C++ -*- Time-stamp: <2011-06-14 19:20:27 yeti>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -538,12 +538,13 @@ int EXAM_IMPL(stem_test::echo_local)
 
       EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
 
-      stem::addr_type def_object = mgr.open( f /* , sock_base::sock_stream */ );
+      stem::domain_type domain = mgr.open( f /* , sock_base::sock_stream */ );
 
-      EXAM_CHECK_ASYNC_F( def_object != stem::badaddr, eflag );
-      EXAM_CHECK_ASYNC_F( def_object == addr, eflag );
+      EXAM_CHECK_ASYNC_F( domain != stem::badaddr, eflag );
+      EXAM_CHECK_ASYNC_F( addr != stem::badaddr, eflag );
 
       EchoClient node;
+      stem::EventHandler::manager().Subscribe( addr, /* mgr.domain() */ domain );
       {
         stem::stem_scope scope( node );
     
@@ -623,6 +624,7 @@ int EXAM_IMPL(stem_test::triple_echo)
     barrier_ip& b1 = *new ( shm.allocate( 1 ) ) barrier_ip();
     barrier_ip& b2 = *new ( shm.allocate( 1 ) ) barrier_ip();
     condition_event_ip& c = *new ( cnd.allocate(1) ) condition_event_ip();
+    stem::addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::addr_type();
 
     try {
       int res = 0;
@@ -648,13 +650,15 @@ int EXAM_IMPL(stem_test::triple_echo)
         
           stem::stem_scope scope( echo );
 
-          echo.set_default(); // become default object       
+          echo.set_default(); // become default object
+          addr = echo.self_id();
 
           stem::NetTransportMgr mgr;
         
-          stem::addr_type def_object = mgr.open( "localhost", 6995 );
+          stem::domain_type domain = mgr.open( "localhost", 6995 );
 
-          EXAM_CHECK_ASYNC_F( def_object != stem::badaddr, res );
+          EXAM_CHECK_ASYNC_F( domain != stem::badaddr, res );
+          EXAM_CHECK_ASYNC_F( addr != stem::badaddr, res );
 
           EchoClient node;
 
@@ -662,7 +666,7 @@ int EXAM_IMPL(stem_test::triple_echo)
       
           stem::Event ev( NODE_EV_ECHO );
 
-          ev.dest( def_object );
+          ev.dest( addr );
           ev.value() = node.mess;
 
           // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
@@ -697,18 +701,20 @@ int EXAM_IMPL(stem_test::triple_echo)
 
         stem::NetTransportMgr mgr;
         
-        stem::addr_type def_object = mgr.open( "localhost", 6995 );
+        stem::domain_type domain = mgr.open( "localhost", 6995 );
 
-        EXAM_CHECK_ASYNC_F( def_object != stem::badaddr, res );
+        EXAM_CHECK_ASYNC_F( domain != stem::badaddr, res );
+        EXAM_CHECK_ASYNC_F( addr != stem::badaddr, res );
 
         EchoClient node;
+        stem::EventHandler::manager().Subscribe( addr, /* mgr.domain() */ domain );
 
         {
           stem::stem_scope scope( node );
       
           stem::Event ev( NODE_EV_ECHO );
 
-          ev.dest( def_object );
+          ev.dest( addr );
           ev.value() = node.mess;
 
           // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
@@ -744,17 +750,19 @@ int EXAM_IMPL(stem_test::triple_echo)
       {
         stem::NetTransportMgr mgr;
       
-        stem::addr_type def_object = mgr.open( "localhost", 6995 );
+        stem::domain_type domain = mgr.open( "localhost", 6995 );
 
-        EXAM_CHECK( def_object != stem::badaddr );
+        EXAM_CHECK( domain != stem::badaddr );
+        EXAM_CHECK( addr != stem::badaddr );
 
         EchoClient node;
+        stem::EventHandler::manager().Subscribe( addr, /* mgr.domain() */ domain );
 
         stem::stem_scope scope( node );
    
         stem::Event ev( NODE_EV_ECHO );
 
-        ev.dest( def_object );
+        ev.dest( addr );
         ev.value() = node.mess;
           
         // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
@@ -779,6 +787,7 @@ int EXAM_IMPL(stem_test::triple_echo)
       }
     }
 
+    shm_a.deallocate( &addr, 1 );
     cnd.deallocate( &c );
     shm.deallocate( &b2 );
     shm.deallocate( &b1 );
@@ -835,18 +844,19 @@ int EXAM_IMPL(stem_test::net_echo)
 
       EXAM_CHECK( c.timed_wait( std::tr2::milliseconds( 800 ) ) ); // wait server start
 
-      stem::addr_type def_object = mgr.open( "localhost", 6995 );
+      stem::domain_type domain = mgr.open( "localhost", 6995 );
 
       EXAM_REQUIRE( mgr.good() );
-      EXAM_REQUIRE( def_object != stem::badaddr );
-      EXAM_CHECK( def_object == addr );
+      EXAM_REQUIRE( domain != stem::badaddr );
+      EXAM_CHECK( addr != stem::badaddr );
 
       EchoClient node;
+      stem::EventHandler::manager().Subscribe( addr, /* mgr.domain() */ domain );
 
       stem::stem_scope scope( node );
 
       stem::Event ev( NODE_EV_ECHO );
-      ev.dest( def_object );
+      ev.dest( addr );
 
       ev.value() = node.mess;
       node.Send( ev );
