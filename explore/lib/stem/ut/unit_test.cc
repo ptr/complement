@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-14 19:20:27 yeti>
+// -*- C++ -*- Time-stamp: <2011-06-16 20:40:13 yeti>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -454,6 +454,7 @@ int EXAM_IMPL(stem_test::echo_net)
 
       EchoClient node;
       stem::EventHandler::manager().Subscribe( addr, /* mgr.domain() */ domain );
+      stem::EventHandler::manager().Subscribe( node.self_id(), node.domain(), /* mgr.domain() */ domain );
       {
         stem::stem_scope scope( node );
     
@@ -545,6 +546,7 @@ int EXAM_IMPL(stem_test::echo_local)
 
       EchoClient node;
       stem::EventHandler::manager().Subscribe( addr, /* mgr.domain() */ domain );
+      stem::EventHandler::manager().Subscribe( node.self_id(), node.domain(), /* mgr.domain() */ domain );
       {
         stem::stem_scope scope( node );
     
@@ -653,12 +655,12 @@ int EXAM_IMPL(stem_test::triple_echo)
           echo.set_default(); // become default object
           addr = echo.self_id();
 
-          stem::NetTransportMgr mgr;
+          // stem::NetTransportMgr mgr;
         
-          stem::domain_type domain = mgr.open( "localhost", 6995 );
+          // stem::domain_type domain = mgr.open( "localhost", 6995 );
 
-          EXAM_CHECK_ASYNC_F( domain != stem::badaddr, res );
-          EXAM_CHECK_ASYNC_F( addr != stem::badaddr, res );
+          // EXAM_CHECK_ASYNC_F( domain != stem::badaddr, res );
+          // EXAM_CHECK_ASYNC_F( addr != stem::badaddr, res );
 
           EchoClient node;
 
@@ -676,8 +678,8 @@ int EXAM_IMPL(stem_test::triple_echo)
 
           EXAM_CHECK_ASYNC_F( node.wait(), res );
         
-          mgr.close();
-          mgr.join();
+          // mgr.close();
+          // mgr.join();
         
           b1.wait();
         
@@ -708,6 +710,7 @@ int EXAM_IMPL(stem_test::triple_echo)
 
         EchoClient node;
         stem::EventHandler::manager().Subscribe( addr, /* mgr.domain() */ domain );
+        stem::EventHandler::manager().Subscribe( node.self_id(), node.domain(), /* mgr.domain() */ domain );
 
         {
           stem::stem_scope scope( node );
@@ -757,6 +760,7 @@ int EXAM_IMPL(stem_test::triple_echo)
 
         EchoClient node;
         stem::EventHandler::manager().Subscribe( addr, /* mgr.domain() */ domain );
+        stem::EventHandler::manager().Subscribe( node.self_id(), node.domain(), /* mgr.domain() */ domain );
 
         stem::stem_scope scope( node );
    
@@ -852,6 +856,7 @@ int EXAM_IMPL(stem_test::net_echo)
 
       EchoClient node;
       stem::EventHandler::manager().Subscribe( addr, /* mgr.domain() */ domain );
+      stem::EventHandler::manager().Subscribe( node.self_id(), node.domain(), /* mgr.domain() */ domain );
 
       stem::stem_scope scope( node );
 
@@ -893,6 +898,7 @@ int EXAM_IMPL(stem_test::net_echo)
 int EXAM_IMPL(stem_test::ugly_echo_net)
 {
   condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+  stem::addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::addr_type();
 
   try {
     std::tr2::this_thread::fork();
@@ -904,17 +910,20 @@ int EXAM_IMPL(stem_test::ugly_echo_net)
 
       EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
 
-      stem::addr_type def_object = mgr.open( "localhost", 6995 );
+      stem::domain_type domain = mgr.open( "localhost", 6995 );
 
-      EXAM_CHECK_ASYNC_F( def_object != stem::badaddr, eflag );
+      EXAM_CHECK_ASYNC_F( domain != stem::badaddr, eflag );
+      EXAM_CHECK_ASYNC_F( addr != stem::badaddr, eflag );
 
       UglyEchoClient node;
+      stem::EventHandler::manager().Subscribe( addr, /* mgr.domain() */ domain );
+      stem::EventHandler::manager().Subscribe( node.self_id(), node.domain(), /* mgr.domain() */ domain );
 
       {
         stem::stem_scope scope( node );
 
         stem::Event ev( NODE_EV_ECHO );
-        ev.dest( def_object );
+        ev.dest( addr );
       
         bool ok = true;
         for ( int i = 0; i < 10000 && ok; ++i ) {
@@ -954,6 +963,7 @@ int EXAM_IMPL(stem_test::ugly_echo_net)
       connect_processor<stem::NetTransport> srv( 6995 );
 
       UglyEchoSrv echo( "ugly echo service");
+      addr = echo.self_id();
 
       {
         stem::stem_scope scope( echo );
@@ -978,6 +988,7 @@ int EXAM_IMPL(stem_test::ugly_echo_net)
     }
   }
 
+  shm_a.deallocate( &addr, 1 );
   (&fcnd)->~condition_event_ip();
   shm_cnd.deallocate( &fcnd, 1 );
 

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-10 15:42:36 yeti>
+// -*- C++ -*- Time-stamp: <2011-06-16 15:33:27 yeti>
 
 /*
  *
@@ -15,6 +15,7 @@
 #include <config/feature.h>
 #include "stem/EvManager.h"
 #include "stem/NetTransport.h"
+#include "stem/EDSEv.h"
 #include <iomanip>
 #include <mt/mutex>
 
@@ -98,6 +99,16 @@ void EvManager::stop_queue()
 
 void EvManager::push( const Event& e )
 {
+  if ( e.code() == EV_STEM_SUBSCRIPTION ) {
+    stem::Event_base<xmt::uuid_type> ev = stem::detail::convert<stem::Event,stem::Event_base<xmt::uuid_type> >()(e);
+    // transit domains do subscription too!
+    Subscribe( ev.src(), ev.value(), ev.dest() );
+    return;
+  } else if ( e.code() == EV_STEM_ANNOTATION ) {
+    annotate( e.src(), e.dest(), e.value() );
+    return;
+  }
+
   unsigned int i = e.dest().u.i[0] & (n_threads - 1);
   std::tr2::lock_guard<std::tr2::mutex> lock( workers[i]->lock );
   workers[i]->events.push_back( e );
@@ -221,6 +232,49 @@ void EvManager::unsafe_Subscribe( const addr_type& id, const domain_type& d )
   heap[id].domain = d;
 }
 
+void EvManager::unsafe_Subscribe( const addr_type& id, const domain_type& d, const domain_type& at )
+{
+  unsafe_Subscribe( id, d ); // transit domains do subscribe too!
+
+  if ( at == EventHandler::domain() ) {
+    return;
+  }
+
+ #ifdef __FIT_STEM_TRACE
+  try {
+    lock_guard<mutex> lk(_lock_tr);
+    if ( _trs != 0 && _trs->good() && (_trflags & tracesubscr) ) {
+      ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+      *_trs << "EvManager subscribe " << id << ' ' << d << ' ' << at << endl;
+#ifdef STLPORT
+      _trs->flags( f );
+#else
+      _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+    }
+  }
+  catch ( ... ) {
+  }
+#endif // __FIT_STEM_TRACE
+
+  std::tr2::basic_read_lock<std::tr2::rw_mutex> elock( _lock_edges );
+  std::tr2::basic_read_lock<std::tr2::rw_mutex> glock( _lock_gate );
+
+  Event_base<xmt::uuid_type> ev( EV_STEM_SUBSCRIPTION );
+
+  ev.src( id );
+  ev.dest( at );
+  ev.value() = d;
+
+  auto eid = gate.find( at );
+  if ( eid != gate.end() ) {
+    auto bid = bridges.find( eid->second );
+    if ( bid != bridges.end() ) {
+      reinterpret_cast<NetTransport_base*>(bid->second)->Dispatch( stem::detail::convert<stem::Event_base<xmt::uuid_type>,stem::Event>()(ev) );
+    }
+  }
+}
+
 void EvManager::unsafe_annotate( const addr_type& id, const std::string& info )
 {
   info_heap_type::iterator i = iheap.find( info );
@@ -233,6 +287,32 @@ void EvManager::unsafe_annotate( const addr_type& id, const std::string& info )
       }
     }
     i->second.push_back( id );
+  }
+}
+
+void EvManager::unsafe_annotate( const addr_type& id, const domain_type& at, const std::string& info )
+{
+  if ( at == EventHandler::domain() ) {
+    std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
+    unsafe_annotate( id, info );
+    return;
+  }
+
+  std::tr2::basic_read_lock<std::tr2::rw_mutex> elock( _lock_edges );
+  std::tr2::basic_read_lock<std::tr2::rw_mutex> glock( _lock_gate );
+
+  Event ev( EV_STEM_ANNOTATION );
+
+  ev.src( id );
+  ev.dest( at );
+  ev.value() = info;
+
+  auto eid = gate.find( at );
+  if ( eid != gate.end() ) {
+    auto bid = bridges.find( eid->second );
+    if ( bid != bridges.end() ) {
+      reinterpret_cast<NetTransport_base*>(bid->second)->Dispatch( ev );
+    }
   }
 }
 
