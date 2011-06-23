@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-16 15:33:27 yeti>
+// -*- C++ -*- Time-stamp: <2011-06-23 20:22:11 yeti>
 
 /*
  *
@@ -34,6 +34,53 @@ std::string EvManager::inv_key_str( "invalid key" );
 
 static const string addr_unknown("address unknown");
 static const string no_catcher( "no catcher for event" );
+
+struct sub_rq :
+        public stem::__pack_base,
+        public std::pair<xmt::uuid_type,std::string>
+{
+    void pack( std::ostream& s ) const;
+    void unpack( std::istream& s );
+
+    sub_rq() = default;
+    sub_rq( const sub_rq& r )
+      {
+        first = r.first;
+        second = r.second;
+      }
+
+    sub_rq( const std::pair<xmt::uuid_type,std::string>& r )
+      {
+        first = r.first;
+        second = r.second;
+      }
+
+    sub_rq& operator =( const sub_rq& r )
+      {
+        first = r.first;
+        second = r.second;
+        return *this;
+      }
+
+    sub_rq& operator =( const std::pair<xmt::uuid_type,std::string>& r )
+      {
+        first = r.first;
+        second = r.second;
+        return *this;
+      }
+};
+
+void sub_rq::pack( std::ostream& s ) const
+{
+  __pack( s, first );
+  __pack( s, second );
+}
+
+void sub_rq::unpack( std::istream& s )
+{
+  __unpack( s, first );
+  __unpack( s, second );
+}
 
 unsigned int EvManager::working_threads = 2;
 
@@ -99,14 +146,81 @@ void EvManager::stop_queue()
 
 void EvManager::push( const Event& e )
 {
-  if ( e.code() == EV_STEM_SUBSCRIPTION ) {
-    stem::Event_base<xmt::uuid_type> ev = stem::detail::convert<stem::Event,stem::Event_base<xmt::uuid_type> >()(e);
-    // transit domains do subscription too!
-    Subscribe( ev.src(), ev.value(), ev.dest() );
-    return;
-  } else if ( e.code() == EV_STEM_ANNOTATION ) {
-    annotate( e.src(), e.dest(), e.value() );
-    return;
+  if ( e.code() < EV_STEM_SYS_MAX ) {
+    switch ( e.code() ) {
+      case EV_STEM_SUBSCRIPTION_FIN:
+        {
+          stem::Event_base<xmt::uuid_type> ev = stem::detail::convert<stem::Event,stem::Event_base<xmt::uuid_type> >()(e);
+          lock_guard<mutex> lk(_lock_rqs);
+          _rqs.erase( ev.value() );
+          _cnd_rqs.notify_all();
+        }
+        return;
+      case EV_STEM_SUBSCRIPTION:
+        {
+          stem::Event_base<xmt::uuid_type> ev = stem::detail::convert<stem::Event,stem::Event_base<xmt::uuid_type> >()(e);
+          // transit domains do subscription too!
+          Subscribe( ev.src(), ev.value(), ev.dest() );
+        }
+        return;
+      case EV_STEM_ANNOTATION:
+        annotate( e.src(), e.dest(), e.value() );
+        return;
+      case EV_STEM_SUBSCRIPTION_RQ:
+        {
+          stem::Event_base<sub_rq> ev_ = stem::detail::convert<stem::Event,stem::Event_base<sub_rq> >()(e);
+          std::tr2::basic_read_lock<std::tr2::rw_mutex> lock( _lock_heap );
+          std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
+          EvManager::info_heap_type::const_iterator i = iheap.find( ev_.value().second );
+          if ( i != iheap.end() ) {
+            std::tr2::basic_read_lock<std::tr2::rw_mutex> elock( _lock_edges );
+            std::tr2::basic_read_lock<std::tr2::rw_mutex> glock( _lock_gate );
+
+            NetTransport_base* bridge = 0;
+
+            auto eid = gate.find( e.src() ); // in src() is domain indeed (here)
+            if ( eid != gate.end() ) {
+              auto bid = bridges.find( eid->second );
+              if ( bid == bridges.end() ) {
+                return;
+              }
+              bridge = reinterpret_cast<NetTransport_base*>(bid->second);
+            } else {
+              return;
+            }
+
+            // bridge != 0 here
+
+            Event_base<xmt::uuid_type> ev( EV_STEM_SUBSCRIPTION );
+            Event_base<xmt::uuid_type> ev_fin( EV_STEM_SUBSCRIPTION_FIN );
+
+            ev.dest( e.src() ); // in src() is domain indeed (here)
+            ev_fin.dest( e.src() ); // in src() is domain indeed (here)
+            ev_fin.src( EventHandler::domain() ); // source is domain here
+            ev_fin.value() = ev_.value().first;
+
+            for ( std::list<addr_type>::const_iterator j = i->second.begin(); j != i->second.end(); ++j ) {
+              local_heap_type::iterator k = heap.find( *j );
+              if ( is_domain( k->second.domain ) ) {
+                // exclude requestor's domain:
+                if ( k->second.domain != EventHandler::domain() ) {
+                  // pass info about transit object
+                  ev.src( *j );
+                  ev.value() = k->second.domain;
+                  bridge->Dispatch( stem::detail::convert<stem::Event_base<xmt::uuid_type>,stem::Event>()(ev) );
+                }
+              } else { // object hosted in this domain
+                ev.src( *j );
+                ev.value() = EventHandler::domain();
+                bridge->Dispatch( stem::detail::convert<stem::Event_base<xmt::uuid_type>,stem::Event>()(ev) );
+              }
+            }
+            bridge->Dispatch( stem::detail::convert<stem::Event_base<xmt::uuid_type>,stem::Event>()(ev_fin) );
+
+          }
+        }
+        return;
+    }
   }
 
   unsigned int i = e.dest().u.i[0] & (n_threads - 1);
@@ -130,10 +244,10 @@ void EvManager::worker::_loop( worker* p )
         swap( me.events, events );
       }
 
-      for ( list< stem::Event >::const_iterator i = events.begin();i != events.end();++i ) {
+      for ( list<stem::Event>::const_iterator i = events.begin(); i != events.end(); ++i ) {
         const Event& ev = *i;
         {
-          std::tr2::lock_guard<std::tr2::rw_mutex> lock( me.mgr->_lock_heap );
+          std::tr2::basic_read_lock<std::tr2::rw_mutex> lock( me.mgr->_lock_heap );
           local_heap_type::iterator k = me.mgr->heap.find( ev.dest() );
 
           if ( k == me.mgr->heap.end() ) {
@@ -273,6 +387,57 @@ void EvManager::unsafe_Subscribe( const addr_type& id, const domain_type& d, con
       reinterpret_cast<NetTransport_base*>(bid->second)->Dispatch( stem::detail::convert<stem::Event_base<xmt::uuid_type>,stem::Event>()(ev) );
     }
   }
+}
+
+/*
+ * Request to domain 'from': give me pair (id,domain) for objects
+ * (except objects from my own domain), that annotated as 'info'
+ * at domain 'from'.
+ */
+EvManager::async_rq_id_type EvManager::unsafe_Subscribe( const std::string& info, const domain_type& from )
+{
+  if ( from == EventHandler::domain() ) {
+    return xmt::nil_uuid;
+  }
+
+ #ifdef __FIT_STEM_TRACE
+  try {
+    lock_guard<mutex> lk(_lock_tr);
+    if ( _trs != 0 && _trs->good() && (_trflags & tracesubscr) ) {
+      ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+      *_trs << "EvManager subscribe '" << info << "' " << from << endl;
+#ifdef STLPORT
+      _trs->flags( f );
+#else
+      _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+    }
+  }
+  catch ( ... ) {
+  }
+#endif // __FIT_STEM_TRACE
+
+  std::tr2::basic_read_lock<std::tr2::rw_mutex> elock( _lock_edges );
+  std::tr2::basic_read_lock<std::tr2::rw_mutex> glock( _lock_gate );
+
+  auto eid = gate.find( from );
+  if ( eid != gate.end() ) {
+    auto bid = bridges.find( eid->second );
+    if ( bid != bridges.end() ) {
+      Event_base<sub_rq> ev( EV_STEM_SUBSCRIPTION_RQ );
+
+      ev.src( EventHandler::domain() );
+      ev.dest( from );
+      ev.value() = make_pair( xmt::uid(), info );
+
+      lock_guard<mutex> lk(_lock_rqs);
+      _rqs.insert( ev.value().first );
+      reinterpret_cast<NetTransport_base*>(bid->second)->Dispatch( stem::detail::convert<stem::Event_base<sub_rq>,stem::Event>()(ev) );
+      return ev.value().first;
+    }
+  }
+
+  return xmt::nil_uuid;
 }
 
 void EvManager::unsafe_annotate( const addr_type& id, const std::string& info )

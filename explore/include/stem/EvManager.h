@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-16 15:32:19 yeti>
+// -*- C++ -*- Time-stamp: <2011-06-23 20:18:42 yeti>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2011
@@ -83,6 +83,9 @@ class NetTransport_base;
 
 class EvManager
 {
+  public:
+    typedef xmt::uuid_type async_rq_id_type;
+
   private:
     typedef xmt::uuid_type edge_id_type;
 
@@ -107,6 +110,7 @@ class EvManager
     typedef std::unordered_map<edge_id_type,std::pair<std::pair<domain_type,domain_type>,unsigned> > edge_container_type;
     typedef std::unordered_map<edge_id_type,void*> bridge_container_type;
     typedef std::unordered_map<domain_type,edge_id_type> pi_type;
+    typedef std::unordered_set<async_rq_id_type> rqs_container_type;
 #endif
 
   public:
@@ -279,6 +283,13 @@ class EvManager
     void start_queue();
     void stop_queue();
 
+    template <class Duration>
+    bool wait_request( const async_rq_id_type& rqid, const Duration& timeout )
+      {
+        std::tr2::unique_lock<std::tr2::mutex> lk( _lock_rqs );
+        return _cnd_rqs.timed_wait( lk, timeout, [&]{ return _rqs.find( rqid ) == _rqs.end(); } );
+      }
+
     static unsigned int working_threads;
 
   protected:
@@ -286,6 +297,7 @@ class EvManager
     void unsafe_Unsubscribe( const addr_type& id );
     void unsafe_Subscribe( const addr_type& id, const domain_type& d );
     void unsafe_Subscribe( const addr_type& id, const domain_type& d, const domain_type& at );
+    async_rq_id_type unsafe_Subscribe( const std::string& info, const domain_type& from );
 
     bool unsafe_is_avail( const addr_type& id ) const
       { return heap.find( id ) != heap.end(); }
@@ -305,6 +317,9 @@ class EvManager
     bridge_container_type bridges;
     pi_type gate; // predecessors
     std::tr2::rw_mutex _lock_gate;
+    rqs_container_type _rqs;
+    std::tr2::mutex _lock_rqs;
+    std::tr2::condition_variable _cnd_rqs;
 
     struct worker
     {

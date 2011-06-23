@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-06-16 14:28:33 yeti>
+// -*- C++ -*- Time-stamp: <2011-06-23 17:52:49 yeti>
 
 /*
- * Copyright (c) 1995-1999, 2002, 2003, 2005, 2006, 2009
+ * Copyright (c) 1995-1999, 2002-2011
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999
@@ -16,6 +16,8 @@
 
 namespace stem {
 
+#define EV_STEM_SUBSCRIPTION_RQ  0x9
+#define EV_STEM_SUBSCRIPTION_FIN 0x10
 #define EV_STEM_SUBSCRIPTION     0x11
 
 // remote (net) channel annotation
@@ -32,6 +34,10 @@ namespace stem {
 #define EV_EDS_CRON_ADD          0x17
 #define EV_EDS_CRON_REMOVE       0x18
 #define EV_EDS_CRON_REMOVE_ARG   0x19
+
+// Maximum StEM special event code:
+
+#define EV_STEM_SYS_MAX          0x30
 
 } // namespace stem
 
