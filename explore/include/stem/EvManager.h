@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-23 20:18:42 yeti>
+// -*- C++ -*- Time-stamp: <2011-06-24 18:11:06 yeti>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2011
@@ -221,6 +221,8 @@ class EvManager
         unsafe_annotate( id, at, std::string( info ) );
       }
 
+    async_rq_id_type Subscribe( const std::string& info, const domain_type& from );
+
     void Unsubscribe( const addr_type& id );
 
     bool is_avail( const addr_type& id ) const
@@ -287,7 +289,24 @@ class EvManager
     bool wait_request( const async_rq_id_type& rqid, const Duration& timeout )
       {
         std::tr2::unique_lock<std::tr2::mutex> lk( _lock_rqs );
-        return _cnd_rqs.timed_wait( lk, timeout, [&]{ return _rqs.find( rqid ) == _rqs.end(); } );
+        // return _cnd_rqs.timed_wait( lk, timeout, [&]{ return _rqs.find( rqid ) == _rqs.end(); } );
+        return _cnd_rqs.timed_wait( lk, timeout, [&_rqs,&rqid]{ return _rqs.find( rqid ) == _rqs.end(); } );
+      }
+
+    template <class BackInsertIterator>
+    void find( const std::string& name, BackInsertIterator bi )
+      {
+        std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
+        info_heap_type::const_iterator i = iheap.find( name );
+        if ( i != iheap.end() ) {
+#ifdef __FIT_CPP_0X
+          for_each( i->second.begin(), i->second.end(), [&bi](const addr_type& j ){ *bi++ = j; } );
+#else
+          for ( std::list<addr_type>::const_iterator j = i->second.begin(); j != i->second.end(); ++j ) {
+            *bi++ = *j;
+          }
+#endif
+        }
       }
 
     static unsigned int working_threads;
@@ -297,7 +316,6 @@ class EvManager
     void unsafe_Unsubscribe( const addr_type& id );
     void unsafe_Subscribe( const addr_type& id, const domain_type& d );
     void unsafe_Subscribe( const addr_type& id, const domain_type& d, const domain_type& at );
-    async_rq_id_type unsafe_Subscribe( const std::string& info, const domain_type& from );
 
     bool unsafe_is_avail( const addr_type& id ) const
       { return heap.find( id ) != heap.end(); }

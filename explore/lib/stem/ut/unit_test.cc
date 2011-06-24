@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-16 20:40:13 yeti>
+// -*- C++ -*- Time-stamp: <2011-06-24 17:36:03 yeti>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -1247,19 +1247,29 @@ int EXAM_IMPL(stem_test::last_event)
       EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
       stem::NetTransportMgr mgr;
 
-      stem::addr_type def_object = mgr.open( "localhost", 6995 );
+      stem::domain_type domain = mgr.open( "localhost", 6995 );
 
-      EXAM_REQUIRE( mgr.good() );
-      EXAM_REQUIRE( def_object != stem::badaddr );
+      EXAM_CHECK_ASYNC_F( mgr.good(), eflag );
+      EXAM_CHECK_ASYNC_F( domain != stem::badaddr, eflag );
+
+      stem::EvManager::async_rq_id_type rq = stem::EventHandler::manager().Subscribe( string("echo service"), /* mgr.domain() */ domain );
+
+      bool res = stem::EventHandler::manager().wait_request( rq, std::tr2::milliseconds(100) );
+      EXAM_CHECK_ASYNC_F( res, eflag );
 
       /*
       stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
       stem::EventHandler::manager()->settrs( &std::cerr );
       */
 
+      list<stem::addr_type> echo_list;
+      stem::EventHandler::manager().find( string("echo service"), back_inserter(echo_list) );
+      EXAM_CHECK_ASYNC_F( !echo_list.empty(), eflag );
+      EXAM_CHECK_ASYNC_F( echo_list.size() == 1, eflag );
+
       stem::Event ev( NODE_EV_ECHO );
       ev.value() = "ping";
-      ev.dest( def_object );
+      ev.dest( echo_list.front() );
 
       {
         LastEvent le( "ping" );

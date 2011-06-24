@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-23 20:22:11 yeti>
+// -*- C++ -*- Time-stamp: <2011-06-24 18:09:02 yeti>
 
 /*
  *
@@ -193,11 +193,14 @@ void EvManager::push( const Event& e )
 
             Event_base<xmt::uuid_type> ev( EV_STEM_SUBSCRIPTION );
             Event_base<xmt::uuid_type> ev_fin( EV_STEM_SUBSCRIPTION_FIN );
+            Event ev_ann( EV_STEM_ANNOTATION );
 
             ev.dest( e.src() ); // in src() is domain indeed (here)
             ev_fin.dest( e.src() ); // in src() is domain indeed (here)
             ev_fin.src( EventHandler::domain() ); // source is domain here
             ev_fin.value() = ev_.value().first;
+            ev_ann.dest( e.src() ); // in src() is domain indeed (here)
+            ev_ann.value() = ev_.value().second;
 
             for ( std::list<addr_type>::const_iterator j = i->second.begin(); j != i->second.end(); ++j ) {
               local_heap_type::iterator k = heap.find( *j );
@@ -207,12 +210,16 @@ void EvManager::push( const Event& e )
                   // pass info about transit object
                   ev.src( *j );
                   ev.value() = k->second.domain;
+                  ev_ann.src( *j );
                   bridge->Dispatch( stem::detail::convert<stem::Event_base<xmt::uuid_type>,stem::Event>()(ev) );
+                  bridge->Dispatch( ev_ann );
                 }
               } else { // object hosted in this domain
                 ev.src( *j );
                 ev.value() = EventHandler::domain();
+                ev_ann.src( *j );
                 bridge->Dispatch( stem::detail::convert<stem::Event_base<xmt::uuid_type>,stem::Event>()(ev) );
+                bridge->Dispatch( ev_ann );
               }
             }
             bridge->Dispatch( stem::detail::convert<stem::Event_base<xmt::uuid_type>,stem::Event>()(ev_fin) );
@@ -394,7 +401,7 @@ void EvManager::unsafe_Subscribe( const addr_type& id, const domain_type& d, con
  * (except objects from my own domain), that annotated as 'info'
  * at domain 'from'.
  */
-EvManager::async_rq_id_type EvManager::unsafe_Subscribe( const std::string& info, const domain_type& from )
+EvManager::async_rq_id_type EvManager::Subscribe( const std::string& info, const domain_type& from )
 {
   if ( from == EventHandler::domain() ) {
     return xmt::nil_uuid;
