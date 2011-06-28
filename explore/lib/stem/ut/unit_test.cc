@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-24 17:36:03 yeti>
+// -*- C++ -*- Time-stamp: <2011-06-28 19:02:42 yeti>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -1004,17 +1004,16 @@ static void dummy_signal_handler( int )
 
 int EXAM_IMPL(stem_test::peer)
 {
-#if 0
   /*
    * The logical scheme is:
    *
-   *        / c1
-   *   echo
-   *        \ c2
+   *     / c1
+   *   x
+   *     \ c2
    *
-   * (c1 <-> c2, through 'echo')
+   * (c1 <-> c2, through 'x')
    *
-   * echo, c1 and c2 are in different processes.
+   * x, c1 and c2 are in different processes.
    *
    */
 
@@ -1048,75 +1047,92 @@ int EXAM_IMPL(stem_test::peer)
       stem::NetTransportMgr mgr;
 
       PeerClient c1( "c1 local" );  // c1 client
-      Naming nm;
+      // Naming nm;
 
       {
         stem::stem_scope scope( c1 );
-        stem::stem_scope nm_scope( nm );
+        // stem::stem_scope nm_scope( nm );
 
         EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
 
-        stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
-        // It done like it should on client side
+        stem::domain_type domain = mgr.open( "localhost", 6995 );
 
-        EXAM_CHECK_ASYNC_F( zero != stem::badaddr, eflag );
+        EXAM_CHECK_ASYNC_F( domain != stem::badaddr, eflag );
 
-        stem::Event ev( NODE_EV_REGME );
-        ev.dest( zero );
+        // stem::Event ev( NODE_EV_REGME );
+        // ev.dest( zero );
 
-        ev.value() = "c1@here";
-        c1.Send( ev ); // 'register' c1 client on 'echo' server
+        // ev.value() = "c1@here";
+        // c1.Send( ev ); // 'register' c1 client on 'echo' server
 
-        stem::Event evname( EV_STEM_GET_NS_NAME );
-        Naming::nsrecords_type::const_iterator i;
+        stem::EventHandler::manager().Subscribe( c1.self_id(), c1.domain(), /* mgr.domain() */ domain );
+        stem::EventHandler::manager().annotate( c1.self_id(), domain, "c1 local" );
 
-        evname.dest( stem::EventHandler::ns() );
-        evname.value() = "nsf"; // <- ask for "name service foreign"
+        //stem::Event evname( EV_STEM_GET_NS_NAME );
+        //Naming::nsrecords_type::const_iterator i;
 
-        nm.reset();
-        nm.lst.clear();
-        nm.Send( evname );
+        //evname.dest( stem::EventHandler::ns() );
+        //evname.value() = "nsf"; // <- ask for "name service foreign"
 
-        EXAM_CHECK_ASYNC_F( nm.wait(), eflag );
-        EXAM_CHECK_ASYNC_F( !nm.lst.empty(), eflag );
+        //nm.reset();
+        //nm.lst.clear();
+        //nm.Send( evname );
 
-        if ( !nm.lst.empty() ) {
-          EXAM_CHECK_ASYNC_F( nm.lst.begin()->first != stem::badaddr, eflag );
-          EXAM_CHECK_ASYNC_F( nm.lst.begin()->second == "nsf", eflag );
+        //EXAM_CHECK_ASYNC_F( nm.wait(), eflag );
+        //EXAM_CHECK_ASYNC_F( !nm.lst.empty(), eflag );
+
+        //if ( !nm.lst.empty() ) {
+        //  EXAM_CHECK_ASYNC_F( nm.lst.begin()->first != stem::badaddr, eflag );
+        //  EXAM_CHECK_ASYNC_F( nm.lst.begin()->second == "nsf", eflag );
 
           // Ask NS of process with c2 about address of "c2@here"
 
-          stem::addr_type nsf = nm.lst.begin()->first;
+        //  stem::addr_type nsf = nm.lst.begin()->first;
 
-          evname.dest( nsf );
-          evname.value() = "c2@here";
+        //  evname.dest( nsf );
+        //  evname.value() = "c2@here";
 
-          EXAM_CHECK_ASYNC_F( pcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+        EXAM_CHECK_ASYNC_F( pcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
 
-          do {
-            nm.reset();
-            nm.lst.clear();
-            nm.Send( evname );
-            nm.wait();
-            i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "c2@here" ) ), select2nd<pair<stem::addr_type,string> >() ) );
-          } while ( i == nm.lst.end() );
+        bool res = false;
 
-          EXAM_CHECK_ASYNC_F( i != nm.lst.end(), eflag );
-          EXAM_CHECK_ASYNC_F( i->second == "c2@here", eflag );
+        for ( int cnt = 0; (cnt < 3) && (res == false); ++cnt ) {
+          stem::EvManager::async_rq_id_type rq = stem::EventHandler::manager().Subscribe( string("c2 local"), /* mgr.domain() */ domain );
+
+          res = stem::EventHandler::manager().wait_request( rq, std::tr2::milliseconds(300) );
+        }
+
+        EXAM_CHECK_ASYNC_F( res, eflag );
+
+        //  do {
+        //    nm.reset();
+        //    nm.lst.clear();
+        //    nm.Send( evname );
+        //    nm.wait();
+        //    i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "c2@here" ) ), select2nd<pair<stem::addr_type,string> >() ) );
+        //  } while ( i == nm.lst.end() );
+
+        //  EXAM_CHECK_ASYNC_F( i != nm.lst.end(), eflag );
+        //  EXAM_CHECK_ASYNC_F( i->second == "c2@here", eflag );
 
           // c2 accessable via mgr; set nice to 1000,
           // as for common remote object (may be 2000, routing
           // via two net connctions?)
-          c1.manager()->Subscribe( i->first, &mgr, i->second, 1000 );
+        //  c1.manager()->Subscribe( i->first, &mgr, i->second, 1000 );
 
-          stem::Event pe( NODE_EV_ECHO );
-          pe.dest( i->first );
-          pe.value() = "c2 local"; // <<-- mess is like name ... |
+        list<stem::addr_type> echo_list;
+        stem::EventHandler::manager().find( string("c2 local"), back_inserter(echo_list) );
+        EXAM_CHECK_ASYNC_F( !echo_list.empty(), eflag );
+        EXAM_CHECK_ASYNC_F( echo_list.size() == 1, eflag );
+
+        stem::Event pe( NODE_EV_ECHO );
+        pe.dest( echo_list.front() );
+        pe.value() = "c2 local"; // <<-- mess is like name ... |
                                  //                            .
-          c1.Send( pe );
+        c1.Send( pe );
 
-          EXAM_CHECK_ASYNC_F( scnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
-        }
+        EXAM_CHECK_ASYNC_F( scnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+        // }
       }
 
       mgr.close();
@@ -1162,16 +1178,18 @@ int EXAM_IMPL(stem_test::peer)
         stem::stem_scope scope( c2 );
 
         EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
-        stem::addr_type zero = mgr.open( "localhost", 6995 ); // take address of 'zero' (aka default) object via net transport from server
-        // It done like it should on client side
+        stem::domain_type domain = mgr.open( "localhost", 6995 );
 
-        EXAM_CHECK_ASYNC_F( zero != stem::badaddr, eflag );
+        EXAM_CHECK_ASYNC_F( domain != stem::badaddr, eflag );
 
-        stem::Event ev( NODE_EV_REGME );
-        ev.dest( zero );
+        // stem::Event ev( NODE_EV_REGME );
+        // ev.dest( zero );
 
-        ev.value() = "c2@here";
-        c2.Send( ev ); // 'register' c2 client on 'echo' server
+        // ev.value() = "c2@here";
+        // c2.Send( ev ); // 'register' c2 client on 'echo' server
+
+        stem::EventHandler::manager().Subscribe( c2.self_id(), c2.domain(), /* mgr.domain() */ domain );
+        stem::EventHandler::manager().annotate( c2.self_id(), domain, "c2 local" );
 
         pcnd.notify_one();
 
@@ -1190,12 +1208,12 @@ int EXAM_IMPL(stem_test::peer)
     exit( eflag );
   }
   catch ( std::tr2::fork_in_parent& child ) {
-    connect_processor<stem::NetTransport> srv( 6995 ); // server, it serve 'echo'
-    StEMecho echo( "echo service"); // <= zero! 'echo' server, default ('zero' address)
+    connect_processor<stem::NetTransport> srv( 6995 ); // server, listen connections
+    // StEMecho echo( "echo service");
     {
-      stem::stem_scope scope( echo );
+      // stem::stem_scope scope( echo );
 
-      echo.set_default();
+      // echo.set_default();
 
       fcnd.notify_all();
 
@@ -1226,9 +1244,6 @@ int EXAM_IMPL(stem_test::peer)
   shm_cnd.deallocate( &pcnd, 1 );
   (&scnd)->~condition_event_ip();
   shm_cnd.deallocate( &scnd, 1 );
-#else // 0
-  throw exam::skip_exception();
-#endif // 0
 
   return EXAM_RESULT;
 }
