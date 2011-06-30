@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-10 14:49:19 yeti>
+// -*- C++ -*- Time-stamp: <2011-06-30 16:04:35 yeti>
 
 /*
  *
@@ -174,6 +174,12 @@ __FIT_DECLSPEC void NetTransport_base::_close()
   EventHandler::solitary();
 #endif
   net.close();
+
+  if ( _id != xmt::nil_uuid ) {
+    EventHandler::manager().remove_edge( _id );
+    _id = xmt::nil_uuid;
+  }
+
 }
 
 bool NetTransport_base::pop( Event& _rs )
@@ -183,7 +189,7 @@ bool NetTransport_base::pop( Event& _rs )
   using namespace std;
 
   if ( !net.read( (char *)&header.magic, sizeof(uint32_t) ).good() ) {
-    net.close();
+    NetTransport_base::_close();
     net.setstate( ios_base::failbit );
     return false;
   }
@@ -210,13 +216,13 @@ bool NetTransport_base::pop( Event& _rs )
     catch ( ... ) {
     }
 
-    net.close();
+    NetTransport_base::_close();
     net.setstate( ios_base::failbit );
     return false;
   }
 
   if ( !net.read( (char *)&header.code, sizeof(msg_hdr) - sizeof(uint32_t) ).good() ) {
-    net.close();
+    NetTransport_base::_close();
     net.setstate( ios_base::failbit );
     return false;
   }
@@ -261,7 +267,7 @@ bool NetTransport_base::pop( Event& _rs )
     }
     catch ( ... ) {
     }
-    net.close();
+    NetTransport_base::_close();
     net.setstate( ios_base::failbit );
     return false;
   }
@@ -288,7 +294,7 @@ bool NetTransport_base::pop( Event& _rs )
     }
     catch ( ... ) {
     }
-    net.close();
+    NetTransport_base::_close();
     net.setstate( ios_base::failbit );
     return false;
   }
@@ -322,7 +328,7 @@ bool NetTransport_base::pop( Event& _rs )
 #endif // __FIT_STEM_TRACE
 
   if ( !net.good() ) {
-    net.close();
+    NetTransport_base::_close();
     net.setstate( ios_base::failbit );
   }
 
@@ -396,7 +402,7 @@ bool NetTransport_base::Dispatch( const Event& _rs )
     }
   }
   catch ( ios_base::failure& ) {
-    net.close();
+    NetTransport_base::_close();
   }
   catch ( ... ) {
     throw;

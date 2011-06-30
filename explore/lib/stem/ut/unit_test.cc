@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-28 19:02:42 yeti>
+// -*- C++ -*- Time-stamp: <2011-06-30 14:28:46 yeti>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -1349,12 +1349,15 @@ int EXAM_IMPL(stem_test::boring_manager)
         const int n = 10;
         stem::NetTransportMgr *mgr[n];
         mgr[0] = new stem::NetTransportMgr;
-        mgr[0]->open( "localhost", 6995 );
+        stem::domain_type d0 = mgr[0]->open( "localhost", 6995 );
+        EXAM_CHECK_ASYNC_F( d0 != stem::badaddr, eflag );
 
         for ( int j = 1; j < n; ++j ) {
           mgr[j] = new stem::NetTransportMgr;
-          stem::addr_type a = mgr[j]->open( "localhost", 6995 );
-          EXAM_CHECK_ASYNC_F( a != stem::badaddr, eflag );
+          stem::domain_type d = mgr[j]->open( "localhost", 6995 );
+          EXAM_CHECK_ASYNC_F( d != stem::badaddr, eflag );
+          EXAM_CHECK_ASYNC_F( d == d0, eflag );
+
           mgr[j]->close();
           mgr[j]->join();
           delete mgr[j];
@@ -1416,14 +1419,26 @@ int EXAM_IMPL(stem_test::boring_manager_more)
         const int n = 10;
         stem::NetTransportMgr *mgr[n];
         mgr[0] = new stem::NetTransportMgr;
-        mgr[0]->open( "localhost", 6995 );
+        stem::domain_type d0 = mgr[0]->open( "localhost", 6995 );
+        EXAM_CHECK_ASYNC_F( d0 != stem::badaddr, eflag );
 
         for ( int j = 1; j < n; ++j ) {
           mgr[j] = new stem::NetTransportMgr;
-          stem::addr_type a = mgr[j]->open( "localhost", 6995 );
-          EXAM_CHECK_ASYNC_F( a != stem::badaddr, eflag );
+          stem::domain_type d = mgr[j]->open( "localhost", 6995 );
+          EXAM_CHECK_ASYNC_F( d != stem::badaddr, eflag );
+          EXAM_CHECK_ASYNC_F( d == d0, eflag );
 
-          ev.dest( a );
+          stem::EvManager::async_rq_id_type rq = stem::EventHandler::manager().Subscribe( string("echo service"), /* mgr.domain() */ d );
+
+          bool res = stem::EventHandler::manager().wait_request( rq, std::tr2::milliseconds(300) );
+
+          EXAM_CHECK_ASYNC_F( res, eflag );
+          list<stem::addr_type> echo_list;
+          stem::EventHandler::manager().find( string("echo service"), back_inserter(echo_list) );
+          EXAM_CHECK_ASYNC_F( !echo_list.empty(), eflag );
+          EXAM_CHECK_ASYNC_F( echo_list.size() == 1, eflag );
+
+          ev.dest( echo_list.front() );
           ev.value() = "echo string";
 
           EchoClientTrivial node;

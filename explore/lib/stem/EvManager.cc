@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-24 18:09:02 yeti>
+// -*- C++ -*- Time-stamp: <2011-06-30 16:06:29 yeti>
 
 /*
  *
@@ -677,6 +677,31 @@ void EvManager::connectivity( const edge_id_type& eid, const domain_type& u, con
   if ( (b != 0) && (u == EventHandler::domain()) ) {
     bridges[eid] = b;
   }
+}
+
+void EvManager::remove_edge( const edge_id_type& _id )
+{
+  unique_lock<rw_mutex> lk( _lock_edges );
+
+  auto eid =  edges.find( _id ); // edge
+ 
+  if ( eid != edges.end() ) {
+    vertex_container_type::iterator vi = vertices.find( eid->second.first.first );
+    if ( vi != vertices.end() ) { // vertex, that has outgoing edge _id
+      for ( auto j = vi->second.begin(); j != vi->second.end(); ++j ) {
+        if ( *j == _id ) {
+          vi->second.erase( j ); // remove edge from vertex's list of edges
+          break;
+        }
+      }
+    }
+
+    edges.erase( eid );
+    bridges.erase( _id );
+
+    lk.unlock();
+    route_calc();
+  }      
 }
 
 void EvManager::route_calc()

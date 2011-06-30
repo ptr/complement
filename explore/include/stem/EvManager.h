@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-24 18:11:06 yeti>
+// -*- C++ -*- Time-stamp: <2011-06-30 16:05:16 yeti>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2011
@@ -400,6 +400,7 @@ class EvManager
   protected:
     EvManager::edge_id_type bridge( NetTransport_base*, const domain_type& );
     void connectivity( const edge_id_type& eid, const domain_type& u, const domain_type& v, unsigned w, NetTransport_base* b );
+    void remove_edge( const edge_id_type& );
 
   private:
     void route_calc();
