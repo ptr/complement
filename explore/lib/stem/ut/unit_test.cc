@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-30 14:28:46 yeti>
+// -*- C++ -*- Time-stamp: <2011-07-04 17:54:30 yeti>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -1712,7 +1712,7 @@ int EXAM_IMPL(stem_test::command_mgr)
 
         EXAM_CHECK_ASYNC_F( srv.good(), res );
       
-        ProxyEcho pe;
+        ProxyEcho pe( "proxy echo" );
         stem::stem_scope scope( pe );
 
         pe.set_default();
@@ -1734,9 +1734,20 @@ int EXAM_IMPL(stem_test::command_mgr)
       {
         stem::NetTransportMgr mgr;
 
-        stem::addr_type addr = mgr.open( "localhost", 6995 );
+        stem::domain_type domain = mgr.open( "localhost", 6995 );
 
-        EXAM_CHECK( addr != stem::badaddr );
+        EXAM_CHECK( domain != stem::badaddr );
+
+        stem::EvManager::async_rq_id_type rq = stem::EventHandler::manager().Subscribe( string("proxy echo"), /* mgr.domain() */ domain );
+
+        bool res = stem::EventHandler::manager().wait_request( rq, std::tr2::milliseconds(300) );
+
+        EXAM_CHECK( res );
+
+        list<stem::addr_type> echo_list;
+        stem::EventHandler::manager().find( string("proxy echo"), back_inserter(echo_list) );
+        EXAM_CHECK( !echo_list.empty() );
+        EXAM_CHECK( echo_list.size() == 1 );
 
         EchoClient node;
         stem::stem_scope scope( node );
@@ -1744,7 +1755,7 @@ int EXAM_IMPL(stem_test::command_mgr)
         for ( int i = 0; i < 1000; ++i ) {
           stem::Event ev( NODE_EV_ECHO );
 
-          ev.dest( addr );
+          ev.dest( echo_list.front() );
           ev.value() = node.mess;
 
           node.Send( ev );
@@ -1788,7 +1799,6 @@ int EXAM_IMPL(stem_test::command_mgr)
 
 int EXAM_IMPL(stem_test::route_to_net)
 {
-#if 0
   condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
   stem::addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::addr_type();
 
@@ -1804,13 +1814,12 @@ int EXAM_IMPL(stem_test::route_to_net)
 
       EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
 
-      /* stem::addr_type def_object = */ mgr.open( "localhost", 6995 );
+      stem::domain_type domain = mgr.open( "localhost", 6995 );
 
-      // EXAM_CHECK_ASYNC_F( def_object != stem::badaddr, eflag );
-      // EXAM_CHECK_ASYNC_F( def_object == addr, eflag );
+      EXAM_CHECK_ASYNC_F( domain != stem::badaddr, eflag );
       EXAM_CHECK_ASYNC_F( addr != stem::badaddr, eflag );
 
-      mgr.add_route( addr );
+      stem::EventHandler::manager().Subscribe( addr, mgr.domain() /* or domain */ );
 
       EchoClient node;
       {
@@ -1874,16 +1883,13 @@ int EXAM_IMPL(stem_test::route_to_net)
   (&fcnd)->~condition_event_ip();
   shm_cnd.deallocate( &fcnd, 1 );
   shm_a.deallocate( &addr, 1 );
-#else // 0
-  throw exam::skip_exception();
-#endif // 0
 
   return EXAM_RESULT;
 }
 
 int EXAM_IMPL(stem_test::route_from_net)
 {
-#if 0
+#if 1
   condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
   condition_event_ip& fcnd2 = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
   condition_event_ip& fcnd3 = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
@@ -1899,19 +1905,25 @@ int EXAM_IMPL(stem_test::route_from_net)
     try {
       stem::NetTransportMgr mgr;
 
+      stem::EventHandler::manager().settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+      stem::EventHandler::manager().settrs( &std::cerr );
+
       StEMecho echo( "echo service" );
       addr = echo.self_id();
 
       EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
 
-      /* stem::addr_type def_object = */ mgr.open( "localhost", 6995 );
+      stem::domain_type domain = mgr.open( "localhost", 6995 );
 
       EXAM_CHECK_ASYNC_F( mgr.is_open(), eflag );
       EXAM_CHECK_ASYNC_F( mgr.good(), eflag );
 
+      EXAM_CHECK_ASYNC_F( domain != stem::badaddr, eflag );
+      EXAM_CHECK_ASYNC_F( addr != stem::badaddr, eflag );
+
       {
         stem::stem_scope scope( echo );
-        mgr.add_remote_route( echo.self_id() );
+        stem::EventHandler::manager().Subscribe( echo.self_id(), echo.domain(), mgr.domain() /* or domain */ );
 
         this_thread::sleep( milliseconds(200) ); // chance to accept on other side
 
@@ -1934,6 +1946,10 @@ int EXAM_IMPL(stem_test::route_from_net)
       fcnd.notify_one();
 
       EchoClient node;
+
+      stem::EventHandler::manager().settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
+      stem::EventHandler::manager().settrs( &std::cerr );
+
       {
         stem::stem_scope scope( node );
     
@@ -1945,9 +1961,6 @@ int EXAM_IMPL(stem_test::route_from_net)
 
         ev.dest( addr );
         ev.value() = node.mess;
-
-        // stem::EventHandler::manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
-        // stem::EventHandler::manager()->settrs( &std::cerr );
 
         node.Send( ev );
 
