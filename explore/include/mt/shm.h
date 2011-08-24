@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-03-23 16:33:34 ptr>
+// -*- C++ -*- Time-stamp: <2011-08-24 13:26:35 ptr>
 
 /*
  * Copyright (c) 2006-2011
@@ -71,6 +71,11 @@ class shm_bad_alloc :
 template <class T>
 struct is_ipc_sharable :
     public std::integral_constant<bool,std::is_pod<T>::value>
+{ };
+
+template <class F, class S>
+struct is_ipc_sharable<std::pair<F,S> > :
+    public std::integral_constant<bool,is_ipc_sharable<F>::value && is_ipc_sharable<S>::value>
 { };
 
 #define  __SPEC_(C,T,B)               \
