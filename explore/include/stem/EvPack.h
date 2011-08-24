@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/04/29 13:31:10 ptr>
+// -*- C++ -*- Time-stamp: <2011-08-23 19:30:00 ptr>
 
 /*
  *
@@ -119,6 +119,17 @@ class __net_converter<signed char>
 
     static signed char from_net( const signed char& x )
       { return x; }
+};
+
+template <class F, class S>
+class __net_converter<std::pair<F,S> >
+{
+  public:
+    static std::pair<F,S> to_net( const std::pair<F,S>& x )
+      { return std::make_pair( __net_converter<F>::to_net(x.first), __net_converter<S>::to_net(x.second) ); }
+
+    static std::pair<F,S> from_net( const std::pair<F,S>& x )
+      { return std::make_pair( __net_converter<F>::from_net(x.first), __net_converter<S>::from_net(x.second) ); }
 };
 
 template <class T>
