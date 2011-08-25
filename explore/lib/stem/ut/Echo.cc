@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-06-08 15:04:15 ptr>
+// -*- C++ -*- Time-stamp: <2011-08-24 18:35:00 ptr>
 
 /*
- * Copyright (c) 2006, 2007
+ * Copyright (c) 2006, 2007, 2011
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -51,17 +51,8 @@ void StEMecho::echo( const Event& ev )
   Send( eev );
 }
 
-void StEMecho::regme( const stem::Event& ev )
-{
-  // cerr << "Echo\n";
-  manager().annotate( ev.src(), ev.value() );
-
-  cnd.notify_one();
-}
-
 DEFINE_RESPONSE_TABLE( StEMecho )
   EV_EDS( 0, NODE_EV_ECHO, echo )
-  EV_EDS( 0, NODE_EV_REGME, regme )
 END_RESPONSE_TABLE
 
 EchoClientTrivial::EchoClientTrivial() :
@@ -312,20 +303,20 @@ END_RESPONSE_TABLE
 LastEvent::LastEvent( const char* info ) :
     EventHandler( info ),
     mess( info ),
-    peer( stem::badaddr )
+    peer( stem::extbadaddr )
 {
 }
 
 LastEvent::LastEvent( stem::addr_type id, const char *info ) :
     EventHandler( id, info ),
     mess( info ),
-    peer( stem::badaddr )
+    peer( stem::extbadaddr )
 {
 }
 
 LastEvent::~LastEvent()
 {
-  if ( peer != stem::badaddr ) {
+  if ( peer != stem::extbadaddr ) {
     Event ev( NODE_EV_LAST );
 
     ev.dest( peer );

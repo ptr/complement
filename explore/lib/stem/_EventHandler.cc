@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-06-09 19:49:34 yeti>
+// -*- C++ -*- Time-stamp: <2011-08-25 08:03:24 ptr>
 
 /*
- * Copyright (c) 1995-1999, 2002-2003, 2005-2010
+ * Copyright (c) 1995-1999, 2002-2003, 2005-2011
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -30,8 +30,6 @@ char *Init_buf[128];
 static domain_type _domain = xmt::uid();
 static EvManager _mgr;
 Names     *EventHandler::_ns = 0;
-mutex _def_lock;
-addr_type _default_addr = xmt::nil_uuid;
 
 static int _rcount = 0;
 static mutex _mf_lock;
@@ -130,7 +128,7 @@ bool EventHandler::is_avail( const addr_type& id ) const
 
 void EventHandler::Send( const Event& e ) const
 {
-  e.src( _id );
+  e.src( make_pair(_domain,_id) );
   _mgr.push( e );
 }
 
@@ -293,23 +291,6 @@ addr_type EventHandler::ns()
 
 const domain_type& EventHandler::domain()
 { return _domain; }
-
-addr_type EventHandler::set_default() const
-{
-  lock_guard<mutex> lk( _def_lock );
-  addr_type tmp = _default_addr;
-  _default_addr = _id;
-
-  return tmp;
-}
-
-addr_type EventHandler::get_default()
-{
-  lock_guard<mutex> lk( _def_lock );
-  addr_type tmp = _default_addr;
-
-  return tmp;
-}
 
 void EventHandler::solitary()
 {

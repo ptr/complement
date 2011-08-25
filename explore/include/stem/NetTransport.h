@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-10 13:27:40 yeti>
+// -*- C++ -*- Time-stamp: <2011-08-23 17:56:20 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2011
@@ -37,6 +37,8 @@ class NetTransport_base
     struct msg_hdr {
         uint32_t magic;
         uint32_t code;
+        uint32_t dstd[4];
+        uint32_t srcd[4];
         uint32_t dst[4];
         uint32_t src[4];
         uint32_t flags;

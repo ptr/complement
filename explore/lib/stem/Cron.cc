@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/19 21:30:05 ptr>
+// -*- C++ -*- Time-stamp: <2011-08-24 20:16:44 ptr>
 
 /*
  * Copyright (c) 1998, 2002-2003, 2005-2006, 2008-2009
@@ -97,7 +97,7 @@ void Cron::Add( const Event_base<CronEntry>& entry )
   en.n = ne.n;
   en.ev = ne.ev;
 
-  if ( en.ev.dest() == badaddr ) {
+  if ( en.ev.dest() == extbadaddr ) {
     en.ev.dest( entry.src() );
   }
 
@@ -189,6 +189,7 @@ void Cron::_loop( Cron* p )
   //   -) Cron object destroyed
   // If Cron's container empty, this thread suspend, and can be alarmed
   // after Add (Cron entry) event.
+
   Cron& me = *p;
   system_time st;
 
@@ -237,11 +238,11 @@ void Cron::_loop( Cron* p )
     __CronEntry en = me._M_c.top(); // get and eject top cron entry
     me._M_c.pop();
 
-    if ( me.is_avail( en.ev.dest() ) ) { // check if target abonent exist
-      me.Forward( en.ev );
-    } else { // do nothing, this lead to removing invalid abonent from Cron
-      continue;
-    }
+    // if target is in the same domain, we can check if ones exist
+    if ( (en.ev.dest().first == EventHandler::domain()) && !me.is_avail( en.ev.dest().second ) ) { 
+      continue; // do nothing, this lead to removing non-existent abonent from Cron
+    }    
+    me.Forward( en.ev ); // otherwise, forward event
 
     en.expired = en.start;
     en.expired += en.period * ++en.count;
@@ -290,7 +291,7 @@ void CronEntry::unpack( std::istream& s )
   stem::code_type c;
   __unpack( s, c );
   ev.code( c );
-  stem::addr_type a;
+  stem::ext_addr_type a;
   __unpack( s, a );
   ev.dest( a );
   __unpack( s, a );

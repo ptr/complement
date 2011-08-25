@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-23 17:52:49 yeti>
+// -*- C++ -*- Time-stamp: <2011-08-24 19:56:44 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2011
@@ -15,14 +15,6 @@
 #define __EDSEv_h
 
 namespace stem {
-
-#define EV_STEM_SUBSCRIPTION_RQ  0x9
-#define EV_STEM_SUBSCRIPTION_FIN 0x10
-#define EV_STEM_SUBSCRIPTION     0x11
-
-// remote (net) channel annotation
-
-#define EV_STEM_ANNOTATION       0x12
 
 // Name Service
 #define EV_STEM_GET_NS_LIST      0x13

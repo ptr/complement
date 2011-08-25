@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-30 16:04:35 yeti>
+// -*- C++ -*- Time-stamp: <2011-08-24 20:14:52 ptr>
 
 /*
  *
@@ -62,7 +62,7 @@ namespace detail {
 void dump( std::ostream& o, const EDS::Event& e )
 {
   o << setiosflags(ios_base::showbase) << hex
-    << "Code: " << e.code() << " Destination: " << e.dest() << " Source: " << e.src()
+    << "Code: " << e.code() << " Destination: " << e.dest().first << '/' << e.dest().second << " Source: " << e.src().first << '/' << e.src().second
     << "\nData:\n";
 
   string mark_line( "-----------| 4 --------| 8 --------| b --------|10 --------|14 --------|\n" );
@@ -228,6 +228,18 @@ bool NetTransport_base::pop( Event& _rs )
   }
 
   _rs.code( from_net( header.code ) );
+  domain_type dstd;
+  dstd.u.i[0] = header.dstd[0];
+  dstd.u.i[1] = header.dstd[1];
+  dstd.u.i[2] = header.dstd[2];
+  dstd.u.i[3] = header.dstd[3];
+
+  domain_type srcd;
+  srcd.u.i[0] = header.srcd[0];
+  srcd.u.i[1] = header.srcd[1];
+  srcd.u.i[2] = header.srcd[2];
+  srcd.u.i[3] = header.srcd[3];
+
   addr_type dst;
   dst.u.i[0] = header.dst[0];
   dst.u.i[1] = header.dst[1];
@@ -240,8 +252,8 @@ bool NetTransport_base::pop( Event& _rs )
   src.u.i[2] = header.src[2];
   src.u.i[3] = header.src[3];
 
-  _rs.src( src );
-  _rs.dest( dst );
+  _rs.src( make_pair( srcd, src ) );
+  _rs.dest( make_pair( dstd, dst ) );
 
   _rs.resetf( from_net( header.flags ) );
   uint32_t sz = from_net( header.sz );
@@ -315,7 +327,9 @@ bool NetTransport_base::pop( Event& _rs )
       ios_base::fmtflags flags = EventHandler::manager()._trs->flags( static_cast<std::_Ios_Fmtflags>(0) );
 #endif
       *EventHandler::manager()._trs << "\tMessage from remote " << hex << showbase << _rs.code() << " "
-                                       << src << " -> " << dst << endl;
+                                    << srcd << '/' << src
+                                    << " -> "
+                                    << dstd << '/' << dst << endl;
 #ifdef STLPORT
       EventHandler::manager()._trs->flags( flags );
 #else
@@ -351,14 +365,16 @@ bool NetTransport_base::Dispatch( const Event& _rs )
       ios_base::fmtflags flags = EventHandler::manager()._trs->flags( static_cast<std::_Ios_Fmtflags>(0) );
 #endif
       *EventHandler::manager()._trs << "\tMessage to remote " << hex << showbase << _rs.code() << " "
-                                       << _rs.src() << " -> " << _rs.dest() << endl;
+                                    << _rs.src().first << '/' << _rs.src().second
+                                    << " -> "
+                                    << _rs.dest().first << '/' << _rs.dest().second << endl;
       EventHandler::manager().dump( *EventHandler::manager()._trs ) << endl;
 #ifdef STLPORT
       EventHandler::manager()._trs->flags( flags );
 #else
       EventHandler::manager()._trs->flags( static_cast<std::_Ios_Fmtflags>(flags) );
 #endif
-      }
+    }
   }
   catch ( ... ) {
   }
@@ -373,18 +389,28 @@ bool NetTransport_base::Dispatch( const Event& _rs )
   header.magic = EDS_MAGIC;
   header.code = to_net( _rs.code() );
 
-  addr_type dst = _rs.dest();
-  addr_type src = _rs.src();
+  ext_addr_type dst = _rs.dest();
+  ext_addr_type src = _rs.src();
 
-  header.dst[0] = dst.u.i[0];
-  header.dst[1] = dst.u.i[1];
-  header.dst[2] = dst.u.i[2];
-  header.dst[3] = dst.u.i[3];
+  header.dstd[0] = dst.first.u.i[0];
+  header.dstd[1] = dst.first.u.i[1];
+  header.dstd[2] = dst.first.u.i[2];
+  header.dstd[3] = dst.first.u.i[3];
 
-  header.src[0] = src.u.i[0];
-  header.src[1] = src.u.i[1];
-  header.src[2] = src.u.i[2];
-  header.src[3] = src.u.i[3];
+  header.srcd[0] = src.first.u.i[0];
+  header.srcd[1] = src.first.u.i[1];
+  header.srcd[2] = src.first.u.i[2];
+  header.srcd[3] = src.first.u.i[3];
+
+  header.dst[0] = dst.second.u.i[0];
+  header.dst[1] = dst.second.u.i[1];
+  header.dst[2] = dst.second.u.i[2];
+  header.dst[3] = dst.second.u.i[3];
+
+  header.src[0] = src.second.u.i[0];
+  header.src[1] = src.second.u.i[1];
+  header.src[2] = src.second.u.i[2];
+  header.src[3] = src.second.u.i[3];
 
   header.flags = to_net( _rs.flags() );
   header.sz = to_net( static_cast<uint32_t>(_rs.value().size()) );
@@ -551,17 +577,6 @@ void NetTransport::connect( sockstream& s )
       catch ( ... ) {
       }
 #endif // __FIT_STEM_TRACE
-
-      if ( !EventHandler::manager().is_avail( ev.src() ) ) {
-        // _ids.push_back( ev.src() );
-        /* ev.src() may be not hosted in peer's domain,
-           but we don't know it native domain. At least
-           peer's domain know more about this object...
-
-           Should be fixed.
-         */
-        EventHandler::manager().Subscribe( ev.src(), domain() );
-      }
 
       EventHandler::manager().push( ev );
     }
@@ -816,11 +831,6 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
       catch ( ... ) {
       }
 #endif // __FIT_STEM_TRACE
-
-      if ( !EventHandler::manager().is_avail( ev.src() ) ) {
-        // me._ids.push_back( ev.src() );
-        // EventHandler::manager()->Subscribe( ev.src(), &me, 1000 );
-      }
 
       EventHandler::manager().push( ev );
     }

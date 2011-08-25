@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-03 20:33:51 ptr>
+// -*- C++ -*- Time-stamp: <2011-08-23 17:44:10 ptr>
 
 /*
  *
@@ -50,8 +50,10 @@ namespace stem {
 typedef xmt::uuid_type addr_type;
 typedef uint32_t code_type;
 typedef xmt::uuid_type domain_type;
+typedef std::pair<domain_type,addr_type> ext_addr_type;
 
 extern const addr_type& badaddr;
+extern const ext_addr_type extbadaddr;
 extern const code_type badcode;
 
 class __Event_Base
@@ -61,15 +63,15 @@ class __Event_Base
 
     __Event_Base() :
         _code( badcode ),
-        _dst( badaddr ),
-        _src( badaddr ),
+        _dst( extbadaddr ),
+        _src( extbadaddr ),
         _flags( 0 )
       { }
 
     explicit __Event_Base( code_type c ) :
         _code( c ),
-        _dst( badaddr ),
-        _src( badaddr ),
+        _dst( extbadaddr ),
+        _src( extbadaddr ),
         _flags( 0 )
       { }
 
@@ -82,18 +84,18 @@ class __Event_Base
 
     code_type code() const
       { return _code; }
-    addr_type dest() const
+    ext_addr_type dest() const
       { return _dst; }
-    addr_type src() const
+    ext_addr_type src() const
       { return _src; }
     uint32_t flags() const
       { return _flags; }
 
     void code( code_type c ) const
       { _code = c; }
-    void dest( addr_type c ) const
+    void dest( ext_addr_type c ) const
       { _dst = c; }
-    void src( addr_type c ) const
+    void src( ext_addr_type c ) const
       { _src = c; }
 
     void setf( uint32_t f ) const
@@ -122,8 +124,8 @@ class __Event_Base
 
   protected:
     mutable code_type  _code; // event code
-    mutable addr_type  _dst;  // destination
-    mutable addr_type  _src;  // source
+    mutable ext_addr_type  _dst;  // destination
+    mutable ext_addr_type  _src;  // source
     mutable uint32_t   _flags;
 };
 

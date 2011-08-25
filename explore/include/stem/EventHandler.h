@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-09 18:23:43 yeti>
+// -*- C++ -*- Time-stamp: <2011-08-25 08:02:48 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005-2010
@@ -568,8 +568,6 @@ class EventHandler
     static EvManager& manager();
     static addr_type ns();
     static const domain_type& domain();
-    addr_type set_default() const; // become default object
-    static addr_type get_default(); // default object
     __FIT_DECLSPEC void Send( const Event& e ) const;
     __FIT_DECLSPEC void Forward( const Event& e ) const;
     __FIT_DECLSPEC void sync_call( const Event& e );

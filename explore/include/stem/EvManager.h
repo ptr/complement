@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-06-30 16:05:16 yeti>
+// -*- C++ -*- Time-stamp: <2011-08-24 20:03:44 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2011
@@ -89,11 +89,6 @@ class EvManager
   private:
     typedef xmt::uuid_type edge_id_type;
 
-    union target_type {
-        void* object;
-        domain_type domain;
-    };
-
     typedef std::list<addr_type> addr_collection_type;
 #ifdef __USE_STLPORT_HASH
     typedef std::hash_map<addr_type,handlers_type> local_heap_type;
@@ -104,7 +99,7 @@ class EvManager
     typedef __gnu_cxx::hash_map<std::string,addr_collection_type> info_heap_type;
 #endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-    typedef std::unordered_map<addr_type,target_type> local_heap_type;
+    typedef std::unordered_map<addr_type,EventHandler*> local_heap_type;
     typedef std::unordered_map<std::string,addr_collection_type> info_heap_type;
     typedef std::unordered_map<domain_type,std::list<edge_id_type> > vertex_container_type;
     typedef std::unordered_map<edge_id_type,std::pair<std::pair<domain_type,domain_type>,unsigned> > edge_container_type;
@@ -150,39 +145,12 @@ class EvManager
         unsafe_Subscribe( id, object );
       }
 
-    void Subscribe( const addr_type& id, const domain_type& domain )
-      {
-        std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
-        unsafe_Subscribe( id, domain );
-      }
-
-    void Subscribe( const addr_type& id, const domain_type& domain, const domain_type& at )
-      {
-        std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
-        unsafe_Subscribe( id, domain, at );
-      }
-
     void Subscribe( const addr_type& id, EventHandler* object, const std::string& info )
       {
         std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
         std::tr2::lock_guard<std::tr2::mutex> lk_( _lock_iheap );
         unsafe_Subscribe( id, object );
         unsafe_annotate( id, info );
-      }
-
-    void Subscribe( const addr_type& id, const domain_type& domain, const std::string& info )
-      {
-        std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
-        std::tr2::lock_guard<std::tr2::mutex> lk_( _lock_iheap );
-        unsafe_Subscribe( id, domain );
-        unsafe_annotate( id, info );
-      }
-
-    void Subscribe( const addr_type& id, const domain_type& domain, const domain_type& at, const std::string& info )
-      {
-        std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
-        unsafe_Subscribe( id, domain, at );
-        unsafe_annotate( id, at, info );
       }
 
     void Subscribe( const addr_type& id, EventHandler* object, const char* info )
@@ -197,32 +165,6 @@ class EvManager
         unsafe_annotate( id, std::string( info ) );
       }
 
-    void Subscribe( const addr_type& id, const domain_type& domain, const char* info )
-      {
-        std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
-        std::tr2::lock_guard<std::tr2::mutex> lk_( _lock_iheap );
-        unsafe_Subscribe( id, domain );
-
-        if ( info == 0 || info[0] == 0 ) {
-          return;
-        }
-        unsafe_annotate( id, std::string( info ) );
-      }
-
-    void Subscribe( const addr_type& id, const domain_type& domain, const domain_type& at, const char* info )
-      {
-        std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
-        unsafe_Subscribe( id, domain, at );
-
-        if ( info == 0 || info[0] == 0 ) {
-          return;
-        }
-
-        unsafe_annotate( id, at, std::string( info ) );
-      }
-
-    async_rq_id_type Subscribe( const std::string& info, const domain_type& from );
-
     void Unsubscribe( const addr_type& id );
 
     bool is_avail( const addr_type& id ) const
@@ -231,10 +173,9 @@ class EvManager
         return unsafe_is_avail( id );
       }
 
-    bool is_local( const addr_type& id ) const
+    bool is_local( const ext_addr_type& id ) const
       {
-        std::tr2::basic_read_lock<std::tr2::rw_mutex> lk( _lock_heap );
-        return unsafe_is_local( id );
+        return id.first == EventHandler::domain() ? is_avail( id.second ) : false;
       }
 
     void annotate( const addr_type& id, const std::string& info )
@@ -253,22 +194,6 @@ class EvManager
         }
         std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
         unsafe_annotate( id, std::string( info ) );
-      }
-
-    void annotate( const addr_type& id, const domain_type& at, const std::string& info )
-      {
-        if ( info.empty() ) {
-          return;
-        }
-        unsafe_annotate( id, at, info );
-      }
-
-    void annotate( const addr_type& id, const domain_type& at, const char* info )
-      {
-        if ( info == 0 || info[0] == 0 ) {
-          return;
-        }
-        unsafe_annotate( id, at, std::string( info ) );
       }
 
     __FIT_DECLSPEC void push( const Event& e );
@@ -314,17 +239,13 @@ class EvManager
   protected:
     void unsafe_Subscribe( const addr_type& id, EventHandler* object );
     void unsafe_Unsubscribe( const addr_type& id );
-    void unsafe_Subscribe( const addr_type& id, const domain_type& d );
-    void unsafe_Subscribe( const addr_type& id, const domain_type& d, const domain_type& at );
 
     bool unsafe_is_avail( const addr_type& id ) const
       { return heap.find( id ) != heap.end(); }
 
-    bool unsafe_is_local( const addr_type& id ) const;
     bool is_domain( const domain_type& d ) const;
 
     void unsafe_annotate( const addr_type& id, const std::string& info );
-    void unsafe_annotate( const addr_type& id, const domain_type& at, const std::string& info );
 
   private:
     local_heap_type heap;   // address -> EventHandler *

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/05 14:07:07 ptr>
+// -*- C++ -*- Time-stamp: <2011-08-24 18:35:14 ptr>
 
 /*
  * Copyright (c) 2006-2009
@@ -28,9 +28,6 @@ class StEMecho :
     StEMecho( stem::addr_type id, const char* );
 
     void echo( const stem::Event& );
-    void regme( const stem::Event& );
-
-    std::tr2::condition_event cnd;
 
   private:
     DECLARE_RESPONSE_TABLE( StEMecho, stem::EventHandler );
@@ -239,7 +236,7 @@ class LastEvent :
 
   private:
     std::tr2::condition_event cnd;
-    stem::addr_type peer;
+    stem::ext_addr_type peer;
     std::tr2::condition_event cnd_conf;
 
     DECLARE_RESPONSE_TABLE( LastEvent, stem::EventHandler );
@@ -274,7 +271,6 @@ class ProxyEcho :
 };
 
 #define NODE_EV_ECHO               0x903
-#define NODE_EV_REGME              0x904
 #define NODE_EV_LAST               0x905
 #define NODE_EV_LAST_CONFORMATION  0x906
 
