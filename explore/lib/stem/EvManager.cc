@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2011-08-24 20:04:41 ptr>
+// -*- C++ -*- Time-stamp: <2011-08-25 09:05:48 ptr>
 
 /*
  *
- * Copyright (c) 1995-1999, 2002, 2003, 2005-2010
+ * Copyright (c) 1995-1999, 2002, 2003, 2005-2011
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -35,53 +35,6 @@ std::string EvManager::inv_key_str( "invalid key" );
 
 static const string addr_unknown("address unknown");
 static const string no_catcher( "no catcher for event" );
-
-struct sub_rq :
-        public stem::__pack_base,
-        public std::pair<xmt::uuid_type,std::string>
-{
-    void pack( std::ostream& s ) const;
-    void unpack( std::istream& s );
-
-    sub_rq() = default;
-    sub_rq( const sub_rq& r )
-      {
-        first = r.first;
-        second = r.second;
-      }
-
-    sub_rq( const std::pair<xmt::uuid_type,std::string>& r )
-      {
-        first = r.first;
-        second = r.second;
-      }
-
-    sub_rq& operator =( const sub_rq& r )
-      {
-        first = r.first;
-        second = r.second;
-        return *this;
-      }
-
-    sub_rq& operator =( const std::pair<xmt::uuid_type,std::string>& r )
-      {
-        first = r.first;
-        second = r.second;
-        return *this;
-      }
-};
-
-void sub_rq::pack( std::ostream& s ) const
-{
-  __pack( s, first );
-  __pack( s, second );
-}
-
-void sub_rq::unpack( std::istream& s )
-{
-  __unpack( s, first );
-  __unpack( s, second );
-}
 
 unsigned int EvManager::working_threads = 2;
 
