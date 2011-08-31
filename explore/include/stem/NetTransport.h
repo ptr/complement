@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-08-23 17:56:20 ptr>
+// -*- C++ -*- Time-stamp: <2011-08-26 17:54:47 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2011
@@ -72,8 +72,7 @@ class NetTransport_base
 #endif
 
   public:
-    void close()
-      { NetTransport_base::_close(); }
+    void close();
 
     bool Dispatch( const Event& );
     domain_type domain() const;
@@ -101,9 +100,7 @@ class NetTransport :
   public:
     __FIT_DECLSPEC
     NetTransport( std::sockstream& );
-    ~NetTransport()
-      { NetTransport_base::_close(); }
-
+    ~NetTransport();
 
     __FIT_DECLSPEC
     void connect( std::sockstream& );
@@ -185,8 +182,7 @@ class NetTransportMgr :
     addr_type open( const sockaddr_in& addr, const Duration& timeout,
                     sock_base::stype type = sock_base::sock_stream );
 
-    void close()
-      {  NetTransport_base::_close(); }
+    void close();
 
     void join();
 

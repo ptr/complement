@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-08-24 20:14:52 ptr>
+// -*- C++ -*- Time-stamp: <2011-08-29 22:36:38 ptr>
 
 /*
  *
@@ -176,11 +176,19 @@ __FIT_DECLSPEC void NetTransport_base::_close()
   net.close();
 
   if ( _id != xmt::nil_uuid ) {
-    EventHandler::manager().remove_edge( _id );
+    // EventHandler::manager().remove_edge( _id );
     _id = xmt::nil_uuid;
   }
-
 }
+
+void NetTransport_base::close()
+{
+  if ( _id != xmt::nil_uuid ) {
+    EventHandler::manager().remove_edge( _id );
+  }
+  NetTransport_base::_close();
+}
+
 
 bool NetTransport_base::pop( Event& _rs )
 {
@@ -189,7 +197,6 @@ bool NetTransport_base::pop( Event& _rs )
   using namespace std;
 
   if ( !net.read( (char *)&header.magic, sizeof(uint32_t) ).good() ) {
-    NetTransport_base::_close();
     net.setstate( ios_base::failbit );
     return false;
   }
@@ -216,13 +223,11 @@ bool NetTransport_base::pop( Event& _rs )
     catch ( ... ) {
     }
 
-    NetTransport_base::_close();
     net.setstate( ios_base::failbit );
     return false;
   }
 
   if ( !net.read( (char *)&header.code, sizeof(msg_hdr) - sizeof(uint32_t) ).good() ) {
-    NetTransport_base::_close();
     net.setstate( ios_base::failbit );
     return false;
   }
@@ -279,7 +284,6 @@ bool NetTransport_base::pop( Event& _rs )
     }
     catch ( ... ) {
     }
-    NetTransport_base::_close();
     net.setstate( ios_base::failbit );
     return false;
   }
@@ -306,7 +310,6 @@ bool NetTransport_base::pop( Event& _rs )
     }
     catch ( ... ) {
     }
-    NetTransport_base::_close();
     net.setstate( ios_base::failbit );
     return false;
   }
@@ -342,7 +345,6 @@ bool NetTransport_base::pop( Event& _rs )
 #endif // __FIT_STEM_TRACE
 
   if ( !net.good() ) {
-    NetTransport_base::_close();
     net.setstate( ios_base::failbit );
   }
 
@@ -423,12 +425,8 @@ bool NetTransport_base::Dispatch( const Event& _rs )
     }
 
     net.flush();
-    if ( !net.good() ) {
-      throw ios_base::failure( "net not good" );
-    }
   }
   catch ( ios_base::failure& ) {
-    NetTransport_base::_close();
   }
   catch ( ... ) {
     throw;
@@ -473,6 +471,14 @@ NetTransport::NetTransport( std::sockstream& s ) :
   }
   catch ( ... ) {
   }
+}
+
+NetTransport::~NetTransport()
+{
+  if ( _id != xmt::nil_uuid ) {
+    EventHandler::manager().remove_edge( _id );
+  }
+  NetTransport_base::_close();
 }
 
 void NetTransport::connect( sockstream& s )
@@ -579,6 +585,11 @@ void NetTransport::connect( sockstream& s )
 #endif // __FIT_STEM_TRACE
 
       EventHandler::manager().push( ev );
+    } else {
+      if ( _id != xmt::nil_uuid ) {
+        EventHandler::manager().remove_edge( _id );
+      }
+      NetTransport_base::_close();
     }
   }
   catch ( ios_base::failure& ex ) {
@@ -725,6 +736,16 @@ addr_type NetTransportMgr::open( sock_base::socket_type s,
   return badaddr;
 }
 
+void NetTransportMgr::close()
+{
+  // stem::EvManager::edge_id_type tmp = _id;
+
+  if ( _id /* tmp */ != xmt::nil_uuid ) {
+    EventHandler::manager().remove_edge( _id );
+  }
+  NetTransport_base::_close();
+}
+
 stem::addr_type NetTransportMgr::discovery( const std::tr2::nanoseconds& timeout )
 {
   this->write( reinterpret_cast<const char*>(&EDS_MAGIC), sizeof(EDS_MAGIC) );
@@ -835,6 +856,9 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
       EventHandler::manager().push( ev );
     }
     me.net.close();
+    if ( me._id != xmt::nil_uuid ) {
+      EventHandler::manager().remove_edge( me._id );
+    }
     me.NetTransport_base::_close();
 #ifdef __FIT_STEM_TRACE
     try {
@@ -859,6 +883,9 @@ void NetTransportMgr::_loop( NetTransportMgr* p )
   }
   catch ( ... ) {
     me.net.close();
+    if ( me._id != xmt::nil_uuid ) {
+      EventHandler::manager().remove_edge( me._id );
+    }
     me.NetTransport_base::_close();
 #ifdef __FIT_STEM_TRACE
     try {
