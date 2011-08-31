@@ -30,13 +30,18 @@
 #    include <ext/hash_set>
 #    define __USE_STD_HASH
 #  else
-#    include <tr1/unordered_map>
-#    include <tr1/unordered_set>
-#    define __USE_STD_TR1
+#    ifdef __FIT_CPP_0X
+#      include <unordered_map>
+#      include <unordered_set>
+#    else
+#      include <tr1/unordered_map>
+#      include <tr1/unordered_set>
+#      define __USE_STD_TR1
+#    endif
 #  endif
 #endif
 
-#if defined(__USE_STLPORT_HASH) || defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
+#if defined(__USE_STLPORT_HASH) || defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1) || defined(__FIT_CPP_0X)
 #  define __HASH_NAMESPACE std
 #endif
 #if defined(__USE_STD_HASH)
