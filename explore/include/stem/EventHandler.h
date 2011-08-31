@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-08-25 08:02:48 ptr>
+// -*- C++ -*- Time-stamp: <2011-08-26 11:57:12 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005-2010
@@ -550,9 +550,6 @@ class EventHandler
         ~Init();
       private:
         static void _guard( int );
-        static void __at_fork_prepare();
-        static void __at_fork_child();
-        static void __at_fork_parent();
     };
 
     __FIT_DECLSPEC EventHandler();
@@ -565,6 +562,7 @@ class EventHandler
     void disable();
 
     __FIT_DECLSPEC bool is_avail( const addr_type& id ) const;
+    static void cold_start( bool v );
     static EvManager& manager();
     static addr_type ns();
     static const domain_type& domain();

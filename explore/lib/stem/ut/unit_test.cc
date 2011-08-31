@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-08-24 20:24:53 ptr>
+// -*- C++ -*- Time-stamp: <2011-08-26 12:44:03 ptr>
 
 /*
  * Copyright (c) 2002, 2003, 2006-2009
@@ -1101,6 +1101,7 @@ int EXAM_IMPL(stem_test::peer)
   catch ( std::tr2::fork_in_parent& child ) {
     connect_processor<stem::NetTransport> srv( 6995 ); // server, listen connections
     // StEMecho echo( "echo service");
+    stem::EventHandler::cold_start( true );
     {
       // stem::stem_scope scope( echo );
 
@@ -1124,6 +1125,7 @@ int EXAM_IMPL(stem_test::peer)
         EXAM_ERROR( "child interrupted" );
       }
     }
+    stem::EventHandler::cold_start( false );
 
     srv.close();
     srv.wait();
@@ -1298,6 +1300,8 @@ int EXAM_IMPL(stem_test::boring_manager_more)
     stem::Event ev( NODE_EV_ECHO );
 
     try {
+      stem::EventHandler::cold_start( true );
+
       EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
 
       for ( int i = 0; i < 10; ++i ) {

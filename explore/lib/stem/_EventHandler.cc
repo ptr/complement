@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-08-25 08:03:24 ptr>
+// -*- C++ -*- Time-stamp: <2011-08-26 11:55:36 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2011
@@ -32,38 +32,33 @@ static EvManager _mgr;
 Names     *EventHandler::_ns = 0;
 
 static int _rcount = 0;
+static bool _start_early = false;
 static mutex _mf_lock;
 
-/* _domain must be change in any case --- even before
-   call of EventHandler::Init::_guard (i.e. if fork
-   happens before any EventHandler was born).
- */
-static void change_domain()
-{
-  _domain = xmt::uid();
-}
-
-static int dummy = pthread_atfork( 0, 0, &change_domain );
-
-void EventHandler::Init::__at_fork_prepare()
+static void at_fork_prepare()
 {
   _mf_lock.lock();
-  if ( _rcount != 0 ) {
-    _mgr.stop_queue();
-  }
+  _mgr.stop_queue(); // stop in any case, before fork
 }
 
-void EventHandler::Init::__at_fork_child()
+static void at_fork_child()
 {
-  if ( _rcount != 0 ) {
+  /* 
+     _domain must be change in any case --- even before
+     call of EventHandler::Init::_guard (i.e. if fork
+     happens before any EventHandler was born).
+  */
+  _domain = xmt::uid();
+  _mgr.check_clean();
+  if ( (_rcount != 0) || _start_early ) {
     _mgr.start_queue();
   }
   _mf_lock.unlock();
 }
 
-void EventHandler::Init::__at_fork_parent()
+static void at_fork_parent()
 {
-  if ( _rcount != 0 ) {
+  if ( (_rcount != 0) || _start_early ) {
     _mgr.start_queue();
   }
   _mf_lock.unlock();
@@ -74,25 +69,24 @@ static void sq()
   _mgr.stop_queue();
 }
 
+static int dummy = pthread_atfork( at_fork_prepare, at_fork_parent, at_fork_child );
+static int dummy2 = atexit( &sq );
+
 void EventHandler::Init::_guard( int direction )
 {
   static recursive_mutex _init_lock;
-  static bool at_f = false;
 
   lock_guard<recursive_mutex> lk(_init_lock);
 
   if ( direction ) {
     if ( _rcount++ == 0 ) {
-      if ( !at_f ) {
-        // cerr << HERE << endl;
-        atexit( &sq );
-        pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child );
-        at_f = true;
-
+      unique_lock<mutex> lk(_mf_lock);
+      if ( !_start_early ) { // already started
         _mgr.start_queue();
-        EventHandler::_ns = new Names( "ns" );
-        EventHandler::_ns->enable();
-      } else if ( EventHandler::_ns == 0 ) {
+      }
+      lk.unlock();
+
+      if ( EventHandler::_ns == 0 ) {
         EventHandler::_ns = new Names( "ns" );
         EventHandler::_ns->enable();
       }
@@ -106,7 +100,10 @@ void EventHandler::Init::_guard( int direction )
       EventHandler::_ns = 0;
       // cerr << HERE << endl;
     } else if ( _rcount == 0 ) {
-      // _mgr.stop_queue();
+      lock_guard<mutex> lk(_mf_lock);
+      if ( !_start_early ) {
+        _mgr.stop_queue();
+      }
       // cerr << HERE << endl;
     }
   }
@@ -117,6 +114,29 @@ EventHandler::Init::Init()
 
 EventHandler::Init::~Init()
 { _guard( 0 ); }
+
+void EventHandler::cold_start( bool v )
+{
+  lock_guard<mutex> lk(_mf_lock);
+  if ( v ) {
+     if ( !_start_early ) {
+      _start_early = true;
+      _mgr.start_queue();
+    }
+  } else {
+    // unique_lock<mutex> lk(_mf_lock);
+    if ( _start_early ) {
+      _start_early = false;
+      if ( _rcount == 0 ) { // unsafe check really...
+        _mgr.stop_queue();
+      }
+      // lk.unlock();
+      // new( Init_buf ) Init();
+      // Init* tmp = reinterpret_cast<Init*>(Init_buf);
+      // tmp->~Init();
+    }
+  }
+}
 
 EvManager& EventHandler::manager()
 { return _mgr; }

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-08-25 09:06:09 ptr>
+// -*- C++ -*- Time-stamp: <2011-08-26 12:03:02 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2011
@@ -205,6 +205,7 @@ class EvManager
 
     void start_queue();
     void stop_queue();
+    void check_clean();
 
     template <class BackInsertIterator>
     void find( const std::string& name, BackInsertIterator bi )

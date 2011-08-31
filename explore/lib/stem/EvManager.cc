@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-08-25 09:05:48 ptr>
+// -*- C++ -*- Time-stamp: <2011-08-30 15:31:59 ptr>
 
 /*
  *
@@ -50,39 +50,24 @@ EvManager::EvManager() :
 
 EvManager::~EvManager()
 {
-#if 0
-  if ( !_dispatch_stop ) {
-    // never be here:
-    // worker loops should be stopped before EvManager's dtor call!
-    cerr << HERE << endl;
-    _dispatch_stop = true;
-
-    for ( unsigned int i = 0; i < n_threads; ++i ) {
-      cerr << HERE << endl;
-      {
-        std::tr2::unique_lock<std::tr2::mutex> lock( workers[i]->lock );
-        workers[i]->cnd.notify_one();
-        cerr << HERE << endl;
-      }
-      delete workers[i];
-      cerr << HERE << endl;
-    }
-  }
-#endif
+  stop_queue();
 }
 
-/* Oversimplified start_queue, review later */
 void EvManager::start_queue()
 {
+  // ::fprintf( stderr, "start_queue\n" );
+  if ( !_dispatch_stop ) {
+    return;
+  }
   _dispatch_stop = false;
   for ( unsigned int i = 0; i < n_threads; ++i ) {
     workers[i] = new worker( this );
   }
 }
 
-/* Oversimplified stop_queue, review later */
 void EvManager::stop_queue()
 {
+  // ::fprintf( stderr, "stop_queue\n" );
   if ( _dispatch_stop ) {
     return;
   }
@@ -90,12 +75,52 @@ void EvManager::stop_queue()
   _dispatch_stop = true;
 
   for ( unsigned int i = 0; i < n_threads; ++i ) {
-    {
+    if ( workers[i] != 0 ) {
       std::tr2::unique_lock<std::tr2::mutex> lock( workers[i]->lock );
       workers[i]->cnd.notify_one();
     }
-    delete workers[i];
   }
+
+  for ( unsigned int i = 0; i < n_threads; ++i ) {
+    delete workers[i];
+    workers[i] = 0;
+  }
+}
+
+void EvManager::check_clean()
+{
+  // if ( !heap.empty() ) {
+  //   ::fprintf( stderr, "EvManager: heap not empty!\n" );
+  // }
+
+  // if ( !iheap.empty() ) {
+  //   ::fprintf( stderr, "EvManager: iheap not empty!\n" );
+  // }
+
+  // if ( vertices.size() != 1 ) {
+    // ::fprintf( stderr, "EvManager: vertices > 1!\n" );
+  // }
+
+  /* Be careful with call order here!
+     Expected that this is child process (after fork()),
+     and new domain id was already generated (see _EventHandler.cc) */
+  vertices.clear();
+  vertices[EventHandler::domain()];
+
+  if ( !edges.empty() ) {
+    // ::fprintf( stderr, "EvManager: edges not empty!\n" );
+    edges.clear();
+  }
+
+  if ( !bridges.empty() ) {
+    // ::fprintf( stderr, "EvManager: bridges not empty!\n" );
+    bridges.clear();
+  }
+
+  // if ( gate.size() != 1 ) {
+  //   ::fprintf( stderr, "EvManager: gates not empty! %d\n", gate.size() );
+  // }
+  gate.clear();
 }
 
 void EvManager::push( const Event& e )
@@ -113,6 +138,7 @@ void EvManager::worker::_loop( worker* p )
 {
   worker& me = *p;
   EventHandler* obj;
+  edge_id_type edge;
 
   for ( ; ; ) {
     try {
@@ -127,28 +153,27 @@ void EvManager::worker::_loop( worker* p )
       for ( list<stem::Event>::const_iterator i = events.begin(); i != events.end(); ++i ) {
         const Event& ev = *i;
         if ( ev.dest().first != EventHandler::domain() ) {
-          std::tr2::basic_read_lock<std::tr2::rw_mutex> elock( me.mgr->_lock_edges );
-          std::tr2::basic_read_lock<std::tr2::rw_mutex> glock( me.mgr->_lock_gate );
+          ReTryBridge:
+          {
+            std::tr2::basic_read_lock<std::tr2::rw_mutex> glock( me.mgr->_lock_gate );
 
-          auto eid = me.mgr->gate.find( ev.dest().first );
-          if ( eid != me.mgr->gate.end() ) {
-            auto bid = me.mgr->bridges.find( eid->second );
-            if ( bid != me.mgr->bridges.end() ) {
-              reinterpret_cast<NetTransport_base*>(bid->second)->Dispatch( ev );
-            }
+            auto eid = me.mgr->gate.find( ev.dest().first );
+
+            if ( eid != me.mgr->gate.end() ) {
+              edge = eid->second;
+              // cerr << HERE << ' ' << edge << endl;
+            } else {
 #ifdef __FIT_STEM_TRACE
-              else {
               try {
                 lock_guard<mutex> lk(me.mgr->_lock_tr);
                 if ( me.mgr->_trs != 0 && me.mgr->_trs->good() && (me.mgr->_trflags & tracefault) ) {
                   ios_base::fmtflags f = me.mgr->_trs->flags( ios_base::showbase );
-                  *me.mgr->_trs << "EvManager: bridge not found for " << eid->second
-                        << "; Event "
-                        << hex << showbase << ev.code() << " "
-                        << ev.src().first << '/' << ev.src().second
-                        << " -> "
-                        << ev.dest().first << '/' << ev.dest().second
-                        << endl;
+                  *me.mgr->_trs << "EvManager: gate not found; Event "
+                                << hex << showbase << ev.code() << " "
+                                << ev.src().first << '/' << ev.src().second
+                                << " -> "
+                                << ev.dest().first << '/' << ev.dest().second
+                                << endl;
 #ifdef STLPORT
                   me.mgr->_trs->flags( f );
 #else
@@ -158,32 +183,36 @@ void EvManager::worker::_loop( worker* p )
               }
               catch ( ... ) {
               }
-            }
 #endif // __FIT_STEM_TRACE
+              continue;
+            }
           }
-#ifdef __FIT_STEM_TRACE
-            else {
-            try {
-              lock_guard<mutex> lk(me.mgr->_lock_tr);
-              if ( me.mgr->_trs != 0 && me.mgr->_trs->good() && (me.mgr->_trflags & tracefault) ) {
-                ios_base::fmtflags f = me.mgr->_trs->flags( ios_base::showbase );
-                *me.mgr->_trs << "EvManager: gate not found; Event "
-                      << hex << showbase << ev.code() << " "
-                      << ev.src().first << '/' << ev.src().second
-                      << " -> "
-                      << ev.dest().first << '/' << ev.dest().second
-                      << endl;
-#ifdef STLPORT
-                me.mgr->_trs->flags( f );
-#else
-                me.mgr->_trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
-#endif
+
+          {
+            std::tr2::basic_read_lock<std::tr2::rw_mutex> elock( me.mgr->_lock_edges );
+            auto bid = me.mgr->bridges.find( edge );
+
+            if ( bid != me.mgr->bridges.end() ) {
+              if ( reinterpret_cast<NetTransport_base*>(bid->second)->Dispatch( ev ) ) {
+                continue;
               }
+              // channel become bad; remove this bridge.
             }
-            catch ( ... ) {
-            }
+            // bridge not found; is connection lost? But gate to domain still
+            // available, so there are a chance that another bridge good;
+            // let's re-try with another bridge.
+            // cerr << HERE << ' ' << edge << endl;
+            // me.mgr->remove_edge( edge );
+            // goto ReTryBridge;
+            // continue;
           }
-#endif // __FIT_STEM_TRACE
+          /*
+            NetTransport_base::Dispatch say false, to do NetTransport_base::_close
+            I need to lock me.mgr->_lock_edges for write, that's why I released
+            read lock just above
+          */
+          // cerr << HERE << ' ' << edge << endl;
+          me.mgr->remove_edge( edge );
           continue;
         }
         {
@@ -511,54 +540,70 @@ void EvManager::route_calc()
   d_type d; // destination weights
   q_type Q; // heap, d[Q[0]] is minimal in d
 
-  basic_read_lock<rw_mutex> lk( _lock_edges );
+  {
+    basic_read_lock<rw_mutex> lk( _lock_edges );
 
-  Q.reserve( vertices.size() );
+    Q.reserve( vertices.size() );
 
-  for ( auto i = vertices.begin(); i != vertices.end(); ++i ) {
-    Q.push_back( i->first );
-    d[i->first] = numeric_limits<unsigned>::max();
-    pi[i->first] = xmt::nil_uuid;
-  }
-
-  d[EventHandler::domain()] = 0; // source
-
-  make_heap( Q.begin(), Q.end(), q_less( d ) );
-
-  q_type::iterator i = Q.end();
-
-  unsigned path_w;
-  unsigned w;
-  vertex_container_type::iterator vi;
-  edge_container_type::iterator ei;
-
-  while ( i != Q.begin() ) { // while Q not empty...
-    path_w = d[*Q.begin()]; // u = *Q.begin(); u has min weight in Q
-    if ( path_w == numeric_limits<unsigned>::max() ) {
-      break; // only unaccessible remains
+    for ( auto i = vertices.begin(); i != vertices.end(); ++i ) {
+      Q.push_back( i->first );
+      d[i->first] = numeric_limits<unsigned>::max();
+      pi[i->first] = xmt::nil_uuid;
     }
-    vi = vertices.find( *Q.begin() );
 
-    pop_heap( Q.begin(), i--, q_less( d ) ); // remove u from Q
+    d[EventHandler::domain()] = 0; // source
 
-    // iterate through edges (u,v)
-    for ( auto j = vi->second.begin(); j != vi->second.end(); ++j ) {
-      ei = edges.find( *j );
-      w = path_w + ei->second.second; // w(path to u) + w(u,v)
-      if ( w < d[ei->second.first.second] ) { // relax
-        d[ei->second.first.second] = w;
-        pi[ei->second.first.second] = *j;
-        make_heap( Q.begin(), i, q_less( d ) );
+    make_heap( Q.begin(), Q.end(), q_less( d ) );
+
+    q_type::iterator i = Q.end();
+
+    unsigned path_w;
+    unsigned w;
+    vertex_container_type::iterator vi;
+    edge_container_type::iterator ei;
+
+    while ( i != Q.begin() ) { // while Q not empty...
+      path_w = d[*Q.begin()]; // u = *Q.begin(); u has min weight in Q
+      if ( path_w == numeric_limits<unsigned>::max() ) {
+        break; // only unaccessible remains
+      }
+      vi = vertices.find( *Q.begin() );
+
+      pop_heap( Q.begin(), i--, q_less( d ) ); // remove u from Q
+
+      // iterate through edges (u,v)
+      for ( auto j = vi->second.begin(); j != vi->second.end(); ++j ) {
+        ei = edges.find( *j );
+        if ( ei == edges.end() ) { // I don't understand why it happens...
+          /*
+          cerr << HERE << ' ' << vertices.size() << ' ' << edges.size() << ' ' << *j << ' '
+               << vi->second.size() << endl;
+          for ( auto xi = edges.begin(); xi != edges.end(); ++xi ) {
+            cerr << xi->first << endl;
+          }
+          cerr << endl;
+          for ( auto xi = vi->second.begin(); xi != vi->second.end(); ++xi ) {
+            cerr << *xi << endl;
+          }
+          */
+          continue;
+        }
+        w = path_w + ei->second.second; // w(path to u) + w(u,v)
+        if ( w < d[ei->second.first.second] ) { // relax
+          d[ei->second.first.second] = w;
+          pi[ei->second.first.second] = *j;
+          make_heap( Q.begin(), i, q_less( d ) );
+        }
       }
     }
-  }
 
-  for ( auto k = pi.begin(); k != pi.end(); ++k ) {
-    if ( k->second != xmt::nil_uuid ) {
-      auto j = pi.find( edges[k->second].first.first );
-      while ( (j != pi.end()) && (j->second != xmt::nil_uuid) ) {
-        k->second = j->second;
-        j = pi.find( edges[j->second].first.first );
+    for ( auto k = pi.begin(); k != pi.end(); ++k ) {
+      if ( k->second != xmt::nil_uuid ) {
+        auto j = pi.find( edges[k->second].first.first );
+        while ( (j != pi.end()) && (j->second != xmt::nil_uuid) ) {
+          k->second = j->second;
+          j = pi.find( edges[j->second].first.first );
+        }
       }
     }
   }
