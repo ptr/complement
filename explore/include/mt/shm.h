@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-08-24 13:26:35 ptr>
+// -*- C++ -*- Time-stamp: <2011-09-20 18:25:42 ptr>
 
 /*
  * Copyright (c) 2006-2011
@@ -443,7 +443,7 @@ class shm_alloc
       }
 
   protected:
-    static void *allocate( size_type n, void *hint = 0 )
+    static void *allocate( size_type n, void* /* hint */ = 0 )
       {
         _master *m = reinterpret_cast<_master *>( _seg.address() );
         if ( m != reinterpret_cast<_master *>(-1) ) {

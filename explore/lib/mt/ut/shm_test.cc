@@ -127,7 +127,7 @@ int EXAM_IMPL(shm_test::shm_alloc)
       EXAM_CHECK( ch2 != 0 );
       try {
         // try to allocate third block, not enough room
-        char *ch3 = shmall.allocate( 8 * 1024 - 7000 );
+        /* char *ch3 = */ shmall.allocate( 8 * 1024 - 7000 );
         EXAM_ERROR( "xmt::shm_bad_alloc exception expected" );
       }
       catch ( xmt::shm_bad_alloc& err ) {
