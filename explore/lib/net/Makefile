@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <07/08/03 23:56:04 ptr>
+# -*- Makefile -*- Time-stamp: <2011-10-05 23:38:27 ptr>
 
 SRCROOT := ../..
 
@@ -10,28 +10,27 @@ HEADERS_BASE = $(SRCROOT)/include/net $(SRCROOT)/include/config $(SRCROOT)/inclu
 
 LIBMT_DIR = ${CoMT_DIR}/lib/mt
 LIBSOCK_DIR = ${CoMT_DIR}/lib/sockios
-LIBSTEM_DIR = ${CoMT_DIR}/lib/stem
 LIBMISC_DIR = ${CoMT_DIR}/lib/misc
 LIBBOOSTRE_DIR = ${CoMT_DIR}/../extern/custom/boost/libs/regex
 
 ifeq ($(OSNAME),linux)
 
-release-shared:	LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR} -L${LIBMISC_DIR}/${OUTPUT_DIR} -L${LIBSOCK_DIR}/${OUTPUT_DIR} -L${LIBSTEM_DIR}/${OUTPUT_DIR} -L${LIBBOOSTRE_DIR}/${OUTPUT_DIR}
+release-shared:	LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR} -L${LIBMISC_DIR}/${OUTPUT_DIR} -L${LIBSOCK_DIR}/${OUTPUT_DIR} -L${LIBBOOSTRE_DIR}/${OUTPUT_DIR}
 
 ifndef WITHOUT_STLPORT
 
-stldbg-shared:	LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBMISC_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSOCK_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSTEM_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBBOOSTRE_DIR}/${OUTPUT_DIR_STLDBG}
+stldbg-shared:	LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBMISC_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBSOCK_DIR}/${OUTPUT_DIR_STLDBG} -L${LIBBOOSTRE_DIR}/${OUTPUT_DIR_STLDBG}
 
 endif
 
-dbg-shared:	LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR_DBG} -L${LIBMISC_DIR}/${OUTPUT_DIR_DBG} -L${LIBSOCK_DIR}/${OUTPUT_DIR_DBG} -L${LIBSTEM_DIR}/${OUTPUT_DIR_DBG} -L${LIBBOOSTRE_DIR}/${OUTPUT_DIR_DBG}
+dbg-shared:	LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR_DBG} -L${LIBMISC_DIR}/${OUTPUT_DIR_DBG} -L${LIBSOCK_DIR}/${OUTPUT_DIR_DBG} -L${LIBBOOSTRE_DIR}/${OUTPUT_DIR_DBG}
 
 endif
 
-release-shared:	LDLIBS += -lxmt -lsockios -lstem -lboost_regex -lmisc
-dbg-shared:	LDLIBS += -lxmtg -lsockiosg -lstemg -lboost_regexg -lmiscg
+release-shared:	LDLIBS += -lxmt -lsockios -lboost_regex -lmisc
+dbg-shared:	LDLIBS += -lxmtg -lsockiosg -lboost_regexg -lmiscg
 ifndef WITHOUT_STLPORT
-stldbg-shared:	LDLIBS += -lxmtstlg -lsockiosstlg -lstemstlg -lboost_regexstlg -lmiscstlg
+stldbg-shared:	LDLIBS += -lxmtstlg -lsockiosstlg -lboost_regexstlg -lmiscstlg
 endif
 
 
