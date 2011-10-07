@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/16 02:20:24 ptr>
+// -*- C++ -*- Time-stamp: <2011-10-07 08:15:06 ptr>
 
 /*
  *
@@ -9,7 +9,7 @@
  *
  */
 
-#include <net/ftransfer.h>
+#include "ftransfer.h"
 #include <stem/EvPack.h>
 
 #include <iterator>
@@ -39,7 +39,7 @@ class file_receiver :
     public EventHandler
 {
   public:
-    file_receiver( const std::string& nm, stem::addr_type snd, stem::addr_type remover );
+    file_receiver( const std::string& nm, stem::ext_addr_type snd, stem::ext_addr_type remover );
     ~file_receiver();
 
     void next_chunk( const stem::Event& );
@@ -48,7 +48,7 @@ class file_receiver :
   private:
     misc::otfstream f;
     std::string name;
-    stem::addr_type r;
+    stem::ext_addr_type r;
     MD5_CTX ctx;
 
     DECLARE_RESPONSE_TABLE( file_receiver, EventHandler );
@@ -60,9 +60,9 @@ class file_sender :
   public:
     file_sender( const std::string& name,
                  const std::string& rmprefix,
-                 stem::addr_type rcv,
-                 stem::addr_type remover,
-                 stem::addr_type watcher );
+                 stem::ext_addr_type rcv,
+                 stem::ext_addr_type remover,
+                 stem::ext_addr_type watcher );
     ~file_sender();
 
     void ack( const stem::Event& );
@@ -73,8 +73,8 @@ class file_sender :
   private:
     std::ilfstream f;
     std::string name;
-    stem::addr_type r;
-    stem::addr_type w;
+    stem::ext_addr_type r;
+    stem::ext_addr_type w;
     MD5_CTX ctx;
 
     DECLARE_RESPONSE_TABLE( file_sender, EventHandler );
@@ -93,7 +93,7 @@ const int ST_SANITY        = 0x2;
 
 const int ST_CORE_SEND     = 0x1;
 
-file_receiver::file_receiver( const std::string& nm, stem::addr_type snd, stem::addr_type remover ) :
+file_receiver::file_receiver( const std::string& nm, stem::ext_addr_type snd, stem::ext_addr_type remover ) :
     EventHandler(),
     f(),
     name( nm ),
@@ -194,9 +194,9 @@ END_RESPONSE_TABLE
 
 file_sender::file_sender( const string& nm,
                           const string& rmprefix,
-                          stem::addr_type rcv,
-                          stem::addr_type remover,
-                          stem::addr_type watcher ) :
+                          stem::ext_addr_type rcv,
+                          stem::ext_addr_type remover,
+                          stem::ext_addr_type watcher ) :
     EventHandler(),
     name( nm ),
     f( nm.c_str() ),
@@ -352,10 +352,10 @@ FileSndMgr::~FileSndMgr()
   senders.clear();
 }
 
-void FileSndMgr::sendfile( const std::string& name, stem::addr_type to, stem::addr_type watcher )
+void FileSndMgr::sendfile( const std::string& name, stem::ext_addr_type to, stem::ext_addr_type watcher )
 {
   try {
-    detail::file_sender* f = new detail::file_sender( name, tranc_prefix, to, self_id(), watcher );
+    detail::file_sender* f = new detail::file_sender( name, tranc_prefix, to, make_pair(EventHandler::domain(),self_id()), watcher );
 
     senders[f->self_id()] = f;
   }
@@ -365,7 +365,7 @@ void FileSndMgr::sendfile( const std::string& name, stem::addr_type to, stem::ad
 
 void FileSndMgr::finish( const stem::Event& ev )
 {
-  container_type::iterator i = senders.find( ev.src() );
+  container_type::iterator i = senders.find( ev.src().second );
   if ( i != senders.end() ) {
     delete i->second;
     senders.erase( i );
@@ -432,7 +432,7 @@ void FileRcvMgr::receive( const stem::Event& ev )
     nm += ev.value();
 
     if ( provide_dir( nm ) ) {
-      detail::file_receiver* f = new detail::file_receiver( nm, ev.src(), self_id() );
+      detail::file_receiver* f = new detail::file_receiver( nm, ev.src(), make_pair(EventHandler::domain(),self_id()) );
 
       receivers[f->self_id()] = f;
     }
@@ -443,7 +443,7 @@ void FileRcvMgr::receive( const stem::Event& ev )
 
 void FileRcvMgr::finish( const stem::Event& ev )
 {
-  container_type::iterator i = receivers.find( ev.src() );
+  container_type::iterator i = receivers.find( ev.src().second );
   if ( i != receivers.end() ) {
     delete i->second;
     receivers.erase( i );

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/24 01:34:01 ptr>
+// -*- C++ -*- Time-stamp: <2011-10-07 08:25:42 ptr>
 
 /*
  *
@@ -11,7 +11,7 @@
 
 #include "ftransfer_test.h"
 
-#include <net/ftransfer.h>
+#include "../ftransfer.h"
 #include <mt/date_time>
 #include <mt/thread>
 #include <mt/uid.h>
@@ -100,7 +100,7 @@ int EXAM_IMPL(ftransfer_test::core)
     receiver.set_prefix( target );
 
     sender.truncate_path( "/tmp/" );
-    sender.sendfile( name, receiver.self_id(), watcher.self_id() );
+    sender.sendfile( name, make_pair( receiver.domain(), receiver.self_id() ), make_pair( watcher.domain(), watcher.self_id() ) );
 
     std::tr2::this_thread::sleep( std::tr2::milliseconds(400) );
   }
@@ -194,7 +194,7 @@ int EXAM_IMPL(ftransfer_test::big_file)
     receiver.set_prefix( target );
 
     sender.truncate_path( "/tmp/" );
-    sender.sendfile( name, receiver.self_id() );
+    sender.sendfile( name, make_pair( receiver.domain(), receiver.self_id() ) );
 
     // expected speed more then 10MB/s for local transfer
     std::tr2::this_thread::sleep( std::tr2::seconds(5) );

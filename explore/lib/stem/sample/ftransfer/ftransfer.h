@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/01/15 17:30:22 ptr>
+// -*- C++ -*- Time-stamp: <2011-10-07 08:13:33 ptr>
 
 /*
  *
@@ -39,12 +39,12 @@ class FileSndMgr :
   public:
     FileSndMgr();
     explicit FileSndMgr( const char* );
-    explicit FileSndMgr( addr_type id, const char* info = 0 );
+    explicit FileSndMgr( stem::addr_type id, const char* info = 0 );
     ~FileSndMgr();
     
     void truncate_path( const std::string& p )
       { tranc_prefix = p; }
-    void sendfile( const std::string& name, stem::addr_type to, stem::addr_type watcher = stem::badaddr );
+    void sendfile( const std::string& name, stem::ext_addr_type to, stem::ext_addr_type watcher = stem::extbadaddr );
 
   private:
     void finish( const stem::Event& );
@@ -64,7 +64,7 @@ class FileRcvMgr :
   public:
     FileRcvMgr();
     explicit FileRcvMgr( const char* );
-    explicit FileRcvMgr( addr_type id, const char* info = 0 );
+    explicit FileRcvMgr( stem::addr_type id, const char* info = 0 );
     ~FileRcvMgr();
 
     void set_prefix( const std::string& p )
