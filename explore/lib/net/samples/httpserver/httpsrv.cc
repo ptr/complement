@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-10-05 23:22:14 ptr>
+// -*- C++ -*- Time-stamp: <2011-10-10 17:49:31 ptr>
 
 /*
  *
@@ -69,9 +69,11 @@ void HTTPsrv::connect( std::sockstream& s )
   http::base_response rs;
 
   rs.code( 202 );
-  rs.protocol( http::command::HTTP11 );
+  rs.protocol( http::command::HTTP10 );
+  http::header h1( "Location", "/result" );
+  http::header h2( "Content-type", "text/html" );
 
-  (s << rs).flush();
+  (s << rs << h1 << h2).flush();
 
   if ( !url.empty() ) {
     if ( (url == r.head().URL()) && !cmd.empty() ) {
