@@ -1,10 +1,10 @@
-// -*- C++ -*- Time-stamp: <09/06/06 00:28:50 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-07 18:07:17 ptr>
 
 /*
  * Copyright (c) 2008, 2009
  * Dmitry Osmakov
  *
- * Copyright (c) 1997-1998, 2001, 2008, 2009
+ * Copyright (c) 1997-1998, 2001, 2008, 2009, 2012
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -25,21 +25,16 @@ int option_base::_count = 0;
 
 string option_base::_parname( const char* def ) const
 {
-  string::size_type p[2];
+  string::size_type p0 = desc.find( '<' );
 
-  p[0] = desc.find( '<' );
-
-  if ( p[0] != string::npos ) {
-    p[1] = desc.find( '>', p[0] );
+  if ( p0 != string::npos ) {
+    string::size_type p1 = desc.find( '>', p0 );
+    if ( p1 != string::npos ) {
+      return desc.substr( p0, p1 - p0 + 1 );
+    }
   }
 
-  string sample( def );
-
-  if ( (p[0] != string::npos) && (p[1] != string::npos) ) {
-    sample = desc.substr( p[0], p[1] - p[0] + 1 );
-  }
-
-  return sample;
+  return string( def );
 }
 
 std::ostream& option<string>::_describe( std::ostream& out ) const
