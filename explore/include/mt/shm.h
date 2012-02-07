@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-09-20 18:25:42 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-07 17:57:12 ptr>
 
 /*
- * Copyright (c) 2006-2011
+ * Copyright (c) 2006-2012
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -20,6 +20,7 @@
 
 #include <stdexcept>
 #include <algorithm>
+#include <memory>
 
 #if (defined(STLPORT) && ((_STLPORT_MAJOR > 5) || ((_STLPORT_MAJOR == 5) && (_STLPORT_MINOR > 1)))) || (defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))) && defined(__GXX_EXPERIMENTAL_CXX0X__))
 # include <type_traits>
@@ -599,22 +600,6 @@ class __allocator_shm<std::true_type>
       { }
 };
 
-#ifndef STLPORT
-
-template <class _Tp, class TRD >
-inline void __destroy_aux(_Tp *p, const TRD& /* has_trivial_destructor */)
-{ }
-
-template <class _Tp>
-inline void __destroy_aux(_Tp *p, const std::false_type& /* has_trivial_destructor */)
-{ p->~_Tp(); }
-
-template <class _Tp>
-inline void __destroy_aux(_Tp *p, const std::true_type& /* has_trivial_destructor */)
-{ }
-
-#endif // !STLPORT
-
 } // namespace detail
 
 template <class _Tp, int _Inst>
@@ -691,20 +676,12 @@ class allocator_shm :
 
     void construct(pointer __p, const_reference __val)
       {
-#ifdef STLPORT
-        _STLP_STD::_Copy_Construct(__p, __val);
-#else
-        new (__p) _Tp(__val);
-#endif
+        std::allocator_traits<allocator_shm<_Tp,_Inst> >::construct( *this, __p, __val );
       }
 
     void destroy(pointer __p)
       {
-#ifdef STLPORT
-        _STLP_STD::_Destroy(__p);
-#else
-        detail::__destroy_aux(__p,std::has_trivial_destructor<value_type>::value);
-#endif
+        std::allocator_traits<allocator_shm<_Tp,_Inst> >::destroy( *this, __p );
       }
 
 };
