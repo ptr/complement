@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-08-23 17:44:10 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-08 12:31:06 ptr>
 
 /*
  *
@@ -53,6 +53,7 @@ typedef xmt::uuid_type domain_type;
 typedef std::pair<domain_type,addr_type> ext_addr_type;
 
 extern const addr_type& badaddr;
+extern const domain_type& baddomain;
 extern const ext_addr_type extbadaddr;
 extern const code_type badcode;
 

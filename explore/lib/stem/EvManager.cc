@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2011-08-30 15:31:59 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-08 12:32:59 ptr>
 
 /*
  *
- * Copyright (c) 1995-1999, 2002, 2003, 2005-2011
+ * Copyright (c) 1995-1999, 2002, 2003, 2005-2012
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -28,7 +28,8 @@ using namespace std;
 using namespace std::tr2;
 
 const addr_type& badaddr = xmt::nil_uuid;
-const ext_addr_type extbadaddr( xmt::nil_uuid, xmt::nil_uuid );
+const domain_type& baddomain = xmt::nil_uuid;
+const ext_addr_type extbadaddr( baddomain, badaddr );
 const code_type badcode  = 0xffffffff;
 
 std::string EvManager::inv_key_str( "invalid key" );

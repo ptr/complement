@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-08-26 17:54:47 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-08 12:39:49 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2011
@@ -141,46 +141,46 @@ class NetTransportMgr :
     bool is_open() const
       { return std::sockstream::is_open(); }
 
-    addr_type open( const char* hostname, int port,
-                    sock_base::stype type = sock_base::sock_stream,
-                    sock_base::protocol pro = sock_base::inet );
+    domain_type open( const char* hostname, int port,
+                      sock_base::stype type = sock_base::sock_stream,
+                      sock_base::protocol pro = sock_base::inet );
 
 
-    addr_type open( const char* path,
-                    sock_base::stype type = sock_base::sock_stream );
+    domain_type open( const char* path,
+                      sock_base::stype type = sock_base::sock_stream );
 
-    addr_type open( in_addr_t addr, int port,
-                    sock_base::stype type = sock_base::sock_stream,
-                    sock_base::protocol pro = sock_base::inet );
+    domain_type open( in_addr_t addr, int port,
+                      sock_base::stype type = sock_base::sock_stream,
+                      sock_base::protocol pro = sock_base::inet );
 
-    addr_type open( const sockaddr_in& addr,
-                    sock_base::stype type = sock_base::sock_stream );
+    domain_type open( const sockaddr_in& addr,
+                      sock_base::stype type = sock_base::sock_stream );
 
-    addr_type open( sock_base::socket_type s, const sockaddr& addr,
-                    sock_base::stype type = sock_base::sock_stream );
+    domain_type open( sock_base::socket_type s, const sockaddr& addr,
+                      sock_base::stype type = sock_base::sock_stream );
 
-    addr_type open( sock_base::socket_type s,
-                    sock_base::stype type = sock_base::sock_stream );
-
-    template <class Duration>
-    addr_type open( const char* hostname, int port,
-                    const Duration& timeout,
-                    sock_base::stype type = sock_base::sock_stream,
-                    sock_base::protocol pro = sock_base::inet );
+    domain_type open( sock_base::socket_type s,
+                      sock_base::stype type = sock_base::sock_stream );
 
     template <class Duration>
-    addr_type open( const char* path, const Duration& timeout,
-                    sock_base::stype type = sock_base::sock_dgram );
+    domain_type open( const char* hostname, int port,
+                      const Duration& timeout,
+                      sock_base::stype type = sock_base::sock_stream,
+                      sock_base::protocol pro = sock_base::inet );
 
     template <class Duration>
-    addr_type open( in_addr_t addr, int port,
-                    const Duration& timeout,
-                    sock_base::stype type = sock_base::sock_stream,
-                    sock_base::protocol pro = sock_base::inet );
+    domain_type open( const char* path, const Duration& timeout,
+                      sock_base::stype type = sock_base::sock_dgram );
 
     template <class Duration>
-    addr_type open( const sockaddr_in& addr, const Duration& timeout,
-                    sock_base::stype type = sock_base::sock_stream );
+    domain_type open( in_addr_t addr, int port,
+                      const Duration& timeout,
+                      sock_base::stype type = sock_base::sock_stream,
+                      sock_base::protocol pro = sock_base::inet );
+
+    template <class Duration>
+    domain_type open( const sockaddr_in& addr, const Duration& timeout,
+                      sock_base::stype type = sock_base::sock_stream );
 
     void close();
 
@@ -199,7 +199,7 @@ class NetTransportMgr :
 #endif
 
   private:
-    addr_type discovery( const std::tr2::nanoseconds& timeout = std::tr2::nanoseconds() );
+    domain_type discovery( const std::tr2::nanoseconds& timeout = std::tr2::nanoseconds() );
 
     static void _loop( NetTransportMgr* );
     std::tr2::thread* _thr;
@@ -207,10 +207,10 @@ class NetTransportMgr :
 
 
 template <class Duration>
-addr_type NetTransportMgr::open( const char* hostname, int port,
-                            const Duration& timeout,
-                            sock_base::stype type,
-                            sock_base::protocol pro )
+domain_type NetTransportMgr::open( const char* hostname, int port,
+                                   const Duration& timeout,
+                                   sock_base::stype type,
+                                   sock_base::protocol pro )
 {
   std::sockstream::open( hostname, port, timeout );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
@@ -223,26 +223,26 @@ addr_type NetTransportMgr::open( const char* hostname, int port,
     }
     return discovery( static_cast<std::tr2::nanoseconds>(timeout).count() );
   }
-  return stem::badaddr;
+  return stem::baddomain;
 }
 
 template <class Duration>
-addr_type NetTransportMgr::open( const char* path,
-                            const Duration& timeout,
-                            sock_base::stype type )
+domain_type NetTransportMgr::open( const char* path,
+                                   const Duration& timeout,
+                                   sock_base::stype type )
 {
   std::sockstream::open( path, timeout, type );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
     return discovery( static_cast<std::tr2::nanoseconds>(timeout).count() );
   }
-  return stem::badaddr;
+  return stem::baddomain;
 }
 
 template <class Duration>
-addr_type NetTransportMgr::open( in_addr_t addr, int port,
-                            const Duration& timeout,
-                            sock_base::stype type,
-                            sock_base::protocol pro )
+domain_type NetTransportMgr::open( in_addr_t addr, int port,
+                                   const Duration& timeout,
+                                   sock_base::stype type,
+                                   sock_base::protocol pro )
 {
   std::sockstream::open( addr, port, timeout );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
@@ -255,13 +255,13 @@ addr_type NetTransportMgr::open( in_addr_t addr, int port,
     }
     return discovery( static_cast<std::tr2::nanoseconds>(timeout).count() );
   }
-  return stem::badaddr;
+  return stem::baddomain;
 }
 
 template <class Duration>
-addr_type NetTransportMgr::open( const sockaddr_in& addr,
-                            const Duration& timeout,
-                            sock_base::stype type )
+domain_type NetTransportMgr::open( const sockaddr_in& addr,
+                                   const Duration& timeout,
+                                   sock_base::stype type )
 {
   std::sockstream::open( addr, timeout, type );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
@@ -274,10 +274,8 @@ addr_type NetTransportMgr::open( const sockaddr_in& addr,
     }
     return discovery( static_cast<std::tr2::nanoseconds>(timeout).count() );
   }
-  return stem::badaddr;
+  return stem::baddomain;
 }
-
-
 
 } // namespace stem
 

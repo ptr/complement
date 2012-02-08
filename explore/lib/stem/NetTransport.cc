@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2011-08-29 22:36:38 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-08 12:37:09 ptr>
 
 /*
  *
- * Copyright (c) 1997-1999, 2002-2003, 2005-2011
+ * Copyright (c) 1997-1999, 2002-2003, 2005-2012
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -641,9 +641,9 @@ void NetTransport::connect( sockstream& s )
   }
 }
 
-addr_type NetTransportMgr::open( const char* hostname, int port,
-                                 std::sock_base::stype stype,
-                                 sock_base::protocol pro )
+domain_type NetTransportMgr::open( const char* hostname, int port,
+                                   std::sock_base::stype stype,
+                                   sock_base::protocol pro )
 {
   std::sockstream::open( hostname, port, stype, pro );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
@@ -656,22 +656,22 @@ addr_type NetTransportMgr::open( const char* hostname, int port,
     }
     return discovery();
   }
-  return badaddr;
+  return baddomain;
 }
 
-addr_type NetTransportMgr::open( const char* path,
-                                 std::sock_base::stype stype )
+domain_type NetTransportMgr::open( const char* path,
+                                   std::sock_base::stype stype )
 {
   std::sockstream::open( path, stype );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
     return discovery();
   }
-  return badaddr;
+  return baddomain;
 }
 
-addr_type NetTransportMgr::open( in_addr_t addr, int port,
-                                 sock_base::stype type,
-                                 sock_base::protocol pro )
+domain_type NetTransportMgr::open( in_addr_t addr, int port,
+                                   sock_base::stype type,
+                                   sock_base::protocol pro )
 {
   std::sockstream::open( addr, port, type, pro );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
@@ -684,11 +684,11 @@ addr_type NetTransportMgr::open( in_addr_t addr, int port,
     }
     return discovery();
   }
-  return badaddr;
+  return baddomain;
 }
 
-addr_type NetTransportMgr::open( const sockaddr_in& addr,
-                                 sock_base::stype type )
+domain_type NetTransportMgr::open( const sockaddr_in& addr,
+                                   sock_base::stype type )
 {
   std::sockstream::open( addr, type );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
@@ -701,11 +701,11 @@ addr_type NetTransportMgr::open( const sockaddr_in& addr,
     }
     return discovery();
   }
-  return badaddr;
+  return baddomain;
 }
 
-addr_type NetTransportMgr::open( sock_base::socket_type s, const sockaddr& addr,
-                                 sock_base::stype type )
+domain_type NetTransportMgr::open( sock_base::socket_type s, const sockaddr& addr,
+                                   sock_base::stype type )
 {
   std::sockstream::open( s, addr, type );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
@@ -718,11 +718,11 @@ addr_type NetTransportMgr::open( sock_base::socket_type s, const sockaddr& addr,
     }
     return discovery();
   }
-  return badaddr;
+  return baddomain;
 }
 
-addr_type NetTransportMgr::open( sock_base::socket_type s,
-                                 sock_base::stype type )
+domain_type NetTransportMgr::open( sock_base::socket_type s,
+                                   sock_base::stype type )
 {
   std::sockstream::open( s, type );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
@@ -733,7 +733,7 @@ addr_type NetTransportMgr::open( sock_base::socket_type s,
     }
     return discovery();
   }
-  return badaddr;
+  return baddomain;
 }
 
 void NetTransportMgr::close()
@@ -746,7 +746,7 @@ void NetTransportMgr::close()
   NetTransport_base::_close();
 }
 
-stem::addr_type NetTransportMgr::discovery( const std::tr2::nanoseconds& timeout )
+stem::domain_type NetTransportMgr::discovery( const std::tr2::nanoseconds& timeout )
 {
   this->write( reinterpret_cast<const char*>(&EDS_MAGIC), sizeof(EDS_MAGIC) );
   __pack_base::__pack( *this, EventHandler::domain() );
@@ -761,7 +761,7 @@ stem::addr_type NetTransportMgr::discovery( const std::tr2::nanoseconds& timeout
   this->read( reinterpret_cast<char*>(&magic), sizeof(EDS_MAGIC) );
 
   if ( this->fail() || magic != EDS_MAGIC ) {
-    return stem::badaddr;
+    return stem::baddomain;
   }
 
   {
@@ -788,7 +788,7 @@ stem::addr_type NetTransportMgr::discovery( const std::tr2::nanoseconds& timeout
   for ( ; ; ) {
     __pack_base::__unpack( *this, eid );
     if ( this->fail()  ) {
-      return stem::badaddr;
+      return stem::baddomain;
     }
     if ( eid == xmt::nil_uuid ) {
       break; // finish of edges list
@@ -798,7 +798,7 @@ stem::addr_type NetTransportMgr::discovery( const std::tr2::nanoseconds& timeout
     __pack_base::__unpack( *this, w );
 
     if ( this->fail() ) {
-      return stem::badaddr;
+      return stem::baddomain;
     }
 
     if ( first ) {
@@ -817,7 +817,7 @@ stem::addr_type NetTransportMgr::discovery( const std::tr2::nanoseconds& timeout
     return domain;
   }
 
-  return stem::badaddr;
+  return stem::baddomain;
 }
 
 
