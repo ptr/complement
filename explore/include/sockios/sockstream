@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/02 20:04:43 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-07 18:36:29 ptr>
 
 /*
  * Copyright (c) 1997-1999, 2002, 2003, 2005-2010
@@ -756,14 +756,9 @@ class basic_sockbuf :
       { throw length_error("basic_sockbuf"); }
 #endif
 
-#ifdef STLPORT
-    typedef typename _Alloc_traits<charT, _Alloc>::allocator_type allocator_type;
-#else
     typedef _Alloc allocator_type;
-#endif
-    /* typedef __allocator<charT, _Alloc> _Alloc_type; */
 
-    /* _Alloc_type */ allocator_type _M_data_allocator;
+    allocator_type _M_data_allocator;
 
     class rdready_t
     {
