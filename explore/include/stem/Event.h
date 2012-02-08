@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2012-02-08 12:31:06 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-08 17:12:51 ptr>
 
 /*
  *
- * Copyright (c) 1995-1999, 2002, 2003, 2005-2011x
+ * Copyright (c) 1995-1999, 2002, 2003, 2005-2012
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -56,6 +56,20 @@ extern const addr_type& badaddr;
 extern const domain_type& baddomain;
 extern const ext_addr_type extbadaddr;
 extern const code_type badcode;
+
+// } // namespace stem
+
+// namespace std {
+
+inline bool operator ==(const stem::ext_addr_type& l, const stem::ext_addr_type& r)
+{ return (l.first == r.first) && (l.second == r.second); }
+
+inline bool operator !=(const stem::ext_addr_type& l, const stem::ext_addr_type& r)
+{ return (l.first != r.first) || (r.second != r.second); }
+
+}
+
+namespace stem {
 
 class __Event_Base
 {
