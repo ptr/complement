@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2012-02-08 12:37:09 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-09 14:49:05 ptr>
 
 /*
  *
@@ -170,9 +170,6 @@ __FIT_DECLSPEC void NetTransport_base::_close()
   }
 #endif // __FIT_STEM_TRACE
 
-#if 0
-  EventHandler::solitary();
-#endif
   net.close();
 
   if ( _id != xmt::nil_uuid ) {

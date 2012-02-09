@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-08-24 20:16:44 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-09 14:48:43 ptr>
 
 /*
  * Copyright (c) 1998, 2002-2003, 2005-2006, 2008-2009
@@ -58,7 +58,7 @@ Cron::Cron( addr_type id, const char *info ) :
 
 Cron::~Cron()
 {
-  this->solitary();
+  this->disable();
 
   if ( _thr != 0 ) {
     {

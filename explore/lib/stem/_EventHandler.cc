@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-08-26 11:55:36 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-09 14:51:54 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2011
@@ -290,7 +290,9 @@ EventHandler::EventHandler( const addr_type& id, const char* info ) :
 
 EventHandler::~EventHandler()
 {
-  EventHandler::solitary();
+  _mgr.Unsubscribe( _id );
+  theHistory.clear();
+
   Init* tmp = reinterpret_cast<Init*>(Init_buf);
   tmp->~Init();
 }
@@ -312,16 +314,6 @@ addr_type EventHandler::ns()
 const domain_type& EventHandler::domain()
 { return _domain; }
 
-void EventHandler::solitary()
-{
-  _mgr.Unsubscribe( _id );
-  {
-    std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( _theHistory_lock );
-    _id = badaddr;
-  }
-  theHistory.clear();
-}
-
 void EventHandler::enable()
 {
   _mgr.Subscribe( _id, this );
@@ -330,10 +322,6 @@ void EventHandler::enable()
 void EventHandler::disable()
 {
   _mgr.Unsubscribe( _id );
-  {
-    std::tr2::lock_guard<std::tr2::recursive_mutex> hlk( _theHistory_lock );
-    _id = badaddr;
-  }
 }
 
 int EventHandler::flags() const

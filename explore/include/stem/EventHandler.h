@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-08-26 11:57:12 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-09 14:53:48 ptr>
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005-2010
@@ -582,12 +582,8 @@ class EventHandler
     void sync_call( const stem::Event_base<D>& e )
       { EventHandler::sync_call( stem::detail::convert<stem::Event_base<D>,stem::Event>()(e) ); }
 
-    const addr_type self_id() const
-      {
-        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( _theHistory_lock );
-        return _id;
-      }
-    void solitary();
+    const addr_type& self_id() const
+      { return _id; }
 
     void State( state_type state )
       { PushState( state ); }

@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2012-02-08 12:39:49 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-08 20:46:15 ptr>
 
 /*
- * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2011
+ * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2012
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -62,11 +62,11 @@ class NetTransport_base
 
     virtual int flags() const;
 
-  private:
 #ifdef __FIT_CPP_0X
     NetTransport_base( NetTransport_base& ) = delete;
     NetTransport_base operator =( const NetTransport_base& ) = delete;
 #else
+  private:
     NetTransport_base( NetTransport_base& );
     NetTransport_base operator =( const NetTransport_base& );
 #endif
@@ -144,7 +144,6 @@ class NetTransportMgr :
     domain_type open( const char* hostname, int port,
                       sock_base::stype type = sock_base::sock_stream,
                       sock_base::protocol pro = sock_base::inet );
-
 
     domain_type open( const char* path,
                       sock_base::stype type = sock_base::sock_stream );
