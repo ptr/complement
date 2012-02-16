@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2011-04-29 19:39:01 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-08 17:02:09 ptr>
 
 /*
  *
- * Copyright (c) 2008-2011
+ * Copyright (c) 2008-2012
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -48,9 +48,27 @@
 
 namespace janus {
 
-typedef stem::addr_type addr_type;
+typedef stem::ext_addr_type addr_type;
 typedef uint32_t vtime_unit_type;
 typedef xmt::uuid_type gid_type; // required, used in VTSend
+
+// using stem::operator ==;
+// using stem::operator !=;
+
+} // namespace janus
+
+namespace std {
+
+template <>
+struct hash<janus::addr_type>
+{
+    size_t operator()(const janus::addr_type& __x) const
+      { return __x.second.u.i[0]; }
+};
+
+} // namespace std
+
+namespace janus {
 
 extern const gid_type& nil_gid;
 

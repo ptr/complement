@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-04-29 19:39:56 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-08 13:44:36 ptr>
 
 /*
  *
@@ -54,7 +54,7 @@ class Cron;
 
 namespace janus {
 
-extern const addr_type& nil_addr;
+extern const addr_type nil_addr;
 extern const gid_type& nil_gid;
 
 class basic_vs :
@@ -90,9 +90,9 @@ class basic_vs :
     void vs_tcp_point( uint32_t, int );
     void vs_tcp_point( const sockaddr_in& );
     void vs_copy_tcp_points( const basic_vs& );
-    int vs_join( const stem::addr_type& );
-    int vs_join( const stem::addr_type&, const char*, int );
-    int vs_join( const stem::addr_type&, const sockaddr_in& );
+    int vs_join( const stem::ext_addr_type& );
+    int vs_join( const stem::ext_addr_type&, const char*, int );
+    int vs_join( const stem::ext_addr_type&, const sockaddr_in& );
     int vs_join( const char*, int );
     int vs_join( const sockaddr_in& );
     int vs( const stem::Event& );
@@ -131,7 +131,7 @@ class basic_vs :
     std::tr2::recursive_mutex _lock_vt;
 
     virtual xmt::uuid_type vs_pub_recover( bool is_founder ) = 0;
-    virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& ) = 0;
+    virtual void vs_resend_from( const xmt::uuid_type&, const stem::ext_addr_type& ) = 0;
     virtual void vs_pub_view_update() = 0;
     virtual void vs_pub_rec( const stem::Event& ) = 0;
     virtual void vs_pub_flush() = 0;
@@ -196,10 +196,10 @@ class basic_vs :
     delayed_container_type de;
     vs_points::points_type points;
     unsigned view;
-    stem::addr_type lock_addr;
+    stem::ext_addr_type lock_addr;
     lock_rsp_type lock_rsp;
-    stem::addr_type group_applicant;
-    stem::addr_type group_applicant_ref;
+    stem::ext_addr_type group_applicant;
+    xmt::uuid_type group_applicant_ref;
     stem::addr_type sid;
     int self_events;
     int vs_lock_safety_sequental_attempts;

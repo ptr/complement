@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/06/10 16:12:21 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-08 15:19:38 ptr>
 
 /*
  *
@@ -59,6 +59,7 @@ int main( int argc, const char ** argv )
                         t.add( &vtime_operations::VT_one_group_core3, vt_oper, "VT one group add third group member",
                           t.add( &vtime_operations::VT_one_group_core, vt_oper, "VT one group add group member" ) ) ) ) ) ) ) ) );
 
+#if 0 // review
   tc[1] = t.add( &vtime_operations::VT_one_group_multiple_send, vt_oper, "VT one group multiple send",
             t.add( &vtime_operations::VT_one_group_send, vt_oper, "VT one group send", tc[0] ) );
 
@@ -82,6 +83,7 @@ int main( int argc, const char ** argv )
                   t.add( &vtime_operations::leader_multiple_change, vt_oper, "VT total order, leader multiple change",
                     t.add( &vtime_operations::leader_change, vt_oper, "VT total order, leader change",
                       t.add( &vtime_operations::leader_local, vt_oper, "VT total order, leader local", tc[4] ) ) ) ) ) ) );
+#endif // review
 
   if ( opts.is_set( 'v' ) ) {
     t.flags( t.flags() | exam::base_logger::verbose );

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/12 12:32:57 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-08 14:49:44 ptr>
 
 /*
  *
@@ -40,8 +40,8 @@ int torder_vs::vs_torder( const stem::Event& inc_ev )
 
   ev.value().ev = inc_ev;
   ev.value().id = xmt::uid();
-  ev.value().ev.src( sid );
-  ev.value().ev.dest( sid );
+  ev.value().ev.src( make_pair( stem::EventHandler::domain(), sid ) );
+  ev.value().ev.dest( make_pair( stem::EventHandler::domain(), sid ) );
 
   int ret = basic_vs::vs( ev );
 
@@ -56,7 +56,7 @@ void torder_vs::vs_pub_flush()
 void torder_vs::vs_pub_view_update()
 {
   // next leader election process
-  vector<stem::addr_type> basket;
+  vector<stem::ext_addr_type> basket;
   {
     unique_lock<recursive_mutex> lk( _lock_vt );
     
@@ -73,9 +73,9 @@ void torder_vs::vs_pub_view_update()
 
   sort( basket.begin(), basket.end() );
 
-  vector<stem::addr_type>::iterator i = basket.begin() + view % basket.size();
+  vector<stem::ext_addr_type>::iterator i = basket.begin() + view % basket.size();
 
-  if ( *i == sid ) {
+  if ( i->second == sid ) {
     is_leader_ = true;
       
     stem::Event_base<vs_event_total_order::id_type> cnf( VS_ORDER_CONF );
@@ -94,7 +94,7 @@ void torder_vs::vs_pub_view_update()
   }
 }
 
-void torder_vs::vs_resend_from( const xmt::uuid_type& from, const stem::addr_type& addr)
+void torder_vs::vs_resend_from( const xmt::uuid_type& from, const stem::ext_addr_type& addr)
 {
   for ( conf_cnt_type::const_iterator i = conform_container_.begin();i != conform_container_.end();++i) {
     stem::Event_base<vs_event_total_order> ev( VS_EVENT_TORDER );

@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/12 14:09:34 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-09 21:40:06 ptr>
 
 /*
  *
@@ -42,7 +42,7 @@ using namespace std::tr2;
 #define VS_ACCESS_POINT_SEC 0x30a
 #define VS_ACCESS_POINT     0x30b
 
-const janus::addr_type& nil_addr = xmt::nil_uuid;
+const janus::addr_type nil_addr( xmt::nil_uuid, xmt::nil_uuid );
 const gid_type& nil_gid = xmt::nil_uuid;
 
 static std::tr2::milliseconds vs_lock_timeout( 20000 );
@@ -107,8 +107,8 @@ basic_vs::Init::~Init()
 basic_vs::basic_vs() :
     EventHandler(),
     view( 0 ),
-    lock_addr( stem::badaddr ),
-    group_applicant( stem::badaddr ),
+    lock_addr( stem::extbadaddr ),
+    group_applicant( stem::extbadaddr ),
     sid( self_id() ),
     self_events( 0 ),
     vs_lock_safety_sequental_attempts( 0 )
@@ -119,8 +119,8 @@ basic_vs::basic_vs() :
 basic_vs::basic_vs( const char* info ) :
     EventHandler( info ),
     view( 0 ),
-    lock_addr( stem::badaddr ),
-    group_applicant( stem::badaddr ),
+    lock_addr( stem::extbadaddr ),
+    group_applicant( stem::extbadaddr ),
     sid( self_id() ),
     self_events( 0 ),
     vs_lock_safety_sequental_attempts( 0 )
@@ -130,6 +130,8 @@ basic_vs::basic_vs( const char* info ) :
 
 basic_vs::~basic_vs()
 {
+  cerr << HERE << ' ' << vs_group_size() << endl;
+
   for ( access_container_type::iterator i = remotes_.begin(); i != remotes_.end(); ++i ) {
     delete *i;
   }
@@ -155,18 +157,18 @@ int basic_vs::vs( const stem::Event& inc_ev )
 
   stem::Event_base<vs_event> ev( VS_EVENT );
 
-  ev.src( sid );
+  ev.src( make_pair( stem::EventHandler::domain(), sid ) );
   
   {
     lock_guard<recursive_mutex> lkv( _lock_vt );
 
-    ++vt[sid];
+    ++vt[ev.src()]; // sid
     ++self_events;
     ev.value().view = view;
     ev.value().ev = inc_ev;
     ev.value().vt = vt;
     ev.value().ev.setf( stem::__Event_Base::vs );
-    ev.src( sid );
+    // ev.src( sid );
 
     for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
       ev.dest( i->first );
@@ -182,12 +184,12 @@ int basic_vs::vs_locked( const stem::Event& inc_ev )
   lock_guard<recursive_mutex> hlk( _theHistory_lock );
 
   stem::Event_base<vs_event> ev( VS_EVENT );
-  ev.src( sid );
+  ev.src( make_pair( stem::EventHandler::domain(), sid ) );
 
   {
     lock_guard<recursive_mutex> lk( _lock_vt );
 
-    ++vt[sid];
+    ++vt[ev.src()]; // sid
     ++self_events;
     ev.value().view = view;
     ev.value().ev = inc_ev;
@@ -231,7 +233,7 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
       }
     }
 
-    if ( self_events && ev.src() != sid ) {
+    if ( self_events && ev.src().second != sid ) {
       // misc::use_syslog<LOG_DEBUG>() << "ove.push_back" << ':' << __FILE__ << ':' << __LINE__ << ':' << sid << ':' << ev.value().ev.code() << endl;
       ove.push_back( ev );
       return;
@@ -244,7 +246,7 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
     }
 
     for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-      if ( (i->first == ev.src()) && (i->first != sid) ) {
+      if ( (i->first == ev.src()) && (i->first.second != sid) ) {
         if ( (i->second + 1) != tmp[ev.src()] ) {
           if ( (i->second + 1) < tmp[ev.src()] ) {
             // misc::use_syslog<LOG_DEBUG>() << "ove.push_back" << ':' << HERE << ':' << sid << ':' << ev.src() << ':' << ev.value().ev.code() << endl;
@@ -262,14 +264,14 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
       }
     }
 
-    if ( ev.src() != sid ) {
+    if ( ev.src().second != sid ) {
       ++vt[ev.src()];
     } else {
       --self_events;
     }
 
     ev.value().ev.src( ev.src() );
-    ev.value().ev.dest( sid );
+    ev.value().ev.dest( make_pair(stem::EventHandler::domain(), sid) );
 
     if ( (code != VS_UPDATE_VIEW) && (code != VS_LOCK_VIEW) ) {
       this->vs_pub_rec( ev.value().ev );
@@ -286,7 +288,7 @@ void basic_vs::vs_process( const stem::Event_base<vs_event>& ev )
 void basic_vs::send_to_vsg( const stem::Event& ev ) const // not VS!
 {
   stem::Event sev = ev;
-  sev.src( sid );
+  sev.src( make_pair(stem::EventHandler::domain(), sid) );
   forward_to_vsg( sev );
 }
 
@@ -297,7 +299,7 @@ void basic_vs::forward_to_vsg( const stem::Event& ev ) const // not VS!
   lock_guard<recursive_mutex> lk( _lock_vt );
 
   for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-    if ( i->first != sid ) {
+    if ( i->first.second != sid ) {
       sev.dest( i->first );
       Forward( sev );
     }
@@ -313,8 +315,7 @@ void basic_vs::vs_tcp_point( uint32_t addr, int port )
   uint16_t prt = stem::to_net( static_cast<uint32_t>(port) );
   memcpy( (void *)(d.data() + 4), (const void *)&prt, 2 );
 
-
-  pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = points.equal_range( sid );
+  pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = points.equal_range( make_pair(stem::EventHandler::domain(), sid) );
   for ( ; range.first != range.second; ++range.first ) {
     // hostid is equal: select by self_id()
     if ( (range.first->second.family == AF_INET) &&
@@ -324,7 +325,7 @@ void basic_vs::vs_tcp_point( uint32_t addr, int port )
     }
   }
 
-  vs_points::access_t& p = points.insert( make_pair(sid, vs_points::access_t()) )->second;
+  vs_points::access_t& p = points.insert( make_pair(make_pair(stem::EventHandler::domain(), sid), vs_points::access_t()) )->second;
 
   p.hostid = xmt::hostid();
   p.family = AF_INET;
@@ -348,7 +349,7 @@ void basic_vs::vs_tcp_point( const sockaddr_in& a )
     memcpy( (void *)(d.data() + 4), (const void *)&a.sin_port, 2 );
 
 
-    pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = points.equal_range( sid );
+    pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = points.equal_range( make_pair(stem::EventHandler::domain(), sid) );
     for ( ; range.first != range.second; ++range.first ) {
       // hostid is equal: select by self_id()
       if ( (range.first->second.family == AF_INET) &&
@@ -358,7 +359,7 @@ void basic_vs::vs_tcp_point( const sockaddr_in& a )
       }
     }
 
-    vs_points::access_t& p = points.insert( make_pair(sid, vs_points::access_t()) )->second;
+    vs_points::access_t& p = points.insert( make_pair(make_pair(stem::EventHandler::domain(), sid), vs_points::access_t()) )->second;
 
     p.hostid = xmt::hostid();
     p.family = AF_INET;
@@ -375,24 +376,24 @@ void basic_vs::vs_tcp_point( const sockaddr_in& a )
 
 void basic_vs::vs_copy_tcp_points( const basic_vs& orig )
 {
-  pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = orig.points.equal_range( orig.self_id() );
+  pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = orig.points.equal_range( make_pair(stem::EventHandler::domain(), orig.self_id()) );
 
   for ( ; range.first != range.second; ++range.first ) {
-    vs_points::access_t& p = points.insert( make_pair(sid, vs_points::access_t()) )->second;
+    vs_points::access_t& p = points.insert( make_pair(make_pair(stem::EventHandler::domain(), sid), vs_points::access_t()) )->second;
     p = range.first->second;
   }
 }
 
-int basic_vs::vs_join( const stem::addr_type& a )
+int basic_vs::vs_join( const stem::ext_addr_type& a )
 {
-  if ( find( self_ids_begin(), self_ids_end(), a ) != self_ids_end() ) {
+  if ( a.second == self_id() ) {
     return 1; // join to self prohibited
   }
 
-  if ( a == stem::badaddr ) {
+  if ( a.second == stem::badaddr ) {
     this->vs_pub_recover( true );
     _lock_vt.lock();
-    vt[sid]; // make self-entry not empty (used in vs_group_size)
+    vt[make_pair(stem::EventHandler::domain(), sid)]; // make self-entry not empty (used in vs_group_size)
     _lock_vt.unlock();
 
     vs_pub_join();
@@ -401,7 +402,7 @@ int basic_vs::vs_join( const stem::addr_type& a )
     return 0;
   }
 
-  if ( is_avail( a ) ) {
+  if ( is_avail( a.second ) ) {
     xmt::uuid_type ref = this->vs_pub_recover( false );
 
     PushState( VS_ST_LOCKED );
@@ -423,10 +424,11 @@ int basic_vs::vs_join( const stem::addr_type& a )
   return 1;
 }
 
-int basic_vs::vs_join( const stem::addr_type& a, const char* host, int port )
+int basic_vs::vs_join( const stem::ext_addr_type& a, const char* host, int port )
 {
-  if ( !is_avail( a ) ) {
-    if ( a == stem::badaddr ) {
+#if 0 // review
+  if ( /* !is_avail( a ) */ true ) {
+    if ( a.second == stem::badaddr ) {
       return 2;
     }
 
@@ -445,14 +447,16 @@ int basic_vs::vs_join( const stem::addr_type& a, const char* host, int port )
     }
     remotes_.back()->add_remote_route( sid );
   }
+#endif // review
 
   return vs_join( a );
 }
 
-int basic_vs::vs_join( const stem::addr_type& a, const sockaddr_in& srv )
+int basic_vs::vs_join( const stem::ext_addr_type& a, const sockaddr_in& srv )
 {
-  if ( !is_avail( a ) ) {
-    if ( a == stem::badaddr ) {
+#if 0 // review
+  if ( /* !is_avail( a ) */ true ) {
+    if ( a.second == stem::badaddr ) {
       return 2;
     }
 
@@ -471,6 +475,7 @@ int basic_vs::vs_join( const stem::addr_type& a, const sockaddr_in& srv )
     }
     remotes_.back()->add_remote_route( sid );
   }
+#endif // review
 
   return vs_join( a );
 }
@@ -507,21 +512,22 @@ int basic_vs::vs_join( const sockaddr_in& a )
 
   bool local = false;
 
-  for ( id_iterator me = self_ids_begin(); me != self_ids_end(); ++me ) {
-    pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = points.equal_range( *me );
-    for ( ; range.first != range.second; ++range.first ) {
-      // hostid is equal: select by self_id()
-      if ( (range.first->second.family == AF_INET) &&
-           (range.first->second.type == std::sock_base::sock_stream) &&
-           (range.first->second.data == d) ) {
-        if ( get_default() == *me ) {
-          return 5; // attempt to join to self detected
-        }
-        local = true; // not self, but object is local; skip network later
+  pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = points.equal_range( make_pair(stem::EventHandler::domain(), sid) );
+  for ( ; range.first != range.second; ++range.first ) {
+    // hostid is equal: select by self_id()
+    if ( (range.first->second.family == AF_INET) &&
+         (range.first->second.type == std::sock_base::sock_stream) &&
+         (range.first->second.data == d) ) {
+#if 0 // review
+      if ( get_default() == sid ) {
+        return 5; // attempt to join to self detected
       }
+#endif // review
+      local = true; // not self, but object is local; skip network later
     }
   }
 
+#if 0 // review
   if ( local ) {
     return vs_join( get_default() ); // local object, skip network
   }
@@ -545,6 +551,9 @@ int basic_vs::vs_join( const sockaddr_in& a )
 
   remotes_.back()->add_route( trial_node );
   remotes_.back()->add_remote_route( sid );
+#else
+  stem::ext_addr_type trial_node;
+#endif // review
 
   return vs_join( trial_node );
 }
@@ -569,7 +578,7 @@ void basic_vs::vs_join_request_work( const stem::Event_base<vs_join_rq>& ev )
   rsp.value().points = points;
   rsp.dest( ev.src() );
 
-  rsp.src( sid );
+  rsp.src( make_pair( stem::EventHandler::domain(), sid ) );
   Forward( rsp );
 
   {
@@ -601,7 +610,7 @@ void basic_vs::vs_join_request_work( const stem::Event_base<vs_join_rq>& ev )
   basic_vs::vs( view_lock_ev );
 
   view_lock_ev.dest( group_applicant );
-  view_lock_ev.src( sid );
+  view_lock_ev.src( make_pair( stem::EventHandler::domain(), sid ) );
   Forward( view_lock_ev );
 }
 
@@ -623,13 +632,14 @@ void basic_vs::vs_send_flush()
 {
   Event_base< xmt::uuid_type > ev( VS_FLUSH_RQ );
   ev.value() = xmt::uid();
-  ev.dest( sid );
-  ev.src( sid );
-  Forward( ev ); 
+  ev.dest( make_pair( stem::EventHandler::domain(), sid ) );
+  ev.src( make_pair( stem::EventHandler::domain(), sid ) );
+  Forward( ev );
 }
 
 void basic_vs::vs_flush_request_work( const stem::Event_base< xmt::uuid_type >& ev )
 {
+  cerr << HERE << endl;
   // misc::use_syslog<LOG_DEBUG>() << "vs_flush_request_work:" << sid << endl;
   check_remotes();
   
@@ -640,6 +650,7 @@ void basic_vs::vs_flush_request_work( const stem::Event_base< xmt::uuid_type >& 
 
 void basic_vs::vs_flush_request( const stem::Event_base< xmt::uuid_type >& ev )
 {
+  cerr << HERE << endl;
   fq.push_back( stem::detail::convert<stem::Event_base<xmt::uuid_type>,stem::Event>()( ev ) );
 
   if ( fq.size() == 1 ) {
@@ -649,6 +660,7 @@ void basic_vs::vs_flush_request( const stem::Event_base< xmt::uuid_type >& ev )
 
 void basic_vs::vs_flush_request_lk( const stem::Event_base< xmt::uuid_type >& ev )
 {
+  cerr << HERE << endl;
   fq.push_back( stem::detail::convert<stem::Event_base<xmt::uuid_type>,stem::Event>()( ev ) );
 }
 
@@ -675,7 +687,7 @@ void basic_vs::vs_lock_view( const stem::EventVoid& ev )
   stem::EventVoid view_lock_ev( VS_LOCK_VIEW_ACK );
   view_lock_ev.dest( lock_addr );
 
-  view_lock_ev.src( sid );
+  view_lock_ev.src( make_pair( stem::EventHandler::domain(), sid ) );
   Forward( view_lock_ev );
 
   add_lock_safety(); // belay: avoid infinite lock
@@ -689,7 +701,7 @@ void basic_vs::vs_lock_view_lk( const stem::EventVoid& ev )
     // misc::use_syslog<LOG_DEBUG>() << "vs_lock_view_lk2:" << sid << ':' << lock_addr << endl;
     stem::EventVoid view_lock_ev( VS_LOCK_VIEW_ACK );
     view_lock_ev.dest( lock_addr );
-    view_lock_ev.src( sid );
+    view_lock_ev.src( make_pair( stem::EventHandler::domain(), sid ) );
     Forward( view_lock_ev );
   }
 }
@@ -707,14 +719,14 @@ void basic_vs::check_lock_rsp()
         }
       }
       // response from all group members available
-      if ( group_applicant != stem::badaddr ) {
+      if ( group_applicant != stem::extbadaddr ) {
         vt[group_applicant]; // i.e. create entry in vt
         this->vs_resend_from( group_applicant_ref, group_applicant );
-        group_applicant = stem::badaddr;
+        group_applicant = stem::extbadaddr;
         group_applicant_ref = xmt::nil_uuid;
       }
         
-      stem::Event_base< pair< stem::addr_type, string > > iev( fq.front().code() );
+      stem::Event_base< pair< stem::ext_addr_type, string > > iev( fq.front().code() );
       iev.value().first = fq.front().src();
       if ( fq.front().code() == VS_FLUSH_RQ ) {
         iev.value().second = fq.front().value();
@@ -723,7 +735,7 @@ void basic_vs::check_lock_rsp()
       stem::Event_base<vs_event> update_view_ev( VS_UPDATE_VIEW );
       update_view_ev.value().view = view;
       update_view_ev.value().vt = vt;
-      update_view_ev.value().ev = stem::detail::convert<stem::Event_base< pair< stem::addr_type, string > >, stem::Event>()(iev);
+      update_view_ev.value().ev = stem::detail::convert<stem::Event_base< pair< stem::ext_addr_type, string > >, stem::Event>()(iev);
 
       lk.unlock();
       vs_locked( update_view_ev );
@@ -743,7 +755,7 @@ void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
 {
   lock_guard<recursive_mutex> hlk( _theHistory_lock );
 
-  lock_addr = stem::badaddr;
+  lock_addr = stem::extbadaddr;
   vs_lock_safety_sequental_attempts = 0;
   RemoveState( VS_ST_LOCKED );
 
@@ -751,22 +763,22 @@ void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
     // belay: avoid infinite lock
     Event_base<CronEntry> cr( EV_EDS_CRON_REMOVE );
     const stem::EventVoid cr_ev( VS_LOCK_SAFETY );
-    cr_ev.dest( sid );
-    cr_ev.src( sid );
+    cr_ev.dest( make_pair( stem::EventHandler::domain(), sid ) );
+    cr_ev.src( make_pair( stem::EventHandler::domain(), sid ) );
     cr_ev.pack( cr.value().ev );
 
-    cr.dest( _cron->self_id() );
+    cr.dest( make_pair( stem::EventHandler::domain(), _cron->self_id() ) );
     // cr.value().start = get_system_time() + vs_pub_lock_timeout();
     // cr.value().n = 1;
     // cr.value().period = 0;
 
-    cr.src( sid );
+    cr.src( make_pair( stem::EventHandler::domain(), sid ) );
     Forward( cr );
   }
 
   stem::code_type code = ev.value().ev.code();
-  stem::Event_base< pair< stem::addr_type, string > > origin_event = stem::detail::convert< stem::Event, stem::Event_base< pair< stem::addr_type, string > > >()(ev.value().ev);
-  stem::addr_type origin = origin_event.value().first;
+  stem::Event_base< pair< stem::ext_addr_type, string > > origin_event = stem::detail::convert< stem::Event, stem::Event_base< pair< stem::ext_addr_type, string > > >()(ev.value().ev);
+  stem::ext_addr_type origin = origin_event.value().first;
 
   if ( code == VS_JOIN_RQ ) {
     _lock_vt.lock();
@@ -775,7 +787,7 @@ void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
 
     _lock_vt.unlock();
 
-    if ( origin == sid ) {
+    if ( origin.second == sid ) {
       vs_pub_join();
     } 
     // misc::use_syslog<LOG_INFO,LOG_USER>() << "vs_pub_update_view:" << sid << endl;
@@ -787,7 +799,7 @@ void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
     this->vs_pub_flush();
   }
 
-  if ( !fq.empty() && (ev.src() == sid) && (fq.front().dest() == sid) ) {
+  if ( !fq.empty() && (ev.src().second == sid) && (fq.front().dest().second == sid) ) {
     fq.pop_front();
   }
 
@@ -796,6 +808,7 @@ void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
 
 void basic_vs::vs_group_points( const stem::Event_base<vs_points>& ev )
 {
+#if 0 // review
   for ( vs_points::points_type::const_iterator i = ev.value().points.begin(); i != ev.value().points.end(); ++i ) {
     if ( hostid() != i->second.hostid ) {
       if ( i->second.family == AF_INET ) {
@@ -853,6 +866,7 @@ void basic_vs::vs_group_points( const stem::Event_base<vs_points>& ev )
       }
     }
   }
+#endif // review
 }
 
 void basic_vs::process_delayed()
@@ -889,14 +903,14 @@ void basic_vs::process_out_of_order()
 
       _lock_vt.lock();
 
-      if ( self_events && k->src() != sid ) {
+      if ( self_events && k->src().second != sid ) {
         ++k;
         _lock_vt.unlock();
         goto try_next;
       }
 
       for ( vtime::vtime_type::const_iterator i = vt.vt.begin(); i != vt.vt.end(); ++i ) {
-        if ( (i->first == k->src()) && (i->first != sid) ) {
+        if ( (i->first == k->src()) && (i->first.second != sid) ) {
           if ( (i->second + 1) != tmp[k->src()] ) {
             ++k;
             _lock_vt.unlock();
@@ -940,29 +954,30 @@ void basic_vs::add_lock_safety()
   // belay: avoid infinite lock
   Event_base<CronEntry> cr( EV_EDS_CRON_ADD );
   const stem::EventVoid cr_ev( VS_LOCK_SAFETY );
-  cr_ev.dest( sid );
-  cr_ev.src( sid );
+  cr_ev.dest( make_pair( stem::EventHandler::domain(), sid ) );
+  cr_ev.src( make_pair( stem::EventHandler::domain(), sid ) );
   cr_ev.pack( cr.value().ev );
 
-  cr.dest( _cron->self_id() );
+  cr.dest( make_pair( stem::EventHandler::domain(), _cron->self_id() ) );
   cr.value().start = get_system_time() + vs_pub_lock_timeout();
   cr.value().n = 1;
   cr.value().period = 0;
   
-  cr.src( sid );
+  cr.src( make_pair( stem::EventHandler::domain(), sid ) );
   Forward( cr );
 }
 
 void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
 {
-  if ( ev.src() != sid ) {
+  if ( ev.src().second != sid ) {
     return;
   }
   // misc::use_syslog<LOG_INFO,LOG_USER>() << "vs_lock_safety1:" << sid << endl;
 
   check_remotes();
 
-  if ( lock_addr != sid ) {
+  if ( lock_addr.second != sid ) {
+#if 0 // review
     if ( !is_avail(lock_addr) ) {
       lock_addr = stem::badaddr;
       vs_lock_safety_sequental_attempts = 0;
@@ -972,6 +987,9 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
     } else {
       add_lock_safety();
     }
+#else // review
+    add_lock_safety();
+#endif // review
     return;
   }
 
@@ -982,7 +1000,7 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
   if ( vs_lock_safety_sequental_attempts++ < max_vs_lock_safety_sequental_attempts ) {
     add_lock_safety();
   } else {
-    lock_addr = stem::badaddr;
+    lock_addr = stem::extbadaddr;
     vs_lock_safety_sequental_attempts = 0;
     RemoveState( VS_ST_LOCKED );
     lock_rsp.clear();
@@ -1008,6 +1026,7 @@ bool basic_vs::check_remotes()
   bool drop = false;
 
   for ( vtime::vtime_type::iterator i = vt.vt.begin(); i != vt.vt.end(); ) {
+#if 0 // review
     if ( !is_avail( i->first ) ) {
       points.erase( i->first );
       vt.vt.erase( i++ );
@@ -1015,6 +1034,9 @@ bool basic_vs::check_remotes()
     } else {
       ++i;
     }
+#else // review
+    ++i;
+#endif // review
   }
 
   return !drop;
@@ -1022,6 +1044,7 @@ bool basic_vs::check_remotes()
 
 void basic_vs::access_points_refresh()
 {
+#if 0 // review
   this->pub_access_point(); // user-defined
 
   pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = points.equal_range( sid );
@@ -1033,6 +1056,7 @@ void basic_vs::access_points_refresh()
   }
 
   send_to_vsg( my );
+#endif // review
 }
 
 void basic_vs::pub_access_point()
@@ -1042,6 +1066,7 @@ void basic_vs::pub_access_point()
 
 void basic_vs::access_points_refresh_pri( const stem::Event_base<janus::detail::access_points>& ev )
 {
+#if 0 // review
   // points.clear(); ?
 
   {
@@ -1071,11 +1096,12 @@ void basic_vs::access_points_refresh_pri( const stem::Event_base<janus::detail::
   for ( ; range.first != range.second; ++range.first ) {
     points.insert( *range.first );
   }
+#endif // review
 }
 
 void basic_vs::access_points_refresh_sec( const stem::Event_base<janus::detail::access_points>& ev )
 {
-  if ( ev.src() == sid ) {
+  if ( ev.src().second == sid ) {
     return;
   }
 
@@ -1089,15 +1115,18 @@ void basic_vs::access_points_refresh_sec( const stem::Event_base<janus::detail::
     }
   }
 
+#if 0 // review
   pair<vs_points::points_type::const_iterator,vs_points::points_type::const_iterator> range = ev.value().points.equal_range( ev.src() );
   for ( ; range.first != range.second; ++range.first ) {
     vs_points::access_t& p = points.insert( make_pair(ev.src(), vs_points::access_t()) )->second;
     p = range.first->second;
   }
+#endif // review
 }
 
 void basic_vs::vs_access_point( const stem::Event_base< vs_points >& ev )
 {
+#if 0 // review
   for ( vs_points::points_type::const_iterator i = ev.value().points.begin(); i != ev.value().points.end(); ++i ) {
     if ( hostid() != i->second.hostid ) {
       if ( i->second.family == AF_INET ) {
@@ -1110,6 +1139,7 @@ void basic_vs::vs_access_point( const stem::Event_base< vs_points >& ev )
       points.insert( *i );
     }
   }
+#endif // review
 }
 
 xmt::uuid_type basic_vs::flush_id( const stem::Event& ev )

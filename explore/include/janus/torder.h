@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-04-29 19:40:48 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-08 14:50:40 ptr>
 
 /*
  *
@@ -51,7 +51,7 @@ class torder_vs :
   protected:
     virtual void vs_pub_view_update();
     virtual void vs_pub_flush();
-    virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& );
+    virtual void vs_resend_from( const xmt::uuid_type&, const stem::ext_addr_type& );
     virtual void vs_pub_tord_rec( const stem::Event& ) = 0;
 
   protected:

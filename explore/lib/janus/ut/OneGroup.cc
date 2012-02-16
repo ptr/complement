@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/07/12 16:49:31 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-08 19:17:33 ptr>
 
 /*
  *
@@ -80,7 +80,7 @@ class VTM_one_group_handler :
       { return basic_vs::vt; }
     
     virtual xmt::uuid_type vs_pub_recover( bool is_fouder );
-    virtual void vs_resend_from( const xmt::uuid_type&, const stem::addr_type& );
+    virtual void vs_resend_from( const xmt::uuid_type&, const stem::ext_addr_type& );
     virtual void vs_pub_view_update();
     virtual void vs_pub_rec( const stem::Event& );
     virtual void vs_pub_join();
@@ -184,7 +184,7 @@ xmt::uuid_type VTM_one_group_handler::vs_pub_recover( bool is_founder )
   return xmt::nil_uuid;
 }
 
-void VTM_one_group_handler::vs_resend_from( const xmt::uuid_type&, const stem::addr_type& )
+void VTM_one_group_handler::vs_resend_from( const xmt::uuid_type&, const stem::ext_addr_type& )
 {
 }
 
@@ -255,22 +255,22 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core)
     // misc::use_syslog<LOG_INFO,LOG_USER>() << "-----------------" << endl;
   VTM_one_group_handler a1;
 
-  // a1.manager()->settrs( &cerr );
-  // a1.manager()->settrf( stem::EvManager::tracedispatch | stem::EvManager::tracetime | stem::EvManager::tracefault | stem::EvManager::tracesend );
+  a1.manager().settrs( &cerr );
+  a1.manager().settrf( stem::EvManager::tracedispatch | stem::EvManager::tracetime | stem::EvManager::tracefault | stem::EvManager::tracesend );
 
   EXAM_CHECK( a1.vs_group_size() == 0 );
 
   // join to itself is prohibited
-  EXAM_CHECK( a1.vs_join(a1.self_id() ) == 1 );
+  EXAM_CHECK( a1.vs_join(make_pair(stem::EventHandler::domain(), a1.self_id()) ) == 1 );
   EXAM_CHECK( a1.vs_group_size() == 0 );
 
-  a1.vs_join( stem::badaddr );
+  a1.vs_join( stem::extbadaddr );
   EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 1 ) );
 
   {
     VTM_one_group_handler a2;
 
-    a2.vs_join( a1.self_id() );
+    a2.vs_join( make_pair( stem::EventHandler::domain(), a1.self_id()) );
 
     EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
     EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
@@ -297,14 +297,14 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3)
   VTM_one_group_handler a2;
   VTM_one_group_handler a3;
 
-  a1.vs_join( stem::badaddr );
-  a2.vs_join( a1.self_id() );
+  a1.vs_join( stem::extbadaddr );
+  a2.vs_join( make_pair(stem::EventHandler::domain(), a1.self_id()) );
   
   EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
   EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
   EXAM_CHECK( a2.wait_join( std::tr2::milliseconds(500)) );
 
-  a3.vs_join( a2.self_id() );
+  a3.vs_join( make_pair(stem::EventHandler::domain(), a2.self_id()) );
 
   EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 3 ) );
   EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3 ) );
@@ -335,12 +335,12 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3_sim)
     // misc::use_syslog<LOG_INFO,LOG_USER>() << "a2 = " << a2.self_id() << endl;
     // misc::use_syslog<LOG_INFO,LOG_USER>() << "a3 = " << a3.self_id() << endl;
 
-    a1.vs_join( stem::badaddr );
+    a1.vs_join( stem::extbadaddr );
 
     EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 1 ) );
 
-    a2.vs_join( a1.self_id() );
-    a3.vs_join( a1.self_id() );
+    a2.vs_join( make_pair(stem::EventHandler::domain(), a1.self_id()) );
+    a3.vs_join( make_pair(stem::EventHandler::domain(), a1.self_id()) );
 
     EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 3 ) );
     EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3 ) );
@@ -350,7 +350,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_core3_sim)
 
     VTM_one_group_handler* a4 = new VTM_one_group_handler();
   
-    a4->vs_join( a3.self_id() );
+    a4->vs_join( make_pair(stem::EventHandler::domain(), a3.self_id()) );
 
     EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 4 ) );
     EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 4 ) );
@@ -383,16 +383,16 @@ int EXAM_IMPL(vtime_operations::VT_one_group_join_exit)
   VTM_one_group_handler a1;
   VTM_one_group_handler a2;
 
-  a1.vs_join( stem::badaddr );
+  a1.vs_join( stem::extbadaddr );
 
   {
     VTM_one_group_handler a3;
-    a3.vs_join( a1.self_id() );
+    a3.vs_join( make_pair(stem::EventHandler::domain(), a1.self_id()) );
 
     EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2 ) );
     EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(500), 2 ) );
 
-    a2.vs_join( a1.self_id() );
+    a2.vs_join( make_pair(stem::EventHandler::domain(), a1.self_id()) );
   }
 
   a1.vs_send_flush();
@@ -413,9 +413,9 @@ int EXAM_IMPL(vtime_operations::double_flush)
     VTM_one_group_handler a2;
     VTM_one_group_handler a3;
   
-    a1.vs_join( stem::badaddr );
-    a2.vs_join( a1.self_id() );
-    a3.vs_join( a1.self_id() );
+    a1.vs_join( stem::extbadaddr );
+    a2.vs_join( make_pair(stem::EventHandler::domain(), a1.self_id()) );
+    a3.vs_join( make_pair(stem::EventHandler::domain(), a1.self_id()) );
 
     EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 3) );
     EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3) );
@@ -430,7 +430,7 @@ int EXAM_IMPL(vtime_operations::double_flush)
 
     VTM_one_group_handler a4;
 
-    a4.vs_join( a3.self_id() );
+    a4.vs_join( make_pair(stem::EventHandler::domain(), a3.self_id()) );
     EXAM_CHECK( a4.wait_group_size( std::tr2::milliseconds(500), 4) );
   }
 
@@ -444,14 +444,14 @@ int EXAM_IMPL(vtime_operations::double_exit)
   for ( int i = 0; i < 1000; ++i ) {
     VTM_one_group_handler a1;
 
-    a1.vs_join( stem::badaddr );
+    a1.vs_join( stem::extbadaddr );
 
     {
       VTM_one_group_handler a2;
       VTM_one_group_handler a3;
 
-      a2.vs_join( a1.self_id() );
-      a3.vs_join( a1.self_id() );
+      a2.vs_join( make_pair(stem::EventHandler::domain(), a1.self_id()) );
+      a3.vs_join( make_pair(stem::EventHandler::domain(), a1.self_id()) );
 
       EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 3) );
       EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3) );
@@ -460,7 +460,7 @@ int EXAM_IMPL(vtime_operations::double_exit)
 
     VTM_one_group_handler a4;
 
-    a4.vs_join( a1.self_id() );
+    a4.vs_join( make_pair(stem::EventHandler::domain(), a1.self_id()) );
     EXAM_CHECK( a4.wait_group_size( std::tr2::milliseconds(500), 2) );
   }
 
@@ -476,13 +476,13 @@ int EXAM_IMPL(vtime_operations::flush_and_join)
     VTM_one_group_handler a2;
     VTM_one_group_handler a3;
 
-    a1.vs_join( stem::badaddr );
-    a2.vs_join( a1.self_id() );
+    a1.vs_join( stem::extbadaddr );
+    a2.vs_join( make_pair(stem::EventHandler::domain(), a1.self_id()) );
 
     EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2) );
     EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2) );
 
-    a3.vs_join( a2.self_id() );
+    a3.vs_join( make_pair(stem::EventHandler::domain(), a2.self_id()) );
     a1.vs_send_flush();
 
     EXAM_CHECK( a1.wait_flush( std::tr2::milliseconds(500), 1 ) );
@@ -506,8 +506,8 @@ int EXAM_IMPL(vtime_operations::flush_and_exit)
     {
       VTM_one_group_handler a1;
 
-      a1.vs_join( stem::badaddr );
-      a2.vs_join( a1.self_id() );
+      a1.vs_join( stem::extbadaddr );
+      a2.vs_join( make_pair(stem::EventHandler::domain(), a1.self_id()) );
 
       EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 2) );
       EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2) );
@@ -518,7 +518,7 @@ int EXAM_IMPL(vtime_operations::flush_and_exit)
     a2.vs_send_flush();
     EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 1) );
 
-    a3.vs_join( a2.self_id() );
+    a3.vs_join( make_pair(stem::EventHandler::domain(), a2.self_id()) );
 
     EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2) );
     EXAM_CHECK( a3.wait_group_size( std::tr2::milliseconds(500), 2) );
@@ -542,15 +542,15 @@ int EXAM_IMPL(vtime_operations::join_flush_exit)
       misc::use_syslog<LOG_INFO,LOG_USER>() << "a3 = " << a3.self_id() << endl;
       misc::use_syslog<LOG_INFO,LOG_USER>() << "a4 = " << a4.self_id() << endl;
 
-      a1.vs_join( stem::badaddr );
-      a2.vs_join( a1.self_id() );
-      a3.vs_join( a1.self_id() );
+      a1.vs_join( stem::extbadaddr );
+      a2.vs_join( make_pair(stem::EventHandler::domain(), a1.self_id()) );
+      a3.vs_join( make_pair(stem::EventHandler::domain(), a1.self_id()) );
 
       EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 3) );
       EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3) );
 
       a1.vs_send_flush();
-      a4.vs_join( a1.self_id() );
+      a4.vs_join( make_pair(stem::EventHandler::domain(), a1.self_id()) );
     }
   
     a1.vs_send_flush();
@@ -575,8 +575,8 @@ int EXAM_IMPL(vtime_operations::VT_one_group_send)
     VTM_one_group_handler a1;
     VTM_one_group_handler a2;
 
-    a1.vs_join( stem::badaddr );
-    a2.vs_join( a1.self_id() );
+    a1.vs_join( stem::extbadaddr );
+    a2.vs_join( make_pair(stem::EventHandler::domain(), a1.self_id()) );
 
     EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 2 ) );
 
@@ -593,7 +593,7 @@ int EXAM_IMPL(vtime_operations::VT_one_group_send)
 
     VTM_one_group_handler a3;
 
-    a3.vs_join( a1.self_id() );
+    a3.vs_join( make_pair(stem::EventHandler::domain(), a1.self_id()) );
 
     EXAM_CHECK( a1.wait_group_size( std::tr2::milliseconds(500), 3 ) );
     EXAM_CHECK( a2.wait_group_size( std::tr2::milliseconds(500), 3 ) );
@@ -633,11 +633,11 @@ int EXAM_IMPL(vtime_operations::VT_one_group_multiple_send)
 
   // cerr << HERE << ' ' << std::tr2::get_system_time().nanoseconds_since_epoch().count() << endl;
 
-  a[0]->vs_join( stem::badaddr );
+  a[0]->vs_join( stem::extbadaddr );
 
   stem::addr_type addr = a[0]->self_id();
   for ( int i = 1; i < n_obj; ++i ) {
-    a[i]->vs_join( addr );
+    a[i]->vs_join( make_pair(stem::EventHandler::domain(), addr) );
   }
 
   // cerr << HERE << ' ' << std::tr2::get_system_time().nanoseconds_since_epoch().count() << endl;
@@ -684,7 +684,7 @@ const int n_obj = 4;
 const int n_msg = 1;
 std::tr2::thread* thr[n_obj];
 int res[n_obj];
-stem::addr_type addr; 
+stem::ext_addr_type addr; 
 
 void run(int k)
 {
@@ -710,11 +710,11 @@ int EXAM_IMPL(vtime_operations::VT_mt_operation)
 {
   for (int i = 0;i < 100;++i) {
   VTM_one_group_handler a;
-  mt_operation::addr = a.self_id();
+  mt_operation::addr = make_pair(stem::EventHandler::domain(), a.self_id());
 
-  misc::use_syslog<LOG_INFO,LOG_USER>() << "----------------- " << mt_operation::addr << endl;
+  misc::use_syslog<LOG_INFO,LOG_USER>() << "----------------- " << mt_operation::addr.second << endl;
 
-  a.vs_join( stem::badaddr );
+  a.vs_join( stem::extbadaddr );
 
   for (int i = 0;i < mt_operation::n_obj;++i) {
     mt_operation::thr[i] = new std::tr2::thread( mt_operation::run, i );
