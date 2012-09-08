@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2012-02-09 21:40:06 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-17 15:32:45 ptr>
 
 /*
  *
@@ -52,7 +52,7 @@ Cron* basic_vs::_cron = 0;
 
 static int *_rcount = 0;
 
-const int basic_vs::max_vs_lock_safety_sequental_attempts = 100;
+const int /* basic_vs:: */ max_vs_lock_safety_sequental_attempts = 1 /* 00 */;
 
 #if 1 // depends where fork happens: in the EvManager loop (stack) or not.
 void basic_vs::Init::__at_fork_prepare()
@@ -402,7 +402,8 @@ int basic_vs::vs_join( const stem::ext_addr_type& a )
     return 0;
   }
 
-  if ( is_avail( a.second ) ) {
+  // if ( is_avail( a.second ) ) {
+    cerr << HERE << endl;
     xmt::uuid_type ref = this->vs_pub_recover( false );
 
     PushState( VS_ST_LOCKED );
@@ -419,9 +420,9 @@ int basic_vs::vs_join( const stem::ext_addr_type& a )
     add_lock_safety();  // belay: avoid infinite lock
 
     return 0;
-  }
+  // }
 
-  return 1;
+  // return 1;
 }
 
 int basic_vs::vs_join( const stem::ext_addr_type& a, const char* host, int port )
@@ -571,6 +572,7 @@ basic_vs::size_type basic_vs::vs_group_size() const
 
 void basic_vs::vs_join_request_work( const stem::Event_base<vs_join_rq>& ev )
 {
+  cerr << HERE << endl;
   check_remotes();
 
   stem::Event_base<vs_points> rsp( VS_JOIN_RS );
@@ -630,6 +632,7 @@ void basic_vs::vs_join_request_lk( const stem::Event_base<vs_join_rq>& ev )
 
 void basic_vs::vs_send_flush()
 {
+  cerr << HERE << ' ' << self_id() << endl;
   Event_base< xmt::uuid_type > ev( VS_FLUSH_RQ );
   ev.value() = xmt::uid();
   ev.dest( make_pair( stem::EventHandler::domain(), sid ) );
@@ -639,7 +642,7 @@ void basic_vs::vs_send_flush()
 
 void basic_vs::vs_flush_request_work( const stem::Event_base< xmt::uuid_type >& ev )
 {
-  cerr << HERE << endl;
+  cerr << HERE << ' ' << self_id() << endl;
   // misc::use_syslog<LOG_DEBUG>() << "vs_flush_request_work:" << sid << endl;
   check_remotes();
   
@@ -681,6 +684,7 @@ void basic_vs::repeat_request( const stem::Event& ev )
 
 void basic_vs::vs_lock_view( const stem::EventVoid& ev )
 {
+  cerr << HERE << ' ' << self_id() << ' ' << ev.src().second << endl;
   PushState( VS_ST_LOCKED );
   lock_addr = ev.src();
   // misc::use_syslog<LOG_DEBUG>() << "vs_lock_view:" << sid << ':' << lock_addr << endl;
@@ -754,6 +758,8 @@ void basic_vs::vs_lock_view_ack( const stem::EventVoid& ev )
 void basic_vs::vs_update_view( const Event_base<vs_event>& ev )
 {
   lock_guard<recursive_mutex> hlk( _theHistory_lock );
+
+  cerr << HERE << endl;
 
   lock_addr = stem::extbadaddr;
   vs_lock_safety_sequental_attempts = 0;
@@ -969,14 +975,17 @@ void basic_vs::add_lock_safety()
 
 void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
 {
+  cerr << HERE << endl;
   if ( ev.src().second != sid ) {
     return;
   }
+  cerr << HERE << endl;
   // misc::use_syslog<LOG_INFO,LOG_USER>() << "vs_lock_safety1:" << sid << endl;
 
   check_remotes();
 
   if ( lock_addr.second != sid ) {
+    cerr << HERE << endl;
 #if 0 // review
     if ( !is_avail(lock_addr) ) {
       lock_addr = stem::badaddr;
@@ -995,11 +1004,14 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
 
   // misc::use_syslog<LOG_INFO,LOG_USER>() << "vs_lock_safety2:" << sid << endl;
   
+  cerr << HERE << endl;
   check_lock_rsp();
 
-  if ( vs_lock_safety_sequental_attempts++ < max_vs_lock_safety_sequental_attempts ) {
+  if ( ++vs_lock_safety_sequental_attempts < max_vs_lock_safety_sequental_attempts ) {
+    cerr << HERE << endl;
     add_lock_safety();
   } else {
+    cerr << HERE << ' ' << lock_rsp.size() << ' ' << fq.size() << hex << fq.front().code() << dec << endl;
     lock_addr = stem::extbadaddr;
     vs_lock_safety_sequental_attempts = 0;
     RemoveState( VS_ST_LOCKED );
@@ -1012,6 +1024,7 @@ void basic_vs::vs_lock_safety( const stem::EventVoid& ev )
 
 bool basic_vs::check_remotes()
 {
+#if 0 // this function should be removed
   for ( access_container_type::iterator i = remotes_.begin(); i != remotes_.end(); ) {
     if ( !(*i)->is_open() || (*i)->bad() ) {
       delete *i;
@@ -1040,6 +1053,9 @@ bool basic_vs::check_remotes()
   }
 
   return !drop;
+#else // 0
+  return true;
+#endif // 0
 }
 
 void basic_vs::access_points_refresh()

@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2012-02-08 13:44:36 ptr>
+// -*- C++ -*- Time-stamp: <2012-02-17 15:31:03 ptr>
 
 /*
  *
- * Copyright (c) 2008-2010
+ * Copyright (c) 2008-2012
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -122,7 +122,7 @@ class basic_vs :
 
     void access_points_refresh();
 
-    static const int max_vs_lock_safety_sequental_attempts;
+    // static const int max_vs_lock_safety_sequental_attempts;
 
   protected:
     bool check_remotes();
