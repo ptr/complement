@@ -17,7 +17,7 @@
 
 #include <mt/uid.h>
 
-#ifdef STLPORT
+#if defined(STLPORT) || defined(__FIT_CPP_0X)
 #  include <unordered_map>
 #  include <unordered_set>
 // #  include <hash_map>
