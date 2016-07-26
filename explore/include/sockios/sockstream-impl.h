@@ -103,10 +103,10 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port,
     if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
       throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
-    setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
+    this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
     std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
-    setg( this->epptr(), this->epptr(), this->epptr() );
+    this->setg( this->epptr(), this->epptr(), this->epptr() );
 
     _fl = _fr = this->eback();
 
@@ -285,10 +285,10 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, sock_base::stype t
     if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
       throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
-    setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
+    this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
     std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
-    setg( this->epptr(), this->epptr(), this->epptr() );
+    this->setg( this->epptr(), this->epptr(), this->epptr() );
 
     _fl = _fr = this->eback();
 
@@ -464,10 +464,10 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
     if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
       throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
-    setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
+    this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
     std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
-    setg( this->epptr(), this->epptr(), this->epptr() );
+    this->setg( this->epptr(), this->epptr(), this->epptr() );
 
     _fl = _fr = this->eback();
 
@@ -728,9 +728,9 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
     basic_socket_t::_fd = -1;
     throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>" ) );
   }
-  setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
+  this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
-  setg( this->epptr(), this->epptr(), this->epptr() );
+  this->setg( this->epptr(), this->epptr(), this->epptr() );
 
   _fl = _fr = this->eback();
 
@@ -776,9 +776,9 @@ void basic_sockbuf<charT, traits, _Alloc>::rewind()
   if ( this->gptr() == this->_ebuf ) {
     this->_fr = this->_fl;
     this->_fl = this->eback();
-    setg( this->eback(), this->eback(), this->_fr );
+    this->setg( this->eback(), this->eback(), this->_fr );
   } else if ( this->_fr != this->egptr() ) {
-    setg( this->eback(), this->gptr(), this->_fr );
+    this->setg( this->eback(), this->gptr(), this->_fr );
   }
 
   if ( this->is_open_unsafe() && ((this->_fr < this->_ebuf) || (this->_fl < this->gptr())) ) {
@@ -826,7 +826,7 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
   }
 
   if ( !traits::eq_int_type( c, traits::eof() ) && this->pptr() < this->epptr() ) {
-    sputc( traits::to_char_type(c) );
+    this->sputc( traits::to_char_type(c) );
     return c;
   }
 
@@ -884,19 +884,19 @@ basic_sockbuf<charT, traits, _Alloc>::overflow( int_type c )
       count /= sizeof(charT);
       traits::move( this->pbase(), this->pbase() + offset, count - offset );
       // std::copy_backword( this->pbase() + offset, this->pbase() + count, this->pbase() );
-      setp( this->pbase(), this->epptr() ); // require: set pptr
+      this->setp( this->pbase(), this->epptr() ); // require: set pptr
       this->pbump( count - offset );
       if( !traits::eq_int_type(c,traits::eof()) ) {
-        sputc( traits::to_char_type(c) );
+        this->sputc( traits::to_char_type(c) );
       }
 
       return traits::not_eof(c);
     }
   }
 
-  setp( this->pbase(), this->epptr() ); // require: set pptr
+  this->setp( this->pbase(), this->epptr() ); // require: set pptr
   if( !traits::eq_int_type(c,traits::eof()) ) {
-    sputc( traits::to_char_type(c) );
+    this->sputc( traits::to_char_type(c) );
   }
 
   return traits::not_eof(c);
@@ -961,7 +961,7 @@ int basic_sockbuf<charT, traits, _Alloc>::sync()
       count -= offset;
       start += offset;
     }
-    setp( this->pbase(), this->epptr() ); // require: set pptr
+    this->setp( this->pbase(), this->epptr() ); // require: set pptr
   }
 
   return 0;
