@@ -10,6 +10,13 @@
 
 #include <exam/defs.h>
 
+#define __EXTRA_SOCK_OPT1
+#ifdef __FIT_SOCK_CLOEXEC
+#  undef __EXTRA_SOCK_OPT1
+#  define __EXTRA_SOCK_OPT1 | SOCK_CLOEXEC
+#endif
+#define __EXTRA_SOCK_OPT __EXTRA_SOCK_OPT1
+
 namespace std {
 
 namespace detail {
@@ -665,3 +672,6 @@ template<class Connect, class charT, class traits, class _Alloc, void (Connect::
 std::ostream* connect_processor<Connect, charT, traits, _Alloc, C>::_trs = 0;
 
 } // namespace std
+
+#undef __EXTRA_SOCK_OPT
+#undef __EXTRA_SOCK_OPT1

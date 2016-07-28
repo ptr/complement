@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/12/02 20:22:18 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2009, 2016
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -53,6 +53,14 @@ extern "C" int x_res_init(void);
 
 #include <cstdlib>
 #include <cstring>
+
+
+#define __EXTRA_SOCK_OPT1
+#ifdef __FIT_SOCK_CLOEXEC
+#  undef __EXTRA_SOCK_OPT1
+#  define __EXTRA_SOCK_OPT1 | SOCK_CLOEXEC
+#endif
+#define __EXTRA_SOCK_OPT __EXTRA_SOCK_OPT1
 
 #ifdef STLPORT
 _STLP_BEGIN_NAMESPACE
@@ -175,7 +183,7 @@ inline bool less_mtu( const net_iface& l, const net_iface& r )
 template <class BackInsertIterator>
 void get_ifaces( BackInsertIterator bi )
 {
-  int sock = socket(AF_INET, SOCK_DGRAM, 0);
+  int sock = socket(AF_INET, SOCK_DGRAM __EXTRA_SOCK_OPT, 0);
   struct ifconf ifc;
   char st_buf[100 * sizeof(struct ifreq)];
   int len = sizeof( st_buf );
@@ -257,5 +265,8 @@ _STLP_END_NAMESPACE
 #else
 } // namespace std
 #endif
+
+#undef __EXTRA_SOCK_OPT
+#undef __EXTRA_SOCK_OPT1
 
 #endif // __SOCKSIOS_NETINFO_H

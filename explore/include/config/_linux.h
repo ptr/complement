@@ -1,8 +1,6 @@
-/* Time-stamp: <2010-11-10 14:42:52 ptr> */
-
 /*
  *
- * Copyright (c) 2003-2008
+ * Copyright (c) 2003-2008, 2016
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -70,11 +68,17 @@
 #define __FIT_NO_SELECT
 
 /*
- * use algorithms that based on non-block sockets technique
+ * use SOCK_NONBLOCK flag on sockets opening and skip fcntl
  */
+
+#define __FIT_SOCK_NONBLOCK
+
 /*
-#define __FIT_NONBLOCK_SOCKETS
-*/
+ * use SOCK_CLOEXEC flag on sockets opening
+ */
+
+#define __FIT_SOCK_CLOEXEC
+
 /*
  * use epoll syscall instead of poll
  */

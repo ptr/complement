@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/12/16 17:05:37 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005-2009
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2009, 2016
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -13,6 +13,18 @@
 
 #include <sockios/netinfo.h>
 #include <fcntl.h>
+
+#define __EXTRA_SOCK_OPT1
+#define __EXTRA_SOCK_OPT2
+#ifdef __FIT_SOCK_NONBLOCK
+#  undef __EXTRA_SOCK_OPT1
+#  define __EXTRA_SOCK_OPT1 | SOCK_NONBLOCK
+#endif
+#ifdef __FIT_SOCK_CLOEXEC
+#  undef __EXTRA_SOCK_OPT2
+#  define __EXTRA_SOCK_OPT2 | SOCK_CLOEXEC
+#endif
+#define __EXTRA_SOCK_OPT __EXTRA_SOCK_OPT1 __EXTRA_SOCK_OPT2
 
 #ifdef STLPORT
 _STLP_BEGIN_NAMESPACE
@@ -58,7 +70,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port,
     _type = type;
 
     if ( prot == sock_base::inet ) {
-      basic_socket_t::_fd = socket( PF_INET, type, 0 );
+      basic_socket_t::_fd = socket( PF_INET, type __EXTRA_SOCK_OPT, 0 );
       if ( basic_socket_t::_fd == -1 ) {
         throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
       }
@@ -100,9 +112,11 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port,
       throw std::length_error( "can't allocate block" );
     }
 
+#ifndef __FIT_SOCK_NONBLOCK
     if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
       throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
+#endif
     this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
     std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
@@ -147,14 +161,16 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port, const std:
     _mode = ios_base::in | ios_base::out;
     _type = sock_base::sock_stream;
 
-    basic_socket_t::_fd = socket( PF_INET, sock_base::sock_stream, 0 );
+    basic_socket_t::_fd = socket( PF_INET, sock_base::sock_stream __EXTRA_SOCK_OPT, 0 );
     if ( basic_socket_t::_fd == -1 ) {
       throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
 
+#ifndef __FIT_SOCK_NONBLOCK
     if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
       throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
+#endif
 
     basic_socket_t::_address.inet.sin_family = AF_INET;
     // htons is a define at least in Linux 2.2.5-15, and it's expantion fail
@@ -255,7 +271,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, sock_base::stype t
   try {
     _mode = ios_base::in | ios_base::out;
     _type = type;
-    basic_socket_t::_fd = socket( PF_UNIX, type, 0 );
+    basic_socket_t::_fd = socket( PF_UNIX, type __EXTRA_SOCK_OPT, 0 );
     if ( basic_socket_t::_fd == -1 ) {
       throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
@@ -282,9 +298,11 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, sock_base::stype t
       throw std::length_error( "can't allocate block" );
     }
 
+#ifndef __FIT_SOCK_NONBLOCK
     if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
       throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
+#endif
     this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
     std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
@@ -327,16 +345,18 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, const std::tr2::na
   try {
     _mode = ios_base::in | ios_base::out;
     _type = type;
-    basic_socket_t::_fd = socket( PF_UNIX, type, 0 );
+    basic_socket_t::_fd = socket( PF_UNIX, type __EXTRA_SOCK_OPT, 0 );
     if ( basic_socket_t::_fd == -1 ) {
       throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
     basic_socket_t::_address.unx.sun_family = AF_UNIX;
     strncpy(basic_socket_t::_address.unx.sun_path, path, sizeof(basic_socket_t::_address.unx.sun_path));
 
+#ifndef __FIT_SOCK_NONBLOCK
     if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
       throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
+#endif
 
     // Generally, stream sockets may successfully connect() only once
     if ( connect( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof( basic_socket_t::_address.unx ) ) == -1 ) {
@@ -432,7 +452,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
     _type = type;
 
     if ( addr.sin_family == AF_INET ) {
-      basic_socket_t::_fd = socket( PF_INET, type, 0 );
+      basic_socket_t::_fd = socket( PF_INET, type __EXTRA_SOCK_OPT, 0 );
       if ( basic_socket_t::_fd == -1 ) {
         throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
       }
@@ -461,9 +481,11 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
       throw std::length_error( "can't allocate block" );
     }
 
+#ifndef __FIT_SOCK_NONBLOCK
     if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
       throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
+#endif
     this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
     std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
@@ -510,15 +532,17 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
     _type = type;
 
     if ( addr.sin_family == AF_INET ) {
-      basic_socket_t::_fd = socket( PF_INET, type, 0 );
+      basic_socket_t::_fd = socket( PF_INET, type __EXTRA_SOCK_OPT, 0 );
       if ( basic_socket_t::_fd == -1 ) {
         throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
       }
       basic_socket_t::_address.inet = addr;
 
+#ifndef __FIT_SOCK_NONBLOCK
       if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
         throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
       }
+#endif
 
       // Generally, stream sockets may successfully connect() only once
       if ( connect( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof( basic_socket_t::_address ) ) == -1 ) {
@@ -723,6 +747,8 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
     return 0;
   }
 
+  // I don't know, how _fd was created, so not used __FIT_SOCK_NONBLOCK here,
+  // just try to set O_NONBLOCK...
   if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
     ::close( basic_socket_t::_fd );
     basic_socket_t::_fd = -1;
@@ -1155,6 +1181,10 @@ void basic_sockbuf<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, 
   }
 #endif // __unix
 }
+
+#undef __EXTRA_SOCK_OPT
+#undef __EXTRA_SOCK_OPT1
+#undef __EXTRA_SOCK_OPT2
 
 #ifdef STLPORT
 _STLP_END_NAMESPACE
