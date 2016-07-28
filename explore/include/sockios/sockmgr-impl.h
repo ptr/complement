@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/05/21 15:22:14 ptr>
+// -*- C++ -*-
 
 /*
  * Copyright (c) 2008-2010
@@ -633,6 +633,10 @@ void sockmgr<charT,traits,_Alloc>::process_dgram_srv( const epoll_event& ev, typ
   }
 
   (*info.p)( ifd->first, addr );
+
+  if (!epoll_restore(ifd->first)) {
+    (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
+  }
 }
 
 template<class charT, class traits, class _Alloc>
