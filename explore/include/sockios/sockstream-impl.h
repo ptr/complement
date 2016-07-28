@@ -686,7 +686,9 @@ basic_sockbuf<charT, traits, _Alloc>::attach( sock_base::socket_type s,
     return 0;
   }
 
-  if ( basic_socket_t::is_open() ) {
+  if ( is_open() ) {
+    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+
     if ( (s != basic_socket_t::_fd) || (t != _type) ||
          (basic_socket_t::_address.any.sa_family != addr.sa_family) ) {
       return 0;
