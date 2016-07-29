@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-04-29 19:29:09 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2008-2011
+ * Copyright (c) 2008-2011, 2016
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -63,6 +63,7 @@ class sock_processor_base :
     typedef basic_sockbuf<charT,traits,_Alloc>    sockbuf_t;
 
     struct adopt_close_t { };
+    struct adopt_bt_t { };
 
     sock_processor_base() :
         _mode( ios_base::in | ios_base::out ),
@@ -121,6 +122,9 @@ class sock_processor_base :
 
     void open( int port, sock_base::stype type, sock_base::protocol prot )
       { sock_processor_base::open(INADDR_ANY, port, type, prot); }
+
+    // Bluetooth socket
+    void open( int dev, int channel, sock_base::protocol prot, const adopt_bt_t& );
 
     virtual void close()
       { _close(); }

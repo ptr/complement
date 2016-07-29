@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2010-11-09 15:43:47 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2008-2010
+ * Copyright (c) 2008-2010, 2016
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -35,7 +35,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int po
   _state = ios_base::goodbit;
 
   if ( prot == sock_base::inet ) {
-    basic_socket_t::_fd = socket( PF_INET, type, 0 );
+    basic_socket_t::_fd = socket( PF_INET, type __EXTRA_SOCK_OPT, 0 );
     if ( basic_socket_t::_fd == -1 ) {
       _state |= ios_base::failbit | ios_base::badbit;
       return;
@@ -82,7 +82,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const char* path, sock_base
   _mode = ios_base::in | ios_base::out;
   _state = ios_base::goodbit;
 
-  basic_socket_t::_fd = socket( PF_UNIX, type, 0 );
+  basic_socket_t::_fd = socket( PF_UNIX, type __EXTRA_SOCK_OPT, 0 );
   if ( basic_socket_t::_fd == -1 ) {
     _state |= ios_base::failbit | ios_base::badbit;
     return;
@@ -108,6 +108,67 @@ void sock_processor_base<charT,traits,_Alloc>::open( const char* path, sock_base
     ::listen( basic_socket_t::_fd, SOMAXCONN );
     basic_socket_t::mgr->push( *this );
   }
+
+  _state = ios_base::goodbit;
+
+  return;
+}
+
+template<class charT, class traits, class _Alloc>
+void sock_processor_base<charT,traits,_Alloc>::open( int dev, int channel, sock_base::protocol prot, const adopt_bt_t& )
+{
+  std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+  if ( basic_socket_t::is_open_unsafe() ) {
+    return;
+  }
+  _mode = ios_base::in | ios_base::out;
+  _state = ios_base::goodbit;
+
+  switch (prot) {
+    case sock_base::bt_hci:
+      basic_socket_t::_fd = socket(PF_BLUETOOTH, sock_base::sock_raw __EXTRA_SOCK_OPT, BTPROTO_HCI);
+
+      if ( basic_socket_t::_fd == -1 ) {
+        _state |= ios_base::failbit | ios_base::badbit;
+        return;
+      }
+      basic_socket_t::_address.bt_hci.sbt_hci_family = AF_BLUETOOTH;
+      basic_socket_t::_address.bt_hci.dev = dev;
+      basic_socket_t::_address.bt_hci.channel = channel;
+
+      if ( ::bind( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof(basic_socket_t::_address) ) == -1 ) {
+        _state |= ios_base::failbit;
+        ::close( basic_socket_t::_fd );
+
+        basic_socket_t::_fd = -1;
+        return;
+      } else {
+        // immediately set filter "allow all", otherwise no data come in
+        bt::hci::sock_filter f;
+
+        f.clear();
+        f.all_ptypes();
+        f.all_events();
+        // f.opcode(htobs(cmd_opcode_pack(1, 1)));
+        f.opcode(0);
+
+        int ret = setsockopt( basic_socket_t::_fd, SOL_HCI, bt::hci::sock_filter::SO_HCI_FILTER, (const void *)&f, (socklen_t)sizeof(bt::hci::sock_filter) );
+        if (ret) {
+          _state |= ios_base::failbit;
+          ::close( basic_socket_t::_fd );
+          basic_socket_t::_fd = -1;
+          return;
+        }
+      }
+
+      break;
+
+    default:
+      _state |= ios_base::failbit | ios_base::badbit;
+      return;
+  }
+
+  basic_socket_t::mgr->push_dp( *this );
 
   _state = ios_base::goodbit;
 

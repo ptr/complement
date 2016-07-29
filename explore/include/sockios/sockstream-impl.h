@@ -34,6 +34,7 @@ namespace std {
 
 namespace detail {
 extern unsigned local_mtu;
+extern unsigned bt_max_frame;
 }
 
 template<class charT, class traits, class _Alloc>
@@ -729,6 +730,17 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
       _xread = &_Self_type::recvfrom_un;
     } else {
     }
+  } else if ( t == sock_base::sock_raw ) {
+    if ( basic_socket_t::_address.any.sa_family == AF_INET ) {
+      _xwrite = &_Self_type::sendto_in;
+      _xread = &_Self_type::recvfrom_in;
+    } else if ( basic_socket_t::_address.any.sa_family == AF_UNIX ) {
+      _xwrite = &_Self_type::sendto_un;
+      _xread = &_Self_type::recvfrom_un;
+    } else if ( basic_socket_t::_address.any.sa_family == AF_BLUETOOTH ) {
+      _xwrite = &_Self_type::write;
+      _xread = &_Self_type::read;
+    }
   } else {
     basic_socket_t::_fd = -1;
     return 0; // unsupported type
@@ -738,7 +750,9 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
     if ( basic_socket_t::_address.any.sa_family == AF_INET ) {
       _M_allocate_block( ((t == sock_base::sock_stream ? (basic_socket_t::default_mtu - 20 - 20) * 2 : (basic_socket_t::default_mtu - 20 - 8)) * 2) / sizeof(charT) );
     } else if ( basic_socket_t::_address.any.sa_family == AF_UNIX ) {
-      _M_allocate_block( (std::detail::local_mtu << 1) / sizeof(charT) );      
+      _M_allocate_block( (std::detail::local_mtu << 1) / sizeof(charT) );
+    } else if ( basic_socket_t::_address.any.sa_family == AF_BLUETOOTH ) {
+      _M_allocate_block( (std::detail::bt_max_frame << 1) / sizeof(charT) );
     }
   }
 
@@ -1182,6 +1196,22 @@ void basic_sockbuf<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, 
     throw std::invalid_argument( "socket is closed" );
   }
 #endif // __unix
+}
+
+template<class charT, class traits, class _Alloc>
+void basic_sockbuf<charT, traits, _Alloc>::setoptions( const bt::hci::sock_filter& f )
+{
+  std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+
+  if ( basic_socket_t::is_open_unsafe() ) {
+    int ret = 0;
+    ret = setsockopt( basic_socket_t::_fd, SOL_HCI, bt::hci::sock_filter::SO_HCI_FILTER, (const void *)&f, (socklen_t)sizeof(bt::hci::sock_filter) );
+    if ( ret != 0 ) {
+      throw std::system_error( errno, std::get_posix_category(), std::string( "socket option" ) );
+    }
+  } else {
+    throw std::invalid_argument( "socket is closed" );
+  }
 }
 
 #undef __EXTRA_SOCK_OPT

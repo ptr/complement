@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2012-02-07 18:36:29 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005-2010
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2010, 2016
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -65,6 +65,8 @@
 
 #include <sockios/netinfo.h>
 #include <sockios/syslog.h>
+#include <sockios/bt.h>
+#include <sockios/bt_hci.h>
 #include <list>
 
 #include <exam/defs.h>
@@ -100,7 +102,14 @@ class sock_base
 
     enum protocol {
       local,                              // local to host (pipes, portals)
-      inet                                // internetwork: UDP, TCP, etc.
+      inet,                               // internetwork: UDP, TCP, etc.
+      bt_hci,                             // Bluetooth HCI
+      bt_sco,                             // Bluetooth SCO
+      bt_rfcomm,                          // Bluetooth RFCOMM
+      bt_bnep,                            // Bluetooth BNEP
+      bt_cmtp,                            // Bluetooth CMTP
+      bt_hidp,                            // Bluetooth HID
+      bt_avdtp                            // Bluetooth AVDTP
     };
 
     // Option flags per-socket.
@@ -143,6 +152,9 @@ class sock_base
       so_tcp_quickack,   // = TCP_QUICKACK,   // Bock/reenable quick ACKs.
       so_tcp_congestion, // = TCP_CONGESTION, // Congestion control algorithm.
       so_tcp_md5sig,     // = TCP_MD5SIG      // TCP MD5 Signature (RFC2385)
+#endif
+#if 1
+      so_bt_hci_filter,  // = HCI_FILTER // Bluetooth HCI events filter
 #endif
     };
 
@@ -316,9 +328,10 @@ class basic_socket
     sock_base::socket_type _fd;
 
     union sockaddr_t {
-        sockaddr_in inet;
-        sockaddr_un unx;
-        sockaddr    any;
+        sockaddr_in     inet;
+        sockaddr_un     unx;
+        sockaddr_bt_hci bt_hci;
+        sockaddr        any;
     } _address;
 
     std::tr2::nanoseconds _rdtimeout;
@@ -660,6 +673,7 @@ class basic_sockbuf :
 
     void setoptions( sock_base::so_t optname, int __v );
     void setoptions( sock_base::so_t optname, bool on_off = true, int __v = 0 );
+    void setoptions( const bt::hci::sock_filter& );
     bool is_ready()
       {
         std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );

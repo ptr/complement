@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/06/13 22:59:17 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005-2008
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2008, 2016
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -26,7 +26,12 @@ namespace detail {
 using namespace std;
 using namespace std::tr2;
 
+#define BT_HCI_MAX_ACL_SIZE	  (1492 + 4)
+#define BT_HCI_MAX_SCO_SIZE	  255
+#define BT_HCI_MAX_EVENT_SIZE	260
+#define BT_HCI_MAX_FRAME_SIZE (BT_HCI_MAX_ACL_SIZE + 4)
 
+unsigned bt_max_frame = BT_HCI_MAX_FRAME_SIZE;
 
 } // namespace detail
 
