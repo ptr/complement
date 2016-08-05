@@ -64,6 +64,7 @@ class sock_processor_base :
 
     struct adopt_close_t { };
     struct adopt_bt_t { };
+    struct adopt_dev_t { };
 
     sock_processor_base() :
         _mode( ios_base::in | ios_base::out ),
@@ -125,6 +126,9 @@ class sock_processor_base :
 
     // Bluetooth socket
     void open( int dev, int channel, sock_base::protocol prot, const adopt_bt_t& );
+
+    // device
+    void open( const char *path, const adopt_dev_t& );
 
     virtual void close()
       { _close(); }

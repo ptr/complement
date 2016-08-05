@@ -98,7 +98,7 @@ sockmgr<charT,traits,_Alloc>::~sockmgr()
   }
 
   for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
-    if ( (i->second.flags & (fd_info::listener | fd_info::dgram_proc)) == 0 ) {
+    if ( (i->second.flags & (fd_info::listener | fd_info::dgram_proc | fd_info::nonsock_proc)) == 0 ) {
       sockbuf_t* b = i->second.b;
       if ( b != 0 ) {
         std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
@@ -123,51 +123,19 @@ sockmgr<charT,traits,_Alloc>::~sockmgr()
 template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::push( socks_processor_t& p )
 {
-  ctl _ctl;
-  _ctl.cmd = listener;
-  _ctl.data.ptr = static_cast<void *>(&p);
-
-  p.addref();
-  int r = 0;
-  int ret = 0;
-  do {
-    ret = ::write( pipefd[1], &_ctl, sizeof(ctl) );
-    if ( ret < 0 ) {
-      switch ( errno ) {
-        case EINTR:
-          continue;
-        default:
-          p.release();
-          throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>::push( socks_processor_t& p )" ) );
-      }
-    }
-    r += ret;
-  } while ( (r != sizeof(ctl)) );
+  push_proc(p, listener);
 }
 
 template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::push_dp( socks_processor_t& p )
 {
-  ctl _ctl;
-  _ctl.cmd = dgram_proc;
-  _ctl.data.ptr = static_cast<void *>(&p);
+  push_proc(p, dgram_proc);
+}
 
-  p.addref();
-  int r = 0;
-  int ret = 0;
-  do {
-    ret = ::write( pipefd[1], &_ctl, sizeof(ctl) );
-    if ( ret < 0 ) {
-      switch ( errno ) {
-        case EINTR:
-          continue;
-        default:
-          p.release();
-          throw std::system_error( errno, std::get_posix_category(), std::string( __PRETTY_FUNCTION__ ) );
-      }
-    }
-    r += ret;
-  } while ( (r != sizeof(ctl)) );
+template<class charT, class traits, class _Alloc>
+void sockmgr<charT,traits,_Alloc>::push_nsp( socks_processor_t& p )
+{
+  push_proc(p, nonsock_proc);
 }
 
 template<class charT, class traits, class _Alloc>
@@ -240,6 +208,8 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
                 process_listener( ev[i], ifd );
               } else if ( info.flags & fd_info::dgram_proc ) {
                 process_dgram_srv( ev[i], ifd );
+              } else if ( info.flags & fd_info::nonsock_proc ) {
+                process_nonsock_srv( ev[i], ifd );
               } else {
                 process_regular( ev[i], ifd );
               }
@@ -273,7 +243,7 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
     try {
       // this is possible, normal flow of operation
       for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
-        if ( (i->second.flags & (fd_info::listener | fd_info::dgram_proc)) == 0 ) {
+        if ( (i->second.flags & (fd_info::listener | fd_info::dgram_proc | fd_info::nonsock_proc)) == 0 ) {
           sockbuf_t* b = i->second.b;
           if ( b != 0 ) {
             std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
@@ -444,15 +414,16 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
       throw std::detail::stop_request();
     }
     case dgram_proc:
+    case nonsock_proc:
     {
-      int dgram_proc_fd = static_cast<socks_processor_t*>(_ctl.data.ptr)->fd();
-      if ( dgram_proc_fd >= 0 ) {
-        if ( fcntl( dgram_proc_fd, F_SETFL, fcntl( dgram_proc_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
+      int proc_fd = static_cast<socks_processor_t*>(_ctl.data.ptr)->fd();
+      if ( proc_fd >= 0 ) {
+        if ( fcntl( proc_fd, F_SETFL, fcntl( proc_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
           static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
           throw std::runtime_error( "can't establish nonblock mode on listener" );
         }
-        if ( descr.find( dgram_proc_fd ) != descr.end() ) { // reuse?
-          if (!epoll_restore(dgram_proc_fd)) {
+        if ( descr.find( proc_fd ) != descr.end() ) { // reuse?
+          if (!epoll_restore(proc_fd)) {
             extern std::tr2::mutex _se_lock;
             extern std::ostream* _se_stream;
 
@@ -468,7 +439,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
             return;
           }
         } else {
-          if (!epoll_push(dgram_proc_fd)) {
+          if (!epoll_push(proc_fd)) {
             extern std::tr2::mutex _se_lock;
             extern std::ostream* _se_stream;
 
@@ -482,13 +453,15 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
             return;
           }
         }
-        descr[dgram_proc_fd] = fd_info( fd_info::dgram_proc, 0, static_cast<socks_processor_t*>(_ctl.data.ptr) );
+        descr[proc_fd] = fd_info( _ctl.cmd == dgram_proc ? fd_info::dgram_proc : fd_info::nonsock_proc,
+                                  0, static_cast<socks_processor_t*>(_ctl.data.ptr) );
       }
       static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
       break;
     }
   }
 }
+
 template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::close_listener(typename sockmgr<charT,traits,_Alloc>::fd_container_type::iterator ifd)
 {
@@ -520,7 +493,6 @@ void sockmgr<charT,traits,_Alloc>::close_listener(typename sockmgr<charT,traits,
   info.p->stop();
   ::close( listener_fd ); 
 }
-
 
 template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, typename sockmgr<charT,traits,_Alloc>::fd_container_type::iterator ifd )
@@ -631,6 +603,42 @@ void sockmgr<charT,traits,_Alloc>::process_dgram_srv( const epoll_event& ev, typ
     }
     return;
   }
+
+  (*info.p)( ifd->first, addr );
+
+  if (!epoll_restore(ifd->first)) {
+    (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
+  }
+}
+
+template<class charT, class traits, class _Alloc>
+void sockmgr<charT,traits,_Alloc>::process_nonsock_srv( const epoll_event& ev, typename sockmgr<charT,traits,_Alloc>::fd_container_type::iterator ifd )
+{
+  if ( ev.events & (EPOLLHUP | EPOLLERR) ) {
+    close_listener(ifd);
+    return;
+  }
+
+  if ( (ev.events & EPOLLIN) == 0 ) {
+    // sockbuf_t* b = (*info.p)( ifd->first, addr );
+    return; // I don't know what to do this case...
+  }
+
+  fd_info& info = ifd->second;
+  sockaddr addr = { AF_UNSPEC };
+
+  // Urgent: don't do ioctl here to check number of available chars for read:
+  // it cause of notification via epoll and would lead to infinite loop
+#if 0
+  int len;
+  ioctl(ifd->first, FIONREAD, &len);
+  if ( len <= 0 ) {
+    if (!epoll_restore(ifd->first)) {
+      (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );
+    }
+    return;
+  }
+#endif
 
   (*info.p)( ifd->first, addr );
 
@@ -845,6 +853,31 @@ void sockmgr<charT,traits,_Alloc>::process_regular( const epoll_event& ev, typen
       (*info.p)( ev.data.fd );
     }
   }
+}
+
+template<class charT, class traits, class _Alloc>
+void sockmgr<charT,traits,_Alloc>::push_proc( socks_processor_t& p, command_type cmd )
+{
+  ctl _ctl;
+  _ctl.cmd = cmd;
+  _ctl.data.ptr = static_cast<void *>(&p);
+
+  p.addref();
+  int r = 0;
+  int ret = 0;
+  do {
+    ret = ::write( pipefd[1], &_ctl, sizeof(ctl) );
+    if ( ret < 0 ) {
+      switch ( errno ) {
+        case EINTR:
+          continue;
+        default:
+          p.release();
+          throw std::system_error( errno, std::get_posix_category(), std::string( __PRETTY_FUNCTION__ ) );
+      }
+    }
+    r += ret;
+  } while ( (r != sizeof(ctl)) );
 }
 
 template<class charT, class traits, class _Alloc>

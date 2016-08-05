@@ -740,6 +740,9 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
     } else if ( basic_socket_t::_address.any.sa_family == AF_BLUETOOTH ) {
       _xwrite = &_Self_type::write;
       _xread = &_Self_type::read;
+    } else if ( basic_socket_t::_address.any.sa_family == AF_UNSPEC ) {
+      _xwrite = &_Self_type::write;
+      _xread = &_Self_type::read;
     }
   } else {
     basic_socket_t::_fd = -1;
@@ -753,6 +756,8 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
       _M_allocate_block( (std::detail::local_mtu << 1) / sizeof(charT) );
     } else if ( basic_socket_t::_address.any.sa_family == AF_BLUETOOTH ) {
       _M_allocate_block( (std::detail::bt_max_frame << 1) / sizeof(charT) );
+    } else if ( basic_socket_t::_address.any.sa_family == AF_UNSPEC ) {
+      _M_allocate_block( 2048 / sizeof(charT) );
     }
   }
 

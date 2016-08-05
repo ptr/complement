@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-04-29 19:30:19 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2008, 2009
+ * Copyright (c) 2008, 2009, 2016
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -66,18 +66,20 @@ class sockmgr
     typedef basic_sockbuf<charT,traits,_Alloc> sockbuf_t;
     typedef sock_processor_base<charT,traits,_Alloc> socks_processor_t;
 
-    enum {
+    enum command_type {
       listener,
       tcp_buffer,
       rqstop,
-      dgram_proc
+      dgram_proc,
+      nonsock_proc
     };
 
     struct fd_info
     {
         enum {
-          listener = 0x1,
-          dgram_proc = 0x2
+          listener     = 0x1,
+          dgram_proc   = 0x2,
+          nonsock_proc = 0x4
         };
 
         fd_info() :
@@ -140,6 +142,7 @@ class sockmgr
 
     void push( socks_processor_t& p );
     void push_dp( socks_processor_t& p );
+    void push_nsp( socks_processor_t& p );
     void push( sockbuf_t& s );
 
     bool epoll_restore(int fd, int flags = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT);
@@ -180,9 +183,12 @@ class sockmgr
     void process_listener( const epoll_event&, typename fd_container_type::iterator );
     void process_dgram_srv( const epoll_event&, typename fd_container_type::iterator );
     void process_regular( const epoll_event&, typename fd_container_type::iterator );
+    void process_nonsock_srv( const epoll_event&, typename fd_container_type::iterator );
 
     void close_listener( typename fd_container_type::iterator );
     bool epoll_push(int fd, int flags = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT);
+
+    void push_proc( socks_processor_t& p, command_type cmd );
 
     int efd;
     int pipefd[2];
