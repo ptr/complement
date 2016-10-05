@@ -8,7 +8,11 @@
  *
  */
 
+#if !defined(STLPORT) && defined(__GNUC__) && (__GNUC__ >= 5)
+#include <system_error>
+#else
 #include <mt/system_error>
+#endif
 #include <exam/defs.h>
 
 namespace std {
@@ -48,13 +52,13 @@ sockmgr<charT,traits,_Alloc>::sockmgr(int _fd_count_hint, int _maxevents) :
 
   efd = epoll_create(_fd_count_hint);
   if ( efd < 0 ) {
-    throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>" ) );
+    throw std::system_error( errno, std::system_category(), std::string( "sockmgr<charT,traits,_Alloc>" ) );
   }
 
   if ( pipe( pipefd ) < 0 ) {
     ::close( efd );
     efd = -1;
-    throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>" ) );
+    throw std::system_error( errno, std::system_category(), std::string( "sockmgr<charT,traits,_Alloc>" ) );
   }
 
   if (!epoll_push(pipefd[0], EPOLLIN | EPOLLERR | EPOLLHUP)) {
@@ -64,7 +68,7 @@ sockmgr<charT,traits,_Alloc>::sockmgr(int _fd_count_hint, int _maxevents) :
     pipefd[1] = -1;
     ::close( pipefd[0] );
     pipefd[0] = -1;
-    throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>" ) );
+    throw std::system_error( errno, std::system_category(), std::string( "sockmgr<charT,traits,_Alloc>" ) );
   }
 
   _worker = new std::tr2::thread( _loop, this );
@@ -156,7 +160,7 @@ void sockmgr<charT,traits,_Alloc>::push( sockbuf_t& s )
         case EINTR:
           continue;
         default:
-          throw std::system_error( errno, std::get_posix_category(), std::string( "sockmgr<charT,traits,_Alloc>::push( sockbuf_t& s )" ) );
+          throw std::system_error( errno, std::system_category(), std::string( "sockmgr<charT,traits,_Alloc>::push( sockbuf_t& s )" ) );
       }
     }
     r += ret;
@@ -189,7 +193,7 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
         if ( _se_stream != 0 ) {
           *_se_stream << HERE << ' '
                       << efd << ' '
-                      << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
+                      << std::make_error_code( static_cast<std::errc>(errno) ).message()
                       << std::endl;
         }
 
@@ -356,7 +360,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
             std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
             if ( _se_stream != 0 ) {
               *_se_stream << HERE << ' '
-                          << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
+                          << std::make_error_code( static_cast<std::errc>(errno) ).message()
                           << std::endl;
             }
             // descr.erase(listener_fd);
@@ -371,7 +375,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
             std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
             if ( _se_stream != 0 ) {
               *_se_stream << HERE << ' '
-                          << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
+                          << std::make_error_code( static_cast<std::errc>(errno) ).message()
                           << std::endl;
             }
             static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
@@ -397,7 +401,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
           std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
           if ( _se_stream != 0 ) {
             *_se_stream << HERE << ' '
-                        << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
+                        << std::make_error_code( static_cast<std::errc>(errno) ).message()
                         << std::endl;
           }
 
@@ -430,7 +434,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
             std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
             if ( _se_stream != 0 ) {
               *_se_stream << HERE << ' '
-                          << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
+                          << std::make_error_code( static_cast<std::errc>(errno) ).message()
                           << std::endl;
             }
 
@@ -446,7 +450,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
             std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
             if ( _se_stream != 0 ) {
               *_se_stream << HERE << ' '
-                          << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
+                          << std::make_error_code( static_cast<std::errc>(errno) ).message()
                           << std::endl;
             }
             static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
@@ -526,7 +530,7 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
         int save_errno = errno;
         errno = 0;
         if (epoll_restore(ev.data.fd)) {
-          throw std::system_error( save_errno, std::get_posix_category(), std::string( __PRETTY_FUNCTION__ ) );
+          throw std::system_error( save_errno, std::system_category(), std::string( __PRETTY_FUNCTION__ ) );
         }
       }
 
@@ -536,13 +540,13 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
 
     if ( fcntl( fd, F_SETFL, fcntl( fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
       ::close( fd );
-      throw std::system_error( errno, std::get_posix_category(), std::string( __PRETTY_FUNCTION__ ) );
+      throw std::system_error( errno, std::system_category(), std::string( __PRETTY_FUNCTION__ ) );
     }
       
     try {
       if (!epoll_push(fd)) {
         ::close( fd );
-        throw std::system_error( errno, std::get_posix_category(), std::string( __PRETTY_FUNCTION__ ) );
+        throw std::system_error( errno, std::system_category(), std::string( __PRETTY_FUNCTION__ ) );
       }
 
       sockbuf_t* b = (*info.p)( fd, addr );
@@ -730,7 +734,7 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
       std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
       if ( _se_stream != 0 ) {
         *_se_stream << HERE << ' '
-                    << std::posix_error::make_error_code( static_cast<std::posix_error::posix_errno>(errno) ).message()
+                    << std::make_error_code( static_cast<std::errc>(errno) ).message()
                     << std::endl;
       }
 
@@ -873,7 +877,7 @@ void sockmgr<charT,traits,_Alloc>::push_proc( socks_processor_t& p, command_type
           continue;
         default:
           p.release();
-          throw std::system_error( errno, std::get_posix_category(), std::string( __PRETTY_FUNCTION__ ) );
+          throw std::system_error( errno, std::system_category(), std::string( __PRETTY_FUNCTION__ ) );
       }
     }
     r += ret;

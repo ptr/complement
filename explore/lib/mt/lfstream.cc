@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/19 20:29:27 yeti>
+// -*- C++ -*-
 
 /*
  * Copyright (c) 2004, 2008
@@ -19,7 +19,11 @@
 # include <errno.h>
 #endif /* __unix || __unix__ */
 
+#if !defined(STLPORT) && defined(__GNUC__) && (__GNUC__ >= 5)
+#include <system_error>
+#else
 #include <mt/system_error>
+#endif
 #include <mt/mutex>
 
 namespace std {

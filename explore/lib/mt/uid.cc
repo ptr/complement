@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2011-05-24 11:04:23 ptr>
+// -*- C++ -*-
 
 /*
  * Copyright (c) 2006, 2008-2011
@@ -24,7 +24,11 @@
 #include <iomanip>
 #include <cstring>
 #include <stdexcept>
+#if !defined(STLPORT) && defined(__GNUC__) && (__GNUC__ >= 5)
+#include <system_error>
+#else
 #include <mt/system_error>
+#endif
 #include <misc/md5.h>
 
 #include <sys/sysctl.h>
@@ -243,7 +247,7 @@ const xmt::uuid_type& hostid() throw (runtime_error)
   static detail::__uid_init _uid;
 
   if ( _uid.err != 0 ) {
-    throw system_error( _uid.err, get_posix_category(), "boot_id" );
+    throw system_error( _uid.err, system_category(), "boot_id" );
   }
 
   return detail::__uid_init::_host_id;

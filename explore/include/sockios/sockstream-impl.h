@@ -73,7 +73,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port,
     if ( prot == sock_base::inet ) {
       basic_socket_t::_fd = socket( PF_INET, type __EXTRA_SOCK_OPT, 0 );
       if ( basic_socket_t::_fd == -1 ) {
-        throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+        throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
       }
       basic_socket_t::_address.inet.sin_family = AF_INET;
       // htons is a define at least in Linux 2.2.5-15, and it's expantion fail
@@ -90,7 +90,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port,
   
       // Generally, stream sockets may successfully connect() only once
       if ( connect( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof( basic_socket_t::_address ) ) == -1 ) {
-        throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+        throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
       }
       if ( type == sock_base::sock_stream ) {
         _xwrite = &_Self_type::write;
@@ -115,7 +115,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port,
 
 #ifndef __FIT_SOCK_NONBLOCK
     if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
-      throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+      throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
 #endif
     this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
@@ -164,12 +164,12 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port, const std:
 
     basic_socket_t::_fd = socket( PF_INET, sock_base::sock_stream __EXTRA_SOCK_OPT, 0 );
     if ( basic_socket_t::_fd == -1 ) {
-      throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+      throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
 
 #ifndef __FIT_SOCK_NONBLOCK
     if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
-      throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+      throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
 #endif
 
@@ -204,7 +204,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port, const std:
               errno = 0;
               continue;
             default:
-              throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+              throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
           }
         }
         if ( (wpfd.revents & (POLLERR | POLLHUP
@@ -212,10 +212,10 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port, const std:
                               | POLLRDHUP
 #endif
                 )) != 0 ) {
-          throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+          throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
         }
       } else {
-        throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+        throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
       }
     }
 
@@ -274,14 +274,14 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, sock_base::stype t
     _type = type;
     basic_socket_t::_fd = socket( PF_UNIX, type __EXTRA_SOCK_OPT, 0 );
     if ( basic_socket_t::_fd == -1 ) {
-      throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+      throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
     basic_socket_t::_address.unx.sun_family = AF_UNIX;
     strncpy(basic_socket_t::_address.unx.sun_path, path, sizeof(basic_socket_t::_address.unx.sun_path));
 
     // Generally, stream sockets may successfully connect() only once
     if ( connect( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof( basic_socket_t::_address.unx ) ) == -1 ) {
-      throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+      throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
     if ( type == sock_base::sock_stream ) {
       _xwrite = &_Self_type::write;
@@ -301,7 +301,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, sock_base::stype t
 
 #ifndef __FIT_SOCK_NONBLOCK
     if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
-      throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+      throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
 #endif
     this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
@@ -348,14 +348,14 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, const std::tr2::na
     _type = type;
     basic_socket_t::_fd = socket( PF_UNIX, type __EXTRA_SOCK_OPT, 0 );
     if ( basic_socket_t::_fd == -1 ) {
-      throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+      throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
     basic_socket_t::_address.unx.sun_family = AF_UNIX;
     strncpy(basic_socket_t::_address.unx.sun_path, path, sizeof(basic_socket_t::_address.unx.sun_path));
 
 #ifndef __FIT_SOCK_NONBLOCK
     if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
-      throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+      throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
 #endif
 
@@ -377,7 +377,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, const std::tr2::na
               errno = 0;
               continue;
             default:
-              throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+              throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
           }
         }
         if ( (wpfd.revents & (POLLERR | POLLHUP
@@ -385,10 +385,10 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, const std::tr2::na
                               | POLLRDHUP
 #endif
                 )) != 0 ) {
-          throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+          throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
         }
       } else {
-        throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+        throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
       }
     }
     if ( type == sock_base::sock_stream ) {
@@ -455,13 +455,13 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
     if ( addr.sin_family == AF_INET ) {
       basic_socket_t::_fd = socket( PF_INET, type __EXTRA_SOCK_OPT, 0 );
       if ( basic_socket_t::_fd == -1 ) {
-        throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+        throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
       }
       basic_socket_t::_address.inet = addr;
   
       // Generally, stream sockets may successfully connect() only once
       if ( connect( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof( basic_socket_t::_address ) ) == -1 ) {
-        throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+        throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
       }
       if ( type == sock_base::sock_stream ) {
         _xwrite = &_Self_type::write;
@@ -484,7 +484,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
 
 #ifndef __FIT_SOCK_NONBLOCK
     if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
-      throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+      throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
 #endif
     this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
@@ -535,13 +535,13 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
     if ( addr.sin_family == AF_INET ) {
       basic_socket_t::_fd = socket( PF_INET, type __EXTRA_SOCK_OPT, 0 );
       if ( basic_socket_t::_fd == -1 ) {
-        throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+        throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
       }
       basic_socket_t::_address.inet = addr;
 
 #ifndef __FIT_SOCK_NONBLOCK
       if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
-        throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+        throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
       }
 #endif
 
@@ -563,7 +563,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
                 errno = 0;
                 continue;
               default:
-                throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+                throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
             }
           }
           if ( (wpfd.revents & (POLLERR | POLLHUP
@@ -571,10 +571,10 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
                                 | POLLRDHUP
 #endif
                   )) != 0 ) {
-            throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+            throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
           }
         } else {
-          throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+          throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
         }
       }
       if ( type == sock_base::sock_stream ) {
@@ -773,7 +773,7 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
   if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
     ::close( basic_socket_t::_fd );
     basic_socket_t::_fd = -1;
-    throw std::system_error( errno, std::get_posix_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>" ) );
+    throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>" ) );
   }
   this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
@@ -1114,7 +1114,7 @@ void basic_sockbuf<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, 
         throw std::invalid_argument( "bad socket option" );
     }
     if ( ret != 0 ) {
-      throw std::system_error( errno, std::get_posix_category(), std::string( "socket option" ) );
+      throw std::system_error( errno, std::system_category(), std::string( "socket option" ) );
     }
   } else {
     throw std::invalid_argument( "socket is closed" );
@@ -1195,7 +1195,7 @@ void basic_sockbuf<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, 
         throw std::invalid_argument( "bad socket option" );
     }
     if ( ret != 0 ) {
-      throw std::system_error( errno, std::get_posix_category(), std::string( "socket option" ) );
+      throw std::system_error( errno, std::system_category(), std::string( "socket option" ) );
     }
   } else {
     throw std::invalid_argument( "socket is closed" );
@@ -1212,7 +1212,7 @@ void basic_sockbuf<charT, traits, _Alloc>::setoptions( const bt::hci::sock_filte
     int ret = 0;
     ret = setsockopt( basic_socket_t::_fd, SOL_HCI, bt::hci::sock_filter::SO_HCI_FILTER, (const void *)&f, (socklen_t)sizeof(bt::hci::sock_filter) );
     if ( ret != 0 ) {
-      throw std::system_error( errno, std::get_posix_category(), std::string( "socket option" ) );
+      throw std::system_error( errno, std::system_category(), std::string( "socket option" ) );
     }
   } else {
     throw std::invalid_argument( "socket is closed" );

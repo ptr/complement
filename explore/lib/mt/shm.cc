@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/18 11:59:58 ptr>
+// -*- C++ -*-
 
 /*
  * Copyright (c) 2006, 2009
@@ -9,7 +9,11 @@
  */
 
 #include <mt/shm.h>
+#if !defined(STLPORT) && defined(__GNUC__) && (__GNUC__ >= 5)
+#include <system_error>
+#else
 #include <mt/system_error>
+#endif
 #include <iostream>
 #include <cstring>
 
@@ -32,7 +36,7 @@ const char* shm_bad_alloc::what() const throw()
   if ( err == -3 ) {
     return "shared memory: not enough space left in shared memory segment";
   }
-  strncpy( _buf, std::system_error( err, std::get_posix_category(), rstring ).what(), sizeof(_buf) );
+  strncpy( _buf, std::system_error( err, std::system_category(), rstring ).what(), sizeof(_buf) );
   _buf[sizeof(_buf)-1] = 0; // null term, even if room wasn't enough
   return _buf;
 }

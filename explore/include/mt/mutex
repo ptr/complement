@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/03/14 00:46:21 ptr>
+// -*- C++ -*-
 
 /*
  * Copyright (c) 1997-1999, 2002-2009
@@ -39,7 +39,11 @@
 #endif // __unix
 
 #include <cerrno>
+#if !defined(STLPORT) && defined(__GNUC__) && (__GNUC__ >= 5)
+#include <system_error>
+#else
 #include <mt/system_error>
+#endif
 
 namespace std {
 
@@ -100,7 +104,7 @@ class __mutex_base
           if ( SCOPE ) {
             int ret = pthread_mutexattr_setpshared( &att, PTHREAD_PROCESS_SHARED );
             if ( ret != 0 ) {
-              throw std::system_error( ret, std::get_posix_category(), detail::_notpshared );
+              throw std::system_error( ret, std::system_category(), detail::_notpshared );
             }
           }
 # endif // __FIT_PSHARED_MUTEX
@@ -108,7 +112,7 @@ class __mutex_base
           if ( RECURSIVE_SAFE ) {
             int ret = pthread_mutexattr_settype( &att, PTHREAD_MUTEX_RECURSIVE );
             if ( ret != 0 ) {
-              throw std::system_error( ret, std::get_posix_category(), detail::_notrecursive );
+              throw std::system_error( ret, std::system_category(), detail::_notrecursive );
             }
           }
 # endif
@@ -225,7 +229,7 @@ class __mutex :
 #ifdef __FIT_PTHREADS
         int e = pthread_mutex_lock( &this->_M_lock );
         if ( e ) {
-          throw std::system_error( e, std::get_posix_category() );
+          throw std::system_error( e, std::system_category() );
         }
 #endif
 #ifdef __FIT_WIN32THREADS
@@ -526,7 +530,7 @@ class __rw_mutex_base
 # ifdef __FIT_PSHARED_MUTEX
           int ret = pthread_rwlockattr_setpshared( &att, PTHREAD_PROCESS_SHARED );
           if ( ret != 0 ) {
-            throw std::system_error( ret, std::get_posix_category(), std::tr2::detail::_notpshared );
+            throw std::system_error( ret, std::system_category(), std::tr2::detail::_notpshared );
           }
 # endif // __FIT_PSHARED_MUTEX
           pthread_rwlock_init( &_M_lock, &att );

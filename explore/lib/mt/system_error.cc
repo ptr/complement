@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/10/07 01:02:13 ptr>
+// -*- C++ -*-
 
 /*
  * Copyright (c) 2007-2008
@@ -10,6 +10,8 @@
  *
  * http://www.open-std.org/jtc1/sc22/WG21/docs/papers/2008/n2691.pdf
  */
+
+#if defined(STLPORT) || defined(__GNUC__) && (__GNUC__ < 5)
 
 #include "mt/system_error"
 #include <cerrno>
@@ -1103,3 +1105,5 @@ const char* system_error::what() const throw()
 }
 
 } // namespace std
+
+#endif // __GNUC__ < 5
