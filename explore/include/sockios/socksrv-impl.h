@@ -201,6 +201,31 @@ void sock_processor_base<charT,traits,_Alloc>::open( const char *path, const ado
 }
 
 template<class charT, class traits, class _Alloc>
+void sock_processor_base<charT,traits,_Alloc>::open( int fd, const adopt_dev_t& )
+{
+  std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+  if ( basic_socket_t::is_open_unsafe() ) {
+    return;
+  }
+  _mode = ios_base::in | ios_base::out;
+  _state = ios_base::goodbit;
+
+  basic_socket_t::_fd = fd;
+
+  if ( basic_socket_t::_fd == -1 ) {
+    _state |= ios_base::failbit | ios_base::badbit;
+    return;
+  }
+  basic_socket_t::_address.any.sa_family = AF_UNSPEC;
+
+  basic_socket_t::mgr->push_nsp( *this );
+
+  _state = ios_base::goodbit;
+
+  return;
+}
+
+template<class charT, class traits, class _Alloc>
 void sock_processor_base<charT,traits,_Alloc>::_close()
 {
   if ( !is_open() ) {

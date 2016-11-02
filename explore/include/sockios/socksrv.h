@@ -129,6 +129,7 @@ class sock_processor_base :
 
     // device
     void open( const char *path, const adopt_dev_t& );
+    void open( int fd, const adopt_dev_t& );
 
     virtual void close()
       { _close(); }
