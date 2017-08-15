@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <07/09/21 22:45:51 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2007
+ * Copyright (c) 2007, 2017
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -39,6 +39,13 @@ void callstack( std::ostream& s )
 } // namespace xmt
 
 #else // __FIT_PRESENT_BFD
+
+#ifndef PACKAGE
+#  define PACKAGE
+#endif
+#ifndef PACKAGE_VERSION
+#  define PACKAGE_VERSION
+#endif
 
 #include <bfd.h>
 #include <signal.h>
