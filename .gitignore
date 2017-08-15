@@ -4,3 +4,4 @@ gmon.out
 obj
 /explore/Makefiles/gmake/config.mak
 *.swp
+.config.mk
