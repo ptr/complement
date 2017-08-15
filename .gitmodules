@@ -1,0 +1,3 @@
+[submodule "explore/Makefiles"]
+	path = explore/Makefiles
+	url = ../makeit.git
