@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <10/08/25 18:27:56 ptr>
+// -*- C++ -*- Time-stamp: <2017-08-16 16:37:09 ptr>
 
 /*
  * Copyright (c) 2003, 2006, 2007, 2010
@@ -110,6 +110,7 @@ void thread_two()
 
 int EXAM_IMPL(signal_3_test)
 {
+  throw exam::skip_exception();
   std::tr2::thread t( thread_two );
 
   {
