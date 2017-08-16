@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-05-24 11:14:42 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2006-2011
+ * Copyright (c) 2006-2011, 2017
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -499,6 +499,64 @@ int EXAM_IMPL(uid_test_wg21::uidconv)
   return EXAM_RESULT;
 }
 
+int EXAM_IMPL(uid_test_wg21::istream)
+{
+  /* This is illustration for
+
+     istreambuf_iterator not increment g-pointer of istream, so character
+     will be extracted twice (or more, under some occasion), so it not work
+     as single-pass input iterator.
+
+     https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81857
+     (for GNU libstdc++)
+   */
+  std::stringstream s;
+  char b[] = "c2ee3d09-43b3-466d-b490-db35999a22cf";
+  char r[] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+  //          012345678901234567890123456789012345
+  //char x[] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+
+  s << b;
+  EXAM_CHECK( !s.fail() );
+
+#if 1
+  // std::copy_n( std::istreambuf_iterator<char>(s), 1, r );
+  // EXAM_CHECK( !s.fail() );
+  // EXAM_CHECK( s.tellg() == 0 );
+//  std::copy_n( std::istreambuf_iterator<char>(s), 1, r + 1 );
+//  EXAM_CHECK( !s.fail() );
+//  EXAM_CHECK( s.tellg() == 0 );
+//  std::copy_n( std::istreambuf_iterator<char>(s), 34, r + 2 );
+//  EXAM_CHECK( !s.fail() );
+  std::copy_n( std::istreambuf_iterator<char>(s), 36, r );
+  EXAM_CHECK( !s.fail() );
+  EXAM_CHECK( memcmp(b, r, 36) == 0 );
+  // EXAM_CHECK( std::istreambuf_iterator<char>(s) == std::istreambuf_iterator<char>() );
+  EXAM_CHECK( s.tellg() != 35 ); // pass ?!
+  char c = 'q';
+  std::copy_n( std::istreambuf_iterator<char>(s), 1, &c );
+  EXAM_CHECK( s.fail() ); // pass ?!
+  EXAM_CHECK( c != 'f' ); // pass ?!
+  EXAM_CHECK( s.tellg() != 35 ); // pass ?!
+
+  // std::copy_n( std::istreambuf_iterator<char>(s), 36, x );
+  // EXAM_CHECK( !s.fail() );
+  // EXAM_CHECK( memcmp(b, x, 36) == 0 );
+  // std::cerr << x << std::endl;
+#else
+  std::copy_n( std::istreambuf_iterator<char>(s), 1, r );
+  EXAM_CHECK( !s.fail() );
+  EXAM_CHECK( s.tellg() == 0 );
+  EXAM_CHECK( r[0] == 'c' );
+  std::copy_n( std::istreambuf_iterator<char>(s), 1, r );
+  EXAM_CHECK( !s.fail() );
+  EXAM_CHECK( s.tellg() == 0 );
+  EXAM_CHECK( r[0] == 'c' );
+#endif
+
+  return EXAM_RESULT;
+}
+
 int EXAM_IMPL(uid_test_wg21::uid_stream)
 {
   xmt::uuid_type u = xmt::uid();
@@ -507,11 +565,16 @@ int EXAM_IMPL(uid_test_wg21::uid_stream)
 
   s << u;
 
+  // std::cerr << s.tellg() << std::endl;
   EXAM_CHECK( s.str() == std::string(u) );
 
   xmt::uuid_type r;
 
   s >> r;
+
+  // s.seekg( 0, std::istream::end );
+  // std::cerr << s.tellg() << std::endl;
+  // std::cerr << s.str()[s.tellg()] << std::endl;
 
   EXAM_CHECK( !s.fail() );
   EXAM_CHECK( u == r );
@@ -522,6 +585,9 @@ int EXAM_IMPL(uid_test_wg21::uid_stream)
   s.clear();
 
   s << "   " << u2 << ' ' << u3;
+
+  EXAM_CHECK( !s.fail() );
+  EXAM_CHECK( !s.eof() );
 
   xmt::uuid_type r2, r3;
 

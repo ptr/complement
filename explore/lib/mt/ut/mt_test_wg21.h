@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-05-24 11:06:50 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2006-2008
+ * Copyright (c) 2006-2008, 2017
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -43,6 +43,7 @@ class uid_test_wg21
     int EXAM_DECL(uidconv);
     int EXAM_DECL(uid_stream);
     int EXAM_DECL(version);
+    int EXAM_DECL(istream);
 };
 
 #endif // __MT_TEST_WG21_H
