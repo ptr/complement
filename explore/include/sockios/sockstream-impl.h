@@ -90,7 +90,9 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port,
   
       // Generally, stream sockets may successfully connect() only once
       if ( connect( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof( basic_socket_t::_address ) ) == -1 ) {
-        throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+        if ( errno != EINPROGRESS ) { // socket may be non-block
+          throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
+        }
       }
       if ( type == sock_base::sock_stream ) {
         _xwrite = &_Self_type::write;
