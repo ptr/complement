@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
 /*
- * Copyright (c) 2008-2010, 2016
+ * Copyright (c) 2008-2010, 2016, 2017
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -287,6 +287,9 @@ void sock_processor_base<charT,traits,_Alloc>::setoptions_unsafe( sock_base::so_
         break;
       default:
         throw std::invalid_argument( "bad socket option" );
+    }
+    if ( ret != 0 ) {
+      throw system_error( errno, system_category(), std::string( __PRETTY_FUNCTION__ ) );
     }
   } else {
     throw std::invalid_argument( "socket is closed" );
