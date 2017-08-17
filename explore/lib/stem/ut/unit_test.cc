@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-08-26 12:44:03 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2002, 2003, 2006-2009
+ * Copyright (c) 2002, 2003, 2006-2009, 2017
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -1365,7 +1365,7 @@ int EXAM_IMPL(stem_test::boring_manager_more)
         EXAM_ERROR( "child interrupted" );
       }
     } else {
-      std::system_error err( errno, std::get_posix_category(), std::string( "waitpid interrupted" ) );
+      std::system_error err( errno, std::system_category(), std::string( "waitpid interrupted" ) );
 
       EXAM_ERROR( err.what() );
     }
