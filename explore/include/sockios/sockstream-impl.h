@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005-2009, 2016
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2009, 2016, 2017
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -230,10 +230,10 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port, const std:
       throw std::length_error( "can't allocate block" );
     }
 
-    setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
+    this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
     std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
-    setg( this->epptr(), this->epptr(), this->epptr() );
+    this->setg( this->epptr(), this->epptr(), this->epptr() );
 
     _fl = _fr = this->eback();
 
@@ -407,10 +407,10 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, const std::tr2::na
       throw std::length_error( "can't allocate block" );
     }
 
-    setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
+    this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
     std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
-    setg( this->epptr(), this->epptr(), this->epptr() );
+    this->setg( this->epptr(), this->epptr(), this->epptr() );
 
     _fl = _fr = this->eback();
 
