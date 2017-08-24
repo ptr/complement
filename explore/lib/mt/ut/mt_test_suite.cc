@@ -96,7 +96,7 @@ int main( int argc, const char** argv )
 
   uid_test_wg21 test_wg21_uid;
 
-  exam::test_suite::test_case_type uidtc[4];
+  exam::test_suite::test_case_type uidtc[6];
 
   uidtc[1] = t.add( &uid_test_wg21::uid, test_wg21_uid, "uid_test_wg21::uid",
          uidtc[0] = t.add( &uid_test_wg21::uidstr, test_wg21_uid, "uid_test_wg21::uidstr" ) );
@@ -104,8 +104,12 @@ int main( int argc, const char** argv )
   uidtc[3] = t.add( &uid_test_wg21::uidconv, test_wg21_uid, "uid_test_wg21::uidconv",
                     t.add( &uid_test_wg21::hostidstr, test_wg21_uid, "uid_test_wg21::hostidstr",
                            t.add( &uid_test_wg21::hostid, test_wg21_uid, "uid_test_wg21::hostid" ) ) );
-  t.add( &uid_test_wg21::uid_stream, test_wg21_uid, "uid_test_wg21::uid_stream", uidtc + 2, uidtc + 4 );
   t.add( &uid_test_wg21::version, test_wg21_uid, "uid version", uidtc[1] );
+  uidtc[4] = t.add( &uid_test_wg21::copy_n, test_wg21_uid, "copy_n",
+                    t.add( &uid_test_wg21::istream_iterator, test_wg21_uid, "istream_iterator",
+                           t.add( &uid_test_wg21::istream_iterator_ctor, test_wg21_uid, "istream_iterator ctor", uidtc[2] ) ) );
+  uidtc[5] = t.add( &uid_test_wg21::sentry, test_wg21_uid, "sentry" );
+  t.add( &uid_test_wg21::uid_stream, test_wg21_uid, "uid_test_wg21::uid_stream", uidtc + 2, uidtc + 6 );
 
   flock_test flock;
 

@@ -82,33 +82,26 @@ std::ostream& operator <<( std::ostream& s, const xmt::uuid_type& uid )
 
 std::istream& operator >>( std::istream& s, xmt::uuid_type& uid )
 {
-#ifdef STLPORT
-  std::ios_base::fmtflags f = s.flags( 0 );
-#else // i.e. libstdc++
-  std::ios_base::fmtflags f = s.flags( static_cast<std::ios_base::fmtflags>(0) );
-#endif
-
-  std::istream::sentry __sentry( s, (f & std::ios_base::skipws) == 0 ); // skip whitespace
-
-  if ( !__sentry ) {
-    s.flags( f );
+  if ( !std::istream::sentry( s ) ) {
     return s;
   }
 
   char b[37];
 
-  copy_n( istreambuf_iterator<char>(s), 36, b );
+  s.read( b, 36 );
   b[36] = '\0';
   if ( !s.fail() ) {
     if ( uuid_parse( b, uid.u.b ) < 0 ) {
-      for (int r = 35; r >= 0; --r ) {
-        s.putback( b[r] );
+      for ( char *r = b + 35; r >= b; --r ) {
+        s.putback( *r );
       }
       s.setstate( std::ios_base::failbit );
     }
+  } else {
+    for ( char *r = b + s.gcount() - 1; r >= b; --r ) {
+      s.putback( *r );
+    }
   }
-
-  s.flags( f );
 
   return s;
 }

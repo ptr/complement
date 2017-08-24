@@ -44,6 +44,10 @@ class uid_test_wg21
     int EXAM_DECL(uid_stream);
     int EXAM_DECL(version);
     int EXAM_DECL(istream);
+    int EXAM_DECL(istream_iterator);
+    int EXAM_DECL(istream_iterator_ctor);
+    int EXAM_DECL(copy_n);
+    int EXAM_DECL(sentry);
 };
 
 #endif // __MT_TEST_WG21_H

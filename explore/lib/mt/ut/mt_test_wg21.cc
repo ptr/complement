@@ -30,6 +30,10 @@
 #include <string>
 #include <set>
 
+#include <vector>
+#include <algorithm>
+#include <iterator>
+
 int EXAM_IMPL(mt_test_wg21::date_time)
 {
   // using namespace std::tr2;
@@ -514,45 +518,143 @@ int EXAM_IMPL(uid_test_wg21::istream)
   char b[] = "c2ee3d09-43b3-466d-b490-db35999a22cf";
   char r[] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
   //          012345678901234567890123456789012345
-  //char x[] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
-
+  //          0         1         2         3
   s << b;
   EXAM_CHECK( !s.fail() );
 
-#if 1
-  // std::copy_n( std::istreambuf_iterator<char>(s), 1, r );
-  // EXAM_CHECK( !s.fail() );
-  // EXAM_CHECK( s.tellg() == 0 );
-//  std::copy_n( std::istreambuf_iterator<char>(s), 1, r + 1 );
-//  EXAM_CHECK( !s.fail() );
-//  EXAM_CHECK( s.tellg() == 0 );
-//  std::copy_n( std::istreambuf_iterator<char>(s), 34, r + 2 );
-//  EXAM_CHECK( !s.fail() );
+  EXAM_CHECK( s.tellg() == 0 );
+  /*
+    https://cplusplus.github.io/LWG/issue2471
+
+    It's unspecified how many times copy_n increments the InputIterator.
+    uninitialized_copy_n is specified to increment it exactly n times,
+    which means if an istream_iterator is used then the next character
+    after those copied is read from the stream and then discarded, losing data.
+
+    I believe all three of Dinkumware, libc++ and libstdc++ implement copy_n
+    with n - 1 increments of the InputIterator, which avoids reading and
+    discarding a character when used with istream_iterator, but is inconsistent
+    with uninitialized_copy_n and causes surprising behaviour with
+    istreambuf_iterator instead, because copy_n(in, 2, copy_n(in, 2, out))
+    is not equivalent to copy_n(in, 4, out)
+   */
   std::copy_n( std::istreambuf_iterator<char>(s), 36, r );
   EXAM_CHECK( !s.fail() );
   EXAM_CHECK( memcmp(b, r, 36) == 0 );
-  // EXAM_CHECK( std::istreambuf_iterator<char>(s) == std::istreambuf_iterator<char>() );
-  EXAM_CHECK( s.tellg() != 35 ); // pass ?!
+  // EXAM_CHECK( s.tellg() != 35 );
   char c = 'q';
   std::copy_n( std::istreambuf_iterator<char>(s), 1, &c );
-  EXAM_CHECK( s.fail() ); // pass ?!
-  EXAM_CHECK( c != 'f' ); // pass ?!
-  EXAM_CHECK( s.tellg() != 35 ); // pass ?!
+  EXAM_CHECK( std::istreambuf_iterator<char>(s) != std::istreambuf_iterator<char>() ); // see comment above
+  EXAM_CHECK( !s.fail() ); // surprise, see comment above
+  EXAM_CHECK( c != 'q' );
+  EXAM_CHECK( c == 'f' ); // surprise, see comment above
 
-  // std::copy_n( std::istreambuf_iterator<char>(s), 36, x );
-  // EXAM_CHECK( !s.fail() );
-  // EXAM_CHECK( memcmp(b, x, 36) == 0 );
-  // std::cerr << x << std::endl;
-#else
-  std::copy_n( std::istreambuf_iterator<char>(s), 1, r );
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(uid_test_wg21::istream_iterator)
+{
+  /* test from libstdc++, bug 2627 */
+  // bool test __attribute__((unused)) = true;
+  const std::string s("free the vieques");
+
+  // 1
+  std::string res_postfix;
+  std::istringstream iss01(s);
+  std::istreambuf_iterator<char> isbufit01(iss01);
+  for (std::size_t j = 0; j < s.size(); ++j, isbufit01++)
+    res_postfix += *isbufit01;
+
+  // 2
+  std::string res_prefix;
+  std::istringstream iss02(s);
+  std::istreambuf_iterator<char> isbufit02(iss02);
+  for (std::size_t j = 0; j < s.size(); ++j, ++isbufit02)
+    res_prefix += *isbufit02;
+
+  // 3 mixed
+  std::string res_mixed;
+  std::istringstream iss03(s);
+  std::istreambuf_iterator<char> isbufit03(iss03);
+  for (std::size_t j = 0; j < (s.size() / 2); ++j)
+    {
+      res_mixed += *isbufit03;
+      ++isbufit03;
+      res_mixed += *isbufit03;
+      isbufit03++;
+    }
+
+  EXAM_CHECK( res_postfix == res_prefix );
+  EXAM_CHECK( res_mixed == res_prefix );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(uid_test_wg21::copy_n)
+{
+  /* test from libstdc++, bug 50119 */
+
+  std::vector<int> v;
+  std::istringstream s("1 2 3 4 5");
+
+  std::copy_n(std::istream_iterator<int>(s), 2, back_inserter(v));
+  EXAM_CHECK( v.size() == 2 );
+  EXAM_CHECK( v[0] == 1 );
+  EXAM_CHECK( v[1] == 2 );
+
+  std::copy_n(std::istream_iterator<int>(s), 2, back_inserter(v));
+  EXAM_CHECK( v.size() == 4 );
+  EXAM_CHECK( v[0] == 1 );
+  EXAM_CHECK( v[1] == 2 );
+  EXAM_CHECK( v[2] == 3 );
+  EXAM_CHECK( v[3] == 4 );
+
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(uid_test_wg21::istream_iterator_ctor)
+{
+  /* test related to libstdc++ bug 50119 */
+  /* check that istream_iterator ctor with stream _not_ extract
+     value from stream (libstdc++ extract it!)
+
+     See: istream_iterator: unexpected read in ctor
+     https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81964
+  */
+
+  std::istringstream s("1 2");
+  std::istream_iterator<int> ii1(s);
+  std::istream_iterator<int> ii2(s);
+
+  EXAM_CHECK( *ii2 == 1 );
+  EXAM_CHECK( *ii1 == 2 );
+
+  return EXAM_RESULT;
+}
+
+struct dummy {
+    char c;
+};
+
+std::istream& operator >>( std::istream& s, dummy& d )
+{
+  std::istream::sentry __sentry( s ); // skip whitespace
+
+  s.read( &d.c, 1 );
+
+  return s;
+}
+
+int EXAM_IMPL(uid_test_wg21::sentry)
+{
+  dummy d;
+  std::stringstream s;
+
+  s << "  " << 'a';
+  s >> d;
+
   EXAM_CHECK( !s.fail() );
-  EXAM_CHECK( s.tellg() == 0 );
-  EXAM_CHECK( r[0] == 'c' );
-  std::copy_n( std::istreambuf_iterator<char>(s), 1, r );
-  EXAM_CHECK( !s.fail() );
-  EXAM_CHECK( s.tellg() == 0 );
-  EXAM_CHECK( r[0] == 'c' );
-#endif
+  EXAM_CHECK( d.c == 'a' );
 
   return EXAM_RESULT;
 }
@@ -565,16 +667,11 @@ int EXAM_IMPL(uid_test_wg21::uid_stream)
 
   s << u;
 
-  // std::cerr << s.tellg() << std::endl;
   EXAM_CHECK( s.str() == std::string(u) );
 
   xmt::uuid_type r;
 
   s >> r;
-
-  // s.seekg( 0, std::istream::end );
-  // std::cerr << s.tellg() << std::endl;
-  // std::cerr << s.str()[s.tellg()] << std::endl;
 
   EXAM_CHECK( !s.fail() );
   EXAM_CHECK( u == r );
