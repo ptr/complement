@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2012-02-08 12:32:59 ptr>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 1995-1999, 2002, 2003, 2005-2012
+ * Copyright (c) 1995-1999, 2002, 2003, 2005-2012, 2017
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -132,6 +132,28 @@ void EvManager::push( const Event& e )
   unsigned int i = e.dest().second.u.i[0] & (n_threads - 1);
   std::tr2::lock_guard<std::tr2::mutex> lock( workers[i]->lock );
   workers[i]->events.push_back( e );
+#ifdef __FIT_STEM_TRACE
+  try {
+    lock_guard<mutex> lk(_lock_tr);
+    if ( _trs != 0 && _trs->good() && (_trflags & (tracesend | tracedispatch)) ) {
+      ios_base::fmtflags f = _trs->flags( ios_base::showbase );
+      *_trs << "EvManager: push " << i
+            << "; Event "
+            << hex << showbase << e.code() << " "
+            << e.src().first << '/' << e.src().second
+            << " -> "
+            << e.dest().first << '/' << e.dest().second
+            << endl;
+#ifdef STLPORT
+      _trs->flags( f );
+#else
+      _trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+    }
+  }
+  catch ( ... ) {
+  }
+#endif // __FIT_STEM_TRACE
   workers[i]->cnd.notify_one();
 }
 
@@ -194,6 +216,27 @@ void EvManager::worker::_loop( worker* p )
             auto bid = me.mgr->bridges.find( edge );
 
             if ( bid != me.mgr->bridges.end() ) {
+#ifdef __FIT_STEM_TRACE
+              try {
+                lock_guard<mutex> lk(me.mgr->_lock_tr);
+                if ( me.mgr->_trs != 0 && me.mgr->_trs->good() && (me.mgr->_trflags & (tracedispatch | tracenet)) ) {
+                  ios_base::fmtflags f = me.mgr->_trs->flags( ios_base::showbase );
+                  *me.mgr->_trs << "EvManager: dispatch to NetTransport; Event "
+                                << hex << showbase << ev.code() << " "
+                                << ev.src().first << '/' << ev.src().second
+                                << " -> "
+                                << ev.dest().first << '/' << ev.dest().second
+                                << endl;
+#ifdef STLPORT
+                  me.mgr->_trs->flags( f );
+#else
+                  me.mgr->_trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+                }
+              }
+              catch ( ... ) {
+              }
+#endif // __FIT_STEM_TRACE
               if ( reinterpret_cast<NetTransport_base*>(bid->second)->Dispatch( ev ) ) {
                 continue;
               }
@@ -213,6 +256,27 @@ void EvManager::worker::_loop( worker* p )
             read lock just above
           */
           // cerr << HERE << ' ' << edge << endl;
+#ifdef __FIT_STEM_TRACE
+          try {
+            lock_guard<mutex> lk(me.mgr->_lock_tr);
+            if ( me.mgr->_trs != 0 && me.mgr->_trs->good() && (me.mgr->_trflags & tracenet) ) {
+              ios_base::fmtflags f = me.mgr->_trs->flags( ios_base::showbase );
+              *me.mgr->_trs << "EvManager: net edge removed; Event "
+                            << hex << showbase << ev.code() << " "
+                            << ev.src().first << '/' << ev.src().second
+                            << " -> "
+                            << ev.dest().first << '/' << ev.dest().second
+                            << endl;
+#ifdef STLPORT
+              me.mgr->_trs->flags( f );
+#else
+              me.mgr->_trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+            }
+          }
+          catch ( ... ) {
+          }
+#endif // __FIT_STEM_TRACE
           me.mgr->remove_edge( edge );
           continue;
         }
@@ -249,8 +313,55 @@ void EvManager::worker::_loop( worker* p )
 
           obj->_theHistory_lock.lock();
         }
-
+#ifdef __FIT_STEM_TRACE
+        try {
+          lock_guard<mutex> lk(me.mgr->_lock_tr);
+          if ( me.mgr->_trs != 0 && me.mgr->_trs->good() && (me.mgr->_trflags & tracedispatch) ) {
+            ios_base::fmtflags f = me.mgr->_trs->flags( ios_base::showbase );
+            *me.mgr->_trs << "EvManager: dispatch to object " << (void *)obj
+                          << "; Event "
+                          << hex << showbase << ev.code() << " "
+                          << ev.src().first << '/' << ev.src().second
+                          << " -> "
+                          << ev.dest().second
+                          << endl;
+#ifdef STLPORT
+            me.mgr->_trs->flags( f );
+#else
+            me.mgr->_trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+            obj->DispatchTrace( ev, *me.mgr->_trs );
+            *me.mgr->_trs << endl;
+          }
+        }
+        catch ( ... ) {
+        }
+        bool proccessed =
+#endif // __FIT_STEM_TRACE
         obj->Dispatch( ev );
+ #ifdef __FIT_STEM_TRACE
+        try {
+          lock_guard<mutex> lk(me.mgr->_lock_tr);
+          if ( me.mgr->_trs != 0 && me.mgr->_trs->good() && (me.mgr->_trflags & tracedispatch) ) {
+            ios_base::fmtflags f = me.mgr->_trs->flags( ios_base::showbase );
+            *me.mgr->_trs << "EvManager: object " << (void *)obj
+                          << " process result " << proccessed
+                          << "; Event "
+                          << hex << showbase << ev.code() << " "
+                          << ev.src().first << '/' << ev.src().second
+                          << " -> "
+                          << ev.dest().second
+                          << endl;
+#ifdef STLPORT
+            me.mgr->_trs->flags( f );
+#else
+            me.mgr->_trs->flags( static_cast<std::_Ios_Fmtflags>(f) );
+#endif
+          }
+        }
+        catch ( ... ) {
+        }
+#endif // __FIT_STEM_TRACE
         obj->_theHistory_lock.unlock();
       }
 

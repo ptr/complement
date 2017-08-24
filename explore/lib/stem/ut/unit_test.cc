@@ -250,6 +250,9 @@ int EXAM_IMPL(stem_test::ns)
   Node node( addr, "Node" );
   Naming nm;
 
+  // stem::EventHandler::manager().settrf( stem::EvManager::tracedispatch | stem::EvManager::tracefault | stem::EvManager::tracesubscr | stem::EvManager::tracesend );
+  // stem::EventHandler::manager().settrs( &std::cerr );
+
   {
     stem::stem_scope scope( node );
     stem::stem_scope nm_scope( nm );
