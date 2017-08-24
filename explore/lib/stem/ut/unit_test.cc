@@ -261,10 +261,23 @@ int EXAM_IMPL(stem_test::ns)
     ev.dest( make_pair(stem::EventHandler::domain(), stem::EventHandler::ns()) );
     nm.Send( ev );
 
-    nm.wait();
+    bool ns_answer = nm.wait();
+    EXAM_CHECK( ns_answer );
+
+    if ( !ns_answer ) { // oops, no reasons to check more
+      return EXAM_RESULT;
+    }
 
     // this is sample of all inline find:
-    Naming::nsrecords_type::const_iterator i = find_if( nm.lst.begin(), nm.lst.end(), compose1( bind2nd( equal_to<string>(), string( "ns" ) ), select2nd<pair<stem::addr_type,string> >() ) );
+    Naming::nsrecords_type::const_iterator i = find_if( nm.lst.begin(), nm.lst.end(), [](auto& j){ return j.second == "ns"; } );
+    /*
+    Naming::nsrecords_type::const_iterator i = nm.lst.begin();
+    for ( ; i != nm.lst.end(); ++i ) {
+      if ( i->second == "ns" ) {
+        break;
+      }
+    }
+    */
 
     EXAM_CHECK( i != nm.lst.end() );
     EXAM_CHECK( i->second == "ns" );
