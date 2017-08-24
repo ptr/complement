@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2011-03-16 17:23:10 ptr>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 2010-2011
+ * Copyright (c) 2010-2011, 2017
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -264,7 +264,10 @@ void revision::get_manifest( manifest_type& m, const revision_id_type& rid ) thr
     }
     str.erase();
     str.reserve( sz );
-    copy_n( istreambuf_iterator<char>(s), sz, back_inserter(str) );
+
+    istreambuf_iterator<char> iis(s);
+    copy_n( iis, sz, back_inserter(str) );
+    ++iis; // https://cplusplus.github.io/LWG/issue2471
 
     s.read( reinterpret_cast<char*>(rev.u.b), sizeof(revision_id_type) );
     if ( s.fail() ) {
@@ -315,7 +318,11 @@ void revision::get_diff( diff_type& d, const revision_id_type& rid ) throw( std:
     }
     str.erase();
     str.reserve( sz );
-    copy_n( istreambuf_iterator<char>(s), sz, back_inserter(str) );
+
+    istreambuf_iterator<char> iis(s);
+    copy_n( iis, sz, back_inserter(str) );
+    ++iis; // https://cplusplus.github.io/LWG/issue2471
+
     s.read( reinterpret_cast<char*>(rev.u.b), sizeof(revision_id_type) );
     if ( s.fail() ) {
       break;
@@ -330,7 +337,11 @@ void revision::get_diff( diff_type& d, const revision_id_type& rid ) throw( std:
     }
     str.erase();
     str.reserve( sz );
-    copy_n( istreambuf_iterator<char>(s), sz, back_inserter(str) );
+
+    istreambuf_iterator<char> iis(s);
+    copy_n( iis, sz, back_inserter(str) );
+    ++iis; // https://cplusplus.github.io/LWG/issue2471
+
     s.read( reinterpret_cast<char*>(rev.u.b), sizeof(revision_id_type) );
     if ( s.fail() ) {
       break;

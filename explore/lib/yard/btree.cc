@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2011-03-16 17:25:22 ptr>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 2010-2011
+ * Copyright (c) 2010-2011, 2017
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -488,7 +488,10 @@ std::string BTree::operator []( const key_type& key ) const throw(std::invalid_a
 
   s.reserve( i->second.size );
   file_.seekg( i->second.address );
-  copy_n( istreambuf_iterator<char>(file_), i->second.size, back_inserter(s) );
+
+  istreambuf_iterator<char> iis(file_);
+  copy_n( iis, i->second.size, back_inserter(s) );
+  ++iis; // https://cplusplus.github.io/LWG/issue2471
 
   if ( file_.fail() ) {
     throw ios_base::failure( "BTree io operation fail" );

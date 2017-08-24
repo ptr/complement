@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-03-16 17:24:05 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2011
+ * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2011, 2017
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -42,8 +42,10 @@ void __pack_base::__unpack( istream& s, string& str )
     sz = from_net( sz );
     str.erase();
     if ( sz > 0 ) {
+      istreambuf_iterator<char> i(s);
       str.reserve( sz );
-      copy_n( istreambuf_iterator<char>(s), sz, back_inserter(str) );
+      copy_n( i, sz, back_inserter(str) );
+      ++i; // https://cplusplus.github.io/LWG/issue2471
     }
   }
 }

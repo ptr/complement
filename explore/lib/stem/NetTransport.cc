@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2012-02-09 14:49:05 ptr>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 1997-1999, 2002-2003, 2005-2012
+ * Copyright (c) 1997-1999, 2002-2003, 2005-2012, 2017
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -315,7 +315,10 @@ bool NetTransport_base::pop( Event& _rs )
 
   str.erase();
   str.reserve( sz );
-  copy_n( istreambuf_iterator<char>(net), sz, back_inserter(str) );
+
+  istreambuf_iterator<char> iis(net);
+  copy_n( iis, sz, back_inserter(str) );
+  ++iis; // https://cplusplus.github.io/LWG/issue2471
 
 #ifdef __FIT_STEM_TRACE
   try {
