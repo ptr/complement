@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/06/30 18:47:39 yeti>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2006-2008
+ * Copyright (c) 2006-2008, 2017
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0

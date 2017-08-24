@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-06-06 18:44:50 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2009
+ * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2009, 2017
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -49,6 +49,7 @@ void Names::ns_list( const Event& rq )
 {
   typedef NameRecords<addr_type,string> Seq;
   Event_base<Seq> rs( EV_STEM_NS_LIST );
+  rs.dest( rq.src() );
   Seq::container_type& lst = rs.value().container;
 
   manager()._lock_iheap.lock();
@@ -59,7 +60,6 @@ void Names::ns_list( const Event& rq )
   }
   manager()._lock_iheap.unlock();
 
-  rs.dest( rq.src() );
   Send( rs );
 }
 
