@@ -538,6 +538,11 @@ int EXAM_IMPL(uid_test_wg21::istream)
     istreambuf_iterator instead, because copy_n(in, 2, copy_n(in, 2, out))
     is not equivalent to copy_n(in, 4, out)
    */
+
+  /*
+    copy_n return result + n (i.e. increment OutputIterator n times) and
+    increment InputIterator max(0, n - 1).
+   */
   std::copy_n( std::istreambuf_iterator<char>(s), 36, r );
   EXAM_CHECK( !s.fail() );
   EXAM_CHECK( memcmp(b, r, 36) == 0 );
@@ -548,6 +553,13 @@ int EXAM_IMPL(uid_test_wg21::istream)
   EXAM_CHECK( !s.fail() ); // surprise, see comment above
   EXAM_CHECK( c != 'q' );
   EXAM_CHECK( c == 'f' ); // surprise, see comment above
+
+  // Suggested workaround technique:
+  std::istreambuf_iterator<char> iis(s);
+  ++iis; // <---
+  std::copy_n( iis, 1, &c );
+  // EXAM_CHECK( s.fail() ); // ?!
+  EXAM_CHECK( iis == std::istreambuf_iterator<char>() );
 
   return EXAM_RESULT;
 }
