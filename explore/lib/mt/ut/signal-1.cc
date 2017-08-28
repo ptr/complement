@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <10/08/25 18:25:54 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2003, 2006, 2007, 2010
+ * Copyright (c) 2003, 2006, 2007, 2010, 2017
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -29,11 +29,15 @@ static std::tr2::thread* th_two = 0;
 
 static int v = 0;
 
+namespace signal_1 {
+
 struct true_val
 {
     bool operator()() const
       { return (v == 2); }
 };
+
+}
 
 static std::tr2::mutex cond_mtx;
 static std::tr2::condition_variable cnd;
@@ -69,7 +73,7 @@ void thread_one()
   {
     std::tr2::unique_lock<std::tr2::mutex> lk( cond_mtx );
 
-    cnd.wait( lk, true_val() );
+    cnd.wait( lk, signal_1::true_val() );
   }
 
   pthread_kill( th_one->native_handle(), SIGINT ); // send signal SIGINT to self

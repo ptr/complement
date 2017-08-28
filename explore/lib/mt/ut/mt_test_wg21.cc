@@ -265,11 +265,15 @@ int EXAM_IMPL(mt_test_wg21::semaphore)
 static std::tr2::mutex cond_mtx;
 static std::tr2::condition_variable cnd;
 
+namespace test_wg21 {
+
 struct true_val
 {
   bool operator()() const
     { return (val == 1); }
 };
+
+}
 
 void thread_func5()
 {
@@ -287,7 +291,7 @@ int EXAM_IMPL(mt_test_wg21::condition_var)
   
   std::tr2::unique_lock<std::tr2::mutex> lk( cond_mtx );
   
-  EXAM_CHECK( cnd.timed_wait( lk, std::tr2::milliseconds(500), true_val() ) );
+  EXAM_CHECK( cnd.timed_wait( lk, std::tr2::milliseconds(500), test_wg21::true_val() ) );
   
   EXAM_CHECK( val == 1 );
   
