@@ -627,19 +627,41 @@ int EXAM_IMPL(uid_test_wg21::copy_n)
 int EXAM_IMPL(uid_test_wg21::istream_iterator_ctor)
 {
   /* test related to libstdc++ bug 50119 */
-  /* check that istream_iterator ctor with stream _not_ extract
+  /* check that istream_iterator ctor with stream extract
      value from stream (libstdc++ extract it!)
 
      See: istream_iterator: unexpected read in ctor
      https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81964
+
+    Standard say:
+    
+        27.6.1  Class template istream_iterator [istream.iterator]
+        1 The class template istream_iterator is an input iterator (27.2.3)
+          that reads (using operator>>) successive elements from the input
+          stream for which it was constructed.
+      ->    After it is constructed, and every time ++ is used, the iterator
+      ->    reads and stores a value of T.
+        ...
+    
+        27.6.1.1 istream_iterator constructors and destructor [istream.iterator.cons]
+        ...
+          istream_iterator(istream_type& s);
+      ->  3 Effects: Initializes in_stream with addressof(s). value may be initialized
+      ->    during construction or the first time it is referenced.
+        4 Postconditions: in_stream == addressof(s).
+    
+    Current position is "After it is constructed ... the iterator reads and stores
+    a value of T.".
+
+    See also http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0738r0.html
   */
 
   std::istringstream s("1 2");
-  std::istream_iterator<int> ii1(s);
-  std::istream_iterator<int> ii2(s);
+  std::istream_iterator<int> ii1(s); // read 1
+  std::istream_iterator<int> ii2(s); // read 2
 
-  EXAM_CHECK( *ii2 == 1 );
-  EXAM_CHECK( *ii1 == 2 );
+  EXAM_CHECK( *ii2 == 2 );
+  EXAM_CHECK( *ii1 == 1 );
 
   return EXAM_RESULT;
 }
