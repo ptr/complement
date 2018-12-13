@@ -316,7 +316,7 @@ class basic_socket
           : 0;
       }
 
-    const sockaddr_in& inet_sockaddr() const throw( std::domain_error )
+    const sockaddr_in& inet_sockaddr() const
       {
         if ( _address.any.sa_family != AF_INET ) {
           throw domain_error( "socket not belongs to inet type" );

@@ -132,7 +132,7 @@ extern std::string _notrecursive;
 
 } // namespace detail
 
-// extern __FIT_DECLSPEC void signal_throw( int sig ) throw( int );
+// extern __FIT_DECLSPEC void signal_throw( int sig );
 // extern __FIT_DECLSPEC void signal_thread_exit( int sig );
 
 // #ifdef __unix
@@ -1355,8 +1355,8 @@ class __barrier
 
 typedef __barrier<false> barrier;
 
-__FIT_DECLSPEC void fork() throw( fork_in_parent, std::runtime_error );
-__FIT_DECLSPEC void become_daemon() throw( fork_in_parent, std::runtime_error );
+__FIT_DECLSPEC void fork();
+__FIT_DECLSPEC void become_daemon();
 __FIT_DECLSPEC void block_signal( int sig );
 __FIT_DECLSPEC void unblock_signal( int sig );
 __FIT_DECLSPEC int signal_handler( int sig, SIG_PF );
@@ -1481,7 +1481,7 @@ class Thread
 
     bool _not_run() const
       { /* Locker lk( _llock ); */ return _id == bad_thread_id; }
-    void _create( const void *p, size_t psz ) throw( std::runtime_error);
+    void _create( const void *p, size_t psz );
 
     static void *_call( void *p );
 #ifdef WIN32

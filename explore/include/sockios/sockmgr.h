@@ -164,7 +164,7 @@ class sockmgr
     struct no_ready_data
     { };
 
-    void net_read( sockbuf_t& b ) throw (fdclose, no_free_space, retry, no_ready_data);
+    void net_read( sockbuf_t& b );
 
     void dump_descr();
 

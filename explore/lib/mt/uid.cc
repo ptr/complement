@@ -155,7 +155,7 @@ uuid_type::operator string() const
   return s.str();
 }
 
-const char *hostid_str() throw (runtime_error)
+const char *hostid_str()
 {
   static char b[37] = "";
 
@@ -166,7 +166,7 @@ const char *hostid_str() throw (runtime_error)
   return b;
 }
 
-const xmt::uuid_type& hostid() throw (runtime_error)
+const xmt::uuid_type& hostid()
 {
   static detail::__uid_init _uid;
 
@@ -177,7 +177,7 @@ const xmt::uuid_type& hostid() throw (runtime_error)
   return detail::__uid_init::_host_id;
 }
 
-std::string uid_str() throw (runtime_error)
+std::string uid_str()
 {
   char b[37];
   uuid_type id;
@@ -188,7 +188,7 @@ std::string uid_str() throw (runtime_error)
   return std::string( b, 36 );
 }
 
-xmt::uuid_type uid() throw (runtime_error)
+xmt::uuid_type uid()
 {
   uuid_type id;
 

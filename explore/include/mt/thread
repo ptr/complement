@@ -66,7 +66,7 @@ class fork_in_parent :
     pid_t _pid;
 };
 
-__FIT_DECLSPEC void fork() throw( fork_in_parent, std::runtime_error );
+__FIT_DECLSPEC void fork();
 
 class thread_base
 {
@@ -123,7 +123,7 @@ class thread_base
 
         friend class thread_base;
         friend id get_id(void);
-        // friend __FIT_DECLSPEC void fork() throw( fork_in_parent, std::runtime_error );
+        // friend __FIT_DECLSPEC void fork();
     };
 
     enum {
@@ -186,7 +186,7 @@ class thread_base
     std::string _stack_on_create;
 #endif
     friend class Init;
-    friend __FIT_DECLSPEC void fork() throw( fork_in_parent, std::runtime_error );
+    friend __FIT_DECLSPEC void fork();
 };
 
 template <unsigned F, size_t S>
@@ -596,7 +596,7 @@ namespace this_thread
 {
 using tr2::fork;
 
-__FIT_DECLSPEC void become_daemon() throw( fork_in_parent, std::runtime_error );
+__FIT_DECLSPEC void become_daemon();
 
 // std::thread_base::id get_id();
 using tr2::get_id;

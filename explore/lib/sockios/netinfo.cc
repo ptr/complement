@@ -20,7 +20,7 @@ _STLP_BEGIN_NAMESPACE
 namespace std {
 #endif
 
-::in_addr_t findhost( const char *hostname ) throw( std::domain_error )
+::in_addr_t findhost( const char *hostname )
 {
   in_addr inet;
   int _errno;
@@ -168,7 +168,7 @@ std::string hostname()
   return _hostname;
 }
 
-int service( const char *name, const char *proto ) throw( std::domain_error )
+int service( const char *name, const char *proto )
 {
 #ifdef _WIN32
   typedef u_short uint16_t;
@@ -198,7 +198,7 @@ int service( const char *name, const char *proto ) throw( std::domain_error )
 #endif
 }
 
-std::string service( int port, const char *proto ) throw( std::domain_error )
+std::string service( int port, const char *proto )
 {
 #ifdef _WIN32
   typedef u_short uint16_t;

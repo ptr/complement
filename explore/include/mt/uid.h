@@ -113,13 +113,13 @@ extern const uuid_type nil_uuid; // NIL UUID
 
 // Hostid:
 
-const char* hostid_str() throw (std::runtime_error);
-const xmt::uuid_type& hostid() throw (std::runtime_error);
+const char* hostid_str();
+const xmt::uuid_type& hostid();
 
 // UUID genration:
 
-std::string uid_str() throw (std::runtime_error);
-xmt::uuid_type uid() throw (std::runtime_error);
+std::string uid_str();
+xmt::uuid_type uid();
 
 // Create UUID from MD5 signature:
 

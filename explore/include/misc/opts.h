@@ -165,7 +165,7 @@ class option :
     std::list<T> args;
     T default_arg;
 
-    void read( const char *str ) throw (std::invalid_argument)
+    void read( const char *str )
       {
         std::istringstream s( str );
         T _v;
@@ -176,7 +176,7 @@ class option :
         }
       }
 
-    void read( const std::string& str ) throw (std::invalid_argument)
+    void read( const std::string& str )
       {
         std::istringstream s( str );
         T _v;

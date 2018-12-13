@@ -101,7 +101,7 @@ const std::string msg1( "Can't create thread" );
 const std::string msg2( "Can't fork" );
 
 // __FIT_DECLSPEC
-// void signal_throw( int sig ) throw( int )
+// void signal_throw( int sig )
 // {
 //   throw sig;
 // }
@@ -204,7 +204,7 @@ thread_base::id get_id()
 }
 
 __FIT_DECLSPEC
-void fork() throw( fork_in_parent, std::runtime_error )
+void fork()
 {
 #ifdef __unix
   thread_base::id fthr = this_thread::get_id();
@@ -227,7 +227,7 @@ namespace this_thread
 {
 
 __FIT_DECLSPEC
-void become_daemon() throw( fork_in_parent, std::runtime_error )
+void become_daemon()
 {
 #ifdef __unix
   try {

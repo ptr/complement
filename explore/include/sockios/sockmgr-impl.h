@@ -652,7 +652,7 @@ void sockmgr<charT,traits,_Alloc>::process_nonsock_srv( const epoll_event& ev, t
 }
 
 template<class charT, class traits, class _Alloc>
-void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Alloc>::sockbuf_t& b ) throw (fdclose, no_free_space, retry, no_ready_data)
+void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Alloc>::sockbuf_t& b )
 {
   std::tr2::unique_lock<std::tr2::recursive_mutex> lk( b.ulck, std::tr2::defer_lock_t() );
   if ( lk.try_lock() ) {
