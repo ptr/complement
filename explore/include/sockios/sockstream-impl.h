@@ -279,7 +279,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, sock_base::stype t
       throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
     basic_socket_t::_address.unx.sun_family = AF_UNIX;
-    strncpy(basic_socket_t::_address.unx.sun_path, path, sizeof(basic_socket_t::_address.unx.sun_path));
+    strncpy(basic_socket_t::_address.unx.sun_path, path, sizeof(basic_socket_t::_address.unx.sun_path)-1);
 
     // Generally, stream sockets may successfully connect() only once
     if ( connect( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof( basic_socket_t::_address.unx ) ) == -1 ) {
