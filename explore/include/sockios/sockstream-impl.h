@@ -95,7 +95,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port,
         }
       }
       if ( type == sock_base::sock_stream ) {
-        _xwrite = &_Self_type::write;
+        _xwrite = &_Self_type::send;
         _xread = &_Self_type::read;
       } else if ( type == sock_base::sock_dgram ) {
         _xwrite = &_Self_type::sendto_in;
@@ -221,7 +221,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port, const std:
       }
     }
 
-    _xwrite = &_Self_type::write;
+    _xwrite = &_Self_type::send;
     _xread = &_Self_type::read;
 
     if ( _bbuf == 0 ) {
@@ -286,7 +286,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, sock_base::stype t
       throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
     }
     if ( type == sock_base::sock_stream ) {
-      _xwrite = &_Self_type::write;
+      _xwrite = &_Self_type::send;
       _xread = &_Self_type::read;
     } else if ( type == sock_base::sock_dgram ) {
       _xwrite = &_Self_type::sendto_un;
@@ -394,7 +394,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, const std::tr2::na
       }
     }
     if ( type == sock_base::sock_stream ) {
-      _xwrite = &_Self_type::write;
+      _xwrite = &_Self_type::send;
       _xread = &_Self_type::read;
     } else if ( type == sock_base::sock_dgram ) {
       _xwrite = &_Self_type::sendto_un;
@@ -466,7 +466,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
         throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>::open" ) );
       }
       if ( type == sock_base::sock_stream ) {
-        _xwrite = &_Self_type::write;
+        _xwrite = &_Self_type::send;
         _xread = &_Self_type::read;
       } else if ( type == sock_base::sock_dgram ) {
         _xwrite = &_Self_type::sendto_in;
@@ -580,7 +580,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
         }
       }
       if ( type == sock_base::sock_stream ) {
-        _xwrite = &_Self_type::write;
+        _xwrite = &_Self_type::send;
         _xread = &_Self_type::read;
       } else if ( type == sock_base::sock_dgram ) {
         _xwrite = &_Self_type::sendto_in;
@@ -721,7 +721,7 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
   _type = t;
 
   if ( t == sock_base::sock_stream ) {
-    _xwrite = &_Self_type::write;
+    _xwrite = &_Self_type::send;
     _xread = &_Self_type::read;
   } else if ( t == sock_base::sock_dgram ) {
     if ( basic_socket_t::_address.any.sa_family == AF_INET ) {
@@ -740,10 +740,10 @@ basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
       _xwrite = &_Self_type::sendto_un;
       _xread = &_Self_type::recvfrom_un;
     } else if ( basic_socket_t::_address.any.sa_family == AF_BLUETOOTH ) {
-      _xwrite = &_Self_type::write;
+      _xwrite = &_Self_type::send;
       _xread = &_Self_type::read;
     } else if ( basic_socket_t::_address.any.sa_family == AF_UNSPEC ) {
-      _xwrite = &_Self_type::write;
+      _xwrite = &_Self_type::send;
       _xread = &_Self_type::read;
     }
   } else {
