@@ -31,12 +31,12 @@ endif
 
 endif
 
-release-shared : LDLIBS = -lxmt -lsockios -lexam -lmisc
+release-shared:	LDLIBS = -lxmt -lsockios -lexam -lmisc
 
-dbg-shared     : LDLIBS = -lxmtg -lsockiosg -lexamg -lmiscg
+dbg-shared:	LDLIBS_DBG = -lxmtg -lsockiosg -lexamg -lmiscg
 
 ifndef WITHOUT_STLPORT
-stldbg-shared  : LDLIBS = -lxmtstlg -lsockiosstlg -lexamstlg -lmiscstlg
+stldbg-shared:	LDLIBS = -lxmtstlg -lsockiosstlg -lexamstlg -lmiscstlg
 endif
 
 check-release-shared:	release-shared

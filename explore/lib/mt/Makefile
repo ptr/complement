@@ -19,14 +19,16 @@ stldbg-shared:	LDFLAGS += -L$(SRCROOT)/lib/misc/${OUTPUT_DIR_STLDBG}
 endif
 
 release-shared:	LDLIBS += -luuid -lmisc
-dbg-shared:	LDLIBS += -luuid -lmiscg
+dbg-shared:	LDLIBS_DBG += -luuid -lmiscg
 ifndef WITHOUT_STLPORT
 stldbg-shared:	LDLIBS += -luuid -lmiscstlg
 endif
 
 LDLIBS += -ldl 
+LDLIBS_DBG += -ldl
 ifndef WITHOUT_BFD
 LDLIBS += -lbfd
+LDLIBS_DBG += -lbfd
 endif
 
 check:	all-shared
