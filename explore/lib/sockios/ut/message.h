@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <05/12/20 10:10:21 ptr>
+// -*- C++ -*- 
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005
+ * Copyright (c) 2002, 2003, 2005, 2019
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 2.1
@@ -21,7 +21,6 @@
 #define __message_h
 
 #include <string>
-#include <mt/xmt.h>
 
 extern std::string message;
 extern std::string message_rsp;
