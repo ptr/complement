@@ -736,17 +736,17 @@ class __barrier
       }
 
     ~__barrier()
-      {
-#ifdef __FIT_PTHREADS
-        pthread_barrier_destroy( &_barr );
-#endif
-      }
+      { }
 
-    void wait()
+    void wait(bool keep = false)
       {
 #ifdef __FIT_PTHREADS
         int ret = pthread_barrier_wait( &_barr );
-        if ( ret != PTHREAD_BARRIER_SERIAL_THREAD && ret != 0 ) {
+        if (ret == PTHREAD_BARRIER_SERIAL_THREAD) { // for one thread
+          if (!keep) {
+            pthread_barrier_destroy( &_barr );
+          }
+        } else if (ret != 0) { // ret == 0 for other threads; ret != 0 means error here
           throw std::system_error( ret, std::system_category() );
         }
 #endif
