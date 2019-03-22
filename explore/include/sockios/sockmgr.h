@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
 /*
- * Copyright (c) 2008, 2009, 2016
+ * Copyright (c) 2008, 2009, 2016, 2019
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -71,7 +71,9 @@ class sockmgr
       tcp_buffer,
       rqstop,
       dgram_proc,
-      nonsock_proc
+      nonsock_proc,
+      nonsock_buffer,
+      close_fd
     };
 
     struct fd_info
@@ -79,7 +81,8 @@ class sockmgr
         enum {
           listener     = 0x1,
           dgram_proc   = 0x2,
-          nonsock_proc = 0x4
+          nonsock_proc = 0x4,
+          nonsock_buffer = 0x8,
         };
 
         fd_info() :
@@ -144,6 +147,8 @@ class sockmgr
     void push_dp( socks_processor_t& p );
     void push_nsp( socks_processor_t& p );
     void push( sockbuf_t& s );
+    void push_nsp(sockbuf_t& s);
+    void push_close(sockbuf_t& s);
 
     bool epoll_restore(int fd, int flags = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT);
   private:
@@ -189,6 +194,7 @@ class sockmgr
     bool epoll_push(int fd, int flags = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLET | EPOLLONESHOT);
 
     void push_proc( socks_processor_t& p, command_type cmd );
+    void push_cmd(command_type, void *);
 
     int efd;
     int pipefd[2];

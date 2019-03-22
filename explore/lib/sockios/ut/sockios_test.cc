@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2011-04-29 19:33:30 ptr>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005-2011
+ * Copyright (c) 2002, 2003, 2005-2011, 2019
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -2015,5 +2015,124 @@ int EXAM_IMPL(sockios_test::ugly_echo)
     EXAM_ERROR( err.what() );
   }
   
+  return EXAM_RESULT;
+}
+
+int EXAM_IMPL(sockios_test::tty_sockbuf)
+{
+  try {
+    xmt::shm_alloc<0> seg;
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+    xmt::allocator_shm<barrier_ip,0> shm;
+
+    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+
+    int ptm = getpt() /* ::open("/dev/ptmx", O_RDWR | O_NOCTTY) */;
+    EXAM_CHECK(ptm >= 0);
+
+    char buf[128];
+
+    int ret = grantpt(ptm);
+    EXAM_CHECK(ret == 0);
+    ret = unlockpt(ptm);
+    EXAM_CHECK(ret == 0);
+
+    ret = ptsname_r(ptm, buf, 128);
+    EXAM_CHECK(ret == 0);
+
+    try {
+      this_thread::fork();
+      int ret = 0;
+
+      close(ptm);
+
+      if (ret == 0) {
+        sockbuf s;
+
+        // open slave PTTY
+        EXAM_CHECK_ASYNC_F(s.open(buf, sock_base::tty) != 0, ret);
+
+        b.wait(true); // <--- align here
+        if (s.is_open()) {
+          // this is RAW TTY:
+          s.setoptions(0, IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON,
+                       0, OPOST,
+                       CS8, CSIZE | PARENB,
+                       0, ECHO | ECHONL | ICANON | ISIG | IEXTEN,
+                       TCSADRAIN);
+
+          /* Reader should be present on slave, otherwise master will receive HUP
+             on epoll.
+           */
+#if 1
+          char c = s.sgetc();
+          EXAM_CHECK_ASYNC_F(c == '.', ret);
+
+          //cerr << HERE << ' ' << int(c) << endl;
+#else
+          char bb[1024];
+          int off1 = -1, off2 = -1;
+          int i = 0;
+          cerr << HERE << endl;
+          while (off1 < 0 && off2 < 0) {
+            off1 = ::read(s.fd(), bb, 1);
+            /* off2 = ::read(s.fd(), bb + 1, 1); */
+            ++i;
+          }
+          cerr << HERE << ' ' << off1 << ' ' << int(bb[0]) << ' ' << off2 << ' ' << int(bb[1]) << ' ' << i << endl;
+#endif
+          b.wait(true);
+        }
+      } else {
+        b.wait(true); // <--- align here (instead of wait in positive branch above)
+      }
+      b.wait(); // <--- align here
+
+      exit(ret);
+    }
+    catch ( std::tr2::fork_in_parent& child ) {
+      sockbuf s;
+
+      // open master PTTY
+      EXAM_CHECK(s.open(ptm, sock_base::tty) != 0);
+
+      b.wait(true); // <--- align here
+
+      if (s.is_open()) {
+        // this is RAW TTY
+        s.setoptions(0, IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON,
+                     0, OPOST,
+                     CS8, CSIZE | PARENB,
+                     0, ECHO | ECHONL | ICANON | ISIG | IEXTEN,
+                     TCSADRAIN
+          );
+        s.sputc('.');
+        s.pubsync();
+        b.wait(true);
+      }
+
+      b.wait(); // <--- align here
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+    }
+
+    if (ptm >= 0) {
+      ::close(ptm);
+    }
+
+    shm.deallocate( &b );
+    seg.deallocate();
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
   return EXAM_RESULT;
 }

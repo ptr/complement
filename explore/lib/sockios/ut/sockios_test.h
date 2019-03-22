@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/06/05 10:00:00 ptr>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005-2010
+ * Copyright (c) 2002, 2003, 2005-2010, 2019
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -46,6 +46,8 @@ class sockios_test
     int EXAM_DECL(echo);
     int EXAM_DECL(ugly_echo);
     int EXAM_DECL(at_funcs);
+
+    int EXAM_DECL(tty_sockbuf);
 };
 
 #endif // __sockios2_test_h

@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
 /*
- * Copyright (c) 2008-2010
+ * Copyright (c) 2008-2010, 2019
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -102,7 +102,11 @@ sockmgr<charT,traits,_Alloc>::~sockmgr()
   }
 
   for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
-    if ( (i->second.flags & (fd_info::listener | fd_info::dgram_proc | fd_info::nonsock_proc)) == 0 ) {
+    if ((i->second.flags & (fd_info::listener |
+                            fd_info::dgram_proc |
+                            fd_info::nonsock_proc |
+                            fd_info::nonsock_buffer)
+          ) == 0) {
       sockbuf_t* b = i->second.b;
       if ( b != 0 ) {
         std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
@@ -145,9 +149,27 @@ void sockmgr<charT,traits,_Alloc>::push_nsp( socks_processor_t& p )
 template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::push( sockbuf_t& s )
 {
+  sockmgr<charT,traits,_Alloc>::push_cmd(tcp_buffer, static_cast<void *>(&s));
+}
+
+template<class charT, class traits, class _Alloc>
+void sockmgr<charT,traits,_Alloc>::push_nsp( sockbuf_t& s )
+{
+  sockmgr<charT,traits,_Alloc>::push_cmd(nonsock_buffer, static_cast<void *>(&s));
+}
+
+template<class charT, class traits, class _Alloc>
+void sockmgr<charT,traits,_Alloc>::push_close(sockbuf_t& s)
+{
+  sockmgr<charT,traits,_Alloc>::push_cmd(close_fd, static_cast<void *>(&s));
+}
+
+template<class charT, class traits, class _Alloc>
+void sockmgr<charT,traits,_Alloc>::push_cmd(command_type cmd, void *data)
+{
   ctl _ctl;
-  _ctl.cmd = tcp_buffer;
-  _ctl.data.ptr = static_cast<void *>(&s);
+  _ctl.cmd = cmd;
+  _ctl.data.ptr = data;
 
   errno = 0;
 
@@ -160,7 +182,7 @@ void sockmgr<charT,traits,_Alloc>::push( sockbuf_t& s )
         case EINTR:
           continue;
         default:
-          throw std::system_error( errno, std::system_category(), std::string( "sockmgr<charT,traits,_Alloc>::push( sockbuf_t& s )" ) );
+          throw std::system_error( errno, std::system_category(), std::string( "sockmgr<charT,traits,_Alloc>::push_cmd(command_type, data)" ) );
       }
     }
     r += ret;
@@ -214,7 +236,7 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
                 process_dgram_srv( ev[i], ifd );
               } else if ( info.flags & fd_info::nonsock_proc ) {
                 process_nonsock_srv( ev[i], ifd );
-              } else {
+              } else { // tcp_buffer | nonsock_buffer
                 process_regular( ev[i], ifd );
               }
             } // otherwise already closed
@@ -247,7 +269,10 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
     try {
       // this is possible, normal flow of operation
       for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
-        if ( (i->second.flags & (fd_info::listener | fd_info::dgram_proc | fd_info::nonsock_proc)) == 0 ) {
+        if ((i->second.flags & (fd_info::listener |
+                                fd_info::dgram_proc |
+                                fd_info::nonsock_proc |
+                                fd_info::nonsock_buffer)) == 0) {
           sockbuf_t* b = i->second.b;
           if ( b != 0 ) {
             std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
@@ -463,6 +488,67 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
       static_cast<socks_processor_t*>(_ctl.data.ptr)->release();
       break;
     }
+    case nonsock_buffer:
+    {
+      int nonsock_buffer_fd = static_cast<sockbuf_t*>(_ctl.data.ptr)->fd();
+
+      if ( nonsock_buffer_fd >= 0 ) {
+        if (!epoll_push(nonsock_buffer_fd)) {
+          extern std::tr2::mutex _se_lock;
+          extern std::ostream* _se_stream;
+
+          std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+          if ( _se_stream != 0 ) {
+            *_se_stream << HERE << ' '
+                        << std::make_error_code( static_cast<std::errc>(errno) ).message()
+                        << std::endl;
+          }
+
+          descr.erase( nonsock_buffer_fd );
+
+          return; // already closed?
+        }
+        descr[nonsock_buffer_fd] = fd_info(fd_info::nonsock_buffer,
+                                           static_cast<sockbuf_t*>(_ctl.data.ptr), 0);
+      }
+      break;
+    }
+    case close_fd:
+    {
+      int fd = static_cast<sockbuf_t*>(_ctl.data.ptr)->fd();
+      if (fd >= 0) {
+        for (auto i : descr) {
+          sockbuf_t* b = i.second.b;
+          if (b != 0) {
+            /*
+              It's intended for fd_info::nonsock_buffer descriptors only;
+              Now it really done for fd_info::nonsock_buffer only:
+                basic_sockbuf<charT, traits, _Alloc>::close() {
+                  ...
+                  if (_type == sock_base::tty) {
+                    basic_socket_t::mgr->push_close( *this );
+                  }
+                  ...
+                }
+              but let's check flags about fd_info::nonsock_buffer once more.
+             */
+            if ((b->_fd == fd) && (i.second.flags & fd_info::nonsock_buffer)) {
+              std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
+              ::close( b->_fd );
+              b->_fd = -1;
+              b->ucnd.notify_all();
+              if (i.second.p != 0) { // if no processing server, it is 0
+                (*i.second.p)( i.first, typename socks_processor_t::adopt_close_t() );
+              }
+              descr.erase(fd);
+
+              return;
+            }
+          }
+        }
+      }
+      break;
+    }
   }
 }
 
@@ -675,7 +761,7 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
           // no more ready data available
           errno = 0;
           // return back to epoll
-          if ( b._type == std::sock_base::sock_stream ) {
+          if ( (b._type == std::sock_base::sock_stream) || (b._type == std::sock_base::tty) ) {
             if (!epoll_restore(b._fd)) {
               throw fdclose(); // closed?
             }
@@ -741,7 +827,7 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
       throw fdclose(); // closed?
     }
     // really data may be available, but let's process another descriptor
-    throw no_ready_data(); 
+    throw no_ready_data();
   }
 }
 
@@ -806,7 +892,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( const epoll_event& ev, typen
           catch ( const retry& ) {
           }
         }
-      } else if ( b->stype() == std::sock_base::sock_dgram ) {
+      } else if ( (b->stype() == std::sock_base::sock_dgram) || (b->stype() == std::sock_base::tty) ) {
         try {
           net_read( *b );
           if ( info.p != 0 ) {

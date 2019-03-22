@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
 /*
- * Copyright (c) 2008-2010, 2016, 2017
+ * Copyright (c) 2008-2010, 2016, 2017, 2019
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -217,6 +217,56 @@ void sock_processor_base<charT,traits,_Alloc>::open( int fd, const adopt_dev_t& 
     return;
   }
   basic_socket_t::_address.any.sa_family = AF_UNSPEC;
+
+  basic_socket_t::mgr->push_nsp( *this );
+
+  _state = ios_base::goodbit;
+
+  return;
+}
+
+template<class charT, class traits, class _Alloc>
+void sock_processor_base<charT,traits,_Alloc>::open( const char *path, const adopt_tty_t& )
+{
+  std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+  if ( basic_socket_t::is_open_unsafe() ) {
+    return;
+  }
+  _mode = ios_base::in | ios_base::out;
+  _state = ios_base::goodbit;
+
+  basic_socket_t::_fd = ::open(path, O_RDWR | O_NONBLOCK | O_CLOEXEC | O_NOCTTY);
+
+  if ( basic_socket_t::_fd == -1 ) {
+    _state |= ios_base::failbit | ios_base::badbit;
+    return;
+  }
+  tcgetattr(basic_socket_t::_fd, &basic_socket_t::_address.term);
+
+  basic_socket_t::mgr->push_nsp( *this );
+
+  _state = ios_base::goodbit;
+
+  return;
+}
+
+template<class charT, class traits, class _Alloc>
+void sock_processor_base<charT,traits,_Alloc>::open( int fd, const adopt_tty_t& )
+{
+  std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+  if ( basic_socket_t::is_open_unsafe() ) {
+    return;
+  }
+  _mode = ios_base::in | ios_base::out;
+  _state = ios_base::goodbit;
+
+  basic_socket_t::_fd = fd;
+
+  if ( basic_socket_t::_fd == -1 ) {
+    _state |= ios_base::failbit | ios_base::badbit;
+    return;
+  }
+  tcgetattr(basic_socket_t::_fd, &basic_socket_t::_address.term);
 
   basic_socket_t::mgr->push_nsp( *this );
 

@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
 /*
- * Copyright (c) 2008-2011, 2016
+ * Copyright (c) 2008-2011, 2016, 2019
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -65,6 +65,7 @@ class sock_processor_base :
     struct adopt_close_t { };
     struct adopt_bt_t { };
     struct adopt_dev_t { };
+    struct adopt_tty_t { };
 
     sock_processor_base() :
         _mode( ios_base::in | ios_base::out ),
@@ -130,6 +131,10 @@ class sock_processor_base :
     // device
     void open( const char *path, const adopt_dev_t& );
     void open( int fd, const adopt_dev_t& );
+
+    // tty
+    void open( const char *path, const adopt_tty_t& );
+    void open( int fd, const adopt_tty_t& );
 
     virtual void close()
       { _close(); }

@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005-2010, 2016
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2010, 2016, 2019
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -59,8 +59,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/un.h>
-#ifdef __hpux
-#endif
+#include <termios.h>
 #include <cerrno>
 
 #include <sockios/netinfo.h>
@@ -97,7 +96,8 @@ class sock_base
       sock_dgram	= SOCK_DGRAM,     // datagram socket
       sock_raw	        = SOCK_RAW,       // raw-protocol interface
       sock_rdm	        = SOCK_RDM,       // reliably-delivered message
-      sock_seqpacket    = SOCK_SEQPACKET  // sequenced packet stream
+      sock_seqpacket    = SOCK_SEQPACKET, // sequenced packet stream
+      tty                           // really not a socket, it is TTY
     };
 
     enum protocol {
@@ -332,6 +332,7 @@ class basic_socket
         sockaddr_un     unx;
         sockaddr_bt_hci bt_hci;
         sockaddr        any;
+        termios         term;
     } _address;
 
     std::tr2::nanoseconds _rdtimeout;
@@ -674,6 +675,12 @@ class basic_sockbuf :
     void setoptions( sock_base::so_t optname, int __v );
     void setoptions( sock_base::so_t optname, bool on_off = true, int __v = 0 );
     void setoptions( const bt::hci::sock_filter& );
+    void setoptions(tcflag_t iflag_set, tcflag_t iflag_drop,
+                    tcflag_t oflag_set, tcflag_t oflag_drop,
+                    tcflag_t cflag_set, tcflag_t cflag_drop,
+                    tcflag_t lflag_set, tcflag_t lflag_drop,
+                    int when);
+
     bool is_ready()
       {
         std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
@@ -806,7 +813,7 @@ class basic_sockbuf :
     int (basic_sockbuf<charT,traits,_Alloc>::*_xwrite)( const void *, size_t );
     int (basic_sockbuf<charT,traits,_Alloc>::*_xread)( void *, size_t );
     int write( const void *buf, size_t n )
-      { return ::send( basic_socket_t::_fd, (const char *)buf, n, 0 ); }
+      { return ::write( basic_socket_t::_fd, buf, n ); }
     int send( const void *buf, size_t n )
       { return ::send( basic_socket_t::_fd, buf, n, 0 ); }
     int sendto_in( const void *buf, size_t n )

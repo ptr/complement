@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2010-11-10 14:12:44 ptr>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005-2010
+ * Copyright (c) 2002, 2003, 2005-2010, 2019
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -82,6 +82,8 @@ int main( int argc, const char** argv )
   t.add( &sockios_test::income_data, test, "all data available after sockstream was closed, different processes", tc[4] );
   t.add( &sockios_test::few_packets_loop, test, "packets boundary, loop", 
     t.add( &sockios_test::few_packets, test, "packets boundary", tc[3] ) );
+
+  t.add( &sockios_test::tty_sockbuf, test, "tty in sockbuf", tc[0] );
 
   exam::test_suite::test_case_type extratc[6];
 
