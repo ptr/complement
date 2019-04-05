@@ -48,6 +48,7 @@ class sockios_test
     int EXAM_DECL(at_funcs);
 
     int EXAM_DECL(tty_sockbuf);
+    int EXAM_DECL(tty_sockstream);
 };
 
 #endif // __sockios2_test_h

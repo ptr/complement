@@ -83,7 +83,8 @@ int main( int argc, const char** argv )
   t.add( &sockios_test::few_packets_loop, test, "packets boundary, loop", 
     t.add( &sockios_test::few_packets, test, "packets boundary", tc[3] ) );
 
-  t.add( &sockios_test::tty_sockbuf, test, "tty in sockbuf", tc[0] );
+  t.add(&sockios_test::tty_sockstream, test, "tty in sockstream",
+    t.add(&sockios_test::tty_sockbuf, test, "tty in sockbuf", tc[0]));
 
   exam::test_suite::test_case_type extratc[6];
 
