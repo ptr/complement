@@ -83,7 +83,11 @@ class sock_processor_base :
         _chk( *this ),
         _rcount( 0 )
       {
-        sock_processor_base::open( path, t );
+        if (t != sock_base::tty) {
+          sock_processor_base::open(path, t);
+        } else {
+          sock_processor_base::open(path, adopt_tty_t());
+        }
       }
 
     virtual ~sock_processor_base()

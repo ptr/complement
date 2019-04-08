@@ -13,6 +13,7 @@
 #include "sockios_test.h"
 #include "unix_socket.h"
 #include "syslog_test.h"
+#include "tty_proc.h"
 
 #include <exam/suite.h>
 
@@ -83,8 +84,11 @@ int main( int argc, const char** argv )
   t.add( &sockios_test::few_packets_loop, test, "packets boundary, loop", 
     t.add( &sockios_test::few_packets, test, "packets boundary", tc[3] ) );
 
-  t.add(&sockios_test::tty_sockstream, test, "tty in sockstream",
-    t.add(&sockios_test::tty_sockbuf, test, "tty in sockbuf", tc[0]));
+  tty_processor_test tty;
+
+  t.add(&tty_processor_test::tty_processor, tty, "tty processor",
+    t.add(&tty_processor_test::tty_sockstream, tty, "tty in sockstream",
+      t.add(&tty_processor_test::tty_sockbuf, tty, "tty in sockbuf", tc[0])));
 
   exam::test_suite::test_case_type extratc[6];
 
@@ -147,4 +151,3 @@ int main( int argc, const char** argv )
 
   return t.girdle();
 }
-
