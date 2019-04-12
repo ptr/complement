@@ -12,9 +12,9 @@
 #define __SOCKIOS_SOCKSRV_H
 
 #include <cerrno>
-#include <mt/thread>
-#include <mt/mutex>
-#include <mt/condition_variable>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #if defined(STLPORT) || defined(__FIT_CPP_0X)
 #  include <unordered_map>
@@ -46,7 +46,7 @@ template <class charT, class traits, class _Alloc> class basic_sockstream;
 template <class charT, class traits, class _Alloc> class sock_processor_base;
 
 namespace detail {
-extern std::tr2::mutex _se_lock;
+extern std::mutex _se_lock;
 extern std::ostream* _se_stream;
 }
 
@@ -97,13 +97,13 @@ class sock_processor_base :
 
     void addref()
       {
-        std::tr2::lock_guard<std::tr2::mutex> lk(_cnt_lck);
+        std::lock_guard<std::mutex> lk(_cnt_lck);
         ++_rcount;
       }
 
     void release()
       {
-        std::tr2::lock_guard<std::tr2::mutex> lk(_cnt_lck);
+        std::lock_guard<std::mutex> lk(_cnt_lck);
         if ( --_rcount == 0 ) {
           _cnt_cnd.notify_one();
         }
@@ -111,7 +111,7 @@ class sock_processor_base :
 
     int count()
       {
-        std::tr2::lock_guard<std::tr2::mutex> lk(_cnt_lck);
+        std::lock_guard<std::mutex> lk(_cnt_lck);
         int tmp = _rcount;
         return tmp;
       }
@@ -181,17 +181,17 @@ class sock_processor_base :
 
   public:
     bool is_open() const
-      { std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck); return basic_socket_t::is_open_unsafe(); }
+      { std::lock_guard<const std::mutex> lk(_fd_lck); return basic_socket_t::is_open_unsafe(); }
     bool good() const
       { return _state == ios_base::goodbit; }
 
     sock_base::socket_type fd() const
-      { std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck); sock_base::socket_type tmp = basic_socket_t::fd_unsafe(); return tmp; }
+      { std::lock_guard<const std::mutex> lk(_fd_lck); sock_base::socket_type tmp = basic_socket_t::fd_unsafe(); return tmp; }
 
     void shutdown( sock_base::shutdownflg dir );
     void setoptions( sock_base::so_t optname, bool on_off = true, int __v = 0 )
       {
-        std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+        std::lock_guard<std::mutex> lk(_fd_lck);
         setoptions_unsafe( optname, on_off, __v );
       }
     void setoptions(tcflag_t iflag_set, tcflag_t iflag_drop,
@@ -216,7 +216,7 @@ class sock_processor_base :
     std::sock_base::stype   _type;
 
   protected:
-    std::tr2::mutex _fd_lck;
+    std::mutex _fd_lck;
 
     class _cnt_checker
     {
@@ -234,8 +234,8 @@ class sock_processor_base :
     };
 
     _cnt_checker _chk;
-    std::tr2::mutex _cnt_lck;
-    std::tr2::condition_variable _cnt_cnd;
+    std::mutex _cnt_lck;
+    std::condition_variable _cnt_cnd;
     int _rcount;
 
     friend class _cnt_checker;
@@ -263,7 +263,7 @@ class connect_processor :
         static void __at_fork_prepare();
         static void __at_fork_child();
         static void __at_fork_parent();
-        static std::tr2::mutex _init_lock;
+        static std::mutex _init_lock;
         static int _count;
         static bool _at_fork;
     };
@@ -276,7 +276,7 @@ class connect_processor :
         _in_work( true )
       { 
         new( Init_buf ) Init();
-        ploop = new std::tr2::thread( loop, this );
+        ploop = new std::thread( loop, this );
       }
 
     explicit connect_processor( int port ) :
@@ -285,7 +285,7 @@ class connect_processor :
         _in_work( true )
       { 
         new( Init_buf ) Init();   
-        ploop = new std::tr2::thread( loop, this );
+        ploop = new std::thread( loop, this );
       }
 
     explicit connect_processor( const char* path ) :
@@ -294,7 +294,7 @@ class connect_processor :
         _in_work( true )
       { 
         new( Init_buf ) Init();
-        ploop = new std::tr2::thread( loop, this );
+        ploop = new std::thread( loop, this );
       }
 
     virtual ~connect_processor()
@@ -430,8 +430,8 @@ class connect_processor :
     opened_pool_t opened_pool;
 
     ready_queue_t ready_queue;
-    std::tr2::mutex ready_lock;
-    std::tr2::condition_variable ready_cnd;
+    std::mutex ready_lock;
+    std::condition_variable ready_cnd;
 
     typedef std::vector<at_func_type> at_container_type;
 
@@ -440,9 +440,9 @@ class connect_processor :
     at_container_type _at_disconnect;
 
     bool _in_work;
-    std::tr2::thread* ploop;
+    std::thread* ploop;
 
-    static std::tr2::mutex _lock_tr;
+    static std::mutex _lock_tr;
     static unsigned _trflags;
     static std::ostream* _trs;
 };

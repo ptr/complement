@@ -10,6 +10,8 @@
 
 #include <exam/defs.h>
 
+#include <mt/signal>
+
 #define __EXTRA_SOCK_OPT1
 #ifdef __FIT_SOCK_CLOEXEC
 #  undef __EXTRA_SOCK_OPT1
@@ -20,14 +22,14 @@
 namespace std {
 
 namespace detail {
-extern std::tr2::mutex _se_lock;
+extern std::mutex _se_lock;
 extern std::ostream* _se_stream;
 }
 
 template<class charT, class traits, class _Alloc>
 void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int port, sock_base::stype type, sock_base::protocol prot )
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+  std::lock_guard<std::mutex> lk(_fd_lck);
   if ( basic_socket_t::is_open_unsafe() ) {
     return;
   }
@@ -76,7 +78,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int po
 template<class charT, class traits, class _Alloc>
 void sock_processor_base<charT,traits,_Alloc>::open( const char* path, sock_base::stype type )
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+  std::lock_guard<std::mutex> lk(_fd_lck);
   if ( basic_socket_t::is_open_unsafe() ) {
     return;
   }
@@ -119,7 +121,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const char* path, sock_base
 template<class charT, class traits, class _Alloc>
 void sock_processor_base<charT,traits,_Alloc>::open( int dev, int channel, sock_base::protocol prot, const adopt_bt_t& )
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+  std::lock_guard<std::mutex> lk(_fd_lck);
   if ( basic_socket_t::is_open_unsafe() ) {
     return;
   }
@@ -181,7 +183,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( int dev, int channel, sock_
 template<class charT, class traits, class _Alloc>
 void sock_processor_base<charT,traits,_Alloc>::open( const char *path, const adopt_dev_t& )
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+  std::lock_guard<std::mutex> lk(_fd_lck);
   if ( basic_socket_t::is_open_unsafe() ) {
     return;
   }
@@ -207,7 +209,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const char *path, const ado
 template<class charT, class traits, class _Alloc>
 void sock_processor_base<charT,traits,_Alloc>::open( int fd, const adopt_dev_t& )
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+  std::lock_guard<std::mutex> lk(_fd_lck);
   if ( basic_socket_t::is_open_unsafe() ) {
     return;
   }
@@ -233,7 +235,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( int fd, const adopt_dev_t& 
 template<class charT, class traits, class _Alloc>
 void sock_processor_base<charT,traits,_Alloc>::open( const char *path, const adopt_tty_t& )
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+  std::lock_guard<std::mutex> lk(_fd_lck);
   if ( basic_socket_t::is_open_unsafe() ) {
     return;
   }
@@ -259,7 +261,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const char *path, const ado
 template<class charT, class traits, class _Alloc>
 void sock_processor_base<charT,traits,_Alloc>::open( int fd, const adopt_tty_t& )
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+  std::lock_guard<std::mutex> lk(_fd_lck);
   if ( basic_socket_t::is_open_unsafe() ) {
     return;
   }
@@ -289,7 +291,7 @@ void sock_processor_base<charT,traits,_Alloc>::_close()
     return;
   }
 
-  std::tr2::unique_lock<std::tr2::mutex> clk(_cnt_lck);
+  std::unique_lock<std::mutex> clk(_cnt_lck);
   
   /* all command in pipe should be processed:
      otherwise shutdown signal to descriptor, that may not
@@ -297,7 +299,7 @@ void sock_processor_base<charT,traits,_Alloc>::_close()
    */
   _cnt_cnd.wait( clk, _chk );
 
-  std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+  std::lock_guard<std::mutex> lk(_fd_lck);
 
   if (_type != std::sock_base::tty) {
     ::shutdown( basic_socket_t::_fd, 0 );
@@ -313,7 +315,7 @@ void sock_processor_base<charT,traits,_Alloc>::_close()
 template<class charT, class traits, class _Alloc>
 void sock_processor_base<charT,traits,_Alloc>::shutdown( sock_base::shutdownflg dir )
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+  std::lock_guard<std::mutex> lk(_fd_lck);
   if ( basic_socket_t::is_open_unsafe() ) {
     if ( (dir & (sock_base::stop_in | sock_base::stop_out)) ==
          (sock_base::stop_in | sock_base::stop_out) ) {
@@ -411,13 +413,13 @@ template<class Connect, class charT, class traits, class _Alloc, void (Connect::
 bool connect_processor<Connect, charT, traits, _Alloc, C>::Init::_at_fork = false;
 
 template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
-std::tr2::mutex connect_processor<Connect, charT, traits, _Alloc, C>::Init::_init_lock;
+std::mutex connect_processor<Connect, charT, traits, _Alloc, C>::Init::_init_lock;
 
 template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::Init::_guard( int direction )
 {
   if ( direction ) {
-    std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
+    std::lock_guard<std::mutex> lk( _init_lock );
     if ( _count++ == 0 ) {
 #ifdef __FIT_PTHREADS
       if ( !_at_fork ) { // call only once
@@ -429,7 +431,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::Init::_guard( int dir
 #endif
     }
   } else {
-    std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
+    std::lock_guard<std::mutex> lk( _init_lock );
     if ( --_count == 0 ) {
 
     }
@@ -470,7 +472,7 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
     // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
 // #ifdef __FIT_STEM_TRACE
     try {
-      std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+      std::lock_guard<std::mutex> lk(_lock_tr);
       if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
         ios_base::fmtflags f = _trs->flags( ios_base::showbase );
         *_trs << HERE << ":unexpected";
@@ -489,7 +491,7 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
   }
 
   {
-    std::tr2::lock_guard<std::tr2::mutex> lk( ready_lock );
+    std::lock_guard<std::mutex> lk( ready_lock );
     ready_queue.push( request_t( socket_open, fd, p ) );
     ready_cnd.notify_one();
   }
@@ -500,7 +502,7 @@ typename connect_processor<Connect, charT, traits, _Alloc, C>::base_t::sockbuf_t
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_base::socket_type fd )
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk( ready_lock );
+  std::lock_guard<std::mutex> lk( ready_lock );
   ready_queue.push( request_t( socket_read, fd ) );
   ready_cnd.notify_one();
 }
@@ -508,7 +510,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_bas
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::operator ()( sock_base::socket_type fd, const typename base_t::adopt_close_t& )
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk( ready_lock );
+  std::lock_guard<std::mutex> lk( ready_lock );
   ready_queue.push( request_t( socket_close, fd ) );
   ready_cnd.notify_one();
 }
@@ -533,7 +535,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::feed_data_to_processo
     // misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor " << e.what() << endl;
 // #ifdef __FIT_STEM_TRACE
     try {
-      std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+      std::lock_guard<std::mutex> lk(_lock_tr);
       if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
         ios_base::fmtflags f = _trs->flags( ios_base::showbase );
         *_trs << HERE << ":exception from Connect::ctor " << e.what() << endl;
@@ -552,7 +554,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::feed_data_to_processo
     // misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor unknown" << endl;
 // #ifdef __FIT_STEM_TRACE
     try {
-      std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+      std::lock_guard<std::mutex> lk(_lock_tr);
       if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
         ios_base::fmtflags f = _trs->flags( ios_base::showbase );
         *_trs << HERE << ":exception from Connect::ctor unknown" << endl;
@@ -580,7 +582,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
         // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
 // #ifdef __FIT_STEM_TRACE
         try {
-          std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+          std::lock_guard<std::mutex> lk(_lock_tr);
           if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
             ios_base::fmtflags f = _trs->flags( ios_base::showbase );
             *_trs << HERE << ":unexpected" << endl;
@@ -601,7 +603,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
         // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
 // #ifdef __FIT_STEM_TRACE
         try {
-          std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+          std::lock_guard<std::mutex> lk(_lock_tr);
           if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
             ios_base::fmtflags f = _trs->flags( ios_base::showbase );
             *_trs << HERE << ":unexpected" << endl;
@@ -632,7 +634,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
         // misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor " << e.what() << endl;
  // #ifdef __FIT_STEM_TRACE
         try {
-          std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+          std::lock_guard<std::mutex> lk(_lock_tr);
           if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
             ios_base::fmtflags f = _trs->flags( ios_base::showbase );
             *_trs << HERE << ":exception from Connect::ctor " << e.what() << endl;
@@ -652,7 +654,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
         // misc::use_syslog<LOG_DEBUG>() << HERE << ":exception from Connect::ctor unknown" << endl;
 // #ifdef __FIT_STEM_TRACE
         try {
-          std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+          std::lock_guard<std::mutex> lk(_lock_tr);
           if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
             ios_base::fmtflags f = _trs->flags( ios_base::showbase );
             *_trs << HERE << ":exception from Connect::ctor unknown" << endl;
@@ -679,7 +681,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
         // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
 // #ifdef __FIT_STEM_TRACE
         try {
-          std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+          std::lock_guard<std::mutex> lk(_lock_tr);
           if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
             ios_base::fmtflags f = _trs->flags( ios_base::showbase );
             *_trs << HERE << ":unexpected" << endl;
@@ -704,7 +706,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
         // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected" << endl;
 // #ifdef __FIT_STEM_TRACE
         try {
-          std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+          std::lock_guard<std::mutex> lk(_lock_tr);
           if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
             ios_base::fmtflags f = _trs->flags( ios_base::showbase );
             *_trs << HERE << ":unexpected" << endl;
@@ -737,7 +739,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
       // misc::use_syslog<LOG_DEBUG>() << "unexpected request operation type: " << request.operation_type << endl;
 // #ifdef __FIT_STEM_TRACE
       try {
-        std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+        std::lock_guard<std::mutex> lk(_lock_tr);
         if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
           ios_base::fmtflags f = _trs->flags( ios_base::showbase );
           *_trs << HERE << "unexpected request operation type: " << request.operation_type << endl;
@@ -757,7 +759,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
     // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected " << e.what() << endl;
 // #ifdef __FIT_STEM_TRACE
     try {
-      std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+      std::lock_guard<std::mutex> lk(_lock_tr);
       if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
         ios_base::fmtflags f = _trs->flags( ios_base::showbase );
         *_trs << HERE << ":unexpected " << e.what() << endl;
@@ -776,7 +778,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::process_request( cons
     // misc::use_syslog<LOG_DEBUG>() << HERE << ":unexpected unknown" << endl;
 // #ifdef __FIT_STEM_TRACE
     try {
-      std::tr2::lock_guard<std::tr2::mutex> lk(_lock_tr);
+      std::lock_guard<std::mutex> lk(_lock_tr);
       if ( _trs != 0 && _trs->good() && (_trflags & base_t::tracefault) ) {
         ios_base::fmtflags f = _trs->flags( ios_base::showbase );
         *_trs << HERE << ":unexpected unknown" << endl;
@@ -798,7 +800,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::clear_opened_pool()
 {
   try { 
     if ( !opened_pool.empty() ) {
-      std::tr2::lock_guard<std::tr2::mutex> lk(std::detail::_se_lock);
+      std::lock_guard<std::mutex> lk(std::detail::_se_lock);
       if ( std::detail::_se_stream != 0 ) {
         *std::detail::_se_stream << HERE << " worker pool not empty, remains "
                     << opened_pool.size() << std::endl;
@@ -820,12 +822,12 @@ template <class Connect, class charT, class traits, class _Alloc, void (Connect:
 void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
 {
   try {
-    std::tr2::this_thread::signal_handler( SIGPIPE, SIG_IGN );
+    std::this_thread::signal_handler( SIGPIPE, SIG_IGN );
 
     for ( ; ; ) {
       request_t request; 
       {
-        std::tr2::unique_lock<std::tr2::mutex> lk( ready_lock );
+        std::unique_lock<std::mutex> lk( ready_lock );
 
         ready_cnd.wait( lk, not_empty );
         if ( ready_queue.empty() ) {
@@ -843,7 +845,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
   }
   catch ( const std::exception& e ) {
     try {
-      std::tr2::lock_guard<std::tr2::mutex> lk(std::detail::_se_lock);
+      std::lock_guard<std::mutex> lk(std::detail::_se_lock);
       if ( std::detail::_se_stream != 0 ) {
         *std::detail::_se_stream << HERE << ' ' << e.what() << std::endl;
       }
@@ -853,7 +855,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
   }
   catch ( ... ) {
     try {
-      std::tr2::lock_guard<std::tr2::mutex> lk(std::detail::_se_lock);
+      std::lock_guard<std::mutex> lk(std::detail::_se_lock);
       if ( std::detail::_se_stream != 0 ) {
         *std::detail::_se_stream << HERE << " unknown exception" << std::endl;
       }
@@ -866,7 +868,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::worker()
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 void connect_processor<Connect, charT, traits, _Alloc, C>::_stop()
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk( ready_lock );
+  std::lock_guard<std::mutex> lk( ready_lock );
 
   _in_work = false;
   ready_cnd.notify_one();
@@ -875,7 +877,7 @@ void connect_processor<Connect, charT, traits, _Alloc, C>::_stop()
 template <class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 std::ostream* connect_processor<Connect, charT, traits, _Alloc, C>::settrs( std::ostream* s )
 {
-  std::tr2::lock_guard<std::tr2::mutex> _x1( _lock_tr );
+  std::lock_guard<std::mutex> _x1( _lock_tr );
   std::ostream* tmp = _trs;
   _trs = s;
 
@@ -883,7 +885,7 @@ std::ostream* connect_processor<Connect, charT, traits, _Alloc, C>::settrs( std:
 }
 
 template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
-std::tr2::mutex connect_processor<Connect, charT, traits, _Alloc, C>::_lock_tr;
+std::mutex connect_processor<Connect, charT, traits, _Alloc, C>::_lock_tr;
 
 template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 unsigned connect_processor<Connect, charT, traits, _Alloc, C>::_trflags = 0;

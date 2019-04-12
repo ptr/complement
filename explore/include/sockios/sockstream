@@ -29,10 +29,10 @@
 # endif
 #endif
 
-#include <mt/mutex>
-#include <mt/condition_variable>
-#include <mt/date_time>
-#include <mt/thread>
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
+#include <thread>
 
 #include <netdb.h>
 #include <netinet/in.h>
@@ -77,7 +77,7 @@ namespace std {
 #endif
 
 namespace detail {
-extern std::tr2::mutex _se_lock;
+extern std::mutex _se_lock;
 extern std::ostream* _se_stream;
 }
 
@@ -243,7 +243,7 @@ class basic_socket
         static void __at_fork_prepare();
         static void __at_fork_child();
         static void __at_fork_parent();
-        static std::tr2::mutex _init_lock;
+        static std::mutex _init_lock;
         static int _count;
         static bool _at_fork;
     };
@@ -257,7 +257,7 @@ class basic_socket
     typedef unsigned short                 family_type;
 #endif
 
-    void rdtimeout( const std::tr2::nanoseconds& d )
+    void rdtimeout( const std::chrono::nanoseconds& d )
       {
         _use_rdtimeout = true;
         _rdtimeout = d;
@@ -267,13 +267,13 @@ class basic_socket
     void rdtimeout( const Duration& d )
       {
         _use_rdtimeout = true;
-        _rdtimeout = static_cast<std::tr2::nanoseconds>(d);
+        _rdtimeout = static_cast<std::chrono::nanoseconds>(d);
       }
 
     void rdtimeout() // infinite
       { _use_rdtimeout = false; }
 
-    void wrtimeout( const std::tr2::nanoseconds& d )
+    void wrtimeout( const std::chrono::nanoseconds& d )
       {
         _use_wrtimeout = true;
         _wrtimeout = d;
@@ -283,7 +283,7 @@ class basic_socket
     void wrtimeout( const Duration& d )
       {
         _use_wrtimeout = true;
-        _wrtimeout = static_cast<std::tr2::nanoseconds>(d);
+        _wrtimeout = static_cast<std::chrono::nanoseconds>(d);
       }
 
     void wrtimeout() // infinite
@@ -335,8 +335,8 @@ class basic_socket
         termios         term;
     } _address;
 
-    std::tr2::nanoseconds _rdtimeout;
-    std::tr2::nanoseconds _wrtimeout;
+    std::chrono::nanoseconds _rdtimeout;
+    std::chrono::nanoseconds _wrtimeout;
     bool _use_rdtimeout;
     bool _use_wrtimeout;
 
@@ -352,13 +352,13 @@ template<class charT, class traits, class _Alloc>
 bool basic_socket<charT,traits,_Alloc>::Init::_at_fork = false;
 
 template<class charT, class traits, class _Alloc>
-std::tr2::mutex basic_socket<charT,traits,_Alloc>::Init::_init_lock;
+std::mutex basic_socket<charT,traits,_Alloc>::Init::_init_lock;
 
 template<class charT, class traits, class _Alloc>
 void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
 {
   if ( direction ) {
-    std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
+    std::lock_guard<std::mutex> lk( _init_lock );
     if ( _count++ == 0 ) {
       basic_socket<charT,traits,_Alloc>::mgr = new std::detail::sockmgr<charT,traits,_Alloc>();
       typedef std::list<std::net_iface> ifcontainer;
@@ -376,10 +376,10 @@ void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
 #endif
     }
   } else {
-    std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
+    std::lock_guard<std::mutex> lk( _init_lock );
     if ( --_count == 0 ) {
       if ( basic_socket<charT,traits,_Alloc>::mgr == 0 ) {
-        std::tr2::lock_guard<std::tr2::mutex> lk(std::detail::_se_lock);
+        std::lock_guard<std::mutex> lk(std::detail::_se_lock);
         if ( std::detail::_se_stream != 0 ) {
           *std::detail::_se_stream << HERE << " net manager not exist" << std::endl;;
         }
@@ -387,7 +387,7 @@ void basic_socket<charT,traits,_Alloc>::Init::_guard( int direction )
       delete basic_socket<charT,traits,_Alloc>::mgr;
       basic_socket<charT,traits,_Alloc>::mgr = 0;
     } else if ( _count < 0 ) {
-      std::tr2::lock_guard<std::tr2::mutex> lk(std::detail::_se_lock);
+      std::lock_guard<std::mutex> lk(std::detail::_se_lock);
       if ( std::detail::_se_stream != 0 ) {
         *std::detail::_se_stream << HERE << " too many deletes" << std::endl;;
       }
@@ -423,7 +423,7 @@ void basic_socket<charT,traits,_Alloc>::Init::__at_fork_child()
     basic_socket<charT,traits,_Alloc>::mgr = new std::detail::sockmgr<charT,traits,_Alloc>();
   }
   _init_lock.unlock();
-  // _sock_processor_base::_idx =  std::tr2::this_thread::xalloc();
+  // _sock_processor_base::_idx =  std::this_thread::xalloc();
 }
 
 template<class charT, class traits, class _Alloc>
@@ -602,46 +602,46 @@ class basic_sockbuf :
                         sock_base::protocol prot = sock_base::inet );
 
     sockbuf_type *open( const char* hostname, int port,
-                        const std::tr2::nanoseconds& timeout );
+                        const std::chrono::nanoseconds& timeout );
 
     template <class Duration>
     sockbuf_type *open( const char* hostname, int port,
                         const Duration& timeout )
-      { return this->open( hostname, port, static_cast<std::tr2::nanoseconds>(timeout) ); }
+      { return this->open( hostname, port, static_cast<std::chrono::nanoseconds>(timeout) ); }
 
     sockbuf_type *open( in_addr_t addr, int port,
                         sock_base::stype type = sock_base::sock_stream,
                         sock_base::protocol prot = sock_base::inet );
 
-    sockbuf_type *open( in_addr_t addr, int port, const std::tr2::nanoseconds& timeout );
+    sockbuf_type *open( in_addr_t addr, int port, const std::chrono::nanoseconds& timeout );
 
     template <class Duration>
     sockbuf_type *open( in_addr_t addr, int port, const Duration& timeout )
-      { return this->open( addr, port, static_cast<std::tr2::nanoseconds>(timeout) ); }
+      { return this->open( addr, port, static_cast<std::chrono::nanoseconds>(timeout) ); }
 
     sockbuf_type *open( const char* path,
                         sock_base::stype type = sock_base::sock_dgram );
 
-    sockbuf_type *open( const char* path, const std::tr2::nanoseconds& timeout,
+    sockbuf_type *open( const char* path, const std::chrono::nanoseconds& timeout,
                         sock_base::stype type = sock_base::sock_dgram );
 
     template <class Duration>
     sockbuf_type *open( const char* path, const Duration& timeout,
                         sock_base::stype type = sock_base::sock_dgram )
-      { return this->open( path, static_cast<std::tr2::nanoseconds>(timeout), type ); }
+      { return this->open( path, static_cast<std::chrono::nanoseconds>(timeout), type ); }
 
     sockbuf_type *open( const sockaddr_in& addr,
                         sock_base::stype type = sock_base::sock_stream );
 
     sockbuf_type *open( const sockaddr_in& addr,
-                        const std::tr2::nanoseconds& timeout,
+                        const std::chrono::nanoseconds& timeout,
                         sock_base::stype type = sock_base::sock_stream );
 
     template <class Duration>
     sockbuf_type *open( const sockaddr_in& addr,
                         const Duration& timeout,
                         sock_base::stype type = sock_base::sock_stream )
-      { return this->open( addr, static_cast<std::tr2::nanoseconds>(timeout), type ); }
+      { return this->open( addr, static_cast<std::chrono::nanoseconds>(timeout), type ); }
 
     sockbuf_type *open( sock_base::socket_type s,
                         sock_base::stype t = sock_base::sock_stream );
@@ -658,7 +658,7 @@ class basic_sockbuf :
     sockbuf_type *close();
     void shutdown( sock_base::shutdownflg dir )
       {
-        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+        std::lock_guard<std::recursive_mutex> lk( ulck );
         shutdown_unsafe( dir );
       }
 
@@ -667,12 +667,12 @@ class basic_sockbuf :
 
     sock_base::socket_type fd() const
       {
-        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+        std::lock_guard<const std::recursive_mutex> lk( ulck );
         return basic_socket<charT,traits,_Alloc>::fd_unsafe();
       }
     bool is_open() const
       {
-        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+        std::lock_guard<const std::recursive_mutex> lk( ulck );
         return basic_socket<charT,traits,_Alloc>::is_open_unsafe();
       }
 
@@ -687,13 +687,13 @@ class basic_sockbuf :
 
     bool is_ready()
       {
-        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+        std::lock_guard<std::recursive_mutex> lk( ulck );
         return this->gptr() < _fr ? true : this->eback() < _fl ? true : false;
       }
 
     void pubrewind()
       {
-        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+        std::lock_guard<std::recursive_mutex> lk( ulck );
         this->rewind();
       }
 
@@ -714,7 +714,7 @@ class basic_sockbuf :
     virtual int_type overflow( int_type c = traits::eof() );
     virtual int_type pbackfail( int_type c = traits::eof() )
       {
-        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+        std::lock_guard<std::recursive_mutex> lk( ulck );
 
         if ( (this->gptr() <= this->eback()) || (_fl == this->gptr() ) ) {
           return traits::eof();
@@ -861,9 +861,9 @@ class basic_sockbuf :
     bool                _attached;
 
   public:
-    std::tr2::recursive_mutex ulck;
+    std::recursive_mutex ulck;
   private:
-    std::tr2::condition_variable ucnd;
+    std::condition_variable_any ucnd;
 
     friend class std::detail::sockmgr<charT,traits,_Alloc>;
     friend class sock_processor_base<charT,traits,_Alloc>;

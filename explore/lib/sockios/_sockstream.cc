@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/07/15 20:02:28 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 1997-1999, 2002, 2005, 2009
+ * Copyright (c) 1997-1999, 2002, 2005, 2009, 2019
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2000
@@ -19,13 +19,13 @@
 namespace std {
 
 namespace detail {
-std::tr2::mutex _se_lock;
+std::mutex _se_lock;
 ostream* _se_stream = 0;
 } // namespace detail
 
 ostream* set_sock_error_stream( ostream* new_stream )
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk( std::detail::_se_lock );
+  std::lock_guard<std::mutex> lk( std::detail::_se_lock );
   ostream* old_stream = std::detail::_se_stream;
   std::detail::_se_stream = new_stream;
 

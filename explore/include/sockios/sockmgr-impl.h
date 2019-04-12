@@ -15,6 +15,8 @@
 #endif
 #include <exam/defs.h>
 
+#include <mt/signal>
+
 namespace std {
 
 namespace detail {
@@ -71,7 +73,7 @@ sockmgr<charT,traits,_Alloc>::sockmgr(int _fd_count_hint, int _maxevents) :
     throw std::system_error( errno, std::system_category(), std::string( "sockmgr<charT,traits,_Alloc>" ) );
   }
 
-  _worker = new std::tr2::thread( _loop, this );
+  _worker = new std::thread( _loop, this );
 }
 
 template<class charT, class traits, class _Alloc>
@@ -109,7 +111,7 @@ sockmgr<charT,traits,_Alloc>::~sockmgr()
           ) == 0) {
       sockbuf_t* b = i->second.b;
       if ( b != 0 ) {
-        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
+        std::lock_guard<std::recursive_mutex> lk( b->ulck );
         ::close( b->_fd );
         b->_fd = -1;
         b->ucnd.notify_all();
@@ -194,7 +196,7 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
 {
   epoll_event ev[maxevents];
 
-  std::tr2::this_thread::signal_handler( SIGPIPE, SIG_IGN );
+  std::this_thread::signal_handler( SIGPIPE, SIG_IGN );
 
   memset( ev, 0, maxevents * sizeof(epoll_event) );
 
@@ -208,10 +210,10 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
           continue;
         }
 
-        extern std::tr2::mutex _se_lock;
+        extern std::mutex _se_lock;
         extern std::ostream* _se_stream;
 
-        std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+        std::lock_guard<std::mutex> lk(_se_lock);
         if ( _se_stream != 0 ) {
           *_se_stream << HERE << ' '
                       << efd << ' '
@@ -245,19 +247,19 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
           }
         }
         catch ( const std::system_error& err ) {
-          extern std::tr2::mutex _se_lock;
+          extern std::mutex _se_lock;
           extern std::ostream* _se_stream;
 
-          std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+          std::lock_guard<std::mutex> lk(_se_lock);
           if ( _se_stream != 0 ) {
             *_se_stream << err.what() << std::endl;
           }
         }
         catch ( const std::runtime_error& err ) {
-          extern std::tr2::mutex _se_lock;
+          extern std::mutex _se_lock;
           extern std::ostream* _se_stream;
 
-          std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+          std::lock_guard<std::mutex> lk(_se_lock);
           if ( _se_stream != 0 ) {
             *_se_stream << err.what() << std::endl;
           }
@@ -275,7 +277,7 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
                                 fd_info::nonsock_buffer)) == 0) {
           sockbuf_t* b = i->second.b;
           if ( b != 0 ) {
-            std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
+            std::lock_guard<std::recursive_mutex> lk( b->ulck );
             ::close( b->_fd );
             b->_fd = -1;
             b->ucnd.notify_all();
@@ -293,10 +295,10 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
     }
     catch ( std::exception& e ) {
       try {
-        extern std::tr2::mutex _se_lock;
+        extern std::mutex _se_lock;
         extern std::ostream* _se_stream;
 
-        std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+        std::lock_guard<std::mutex> lk(_se_lock);
         if ( _se_stream != 0 ) {
           *_se_stream << HERE << ' ' << e.what() << std::endl;
         }
@@ -306,10 +308,10 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
     }
     catch ( ... ) {
       try {
-        extern std::tr2::mutex _se_lock;
+        extern std::mutex _se_lock;
         extern std::ostream* _se_stream;
 
-        std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+        std::lock_guard<std::mutex> lk(_se_lock);
         if ( _se_stream != 0 ) {
           *_se_stream << HERE << " unknown exception" << std::endl;
         }
@@ -320,10 +322,10 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
   }
   catch ( std::exception& e ) {
     try {
-      extern std::tr2::mutex _se_lock;
+      extern std::mutex _se_lock;
       extern std::ostream* _se_stream;
 
-      std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+      std::lock_guard<std::mutex> lk(_se_lock);
       if ( _se_stream != 0 ) {
         *_se_stream << HERE << ' ' << e.what() << std::endl;
       }
@@ -333,10 +335,10 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
   }
   catch ( ... ) {
     try {
-      extern std::tr2::mutex _se_lock;
+      extern std::mutex _se_lock;
       extern std::ostream* _se_stream;
 
-      std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+      std::lock_guard<std::mutex> lk(_se_lock);
       if ( _se_stream != 0 ) {
         *_se_stream << HERE << " unknown exception" << std::endl;
       }
@@ -379,10 +381,10 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
         
         if ( descr.find(listener_fd) != descr.end() ) { // reuse?
           if (!epoll_restore(listener_fd)) {
-            extern std::tr2::mutex _se_lock;
+            extern std::mutex _se_lock;
             extern std::ostream* _se_stream;
 
-            std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+            std::lock_guard<std::mutex> lk(_se_lock);
             if ( _se_stream != 0 ) {
               *_se_stream << HERE << ' '
                           << std::make_error_code( static_cast<std::errc>(errno) ).message()
@@ -394,10 +396,10 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
           }
         } else {
           if (!epoll_push(listener_fd)) {
-            extern std::tr2::mutex _se_lock;
+            extern std::mutex _se_lock;
             extern std::ostream* _se_stream;
 
-            std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+            std::lock_guard<std::mutex> lk(_se_lock);
             if ( _se_stream != 0 ) {
               *_se_stream << HERE << ' '
                           << std::make_error_code( static_cast<std::errc>(errno) ).message()
@@ -420,10 +422,10 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
 
       if ( tcp_buffer_fd >= 0 ) {
         if (!epoll_push(tcp_buffer_fd)) {
-          extern std::tr2::mutex _se_lock;
+          extern std::mutex _se_lock;
           extern std::ostream* _se_stream;
 
-          std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+          std::lock_guard<std::mutex> lk(_se_lock);
           if ( _se_stream != 0 ) {
             *_se_stream << HERE << ' '
                         << std::make_error_code( static_cast<std::errc>(errno) ).message()
@@ -453,10 +455,10 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
         }
         if ( descr.find( proc_fd ) != descr.end() ) { // reuse?
           if (!epoll_restore(proc_fd)) {
-            extern std::tr2::mutex _se_lock;
+            extern std::mutex _se_lock;
             extern std::ostream* _se_stream;
 
-            std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+            std::lock_guard<std::mutex> lk(_se_lock);
             if ( _se_stream != 0 ) {
               *_se_stream << HERE << ' '
                           << std::make_error_code( static_cast<std::errc>(errno) ).message()
@@ -469,10 +471,10 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
           }
         } else {
           if (!epoll_push(proc_fd)) {
-            extern std::tr2::mutex _se_lock;
+            extern std::mutex _se_lock;
             extern std::ostream* _se_stream;
 
-            std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+            std::lock_guard<std::mutex> lk(_se_lock);
             if ( _se_stream != 0 ) {
               *_se_stream << HERE << ' '
                           << std::make_error_code( static_cast<std::errc>(errno) ).message()
@@ -494,10 +496,10 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
 
       if ( nonsock_buffer_fd >= 0 ) {
         if (!epoll_push(nonsock_buffer_fd)) {
-          extern std::tr2::mutex _se_lock;
+          extern std::mutex _se_lock;
           extern std::ostream* _se_stream;
 
-          std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+          std::lock_guard<std::mutex> lk(_se_lock);
           if ( _se_stream != 0 ) {
             *_se_stream << HERE << ' '
                         << std::make_error_code( static_cast<std::errc>(errno) ).message()
@@ -533,7 +535,7 @@ void sockmgr<charT,traits,_Alloc>::cmd_from_pipe()
               but let's check flags about fd_info::nonsock_buffer once more.
              */
             if ((b->_fd == fd) && (i.second.flags & fd_info::nonsock_buffer)) {
-              std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
+              std::lock_guard<std::recursive_mutex> lk( b->ulck );
               ::close( b->_fd );
               b->_fd = -1;
               b->ucnd.notify_all();
@@ -564,7 +566,7 @@ void sockmgr<charT,traits,_Alloc>::close_listener(typename sockmgr<charT,traits,
       if ( (i->second.flags & fd_info::listener) == 0 ) { // it's not me!
         sockbuf_t* b = i->second.b;
         {
-          std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
+          std::lock_guard<std::recursive_mutex> lk( b->ulck );
           ::close( b->_fd );
           b->_fd = -1;
           b->ucnd.notify_all();
@@ -639,11 +641,11 @@ void sockmgr<charT,traits,_Alloc>::process_listener( const epoll_event& ev, type
       descr[fd] = fd_info( b, info.p );
     }
     catch ( ... ) {
-      extern std::tr2::mutex _se_lock;
+      extern std::mutex _se_lock;
       extern std::ostream* _se_stream;
 
       {
-        std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+        std::lock_guard<std::mutex> lk(_se_lock);
         if ( _se_stream != 0 ) {
           *_se_stream << HERE << ' ' << fd << std::endl;
         }
@@ -754,7 +756,7 @@ void sockmgr<charT,traits,_Alloc>::process_nonsock_srv( const epoll_event& ev, t
 template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Alloc>::sockbuf_t& b )
 {
-  std::tr2::unique_lock<std::tr2::recursive_mutex> lk( b.ulck, std::tr2::defer_lock_t() );
+  std::unique_lock<std::recursive_mutex> lk( b.ulck, std::defer_lock_t() );
   if ( lk.try_lock() ) {
     switch (b._net_read_unsafe()) {
       case 0:
@@ -775,10 +777,10 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
   } else { // it locked someware; let's return to this descriptor later
     // return back to epoll
     if (!epoll_restore(b._fd)) {
-      extern std::tr2::mutex _se_lock;
+      extern std::mutex _se_lock;
       extern std::ostream* _se_stream;
 
-      std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+      std::lock_guard<std::mutex> lk(_se_lock);
       if ( _se_stream != 0 ) {
         *_se_stream << HERE << ' '
                     << std::make_error_code( static_cast<std::errc>(errno) ).message()
@@ -874,7 +876,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( const epoll_event& ev, typen
 
     if ( info.p != 0 ) {
       {
-        std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
+        std::lock_guard<std::recursive_mutex> lk( b->ulck );
         // Note: close socket automatically remove it from epoll's vector,
         // so no epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ); here
         ::close( b->_fd );
@@ -889,7 +891,7 @@ void sockmgr<charT,traits,_Alloc>::process_regular( const epoll_event& ev, typen
       descr.erase( ifd );
     } else {
       descr.erase( ifd );
-      std::tr2::lock_guard<std::tr2::recursive_mutex> lk( b->ulck );
+      std::lock_guard<std::recursive_mutex> lk( b->ulck );
       // Note: close socket automatically remove it from epoll's vector,
       // so no epoll_ctl( efd, EPOLL_CTL_DEL, ifd->first, 0 ); here
       ::close( b->_fd );
@@ -934,10 +936,10 @@ void sockmgr<charT,traits,_Alloc>::push_proc( socks_processor_t& p, command_type
 template<class charT, class traits, class _Alloc>
 void sockmgr<charT,traits,_Alloc>::dump_descr()
 {
-  extern std::tr2::mutex _se_lock;
+  extern std::mutex _se_lock;
   extern std::ostream* _se_stream;
 
-  std::tr2::lock_guard<std::tr2::mutex> lk(_se_lock);
+  std::lock_guard<std::mutex> lk(_se_lock);
   if ( _se_stream != 0 ) {
     for ( typename fd_container_type::iterator i = descr.begin(); i != descr.end(); ++i ) {
       *_se_stream << i->first << " "

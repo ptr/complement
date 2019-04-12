@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
 /*
- * Copyright (c) 1997-1999, 2002, 2003, 2005-2008, 2016
+ * Copyright (c) 1997-1999, 2002, 2003, 2005-2008, 2016, 2019
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -24,7 +24,6 @@ namespace std {
 namespace detail {
 
 using namespace std;
-using namespace std::tr2;
 
 #define BT_HCI_MAX_ACL_SIZE	  (1492 + 4)
 #define BT_HCI_MAX_SCO_SIZE	  255

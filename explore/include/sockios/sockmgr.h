@@ -16,9 +16,9 @@
 #include <fcntl.h>
 
 #include <cerrno>
-#include <mt/thread>
-#include <mt/mutex>
-#include <mt/condition_variable>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #include <sockios/socksrv.h>
 
@@ -198,7 +198,7 @@ class sockmgr
 
     int efd;
     int pipefd[2];
-    std::tr2::thread* _worker;
+    std::thread* _worker;
     const int maxevents;
     fd_container_type descr;
 

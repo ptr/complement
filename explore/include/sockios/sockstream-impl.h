@@ -52,7 +52,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* name, int port,
 template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc>*
 basic_sockbuf<charT, traits, _Alloc>::open( const char* name, int port,
-                                            const std::tr2::nanoseconds& timeout )
+                                            const std::chrono::nanoseconds& timeout )
 {
   return basic_sockbuf<charT, traits, _Alloc>::open( std::findhost( name ), port, timeout );
 }
@@ -122,7 +122,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port,
 #endif
     this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
-    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+    std::lock_guard<std::recursive_mutex> lk( ulck );
     this->setg( this->epptr(), this->epptr(), this->epptr() );
 
     _fl = _fr = this->eback();
@@ -154,7 +154,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port,
 
 template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
-basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port, const std::tr2::nanoseconds& timeout )
+basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port, const std::chrono::nanoseconds& timeout )
 {
   // open timeout for sock_base::sock_stream, sock_base::inet only
   if ( is_open() ) {
@@ -234,7 +234,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( in_addr_t addr, int port, const std:
 
     this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
-    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+    std::lock_guard<std::recursive_mutex> lk( ulck );
     this->setg( this->epptr(), this->epptr(), this->epptr() );
 
     _fl = _fr = this->eback();
@@ -319,7 +319,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, sock_base::stype t
 
     this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
-    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+    std::lock_guard<std::recursive_mutex> lk( ulck );
     this->setg( this->epptr(), this->epptr(), this->epptr() );
 
     _fl = _fr = this->eback();
@@ -355,7 +355,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, sock_base::stype t
 
 template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
-basic_sockbuf<charT, traits, _Alloc>::open( const char* path, const std::tr2::nanoseconds& timeout, sock_base::stype type )
+basic_sockbuf<charT, traits, _Alloc>::open( const char* path, const std::chrono::nanoseconds& timeout, sock_base::stype type )
 {
   if ( is_open() ) {
     return 0;
@@ -440,7 +440,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const char* path, const std::tr2::na
 
     this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
-    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+    std::lock_guard<std::recursive_mutex> lk( ulck );
     this->setg( this->epptr(), this->epptr(), this->epptr() );
 
     _fl = _fr = this->eback();
@@ -524,7 +524,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
 #endif
     this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
-    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+    std::lock_guard<std::recursive_mutex> lk( ulck );
     this->setg( this->epptr(), this->epptr(), this->epptr() );
 
     _fl = _fr = this->eback();
@@ -557,7 +557,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
 template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
 basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
-                                            const std::tr2::nanoseconds& timeout,
+                                            const std::chrono::nanoseconds& timeout,
                                             sock_base::stype type )
 {
   if ( is_open() ) {
@@ -633,7 +633,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
 
     setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
 
-    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+    std::lock_guard<std::recursive_mutex> lk( ulck );
     setg( this->epptr(), this->epptr(), this->epptr() );
 
     _fl = _fr = this->eback();
@@ -646,7 +646,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( const sockaddr_in& addr,
       basic_socket_t::_fd = -1;
     }
    
-    // std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+    // std::lock_guard<std::recursive_mutex> lk( ulck );
     // ucnd.notify_all();
 
     return 0;
@@ -749,7 +749,7 @@ basic_sockbuf<charT, traits, _Alloc>::attach( sock_base::socket_type s,
   }
 
   if ( is_open() ) {
-    std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+    std::lock_guard<std::recursive_mutex> lk( ulck );
 
     if ( (s != basic_socket_t::_fd) || (t != _type) ||
          (basic_socket_t::_address.any.sa_family != addr.sa_family) ) {
@@ -770,7 +770,7 @@ basic_sockbuf<charT, traits, _Alloc>::_init_buf( sock_base::socket_type s,
                                                  const sockaddr& addr,
                                                  sock_base::stype t )
 {
-  std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+  std::lock_guard<std::recursive_mutex> lk( ulck );
 
   if ( basic_socket_t::is_open_unsafe() || s == -1 ) {
     return 0;
@@ -863,7 +863,7 @@ template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
 basic_sockbuf<charT, traits, _Alloc>::close()
 {
-  std::tr2::unique_lock<std::tr2::recursive_mutex> lk( ulck );
+  std::unique_lock<std::recursive_mutex> lk( ulck );
 
   if ( !basic_socket_t::is_open_unsafe() ) {
     return 0;
@@ -933,7 +933,7 @@ template<class charT, class traits, class _Alloc>
 __FIT_TYPENAME basic_sockbuf<charT, traits, _Alloc>::int_type
 basic_sockbuf<charT, traits, _Alloc>::underflow()
 {
-  std::tr2::unique_lock<std::tr2::recursive_mutex> lk( ulck );
+  std::unique_lock<std::recursive_mutex> lk( ulck );
 
   rewind();
 
@@ -943,7 +943,7 @@ basic_sockbuf<charT, traits, _Alloc>::underflow()
 
   // no ready data, wait on condition
   if ( basic_socket_t::_use_rdtimeout ) {
-    if ( !ucnd.timed_wait( lk, basic_socket_t::_rdtimeout, rdready ) ) {
+    if (!ucnd.wait_for(lk, basic_socket_t::_rdtimeout, rdready)) {
       return traits::eof();
     }
   } else {
@@ -1257,7 +1257,7 @@ template<class charT, class traits, class _Alloc>
 void basic_sockbuf<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, bool on_off, int __v )
 {
 #ifdef __unix
-  std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+  std::lock_guard<std::recursive_mutex> lk( ulck );
 
   if ( basic_socket_t::is_open_unsafe() ) {
     int turn = on_off ? 1 : 0;
@@ -1322,7 +1322,7 @@ template<class charT, class traits, class _Alloc>
 void basic_sockbuf<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, int __v )
 {
 #ifdef __unix
-  std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+  std::lock_guard<std::recursive_mutex> lk( ulck );
 
   if ( basic_socket_t::is_open_unsafe() ) {
     int ret = 0;
@@ -1402,7 +1402,7 @@ void basic_sockbuf<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, 
 template<class charT, class traits, class _Alloc>
 void basic_sockbuf<charT, traits, _Alloc>::setoptions( const bt::hci::sock_filter& f )
 {
-  std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+  std::lock_guard<std::recursive_mutex> lk( ulck );
 
   if ( basic_socket_t::is_open_unsafe() ) {
     int ret = 0;
@@ -1422,7 +1422,7 @@ void basic_sockbuf<charT, traits, _Alloc>::setoptions(tcflag_t iflag_set, tcflag
                                                       tcflag_t lflag_set, tcflag_t lflag_drop,
                                                       int when)
 {
-  std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
+  std::lock_guard<std::recursive_mutex> lk( ulck );
 
   if ( basic_socket_t::is_open_unsafe() ) {
     basic_socket_t::_address.term.c_iflag &= ~iflag_drop;
