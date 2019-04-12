@@ -1092,6 +1092,12 @@ int basic_sockbuf<charT, traits, _Alloc>::sync()
     this->setp( this->pbase(), this->epptr() ); // require: set pptr
   }
 
+  if (_type == sock_base::tty) {
+    if (::tcdrain(basic_socket_t::_fd) != 0) {
+      return -errno;
+    }
+  }
+
   return 0;
 }
 
