@@ -1,0 +1,43 @@
+// -*- C++ -*-
+
+/*
+ * Copyright (c) 1997-1999, 2002-2011, 2019
+ * Petr Ovtchenkov
+ *
+ * Portion Copyright (c) 1999-2001
+ * Parallel Graphics Ltd.
+ *
+ * Licensed under the Academic Free License version 3.0
+ *
+ * Derived from original <mt/xmt.h> and <mt/thread> of 'complement'
+ * project [http://complement.sourceforge.net]
+ * 
+ * Here signal helpers, that not in JTC1/SC22/WG21 C++.
+ */
+
+#ifndef __SIGNAL_H
+#define __SIGNAL_H
+
+#ifndef __config_feature_h
+#include <config/feature.h>
+#endif
+
+#ifdef __unix
+# include <signal.h>
+#endif // __unix
+
+namespace std {
+
+namespace this_thread
+{
+
+__FIT_DECLSPEC void block_signal( int sig );
+__FIT_DECLSPEC void unblock_signal( int sig );
+__FIT_DECLSPEC int signal_handler( int sig, void (*handler)(int) );
+__FIT_DECLSPEC int signal_handler( int sig, void (*handler)(int, siginfo_t*, void*) );
+
+} // namespace this_thread
+
+} // namespace std
+
+#endif /* __SIGNAL_H */
