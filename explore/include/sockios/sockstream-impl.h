@@ -688,7 +688,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s, sock_base:
     } a;
 
     tcgetattr(s, &a.term);
-    basic_sockbuf<charT, traits, _Alloc>* ret = _open_sockmgr( s, a.sa, t );
+    basic_sockbuf<charT, traits, _Alloc>* ret = _init_buf( s, a.sa, t );
     if (ret != 0 /* && t == sock_base::tty */ ) { // it is sock_base::tty here
       basic_socket_t::mgr->push_nsp( *this );
     }
@@ -703,7 +703,7 @@ basic_sockbuf<charT, traits, _Alloc>::open( sock_base::socket_type s,
                                             const sockaddr& addr,
                                             sock_base::stype t )
 {
-  basic_sockbuf<charT, traits, _Alloc>* ret = _open_sockmgr( s, addr, t );
+  basic_sockbuf<charT, traits, _Alloc>* ret = _init_buf( s, addr, t );
   if ( (ret != 0) && (t == sock_base::sock_stream) ) {
     // push to mgr only statefull (connected) sockets
     basic_socket_t::mgr->push( *this );
@@ -733,7 +733,7 @@ basic_sockbuf<charT, traits, _Alloc>::attach( sock_base::socket_type s,
     } a;
 
     tcgetattr(s, &a.term);
-    return _open_sockmgr( s, a.sa, t );
+    return _init_buf( s, a.sa, t );
   }
 }
 
@@ -763,9 +763,9 @@ basic_sockbuf<charT, traits, _Alloc>::attach( sock_base::socket_type s,
 
 template<class charT, class traits, class _Alloc>
 basic_sockbuf<charT, traits, _Alloc> *
-basic_sockbuf<charT, traits, _Alloc>::_open_sockmgr( sock_base::socket_type s,
-                                                     const sockaddr& addr,
-                                                     sock_base::stype t )
+basic_sockbuf<charT, traits, _Alloc>::_init_buf( sock_base::socket_type s,
+                                                 const sockaddr& addr,
+                                                 sock_base::stype t )
 {
   std::tr2::lock_guard<std::tr2::recursive_mutex> lk( ulck );
 

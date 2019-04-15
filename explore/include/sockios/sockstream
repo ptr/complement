@@ -805,8 +805,8 @@ class basic_sockbuf :
          sockbuf_type& b;
     };
 
-    sockbuf_type *_open_sockmgr( sock_base::socket_type s, const sockaddr& addr,
-                                 sock_base::stype t = sock_base::sock_stream );
+    sockbuf_type *_init_buf( sock_base::socket_type s, const sockaddr& addr,
+                             sock_base::stype t = sock_base::sock_stream );
 
   private:
     typedef basic_sockbuf<charT,traits,_Alloc> _Self_type;

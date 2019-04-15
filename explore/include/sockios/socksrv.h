@@ -167,7 +167,7 @@ class sock_processor_base :
       {
         sockstream_t* s = new sockstream_t();
         if ( s != 0 ) {
-          s->rdbuf()->_open_sockmgr( fd, addr );
+          s->rdbuf()->_init_buf(fd, addr);
         }
         return s;
       }
