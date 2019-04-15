@@ -742,74 +742,21 @@ void sockmgr<charT,traits,_Alloc>::net_read( typename sockmgr<charT,traits,_Allo
 {
   std::tr2::unique_lock<std::tr2::recursive_mutex> lk( b.ulck, std::tr2::defer_lock_t() );
   if ( lk.try_lock() ) {
-    if ( b._fr < b._ebuf ) {
-      long offset = ::read( b._fd, b._fr, sizeof(charT) * (b._ebuf - b._fr) );
-      if ( offset > 0 ) {
-        b._fr += offset / sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
-        if ( (b._fr < b._ebuf) || (b._fl < b.gptr()) ) { // free space available?
-          // return back to epoll
-          if (!epoll_restore(b._fd)) {
-            throw fdclose(); // closed?
-          }
-        }
-        b.ucnd.notify_one();
-      } else if ( offset == 0 ) {
-        // EPOLLRDHUP may be missed in kernel, but offset 0 is the same
+    switch (b._net_read_unsafe()) {
+      case 0:
+        break;
+      case 1:
         throw fdclose();
-      } else switch ( errno ) { // offset < 0
-        case EAGAIN: // EWOULDBLOCK
-          // no more ready data available
-          errno = 0;
-          // return back to epoll
-          if ( (b._type == std::sock_base::sock_stream) || (b._type == std::sock_base::tty) ) {
-            if (!epoll_restore(b._fd)) {
-              throw fdclose(); // closed?
-            }
-          } else if ( b._type == std::sock_base::sock_dgram ) {
-            throw fdclose(); // closed?
-          }
-          throw no_ready_data();
-        case EINTR: // if EINTR, continue
-          throw retry();
-        default:           // EBADF (already closed?), EFAULT (Bad address),
-          throw fdclose(); // ECONNRESET (Connection reset by peer), ...
-      }
-    } else {
-      charT* gptr = b.gptr();
-      if ( b._fl < gptr ) {
-        long offset = ::read( b._fd, b._fl, sizeof(charT) * (gptr - b._fl) );
-        if ( offset > 0 ) {
-          b._fl += offset / sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
-          if ( b._fl < gptr ) { // free space available?
-            // return back to epoll
-            if (!epoll_restore(b._fd)) {
-              throw fdclose(); // closed?
-            }
-          }
-          b.ucnd.notify_one();
-        } else if ( offset == 0 ) {
-          // EPOLLRDHUP may be missed in kernel, but offset 0 is the same
-          throw fdclose();
-        } else switch ( errno ) { // offset < 0
-          case EAGAIN: // EWOULDBLOCK
-            // no more ready data available; return back to epoll.
-            errno = 0;
-            if ( b._type == std::sock_base::sock_stream ) {
-              if (!epoll_restore(b._fd)) {
-                throw fdclose(); // closed?
-              }
-            } else if ( b._type == std::sock_base::sock_dgram ) {
-              throw fdclose();
-            }
-            throw no_ready_data();
-          case EINTR: // if EINTR, continue
-            throw retry();
-          default:   // EBADF (already closed?), EFAULT (Bad address),
-            throw fdclose(); // ECONNRESET (Connection reset by peer), ...
-        }
-      } else { // process extract data from buffer too slow for us!
+        break;
+      case 2:
+        throw no_ready_data();
+        break;
+      case 3:
+        throw retry();
+        break;
+      case 4:
         throw no_free_space(); // No free space in the buffer.
-      }
+        break;
     }
   } else { // it locked someware; let's return to this descriptor later
     // return back to epoll

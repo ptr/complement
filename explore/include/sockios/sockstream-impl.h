@@ -1145,6 +1145,97 @@ streamsize basic_sockbuf<charT, traits, _Alloc>::xsputn( const char_type *s, str
 }
 
 template<class charT, class traits, class _Alloc>
+int basic_sockbuf<charT, traits, _Alloc>::_net_read_unsafe()
+{
+  if ( _fr < _ebuf ) {
+    long offset = ::read(basic_socket_t::_fd, _fr, sizeof(charT) * (_ebuf - _fr));
+    if ( offset > 0 ) {
+      _fr += offset / sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
+      if ((_fr < _ebuf) || (_fl < this->gptr())) { // free space available?
+        // return back to epoll
+        if (!basic_socket_t::mgr->epoll_restore(basic_socket_t::_fd)) {
+          // throw fdclose(); // closed?
+          return 1;
+        }
+      }
+      ucnd.notify_one();
+    } else if (offset == 0) {
+      // EPOLLRDHUP may be missed in kernel, but offset 0 is the same
+      // throw fdclose();
+      return 1;
+    } else switch (errno) { // offset < 0
+        case EAGAIN: // EWOULDBLOCK
+          // no more ready data available
+          errno = 0;
+          // return back to epoll
+          if ((_type == std::sock_base::sock_stream) || (_type == std::sock_base::tty)) {
+            if (!basic_socket_t::mgr->epoll_restore(basic_socket_t::_fd)) {
+              // throw fdclose(); // closed?
+              return 1;
+            }
+          } else if (_type == std::sock_base::sock_dgram) {
+            // throw fdclose(); // closed?
+            return 1;
+          }
+          // throw no_ready_data();
+          return 2;
+        case EINTR: // if EINTR, continue
+          // throw retry();
+          return 3;
+        default:           // EBADF (already closed?), EFAULT (Bad address),
+          // throw fdclose(); // ECONNRESET (Connection reset by peer), ...
+          return 1;
+      }
+  } else {
+    charT* gptr = this->gptr();
+    if (_fl < gptr) {
+      long offset = ::read(basic_socket_t::_fd, _fl, sizeof(charT) * (gptr - _fl));
+      if (offset > 0) {
+        _fl += offset / sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
+        if (_fl < gptr) { // free space available?
+          // return back to epoll
+          if (!basic_socket_t::mgr->epoll_restore(basic_socket_t::_fd)) {
+            // throw fdclose(); // closed?
+            return 1;
+          }
+        }
+        ucnd.notify_one();
+      } else if (offset == 0) {
+        // EPOLLRDHUP may be missed in kernel, but offset 0 is the same
+        // throw fdclose();
+        return 1;
+      } else switch (errno) { // offset < 0
+          case EAGAIN: // EWOULDBLOCK
+            // no more ready data available; return back to epoll.
+            errno = 0;
+            if (_type == std::sock_base::sock_stream) {
+              if (!basic_socket_t::mgr->epoll_restore(basic_socket_t::_fd)) {
+                // throw fdclose(); // closed?
+                return 1;
+              }
+            } else if (_type == std::sock_base::sock_dgram) {
+              // throw fdclose();
+              return 1;
+            }
+            // throw no_ready_data();
+            return 2;
+          case EINTR: // if EINTR, continue
+            // throw retry();
+            return 3;
+          default:   // EBADF (already closed?), EFAULT (Bad address),
+            // throw fdclose(); // ECONNRESET (Connection reset by peer), ...
+            return 1;
+        }
+    } else { // process extract data from buffer too slow for us!
+      // throw no_free_space(); // No free space in the buffer.
+      return 4;
+    }
+  }
+
+  return 0;
+}
+
+template<class charT, class traits, class _Alloc>
 void basic_sockbuf<charT, traits, _Alloc>::setoptions( sock_base::so_t optname, bool on_off, int __v )
 {
 #ifdef __unix

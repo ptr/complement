@@ -850,6 +850,8 @@ class basic_sockbuf :
 
     void __hostname();
 
+    int _net_read_unsafe();
+
     ios_base::openmode  _mode;
     sock_base::stype    _type;
 
