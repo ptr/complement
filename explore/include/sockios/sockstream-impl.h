@@ -727,7 +727,13 @@ basic_sockbuf<charT, traits, _Alloc>::attach( sock_base::socket_type s,
 
     return basic_sockbuf<charT, traits, _Alloc>::attach( s, sa, t );
   } else {
-    return basic_sockbuf<charT, traits, _Alloc>::open(dup(s), t);
+    union {
+        sockaddr sa;
+        termios  term;
+    } a;
+
+    tcgetattr(s, &a.term);
+    return _open_sockmgr( s, a.sa, t );
   }
 }
 
