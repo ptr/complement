@@ -563,7 +563,7 @@ int EXAM_IMPL(sockios_test::check_rdtimeout_fail)
         EXAM_CHECK_ASYNC_F( prss.good(), res );
         EXAM_CHECK_ASYNC_F( prss.is_open(), res );
 
-        b.wait();
+        b.wait(true);
 
         EXAM_CHECK_ASYNC_F( lazy_worker::cnd.timed_wait( milliseconds( 2000 ) ), res );
         b2.wait();
@@ -572,7 +572,7 @@ int EXAM_IMPL(sockios_test::check_rdtimeout_fail)
       exit( res );
     }
     catch ( std::tr2::fork_in_parent& child ) {
-      b.wait();
+      b.wait(true);
       {
         sockstream s( "localhost", 2008 );
         EXAM_CHECK( s.good() );
@@ -628,7 +628,7 @@ int EXAM_IMPL(sockios_test::check_rdtimeout)
         EXAM_CHECK_ASYNC_F( prss.good(), res );
         EXAM_CHECK_ASYNC_F( prss.is_open(), res );
 
-        b.wait();
+        b.wait(true);
 
         EXAM_CHECK_ASYNC_F( lazy_worker::cnd.timed_wait( milliseconds( 2000 ) ), res );
         b2.wait();
@@ -637,7 +637,7 @@ int EXAM_IMPL(sockios_test::check_rdtimeout)
       exit( res );
     }
     catch ( std::tr2::fork_in_parent& child ) {
-      b.wait();
+      b.wait(true);
       {
         sockstream s( "localhost", 2008 );
         EXAM_CHECK( s.good() );
@@ -693,7 +693,7 @@ int EXAM_IMPL(sockios_test::open_timeout)
         EXAM_CHECK_ASYNC_F( prss.good(), res );
         EXAM_CHECK_ASYNC_F( prss.is_open(), res );
 
-        b.wait();
+        b.wait(true);
 
         EXAM_CHECK_ASYNC_F( lazy_worker::cnd.timed_wait( milliseconds( 2000 ) ), res );
         b2.wait();
@@ -702,7 +702,7 @@ int EXAM_IMPL(sockios_test::open_timeout)
       exit( res );
     }
     catch ( std::tr2::fork_in_parent& child ) {
-      b.wait();
+      b.wait(true);
       {
         sockstream s( "localhost", 2008, std::tr2::milliseconds(100) );
         EXAM_CHECK( s.good() );
@@ -1059,7 +1059,7 @@ int EXAM_IMPL(sockios_test::srv_sigpipe)
         this_thread::fork();
 
         try {
-          b.wait();
+          b.wait(true);
           /*
            * This process will be killed,
            * so I don't care about safe termination.
@@ -1093,7 +1093,7 @@ int EXAM_IMPL(sockios_test::srv_sigpipe)
         EXAM_CHECK( r.good() );
         EXAM_CHECK( r.is_open() );
 
-        b.wait();
+        b.wait(true);
         b.wait();
 
         kill( child.pid(), SIGTERM );
@@ -1109,10 +1109,9 @@ int EXAM_IMPL(sockios_test::srv_sigpipe)
 
         EXAM_CHECK( r.good() );
         EXAM_CHECK( r.is_open() );
-        //cerr << HERE << endl;
         }
         catch ( ... ) {
-          EXAM_ERROR( "unkown exception" );
+          EXAM_ERROR( "unknown exception" );
         }
       }
       shm.deallocate( &b );
