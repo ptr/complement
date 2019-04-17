@@ -1166,10 +1166,11 @@ int basic_sockbuf<charT, traits, _Alloc>::_net_read_unsafe()
     if ( offset > 0 ) {
       _fr += offset / sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
       if ((_fr < _ebuf) || (_fl < this->gptr())) { // free space available?
-        // return back to epoll
-        if (!basic_socket_t::mgr->epoll_restore(basic_socket_t::_fd)) {
-          // throw fdclose(); // closed?
-          return 1;
+        if (!_attached) { // return back to epoll
+          if (!basic_socket_t::mgr->epoll_restore(basic_socket_t::_fd)) {
+            // throw fdclose(); // closed?
+            return 1;
+          }
         }
       }
       ucnd.notify_one();
@@ -1183,9 +1184,11 @@ int basic_sockbuf<charT, traits, _Alloc>::_net_read_unsafe()
           errno = 0;
           // return back to epoll
           if ((_type == std::sock_base::sock_stream) || (_type == std::sock_base::tty)) {
-            if (!basic_socket_t::mgr->epoll_restore(basic_socket_t::_fd)) {
-              // throw fdclose(); // closed?
-              return 1;
+            if (!_attached) {
+              if (!basic_socket_t::mgr->epoll_restore(basic_socket_t::_fd)) {
+                // throw fdclose(); // closed?
+                return 1;
+              }
             }
           } else if (_type == std::sock_base::sock_dgram) {
             // throw fdclose(); // closed?
@@ -1207,10 +1210,11 @@ int basic_sockbuf<charT, traits, _Alloc>::_net_read_unsafe()
       if (offset > 0) {
         _fl += offset / sizeof(charT); // if offset % sizeof(charT) != 0, rest will be lost!
         if (_fl < gptr) { // free space available?
-          // return back to epoll
-          if (!basic_socket_t::mgr->epoll_restore(basic_socket_t::_fd)) {
-            // throw fdclose(); // closed?
-            return 1;
+          if (!_attached) { // return back to epoll
+            if (!basic_socket_t::mgr->epoll_restore(basic_socket_t::_fd)) {
+              // throw fdclose(); // closed?
+              return 1;
+            }
           }
         }
         ucnd.notify_one();
@@ -1222,7 +1226,7 @@ int basic_sockbuf<charT, traits, _Alloc>::_net_read_unsafe()
           case EAGAIN: // EWOULDBLOCK
             // no more ready data available; return back to epoll.
             errno = 0;
-            if (_type == std::sock_base::sock_stream) {
+            if ((_type == std::sock_base::sock_stream) && !_attached) {
               if (!basic_socket_t::mgr->epoll_restore(basic_socket_t::_fd)) {
                 // throw fdclose(); // closed?
                 return 1;
