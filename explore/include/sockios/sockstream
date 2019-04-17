@@ -498,13 +498,14 @@ class basic_sockbuf :
         rdready( *this ),
 #if !defined(STLPORT) && defined(__GNUC__)
 #if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4))) // hmm, 3.3.6 
-        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) )
+        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) ),
 #else  // 4.1.1
-        _mode( _S_in | _S_out )
+        _mode( _S_in | _S_out ),
 #endif // __GNUC__
 #else  // STLPORT
-        _mode( 0 )
+        _mode( 0 ),
 #endif // STLPORT
+        _attached(false)
       { }
 
     basic_sockbuf( const char *hostname, int port,
@@ -518,13 +519,14 @@ class basic_sockbuf :
         rdready( *this ),
 #if !defined(STLPORT) && defined(__GNUC__)
 #if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)))
-        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) )
+        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) ),
 #else  // 4.1.1
-        _mode( _S_in | _S_out )
+        _mode( _S_in | _S_out ),
 #endif // __GNUC__
 #else  // STLPORT
-        _mode( 0 )
+        _mode( 0 ),
 #endif // STLPORT
+        _attached(false)
       { open( hostname, port, type, prot ); }
 
     template <class Duration>
@@ -538,13 +540,14 @@ class basic_sockbuf :
         rdready( *this ),
 #if !defined(STLPORT) && defined(__GNUC__)
 #if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)))
-        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) )
+        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) ),
 #else  // 4.1.1
-        _mode( _S_in | _S_out )
+        _mode( _S_in | _S_out ),
 #endif // __GNUC__
 #else  // STLPORT
-        _mode( 0 )
+        _mode( 0 ),
 #endif // STLPORT
+        _attached(false)
       { open( hostname, port, timeout ); }
 
     basic_sockbuf( const in_addr& addr, int port,
@@ -558,13 +561,14 @@ class basic_sockbuf :
         _allocated( true ),
 #if !defined(STLPORT) && defined(__GNUC__)
 #if ((__GNUC__ < 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ < 4)))
-        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) )
+        _mode( ios_base::openmode(__ios_flags::_S_in | __ios_flags::_S_out) ),
 #else  // 4.1.1
-        _mode( _S_in | _S_out )
+        _mode( _S_in | _S_out ),
 #endif // __GNUC__
 #else  // STLPORT
-        _mode( 0 )
+        _mode( 0 ),
 #endif // STLPORT
+        _attached(false)
       { open( addr, type, prot ); }
 
     template <class Duration>
@@ -854,6 +858,7 @@ class basic_sockbuf :
 
     ios_base::openmode  _mode;
     sock_base::stype    _type;
+    bool                _attached;
 
   public:
     std::tr2::recursive_mutex ulck;

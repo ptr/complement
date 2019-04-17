@@ -733,6 +733,7 @@ basic_sockbuf<charT, traits, _Alloc>::attach( sock_base::socket_type s,
     } a;
 
     tcgetattr(s, &a.term);
+    _attached = true;
     return _init_buf( s, a.sa, t );
   }
 }
@@ -755,9 +756,11 @@ basic_sockbuf<charT, traits, _Alloc>::attach( sock_base::socket_type s,
       return 0;
     }
     memcpy( (void *)&basic_socket_t::_address.any, (const void *)&addr, sizeof(sockaddr) );
+    _attached = true;
     return this;
   }
 
+  _attached = true;
   return basic_sockbuf<charT, traits, _Alloc>::open( dup(s), addr, t );
 }
 
@@ -834,6 +837,7 @@ basic_sockbuf<charT, traits, _Alloc>::_init_buf( sock_base::socket_type s,
   if ( _bbuf == 0 ) {
     ::close( basic_socket_t::_fd );
     basic_socket_t::_fd = -1;
+    _attached = false;
 
     return 0;
   }
@@ -843,6 +847,7 @@ basic_sockbuf<charT, traits, _Alloc>::_init_buf( sock_base::socket_type s,
   if ( fcntl( basic_socket_t::_fd, F_SETFL, fcntl( basic_socket_t::_fd, F_GETFL ) | O_NONBLOCK ) != 0 ) {
     ::close( basic_socket_t::_fd );
     basic_socket_t::_fd = -1;
+    _attached = false;
     throw std::system_error( errno, std::system_category(), std::string( "basic_sockbuf<charT, traits, _Alloc>" ) );
   }
   this->setp( _bbuf, _bbuf + ((_ebuf - _bbuf)>>1) );
@@ -867,13 +872,16 @@ basic_sockbuf<charT, traits, _Alloc>::close()
   shutdown_unsafe( sock_base::stop_in | sock_base::stop_out );
   rewind();
 
-  if (_type == sock_base::tty) {
-    // ask sock_mgr to remove file descriptor from polling and close it.
-    basic_socket_t::mgr->push_close( *this );
+  if (!_attached) {
+    if (_type == sock_base::tty) {
+      // ask sock_mgr to remove file descriptor from polling and close it.
+      basic_socket_t::mgr->push_close( *this );
+    }
+
+    ucnd.wait( lk, closed_t( *this ) );
+  } else { // not under sock_mgr control
+    _attached = false;
   }
-
-  ucnd.wait( lk, closed_t( *this ) );
-
   return this;
 }
 
