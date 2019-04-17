@@ -756,11 +756,11 @@ basic_sockbuf<charT, traits, _Alloc>::attach( sock_base::socket_type s,
       return 0;
     }
     memcpy( (void *)&basic_socket_t::_address.any, (const void *)&addr, sizeof(sockaddr) );
-    _attached = true;
+    // _attached = true;
     return this;
   }
 
-  _attached = true;
+  // _attached = true;
   return basic_sockbuf<charT, traits, _Alloc>::open( dup(s), addr, t );
 }
 
