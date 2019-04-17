@@ -189,10 +189,13 @@ class sock_processor_base :
         std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
         setoptions_unsafe( optname, on_off, __v );
       }
+    std::sock_base::stype stype() const
+      { return _type; }
 
   private:
     std::ios_base::openmode _mode;  // open mode
     std::ios_base::iostate  _state; // state flags
+    std::sock_base::stype   _type;
 
   protected:
     std::tr2::mutex _fd_lck;

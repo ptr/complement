@@ -33,6 +33,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const in_addr& addr, int po
   }
   _mode = ios_base::in | ios_base::out;
   _state = ios_base::goodbit;
+  _type = type;
 
   if ( prot == sock_base::inet ) {
     basic_socket_t::_fd = socket( PF_INET, type __EXTRA_SOCK_OPT, 0 );
@@ -81,6 +82,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const char* path, sock_base
   }
   _mode = ios_base::in | ios_base::out;
   _state = ios_base::goodbit;
+  _type = type;
 
   basic_socket_t::_fd = socket( PF_UNIX, type __EXTRA_SOCK_OPT, 0 );
   if ( basic_socket_t::_fd == -1 ) {
@@ -123,6 +125,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( int dev, int channel, sock_
   }
   _mode = ios_base::in | ios_base::out;
   _state = ios_base::goodbit;
+  _type = std::sock_base::sock_raw; // ? used for bluetooth socket
 
   switch (prot) {
     case sock_base::bt_hci:
@@ -184,6 +187,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const char *path, const ado
   }
   _mode = ios_base::in | ios_base::out;
   _state = ios_base::goodbit;
+  _type = std::sock_base::sock_raw; // ? used for bluetooth socket
 
   basic_socket_t::_fd = ::open(path, O_RDWR | O_NONBLOCK | O_CLOEXEC);
 
@@ -209,6 +213,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( int fd, const adopt_dev_t& 
   }
   _mode = ios_base::in | ios_base::out;
   _state = ios_base::goodbit;
+  _type = std::sock_base::sock_raw; // ? used for bluetooth socket
 
   basic_socket_t::_fd = fd;
 
@@ -234,6 +239,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const char *path, const ado
   }
   _mode = ios_base::in | ios_base::out;
   _state = ios_base::goodbit;
+  _type = std::sock_base::tty;
 
   basic_socket_t::_fd = ::open(path, O_RDWR | O_NONBLOCK | O_CLOEXEC | O_NOCTTY);
 
@@ -259,6 +265,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( int fd, const adopt_tty_t& 
   }
   _mode = ios_base::in | ios_base::out;
   _state = ios_base::goodbit;
+  _type = std::sock_base::tty;
 
   basic_socket_t::_fd = fd;
 
@@ -292,7 +299,11 @@ void sock_processor_base<charT,traits,_Alloc>::_close()
 
   std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
 
-  ::shutdown( basic_socket_t::_fd, 0 );
+  if (_type != std::sock_base::tty) {
+    ::shutdown( basic_socket_t::_fd, 0 );
+  } else {
+    ::tcflush(basic_socket_t::_fd, TCIFLUSH);
+  }
 
   basic_socket_t::_fd = -1;
 
@@ -306,11 +317,23 @@ void sock_processor_base<charT,traits,_Alloc>::shutdown( sock_base::shutdownflg 
   if ( basic_socket_t::is_open_unsafe() ) {
     if ( (dir & (sock_base::stop_in | sock_base::stop_out)) ==
          (sock_base::stop_in | sock_base::stop_out) ) {
-      ::shutdown( basic_socket_t::_fd, 2 );
+      if ( _type != sock_base::tty ) {
+        ::shutdown( basic_socket_t::_fd, 2 );
+      } else {
+        ::tcflush(basic_socket_t::_fd, TCIOFLUSH);
+      }
     } else if ( dir & sock_base::stop_in ) {
-      ::shutdown( basic_socket_t::_fd, 0 );
+      if ( _type != sock_base::tty ) {
+        ::shutdown( basic_socket_t::_fd, 0 );
+      } else {
+        ::tcflush(basic_socket_t::_fd, TCIFLUSH);
+      }
     } else if ( dir & sock_base::stop_out ) {
-      ::shutdown( basic_socket_t::_fd, 1 );
+      if ( _type != sock_base::tty ) {
+        ::shutdown( basic_socket_t::_fd, 1 );
+      } else {
+        ::tcflush(basic_socket_t::_fd, TCOFLUSH);
+      }
     }
   }
 }
