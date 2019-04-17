@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2010-11-11 14:06:05 ptr>
+// -*- C++ -*- Time-stamp: <2019-04-17 19:31:22 ptr>
 
 /*
  *
@@ -38,7 +38,9 @@ int EXAM_IMPL(syslog_test::core_test)
 
   ifstream l( "/var/log/user.log" );
 
-  EXAM_REQUIRE( l.good() );
+  if (!l.good()) {
+    throw exam::skip_exception();
+  }
 
   string line;
 
