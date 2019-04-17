@@ -429,6 +429,48 @@ class connect_processor :
     static std::ostream* _trs;
 };
 
+template <class Packet, class charT = char, class traits = std::char_traits<charT>, class _Alloc = std::allocator<charT>, void (Packet::*C)(std::basic_sockstream<charT,traits,_Alloc>&) = &Packet::operator () >
+class packet_processor :
+        public sock_processor_base<charT,traits,_Alloc>
+{
+  private:
+    typedef sock_processor_base<charT,traits,_Alloc> base_t;
+
+  public:
+    explicit packet_processor() :
+        base_t(),
+        proc(*this)
+      { }
+
+    explicit packet_processor(const char *path, sock_base::stype t = sock_base::tty) :
+        base_t(path, t),
+        proc(*this)
+      { }
+
+    virtual void close()
+      {
+        base_t::_close();
+
+        std::tr2::unique_lock<std::tr2::mutex> lk(lock);
+        fin.notify_one();
+      }
+
+    void wait()
+      {
+        std::tr2::unique_lock<std::tr2::mutex> lk(lock);
+        fin.wait(lk);
+      }
+
+  private:
+    virtual typename base_t::sockbuf_t* operator ()(sock_base::socket_type fd, const sockaddr&);
+    virtual void operator ()(sock_base::socket_type fd);
+
+    std::basic_sockstream<charT,traits,_Alloc> packet;
+    Packet proc;
+    std::tr2::mutex lock;
+    std::tr2::condition_variable fin;
+};
+
 } // namesapce std
 
 #ifdef __USE_STLPORT_HASH

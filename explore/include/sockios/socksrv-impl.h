@@ -858,6 +858,20 @@ unsigned connect_processor<Connect, charT, traits, _Alloc, C>::_trflags = 0;
 template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 std::ostream* connect_processor<Connect, charT, traits, _Alloc, C>::_trs = 0;
 
+template <class Packet, class charT, class traits, class _Alloc, void (Packet::*C)(std::basic_sockstream<charT,traits,_Alloc>&)>
+typename packet_processor<Packet, charT, traits, _Alloc, C>::base_t::sockbuf_t* packet_processor<Packet, charT, traits, _Alloc, C>::operator()(sock_base::socket_type fd, const sockaddr& addr)
+{
+  if (!packet.is_open()) {
+    packet.attach(fd, base_t::stype());
+  }
+
+  return packet.is_open() ? packet.rdbuf() : 0;
+}
+
+template <class Packet, class charT, class traits, class _Alloc, void (Packet::*C)(std::basic_sockstream<charT,traits,_Alloc>&)>
+void packet_processor<Packet, charT, traits, _Alloc, C>::operator()(sock_base::socket_type fd)
+{ (proc.*C)(packet); }
+
 } // namespace std
 
 #undef __EXTRA_SOCK_OPT

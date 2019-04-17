@@ -730,7 +730,21 @@ void sockmgr<charT,traits,_Alloc>::process_nonsock_srv( const epoll_event& ev, t
   }
 #endif
 
-  (*info.p)( ifd->first, addr );
+  sockmgr<charT,traits,_Alloc>::sockbuf_t *b = (*info.p)(ifd->first, addr);
+
+  if ((b != 0) && b->_attached) {
+    // similar to net_read below, just without throwing exceptions
+    std::tr2::unique_lock<std::tr2::recursive_mutex> lk(b->ulck, std::tr2::defer_lock_t());
+    if (lk.try_lock()) {
+      int ret = b->_net_read_unsafe();
+
+      if ((ret == 1) || (ret == 4)) {
+        (*info.p)(b->fd(), typename socks_processor_t::adopt_close_t());
+      } else if (b->in_avail() > 0) {
+        (*info.p)(b->fd());
+      }
+    } // else locked, do nothing (this should not happens?)
+  }
 
   if (!epoll_restore(ifd->first)) {
     (*info.p)( ifd->first, typename socks_processor_t::adopt_close_t() );

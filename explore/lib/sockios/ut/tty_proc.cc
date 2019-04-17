@@ -15,6 +15,7 @@
 
 #include <sockios/sockstream>
 #include <sockios/sockmgr.h>
+#include <sockios/socksrv.h>
 
 #include <mt/mutex>
 #include <mt/condition_variable>
@@ -338,6 +339,139 @@ int EXAM_IMPL(tty_processor_test::tty_processor)
         srv.close();
 
         EXAM_CHECK_ASYNC_F(!srv.is_open(), ret);
+      } else {
+        b.wait(true); // <--- align here (instead of wait in positive branch above)
+      }
+      b.wait(); // <--- align here
+
+      exit(ret);
+    }
+    catch ( std::tr2::fork_in_parent& child ) {
+      sockstream s(ptm, sock_base::tty); // open master PTTY
+
+      EXAM_CHECK(s.is_open() && s.good());
+
+      b.wait(true); // <--- align here
+
+      if (s.is_open()) {
+        // this is RAW TTY
+        s.rdbuf()->setoptions(0, IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON,
+                              0, OPOST,
+                              CS8, CSIZE | PARENB,
+                              0, ECHO | ECHONL | ICANON | ISIG | IEXTEN,
+                              TCSADRAIN
+          );
+        s << '.';
+        s.flush();
+        b.wait(true);
+      }
+
+      b.wait(); // <--- align here
+
+      int stat = -1;
+      EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+      if ( WIFEXITED(stat) ) {
+        EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+      } else {
+        EXAM_ERROR( "child interrupted" );
+      }
+    }
+
+    if (ptm >= 0) {
+      ::close(ptm);
+    }
+
+    shm.deallocate( &b );
+    seg.deallocate();
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
+
+  return EXAM_RESULT;
+}
+
+class packet_s
+{
+  public:
+    packet_s() = delete;
+
+    packet_s(std::sock_basic_processor& srv) :
+        _srv(srv)
+      { }
+    void operator ()(sockstream&);
+
+  private:
+    std::sock_basic_processor& _srv;
+
+  public:
+    static mutex lock;
+    static char rc;
+};
+
+mutex packet_s::lock;
+char packet_s::rc;
+
+void packet_s::operator ()(sockstream& s)
+{
+  unique_lock<mutex> lk(lock);
+
+  s.read(&rc, 1);
+
+  _srv.close();
+}
+
+int EXAM_IMPL(tty_processor_test::tty_packet_processor)
+{
+  try {
+    xmt::shm_alloc<0> seg;
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+    xmt::allocator_shm<barrier_ip,0> shm;
+
+    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+
+    int ptm = getpt() /* ::open("/dev/ptmx", O_RDWR | O_NOCTTY) */;
+    EXAM_CHECK(ptm >= 0);
+
+    char buf[128];
+
+    int ret = grantpt(ptm);
+    EXAM_CHECK(ret == 0);
+    ret = unlockpt(ptm);
+    EXAM_CHECK(ret == 0);
+
+    ret = ptsname_r(ptm, buf, 128);
+    EXAM_CHECK(ret == 0);
+
+    try {
+      this_thread::fork();
+      int ret = 0;
+
+      close(ptm);
+
+      if (ret == 0) {
+        {
+          unique_lock<mutex> lk(packet_s::lock);
+          packet_s::rc = '-';
+        }
+        packet_processor<packet_s> srv(buf, sock_base::tty); // listen on slave PTTY
+
+        EXAM_CHECK_ASYNC_F( srv.is_open(), ret );
+        EXAM_CHECK_ASYNC_F( srv.good(), ret );
+
+        b.wait(true); // <--- align here
+        if (srv.is_open()) {
+          b.wait(true);
+
+          srv.wait();
+        }
+
+        EXAM_CHECK_ASYNC_F(!srv.is_open(), ret);
+        {
+          unique_lock<mutex> lk(packet_s::lock);
+          EXAM_CHECK_ASYNC_F(packet_s::rc == '.', ret);
+        }
       } else {
         b.wait(true); // <--- align here (instead of wait in positive branch above)
       }

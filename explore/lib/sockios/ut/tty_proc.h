@@ -19,6 +19,7 @@ struct tty_processor_test
     int EXAM_DECL(tty_sockbuf);
     int EXAM_DECL(tty_sockstream);
     int EXAM_DECL(tty_processor);
+    int EXAM_DECL(tty_packet_processor);
 };
 
 #endif // __tty_proc_h

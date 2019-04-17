@@ -86,9 +86,10 @@ int main( int argc, const char** argv )
 
   tty_processor_test tty;
 
-  t.add(&tty_processor_test::tty_processor, tty, "tty processor",
-    t.add(&tty_processor_test::tty_sockstream, tty, "tty in sockstream",
-      t.add(&tty_processor_test::tty_sockbuf, tty, "tty in sockbuf", tc[0])));
+  t.add(&tty_processor_test::tty_packet_processor, tty, "tty packet processor",
+    t.add(&tty_processor_test::tty_processor, tty, "tty processor",
+      t.add(&tty_processor_test::tty_sockstream, tty, "tty in sockstream",
+        t.add(&tty_processor_test::tty_sockbuf, tty, "tty in sockbuf", tc[0]))));
 
   exam::test_suite::test_case_type extratc[6];
 
