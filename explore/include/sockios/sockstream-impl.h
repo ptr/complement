@@ -1429,6 +1429,11 @@ void basic_sockbuf<charT, traits, _Alloc>::setoptions(tcflag_t iflag_set, tcflag
     basic_socket_t::_address.term.c_iflag |= iflag_set;
     basic_socket_t::_address.term.c_oflag &= ~oflag_drop;
     basic_socket_t::_address.term.c_oflag |= oflag_set;
+    if ((cflag_set & CBAUD) != 0) { // baud rate mentioned
+      cfsetispeed(&basic_socket_t::_address.term, cflag_set & CBAUD);
+      cfsetospeed(&basic_socket_t::_address.term, cflag_set & CBAUD);
+      cflag_set &= ~CBAUD;
+    }
     basic_socket_t::_address.term.c_cflag &= ~cflag_drop;
     basic_socket_t::_address.term.c_cflag |= cflag_set;
     basic_socket_t::_address.term.c_lflag &= ~lflag_drop;
