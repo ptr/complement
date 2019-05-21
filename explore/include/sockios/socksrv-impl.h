@@ -370,6 +370,39 @@ void sock_processor_base<charT,traits,_Alloc>::setoptions_unsafe( sock_base::so_
 #endif // __unix
 }
 
+template<class charT, class traits, class _Alloc>
+void sock_processor_base<charT,traits,_Alloc>::setoptions_unsafe(tcflag_t iflag_set, tcflag_t iflag_drop,
+                                                                 tcflag_t oflag_set, tcflag_t oflag_drop,
+                                                                 tcflag_t cflag_set, tcflag_t cflag_drop,
+                                                                 tcflag_t lflag_set, tcflag_t lflag_drop,
+                                                                 int when)
+{
+#ifdef __unix
+  if ( basic_socket_t::is_open_unsafe() ) {
+    basic_socket_t::_address.term.c_iflag &= ~iflag_drop;
+    basic_socket_t::_address.term.c_iflag |= iflag_set;
+    basic_socket_t::_address.term.c_oflag &= ~oflag_drop;
+    basic_socket_t::_address.term.c_oflag |= oflag_set;
+    if ((cflag_set & CBAUD) != 0) { // baud rate mentioned
+      cfsetispeed(&basic_socket_t::_address.term, cflag_set & CBAUD);
+      cfsetospeed(&basic_socket_t::_address.term, cflag_set & CBAUD);
+      cflag_set &= ~CBAUD;
+    }
+    basic_socket_t::_address.term.c_cflag &= ~cflag_drop;
+    basic_socket_t::_address.term.c_cflag |= cflag_set;
+    basic_socket_t::_address.term.c_lflag &= ~lflag_drop;
+    basic_socket_t::_address.term.c_lflag |= lflag_set;
+
+    int ret = tcsetattr(basic_socket_t::_fd, when, &basic_socket_t::_address.term);
+
+    if (ret != 0) {
+      throw std::system_error( errno, std::system_category(), std::string( "tty option" ) );
+    }
+  } else {
+    throw std::invalid_argument( "socket is closed" );
+  }
+#endif
+}
 
 template<class Connect, class charT, class traits, class _Alloc, void (Connect::*C)( std::basic_sockstream<charT,traits,_Alloc>& )>
 int connect_processor<Connect, charT, traits, _Alloc, C>::Init::_count = 0;

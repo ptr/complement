@@ -163,6 +163,11 @@ class sock_processor_base :
 
   protected:
     void setoptions_unsafe( sock_base::so_t optname, bool on_off = true, int __v = 0 );
+    void setoptions_unsafe(tcflag_t iflag_set, tcflag_t iflag_drop,
+                           tcflag_t oflag_set, tcflag_t oflag_drop,
+                           tcflag_t cflag_set, tcflag_t cflag_drop,
+                           tcflag_t lflag_set, tcflag_t lflag_drop,
+                           int when);
     sockstream_t* create_stream( int fd, const sockaddr& addr )
       {
         sockstream_t* s = new sockstream_t();
@@ -188,6 +193,19 @@ class sock_processor_base :
       {
         std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
         setoptions_unsafe( optname, on_off, __v );
+      }
+    void setoptions(tcflag_t iflag_set, tcflag_t iflag_drop,
+                    tcflag_t oflag_set, tcflag_t oflag_drop,
+                    tcflag_t cflag_set, tcflag_t cflag_drop,
+                    tcflag_t lflag_set, tcflag_t lflag_drop,
+                    int when)
+      {
+        std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+        setoptions_unsafe(iflag_set, iflag_drop,
+                          oflag_set, oflag_drop,
+                          cflag_set, cflag_drop,
+                          lflag_set, lflag_drop,
+                          when);
       }
     std::sock_base::stype stype() const
       { return _type; }
