@@ -10,7 +10,7 @@
 
 #include "hashes_test.h"
 
-#include "../crc16-ccitt.h"
+#include "misc/crc16-ccitt.h"
 
 using namespace std;
 
