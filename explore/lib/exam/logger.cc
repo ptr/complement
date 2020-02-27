@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/03/16 17:26:57 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2007-2009
+ * Copyright (c) 2007-2009, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -14,7 +14,6 @@
 namespace exam {
 
 using namespace std;
-using namespace std::tr2;
 
 int base_logger::flags() const
 {
@@ -141,17 +140,16 @@ void trivial_logger::tc( base_logger::tc_result r, const std::string& name, int 
 
 void trivial_time_logger::tc_pre()
 {
-  tst.push_back( get_system_time().nanoseconds_since_epoch() );
+  now = std::chrono::steady_clock::now();
 }
 
 void trivial_time_logger::tc_post()
 {
-  tst.back() = get_system_time().nanoseconds_since_epoch() - tst.back();
+  tst.push_back(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - now));
 }
 
 void trivial_time_logger::tc_break()
 {
-  tst.pop_back();
 }
 
 void trivial_time_logger::tc( base_logger::tc_result r, const std::string& name )

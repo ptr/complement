@@ -19,7 +19,6 @@ namespace exam {
 
 using namespace std;
 using namespace detail;
-using namespace std::tr2;
 
 int EXAM_IMPL(test_suite::_root_func)
 {

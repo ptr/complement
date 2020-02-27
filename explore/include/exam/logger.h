@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/03/16 17:19:48 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2007-2009
+ * Copyright (c) 2007-2009, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -13,7 +13,7 @@
 #include <string>
 #include <cstdio>
 #include <ostream>
-#include <mt/date_time>
+#include <chrono>
 #include <list>
 
 namespace exam {
@@ -129,8 +129,9 @@ class trivial_time_logger :
     virtual void tc( base_logger::tc_result, const std::string&, int );
 
   private:
-    typedef std::list<std::tr2::nanoseconds> time_container_t;
+    typedef std::list<std::chrono::nanoseconds> time_container_t;
     time_container_t tst;
+    std::chrono::steady_clock::time_point now;
 };
 
 } // namespace exam

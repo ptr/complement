@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <09/05/05 11:31:33 ptr>
+# -*- Makefile -*-
 
 SRCROOT := ../../..
 
@@ -9,16 +9,15 @@ INCLUDES += -I${CoMT_INCLUDE_DIR}
 DEFS += -D__FIT_EXAM
 
 LIBEXAM_DIR = ${CoMT_DIR}/lib/exam
-LIBXMT_DIR = ${CoMT_DIR}/lib/mt
 LIBMISC_DIR = ${CoMT_DIR}/lib/misc
 
 CXXFLAGS += -Wall
 
 ifeq ($(OSNAME),linux)
 
-release-shared:	LDFLAGS += -L${LIBEXAM_DIR}/${OUTPUT_DIR} -L$(LIBXMT_DIR)/${OUTPUT_DIR} -Wl,--rpath=${LIBEXAM_DIR}/${OUTPUT_DIR}:$(LIBMISC_DIR)/${OUTPUT_DIR}:$(LIBXMT_DIR)/${OUTPUT_DIR}:${STLPORT_LIB_DIR}
+release-shared:	LDFLAGS += -L${LIBEXAM_DIR}/${OUTPUT_DIR} -Wl,--rpath=${LIBEXAM_DIR}/${OUTPUT_DIR}:$(LIBMISC_DIR)/${OUTPUT_DIR}:${STLPORT_LIB_DIR}
 
-dbg-shared:	LDFLAGS += -L${LIBEXAM_DIR}/${OUTPUT_DIR_DBG} -L$(LIBXMT_DIR)/${OUTPUT_DIR_DBG} -Wl,--rpath=${LIBEXAM_DIR}/${OUTPUT_DIR_DBG}:$(LIBMISC_DIR)/${OUTPUT_DIR_DBG}:$(LIBXMT_DIR)/${OUTPUT_DIR_DBG}:${STLPORT_LIB_DIR}
+dbg-shared:	LDFLAGS += -L${LIBEXAM_DIR}/${OUTPUT_DIR_DBG} -Wl,--rpath=${LIBEXAM_DIR}/${OUTPUT_DIR_DBG}:$(LIBMISC_DIR)/${OUTPUT_DIR_DBG}:${STLPORT_LIB_DIR}
 
 ifndef WITHOUT_STLPORT
 stldbg-shared:	LDFLAGS += -L${LIBEXAM_DIR}/${OUTPUT_DIR_STLDBG} -L$(LIBXMT_DIR)/${OUTPUT_DIR_STLDBG} -Wl,--rpath=${LIBEXAM_DIR}/${OUTPUT_DIR_STLDBG}:$(LIBMISC_DIR)/${OUTPUT_DIR_STLDBG}:$(LIBXMT_DIR)/${OUTPUT_DIR_STLDBG}:${STLPORT_LIB_DIR}
@@ -26,8 +25,9 @@ endif
 
 endif
 
-release-shared : LDLIBS = -lexam -lxmt
-dbg-shared     : LDLIBS = -lexamg -lxmtg
+LDLIBS = -lexam
+LDLIBS_DBG = -lexamg
+
 ifndef WITHOUT_STLPORT
 stldbg-shared  : LDLIBS = -lexamstlg -lxmtstlg
 endif

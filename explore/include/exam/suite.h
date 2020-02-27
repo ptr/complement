@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <10/06/03 12:59:39 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2007-2009
+ * Copyright (c) 2007-2009, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -21,7 +21,7 @@
 #include <vector>
 #include <algorithm>
 
-#include <mt/mutex>
+#include <mutex>
 #include <exam/logger.h>
 #include <exam/defs.h>
 
@@ -207,7 +207,7 @@ class test_suite
     };
 
     base_logger *local_logger;
-    std::tr2::mutex _lock_ll;
+    std::mutex _lock_ll;
 
     struct test_case_collect
     {
@@ -235,10 +235,10 @@ class test_suite
     static int _root_func( test_suite *, int = 0 );
 
     static base_logger *logger;
-    static std::tr2::mutex _lock_gl;
+    static std::mutex _lock_gl;
 
     static std::stack<test_suite *> _stack;
-    static std::tr2::mutex _lock_stack;
+    static std::mutex _lock_stack;
 };
 
 template <class TC>
