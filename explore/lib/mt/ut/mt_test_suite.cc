@@ -62,29 +62,27 @@ int main( int argc, const char** argv )
   t.add( signal_3_test, "signal_3_test" );
 
 #if 0
-  t.add( timespec_diff, "timespec_diff" );
   // You can't throw exception from signal handler
   // (stack saved/restored, that confuse stack unwind);
   // by this reason next test is commented:
   // t.add( signal_2_test, "signal_2_test" );
 #endif
 
-  exam::test_suite::test_case_type tc[3];
+  // exam::test_suite::test_case_type tc[3];
 
   t.add( &sys_err_test::file, sys_err, "system error, no such file" );
 
   shm_test shmtest;
 
-  t.add( &shm_test::shm_named_obj_more, shmtest, "mt_test::shm_named_obj_more",
-         t.add( &shm_test::shm_named_obj, shmtest, "mt_test::shm_named_obj",
-                t.add( &shm_test::fork_shm, shmtest, "mt_test::fork_shm",
-                       t.add( &shm_test::shm_alloc, shmtest, "mt_test::shm_alloc",
-                              t.add( &shm_test::shm_segment, shmtest, "mt_test::shm_segment" ) ) ) )
+  t.add( &shm_test::shm_named_obj_more, shmtest, "shm_test::shm_named_obj_more",
+         t.add( &shm_test::shm_named_obj, shmtest, "shm_test::shm_named_obj",
+                t.add( &shm_test::fork_shm, shmtest, "shm_test::fork_shm",
+                       t.add( &shm_test::shm_alloc, shmtest, "shm_test::shm_alloc",
+                              t.add( &shm_test::shm_segment, shmtest, "shm_test::shm_segment" ) ) ) )
  );
 
   mt_test_wg21 test_wg21;
 
-  t.add( &mt_test_wg21::date_time, test_wg21, "mt_test_wg21::date_time" );
   t.add( &mt_test_wg21::thread_call, test_wg21, "mt_test_wg21::thread_call" );
   t.add( &mt_test_wg21::mutex_rw_test, test_wg21, "rw mutex",
     t.add( &mt_test_wg21::mutex_test, test_wg21, "mt_test_wg21::mutex_test" ) );

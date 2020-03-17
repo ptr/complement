@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/06/18 12:08:10 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2006-2009
+ * Copyright (c) 2006-2009, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -10,9 +10,10 @@
 
 #include "shm_test.h"
 
-#include <mt/condition_variable>
+#include <condition_variable>
+#include <thread>
 #include <mt/shm.h>
-#include <mt/thread>
+#include <mt/fork.h>
 
 #include <sys/shm.h>
 #include <sys/wait.h>
@@ -202,9 +203,8 @@ int EXAM_IMPL(shm_test::fork_shm)
       std::tr2::this_thread::fork();
 
       try {
-
         // Child code
-        if ( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ) ) {
+        if ( fcnd.wait_for( std::chrono::milliseconds( 800 ) ) ) {
           exit( 0 );
         }
 
@@ -302,7 +302,7 @@ int EXAM_IMPL(shm_test::shm_named_obj)
       try {
         EXAM_CHECK( child.pid() > 0 );
 
-        EXAM_CHECK( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ) );
+        EXAM_CHECK( fcnd.wait_for(std::chrono::milliseconds(800)) );
 
         int stat = -1;
         EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
@@ -393,7 +393,7 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
       exit( eflag );
     }
     catch ( std::tr2::fork_in_parent& child ) {
-      EXAM_CHECK( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ) );
+      EXAM_CHECK( fcnd.wait_for(std::chrono::milliseconds(800)) );
       int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
       if ( WIFEXITED(stat) ) {
@@ -426,7 +426,7 @@ int EXAM_IMPL(shm_test::shm_named_obj_more)
       exit( eflag );
     }
     catch ( std::tr2::fork_in_parent& child ) {
-      EXAM_CHECK( fcnd1.timed_wait( std::tr2::milliseconds( 800 ) ) );
+      EXAM_CHECK( fcnd1.wait_for(std::chrono::milliseconds(800)) );
       int stat = -1;
       EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
       if ( WIFEXITED(stat) ) {

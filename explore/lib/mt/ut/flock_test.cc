@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/06/18 11:36:59 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2004, 2006-2009
+ * Copyright (c) 2004, 2006-2009, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -22,7 +22,9 @@
 
 #include <mt/lfstream>
 #include <mt/shm.h>
-#include <mt/thread>
+#include <thread>
+
+#include <mt/fork.h>
 
 using namespace std;
 
@@ -85,11 +87,11 @@ int EXAM_IMPL(flock_test::read_lock)
 
         fcnd.notify_one();
 
-        EXAM_CHECK_ASYNC_F( fcnd2.timed_wait( std::tr2::milliseconds( 800 ) ), ret );
+        EXAM_CHECK_ASYNC_F( fcnd2.wait_for(std::chrono::milliseconds(800)), ret );
 
         f.unlock();
 
-        //  EXAM_CHECK_ASYNC( fcnd2.timed_wait( std::tr2::milliseconds( 800 ) ) );
+        //  EXAM_CHECK_ASYNC( fcnd2.wait_for(std::chrono::milliseconds(800)) );
       }
       catch ( ... ) {
         EXAM_ERROR_ASYNC_F( "unexpected exception", ret );
@@ -101,7 +103,7 @@ int EXAM_IMPL(flock_test::read_lock)
       try {
         EXAM_CHECK( child.pid() > 0 );
 
-        EXAM_CHECK( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ) );
+        EXAM_CHECK( fcnd.wait_for(std::chrono::milliseconds(800)) );
 
         lfstream f( fname.c_str() );
 
@@ -165,11 +167,11 @@ int EXAM_IMPL(flock_test::write_lock)
 
         fcnd.notify_one();
 
-        EXAM_CHECK_ASYNC( !fcnd2.timed_wait( std::tr2::milliseconds( 800 ) ) );
+        EXAM_CHECK_ASYNC( !fcnd2.wait_for(std::chrono::milliseconds(800)) );
 
         f.unlock();
 
-        EXAM_CHECK_ASYNC( fcnd2.timed_wait( std::tr2::milliseconds( 800 ) ) );
+        EXAM_CHECK_ASYNC( fcnd2.wait_for(std::chrono::milliseconds(800)) );
       }
       catch ( ... ) {
       }
@@ -180,7 +182,7 @@ int EXAM_IMPL(flock_test::write_lock)
       try {
         EXAM_CHECK( child.pid() > 0 );
 
-        EXAM_CHECK( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ) );
+        EXAM_CHECK( fcnd.wait_for(std::chrono::milliseconds(800)) );
 
         lfstream f( fname.c_str() );
 
@@ -358,11 +360,11 @@ int EXAM_IMPL(flock_test::wr_lock)
 
         fcnd.notify_one();
 
-        EXAM_CHECK_ASYNC( !fcnd2.timed_wait( std::tr2::milliseconds( 800 ) ) );
+        EXAM_CHECK_ASYNC( !fcnd2.wait_for(std::chrono::milliseconds(800)) );
 
         f.unlock();
 
-        EXAM_CHECK_ASYNC( fcnd2.timed_wait( std::tr2::milliseconds( 800 ) ) );
+        EXAM_CHECK_ASYNC( fcnd2.wait_for(std::chrono::milliseconds(800)) );
       }
       catch ( ... ) {
       }
@@ -373,7 +375,7 @@ int EXAM_IMPL(flock_test::wr_lock)
       try {
         EXAM_CHECK( child.pid() > 0 );
 
-        EXAM_CHECK( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ) );
+        EXAM_CHECK( fcnd.wait_for(std::chrono::milliseconds(800)) );
 
         lfstream f( fname.c_str() );
 
@@ -437,11 +439,11 @@ int EXAM_IMPL(flock_test::rw_lock)
 
         fcnd.notify_one();
 
-        EXAM_CHECK_ASYNC( !fcnd2.timed_wait( std::tr2::milliseconds( 800 ) ) );
+        EXAM_CHECK_ASYNC( !fcnd2.wait_for(std::chrono::milliseconds(800)) );
 
         f.unlock();
 
-        EXAM_CHECK_ASYNC( fcnd2.timed_wait( std::tr2::milliseconds( 800 ) ) );
+        EXAM_CHECK_ASYNC( fcnd2.wait_for(std::chrono::milliseconds(800)) );
       }
       catch ( ... ) {
       }
@@ -452,7 +454,7 @@ int EXAM_IMPL(flock_test::rw_lock)
       try {
         EXAM_CHECK( child.pid() > 0 );
 
-        EXAM_CHECK( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ) );
+        EXAM_CHECK( fcnd.wait_for(std::chrono::milliseconds(800)) );
 
         lfstream f( fname.c_str() );
 

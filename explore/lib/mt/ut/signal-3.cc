@@ -10,8 +10,10 @@
 
 #include <exam/suite.h>
 
-#include <mt/thread>
-#include <mt/condition_variable>
+#include <thread>
+#include <condition_variable>
+
+#include <mt/fork.h>
 
 /*
  * This is the same as signal-1, but instead of unblock signal, I block one
@@ -31,12 +33,12 @@ static void thread_one();
 static void thread_two();
 
 // static std::tr2::thread* th_one = 0;
-static std::tr2::thread* th_two = 0;
+static std::thread* th_two = 0;
 
 static int v = 0;
 
-static std::tr2::mutex cond_mtx;
-static std::tr2::condition_variable cnd;
+static std::mutex cond_mtx;
+static std::condition_variable cnd;
 
 namespace signal_3 {
 
@@ -71,7 +73,7 @@ extern "C" {
 void thread_one()
 {
   {
-    std::tr2::unique_lock<std::tr2::mutex> lk( cond_mtx );
+    std::unique_lock<std::mutex> lk(cond_mtx);
 
     cnd.wait( lk, signal_3::true_val() );
   }
@@ -85,14 +87,14 @@ void thread_two()
   std::tr2::this_thread::block_signal( SIGINT ); // block signal
 
   {
-    std::tr2::unique_lock<std::tr2::mutex> lk( cond_mtx );
+    std::unique_lock<std::mutex> lk(cond_mtx);
     v = 1;
   }
 
-  std::tr2::thread t( thread_one ); // start thread_one
+  std::thread t( thread_one ); // start thread_one
 
   {
-    std::tr2::unique_lock<std::tr2::mutex> lk( cond_mtx );
+    std::unique_lock<std::mutex> lk(cond_mtx);
     v = 2;
     cnd.notify_one();
   }
@@ -100,24 +102,24 @@ void thread_two()
   t.join();
 
   {
-    std::tr2::unique_lock<std::tr2::mutex> lk( cond_mtx );
+    std::unique_lock<std::mutex> lk(cond_mtx);
     EXAM_CHECK_ASYNC( v == 2 ); // signal was blocked!
   }
 
   std::tr2::this_thread::unblock_signal( SIGINT ); // unblock signal
 
   {
-    std::tr2::unique_lock<std::tr2::mutex> lk( cond_mtx );
+    std::unique_lock<std::mutex> lk(cond_mtx);
     EXAM_CHECK_ASYNC( v == 4 );
   }
 }
 
 int EXAM_IMPL(signal_3_test)
 {
-  std::tr2::thread t( thread_two );
+  std::thread t(thread_two);
 
   {
-    std::tr2::unique_lock<std::tr2::mutex> lk( cond_mtx );
+    std::unique_lock<std::mutex> lk(cond_mtx);
     th_two = &t; // store address to be called from thread_one
     cnd.notify_one();
   }

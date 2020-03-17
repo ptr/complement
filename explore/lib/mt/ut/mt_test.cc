@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/03/26 10:09:40 ptr>
+// -*- C++ -*-
 
 /*
  * Copyright (c) 2006, 2007
@@ -10,7 +10,6 @@
 
 #include "mt_test.h"
 
-// #include <mt/xmt.h>
 #include <mt/shm.h>
 #include <mt/thr_mgr.h>
 #include <mt/callstack.h>

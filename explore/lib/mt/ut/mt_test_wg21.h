@@ -18,7 +18,6 @@
 class mt_test_wg21
 {
   public:
-    int EXAM_DECL(date_time);
     int EXAM_DECL(thread_call);
     int EXAM_DECL(mutex_test);
     int EXAM_DECL(mutex_rw_test);

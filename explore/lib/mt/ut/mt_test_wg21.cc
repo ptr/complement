@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
 /*
- * Copyright (c) 2006-2011, 2017
+ * Copyright (c) 2006-2011, 2017, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -10,12 +10,17 @@
 
 #include "mt_test_wg21.h"
 
-#include <mt/date_time>
-#include <mt/thread>
-#include <mt/mutex>
-#include <mt/condition_variable>
+#include <chrono>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <shared_mutex>
 #include <misc/type_traits.h>
 #include <typeinfo>
+
+#include <mt/fork.h>
+// for barriers, semaphores, inter-process mutex and conditions:
+#include <mt/condition_variable>
 
 #include <iostream>
 #include <iomanip>
@@ -34,45 +39,6 @@
 #include <algorithm>
 #include <iterator>
 
-int EXAM_IMPL(mt_test_wg21::date_time)
-{
-  // using namespace std::tr2;
-
-  // check core of implementation
-  EXAM_CHECK( (std::is_same<std::tr2::nanoseconds,std::tr2::detail::__is_more_precise<std::tr2::nanoseconds,std::tr2::microseconds>::finest_type>::value) );
-  EXAM_CHECK( (std::is_same<std::tr2::nanoseconds,std::tr2::detail::__is_more_precise<std::tr2::microseconds,std::tr2::nanoseconds>::finest_type>::value) );
-
-  // the same, just with typeid
-  EXAM_CHECK( typeid(std::tr2::nanoseconds) == typeid(std::tr2::detail::__is_more_precise<std::tr2::nanoseconds,std::tr2::microseconds>::finest_type) );
-  EXAM_CHECK( typeid(std::tr2::nanoseconds) == typeid(std::tr2::detail::__is_more_precise<std::tr2::microseconds,std::tr2::nanoseconds>::finest_type) );
-
-  std::tr2::nanoseconds ns( 100 );
-  std::tr2::nanoseconds ns2( 200 );
-
-  EXAM_CHECK( ns.count() == 100 );
-  EXAM_CHECK( ns < ns2 );
-
-  std::tr2::microseconds mc( 100 );
-  EXAM_CHECK( mc.count() == 100 );
-  EXAM_CHECK( ns < mc );
-  EXAM_CHECK( (ns * 1000L) == mc );
-  EXAM_CHECK( (mc / 1000L) != ns ); // Before conversion: (mc / 1000L) == 0
-  EXAM_CHECK( (mc + ns) > mc );
-  EXAM_CHECK( (mc + ns).count() == (ns + mc).count() );
-  EXAM_CHECK( (mc + ns) == (ns + mc) );
-
-  std::tr2::nanoseconds ns3( 100000LL );
-  EXAM_CHECK( ns3 == static_cast<std::tr2::nanoseconds>(mc) );
-  EXAM_CHECK( ns3 == mc );
-  EXAM_CHECK( mc == ns3 );
-
-  std::tr2::system_time st = std::tr2::get_system_time();
-
-  EXAM_CHECK( (std::tr2::get_system_time() - st) >= std::tr2::nanoseconds( 0 ) );
-
-  return EXAM_RESULT;
-}
-
 static int val = 0;
 
 void thread_func()
@@ -89,13 +55,13 @@ int EXAM_IMPL(mt_test_wg21::thread_call)
 {
   val = -1;
  
-  std::tr2::basic_thread<0,0> t( thread_func );
+  std::thread t(thread_func);
 
   t.join();
 
   EXAM_CHECK( val == 1 );
 
-  std::tr2::basic_thread<0,0> t2( thread_func_int, 2 );
+  std::thread t2(thread_func_int, 2);
 
   t2.join();
 
@@ -106,11 +72,11 @@ int EXAM_IMPL(mt_test_wg21::thread_call)
   return EXAM_RESULT;
 }
 
-static std::tr2::mutex lk;
+static std::mutex lk;
 
 void thread_func2()
 {
-  std::tr2::lock_guard<std::tr2::mutex> lock( lk );
+  std::lock_guard<std::mutex> lock(lk);
 
   ++val;
 }
@@ -119,7 +85,7 @@ int EXAM_IMPL(mt_test_wg21::mutex_test)
 {
   val = 0;
 
-  std::tr2::basic_thread<0,0> t( thread_func2 );
+  std::thread t(thread_func2);
 
   lk.lock();
   --val;
@@ -129,7 +95,7 @@ int EXAM_IMPL(mt_test_wg21::mutex_test)
 
   EXAM_CHECK( val == 0 );
 
-  std::tr2::recursive_mutex rlk;
+  std::recursive_mutex rlk;
 
   rlk.lock();
   rlk.lock(); // shouldn't block here
@@ -144,16 +110,16 @@ namespace rw_mutex_ns {
 int n_threads = 3; 
 int n_times = 10000;
 int shared_res;
-std::tr2::rw_mutex _lock_heap;
+std::shared_mutex _lock_heap;
 
 void run()
 {
   for ( int i = 0; i < n_times; ++i ) {
     if ( rand() % 2 ) {
-      std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
+      std::lock_guard<std::shared_mutex> lk(_lock_heap);
       ++shared_res;
     } else {
-      std::tr2::basic_read_lock<std::tr2::rw_mutex> lk(_lock_heap);
+      std::shared_lock<std::shared_mutex> lk(_lock_heap);
       int tmp = shared_res;
       ++tmp;
     }
@@ -164,10 +130,10 @@ void run()
 
 int EXAM_IMPL(mt_test_wg21::mutex_rw_test)
 {
-  std::vector<std::tr2::thread*> thr(rw_mutex_ns::n_threads);
+  std::vector<std::thread*> thr(rw_mutex_ns::n_threads);
 
   for ( int i = 0;i < rw_mutex_ns::n_threads; ++i ) {
-    thr[i] = new std::tr2::thread( rw_mutex_ns::run );
+    thr[i] = new std::thread(rw_mutex_ns::run);
   }
 
   for ( int i = 0; i < rw_mutex_ns::n_threads; ++i ) {
@@ -187,7 +153,7 @@ void thread_func3()
 
     bar.wait();
 
-    std::tr2::lock_guard<std::tr2::mutex> lock( lk );
+    std::lock_guard<std::mutex> lock(lk);
 
     ++val;
   }
@@ -200,7 +166,7 @@ int EXAM_IMPL(mt_test_wg21::barrier)
 {
   val = 0;
 
-  std::tr2::basic_thread<0,0> t( thread_func3 );
+  std::thread t(thread_func3);
 
   EXAM_CHECK( val == 0 );
 
@@ -217,7 +183,7 @@ int EXAM_IMPL(mt_test_wg21::barrier)
   return EXAM_RESULT;
 }
 
-void thread_func4(  std::tr2::semaphore* s )
+void thread_func4(std::tr2::semaphore* s)
 {
   EXAM_CHECK_ASYNC( val == 1 );
 
@@ -234,7 +200,7 @@ int EXAM_IMPL(mt_test_wg21::semaphore)
 
   s.wait();
 
-  std::tr2::basic_thread<0,0> t( thread_func4, &s );
+  std::thread t(thread_func4, &s);
 
   s.wait();
 
@@ -246,7 +212,7 @@ int EXAM_IMPL(mt_test_wg21::semaphore)
 
   std::tr2::semaphore s1(0);
 
-  std::tr2::basic_thread<0,0> t1( thread_func4, &s1 );
+  std::thread t1(thread_func4, &s1);
 
   s1.wait();
 
@@ -262,8 +228,8 @@ int EXAM_IMPL(mt_test_wg21::semaphore)
   return EXAM_RESULT;
 }
 
-static std::tr2::mutex cond_mtx;
-static std::tr2::condition_variable cnd;
+static std::mutex cond_mtx;
+static std::condition_variable cnd;
 
 namespace test_wg21 {
 
@@ -277,7 +243,7 @@ struct true_val
 
 void thread_func5()
 {
-  std::tr2::unique_lock<std::tr2::mutex> lk( cond_mtx );
+  std::unique_lock<std::mutex> lk(cond_mtx);
   
   val = 1;
   cnd.notify_one();
@@ -287,11 +253,11 @@ int EXAM_IMPL(mt_test_wg21::condition_var)
 {
   val = 0;
   
-  std::tr2::thread t( thread_func5 );
+  std::thread t(thread_func5);
   
-  std::tr2::unique_lock<std::tr2::mutex> lk( cond_mtx );
+  std::unique_lock<std::mutex> lk(cond_mtx);
   
-  EXAM_CHECK( cnd.timed_wait( lk, std::tr2::milliseconds(500), test_wg21::true_val() ) );
+  EXAM_CHECK( cnd.wait_for(lk, std::chrono::milliseconds(500), test_wg21::true_val()));
   
   EXAM_CHECK( val == 1 );
   

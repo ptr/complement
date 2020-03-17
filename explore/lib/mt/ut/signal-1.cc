@@ -10,8 +10,10 @@
 
 #include <exam/suite.h>
 
-#include <mt/thread>
-#include <mt/condition_variable>
+#include <thread>
+#include <condition_variable>
+
+#include <mt/fork.h>
 
 /* 
  * thread 2:  v = 1; create thread 1 ----------------------------------- join; v == 4?
@@ -24,8 +26,8 @@
 static void thread_one();
 static void thread_two();
 
-static std::tr2::thread* th_one = 0;
-static std::tr2::thread* th_two = 0;
+static std::thread* th_one = 0;
+static std::thread* th_two = 0;
 
 static int v = 0;
 
@@ -39,8 +41,8 @@ struct true_val
 
 }
 
-static std::tr2::mutex cond_mtx;
-static std::tr2::condition_variable cnd;
+static std::mutex cond_mtx;
+static std::condition_variable cnd;
 
 extern "C" {
   static void handler( int );
@@ -71,7 +73,7 @@ void thread_one()
   std::tr2::this_thread::signal_handler( SIGINT, handler );
 
   {
-    std::tr2::unique_lock<std::tr2::mutex> lk( cond_mtx );
+    std::unique_lock<std::mutex> lk(cond_mtx);
 
     cnd.wait( lk, signal_1::true_val() );
   }
@@ -82,15 +84,15 @@ void thread_one()
 void thread_two()
 {
   {
-    std::tr2::unique_lock<std::tr2::mutex> lk( cond_mtx );
+    std::unique_lock<std::mutex> lk(cond_mtx);
     v = 1;
   }
 
-  std::tr2::thread t( thread_one ); // start thread_one
+  std::thread t(thread_one); // start thread_one
   th_one = &t;            // store address to be called from thread_one
 
   {
-    std::tr2::unique_lock<std::tr2::mutex> lk( cond_mtx );
+    std::unique_lock<std::mutex> lk(cond_mtx);
     v = 2;
     cnd.notify_one();
   }
@@ -102,7 +104,7 @@ void thread_two()
 
 int EXAM_IMPL(signal_1_test)
 {
-  std::tr2::thread t( thread_two );
+  std::thread t(thread_two);
 
   t.join();
 
