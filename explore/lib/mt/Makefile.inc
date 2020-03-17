@@ -1,8 +1,8 @@
 # -*- Makefile -*-
 
 LIBNAME = xmt
-MAJOR = 2
-MINOR = 3
+MAJOR = 3
+MINOR = 0
 PATCH = 0
-SRC_CC = time.cc uid.cc shm.cc callstack.cc system_error.cc thread.cc \
-         date_time.cc lfstream.cc demangle.cc
+SRC_CC = uid.cc shm.cc callstack.cc thread.cc \
+         lfstream.cc demangle.cc
