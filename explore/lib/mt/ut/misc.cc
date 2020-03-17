@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <09/06/01 01:07:04 ptr>
+// -*- C++ -*-
 
 /*
  * Copyright (c) 2009
@@ -10,6 +10,7 @@
 
 #include "misc.h"
 
+#include <config/feature.h>
 #include <mt/callstack.h>
 #include <typeinfo>
 
