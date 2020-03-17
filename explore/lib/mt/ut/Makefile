@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <2011-03-16 12:28:58 ptr>
+# -*- Makefile -*-
 
 SRCROOT := ../../..
 
