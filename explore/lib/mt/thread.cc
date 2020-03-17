@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-08-26 07:42:48 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 1997-1999, 2002-2011
+ * Copyright (c) 1997-1999, 2002-2011, 2020
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -24,8 +24,9 @@
 #include <fcntl.h>
 #include <cstdlib>
 
-#include <mt/mutex>
-#include <mt/thread>
+#include <mutex>
+#include <thread>
+#include <mt/fork.h>
 #include <mt/callstack.h>
 
 #include <cstring>
@@ -106,75 +107,6 @@ const std::string msg2( "Can't fork" );
 //   throw sig;
 // }
 
-
-#ifdef __FIT_WIN32THREADS
-static const thread_base::native_handle_type _bad_thread_id = INVALID_HANDLE_VALUE;
-#endif // __FIT_WIN32THREADS
-
-#if defined(__FIT_PTHREADS)
-# if !(defined(__FreeBSD__) || defined(__OpenBSD__))
-static const thread_base::native_handle_type _bad_thread_id = static_cast<thread_base::native_handle_type>(-1);
-# else // __FreeBSD__ || __OpenBSD__
-// pthread_t is defined as 'typedef struct pthread *pthread_t;'
-static const thread_base::native_handle_type _bad_thread_id = static_cast<thread_base::native_handle_type>(0);
-# endif // !(__FreeBSD__ || __OpenBSD__)
-#endif // __FIT_UITHREADS || _PTHREADS
-
-thread_base::id::id() :
-    _id( _bad_thread_id )
-{ }
-
-__FIT_DECLSPEC
-thread_base::thread_base() :
-    _id( _bad_thread_id )
-{
-}
-
-__FIT_DECLSPEC
-thread_base::~thread_base()
-{
-  if ( joinable() ) {
-    thread_base::join();
-  }
-}
-
-__FIT_DECLSPEC
-bool thread_base::joinable() const // if true, you can (and should) use join()
-{
-  lock_guard<mutex> lk( _id_lock );
-  return (_id != _bad_thread_id);
-}
-
-__FIT_DECLSPEC
-void thread_base::join()
-{
-#ifdef __FIT_WIN32THREADS
-  ret_t rt = 0;
-
-  WaitForSingleObject( _id, -1 );
-  GetExitCodeThread( _id, &rt );
-  CloseHandle( _id );
-  _id = _bad_thread_id;
-#endif // __FIT_WIN32THREADS
-#ifdef __FIT_PTHREADS
-  pthread_join( _id, 0 );
-
-  _id = _bad_thread_id; // lock not required here, only one thread
-#endif // PTHREADS
-}
-
-__FIT_DECLSPEC
-void thread_base::detach()
-{
-#ifdef __FIT_PTHREADS
-  lock_guard<mutex> lk( _id_lock );
-  if ( pthread_detach( _id ) ) {
-    // throw system_error;
-  }
-  _id = _bad_thread_id;
-#endif
-}
-
 pid_t getpid()
 {
 #ifdef __FIT_SYSCALL
@@ -193,21 +125,10 @@ pid_t getppid()
 #endif
 }
 
-thread_base::id get_id()
-{
-#ifdef __FIT_PTHREADS
-  return thread_base::id( pthread_self() );
-#endif
-#ifdef __FIT_WIN32THREADS
-  return thread_base::id( GetCurrentThread() );
-#endif
-}
-
 __FIT_DECLSPEC
 void fork()
 {
 #ifdef __unix
-  thread_base::id fthr = this_thread::get_id();
   fork_in_parent f( ::fork() );
   if ( f.pid() > 0 ) {
     throw f;
@@ -251,50 +172,6 @@ void become_daemon()
     throw;
   }
 #endif
-}
-
-#if 0
-std::thread_base::id get_id()
-{
-#ifdef __FIT_PTHREADS
-  return thread_base::id( pthread_self() );
-#endif
-#ifdef __FIT_WIN32THREADS
-  return thread_base::id( GetCurrentThread() );
-#endif
-}
-#endif // 0
-
-__FIT_DECLSPEC
-void sleep( const std::tr2::system_time& abstime )
-{
-  std::tr2::system_time ct = std::tr2::get_system_time();
-
-  if ( abstime > ct ) {
-    std::tr2::nanoseconds delta = abstime - ct;
-
-#ifdef __unix
-    ::timespec t;
-    t.tv_sec = delta.count() / std::tr2::nanoseconds::ticks_per_second;
-    t.tv_nsec = delta.count() % std::tr2::nanoseconds::ticks_per_second;
-    nanosleep( const_cast<const ::timespec *>(&t), 0 );
-#endif
-  }
-#ifdef WIN32
-  time_t ct = time( 0 );
-  time_t _conv = abstime.tv_sec * 1000 + abstime.tv_nsec / 1000000;
-
-  Sleep( _conv >= ct ? _conv - ct : 1 );
-#endif
-}
-
-__FIT_DECLSPEC
-void sleep( const std::tr2::nanoseconds& rel_t )
-{
-  ::timespec t;
-  t.tv_sec = rel_t.count() / std::tr2::nanoseconds::ticks_per_second;
-  t.tv_nsec = rel_t.count() % std::tr2::nanoseconds::ticks_per_second;
-  ::nanosleep( const_cast<const ::timespec *>(&t), 0 );
 }
 
 __FIT_DECLSPEC void block_signal( int sig )

@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
 /*
- * Copyright (c) 1997-1999, 2002-2008
+ * Copyright (c) 1997-1999, 2002-2008, 2020
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -22,7 +22,7 @@
 #include <config/feature.h>
 #endif
 
-#include <mt/date_time>
+#include <chrono>
 #include <mt/mutex>
 #ifdef __FIT_PTHREADS
 #  include <semaphore.h>
@@ -122,13 +122,16 @@ class __condition_variable
         }
       }
 
-    template <bool RECURSIVE_SAFE>
-    bool timed_wait( unique_lock<__mutex<RECURSIVE_SAFE,SCOPE> >& lock, const system_time& abs_time )
+    template <bool RECURSIVE_SAFE, typename Duration>
+    bool wait_until(unique_lock<__mutex<RECURSIVE_SAFE,SCOPE> >& lock, const chrono::time_point<chrono::system_clock,Duration>& abs_time)
       {
 #ifdef __FIT_PTHREADS
         ::timespec t;
-        t.tv_sec = abs_time.seconds_since_epoch();
-        t.tv_nsec = static_cast<long>( abs_time.nanoseconds_since_epoch().count() % nanoseconds::ticks_per_second );
+        auto sc = chrono::time_point_cast<chrono::seconds>(abs_time);
+        auto ns = chrono::duration_cast<chrono::nanoseconds>(abs_time - sc);
+
+        t.tv_sec = static_cast<time_t>(sc.time_since_epoch().count());
+        t.tv_nsec = static_cast<long>(ns.count());
         int ret = pthread_cond_timedwait( &_cond, const_cast<pthread_mutex_t *>(&lock.m->_M_lock), &t );
         if ( ret != 0 ) {
           if ( ret == ETIMEDOUT ) {
@@ -140,19 +143,31 @@ class __condition_variable
         return true;
       }
 
+    template <bool RECURSIVE_SAFE, typename Clock, typename Duration>
+    bool wait_until(unique_lock<__mutex<RECURSIVE_SAFE,SCOPE> >& lock, const chrono::time_point<Clock,Duration>& abs_time)
+      {
+        // align Clock with chrono::system_clock
+        const typename Clock::time_point p = Clock::now();
+        const chrono::system_clock::time_point ps = chrono::system_clock::now();
+        const auto d = abs_time - p;
+        const auto ds = ps + d;
+
+        return wait_until(lock, ds);
+      }
+
     template <bool RECURSIVE_SAFE, class Duration>
-    bool timed_wait( unique_lock<__mutex<RECURSIVE_SAFE,SCOPE> >& lock, const Duration& rel_time )
+    bool wait_for(unique_lock<__mutex<RECURSIVE_SAFE,SCOPE> >& lock, const Duration& rel_time)
       {
 #ifdef __FIT_PTHREADS
-        return timed_wait( lock, get_system_time() + rel_time );
+        return wait_until(lock, chrono::steady_clock::now() + rel_time);
 #endif
       }
 
-    template <bool RECURSIVE_SAFE, class Predicate>
-    bool timed_wait( unique_lock<__mutex<RECURSIVE_SAFE,SCOPE> >& lock, const system_time& abs_time, Predicate pred )
+    template <bool RECURSIVE_SAFE, typename Clock, typename Duration, class Predicate>
+    bool wait_until(unique_lock<__mutex<RECURSIVE_SAFE,SCOPE> >& lock, const chrono::time_point<Clock,Duration>& abs_time, Predicate pred)
       {
         while ( !pred() ) {
-          if ( !timed_wait( lock, abs_time ) ) {
+          if ( !wait_until(lock, abs_time) ) {
             return pred();
           }
         }
@@ -160,10 +175,10 @@ class __condition_variable
       }
 
     template <bool RECURSIVE_SAFE, class Duration, class Predicate>
-    bool timed_wait( unique_lock<__mutex<RECURSIVE_SAFE,SCOPE> >& lock, const Duration& rel_time, Predicate pred )
+    bool wait_for(unique_lock<__mutex<RECURSIVE_SAFE,SCOPE> >& lock, const Duration& rel_time, Predicate pred)
       {
 #ifdef __FIT_PTHREADS
-        return timed_wait( lock, get_system_time() + rel_time, pred );
+        return wait_until(lock, chrono::steady_clock::now() + rel_time, pred);
 #endif
       }
 
@@ -278,14 +293,17 @@ class __condition_variable_any
         }
       }
 
-    template <class Lock>
-    bool timed_wait( Lock& lock, const system_time& abs_time )
+    template <class Lock, typename Duration>
+    bool wait_until(Lock& lock, const chrono::time_point<chrono::system_clock,Duration>& abs_time)
       {
 #ifdef __FIT_PTHREADS
         ::timespec t;
-        t.tv_sec = abs_time.seconds_since_epoch();
-        t.tv_nsec = static_cast<long>( abs_time.nanoseconds_since_epoch().count() % nanoseconds::ticks_per_second );
-        int ret = pthread_cond_timedwait( &_cond, lock.native_handle(), &t );
+        auto sc = chrono::time_point_cast<chrono::seconds>(abs_time);
+        auto ns = chrono::duration_cast<chrono::nanoseconds>(abs_time - sc);
+
+        t.tv_sec = static_cast<time_t>(sc.time_since_epoch().count());
+        t.tv_nsec = static_cast<long>(ns.count());
+        int ret = pthread_cond_timedwait(&_cond, lock.native_handle(), &t);
         if ( ret != 0 ) {
           if ( ret == ETIMEDOUT ) {
             return false;
@@ -311,11 +329,23 @@ class __condition_variable_any
         return true;
       }
 
+    template <class Lock, typename Clock, typename Duration>
+    bool wait_until(Lock& lock, const chrono::time_point<Clock,Duration>& abs_time)
+      {
+        // align Clock with chrono::system_clock
+        const typename Clock::time_point p = Clock::now();
+        const chrono::system_clock::time_point ps = chrono::system_clock::now();
+        const auto d = abs_time - p;
+        const auto ds = ps + d;
+
+        return wait_until(lock, ds);
+      }
+
     template <class Lock, class Duration>
-    bool timed_wait( Lock& lock, const Duration& rel_time )
+    bool wait_for( Lock& lock, const Duration& rel_time )
       {
 #ifdef __FIT_PTHREADS
-        return timed_wait( lock, get_system_time() + rel_time );
+        return wait_until(lock, chrono::steady_clock::now() + rel_time);
 #endif
 #ifdef __FIT_WIN32THREADS
         static const std::tr2::nanoseconds::tick_type _th = std::tr2::nanoseconds::ticks_per_second / Duration::ticks_per_second;
@@ -336,11 +366,11 @@ class __condition_variable_any
 #endif
       }
 
-    template <class Lock, class Predicate>
-    bool timed_wait( Lock& lock, const system_time& abs_time, Predicate pred )
+    template <class Lock, typename Clock, typename Duration, class Predicate>
+    bool wait_until(Lock& lock, const chrono::time_point<Clock,Duration>& abs_time, Predicate pred)
       {
         while ( !pred() ) {
-          if ( !timed_wait( lock, abs_time ) ) {
+          if ( !wait_until(lock, abs_time) ) {
             return pred();
           }
         }
@@ -348,10 +378,10 @@ class __condition_variable_any
       }
 
     template <class Lock, class Duration, class Predicate>
-    bool timed_wait( Lock& lock, const Duration& rel_time, Predicate pred )
+    bool wait_for(Lock& lock, const Duration& rel_time, Predicate pred)
       {
 #ifdef __FIT_PTHREADS
-        return timed_wait( lock, get_system_time() + rel_time, pred );
+        return wait_until(lock, chrono::steady_clock::now() + rel_time, pred);
 #endif
       }
 
@@ -480,14 +510,18 @@ class __condition_event
 #endif
       }
 
-    bool timed_wait(const system_time& abs_time )
+    template <typename Duration>
+    bool wait_until(const chrono::time_point<chrono::system_clock,Duration>& abs_time)
       {
         unique_lock<__mutex<false,SCOPE> > lk( _lock );
 
 #ifdef __FIT_PTHREADS
         ::timespec t;
-        t.tv_sec = abs_time.seconds_since_epoch();
-        t.tv_nsec = static_cast<long>( abs_time.nanoseconds_since_epoch().count() % nanoseconds::ticks_per_second );
+        auto sc = chrono::time_point_cast<chrono::seconds>(abs_time);
+        auto ns = chrono::duration_cast<chrono::nanoseconds>(abs_time - sc);
+
+        t.tv_sec = static_cast<time_t>(sc.time_since_epoch().count());
+        t.tv_nsec = static_cast<long>(ns.count());
         while ( !_val ) {
           int ret = pthread_cond_timedwait( &_cond, _lock.native_handle(), &t );
           if ( ret != 0 ) {
@@ -513,15 +547,26 @@ class __condition_event
           return _val;
         }
 #endif
-
         return true;
       }
 
+    template <typename Clock, typename Duration>
+    bool wait_until(const chrono::time_point<Clock,Duration>& abs_time)
+      {
+        // align Clock with chrono::system_clock
+        const typename Clock::time_point p = Clock::now();
+        const chrono::system_clock::time_point ps = chrono::system_clock::now();
+        const auto d = abs_time - p;
+        const auto ds = ps + d;
+
+        return wait_until(ds);
+      }
+
     template <class Duration>
-    bool timed_wait( const Duration& rel_time )
+    bool wait_for( const Duration& rel_time )
       {
 #ifdef __FIT_PTHREADS
-        return timed_wait( get_system_time() + rel_time );
+        return wait_until(chrono::steady_clock::now() + rel_time);
 #endif
 #ifdef __FIT_WIN32THREADS
         static const std::tr2::nanoseconds::tick_type _th = std::tr2::nanoseconds::ticks_per_second / Duration::ticks_per_second;
@@ -619,12 +664,16 @@ class __semaphore
 #endif        
       }
 
-    bool timed_wait(const system_time& abs_time )
+    template <typename Duration>
+    bool wait_until(const chrono::time_point<chrono::system_clock,Duration>& abs_time)
       {
 #ifdef __FIT_PTHREADS
         ::timespec t;
-        t.tv_sec = abs_time.seconds_since_epoch();
-        t.tv_nsec = static_cast<long>( abs_time.nanoseconds_since_epoch().count() % nanoseconds::ticks_per_second );
+        auto sc = chrono::time_point_cast<chrono::seconds>(abs_time);
+        auto ns = chrono::duration_cast<chrono::nanoseconds>(abs_time - sc);
+
+        t.tv_sec = static_cast<time_t>(sc.time_since_epoch().count());
+        t.tv_nsec = static_cast<long>(ns.count());
 #  if !(defined(__FreeBSD__) || defined(__OpenBSD__))
         if ( sem_timedwait( &_sem, &t ) ) {
           if ( errno == ETIMEDOUT ) {
@@ -647,11 +696,23 @@ class __semaphore
         return true;
       }
 
+    template <typename Clock, typename Duration>
+    bool wait_until(const chrono::time_point<Clock,Duration>& abs_time)
+      {
+        // align Clock with chrono::system_clock
+        const typename Clock::time_point p = Clock::now();
+        const chrono::system_clock::time_point ps = chrono::system_clock::now();
+        const auto d = abs_time - p;
+        const auto ds = ps + d;
+
+        return wait_until(ds);
+      }
+
     template <class Duration>
-    bool timed_wait( const Duration& rel_time )
+    bool wait_for(const Duration& rel_time)
       {
 #ifdef __FIT_PTHREADS
-        return timed_wait( get_system_time() + rel_time );
+        return wait_until(chrono::steady_clock::now() + rel_time);
 #endif
 #ifdef __FIT_WIN32THREADS
         static const std::tr2::nanoseconds::tick_type _th = std::tr2::nanoseconds::ticks_per_second / Duration::ticks_per_second;
