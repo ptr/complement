@@ -147,4 +147,13 @@
 #  define __FIT_CPP_0X
 #endif
 
+#if defined(__GNUC__) && (__cplusplus >= 201103L)
+#  ifndef __FIT_CPP_0X
+#    define __FIT_CPP_0X
+#  endif
+#endif
+
+#if defined(__GNUC__) && (__cplusplus >= 201703L)
+#endif
+
 #endif /* __config_feature_h */
