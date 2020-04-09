@@ -303,7 +303,7 @@ class connect_processor :
 
         connect_processor::wait();
 
-        delete ploop;
+        delete ploop; // join in wait()
 
         Init* tmp = reinterpret_cast<Init*>(Init_buf);
         tmp->~Init();

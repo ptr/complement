@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <2011-03-16 12:28:43 ptr>
+# -*- Makefile -*-
 
 SRCROOT := ../../..
 
@@ -36,7 +36,7 @@ release-shared:	LDLIBS = -lxmt -lsockios -lexam -lmisc
 dbg-shared:	LDLIBS_DBG = -lxmtg -lsockiosg -lexamg -lmiscg
 
 ifndef WITHOUT_STLPORT
-stldbg-shared:	LDLIBS = -lxmtstlg -lsockiosstlg -lexamstlg -lmiscstlg
+stldbg-shared:	LDLIBS_STLDBG = -lxmtstlg -lsockiosstlg -lexamstlg -lmiscstlg
 endif
 
 check-release-shared:	release-shared

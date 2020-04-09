@@ -79,12 +79,15 @@ sockmgr<charT,traits,_Alloc>::sockmgr(int _fd_count_hint, int _maxevents) :
 template<class charT, class traits, class _Alloc>
 sockmgr<charT,traits,_Alloc>::~sockmgr()
 {
-  if ( _worker->joinable() && (pipefd[1] != -1) ) {
-    ctl _ctl;
-    _ctl.cmd = rqstop;
-    _ctl.data.ptr = 0;
+  if (_worker->joinable()) {
+    if (pipefd[1] != -1) {
+      ctl _ctl;
+      _ctl.cmd = rqstop;
+      _ctl.data.ptr = 0;
 
-    ::write( pipefd[1], &_ctl, sizeof(ctl) );
+      ::write( pipefd[1], &_ctl, sizeof(ctl) );
+    }
+    _worker->join();
   }
 
   delete _worker;
@@ -196,7 +199,7 @@ void sockmgr<charT,traits,_Alloc>::io_worker()
 {
   epoll_event ev[maxevents];
 
-  std::this_thread::signal_handler( SIGPIPE, SIG_IGN );
+  std::this_thread::signal_handler(SIGPIPE, SIG_IGN);
 
   memset( ev, 0, maxevents * sizeof(epoll_event) );
 
