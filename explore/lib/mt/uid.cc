@@ -31,8 +31,13 @@
 #endif
 #include <misc/md5.h>
 
+#define __DEPRECATED_HERE
+
+#ifndef __DEPRECATED_HERE
 #include <sys/sysctl.h>
 #include <linux/sysctl.h>
+#endif
+
 #include <uuid/uuid.h>
 
 #include <iostream>
@@ -134,12 +139,15 @@ __uid_init::__uid_init() :
 
   if ( boot_id.is_open() && boot_id.good() ) {
     boot_id >> _host_id;
-  } else {
+  }
+#ifndef __DEPRECATED_HERE
+  else {
     static size_t n = sizeof(uuid_type);
     static int mib[] = { CTL_KERN, KERN_RANDOM, RANDOM_BOOT_ID };
 
     err = sysctl( mib, sizeof(mib)/sizeof(mib[0]), &_host_id, &n, (void*)0, 0 );
   }
+#endif
 }
 
 } // namespace detail
