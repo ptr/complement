@@ -583,7 +583,7 @@ class not_empty5 :
 
 int EXAM_IMPL(misc_test::type_traits_is_empty)
 {
-  EXAM_CHECK( std::is_empty<empty>::value == true );
+  EXAM_CHECK( std::is_empty<::empty>::value == true );
   EXAM_CHECK( std::is_empty<not_empty1>::value == false );
   EXAM_CHECK( std::is_empty<empty1>::value == true );
   EXAM_CHECK( std::is_empty<not_empty3>::value == false );
