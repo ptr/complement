@@ -51,24 +51,24 @@ endif
 endif
 
 release-shared : LDLIBS = -lxmt -lexam -lmisc
-dbg-shared     : LDLIBS = -lxmtg -lexamg -lmiscg
+dbg-shared     : LDLIBS_DBG = -lxmtg -lexamg -lmiscg
 ifndef WITHOUT_STLPORT
-stldbg-shared  : LDLIBS = -lxmtstlg -lexamstlg -lmiscstlg
+stldbg-shared  : LDLIBS_STLDBG = -lxmtstlg -lexamstlg -lmiscstlg
 endif
 
 ifeq ($(OSNAME),freebsd)
-release-shared : LDLIBS += -lthr
-dbg-shared     : LDLIBS += -lthr
+release-shared : STDLIBS += -lthr
+dbg-shared     : STDLIBS += -lthr
 ifndef WITHOUT_STLPORT
-stldbg-shared  : LDLIBS += -lthr
+stldbg-shared  : STDLIBS += -lthr
 endif
 endif
 
 ifeq ($(OSNAME),sunos)
-release-shared : LDLIBS += -lrt
-dbg-shared     : LDLIBS += -lrt
+release-shared : STDLIBS += -lrt
+dbg-shared     : STDLIBS += -lrt
 ifndef WITHOUT_STLPORT
-stldbg-shared  : LDLIBS += -lrt
+stldbg-shared  : STDLIBS += -lrt
 endif
 endif
 

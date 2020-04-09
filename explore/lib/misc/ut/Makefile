@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <08/06/29 19:26:11 ptr>
+# -*- Makefile -*-
 
 SRCROOT := ../../..
 
@@ -35,26 +35,24 @@ endif
 
 endif
 
-release-shared : LDLIBS = -lexam -lxmt -lmisc
-dbg-shared     : LDLIBS = -lexamg -lxmtg -lmiscg
+LDLIBS += -lexam -lmisc
+misc_ut_LDLIBS += -lexam -lmisc
+opts_ut_LDLIBS += -lexam -lmisc
+LDLIBS_DBG += -lexamg -lmiscg
+misc_ut_LDLIBS_DBG += -lexamg -lmiscg
+opts_ut_LDLIBS_DBG += -lexamg -lmiscg
 ifndef WITHOUT_STLPORT
-stldbg-shared  : LDLIBS = -lexamstlg -lxmtstlg -lmiscstlg
+LDLIBS_STLDBG += -lexamstlg -lmiscstlg
+misc_ut_LDLIBS_STLDBG += -lexamstlg -lmiscstlg
+opts_ut_LDLIBS_STLDBG += -lexamstlg -lmiscstlg
 endif
 
 ifeq ($(OSNAME),freebsd)
-release-shared : LDLIBS += -lthr
-dbg-shared     : LDLIBS += -lthr
-ifndef WITHOUT_STLPORT
-stldbg-shared  : LDLIBS += -lthr
-endif
+STDLIBS += -lthr
 endif
 
 ifeq ($(OSNAME),sunos)
-release-shared : LDLIBS += -lrt
-dbg-shared     : LDLIBS += -lrt
-ifndef WITHOUT_STLPORT
-stldbg-shared  : LDLIBS += -lrt
-endif
+STDLIBS += -lrt
 endif
 
 check-release-shared:	release-shared
