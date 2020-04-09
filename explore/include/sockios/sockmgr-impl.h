@@ -739,7 +739,7 @@ void sockmgr<charT,traits,_Alloc>::process_nonsock_srv( const epoll_event& ev, t
 
   if ((b != 0) && b->_attached) {
     // similar to net_read below, just without throwing exceptions
-    std::tr2::unique_lock<std::tr2::recursive_mutex> lk(b->ulck, std::tr2::defer_lock_t());
+    std::unique_lock<std::recursive_mutex> lk(b->ulck, std::defer_lock_t());
     if (lk.try_lock()) {
       int ret = b->_net_read_unsafe();
 

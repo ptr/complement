@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2019-04-17 19:31:22 ptr>
+// -*- C++ -*-
 
 /*
  *
@@ -17,7 +17,7 @@
 #include <sstream>
 #include <sockios/syslog.h>
 #include <mt/uid.h>
-#include <mt/thread>
+#include <mt/fork.h>
 
 using namespace std;
 

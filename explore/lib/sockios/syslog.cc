@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-04-29 19:32:01 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2009-2011
+ * Copyright (c) 2009-2011, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -26,23 +26,14 @@ closelog();
 #endif
 
 #include <sstream>
-#include <mt/thread>
+#include <thread>
+#include <mt/fork.h>
 #include <sockios/sockstream>
 
 #if defined(STLPORT) || defined(__FIT_CPP_0X)
 #  include <unordered_map>
 #  include <unordered_set>
 #  define __USE_STLPORT_TR1
-#else
-#  if defined(__GNUC__) && (__GNUC__ < 4)
-#    include <ext/hash_map>
-#    include <ext/hash_set>
-#    define __USE_STD_HASH
-#  else
-#    include <tr1/unordered_map>
-#    include <tr1/unordered_set>
-#    define __USE_STD_TR1
-#  endif
 #endif
 
 namespace misc {
@@ -51,61 +42,13 @@ std::ostream& use_syslog()
 { return detail::xsyslog(); }
 
 namespace detail {
-#ifdef __USE_STLPORT_HASH
-typedef std::hash_map<std::tr2::thread_base::id,std::sockstream*> log_heap_type;
-#endif
-#ifdef __USE_STD_HASH
-typedef __gnu_cxx::hash_map<std::tr2::thread_base::id,std::sockstream*> log_heap_type;
-#endif
 #if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-typedef std::unordered_map<std::tr2::thread_base::id,std::sockstream*> log_heap_type;
+typedef std::unordered_map<std::thread::id,std::sockstream*> log_heap_type;
+#else
+#error "unordered_map expected"
 #endif
 } // namespace detail
 } // namespce misc
-
-#if defined(__USE_STLPORT_HASH) || defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
-#  define __HASH_NAMESPACE std
-#endif
-#if defined(__USE_STD_HASH)
-#  define __HASH_NAMESPACE __gnu_cxx
-#endif
-
-namespace __HASH_NAMESPACE {
-
-#ifdef __USE_STD_TR1
-namespace tr1 {
-#endif
-
-template <>
-struct hash<std::tr2::thread_base::id>
-{
-    size_t operator()(const std::tr2::thread_base::id& __x) const
-      { return *(size_t*)(&__x); } // hack
-};
-
-#ifdef __USE_STD_TR1
-}
-#endif
-
-} // namespace __HASH_NAMESPACE
-
-#undef __HASH_NAMESPACE
-
-#ifdef __USE_STLPORT_TR1
-#undef __USE_STLPORT_TR1
-#endif
-
-#ifdef __USE_STD_TR1
-#undef __USE_STD_TR1
-#endif
-
-#ifdef __USE_STD_HASH
-#undef __USE_STD_HASH
-#endif
-
-#ifdef __USE_STLPORT_HASH
-#undef __USE_STLPORT_HASH
-#endif
 
 #include <sys/syslog.h>
 #include <sockios/syslog.h>
@@ -134,7 +77,7 @@ class syslog_init
         static void __at_fork_prepare();
         static void __at_fork_child();
         static void __at_fork_parent();
-        static std::tr2::mutex _init_lock;
+        static std::mutex _init_lock;
         static int _count;
         static bool _at_fork;
     };
@@ -160,15 +103,15 @@ const char timeline[] = ""; // null-length string
 
 char syslog_init::Init_buf[128];
 int syslog_init::Init::_count = 0;
-std::tr2::mutex syslog_init::Init::_init_lock;
+std::mutex syslog_init::Init::_init_lock;
 bool syslog_init::Init::_at_fork = false;
-std::tr2::mutex _heap_lock;
+std::mutex _heap_lock;
 static string prefix;
 
 void syslog_init::Init::_guard( int direction )
 {
   if ( direction ) {
-    std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
+    std::lock_guard<std::mutex> lk( _init_lock );
     if ( _count++ == 0 ) {
       if ( !_at_fork ) { // call only once
         if ( pthread_atfork( __at_fork_prepare, __at_fork_parent, __at_fork_child ) ) {
@@ -182,7 +125,7 @@ void syslog_init::Init::_guard( int direction )
       }
     }
   } else {
-    std::tr2::lock_guard<std::tr2::mutex> lk( _init_lock );
+    std::lock_guard<std::mutex> lk( _init_lock );
     --_count;
   }
 }
@@ -234,7 +177,7 @@ ostream& xsyslog( int _level, int _facility )
     return cerr; // throw invalid_argument();
   }
 
-  std::tr2::thread_base::id id =  std::tr2::this_thread::get_id();
+  std::thread::id id =  std::this_thread::get_id();
   _heap_lock.lock();
   if ( detail::slogs[id] == 0 ) {
     detail::slogs[id] = new sockstream( "/dev/log", sock_base::sock_dgram );
@@ -298,7 +241,7 @@ void set_default_log_facility(int log_facility)
 
 void close_syslog()
 {
-  std::tr2::lock_guard<std::tr2::mutex> lk( detail::_heap_lock );
+  std::lock_guard<std::mutex> lk( detail::_heap_lock );
   for ( detail::log_heap_type::iterator i = detail::slogs.begin(); i != detail::slogs.end(); ++i ) {
     delete i->second;
   }

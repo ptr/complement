@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2011-04-29 19:34:56 ptr>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 2009-2011
+ * Copyright (c) 2009-2011, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -16,32 +16,18 @@
 #include <sockios/sockstream>
 #include <sockios/sockmgr.h>
 
-#include <mt/mutex>
-#include <mt/condition_variable>
-#include <mt/shm.h>
+#include <mutex>
+#include <condition_variable>
 #include <sys/wait.h>
 
-// #include <sockios/syslog.h>
-// #include <locale>
+#include <mt/shm.h>
+#include <mt/fork.h>
 
-#if defined(STLPORT) || defined(__FIT_CPP_0X)
-#  include <unordered_map>
-#  include <unordered_set>
-#  define __USE_STLPORT_TR1
-#else
-#  if defined(__GNUC__) && (__GNUC__ < 4)
-#    include <ext/hash_map>
-#    include <ext/hash_set>
-#    define __USE_STD_HASH
-#  else
-#    include <tr1/unordered_map>
-#    include <tr1/unordered_set>
-#    define __USE_STD_TR1
-#  endif
-#endif
+
+#include <unordered_map>
+#include <unordered_set>
 
 using namespace std;
-using namespace std::tr2;
 
 class simple_us_mgr :
     public sock_basic_processor
@@ -114,7 +100,7 @@ int EXAM_IMPL(unix_sockios_test::core_test)
       {
         unique_lock<mutex> lk( simple_us_mgr::lock );
 
-        // EXAM_CHECK( simple_us_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_us_mgr::n_cnt_check ) );
+        // EXAM_CHECK(simple_us_mgr::cnd.wait_for(lk, chrono::milliseconds(500), simple_us_mgr::n_cnt_check));
       }
       {
         lock_guard<mutex> lk(simple_us_mgr::lock);
@@ -130,7 +116,7 @@ int EXAM_IMPL(unix_sockios_test::core_test)
 
     unique_lock<mutex> lk( simple_us_mgr::lock );
 
-    // EXAM_CHECK( simple_us_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_us_mgr::c_cnt_check ) );
+    // EXAM_CHECK( simple_us_mgr::cnd.wait_for(lk, milliseconds(500), simple_us_mgr::c_cnt_check));
     EXAM_CHECK( simple_us_mgr::d_cnt == 0 );
 
     s.close();
@@ -177,7 +163,7 @@ int EXAM_IMPL(unix_sockios_test::core_write_test)
       {
         unique_lock<mutex> lk( simple_us_mgr::lock );
 
-        EXAM_CHECK( simple_us_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_us_mgr::n_cnt_check ) );
+        EXAM_CHECK(simple_us_mgr::cnd.wait_for(lk, std::chrono::milliseconds(500), simple_us_mgr::n_cnt_check));
         EXAM_CHECK( string(simple_us_mgr::buf) == "Hello, world!\n" );
       }
       {
@@ -194,7 +180,7 @@ int EXAM_IMPL(unix_sockios_test::core_write_test)
 
     unique_lock<mutex> lk( simple_us_mgr::lock );
 
-    // EXAM_CHECK( simple_us_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_us_mgr::c_cnt_check ) );
+    // EXAM_CHECK(simple_us_mgr::cnd.wait_for(lk, chrono::milliseconds(500), simple_us_mgr::c_cnt_check));
     EXAM_CHECK( simple_us_mgr::d_cnt == 0 );
 
     s.close();
@@ -230,7 +216,7 @@ int EXAM_IMPL(unix_sockios_test::stream_core_test)
       {
         unique_lock<mutex> lk( simple_us_mgr::lock );
 
-        EXAM_CHECK( simple_us_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_us_mgr::n_cnt_check ) );
+        EXAM_CHECK(simple_us_mgr::cnd.wait_for(lk, std::chrono::milliseconds(500), simple_us_mgr::n_cnt_check));
       }
       {
         lock_guard<mutex> lk(simple_us_mgr::lock);
@@ -246,7 +232,7 @@ int EXAM_IMPL(unix_sockios_test::stream_core_test)
 
     unique_lock<mutex> lk( simple_us_mgr::lock );
 
-    EXAM_CHECK( simple_us_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_us_mgr::c_cnt_check ) );
+    EXAM_CHECK( simple_us_mgr::cnd.wait_for(lk, std::chrono::milliseconds(500), simple_us_mgr::c_cnt_check));
     EXAM_CHECK( simple_us_mgr::d_cnt == 0 );
 
     s.close();
@@ -316,15 +302,7 @@ class simple_us_mgr2 :
       { return d_cnt == 1; }
 
   private:
-#ifdef __USE_STLPORT_HASH
-    typedef std::hash_map<sock_base::socket_type,sockstream_t*> fd_container_type;
-#endif
-#ifdef __USE_STD_HASH
-    typedef __gnu_cxx::hash_map<sock_base::socket_type, sockstream_t*> fd_container_type;
-#endif
-#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
     typedef std::unordered_map<sock_base::socket_type, sockstream_t*> fd_container_type;
-#endif
 
     fd_container_type cons;
 };
@@ -354,7 +332,7 @@ int EXAM_IMPL(unix_sockios_test::stream_core_write_test)
       {
         unique_lock<mutex> lk( simple_us_mgr2::lock );
 
-        EXAM_CHECK( simple_us_mgr2::cnd.timed_wait( lk, milliseconds( 500 ), simple_us_mgr2::n_cnt_check ) );
+        EXAM_CHECK(simple_us_mgr2::cnd.wait_for(lk, std::chrono::milliseconds(500), simple_us_mgr2::n_cnt_check));
       }
 
       str << "Hello, world!" << endl;
@@ -364,13 +342,13 @@ int EXAM_IMPL(unix_sockios_test::stream_core_write_test)
       {
         unique_lock<mutex> lk( simple_us_mgr2::lock );
 
-        EXAM_CHECK( simple_us_mgr2::cnd.timed_wait( lk, milliseconds( 500 ), simple_us_mgr2::d_cnt_check ) );
+        EXAM_CHECK(simple_us_mgr2::cnd.wait_for(lk, std::chrono::milliseconds(500), simple_us_mgr2::d_cnt_check));
       }
       str.close();
       {
         unique_lock<mutex> lk( simple_us_mgr2::lock );
 
-        EXAM_CHECK( simple_us_mgr2::cnd.timed_wait( lk, milliseconds( 500 ), simple_us_mgr2::c_cnt_check ) );
+        EXAM_CHECK(simple_us_mgr2::cnd.wait_for(lk, std::chrono::milliseconds(500), simple_us_mgr2::c_cnt_check));
       }
     }
   }
@@ -458,13 +436,13 @@ int EXAM_IMPL(unix_sockios_test::processor_core_one_local)
       unique_lock<mutex> lk( worker_us::lock );
 
       // worker's ctor visited once:
-      EXAM_CHECK( worker_us::cnd.timed_wait( lk, milliseconds( 500 ), worker_us::visits_counter1 ) );      
+      EXAM_CHECK( worker_us::cnd.wait_for(lk, std::chrono::milliseconds(500), worker_us::visits_counter1));
       worker_us::visits = 0;
     }
 
     unique_lock<mutex> lksrv( worker_us::lock );
     // worker's dtor pass, no worker's objects left
-    EXAM_CHECK( worker_us::cnd.timed_wait( lksrv, milliseconds( 500 ), worker_us::counter0 ) );
+    EXAM_CHECK( worker_us::cnd.wait_for(lksrv, std::chrono::milliseconds(500), worker_us::counter0));
   }
 
   unlink( f );
@@ -502,13 +480,13 @@ int EXAM_IMPL(unix_sockios_test::processor_core_two_local)
       unique_lock<mutex> lk( worker_us::lock );
 
       // two worker's ctors visited (two connects)
-      EXAM_CHECK( worker_us::cnd.timed_wait( lk, milliseconds( 500 ), worker_us::visits_counter2 ) );
+      EXAM_CHECK(worker_us::cnd.wait_for(lk, std::chrono::milliseconds(500), worker_us::visits_counter2));
       worker_us::visits = 0;
     }
 
     unique_lock<mutex> lksrv( worker_us::lock );
     // both worker's dtors pass, no worker's objects left
-    EXAM_CHECK( worker_us::cnd.timed_wait( lksrv, milliseconds( 500 ), worker_us::counter0 ) );
+    EXAM_CHECK(worker_us::cnd.wait_for(lksrv, std::chrono::milliseconds(500), worker_us::counter0));
   }
 
   unlink( f );
@@ -542,7 +520,7 @@ int EXAM_IMPL(unix_sockios_test::processor_core_getline)
       s1 << "Hello, world!" << endl;
 
       unique_lock<mutex> lk( worker_us::lock );
-      EXAM_CHECK( worker_us::line_cnd.timed_wait( lk, milliseconds( 500 ), worker_us::rd_counter1 ) );
+      EXAM_CHECK(worker_us::line_cnd.wait_for(lk, std::chrono::milliseconds(500), worker_us::rd_counter1));
 
       // cerr << worker::line << endl;
       EXAM_CHECK( worker_us::line == "Hello, world!" );
@@ -552,7 +530,7 @@ int EXAM_IMPL(unix_sockios_test::processor_core_getline)
 
     unique_lock<mutex> lksrv( worker_us::lock );
     // worker's dtor pass, no worker's objects left
-    EXAM_CHECK( worker_us::cnd.timed_wait( lksrv, milliseconds( 500 ), worker_us::counter0 ) );
+    EXAM_CHECK(worker_us::cnd.wait_for(lksrv, std::chrono::milliseconds(500), worker_us::counter0));
   }
 
   unlink( f );
@@ -582,12 +560,12 @@ int EXAM_IMPL(unix_sockios_test::processor_core_income_data)
 
     {
       unique_lock<mutex> lk( worker_us::lock );
-      EXAM_CHECK( worker_us::line_cnd.timed_wait( lk, milliseconds( 500 ), worker_us::rd_counter1 ) );
+      EXAM_CHECK(worker_us::line_cnd.wait_for(lk, std::chrono::milliseconds(500), worker_us::rd_counter1));
     }
 
     {
       unique_lock<mutex> lksrv( worker_us::lock );
-      EXAM_CHECK( worker_us::cnd.timed_wait( lksrv, milliseconds( 500 ), worker_us::counter0 ) );
+      EXAM_CHECK(worker_us::cnd.wait_for(lksrv, std::chrono::milliseconds(500), worker_us::counter0));
     }
 
     // EXAM_CHECK( worker_us::line == "Hello, world!" ); // <-- may fail
@@ -614,14 +592,14 @@ int EXAM_IMPL(unix_sockios_test::income_data)
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-    xmt::allocator_shm<barrier_ip,0> shm;
-    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+    std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
 
     try {
 
       EXAM_CHECK( worker_us::visits == 0 );
 
-      this_thread::fork();
+      std::tr2::this_thread::fork();
 
       int res = 0;
       {
@@ -636,12 +614,12 @@ int EXAM_IMPL(unix_sockios_test::income_data)
 
         {
           unique_lock<mutex> lk( worker_us::lock );
-          EXAM_CHECK_ASYNC_F( worker_us::line_cnd.timed_wait( lk, milliseconds( 500 ), worker_us::rd_counter1 ), res );
+          EXAM_CHECK_ASYNC_F(worker_us::line_cnd.wait_for(lk, std::chrono::milliseconds(500), worker_us::rd_counter1), res);
         }
 
         {
           unique_lock<mutex> lksrv( worker_us::lock );
-          EXAM_CHECK_ASYNC_F( worker_us::cnd.timed_wait( lksrv, milliseconds( 500 ), worker_us::counter0 ), res );
+          EXAM_CHECK_ASYNC_F(worker_us::cnd.wait_for(lksrv, std::chrono::milliseconds(500), worker_us::counter0), res);
         }
 
         EXAM_CHECK_ASYNC_F( worker_us::line == "Hello, world!", res ); // <-- may fail
@@ -703,7 +681,7 @@ int EXAM_IMPL(unix_sockios_test::open_timeout)
   }
 
   {
-    sockstream str( f, std::tr2::milliseconds(100), sock_base::sock_stream );
+    sockstream str(f, std::chrono::milliseconds(100), sock_base::sock_stream);
 
     EXAM_CHECK( !str.is_open() );
     EXAM_CHECK( !str.good() );

@@ -2,7 +2,7 @@
 
 /*
  *
- * Copyright (c) 2019
+ * Copyright (c) 2019, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -17,13 +17,13 @@
 #include <sockios/sockmgr.h>
 #include <sockios/socksrv.h>
 
-#include <mt/mutex>
-#include <mt/condition_variable>
+#include <mutex>
+#include <condition_variable>
 #include <mt/shm.h>
+#include <mt/fork.h>
 #include <sys/wait.h>
 
 using namespace std;
-using namespace std::tr2;
 
 class simple_tty_mgr :
     public sock_basic_processor
@@ -83,9 +83,9 @@ int EXAM_IMPL(tty_processor_test::tty_sockbuf)
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-    xmt::allocator_shm<barrier_ip,0> shm;
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
 
-    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+    std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
 
     int ptm = getpt() /* ::open("/dev/ptmx", O_RDWR | O_NOCTTY) */;
     EXAM_CHECK(ptm >= 0);
@@ -101,7 +101,7 @@ int EXAM_IMPL(tty_processor_test::tty_sockbuf)
     EXAM_CHECK(ret == 0);
 
     try {
-      this_thread::fork();
+      std::tr2::this_thread::fork();
       int ret = 0;
 
       close(ptm);
@@ -188,9 +188,9 @@ int EXAM_IMPL(tty_processor_test::tty_sockstream)
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-    xmt::allocator_shm<barrier_ip,0> shm;
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
 
-    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+    std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
 
     int ptm = getpt() /* ::open("/dev/ptmx", O_RDWR | O_NOCTTY) */;
     EXAM_CHECK(ptm >= 0);
@@ -206,7 +206,7 @@ int EXAM_IMPL(tty_processor_test::tty_sockstream)
     EXAM_CHECK(ret == 0);
 
     try {
-      this_thread::fork();
+      std::tr2::this_thread::fork();
       int ret = 0;
 
       close(ptm);
@@ -296,9 +296,9 @@ int EXAM_IMPL(tty_processor_test::tty_processor)
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-    xmt::allocator_shm<barrier_ip,0> shm;
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
 
-    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+    std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
 
     int ptm = getpt() /* ::open("/dev/ptmx", O_RDWR | O_NOCTTY) */;
     EXAM_CHECK(ptm >= 0);
@@ -314,7 +314,7 @@ int EXAM_IMPL(tty_processor_test::tty_processor)
     EXAM_CHECK(ret == 0);
 
     try {
-      this_thread::fork();
+      std::tr2::this_thread::fork();
       int ret = 0;
 
       close(ptm);
@@ -329,7 +329,7 @@ int EXAM_IMPL(tty_processor_test::tty_processor)
         if (srv.is_open()) {
           {
             unique_lock<mutex> lk( simple_tty_mgr::lock );
-            EXAM_CHECK_ASYNC_F(simple_tty_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_tty_mgr::n_cnt_check), ret);
+            EXAM_CHECK_ASYNC_F(simple_tty_mgr::cnd.wait_for(lk, std::chrono::milliseconds( 500 ), simple_tty_mgr::n_cnt_check), ret);
             EXAM_CHECK_ASYNC_F(simple_tty_mgr::buf[0] == '.', ret);
           }
 
@@ -427,9 +427,9 @@ int EXAM_IMPL(tty_processor_test::tty_packet_processor)
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-    xmt::allocator_shm<barrier_ip,0> shm;
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
 
-    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+    std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
 
     int ptm = getpt() /* ::open("/dev/ptmx", O_RDWR | O_NOCTTY) */;
     EXAM_CHECK(ptm >= 0);
@@ -445,7 +445,7 @@ int EXAM_IMPL(tty_processor_test::tty_packet_processor)
     EXAM_CHECK(ret == 0);
 
     try {
-      this_thread::fork();
+      std::tr2::this_thread::fork();
       int ret = 0;
 
       close(ptm);

@@ -181,12 +181,16 @@ class sock_processor_base :
 
   public:
     bool is_open() const
-      { std::lock_guard<const std::mutex> lk(_fd_lck); return basic_socket_t::is_open_unsafe(); }
+      { std::lock_guard<std::mutex> lk(const_cast<std::mutex&>(_fd_lck)); return basic_socket_t::is_open_unsafe(); }
     bool good() const
       { return _state == ios_base::goodbit; }
 
     sock_base::socket_type fd() const
-      { std::lock_guard<const std::mutex> lk(_fd_lck); sock_base::socket_type tmp = basic_socket_t::fd_unsafe(); return tmp; }
+      {
+        std::lock_guard<std::mutex> lk(const_cast<std::mutex&>(_fd_lck));
+        sock_base::socket_type tmp = basic_socket_t::fd_unsafe();
+        return tmp;
+      }
 
     void shutdown( sock_base::shutdownflg dir );
     void setoptions( sock_base::so_t optname, bool on_off = true, int __v = 0 )
@@ -200,7 +204,7 @@ class sock_processor_base :
                     tcflag_t lflag_set, tcflag_t lflag_drop,
                     int when)
       {
-        std::tr2::lock_guard<std::tr2::mutex> lk(_fd_lck);
+        std::lock_guard<std::mutex> lk(const_cast<std::mutex&>(_fd_lck));
         setoptions_unsafe(iflag_set, iflag_drop,
                           oflag_set, oflag_drop,
                           cflag_set, cflag_drop,
@@ -469,13 +473,13 @@ class packet_processor :
       {
         base_t::_close();
 
-        std::tr2::unique_lock<std::tr2::mutex> lk(lock);
+        std::unique_lock<std::mutex> lk(lock);
         fin.notify_one();
       }
 
     void wait()
       {
-        std::tr2::unique_lock<std::tr2::mutex> lk(lock);
+        std::unique_lock<std::mutex> lk(lock);
         fin.wait(lk);
       }
 
@@ -485,8 +489,8 @@ class packet_processor :
 
     std::basic_sockstream<charT,traits,_Alloc> packet;
     Packet proc;
-    std::tr2::mutex lock;
-    std::tr2::condition_variable fin;
+    std::mutex lock;
+    std::condition_variable fin;
 };
 
 } // namesapce std

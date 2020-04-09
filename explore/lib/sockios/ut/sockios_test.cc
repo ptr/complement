@@ -2,7 +2,7 @@
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005-2011, 2019
+ * Copyright (c) 2002, 2003, 2005-2011, 2019, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -13,30 +13,18 @@
 #include <exam/suite.h>
 
 #include <sockios/sockstream>
-#include <mt/mutex>
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
 #include <sys/wait.h>
 #include <mt/shm.h>
 #include <mt/uid.h>
+#include <mt/fork.h>
 
-#if defined(STLPORT) || defined(__FIT_CPP_0X)
-#  include <unordered_map>
-#  include <unordered_set>
-#  define __USE_STLPORT_TR1
-#else
-#  if defined(__GNUC__) && (__GNUC__ < 4)
-#    include <ext/hash_map>
-#    include <ext/hash_set>
-#    define __USE_STD_HASH
-#  else
-#    include <tr1/unordered_map>
-#    include <tr1/unordered_set>
-#    define __USE_STD_TR1
-#  endif
-#endif
-
+#include <unordered_map>
+#include <unordered_set>
 
 using namespace std;
-using namespace std::tr2;
 
 sockios_test::sockios_test()
 {
@@ -116,15 +104,7 @@ class simple_mgr :
 
   private:
 
-#ifdef __USE_STLPORT_HASH
-    typedef std::hash_map<sock_base::socket_type,sockstream_t*> fd_container_type;
-#endif
-#ifdef __USE_STD_HASH
-    typedef __gnu_cxx::hash_map<sock_base::socket_type, sockstream_t*> fd_container_type;
-#endif
-#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
     typedef std::unordered_map<sock_base::socket_type, sockstream_t*> fd_container_type;
-#endif
 
     fd_container_type cons;
 };
@@ -173,18 +153,18 @@ int EXAM_IMPL(sockios_test::connect_disconnect)
 
       {
         unique_lock<mutex> lk( simple_mgr::lock );
-        EXAM_CHECK( simple_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_mgr::n_cnt_check ) );
+        EXAM_CHECK(simple_mgr::cnd.wait_for(lk, chrono::milliseconds(500), simple_mgr::n_cnt_check));
       }
       {
         s << "Hello" << endl;
         EXAM_CHECK( s.good() );
         unique_lock<mutex> lk( simple_mgr::lock );
-        EXAM_CHECK( simple_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_mgr::d_cnt_check ) );
+        EXAM_CHECK(simple_mgr::cnd.wait_for(lk, chrono::milliseconds(500), simple_mgr::d_cnt_check));
       }
       s.close();
       {
         unique_lock<mutex> lk( simple_mgr::lock );
-        EXAM_CHECK( simple_mgr::cnd.timed_wait( lk, milliseconds( 500 ), simple_mgr::c_cnt_check ) );
+        EXAM_CHECK(simple_mgr::cnd.wait_for(lk, chrono::milliseconds(500), simple_mgr::c_cnt_check));
       }
     }
 
@@ -279,13 +259,13 @@ int EXAM_IMPL(sockios_test::processor_core_one_local)
       unique_lock<mutex> lk( worker::lock );
 
       // worker's ctor visited once:
-      EXAM_CHECK( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter1 ) );      
+      EXAM_CHECK(worker::cnd.wait_for(lk, chrono::milliseconds( 500 ), worker::visits_counter1));
     }
 
 
     unique_lock<mutex> lksrv( worker::lock );
     // worker's dtor pass, no worker's objects left
-    EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
+    EXAM_CHECK(worker::cnd.wait_for(lksrv, chrono::milliseconds( 500 ), worker::counter0));
 
     if ( EXAM_RESULT ) {
       cerr << "failed on iteration " << test << endl;
@@ -323,13 +303,13 @@ int EXAM_IMPL(sockios_test::processor_core_two_local)
       unique_lock<mutex> lk( worker::lock );
 
       // two worker's ctors visited (two connects)
-      EXAM_CHECK( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter2 ) );
+      EXAM_CHECK(worker::cnd.wait_for(lk, chrono::milliseconds( 500 ), worker::visits_counter2));
       worker::visits = 0;
     }
 
     unique_lock<mutex> lksrv( worker::lock );
     // both worker's dtors pass, no worker's objects left
-    EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
+    EXAM_CHECK(worker::cnd.wait_for(lksrv, chrono::milliseconds( 500 ), worker::counter0));
 
     if ( EXAM_RESULT ) {
       cerr << "failed on iteration " << test << endl;
@@ -374,13 +354,13 @@ int EXAM_IMPL(sockios_test::processor_core_getline)
       s1 << line << endl;
 
       unique_lock<mutex> lk( worker::lock );
-      EXAM_CHECK( worker::line_cnd.timed_wait( lk, milliseconds( 500 ), worker::rd_counter1 ) );
+      EXAM_CHECK(worker::line_cnd.wait_for(lk, chrono::milliseconds( 500 ), worker::rd_counter1));
 
       EXAM_CHECK( worker::line == line );
     }
 
     unique_lock<mutex> lksrv( worker::lock );
-    EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
+    EXAM_CHECK( worker::cnd.wait_for(lksrv, chrono::milliseconds( 500 ), worker::counter0));
     if ( EXAM_RESULT ) {
       cerr << "failed on iteration " << test << endl;
       break;
@@ -418,12 +398,12 @@ int EXAM_IMPL(sockios_test::processor_core_income_data)
 
     {
       unique_lock<mutex> lk( worker::lock );
-      EXAM_CHECK( worker::line_cnd.timed_wait( lk, milliseconds( 5000 ), worker::rd_counter1 ) );
+      EXAM_CHECK(worker::line_cnd.wait_for(lk, chrono::milliseconds( 5000 ), worker::rd_counter1));
     }
 
     {
       unique_lock<mutex> lksrv( worker::lock );
-      EXAM_CHECK( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ) );
+      EXAM_CHECK(worker::cnd.wait_for(lksrv, chrono::milliseconds( 500 ), worker::counter0));
     }
 
     EXAM_CHECK( worker::line == line );
@@ -448,14 +428,14 @@ int EXAM_IMPL(sockios_test::income_data)
       xmt::shm_alloc<0> seg;
       seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-      xmt::allocator_shm<barrier_ip,0> shm;
-      barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+      xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+      std::tr2::barrier_ip& b = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
 
       try {
 
         EXAM_CHECK( worker::visits == 0 );
 
-        this_thread::fork();
+        std::tr2::this_thread::fork();
 
         int res = 0;
         {
@@ -470,12 +450,12 @@ int EXAM_IMPL(sockios_test::income_data)
 
           {
             unique_lock<mutex> lk( worker::lock );
-            EXAM_CHECK_ASYNC_F( worker::line_cnd.timed_wait( lk, milliseconds( 500 ), worker::rd_counter1 ), res );
+            EXAM_CHECK_ASYNC_F(worker::line_cnd.wait_for(lk, chrono::milliseconds(500), worker::rd_counter1 ), res);
           }
 
           {
             unique_lock<mutex> lksrv( worker::lock );
-            EXAM_CHECK_ASYNC_F( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ), res );
+            EXAM_CHECK_ASYNC_F(worker::cnd.wait_for(lksrv, chrono::milliseconds(500), worker::counter0), res);
           }
 
           EXAM_CHECK_ASYNC_F( worker::line == "Hello, world!", res ); 
@@ -530,7 +510,7 @@ class lazy_worker
       { }
     void connect( sockstream& s )
       {
-        this_thread::sleep( std::tr2::milliseconds(200) );
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
         string tmp;
         getline(s, tmp);
@@ -549,12 +529,12 @@ int EXAM_IMPL(sockios_test::check_rdtimeout_fail)
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-    xmt::allocator_shm<barrier_ip,0> shm;
-    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
-    barrier_ip& b2 = *new ( shm.allocate( 1 ) ) barrier_ip();
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+    std::tr2::barrier_ip& b = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
+    std::tr2::barrier_ip& b2 = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
 
     try {
-      this_thread::fork();
+      std::tr2::this_thread::fork();
       int res = 0;
 
       {
@@ -565,7 +545,7 @@ int EXAM_IMPL(sockios_test::check_rdtimeout_fail)
 
         b.wait(true);
 
-        EXAM_CHECK_ASYNC_F( lazy_worker::cnd.timed_wait( milliseconds( 2000 ) ), res );
+        EXAM_CHECK_ASYNC_F(lazy_worker::cnd.wait_for(std::chrono::milliseconds(2000)), res);
         b2.wait();
       }
 
@@ -578,7 +558,7 @@ int EXAM_IMPL(sockios_test::check_rdtimeout_fail)
         EXAM_CHECK( s.good() );
         EXAM_CHECK( s.is_open() );
 
-        s.rdbuf()->rdtimeout( std::tr2::milliseconds(100) );
+        s.rdbuf()->rdtimeout(std::chrono::milliseconds(100));
         EXAM_CHECK( s.good() );
         EXAM_CHECK( s.is_open() );
 
@@ -614,12 +594,12 @@ int EXAM_IMPL(sockios_test::check_rdtimeout)
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-    xmt::allocator_shm<barrier_ip,0> shm;
-    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
-    barrier_ip& b2 = *new ( shm.allocate( 1 ) ) barrier_ip();
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+    std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
+    std::tr2::barrier_ip& b2 = *new (shm.allocate(1)) std::tr2::barrier_ip();
 
     try {
-      this_thread::fork();
+      std::tr2::this_thread::fork();
       int res = 0;
 
       {
@@ -630,7 +610,7 @@ int EXAM_IMPL(sockios_test::check_rdtimeout)
 
         b.wait(true);
 
-        EXAM_CHECK_ASYNC_F( lazy_worker::cnd.timed_wait( milliseconds( 2000 ) ), res );
+        EXAM_CHECK_ASYNC_F(lazy_worker::cnd.wait_for(chrono::milliseconds(2000)), res);
         b2.wait();
       }
 
@@ -643,7 +623,7 @@ int EXAM_IMPL(sockios_test::check_rdtimeout)
         EXAM_CHECK( s.good() );
         EXAM_CHECK( s.is_open() );
 
-        s.rdbuf()->rdtimeout( std::tr2::milliseconds(500) );
+        s.rdbuf()->rdtimeout(std::chrono::milliseconds(500));
         EXAM_CHECK( s.good() );
         EXAM_CHECK( s.is_open() );
 
@@ -679,12 +659,12 @@ int EXAM_IMPL(sockios_test::open_timeout)
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-    xmt::allocator_shm<barrier_ip,0> shm;
-    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
-    barrier_ip& b2 = *new ( shm.allocate( 1 ) ) barrier_ip();
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+    std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
+    std::tr2::barrier_ip& b2 = *new (shm.allocate(1)) std::tr2::barrier_ip();
 
     try {
-      this_thread::fork();
+      std::tr2::this_thread::fork();
       int res = 0;
 
       {
@@ -695,7 +675,7 @@ int EXAM_IMPL(sockios_test::open_timeout)
 
         b.wait(true);
 
-        EXAM_CHECK_ASYNC_F( lazy_worker::cnd.timed_wait( milliseconds( 2000 ) ), res );
+        EXAM_CHECK_ASYNC_F(lazy_worker::cnd.wait_for(chrono::milliseconds(2000)), res);
         b2.wait();
       }
 
@@ -704,7 +684,7 @@ int EXAM_IMPL(sockios_test::open_timeout)
     catch ( std::tr2::fork_in_parent& child ) {
       b.wait(true);
       {
-        sockstream s( "localhost", 2008, std::tr2::milliseconds(100) );
+        sockstream s("localhost", 2008, std::chrono::milliseconds(100));
         EXAM_CHECK( s.good() );
         EXAM_CHECK( s.is_open() );
 
@@ -776,11 +756,11 @@ int EXAM_IMPL(sockios_test::disconnect_rawclnt)
     }
   }
 
-  xmt::allocator_shm<barrier_ip,0> shm;
-  barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+  xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+  std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
 
   try {
-    this_thread::fork();
+    std::tr2::this_thread::fork();
 
     int res = 0;
 
@@ -791,7 +771,7 @@ int EXAM_IMPL(sockios_test::disconnect_rawclnt)
 
       b.wait();
 
-      EXAM_CHECK_ASYNC_F( srv_reader::cnd.timed_wait( milliseconds( 800 ) ), res );
+      EXAM_CHECK_ASYNC_F(srv_reader::cnd.wait_for(std::chrono::milliseconds(800)), res);
       // srv_reader::cnd.wait();
     }
 
@@ -857,11 +837,11 @@ int EXAM_IMPL(sockios_test::disconnect)
     }
   }
 
-  xmt::allocator_shm<barrier_ip,0> shm;
-  barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+  xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+  std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
 
   try {
-    this_thread::fork();
+    std::tr2::this_thread::fork();
 
     int res = 0;
 
@@ -872,8 +852,8 @@ int EXAM_IMPL(sockios_test::disconnect)
 
       b.wait();
 
-      EXAM_CHECK_ASYNC_F( srv_reader::cnd.timed_wait( milliseconds( 800 ) ), res );
-      std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
+      EXAM_CHECK_ASYNC_F(srv_reader::cnd.wait_for(chrono::milliseconds(800)), res);
+      std::this_thread::sleep_for(std::chrono::milliseconds(200));
       // srv_reader::cnd.wait();
     }
 
@@ -923,14 +903,14 @@ int EXAM_IMPL(sockios_test::fork)
       xmt::shm_alloc<0> seg;
       seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-      xmt::allocator_shm<barrier_ip,0> shm;
-      barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+      xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+      std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
 
       try {
 
         EXAM_CHECK( worker::visits == 0 );
 
-        this_thread::fork();
+        std::tr2::this_thread::fork();
 
         int res = 0;
         {
@@ -945,12 +925,12 @@ int EXAM_IMPL(sockios_test::fork)
 
           {
             unique_lock<mutex> lk( worker::lock );
-            EXAM_CHECK_ASYNC_F( worker::cnd.timed_wait( lk, milliseconds( 500 ), worker::visits_counter1 ) , res );
+            EXAM_CHECK_ASYNC_F(worker::cnd.wait_for(lk, chrono::milliseconds(500), worker::visits_counter1 ), res);
           }
 
           {
             unique_lock<mutex> lksrv( worker::lock );
-            EXAM_CHECK_ASYNC_F( worker::cnd.timed_wait( lksrv, milliseconds( 500 ), worker::counter0 ), res );
+            EXAM_CHECK_ASYNC_F(worker::cnd.wait_for(lksrv, chrono::milliseconds(500), worker::counter0 ), res);
           }
         }
 
@@ -1020,7 +1000,7 @@ class stream_reader
         s.flush();
       }
 
-    static void load_generator( barrier* b )
+    static void load_generator(std::tr2::barrier* b)
     {
       try {
         sockstream s( "localhost", 2008 );
@@ -1053,10 +1033,10 @@ int EXAM_IMPL(sockios_test::srv_sigpipe)
       xmt::shm_alloc<0> seg;
       seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-      xmt::allocator_shm<barrier_ip,0> shm;
-      barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+      xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+      std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
       try {
-        this_thread::fork();
+        std::tr2::this_thread::fork();
 
         try {
           b.wait(true);
@@ -1066,7 +1046,7 @@ int EXAM_IMPL(sockios_test::srv_sigpipe)
            */
 
           const int b_count = 1;
-          barrier bb( b_count );
+          std::tr2::barrier bb( b_count );
 
           thread* th1 = new thread( stream_reader::load_generator, &bb );
 
@@ -1074,7 +1054,7 @@ int EXAM_IMPL(sockios_test::srv_sigpipe)
             new thread( stream_reader::load_generator, &bb );
           }
 
-          this_thread::sleep( milliseconds( 100 ) );
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
           b.wait();
 
@@ -1155,7 +1135,7 @@ class interrupted_writer
     void connect( sockstream& s )
       { }
 
-    static void read_generator( barrier* b )
+    static void read_generator(std::tr2::barrier* b)
     {      
       sockstream s( "localhost", 2008 );
 
@@ -1171,10 +1151,10 @@ class interrupted_writer
       EXAM_CHECK_ASYNC( buff == 1 );
     }
 
-    static barrier_ip* bb;
+    static std::tr2::barrier_ip* bb;
 };
 
-barrier_ip* interrupted_writer::bb = 0;
+std::tr2::barrier_ip* interrupted_writer::bb = 0;
 
 int EXAM_IMPL(sockios_test::read0)
 {
@@ -1183,17 +1163,17 @@ int EXAM_IMPL(sockios_test::read0)
       xmt::shm_alloc<0> seg;
       seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-      xmt::allocator_shm<barrier_ip,0> shm;
-      barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
-      barrier_ip& bnew = *new ( shm.allocate( 1 ) ) barrier_ip();
+      xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+      std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
+      std::tr2::barrier_ip& bnew = *new (shm.allocate(1)) std::tr2::barrier_ip();
       interrupted_writer::bb = &bnew;
 
       try {
-        this_thread::fork();
+        std::tr2::this_thread::fork();
 
         b.wait();  
 
-        barrier bb;
+        std::tr2::barrier bb;
 
         thread t( interrupted_writer::read_generator, &bb );
 
@@ -1287,7 +1267,7 @@ class byte_cnt
 const int byte_cnt::sz = 64 * 5;
 const int byte_cnt::bsz = 1024;  // bsz * sz > MTU of lo
 int byte_cnt::r = 0;
-mutex  byte_cnt::lock;
+mutex byte_cnt::lock;
 condition_variable byte_cnt::cnd;
 
 struct byte_cnt_predicate
@@ -1321,10 +1301,10 @@ int EXAM_IMPL(sockios_test::few_packets)
       s.flush();
 
       unique_lock<mutex> lk( byte_cnt::lock );
-      EXAM_CHECK( byte_cnt::cnd.timed_wait( lk, milliseconds(800), byte_cnt_predicate() ) );
+      EXAM_CHECK( byte_cnt::cnd.wait_for(lk, chrono::milliseconds(800), byte_cnt_predicate()));
     }
 
-    std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
   }
 
   EXAM_CHECK( byte_cnt::r == (byte_cnt::bsz * byte_cnt::sz) );
@@ -1360,9 +1340,9 @@ int EXAM_IMPL(sockios_test::few_packets_loop)
     s.flush();
 
     unique_lock<mutex> lk( byte_cnt::lock );
-    EXAM_CHECK( byte_cnt::cnd.timed_wait( lk, milliseconds(500), byte_cnt_predicate() ) );
+    EXAM_CHECK(byte_cnt::cnd.wait_for(lk, std::chrono::milliseconds(500), byte_cnt_predicate()));
 
-    std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
   }
 
   EXAM_CHECK( byte_cnt::r == (byte_cnt::bsz * byte_cnt::sz) );
@@ -1394,17 +1374,17 @@ int EXAM_IMPL(sockios_test::service_stop)
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-    xmt::allocator_shm<barrier_ip,0> shm;
-    // xmt::allocator_shm<mutex_ip,0> mtx;
-    // xmt::allocator_shm<condition_event_ip,0> cnd;
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+    // xmt::allocator_shm<std::tr2::mutex_ip,0> mtx;
+    // xmt::allocator_shm<std::tr2::condition_event_ip,0> cnd;
     // xmt::allocator_shm<int,0> ishm;
 
-    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
-    barrier_ip& b2 = *new ( shm.allocate( 1 ) ) barrier_ip();
+    std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
+    std::tr2::barrier_ip& b2 = *new (shm.allocate(1)) std::tr2::barrier_ip();
     try {
-      this_thread::fork();
+      std::tr2::this_thread::fork();
 
-      std::tr2::this_thread::block_signal( SIGINT );
+      std::this_thread::block_signal( SIGINT );
 
       int ret = 0;
 
@@ -1451,7 +1431,7 @@ int EXAM_IMPL(sockios_test::service_stop)
 
       b2.wait();
 
-      this_thread::sleep( milliseconds( 200 ) ); // chance for sigwait
+      std::this_thread::sleep_for(std::chrono::milliseconds(200)); // chance for sigwait
 
       kill( child.pid(), SIGINT );
 
@@ -1538,16 +1518,16 @@ int EXAM_IMPL(sockios_test::quants_reader)
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-    xmt::allocator_shm<barrier_ip,0> shm;
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
 
-    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+    std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
 
     try {
-      this_thread::fork();
+      std::tr2::this_thread::fork();
       int ret = 0;
 
       try {
-        std::tr2::this_thread::block_signal( SIGINT );
+        std::this_thread::block_signal( SIGINT );
 
         connect_processor<reader> srv( 2008 );
 
@@ -1567,7 +1547,7 @@ int EXAM_IMPL(sockios_test::quants_reader)
         if ( sig_caught == SIGINT ) {
           EXAM_MESSAGE_ASYNC( "catch INT signal" );
           unique_lock<mutex> lk( reader::lock );
-          EXAM_CHECK_ASYNC_F( reader::cnd.timed_wait( lk, milliseconds(8000), reader_cnt_predicate() ), ret );
+          EXAM_CHECK_ASYNC_F(reader::cnd.wait_for(lk, chrono::milliseconds(8000), reader_cnt_predicate()), ret);
           srv.close();
         } else {
           EXAM_ERROR_ASYNC_F( "catch of INT signal expected", ret );
@@ -1658,16 +1638,16 @@ int EXAM_IMPL(sockios_test::echo)
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-    xmt::allocator_shm<barrier_ip,0> shm;
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
 
-    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+    std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
 
     try {
-      this_thread::fork();
+      std::tr2::this_thread::fork();
       int ret = 0;
 
       try {
-        std::tr2::this_thread::block_signal( SIGINT );
+        std::this_thread::block_signal(SIGINT);
 
         connect_processor<echo_srv> srv( 2008 );
 
@@ -1788,16 +1768,16 @@ int EXAM_IMPL(sockios_test::at_funcs)
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-    xmt::allocator_shm<barrier_ip,0> shm;
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
 
-    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+    std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
 
     try {
-      this_thread::fork();
+      std::tr2::this_thread::fork();
       int ret = 0;
 
       try {
-        std::tr2::this_thread::block_signal( SIGINT );
+        std::this_thread::block_signal( SIGINT );
 
         connect_processor<echo_srv> srv( 2008 );
 
@@ -1817,7 +1797,7 @@ int EXAM_IMPL(sockios_test::at_funcs)
         int sig_caught;
         sigwait( &signal_mask, &sig_caught );
 
-        std::tr2::this_thread::sleep( std::tr2::milliseconds(200) );
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
         EXAM_CHECK_ASYNC_F( last_conn == 0x7f000001, ret );
         EXAM_CHECK_ASYNC_F( last_data == 0x7f000001, ret );
@@ -1925,16 +1905,16 @@ int EXAM_IMPL(sockios_test::ugly_echo)
     xmt::shm_alloc<0> seg;
     seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-    xmt::allocator_shm<barrier_ip,0> shm;
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
 
-    barrier_ip& b = *new ( shm.allocate( 1 ) ) barrier_ip();
+    std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
 
     try {
-      this_thread::fork();
+      tr2::this_thread::fork();
       int ret = 0;
 
       try {
-        std::tr2::this_thread::block_signal( SIGINT );
+        std::this_thread::block_signal(SIGINT);
 
         connect_processor<ugly_echo_srv> srv( 2008 );
 
