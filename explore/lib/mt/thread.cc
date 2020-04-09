@@ -174,64 +174,6 @@ void become_daemon()
 #endif
 }
 
-__FIT_DECLSPEC void block_signal( int sig )
-{
-#ifdef __unix
-  sigset_t sigset;
-
-  sigemptyset( &sigset );
-  sigaddset( &sigset, sig );
-#  ifdef __FIT_PTHREADS
-  pthread_sigmask( SIG_BLOCK, &sigset, 0 );
-#  endif
-#endif // __unix
-}
-
-__FIT_DECLSPEC void unblock_signal( int sig )
-{
-#ifdef __unix
-  sigset_t sigset;
-
-  sigemptyset( &sigset );
-  sigaddset( &sigset, sig );
-#  ifdef __FIT_PTHREADS
-  pthread_sigmask( SIG_UNBLOCK, &sigset, 0 );
-#  endif
-#endif // __unix
-}
-
-__FIT_DECLSPEC int signal_handler( int sig, void (*handler)(int) )
-{
-#ifdef __unix
-  struct sigaction act;
-
-  sigemptyset( &act.sa_mask );
-  sigaddset( &act.sa_mask, sig );
-
-  act.sa_flags = 0; // SA_RESTART;
-  act.sa_handler = handler;
-  return sigaction( sig, &act, 0 );
-#else
-  return -1;
-#endif // __unix
-}
-
-__FIT_DECLSPEC int signal_handler( int sig, void (*handler)(int, siginfo_t*, void*) )
-{
-#ifdef __unix
-  struct sigaction act;
-
-  sigemptyset( &act.sa_mask );
-  sigaddset( &act.sa_mask, sig );
-
-  act.sa_flags = SA_SIGINFO; // SA_RESTART;
-  act.sa_sigaction = handler;
-  return sigaction( sig, &act, 0 );
-#else
-  return -1;
-#endif // __unix
-}
-
 } // namespace this_thread
 
 } // namespace tr2

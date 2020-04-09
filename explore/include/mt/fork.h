@@ -40,6 +40,8 @@
 #include <chrono>
 #include <mt/callstack.h>
 
+#include <mt/signal>
+
 namespace std {
 
 namespace tr2 {
@@ -98,10 +100,9 @@ __FIT_DECLSPEC void become_daemon();
 //void sleep( const Duration& rel_t )
 //{ std::tr2::this_thread::sleep( static_cast<std::tr2::nanoseconds>(rel_t) ); }
 
-__FIT_DECLSPEC void block_signal( int sig );
-__FIT_DECLSPEC void unblock_signal( int sig );
-__FIT_DECLSPEC int signal_handler( int sig, void (*handler)(int) );
-__FIT_DECLSPEC int signal_handler( int sig, void (*handler)(int, siginfo_t*, void*) );
+using std::this_thread::block_signal;
+using std::this_thread::unblock_signal;
+using std::this_thread::signal_handler;
 
 } // namespace this_thread
 
