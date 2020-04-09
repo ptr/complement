@@ -92,7 +92,7 @@ void sock_processor_base<charT,traits,_Alloc>::open( const char* path, sock_base
     return;
   }
   basic_socket_t::_address.unx.sun_family = AF_UNIX;
-  strncpy(basic_socket_t::_address.unx.sun_path, path, sizeof(basic_socket_t::_address.unx.sun_path));
+  strncpy(basic_socket_t::_address.unx.sun_path, path, sizeof(basic_socket_t::_address.unx.sun_path)-1);
   unlink( path ); // ignore error
 
   if ( ::bind( basic_socket_t::_fd, &basic_socket_t::_address.any, sizeof(basic_socket_t::_address.unx.sun_family) + strlen(basic_socket_t::_address.unx.sun_path) ) == -1 ) {
