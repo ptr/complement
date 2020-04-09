@@ -103,6 +103,33 @@ struct params_collect
   unsigned line;
 };
 
+#ifndef bfd_get_section_flags
+#define __BFD_NO_GET_SECTION
+
+/*
+commit fd3619828e94a24a92cddec42cbc0ab33352eeb4
+Author: Alan Modra <amodra@gmail.com>
+Date:   Mon Sep 16 20:25:17 2019 +0930
+
+    bfd_section_* macros
+    
+    This large patch removes the unnecessary bfd parameter from various
+    bfd section macros and functions.  The bfd is hardly ever used and if
+    needed for the bfd_set_section_* or bfd_rename_section functions can
+    be found via section->owner except for the com, und, abs, and ind
+    std_section special sections.  Those sections shouldn't be modified
+    anyway.
+    
+    The patch also removes various bfd_get_section_<field> macros,
+    replacing their use with bfd_section_<field>, and adds
+    bfd_set_section_lma.  I've also fixed a minor bug in gas where
+    compressed section renaming was done directly rather than calling
+    bfd_rename_section.  This would have broken bfd_get_section_by_name
+    and similar functions, but that hardly mattered at such a late stage
+    in gas processing.
+ */
+#endif
+
 void find_address_in_section( bfd *abfd, asection *section, void *data )
 {
   bfd_boolean& found = static_cast<params_collect *>(data)->found;
@@ -111,17 +138,31 @@ void find_address_in_section( bfd *abfd, asection *section, void *data )
     return;
   }
 
+#ifdef __BFD_NO_GET_SECTION
+  if ( (bfd_section_flags(section) & SEC_ALLOC) == 0 ) {
+    return;
+  }
+#else
   if ( (bfd_get_section_flags(abfd, section) & SEC_ALLOC) == 0 ) {
     return;
   }
+#endif
 
+#ifdef __BFD_NO_GET_SECTION
+  bfd_vma vma = bfd_section_vma(section);
+#else
   bfd_vma vma = bfd_get_section_vma( abfd, section );
+#endif
   bfd_vma& pc = static_cast<params_collect *>(data)->pc;
   if ( pc < vma ) {
     return;
   }
 
+#ifdef __BFD_NO_GET_SECTION
+  bfd_size_type size = bfd_section_size(section);
+#else
   bfd_size_type size = bfd_get_section_size( section );
+#endif
   if ( pc >= vma + size ) {
     return;
   }
