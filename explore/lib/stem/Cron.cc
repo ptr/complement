@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2012-02-09 14:48:43 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 1998, 2002-2003, 2005-2006, 2008-2009
+ * Copyright (c) 1998, 2002-2003, 2005-2006, 2008-2009, 2020
  * Petr Ovtchenkov
  * 
  * Copyright (c) 1999-2001
@@ -21,7 +21,6 @@
 namespace stem {
 
 using namespace std;
-using namespace std::tr2;
 
 Cron::Cron() :
     EventHandler(),
@@ -102,7 +101,7 @@ void Cron::Add( const Event_base<CronEntry>& entry )
   }
 
   if ( en.n == 1 ) {
-    en.period = nanoseconds(0LL);
+    en.period = chrono::nanoseconds();
   } else {
     en.period = ne.period;
     if ( en.n == 0 || en.period.count() == 0LL ) {
@@ -110,7 +109,7 @@ void Cron::Add( const Event_base<CronEntry>& entry )
     }
   }
 
-  system_time current = get_system_time();
+  chrono::time_point<chrono::steady_clock,chrono::nanoseconds> current = chrono::steady_clock::now();
   if ( en.start < current ) {
     en.start = current;
   }
@@ -191,7 +190,7 @@ void Cron::_loop( Cron* p )
   // after Add (Cron entry) event.
 
   Cron& me = *p;
-  system_time st;
+  chrono::time_point<chrono::steady_clock,chrono::nanoseconds> st;
 
   unique_lock<mutex> lk( me._M_l );
 
@@ -204,12 +203,12 @@ void Cron::_loop( Cron* p )
     }
     // At this point _M_c should never be empty!
 
-    if ( me._M_c.top().expired > get_system_time() ) {
+    if (me._M_c.top().expired > chrono::steady_clock::now()) {
       st = me._M_c.top().expired;
       me._top_changed = false;
       bool alarm;
       try {
-        alarm = me.cond.timed_wait( lk, st, me.ready );
+        alarm = me.cond.wait_until(lk, st, me.ready);
 
         if ( !me._run ) {
           break;
@@ -219,13 +218,13 @@ void Cron::_loop( Cron* p )
           continue;
         }
 
-        if ( alarm && (me._M_c.top().expired > get_system_time()) ) {
+        if (alarm && (me._M_c.top().expired > chrono::steady_clock::now())) {
           continue;
         }
 
         if ( me._top_changed ) {
           me._top_changed = false;
-          if ( me._M_c.top().expired > get_system_time() ) {
+          if (me._M_c.top().expired > chrono::steady_clock::now()) {
             continue;
           }
         }
@@ -269,8 +268,8 @@ END_RESPONSE_TABLE
 __FIT_DECLSPEC
 void CronEntry::pack( std::ostream& s ) const
 {
-  __pack( s, static_cast<int64_t>( start.nanoseconds_since_epoch().count() ) );
-  __pack( s, static_cast<int64_t>( period.count() ) );
+  __pack(s, static_cast<int64_t>(start.time_since_epoch().count()));
+  __pack(s, static_cast<int64_t>(period.count()));
   __pack( s, n );
   __pack( s, ev.code() );
   __pack( s, ev.dest() );
@@ -284,9 +283,9 @@ void CronEntry::unpack( std::istream& s )
 {
   int64_t v;
   __unpack( s, v );
-  start = std::tr2::system_time( 0, v );
+  start = std::chrono::time_point<chrono::steady_clock,chrono::nanoseconds>(std::chrono::nanoseconds(v));
   __unpack( s, v );
-  period = std::tr2::nanoseconds( v );
+  period = std::chrono::nanoseconds(v);
   __unpack( s, n );
   stem::code_type c;
   __unpack( s, c );

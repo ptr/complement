@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <08/12/01 23:10:36 ptr>
+// -*- C++ -*-
 
 /*
  * Copyright (c) 2008
@@ -13,7 +13,8 @@
 
 #include <stdint.h>
 #include <stem/EventHandler.h>
-#include <mt/condition_variable>
+#include <mutex>
+#include <condition_variable>
 #include <string>
 
 class CronClient :
@@ -24,8 +25,8 @@ class CronClient :
 
     void cron_event( /* std::string arg */ const stem::Event& );
 
-    std::tr2::mutex m;
-    std::tr2::condition_variable cnd;
+    std::mutex m;
+    std::condition_variable cnd;
 
     std::string see;
     int visited;

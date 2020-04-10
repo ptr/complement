@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-08-26 12:03:02 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2011
+ * Copyright (c) 1995-1999, 2002-2003, 2005-2006, 2009-2011, 2020
  * Petr Ovtchenkov
  * 
  * Copyright (c) 1999-2001
@@ -25,9 +25,10 @@
 #include <queue>
 #include <functional>
 
-#include <mt/mutex>
-#include <mt/thread>
-#include <mt/condition_variable>
+#include <mutex>
+#include <shared_mutex>
+#include <thread>
+#include <condition_variable>
 #include <mt/uid.h>
 #include <mt/uidhash.h>
 
@@ -137,22 +138,22 @@ class EvManager
 
     void Subscribe( const addr_type& id, EventHandler* object )
       {
-        std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
+        std::lock_guard<std::shared_mutex> lk(_lock_heap);
         unsafe_Subscribe( id, object );
       }
 
     void Subscribe( const addr_type& id, EventHandler* object, const std::string& info )
       {
-        std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
-        std::tr2::lock_guard<std::tr2::mutex> lk_( _lock_iheap );
+        std::lock_guard<std::shared_mutex> lk(_lock_heap);
+        std::lock_guard<std::mutex> lk_(_lock_iheap);
         unsafe_Subscribe( id, object );
         unsafe_annotate( id, info );
       }
 
     void Subscribe( const addr_type& id, EventHandler* object, const char* info )
       {
-        std::tr2::lock_guard<std::tr2::rw_mutex> lk( _lock_heap );
-        std::tr2::lock_guard<std::tr2::mutex> lk_( _lock_iheap );
+        std::lock_guard<std::shared_mutex> lk(_lock_heap);
+        std::lock_guard<std::mutex> lk_(_lock_iheap);
         unsafe_Subscribe( id, object );
 
         if ( info == 0 || info[0] == 0 ) {
@@ -165,7 +166,7 @@ class EvManager
 
     bool is_avail( const addr_type& id ) const
       {
-        std::tr2::basic_read_lock<std::tr2::rw_mutex> lk( _lock_heap );
+        std::shared_lock lk(_lock_heap);
         return unsafe_is_avail( id );
       }
 
@@ -179,7 +180,7 @@ class EvManager
         if ( info.empty() ) {
           return;
         }
-        std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
+        std::lock_guard<std::mutex> lk( _lock_iheap );
         unsafe_annotate( id, info );
       }
 
@@ -188,7 +189,7 @@ class EvManager
         if ( info == 0 || info[0] == 0 ) {
           return;
         }
-        std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
+        std::lock_guard<std::mutex> lk( _lock_iheap );
         unsafe_annotate( id, std::string( info ) );
       }
 
@@ -210,7 +211,7 @@ class EvManager
     template <class BackInsertIterator>
     void find( const std::string& name, BackInsertIterator bi )
       {
-        std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
+        std::lock_guard<std::mutex> lk( _lock_iheap );
         info_heap_type::const_iterator i = iheap.find( name );
         if ( i != iheap.end() ) {
 #ifdef __FIT_CPP_0X
@@ -241,17 +242,17 @@ class EvManager
     info_heap_type  iheap;  // address -> info string
     vertex_container_type vertices;
     edge_container_type edges;
-    std::tr2::rw_mutex _lock_edges;
+    std::shared_mutex _lock_edges;
     bridge_container_type bridges;
     pi_type gate; // predecessors
-    std::tr2::rw_mutex _lock_gate;
+    std::shared_mutex _lock_gate;
 
     struct worker
     {
       worker( EvManager* _mgr ) :
           mgr( _mgr ),
           not_empty( *this ),
-          thr( new std::tr2::thread( worker::_loop, this ) )
+          thr( new std::thread( worker::_loop, this ) )
         { }
 
       ~worker() {
@@ -277,9 +278,9 @@ class EvManager
       std::list<Event> events;
       EvManager* mgr;
 
-      std::tr2::mutex lock;
-      std::tr2::condition_variable cnd;
-      std::tr2::thread* thr;
+      std::mutex lock;
+      std::condition_variable cnd;
+      std::thread* thr;
 
       static void _loop( worker* );
     };
@@ -287,11 +288,11 @@ class EvManager
 
     bool _dispatch_stop;
 
-    std::tr2::rw_mutex _lock_heap;
-    std::tr2::mutex _lock_iheap;
+    mutable std::shared_mutex _lock_heap;
+    mutable std::mutex _lock_iheap;
 
     static std::string inv_key_str;
-    std::tr2::mutex _lock_tr;
+    mutable std::mutex _lock_tr;
     unsigned _trflags;
     std::ostream *_trs;
 

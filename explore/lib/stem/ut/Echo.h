@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-08-24 18:35:14 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2006-2009
+ * Copyright (c) 2006-2009, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -12,7 +12,8 @@
 #define __Echo_h
 
 #include <string>
-#include <mt/mutex>
+#include <mutex>
+#include <condition_variable>
 #include <mt/condition_variable>
 #include <stem/EventHandler.h>
 // #include <stem/Names.h>
@@ -66,8 +67,8 @@ class EchoClient :
     int v;
 
   private:
-    std::tr2::mutex m;
-    std::tr2::condition_variable cnd;
+    std::mutex m;
+    std::condition_variable cnd;
     
     struct check_v 
     {
@@ -138,15 +139,15 @@ class UglyEchoClient :
     void handler1( const stem::Event& );
     bool wait();
 
-    std::tr2::mutex lock;
+    std::mutex lock;
     std::string mess;
     std::list< std::string > rsp; 
     int rsp_count;
 
   private:
     bool failflag;
-    std::tr2::condition_variable cnd;
-    std::tr2::mutex mtx;
+    std::condition_variable cnd;
+    std::mutex mtx;
     
     struct rsp_count_8 
     {

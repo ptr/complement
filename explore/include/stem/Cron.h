@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/08/21 20:03:19 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 1998, 2002, 2003, 2005, 2007-2009
+ * Copyright (c) 1998, 2002, 2003, 2005, 2007-2009, 2020
  * Petr Ovtchenkov
  * 
  * Copyright (c) 1999-2001
@@ -27,9 +27,10 @@
 #endif
 
 #include <ctime>
-#include <mt/mutex>
-#include <mt/thread>
-#include <mt/date_time>
+#include <mutex>
+#include <condition_variable>
+#include <thread>
+#include <chrono>
 
 #include <queue>
 #include <string>
@@ -58,8 +59,8 @@ struct CronEntry :
         ev( x.ev )
       { }
 
-    std::tr2::system_time start;
-    std::tr2::nanoseconds period;
+    std::chrono::time_point<chrono::steady_clock,std::chrono::nanoseconds> start;
+    std::chrono::nanoseconds period;
     uint32_t n;
     stem::Event ev;
 
@@ -91,10 +92,10 @@ struct __CronEntry
 
     void swap( __CronEntry& );
 
-    std::tr2::system_time expired;
+    std::chrono::time_point<chrono::steady_clock,std::chrono::nanoseconds> expired;
 
-    std::tr2::system_time start;
-    std::tr2::nanoseconds period;
+    std::chrono::time_point<chrono::steady_clock,std::chrono::nanoseconds> start;
+    std::chrono::nanoseconds period;
 
     unsigned n;
     unsigned count;
@@ -159,13 +160,17 @@ class Cron :
 
         bool operator()() const
           {
-            return (!me._run || me._top_changed || me._M_c.empty() || (me._M_c.top().expired <= std::tr2::get_system_time())) ? true : false;
+            return (!me._run ||
+                    me._top_changed ||
+                    me._M_c.empty() ||
+                    (me._M_c.top().expired <= std::chrono::steady_clock::now())) ?
+              true : false;
           }
 
         Cron& me;
     } ready;
 
-    std::tr2::thread* _thr;
+    std::thread* _thr;
 
     typedef __CronEntry value_type;
     typedef std::priority_queue<value_type,
@@ -173,8 +178,8 @@ class Cron :
       std::greater<value_type> > container_type;
 
     container_type _M_c;
-    std::tr2::mutex _M_l;
-    std::tr2::condition_variable cond;
+    std::mutex _M_l;
+    std::condition_variable cond;
     bool _run;
     bool _top_changed;
 

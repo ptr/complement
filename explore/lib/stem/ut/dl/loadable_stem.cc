@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <09/04/30 11:34:39 ptr>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 2002, 2003, 2006-2009
+ * Copyright (c) 2002, 2003, 2006-2009, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -12,7 +12,7 @@
 #include "../NodeDL.h"
 
 using namespace stem;
-using namespace std::tr2;
+using namespace std;
 
 NodeDL::NodeDL() :
     EventHandler(),
@@ -40,7 +40,7 @@ void NodeDL::handler1( const stem::Event& )
 bool NodeDL::wait()
 {
   unique_lock<mutex> lk( m );
-  return cnd.timed_wait( lk, std::tr2::milliseconds( 500 ), check_v( *this ) );
+  return cnd.wait_for(lk, chrono::milliseconds(500), check_v(*this));
 }
 
 DEFINE_RESPONSE_TABLE( NodeDL )
@@ -75,7 +75,7 @@ void NewNodeDL::handler1( const stem::Event& )
 bool NewNodeDL::wait()
 {
   unique_lock<mutex> lk( m );
-  return cnd.timed_wait( lk, std::tr2::milliseconds( 800 ), check_v( *this )  );
+  return cnd.wait_for(lk, chrono::milliseconds(800), check_v(*this));
 }
 
 DEFINE_RESPONSE_TABLE( NewNodeDL )

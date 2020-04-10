@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/07/07 18:49:33 ptr>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 2009
+ * Copyright (c) 2009, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -11,14 +11,14 @@
 
 #include "vf.h"
 
-#include <mt/date_time>
+#include <chrono>
+#include <thread>
 #include <exam/suite.h>
 
 // #include <iostream>
 
 using namespace std;
 using namespace stem;
-using namespace std::tr2;
 
 VF::VF( stem::addr_type id ) :
     EventHandler( id )
@@ -27,7 +27,7 @@ VF::VF( stem::addr_type id ) :
 
 VF::~VF()
 {
-  this_thread::sleep( milliseconds(500) );
+  this_thread::sleep_for(chrono::milliseconds(500));
 }
 
 int VF::s = 0;
@@ -56,7 +56,7 @@ VF1::~VF1()
 
 bool VF1::Dispatch( const stem::Event& )
 {
-  this_thread::sleep( milliseconds(1500) );
+  this_thread::sleep_for(chrono::milliseconds(1500));
 
   // ok, i want to use s here
   EXAM_CHECK_ASYNC( s != 0 );

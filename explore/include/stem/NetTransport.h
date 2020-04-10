@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2012-02-08 20:46:15 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2012
+ * Copyright (c) 1997-1999, 2002-2003, 2005-2006, 2008-2012, 2020
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -18,7 +18,8 @@
 
 #include <sockios/sockstream>
 
-#include <mt/thread>
+#include <chrono>
+#include <thread>
 
 #include <string>
 #include <sstream>
@@ -198,10 +199,10 @@ class NetTransportMgr :
 #endif
 
   private:
-    domain_type discovery( const std::tr2::nanoseconds& timeout = std::tr2::nanoseconds() );
+    domain_type discovery(const std::chrono::nanoseconds& timeout = std::chrono::nanoseconds());
 
     static void _loop( NetTransportMgr* );
-    std::tr2::thread* _thr;
+    std::thread* _thr;
 };
 
 
@@ -220,7 +221,7 @@ domain_type NetTransportMgr::open( const char* hostname, int port,
     }
     catch ( ... ) {
     }
-    return discovery( static_cast<std::tr2::nanoseconds>(timeout).count() );
+    return discovery(std::chrono::duration_cast<std::chrono::nanoseconds>(timeout));
   }
   return stem::baddomain;
 }
@@ -232,7 +233,7 @@ domain_type NetTransportMgr::open( const char* path,
 {
   std::sockstream::open( path, timeout, type );
   if ( std::sockstream::is_open() && std::sockstream::good() ) {
-    return discovery( static_cast<std::tr2::nanoseconds>(timeout).count() );
+    return discovery(std::chrono::duration_cast<std::chrono::nanoseconds>(timeout));
   }
   return stem::baddomain;
 }
@@ -252,7 +253,7 @@ domain_type NetTransportMgr::open( in_addr_t addr, int port,
     }
     catch ( ... ) {
     }
-    return discovery( static_cast<std::tr2::nanoseconds>(timeout).count() );
+    return discovery(std::chrono::duration_cast<std::chrono::nanoseconds>(timeout));
   }
   return stem::baddomain;
 }
@@ -271,7 +272,7 @@ domain_type NetTransportMgr::open( const sockaddr_in& addr,
     }
     catch ( ... ) {
     }
-    return discovery( static_cast<std::tr2::nanoseconds>(timeout).count() );
+    return discovery(std::chrono::duration_cast<std::chrono::nanoseconds>(timeout));
   }
   return stem::baddomain;
 }

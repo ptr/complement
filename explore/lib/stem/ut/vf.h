@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/07/07 18:48:57 ptr>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 2009
+ * Copyright (c) 2009, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -12,8 +12,6 @@
 #ifndef __vf_h
 #define __vf_h
 
-#include <mt/mutex>
-#include <mt/condition_variable>
 #include <stem/EventHandler.h>
 #include <string>
 

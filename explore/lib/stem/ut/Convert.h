@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/05/25 11:52:05 ptr>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 2007-2009
+ * Copyright (c) 2007-2009, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -12,8 +12,8 @@
 #ifndef __Convert_h
 #define __Convert_h
 
-#include <mt/mutex>
-#include <mt/condition_variable>
+#include <mutex>
+#include <condition_variable>
 
 #include <stem/Event.h>
 #include <stem/EventHandler.h>
@@ -69,8 +69,8 @@ class Convert :
     static bool v_nz_check()
       { return v != 0; }
 
-    std::tr2::mutex mtx;
-    std::tr2::condition_variable cnd;
+    std::mutex mtx;
+    std::condition_variable cnd;
 
     DECLARE_RESPONSE_TABLE( Convert, stem::EventHandler );
 };

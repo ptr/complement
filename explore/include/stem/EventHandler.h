@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2012-02-09 14:53:48 ptr>
+// -*- C++ -*-
 
 /*
  * Copyright (c) 1995-1999, 2002, 2003, 2005-2010
@@ -37,7 +37,7 @@
 # include <misc/type_traits.h>
 #endif
 
-#include <mt/mutex>
+#include <mutex>
 
 namespace stem {
 
@@ -539,7 +539,7 @@ class EventHandler
     // See comment near EventHandler::EventHandler() implementation
     // HistoryContainer& theHistory;
     HistoryContainer theHistory;
-    std::tr2::recursive_mutex _theHistory_lock;
+    mutable std::recursive_mutex _theHistory_lock;
 
   public:
 

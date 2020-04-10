@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <10/05/25 11:46:48 ptr>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 2007-2009
+ * Copyright (c) 2007-2009, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -13,7 +13,7 @@
 #include <mt/date_time>
 #include <string>
 
-using namespace std::tr2;
+using namespace std;
 
 void mess::pack( std::ostream& s ) const
 {
@@ -109,7 +109,7 @@ void Convert::handler6( const stem::Event_base<Convert::compaund_type>& ev )
 bool Convert::wait()
 {
   unique_lock<mutex> lk( mtx );
-  return cnd.timed_wait( lk, std::tr2::milliseconds( 500 ), v_nz_check );
+  return cnd.wait_for(lk, chrono::milliseconds(500), v_nz_check);
 }
 
 DEFINE_RESPONSE_TABLE( Convert )

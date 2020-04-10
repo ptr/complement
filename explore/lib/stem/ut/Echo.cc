@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2011-08-24 18:35:00 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2006, 2007, 2011
+ * Copyright (c) 2006, 2007, 2011, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -14,7 +14,7 @@
 #include <stem/EvManager.h>
 
 #include <exam/suite.h>
-#include <mt/date_time>
+#include <chrono>
 
 #include <exam/defs.h>
 
@@ -102,7 +102,7 @@ EchoClient::~EchoClient()
 
 void EchoClient::handler1( const stem::Event& ev )
 {
-  lock_guard<mutex> lk( m );
+  std::lock_guard<std::mutex> lk(m);
   
   EXAM_CHECK_ASYNC( ev.value() == mess );
   
@@ -112,8 +112,8 @@ void EchoClient::handler1( const stem::Event& ev )
 
 bool EchoClient::wait()
 {
-  unique_lock<mutex> lk( m );
-  bool res = cnd.timed_wait( lk, std::tr2::milliseconds( 2000 ), check_v( *this ) );
+  std::unique_lock<std::mutex> lk(m);
+  bool res = cnd.wait_for(lk, chrono::milliseconds(2000), check_v(*this));
   
   v = 0;
    
@@ -161,7 +161,7 @@ void UglyEchoClient::handler1( const stem::Event& ev )
   }
   lock.unlock();
  
-  std::tr2::lock_guard<std::tr2::mutex> lk( mtx );
+  std::lock_guard<std::mutex> lk(mtx);
 
   if ( failflag ) {
     cout << rsp_count << endl;
@@ -174,9 +174,9 @@ void UglyEchoClient::handler1( const stem::Event& ev )
 
 bool UglyEchoClient::wait()
 {
-  std::tr2::unique_lock<std::tr2::mutex> lk( mtx );
+  std::unique_lock<std::mutex> lk(mtx);
 
-  bool result = cnd.timed_wait(lk, std::tr2::milliseconds( 1000 ), rsp_count_8( *this ) );
+  bool result = cnd.wait_for(lk, chrono::milliseconds(1000), rsp_count_8(*this));
 
   if ( result ) {
     rsp_count = 0;
@@ -231,7 +231,7 @@ void PeerClient::handler1( const stem::Event& ev )
 
 bool PeerClient::wait()
 {
-  return cnd.timed_wait( std::tr2::milliseconds( 500 ) );
+  return cnd.wait_for(chrono::milliseconds(500));
 }
 
 DEFINE_RESPONSE_TABLE( PeerClient )
@@ -292,7 +292,7 @@ void EchoLast::last( const stem::Event& ev )
 
 bool EchoLast::wait()
 {
-  return cnd.timed_wait( std::tr2::milliseconds( 800 ) );
+  return cnd.wait_for(chrono::milliseconds(800));
 }
 
 DEFINE_RESPONSE_TABLE( EchoLast )
@@ -324,7 +324,7 @@ LastEvent::~LastEvent()
     Send( ev );
 
     // See comments in EchoLast::last above
-    cnd_conf.timed_wait( std::tr2::milliseconds( 500 ) );
+    cnd_conf.wait_for(chrono::milliseconds(500));
   }
 
   this->disable();
@@ -347,7 +347,7 @@ void LastEvent::conformation( const stem::Event& ev )
 
 bool LastEvent::wait()
 {
-  return cnd.timed_wait( std::tr2::milliseconds( 500 ) );
+  return cnd.wait_for(chrono::milliseconds(500));
 }
 
 DEFINE_RESPONSE_TABLE( LastEvent )

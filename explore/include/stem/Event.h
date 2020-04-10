@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2012-02-08 17:12:51 ptr>
+// -*- C++ -*-
 
 /*
  *
@@ -27,7 +27,7 @@
 #include <misc/type_traits.h>
 #include <stem/EvPack.h>
 #include <mt/uid.h>
-#include <mt/thread>
+#include <thread>
 
 #if defined(STLPORT) || defined(__FIT_CPP_0X)
 #  include <unordered_map>

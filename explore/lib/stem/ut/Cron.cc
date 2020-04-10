@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <08/12/01 23:13:51 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2008
+ * Copyright (c) 2008, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -11,11 +11,10 @@
 #include "Cron.h"
 
 #include <stem/Cron.h>
-#include <mt/mutex>
+#include <mutex>
 
 using namespace std;
 using namespace stem;
-using namespace std::tr2;
 
 CronClient::CronClient() :
     see(),

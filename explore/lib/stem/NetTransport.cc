@@ -2,7 +2,7 @@
 
 /*
  *
- * Copyright (c) 1997-1999, 2002-2003, 2005-2012, 2017
+ * Copyright (c) 1997-1999, 2002-2003, 2005-2012, 2017, 2020
  * Petr Ovtchenkov
  *
  * Copyright (c) 1999-2001
@@ -21,9 +21,10 @@
 #include "stem/EvManager.h"
 #include "crc.h"
 #include "stem/EDSEv.h"
-#include <mt/thread>
-#include <mt/mutex>
+#include <thread>
+#include <mutex>
 
+#include <mt/fork.h>
 #include <exam/defs.h>
 
 #if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
@@ -36,7 +37,6 @@ const uint32_t EDS_MSG_LIMIT = 0x400000; // 4MB
 namespace stem {
 
 using namespace std;
-using namespace std::tr2;
 
 #if !defined(STLPORT) && defined(__GNUC__) && !defined(__GXX_EXPERIMENTAL_CXX0X__)
 using __gnu_cxx::copy_n;
@@ -114,14 +114,14 @@ addr_type NetTransport_base::ns_remote() const
 
 void NetTransport_base::add_route( const addr_type& a )
 {
-  std::tr2::lock_guard<std::tr2::recursive_mutex> lk( this->_theHistory_lock );
+  std::lock_guard<std::recursive_mutex> lk(this->_theHistory_lock);
   _ids.push_back( a );
   manager()->Subscribe( a, this, 1000 );
 }
 
 void NetTransport_base::rm_route( const addr_type& a )
 {
-  std::tr2::lock_guard<std::tr2::recursive_mutex> lk( this->_theHistory_lock );
+  std::lock_guard<std::recursive_mutex> lk(this->_theHistory_lock);
   addr_container_type::iterator i = _ids.begin();
   ++i;
   while ( i != _ids.end() ) {
@@ -441,7 +441,7 @@ domain_type NetTransport_base::domain() const
     return xmt::nil_uuid;
   }
 
-  basic_read_lock<rw_mutex> lk( EventHandler::manager()._lock_edges );
+  shared_lock lk(EventHandler::manager()._lock_edges);
 
   auto eid =  EventHandler::manager().edges.find( _id );
  
@@ -539,7 +539,7 @@ void NetTransport::connect( sockstream& s )
       __pack_base::__pack( s, EventHandler::domain() );
       __pack_base::__pack( s, 1000 );
 
-      basic_read_lock<rw_mutex> lk( EventHandler::manager()._lock_edges );
+      shared_lock lk(EventHandler::manager()._lock_edges);
 
       for ( auto i = EventHandler::manager().edges.begin(); i != EventHandler::manager().edges.end(); ++i ) {
         if ( i->first != other_eid ) {
@@ -746,13 +746,13 @@ void NetTransportMgr::close()
   NetTransport_base::_close();
 }
 
-stem::domain_type NetTransportMgr::discovery( const std::tr2::nanoseconds& timeout )
+stem::domain_type NetTransportMgr::discovery(const std::chrono::nanoseconds& timeout)
 {
   this->write( reinterpret_cast<const char*>(&EDS_MAGIC), sizeof(EDS_MAGIC) );
   __pack_base::__pack( *this, EventHandler::domain() );
   this->flush();
   
-  if ( timeout != nanoseconds() ) {
+  if (timeout != std::chrono::nanoseconds()) {
     std::sockstream::rdbuf()->rdtimeout( timeout );
   }
 
@@ -765,7 +765,7 @@ stem::domain_type NetTransportMgr::discovery( const std::tr2::nanoseconds& timeo
   }
 
   {
-    basic_read_lock<rw_mutex> lk( EventHandler::manager()._lock_edges );
+    shared_lock lk(EventHandler::manager()._lock_edges);
 
     for ( auto i = EventHandler::manager().edges.begin(); i != EventHandler::manager().edges.end(); ++i ) {
       __pack_base::__pack( *this, i->first );
@@ -813,7 +813,7 @@ stem::domain_type NetTransportMgr::discovery( const std::tr2::nanoseconds& timeo
 
   if ( !this->fail() && (domain != xmt::nil_uuid) ) {
     EventHandler::manager().route_calc();
-    _thr = new std::tr2::thread( _loop, this );
+    _thr = new std::thread( _loop, this );
     return domain;
   }
 

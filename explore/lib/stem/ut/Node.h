@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2011-06-09 18:28:37 yeti>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 2002, 2003, 2006-2008
+ * Copyright (c) 2002, 2003, 2006-2008, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -12,8 +12,8 @@
 #ifndef __Node_h
 #define __Node_h
 
-#include <mt/mutex>
-#include <mt/condition_variable>
+#include <mutex>
+#include <condition_variable>
 #include <stem/EventHandler.h>
 
 class Node :
@@ -32,8 +32,8 @@ class Node :
     int v;
 
   private:
-    std::tr2::mutex m;
-    std::tr2::condition_variable cnd;
+    std::mutex m;
+    std::condition_variable cnd;
     
     struct check_v 
     {
@@ -66,8 +66,8 @@ class NewNode :
     int v;
 
   private:
-    std::tr2::mutex m;
-    std::tr2::condition_variable cnd;
+    std::mutex m;
+    std::condition_variable cnd;
     
     struct check_v 
     {

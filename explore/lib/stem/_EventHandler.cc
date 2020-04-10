@@ -1,4 +1,4 @@
-// -*- C++ -*- Time-stamp: <2012-02-09 14:51:54 ptr>
+// -*- C++ -*-
 
 /*
  * Copyright (c) 1995-1999, 2002-2003, 2005-2011
@@ -15,8 +15,8 @@
 #include "stem/EventHandler.h"
 #include "stem/EvManager.h"
 #include "stem/Names.h"
-#include <mt/mutex>
-#include <mt/thread>
+#include <mutex>
+#include <thread>
 #include <mt/uid.h>
 #include <exam/defs.h>
 
@@ -24,7 +24,7 @@
 
 namespace stem {
 
-using namespace std::tr2;
+//using namespace std::tr2;
 
 char *Init_buf[128];
 static domain_type _domain = xmt::uid();
@@ -299,7 +299,7 @@ EventHandler::~EventHandler()
 
 void EventHandler::TraceStack( ostream& out ) const
 {
-  std::tr2::lock_guard<std::tr2::recursive_mutex> lk( _theHistory_lock );
+  std::lock_guard<std::recursive_mutex> lk(_theHistory_lock);
   const HistoryContainer& hst = theHistory;
   HistoryContainer::const_iterator hst_i = hst.begin();
   while ( hst_i != hst.end() ) {

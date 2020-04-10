@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <2011-06-09 18:28:27 yeti>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 2002, 2003, 2006-2009
+ * Copyright (c) 2002, 2003, 2006-2009, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -11,11 +11,13 @@
 
 #include "Node.h"
 
-#include <mt/date_time>
+#include <chrono>
 
 using namespace std;
 using namespace stem;
-using namespace std::tr2;
+
+using std::lock_guard;
+using std::mutex;
 
 Node::Node() :
     EventHandler(),
@@ -41,7 +43,7 @@ Node::~Node()
 
 void Node::handler1( const stem::Event& )
 {
-  lock_guard<mutex> lk( m );
+  lock_guard<mutex> lk(m);
   // std::cerr << "I am here 1\n";
   v = 1;
   cnd.notify_one();
@@ -51,7 +53,7 @@ void Node::handler1( const stem::Event& )
 bool Node::wait()
 {
   unique_lock<mutex> lk( m );
-  return cnd.timed_wait( lk, std::tr2::milliseconds( 800 ), check_v( *this ) );
+  return cnd.wait_for(lk, chrono::milliseconds(800), check_v( *this ));
 }
 
 DEFINE_RESPONSE_TABLE( Node )
@@ -88,7 +90,7 @@ void NewNode::handler1( const stem::Event& )
 bool NewNode::wait()
 {
   unique_lock<mutex> lk( m );
-  return cnd.timed_wait( lk, std::tr2::milliseconds( 500 ), check_v( *this )  );
+  return cnd.wait_for(lk, chrono::milliseconds(500), check_v(*this));
 }
 
 DEFINE_RESPONSE_TABLE( NewNode )

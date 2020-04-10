@@ -17,7 +17,7 @@
 #include "stem/NetTransport.h"
 #include "stem/EDSEv.h"
 #include <iomanip>
-#include <mt/mutex>
+#include <mutex>
 
 #include <exam/defs.h>
 #include <mt/callstack.h>
@@ -25,7 +25,7 @@
 namespace stem {
 
 using namespace std;
-using namespace std::tr2;
+//using namespace std::tr2;
 
 const addr_type& badaddr = xmt::nil_uuid;
 const domain_type& baddomain = xmt::nil_uuid;
@@ -77,7 +77,7 @@ void EvManager::stop_queue()
 
   for ( unsigned int i = 0; i < n_threads; ++i ) {
     if ( workers[i] != 0 ) {
-      std::tr2::unique_lock<std::tr2::mutex> lock( workers[i]->lock );
+      std::unique_lock<std::mutex> lock( workers[i]->lock );
       workers[i]->cnd.notify_one();
     }
   }
@@ -130,7 +130,7 @@ void EvManager::push( const Event& e )
   // }
 
   unsigned int i = e.dest().second.u.i[0] & (n_threads - 1);
-  std::tr2::lock_guard<std::tr2::mutex> lock( workers[i]->lock );
+  std::lock_guard<std::mutex> lock( workers[i]->lock );
   workers[i]->events.push_back( e );
 #ifdef __FIT_STEM_TRACE
   try {
@@ -168,7 +168,7 @@ void EvManager::worker::_loop( worker* p )
       list< Event > events;
 
       {
-        std::tr2::unique_lock<std::tr2::mutex> lock( me.lock );
+        std::unique_lock<std::mutex> lock(me.lock);
         me.cnd.wait( lock, me.not_empty );
         swap( me.events, events );
       }
@@ -178,7 +178,7 @@ void EvManager::worker::_loop( worker* p )
         if ( ev.dest().first != EventHandler::domain() ) {
           ReTryBridge:
           {
-            std::tr2::basic_read_lock<std::tr2::rw_mutex> glock( me.mgr->_lock_gate );
+            std::shared_lock glock(me.mgr->_lock_gate);
 
             auto eid = me.mgr->gate.find( ev.dest().first );
 
@@ -212,7 +212,7 @@ void EvManager::worker::_loop( worker* p )
           }
 
           {
-            std::tr2::basic_read_lock<std::tr2::rw_mutex> elock( me.mgr->_lock_edges );
+            std::shared_lock elock(me.mgr->_lock_edges);
             auto bid = me.mgr->bridges.find( edge );
 
             if ( bid != me.mgr->bridges.end() ) {
@@ -281,7 +281,7 @@ void EvManager::worker::_loop( worker* p )
           continue;
         }
         {
-          std::tr2::basic_read_lock<std::tr2::rw_mutex> lock( me.mgr->_lock_heap );
+          std::shared_lock lock(me.mgr->_lock_heap);
           local_heap_type::iterator k = me.mgr->heap.find( ev.dest().second );
 
           if ( k == me.mgr->heap.end() ) {
@@ -381,8 +381,8 @@ void EvManager::worker::_loop( worker* p )
 void EvManager::Unsubscribe( const addr_type& id )
 {
   {
-    std::tr2::lock_guard<std::tr2::rw_mutex> _x1( _lock_heap );
-    std::tr2::lock_guard<std::tr2::mutex> lk( _lock_iheap );
+    std::lock_guard<std::shared_mutex> _x1(_lock_heap);
+    std::lock_guard<std::mutex> lk(_lock_iheap);
 
     unsafe_Unsubscribe( id );
   }
@@ -529,7 +529,7 @@ std::ostream& EvManager::dump( std::ostream& s ) const
   ios_base::fmtflags f = s.flags( ios_base::showbase );
 
   {
-    basic_read_lock<rw_mutex> lk( _lock_heap );
+    shared_lock lk( _lock_heap );
 
     for ( local_heap_type::const_iterator i = heap.begin(); i != heap.end(); ++i ) {
       s << i->first << " => "
@@ -568,7 +568,7 @@ EvManager::edge_id_type EvManager::bridge( NetTransport_base* b, const domain_ty
 {
   edge_id_type ne = xmt::uid();
 
-  std::tr2::lock_guard<std::tr2::rw_mutex> lock( _lock_edges );
+  std::lock_guard<std::shared_mutex> lock(_lock_edges);
 
   edges.insert( make_pair( ne, make_pair( make_pair(EventHandler::domain(),domain), 1000) ) );
   vertices[EventHandler::domain()].push_back( ne );
@@ -579,7 +579,7 @@ EvManager::edge_id_type EvManager::bridge( NetTransport_base* b, const domain_ty
 
 void EvManager::connectivity( const edge_id_type& eid, const domain_type& u, const domain_type& v, unsigned w, NetTransport_base* b )
 {
-  std::tr2::lock_guard<std::tr2::rw_mutex> lock( _lock_edges );
+  std::lock_guard<std::shared_mutex> lock(_lock_edges);
 
   if ( edges.insert( make_pair( eid, make_pair( make_pair(u,v), w) ) ).second ) {
     vertices[u].push_back( eid );
@@ -597,7 +597,7 @@ void EvManager::connectivity( const edge_id_type& eid, const domain_type& u, con
 
 void EvManager::remove_edge( const edge_id_type& _id )
 {
-  unique_lock<rw_mutex> lk( _lock_edges );
+  unique_lock<shared_mutex> lk(_lock_edges);
 
   auto eid =  edges.find( _id ); // edge
  
@@ -653,7 +653,7 @@ void EvManager::route_calc()
   q_type Q; // heap, d[Q[0]] is minimal in d
 
   {
-    basic_read_lock<rw_mutex> lk( _lock_edges );
+    shared_lock lk(_lock_edges);
 
     Q.reserve( vertices.size() );
 
@@ -720,7 +720,7 @@ void EvManager::route_calc()
     }
   }
 
-  lock_guard<rw_mutex> glk( _lock_gate );
+  lock_guard<shared_mutex> glk(_lock_gate);
   pi.swap( gate );
 }
 

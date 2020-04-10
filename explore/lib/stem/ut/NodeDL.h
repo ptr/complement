@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <09/04/30 11:35:12 ptr>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 2002, 2003, 2006-2008
+ * Copyright (c) 2002, 2003, 2006-2008, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -12,8 +12,8 @@
 #ifndef __NodeDL_h
 #define __NodeDL_h
 
-#include <mt/mutex>
-#include <mt/condition_variable>
+#include <mutex>
+#include <condition_variable>
 #include <stem/EventHandler.h>
 
 class NodeDL :
@@ -31,8 +31,8 @@ class NodeDL :
     int v;
 
   private:
-    std::tr2::mutex m;
-    std::tr2::condition_variable cnd;
+    std::mutex m;
+    std::condition_variable cnd;
     
     struct check_v 
     {
@@ -65,8 +65,8 @@ class NewNodeDL :
     int v;
 
   private:
-    std::tr2::mutex m;
-    std::tr2::condition_variable cnd;
+    std::mutex m;
+    std::condition_variable cnd;
     
     struct check_v 
     {

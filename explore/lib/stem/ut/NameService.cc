@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
 /*
- * Copyright (c) 2006-2008, 2017
+ * Copyright (c) 2006-2008, 2017, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -15,11 +15,10 @@
 #include <stem/EDSEv.h>
 #include "NameService.h"
 
-#include <mt/date_time>
+#include <chrono>
 
 using namespace std;
 using namespace stem;
-using namespace std::tr2;
 
 Naming::Naming() :
     EventHandler()
@@ -51,7 +50,7 @@ void Naming::names_name( const nsrecords_type& nr )
 
 bool Naming::wait()
 {
-  return cnd.timed_wait( std::tr2::milliseconds( 500 ) );
+  return cnd.wait_for(chrono::milliseconds(500));
 }
 
 DEFINE_RESPONSE_TABLE( Naming )

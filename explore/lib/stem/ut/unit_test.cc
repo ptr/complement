@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
 /*
- * Copyright (c) 2002, 2003, 2006-2009, 2017
+ * Copyright (c) 2002, 2003, 2006-2009, 2017, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -11,9 +11,10 @@
 #include <exam/suite.h>
 
 #include <iostream>
-#include <mt/thread>
+#include <thread>
 #include <mt/uid.h>
 #include <mt/shm.h>
+#include <mt/fork.h>
 
 #include <stem/EventHandler.h>
 #include <stem/Names.h>
@@ -47,7 +48,6 @@ using namespace __gnu_cxx;
 #include <misc/opts.h>
 
 using namespace std;
-using namespace std::tr2;
 
 class stem_test
 {
@@ -388,8 +388,8 @@ int EXAM_IMPL(stem_test::echo)
 }
 
 xmt::shm_alloc<0> seg;
-xmt::allocator_shm<condition_event_ip,0> shm_cnd;
-xmt::allocator_shm<barrier_ip,0>         shm_b;
+xmt::allocator_shm<std::tr2::condition_event_ip,0> shm_cnd;
+xmt::allocator_shm<std::tr2::barrier_ip,0>         shm_b;
 xmt::allocator_shm<stem::ext_addr_type,0>    shm_a;
 
 stem_test::stem_test()
@@ -418,7 +418,9 @@ stem_test::~stem_test()
 
 int EXAM_IMPL(stem_test::echo_net)
 {
-  condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+  using namespace std::tr2;
+
+  std::tr2::condition_event_ip& fcnd = *new (shm_cnd.allocate(1)) std::tr2::condition_event_ip();
   stem::ext_addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::ext_addr_type();
 
   try {
@@ -429,7 +431,7 @@ int EXAM_IMPL(stem_test::echo_net)
     try {
       stem::NetTransportMgr mgr;
 
-      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+      EXAM_CHECK_ASYNC_F(fcnd.wait_for(std::chrono::milliseconds(800)), eflag);
 
       stem::domain_type domain = mgr.open( "localhost", 6995 );
 
@@ -505,9 +507,10 @@ int EXAM_IMPL(stem_test::echo_net)
 
 int EXAM_IMPL(stem_test::echo_local)
 {
+  using namespace std::tr2;
   // throw exam::skip_exception();
 
-  condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+  std::tr2::condition_event_ip& fcnd = *new (shm_cnd.allocate(1)) std::tr2::condition_event_ip();
   stem::ext_addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::ext_addr_type();
 
   const char f[] = "/tmp/stem_echo";
@@ -520,7 +523,7 @@ int EXAM_IMPL(stem_test::echo_local)
     try {
       stem::NetTransportMgr mgr;
 
-      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+      EXAM_CHECK_ASYNC_F(fcnd.wait_for(std::chrono::milliseconds(800)), eflag);
 
       stem::domain_type domain = mgr.open( f /* , sock_base::sock_stream */ );
 
@@ -602,22 +605,22 @@ int EXAM_IMPL(stem_test::echo_local)
 int EXAM_IMPL(stem_test::triple_echo)
 {
   try {
-    xmt::allocator_shm<barrier_ip,0> shm;
-    xmt::allocator_shm<condition_event_ip,0> cnd;
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+    xmt::allocator_shm<std::tr2::condition_event_ip,0> cnd;
 
-    barrier_ip& b1 = *new ( shm.allocate( 1 ) ) barrier_ip();
-    barrier_ip& b2 = *new ( shm.allocate( 1 ) ) barrier_ip();
-    condition_event_ip& c = *new ( cnd.allocate(1) ) condition_event_ip();
+    std::tr2::barrier_ip& b1 = *new (shm.allocate(1)) std::tr2::barrier_ip();
+    std::tr2::barrier_ip& b2 = *new (shm.allocate(1)) std::tr2::barrier_ip();
+    std::tr2::condition_event_ip& c = *new (cnd.allocate(1)) std::tr2::condition_event_ip();
     stem::ext_addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::ext_addr_type();
 
     try {
       int res = 0;
 
-      this_thread::fork();
+      std::tr2::this_thread::fork();
 
       try {
 
-        this_thread::fork();
+        std::tr2::this_thread::fork();
 
         {
 #if 0
@@ -784,9 +787,10 @@ int EXAM_IMPL(stem_test::triple_echo)
 // same as echo_net(), but server in child process
 int EXAM_IMPL(stem_test::net_echo)
 {
+  using namespace std::tr2;
   try {
-    barrier_ip& b = *new ( shm_b.allocate( 1 ) ) barrier_ip();
-    condition_event_ip& c = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+    std::tr2::barrier_ip& b = *new (shm_b.allocate(1)) std::tr2::barrier_ip();
+    std::tr2::condition_event_ip& c = *new (shm_cnd.allocate(1)) std::tr2::condition_event_ip();
     stem::ext_addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::ext_addr_type();
 
     try {
@@ -824,7 +828,7 @@ int EXAM_IMPL(stem_test::net_echo)
       // mgr.manager()->settrf( stem::EvManager::tracenet | stem::EvManager::tracedispatch | stem::EvManager::tracefault );
       // mgr.manager()->settrs( &std::cerr );
 
-      EXAM_CHECK( c.timed_wait( std::tr2::milliseconds( 800 ) ) ); // wait server start
+      EXAM_CHECK(c.wait_for(std::chrono::milliseconds(800))); // wait server start
 
       stem::domain_type domain = mgr.open( "localhost", 6995 );
 
@@ -873,7 +877,8 @@ int EXAM_IMPL(stem_test::net_echo)
 
 int EXAM_IMPL(stem_test::ugly_echo_net)
 {
-  condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+  using namespace std::tr2;
+  std::tr2::condition_event_ip& fcnd = *new (shm_cnd.allocate(1)) std::tr2::condition_event_ip();
   stem::ext_addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::ext_addr_type();
 
   try {
@@ -884,7 +889,7 @@ int EXAM_IMPL(stem_test::ugly_echo_net)
     try {
       stem::NetTransportMgr mgr;
 
-      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+      EXAM_CHECK_ASYNC_F(fcnd.wait_for(std::chrono::milliseconds(800)), eflag);
 
       stem::domain_type domain = mgr.open( "localhost", 6995 );
 
@@ -978,6 +983,8 @@ static void dummy_signal_handler( int )
 
 int EXAM_IMPL(stem_test::peer)
 {
+  using namespace std::tr2;
+
   /*
    * The logical scheme is:
    *
@@ -993,9 +1000,9 @@ int EXAM_IMPL(stem_test::peer)
 
   pid_t fpid;
 
-  condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
-  condition_event_ip& pcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
-  condition_event_ip& scnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+  std::tr2::condition_event_ip& fcnd = *new (shm_cnd.allocate(1)) std::tr2::condition_event_ip();
+  std::tr2::condition_event_ip& pcnd = *new (shm_cnd.allocate(1)) std::tr2::condition_event_ip();
+  std::tr2::condition_event_ip& scnd = *new (shm_cnd.allocate(1)) std::tr2::condition_event_ip();
   stem::ext_addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::ext_addr_type();
 
   addr = stem::extbadaddr;
@@ -1030,13 +1037,13 @@ int EXAM_IMPL(stem_test::peer)
         stem::stem_scope scope( c1 );
         // stem::stem_scope nm_scope( nm );
 
-        EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+        EXAM_CHECK_ASYNC_F( fcnd.wait_for(std::chrono::milliseconds(800)), eflag);
 
         stem::domain_type domain = mgr.open( "localhost", 6995 );
 
         EXAM_CHECK_ASYNC_F( domain != stem::badaddr, eflag );
 
-        EXAM_CHECK_ASYNC_F( pcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+        EXAM_CHECK_ASYNC_F(pcnd.wait_for(std::chrono::milliseconds(800)), eflag);
 
         EXAM_CHECK_ASYNC_F( addr != stem::extbadaddr, eflag );
 
@@ -1046,7 +1053,7 @@ int EXAM_IMPL(stem_test::peer)
                                  //                            .
         c1.Send( pe );
 
-        EXAM_CHECK_ASYNC_F( scnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+        EXAM_CHECK_ASYNC_F(scnd.wait_for(std::chrono::milliseconds(800)), eflag);
       }
 
       mgr.close();
@@ -1091,7 +1098,7 @@ int EXAM_IMPL(stem_test::peer)
       {
         stem::stem_scope scope( c2 );
 
-        EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+        EXAM_CHECK_ASYNC_F( fcnd.wait_for(std::chrono::milliseconds(800)), eflag);
         stem::domain_type domain = mgr.open( "localhost", 6995 );
 
         EXAM_CHECK_ASYNC_F( domain != stem::badaddr, eflag );
@@ -1160,7 +1167,8 @@ int EXAM_IMPL(stem_test::peer)
 
 int EXAM_IMPL(stem_test::last_event)
 {
-  condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+  using namespace std::tr2;
+  std::tr2::condition_event_ip& fcnd = *new (shm_cnd.allocate(1)) std::tr2::condition_event_ip();
   stem::ext_addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::ext_addr_type();
 
   addr = stem::extbadaddr;
@@ -1172,7 +1180,7 @@ int EXAM_IMPL(stem_test::last_event)
     int eflag = 0;
 
     try {
-      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+      EXAM_CHECK_ASYNC_F(fcnd.wait_for(std::chrono::milliseconds(800)), eflag);
       stem::NetTransportMgr mgr;
 
       stem::domain_type domain = mgr.open( "localhost", 6995 );
@@ -1234,7 +1242,8 @@ int EXAM_IMPL(stem_test::last_event)
 
 int EXAM_IMPL(stem_test::boring_manager)
 {
-  condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+  using namespace std::tr2;
+  std::tr2::condition_event_ip& fcnd = *new (shm_cnd.allocate(1)) std::tr2::condition_event_ip();
 
   try {
     // Client
@@ -1243,7 +1252,7 @@ int EXAM_IMPL(stem_test::boring_manager)
     int eflag = 0;
 
     try {
-      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+      EXAM_CHECK_ASYNC_F( fcnd.wait_for(std::chrono::milliseconds(800)), eflag);
 
       for ( int i = 0; i < 10; ++i ) {
         const int n = 10;
@@ -1303,7 +1312,8 @@ int EXAM_IMPL(stem_test::boring_manager)
 
 int EXAM_IMPL(stem_test::boring_manager_more)
 {
-  condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+  using namespace std::tr2;
+  std::tr2::condition_event_ip& fcnd = *new (shm_cnd.allocate(1)) std::tr2::condition_event_ip();
   stem::ext_addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::ext_addr_type();
 
   addr = stem::extbadaddr;
@@ -1318,7 +1328,7 @@ int EXAM_IMPL(stem_test::boring_manager_more)
     try {
       stem::EventHandler::cold_start( true );
 
-      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+      EXAM_CHECK_ASYNC_F( fcnd.wait_for(std::chrono::milliseconds(800)), eflag);
 
       for ( int i = 0; i < 10; ++i ) {
         const int n = 10;
@@ -1526,17 +1536,16 @@ int EXAM_IMPL(stem_test::cron)
  
     ev.dest( make_pair(cron_obj.domain(), ca) );
     ev.value().ev = cr;
-    system_time rec = std::tr2::get_system_time();
-    ev.value().start = rec + std::tr2::milliseconds( 500 );
+    ev.value().start = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
     ev.value().n = 1;
     // ev.value().period = 0;
 
     unique_lock<mutex> lk( client.m );
     client.Send( ev );
 
-    EXAM_CHECK( client.cnd.timed_wait( lk, std::tr2::milliseconds( 800 ) ) );
+    EXAM_CHECK(client.cnd.wait_for(lk, std::chrono::milliseconds(800)) == std::cv_status::no_timeout);
     // 'True' on the line above guarantee for
-    // (std::tr2::get_system_time() - rec) < std::tr2::milliseconds( 800 )
+    // (std::chrono::steady_clock::now() - rec) < std::chrono::milliseconds(800)
 
     // cerr << (std::tr2::get_system_time() - rec).count() << endl;
 
@@ -1591,12 +1600,13 @@ int EXAM_IMPL(stem_test::vf1)
 
 int EXAM_IMPL(stem_test::command_mgr)
 {  
+  using namespace std::tr2;
   try {    
-    xmt::allocator_shm<barrier_ip,0> shm;
-    xmt::allocator_shm<condition_event_ip,0> cnd;
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+    xmt::allocator_shm<std::tr2::condition_event_ip,0> cnd;
 
-    barrier_ip& b1 = *new ( shm.allocate( 1 ) ) barrier_ip();
-    condition_event_ip& c = *new ( cnd.allocate(1) ) condition_event_ip();
+    std::tr2::barrier_ip& b1 = *new (shm.allocate(1)) std::tr2::barrier_ip();
+    std::tr2::condition_event_ip& c = *new (cnd.allocate(1)) std::tr2::condition_event_ip();
     stem::ext_addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::ext_addr_type();
 
     addr = stem::extbadaddr;
@@ -1604,7 +1614,7 @@ int EXAM_IMPL(stem_test::command_mgr)
     try {
       int res = 0;
 
-      this_thread::fork();
+      std::tr2::this_thread::fork();
 
       {
         connect_processor<stem::NetTransport> srv( 6995 );
@@ -1689,7 +1699,8 @@ int EXAM_IMPL(stem_test::command_mgr)
 
 int EXAM_IMPL(stem_test::route_to_net)
 {
-  condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+  using namespace std::tr2;
+  std::tr2::condition_event_ip& fcnd = *new (shm_cnd.allocate(1)) std::tr2::condition_event_ip();
   stem::ext_addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::ext_addr_type();
 
   addr = stem::extbadaddr;
@@ -1702,7 +1713,7 @@ int EXAM_IMPL(stem_test::route_to_net)
     try {
       stem::NetTransportMgr mgr;
 
-      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+      EXAM_CHECK_ASYNC_F(fcnd.wait_for(std::chrono::milliseconds(800)), eflag);
 
       stem::domain_type domain = mgr.open( "localhost", 6995 );
 
@@ -1776,9 +1787,11 @@ int EXAM_IMPL(stem_test::route_to_net)
 
 int EXAM_IMPL(stem_test::route_from_net)
 {
-  condition_event_ip& fcnd = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
-  condition_event_ip& fcnd2 = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
-  condition_event_ip& fcnd3 = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+  using namespace std::tr2;
+
+  std::tr2::condition_event_ip& fcnd = *new ( shm_cnd.allocate(1)) std::tr2::condition_event_ip();
+  std::tr2::condition_event_ip& fcnd2 = *new ( shm_cnd.allocate(1)) std::tr2::condition_event_ip();
+  std::tr2::condition_event_ip& fcnd3 = *new ( shm_cnd.allocate(1)) std::tr2::condition_event_ip();
   stem::ext_addr_type& addr = *new ( shm_a.allocate( 1 ) ) stem::ext_addr_type();
 
   addr = stem::extbadaddr;
@@ -1797,7 +1810,7 @@ int EXAM_IMPL(stem_test::route_from_net)
       StEMecho echo( "echo service" );
       addr = make_pair( echo.domain(), echo.self_id() );
 
-      EXAM_CHECK_ASYNC_F( fcnd.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+      EXAM_CHECK_ASYNC_F(fcnd.wait_for(std::chrono::milliseconds(800)), eflag);
 
       stem::domain_type domain = mgr.open( "localhost", 6995 );
 
@@ -1811,7 +1824,7 @@ int EXAM_IMPL(stem_test::route_from_net)
         stem::stem_scope scope( echo );
 
         fcnd2.notify_one();
-        EXAM_CHECK_ASYNC_F( fcnd3.timed_wait( std::tr2::milliseconds( 800 ) ), eflag );
+        EXAM_CHECK_ASYNC_F(fcnd3.wait_for(std::chrono::milliseconds(800)), eflag);
       }
 
       mgr.close();
@@ -1838,7 +1851,7 @@ int EXAM_IMPL(stem_test::route_from_net)
     
         stem::Event ev( NODE_EV_ECHO );
 
-        EXAM_CHECK( fcnd2.timed_wait( std::tr2::milliseconds( 800 ) ) );
+        EXAM_CHECK(fcnd2.wait_for(std::chrono::milliseconds(800)));
         EXAM_CHECK( addr != stem::extbadaddr );
         EXAM_CHECK( !node.is_avail( addr.second ) );
 
@@ -1887,7 +1900,7 @@ namespace echo_mt_test {
 const int n_obj = 2;
 const int n_msg = 100;
 
-std::tr2::thread* thr[n_obj];
+std::thread* thr[n_obj];
 int res[n_obj];
 
 stem::addr_type addr = xmt::uid();
@@ -1945,8 +1958,8 @@ int EXAM_IMPL(stem_test::echo_mt)
       fill( echo_mt_test::res, echo_mt_test::res + echo_mt_test::n_obj, 0 );
       fill( echo_mt_test::thr, echo_mt_test::thr + echo_mt_test::n_obj, (std::tr2::thread*)(0) );
 
-      barrier_ip& b = *new ( shm_b.allocate( 1 ) ) barrier_ip();
-      condition_event_ip& c = *new ( shm_cnd.allocate( 1 ) ) condition_event_ip();
+      std::tr2::barrier_ip& b = *new ( shm_b.allocate( 1 ) ) std::tr2::barrier_ip();
+      std::tr2::condition_event_ip& c = *new ( shm_cnd.allocate( 1 ) ) std::tr2::condition_event_ip();
 
       try {
         std::tr2::this_thread::fork();
@@ -1978,10 +1991,10 @@ int EXAM_IMPL(stem_test::echo_mt)
       catch ( std::tr2::fork_in_parent& child ) {
         // client part
         {
-          EXAM_CHECK( c.timed_wait( std::tr2::milliseconds( 800 ) ) ); // wait server start
+          EXAM_CHECK(c.wait_for(std::chrono::milliseconds(800))); // wait server start
 
           for ( int i = 0; i < echo_mt_test::n_obj; ++i ) {
-            echo_mt_test::thr[i] = new std::tr2::thread( echo_mt_test::run, i );
+            echo_mt_test::thr[i] = new std::thread( echo_mt_test::run, i );
           }
 
           for ( int i = 0; i < echo_mt_test::n_obj; ++i ) {

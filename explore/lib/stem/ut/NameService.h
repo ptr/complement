@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <09/04/30 11:22:58 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2006-2009
+ * Copyright (c) 2006-2009, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
