@@ -1,0 +1,251 @@
+// -*- C++ -*-
+
+/*
+ * Copyright (c) 1997-1999, 2002-2009, 2020
+ * Petr Ovtchenkov
+ *
+ * Portion Copyright (c) 1999-2001
+ * Parallel Graphics Ltd.
+ *
+ * Licensed under the Academic Free License version 3.0
+ *
+ * Derived from original <mt/xmt.h> of 'complement' project
+ * [http://complement.sourceforge.net]
+ * to make it close to JTC1/SC22/WG21 C++ 0x working draft
+ * [http://www.open-std.org/Jtc1/sc22/wg21/docs/papers/2008/n2521.pdf]
+ */
+
+#ifndef __SHARED_MUTEX_H
+#define __SHARED_MUTEX_H
+
+#ifndef __config_feature_h
+#include <config/feature.h>
+#endif
+
+#include <cstddef>
+#include <stdexcept>
+
+#ifdef WIN32
+# include <windows.h>
+# include <memory>
+# include <limits>
+# define ETIME   62      /* timer expired */
+# pragma warning( disable : 4290)
+#endif // WIN32
+
+#ifdef __unix
+# include <pthread.h>
+# include <sched.h>
+#endif // __unix
+
+#include <cerrno>
+#if !defined(STLPORT) && defined(__GNUC__) && (__GNUC__ >= 5)
+#include <system_error>
+#else
+#include <mt/system_error>
+#endif
+
+#ifdef __FIT_RWLOCK
+
+namespace std {
+
+namespace tr2 {
+
+// Read-write mutex: IEEE Std 1003.1, 2001, 2004 Editions
+
+template <bool SCOPE>
+class __rw_mutex_base
+{
+  public:
+    __rw_mutex_base()
+      {
+#ifdef __FIT_PTHREADS
+        if ( SCOPE ) {
+          pthread_rwlockattr_t att;
+          pthread_rwlockattr_init( &att );
+# ifdef __FIT_PSHARED_MUTEX
+          int ret = pthread_rwlockattr_setpshared( &att, PTHREAD_PROCESS_SHARED );
+          if ( ret != 0 ) {
+            throw std::system_error( ret, std::system_category(), std::tr2::detail::_notpshared );
+          }
+# endif // __FIT_PSHARED_MUTEX
+          pthread_rwlock_init( &_M_lock, &att );
+          pthread_rwlockattr_destroy( &att );
+        } else {
+          pthread_rwlock_init( &_M_lock, 0 );
+        }
+#endif // _PTHREADS
+#ifdef __FIT_WIN32THREADS
+#error Fix me!
+        InitializeCriticalSection( &_M_lock );
+#endif
+      }
+
+    ~__rw_mutex_base()
+      {
+#ifdef _PTHREADS
+        pthread_rwlock_destroy( &_M_lock );
+#endif
+#ifdef WIN32
+#error Fix me!
+        DeleteCriticalSection( &_M_lock );
+#endif
+      }
+
+  private:
+    __rw_mutex_base( const __rw_mutex_base& )
+      { }
+
+  protected:
+#ifdef _PTHREADS
+    pthread_rwlock_t _M_lock;
+#endif
+#ifdef __FIT_WIN32THREADS
+#error Fix me!
+    CRITICAL_SECTION _M_lock;
+#endif
+};
+
+template <bool SCOPE>
+class __rw_mutex :
+    public __rw_mutex_base<SCOPE>
+{
+  public:
+    __rw_mutex()
+      { }
+
+    ~__rw_mutex()
+      { }
+
+    void rdlock()
+      {
+#ifdef __FIT_PTHREADS
+        pthread_rwlock_rdlock( &this->_M_lock );
+#endif
+#ifdef __FIT_WIN32THREADS
+#error Fix me!
+        EnterCriticalSection( &this->_M_lock );
+#endif
+      }
+
+    void lock()
+      {
+#ifdef _PTHREADS
+        pthread_rwlock_wrlock( &this->_M_lock );
+#endif
+#ifdef __FIT_WIN32THREADS
+#error Fix me!
+        EnterCriticalSection( &this->_M_lock );
+#endif
+      }
+
+#if !defined( WIN32 ) || (defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0400)
+    bool try_rdlock()
+      {
+#ifdef __FIT_PTHREADS
+        int res = pthread_rwlock_tryrdlock( &this->_M_lock );
+        if ( res != 0 ) {
+          if ( res == EBUSY ) {
+            return false;
+          }
+          throw std::tr2::lock_error( res );
+        }
+        return true;
+#endif
+#ifdef __FIT_WIN32THREADS
+#error Fix me!
+        return TryEnterCriticalSection( &this->_M_lock ) != 0 ? 0 : -1;
+#endif
+      }
+
+    bool try_lock()
+      {
+#ifdef __FIT_PTHREADS
+        int res = pthread_rwlock_trywrlock( &this->_M_lock );
+        if ( res != 0 ) {
+          if ( res == EBUSY ) {
+            return false;
+          }
+          throw std::tr2::lock_error( res );
+        }
+        return true;
+#endif
+#ifdef __FIT_WIN32THREADS
+#error Fix me!
+        return TryEnterCriticalSection( &this->_M_lock ) != 0 ? 0 : -1;
+#endif
+      }
+
+#endif // !WIN32 || _WIN32_WINNT >= 0x0400
+
+    void unlock()
+      {
+#ifdef _PTHREADS
+        pthread_rwlock_unlock( &this->_M_lock );
+#endif
+#ifdef __FIT_WIN32THREADS
+#error Fix me!
+        LeaveCriticalSection( &this->_M_lock );
+#endif
+      }
+
+  private:
+    __rw_mutex( const __rw_mutex& )
+      { }
+};
+
+template <class M>
+class basic_read_lock
+{
+  public:
+    typedef M mutex_type;
+
+    basic_read_lock( const M& point, bool initially_locked = true ) :
+        m( point ),
+        lk( false )
+      { if ( initially_locked ) lock(); }
+    ~basic_read_lock()
+      { if ( lk ) const_cast<M&>(m).unlock(); }
+
+    void lock()
+      {
+        const_cast<M&>(m).rdlock();
+        if ( lk ) {
+          const_cast<M&>(m).unlock();
+          throw std::tr2::lock_error( 0 );
+        }
+        lk = true;
+      }
+
+    void unlock()
+      {
+        if ( !lk ) {
+          throw std::tr2::lock_error( 0 );
+        }
+        lk = false;
+        const_cast<M&>(m).unlock();
+      }
+
+  private:
+    basic_read_lock( const basic_read_lock& )
+      { }
+    basic_read_lock& operator =( const basic_read_lock& )
+      { return *this; }
+
+    const M& m;
+    bool lk;
+};
+
+typedef __rw_mutex<false>     rw_mutex;
+typedef __rw_mutex<true>      rw_mutex_ip;
+
+typedef basic_read_lock<__rw_mutex<false> >  rd_scoped_lock;
+typedef lock_guard<__rw_mutex<false> >       wr_scoped_lock;
+
+} // namespace tr2
+
+} // namespace std
+
+#endif // __FIT_RWLOCK
+
+#endif /* __SHARED_MUTEX_H */

@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
 /*
- * Copyright (c) 1997-1999, 2002-2009
+ * Copyright (c) 1997-1999, 2002-2009, 2020
  * Petr Ovtchenkov
  *
  * Portion Copyright (c) 1999-2001
@@ -514,151 +514,6 @@ class __mutex<true,SCOPE> : // Recursive Safe
 };
 #endif // __unix && !__FIT_XSI_THR
 
-#ifdef __FIT_RWLOCK
-// Read-write mutex: IEEE Std 1003.1, 2001, 2004 Editions
-
-template <bool SCOPE>
-class __rw_mutex_base
-{
-  public:
-    __rw_mutex_base()
-      {
-#ifdef __FIT_PTHREADS
-        if ( SCOPE ) {
-          pthread_rwlockattr_t att;
-          pthread_rwlockattr_init( &att );
-# ifdef __FIT_PSHARED_MUTEX
-          int ret = pthread_rwlockattr_setpshared( &att, PTHREAD_PROCESS_SHARED );
-          if ( ret != 0 ) {
-            throw std::system_error( ret, std::system_category(), std::tr2::detail::_notpshared );
-          }
-# endif // __FIT_PSHARED_MUTEX
-          pthread_rwlock_init( &_M_lock, &att );
-          pthread_rwlockattr_destroy( &att );
-        } else {
-          pthread_rwlock_init( &_M_lock, 0 );
-        }
-#endif // _PTHREADS
-#ifdef __FIT_WIN32THREADS
-#error Fix me!
-        InitializeCriticalSection( &_M_lock );
-#endif
-      }
-
-    ~__rw_mutex_base()
-      {
-#ifdef _PTHREADS
-        pthread_rwlock_destroy( &_M_lock );
-#endif
-#ifdef WIN32
-#error Fix me!
-        DeleteCriticalSection( &_M_lock );
-#endif
-      }
-
-  private:
-    __rw_mutex_base( const __rw_mutex_base& )
-      { }
-
-  protected:
-#ifdef _PTHREADS
-    pthread_rwlock_t _M_lock;
-#endif
-#ifdef __FIT_WIN32THREADS
-#error Fix me!
-    CRITICAL_SECTION _M_lock;
-#endif
-};
-
-template <bool SCOPE>
-class __rw_mutex :
-    public __rw_mutex_base<SCOPE>
-{
-  public:
-    __rw_mutex()
-      { }
-
-    ~__rw_mutex()
-      { }
-
-    void rdlock()
-      {
-#ifdef __FIT_PTHREADS
-        pthread_rwlock_rdlock( &this->_M_lock );
-#endif
-#ifdef __FIT_WIN32THREADS
-#error Fix me!
-        EnterCriticalSection( &this->_M_lock );
-#endif
-      }
-
-    void lock()
-      {
-#ifdef _PTHREADS
-        pthread_rwlock_wrlock( &this->_M_lock );
-#endif
-#ifdef __FIT_WIN32THREADS
-#error Fix me!
-        EnterCriticalSection( &this->_M_lock );
-#endif
-      }
-
-#if !defined( WIN32 ) || (defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0400)
-    bool try_rdlock()
-      {
-#ifdef __FIT_PTHREADS
-        int res = pthread_rwlock_tryrdlock( &this->_M_lock );
-        if ( res != 0 ) {
-          if ( res == EBUSY ) {
-            return false;
-          }
-          throw std::tr2::lock_error( res );
-        }
-        return true;
-#endif
-#ifdef __FIT_WIN32THREADS
-#error Fix me!
-        return TryEnterCriticalSection( &this->_M_lock ) != 0 ? 0 : -1;
-#endif
-      }
-
-    bool try_lock()
-      {
-#ifdef __FIT_PTHREADS
-        int res = pthread_rwlock_trywrlock( &this->_M_lock );
-        if ( res != 0 ) {
-          if ( res == EBUSY ) {
-            return false;
-          }
-          throw std::tr2::lock_error( res );
-        }
-        return true;
-#endif
-#ifdef __FIT_WIN32THREADS
-#error Fix me!
-        return TryEnterCriticalSection( &this->_M_lock ) != 0 ? 0 : -1;
-#endif
-      }
-
-#endif // !WIN32 || _WIN32_WINNT >= 0x0400
-
-    void unlock()
-      {
-#ifdef _PTHREADS
-        pthread_rwlock_unlock( &this->_M_lock );
-#endif
-#ifdef __FIT_WIN32THREADS
-#error Fix me!
-        LeaveCriticalSection( &this->_M_lock );
-#endif
-      }
-
-  private:
-    __rw_mutex( const __rw_mutex& )
-      { }
-};
-
-#endif // __FIT_RWLOCK
 
 struct defer_lock_t
 { };
@@ -802,73 +657,21 @@ class unique_lock
     friend class __condition_variable<false>;
 };
 
-#ifdef __FIT_RWLOCK
-template <class M>
-class basic_read_lock
-{
-  public:
-    typedef M mutex_type;
-
-    basic_read_lock( const M& point, bool initially_locked = true ) :
-        m( point ),
-        lk( false )
-      { if ( initially_locked ) lock(); }
-    ~basic_read_lock()
-      { if ( lk ) const_cast<M&>(m).unlock(); }
-
-    void lock()
-      {
-        const_cast<M&>(m).rdlock();
-        if ( lk ) {
-          const_cast<M&>(m).unlock();
-          throw std::tr2::lock_error( 0 );
-        }
-        lk = true;
-      }
-
-    void unlock()
-      {
-        if ( !lk ) {
-          throw std::tr2::lock_error( 0 );
-        }
-        lk = false;
-        const_cast<M&>(m).unlock();
-      }
-
-  private:
-    basic_read_lock( const basic_read_lock& )
-      { }
-    basic_read_lock& operator =( const basic_read_lock& )
-      { return *this; }
-
-    const M& m;
-    bool lk;
-};
-#endif // __FIT_RWLOCK
-
 typedef __mutex<false,false>  mutex;
 typedef __mutex<true,false>   recursive_mutex;
 typedef __mutex<false,true>   mutex_ip;
 typedef __mutex<true,true>    recursive_mutex_ip;
-#ifdef __FIT_RWLOCK
-typedef __rw_mutex<false>     rw_mutex;
-typedef __rw_mutex<true>      rw_mutex_ip;
-#endif // __FIT_RWLOCK
 #ifdef __FIT_PTHREAD_SPINLOCK
 typedef __spinlock<false,false> spinlock;
 typedef __spinlock<true,false>  recursive_spinlock;
-#endif // __FIT_RWLOCK
+#endif // __FIT_PTHREAD_SPINLOCK
 
 typedef lock_guard<mutex>           scoped_lock;
 typedef lock_guard<recursive_mutex> recursive_scoped_lock;
-#ifdef __FIT_RWLOCK
-typedef basic_read_lock<__rw_mutex<false> >  rd_scoped_lock;
-typedef lock_guard<__rw_mutex<false> >       wr_scoped_lock;
-#endif // __FIT_RWLOCK
 #ifdef __FIT_PTHREAD_SPINLOCK
 typedef lock_guard<spinlock>            spin_scoped_lock;
 typedef lock_guard<recursive_spinlock>  recursive_spin_scoped_lock;
-#endif // __FIT_RWLOCK
+#endif // __FIT_PTHREAD_SPINLOCK
 
 class native_scoped_lock
 {
