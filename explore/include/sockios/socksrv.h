@@ -181,13 +181,16 @@ class sock_processor_base :
 
   public:
     bool is_open() const
-      { std::lock_guard<std::mutex> lk(const_cast<std::mutex&>(_fd_lck)); return basic_socket_t::is_open_unsafe(); }
+      {
+        std::lock_guard<std::mutex> lk(_fd_lck);
+        return basic_socket_t::is_open_unsafe();
+      }
     bool good() const
       { return _state == ios_base::goodbit; }
 
     sock_base::socket_type fd() const
       {
-        std::lock_guard<std::mutex> lk(const_cast<std::mutex&>(_fd_lck));
+        std::lock_guard<std::mutex> lk(_fd_lck);
         sock_base::socket_type tmp = basic_socket_t::fd_unsafe();
         return tmp;
       }
@@ -204,7 +207,7 @@ class sock_processor_base :
                     tcflag_t lflag_set, tcflag_t lflag_drop,
                     int when)
       {
-        std::lock_guard<std::mutex> lk(const_cast<std::mutex&>(_fd_lck));
+        std::lock_guard<std::mutex> lk(_fd_lck);
         setoptions_unsafe(iflag_set, iflag_drop,
                           oflag_set, oflag_drop,
                           cflag_set, cflag_drop,
@@ -220,7 +223,7 @@ class sock_processor_base :
     std::sock_base::stype   _type;
 
   protected:
-    std::mutex _fd_lck;
+    mutable std::mutex _fd_lck;
 
     class _cnt_checker
     {

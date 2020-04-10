@@ -667,12 +667,12 @@ class basic_sockbuf :
 
     sock_base::socket_type fd() const
       {
-        std::lock_guard<std::recursive_mutex> lk( const_cast<std::recursive_mutex&>(ulck) );
+        std::lock_guard<std::recursive_mutex> lk(ulck);
         return basic_socket<charT,traits,_Alloc>::fd_unsafe();
       }
     bool is_open() const
       {
-        std::lock_guard<std::recursive_mutex> lk( const_cast<std::recursive_mutex&>(ulck) );
+        std::lock_guard<std::recursive_mutex> lk(ulck);
         return basic_socket<charT,traits,_Alloc>::is_open_unsafe();
       }
 
@@ -861,7 +861,7 @@ class basic_sockbuf :
     bool                _attached;
 
   public:
-    std::recursive_mutex ulck;
+    mutable std::recursive_mutex ulck;
   private:
     std::condition_variable_any ucnd;
 
