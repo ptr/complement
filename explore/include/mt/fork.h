@@ -22,23 +22,12 @@
 #include <config/feature.h>
 #endif
 
-#include <memory>
-#include <cstddef>
-#include <climits>
 #include <stdexcept>
 
 #ifdef __unix
 # include <pthread.h>
 # include <semaphore.h>
-# include <sched.h>
-# include <signal.h>
 #endif // __unix
-
-#include <cerrno>
-#include <mutex>
-#include <condition_variable>
-#include <chrono>
-#include <mt/callstack.h>
 
 #include <mt/signal>
 
@@ -70,8 +59,6 @@ class fork_in_parent :
 
 __FIT_DECLSPEC void fork();
 
-//thread_base::id get_id();
-
 pid_t getpid();
 pid_t getppid();
 
@@ -80,25 +67,6 @@ namespace this_thread
 using tr2::fork;
 
 __FIT_DECLSPEC void become_daemon();
-
-// std::thread_base::id get_id();
-// using tr2::get_id;
-
-//inline void yield()
-//{
-//#ifdef __FIT_PTHREADS
-//  // sched_yield();
-//  pthread_yield();
-//#endif
-//}
-
-//__FIT_DECLSPEC void sleep( const std::tr2::system_time& abs_t );
-
-//__FIT_DECLSPEC void sleep( const std::tr2::nanoseconds& rel_t );
-
-//template <class Duration>
-//void sleep( const Duration& rel_t )
-//{ std::tr2::this_thread::sleep( static_cast<std::tr2::nanoseconds>(rel_t) ); }
 
 using std::this_thread::block_signal;
 using std::this_thread::unblock_signal;
