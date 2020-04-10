@@ -1028,24 +1028,26 @@ class stream_reader
 
 int EXAM_IMPL(sockios_test::srv_sigpipe)
 {
-  for ( int test = 0; test < min( 100, test_count); ++test ) {
-    try {
-      xmt::shm_alloc<0> seg;
-      seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+  try {
+    xmt::shm_alloc<0> seg;
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
 
-      xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
-      std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+    std::tr2::barrier_ip& b1 = *new (shm.allocate(1)) std::tr2::barrier_ip();
+    std::tr2::barrier_ip& b2 = *new (shm.allocate(1)) std::tr2::barrier_ip();
+
+    for ( int test = 0; test < min( 100, test_count); ++test ) {
       try {
         std::tr2::this_thread::fork();
 
         try {
-          b.wait(true);
+          b1.wait();
           /*
            * This process will be killed,
            * so I don't care about safe termination.
            */
 
-          const int b_count = 1;
+          const int b_count = 3;
           std::tr2::barrier bb( b_count );
 
           thread* th1 = new thread( stream_reader::load_generator, &bb );
@@ -1056,7 +1058,7 @@ int EXAM_IMPL(sockios_test::srv_sigpipe)
 
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-          b.wait();
+          b2.wait();
 
           th1->join(); // Will be interrupted!
         }
@@ -1068,46 +1070,49 @@ int EXAM_IMPL(sockios_test::srv_sigpipe)
       }
       catch ( std::tr2::fork_in_parent& child ) {
         try {
-        connect_processor<stream_reader> r( 2008 );
+          connect_processor<stream_reader> r(2008);
 
-        EXAM_CHECK( r.good() );
-        EXAM_CHECK( r.is_open() );
+          EXAM_CHECK( r.good() );
+          EXAM_CHECK( r.is_open() );
 
-        b.wait(true);
-        b.wait();
+          b1.wait();
+          EXAM_MESSAGE("child process started");
+          b2.wait();
+          EXAM_MESSAGE("child process provide load");
 
-        kill( child.pid(), SIGTERM );
+          kill( child.pid(), SIGTERM );
 
-        int stat = -1;
-        EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
-        if ( WIFEXITED(stat) ) {
-          // EXAM_CHECK( WEXITSTATUS(stat) == 0 );
-          EXAM_ERROR( "child should be interrupted" );
-        } else {
-          EXAM_MESSAGE( "child interrupted" );
-        }
+          int stat = -1;
+          EXAM_CHECK( waitpid( child.pid(), &stat, 0 ) == child.pid() );
+          if ( WIFEXITED(stat) ) {
+            // EXAM_CHECK( WEXITSTATUS(stat) == 0 );
+            EXAM_ERROR( "child should be interrupted" );
+          } else {
+            EXAM_MESSAGE( "child interrupted" );
+          }
 
-        EXAM_CHECK( r.good() );
-        EXAM_CHECK( r.is_open() );
+          EXAM_CHECK( r.good() );
+          EXAM_CHECK( r.is_open() );
         }
         catch ( ... ) {
           EXAM_ERROR( "unknown exception" );
         }
       }
-      shm.deallocate( &b );
-      seg.deallocate();
-    }
-    catch ( xmt::shm_bad_alloc& err ) {
-      EXAM_ERROR( err.what() );
-    }
-    catch ( ... ) {
-      EXAM_ERROR( "unknown exception" );
-    }
 
-    if ( EXAM_RESULT ) {
-      cerr << "failed on iteration " << test << endl;
-      break;
+      if ( EXAM_RESULT ) {
+        cerr << "failed on iteration " << test << endl;
+        break;
+      }
     }
+    shm.deallocate( &b2 );
+    shm.deallocate( &b1 );
+    seg.deallocate();
+  }
+  catch ( xmt::shm_bad_alloc& err ) {
+    EXAM_ERROR( err.what() );
+  }
+  catch ( ... ) {
+    EXAM_ERROR( "unknown exception" );
   }
 
   return EXAM_RESULT;
