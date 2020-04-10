@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <08/06/12 15:25:51 ptr>
+# -*- Makefile -*-
 
 SRCROOT := ../../../..
 
@@ -23,10 +23,10 @@ endif
 release-shared:	LDLIBS = -lstem
 #stldbg-shared  : LDLIBS = -lxmtstlg -lsockiosstlg -lstemstlg -lboost_test_utfstlg
 #dbg-shared     : LDLIBS = -lxmtg -lsockiosg -lstemg -lboost_test_utfg
-dbg-shared:	LDLIBS = -lstemg
+dbg-shared:	LDLIBS_DBG = -lstemg
 
 ifndef WITHOUT_STLPORT
-stldbg-shared:	LDLIBS = -lstemstlg
+stldbg-shared:	LDLIBS_STLDBG = -lstemstlg
 endif
 
 #LDFLAGS += -Wl,-rpath=${STLPORT_LIB_DIR}:${CoMT_LIB_DIR}

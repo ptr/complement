@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <10/07/09 14:33:30 ptr>
+# -*- Makefile -*- Time-stamp: <2020-04-10 18:58:57 ptr>
 
 SRCROOT := ../../..
 
@@ -35,9 +35,9 @@ endif
 endif
 
 release-shared : LDLIBS = -lxmt -lsockios -lstem -lexam -lmisc -ldl
-dbg-shared     : LDLIBS = -lxmtg -lsockiosg -lstemg -lexamg -lmiscg -ldl
+dbg-shared     : LDLIBS_DBG = -lxmtg -lsockiosg -lstemg -lexamg -lmiscg -ldl
 ifndef WITHOUT_STLPORT
-stldbg-shared  : LDLIBS = -lxmtstlg -lsockiosstlg -lstemstlg -lexamstlg -lmiscstlg -ldl
+stldbg-shared  : LDLIBS_STDDBG = -lxmtstlg -lsockiosstlg -lstemstlg -lexamstlg -lmiscstlg -ldl
 endif
 
 # dbg-shared:	DEFS += -DDEBUG
