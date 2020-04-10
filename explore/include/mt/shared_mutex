@@ -92,6 +92,16 @@ class __rw_mutex_base
 #endif
       }
 
+#ifdef __FIT_PTHREADS
+    typedef pthread_rwlock_t* native_handle_type;
+#endif
+#ifdef __FIT_WIN32THREADS
+    typedef CRITICAL_SECTION* native_handle_type;
+#endif
+
+    native_handle_type native_handle()
+      { return &_M_lock; }
+
   private:
     __rw_mutex_base( const __rw_mutex_base& )
       { }
@@ -117,7 +127,7 @@ class __rw_mutex :
     ~__rw_mutex()
       { }
 
-    void rdlock()
+    void lock_shared()
       {
 #ifdef __FIT_PTHREADS
         pthread_rwlock_rdlock( &this->_M_lock );
@@ -140,7 +150,7 @@ class __rw_mutex :
       }
 
 #if !defined( WIN32 ) || (defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0400)
-    bool try_rdlock()
+    bool try_lock_shared()
       {
 #ifdef __FIT_PTHREADS
         int res = pthread_rwlock_tryrdlock( &this->_M_lock );
@@ -189,6 +199,9 @@ class __rw_mutex :
 #endif
       }
 
+    void unlock_shared()
+      { __rw_mutex<SCOPE>::unlock(); }
+
   private:
     __rw_mutex( const __rw_mutex& )
       { }
@@ -209,7 +222,7 @@ class basic_read_lock
 
     void lock()
       {
-        const_cast<M&>(m).rdlock();
+        const_cast<M&>(m).lock_shared();
         if ( lk ) {
           const_cast<M&>(m).unlock();
           throw std::tr2::lock_error( 0 );
@@ -236,10 +249,10 @@ class basic_read_lock
     bool lk;
 };
 
-typedef __rw_mutex<false>     rw_mutex;
-typedef __rw_mutex<true>      rw_mutex_ip;
+typedef __rw_mutex<false>     shared_mutex;
+typedef __rw_mutex<true>      shared_mutex_ip;
 
-typedef basic_read_lock<__rw_mutex<false> >  rd_scoped_lock;
+typedef basic_read_lock<__rw_mutex<false> >  shared_lock;
 typedef lock_guard<__rw_mutex<false> >       wr_scoped_lock;
 
 } // namespace tr2

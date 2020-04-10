@@ -1,7 +1,7 @@
-// -*- C++ -*- Time-stamp: <2012-02-07 17:57:12 ptr>
+// -*- C++ -*-
 
 /*
- * Copyright (c) 2006-2012
+ * Copyright (c) 2006-2012, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -29,6 +29,7 @@
 #endif
 
 #include <mt/mutex>
+#include <mt/shared_mutex>
 #include <mt/condition_variable>
 
 namespace xmt {
@@ -96,7 +97,7 @@ __SPEC_FULL(is_ipc_sharable,std::tr2::semaphore_ip,true);
 __SPEC_FULL(is_ipc_sharable,std::tr2::barrier_ip,true);
 __SPEC_FULL(is_ipc_sharable,std::tr2::mutex_ip,true);
 __SPEC_FULL(is_ipc_sharable,std::tr2::recursive_mutex_ip,true);
-__SPEC_FULL(is_ipc_sharable,std::tr2::rw_mutex_ip,true);
+__SPEC_FULL(is_ipc_sharable,std::tr2::shared_mutex_ip,true);
 
 
 #undef __SPEC_FULL
