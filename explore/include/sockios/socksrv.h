@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
 /*
- * Copyright (c) 2008-2011, 2016, 2019
+ * Copyright (c) 2008-2011, 2016, 2019, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License Version 3.0
@@ -11,26 +11,15 @@
 #ifndef __SOCKIOS_SOCKSRV_H
 #define __SOCKIOS_SOCKSRV_H
 
+#include <config/feature.h>
+
 #include <cerrno>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 
-#if defined(STLPORT) || defined(__FIT_CPP_0X)
-#  include <unordered_map>
-#  include <unordered_set>
-#  define __USE_STLPORT_TR1
-#else
-#  if defined(__GNUC__) && (__GNUC__ < 4)
-#    include <ext/hash_map>
-#    include <ext/hash_set>
-#    define __USE_STD_HASH
-#  else
-#    include <tr1/unordered_map>
-#    include <tr1/unordered_set>
-#    define __USE_STD_TR1
-#  endif
-#endif
+#include <unordered_map>
+#include <unordered_set>
 
 #include <sockios/sockstream>
 #include <list>
@@ -405,16 +394,7 @@ class connect_processor :
       { base_t::_close(); }
     void _stop();
 
-#ifdef __USE_STLPORT_HASH
-    typedef std::hash_map< sock_base::socket_type, processor > opened_pool_t;
-#endif
-#ifdef __USE_STD_HASH
-    typedef __gnu_cxx::hash_map< sock_base::socket_type, processor > opened_pool_t;
-#endif
-#if defined(__USE_STLPORT_TR1) || defined(__USE_STD_TR1)
     typedef std::unordered_map< sock_base::socket_type, processor > opened_pool_t;
-#endif
-    
     typedef std::queue< request_t > ready_queue_t;
 
     void process_request( const request_t& request );
@@ -497,19 +477,6 @@ class packet_processor :
 };
 
 } // namesapce std
-
-#ifdef __USE_STLPORT_HASH
-#  undef __USE_STLPORT_HASH
-#endif
-#ifdef __USE_STD_HASH
-#  undef __USE_STD_HASH
-#endif
-#ifdef __USE_STLPORT_TR1
-#  undef __USE_STLPORT_TR1
-#endif
-#ifdef __USE_STD_TR1
-#  undef __USE_STD_TR1
-#endif
 
 #include <sockios/socksrv-impl.h>
 
