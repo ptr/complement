@@ -1,15 +1,12 @@
-// -*- C++ -*- Time-stamp: <07/10/15 22:44:45 ptr>
+// -*- C++ -*-
 
 #include <stem/EventHandler.h>
 #include <stem/EvManager.h>
-
-#include <mt/xmt.h>
 
 #include <iostream>
 #include <string>
 
 using namespace std;
-using namespace xmt;
 using namespace stem;
 
 class StSample :

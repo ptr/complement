@@ -1,4 +1,4 @@
-# -*- Makefile -*- Time-stamp: <07/10/15 20:16:57 ptr>
+# -*- Makefile -*-
 
 SRCROOT := ../../../..
 COMPILER_NAME := gcc
@@ -8,13 +8,17 @@ COMPILER_NAME := gcc
 include Makefile.inc
 include ${SRCROOT}/Makefiles/gmake/top.mak
 
+LIBMT_DIR = ${CoMT_DIR}/lib/mt
+LIBMISC_DIR = ${CoMT_DIR}/lib/misc
+LIBSOCK_DIR = ${CoMT_DIR}/lib/sockios
+LIBSTEM_DIR = ${CoMT_DIR}/lib/stem
+
 # DEFS += -DUNIT_TEST
 INCLUDES += -I${CoMT_INCLUDE_DIR}
 
-release-shared: PROJECT_LIBS = -lxmt -lsockios -lstem
-dbg-shared:     PROJECT_LIBS = -lxmtg -lsockiosg -lstemg
-ifndef WITHOUT_STLPORT
-stldbg-shared:  PROJECT_LIBS = -lxmtstlg -lsockiosstlg -lstemstlg
-endif
+LDLIBS = -lxmt -lmisc -lsockios -lstem
+LDLIBS_DBG = lxmtg -lmisc -lsockiosg -lstemg
 
-LDLIBS = -L${CoMT_LIB_DIR} -Wl,-rpath=${CoMT_LIB_DIR}:${STLPORT_LIB_DIR} ${PROJECT_LIBS}
+release-shared: LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR} -L${LIBMISC_DIR}/${OUTPUT_DIR} -L${LIBSOCK_DIR}/${OUTPUT_DIR} -L${LIBSTEM_DIR}/${OUTPUT_DIR} -Wl,--rpath=${LIBMT_DIR}/${OUTPUT_DIR}:${LIBMISC_DIR}/${OUTPUT_DIR}:${LIBSOCK_DIR}/${OUTPUT_DIR}:${LIBSTEM_DIR}/${OUTPUT_DIR}
+
+dbg-shared:     LDFLAGS += -L${LIBMT_DIR}/${OUTPUT_DIR_DBG} -L${LIBMISC_DIR}/${OUTPUT_DIR_DBG} -L${LIBSOCK_DIR}/${OUTPUT_DIR_DBG} -L${LIBSTEM_DIR}/${OUTPUT_DIR_DBG} -Wl,--rpath=${LIBMT_DIR}/${OUTPUT_DIR_DBG}:${LIBMISC_DIR}/${OUTPUT_DIR_DBG}:${LIBSOCK_DIR}/${OUTPUT_DIR_DBG}:${LIBSTEM_DIR}/${OUTPUT_DIR_DBG}
