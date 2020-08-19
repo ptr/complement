@@ -2001,3 +2001,265 @@ int EXAM_IMPL(sockios_test::ugly_echo)
   
   return EXAM_RESULT;
 }
+
+
+// server for istreambuf_iterator test below
+
+class isb_mgr :
+    public sock_basic_processor
+{
+  public:
+    isb_mgr() :
+        sock_basic_processor()
+      { 
+        n_cnt = 0;
+        c_cnt = 0;
+        d_cnt = 0;
+        d2_cnt = 0;
+        marker = ' ';
+      }
+
+    isb_mgr(int port, sock_base::stype t = sock_base::sock_stream) :
+        sock_basic_processor(port, t)
+      { 
+        n_cnt = 0;
+        c_cnt = 0;
+        d_cnt = 0;
+        d2_cnt = 0;
+        marker = ' ';
+      }
+
+  protected:
+    virtual sock_basic_processor::sockbuf_t* operator ()(sock_base::socket_type fd, const sockaddr& addr)
+      { 
+        lock_guard<mutex> lk(lock);
+        ++n_cnt;
+        cnd.notify_one();
+        sockstream_t* s = sock_basic_processor::create_stream(fd, addr);
+
+        cons[fd] = s;
+
+        return s->rdbuf();
+      }
+
+    virtual void operator ()(sock_base::socket_type fd, const adopt_close_t&)
+      {
+        lock_guard<mutex> lk(lock);
+        ++c_cnt;
+        cnd.notify_one();
+        delete cons[fd];
+        cons.erase(fd);
+      }
+
+    virtual void operator ()(sock_base::socket_type fd)
+      {
+        {
+          lock_guard<mutex> lk(lock);
+          ++d_cnt;
+          cnd.notify_one();
+        }
+
+        string str;
+        // istreambuf_iterator ii(cons[fd]->rdbuf());
+        istreambuf_iterator ii(*cons[fd]); // it is the same as commented line above
+
+        copy_n(ii, 20, back_inserter(str)); // 20: hardcoded, see sender
+        ++ii; // https://cplusplus.github.io/LWG/issue2471
+        // ++ii; // <- this is for reference, stall here if uncommented
+
+        {
+          lock_guard<mutex> lk(lock);
+          d2_cnt += str.size();
+          marker = str[19];
+          cnd.notify_one();
+        }
+      }
+
+  public:
+    static mutex lock;
+    static int n_cnt;
+    static int c_cnt;
+    static int d_cnt;
+    static int d2_cnt;
+    static condition_variable cnd;
+    static char marker;
+
+    static bool n_cnt_check()
+      { return n_cnt == 1; }
+    static bool c_cnt_check()
+      { return c_cnt == 1; }
+    static bool d_cnt_check()
+      { return d_cnt == 1; }
+    static bool d_next_cnt_check()
+      { return d_cnt == 2; }
+    static bool d2_cnt_check()
+      { lock_guard<mutex> lk(lock); return d2_cnt == 40; }
+    static bool marker_x_check()
+      { return marker == 'x'; }
+    static bool marker_y_check()
+      { return marker == 'y'; }
+
+  private:
+
+    typedef std::unordered_map<sock_base::socket_type, sockstream_t*> fd_container_type;
+
+    fd_container_type cons;
+};
+
+mutex isb_mgr::lock;
+int isb_mgr::n_cnt = 0;
+int isb_mgr::c_cnt = 0;
+int isb_mgr::d_cnt = 0;
+int isb_mgr::d2_cnt = 0;
+condition_variable isb_mgr::cnd;
+char isb_mgr::marker;
+
+/*
+ * This is test for copy_n with istreambuf iterator problem,
+ * see commit 355d935950.
+ *
+ * Problem is copy_n/istreambuf_iterator/istream_iterator:
+ *
+ *       https://cplusplus.github.io/LWG/issue2471
+ *
+ *       It's unspecified how many times copy_n increments the InputIterator.
+ *       uninitialized_copy_n is specified to increment it exactly n times,
+ *       which means if an istream_iterator is used then the next character
+ *       after those copied is read from the stream and then discarded, losing data.
+ *
+ *       I believe all three of Dinkumware, libc++ and libstdc++ implement copy_n
+ *       with n - 1 increments of the InputIterator, which avoids reading and
+ *       discarding a character when used with istream_iterator, but is inconsistent
+ *       with uninitialized_copy_n and causes surprising behaviour with
+ *       istreambuf_iterator instead, because copy_n(in, 2, copy_n(in, 2, out))
+ *       is not equivalent to copy_n(in, 4, out)
+ *
+ *       [LEWG Kona 2017]
+ *
+ *       This is a mess. Append to Effects: If the InputIterator is not a forward
+ *       iterator, increments n-1 times. Otherwise the number of increments is not
+ *       more than n. (ncm) The preceding proposition is unsatisfactory, because it is
+ *       wrong for istreambuf_iterator, which is much more useful than istream_iterator.
+ *       Proposing instead: Append to Effects: If InputIterator is istream_iterator
+ *       for some T, increments n-1 times. Otherwise, increments n times. Want a paper
+ *       exploring what the implementations actually do, and what non-uniformity
+ *       is "right".
+ *
+ * See also https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81857
+ *
+ */
+
+int EXAM_IMPL(sockios_test::istreambuf_iterator)
+{
+  try {
+    xmt::shm_alloc<0> seg;
+    seg.allocate( 70000, 4096, xmt::shm_base::create | xmt::shm_base::exclusive, 0660 );
+
+    xmt::allocator_shm<std::tr2::barrier_ip,0> shm;
+
+    std::tr2::barrier_ip& b = *new (shm.allocate(1)) std::tr2::barrier_ip();
+
+    try {
+      std::tr2::this_thread::fork();
+      int ret = 0;
+
+      try {
+        std::this_thread::block_signal(SIGINT);
+
+        isb_mgr srv(2008);
+
+        EXAM_CHECK_ASYNC_F(srv.good(), ret);
+        EXAM_CHECK_ASYNC_F(srv.is_open(), ret);
+
+        sigset_t signal_mask;
+
+        sigemptyset(&signal_mask);
+        sigaddset(&signal_mask, SIGINT);
+
+        b.wait();
+
+        {
+          unique_lock<mutex> lk(isb_mgr::lock);
+          EXAM_CHECK_ASYNC_F(isb_mgr::cnd.wait_for(lk, chrono::milliseconds(500), isb_mgr::n_cnt_check), ret);
+        }
+
+        {
+          unique_lock<mutex> lk(isb_mgr::lock);
+          EXAM_CHECK_ASYNC_F(isb_mgr::cnd.wait_for(lk, chrono::milliseconds(500), isb_mgr::d_cnt_check), ret);
+        }
+
+        {
+          unique_lock<mutex> lk(isb_mgr::lock);
+          EXAM_CHECK_ASYNC_F(isb_mgr::cnd.wait_for(lk, chrono::milliseconds(500), isb_mgr::marker_x_check), ret);
+        }
+
+        {
+          unique_lock<mutex> lk(isb_mgr::lock);
+          EXAM_CHECK_ASYNC_F(isb_mgr::cnd.wait_for(lk, chrono::milliseconds(500), isb_mgr::d_next_cnt_check), ret);
+        }
+
+        {
+          unique_lock<mutex> lk(isb_mgr::lock);
+          EXAM_CHECK_ASYNC_F(isb_mgr::cnd.wait_for(lk, chrono::milliseconds(500), isb_mgr::marker_y_check), ret);
+        }
+
+
+        int sig_caught;
+        sigwait(&signal_mask, &sig_caught);
+
+        EXAM_CHECK_ASYNC_F(isb_mgr::d2_cnt_check(), ret);
+      }
+      catch (...) {
+        EXAM_ERROR_ASYNC_F("unexpected exception", ret);
+      }
+
+      exit(ret);
+    }
+    catch (std::tr2::fork_in_parent& child) {
+      b.wait();
+      {     
+        sockstream s("localhost", 2008);
+        EXAM_CHECK(s.good());
+
+        s.rdbuf()->setoptions(sock_base::so_tcp_nodelay);
+
+        // 20 is hardcoded; small enough to fit into MTU
+        std::string mess(20, ' ');
+        
+        mess[19] = 'x'; // marker
+        s.write(mess.data(), mess.size()).flush();
+        // EXAM_CHECK(s.good());
+
+        // wait a bit... for packet out
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+        mess[19] = 'y'; // another marker
+        s.write(mess.data(), mess.size()).flush();
+        // EXAM_CHECK(s.good());
+
+        // wait a bit... hope it is enough for server to process
+        // two packets
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+      }
+
+      kill(child.pid(), SIGINT);
+
+      int stat = -1;
+      EXAM_CHECK(waitpid(child.pid(), &stat, 0) == child.pid());
+      if (WIFEXITED(stat)) {
+        EXAM_CHECK(WEXITSTATUS(stat) == 0);
+      } else {
+        EXAM_ERROR("child interrupted");
+      }
+    }
+
+    shm.deallocate(&b);
+
+    seg.deallocate();
+  }
+  catch (xmt::shm_bad_alloc& err) {
+    EXAM_ERROR(err.what());
+  }
+  
+  return EXAM_RESULT;
+}

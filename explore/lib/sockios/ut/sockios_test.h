@@ -2,7 +2,7 @@
 
 /*
  *
- * Copyright (c) 2002, 2003, 2005-2010, 2019
+ * Copyright (c) 2002, 2003, 2005-2010, 2019, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -46,6 +46,8 @@ class sockios_test
     int EXAM_DECL(echo);
     int EXAM_DECL(ugly_echo);
     int EXAM_DECL(at_funcs);
+
+    int EXAM_DECL(istreambuf_iterator);
 };
 
 #endif // __sockios2_test_h

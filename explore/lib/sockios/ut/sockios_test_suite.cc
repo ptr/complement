@@ -76,6 +76,7 @@ int main( int argc, const char** argv )
                 t.add( &sockios_test::connect_disconnect, test, "sockios2_test::connect_disconnect",
                   tc[0] = t.add( &sockios_test::srv_core, test, "sockios2_test::srv_core" ) ) ) ) ) ) ) ) );
 
+  t.add(&sockios_test::istreambuf_iterator, test, "istreambuf_iterator issue", tc[0]);
   t.add( &sockios_test::two_ports, test, "two servers", tc[0] );
 
   t.add( &sockios_test::disconnect_rawclnt, test, "disconnect raw client", 
