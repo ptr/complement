@@ -101,7 +101,7 @@ class NetTransport :
   public:
     __FIT_DECLSPEC
     NetTransport( std::sockstream& );
-    ~NetTransport();
+    virtual ~NetTransport();
 
     __FIT_DECLSPEC
     void connect( std::sockstream& );
