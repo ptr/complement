@@ -250,8 +250,8 @@ class EvManager
     struct worker
     {
       worker( EvManager* _mgr ) :
-          mgr( _mgr ),
           not_empty( *this ),
+          mgr( _mgr ),
           thr( new std::thread( worker::_loop, this ) )
         { }
 
