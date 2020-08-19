@@ -311,38 +311,42 @@ bool NetTransport_base::pop( Event& _rs )
     return false;
   }
 
-  string& str = _rs.value();
+  if (sz > 0) {
+    string& str = _rs.value();
 
-  str.erase();
-  str.reserve( sz );
+    str.erase();
+    str.reserve(sz);
 
-  istreambuf_iterator<char> iis(net);
-  copy_n( iis, sz, back_inserter(str) );
-  ++iis; // https://cplusplus.github.io/LWG/issue2471
+    istreambuf_iterator<char> iis(net);
+    copy_n(iis, sz, back_inserter(str));
+    ++iis; // https://cplusplus.github.io/LWG/issue2471
 
 #ifdef __FIT_STEM_TRACE
-  try {
-    lock_guard<mutex> lk(EventHandler::manager()._lock_tr);
-    if ( EventHandler::manager()._trs != 0 && EventHandler::manager()._trs->good() && (EventHandler::manager()._trflags & (EvManager::tracenet)) ) {
+    try {
+      lock_guard<mutex> lk(EventHandler::manager()._lock_tr);
+      if (EventHandler::manager()._trs != 0 && EventHandler::manager()._trs->good() && (EventHandler::manager()._trflags & (EvManager::tracenet))) {
 #ifdef STLPORT
-      ios_base::fmtflags flags = EventHandler::manager()._trs->flags( 0 );
+        ios_base::fmtflags flags = EventHandler::manager()._trs->flags(0);
 #else
-      ios_base::fmtflags flags = EventHandler::manager()._trs->flags( static_cast<std::_Ios_Fmtflags>(0) );
+        ios_base::fmtflags flags = EventHandler::manager()._trs->flags(static_cast<std::_Ios_Fmtflags>(0));
 #endif
-      *EventHandler::manager()._trs << "\tMessage from remote " << hex << showbase << _rs.code() << " "
-                                    << srcd << '/' << src
-                                    << " -> "
-                                    << dstd << '/' << dst << endl;
+        *EventHandler::manager()._trs << "\tMessage from remote " << hex << showbase << _rs.code() << " "
+                                      << srcd << '/' << src
+                                      << " -> "
+                                      << dstd << '/' << dst << endl;
 #ifdef STLPORT
-      EventHandler::manager()._trs->flags( flags );
+        EventHandler::manager()._trs->flags(flags);
 #else
-      EventHandler::manager()._trs->flags( static_cast<std::_Ios_Fmtflags>(flags) );
+        EventHandler::manager()._trs->flags(static_cast<std::_Ios_Fmtflags>(flags));
 #endif
+      }
     }
-  }
-  catch ( ... ) {
-  }
+    catch (...) {
+    }
 #endif // __FIT_STEM_TRACE
+  } else {
+    _rs.value().erase();
+  }
 
   if ( !net.good() ) {
     net.setstate( ios_base::failbit );
