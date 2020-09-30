@@ -1,7 +1,7 @@
 // -*- C++ -*-
 
 /*
- * Copyright (c) 1995-1999, 2002, 2003, 2005-2010
+ * Copyright (c) 1995-1999, 2002, 2003, 2005-2010, 2020
  * Petr Ovtchenkov
  * 
  * Copyright (c) 1999-2001
@@ -710,8 +710,12 @@ __FIT_DECLSPEC stem::__DeclareAnyPMF<cls> cls::theDeclEventsTable[] = {
 //                       State     Event      Catcher      Dispatcher
 
 #define RESPONSE_TABLE_ENTRY( state, code, catcher, dispatch )            \
-  { state, code,                                                          \
-    {(stem::__PMFentry<ThisCls>::PMF)&ThisCls::catcher, (stem::GENERIC::DPMF)dispatch, #catcher }},
+  { state,                                                                \
+    code,                                                                 \
+    {reinterpret_cast<stem::__PMFentry<ThisCls>::PMF>(&ThisCls::catcher), \
+     reinterpret_cast<stem::GENERIC::DPMF>(dispatch),                     \
+     #catcher}                                                            \
+  },
 
 // Macro for specification of response table end:
 
