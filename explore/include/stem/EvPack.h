@@ -88,6 +88,42 @@ class __net_converter
       }
 };
 
+template <class T>
+class __le_converter
+{
+#ifndef _LITTLE_ENDIAN
+    union __swapper
+    {
+        char  byte[sizeof(T)];
+        T value;
+    };
+#endif
+  public:
+    static T to_le( const T& x )
+      {
+#ifdef _LITTLE_ENDIAN
+        return x;
+#else
+        __swapper _sw;
+        _sw.value = x;
+        __byte_swapper<sizeof(T)>::__byte_swap( _sw.byte );
+        return _sw.value;
+#endif
+      }
+
+    static T from_le( const T& x )
+      {
+#ifdef _LITTLE_ENDIAN
+        return x;
+#else
+        __swapper _sw;
+        _sw.value = x;
+        __byte_swapper<sizeof(T)>::__byte_swap( _sw.byte );
+        return _sw.value;
+#endif
+      }
+};
+
 template <>
 class __net_converter<char>
 {
@@ -96,6 +132,17 @@ class __net_converter<char>
       { return x; }
 
     static char from_net( const char& x )
+      { return x; }
+};
+
+template <>
+class __le_converter<char>
+{
+  public:
+    static char to_le( const char& x )
+      { return x; }
+
+    static char from_le( const char& x )
       { return x; }
 };
 
@@ -111,6 +158,17 @@ class __net_converter<unsigned char>
 };
 
 template <>
+class __le_converter<unsigned char>
+{
+  public:
+    static unsigned char to_le( const unsigned char& x )
+      { return x; }
+
+    static unsigned char from_le( const unsigned char& x )
+      { return x; }
+};
+
+template <>
 class __net_converter<signed char>
 {
   public:
@@ -118,6 +176,17 @@ class __net_converter<signed char>
       { return x; }
 
     static signed char from_net( const signed char& x )
+      { return x; }
+};
+
+template <>
+class __le_converter<signed char>
+{
+  public:
+    static signed char to_le( const signed char& x )
+      { return x; }
+
+    static signed char from_le( const signed char& x )
       { return x; }
 };
 
@@ -132,6 +201,17 @@ class __net_converter<std::pair<F,S> >
       { return std::make_pair( __net_converter<F>::from_net(x.first), __net_converter<S>::from_net(x.second) ); }
 };
 
+template <class F, class S>
+class __le_converter<std::pair<F,S> >
+{
+  public:
+    static std::pair<F,S> to_le( const std::pair<F,S>& x )
+      { return std::make_pair( __le_converter<F>::to_le(x.first), __le_converter<S>::to_le(x.second) ); }
+
+    static std::pair<F,S> from_le( const std::pair<F,S>& x )
+      { return std::make_pair( __le_converter<F>::from_le(x.first), __le_converter<S>::from_le(x.second) ); }
+};
+
 template <class T>
 T to_net( const T& x )
 { return stem::__net_converter<T>::to_net( x ); }
@@ -139,6 +219,22 @@ T to_net( const T& x )
 template <class T>
 T from_net( const T& x )
 { return stem::__net_converter<T>::from_net( x ); }
+template <class T>
+
+T to_be( const T& x )
+{ return stem::__net_converter<T>::to_net( x ); }
+
+template <class T>
+T from_be( const T& x )
+{ return stem::__net_converter<T>::from_net( x ); }
+
+template <class T>
+T to_le( const T& x )
+{ return stem::__le_converter<T>::to_le( x ); }
+
+template <class T>
+T from_le( const T& x )
+{ return stem::__le_converter<T>::from_le( x ); }
 
 #else // !_MSC_VER
 
