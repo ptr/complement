@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <09/07/31 13:48:26 ptr>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 2009
+ * Copyright (c) 2009, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -23,9 +23,9 @@
 #include <signal.h>
 #include <algorithm>
 
-#include <mt/mutex>
-#include <mt/condition_variable>
-#include <mt/date_time>
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
 
 #include <stem/EventHandler.h>
 
@@ -49,8 +49,8 @@ class Tester :
   public:
     static bool n_cnt();
 
-    static std::tr2::mutex lock;
-    static std::tr2::condition_variable cnd;
+    static std::mutex lock;
+    static std::condition_variable cnd;
     static int visits;
 
   private:
@@ -62,16 +62,16 @@ class Tester :
           { }
 
         bool operator()() const
-          { return tester->peer != stem::badaddr; }
+          { return tester->peer != stem::extbadaddr; }
 
       private:
         Tester* tester;
     };
 
-    std::tr2::mutex peer_lock;
-    std::tr2::condition_variable peer_cnd;
+    std::mutex peer_lock;
+    std::condition_variable peer_cnd;
 
-    stem::addr_type peer;
+    stem::ext_addr_type peer;
 
     friend class pred;
 
@@ -103,8 +103,8 @@ class Busy :
         Busy* busy;
     };
 
-    std::tr2::mutex lock;
-    std::tr2::condition_variable cnd;
+    std::mutex lock;
+    std::condition_variable cnd;
 
     int cnt;
 

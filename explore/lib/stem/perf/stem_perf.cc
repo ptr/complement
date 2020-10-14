@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <09/08/03 15:58:23 ptr>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 2009
+ * Copyright (c) 2009, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -10,28 +10,15 @@
  */
 
 #include "stem_perf.h"
-#include <exam/suite.h>
-
-#include <sockios/sockstream>
-#include <sockios/sockmgr.h>
-
-#include <mt/shm.h>
-#include <sys/wait.h>
-#include <signal.h>
-#include <algorithm>
-
-#include <mt/mutex>
-#include <mt/condition_variable>
-#include <mt/date_time>
 
 #include <stem/NetTransport.h>
+#include <mt/fork.h>
 
 using namespace std;
-using namespace std::tr2;
 using namespace stem;
 
-std::tr2::mutex Tester::lock;
-std::tr2::condition_variable Tester::cnd;
+mutex Tester::lock;
+condition_variable Tester::cnd;
 int Tester::visits = 0;
 
 const int EV_TEST = 0x1000;
@@ -41,21 +28,21 @@ const int port = 6480;
 static const int N = 100000;
 
 Tester::Tester() :
-    peer( badaddr )
+    peer(extbadaddr)
 {
   EventHandler::enable();
 }
 
 Tester::Tester( stem::addr_type id ) :
     EventHandler( id ),
-    peer( badaddr )
+    peer(extbadaddr)
 {
   EventHandler::enable();
 }
 
 Tester::Tester( stem::addr_type id, const char* info ) :
     EventHandler( id, info ),
-    peer( badaddr )
+    peer(extbadaddr)
 {
   EventHandler::enable();
 }
@@ -86,7 +73,7 @@ bool Tester::wait_peer()
   pred p( *this );
 
   unique_lock<mutex> lk( peer_lock );
-  return peer_cnd.timed_wait( lk, std::tr2::milliseconds( 500 ), p );
+  return peer_cnd.wait_for(lk, chrono::milliseconds(500), p);
 }
 
 void Tester::send()
@@ -117,12 +104,12 @@ bool Busy::wait()
   pred p( *this );
 
   unique_lock<mutex> lk( lock );
-  return cnd.timed_wait( lk, std::tr2::seconds( 5 ), p );
+  return cnd.wait_for(lk, chrono::seconds(5), p);
 }
 
 void Busy::handler( const stem::Event& )
 {
-  this_thread::sleep( milliseconds(100) );
+  this_thread::sleep_for(chrono::milliseconds(100));
 
   lock_guard<mutex> lk(lock);
   if ( ++cnt == cnt_lim ) {
@@ -148,14 +135,14 @@ int EXAM_IMPL(stem_perf::local)
   Tester t2;
 
   Event ev( EV_TEST );
-  ev.dest( t2.self_id() );
+  ev.dest(make_pair(t2.domain(), t2.self_id()));
 
   for ( int i = 0; i < N; ++i ) {
     t1.Send( ev );
   }
 
-  std::tr2::unique_lock<std::tr2::mutex> lk(Tester::lock);
-  EXAM_CHECK( Tester::cnd.timed_wait( lk, std::tr2::milliseconds( 1500 ), Tester::n_cnt ) );
+  unique_lock<mutex> lk(Tester::lock);
+  EXAM_CHECK(Tester::cnd.wait_for(lk, chrono::milliseconds(1500), Tester::n_cnt));
 
   Tester::visits = 0;
 
@@ -170,19 +157,19 @@ int EXAM_IMPL(stem_perf::local_too)
   Tester t1;
   Tester t2;
 
-  t2.set_default();
+  // t2.set_default();
 
   stem::addr_type zero = mgr.open( "localhost", port );
 
   Event ev( EV_TEST );
-  ev.dest( zero );
+  ev.dest(make_pair(zero,t2.self_id()));
 
   for ( int i = 0; i < N; ++i ) {
     t1.Send( ev );
   }
 
-  std::tr2::unique_lock<std::tr2::mutex> lk(Tester::lock);
-  EXAM_CHECK( Tester::cnd.timed_wait( lk, std::tr2::milliseconds( 1500 ), Tester::n_cnt ) );
+  unique_lock<mutex> lk(Tester::lock);
+  EXAM_CHECK(Tester::cnd.wait_for(lk, chrono::milliseconds(1500), Tester::n_cnt));
 
   mgr.close();
   mgr.join();
@@ -213,6 +200,7 @@ int EXAM_IMPL(stem_perf::net_loopback)
     std::tr2::condition_event_ip& c = *new ( shme.allocate( 1 ) ) std::tr2::condition_event_ip();
     // j = 0;
 
+    stem::addr_type addr = xmt::uid();
     try {
       std::tr2::this_thread::fork();
 
@@ -231,8 +219,7 @@ int EXAM_IMPL(stem_perf::net_loopback)
         sigemptyset( &signal_mask );
         sigaddset( &signal_mask, SIGINT );
 
-        Tester t2;
-        t2.set_default();
+        Tester t2(addr);
 
         b.wait();
 
@@ -241,8 +228,8 @@ int EXAM_IMPL(stem_perf::net_loopback)
 
         if ( sig_caught == SIGINT ) {
           EXAM_MESSAGE_ASYNC( "catch INT signal" );
-          std::tr2::unique_lock<std::tr2::mutex> lk(Tester::lock);
-          EXAM_CHECK_ASYNC_F( Tester::cnd.timed_wait( lk, std::tr2::milliseconds( 5000 ), Tester::n_cnt ), flag );
+          unique_lock<mutex> lk(Tester::lock);
+          EXAM_CHECK_ASYNC_F(Tester::cnd.wait_for(lk, chrono::milliseconds(5000), Tester::n_cnt), flag);
           // {
           // std::tr2::lock_guard<std::tr2::mutex_ip> lk2(m);
           // j = 1;
@@ -271,7 +258,7 @@ int EXAM_IMPL(stem_perf::net_loopback)
       Tester t1;
 
       Event ev( EV_TEST );
-      ev.dest( zero );
+      ev.dest(make_pair(zero, addr));
 
       for ( int i = 0; i < N; ++i ) {
         t1.Send( ev );
@@ -282,7 +269,7 @@ int EXAM_IMPL(stem_perf::net_loopback)
 
       // {
       // std::tr2::unique_lock<std::tr2::mutex_ip> lk(m);
-      EXAM_CHECK( c.timed_wait( std::tr2::milliseconds( 5000 ) ) );
+      EXAM_CHECK(c.wait_for(chrono::milliseconds(5000)));
       // }
 
       // this_thread::sleep( milliseconds( 500 ) );
@@ -326,6 +313,7 @@ int EXAM_IMPL(stem_perf::net_loopback_inv)
     std::tr2::barrier_ip& b = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
     std::tr2::condition_event_ip& c = *new ( shme.allocate( 1 ) ) std::tr2::condition_event_ip();
 
+    stem::addr_type addr = xmt::uid();
     try {
       std::tr2::this_thread::fork();
 
@@ -348,7 +336,7 @@ int EXAM_IMPL(stem_perf::net_loopback_inv)
         Tester t1;
 
         Event ev( EV_TEST );
-        ev.dest( zero );
+        ev.dest(make_pair(zero, addr));
 
         for ( int i = 0; i < N; ++i ) {
           t1.Send( ev );
@@ -380,19 +368,18 @@ int EXAM_IMPL(stem_perf::net_loopback_inv)
       EXAM_CHECK( srv.good() );
       EXAM_CHECK( srv.is_open() );
 
-      Tester t2;
-      t2.set_default();
+      Tester t2(addr);
 
       b.wait();
 
       {
-        std::tr2::unique_lock<std::tr2::mutex> lk(Tester::lock);
-        EXAM_CHECK( Tester::cnd.timed_wait( lk, std::tr2::milliseconds( 5000 ), Tester::n_cnt ) );
+        unique_lock<mutex> lk(Tester::lock);
+        EXAM_CHECK(Tester::cnd.wait_for(lk, chrono::milliseconds(5000), Tester::n_cnt));
       }
 
       kill( child.pid(), SIGINT );
 
-      EXAM_CHECK( c.timed_wait( std::tr2::milliseconds( 500 ) ) );
+      EXAM_CHECK(c.wait_for(chrono::milliseconds(500)));
 
       srv.close();
       srv.wait();
@@ -434,6 +421,7 @@ int EXAM_IMPL(stem_perf::net_loopback_inv2)
     std::tr2::barrier_ip& b = *new ( shm.allocate( 1 ) ) std::tr2::barrier_ip();
     std::tr2::condition_event_ip& c = *new ( shme.allocate( 1 ) ) std::tr2::condition_event_ip();
 
+    stem::addr_type addr = xmt::uid();
     try {
       std::tr2::this_thread::fork();
 
@@ -452,8 +440,7 @@ int EXAM_IMPL(stem_perf::net_loopback_inv2)
         sigemptyset( &signal_mask );
         sigaddset( &signal_mask, SIGINT );
 
-        Tester t2;
-        t2.set_default();
+        Tester t2(addr);
 
         b.wait();
 
@@ -492,18 +479,18 @@ int EXAM_IMPL(stem_perf::net_loopback_inv2)
       Tester t1;
 
       Event ev( EV_SETPEER );
-      ev.dest( zero );
+      ev.dest(make_pair(zero, addr));
 
       t1.Send( ev );
 
       {
-        std::tr2::unique_lock<std::tr2::mutex> lk(Tester::lock);
-        EXAM_CHECK( Tester::cnd.timed_wait( lk, std::tr2::milliseconds( 5000 ), Tester::n_cnt ) );
+        unique_lock<mutex> lk(Tester::lock);
+        EXAM_CHECK(Tester::cnd.wait_for(lk, chrono::milliseconds(5000), Tester::n_cnt));
       }
 
       kill( child.pid(), SIGINT );
 
-      EXAM_CHECK( c.timed_wait( std::tr2::milliseconds( 500 ) ) );
+      EXAM_CHECK(c.wait_for(chrono::milliseconds(500)));
 
       // this_thread::sleep( milliseconds( 500 ) );
 
@@ -543,10 +530,10 @@ int EXAM_IMPL(stem_perf::parallel)
   Tester t;
 
   Event ev1( EV_TEST );
-  ev1.dest( a1 );
+  ev1.dest(make_pair(b1.domain(), a1));
 
   Event ev2( EV_TEST );
-  ev2.dest( a2 );
+  ev2.dest(make_pair(b2.domain(), a2));
 
   for ( int i = 0; i < b1.cnt_lim; ++i ) {
     t.Send( ev1 );

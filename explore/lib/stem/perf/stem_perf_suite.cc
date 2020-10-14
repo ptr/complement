@@ -1,8 +1,8 @@
-// -*- C++ -*- Time-stamp: <09/07/31 13:51:25 ptr>
+// -*- C++ -*-
 
 /*
  *
- * Copyright (c) 2009
+ * Copyright (c) 2009, 2020
  * Petr Ovtchenkov
  *
  * Licensed under the Academic Free License version 3.0
@@ -22,7 +22,7 @@ int main( int argc, const char** argv )
 {
   Opts opts;
 
-  opts.description( "test suite for 'xmt' framework" );
+  opts.description( "test suite for 'stem' framework" );
   opts.usage( "[options]" );
 
   opts << option<void>( "print this help message", 'h', "help" )
