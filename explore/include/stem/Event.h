@@ -195,12 +195,16 @@ template <class D>
 class __Event_base_aux<D,std::true_type> :
         public __Event_Base
 {
+  private:
+    typedef typename std::remove_reference<D>::type data_type;
+
   public:
-    typedef D         value_type;
-    typedef D&        reference;
-    typedef const D&  const_reference;
-    typedef D *       pointer;
-    typedef const D * const_pointer;
+    typedef data_type        value_type;
+    typedef data_type&       reference;
+    typedef data_type&&      rv_reference;
+    typedef const data_type& const_reference;
+    typedef data_type*       pointer;
+    typedef const data_type* const_pointer;
 
     __Event_base_aux() :
         __Event_Base(),
@@ -212,23 +216,23 @@ class __Event_base_aux<D,std::true_type> :
         _data()
       { }
 
-    __Event_base_aux( code_type c, const D& d ) :
-        __Event_Base( c ),
-        _data( d )
+    __Event_base_aux(code_type c, const_reference d) :
+        __Event_Base(c),
+        _data(d)
       { }
 
-    __Event_base_aux(code_type c, D d) :
-        __Event_Base( c ),
+    __Event_base_aux(code_type c, rv_reference d) :
+        __Event_Base(c),
         _data(std::move(d))
       { }
 
-    __Event_base_aux( const __Event_Base& e, const D& d ) :
-        __Event_Base( e ),
-        _data( d )
+    __Event_base_aux(const __Event_Base& e, const_reference d) :
+        __Event_Base(e),
+        _data(d)
       { }
 
-    __Event_base_aux(const __Event_Base& e, D d) :
-        __Event_Base( e ),
+    __Event_base_aux(const __Event_Base& e, rv_reference d) :
+        __Event_Base(e),
         _data(std::move(d))
       { }
 
@@ -258,12 +262,16 @@ template <class D>
 class __Event_base_aux<D,std::false_type> :
         public __Event_Base
 {
+  private:
+    typedef typename std::remove_reference<D>::type data_type;
+
   public:
-    typedef D         value_type;
-    typedef D&        reference;
-    typedef const D&  const_reference;
-    typedef D *       pointer;
-    typedef const D * const_pointer;
+    typedef data_type        value_type;
+    typedef data_type&       reference;
+    typedef data_type&&      rv_reference;
+    typedef const data_type& const_reference;
+    typedef data_type*       pointer;
+    typedef const data_type* const_pointer;
 
     __Event_base_aux() :
         __Event_Base(),
@@ -275,33 +283,23 @@ class __Event_base_aux<D,std::false_type> :
         _data()
       { }
 
-    __Event_base_aux( code_type c, const D& d ) :
-        __Event_Base( c ),
-        _data( d )
+    __Event_base_aux(code_type c, const_reference d) :
+        __Event_Base(c),
+        _data(d)
       { }
 
-    __Event_base_aux(code_type c, D d) :
+    __Event_base_aux(code_type c, rv_reference d) :
         __Event_Base(c),
         _data(std::move(d))
       { }
 
-    __Event_base_aux(code_type c, D&& d) :
-        __Event_Base(c),
-        _data(std::move(d))
-      { }
-
-    __Event_base_aux( const __Event_Base& e, const D& d ) :
-        __Event_Base( e ),
-        _data( d )
-      { }
-
-    __Event_base_aux(const __Event_Base& e, D d) :
+    __Event_base_aux(const __Event_Base& e, const_reference d) :
         __Event_Base(e),
-        _data(std::move(d))
+        _data(d)
       { }
 
-    __Event_base_aux(__Event_Base&& e, D&& d) :
-        __Event_Base(std::move(e)),
+    __Event_base_aux(const __Event_Base& e, rv_reference d) :
+        __Event_Base(e),
         _data(std::move(d))
       { }
 
@@ -335,6 +333,7 @@ class __Event_base_aux<std::pair<F,S>,std::false_type> :
     typedef std::pair<F,S>         value_type;
     typedef std::pair<F,S>&        reference;
     typedef const std::pair<F,S>&  const_reference;
+    typedef std::pair<F,S>&&       rv_reference;
     typedef std::pair<F,S>*        pointer;
     typedef const std::pair<F,S>*  const_pointer;
 
@@ -348,22 +347,22 @@ class __Event_base_aux<std::pair<F,S>,std::false_type> :
         _data()
       { }
 
-    __Event_base_aux( code_type c, const_reference d ) :
-        __Event_Base( c ),
-        _data( d )
+    __Event_base_aux(code_type c, const_reference d) :
+        __Event_Base(c),
+        _data(d)
       { }
 
-    __Event_base_aux(code_type c, value_type d) :
+    __Event_base_aux(code_type c, rv_reference d) :
         __Event_Base(c),
         _data(std::move(d))
       { }
 
-    __Event_base_aux( const __Event_Base& e, const_reference d ) :
-        __Event_Base( e ),
-        _data( d )
+    __Event_base_aux(const __Event_Base& e, const_reference d) :
+        __Event_Base(e),
+        _data(d)
       { }
 
-    __Event_base_aux(const __Event_Base& e, value_type d) :
+    __Event_base_aux(const __Event_Base& e, rv_reference d) :
         __Event_Base(e),
         _data(std::move(d))
       { }
@@ -405,6 +404,7 @@ class __Event_base_aux<std::string,std::false_type> :
     typedef std::string         value_type;
     typedef std::string&        reference;
     typedef const std::string&  const_reference;
+    typedef std::string&&       rv_reference;
     typedef std::string *       pointer;
     typedef const std::string * const_pointer;
 
@@ -418,18 +418,18 @@ class __Event_base_aux<std::string,std::false_type> :
         _data()
       { }
 
-    __Event_base_aux( code_type c, const std::string& d ) :
-        __Event_Base( c ),
-        _data( d )
+    __Event_base_aux(code_type c, const_reference d) :
+        __Event_Base(c),
+        _data(d)
       { }
 
-    __Event_base_aux( const __Event_Base& e, const std::string& d ) :
-        __Event_Base( e ),
-        _data( d )
+    __Event_base_aux(const __Event_Base& e, const_reference d) :
+        __Event_Base(e),
+        _data(d)
       { }
 
-    __Event_base_aux(__Event_Base&& e, std::string&& d) :
-        __Event_Base(std::move(e)),
+    __Event_base_aux(const __Event_Base& e, rv_reference d) :
+        __Event_Base(e),
         _data(std::move(d))
       { }
 
@@ -462,6 +462,7 @@ class __Event_base_aux<xmt::uuid_type,std::false_type> :
   public:
     typedef xmt::uuid_type         value_type;
     typedef xmt::uuid_type&        reference;
+    typedef xmt::uuid_type&&       rv_reference;
     typedef const xmt::uuid_type&  const_reference;
     typedef xmt::uuid_type*        pointer;
     typedef const xmt::uuid_type*  const_pointer;
@@ -476,17 +477,17 @@ class __Event_base_aux<xmt::uuid_type,std::false_type> :
         _data()
       { }
 
-    __Event_base_aux( code_type c, const xmt::uuid_type& d ) :
-        __Event_Base( c ),
-        _data( d )
+    __Event_base_aux(code_type c, const_reference d) :
+        __Event_Base(c),
+        _data(d)
       { }
 
-    __Event_base_aux( const __Event_Base& e, const xmt::uuid_type& d ) :
-        __Event_Base( e ),
-        _data( d )
+    __Event_base_aux(const __Event_Base& e, const_reference d) :
+        __Event_Base(e),
+        _data(d)
       { }
 
-    __Event_base_aux(const __Event_Base& e, xmt::uuid_type&& d) :
+    __Event_base_aux(const __Event_Base& e, rv_reference d) :
         __Event_Base(e),
         _data(std::move(d))
       { }
@@ -546,38 +547,39 @@ class __Event_base_aux<void,std::true_type> :
 
 template <class D>
 class Event_base :
-    public __Event_base_aux<D,typename std::is_pod<D>::type>
+    public __Event_base_aux<typename std::remove_reference<D>::type,typename std::is_pod<D>::type>
 {
   private:
-    typedef __Event_base_aux<D,typename std::is_pod<D>::type> _Base;
+    typedef typename std::remove_reference<D>::type data_type;
+    typedef __Event_base_aux<data_type,typename std::is_pod<D>::type> _Base;
 
   public:
     Event_base() :
-        __Event_base_aux<D,typename std::is_pod<D>::type>()
+        _Base()
       { }
 
     explicit Event_base( code_type c ) :
-        __Event_base_aux<D,typename std::is_pod<D>::type>( c )
+        _Base( c )
       { }
 
-    Event_base( code_type c, const D& d ) :
-        __Event_base_aux<D,typename std::is_pod<D>::type>( c, d )
+    Event_base(code_type c, const data_type& d) :
+        _Base(c, d)
       { }
 
-    Event_base(code_type c, D&& d) :
-        __Event_base_aux<D,typename std::is_pod<D>::type>(c, std::move(d))
+    Event_base(code_type c, data_type&& d) :
+        _Base(c, std::move(d))
       { }
 
     Event_base( const Event_base& e ) :
-        __Event_base_aux<D,typename std::is_pod<D>::type>( e, e._data )
+        _Base( e, e._data )
       { }
 
     Event_base(const Event& e) :
-        __Event_base_aux<D,typename std::is_pod<D>::type>()
+        _Base()
       { unpack(e); }
 
     Event_base(Event&& e) :
-        __Event_base_aux<D,typename std::is_pod<D>::type>()
+        _Base()
       { unpack(e); }
 
     Event_base(Event_base&& e) = default;
