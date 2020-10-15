@@ -60,7 +60,8 @@ typedef unsigned state_type;
 #define D2(cls) stem::__dispatcher_void<stem::__member_function<cls,void>,stem::Event>
 
 #define __D_EV_T(cls,T) stem::__dispatcher_convert<stem::__member_function<cls,stem::Event_base<T> >,stem::Event>
-#define __D_T(cls,T) stem::__dispatcher_convert<stem::__member_function<cls,T>,stem::Event>
+#define __D_T(cls,T)    stem::__dispatcher_convert<stem::__member_function<cls,T>,stem::Event>
+#define __D_V_T(cls,T)  stem::__dispatcher_convert<stem::__member_function_v<cls,T>,stem::Event>
 
 #ifndef __FIT_TEMPLATE_CLASSTYPE_BUG
 #  define EV_EDS(state,event,handler) \
@@ -78,6 +79,8 @@ typedef unsigned state_type;
    RESPONSE_TABLE_ENTRY(state,event,handler,__D_EV_T(ThisCls,T)::dispatch)
 #define EV_T_(state,event,handler,T) \
    RESPONSE_TABLE_ENTRY(state,event,handler,__D_T(ThisCls,T)::dispatch)
+#define EV_V_T_(state,event,handler,T) \
+   RESPONSE_TABLE_ENTRY(state,event,handler,__D_V_T(ThisCls,T)::dispatch)
 
 
 class EventHandler;
@@ -184,12 +187,23 @@ struct convert<stem::Event,void>
 template <class T, class Arg>
 struct __member_function
 {
-    typedef Arg argument_type;
-    typedef typename std::add_lvalue_reference<typename std::add_const<typename std::remove_reference<Arg>::type>::type>::type const_reference_argument_type;
+    typedef typename std::remove_reference<Arg>::type argument_type;
+    typedef typename std::add_lvalue_reference<typename std::add_const<argument_type>::type>::type const_reference_argument_type;
     typedef typename std::add_pointer<typename std::remove_pointer<T>::type>::type pointer_class_type;
     typedef void (T::*pmf_type)( const_reference_argument_type );
     typedef void (*dpmf_type)( typename std::add_const<typename std::add_pointer<typename std::remove_pointer<T>::type>::type>::type, pmf_type,
 			       const_reference_argument_type arg );
+};
+
+template <class T, class Arg>
+struct __member_function_v
+{
+    typedef typename std::remove_reference<Arg>::type argument_type;
+    typedef typename std::add_lvalue_reference<typename std::add_const<argument_type>::type>::type const_reference_argument_type;
+    typedef typename std::add_pointer<typename std::remove_pointer<T>::type>::type pointer_class_type;
+    typedef void (T::*pmf_type)(argument_type);
+    typedef void (*dpmf_type)(typename std::add_const<typename std::add_pointer<typename std::remove_pointer<T>::type>::type>::type, pmf_type,
+                               argument_type arg);
 };
 
 template <class T>
@@ -220,8 +234,13 @@ struct __dispatcher_void
 template <class PMF, class Arg >
 struct __dispatcher_convert
 {
-    static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, const Arg& arg )
-      {	(c->*pmf)( typename stem::detail::convert<Arg,typename PMF::argument_type>()(arg) ); }
+    typedef typename std::remove_reference<Arg>::type argument_type;
+    typedef const argument_type&                      const_reference_type;
+
+    static void dispatch( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, const_reference_type arg )
+      {	(c->*pmf)( typename stem::detail::convert<argument_type,typename PMF::argument_type>()(arg) ); }
+    static void dispatch_v( typename PMF::pointer_class_type c, typename PMF::pmf_type pmf, argument_type arg )
+      {	(c->*pmf)( typename stem::detail::convert<argument_type,typename PMF::argument_type>()(std::move(arg)) ); }
 };
 
 struct __AnyPMFentry

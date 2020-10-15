@@ -1513,6 +1513,18 @@ int EXAM_IMPL(stem_test::convert)
 
   conv.v = 0;
 
+  stem::Event_base<int32_t> ev7(CONV_EV7, 35);
+  //stem::Event_base<int32_t> ev7(CONV_EV7);
+  //ev7.value() = 35;
+  ev7.dest(make_pair(stem::EventHandler::domain(), conv.self_id()));
+
+  conv.Send(ev7);
+
+  EXAM_CHECK(conv.wait());
+  EXAM_CHECK(conv.v == 35);
+
+  conv.v = 0;
+
   return EXAM_RESULT;
 }
 

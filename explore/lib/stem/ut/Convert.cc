@@ -106,6 +106,14 @@ void Convert::handler6( const stem::Event_base<Convert::compaund_type>& ev )
   cnd.notify_one();
 }
 
+void Convert::handler7(int32_t _v)
+{
+  lock_guard<mutex> lk( mtx );
+  v = _v;
+
+  cnd.notify_one();
+}
+
 bool Convert::wait()
 {
   unique_lock<mutex> lk( mtx );
@@ -120,4 +128,5 @@ DEFINE_RESPONSE_TABLE( Convert )
   EV_Event_base_T_( ST_NULL, CONV_EV4, handler4, void )
   EV_T_( ST_NULL, CONV_EV5, handler5, std::string )
   EV_Event_base_T_( ST_NULL, CONV_EV6, handler6, compaund_type )
+  EV_V_T_( ST_NULL, CONV_EV7, handler7, int32_t)
 END_RESPONSE_TABLE

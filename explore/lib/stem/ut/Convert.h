@@ -57,6 +57,7 @@ class Convert :
     void handler4( const stem::EventVoid& );
     void handler5( const std::string& );
     void handler6( const stem::Event_base<compaund_type>& );
+    void handler7(int32_t);
 
     bool wait();
 
@@ -82,5 +83,6 @@ class Convert :
 #define CONV_EV4 0x90d
 #define CONV_EV5 0x90e
 #define CONV_EV6 0x90f
+#define CONV_EV7 0x910
 
 #endif // __Convert_h
