@@ -217,9 +217,19 @@ class __Event_base_aux<D,std::true_type> :
         _data( d )
       { }
 
+    __Event_base_aux(code_type c, D d) :
+        __Event_Base( c ),
+        _data(std::move(d))
+      { }
+
     __Event_base_aux( const __Event_Base& e, const D& d ) :
         __Event_Base( e ),
         _data( d )
+      { }
+
+    __Event_base_aux(const __Event_Base& e, D d) :
+        __Event_Base( e ),
+        _data(std::move(d))
       { }
 
     const_reference value() const
@@ -270,9 +280,29 @@ class __Event_base_aux<D,std::false_type> :
         _data( d )
       { }
 
+    __Event_base_aux(code_type c, D d) :
+        __Event_Base(c),
+        _data(std::move(d))
+      { }
+
+    __Event_base_aux(code_type c, D&& d) :
+        __Event_Base(c),
+        _data(std::move(d))
+      { }
+
     __Event_base_aux( const __Event_Base& e, const D& d ) :
         __Event_Base( e ),
         _data( d )
+      { }
+
+    __Event_base_aux(const __Event_Base& e, D d) :
+        __Event_Base(e),
+        _data(std::move(d))
+      { }
+
+    __Event_base_aux(__Event_Base&& e, D&& d) :
+        __Event_Base(std::move(e)),
+        _data(std::move(d))
       { }
 
     const_reference value() const
@@ -323,9 +353,19 @@ class __Event_base_aux<std::pair<F,S>,std::false_type> :
         _data( d )
       { }
 
+    __Event_base_aux(code_type c, value_type d) :
+        __Event_Base(c),
+        _data(std::move(d))
+      { }
+
     __Event_base_aux( const __Event_Base& e, const_reference d ) :
         __Event_Base( e ),
         _data( d )
+      { }
+
+    __Event_base_aux(const __Event_Base& e, value_type d) :
+        __Event_Base(e),
+        _data(std::move(d))
       { }
 
     const_reference value() const
@@ -388,6 +428,11 @@ class __Event_base_aux<std::string,std::false_type> :
         _data( d )
       { }
 
+    __Event_base_aux(__Event_Base&& e, std::string&& d) :
+        __Event_Base(std::move(e)),
+        _data(std::move(d))
+      { }
+
     const_reference value() const
       { return _data; }
     reference value()
@@ -439,6 +484,11 @@ class __Event_base_aux<xmt::uuid_type,std::false_type> :
     __Event_base_aux( const __Event_Base& e, const xmt::uuid_type& d ) :
         __Event_Base( e ),
         _data( d )
+      { }
+
+    __Event_base_aux(const __Event_Base& e, xmt::uuid_type&& d) :
+        __Event_Base(e),
+        _data(std::move(d))
       { }
 
     const_reference value() const
@@ -514,12 +564,33 @@ class Event_base :
         __Event_base_aux<D,typename std::is_pod<D>::type>( c, d )
       { }
 
+    Event_base(code_type c, D&& d) :
+        __Event_base_aux<D,typename std::is_pod<D>::type>(c, std::move(d))
+      { }
+
     Event_base( const Event_base& e ) :
         __Event_base_aux<D,typename std::is_pod<D>::type>( e, e._data )
       { }
 
+    Event_base(const Event& e) :
+        __Event_base_aux<D,typename std::is_pod<D>::type>()
+      { unpack(e); }
+
+    Event_base(Event&& e) :
+        __Event_base_aux<D,typename std::is_pod<D>::type>()
+      { unpack(e); }
+
+    Event_base(Event_base&& e) = default;
+
+    Event_base& operator =(const Event_base& e) = default;
+    Event_base& operator =(const Event& e)
+      { unpack(e); }
+    Event_base& operator =(Event&& e)
+      { unpack(e); }
+
     void pack( Event& s ) const;
     void unpack( const Event& s );
+    void unpack(Event&& s);
 };
 
 
@@ -543,9 +614,28 @@ class Event_base<std::string> :
         __Event_base_aux<std::string,std::false_type>( c, d )
       { }
 
+    Event_base(code_type c, std::string&& d) :
+        __Event_base_aux<std::string,std::false_type>(c, std::move(d))
+      { }
+
     Event_base( const Event_base& e ) :
         __Event_base_aux<std::string,std::false_type>( e, e._data )
       { }
+
+    Event_base(Event_base&& e) :
+        __Event_base_aux<std::string,std::false_type>(std::move(e), std::move(e._data))
+      { }
+
+    template <typename U>
+    Event_base(const Event_base<U>& e) :
+        __Event_base_aux<std::string,std::false_type>()
+      { e.pack(*this); }
+
+    Event_base& operator =(const Event_base&) = default;
+
+    template <typename U>
+    Event_base& operator =(const Event_base<U>& e)
+      { e.pack(*this); return *this; }
 
     void pack( Event& s ) const
       {
@@ -563,6 +653,15 @@ class Event_base<std::string> :
         _src  = s.src();
         _flags = s.flags();
         _data = s.value();
+      }
+
+    void unpack(Event&& s)
+      {
+        _code = s.code();
+        _dst  = s.dest();
+        _src  = s.src();
+        _flags = s.flags();
+        _data = std::move(s._data);
       }
 };
 
@@ -589,6 +688,17 @@ void Event_base<D>::unpack( const Event& s )
   _Base::unpack( ss );
 }
 
+template <class D>
+void Event_base<D>::unpack(Event&& s)
+{
+  _Base::_code = s.code();
+  _Base::_dst  = s.dest();
+  _Base::_src  = s.src();
+  _Base::_flags = s.flags() & ~(__Event_Base::conv | __Event_Base::expand);
+  std::istringstream ss(std::move(s._data));
+  _Base::unpack(ss);
+}
+
 template <>
 class Event_base<void> :
     public __Event_base_aux<void,std::true_type>
@@ -610,6 +720,19 @@ class Event_base<void> :
         __Event_base_aux<void,std::true_type>( e )
       { }
 
+    Event_base(Event_base&& e) = default;
+
+    Event_base(const Event& e) :
+        __Event_base_aux<void,std::true_type>()
+      { unpack(e); }
+
+    Event_base(Event&& e) :
+        __Event_base_aux<void,std::true_type>()
+      { unpack(e); }
+
+    Event_base& operator =(const Event& e)
+      { unpack(e); return *this; }
+
     void pack( Event& s ) const
       {
         s.code( _code );
@@ -620,6 +743,14 @@ class Event_base<void> :
       }
 
     void unpack( const Event& s )
+      {
+        _code = s.code();
+        _dst  = s.dest();
+        _src  = s.src();
+        _flags = s.flags() & ~(__Event_Base::conv | __Event_Base::expand);
+      }
+
+    void unpack(Event&& s)
       {
         _code = s.code();
         _dst  = s.dest();

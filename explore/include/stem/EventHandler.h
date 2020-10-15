@@ -108,10 +108,16 @@ struct convert<stem::Event,stem::Event_base<T> >
         if ( (x.flags() & __Event_Base::expand) == 0 ) {
           throw std::invalid_argument( std::string("invalid conversion") );
         }
-        stem::Event_base<T> tmp;
-        tmp.unpack( x );
         
-        return tmp;
+        return stem::Event_base<T>(x);
+      }
+
+    stem::Event_base<T> operator ()(stem::Event&& x) const
+      {
+        if ( (x.flags() & __Event_Base::expand) == 0 ) {
+          throw std::invalid_argument( std::string("invalid conversion") );
+        }
+        return stem::Event_base<T>(std::move(x));
       }
 };
 
@@ -123,10 +129,15 @@ struct convert<stem::Event,T>
         if ( (x.flags() & __Event_Base::expand) == 0 ) {
           throw std::invalid_argument( std::string("invalid conversion") );
         }
-        stem::Event_base<T> tmp;
-        tmp.unpack( x );
-        
-        return tmp.value();
+        return stem::Event_base<T>(x).value();
+      }
+
+    T operator ()(stem::Event&& x) const
+      {
+        if ( (x.flags() & __Event_Base::expand) == 0 ) {
+          throw std::invalid_argument( std::string("invalid conversion") );
+        }
+        return stem::Event_base<T>(std::move(x)).value();
       }
 };
 
@@ -148,6 +159,8 @@ struct convert<stem::Event,stem::Event>
 {
     const stem::Event& operator ()( const stem::Event& x ) const
       { return x; }
+    stem::Event operator ()(stem::Event&& x) const
+      { return std::move(x); }
 };
 
 template <>
@@ -155,6 +168,8 @@ struct convert<stem::Event,std::string>
 {
     const std::string& operator ()( const stem::Event& x ) const
       { return x.value(); }
+    std::string operator ()(stem::Event&& x) const
+      { return std::move(x.value()); }
 };
 
 template <>
